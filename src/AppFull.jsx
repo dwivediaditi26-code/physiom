@@ -11226,6 +11226,9 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     ? runEngineV6(data, _v6Regions)
     : null;
 
+  // dx declared here so Plan section can access it regardless of which branch runs
+  let dx = null;
+
   if (_v6Result?.regionResults?.length) {
     A_parts.push("CLINICAL IMPRESSION (Engine v6 — Ranked Differentials):");
     _v6Result.regionResults.forEach((r, i) => {
@@ -11255,7 +11258,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     }
   } else {
     // Fall back to legacy diagnosis engine
-    const dx = typeof generateDiagnosis === "function" ? generateDiagnosis(data) : null;
+    dx = typeof generateDiagnosis === "function" ? generateDiagnosis(data) : null;
     if (dx?.dx?.length) {
       A_parts.push("Clinical Impression:");
       dx.dx.forEach((d,i) => {
@@ -21230,7 +21233,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements}) {
   const m=measurements||{};
 
   if(showGrid){
-    ctx.strokeStyle="rgba(255,255,255,0.06)"; ctx.lineWidth=0.5;
+    ctx.strokeStyle="rgba(255,255,255,0.18)"; ctx.lineWidth=0.8;
     for(let c=0;c<=12;c++){const x=W/12*c;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
     for(let r=0;r<=16;r++){const y=H/16*r;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
   }
@@ -21242,7 +21245,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements}) {
     const hm=V(23)&&V(24)?{x:(g(23).x+g(24).x)/2,y:(g(23).y+g(24).y)/2}:null;
     const gx=hm?hm.x*W:W/2;
     ctx.save(); ctx.shadowColor="rgba(0,229,255,0.6)"; ctx.shadowBlur=8;
-    ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,0.7)"; ctx.lineWidth=1.8;
+    ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,0.95)"; ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
     ctx.restore(); ctx.setLineDash([]);
   } else {
@@ -21253,7 +21256,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements}) {
     const plumbX=ankPt?ankPt[0]:W/2;
     // Main plumb vertical
     ctx.save(); ctx.shadowColor="rgba(0,229,255,0.8)"; ctx.shadowBlur=12;
-    ctx.setLineDash([9,5]); ctx.strokeStyle="rgba(0,229,255,0.85)"; ctx.lineWidth=2.2;
+    ctx.setLineDash([9,5]); ctx.strokeStyle="rgba(0,229,255,0.98)"; ctx.lineWidth=3;
     ctx.beginPath(); ctx.moveTo(plumbX,0); ctx.lineTo(plumbX,H); ctx.stroke();
     ctx.shadowBlur=0; ctx.setLineDash([]); ctx.restore();
     // Per-segment deviation dots + horizontal offset lines
@@ -21320,7 +21323,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements}) {
     [27,29],[28,30],[27,31],[28,32],
     [7,8],[0,7],[0,8],
   ];
-  ctx.strokeStyle="rgba(124,58,237,0.55)"; ctx.lineWidth=2; ctx.setLineDash([]);
+  ctx.strokeStyle="rgba(167,139,250,0.9)"; ctx.lineWidth=2.5; ctx.setLineDash([]);
   CONNECTIONS.forEach(([a,b])=>{
     if(!V(a)||!V(b)) return;
     const pa=PX(a), pb=PX(b); if(!pa||!pb) return;
@@ -21332,9 +21335,9 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements}) {
   JOINTS.forEach(i=>{
     if(!V(i)) return;
     const p=PX(i); if(!p) return;
-    ctx.beginPath(); ctx.arc(p[0],p[1],5,0,Math.PI*2);
-    ctx.fillStyle="rgba(147,51,234,0.85)"; ctx.fill();
-    ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(p[0],p[1],6,0,Math.PI*2);
+    ctx.fillStyle="rgba(167,139,250,0.95)"; ctx.fill();
+    ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke();
   });
 
   // ── FRONTAL-ONLY overlays ─────────────────────────────────────────────────
@@ -21457,6 +21460,22 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements}) {
     ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
   });
 }
+
+// ─── renderPostureOverlay — alias for drawOverlay used throughout app ──────────
+// Maps the showHeatmap/showLabels/view params to drawOverlay signature
+function renderPostureOverlay({ ctx, W, H, lm, measurements, showGrid, showHeatmap, showLabels, view }) {
+  // Map view names to drawOverlay's expected format
+  const viewMap = {
+    anterior: "anterior", posterior: "posterior",
+    left: "left", right: "right",
+    frontal: "anterior", sagittal: "left",
+    "sag l": "left", "sag r": "right",
+    "sag_l": "left", "sag_r": "right",
+  };
+  const mappedView = viewMap[String(view || "anterior").toLowerCase()] || "anterior";
+  drawOverlay({ ctx, W, H, lm, view: mappedView, showGrid: showGrid !== false, measurements: measurements || {} });
+}
+
 
 // ─── Manual overlay renderer ──────────────────────────────────────────────────
 function drawManualOverlay({ctx, W, H, placed, pointDefs, connections, currentIdx}) {
@@ -21585,6 +21604,167 @@ function ScoreRingBand({score,band,colour,size=80}){
 }
 
 // ─── Finding Card ─────────────────────────────────────────────────────────────
+
+// ─── FindingsDisplay — Priority top 5 + show all toggle ──────────────────────
+function FindingsDisplay({ findings, PC }) {
+  const [showAll, setShowAll] = useState(false);
+
+  if (!findings || findings.length === 0) return null;
+
+  // Sort: confirmed first, then by severity
+  const sevRank = { high: 3, moderate: 2, low: 1 };
+  const sorted = [...findings].sort((a, b) => {
+    const ca = (a.confirmed ? 10 : 0) + (sevRank[a.severity] || 0);
+    const cb = (b.confirmed ? 10 : 0) + (sevRank[b.severity] || 0);
+    return cb - ca;
+  });
+
+  const confirmed  = sorted.filter(f => f.confirmed);
+  const singleView = sorted.filter(f => !f.confirmed);
+  const top5       = sorted.slice(0, 5);
+  const rest       = sorted.slice(5);
+  const shown      = showAll ? sorted : top5;
+
+  // Landmark confidence check — flag low-visibility metrics
+  const lowConfMetrics = ["neck lateral inclination","carrying angle","tibial bowing","ankle height"];
+  const hasLowConf = (text) => lowConfMetrics.some(m => text.toLowerCase().includes(m));
+
+  return (
+    <div style={{ marginTop: 4 }}>
+      {/* Summary bar */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <div style={{ fontSize:"0.62rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"1px" }}>
+          Clinical Findings
+        </div>
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+          {confirmed.length > 0 && (
+            <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+              background: PC.green+"15", color: PC.green, border:`1px solid ${PC.green}33` }}>
+              ✓ {confirmed.length} confirmed
+            </span>
+          )}
+          {singleView.length > 0 && (
+            <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+              background: PC.muted+"15", color: PC.muted, border:`1px solid ${PC.border}` }}>
+              ○ {singleView.length} single-view
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Priority findings */}
+      {shown.map((f, i) => {
+        const isConfirmed = f.confirmed;
+        const isLowConf   = hasLowConf(f.text || "");
+        const col = f.severity==="high" ? PC.red : f.severity==="moderate" ? PC.yellow : PC.green;
+        return (
+          <FindingCardV2 key={i} f={f} col={col}
+            isConfirmed={isConfirmed} isLowConf={isLowConf} PC={PC}/>
+        );
+      })}
+
+      {/* Show all / Show less toggle */}
+      {rest.length > 0 && (
+        <button onClick={() => setShowAll(s => !s)}
+          style={{ width:"100%", padding:"9px", marginTop:6, borderRadius:9,
+            border:`1px solid ${PC.border}`, background: PC.s2,
+            color: PC.muted, fontSize:"0.7rem", fontWeight:700, cursor:"pointer" }}>
+          {showAll
+            ? `▲ Show primary findings only`
+            : `▼ Show all ${rest.length} additional findings`}
+        </button>
+      )}
+
+      {/* Clinical note */}
+      <div style={{ marginTop:10, padding:"8px 12px", borderRadius:8,
+        background: PC.accent+"08", border:`1px solid ${PC.border}`,
+        fontSize:"0.62rem", color:PC.muted, lineHeight:1.5 }}>
+        ✓ Confirmed = seen in ≥2 views · ○ Single-view = verify clinically ·
+        ⚡ Low confidence = verify with goniometer
+      </div>
+    </div>
+  );
+}
+
+// ─── FindingCardV2 — Enhanced with confidence badge ──────────────────────────
+function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div onClick={() => setOpen(o => !o)}
+      style={{ border:`1px solid ${col}30`, borderRadius:10, padding:"10px 12px",
+        marginBottom:7, background:`${col}08`, cursor:"pointer",
+        opacity: isConfirmed ? 1 : 0.82 }}>
+      <div style={{ display:"flex", alignItems:"flex-start", gap:8 }}>
+        {/* Severity dot */}
+        <div style={{ width:8, height:8, borderRadius:"50%", background:col,
+          marginTop:5, flexShrink:0 }}/>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:"0.72rem", fontWeight:700, color:PC.text, lineHeight:1.3 }}>
+            {f.text}
+          </div>
+          <div style={{ fontSize:"0.6rem", color:PC.muted, marginTop:2 }}>
+            {f.region} · {f.icd}
+          </div>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3, flexShrink:0 }}>
+          {/* Severity */}
+          <span style={{ fontSize:"0.6rem", color:col, fontWeight:700 }}>
+            {f.severity?.toUpperCase()}
+          </span>
+          {/* Confidence badge */}
+          {isConfirmed && (
+            <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
+              background: PC.green+"20", color: PC.green, border:`1px solid ${PC.green}44` }}>
+              ✓ CONFIRMED
+            </span>
+          )}
+          {isLowConf && (
+            <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
+              background: PC.yellow+"20", color: PC.yellow, border:`1px solid ${PC.yellow}44` }}>
+              ⚡ VERIFY
+            </span>
+          )}
+          {!isConfirmed && !isLowConf && (
+            <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
+              background: PC.muted+"15", color: PC.muted, border:`1px solid ${PC.border}` }}>
+              ○ SINGLE VIEW
+            </span>
+          )}
+          <div style={{ color:PC.muted, fontSize:"0.8rem" }}>{open ? "▲" : "▼"}</div>
+        </div>
+      </div>
+      {open && (
+        <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${col}20`,
+          fontSize:"0.68rem", color:PC.muted, lineHeight:1.6 }}>
+          {f.detail && (
+            <div style={{ marginBottom:6, fontStyle:"italic", color:PC.muted }}>{f.detail}</div>
+          )}
+          {f.correction && (
+            <div><strong style={{ color:col }}>Treatment: </strong>{f.correction}</div>
+          )}
+          {f.norm && (
+            <div style={{ marginTop:5, fontSize:"0.6rem", fontStyle:"italic" }}>
+              Reference: {f.norm}
+            </div>
+          )}
+          {isLowConf && (
+            <div style={{ marginTop:6, padding:"4px 8px", borderRadius:6,
+              background: PC.yellow+"12", color: PC.yellow, fontSize:"0.6rem", fontWeight:600 }}>
+              ⚡ Landmark confidence may be affected by lighting or clothing.
+              Verify with goniometry or clinical assessment.
+            </div>
+          )}
+          {f.sourceViews && f.sourceViews.length > 0 && (
+            <div style={{ marginTop:5, fontSize:"0.6rem", color:PC.accent }}>
+              Views: {f.sourceViews.join(" + ")}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FindingCard({f}){
   const [open,setOpen]=useState(false);
   const col=f.severity==="high"?PC.red:f.severity==="moderate"?PC.yellow:PC.green;
@@ -23383,11 +23563,42 @@ function PostureAnalysisModule(){
       </div>
       <div style={{padding:isWide?"20px 24px":"14px 16px"}}>
         {/* Score + summary */}
-        <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16,padding:isWide?"18px":"14px",background:PC.surface,borderRadius:14,border:`1px solid ${mvComposite.compositeColour}30`}}>
-          <ScoreRingBand score={mvComposite.compositeScore} band={mvComposite.compositeBand} colour={mvComposite.compositeColour} size={isWide?96:80}/>
-          <div style={{flex:1}}>
-            <div style={{fontWeight:900,fontSize:isWide?"1rem":"0.88rem",color:mvComposite.compositeColour}}>{mvComposite.compositeBand}</div>
-            <div style={{fontSize:"0.68rem",color:PC.muted,marginTop:4,lineHeight:1.5}}>{mvComposite.summary}</div>
+        <div style={{marginBottom:16,padding:isWide?"18px":"14px",background:PC.surface,borderRadius:14,border:`1px solid ${mvComposite.compositeColour}30`}}>
+          {/* Score header */}
+          <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:12}}>
+            <ScoreRingBand score={mvComposite.compositeScore} band={mvComposite.compositeBand} colour={mvComposite.compositeColour} size={isWide?96:80}/>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:900,fontSize:isWide?"1rem":"0.88rem",color:mvComposite.compositeColour}}>
+                {mvComposite.compositeBand}
+              </div>
+              <div style={{fontSize:"0.72rem",color:PC.text,fontWeight:700,marginTop:2}}>
+                Posture Score: {mvComposite.compositeScore}/100
+              </div>
+              <div style={{fontSize:"0.62rem",color:PC.muted,marginTop:4,lineHeight:1.5}}>
+                {mvComposite.summary}
+              </div>
+            </div>
+          </div>
+          {/* Score scale legend */}
+          <div style={{display:"flex",gap:4,marginTop:4}}>
+            {[["88–100","Optimal","#059669"],["74–87","Good","#22c55e"],["58–73","Fair","#f59e0b"],["40–57","Needs Attention","#f97316"],["0–39","Priority Review","#dc2626"]].map(([range,label,col])=>{
+              const isActive = (()=>{
+                const s=mvComposite.compositeScore;
+                if(range.startsWith("88"))return s>=88;
+                if(range.startsWith("74"))return s>=74&&s<88;
+                if(range.startsWith("58"))return s>=58&&s<74;
+                if(range.startsWith("40"))return s>=40&&s<58;
+                return s<40;
+              })();
+              return(
+                <div key={range} style={{flex:1,textAlign:"center",padding:"5px 2px",borderRadius:7,
+                  background:isActive?col+"20":"transparent",
+                  border:isActive?`1px solid ${col}55`:`1px solid transparent`}}>
+                  <div style={{fontSize:"0.55rem",fontWeight:isActive?800:400,color:isActive?col:PC.muted,lineHeight:1.2}}>{label}</div>
+                  <div style={{fontSize:"0.48rem",color:isActive?col:PC.muted,opacity:0.7}}>{range}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
         {/* Named patterns */}
@@ -23423,24 +23634,8 @@ function PostureAnalysisModule(){
             </div>
           </div>
         )}
-        {/* Confirmed findings */}
-        {mvComposite.mergedFindings.filter(f=>f.confirmed).length>0&&(
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>✓ Confirmed — seen in ≥2 views</div>
-            {mvComposite.mergedFindings.filter(f=>f.confirmed).map((f,i)=>(
-              <FindingCard key={i} f={{...f, text:`${f.text}  [${f.sourceViews.join(" + ")}]`}}/>
-            ))}
-          </div>
-        )}
-        {/* Unconfirmed findings */}
-        {mvComposite.mergedFindings.filter(f=>!f.confirmed).length>0&&(
-          <div>
-            <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>○ Single-view only — verify clinically</div>
-            {mvComposite.mergedFindings.filter(f=>!f.confirmed).map((f,i)=>(
-              <div key={i} style={{opacity:0.8}}><FindingCard f={f}/></div>
-            ))}
-          </div>
-        )}
+        {/* ── FINDINGS — Priority top 5 with expand ── */}
+        <FindingsDisplay findings={mvComposite.mergedFindings} PC={PC}/>
       </div>
     </div>
   );
