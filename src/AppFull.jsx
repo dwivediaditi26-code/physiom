@@ -1,7 +1,7 @@
 // AppFull.jsx — PostureModule, PatientDB, Dashboard, PdfReports, AppInner + App (export default)
 import React, { useState, useEffect, useCallback, useRef, useMemo, Component, Suspense } from "react";
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
-import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, ErgoModule, CyriaxModule, CyriaxRegionTests, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS } from "./SubjectiveObjective.jsx";
+import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, ErgoModule, CyriaxModule, CyriaxRegionTests, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
 import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule, PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule, buildClinicalInterpretation, Sparkline } from "./ClinicalModules.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule, DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 
