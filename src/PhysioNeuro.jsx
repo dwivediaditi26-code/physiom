@@ -1,6 +1,6 @@
 // PhysioNeuro.jsx — ALL_TESTS registry, ROM, MMT, Neurological
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { C, getC } from "./utils.js";
+import { C, getC } from "./utils.jsx";
 
 const ALL_TESTS = {
   home:{ label:"Home", icon:"🏠", desc:"App Overview & Features", groups:{ "Welcome":"HOME_MODULE" }},
