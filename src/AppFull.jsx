@@ -3607,69 +3607,153 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
     ctx.restore(); ctx.setLineDash([]);
   } else {
-    // ── Full clinical sagittal plumb line ─────────────────────────────────
-    const hi=view==="right"?24:23, shi=view==="right"?12:11, ki=view==="right"?26:25;
-    const ai=view==="right"?28:27, ei=view==="right"?8:7, heli=view==="right"?30:29;
-    const ankPt=V(ai)?PX(ai):null;
-    const plumbX=ankPt?ankPt[0]:W/2;
-    // Main plumb vertical
-    ctx.save(); ctx.shadowColor="rgba(0,229,255,0.8)"; ctx.shadowBlur=12;
-    ctx.setLineDash([9,5]); ctx.strokeStyle="rgba(0,229,255,0.98)"; ctx.lineWidth=3;
+    // ── Clinical Sagittal Plumb Line (Kendall / Sahrmann standard) ────────
+    // Anchor: Lateral Malleolus. Passes through: Knee → G.Trochanter → L4/L5 → Acromion → EAM
+    const side = view==="right";
+    const iEar  = side?8:7;
+    const iSh   = side?12:11;
+    const iHip  = side?24:23;
+    const iKnee = side?26:25;
+    const iAnk  = side?28:27;
+    const iHeel = side?30:29;
+
+    // Lateral malleolus X: weighted avg of ankle + heel
+    let plumbX = W/2;
+    if(V(iAnk) && V(iHeel)){
+      plumbX = lm[iAnk].x*W*0.6 + lm[iHeel].x*W*0.4;
+    } else if(V(iAnk)){
+      plumbX = lm[iAnk].x*W;
+    } else if(V(iHeel)){
+      plumbX = lm[iHeel].x*W;
+    }
+
+    // pixPerCm from measurements or height estimate
+    const pixPerCm = m.pixPerCm || (H / 170);
+
+    // Draw plumb line
+    ctx.save();
+    ctx.shadowColor="rgba(0,229,255,0.8)"; ctx.shadowBlur=14;
+    ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,1)"; ctx.lineWidth=3;
     ctx.beginPath(); ctx.moveTo(plumbX,0); ctx.lineTo(plumbX,H); ctx.stroke();
     ctx.shadowBlur=0; ctx.setLineDash([]); ctx.restore();
-    // Per-segment deviation dots + horizontal offset lines
+
+    // Clinical reference points — deviations in cm (Kendall 2005 norms)
     const segPts=[
-      {pt:V(ei)?PX(ei):null,   label:"Ear",     norm:3},
-      {pt:V(shi)?PX(shi):null, label:"Shoulder", norm:3},
-      {pt:V(hi)?PX(hi):null,   label:"Hip",      norm:3},
-      {pt:V(ki)?PX(ki):null,   label:"Knee",     norm:3},
-      {pt:ankPt,               label:"Ankle",    norm:0},
-    ].filter(s=>s.pt!==null);
-    segPts.forEach(({pt,label,norm})=>{
-      const dev=(pt[0]-plumbX)/W*100;
-      const absD=Math.abs(dev);
-      const isRef=label==="Ankle";
-      const col=isRef?"rgba(0,229,255,0.9)":absD<norm+2?"rgba(0,201,122,0.9)":absD<norm+6?"rgba(255,179,0,0.9)":"rgba(255,77,109,0.9)";
-      // Horizontal offset line
-      if(!isRef&&Math.abs(pt[0]-plumbX)>4){
-        ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+      { idx:iEar,  label:"EAM",           normRange:2 },
+      { idx:iSh,   label:"Acromion",      normRange:2 },
+      { idx:iHip,  label:"G. Trochanter", normRange:2 },
+      { idx:iKnee, label:"Knee",          normRange:2 },
+    ].filter(s=>V(s.idx));
+
+    segPts.forEach(({idx,label,normRange})=>{
+      const pt=PX(idx); if(!pt) return;
+      const devPx = pt[0]-plumbX;
+      const devCm = devPx/pixPerCm;
+      const absD  = Math.abs(devCm);
+      const col   = absD<=normRange?"rgba(0,201,122,0.95)":absD<=normRange+2?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
+      if(Math.abs(devPx)>6){
+        ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=1.8; ctx.setLineDash([5,3]);
         ctx.beginPath(); ctx.moveTo(plumbX,pt[1]); ctx.lineTo(pt[0],pt[1]); ctx.stroke();
         ctx.setLineDash([]); ctx.restore();
       }
-      // Dot
-      ctx.beginPath(); ctx.arc(pt[0],pt[1],isRef?5:4,0,Math.PI*2);
+      ctx.beginPath(); ctx.arc(pt[0],pt[1],5,0,Math.PI*2);
       ctx.fillStyle=col; ctx.fill();
-      ctx.strokeStyle="#fff"; ctx.lineWidth=1.2; ctx.stroke();
-      // Label badge
-      if(!isRef){
-        const devStr=`${dev>0?"+":""}${dev.toFixed(1)}%`;
-        const badgeText=`${label} ${devStr}`;
-        const tw=ctx.measureText(badgeText).width;
-        const bx=pt[0]+(dev>0?8:-tw-16), by=pt[1]-10;
-        ctx.fillStyle="rgba(0,0,0,0.82)";
-        if(ctx.roundRect) ctx.roundRect(bx,by,tw+8,16,4); else ctx.rect(bx,by,tw+8,16);
-        ctx.fill(); ctx.fillStyle=col; ctx.font="bold 9px system-ui"; ctx.textAlign="left";
-        ctx.fillText(badgeText,bx+4,by+11);
-      }
+      ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke();
+      const sign=devCm>0?"A ":"P ";
+      const badgeText=`${label}  ${sign}${Math.abs(devCm).toFixed(1)}cm`;
+      ctx.font="bold 10px system-ui";
+      const tw=ctx.measureText(badgeText).width;
+      const onRight=pt[0]<W*0.6;
+      const bx=onRight?pt[0]+9:pt[0]-tw-17, by=pt[1]-9;
+      ctx.fillStyle="rgba(10,10,20,0.88)";
+      if(ctx.roundRect) ctx.roundRect(bx,by,tw+8,17,4); else ctx.rect(bx,by,tw+8,17);
+      ctx.fill(); ctx.fillStyle=col; ctx.textAlign="left";
+      ctx.fillText(badgeText,bx+4,by+12);
     });
-    // FHP badge (lateral: horizontal line from ear to shoulder height)
-    if(V(ei)&&V(shi)){
-      const earPt=PX(ei), shPt2=PX(shi);
-      const diff=earPt[0]-shPt2[0];
-      if(Math.abs(diff)>W*0.02){
-        const col2=Math.abs(diff)>W*0.04?"rgba(255,77,109,0.8)":"rgba(255,179,0,0.8)";
-        ctx.strokeStyle=col2; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
-        ctx.beginPath(); ctx.moveTo(earPt[0],earPt[1]); ctx.lineTo(shPt2[0],earPt[1]); ctx.stroke();
-        ctx.setLineDash([]);
-        const fhpPct=Math.abs((diff/W)*100).toFixed(1);
-        const fLabel=`FHP ${fhpPct}%`;
+
+    // Lateral malleolus anchor dot
+    if(V(iAnk)){
+      const ankPt=PX(iAnk);
+      ctx.beginPath(); ctx.arc(ankPt[0],ankPt[1],6,0,Math.PI*2);
+      ctx.fillStyle="rgba(0,229,255,1)"; ctx.fill();
+      ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.font="bold 9px system-ui"; ctx.fillStyle="rgba(0,229,255,1)"; ctx.textAlign="left";
+      ctx.fillText("Lat. Malleolus",ankPt[0]+8,ankPt[1]+4);
+    }
+
+    // CVA (Cervical Vertebral Angle) — normal ≥52°
+    if(V(iEar)&&V(iSh)){
+      const earPt=PX(iEar), shPt=PX(iSh);
+      const dx=earPt[0]-shPt[0], dy=earPt[1]-shPt[1];
+      const cvaAngle=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI);
+      const cvaCol=cvaAngle>=52?"rgba(0,201,122,0.95)":cvaAngle>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
+      ctx.save(); ctx.strokeStyle=cvaCol; ctx.lineWidth=2; ctx.setLineDash([6,3]);
+      ctx.beginPath(); ctx.moveTo(shPt[0],shPt[1]); ctx.lineTo(earPt[0],earPt[1]); ctx.stroke();
+      ctx.setLineDash([]); ctx.restore();
+      const cvaText=`CVA ${cvaAngle.toFixed(1)}° ${cvaAngle>=52?"✓":"⚠"}`;
+      ctx.font="bold 10px system-ui";
+      const ctw=ctx.measureText(cvaText).width;
+      const cx=earPt[0]<W*0.5?earPt[0]+8:earPt[0]-ctw-17, cy=earPt[1]-24;
+      ctx.fillStyle="rgba(10,10,20,0.88)";
+      if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+8,17,4); else ctx.rect(cx,cy,ctw+8,17);
+      ctx.fill(); ctx.fillStyle=cvaCol; ctx.textAlign="left";
+      ctx.fillText(cvaText,cx+4,cy+12);
+      // FHP in cm
+      const fhpCm=Math.abs(dx)/pixPerCm;
+      if(fhpCm>1.5){
+        const fhpCol=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)";
+        ctx.save(); ctx.strokeStyle=fhpCol; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.moveTo(shPt[0],earPt[1]); ctx.lineTo(earPt[0],earPt[1]); ctx.stroke();
+        ctx.setLineDash([]); ctx.restore();
+        ctx.font="bold 9px system-ui";
+        const fLabel=`FHP ${fhpCm.toFixed(1)}cm`;
         const ftw=ctx.measureText(fLabel).width;
-        const fx=(earPt[0]+shPt2[0])/2-ftw/2-4;
-        ctx.fillStyle="rgba(0,0,0,0.85)";
-        if(ctx.roundRect) ctx.roundRect(fx,earPt[1]-22,ftw+8,16,4); else ctx.rect(fx,earPt[1]-22,ftw+8,16);
-        ctx.fill(); ctx.fillStyle=col2; ctx.font="bold 9.5px system-ui"; ctx.textAlign="left";
-        ctx.fillText(fLabel,fx+4,earPt[1]-10);
+        const fx=(earPt[0]+shPt[0])/2-ftw/2;
+        ctx.fillStyle="rgba(10,10,20,0.88)";
+        if(ctx.roundRect) ctx.roundRect(fx-4,earPt[1]-21,ftw+8,15,3); else ctx.rect(fx-4,earPt[1]-21,ftw+8,15);
+        ctx.fill(); ctx.fillStyle=fhpCol; ctx.textAlign="left";
+        ctx.fillText(fLabel,fx,earPt[1]-10);
       }
+    }
+
+    // Trunk inclination (shoulder-hip vs vertical) — normal 0-3°
+    if(V(iSh)&&V(iHip)){
+      const shPt=PX(iSh), hipPt=PX(iHip);
+      const dx=shPt[0]-hipPt[0], dy=shPt[1]-hipPt[1];
+      const trunkAngle=Math.atan2(dx,Math.abs(dy))*180/Math.PI;
+      const taAbs=Math.abs(trunkAngle);
+      const taCol=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
+      const tDir=trunkAngle>0?"Ant":"Post";
+      const taText=`Trunk ${tDir} ${taAbs.toFixed(1)}°`;
+      const midX=(shPt[0]+hipPt[0])/2, midY=(shPt[1]+hipPt[1])/2;
+      ctx.font="bold 9px system-ui";
+      const ttw=ctx.measureText(taText).width;
+      const tx=midX<W*0.5?midX+8:midX-ttw-16;
+      ctx.fillStyle="rgba(10,10,20,0.88)";
+      if(ctx.roundRect) ctx.roundRect(tx,midY-8,ttw+8,15,3); else ctx.rect(tx,midY-8,ttw+8,15);
+      ctx.fill(); ctx.fillStyle=taCol; ctx.textAlign="left";
+      ctx.fillText(taText,tx+4,midY+3);
+    }
+
+    // Knee sagittal angle — normal 0-5° flexion; <0 = recurvatum
+    if(V(iHip)&&V(iKnee)&&V(iAnk)){
+      const hipPt=PX(iHip), kneePt=PX(iKnee), ankPt2=PX(iAnk);
+      const v1x=hipPt[0]-kneePt[0], v1y=hipPt[1]-kneePt[1];
+      const v2x=ankPt2[0]-kneePt[0], v2y=ankPt2[1]-kneePt[1];
+      const dot=v1x*v2x+v1y*v2y;
+      const mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y);
+      const kneeAngle=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180;
+      const kneeFlex=180-kneeAngle;
+      const kCol=Math.abs(kneeFlex)<=5?"rgba(0,201,122,0.95)":kneeFlex<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)";
+      const kLabel=kneeFlex<-2?"Recurvatum":kneeFlex>5?"Flexion":"Normal";
+      const kText=`Knee ${kneeFlex.toFixed(1)}° ${kLabel}`;
+      ctx.font="bold 9px system-ui";
+      const ktw=ctx.measureText(kText).width;
+      const kx=kneePt[0]<W*0.5?kneePt[0]+8:kneePt[0]-ktw-16;
+      ctx.fillStyle="rgba(10,10,20,0.88)";
+      if(ctx.roundRect) ctx.roundRect(kx,kneePt[1]+6,ktw+8,15,3); else ctx.rect(kx,kneePt[1]+6,ktw+8,15);
+      ctx.fill(); ctx.fillStyle=kCol; ctx.textAlign="left";
+      ctx.fillText(kText,kx+4,kneePt[1]+17);
     }
   }
 
@@ -4995,10 +5079,7 @@ function PostureAnalysisModule(){
     const result=await analysePhoto(url,view);
     setAnalysing(false);
     if(result){
-      // Show the annotated overlay on top of the original photo.
-      // analysePhoto draws from a clean createImageBitmap source canvas, so the
-      // data URL is safe on Android. The Layer-2 <img> has an onError fallback
-      // that hides it silently if a browser ever taints the canvas.
+      // Show annotated overlay — analysePhoto uses createImageBitmap (clean, no taint)
       if(result.annotated) setUploadedImg(result.annotated);
       if(assessMode==="multi"){
         const m=measureLandmarks(result.lm);
@@ -5120,15 +5201,82 @@ function PostureAnalysisModule(){
     }
     setCountdown(null);
     const video=videoRef.current; if(!video||video.readyState<2) return;
+    const currentView=viewRef.current; // snapshot view at moment of capture
+
+    // ── Step 1: Freeze frame from video into a blob URL ────────────────────
     const W=video.videoWidth, H=video.videoHeight;
-    const cc=document.createElement("canvas"); cc.width=W; cc.height=H;
-    const ctx=cc.getContext("2d"); ctx.drawImage(video,0,0,W,H);
-    if(landmarks) drawOverlay({ctx,W,H,lm:landmarks,view,showGrid:true,measurements,clearFirst:true});
-    const dataUrl=cc.toDataURL("image/jpeg",0.92);
-    setCapturedImg(dataUrl);
-    if(measurements&&findings&&scoreData&&reliability){
-      saveSession({view,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:dataUrl});
+    const fc=document.createElement("canvas"); fc.width=W; fc.height=H;
+    const fctx=fc.getContext("2d");
+    // Mirror correction: if front camera, flip back before analysis
+    if(camFacing==="user"){ fctx.translate(W,0); fctx.scale(-1,1); }
+    fctx.drawImage(video,0,0,W,H);
+    const rawDataUrl=fc.toDataURL("image/jpeg",0.92);
+
+    // Show frozen frame immediately so UI feels responsive
+    setCapturedImg(rawDataUrl);
+    setAnalysing(true);
+
+    // ── Step 2: Re-run full analysis on frozen frame ───────────────────────
+    // This gives reliable, view-correct measurements vs live 8fps inference
+    const blobUrl = await new Promise(res=>{
+      fc.toBlob(b=>res(b?URL.createObjectURL(b):null),"image/jpeg",0.92);
+    });
+
+    if(blobUrl && poseRef.current && mpStatus==="ready"){
+      const result = await analysePhoto(blobUrl, currentView);
+      URL.revokeObjectURL(blobUrl);
+      setAnalysing(false);
+
+      if(result){
+        // Build annotated image with correct view plumb line
+        const oc=document.createElement("canvas"); oc.width=W; oc.height=H;
+        const octx=oc.getContext("2d");
+        octx.drawImage(fc,0,0,W,H);
+        drawOverlay({ctx:octx,W,H,lm:result.lm,view:currentView,showGrid:true,measurements:result.measurements,clearFirst:false});
+        const annotated=oc.toDataURL("image/jpeg",0.92);
+        setCapturedImg(annotated);
+
+        // Update state with fresh view-correct analysis
+        const calib=computeCalibration(result.lm,patientHeightCm,H);
+        processLandmarks(result.lm, currentView, H);
+
+        if(assessMode==="multi"){
+          const m=measureLandmarks(result.lm,calib);
+          const r=calcReliability(result.lm);
+          const f=r.blocked?[]:buildFindings(result.lm,currentView,m);
+          const s=scorePosture(m,f,r);
+          saveMvResult(currentView,m,f,s,r,annotated);
+          saveSession({view:currentView,time:new Date().toISOString(),score:s?.score,band:s?.band,findings:f.length,img:annotated});
+        } else {
+          saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:annotated});
+        }
+      } else {
+        // Analysis failed — keep frozen frame, use live landmarks as fallback
+        if(landmarks){
+          const oc2=document.createElement("canvas"); oc2.width=W; oc2.height=H;
+          const octx2=oc2.getContext("2d"); octx2.drawImage(fc,0,0,W,H);
+          drawOverlay({ctx:octx2,W,H,lm:landmarks,view:currentView,showGrid:true,measurements,clearFirst:false});
+          setCapturedImg(oc2.toDataURL("image/jpeg",0.92));
+        }
+        if(measurements&&findings&&scoreData){
+          saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
+        }
+      }
+    } else {
+      // Camera not ready — use live landmarks directly
+      URL.revokeObjectURL(blobUrl||"");
+      setAnalysing(false);
+      if(landmarks){
+        const oc3=document.createElement("canvas"); oc3.width=W; oc3.height=H;
+        const octx3=oc3.getContext("2d"); octx3.drawImage(fc,0,0,W,H);
+        drawOverlay({ctx:octx3,W,H,lm:landmarks,view:currentView,showGrid:true,measurements,clearFirst:false});
+        setCapturedImg(oc3.toDataURL("image/jpeg",0.92));
+      }
+      if(measurements&&findings&&scoreData){
+        saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
+      }
     }
+
     setTab("findings");
     if(isMobile) setMobilePanel("results");
   }
@@ -6107,11 +6255,18 @@ function PostureAnalysisModule(){
                       <div style={{fontSize:"6rem",fontWeight:900,color:"#fff"}}>{countdown}</div>
                     </div>
                   )}
+                  {analysing&&countdown===null&&(
+                    <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.65)",gap:10}}>
+                      <div style={{fontSize:"2rem"}}>⏳</div>
+                      <div style={{fontWeight:800,fontSize:"0.85rem",color:"#fff"}}>Analysing…</div>
+                      <div style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.7)"}}>{VIEWS[viewRef.current]?.label||viewRef.current} view · plumb line computing</div>
+                    </div>
+                  )}
                 </div>
                 <div style={{padding:"10px 14px",background:PC.surface,borderTop:`1px solid ${PC.border}`,display:"flex",gap:8}}>
-                  <button onClick={()=>capturePhoto(0)} disabled={!hasData}
-                    style={{flex:2,padding: isWide?"13px":"11px",background:hasData?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#e5e7eb",border:"none",borderRadius:10,color:hasData?"#fff":PC.muted,fontWeight:800,fontSize: isWide?"0.85rem":"0.78rem",cursor:hasData?"pointer":"not-allowed"}}>
-                    ☉ Capture
+                  <button onClick={()=>capturePhoto(0)} disabled={!hasData||analysing}
+                    style={{flex:2,padding: isWide?"13px":"11px",background:hasData&&!analysing?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#e5e7eb",border:"none",borderRadius:10,color:hasData&&!analysing?"#fff":PC.muted,fontWeight:800,fontSize: isWide?"0.85rem":"0.78rem",cursor:hasData&&!analysing?"pointer":"not-allowed"}}>
+                    {analysing?"⏳ Analysing…":"☉ Capture"}
                   </button>
                   <button onClick={()=>capturePhoto(3)} disabled={!hasData}
                     style={{flex:1,padding:"11px",background:`${PC.a2}20`,border:`1px solid ${PC.a2}30`,borderRadius:10,color:PC.a2,fontWeight:700,fontSize:"0.75rem",cursor:hasData?"pointer":"not-allowed"}}>
@@ -6320,12 +6475,27 @@ function PostureAnalysisModule(){
       redFlags: { triggered: false, items: [] },
     };
 
-    // Build HTML and show in-app — no popup blocker issues
     const credits = reportType==="basic"?2:5;
     const html = buildStaticReport(d, reportType, credits);
-    setReportHtml(html);
     setShowReportModal(false);
-    setShowReportViewer(true);
+
+    // Use blob URL — works on mobile Chrome without popup blocker
+    try {
+      const blob = new Blob([html], {type:"text/html"});
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(blobUrl), 5000);
+    } catch(e) {
+      // Final fallback — inline viewer
+      setReportHtml(html);
+      setShowReportViewer(true);
+    }
   }
 
   function buildStaticReport(d, type, credits) {
