@@ -6478,24 +6478,9 @@ function PostureAnalysisModule(){
     const credits = reportType==="basic"?2:5;
     const html = buildStaticReport(d, reportType, credits);
     setShowReportModal(false);
-
-    // Use blob URL — works on mobile Chrome without popup blocker
-    try {
-      const blob = new Blob([html], {type:"text/html"});
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.target = "_blank";
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(()=>URL.revokeObjectURL(blobUrl), 5000);
-    } catch(e) {
-      // Final fallback — inline viewer
-      setReportHtml(html);
-      setShowReportViewer(true);
-    }
+    // Render inline in fullscreen overlay — cannot be popup-blocked
+    setReportHtml(html);
+    setShowReportViewer(true);
   }
 
   function buildStaticReport(d, type, credits) {
@@ -6930,25 +6915,21 @@ function PostureAnalysisModule(){
     </div>`;
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // WRAPPER
+    // WRAPPER — injectable fragment (not full <html>) so it renders inside the
+    // in-app viewer div. Per-element styles are already inlined.
     // ═══════════════════════════════════════════════════════════════════════════
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<title>Clinical Assessment Report — ${d.patient.name}</title>
-<style>
-  @page { size:A4; margin:0; }
-  * { box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  body { margin:0; padding:0; font-family:'Segoe UI',system-ui,Arial,sans-serif; background:#e5e7eb; }
-  .page { width:210mm; min-height:297mm; background:#fff; margin:0 auto 16px; position:relative; overflow:hidden; }
-  @media print { body{background:#fff;} .page{margin:0;page-break-after:always;} }
+    return `<style>
+  #pm-report-doc * { box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  #pm-report-doc { font-family:'Segoe UI',system-ui,Arial,sans-serif; }
+  #pm-report-doc .page { width:794px; min-height:1123px; background:#fff; margin:0 auto 24px; position:relative; overflow:hidden; border-radius:4px; box-shadow:0 4px 32px rgba(0,0,0,.18); }
+  #pm-report-doc table { border-collapse:collapse; width:100%; }
+  @media print {
+    @page { size:A4; margin:0; }
+    #pm-report-doc .page { width:100%!important; min-height:auto!important; margin:0!important; box-shadow:none!important; border-radius:0!important; page-break-after:always; }
+    #pm-report-doc .page:last-of-type { page-break-after:auto; }
+  }
 </style>
-</head>
-<body>
-${page1}${page2}${page3}${page4}
-</body>
-</html>`;
+<div id="pm-report-doc">${page1}${page2}${page3}${page4}</div>`;
   }
 
 
@@ -7149,10 +7130,8 @@ ${page1}${page2}${page3}${page4}
               #postureai-report-printable table{border-collapse:collapse;width:100%;}
               #postureai-report-printable th,#postureai-report-printable td{text-align:left;}
               @media print{
-                body>*:not(#postureai-print-portal){display:none!important;}
-                #postureai-print-portal{display:block!important;}
                 .no-print-report{display:none!important;}
-                #postureai-report-printable{padding:0!important;overflow:visible!important;}
+                #postureai-report-printable{padding:0!important;overflow:visible!important;position:absolute!important;top:0;left:0;width:100%;}
                 #postureai-report-printable .page{width:100%!important;box-shadow:none!important;margin:0!important;border-radius:0!important;page-break-after:always;}
                 #postureai-report-printable .page:last-of-type{page-break-after:auto;}
               }
