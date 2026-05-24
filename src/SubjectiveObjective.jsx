@@ -8692,4 +8692,4 @@ function ErgoModule({ data, set }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 
-export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage };
+export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS };

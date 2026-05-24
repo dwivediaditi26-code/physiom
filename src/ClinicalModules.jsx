@@ -5928,4 +5928,4 @@ function TreatmentSessionLogModule({ data, set }) {
 }
 
 
-export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP, SOAPNoteModule, EXERCISE_DB, ExercisePrescriptionModule, PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule };
+export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP, SOAPNoteModule, EXERCISE_DB, ExercisePrescriptionModule, PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline };
