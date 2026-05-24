@@ -4995,15 +4995,17 @@ function PostureAnalysisModule(){
     const result=await analysePhoto(url,view);
     setAnalysing(false);
     if(result){
-      // Keep original photo visible; do NOT replace with annotated canvas
-      // (canvas tainting on some Android browsers can produce a black image)
-      // Findings/measurements still computed below — overlay just isn't drawn on top.
+      // Show the annotated overlay on top of the original photo.
+      // analysePhoto draws from a clean createImageBitmap source canvas, so the
+      // data URL is safe on Android. The Layer-2 <img> has an onError fallback
+      // that hides it silently if a browser ever taints the canvas.
+      if(result.annotated) setUploadedImg(result.annotated);
       if(assessMode==="multi"){
         const m=measureLandmarks(result.lm);
         const r=calcReliability(result.lm);
         const f=r.blocked?[]:buildFindings(result.lm,view,m);
         const s=scorePosture(m,f,r);
-        saveMvResult(view,m,f,s,r,url);
+        saveMvResult(view,m,f,s,r,result.annotated||url);
         // stay on capture tab so therapist can do next view
       } else {
         setTab("findings");
@@ -6209,19 +6211,19 @@ function PostureAnalysisModule(){
 
             {/* AI mode image — always show original photo; overlay annotated result on top */}
             {inputMode==="ai"&&(rawUploadedImg||uploadedImg)&&(
-              <div style={{borderRadius:14,overflow:"hidden",border:`1px solid ${PC.border}`,boxShadow:isWide?"0 4px 20px rgba(0,0,0,0.08)":"none",background:"#000",position:"relative"}}>
+              <div style={{borderRadius:14,overflow:"hidden",border:`1px solid ${PC.border}`,boxShadow:isWide?"0 4px 20px rgba(0,0,0,0.08)":"none",background:PC.s2,position:"relative"}}>
                 {/* Layer 1: original photo — always visible, never a blank/black canvas */}
                 <img
                   src={rawUploadedImg||uploadedImg}
                   alt="Uploaded"
-                  style={{width:"100%",display:"block",maxHeight:isMobile?"50vh":"none",objectFit:"contain",opacity:analysing?0.55:1,transition:"opacity 0.3s"}}
+                  style={{width:"100%",display:"block",opacity:analysing?0.55:1,transition:"opacity 0.3s"}}
                 />
                 {/* Layer 2: annotated overlay — shown once analysis produces a result */}
                 {uploadedImg&&uploadedImg!==rawUploadedImg&&!analysing&&(
                   <img
                     src={uploadedImg}
                     alt="Analysed overlay"
-                    style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"contain",display:"block"}}
+                    style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"fill",display:"block"}}
                     onError={e=>{ e.target.style.display="none"; }} // hide silently if canvas was tainted/black
                   />
                 )}
