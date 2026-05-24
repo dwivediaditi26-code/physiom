@@ -1,6 +1,6 @@
 // ClinicalModules.jsx — Gait, OutcomeMeasures, SOAP, Exercise, Palpation, TreatmentTechniques, SessionLog
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { C, getC } from "./utils.js";
+import { C, getC } from "./utils.jsx";
 
 const GAIT_PHASES = [
   {id:"g_ic",   phase:"Initial Contact",  pct:"0%",    type:"stance", deviations:["Foot flat contact","Heel strike absent","Excessive plantarflexion","Knee hyperextension at contact"]},
@@ -5928,4 +5928,4 @@ function TreatmentSessionLogModule({ data, set }) {
 }
 
 
-export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP, SOAPNoteModule, EXERCISE_DB, ExercisePrescriptionModule, PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule, PDF_BASE_STYLES, makePDFPage };
+export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP, SOAPNoteModule, EXERCISE_DB, ExercisePrescriptionModule, PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule };
