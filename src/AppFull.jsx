@@ -6269,7 +6269,7 @@ function PostureAnalysisModule(){
     }));
 
     // Build exercise list
-    const rptExercises = (buildExercisePlan ? buildExercisePlan(findings,view) : []).map((ex,i)=>({
+    const rptExercises = Object.values(buildExercisePlan ? buildExercisePlan(findings,view) : {}).flat().map((ex,i)=>({
       phase: ex.cat==="inhibit"?1:ex.cat==="activate"?2:3,
       category: (ex.cat||"correct").toUpperCase(),
       name: ex.name||"Exercise",
