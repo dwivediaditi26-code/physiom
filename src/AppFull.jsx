@@ -3112,328 +3112,818 @@ function calcManualReliability(placedCount, totalPoints) {
 }
 
 // ─── Findings Engine ──────────────────────────────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// POSTURE ANALYSIS ENGINE — v2 (Kendall / Janda / Sahrmann)
+// Items: thresholds, severity, confidence, landmark reliability,
+//        clinical significance filter, interpretation, muscle patterns,
+//        functional correlations, prioritisation
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── 1. THRESHOLD CONSTANTS ────────────────────────────────────────────────────
+// Only deviations exceeding these thresholds trigger findings.
+// Values based on clinical literature measurement error + meaningful change.
+const POSTURE_THRESHOLDS = {
+  // Frontal
+  shoulderAngle:       { mild:3,  moderate:6,  severe:10  }, // degrees
+  pelvisAngle:         { mild:3,  moderate:6,  severe:10  }, // degrees
+  headTilt:            { mild:3,  moderate:6,  severe:9   }, // degrees
+  trunkLateralShift:   { mild:4,  moderate:7,  severe:11  }, // %
+  spinalDeviation:     { mild:4,  moderate:8,  severe:13  }, // %
+  waistAsymmetry:      { mild:4,  moderate:7,  severe:11  }, // %
+  kneeFrontal:         { mild:6,  moderate:10, severe:15  }, // degrees
+  ucsIndex:            { mild:0.6,moderate:1.0,severe:1.5 }, // index
+  lldProxy:            { mild:5,  moderate:10, severe:15  }, // mm
+  neckLateralAngle:    { mild:5,  moderate:8,  severe:12  }, // degrees
+  tibialVarum:         { mild:5,  moderate:10, severe:15  }, // degrees
+  ankleLLD:            { mild:6,  moderate:12, severe:18  }, // mm
+  // Sagittal
+  cvaAngle:            { mild:52, moderate:48, severe:44  }, // degrees (lower = worse)
+  thoracicAngle:       { mild:47, moderate:53, severe:60  }, // degrees (higher = worse)
+  lumbarProxy:         { mild:5,  moderate:9,  severe:14  }, // %
+  hipDisplacement:     { mild:5,  moderate:9,  severe:14  }, // %
+  kneeRecurvatum:      { mild:5,  moderate:10, severe:15  }, // degrees
+  lcsIndex:            { mild:0.5,moderate:0.9,severe:1.4 }, // index
+};
+
+// ── 2. SEVERITY CLASSIFIER ────────────────────────────────────────────────────
+// Returns "mild" | "moderate" | "high" based on thresholds
+function classifySeverity(value, thresholds, lowerIsBad = false) {
+  const { mild, moderate, severe } = thresholds;
+  if (lowerIsBad) {
+    // e.g. CVA angle: lower value = worse
+    if (value <= severe)  return "high";
+    if (value <= moderate) return "moderate";
+    if (value <= mild)     return "mild";
+    return null; // within normal
+  } else {
+    if (value >= severe)  return "high";
+    if (value >= moderate) return "moderate";
+    if (value >= mild)     return "mild";
+    return null; // within normal
+  }
+}
+
+// ── 3. CONFIDENCE SCORING ─────────────────────────────────────────────────────
+// Per-finding confidence based on landmark visibility at the relevant body segment
+function getLandmarkConfidence(lm, indices) {
+  if (!lm || !indices.length) return 50;
+  const visVals = indices.map(i => (lm[i]?.visibility || 0) * 100);
+  const avg = visVals.reduce((a, b) => a + b, 0) / visVals.length;
+  const minV = Math.min(...visVals);
+  // Penalise if any landmark in this region is very low
+  const penalty = minV < 40 ? 20 : minV < 55 ? 10 : 0;
+  return Math.round(clamp(avg - penalty, 0, 100));
+}
+
+// Landmark index groups by body region
+const LANDMARK_GROUPS = {
+  head:      [0, 2, 5, 7, 8],
+  shoulder:  [11, 12],
+  hip:       [23, 24],
+  knee:      [25, 26],
+  ankle:     [27, 28],
+  heel:      [29, 30],
+  upperBody: [0, 7, 8, 11, 12],
+  lowerBody: [23, 24, 25, 26, 27, 28],
+  sagittal:  [0, 7, 8, 11, 12, 23, 24, 25, 26, 27, 28, 29, 30],
+};
+
+// ── 4. LANDMARK RELIABILITY CHECK ─────────────────────────────────────────────
+// Returns { reliable: bool, reason: string } for a specific measurement
+function checkLandmarkReliability(lm, indices, minVisibility = 0.45) {
+  if (!lm) return { reliable: false, reason: "No landmarks" };
+  const lowVis = indices.filter(i => (lm[i]?.visibility || 0) < minVisibility);
+  if (lowVis.length > 0) {
+    return { reliable: false, reason: `Landmark(s) ${lowVis.join(",")} below visibility threshold` };
+  }
+  // Anatomical plausibility: check that body points are in expected vertical order
+  const plausible = checkAnatomicalOrder(lm, indices);
+  if (!plausible) {
+    return { reliable: false, reason: "Anatomically implausible landmark positions" };
+  }
+  return { reliable: true, reason: "" };
+}
+
+function checkAnatomicalOrder(lm, indices) {
+  if (!lm) return true;
+  // Shoulder should be above hip (y increases downward in image coords)
+  if (indices.includes(11) && indices.includes(23)) {
+    if ((lm[11]?.y || 0) > (lm[23]?.y || 1)) return false; // shoulder below hip
+  }
+  if (indices.includes(12) && indices.includes(24)) {
+    if ((lm[12]?.y || 0) > (lm[24]?.y || 1)) return false;
+  }
+  // Hip should be above knee
+  if (indices.includes(23) && indices.includes(25)) {
+    if ((lm[23]?.y || 0) > (lm[25]?.y || 1)) return false;
+  }
+  if (indices.includes(24) && indices.includes(26)) {
+    if ((lm[24]?.y || 0) > (lm[26]?.y || 1)) return false;
+  }
+  // Knee should be above ankle
+  if (indices.includes(25) && indices.includes(27)) {
+    if ((lm[25]?.y || 0) > (lm[27]?.y || 1)) return false;
+  }
+  if (indices.includes(26) && indices.includes(28)) {
+    if ((lm[26]?.y || 0) > (lm[28]?.y || 1)) return false;
+  }
+  return true;
+}
+
+// ── 5. INTERPRETATION ENGINE ──────────────────────────────────────────────────
+// Conservative physiotherapy wording — never certain, always "may indicate"
+const INTERPRETATIONS = {
+  shoulder: (side, deg) =>
+    `Observation may be consistent with ${side.toLowerCase()} shoulder elevation (${deg.toFixed(1)}°). ` +
+    `May be associated with ipsilateral upper trapezius and levator scapulae overactivity, ` +
+    `and contralateral lower trapezius underactivity. Confirm clinically.`,
+  pelvis: (side, deg) =>
+    `Observation may indicate ${side.toLowerCase()} pelvic elevation (${deg.toFixed(1)}°). ` +
+    `May be associated with ipsilateral quadratus lumborum overactivity or leg length asymmetry. ` +
+    `True leg length difference should be assessed clinically before conclusion.`,
+  headTilt: (side, deg) =>
+    `Head lateral inclination toward ${side.toLowerCase()} (${deg.toFixed(1)}°) may be associated with ` +
+    `ipsilateral sternocleidomastoid and scalene overactivity. Upper cervical joint restriction ` +
+    `(C1–C2) is a possible contributing factor. Clinical assessment recommended.`,
+  trunkShift: (side, pct) =>
+    `Lateral trunk displacement toward ${side.toLowerCase()} (${pct.toFixed(1)}%) may reflect ` +
+    `a pain-avoidance strategy, lateral hip weakness, or thoracolumbar muscle asymmetry. ` +
+    `Disc-related antalgic lean should be considered if accompanied by leg symptoms.`,
+  kneeFrontal: (side, deg, pattern) =>
+    `${side} knee ${pattern} tendency (${deg.toFixed(1)}°) may be associated with reduced ` +
+    `hip abductor and external rotator contribution, or increased subtalar pronation. ` +
+    `Static posture alone is insufficient to confirm this pattern — functional assessment recommended.`,
+  ucs: (idx) =>
+    `Observation may be consistent with characteristics of upper crossed pattern (index ${idx.toFixed(1)}). ` +
+    `Possible overactivity: upper trapezius, levator scapulae, SCM, pectoralis minor. ` +
+    `Possible underactivity: deep cervical flexors, lower trapezius, serratus anterior. ` +
+    `Clinical muscle testing required to confirm.`,
+  fhp: (cva, load) =>
+    `Reduced CVA (${cva.toFixed(1)}°) may indicate a forward head tendency. ` +
+    `This pattern may be associated with suboccipital and cervical extensor overactivity ` +
+    `and reduced deep cervical flexor contribution.` +
+    (load ? ` Estimated cervical load increase: ~${load.toFixed(1)}kg (Hansraj 2014 model — proxy only).` : ""),
+  kyphosis: (deg) =>
+    `Increased thoracic curvature (${deg.toFixed(1)}°) may be consistent with a kyphotic tendency. ` +
+    `Possible overactivity: pectoralis major/minor, upper trapezius. ` +
+    `Possible underactivity: middle and lower trapezius, rhomboids, thoracic erectors.`,
+  lumbar: (proxy, dir) =>
+    `${dir} pelvic tilt tendency (${Math.abs(proxy).toFixed(1)}%) may be associated with ` +
+    (dir === "Anterior"
+      ? `possible hip flexor shortening and reduced gluteal contribution.`
+      : `possible hamstring dominance and reduced lumbar extensor contribution.`),
+  lcs: (idx) =>
+    `Observation may be consistent with characteristics of lower crossed pattern (index ${idx.toFixed(1)}). ` +
+    `Possible overactivity: iliopsoas, rectus femoris, thoracolumbar extensors. ` +
+    `Possible underactivity: gluteus maximus, transverse abdominis. ` +
+    `Clinical assessment and muscle length testing recommended.`,
+};
+
+// ── 6. MUSCLE PATTERN SUGGESTIONS ────────────────────────────────────────────
+// Maps posture observations to POSSIBLE (not certain) muscle imbalance tendencies
+const MUSCLE_PATTERNS = {
+  shoulder:    { tight:["Upper trapezius","Levator scapulae"],       weak:["Lower trapezius","Serratus anterior"] },
+  pelvis:      { tight:["QL (elevated side)","Hip abductors (elevated)"], weak:["Glute med (low side)","Hip abductors (low)"] },
+  headTilt:    { tight:["SCM (ipsilateral)","Scalenes (ipsilateral)"],   weak:["Deep cervical flexors","Contralateral SCM"] },
+  trunkShift:  { tight:["QL","Lateral abdominals (shift side)"],     weak:["Contralateral QL","Lateral trunk stabilisers"] },
+  kneeFrontal: { tight:["TFL/ITB","Hip adductors"],                  weak:["Gluteus medius","VMO"] },
+  fhp:         { tight:["Suboccipitals","Cervical extensors","SCM"], weak:["Deep cervical flexors"] },
+  kyphosis:    { tight:["Pectoralis major/minor","Upper trapezius"],  weak:["Lower trapezius","Rhomboids","Thoracic erectors"] },
+  lumbarAnt:   { tight:["Iliopsoas","Rectus femoris","TFL"],         weak:["Gluteus maximus","Transverse abdominis"] },
+  lumbarPost:  { tight:["Hamstrings","Abdominals"],                  weak:["Hip flexors","Lumbar erectors"] },
+  ucs:         { tight:["Upper trapezius","SCM","Pec minor","Scalenes"], weak:["Deep cervical flexors","Lower trapezius","Serratus anterior"] },
+  lcs:         { tight:["Iliopsoas","Rectus femoris","TFL"],         weak:["Gluteus maximus","Gluteus medius","Transverse abdominis"] },
+};
+
+// ── 7. FUNCTIONAL CORRELATIONS ────────────────────────────────────────────────
+// POSSIBLE loading/movement consequences of each posture observation
+const FUNCTIONAL_CORRELATIONS = {
+  shoulder:    "May alter scapulohumeral rhythm and rotator cuff loading if present during overhead tasks.",
+  pelvis:      "May affect lumbopelvic load distribution and contribute to asymmetrical hip/SIJ loading.",
+  headTilt:    "May influence upper cervical joint loading and cranial nerve tension if severe.",
+  trunkShift:  "May increase contralateral lumbopelvic loading and alter gait mechanics.",
+  kneeFrontal: "May increase medial compartment and patellofemoral loading during weight-bearing activities.",
+  fhp:         "May increase suboccipital and upper cervical extensor loading and reduce cervical flexor capacity.",
+  kyphosis:    "May reduce thoracic extension mobility and alter ribcage mechanics during breathing.",
+  lumbarAnt:   "May increase lumbar extension loading and reduce lumbopelvic control capacity.",
+  lumbarPost:  "May increase anterior disc shear load and reduce lumbar extension mobility.",
+  ucs:         "May reduce cervicothoracic mobility and alter shoulder blade positioning during arm activities.",
+  lcs:         "May reduce lumbopelvic control and alter load transfer between lumbar spine and lower limbs.",
+};
+
+// ── 8. RECOMMENDED OBJECTIVE ASSESSMENT ──────────────────────────────────────
+const OBJECTIVE_ASSESSMENTS = {
+  shoulder:    ["Muscle length: upper trapezius passive stretch test","Muscle strength: lower trapezius (prone Y)","SIJ screen if pelvis also elevated"],
+  pelvis:      ["True LLD: tape measure ASIS → medial malleolus","SIJ provocation cluster (Laslett)","Hip abductor strength (Trendelenburg test)"],
+  headTilt:    ["Cervical AROM — rotation range bilateral","FRT (Flexion-Rotation Test) for C1–C2","Cranial nerve screen if accompanied by symptoms"],
+  trunkShift:  ["Neurological screen: SLR, sensation L3–S1","Kemp's test (facet load)","Hip abductor strength — single-leg balance"],
+  kneeFrontal: ["Single-leg squat (observe dynamic valgus/varus)","Hip abductor strength: side-lying abduction","Foot posture index — subtalar pronation"],
+  fhp:         ["Craniovertebral angle measurement (goniometer)","Deep cervical flexor strength: craniocervical flexion test","Upper cervical joint mobility: ULPA"],
+  kyphosis:    ["Passive thoracic extension ROM","Muscle length: pectoralis major (supine)","Strength: lower/mid trapezius (prone Y/T)"],
+  lumbarAnt:   ["Thomas test: hip flexor length","Modified Ober test: TFL/ITB length","Glute max strength: prone hip extension"],
+  lumbarPost:  ["Hamstring length: 90/90 SLR","McKenzie assessment: directional preference","Posterior pelvic tilt control: supine pelvic tilt"],
+  ucs:         ["Craniocervical flexion test (CCFT)","Muscle length: pec minor (wall test)","Thoracic extension mobility (foam roller test)"],
+  lcs:         ["Thomas test bilateral","Gluteus maximus strength: prone hip extension","Transverse abdominis function: TrA activation test"],
+};
+
+// ── 9. FINDING BUILDER — creates structured finding object ────────────────────
+function buildFinding({
+  region, findingName, severity, confidenceScore, interpretation,
+  musclePattern, functionalCorrelation, objectiveAssessments,
+  correction, icd = "M99.0", norm = "", plain = "",
+  clinicalSignificance = "moderate",
+}) {
+  // Clinical significance: suppress low-confidence, low-severity findings
+  if (severity === "mild" && confidenceScore < 55) return null;
+  if (severity === "moderate" && confidenceScore < 35) return null;
+  return {
+    region,
+    text:        findingName,
+    plain:       plain || interpretation.split(".")[0],
+    severity,
+    confidenceScore,
+    clinicalSignificance,
+    interpretation,
+    possibleMusclePatterns: musclePattern
+      ? { tight: musclePattern.tight, weak: musclePattern.weak }
+      : null,
+    functionalCorrelation: functionalCorrelation || null,
+    recommendedObjectiveAssessment: objectiveAssessments || [],
+    correction,
+    icd,
+    norm,
+  };
+}
+
+// ── 10. PRIORITISATION ────────────────────────────────────────────────────────
+function prioritiseFindings(findings) {
+  const sevRank = { high: 3, moderate: 2, mild: 1 };
+  const sigRank = { high: 3, moderate: 2, low: 1 };
+  return [...findings].sort((a, b) => {
+    const aScore = (sevRank[a.severity] || 0) * 3
+      + ((a.confidenceScore || 50) / 100) * 2
+      + (sigRank[a.clinicalSignificance] || 1);
+    const bScore = (sevRank[b.severity] || 0) * 3
+      + ((b.confidenceScore || 50) / 100) * 2
+      + (sigRank[b.clinicalSignificance] || 1);
+    return bScore - aScore;
+  });
+}
+
+// ── MAX FINDINGS PER SESSION ─────────────────────────────────────────────────
+// Clinical significance filter: limit output to top findings to reduce noise
+const MAX_FINDINGS_FRONTAL  = 7;
+const MAX_FINDINGS_SAGITTAL = 6;
+const MAX_FINDINGS_TOTAL    = 10;
+
 function buildFindings(lm, view, m) {
-  if(!lm||!m) return [];
-  const out=[];
-  const add=(region,text,severity,correction,icd="M99.0",detail="",norm="")=>out.push({region,text,severity,correction,icd,detail,norm});
+  if (!lm || !m) return [];
+  const out = [];
+  const isLat = view === "left" || view === "right";
 
-  const isLat=view==="left"||view==="right";
+  // ── Helper: add finding using new structured engine ────────────────────────
+  const add = (params) => {
+    const f = buildFinding(params);
+    if (f) out.push(f);
+  };
 
-  // Frontal findings
-  if(!isLat){
-    if(m.shoulderAngle!==null&&Math.abs(m.shoulderAngle)>3){
-      const abs=Math.abs(m.shoulderAngle), side=m.shoulderAngle>0?"Left":"Right";
-      add("Shoulder Girdle",`${side} shoulder elevated (${abs.toFixed(1)}°)`,abs>7?"high":"moderate",
-        "Release upper trapezius + levator scapulae. Activate lower trapezius Y-T-W ×15. Check ipsilateral QL overactivity.","M54.2");
+  // ── Helper: legacy add (for pattern summaries — keep existing format) ──────
+  const addLegacy = (region, text, severity, correction, icd="M99.0", detail="", norm="") => {
+    out.push({ region, text, plain: text, severity, correction, icd, detail, norm,
+      confidenceScore: 70, clinicalSignificance: "moderate" });
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // FRONTAL VIEW FINDINGS
+  // ══════════════════════════════════════════════════════════════════════════
+  if (!isLat) {
+
+    // ── Shoulder elevation ───────────────────────────────────────────────────
+    if (m.shoulderAngle !== null) {
+      const abs = Math.abs(m.shoulderAngle);
+      const sev = classifySeverity(abs, POSTURE_THRESHOLDS.shoulderAngle);
+      const rel = checkLandmarkReliability(lm, LANDMARK_GROUPS.shoulder);
+      const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.shoulder);
+      if (sev && rel.reliable) {
+        const side = m.shoulderAngle > 0 ? "Left" : "Right";
+        add({
+          region: "Shoulder Girdle",
+          findingName: `${side} shoulder elevation (${abs.toFixed(1)}°)`,
+          severity: sev,
+          confidenceScore: conf,
+          clinicalSignificance: sev === "high" ? "high" : "moderate",
+          interpretation: INTERPRETATIONS.shoulder(side, abs),
+          musclePattern: MUSCLE_PATTERNS.shoulder,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.shoulder,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.shoulder,
+          correction: "Release upper trapezius + levator scapulae. Activate lower trapezius Y-T-W ×15. Assess ipsilateral QL overactivity.",
+          icd: "M54.2",
+          norm: "<3° shoulder level difference",
+        });
+      }
     }
-    if(m.pelvisAngle!==null&&Math.abs(m.pelvisAngle)>3){
-      const abs=Math.abs(m.pelvisAngle), high=m.pelvisAngle>0?"Left":"Right";
-      add("Pelvis / SIJ",`${high} ASIS elevated (${abs.toFixed(1)}°)${m.lldProxy&&m.lldProxy>5?" — LLD suspected":""}`,abs>7?"high":"moderate",
-        "Assess true LLD (tape ASIS→medial malleolus). QL release elevated side. Hip abductor strengthening. SIJ provocation cluster.","M53.3");
+
+    // ── Pelvic obliquity ─────────────────────────────────────────────────────
+    if (m.pelvisAngle !== null) {
+      const abs = Math.abs(m.pelvisAngle);
+      const sev = classifySeverity(abs, POSTURE_THRESHOLDS.pelvisAngle);
+      const rel = checkLandmarkReliability(lm, LANDMARK_GROUPS.hip);
+      const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.hip);
+      if (sev && rel.reliable) {
+        const side = m.pelvisAngle > 0 ? "Left" : "Right";
+        const lldNote = m.lldProxy && m.lldProxy > 5 ? " — leg length asymmetry possible" : "";
+        add({
+          region: "Pelvis / SIJ",
+          findingName: `${side} ASIS elevated (${abs.toFixed(1)}°)${lldNote}`,
+          severity: sev,
+          confidenceScore: conf,
+          clinicalSignificance: sev === "high" ? "high" : "moderate",
+          interpretation: INTERPRETATIONS.pelvis(side, abs),
+          musclePattern: MUSCLE_PATTERNS.pelvis,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.pelvis,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.pelvis,
+          correction: "Assess true LLD (tape ASIS→medial malleolus). QL release elevated side. Hip abductor activation. SIJ provocation cluster.",
+          icd: "M53.3",
+          norm: "<3° pelvic level difference",
+        });
+      }
     }
-    if(m.headTiltAngle!==null&&Math.abs(m.headTiltAngle)>2){
-      const abs=Math.abs(m.headTiltAngle);
-      add("Head / Cervical",`Head tilt — ${m.headTiltSide||""} ear lower (${abs.toFixed(1)}°)`,abs>5?"high":"moderate",
-        "Assess C1–C2 rotation restriction. Inhibit ipsilateral SCM + scalene. Activate contralateral deep neck flexors.","M43.6");
+
+    // ── Head/cervical lateral tilt ───────────────────────────────────────────
+    if (m.headTiltAngle !== null) {
+      const abs = Math.abs(m.headTiltAngle);
+      const sev = classifySeverity(abs, POSTURE_THRESHOLDS.headTilt);
+      const rel = checkLandmarkReliability(lm, [7, 8, 0]);
+      const conf = getLandmarkConfidence(lm, [7, 8, 0]);
+      if (sev && rel.reliable) {
+        const side = m.headTiltSide || "";
+        add({
+          region: "Head / Cervical",
+          findingName: `Head tilt — ${side} ear lower (${abs.toFixed(1)}°)`,
+          severity: sev,
+          confidenceScore: conf,
+          clinicalSignificance: "moderate",
+          interpretation: INTERPRETATIONS.headTilt(side, abs),
+          musclePattern: MUSCLE_PATTERNS.headTilt,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.headTilt,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.headTilt,
+          correction: "Assess C1–C2 rotation restriction. Inhibit ipsilateral SCM + scalene. Activate contralateral deep neck flexors.",
+          icd: "M43.6",
+          norm: "<3° head lateral tilt",
+        });
+      }
     }
-    if(m.trunkLateralShift!==null&&Math.abs(m.trunkLateralShift)>3.5){
-      const abs=Math.abs(m.trunkLateralShift), side=m.trunkLateralShift>0?"right":"left";
-      add("Thoracic",`Trunk shifted ${side} (${abs.toFixed(1)}%)`,abs>7?"high":"moderate",
-        "Assess antalgic lean (disc/radiculopathy). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.","M54.5");
+
+    // ── Trunk lateral shift ──────────────────────────────────────────────────
+    if (m.trunkLateralShift !== null) {
+      const abs = Math.abs(m.trunkLateralShift);
+      const sev = classifySeverity(abs, POSTURE_THRESHOLDS.trunkLateralShift);
+      const rel = checkLandmarkReliability(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
+      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
+      if (sev && rel.reliable) {
+        const side = m.trunkLateralShift > 0 ? "Right" : "Left";
+        add({
+          region: "Thoracic",
+          findingName: `Trunk shifted ${side.toLowerCase()} (${abs.toFixed(1)}%)`,
+          severity: sev,
+          confidenceScore: conf,
+          clinicalSignificance: sev === "high" ? "high" : "moderate",
+          interpretation: INTERPRETATIONS.trunkShift(side, abs),
+          musclePattern: MUSCLE_PATTERNS.trunkShift,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.trunkShift,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.trunkShift,
+          correction: "Assess antalgic lean (disc/radiculopathy screen). Lateral trunk stretch contralateral. Rib mobilisation. Mirror biofeedback.",
+          icd: "M54.5",
+          norm: "<4% lateral trunk displacement",
+        });
+      }
     }
-    if(m.spinalDeviation!==null&&Math.abs(m.spinalDeviation)>4){
-      const abs=Math.abs(m.spinalDeviation);
-      add("Spine",`Head not centred over pelvis (${abs.toFixed(1)}%)`,abs>8?"high":"moderate",
-        "Adam's forward bend test — check rib hump. Refer for standing AP X-ray if structural scoliosis suspected.","M41.9");
-    }
-    if(m.waistAsymmetry!==null&&m.waistAsymmetry>3){
-      add("Scoliosis Screen",`Waist triangle asymmetry (${m.waistAsymmetry.toFixed(1)}%)`,m.waistAsymmetry>6?"high":"moderate",
-        "Adam's forward bend test. Treat lateral trunk shift driver. Rib cage mobilisation. Mirror biofeedback.","M41.9");
-    }
-    {
-      const lv=m.leftKneeFrontal, rv=m.rightKneeFrontal;
-      const lAbs=lv!==null?Math.abs(lv):0, rAbs=rv!==null?Math.abs(rv):0;
-      const lSig=lv!==null&&lAbs>5, rSig=rv!==null&&rAbs>5;
-      if(lSig||rSig){
-        const bilateral=lSig&&rSig;
-        if(bilateral){
-          const worseAbs=Math.max(lAbs,rAbs), worseSide=lAbs>=rAbs?"L":"R";
-          add("Knee Alignment",
-            `Bilateral knee valgus — ${worseSide} worse (L: ${lAbs.toFixed(1)}° R: ${rAbs.toFixed(1)}°)`,
-            worseAbs>10?"high":"moderate",
-            `Glute med: clamshells ×15, lateral band walks ×20m. VMO: terminal knee extensions ×15. Single-leg squat with valgus mirror correction. Foot tripod activation. Address ankle pronation if present.`,
-            "M21.0");
-        } else if(lSig){
-          const pattern=lv<0?"valgus":"varus";
-          add("Knee Alignment",`Left knee ${pattern} — hip-knee-ankle misalignment (${lAbs.toFixed(1)}°)`,lAbs>10?"high":"moderate",
-            lv<0?"Glute med: clamshells, lateral band walks. VMO: terminal knee extensions. Foot tripod.":"Hip ER strengthening. ITB/TFL SMR. Assess subtalar supination.","M21.0");
-        } else {
-          const pattern=rv<0?"valgus":"varus";
-          add("Knee Alignment",`Right knee ${pattern} — hip-knee-ankle misalignment (${rAbs.toFixed(1)}°)`,rAbs>10?"high":"moderate",
-            rv<0?"Glute med: clamshells, lateral band walks. VMO: terminal knee extensions. Foot tripod.":"Hip ER strengthening. ITB/TFL SMR. Assess subtalar supination.","M21.0");
+
+    // ── Knee frontal plane (valgus/varus) ────────────────────────────────────
+    const kneeLandmarks = [23, 24, 25, 26, 27, 28];
+    const kneeRel = checkLandmarkReliability(lm, kneeLandmarks);
+    const kneeConf = getLandmarkConfidence(lm, kneeLandmarks);
+    if (kneeRel.reliable) {
+      const lv = m.leftKneeFrontal, rv = m.rightKneeFrontal;
+      const lSev = lv !== null ? classifySeverity(Math.abs(lv), POSTURE_THRESHOLDS.kneeFrontal) : null;
+      const rSev = rv !== null ? classifySeverity(Math.abs(rv), POSTURE_THRESHOLDS.kneeFrontal) : null;
+      if (lSev || rSev) {
+        const bilateral = lSev && rSev;
+        if (bilateral) {
+          const worseAbs = Math.max(Math.abs(lv), Math.abs(rv));
+          const worseSide = Math.abs(lv) >= Math.abs(rv) ? "L" : "R";
+          const pattern = lv < 0 ? "valgus" : "varus";
+          const worstSev = (lSev === "high" || rSev === "high") ? "high" : "moderate";
+          add({
+            region: "Knee Alignment",
+            findingName: `Bilateral knee ${pattern} — ${worseSide} worse (L:${Math.abs(lv).toFixed(1)}° R:${Math.abs(rv).toFixed(1)}°)`,
+            severity: worstSev,
+            confidenceScore: kneeConf,
+            clinicalSignificance: worstSev,
+            interpretation: INTERPRETATIONS.kneeFrontal("Bilateral", worseAbs, pattern),
+            musclePattern: MUSCLE_PATTERNS.kneeFrontal,
+            functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
+            objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
+            correction: "Glute med: clamshells ×15, lateral band walks ×20m. VMO: terminal knee extensions ×15. Single-leg squat with mirror correction. Foot tripod activation.",
+            icd: "M21.0", norm: "<6° knee frontal deviation",
+          });
+        } else if (lSev) {
+          const pattern = lv < 0 ? "valgus" : "varus";
+          add({
+            region: "Knee Alignment",
+            findingName: `Left knee ${pattern} tendency (${Math.abs(lv).toFixed(1)}°)`,
+            severity: lSev, confidenceScore: kneeConf, clinicalSignificance: lSev,
+            interpretation: INTERPRETATIONS.kneeFrontal("Left", Math.abs(lv), pattern),
+            musclePattern: MUSCLE_PATTERNS.kneeFrontal,
+            functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
+            objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
+            correction: lv < 0 ? "Glute med + VMO activation. Foot tripod." : "Hip ER strengthening. ITB/TFL SMR.",
+            icd: "M21.0", norm: "<6° knee frontal deviation",
+          });
+        } else if (rSev) {
+          const pattern = rv < 0 ? "valgus" : "varus";
+          add({
+            region: "Knee Alignment",
+            findingName: `Right knee ${pattern} tendency (${Math.abs(rv).toFixed(1)}°)`,
+            severity: rSev, confidenceScore: kneeConf, clinicalSignificance: rSev,
+            interpretation: INTERPRETATIONS.kneeFrontal("Right", Math.abs(rv), pattern),
+            musclePattern: MUSCLE_PATTERNS.kneeFrontal,
+            functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
+            objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
+            correction: rv < 0 ? "Glute med + VMO activation. Foot tripod." : "Hip ER strengthening. ITB/TFL SMR.",
+            icd: "M21.0", norm: "<6° knee frontal deviation",
+          });
         }
       }
     }
-    if(m.ucsIndex!==null&&m.ucsIndex>0.6){
-      add("Upper Crossed Syndrome",`UCS pattern (index ${m.ucsIndex.toFixed(1)})`,m.ucsIndex>1?"high":"moderate",
-        "INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep neck flexors, lower trap Y-T-W, serratus. MOBILISE: thoracic extension T4–T8.","M62.9");
-    }
-    if(m.lldProxy!==null&&m.lldProxy>5){
-      add("Leg Length",`Functional LLD suspected — ~${m.lldProxy.toFixed(0)}mm (${m.lldSide} shorter)`,m.lldProxy>10?"high":"moderate",
-        "Confirm with tape measure ASIS→medial malleolus. If LLD >5mm: heel wedge trial 3–5mm. Treat SIJ/QL if functional.","M21.7");
+
+    // ── UCS index ────────────────────────────────────────────────────────────
+    if (m.ucsIndex !== null) {
+      const sev = classifySeverity(m.ucsIndex, POSTURE_THRESHOLDS.ucsIndex);
+      const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.upperBody);
+      if (sev) {
+        add({
+          region: "Upper Crossed Syndrome",
+          findingName: `Possible upper crossed pattern (index ${m.ucsIndex.toFixed(1)})`,
+          severity: sev, confidenceScore: conf,
+          clinicalSignificance: sev === "high" ? "high" : "moderate",
+          interpretation: INTERPRETATIONS.ucs(m.ucsIndex),
+          musclePattern: MUSCLE_PATTERNS.ucs,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.ucs,
+          correction: "INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep neck flexors, lower trap Y-T-W, serratus. MOBILISE: thoracic extension T4–T8.",
+          icd: "M62.9", norm: "UCS index <0.6",
+        });
+      }
     }
 
-    // ── NEW Feature 2: Additional frontal findings ───────────────────────────
-
-    // Neck lateral angle — scalene / thoracic outlet pathway
-    if(m.neckLateralAngle!==null&&m.neckLateralAngle>4){
-      const abs=m.neckLateralAngle, side=m.neckLateralSide||"";
-      add("Neck / Cervical",
-        `Neck lateral inclination — ${side} side (${abs.toFixed(1)}°, normal <4°)`,
-        abs>8?"high":"moderate",
-        `Scalene release ${side} side: lateral cervical stretch 30s×3. Screen thoracic outlet (Adson's test, Roos test 3min). Assess C3–C5 facet restriction. Activate ipsilateral deep neck flexors. Rule out accessory nerve involvement if trapezius wasting present. Confirm with clinical assessment — image proxy only.`,
-        "M54.2");
+    // ── Functional LLD ───────────────────────────────────────────────────────
+    if (m.lldProxy !== null) {
+      const sev = classifySeverity(m.lldProxy, POSTURE_THRESHOLDS.lldProxy);
+      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.ankle]);
+      if (sev) {
+        add({
+          region: "Leg Length",
+          findingName: `Possible functional LLD — ~${m.lldProxy.toFixed(0)}mm (${m.lldSide || ""} shorter)`,
+          severity: sev, confidenceScore: Math.min(conf, 70), // cap — proxy measure
+          clinicalSignificance: "moderate",
+          interpretation: `Ankle height asymmetry may indicate functional or structural leg length difference (~${m.lldProxy.toFixed(0)}mm). This is a proxy measurement only — clinical confirmation is essential before any orthotic intervention.`,
+          musclePattern: MUSCLE_PATTERNS.pelvis,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.pelvis,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.pelvis,
+          correction: "Confirm with tape measure ASIS→medial malleolus. If LLD >5mm: heel wedge trial 3–5mm. Treat SIJ/QL if functional.",
+          icd: "M21.7", norm: "LLD <5mm",
+        });
+      }
     }
 
-    // Waist triangle asymmetry — Adam's test / functional vs structural scoliosis
-    if(m.waistTriangleAsymmetry!==null&&m.waistTriangleAsymmetry>3){
-      const abs=m.waistTriangleAsymmetry, side=m.waistTriangleSide||"";
-      add("Scoliosis / Waist Asymmetry",
-        `Waist triangle asymmetry — ${side} narrower (${abs.toFixed(1)}%, normal <3%)`,
-        abs>6?"high":"moderate",
-        `Adam's forward bend test — observe for rib hump (structural) vs correction on bending (functional). Functional: treat lateral trunk shift driver (QL, hip abductors). Structural: refer for standing AP X-ray (true Cobb angle). Rib mobilisation T5–T10. Mirror biofeedback in standing. Confirm with clinical assessment — image proxy only.`,
-        "M41.9");
+    // ── Waist asymmetry / scoliosis screen ──────────────────────────────────
+    if (m.waistTriangleAsymmetry !== null) {
+      const sev = classifySeverity(m.waistTriangleAsymmetry, POSTURE_THRESHOLDS.waistAsymmetry);
+      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
+      if (sev) {
+        const side = m.waistTriangleSide || "";
+        add({
+          region: "Scoliosis / Waist Asymmetry",
+          findingName: `Waist triangle asymmetry — ${side} narrower (${m.waistTriangleAsymmetry.toFixed(1)}%)`,
+          severity: sev, confidenceScore: conf, clinicalSignificance: sev,
+          interpretation: `Waist triangle asymmetry of ${m.waistTriangleAsymmetry.toFixed(1)}% may be associated with lateral trunk deviation or spinal curvature. This finding alone is insufficient to diagnose scoliosis — Adam's forward bend test and clinical assessment are required.`,
+          musclePattern: MUSCLE_PATTERNS.trunkShift,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.trunkShift,
+          objectiveAssessments: ["Adam's forward bend test — observe for rib hump", "Trunk lateral shift assessment", "Standing AP X-ray if structural scoliosis suspected"],
+          correction: "Adam's forward bend test. Treat lateral trunk shift driver. Rib cage mobilisation. Mirror biofeedback.",
+          icd: "M41.9", norm: "Waist triangle asymmetry <4%",
+        });
+      }
     }
 
-    // Ankle LLD proxy
-    if(m.ankleLLDmm!==null&&m.ankleLLDmm>5){
-      const abs=m.ankleLLDmm, side=m.ankleLLDSide||"";
-      add("Leg Length Discrepancy",
-        `Ankle height difference — ${side} higher (${abs.toFixed(0)}mm proxy, normal <5mm)`,
-        abs>10?"high":"moderate",
-        `Confirm with tape measure: ASIS to medial malleolus bilaterally. True LLD >5mm: trial heel wedge 3–5mm under shorter limb. Assess SIJ provocation (FABER, FADIR, compression). Treat QL overactivity elevated side. Screen for hip OA / femoral neck asymmetry. Ankle measurement sensitivity ±5–8mm — camera level critical. Confirm with clinical assessment — image proxy only.`,
-        "M21.7");
+    // ── Tibial varum ─────────────────────────────────────────────────────────
+    const tibL = m.tibialVarumL ?? 0, tibR = m.tibialVarumR ?? 0;
+    if (tibL > 0 || tibR > 0) {
+      const maxTib = Math.max(tibL, tibR);
+      const sev = classifySeverity(maxTib, POSTURE_THRESHOLDS.tibialVarum);
+      const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.lowerBody);
+      if (sev) {
+        const worse = tibL > tibR ? "Left" : "Right";
+        add({
+          region: "Tibial Varum",
+          findingName: `Tibial bowing — ${worse} worse (L:${tibL.toFixed(1)}° R:${tibR.toFixed(1)}°, normal <5°)`,
+          severity: sev, confidenceScore: Math.min(conf, 65), clinicalSignificance: "moderate",
+          interpretation: `Tibial bowing tendency observed (${worse} worse). This measure is sensitive to rotation and camera angle — clinical confirmation is essential. May be associated with subtalar pronation compensation.`,
+          musclePattern: null,
+          functionalCorrelation: "May be associated with altered foot pronation patterns and medial knee loading.",
+          objectiveAssessments: ["Subtalar neutral assessment", "Foot posture index", "Weight-bearing lower limb alignment X-ray if severe"],
+          correction: "Assess subtalar neutral. Foot orthotic with lateral wedge if pronation-driven. Tibialis posterior strengthening.",
+          icd: "M21.1", norm: "<5° tibial varum",
+        });
+      }
     }
 
-    // Tibial varum
-    if((m.tibialVarumL!==null&&m.tibialVarumL>5)||(m.tibialVarumR!==null&&m.tibialVarumR>5)){
-      const L=m.tibialVarumL??0, R=m.tibialVarumR??0;
-      const worse=L>R?"Left":"Right", abs=Math.max(L,R);
-      add("Tibial Varum",
-        `Tibial bowing — ${worse} worse (L:${L.toFixed(1)}° R:${R.toFixed(1)}°, normal <5°)`,
-        abs>10?"high":"moderate",
-        `Root pronation compensation model: assess subtalar neutral, calcaneal eversion, forefoot varus. Prescribe foot orthotic with lateral wedge if pronation-driven. Strengthening: tibialis posterior, peroneals. If bilateral severe (>15°): refer for orthopaedic review — osteotomy threshold assessment. Rotation-sensitive measure — confirm clinically. Confirm with clinical assessment — image proxy only.`,
-        "M21.1");
+  } // end if(!isLat) — frontal findings
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SAGITTAL VIEW FINDINGS
+  // ══════════════════════════════════════════════════════════════════════════
+  if (isLat) {
+    const sagRel = checkLandmarkReliability(lm, LANDMARK_GROUPS.sagittal);
+    const sagConf = getLandmarkConfidence(lm, LANDMARK_GROUPS.sagittal);
+
+    // ── Forward head posture / CVA ───────────────────────────────────────────
+    if (m.cvaAngle !== null) {
+      const sev = classifySeverity(m.cvaAngle, POSTURE_THRESHOLDS.cvaAngle, true);
+      const earRel = checkLandmarkReliability(lm, [7, 8, 11, 12]);
+      const conf = getLandmarkConfidence(lm, [7, 8, 11, 12]);
+      if (sev && earRel.reliable) {
+        add({
+          region: "Cervical / CVA",
+          findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >52°)`,
+          severity: sev, confidenceScore: conf,
+          clinicalSignificance: sev === "high" ? "high" : "moderate",
+          interpretation: INTERPRETATIONS.fhp(m.cvaAngle, m.cervicalLoadKg),
+          musclePattern: MUSCLE_PATTERNS.fhp,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.fhp,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.fhp,
+          correction: `DNF chin nod ×10 ×3 daily. Thoracic extension foam roller T4–T8. Pec minor stretch 30s×3.${m.cervicalLoadKg ? ` Est. cervical load ~${m.cervicalLoadKg.toFixed(1)}kg (proxy).` : ""}`,
+          icd: "M43.1", norm: "CVA >52°",
+        });
+      } else if (sev && !earRel.reliable) {
+        // Still add but low confidence — ear landmarks unreliable
+        add({
+          region: "Cervical / CVA",
+          findingName: `Possible forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (ear visibility limited)`,
+          severity: "mild", confidenceScore: Math.min(conf, 40),
+          clinicalSignificance: "low",
+          interpretation: "CVA calculation may be affected by reduced ear landmark visibility. Clinical measurement recommended for confirmation.",
+          musclePattern: MUSCLE_PATTERNS.fhp,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.fhp,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.fhp,
+          correction: "Confirm CVA clinically. DNF chin nod if confirmed.",
+          icd: "M43.1", norm: "CVA >52°",
+        });
+      }
     }
 
-    // Knee/ankle ratio — valgus/varus pattern
-    if(m.kneeAnklePattern&&m.kneeAnklePattern!=="Normal"&&m.kneeAnkleRatio!==null){
-      const isValgus=m.kneeAnklePattern==="Valgus";
-      add("Knee Alignment Pattern",
-        `Bilateral ${m.kneeAnklePattern.toLowerCase()} pattern (knee/ankle ratio ${m.kneeAnkleRatio.toFixed(2)}, normal 0.85–1.15)`,
-        Math.abs(m.kneeAnkleRatio-1)>0.25?"high":"moderate",
-        isValgus
-          ? `Valgus: strengthen glute medius (clamshells, lateral band walks ×3 sets). VMO activation: terminal knee extensions, step-downs. Foot tripod loading. Assess hip ER range. Screen medial compartment OA if >40yo. Confirm with clinical assessment — image proxy only.`
-          : `Varus: hip external rotator strengthening. ITB/TFL SMR 90s. Assess subtalar supination, lateral ankle instability. Screen lateral compartment OA. Consider foot orthotic. Confirm with clinical assessment — image proxy only.`,
-        "M21.0");
+    // ── Thoracic kyphosis ────────────────────────────────────────────────────
+    if (m.thoracicAngle !== null) {
+      const sev = classifySeverity(m.thoracicAngle, POSTURE_THRESHOLDS.thoracicAngle);
+      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
+      if (sev && sagRel.reliable) {
+        add({
+          region: "Thoracic Kyphosis",
+          findingName: `Increased thoracic curvature (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,
+          severity: sev, confidenceScore: conf, clinicalSignificance: sev,
+          interpretation: INTERPRETATIONS.kyphosis(m.thoracicAngle),
+          musclePattern: MUSCLE_PATTERNS.kyphosis,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.kyphosis,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.kyphosis,
+          correction: "Thoracic extension foam roller T4–T8 ×2min. Pec stretch bilateral. Lower trap activation Y-T-W ×15.",
+          icd: "M40.0", norm: "Thoracic kyphosis 20–45°",
+        });
+      }
     }
 
-    // Carrying angle (cubitus valgus/varus)
-    if((m.carryingAngleL!==null&&(m.carryingAngleL<5||m.carryingAngleL>15))||
-       (m.carryingAngleR!==null&&(m.carryingAngleR<5||m.carryingAngleR>15))){
-      const L=m.carryingAngleL, R=m.carryingAngleR;
-      const flagL=L!==null&&(L<5||L>15), flagR=R!==null&&(R<5||R>15);
-      const sides=[flagL?"Left":"",flagR?"Right":""].filter(Boolean).join(" & ");
-      const abs=Math.max(L??0,R??0);
-      add("Carrying Angle / Elbow",
-        `Abnormal carrying angle — ${sides} (L:${L!==null?L.toFixed(1)+"°":"N/A"} R:${R!==null?R.toFixed(1)+"°":"N/A"}, normal 5–15°)`,
-        abs>20?"high":"moderate",
-        `Screen ulnar nerve: Tinel's sign at cubital tunnel, Froment's test for intrinsic weakness. Cubital tunnel syndrome: elbow padding, avoid sustained flexion >90°. Cubitus valgus >20°: refer for orthopaedic review. Arm position critical for this measure — recheck with arms relaxed at sides. Confirm with clinical assessment — image proxy only.`,
-        "M79.2");
-    }
-  } // end if(!isLat)
-
-  // Sagittal findings
-  if(isLat){
-    if(m.cvaAngle!==null&&m.cvaAngle<55){
-      const abs=55-m.cvaAngle;
-      const loadStr=m.cervicalLoadKg!==null?` Est. cervical load ~${m.cervicalLoadKg.toFixed(1)}kg (neutral 4.5kg).`:"";
-      add("Cervical / CVA",`Forward head posture — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,m.cvaAngle<49?"high":"moderate",
-        `DNF chin nod ×10 ×3 daily. Thoracic extension foam roller T4–T8. Pec minor stretch doorframe 30s×3. Monitor posture.${loadStr} Hansraj 2014 load model.`,
-        "M43.1");
-    }
-    if(m.thoracicAngle!==null&&m.thoracicAngle>45){
-      const abs=m.thoracicAngle-45;
-      add("Thoracic Kyphosis",`Increased kyphosis (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,m.thoracicAngle>55?"high":"moderate",
-        "Thoracic extension foam roller T4–T8 ×2min. Pec stretch bilateral. Lower trap activation Y-T-W ×15. Postural cueing.","M40.0");
-    }
-    if(m.lumbarProxy!==null&&Math.abs(m.lumbarProxy)>5){
-      const dir=m.lumbarProxy>0?"Anterior":"Posterior";
-      add("Pelvis / Lumbar",`${dir} pelvic tilt (${Math.abs(m.lumbarProxy).toFixed(1)}%)`,Math.abs(m.lumbarProxy)>10?"high":"moderate",
-        m.lumbarProxy>0
-          ?"Hip flexor stretch (Thomas test position 30s×3). Glute activation: bridges ×20. Abdominal hollowing. QL release."
-          :"Hamstring stretch 30s×3. Hip flexor activation. Lumbar extension mobility. Assess disc pathology.","M40.3");
-    }
-    if(m.hipExtensionProxy!==null&&Math.abs(m.hipExtensionProxy)>5){
-      const dir=m.hipExtensionProxy>0?"anterior":"posterior";
-      add("Hip / Global",`Hip displaced ${dir} to ankle plumb (${Math.abs(m.hipExtensionProxy).toFixed(1)}%)`,Math.abs(m.hipExtensionProxy)>10?"high":"moderate",
-        "Assess hip flexor length (Thomas test). Retrain global sagittal alignment with mirror biofeedback.","M99.0");
-    }
-    if(m.leftKneeDev!==null&&m.leftKneeDev<-5){
-      add("Knee",`Knee hyperextension / genu recurvatum (${Math.abs(m.leftKneeDev).toFixed(1)}°)`,m.leftKneeDev<-12?"high":"moderate",
-        "Hamstring strengthening. Avoid terminal knee lock in stance. Beighton hypermobility screen. Proprioception training.","M21.1");
-    }
-    if(m.lcsIndex!==null&&m.lcsIndex>0.5){
-      add("Lower Crossed Syndrome",`LCS pattern (index ${m.lcsIndex.toFixed(1)})`,m.lcsIndex>1?"high":"moderate",
-        "INHIBIT: hip flexors, QL, thoracolumbar fascia. ACTIVATE: glutes (bridges), transverse abdominis. MOBILISE: hip flexor.","M62.9");
+    // ── Pelvic tilt (sagittal) ───────────────────────────────────────────────
+    if (m.lumbarProxy !== null && Math.abs(m.lumbarProxy) > 0) {
+      const abs = Math.abs(m.lumbarProxy);
+      const sev = classifySeverity(abs, POSTURE_THRESHOLDS.lumbarProxy);
+      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.knee]);
+      if (sev && sagRel.reliable) {
+        const dir = m.lumbarProxy > 0 ? "Anterior" : "Posterior";
+        add({
+          region: "Pelvis / Lumbar",
+          findingName: `${dir} pelvic tilt tendency (${abs.toFixed(1)}%)`,
+          severity: sev, confidenceScore: conf, clinicalSignificance: sev,
+          interpretation: INTERPRETATIONS.lumbar(m.lumbarProxy, dir),
+          musclePattern: m.lumbarProxy > 0 ? MUSCLE_PATTERNS.lumbarAnt : MUSCLE_PATTERNS.lumbarPost,
+          functionalCorrelation: m.lumbarProxy > 0 ? FUNCTIONAL_CORRELATIONS.lumbarAnt : FUNCTIONAL_CORRELATIONS.lumbarPost,
+          objectiveAssessments: m.lumbarProxy > 0 ? OBJECTIVE_ASSESSMENTS.lumbarAnt : OBJECTIVE_ASSESSMENTS.lumbarPost,
+          correction: m.lumbarProxy > 0
+            ? "Hip flexor stretch (Thomas test position 30s×3). Glute activation: bridges ×20. Abdominal hollowing."
+            : "Hamstring stretch 30s×3. Hip flexor activation. Lumbar extension mobility.",
+          icd: "M40.3", norm: "<5% pelvic tilt proxy",
+        });
+      }
     }
 
-    // ── UCS — sagittal flag (FHP + thoracic kyphosis) ────────────────────────
-    // Triggers separately from the frontal UCS index: this fires on lateral view
-    // when both CVA and thoracic angle are abnormal simultaneously (Janda pattern)
-    const hasUCS_sag = m.cvaAngle!==null && m.cvaAngle<52
-      && m.thoracicAngle!==null && m.thoracicAngle>45;
-    if(hasUCS_sag){
-      add("Upper Crossed Syndrome (UCS)",
-        `UCS pattern — forward head (CVA ${m.cvaAngle.toFixed(0)}°) + thoracic kyphosis (${m.thoracicAngle.toFixed(0)}°)`,
-        m.cvaAngle<45?"high":"moderate",
-        `NKT Protocol — INHIBIT (90s SMR each): upper trapezius, SCM, scalenes, pec minor. ACTIVATE (3×15): deep cervical flexors (chin nod), lower trapezius (prone Y), serratus anterior (wall slide). CORRECT: thoracic extension foam roller T4–T8. Ergonomic: monitor at eye level, lumbar support. Home: hourly upper trap/pec minor stretch.`,
-        "M62.8");
+    // ── Knee hyperextension/recurvatum ───────────────────────────────────────
+    if (m.leftKneeDev !== null && m.leftKneeDev < 0) {
+      const abs = Math.abs(m.leftKneeDev);
+      const sev = classifySeverity(abs, POSTURE_THRESHOLDS.kneeRecurvatum);
+      const conf = getLandmarkConfidence(lm, [23, 25, 27]);
+      if (sev) {
+        add({
+          region: "Knee",
+          findingName: `Knee hyperextension tendency (${abs.toFixed(1)}°)`,
+          severity: sev, confidenceScore: conf, clinicalSignificance: sev,
+          interpretation: `Knee hyperextension of ${abs.toFixed(1)}° may be associated with posterior capsule laxity or habitual hyperextension posture. Beighton hypermobility screening is recommended if this exceeds 10°.`,
+          musclePattern: { tight: ["Posterior capsule (passive)"], weak: ["Hamstrings","Popliteus"] },
+          functionalCorrelation: "May increase posterior knee joint loading in single-leg stance and stair descent.",
+          objectiveAssessments: ["Beighton hypermobility score","Hamstring strength (60°/s isokinetic or manual)","Posterior capsule laxity assessment"],
+          correction: "Hamstring strengthening. Avoid terminal knee lock in stance. Proprioception training: single-leg balance.",
+          icd: "M21.1", norm: "0–5° knee flexion at rest",
+        });
+      }
     }
 
-    // ── LCS — sagittal flag (anterior pelvic tilt + kyphosis) ────────────────
-    const hasLCS_sag = m.lumbarProxy!==null && m.lumbarProxy>5
-      && m.thoracicAngle!==null && m.thoracicAngle>42;
-    if(hasLCS_sag){
-      add("Lower Crossed Syndrome (LCS)",
-        `LCS pattern — anterior pelvic tilt (${m.lumbarProxy.toFixed(1)}%) + increased kyphosis`,
-        m.lumbarProxy>10?"high":"moderate",
-        `NKT Protocol — INHIBIT (90s SMR each): iliopsoas, rectus femoris, TFL. ACTIVATE (3×15): glute max (bridges with posterior tilt), glute med (clamshells), TVA (dead bug). CORRECT: pelvic tilt awareness drill ×20. Thomas test to confirm hip flexor contracture. Ely's test for RF tightness.`,
-        "M62.8");
+    // ── LCS index ────────────────────────────────────────────────────────────
+    if (m.lcsIndex !== null) {
+      const sev = classifySeverity(m.lcsIndex, POSTURE_THRESHOLDS.lcsIndex);
+      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.knee]);
+      if (sev && sagRel.reliable) {
+        add({
+          region: "Lower Crossed Syndrome",
+          findingName: `Possible lower crossed pattern (index ${m.lcsIndex.toFixed(1)})`,
+          severity: sev, confidenceScore: conf, clinicalSignificance: sev,
+          interpretation: INTERPRETATIONS.lcs(m.lcsIndex),
+          musclePattern: MUSCLE_PATTERNS.lcs,
+          functionalCorrelation: FUNCTIONAL_CORRELATIONS.lcs,
+          objectiveAssessments: OBJECTIVE_ASSESSMENTS.lcs,
+          correction: "INHIBIT: hip flexors, QL. ACTIVATE: glutes (bridges), transverse abdominis. MOBILISE: hip flexor.",
+          icd: "M62.9", norm: "LCS index <0.5",
+        });
+      }
     }
 
-    // ── SWAY-BACK ─────────────────────────────────────────────────────────────
-    // Pattern: hips posterior to plumb + reduced lumbar curve
-    const hipBehindPlumb = m.hipExtensionProxy!==null && m.hipExtensionProxy < -4;
-    const hasReducedLordosis = m.lumbarProxy!==null && m.lumbarProxy < -3;
-    if(hipBehindPlumb && hasReducedLordosis){
-      add("Posture Pattern — Sway-Back",
-        `Sway-back posture: hips posterior to plumb, flat lumbar`,
+    // ── UCS sagittal — skip if UCS already in findings from dedicated block ────
+    const hasUCS_sag = m.cvaAngle !== null && m.cvaAngle < 52 && m.thoracicAngle !== null && m.thoracicAngle > 45;
+    const ucsAlreadyAdded = out.some(x => x.region === "Upper Crossed Syndrome" || x.region === "Upper Crossed Syndrome (UCS)");
+    if (hasUCS_sag && sagRel.reliable && !ucsAlreadyAdded) {
+      const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.upperBody);
+      const sev = m.cvaAngle < 45 ? "high" : "moderate";
+      add({
+        region: "Upper Crossed Syndrome (UCS)",
+        findingName: `Possible UCS pattern — forward head (CVA ${m.cvaAngle.toFixed(0)}°) + thoracic curvature (${m.thoracicAngle.toFixed(0)}°)`,
+        severity: sev, confidenceScore: conf, clinicalSignificance: sev,
+        interpretation: INTERPRETATIONS.ucs(m.ucsIndex || 0.8),
+        musclePattern: MUSCLE_PATTERNS.ucs,
+        functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
+        objectiveAssessments: OBJECTIVE_ASSESSMENTS.ucs,
+        correction: "NKT Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep cervical flexors (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
+        icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
+      });
+    }
+
+    // ── LCS sagittal — skip if LCS already in findings from dedicated block ────
+    const hasLCS_sag = m.lumbarProxy !== null && m.lumbarProxy > 5 && m.thoracicAngle !== null && m.thoracicAngle > 42;
+    const lcsAlreadyAdded = out.some(x => x.region === "Lower Crossed Syndrome" || x.region === "Lower Crossed Syndrome (LCS)");
+    if (hasLCS_sag && sagRel.reliable && !lcsAlreadyAdded) {
+      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.knee]);
+      add({
+        region: "Lower Crossed Syndrome (LCS)",
+        findingName: `Possible LCS pattern — anterior pelvic tilt (${m.lumbarProxy.toFixed(1)}%) + increased thoracic curvature`,
+        severity: m.lumbarProxy > 10 ? "high" : "moderate",
+        confidenceScore: conf, clinicalSignificance: "moderate",
+        interpretation: INTERPRETATIONS.lcs(m.lcsIndex || 0.6),
+        musclePattern: MUSCLE_PATTERNS.lcs,
+        functionalCorrelation: FUNCTIONAL_CORRELATIONS.lcs,
+        objectiveAssessments: OBJECTIVE_ASSESSMENTS.lcs,
+        correction: "NKT Protocol — INHIBIT: iliopsoas, rectus femoris, TFL. ACTIVATE: glute max (bridges), glute med (clamshells), TVA (dead bug). Thomas test to confirm hip flexor length.",
+        icd: "M62.8", norm: "Anterior pelvic tilt <5% + thoracic kyphosis <42°",
+      });
+    }
+
+    // ── Named sagittal pattern (Kendall classification) ───────────────────────
+    const hasFHP   = m.cvaAngle !== null && m.cvaAngle < 52;
+    const hasKyph  = m.thoracicAngle !== null && m.thoracicAngle > 48;
+    const hasLord  = m.lumbarProxy !== null && m.lumbarProxy > 8;
+    const hasFlat  = m.lumbarProxy !== null && m.lumbarProxy < -5;
+    const hipBehindPlumb  = m.hipExtensionProxy !== null && m.hipExtensionProxy < -4;
+    const hasReducedLord  = m.lumbarProxy !== null && m.lumbarProxy < -3;
+    const hasSway  = hipBehindPlumb && hasReducedLord;
+    const isMilitary = m.thoracicAngle !== null && m.thoracicAngle < 30
+      && (m.lumbarProxy === null || Math.abs(m.lumbarProxy) < 3)
+      && (m.cvaAngle === null || m.cvaAngle > 58);
+
+    let patternName = null, patternTx = null, patternNote = null, patternSev = "moderate";
+    if (hasSway) {
+      patternName = "Sway-Back Posture";
+      patternTx   = "Activate hip flexors. Shift hips forward over ankles. Lumbar extension mobility.";
+      patternNote = "Hips posterior to plumb, flat lumbar, forward trunk lean.";
+    } else if (isMilitary) {
+      patternName = "Military / Flat-Back";
+      patternTx   = "Restore thoracic curve: foam roller extension. Restore lordosis: McKenzie.";
+      patternNote = "All spinal curves diminished. Poor sagittal shock absorption.";
+    } else if (hasFHP && hasKyph && hasLord) {
+      patternName = "Lordotic-Kyphotic (UCS + LCS)"; patternSev = "high";
+      patternTx   = "Full postural correction programme addressing UCS and LCS simultaneously.";
+      patternNote = `FHP (CVA ${m.cvaAngle.toFixed(0)}°) + increased thoracic curvature (${m.thoracicAngle.toFixed(0)}°) + anterior pelvic tilt. Findings may be consistent with combined upper and lower crossed pattern characteristics.`;
+    } else if (hasKyph && hasLord) {
+      patternName = "Lordotic-Kyphotic Posture";
+      patternTx   = "Thoracic extension + hip flexor stretch + glute activation.";
+      patternNote = `Thoracic curvature (${m.thoracicAngle.toFixed(0)}°) and anterior pelvic tilt both elevated.`;
+    } else if (hasKyph && !hasLord) {
+      patternName = "Kyphotic Posture";
+      patternTx   = "Thoracic extension foam roller + lower trapezius + pec minor stretch.";
+      patternNote = `Increased thoracic curvature (${m.thoracicAngle.toFixed(0)}°) as primary observation.`;
+    } else if (hasLord && !hasKyph) {
+      patternName = "Lordotic Posture";
+      patternTx   = "Hip flexor inhibition + glute max activation + pelvic tilt awareness.";
+      patternNote = "Anterior pelvic tilt tendency without significant thoracic component.";
+    } else if (hasFlat) {
+      patternName = "Flat-Back Posture";
+      patternTx   = "McKenzie extension + lumbar roll support + erector facilitation.";
+      patternNote = "Reduced lumbar lordosis. Hamstring and abdominal dominance possible.";
+    } else if (hasFHP && !hasKyph) {
+      patternName = "Forward Head Posture (Isolated)";
+      patternTx   = "DNF activation (chin nod ×10 ×3). Thoracic extension. Ergonomic screen.";
+      patternNote = `FHP without significant thoracic kyphosis (CVA ${m.cvaAngle.toFixed(0)}°).`;
+    }
+
+    if (patternName && sagRel.reliable) {
+      const patConf = getLandmarkConfidence(lm, LANDMARK_GROUPS.sagittal);
+      addLegacy(
+        `◈ Sagittal Pattern — ${patternName}`,
+        `Classification: ${patternName}`,
+        patternSev, patternTx, "Z96.89",
+        patternNote,
+        "Ideal: ear over acromion over greater trochanter over lateral malleolus"
+      );
+    }
+
+    // ── Sway-back pattern ────────────────────────────────────────────────────
+    if (hasSway && sagRel.reliable) {
+      addLegacy("Posture Pattern — Sway-Back",
+        "Sway-back posture: hips posterior to plumb, flat lumbar",
         "moderate",
-        `INHIBIT: hamstrings (slump stretch, seated), abdominals (reduce over-bracing). ACTIVATE: hip flexors (psoas activation — standing hip flexion ×15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles. Lumbar roll support in sitting.`,
+        "INHIBIT: hamstrings. ACTIVATE: hip flexors (psoas — standing hip flexion ×15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles.",
         "M40.3");
     }
-
-    // ── MILITARY / FLAT BACK ──────────────────────────────────────────────────
-    const isMilitary = m.thoracicAngle!==null && m.thoracicAngle<30
-      && (m.lumbarProxy===null || Math.abs(m.lumbarProxy)<3)
-      && (m.cvaAngle===null || m.cvaAngle>58);
-    if(isMilitary){
-      add("Posture Pattern — Military / Flat Back",
-        `Flat-back posture: reduced thoracic kyphosis (${m.thoracicAngle.toFixed(0)}°) and lumbar lordosis`,
+    if (isMilitary && sagRel.reliable) {
+      addLegacy("Posture Pattern — Military / Flat Back",
+        `Flat-back posture: reduced thoracic curvature (${m.thoracicAngle.toFixed(0)}°) and lumbar lordosis`,
         "moderate",
-        `Thoracic mobility: foam roller extension at T4–T8 ×2min daily. Rib expansion breathing ×10. Restore lordosis: McKenzie press-ups. Cervical retraction (NOT chin tuck). Reassure: flat-back is not always symptomatic — assess function.`,
+        "Thoracic mobility: foam roller extension T4–T8 ×2min. Rib expansion breathing ×10. Restore lordosis: McKenzie press-ups. Cervical retraction.",
         "M40.4");
     }
 
-    // ── NAMED SAGITTAL PATTERN LABEL (Kendall classification) ─────────────────
-    // Adds a single top-level pattern card summarising the overall sagittal type.
-    // Only fires when a named pattern is identifiable (not for ideal alignment).
-    {
-      const hasFHP   = m.cvaAngle!==null && m.cvaAngle<52;
-      const hasKyph  = m.thoracicAngle!==null && m.thoracicAngle>48;
-      const hasLord  = m.lumbarProxy!==null && m.lumbarProxy>8;   // proxy for hyperlordosis
-      const hasFlat  = m.lumbarProxy!==null && m.lumbarProxy < -5;
-      const hasSway  = hipBehindPlumb && hasReducedLordosis;
-      const hasMil   = isMilitary;
+  } // end isLat — sagittal findings
 
-      let patternName = null, patternTx = null, patternNote = null, patternSev = null;
-
-      if(hasSway){
-        patternName = "Sway-Back Posture";
-        patternSev  = "moderate";
-        patternTx   = "Activate hip flexors. Shift hips forward over ankles. Lumbar extension mobility.";
-        patternNote = "Hips posterior to plumb, flat lumbar, forward trunk lean. Hamstring/abdominal dominance.";
-      } else if(hasMil){
-        patternName = "Military / Flat-Back";
-        patternSev  = "moderate";
-        patternTx   = "Restore thoracic curve: foam roller extension. Restore lordosis: McKenzie.";
-        patternNote = "All spinal curves diminished. Poor sagittal shock absorption.";
-      } else if(hasFHP && hasKyph && hasLord){
-        patternName = "Lordotic-Kyphotic (UCS + LCS)";
-        patternSev  = "high";
-        patternTx   = "Full postural correction programme. Address UCS and LCS simultaneously.";
-        patternNote = `FHP (CVA ${m.cvaAngle.toFixed(0)}°) + hyperkyphosis (${m.thoracicAngle.toFixed(0)}°) + anterior pelvic tilt. Classic combined Upper and Lower Crossed Syndrome.`;
-      } else if(hasKyph && hasLord){
-        patternName = "Lordotic-Kyphotic Posture";
-        patternSev  = "moderate";
-        patternTx   = "Thoracic extension + hip flexor stretch + glute activation.";
-        patternNote = `Thoracic kyphosis (${m.thoracicAngle.toFixed(0)}°) and anterior pelvic tilt both elevated. S-curve amplification.`;
-      } else if(hasKyph && !hasLord){
-        patternName = "Kyphotic Posture";
-        patternSev  = "moderate";
-        patternTx   = "Thoracic extension foam roller + lower trapezius + pec minor stretch.";
-        patternNote = `Increased thoracic kyphosis (${m.thoracicAngle.toFixed(0)}°) as primary finding.`;
-      } else if(hasLord && !hasKyph){
-        patternName = "Lordotic Posture";
-        patternSev  = "moderate";
-        patternTx   = "Hip flexor inhibition + glute max activation + pelvic tilt awareness.";
-        patternNote = "Hyperlordosis + anterior pelvic tilt. LCS pattern without significant thoracic component.";
-      } else if(hasFlat){
-        patternName = "Flat-Back Posture";
-        patternSev  = "moderate";
-        patternTx   = "McKenzie extension + lumbar roll support + erector facilitation.";
-        patternNote = "Reduced lumbar lordosis. Disc anterior shear risk. Assess hamstring and abdominal dominance.";
-      } else if(hasFHP && !hasKyph){
-        patternName = "Forward Head Posture (Isolated)";
-        patternSev  = "moderate";
-        patternTx   = "DNF activation (chin nod ×10 ×3). Thoracic extension. Ergonomic screen and desk posture review.";
-        patternNote = `FHP without significant thoracic kyphosis (CVA ${m.cvaAngle.toFixed(0)}°). Cervical extensor overactivation.`;
-      }
-
-      if(patternName!==null){
-        add(
-          `◈ Sagittal Pattern — ${patternName}`,
-          `Classification: ${patternName}`,
-          patternSev,
-          patternTx,
-          "Z96.89"
-        );
-        // Patch the last finding to carry the clinical note in correction field for display
-        const last = out[out.length-1];
-        last.detail = patternNote;
-        last.norm   = "Ideal: ear over acromion over greater trochanter over lateral malleolus";
-      }
-    }
-  } // end isLat
-
-  // ── GLOBAL — all views ────────────────────────────────────────────────────
-  if(m.posturalLoadIndex!==null && m.posturalLoadIndex>55){
-    const pliContribs=[];
-    if(Math.abs(m.shoulderAngle||0)>3) pliContribs.push(`Uneven shoulders (${Math.abs(m.shoulderAngle).toFixed(1)}°)`);
-    if(Math.abs(m.pelvisAngle||0)>3)   pliContribs.push(`Uneven pelvis (${Math.abs(m.pelvisAngle).toFixed(1)}°)`);
-    if(Math.abs(m.fhpNorm||0)>3)       pliContribs.push(`Head too far forward (${Math.abs(m.fhpNorm).toFixed(1)}%)`);
-    if(Math.abs(m.trunkLateralShift||0)>4) pliContribs.push(`Body leaning sideways (${Math.abs(m.trunkLateralShift).toFixed(1)}%)`);
-    if(Math.abs(m.cogDeviation||0)>4)  pliContribs.push(`Centre of gravity off (${Math.abs(m.cogDeviation).toFixed(1)}%)`);
-    if(Math.abs(m.lumbarProxy||0)>4)   pliContribs.push(`Pelvic tilt / lower back curve (${Math.abs(m.lumbarProxy).toFixed(1)}%)`);
-    if(Math.abs(m.scapularAsymm||0)>3) pliContribs.push(`Scapular asymmetry (${Math.abs(m.scapularAsymm).toFixed(1)}%)`);
-    const pliLabel = m.posturalLoadIndex>80
+  // ══════════════════════════════════════════════════════════════════════════
+  // GLOBAL — all views
+  // ══════════════════════════════════════════════════════════════════════════
+  if (m.posturalLoadIndex !== null && m.posturalLoadIndex > 55) {
+    const pliLabel = m.posturalLoadIndex > 80
       ? "Very High — multiple areas need attention"
-      : m.posturalLoadIndex>65
+      : m.posturalLoadIndex > 65
       ? "High — several postural areas are stressed"
       : "Elevated — more than one area is affected";
-    const pliDetail = pliContribs.length>0
-      ? `Contributing factors:\n${pliContribs.map(c=>`• ${c}`).join("\n")}\n\nThis means the body is working harder than it should to stay balanced. Each problem adds up and increases joint strain over time.`
-      : "Multiple small postural deviations adding up across body areas.";
-    add("Global — Body Load Summary",
+    addLegacy("Global — Body Load Summary",
       `Overall postural load ${pliLabel} (PLI ${m.posturalLoadIndex}/100)`,
-      m.posturalLoadIndex>75?"high":"moderate",
-      `Start with the highest-priority finding above. Fixing one problem often reduces the overall load automatically. Aim for: 1 targeted exercise per area, 10–15 min daily. Re-assess in 4–6 weeks.`,
-      "M62.9", pliDetail, "Target: PLI <35/100");
+      m.posturalLoadIndex > 75 ? "high" : "moderate",
+      "Address highest-priority findings above. Aim for 1 targeted exercise per area, 10–15 min daily. Re-assess in 4–6 weeks.",
+      "M62.9",
+      `PLI ${m.posturalLoadIndex}/100 — multiple postural deviations contributing.`,
+      "Target: PLI <35/100");
   }
 
-  return out;
+  // ── CLINICAL SIGNIFICANCE FILTER + PRIORITISE ─────────────────────────────
+  // 1. Remove low-confidence mild findings
+  const filtered = out.filter(f => {
+    if (f.severity === "mild" && (f.confidenceScore || 70) < 55) return false;
+    return true;
+  });
+
+  // 2. Deduplicate by region — keep first (highest priority) occurrence
+  const seenRegions = new Set();
+  const deduped = filtered.filter(f => {
+    if (seenRegions.has(f.region)) return false;
+    seenRegions.add(f.region);
+    return true;
+  });
+
+  // 3. Prioritise: high severity + confidence + clinical significance first
+  const prioritised = prioritiseFindings(deduped);
+
+  // 4. Cap output — always keep pattern/global findings
+  const maxFindings = isLat ? MAX_FINDINGS_SAGITTAL : MAX_FINDINGS_FRONTAL;
+  const isPattern = f => f.region.startsWith("◈") || f.region.startsWith("Global") || f.region.includes("Sway") || f.region.includes("Military");
+  const patternFindings = prioritised.filter(isPattern);
+  const regularFindings = prioritised.filter(f => !isPattern(f));
+
+  return [...regularFindings.slice(0, maxFindings), ...patternFindings];
 }
+
 
 // ─── Score Engine ─────────────────────────────────────────────────────────────
 function scorePosture(m, findings, reliability) {
@@ -3614,6 +4104,30 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,0.95)"; ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
     ctx.restore(); ctx.setLineDash([]);
+  // ── Legend (top-right) — mirrors Image 2 ─────────────────────────────────
+  if(!isLat){
+    const legendItems=[
+      {col:"rgba(0,201,122,0.95)", label:"Normal"},
+      {col:"rgba(255,179,0,0.95)", label:"Mild deviation"},
+      {col:"rgba(255,77,109,0.95)", label:"Significant"},
+      {col:"rgba(200,100,255,0.9)", label:"ASIS/Pelvis"},
+      {col:"rgba(0,140,255,0.85)", label:"Spine segments"},
+    ];
+    const lx=W-140, ly=10, lw=132, lh=legendItems.length*16+10;
+    ctx.fillStyle="rgba(0,0,0,0.72)";
+    if(ctx.roundRect) ctx.roundRect(lx,ly,lw,lh,6); else ctx.rect(lx,ly,lw,lh);
+    ctx.fill();
+    legendItems.forEach(({col,label},i)=>{
+      const iy=ly+10+i*16;
+      ctx.beginPath(); ctx.arc(lx+10,iy,5,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+      ctx.font="10px system-ui"; ctx.textAlign="left"; ctx.fillStyle="#fff";
+      ctx.fillText(label,lx+20,iy+4);
+    });
+    // "ANTERIOR VIEW" bottom-left label
+    ctx.font="bold 9px system-ui"; ctx.textAlign="left"; ctx.fillStyle="rgba(255,255,255,0.55)";
+    ctx.fillText("ANTERIOR VIEW",6,H-8);
+  }
+
   } else {
     // ── Clinical Sagittal Plumb Line (Kendall / Sahrmann standard) ────────
     const side = view==="right";
@@ -3692,19 +4206,40 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
         drawBadge(ctx, mx, my, `Tilt ${tiltAbs.toFixed(1)}°`, tiltColor);
       }
     }
-    // Horizontal level lines
+    // Horizontal level lines — full width with right-edge angle readings (like Image 2)
     const LEVELS=[
-      {idxL:2,  idxR:5,  label:"Eyes",      color:"rgba(255,200,80,0.85)"},
-      {idxL:7,  idxR:8,  label:"Ears",      color:"rgba(0,229,255,0.7)"},
-      {idxL:11, idxR:12, label:"Shoulders", color:"rgba(147,51,234,0.8)"},
-      {idxL:23, idxR:24, label:"ASIS",      color:"rgba(249,115,22,0.8)"},
-      {idxL:25, idxR:26, label:"Knees",     color:"rgba(16,185,129,0.8)"},
-      {idxL:27, idxR:28, label:"Ankles",    color:"rgba(99,102,241,0.8)"},
+      {idxL:7,  idxR:8,  label:"Eye Level\nEars / C-spine", color:"rgba(0,229,255,0.8)"},
+      {idxL:11, idxR:12, label:"Shoulders",      color:"rgba(147,51,234,0.9)"},
+      {idxL:23, idxR:24, label:"ASIS / Pelvis",  color:"rgba(249,115,22,0.9)"},
+      {idxL:25, idxR:26, label:"Knees",          color:"rgba(16,185,129,0.9)"},
+      {idxL:27, idxR:28, label:"Ankles",         color:"rgba(99,102,241,0.9)"},
+      {idxL:29, idxR:30, label:"Heels",          color:"rgba(99,102,241,0.7)"},
     ];
     LEVELS.forEach(({idxL,idxR,label,color})=>{
       if(!V(idxL)||!V(idxR)) return;
       const pL=PX(idxL), pR=PX(idxR);
-      drawLevelLine(ctx, pL[0]-W*0.06, pL[1], pR[0]+W*0.06, pR[1], color, label);
+      const dy=pR[1]-pL[1], dx=pR[0]-pL[0];
+      const angleDeg=Math.atan2(dy,dx)*180/Math.PI;
+      const absA=Math.abs(angleDeg);
+      const angleCol=absA<1?"rgba(0,201,122,0.95)":absA<3?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
+      const my=(pL[1]+pR[1])/2;
+      // Full-width line
+      ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(0,my); ctx.lineTo(W,my); ctx.stroke();
+      ctx.restore(); ctx.setLineDash([]);
+      // Left label
+      const lines=label.split("\n"); const lh=11, bh=lines.length*lh+6;
+      ctx.fillStyle="rgba(0,0,0,0.78)";
+      if(ctx.roundRect) ctx.roundRect(2,my-bh/2,80,bh,3); else ctx.rect(2,my-bh/2,80,bh);
+      ctx.fill(); ctx.font="bold 8px system-ui"; ctx.textAlign="left"; ctx.fillStyle=color;
+      lines.forEach((ln,i)=>ctx.fillText(ln,6,my-bh/2+lh*(i+0.85)));
+      // Right-edge angle badge
+      const angText=(angleDeg>=0?"+":"")+angleDeg.toFixed(1)+"°";
+      ctx.font="bold 9px system-ui"; const atw=ctx.measureText(angText).width;
+      ctx.fillStyle="rgba(0,0,0,0.82)";
+      if(ctx.roundRect) ctx.roundRect(W-atw-14,my-9,atw+10,16,3); else ctx.rect(W-atw-14,my-9,atw+10,16);
+      ctx.fill(); ctx.fillStyle=angleCol; ctx.textAlign="right";
+      ctx.fillText(angText,W-6,my+4);
     });
     // ASIS dashed rings
     [[23,"L.ASIS"],[24,"R.ASIS"]].forEach(([idx,lbl])=>{
