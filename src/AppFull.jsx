@@ -6304,10 +6304,15 @@ function PostureAnalysisModule(){
       views,
       annotatedImg,
       findings: rptFindings,
-      muscles: {
-        tight: findings.flatMap(f=>f.tight||[]).filter((v,i,a)=>typeof v==='string'?a.indexOf(v)===i:a.findIndex(x=>x?.name===v?.name)===i),
-        weak:  findings.flatMap(f=>f.weak||[]).filter((v,i,a)=>typeof v==='string'?a.indexOf(v)===i:a.findIndex(x=>x?.name===v?.name)===i),
-      },
+      muscles: (()=>{
+        const mi = buildMuscleImbalance(findings);
+        const toObj = (entries, type) => (entries||[]).map(([name, regions])=>({
+          name,
+          source: (regions||[]).map(r=>r.region||"").filter(Boolean).join(", ")||"Posture",
+          severity: type==="tight"?"Overactive":"Underactive",
+        }));
+        return { tight: toObj(mi.tight,"tight"), weak: toObj(mi.weak,"weak") };
+      })(),
       metrics: {
         cvaAngle: m.cvaAngle, cervicalLoadKg: m.cervicalLoadKg,
         thoracicAngle: m.thoracicAngle, lumbarProxy: m.lumbarProxy,
