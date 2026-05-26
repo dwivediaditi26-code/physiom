@@ -6250,9 +6250,10 @@ function PostureAnalysisModule(){
   // ── Report generator ─────────────────────────────────────────────────────────
   function generateReport() {
     if(!findings.length||!scoreData) return;
-    const annotatedImg = uploadedImg || capturedImg || null;
-    const views = [view];
-    const m = measurements||{};
+    try {
+      const annotatedImg = uploadedImg || capturedImg || null;
+      const views = [view];
+      const m = measurements||{};
 
     // Build findings for report
     const rptFindings = findings.map(f=>({
@@ -6299,13 +6300,13 @@ function PostureAnalysisModule(){
         date: new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}),
         session: sessions.length+1,
       },
-      score: { value: scoreData.score, band: scoreData.band, colour: scoreData.colour||"#dc2626" },
+      score: { value: scoreData?.score||0, band: scoreData?.band||"", colour: scoreData?.colour||scoreData?.color||"#dc2626" },
       views,
       annotatedImg,
       findings: rptFindings,
       muscles: {
-        tight: (findings.flatMap(f=>f.tight||[])).filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i),
-        weak:  (findings.flatMap(f=>f.weak||[])).filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i),
+        tight: findings.flatMap(f=>f.tight||[]).filter((v,i,a)=>typeof v==='string'?a.indexOf(v)===i:a.findIndex(x=>x?.name===v?.name)===i),
+        weak:  findings.flatMap(f=>f.weak||[]).filter((v,i,a)=>typeof v==='string'?a.indexOf(v)===i:a.findIndex(x=>x?.name===v?.name)===i),
       },
       metrics: {
         cvaAngle: m.cvaAngle, cervicalLoadKg: m.cervicalLoadKg,
@@ -6326,12 +6327,29 @@ function PostureAnalysisModule(){
       redFlags: { triggered: false, items: [] },
     };
 
-    // Build HTML and show in-app — no popup blocker issues
+    // Build HTML — wrap in full document so openPdf works (same as PdfReportsModal)
     const credits = reportType==="basic"?2:5;
-    const html = buildStaticReport(d, reportType, credits);
-    setReportHtml(html);
+    const bodyHtml = buildStaticReport(d, reportType, credits);
+    const fullHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+<title>PostureAI Clinical Report</title>
+<style>
+  @page{size:A4;margin:0}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{margin:0;padding:16px;font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#e5e7eb}
+  .page{width:794px;min-height:1123px;background:#fff;margin:0 auto 24px;border-radius:4px;box-shadow:0 4px 32px rgba(0,0,0,.18);position:relative;overflow:hidden}
+  table{border-collapse:collapse;width:100%}
+  @media print{body{background:#fff;padding:0}.page{margin:0;box-shadow:none;border-radius:0;page-break-after:always}.page:last-of-type{page-break-after:auto}}
+</style></head><body>${bodyHtml}</body></html>`;
+    // Open in new tab and print — same method as the working PdfReportsModal
+    const win = window.open("","_blank");
+    if(!win){ alert("Please allow popups to generate the PDF report."); return; }
+    win.document.open(); win.document.write(fullHtml); win.document.close();
+    setTimeout(()=>{ try{ win.print(); }catch(e){} }, 800);
     setShowReportModal(false);
-    setShowReportViewer(true);
+    } catch(err) {
+      console.error("generateReport error:", err);
+      alert("Report error: " + err.message);
+    }
   }
 
   function buildStaticReport(d, type, credits) {
