@@ -1,7 +1,13 @@
-// SubjectiveObjective.jsx — Special Tests, Subjective, NKT, KineticChain, FMS, Fascia, Ergo
-import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
+// SubjectiveObjective.jsx — Special Tests, Subjective, NKT, FMS, Fascia, Ergo, generateDiagnosis
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC } from "./utils.jsx";
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPECIAL TESTS — 100+ Tests with How-To + SVG Illustrations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// SVG illustrations for each test (simplified anatomical diagrams)
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
   neer: (
@@ -6971,7 +6977,7 @@ function FMASection(){
             <div style={{fontSize:"0.75rem",color:C.muted}}>Select tests, identify defects manually. AI camera optional. Full clinical interpretation generated per defect.</div>
           </div>
           <button type="button" onClick={()=>setShowCamera(p=>!p)} style={{flexShrink:0,padding:"5px 10px",background:showCamera?"rgba(0,229,255,0.15)":"rgba(0,229,255,0.06)",border:`1px solid ${showCamera?C.accent:C.border}`,borderRadius:8,color:showCamera?C.accent:C.muted,fontSize:"0.7rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
-            📷 Camera {showCamera?"ON":"OFF"}
+            📷 AI Camera {showCamera?"ON":"OFF"}
           </button>
         </div>
         {selectedTests.length>0&&(
@@ -9096,9 +9102,8 @@ function ErgoModule({ data, set }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// GAIT ANALYSIS MODULE
-// ═══════════════════════════════════════════════════════════════════════════════
 
-
-export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML };
+export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection,
+  NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
+  runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA,
+  generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML };

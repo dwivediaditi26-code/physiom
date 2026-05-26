@@ -1,6 +1,7 @@
-// PhysioNeuro.jsx — ALL_TESTS registry, ROM, MMT, Neurological
+// PhysioNeuro.jsx — ALL_TESTS, ROM, MMT, Neurological
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { C, getC } from "./utils.jsx";
+
 
 const ALL_TESTS = {
   home:{ label:"Home", icon:"🏠", desc:"App Overview & Features", groups:{ "Welcome":"HOME_MODULE" }},
@@ -2719,6 +2720,7 @@ function NeurologicalModule({ data, set }) {
 // POSTURE CAMERA MODULE v2 — Professional Physiotherapy-Grade Pose Tracking
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 
-export { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule, ROM_DATA, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP };
+export { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
+  ROM_DATA, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES,
+  NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP };

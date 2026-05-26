@@ -1,26 +1,16 @@
-// utils.js — PhysioMaster shared utilities, theme, and shell components
-import React, { useState, useEffect, Component, Suspense } from "react";
+// PhysioMaster AppFull v3.3 — 23 May 2026 — clearRect overlay wipe fix + bilateral knee merge
+import React, { useState, useCallback, useRef, useEffect, useMemo, Component, Suspense, lazy } from "react";
+import { createPortal } from "react-dom";
 
-// ── In-memory localStorage shim ─────────────────────────────────────────────
-const _memStore = {};
-export const _ls = {
-  getItem: (k) => _memStore[k] ?? null,
-  setItem: (k, v) => { _memStore[k] = String(v); },
-  removeItem: (k) => { delete _memStore[k]; },
-};
-try { localStorage.getItem('_test'); } catch(_e) {
-  Object.defineProperty(window, 'localStorage', { value: _ls, writable: true });
-}
+// ─── Math Utilities (hoisted to top — used throughout app) ───────────────────
+const mid = (a, b) => a && b ? { x:(a.x+b.x)/2, y:(a.y+b.y)/2, visibility: Math.min(a.visibility||0,b.visibility||0) } : null;
+const vis = (lm, i, thresh=0.4) => (lm[i]?.visibility||0) > thresh;
+const px  = (lm, i, W, H) => lm[i] ? [lm[i].x*W, lm[i].y*H] : null;
+const r1  = v => v !== null && v !== undefined && !isNaN(v) ? Math.round(v*10)/10 : null;
+const r2  = v => v !== null && v !== undefined && !isNaN(v) ? Math.round(v*100)/100 : null;
+const MIN_VIS = 0.45;
 
-// ─── Math Utilities ──────────────────────────────────────────────────────────
-export const mid = (a, b) => a && b ? { x:(a.x+b.x)/2, y:(a.y+b.y)/2, visibility: Math.min(a.visibility||0,b.visibility||0) } : null;
-export const vis = (lm, i, thresh=0.4) => (lm[i]?.visibility||0) > thresh;
-export const px  = (lm, i, W, H) => lm[i] ? [lm[i].x*W, lm[i].y*H] : null;
-export const r1  = v => v !== null && v !== undefined && !isNaN(v) ? Math.round(v*10)/10 : null;
-export const r2  = v => v !== null && v !== undefined && !isNaN(v) ? Math.round(v*100)/100 : null;
-export const MIN_VIS = 0.45;
-
-export function calcAngleDeg(a, b) {
+function calcAngleDeg(a, b) {
   if (!a || !b) return null;
   let angle = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
   if (angle > 90)  angle -= 180;
@@ -28,6 +18,14 @@ export function calcAngleDeg(a, b) {
   return Math.round(angle * 10) / 10;
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// LAZY LOADING WRAPPER
+// Heavy modules only load when the user navigates to that tab
+// Initial bundle: ~300KB instead of 2.4MB
+// ═══════════════════════════════════════════════════════════════
+
+// Loading spinner shown while lazy chunk loads
 function TabLoader() {
   return (
     <div style={{
@@ -369,7 +367,7 @@ function MobileStyleInjector() {
       const t = localStorage.getItem("physio_theme") || "light";
       document.documentElement.setAttribute("data-theme", t);
       document.body.style.background = "#faf8fc";
-    } catch(_e) {}
+    } catch {}
     return () => { const s = document.getElementById(id); if (s) s.remove(); };
   }, []);
   return null;
@@ -411,12 +409,12 @@ const THEMES = {
 
 // Global theme state — read by all components via getC()
 let _currentTheme = "light";
-try { _currentTheme = localStorage.getItem("physio_theme") || "light"; } catch(_e) {}
+try { _currentTheme = localStorage.getItem("physio_theme") || "light"; } catch {}
 let _themeListeners = [];
 function getC() { return THEMES[_currentTheme]; }
 function setTheme(t) {
   _currentTheme = t;
-  try { localStorage.setItem("physio_theme", t); } catch(_e) {}
+  try { localStorage.setItem("physio_theme", t); } catch {}
   document.documentElement.setAttribute("data-theme", t);
   _themeListeners.forEach(fn => fn(t));
 }
@@ -432,12 +430,9 @@ function useTheme() {
 
 // Backwards-compatible C for components that use it statically
 // These will update when theme changes via useTheme() in App
+
 const C = getC();
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SPECIAL TESTS — 100+ Tests with How-To + SVG Illustrations
-// ═══════════════════════════════════════════════════════════════════════════
-
 
 export { TabLoader, LazyBoundary, LazyTab, ErrorBoundary, MobileStyleInjector, MOBILE_CSS };
 export { THEMES, getC, setTheme, useTheme, C };
+export { mid, vis, px, r1, r2, MIN_VIS, calcAngleDeg };
