@@ -4237,13 +4237,27 @@ function SubjectiveModule({ data, set, onNav }) {
       {activeTab === "results" && insight && showInsight && (
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
 
-          {/* ── CLINICAL REASONING DASHBOARD ── */}
+          {/* ── QUICK JUMP BAR ── */}
           {onNav && (
-            <ClinicalReasoningDashboard
-              insight={insight}
-              data={data}
-              onNav={onNav}
-            />
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap", padding:"10px 12px",
+              background: PC.s2, borderRadius:10, border:`1px solid ${PC.border}` }}>
+              <span style={{ fontSize:"0.58rem", fontWeight:800, color:PC.muted, alignSelf:"center",
+                textTransform:"uppercase", letterSpacing:1, marginRight:4, whiteSpace:"nowrap" }}>Jump to:</span>
+              {[
+                { key:"rom",       label:"📐 ROM",         col:PC.accent },
+                { key:"mmt",       label:"💪 MMT",         col:PC.accent },
+                { key:"special",   label:"🔬 Special Tests", col:PC.a3 },
+                { key:"nkt",       label:"⚡ NKT",         col:PC.a2 },
+                { key:"kinetic",   label:"⛓️ Kinetic Chain", col:PC.a2 },
+                { key:"posture",   label:"🧍 Posture",      col:PC.a4 },
+              ].map(({key,label,col})=>(
+                <button key={key} onClick={()=>onNav(key)} style={{
+                  fontSize:"0.62rem", fontWeight:700, padding:"4px 10px",
+                  background: col+"15", border:`1px solid ${col}33`,
+                  borderRadius:20, color:col, cursor:"pointer", whiteSpace:"nowrap"
+                }}>{label}</button>
+              ))}
+            </div>
           )}
 
           {/* ── URGENT FLAGS BANNER ── */}
@@ -4482,9 +4496,10 @@ function SubjectiveModule({ data, set, onNav }) {
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
                     {/* ROM */}
                     <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
-                      <div style={{ background: PC.s3, padding:"8px 12px" }}>
+                      <div style={{ background: PC.s3, padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                         <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
                           letterSpacing:1, color: PC.muted }}>Phase 3a — ROM</span>
+                        {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start ROM →</button>}
                       </div>
                       <div style={{ padding:"10px 12px" }}>
                         {romForRegion.map((rm, rmi)=>(
@@ -4492,11 +4507,14 @@ function SubjectiveModule({ data, set, onNav }) {
                             borderBottom: rmi < romForRegion.length-1 ? `1px solid ${PC.border}` : "none" }}>
                             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:2 }}>
                               <div style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{rm.mv}</div>
-                              <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 6px", borderRadius:99,
-                                background: rm.imp==="High"?PC.green+"15":PC.yellow+"15",
-                                color: rm.imp==="High"?PC.green:PC.yellow }}>
-                                {rm.imp}
-                              </span>
+                              <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                                <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 6px", borderRadius:99,
+                                  background: rm.imp==="High"?PC.green+"15":PC.yellow+"15",
+                                  color: rm.imp==="High"?PC.green:PC.yellow }}>
+                                  {rm.imp}
+                                </span>
+                                {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.52rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer" }}>→</button>}
+                              </div>
                             </div>
                             <div style={{ fontSize:"0.6rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{rm.why}</div>
                           </div>
@@ -4505,15 +4523,19 @@ function SubjectiveModule({ data, set, onNav }) {
                     </div>
                     {/* MMT */}
                     <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
-                      <div style={{ background: PC.s3, padding:"8px 12px" }}>
+                      <div style={{ background: PC.s3, padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                         <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
                           letterSpacing:1, color: PC.muted }}>Phase 3b — MMT</span>
+                        {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start MMT →</button>}
                       </div>
                       <div style={{ padding:"10px 12px" }}>
                         {mmtItems.map((mm, mmi)=>(
                           <div key={mmi} style={{ marginBottom:7, paddingBottom:7,
                             borderBottom: mmi < mmtItems.length-1 ? `1px solid ${PC.border}` : "none" }}>
-                            <div style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text, marginBottom:2 }}>{mm.m}</div>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:2 }}>
+                              <div style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{mm.m}</div>
+                              {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.52rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer", flexShrink:0 }}>→</button>}
+                            </div>
                             <div style={{ fontSize:"0.6rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{mm.why}</div>
                           </div>
                         ))}
@@ -4523,28 +4545,39 @@ function SubjectiveModule({ data, set, onNav }) {
 
                   {/* ── PHASE 4: FUNCTIONAL ASSESSMENT ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
-                    <div style={{ background: PC.s3, padding:"8px 13px" }}>
+                    <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
                         letterSpacing:1, color: PC.muted }}>Phase 4 — Functional Assessment</span>
+                      {onNav && <button onClick={()=>onNav("functional")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a2+"22", border:`1px solid ${PC.a2}44`, borderRadius:20, color:PC.a2, cursor:"pointer" }}>Open →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"flex", flexWrap:"wrap", gap:6 }}>
                       {funcItems.map((fi, fii)=>(
-                        <span key={fii} style={{ fontSize:"0.68rem", padding:"4px 10px", borderRadius:8,
-                          background: PC.s2, border:`1px solid ${PC.border}`, color: PC.text }}>
-                          {fi}
-                        </span>
+                        onNav ? (
+                          <button key={fii} onClick={()=>onNav("functional")} style={{ fontSize:"0.68rem", padding:"4px 10px", borderRadius:8,
+                            background: PC.s2, border:`1px solid ${PC.accent}33`, color: PC.accent, cursor:"pointer", fontWeight:600 }}>
+                            {fi} →
+                          </button>
+                        ) : (
+                          <span key={fii} style={{ fontSize:"0.68rem", padding:"4px 10px", borderRadius:8,
+                            background: PC.s2, border:`1px solid ${PC.border}`, color: PC.text }}>
+                            {fi}
+                          </span>
+                        )
                       ))}
                     </div>
                   </div>
 
                   {/* ── PHASE 5: SPECIAL TESTS BY SUSPICION ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
-                    <div style={{ background: PC.s3, padding:"8px 13px" }}>
-                      <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
-                        letterSpacing:1, color: PC.muted }}>Phase 5 — Special Tests</span>
-                      <span style={{ fontSize:"0.6rem", color: PC.muted, marginLeft:8, fontStyle:"italic" }}>
-                        Selected because of clinical suspicion — not random
-                      </span>
+                    <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div>
+                        <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1, color: PC.muted }}>Phase 5 — Special Tests</span>
+                        <span style={{ fontSize:"0.6rem", color: PC.muted, marginLeft:8, fontStyle:"italic" }}>
+                          Selected because of clinical suspicion — not random
+                        </span>
+                      </div>
+                      {onNav && <button onClick={()=>onNav("special")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a3+"22", border:`1px solid ${PC.a3}44`, borderRadius:20, color:PC.a3, cursor:"pointer", flexShrink:0 }}>Open Tests →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"flex", flexDirection:"column", gap:8 }}>
                       {testsByDx.length === 0 && (
@@ -4569,11 +4602,20 @@ function SubjectiveModule({ data, set, onNav }) {
                           </div>
                           <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
                             {td.tests.map((t,ti)=>(
-                              <span key={ti} style={{ fontSize:"0.62rem", padding:"3px 8px",
-                                borderRadius:6, background: PC.surface,
-                                border:`1px solid ${PC.border}`, color: PC.text }}>
-                                {t}
-                              </span>
+                              onNav ? (
+                                <button key={ti} onClick={()=>onNav("special")} style={{ fontSize:"0.62rem", padding:"3px 8px",
+                                  borderRadius:6, background: PC.surface,
+                                  border:`1px solid ${PC.border}`, color: PC.accent, cursor:"pointer",
+                                  fontWeight:600 }}>
+                                  {t} →
+                                </button>
+                              ) : (
+                                <span key={ti} style={{ fontSize:"0.62rem", padding:"3px 8px",
+                                  borderRadius:6, background: PC.surface,
+                                  border:`1px solid ${PC.border}`, color: PC.text }}>
+                                  {t}
+                                </span>
+                              )
                             ))}
                           </div>
                         </div>
@@ -4601,9 +4643,10 @@ function SubjectiveModule({ data, set, onNav }) {
 
                   {/* ── PHASE 6: NKT / MOTOR CONTROL ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
-                    <div style={{ background: PC.s3, padding:"8px 13px" }}>
+                    <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
                         letterSpacing:1, color: PC.muted }}>Phase 6 — Motor Control / NKT Assessment</span>
+                      {onNav && <button onClick={()=>onNav("nkt")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a4+"22", border:`1px solid ${PC.a4}44`, borderRadius:20, color:PC.a4, cursor:"pointer" }}>Open NKT →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
                       <div>
@@ -9485,652 +9528,4 @@ function ErgoModule({ data, set }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 
-
-// ══════════════════════════════════════════════════════════════════════════════
-// CLINICAL REASONING GUIDED WORKFLOW — ClinicalReasoningDashboard
-// Spec: post-subjective guided assessment workflow with one-click navigation.
-// Implements: clinical hypotheses, pattern analysis, suggested next assessments,
-// assessment queue, muscle patterns, functional impact, red flags.
-// Language: "Presentation suggests…", "Possible involvement…",
-//           "Further assessment recommended…" — never definitive diagnosis.
-// ══════════════════════════════════════════════════════════════════════════════
-
-// ── Assessment navigation config: what each nav key maps to ──────────────────
-const ASSESS_NAV_CONFIG = {
-  rom:       { label:"ROM Assessment",       icon:"📐", nav:"rom",       color:"#9333ea", why:"Quantify active and passive range of motion to identify joint mobility restrictions and compare bilaterally." },
-  mmt:       { label:"MMT Assessment",       icon:"💪", nav:"mmt",       color:"#7c3aed", why:"Assess muscle strength using Oxford Scale grading to identify myotomal weakness or inhibition patterns." },
-  special:   { label:"Special Tests",        icon:"🔬", nav:"special",   color:"#9333ea", why:"Apply hypothesis-driven orthopaedic special tests to increase or decrease diagnostic probability." },
-  neuro:     { label:"Neurological Screen",  icon:"🧠", nav:"neuro",     color:"#dc2626", why:"Assess dermatomes, myotomes, and reflexes to identify nerve root or cord involvement." },
-  nkt:       { label:"NKT Assessment",       icon:"⚡", nav:"nkt",       color:"#0891b2", why:"Identify inhibition/facilitation patterns driving pain and movement dysfunction." },
-  kinetic:   { label:"Kinetic Chain",        icon:"⛓️", nav:"kinetic",   color:"#059669", why:"Analyse joint-by-joint kinetic chain contributions to the presenting movement dysfunction." },
-  palpation: { label:"Palpation",            icon:"🖐", nav:"palpation", color:"#d97706", why:"Localise tissue tenderness, temperature, swelling and structural integrity to the responsible structure." },
-  gait:      { label:"Gait Analysis",        icon:"🚶", nav:"gait",      color:"#7c3aed", why:"Assess functional gait patterns and identify biomechanical contributors to the presentation." },
-  functional:{ label:"Functional Assessment",icon:"🎯", nav:"functional",color:"#0891b2", why:"Evaluate patient-specific functional tasks relevant to their goals and activities." },
-  posture:   { label:"Posture Analysis",     icon:"🧍", nav:"posture",   color:"#9333ea", why:"Assess static and dynamic postural alignment for contributing biomechanical factors." },
-  outcome:   { label:"Outcome Measures",     icon:"📊", nav:"outcome",   color:"#059669", why:"Quantify symptom severity and functional impact for goal-setting and progress monitoring." },
-};
-
-// ── Pattern colour map ─────────────────────────────────────────────────────────
-const PATTERN_COLOURS = {
-  "Mechanical":          "#059669",
-  "Inflammatory":        "#dc2626",
-  "Neurodynamic":        "#0891b2",
-  "Radiculopathy":       "#dc2626",
-  "Nociplastic risk":    "#d97706",
-  "Tendinopathic":       "#7c3aed",
-  "Instability risk":    "#d97706",
-  "⚠ Myelopathy":        "#dc2626",
-  "⚠ VBI":              "#dc2626",
-  "⚠ Fracture screen":  "#dc2626",
-  "⚠ Cauda equina":     "#dc2626",
-};
-
-// ── Region → Assessment Priority Map ─────────────────────────────────────────
-// Each region maps to an ordered array of recommended assessments with priority
-const REGION_ASSESSMENT_MAP = {
-  "Cervical spine": {
-    primary:   ["rom","special","neuro"],
-    secondary: ["mmt","nkt","palpation"],
-    optional:  ["kinetic","posture","outcome"],
-    functional:["overhead reach","cervical rotation functional task","desk work ergonomics"],
-    structures:["Zygapophyseal joints (C2–C7)","Intervertebral disc","Cervical nerve roots","Deep cervical flexors","Upper trapezius / levator scapulae"],
-    muscles:   { over:["Upper trapezius","Levator scapulae","SCM","Suboccipitals"], under:["Deep cervical flexors","Lower trapezius","Serratus anterior"] },
-    rom_priority:["Cervical flexion","Cervical extension","Cervical rotation L","Cervical rotation R","Cervical lateral flexion L","Cervical lateral flexion R"],
-  },
-  "Lumbar / SI": {
-    primary:   ["rom","special","neuro"],
-    secondary: ["mmt","palpation","nkt"],
-    optional:  ["gait","kinetic","outcome"],
-    functional:["lifting from floor","prolonged sitting posture","stair climbing","forward bend task"],
-    structures:["Lumbar intervertebral disc","Zygapophyseal joints","Sacroiliac joint","Lumbar nerve roots","Thoracolumbar fascia","Multifidus"],
-    muscles:   { over:["Thoracolumbar erectors","Hip flexors","QL"], under:["Transverse abdominis","Multifidus","Glute max","Glute med"] },
-    rom_priority:["Lumbar flexion","Lumbar extension","Lumbar lateral flexion L","Lumbar lateral flexion R","Lumbar rotation L","Lumbar rotation R"],
-  },
-  "Shoulder (L)": {
-    primary:   ["rom","special","mmt"],
-    secondary: ["palpation","nkt","kinetic"],
-    optional:  ["posture","outcome"],
-    functional:["overhead reach","reaching behind back","lifting task","push/pull task"],
-    structures:["Rotator cuff (supraspinatus, infraspinatus, subscapularis, teres minor)","Subacromial space","Acromioclavicular joint","Glenohumeral capsule","Biceps long head tendon","Scapular stabilisers"],
-    muscles:   { over:["Upper trapezius","Pectoralis minor","Levator scapulae"], under:["Lower trapezius","Serratus anterior","Rotator cuff (ER)"] },
-    rom_priority:["Shoulder flexion","Shoulder abduction","External rotation","Internal rotation","Horizontal adduction"],
-  },
-  "Shoulder (R)": {
-    primary:   ["rom","special","mmt"],
-    secondary: ["palpation","nkt","kinetic"],
-    optional:  ["posture","outcome"],
-    functional:["overhead reach","reaching behind back","lifting task","push/pull task"],
-    structures:["Rotator cuff (supraspinatus, infraspinatus, subscapularis, teres minor)","Subacromial space","Acromioclavicular joint","Glenohumeral capsule","Biceps long head tendon","Scapular stabilisers"],
-    muscles:   { over:["Upper trapezius","Pectoralis minor","Levator scapulae"], under:["Lower trapezius","Serratus anterior","Rotator cuff (ER)"] },
-    rom_priority:["Shoulder flexion","Shoulder abduction","External rotation","Internal rotation","Horizontal adduction"],
-  },
-  "Hip / Groin": {
-    primary:   ["rom","special","mmt"],
-    secondary: ["palpation","gait","kinetic"],
-    optional:  ["nkt","outcome"],
-    functional:["single-leg stance","squat task","step-down","gait analysis"],
-    structures:["Hip joint (labrum / articular cartilage)","Iliopsoas tendon","Adductor longus","Gluteus medius/minimus","Greater trochanteric bursa","Hip flexor complex"],
-    muscles:   { over:["Hip flexors","TFL","Adductors"], under:["Gluteus maximus","Gluteus medius","Deep hip external rotators"] },
-    rom_priority:["Hip flexion","Hip extension","Hip internal rotation","Hip external rotation","Hip abduction","Hip adduction"],
-  },
-  "Knee (L)": {
-    primary:   ["rom","special","mmt"],
-    secondary: ["gait","palpation","kinetic"],
-    optional:  ["nkt","outcome"],
-    functional:["squat","stair descent","step-down","single-leg hop"],
-    structures:["Patellofemoral joint","Tibiofemoral compartments (medial/lateral)","Menisci","ACL/PCL/MCL/LCL","Patellar tendon","ITB/TFL","Pes anserinus"],
-    muscles:   { over:["TFL/ITB","Hip flexors","Hamstrings"], under:["VMO","Gluteus medius","Tibialis anterior"] },
-    rom_priority:["Knee flexion","Knee extension","Patellar mobility"],
-  },
-  "Knee (R)": {
-    primary:   ["rom","special","mmt"],
-    secondary: ["gait","palpation","kinetic"],
-    optional:  ["nkt","outcome"],
-    functional:["squat","stair descent","step-down","single-leg hop"],
-    structures:["Patellofemoral joint","Tibiofemoral compartments (medial/lateral)","Menisci","ACL/PCL/MCL/LCL","Patellar tendon","ITB/TFL","Pes anserinus"],
-    muscles:   { over:["TFL/ITB","Hip flexors","Hamstrings"], under:["VMO","Gluteus medius","Tibialis anterior"] },
-    rom_priority:["Knee flexion","Knee extension","Patellar mobility"],
-  },
-  "Ankle / Foot": {
-    primary:   ["rom","special","palpation"],
-    secondary: ["mmt","gait","kinetic"],
-    optional:  ["nkt","outcome"],
-    functional:["single-leg calf raise","walking","step-down","jogging (if applicable)"],
-    structures:["Ankle mortise (talar dome, tibiotalar)","ATFL/CFL/AITFL","Achilles tendon","Plantar fascia","Peroneal tendons","Subtalar joint"],
-    muscles:   { over:["Gastrocnemius/soleus","Peroneus longus"], under:["Tibialis posterior","Intrinsic foot muscles","Tibialis anterior"] },
-    rom_priority:["Ankle dorsiflexion","Plantarflexion","Inversion","Eversion","Subtalar ROM"],
-  },
-  "Elbow/Wrist/Hand": {
-    primary:   ["rom","special","palpation"],
-    secondary: ["mmt","nkt"],
-    optional:  ["neuro","outcome"],
-    functional:["grip strength task","typing posture","overhead reach","tool use"],
-    structures:["Lateral epicondyle (ECRB)","Medial epicondyle (FCU/PT)","Cubital tunnel (ulnar nerve)","Carpal tunnel (median nerve)","Radiocarpal joint","DRUJ"],
-    muscles:   { over:["Wrist extensors","Wrist flexors","FCU"], under:["Wrist extensors (eccentric capacity)","Intrinsic hand muscles","Periscapular stabilisers"] },
-    rom_priority:["Elbow flexion","Elbow extension","Forearm supination","Forearm pronation","Wrist extension","Wrist flexion"],
-  },
-  "Thoracic spine": {
-    primary:   ["rom","palpation","special"],
-    secondary: ["posture","kinetic","nkt"],
-    optional:  ["mmt","outcome"],
-    functional:["thoracic rotation task","overhead reach","breathing assessment","sustained sitting posture"],
-    structures:["Thoracic zygapophyseal joints","Costovertebral joints","Thoracic disc","Thoracic nerve roots","Posterior rib articulations"],
-    muscles:   { over:["Thoracic erectors","Upper trapezius","Pec major/minor"], under:["Thoracic extensors","Mid/lower trapezius","Rhomboids","Serratus anterior"] },
-    rom_priority:["Thoracic rotation L","Thoracic rotation R","Thoracic flexion","Thoracic extension","Rib excursion"],
-  },
-};
-
-// ── Urgency badge ─────────────────────────────────────────────────────────────
-function UrgencyBadge({level}){
-  const cols={"high":{bg:"#fee2e2",border:"#fca5a5",text:"#991b1b",label:"🔴 High Priority"},"mod":{bg:"#fef3c7",border:"#fcd34d",text:"#92400e",label:"🟡 Moderate"},"opt":{bg:"#f0fdf4",border:"#86efac",text:"#166534",label:"⚪ Optional"}};
-  const s=cols[level]||cols["opt"];
-  return(<span style={{display:"inline-block",fontSize:"0.58rem",fontWeight:800,padding:"2px 8px",background:s.bg,border:`1px solid ${s.border}`,color:s.text,borderRadius:20,letterSpacing:"0.3px"}}>{s.label}</span>);
-}
-
-// ── Assessment Button Card ────────────────────────────────────────────────────
-function AssessmentCard({navKey,priority,onNav,completed,whyOverride}){
-  const cfg=ASSESS_NAV_CONFIG[navKey];
-  if(!cfg) return null;
-  const [showWhy,setShowWhy]=React.useState(false);
-  const isDone=completed&&completed.has(navKey);
-  return(
-    <div style={{background:isDone?"rgba(5,150,105,0.06)":"rgba(255,255,255,0.03)",border:`1px solid ${isDone?"#059669":"rgba(255,255,255,0.08)"}`,borderRadius:10,overflow:"hidden",transition:"all 0.2s"}}>
-      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
-        <div style={{width:32,height:32,borderRadius:8,background:`${cfg.color}15`,border:`1px solid ${cfg.color}30`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1rem",flexShrink:0}}>{isDone?"✅":cfg.icon}</div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:2}}>
-            <span style={{fontSize:"0.78rem",fontWeight:700,color:isDone?"#059669":"#e2e8f0"}}>{cfg.label}</span>
-            <UrgencyBadge level={priority}/>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:6,flexShrink:0}}>
-          <button onClick={()=>setShowWhy(w=>!w)} style={{padding:"4px 8px",background:"transparent",border:"1px solid rgba(255,255,255,0.12)",borderRadius:6,color:"#94a3b8",cursor:"pointer",fontSize:"0.6rem",fontWeight:600}}>Why?</button>
-          {!isDone&&<button onClick={()=>onNav(cfg.nav)} style={{padding:"5px 12px",background:`linear-gradient(135deg,${cfg.color},${cfg.color}cc)`,border:"none",borderRadius:7,color:"#fff",cursor:"pointer",fontSize:"0.72rem",fontWeight:700,whiteSpace:"nowrap"}}>Start →</button>}
-          {isDone&&<span style={{padding:"5px 10px",background:"#059669",borderRadius:7,color:"#fff",fontSize:"0.65rem",fontWeight:700}}>Done ✓</span>}
-        </div>
-      </div>
-      {showWhy&&(
-        <div style={{padding:"8px 12px 10px",borderTop:"1px solid rgba(255,255,255,0.06)",background:"rgba(0,0,0,0.2)"}}>
-          <div style={{fontSize:"0.68rem",color:"#94a3b8",lineHeight:1.5}}><strong style={{color:"#cbd5e1"}}>Clinical rationale: </strong>{whyOverride||cfg.why}</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Confidence Badge ──────────────────────────────────────────────────────────
-function ConfidenceBadge({level}){
-  const m={"HIGH":{bg:"rgba(5,150,105,0.15)",c:"#6ee7b7",t:"HIGH"},"MODERATE":{bg:"rgba(217,119,6,0.15)",c:"#fcd34d",t:"MOD"},"LOW":{bg:"rgba(100,116,139,0.15)",c:"#94a3b8",t:"LOW"}};
-  const s=m[level]||m["LOW"];
-  return(<span style={{display:"inline-block",fontSize:"0.55rem",fontWeight:800,padding:"1px 6px",background:s.bg,color:s.c,borderRadius:4,letterSpacing:"0.5px"}}>{s.t}</span>);
-}
-
-// ── Main Clinical Reasoning Dashboard ────────────────────────────────────────
-function ClinicalReasoningDashboard({ insight, data, onNav }) {
-  const [activeTab, setActiveTab] = React.useState("overview");
-  const [queueCompleted, setQueueCompleted] = React.useState(new Set());
-  const [expandedSection, setExpandedSection] = React.useState({});
-
-  if (!insight) return null;
-
-  const { regionResults, cross, anyUrgent } = insight;
-  if (!regionResults || regionResults.length === 0) return null;
-
-  const PC = C; // use theme colours
-  const region0 = regionResults[0];
-  const regionKey = region0.region; // e.g. "Cervical spine"
-  const regionCfg = REGION_ASSESSMENT_MAP[regionKey] || REGION_ASSESSMENT_MAP["Lumbar / SI"];
-
-  // ── Aggregate data across all regions ──────────────────────────────────────
-  const allDiffs = regionResults.flatMap(r => r.differentials || []);
-  const allTests = regionResults.flatMap(r => r.objTests || []);
-  const allTags  = regionResults.flatMap(r => r.tags || []);
-  const allPrecs = regionResults.flatMap(r => r.precautions || []);
-
-  // ── Generate clinical summary sentence ────────────────────────────────────
-  const buildSummary = () => {
-    const regionLabel = regionResults.map(r => r.region).join(" and ");
-    const topDiff = allDiffs[0];
-    const pattern = allTags.filter(t => !t.startsWith("⚠")).slice(0, 2).join(" and ").toLowerCase();
-    const durStr = region0.isAcute ? "acute" : region0.isSubacute ? "subacute" : region0.isChronic ? "chronic" : "";
-    if (anyUrgent) return `This presentation requires urgent medical review before physiotherapy assessment proceeds. One or more serious pathology indicators have been identified that require immediate clinical action.`;
-    if (topDiff) return `Presentation of ${durStr ? durStr + " " : ""}${regionLabel.toLowerCase()} disorder suggests possible ${topDiff.label.toLowerCase()}. ${pattern ? `A predominantly ${pattern} pattern is evident. ` : ""}Further objective assessment is recommended to increase or decrease diagnostic probability.`;
-    return `Presentation involves the ${regionLabel.toLowerCase()}. Objective assessment is required to develop a working clinical hypothesis. Pattern analysis is pending additional subjective data.`;
-  };
-
-  // ── Working hypotheses from differentials ─────────────────────────────────
-  const hypotheses = allDiffs.map((d, i) => ({
-    ...d,
-    rank: i + 1,
-    region: regionResults.find(r => (r.differentials || []).includes(d))?.region || regionKey,
-  }));
-
-  // ── Key findings extracted from subjective data ───────────────────────────
-  const keyFindings = [
-    data.cc_vas_now > 0 && `Pain NRS: ${data.cc_vas_now}/10 now, ${data.cc_vas_worst}/10 worst`,
-    data.cc_duration && `Duration: ${data.cc_duration}`,
-    data.cc_onset && `Onset: ${data.cc_onset}`,
-    region0.mechanicalPattern && "Mechanical aggravating pattern identified",
-    region0.inflammatoryPattern && "Inflammatory pattern indicators present",
-    region0.radiculopathySig && "Neurological/radicular signs present",
-    region0.neurodynamicSig && "Neural tension involvement likely",
-    region0.nociplasticSig && "Nociplastic pain indicators",
-    region0.highIrrit && "High irritability — assessment pace must be adjusted",
-    anyUrgent && "⚠ Urgent clinical flags identified — see alerts below",
-  ].filter(Boolean);
-
-  // ── Pattern tags for Clinical Pattern section ─────────────────────────────
-  const patternItems = [
-    { label:"Mechanical", active: region0.mechanicalPattern, confidence: region0.mechanicalPattern ? "High" : "Low" },
-    { label:"Inflammatory", active: region0.inflammatoryPattern, confidence: region0.inflammatoryPattern ? "High" : "Low" },
-    { label:"Neurodynamic", active: region0.neurodynamicSig || region0.radiculopathySig, confidence: region0.radiculopathySig ? "High" : region0.neurodynamicSig ? "Moderate" : "Low" },
-    { label:"Nociplastic", active: region0.nociplasticSig, confidence: region0.nociplasticSig ? "Moderate" : "Low" },
-    { label:"Red Flags", active: anyUrgent || allPrecs.length > 0, confidence: anyUrgent ? "URGENT" : allPrecs.length > 0 ? "Present" : "None" },
-  ];
-
-  // ── Assessment queue (ordered by priority) ────────────────────────────────
-  const primaryQueue   = [...new Set(regionResults.flatMap(r => (REGION_ASSESSMENT_MAP[r.region]||REGION_ASSESSMENT_MAP["Lumbar / SI"]).primary || []))];
-  const secondaryQueue = [...new Set(regionResults.flatMap(r => (REGION_ASSESSMENT_MAP[r.region]||REGION_ASSESSMENT_MAP["Lumbar / SI"]).secondary || []).filter(k => !primaryQueue.includes(k)))];
-  const optionalQueue  = [...new Set(regionResults.flatMap(r => (REGION_ASSESSMENT_MAP[r.region]||REGION_ASSESSMENT_MAP["Lumbar / SI"]).optional || []).filter(k => !primaryQueue.includes(k) && !secondaryQueue.includes(k)))];
-
-  // If neurological signs → add neuro to primary
-  if ((region0.radiculopathySig || region0.neurodynamicSig) && !primaryQueue.includes("neuro")) primaryQueue.unshift("neuro");
-
-  // ── Muscle patterns (NKT integration) ─────────────────────────────────────
-  const musclePatterns = regionResults.map(r => {
-    const cfg = REGION_ASSESSMENT_MAP[r.region] || REGION_ASSESSMENT_MAP["Lumbar / SI"];
-    return { region: r.region, over: cfg.muscles?.over || [], under: cfg.muscles?.under || [] };
-  });
-
-  // ── Functional tasks ──────────────────────────────────────────────────────
-  const functionalTasks = [...new Set(regionResults.flatMap(r => (REGION_ASSESSMENT_MAP[r.region]||REGION_ASSESSMENT_MAP["Lumbar / SI"]).functional || []))];
-
-  // ── Probable structures ───────────────────────────────────────────────────
-  const probableStructures = [...new Set(regionResults.flatMap(r => (REGION_ASSESSMENT_MAP[r.region]||REGION_ASSESSMENT_MAP["Lumbar / SI"]).structures || []))];
-
-  // ── Helper: toggle section expand ─────────────────────────────────────────
-  const toggleSection = (key) => setExpandedSection(prev => ({...prev, [key]: !prev[key]}));
-
-  // ── Style constants ───────────────────────────────────────────────────────
-  const cardStyle = {
-    background:"rgba(255,255,255,0.03)",
-    border:"1px solid rgba(255,255,255,0.08)",
-    borderRadius:12,
-    overflow:"hidden",
-    marginBottom:12,
-  };
-  const sectionHeaderStyle = {
-    display:"flex",
-    justifyContent:"space-between",
-    alignItems:"center",
-    padding:"12px 16px",
-    cursor:"pointer",
-    userSelect:"none",
-  };
-  const sectionTitleStyle = {
-    fontSize:"0.72rem",
-    fontWeight:800,
-    letterSpacing:"0.8px",
-    textTransform:"uppercase",
-    color:"#94a3b8",
-  };
-
-  // ── Tabs ──────────────────────────────────────────────────────────────────
-  const tabs = [
-    { key:"overview",    label:"Overview" },
-    { key:"hypotheses",  label:"Hypotheses" },
-    { key:"assessments", label:"Next Steps" },
-    { key:"patterns",    label:"Patterns" },
-  ];
-
-  return (
-    <div style={{fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
-
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div style={{background:`linear-gradient(135deg,rgba(147,51,234,0.12),rgba(124,58,237,0.08))`,border:"1px solid rgba(147,51,234,0.2)",borderRadius:16,padding:"18px 20px",marginBottom:16,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,#9333ea,#7c3aed,#0891b2)"}}/>
-        <div style={{display:"flex",alignItems:"flex-start",gap:14}}>
-          <div style={{width:42,height:42,borderRadius:11,background:"rgba(147,51,234,0.2)",border:"1px solid rgba(147,51,234,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.3rem",flexShrink:0}}>🧭</div>
-          <div style={{flex:1}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
-              <span style={{fontSize:"0.9rem",fontWeight:800,color:"#e2e8f0",letterSpacing:"-0.2px"}}>Clinical Reasoning Guide</span>
-              {anyUrgent&&<span style={{fontSize:"0.6rem",fontWeight:800,padding:"2px 8px",background:"rgba(220,38,38,0.2)",border:"1px solid rgba(220,38,38,0.4)",color:"#fca5a5",borderRadius:20}}>⚠ Urgent Flags</span>}
-              {!anyUrgent&&<span style={{fontSize:"0.6rem",fontWeight:800,padding:"2px 8px",background:"rgba(5,150,105,0.15)",border:"1px solid rgba(5,150,105,0.3)",color:"#6ee7b7",borderRadius:20}}>✓ Cleared</span>}
-            </div>
-            <div style={{fontSize:"0.72rem",color:"#94a3b8",lineHeight:1.5}}>
-              {regionResults.length} region{regionResults.length>1?"s":""} assessed · {hypotheses.length} hypothesis{hypotheses.length!==1?"es":""} generated · {primaryQueue.length + secondaryQueue.length} assessments recommended
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Urgent Alerts ──────────────────────────────────────────────── */}
-      {allPrecs.length > 0 && (
-        <div style={{background:"rgba(220,38,38,0.1)",border:"1px solid rgba(220,38,38,0.3)",borderRadius:12,padding:"14px 16px",marginBottom:16}}>
-          <div style={{fontSize:"0.72rem",fontWeight:800,color:"#fca5a5",marginBottom:10,letterSpacing:"0.5px"}}>🚨 RED FLAG ALERTS — Clinical Safety</div>
-          {allPrecs.map((p, i) => (
-            <div key={i} style={{fontSize:"0.72rem",color:"#fca5a5",lineHeight:1.6,padding:"4px 0",borderBottom:i<allPrecs.length-1?"1px solid rgba(220,38,38,0.15)":"none"}}>{p}</div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Tabs ───────────────────────────────────────────────────────── */}
-      <div style={{display:"flex",gap:4,marginBottom:16,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:4}}>
-        {tabs.map(t=>(
-          <button key={t.key} onClick={()=>setActiveTab(t.key)} style={{flex:1,padding:"7px 6px",border:"none",borderRadius:7,background:activeTab===t.key?"rgba(147,51,234,0.25)":"transparent",color:activeTab===t.key?"#c084fc":"#64748b",fontWeight:700,fontSize:"0.65rem",cursor:"pointer",transition:"all 0.15s",letterSpacing:"0.2px"}}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ═══ TAB: OVERVIEW ══════════════════════════════════════════════ */}
-      {activeTab==="overview"&&(
-        <>
-          {/* Clinical Summary */}
-          <div style={cardStyle}>
-            <div onClick={()=>toggleSection("summary")} style={sectionHeaderStyle}>
-              <span style={sectionTitleStyle}>📋 Clinical Summary</span>
-              <span style={{color:"#64748b",fontSize:"0.7rem"}}>{expandedSection.summary?"▲":"▼"}</span>
-            </div>
-            {expandedSection.summary!==false&&(
-              <div style={{padding:"0 16px 14px"}}>
-                <div style={{fontSize:"0.78rem",color:"#cbd5e1",lineHeight:1.7,fontStyle:"italic",borderLeft:"3px solid #9333ea",paddingLeft:12}}>
-                  "{buildSummary()}"
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Key Findings */}
-          <div style={cardStyle}>
-            <div onClick={()=>toggleSection("findings")} style={sectionHeaderStyle}>
-              <span style={sectionTitleStyle}>🔍 Key Findings from Subjective</span>
-              <span style={{color:"#64748b",fontSize:"0.7rem"}}>{expandedSection.findings===false?"▲":"▼"}</span>
-            </div>
-            {expandedSection.findings!==false&&(
-              <div style={{padding:"0 16px 14px",display:"flex",flexDirection:"column",gap:6}}>
-                {keyFindings.length===0&&<div style={{fontSize:"0.7rem",color:"#64748b"}}>Complete the subjective assessment to generate key findings.</div>}
-                {keyFindings.map((f,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 10px",background:"rgba(255,255,255,0.03)",borderRadius:7,border:"1px solid rgba(255,255,255,0.06)"}}>
-                    <span style={{color:"#9333ea",fontSize:"0.7rem",marginTop:2,flexShrink:0}}>•</span>
-                    <span style={{fontSize:"0.72rem",color:"#cbd5e1",lineHeight:1.4}}>{f}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Clinical Pattern Analysis */}
-          <div style={cardStyle}>
-            <div onClick={()=>toggleSection("pattern")} style={sectionHeaderStyle}>
-              <span style={sectionTitleStyle}>📊 Clinical Pattern Analysis</span>
-              <span style={{color:"#64748b",fontSize:"0.7rem"}}>{expandedSection.pattern===false?"▲":"▼"}</span>
-            </div>
-            {expandedSection.pattern!==false&&(
-              <div style={{padding:"0 16px 14px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                {patternItems.map((p,i)=>{
-                  const col = p.label==="Red Flags" ? (p.active?"#ef4444":"#22c55e") : p.active ? (PATTERN_COLOURS[p.label]||"#9333ea") : "#334155";
-                  const bg  = p.active ? `${col}15` : "rgba(255,255,255,0.02)";
-                  const dot = p.label==="Red Flags" ? (p.confidence==="URGENT"?"🔴":p.confidence==="Present"?"🟡":"🟢") : p.confidence==="High"?"🟢":p.confidence==="Moderate"?"🟡":"⚪";
-                  return(
-                    <div key={i} style={{background:bg,border:`1px solid ${col}30`,borderRadius:9,padding:"10px 12px"}}>
-                      <div style={{fontSize:"0.65rem",fontWeight:700,color:col,marginBottom:3}}>{dot} {p.label}</div>
-                      <div style={{fontSize:"0.6rem",color:"#64748b",fontWeight:600}}>{p.active ? "Pattern evident" : "Not indicated"} — {p.confidence}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Probable Structures */}
-          <div style={cardStyle}>
-            <div onClick={()=>toggleSection("structures")} style={sectionHeaderStyle}>
-              <span style={sectionTitleStyle}>🔩 Possible Structures Involved</span>
-              <span style={{color:"#64748b",fontSize:"0.7rem"}}>{expandedSection.structures===false?"▲":"▼"}</span>
-            </div>
-            {expandedSection.structures!==false&&(
-              <div style={{padding:"0 16px 14px"}}>
-                <div style={{fontSize:"0.62rem",color:"#64748b",marginBottom:10,lineHeight:1.4}}>Based on presentation pattern. Objective assessment required to confirm or exclude involvement. This is not a diagnosis.</div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {probableStructures.map((s,i)=>(
-                    <span key={i} style={{fontSize:"0.65rem",padding:"3px 10px",background:"rgba(147,51,234,0.1)",border:"1px solid rgba(147,51,234,0.2)",borderRadius:20,color:"#c084fc",fontWeight:600}}>{s}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Functional Impact */}
-          <div style={cardStyle}>
-            <div onClick={()=>toggleSection("functional")} style={sectionHeaderStyle}>
-              <span style={sectionTitleStyle}>🎯 Functional Assessment Priorities</span>
-              <span style={{color:"#64748b",fontSize:"0.7rem"}}>{expandedSection.functional===false?"▲":"▼"}</span>
-            </div>
-            {expandedSection.functional!==false&&(
-              <div style={{padding:"0 16px 14px"}}>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {functionalTasks.map((t,i)=>(
-                    <span key={i} style={{fontSize:"0.65rem",padding:"4px 10px",background:"rgba(8,145,178,0.1)",border:"1px solid rgba(8,145,178,0.2)",borderRadius:8,color:"#67e8f9",fontWeight:600}}>→ {t}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Cross-region interactions */}
-          {cross && cross.length > 0 && (
-            <div style={cardStyle}>
-              <div onClick={()=>toggleSection("cross")} style={sectionHeaderStyle}>
-                <span style={sectionTitleStyle}>🔗 Kinetic Chain & Cross-Region</span>
-                <span style={{color:"#64748b",fontSize:"0.7rem"}}>{expandedSection.cross===false?"▲":"▼"}</span>
-              </div>
-              {expandedSection.cross!==false&&(
-                <div style={{padding:"0 16px 14px",display:"flex",flexDirection:"column",gap:8}}>
-                  {cross.map((cf,i)=>(
-                    <div key={i} style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:8,padding:"10px 12px"}}>
-                      <div style={{fontSize:"0.68rem",fontWeight:700,color:"#e2e8f0",marginBottom:4}}>{cf.title}</div>
-                      <div style={{fontSize:"0.65rem",color:"#94a3b8",lineHeight:1.5}}>{cf.detail}</div>
-                      {cf.refs&&<div style={{fontSize:"0.58rem",color:"#475569",marginTop:4,fontStyle:"italic"}}>Refs: {cf.refs}</div>}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* ═══ TAB: HYPOTHESES ═══════════════════════════════════════════ */}
-      {activeTab==="hypotheses"&&(
-        <div>
-          <div style={{fontSize:"0.65rem",color:"#64748b",marginBottom:14,lineHeight:1.6,padding:"10px 12px",background:"rgba(147,51,234,0.06)",border:"1px solid rgba(147,51,234,0.12)",borderRadius:10}}>
-            💡 <strong style={{color:"#c084fc"}}>Clinical note:</strong> The following represent working clinical hypotheses generated from your subjective assessment. These are <em>not diagnoses</em>. They are used to guide objective assessment selection and prioritisation. Objective findings will confirm, modify, or eliminate these hypotheses.
-          </div>
-          {hypotheses.length===0&&(
-            <div style={{textAlign:"center",padding:"32px 20px",color:"#64748b",fontSize:"0.75rem"}}>Complete the subjective assessment to generate hypotheses.</div>
-          )}
-          {hypotheses.map((h,i)=>(
-            <div key={i} style={{...cardStyle,borderColor:h.confidence==="HIGH"?"rgba(5,150,105,0.3)":h.confidence==="MODERATE"?"rgba(217,119,6,0.3)":"rgba(255,255,255,0.08)"}}>
-              <div style={{display:"flex",alignItems:"flex-start",gap:12,padding:"14px 16px"}}>
-                <div style={{width:28,height:28,borderRadius:"50%",background:h.confidence==="HIGH"?"rgba(5,150,105,0.2)":h.confidence==="MODERATE"?"rgba(217,119,6,0.2)":"rgba(100,116,139,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.75rem",fontWeight:800,color:h.confidence==="HIGH"?"#6ee7b7":h.confidence==="MODERATE"?"#fcd34d":"#94a3b8",flexShrink:0}}>{i+1}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:6}}>
-                    <span style={{fontSize:"0.78rem",fontWeight:700,color:"#e2e8f0"}}>{h.label}</span>
-                    <ConfidenceBadge level={h.confidence}/>
-                    <span style={{fontSize:"0.6rem",color:"#64748b"}}>— {h.region}</span>
-                  </div>
-                  {h.evidence&&<div style={{fontSize:"0.67rem",color:"#94a3b8",lineHeight:1.5,marginBottom:8}}>Evidence basis: {h.evidence}</div>}
-                  {h.tests&&h.tests.length>0&&(
-                    <div>
-                      <div style={{fontSize:"0.6rem",fontWeight:700,color:"#64748b",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.5px"}}>Tests to confirm/exclude:</div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                        {h.tests.map((t,j)=>(
-                          <span key={j} style={{fontSize:"0.62rem",padding:"2px 8px",background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:20,color:"#c084fc"}}>{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-          {/* Psychosocial / nociplastic note */}
-          {region0.nociplasticSig&&(
-            <div style={{...cardStyle,borderColor:"rgba(217,119,6,0.3)"}}>
-              <div style={{padding:"14px 16px"}}>
-                <div style={{fontSize:"0.72rem",fontWeight:700,color:"#fcd34d",marginBottom:6}}>🔶 Psychosocial / Nociplastic Consideration</div>
-                <div style={{fontSize:"0.68rem",color:"#94a3b8",lineHeight:1.6}}>Multiple features suggesting possible central sensitisation contribution. Recommend completing CSI, STarT Back, PCS-13. Consider pain neurophysiology education component. Biological, psychological, and social factors should all be addressed in management planning.</div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ═══ TAB: NEXT STEPS (Assessment Queue) ════════════════════════ */}
-      {activeTab==="assessments"&&(
-        <div>
-          <div style={{fontSize:"0.65rem",color:"#64748b",marginBottom:14,lineHeight:1.6,padding:"10px 12px",background:"rgba(8,145,178,0.06)",border:"1px solid rgba(8,145,178,0.12)",borderRadius:10}}>
-            🧭 <strong style={{color:"#67e8f9"}}>Guided workflow:</strong> Assessments are ordered by clinical priority based on your subjective findings. Click any card to navigate directly. Each assessment will increase or decrease hypothesis probability.
-          </div>
-
-          {/* Quick-start: top 3 buttons */}
-          <div style={{marginBottom:16}}>
-            <div style={{fontSize:"0.6rem",fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Quick Start</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8}}>
-              {primaryQueue.slice(0,3).map(key=>{
-                const cfg=ASSESS_NAV_CONFIG[key];
-                if(!cfg) return null;
-                return(
-                  <button key={key} onClick={()=>onNav(cfg.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"14px 10px",background:`linear-gradient(135deg,${cfg.color}20,${cfg.color}10)`,border:`1px solid ${cfg.color}40`,borderRadius:12,cursor:"pointer",color:cfg.color,transition:"all 0.15s"}}>
-                    <span style={{fontSize:"1.4rem"}}>{cfg.icon}</span>
-                    <span style={{fontSize:"0.62rem",fontWeight:800,textAlign:"center",lineHeight:1.3}}>{cfg.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Primary assessments */}
-          {primaryQueue.length>0&&(
-            <div style={{marginBottom:14}}>
-              <div style={{fontSize:"0.6rem",fontWeight:800,color:"#6ee7b7",textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>🟢 Highly Recommended</div>
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {primaryQueue.map(key=><AssessmentCard key={key} navKey={key} priority="high" onNav={onNav} completed={queueCompleted}/>)}
-              </div>
-            </div>
-          )}
-
-          {/* Secondary assessments */}
-          {secondaryQueue.length>0&&(
-            <div style={{marginBottom:14}}>
-              <div style={{fontSize:"0.6rem",fontWeight:800,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>🟡 Recommended</div>
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {secondaryQueue.map(key=><AssessmentCard key={key} navKey={key} priority="mod" onNav={onNav} completed={queueCompleted}/>)}
-              </div>
-            </div>
-          )}
-
-          {/* Optional assessments */}
-          {optionalQueue.length>0&&(
-            <div style={{marginBottom:14}}>
-              <div style={{fontSize:"0.6rem",fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>⚪ Optional</div>
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {optionalQueue.map(key=><AssessmentCard key={key} navKey={key} priority="opt" onNav={onNav} completed={queueCompleted}/>)}
-              </div>
-            </div>
-          )}
-
-          {/* Specific objective tests suggested by engine */}
-          {allTests.filter(t=>t&&t.length>0).length>0&&(
-            <div style={cardStyle}>
-              <div style={{padding:"12px 16px"}}>
-                <div style={{fontSize:"0.6rem",fontWeight:800,color:"#9333ea",textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>📋 Specific Tests Recommended by Clinical Engine</div>
-                <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                  {allTests.filter(Boolean).map((t,i)=>(
-                    <div key={i} style={{fontSize:"0.68rem",color:"#94a3b8",padding:"5px 10px",background:"rgba(147,51,234,0.06)",borderRadius:6,display:"flex",alignItems:"flex-start",gap:6}}>
-                      <span style={{color:"#9333ea",flexShrink:0,marginTop:1}}>→</span>{t}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ═══ TAB: PATTERNS (NKT + Kinetic Chain) ═══════════════════════ */}
-      {activeTab==="patterns"&&(
-        <div>
-          {/* Muscle patterns */}
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:"0.6rem",fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>⚡ Probable Motor Control Patterns</div>
-            <div style={{fontSize:"0.62rem",color:"#64748b",marginBottom:10,lineHeight:1.5,padding:"8px 12px",background:"rgba(0,0,0,0.2)",borderRadius:8}}>Based on the clinical presentation region and pattern. These represent possible tendencies — not confirmed diagnoses. NKT assessment will identify actual inhibitor-facilitator relationships.</div>
-            {musclePatterns.map((mp,i)=>(
-              <div key={i} style={{...cardStyle,marginBottom:10}}>
-                <div style={{padding:"10px 14px"}}>
-                  <div style={{fontSize:"0.65rem",fontWeight:700,color:"#c084fc",marginBottom:10}}>{mp.region}</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                    <div>
-                      <div style={{fontSize:"0.58rem",fontWeight:800,color:"#f87171",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Possible Overactivity</div>
-                      {mp.over.map((m,j)=>(
-                        <div key={j} style={{fontSize:"0.65rem",color:"#fca5a5",padding:"3px 8px",background:"rgba(220,38,38,0.08)",borderRadius:5,marginBottom:4,border:"1px solid rgba(220,38,38,0.12)"}}>⬆ {m}</div>
-                      ))}
-                    </div>
-                    <div>
-                      <div style={{fontSize:"0.58rem",fontWeight:800,color:"#4ade80",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Possible Underactivity</div>
-                      {mp.under.map((m,j)=>(
-                        <div key={j} style={{fontSize:"0.65rem",color:"#86efac",padding:"3px 8px",background:"rgba(5,150,105,0.08)",borderRadius:5,marginBottom:4,border:"1px solid rgba(5,150,105,0.12)"}}>⬇ {m}</div>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{fontSize:"0.58rem",color:"#475569",marginTop:8,fontStyle:"italic"}}>Confirm with NKT Assessment and specific muscle testing</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* ROM priority */}
-          <div style={cardStyle}>
-            <div style={{padding:"12px 16px"}}>
-              <div style={{fontSize:"0.6rem",fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>📐 ROM Assessment Priority Order</div>
-              {regionResults.map(r=>{
-                const cfg=REGION_ASSESSMENT_MAP[r.region]||REGION_ASSESSMENT_MAP["Lumbar / SI"];
-                return(
-                  <div key={r.region} style={{marginBottom:10}}>
-                    <div style={{fontSize:"0.65rem",fontWeight:700,color:"#9333ea",marginBottom:6}}>{r.region}</div>
-                    {(cfg.rom_priority||[]).map((rom,i)=>(
-                      <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 8px",marginBottom:3,background:"rgba(147,51,234,0.05)",borderRadius:6}}>
-                        <span style={{fontSize:"0.58rem",fontWeight:800,color:"#7c3aed",width:16,textAlign:"center"}}>{i+1}</span>
-                        <span style={{fontSize:"0.67rem",color:"#cbd5e1"}}>{rom}</span>
-                        {i===0&&<span style={{fontSize:"0.55rem",padding:"1px 6px",background:"rgba(5,150,105,0.15)",color:"#6ee7b7",borderRadius:20,fontWeight:700,marginLeft:"auto"}}>Priority</span>}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Kinetic chain suggestions */}
-          {cross&&cross.length>0&&(
-            <div style={cardStyle}>
-              <div style={{padding:"12px 16px"}}>
-                <div style={{fontSize:"0.6rem",fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>⛓️ Kinetic Chain Interactions</div>
-                {cross.map((cf,i)=>(
-                  <div key={i} style={{padding:"8px 10px",background:"rgba(255,255,255,0.02)",borderRadius:7,marginBottom:6,border:"1px solid rgba(255,255,255,0.05)"}}>
-                    <div style={{fontSize:"0.67rem",fontWeight:700,color:"#e2e8f0",marginBottom:3}}>{cf.title}</div>
-                    <div style={{fontSize:"0.62rem",color:"#64748b",lineHeight:1.5}}>{cf.detail.slice(0,120)}...</div>
-                  </div>
-                ))}
-                <button onClick={()=>setActiveTab("overview")} style={{fontSize:"0.62rem",color:"#9333ea",background:"transparent",border:"none",cursor:"pointer",marginTop:4}}>See full detail in Overview →</button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, ClinicalReasoningDashboard };
+export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML };

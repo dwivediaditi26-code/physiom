@@ -5,7 +5,7 @@ import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, useTheme, MobileS
 import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection,
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
   ErgoModule, CyriaxModule, CyriaxRegionTests, generateDiagnosis,
-  PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, ClinicalReasoningDashboard } from "./SubjectiveObjective.jsx";
+  PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
 import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule,
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
   buildClinicalInterpretation, Sparkline } from "./ClinicalModules.jsx";
