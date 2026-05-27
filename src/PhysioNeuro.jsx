@@ -558,15 +558,44 @@ function genROMSoap(data){
   return findings.length===0?"No significant ROM restrictions recorded.":`ROM restrictions identified:\n${findings.join("\n")}`;
 }
 
+
+// Deep-link highlight animation — injected once globally
+if (typeof document !== "undefined" && !document.getElementById("physio-hl-style")) {
+  const st = document.createElement("style");
+  st.id = "physio-hl-style";
+  st.textContent = `
+    @keyframes physioHL {
+      0%   { box-shadow: 0 0 0 0 rgba(147,51,234,0.5); border-color: #9333ea; }
+      50%  { box-shadow: 0 0 0 8px rgba(147,51,234,0.2); border-color: #c084fc; }
+      100% { box-shadow: 0 0 0 0 rgba(147,51,234,0); border-color: transparent; }
+    }
+    .physio-highlight { animation: physioHL 1.8s ease-out 2; }
+  `;
+  document.head.appendChild(st);
+}
+
 function ROMModule({data,set,navContext={}}){
   const [region,setRegion]=useState(()=>{
     if(navContext.romRegion && ROM_REGIONS.includes(navContext.romRegion)) return navContext.romRegion;
     return ROM_REGIONS[0];
   });
-  // Auto-select region when navContext changes
+  const hlRef = React.useRef({});
+
+  // Auto-select region + scroll + highlight target movement
   React.useEffect(()=>{
     if(navContext.romRegion && ROM_REGIONS.includes(navContext.romRegion)) setRegion(navContext.romRegion);
   },[navContext.romRegion]);
+
+  React.useEffect(()=>{
+    if(navContext.romHighlight && hlRef.current[navContext.romHighlight]){
+      const el = hlRef.current[navContext.romHighlight];
+      setTimeout(()=>{
+        el.scrollIntoView({ behavior:"smooth", block:"center" });
+        el.classList.add("physio-highlight");
+        setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+      }, 350);
+    }
+  },[navContext.romHighlight]);
   const [selected,setSelected]=useState(null);
   const [showSoap,setShowSoap]=useState(false);
   const [mode,setMode]=useState("arom"); // arom | prom | resisted
@@ -663,7 +692,7 @@ function ROMModule({data,set,navContext={}}){
           const hasAnyVal=sides.some(s=>getVal(m.id,s));
 
           return(
-            <div key={m.id} style={{background:C.surface,border:`1px solid ${hasAnyVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
+            <div key={m.id} ref={el=>{ if(el) hlRef.current[m.id]=el; }} style={{background:C.surface,border:`1px solid ${hasAnyVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
               {/* Card Header */}
               <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
@@ -1147,9 +1176,22 @@ function MMTModule({data,set,navContext={}}){
     if(navContext.mmtRegion && MMT_REGIONS.includes(navContext.mmtRegion)) return navContext.mmtRegion;
     return MMT_REGIONS[0];
   });
+  const mmtHlRef = React.useRef({});
+
   React.useEffect(()=>{
     if(navContext.mmtRegion && MMT_REGIONS.includes(navContext.mmtRegion)) setRegion(navContext.mmtRegion);
   },[navContext.mmtRegion]);
+
+  React.useEffect(()=>{
+    if(navContext.mmtHighlight && mmtHlRef.current[navContext.mmtHighlight]){
+      const el = mmtHlRef.current[navContext.mmtHighlight];
+      setTimeout(()=>{
+        el.scrollIntoView({ behavior:"smooth", block:"center" });
+        el.classList.add("physio-highlight");
+        setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+      }, 350);
+    }
+  },[navContext.mmtHighlight]);
   const [selected,setSelected]=useState(null);
   const [showInterp,setShowInterp]=useState(false);
 
@@ -1250,7 +1292,7 @@ function MMTModule({data,set,navContext={}}){
           const hasVal=lv||rv;
           const rehab=rehabSuggestions(m);
           return(
-            <div key={m.id} style={{background:C.surface,border:`1px solid ${hasVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
+            <div key={m.id} ref={el=>{ if(el) mmtHlRef.current[m.id]=el; }} style={{background:C.surface,border:`1px solid ${hasVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
               {/* Header */}
               <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div style={{flex:1}}>
