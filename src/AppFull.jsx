@@ -5,7 +5,7 @@ import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, useTheme, MobileS
 import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection,
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
   ErgoModule, CyriaxModule, CyriaxRegionTests, generateDiagnosis,
-  PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
+  PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, ClinicalReasoningDashboard } from "./SubjectiveObjective.jsx";
 import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule,
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
   buildClinicalInterpretation, Sparkline } from "./ClinicalModules.jsx";
@@ -631,1205 +631,838 @@ function CanvasOverlayOnImage({ photoUrl, landmarks, view }) {
   );
 }
 
-// ─── Main PostureCameraModule — Professional Physiotherapy Assessment Camera ──
+// ─── Main PostureCameraModule — New Live Camera + Capture → Analysis ───────────
 
 function PostureCameraModule({ activePatient, set }) {
-  const videoRef   = useRef(null);
-  const canvasRef  = useRef(null);
-  const streamRef  = useRef(null);
-  const smoother   = useRef(createSmoother());
-  const lostTimer  = useRef(null);
-  const burstRef   = useRef(null);
+  // ── refs ──────────────────────────────────────────────────────────────────
+  const videoRef    = useRef(null);
+  const canvasRef   = useRef(null);  // skeleton overlay during live
+  const streamRef   = useRef(null);
+  const smoother    = useRef(createSmoother());
+  const lostTimer   = useRef(null);
 
-  const [trackState, setTrackState] = useState(TRACKING_STATES.IDLE);
-  const [isLoading,  setIsLoading]  = useState(false);
-  const [facingMode, setFacingMode] = useState("user");
-  const [landmarks,  setLandmarks]  = useState(null);
+  // ── camera state ──────────────────────────────────────────────────────────
+  const [camState,   setCamState]   = useState("idle");   // idle | loading | live | error
+  const [facingMode, setFacingMode] = useState("environment");
+  const [camError,   setCamError]   = useState(null);
   const [videoSize,  setVideoSize]  = useState(null);
-  const [countdown,  setCountdown]  = useState(0);
-  const [permError,  setPermError]  = useState(null);
   const [poseActive, setPoseActive] = useState(false);
+  const [landmarks,  setLandmarks]  = useState(null);
+  const [quality,    setQuality]    = useState({ score:0, warnings:[], ready:false });
+  const [activeView, setActiveView] = useState("anterior");
+  const [zoom,       setZoom]       = useState(1);
+  const [cdSecs,     setCdSecs]     = useState(3);
+  const [cdCount,    setCdCount]    = useState(null);   // null = not running
 
-  // Enhanced state
-  const [zoom,           setZoom]           = useState(1);
-  const [countdownSecs,  setCountdownSecs]  = useState(3);
-  const [burstMode,      setBurstMode]      = useState(false);
-  const [activeView,     setActiveView]     = useState("anterior");
-  const [captureCountdown, setCaptureCountdown] = useState(null);
-  const [lastCapture,    setLastCapture]       = useState(null);
-  const [stabilityFrames, setStabilityFrames]   = useState(0);
-  const [lightingWarn,   setLightingWarn]   = useState(false);
+  // ── captured photo + analysis state ──────────────────────────────────────
+  const [capturedImg,  setCapturedImg]  = useState(null);   // base64 still
+  const [capturedLm,   setCapturedLm]   = useState(null);   // landmarks from capture
+  const [capturedView, setCapturedView] = useState(null);
+  const [analysing,    setAnalysing]    = useState(false);
+  const [analysis,     setAnalysis]     = useState(null);   // { measurements, findings, scoreData }
+  const [analyseError, setAnalyseError] = useState(null);
 
-  // ── Multi-view capture bank: stores one capture per view ──────────────────
-  const [viewCaptures, setViewCaptures] = useState({
-    anterior: null, posterior: null, left: null, right: null
-  }); // each: { img, lm, measurements, findings, scoreData, time }
-  const [showViewBank, setShowViewBank] = useState(false);
-
-  // ── Before / After comparison ─────────────────────────────────────────────
-  const [baselineCapture, setBaselineCapture] = useState(null);  // { img, score, findings, date, view }
-  const [showComparison,  setShowComparison]  = useState(false);
-  // Upload photo state — for the always-visible upload button
-  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState(null);
-  const [uploadedPhotoLm,  setUploadedPhotoLm]  = useState(null);
-  const [uploadedAnalysis, setUploadedAnalysis] = useState(null); // Holds detection-failure message when MediaPipe finds no landmarks
-  const [uploadAnalysing,  setUploadAnalysing]  = useState(false);
-  const [reportPatient,    setReportPatient]    = useState("");
-  const [reportClinician,  setReportClinician]  = useState("");
-  const [reportExporting,  setReportExporting]  = useState(false);
-  const [savedToRecord,    setSavedToRecord]    = useState(false); // confirmation flash
+  // ── upload photo ──────────────────────────────────────────────────────────
+  const uploadRef    = useRef(null);
   const uploadObjRef = useRef(null);
+  const [uploadImg,   setUploadImg]   = useState(null);
+  const [uploadLm,    setUploadLm]    = useState(null);
+  const [uploadView,  setUploadView]  = useState("anterior");
+  const [uploadBusy,  setUploadBusy]  = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [uploadAnal,  setUploadAnal]  = useState(null);
 
-  // Auto-fill patient name from active patient record
+  // ── multi-view bank ───────────────────────────────────────────────────────
+  const [viewBank, setViewBank] = useState({ anterior:null, posterior:null, left:null, right:null });
+
+  // Auto-fill patient name
+  const [reportPatient, setReportPatient] = useState("");
   useEffect(() => {
     if (activePatient?.data?.dem_name) setReportPatient(activePatient.data.dem_name);
     else if (activePatient?.name && activePatient.name !== "New Patient") setReportPatient(activePatient.name);
   }, [activePatient?.id]);
 
-  const isActive = trackState !== TRACKING_STATES.IDLE;
-  const quality  = landmarks ? computeQuality(landmarks) : { score:null, warnings:[], ready:false, distanceHint:null };
-
-  // ── Lighting detection via canvas sampling ─────────────────────────────────
-  const checkLighting = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const v = videoRef.current;
-    if (v.readyState < 2) return;
-    const c = document.createElement("canvas");
-    c.width = 32; c.height = 32;
-    const ctx = c.getContext("2d");
-    ctx.drawImage(v, 0, 0, 32, 32);
-    const d = ctx.getImageData(0, 0, 32, 32).data;
-    let lum = 0;
-    for (let i = 0; i < d.length; i += 4) lum += 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-    lum /= (d.length / 4);
-    setLightingWarn(lum < 60 || lum > 230);
-  }, []);
-
-  useEffect(() => {
-    if (!isActive) return;
-    const t = setInterval(checkLighting, 3000);
-    return () => clearInterval(t);
-  }, [isActive, checkLighting]);
-
-  // ── Stability detection ────────────────────────────────────────────────────
-  const prevLmRef = useRef(null);
-  useEffect(() => {
-    if (!landmarks) { setStabilityFrames(0); return; }
-    if (!prevLmRef.current) { prevLmRef.current = landmarks; return; }
-    const drift = Math.abs((landmarks[0]?.x||0) - (prevLmRef.current[0]?.x||0)) * 100
-                + Math.abs((landmarks[0]?.y||0) - (prevLmRef.current[0]?.y||0)) * 100;
-    prevLmRef.current = landmarks;
-    setStabilityFrames(f => drift < 1.5 ? Math.min(f + 1, 30) : 0);
-  }, [landmarks]);
-
-  const isStable = stabilityFrames >= 12;
-
-  // ── Calibration ────────────────────────────────────────────────────────────
-  const runCalibration = () => {
-    setTrackState(TRACKING_STATES.CALIBRATING);
-    let c = 4; setCountdown(c);
-    const t = setInterval(() => {
-      c--; setCountdown(c);
-      if (c <= 0) { clearInterval(t); setTrackState(TRACKING_STATES.DETECTING); setPoseActive(true); }
-    }, 1000);
-  };
-
-  // ── Camera start / stop ────────────────────────────────────────────────────
-  const startCamera = async (mode = facingMode) => {
-    setPermError(null); setIsLoading(true); setTrackState(TRACKING_STATES.LOADING);
+  // ── Start Camera ──────────────────────────────────────────────────────────
+  const startCamera = async (mode) => {
+    const fm = mode || facingMode;
+    setCamError(null); setCamState("loading");
     try {
       if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-      // Adaptive resolution: try HD first, fall back gracefully
       let stream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:mode, width:{ideal:window.innerWidth}, height:{ideal:window.innerHeight}, frameRate:{ideal:30,max:60} }, audio:false });
+        stream = await navigator.mediaDevices.getUserMedia({
+          video:{ facingMode:fm, width:{ideal:1920}, height:{ideal:1080}, frameRate:{ideal:30,max:60} }, audio:false
+        });
       } catch {
-        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:mode, width:{ideal:window.innerWidth}, height:{ideal:window.innerHeight} }, audio:false });
+        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:fm }, audio:false });
       }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await new Promise(res => { videoRef.current.onloadedmetadata = res; });
-        setVideoSize({ w:videoRef.current.videoWidth, h:videoRef.current.videoHeight });
+        setVideoSize({ w: videoRef.current.videoWidth, h: videoRef.current.videoHeight });
       }
-      setIsLoading(false);
-      runCalibration();
+      setFacingMode(fm);
+      setCamState("live");
+      setPoseActive(true);
     } catch(err) {
-      setIsLoading(false); setTrackState(TRACKING_STATES.IDLE);
-      setPermError(err.name==="NotAllowedError" ? "Camera permission denied — allow access in browser settings." : err.name==="NotFoundError" ? "No camera found on this device." : `Camera error: ${err.message}`);
+      setCamState("error");
+      setCamError(
+        err.name === "NotAllowedError" ? "Camera permission denied — allow access in browser settings." :
+        err.name === "NotFoundError"   ? "No camera found on this device." :
+        `Camera error: ${err.message}`
+      );
     }
   };
 
+  // ── Stop Camera ───────────────────────────────────────────────────────────
   const stopCamera = () => {
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    streamRef.current = null; setPoseActive(false); setLandmarks(null);
-    setTrackState(TRACKING_STATES.IDLE); setCountdown(0);
+    streamRef.current = null;
+    setPoseActive(false);
+    setLandmarks(null);
+    setCamState("idle");
+    setCdCount(null);
     if (lostTimer.current) clearTimeout(lostTimer.current);
-    if (burstRef.current) clearInterval(burstRef.current);
-    setCaptureCountdown(null);
   };
 
+  // ── Flip Camera ───────────────────────────────────────────────────────────
   const flipCamera = () => {
-    const next = facingMode==="user" ? "environment" : "user";
-    setFacingMode(next); if (isActive) { stopCamera(); setTimeout(() => startCamera(next), 200); }
-  };
-
-  // ── Generate multi-view PDF (Fix 1) ──────────────────────────────────────
-  const generateMultiViewPDF = useCallback(async () => {
-    setReportExporting(true);
-    try {
-      const date = new Date().toLocaleDateString("en-AU", { day:"2-digit", month:"long", year:"numeric" });
-      const captured = Object.entries(viewCaptures).filter(([,v]) => v !== null);
-      const allFindings = captured.flatMap(([,v]) => v.findings);
-      const highCount = allFindings.filter(f=>f.severity==="high").length;
-      const modCount  = allFindings.filter(f=>f.severity!=="high").length;
-      const avgScore  = captured.length
-        ? Math.round(captured.reduce((s,[,v]) => s + (v.scoreData?.score||0), 0) / captured.length) : null;
-      const scoreCol  = avgScore >= 78 ? "#16a34a" : avgScore >= 62 ? "#d97706" : "#dc2626";
-      const viewLabels = {anterior:"Anterior (Front)", posterior:"Posterior (Back)", left:"Left Lateral", right:"Right Lateral"};
-      const viewIcons  = {anterior:"⬆", posterior:"⬇", left:"◀", right:"▶"};
-
-      const viewSections = captured.map(([view, cap]) => {
-        const sCol = (cap.scoreData?.score||0) >= 78 ? "#16a34a" : (cap.scoreData?.score||0) >= 62 ? "#d97706" : "#dc2626";
-        const highF = cap.findings.filter(f=>f.severity==="high");
-        const modF  = cap.findings.filter(f=>f.severity!=="high");
-        return `
-          <div style="break-inside:avoid;margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
-            <div style="background:#f0f9ff;padding:8px 13px;border-bottom:1px solid #bae6fd;display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-size:13px;font-weight:800;color:#0369a1;">${viewIcons[view]} ${viewLabels[view]}</div>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <span style="font-size:9px;padding:2px 7px;border-radius:5px;background:#fee2e2;color:#b91c1c;font-weight:700;">${highF.length} HIGH</span>
-                <span style="font-size:9px;padding:2px 7px;border-radius:5px;background:#fef3c7;color:#92400e;font-weight:700;">${modF.length} MOD</span>
-                ${cap.scoreData?.score ? `<span style="font-size:16px;font-weight:900;color:${sCol};">${cap.scoreData?.score}</span>` : ""}
-              </div>
-            </div>
-            <div style="display:flex;gap:12px;padding:10px 13px;">
-              <img src="${cap.img}" style="width:160px;flex-shrink:0;border-radius:7px;border:1px solid #e2e8f0;object-fit:contain;background:#f8fafc;" alt="${view}"/>
-              <div style="flex:1;">
-                ${cap.findings.map(f => `
-                  <div style="padding:5px 9px;margin-bottom:5px;border-radius:7px;border-left:3px solid ${f.severity==="high"?"#dc2626":"#d97706"};background:${f.severity==="high"?"#fff5f5":"#fffbeb"};">
-                    <div style="display:flex;gap:6px;align-items:center;margin-bottom:2px;">
-                      <span style="font-size:11px;">${f.icon||"●"}</span>
-                      <strong style="font-size:10.5px;color:${f.severity==="high"?"#b91c1c":"#92400e"};">${f.region}</strong>
-                      <span style="font-size:8px;padding:1px 5px;border-radius:4px;background:${f.severity==="high"?"#fee2e2":"#fef3c7"};color:${f.severity==="high"?"#b91c1c":"#92400e"};font-weight:700;">${f.severity.toUpperCase()}</span>
-                      ${f.icd?`<span style="font-size:8px;color:#94a3b8;margin-left:auto;font-family:monospace;">${f.icd}</span>`:""}
-                    </div>
-                    <div style="font-size:10px;color:#374151;line-height:1.5;">${f.text}</div>
-                    ${f.correction?`<div style="font-size:9px;color:#64748b;margin-top:2px;"><strong style="color:${f.severity==="high"?"#be123c":"#b45309"};">Rx: </strong>${f.correction}</div>`:""}
-                  </div>`).join("")}
-                ${cap.findings.length === 0 ? `<div style="color:#16a34a;font-weight:700;font-size:10.5px;padding:8px;">✅ No significant findings</div>` : ""}
-              </div>
-            </div>
-            ${cap.measurements ? `
-              <div style="padding:6px 13px 10px;border-top:1px solid #f1f5f9;">
-                <div style="font-size:8.5px;font-weight:700;color:#64748b;margin-bottom:4px;">KEY MEASUREMENTS</div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                  ${[
-                    ["Shoulder", cap.measurements.shoulderAngle, "°"],
-                    ["Pelvis/ASIS", cap.measurements.pelvisAngle, "°"],
-                    ["CVA", cap.measurements.cvaAngle, "°"],
-                    ["Kyphosis", cap.measurements.thoracicAngle, "°"],
-                    ["Lordosis", cap.measurements.lordosisAngle, "°"],
-                    ["L Knee", cap.measurements.leftKneeDev, "°"],
-                    ["R Knee", cap.measurements.rightKneeDev, "°"],
-                    ["CoG", cap.measurements.cogDeviation, "%"],
-                  ].filter(([,v]) => v !== null && v !== undefined).map(([label,val,unit]) => {
-                    const abs = Math.abs(val);
-                    const col = abs < 3 ? "#16a34a" : abs < 8 ? "#d97706" : "#dc2626";
-                    return `<span style="font-size:9px;padding:2px 7px;border-radius:5px;background:${col}15;color:${col};font-weight:700;">${label}: ${val>0?"+":""}${Math.round(val*10)/10}${unit}</span>`;
-                  }).join("")}
-                </div>
-              </div>` : ""}
-          </div>`;
-      }).join("");
-
-      // Before/After section
-      const compSection = baselineCapture && captured.some(([v]) => v === baselineCapture.view) ? (() => {
-        const cur = viewCaptures[baselineCapture.view];
-        const bScore = baselineCapture.scoreData?.score;
-        const cScore = cur?.scoreData?.score;
-        const delta = bScore && cScore ? cScore - bScore : null;
-        return `
-          <div style="break-before:always;margin-bottom:20px;">
-            <h2>⇄ Before / After Comparison — ${viewLabels[baselineCapture.view] || baselineCapture.view}</h2>
-            <div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:12px;align-items:center;margin-bottom:12px;">
-              <div style="text-align:center;">
-                <img src="${baselineCapture.img}" style="width:100%;border-radius:8px;border:2px solid #7f5af0;"/>
-                <div style="font-size:9px;color:#6d28d9;font-weight:700;margin-top:4px;">BASELINE · ${baselineCapture.date}</div>
-                ${bScore?`<div style="font-size:24px;font-weight:900;color:#6d28d9;">${bScore}</div>`:""}
-              </div>
-              <div style="text-align:center;">
-                ${delta!==null?`<div style="font-size:24px;font-weight:900;color:${delta>=0?"#16a34a":"#dc2626"};">${delta>=0?"▲":"▼"}${Math.abs(delta)}</div><div style="font-size:9px;color:#64748b;">pts change</div>`:""}
-              </div>
-              <div style="text-align:center;">
-                <img src="${cur.img}" style="width:100%;border-radius:8px;border:2px solid #0ea5e9;"/>
-                <div style="font-size:9px;color:#0369a1;font-weight:700;margin-top:4px;">CURRENT · ${cur.time}</div>
-                ${cScore?`<div style="font-size:24px;font-weight:900;color:#0369a1;">${cScore}</div>`:""}
-              </div>
-            </div>
-          </div>`;
-      })() : "";
-
-      const metaRight = `<strong>Patient:</strong> ${reportPatient||"—"}<br/><strong>Clinician:</strong> ${reportClinician||"—"}<br/><strong>Date:</strong> ${date}<br/><strong>Views:</strong> ${captured.map(([v])=>v).join(", ")}`;
-      const bodyHTML = `
-        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;font-size:9.5px;color:#78350f;margin-bottom:14px;">
-          ⚠ Observational postural assessment from static photographs. Clinical correlation required.
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:9px 12px;"><div style="font-size:8px;font-weight:700;color:#0369a1;text-transform:uppercase;margin-bottom:3px;">Patient</div><div style="font-size:11px;font-weight:700;">${reportPatient||"—"}</div></div>
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:9px 12px;"><div style="font-size:8px;font-weight:700;color:#0369a1;text-transform:uppercase;margin-bottom:3px;">Clinician</div><div style="font-size:11px;font-weight:700;">${reportClinician||"—"}</div></div>
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:9px 12px;"><div style="font-size:8px;font-weight:700;color:#0369a1;text-transform:uppercase;margin-bottom:3px;">Views</div><div style="font-size:11px;font-weight:700;">${captured.length}/4</div></div>
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:9px 12px;"><div style="font-size:8px;font-weight:700;color:#0369a1;text-transform:uppercase;margin-bottom:3px;">Avg Score</div><div style="font-size:16px;font-weight:900;color:${scoreCol};">${avgScore ?? "—"}</div></div>
-        </div>
-        <div style="display:flex;gap:10px;margin-bottom:16px;">
-          <div style="text-align:center;flex:1;padding:10px;background:#fee2e2;border-radius:8px;"><div style="font-size:28px;font-weight:900;color:#dc2626;">${highCount}</div><div style="font-size:9px;font-weight:700;color:#b91c1c;">HIGH PRIORITY</div></div>
-          <div style="text-align:center;flex:1;padding:10px;background:#fef3c7;border-radius:8px;"><div style="font-size:28px;font-weight:900;color:#d97706;">${modCount}</div><div style="font-size:9px;font-weight:700;color:#92400e;">MODERATE</div></div>
-          <div style="text-align:center;flex:1;padding:10px;background:#f0fdf4;border-radius:8px;"><div style="font-size:28px;font-weight:900;color:#16a34a;">${allFindings.length}</div><div style="font-size:9px;font-weight:700;color:#15803d;">TOTAL</div></div>
-        </div>
-        ${viewSections}
-        ${compSection}
-        <div style="margin-top:20px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;gap:30px;">
-          <div style="flex:1;"><div style="height:32px;border-bottom:1px solid #94a3b8;margin-bottom:5px;"></div><div style="font-size:8.5px;color:#64748b;">Clinician Signature</div></div>
-          <div style="flex:1;"><div style="height:32px;border-bottom:1px solid #94a3b8;margin-bottom:5px;"></div><div style="font-size:8.5px;color:#64748b;">Date</div></div>
-        </div>`;
-
-      const html = makePDFPage("Multi-View Postural Assessment Report", metaRight, bodyHTML);
-      await downloadPDFFromHTML(html, `PostureReport_MultiView_${(reportPatient||"Patient").replace(/\s+/g,"_")}_${date.replace(/\s/g,"")}.pdf`);
-    } catch(e) { console.error("Multi-view PDF:", e); }
-    setReportExporting(false);
-  }, [viewCaptures, baselineCapture, reportPatient, reportClinician]);
-
-  // ── Generate single-view postural assessment PDF report ───────────────────
-  const generatePostureReportPDF = useCallback(async () => {
-    setReportExporting(true);
-    try {
-      const date = new Date().toLocaleDateString("en-AU", { day:"2-digit", month:"long", year:"numeric" });
-      const viewLabel = activeView ? (activeView.charAt(0).toUpperCase() + activeView.slice(1)) : "Anterior";
-
-      // Get annotated photo as base64 data URL
-      let photoDataUrl = uploadedPhotoUrl || null;
-      if (uploadedPhotoLm && uploadedPhotoUrl) {
-        // Bake overlay onto photo
-        try {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.src = uploadedPhotoUrl;
-          await new Promise(res => { img.onload = res; img.onerror = res; });
-          const cc = document.createElement("canvas");
-          cc.width = img.naturalWidth; cc.height = img.naturalHeight;
-          const ctx = cc.getContext("2d");
-          ctx.drawImage(img, 0, 0);
-          const m = AdvancedMeasurementEngine ? AdvancedMeasurementEngine(uploadedPhotoLm, null) : {};
-          if (typeof renderPostureOverlay === "function") {
-            renderPostureOverlay({ ctx, W:cc.width, H:cc.height, lm:uploadedPhotoLm,
-              measurements:m, showHeatmap:true, showLabels:true, showGrid:true, view:activeView });
-          }
-          photoDataUrl = cc.toDataURL("image/jpeg", 0.88);
-        } catch(e) { console.error("Bake overlay:", e); }
-      }
-
-      // Compute findings
-      let findings = [];
-      let measurements = {};
-      let scoreData = null;
-      if (uploadedPhotoLm) {
-        measurements = AdvancedMeasurementEngine ? AdvancedMeasurementEngine(uploadedPhotoLm, null) : {};
-        const rel = ReliabilityEngine ? ReliabilityEngine(uploadedPhotoLm) : { blocked: false };
-        // QUALITY GATE: suppress findings if image quality was too low
-        findings = (!rel.blocked && ClinicalFindingsEngine)
-          ? ClinicalFindingsEngine(uploadedPhotoLm, activeView, measurements) : [];
-        try {
-          scoreData = PostureScoreEngine(measurements, findings, rel);
-        } catch(e) { console.warn("PostureScoreEngine:", e); }
-      } else if (uploadedAnalysis) {
-        findings = uploadedAnalysis.findings || [];
-      }
-
-      const severityBadge = (s) => s === "high"
-        ? `<span style="display:inline-block;padding:2px 8px;border-radius:5px;background:#fee2e2;color:#b91c1c;font-size:9px;font-weight:800;">HIGH</span>`
-        : `<span style="display:inline-block;padding:2px 8px;border-radius:5px;background:#fef3c7;color:#92400e;font-size:9px;font-weight:800;">MODERATE</span>`;
-
-      const regionBadge = (r) =>
-        `<span style="display:inline-block;padding:2px 8px;border-radius:5px;background:#ede9fe;color:#6d28d9;font-size:9px;font-weight:700;">${r}</span>`;
-
-      const highFindings  = findings.filter(f => f.severity === "high");
-      const modFindings   = findings.filter(f => f.severity !== "high");
-
-      // Score circle SVG
-      const score = scoreData?.score ?? null;
-      const scoreBand = scoreData?.band ?? "";
-      const scoreColor = score !== null ? (score >= 80 ? "#16a34a" : score >= 60 ? "#d97706" : "#dc2626") : "#6b7280";
-      const scoreCircleSVG = score !== null ? `
-        <div style="text-align:center;margin:8px 0 16px;">
-          <svg width="100" height="100" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" stroke-width="8"/>
-            <circle cx="50" cy="50" r="42" fill="none" stroke="${scoreColor}" stroke-width="8"
-              stroke-dasharray="${(score/100)*264} 264" stroke-dashoffset="0" stroke-linecap="round"
-              transform="rotate(-90 50 50)"/>
-            <text x="50" y="46" text-anchor="middle" fill="${scoreColor}" font-size="22" font-weight="800" font-family="system-ui">${score}</text>
-            <text x="50" y="62" text-anchor="middle" fill="#64748b" font-size="9" font-family="system-ui">${scoreBand.toUpperCase()}</text>
-          </svg>
-          <div style="font-size:9px;color:#64748b;margin-top:4px;">Posture Score</div>
-        </div>` : "";
-
-      // Key measurements table
-      const measRows = [
-        ["Shoulder Obliquity", measurements.shoulderAngle, "°", [3,7]],
-        ["Pelvic Obliquity (ASIS)", measurements.pelvisAngle, "°", [3,7]],
-        ["Head Lateral Offset", measurements.headLateralOffset, "%", [2,5]],
-        ["Trunk Lateral Shift", measurements.trunkLateralShift, "%", [3,7]],
-        ["Forward Head (CVA)", measurements.forwardHeadMm, "%", [3,7]],
-        ["Cobb Estimate (Scoliosis)", measurements.cobbEstimate, "°", [5,10]],
-        ["Left Knee Deviation", measurements.leftKneeDev, "°", [5,10]],
-        ["Right Knee Deviation", measurements.rightKneeDev, "°", [5,10]],
-        ["L Ankle Deviation", measurements.leftAnkleAngle, "°", [5,12]],
-        ["R Ankle Deviation", measurements.rightAnkleAngle, "°", [5,12]],
-      ].filter(([,v]) => v !== null && v !== undefined);
-
-      const measHTML = measRows.length ? `
-        <h2 style="font-size:13px;font-weight:800;color:#0369a1;border-left:4px solid #0ea5e9;padding-left:10px;margin:16px 0 8px;">📐 Postural Measurements</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px;">
-          <thead>
-            <tr style="background:#f0f9ff;">
-              <th style="padding:6px 10px;text-align:left;color:#0369a1;font-weight:700;border-bottom:2px solid #bae6fd;">Measurement</th>
-              <th style="padding:6px 10px;text-align:center;color:#0369a1;font-weight:700;border-bottom:2px solid #bae6fd;">Value</th>
-              <th style="padding:6px 10px;text-align:center;color:#0369a1;font-weight:700;border-bottom:2px solid #bae6fd;">Status</th>
-              <th style="padding:6px 10px;text-align:center;color:#0369a1;font-weight:700;border-bottom:2px solid #bae6fd;">Normal Range</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${measRows.map(([label,val,unit,[t1,t2]],i) => {
-              const abs = Math.abs(val);
-              const [col, status] = abs < t1 ? ["#16a34a","Normal"] : abs < t2 ? ["#d97706","Mild"] : ["#dc2626","Significant"];
-              return `<tr style="background:${i%2===0?"#ffffff":"#f8fafc"};">
-                <td style="padding:5px 10px;color:#374151;font-weight:600;">${label}</td>
-                <td style="padding:5px 10px;text-align:center;color:${col};font-weight:800;">${val>0?"+":""}${Math.round(val*10)/10}${unit}</td>
-                <td style="padding:5px 10px;text-align:center;"><span style="padding:1px 7px;border-radius:4px;background:${col}18;color:${col};font-weight:700;font-size:8.5px;">${status}</span></td>
-                <td style="padding:5px 10px;text-align:center;color:#94a3b8;font-size:9px;">&lt;${t1}${unit}</td>
-              </tr>`;
-            }).join("")}
-          </tbody>
-        </table>` : "";
-
-      // AI summary metrics (fallback) — suppressed since AI vision API was removed; kept defensive in case
-      // of legacy data. Skip entirely when this is a detection-failure record.
-      const aiSummaryHTML = (uploadedAnalysis && !uploadedPhotoLm && !uploadedAnalysis._error) ? `
-        <div style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:9px;padding:10px 13px;margin-bottom:14px;font-size:10.5px;line-height:1.7;">
-          <strong style="color:#4338ca;">Analysis Summary:</strong> ${uploadedAnalysis.summary || ""}
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
-            ${uploadedAnalysis.pelvicTilt && uploadedAnalysis.pelvicTilt!=="unknown" ? `<span style="padding:2px 8px;border-radius:5px;background:#ede9fe;color:#6d28d9;font-weight:700;font-size:9px;">Pelvis: ${uploadedAnalysis.pelvicTilt}</span>` : ""}
-            ${uploadedAnalysis.shoulderDeviation && uploadedAnalysis.shoulderDeviation!=="unknown" ? `<span style="padding:2px 8px;border-radius:5px;background:#dbeafe;color:#1d4ed8;font-weight:700;font-size:9px;">Shoulders: ${uploadedAnalysis.shoulderDeviation}</span>` : ""}
-            ${uploadedAnalysis.kneeDeviation && uploadedAnalysis.kneeDeviation!=="unknown" ? `<span style="padding:2px 8px;border-radius:5px;background:#fef3c7;color:#92400e;font-weight:700;font-size:9px;">Knees: ${uploadedAnalysis.kneeDeviation}</span>` : ""}
-            ${uploadedAnalysis.spineAlignment && uploadedAnalysis.spineAlignment!=="unknown" ? `<span style="padding:2px 8px;border-radius:5px;background:#dcfce7;color:#15803d;font-weight:700;font-size:9px;">Spine: ${uploadedAnalysis.spineAlignment}</span>` : ""}
-          </div>
-        </div>` : "";
-
-      // Findings HTML
-      const findingCardHTML = (f, i) => `
-        <div style="background:#f8fafc;border:1px solid ${f.severity==="high"?"#fecaca":"#fde68a"};border-left:4px solid ${f.severity==="high"?"#dc2626":"#d97706"};border-radius:9px;padding:11px 14px;margin-bottom:10px;break-inside:avoid;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:14px;">${f.icon||"●"}</span>
-              <strong style="font-size:11.5px;color:${f.severity==="high"?"#b91c1c":"#92400e"};">${f.region}</strong>
-              ${severityBadge(f.severity)}
-            </div>
-            ${f.icd ? `<span style="font-size:8.5px;color:#94a3b8;font-family:monospace;">${f.icd}</span>` : ""}
-          </div>
-          <p style="margin:4px 0 6px;color:#374151;font-size:10.5px;line-height:1.6;">${f.text}</p>
-          ${f.correction ? `<div style="background:${f.severity==="high"?"#fff1f2":"#fffbeb"};border-radius:6px;padding:7px 10px;font-size:10px;color:#374151;line-height:1.6;">
-            <strong style="color:${f.severity==="high"?"#be123c":"#b45309"};">Rx: </strong>${f.correction}
-          </div>` : ""}
-        </div>`;
-
-      const bodyHTML = `
-        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;font-size:9.5px;color:#78350f;margin-bottom:14px;">
-          ⚠ Observational postural assessment from static photograph. Clinical correlation required. Not a substitute for comprehensive evaluation.
-        </div>
-
-        ${/* Patient info grid */""}
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:9px 12px;">
-            <div style="font-size:8.5px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Patient</div>
-            <div style="font-size:11px;font-weight:700;color:#111827;">${reportPatient || "—"}</div>
-          </div>
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:9px 12px;">
-            <div style="font-size:8.5px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Clinician</div>
-            <div style="font-size:11px;font-weight:700;color:#111827;">${reportClinician || "—"}</div>
-          </div>
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:9px 12px;">
-            <div style="font-size:8.5px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">View</div>
-            <div style="font-size:11px;font-weight:700;color:#111827;">${viewLabel}</div>
-          </div>
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:9px 12px;">
-            <div style="font-size:8.5px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Date</div>
-            <div style="font-size:11px;font-weight:700;color:#111827;">${date}</div>
-          </div>
-        </div>
-
-        ${/* Summary row: photo + score */""}
-        <div style="display:flex;gap:16px;margin-bottom:16px;align-items:flex-start;">
-          ${photoDataUrl ? `<div style="flex:0 0 auto;max-width:220px;">
-            <img src="${photoDataUrl}" alt="Postural assessment photo" style="width:100%;border-radius:8px;border:1px solid #e2e8f0;display:block;"/>
-            <div style="text-align:center;font-size:8.5px;color:#64748b;margin-top:4px;">${viewLabel} View — ${date}</div>
-          </div>` : ""}
-          <div style="flex:1;">
-            ${scoreCircleSVG}
-            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 13px;">
-              <div style="font-size:9px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px;">Finding Summary</div>
-              <div style="display:flex;gap:10px;margin-bottom:8px;">
-                <div style="text-align:center;flex:1;padding:8px;background:#fee2e2;border-radius:7px;">
-                  <div style="font-size:22px;font-weight:900;color:#dc2626;">${highFindings.length}</div>
-                  <div style="font-size:8.5px;color:#b91c1c;font-weight:700;">HIGH</div>
-                </div>
-                <div style="text-align:center;flex:1;padding:8px;background:#fef3c7;border-radius:7px;">
-                  <div style="font-size:22px;font-weight:900;color:#d97706;">${modFindings.length}</div>
-                  <div style="font-size:8.5px;color:#92400e;font-weight:700;">MODERATE</div>
-                </div>
-                <div style="text-align:center;flex:1;padding:8px;background:#f0fdf4;border-radius:7px;">
-                  <div style="font-size:22px;font-weight:900;color:#16a34a;">${findings.length}</div>
-                  <div style="font-size:8.5px;color:#15803d;font-weight:700;">TOTAL</div>
-                </div>
-              </div>
-              <div style="font-size:9px;color:#64748b;line-height:1.6;">
-                Regions assessed: Cervical · Shoulder Girdle · Thoracic · Lumbar/Pelvis · ASIS/PSIS · Knee · Ankle · Foot
-              </div>
-            </div>
-          </div>
-        </div>
-
-        ${aiSummaryHTML}
-        ${measHTML}
-
-        ${highFindings.length > 0 ? `
-        <h2 style="font-size:13px;font-weight:800;color:#b91c1c;border-left:4px solid #dc2626;padding-left:10px;margin:16px 0 8px;">🔴 High Priority Findings (${highFindings.length})</h2>
-        ${highFindings.map(findingCardHTML).join("")}` : ""}
-
-        ${modFindings.length > 0 ? `
-        <h2 style="font-size:13px;font-weight:800;color:#92400e;border-left:4px solid #d97706;padding-left:10px;margin:16px 0 8px;">🟡 Moderate Findings (${modFindings.length})</h2>
-        ${modFindings.map(findingCardHTML).join("")}` : ""}
-
-        ${findings.length === 0 ? `<div style="text-align:center;padding:24px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;color:#15803d;font-weight:700;">✅ No significant postural deviations detected</div>` : ""}
-
-        <div style="margin-top:24px;padding-top:14px;border-top:1px solid #e2e8f0;">
-          <div style="font-size:9px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">Clinician Notes</div>
-          <div style="height:60px;border:1px solid #e2e8f0;border-radius:7px;background:#f8fafc;"></div>
-        </div>
-
-        <div style="margin-top:24px;display:flex;gap:30px;border-top:1px solid #e2e8f0;padding-top:14px;">
-          <div style="flex:1;"><div style="height:32px;border-bottom:1px solid #94a3b8;margin-bottom:5px;"></div><div style="font-size:8.5px;color:#64748b;">Clinician Signature</div></div>
-          <div style="flex:1;"><div style="height:32px;border-bottom:1px solid #94a3b8;margin-bottom:5px;"></div><div style="font-size:8.5px;color:#64748b;">Date</div></div>
-        </div>`;
-
-      const metaRight = `<strong>Patient:</strong> ${reportPatient||"—"}<br/><strong>Clinician:</strong> ${reportClinician||"—"}<br/><strong>View:</strong> ${viewLabel}<br/><strong>Date:</strong> ${date}`;
-      const html = makePDFPage("Postural Assessment Report", metaRight, bodyHTML);
-      const fname = `PostureReport_${(reportPatient||"Patient").replace(/\s+/g,"_")}_${date.replace(/\s/g,"")}.pdf`;
-      await downloadPDFFromHTML(html, fname);
-      // Also auto-save to patient record after PDF export
-      savePostureToRecord();
-    } catch(e) { console.error("PDF export:", e); }
-    setReportExporting(false);
-  }, [uploadedPhotoUrl, uploadedPhotoLm, uploadedAnalysis, activeView, reportPatient, reportClinician]);
-
-  // ── Save posture result to patient record (data key posture_sessions) ────
-  const savePostureToRecord = useCallback(() => {
-    if (!set) return; // no patient loaded
-    const now = new Date().toISOString();
-    const date = new Date().toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" });
-    let measurements = {}, findings = [], scoreData = null;
-    if (uploadedPhotoLm) {
-      measurements = AdvancedMeasurementEngine ? AdvancedMeasurementEngine(uploadedPhotoLm, null) : {};
-      const rel = ReliabilityEngine ? ReliabilityEngine(uploadedPhotoLm) : { blocked: false };
-      findings = (!rel.blocked && ClinicalFindingsEngine)
-        ? ClinicalFindingsEngine(uploadedPhotoLm, activeView, measurements) : [];
-      try { scoreData = PostureScoreEngine(measurements, findings, rel); } catch(e) {}
-    } else if (uploadedAnalysis) {
-      findings = uploadedAnalysis.findings || [];
-    }
-    const sessionRecord = {
-      id: `posture_${Date.now()}`,
-      capturedAt: now,
-      dateLabel: date,
-      view: activeView,
-      source: uploadedPhotoLm ? "mediapipe" : "ai_vision",
-      score: scoreData?.score ?? null,
-      band: scoreData?.band ?? null,
-      findingsCount: findings.length,
-      highCount: findings.filter(f => f.severity === "high").length,
-      findings: findings.map(f => ({ region: f.region, severity: f.severity, text: f.text, icd: f.icd || null })),
-      measurements: {
-        shoulderAngle:      measurements.shoulderAngle      ?? null,
-        pelvisAngle:        measurements.pelvisAngle        ?? null,
-        headLateralOffset:  measurements.headLateralOffset  ?? null,
-        trunkLateralShift:  measurements.trunkLateralShift  ?? null,
-        cvaAngle:           measurements.cvaAngle           ?? null,
-        cobbEstimate:       measurements.cobbEstimate       ?? null,
-        leftKneeDev:        measurements.leftKneeDev        ?? null,
-        rightKneeDev:       measurements.rightKneeDev       ?? null,
-        cogDeviation:       measurements.cogDeviation       ?? null,
-      },
-      aiSummary: uploadedAnalysis?.summary ?? null,
-      pelvicTilt: uploadedAnalysis?.pelvicTilt ?? null,
-      shoulderDeviation: uploadedAnalysis?.shoulderDeviation ?? null,
-      kneeDeviation: uploadedAnalysis?.kneeDeviation ?? null,
-      spineAlignment: uploadedAnalysis?.spineAlignment ?? null,
-    };
-    // Read existing sessions, prepend new one, keep last 20
-    const existingRaw = typeof window !== "undefined"
-      ? (window.__postureSessionsCache || "[]") : "[]";
-    const existing = (() => { try { return JSON.parse(existingRaw); } catch { return []; } })();
-    const next = [sessionRecord, ...existing].slice(0, 20);
-    window.__postureSessionsCache = JSON.stringify(next);
-    set("posture_sessions", JSON.stringify(next));
-    setSavedToRecord(true);
-    setTimeout(() => setSavedToRecord(false), 3000);
-  }, [set, uploadedPhotoLm, uploadedAnalysis, activeView]);
-  // ── Upload photo → run MediaPipe pose detection ───────────────────────────
-  // (AI vision fallback removed — MediaPipe handles all analysis locally.)
-  const handleUploadPhoto = useCallback(async (file) => {
-    if (!file) return;
-    if (uploadObjRef.current) URL.revokeObjectURL(uploadObjRef.current);
-    const url = URL.createObjectURL(file);
-    uploadObjRef.current = url;
-    setUploadedPhotoUrl(url);   // ← photo visible immediately
-    setUploadedPhotoLm(null);
-    setUploadedAnalysis(null);
-    setUploadAnalysing(true);
+    const next = facingMode === "user" ? "environment" : "user";
     stopCamera();
-
-    let mpSuccess = false;
-    let mpError   = null;
-    try {
-      const img = new Image();
-      img.src = url;
-      await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error("Image failed to load")); });
-      if (!window.Pose) await new Promise((res, rej) => {
-        const s = document.createElement("script");
-        s.src = "https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js";
-        s.onload = res; s.onerror = () => rej(new Error("Failed to load MediaPipe Pose library")); document.head.appendChild(s);
-      });
-      const pose = new window.Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}` });
-      pose.setOptions({ modelComplexity:2, smoothLandmarks:false, enableSegmentation:false, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
-      pose.onResults(results => {
-        const lm = results.poseLandmarks;
-        if (lm && lm.length > 0) {
-          let annotatedUrl = null;
-          try {
-            const oc = document.createElement("canvas");
-            oc.width = img.naturalWidth; oc.height = img.naturalHeight;
-            const octx = oc.getContext("2d");
-            octx.drawImage(img, 0, 0, oc.width, oc.height);
-            const m = AdvancedMeasurementEngine(lm, null);
-            renderPostureOverlay({ ctx: octx, W: oc.width, H: oc.height, lm,
-              measurements: m, showHeatmap: true, showLabels: true, showGrid: true,
-              view: activeView });
-            annotatedUrl = oc.toDataURL("image/jpeg", 0.92);
-          } catch(e2) { console.warn("Overlay bake failed, using raw photo:", e2); }
-          setUploadedPhotoLm(lm);
-          if (annotatedUrl) setUploadedPhotoUrl(annotatedUrl);
-          setTrackState(TRACKING_STATES.STABLE);
-          mpSuccess = true;
-        }
-      });
-      await pose.initialize();
-      await pose.send({ image: img });
-      await new Promise(res => setTimeout(res, 1200));
-    } catch(e) {
-      console.error("Upload photo MediaPipe:", e);
-      mpError = e?.message || "MediaPipe failed to process image";
-    }
-
-    // If MediaPipe found nothing, leave a clear message so the panel doesn't look blank
-    if (!mpSuccess) {
-      setUploadedAnalysis({
-        summary: mpError
-          ? `Pose detection failed: ${mpError}`
-          : "No body landmarks detected in this image. For best results upload a clear full-body photo with even lighting, plain background, and form-fitting clothing.",
-        findings: [],
-        pelvicTilt: "unknown",
-        shoulderDeviation: "unknown",
-        kneeDeviation: "unknown",
-        spineAlignment: "unknown",
-        _error: true
-      });
-    }
-    setUploadAnalysing(false);
-  }, [stopCamera, activeView]);
-
-  // ── View change: just switch the view label (no re-analysis — same landmarks apply) ──
-  const handleViewChange = useCallback((newView) => {
-    setActiveView(newView);
-  }, []);
-
-  // ── Tap-to-focus ──────────────────────────────────────────────────────────
-  const handleTapFocus = useCallback((x, y) => {
-    const track = streamRef.current?.getVideoTracks()[0];
-    if (!track) return;
-    const caps = track.getCapabilities?.() || {};
-    if (caps.focusMode && track.applyConstraints) {
-      track.applyConstraints({ advanced:[{ pointsOfInterest:[{x,y}], focusMode:"single-shot" }] }).catch(()=>{});
-    }
-  }, []);
-
-  // ── Countdown capture trigger ──────────────────────────────────────────────
-  const triggerCountdownCapture = useCallback(() => {
-    if (captureCountdown !== null) return;
-    let c = countdownSecs;
-    setCaptureCountdown(c);
-    const t = setInterval(() => {
-      c--;
-      setCaptureCountdown(c);
-      if (c <= 0) {
-        clearInterval(t);
-        setCaptureCountdown(null);
-        // ── Actually take the photo ──────────────────────────────────────
-        const video = videoRef.current;
-        const overlayCanvas = canvasRef.current;
-        if (!video || !videoSize) return;
-        const { w, h } = videoSize;
-        const cap = document.createElement("canvas");
-        cap.width = w; cap.height = h;
-        const ctx = cap.getContext("2d");
-        // Mirror front camera
-        if (facingMode === "user") { ctx.translate(w, 0); ctx.scale(-1, 1); }
-        ctx.drawImage(video, 0, 0, w, h);
-        if (facingMode === "user") { ctx.setTransform(1,0,0,1,0,0); }
-        // Draw overlay skeleton on top
-        if (overlayCanvas && overlayCanvas.width > 0) ctx.drawImage(overlayCanvas, 0, 0, w, h);
-        // Timestamp
-        const time = new Date().toLocaleString();
-        ctx.font = "bold 13px system-ui";
-        const label = `${activeView?.toUpperCase()} · ${time}`;
-        const tw = ctx.measureText(label).width;
-        ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(6, h-30, tw+14, 24);
-        ctx.fillStyle = "#00e5ff"; ctx.fillText(label, 12, h-12);
-        const imgUrl = cap.toDataURL("image/jpeg", 0.92);
-        setLastCapture({ img: imgUrl, time, view: activeView });
-
-        // ── Save into multi-view bank ──────────────────────────────────────
-        if (landmarks) {
-          const m = AdvancedMeasurementEngine(landmarks, null);
-          const f = ClinicalFindingsEngine(landmarks, activeView, m);
-          const rel = ReliabilityEngine(landmarks);
-          const s = PostureScoreEngine(m, f, rel);
-          setViewCaptures(prev => ({
-            ...prev,
-            [activeView]: { img: imgUrl, lm: landmarks, measurements: m, findings: f, scoreData: s, time, view: activeView }
-          }));
-          setShowViewBank(true);
-        }
-      }
-    }, 1000);
-  }, [captureCountdown, countdownSecs, videoRef, canvasRef, videoSize, facingMode, activeView]);
+    setTimeout(() => startCamera(next), 150);
+  };
 
   // ── Landmark handler ───────────────────────────────────────────────────────
   const handleLandmarks = useCallback((raw) => {
     const sm = smoother.current(raw);
     setLandmarks(sm);
     if (!sm) {
-      if (!lostTimer.current) lostTimer.current = setTimeout(() => { setTrackState(s => s===TRACKING_STATES.STABLE||s===TRACKING_STATES.DETECTING?TRACKING_STATES.LOST:s); lostTimer.current=null; }, 800);
+      if (!lostTimer.current) lostTimer.current = setTimeout(() => {
+        setLandmarks(null);
+        lostTimer.current = null;
+      }, 1000);
       return;
     }
     if (lostTimer.current) { clearTimeout(lostTimer.current); lostTimer.current = null; }
-    const q = computeQuality(sm);
-    setTrackState(q.ready ? TRACKING_STATES.STABLE : TRACKING_STATES.DETECTING);
+    setQuality(computeQuality(sm));
   }, []);
 
-  // ── Resize ─────────────────────────────────────────────────────────────────
+  // ── Tap-to-focus ──────────────────────────────────────────────────────────
+  const handleTapFocus = useCallback((x, y) => {
+    const v = videoRef.current;
+    if (!v) return;
+    const track = streamRef.current?.getVideoTracks()[0];
+    try {
+      const caps = track?.getCapabilities?.();
+      if (caps?.focusMode?.includes("manual")) {
+        track.applyConstraints({ advanced:[{ pointOfInterest:{x,y}, focusMode:"manual" }] }).catch(()=>{});
+      }
+    } catch {}
+  }, []);
+
+  // ── Resize ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!isActive) return;
-    const up = () => { const v=videoRef.current; if(v&&v.videoWidth) setVideoSize({w:v.videoWidth,h:v.videoHeight}); };
+    if (camState !== "live") return;
+    const up = () => {
+      const v = videoRef.current;
+      if (v && v.videoWidth) setVideoSize({ w: v.videoWidth, h: v.videoHeight });
+    };
     window.addEventListener("resize", up);
     screen.orientation?.addEventListener?.("change", up);
     return () => { window.removeEventListener("resize", up); screen.orientation?.removeEventListener?.("change", up); };
-  }, [isActive]);
+  }, [camState]);
 
   useEffect(() => { return () => stopCamera(); }, []);
 
-  const showGuide = trackState===TRACKING_STATES.CALIBRATING || trackState===TRACKING_STATES.DETECTING;
+  // ── Run MediaPipe on image (still frame or upload) ────────────────────────
+  const runMediaPipe = async (imgEl) => {
+    if (!window.Pose) {
+      await new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js";
+        s.onload = res; s.onerror = () => rej(new Error("MediaPipe load failed"));
+        document.head.appendChild(s);
+      });
+    }
+    return new Promise((resolve) => {
+      const pose = new window.Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}` });
+      pose.setOptions({ modelComplexity:2, smoothLandmarks:false, enableSegmentation:false, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
+      pose.onResults(r => resolve(r.poseLandmarks || null));
+      pose.initialize().then(() => pose.send({ image: imgEl })).catch(() => resolve(null));
+    });
+  };
+
+  // ── Capture from live camera ───────────────────────────────────────────────
+  const doCapture = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || !videoSize) return;
+    const { w, h } = videoSize;
+
+    // Freeze frame to canvas
+    const cap = document.createElement("canvas");
+    cap.width = w; cap.height = h;
+    const ctx = cap.getContext("2d");
+    if (facingMode === "user") { ctx.translate(w,0); ctx.scale(-1,1); }
+    ctx.drawImage(video, 0, 0, w, h);
+    if (facingMode === "user") ctx.setTransform(1,0,0,1,0,0);
+    // Timestamp + view label
+    const time = new Date().toLocaleString();
+    ctx.font = "bold 14px system-ui";
+    const label = `${activeView.toUpperCase()} · ${time}`;
+    const tw = ctx.measureText(label).width;
+    ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(8, h-34, tw+16, 26);
+    ctx.fillStyle = "#00e5ff"; ctx.fillText(label, 14, h-14);
+    const imgUrl = cap.toDataURL("image/jpeg", 0.93);
+
+    setCapturedImg(imgUrl);
+    setCapturedView(activeView);
+    setCapturedLm(null);
+    setAnalysis(null);
+    setAnalyseError(null);
+    setAnalysing(true);
+    stopCamera();   // stop stream while analysing
+
+    // Run MediaPipe on the frozen frame
+    try {
+      const img = new Image();
+      img.src = imgUrl;
+      await new Promise(res => { img.onload = res; });
+      const lm = await runMediaPipe(img);
+      setCapturedLm(lm);
+      if (lm) {
+        const m = AdvancedMeasurementEngine(lm, null);
+        const f = ClinicalFindingsEngine(lm, activeView, m);
+        const rel = ReliabilityEngine(lm);
+        const s = PostureScoreEngine(m, f, rel);
+        setAnalysis({ measurements:m, findings:f, scoreData:s });
+        // Save to view bank
+        setViewBank(prev => ({
+          ...prev,
+          [activeView]: { img:imgUrl, lm, measurements:m, findings:f, scoreData:s, time, view:activeView }
+        }));
+      } else {
+        setAnalyseError("Pose landmarks not detected — ensure full body is visible, lighting is good, and try again.");
+      }
+    } catch(e) {
+      setAnalyseError(`Analysis failed: ${e.message}`);
+    } finally {
+      setAnalysing(false);
+    }
+  }, [videoRef, videoSize, facingMode, activeView]);
+
+  // ── Countdown Capture ─────────────────────────────────────────────────────
+  const triggerCapture = useCallback((delay = cdSecs) => {
+    if (cdCount !== null) return;
+    if (delay === 0) { doCapture(); return; }
+    let c = delay;
+    setCdCount(c);
+    const t = setInterval(() => {
+      c--;
+      setCdCount(c);
+      if (c <= 0) { clearInterval(t); setCdCount(null); doCapture(); }
+    }, 1000);
+  }, [cdCount, cdSecs, doCapture]);
+
+  // ── Upload Photo → MediaPipe Analysis ────────────────────────────────────
+  const handleUploadFile = useCallback(async (file) => {
+    if (!file) return;
+    if (uploadObjRef.current) URL.revokeObjectURL(uploadObjRef.current);
+    const url = URL.createObjectURL(file);
+    uploadObjRef.current = url;
+    setUploadImg(url); setUploadLm(null); setUploadAnal(null);
+    setUploadError(null); setUploadBusy(true);
+    try {
+      const img = new Image();
+      img.src = url;
+      await new Promise(res => { img.onload = res; });
+      const lm = await runMediaPipe(img);
+      setUploadLm(lm);
+      if (lm) {
+        const m = AdvancedMeasurementEngine(lm, null);
+        const f = ClinicalFindingsEngine(lm, uploadView, m);
+        const rel = ReliabilityEngine(lm);
+        const s = PostureScoreEngine(m, f, rel);
+        setUploadAnal({ measurements:m, findings:f, scoreData:s });
+      } else {
+        setUploadError("Pose not detected — ensure full body, good lighting, form-fitting clothing.");
+      }
+    } catch(e) {
+      setUploadError(`Upload analysis failed: ${e.message}`);
+    } finally {
+      setUploadBusy(false);
+    }
+  }, [uploadView]);
+
+  const isLive  = camState === "live";
+  const isIdle  = camState === "idle";
+  const isError = camState === "error";
+  const isLoad  = camState === "loading";
+
+  const VIEWS = [
+    { v:"anterior",  icon:"⬆", label:"Front",  col:"#00e5ff" },
+    { v:"posterior", icon:"⬇", label:"Back",   col:"#7f5af0" },
+    { v:"left",      icon:"◀", label:"Left",   col:"#00c97a" },
+    { v:"right",     icon:"▶", label:"Right",  col:"#ffb300" },
+  ];
 
   return (
     <div>
       <style>{`
-        @keyframes pcPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        @keyframes cdPop{0%{transform:scale(1.5);opacity:0}100%{transform:scale(1);opacity:1}}
         @keyframes tapFocus{0%{transform:scale(1);opacity:1}100%{transform:scale(2.5);opacity:0}}
-        @keyframes cdPop{0%{transform:scale(1.4);opacity:0}100%{transform:scale(1);opacity:1}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
       `}</style>
 
-      {/* Header */}
-      <div style={{ background:"linear-gradient(135deg,rgba(0,229,255,0.07),rgba(127,90,240,0.07))", border:"1px solid rgba(0,229,255,0.16)", borderRadius:14, padding:"13px 16px", marginBottom:12 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:7 }}>
-          <div style={{ width:34, height:34, borderRadius:9, background:"linear-gradient(135deg,#00e5ff1a,#7f5af01a)", border:"1px solid rgba(0,229,255,0.28)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.2rem" }}>🎥</div>
-          <div>
+      {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
+      <div style={{ background:"linear-gradient(135deg,rgba(0,229,255,0.07),rgba(127,90,240,0.07))",
+        border:"1px solid rgba(0,229,255,0.18)", borderRadius:14, padding:"13px 16px", marginBottom:12 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg,#00e5ff22,#7f5af022)",
+            border:"1px solid rgba(0,229,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.3rem" }}>🎥</div>
+          <div style={{ flex:1 }}>
             <div style={{ fontWeight:800, fontSize:"0.93rem", color:"#00e5ff" }}>Posture Assessment Camera</div>
-            <div style={{ fontSize:"0.63rem", color:"#7e6a9a" }}>MediaPipe BlazePose · HD Capture · Physiotherapy Grade</div>
+            <div style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>Live Capture → MediaPipe Pose Analysis · Physiotherapy Grade</div>
           </div>
-          {/* Video resolution badge */}
-          {videoSize && (
-            <div style={{ marginLeft:"auto", fontSize:"0.58rem", padding:"2px 7px", borderRadius:7, background:"rgba(0,229,255,0.08)", color:"#00e5ff", border:"1px solid rgba(0,229,255,0.2)", fontWeight:700 }}>
+          {isLive && videoSize && (
+            <div style={{ fontSize:"0.58rem", padding:"2px 8px", borderRadius:7,
+              background:"rgba(0,229,255,0.08)", color:"#00e5ff", border:"1px solid rgba(0,229,255,0.2)", fontWeight:700 }}>
               {videoSize.w}×{videoSize.h}
             </div>
           )}
         </div>
-        <TrackingStateBar state={trackState} quality={quality.score}/>
+        {/* Status bar */}
+        <div style={{ marginTop:8, display:"flex", alignItems:"center", gap:7 }}>
+          <div style={{ width:8, height:8, borderRadius:"50%",
+            background: isLive ? "#00c97a" : isLoad ? "#ffb300" : isError ? "#ff4d6d" : "#3d3d5c",
+            boxShadow: isLive ? "0 0 8px #00c97a88" : "none" }}/>
+          <span style={{ fontSize:"0.68rem", fontWeight:700, color: isLive ? "#00c97a" : isError ? "#ff4d6d" : "#7e6a9a" }}>
+            {isLoad ? "Starting camera…" : isLive ? (quality.ready ? "✓ Full body detected — ready to capture" : "Waiting for full body…") : isError ? camError : "Camera off"}
+          </span>
+        </div>
       </div>
 
-      {/* Lighting warning */}
-      {lightingWarn && isActive && (
-        <div style={{ background:"rgba(255,179,0,0.1)", border:"1px solid rgba(255,179,0,0.3)", borderRadius:9, padding:"8px 12px", marginBottom:8, fontSize:"0.72rem", color:"#ffb300", display:"flex", gap:8, fontWeight:600 }}>
-          💡 Poor lighting detected — improve ambient light for better tracking accuracy
+      {/* ══ VIEW SELECTOR ═══════════════════════════════════════════════════ */}
+      <div style={{ marginBottom:12 }}>
+        <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
+          📐 Select Posture View
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:6 }}>
+          {VIEWS.map(({ v, icon, label, col }) => {
+            const act = activeView === v;
+            return (
+              <button key={v} onClick={() => setActiveView(v)} style={{
+                padding:"10px 4px", borderRadius:11, cursor:"pointer", fontWeight:800,
+                fontSize:"0.72rem", display:"flex", flexDirection:"column", alignItems:"center", gap:3,
+                background: act ? `linear-gradient(135deg,${col},${col}aa)` : `${col}12`,
+                color: act ? "#000" : col,
+                border: act ? "none" : `1px solid ${col}40`,
+                boxShadow: act ? `0 0 14px ${col}55` : "none",
+                transition:"all 0.2s"
+              }}>
+                <span style={{ fontSize:"1rem" }}>{icon}</span>
+                <span>{label}</span>
+                {act && <span style={{ fontSize:"0.5rem", opacity:0.85 }}>● SELECTED</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ══ UPLOAD PHOTO BUTTON ══════════════════════════════════════════════ */}
+      <input ref={uploadRef} type="file" accept="image/*" style={{ display:"none" }}
+        onChange={e => { const f = e.target.files?.[0]; if(f) handleUploadFile(f); e.target.value=""; }}/>
+      <button onClick={() => uploadRef.current?.click()} style={{
+        width:"100%", marginBottom:12, padding:"12px 16px",
+        background:"transparent", border:"2px dashed rgba(127,90,240,0.5)",
+        borderRadius:12, color:"#7f5af0", fontWeight:800, fontSize:"0.8rem",
+        cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:9
+      }}>
+        <span style={{ fontSize:"1.1rem" }}>📷</span> Upload Patient Photo for Analysis
+        <span style={{ fontSize:"0.62rem", opacity:0.7, fontWeight:600 }}>JPG / PNG</span>
+      </button>
+
+      {/* ══ CAMERA PANEL ════════════════════════════════════════════════════ */}
+      {/* Pre-camera setup guide */}
+      {isIdle && (
+        <div style={{ background:"rgba(0,229,255,0.04)", border:"1px solid rgba(0,229,255,0.16)", borderRadius:12, padding:14, marginBottom:12 }}>
+          <div style={{ fontSize:"0.7rem", fontWeight:800, color:"#00e5ff", textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📐 Setup Guide</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+            {[["📏","2m camera distance"],["🧍","Full body in frame"],["💡","Even bright lighting"],["📱","Camera at hip height"],
+              ["👕","Form-fitting clothing"],["🦶","Feet fully visible"]].map(([ic,tx],i) => (
+              <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:6, fontSize:"0.7rem", color:"#1a1025" }}>
+                <span>{ic}</span><span style={{ lineHeight:1.4 }}>{tx}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-
-      {/* Photo upload mode */}
-      {activeView==="photo" && <PhotoUploadAnalyzer/>}
-
-      {/* Setup guide — pre-camera */}
-      {!isActive && activeView!=="photo" && <CameraPositionGuide/>}
 
       {/* Permission error */}
-      {activeView!=="photo" && permError && (
-        <div style={{ background:"rgba(255,77,109,0.09)", border:"1px solid rgba(255,77,109,0.3)", borderRadius:10, padding:"11px 14px", marginBottom:10, fontSize:"0.77rem", color:"#ff4d6d", display:"flex", gap:8 }}>
-          🚫 {permError}
+      {isError && (
+        <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.3)",
+          borderRadius:10, padding:"11px 14px", marginBottom:10, fontSize:"0.77rem", color:"#ff4d6d" }}>
+          🚫 {camError}
         </div>
       )}
 
-      {/* Camera + overlays */}
-      {activeView!=="photo" && (
-      <div style={{ position:"relative" }}>
-        <CameraView videoRef={videoRef} canvasRef={canvasRef} isActive={isActive} facingMode={facingMode} onTapFocus={handleTapFocus} zoom={zoom}>
-          <BodyAlignmentGuide show={showGuide || (isActive && !quality.ready)} ready={quality.ready}/>
-          <CalibrationSystem state={trackState} countdown={countdown} quality={quality}/>
+      {/* Live camera view */}
+      {(isLive || isLoad) && (
+        <div style={{ position:"relative", width:"100%", borderRadius:14, overflow:"hidden",
+          aspectRatio:"3/4", maxHeight:"65vh", background:"#0d0d1a", marginBottom:10 }}>
 
-          {/* Distance hint badge */}
-          {quality.distanceHint && isActive && (
-            <div style={{ position:"absolute", bottom:10, left:"50%", transform:"translateX(-50%)", background:"rgba(6,9,15,0.82)", border:"1px solid rgba(255,179,0,0.4)", borderRadius:20, padding:"5px 14px", fontSize:"0.72rem", color:"#ffb300", fontWeight:700, whiteSpace:"nowrap", zIndex:15 }}>
-              {quality.distanceHint==="back" ? "⬅ Step back" : "➡ Step closer"}
+          <video ref={videoRef} autoPlay playsInline muted
+            style={{ width:"100%", height:"100%", objectFit:"contain", display:"block",
+              transform:`${facingMode==="user"?"scaleX(-1)":"none"} scale(${zoom})`,
+              transformOrigin:"center center", transition:"transform 0.2s" }}
+            onClick={e => {
+              const r = e.currentTarget.getBoundingClientRect();
+              handleTapFocus((e.clientX-r.left)/r.width, (e.clientY-r.top)/r.height);
+            }}
+          />
+          <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%",
+            pointerEvents:"none", transform: facingMode==="user"?"scaleX(-1)":"none" }}/>
+
+          {/* View badge */}
+          <div style={{ position:"absolute", top:10, left:10, background:"rgba(6,9,15,0.82)",
+            borderRadius:9, padding:"4px 9px", fontSize:"0.62rem", fontWeight:700,
+            color:"#7f5af0", border:"1px solid rgba(127,90,240,0.35)", zIndex:15, textTransform:"capitalize" }}>
+            {activeView} View
+          </div>
+
+          {/* Body alignment guide when no pose */}
+          {!quality.ready && (
+            <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:8 }}>
+              <svg style={{ width:"100%", height:"100%", position:"absolute", inset:0 }} viewBox="0 0 100 133" preserveAspectRatio="xMidYMid meet">
+                <ellipse cx="50" cy="10" rx="8" ry="10" fill="none" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
+                <line x1="50" y1="20" x2="50" y2="65" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
+                <line x1="32" y1="33" x2="68" y2="33" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
+                <line x1="50" y1="65" x2="38" y2="100" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
+                <line x1="50" y1="65" x2="62" y2="100" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
+                <line x1="50" y1="0" x2="50" y2="133" stroke="rgba(0,229,255,0.18)" strokeWidth="0.5" strokeDasharray="4,3"/>
+              </svg>
             </div>
           )}
 
-          {/* Stability indicator */}
-          {isActive && trackState===TRACKING_STATES.STABLE && (
-            <div style={{ position:"absolute", top:10, right:10, background:"rgba(6,9,15,0.82)", borderRadius:9, padding:"4px 9px", fontSize:"0.62rem", fontWeight:700, color:isStable?"#00c97a":"#ffb300", border:`1px solid ${isStable?"rgba(0,201,122,0.35)":"rgba(255,179,0,0.35)"}`, zIndex:15 }}>
-              {isStable ? "✓ Stable" : "○ Stabilising…"}
-            </div>
-          )}
-
-          {/* Active view badge */}
-          {isActive && (
-            <div style={{ position:"absolute", top:10, left:10, background:"rgba(6,9,15,0.82)", borderRadius:9, padding:"4px 9px", fontSize:"0.62rem", fontWeight:700, color:"#7f5af0", border:"1px solid rgba(127,90,240,0.35)", zIndex:15, textTransform:"capitalize" }}>
-              {activeView} View
-            </div>
-          )}
-
-          {/* Countdown capture overlay */}
-          {captureCountdown !== null && (
-            <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(6,9,15,0.4)", zIndex:25 }}>
-              <div style={{ width:90, height:90, borderRadius:"50%", border:"3px solid #00e5ff", background:"rgba(6,9,15,0.85)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"2.8rem", fontWeight:900, color:"#00e5ff", boxShadow:"0 0 30px rgba(0,229,255,0.5)", animation:"cdPop 0.3s ease-out" }}>
-                {captureCountdown || "📸"}
+          {/* Countdown overlay */}
+          {cdCount !== null && (
+            <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center",
+              justifyContent:"center", background:"rgba(6,9,15,0.45)", zIndex:25 }}>
+              <div style={{ width:90, height:90, borderRadius:"50%", border:"3px solid #00e5ff",
+                background:"rgba(6,9,15,0.85)", display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:"2.8rem", fontWeight:900, color:"#00e5ff",
+                boxShadow:"0 0 30px rgba(0,229,255,0.5)", animation:"cdPop 0.3s ease-out" }}>
+                {cdCount || "📸"}
               </div>
             </div>
           )}
 
-          {/* Floating capture button — always visible when camera active */}
-          {isActive && activeView!=="photo" && (
-            <button onClick={triggerCountdownCapture} disabled={captureCountdown!==null}
-              style={{ position:"absolute", bottom:16, left:"50%", transform:"translateX(-50%)", width:64, height:64, borderRadius:"50%",
-                background: captureCountdown!==null ? "rgba(0,229,255,0.3)" : "linear-gradient(135deg,#00e5ff,#7f5af0)",
-                border:"4px solid rgba(255,255,255,0.25)", cursor:captureCountdown!==null?"not-allowed":"pointer",
-                fontSize:"1.5rem", display:"flex", alignItems:"center", justifyContent:"center",
-                boxShadow:"0 4px 20px rgba(0,229,255,0.4)", zIndex:20, flexDirection:"column", gap:2 }}>
-              {captureCountdown!==null ? (
-                <span style={{fontSize:"1.2rem",fontWeight:900,color:"#000"}}>{captureCountdown}</span>
+          {/* Quality warnings */}
+          {quality.warnings.length > 0 && (
+            <div style={{ position:"absolute", bottom:90, left:10, right:10, zIndex:20 }}>
+              {quality.warnings.slice(0,2).map((w,i) => (
+                <div key={i} style={{ background:"rgba(6,9,15,0.82)", border:`1px solid ${w.color}55`,
+                  borderRadius:8, padding:"5px 10px", fontSize:"0.65rem", fontWeight:700,
+                  color:w.color, marginBottom:4, display:"flex", gap:7, alignItems:"center" }}>
+                  <span>{w.icon}</span> {w.text}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Capture button */}
+          <div style={{ position:"absolute", bottom:16, left:0, right:0, display:"flex",
+            justifyContent:"center", alignItems:"center", gap:14, zIndex:22 }}>
+            {/* Instant capture */}
+            <button onClick={() => triggerCapture(0)} disabled={cdCount!==null}
+              style={{ width:56, height:56, borderRadius:"50%",
+                background:"rgba(255,255,255,0.18)", border:"2px solid rgba(255,255,255,0.4)",
+                cursor:cdCount!==null?"not-allowed":"pointer",
+                fontSize:"0.6rem", fontWeight:800, color:"#fff", display:"flex",
+                flexDirection:"column", alignItems:"center", justifyContent:"center", gap:1 }}>
+              ⚡<span>Now</span>
+            </button>
+
+            {/* Main capture button */}
+            <button onClick={() => triggerCapture(cdSecs)} disabled={cdCount!==null}
+              style={{ width:72, height:72, borderRadius:"50%",
+                background: cdCount!==null ? "rgba(0,229,255,0.3)" : "linear-gradient(135deg,#00e5ff,#7f5af0)",
+                border:"4px solid rgba(255,255,255,0.3)",
+                cursor:cdCount!==null?"not-allowed":"pointer",
+                fontSize:"1.6rem", display:"flex", alignItems:"center", justifyContent:"center",
+                boxShadow:"0 4px 22px rgba(0,229,255,0.45)", zIndex:22 }}>
+              {cdCount !== null ? (
+                <span style={{ fontSize:"2rem", fontWeight:900, color:"#000" }}>{cdCount}</span>
               ) : "📸"}
             </button>
-          )}
-        </CameraView>
+
+            {/* Flip camera */}
+            <button onClick={flipCamera}
+              style={{ width:56, height:56, borderRadius:"50%",
+                background:"rgba(255,255,255,0.18)", border:"2px solid rgba(255,255,255,0.4)",
+                cursor:"pointer", fontSize:"1.2rem", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              🔄
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PoseTracker (live skeleton while camera is on) */}
+      {isLive && <PoseTracker videoRef={videoRef} active={poseActive} onLandmarks={handleLandmarks}/>}
+      {isLive && <SkeletonRenderer canvasRef={canvasRef} landmarks={landmarks} videoSize={videoSize} trackingState={quality.ready?"stable":"detecting"} activeView={activeView}/>}
+
+      {/* ── Camera start / controls ── */}
+      <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+        {!isLive && !isLoad && (
+          <>
+            <button onClick={() => startCamera("user")} style={{
+              flex:1, padding:"12px 8px", borderRadius:11, cursor:"pointer", fontWeight:800,
+              fontSize:"0.75rem", display:"flex", flexDirection:"column", alignItems:"center", gap:4,
+              background:"rgba(0,229,255,0.08)", color:"#00e5ff", border:"1px solid rgba(0,229,255,0.25)"
+            }}><span style={{fontSize:"1.3rem"}}>🤳</span><span>Front Camera</span></button>
+            <button onClick={() => startCamera("environment")} style={{
+              flex:1, padding:"12px 8px", borderRadius:11, cursor:"pointer", fontWeight:800,
+              fontSize:"0.75rem", display:"flex", flexDirection:"column", alignItems:"center", gap:4,
+              background:"rgba(127,90,240,0.08)", color:"#7f5af0", border:"1px solid rgba(127,90,240,0.25)"
+            }}><span style={{fontSize:"1.3rem"}}>📷</span><span>Back Camera</span></button>
+          </>
+        )}
+        {isLoad && (
+          <div style={{ flex:1, padding:"12px", borderRadius:11, background:"#1a2d45",
+            color:"#6b8399", fontWeight:700, fontSize:"0.78rem", textAlign:"center" }}>
+            ⏳ Starting camera…
+          </div>
+        )}
+        {isLive && (
+          <>
+            {/* Zoom */}
+            <div style={{ flex:2, display:"flex", alignItems:"center", gap:6, background:"#ffffff",
+              border:"1px solid #d8cce8", borderRadius:10, padding:"6px 12px" }}>
+              <span style={{ fontSize:"0.65rem", color:"#7e6a9a" }}>🔍</span>
+              <input type="range" min="1" max="2.5" step="0.1" value={zoom} onChange={e=>setZoom(Number(e.target.value))}
+                style={{ flex:1, accentColor:"#00e5ff", cursor:"pointer" }}/>
+              <span style={{ fontSize:"0.65rem", color:"#00e5ff", fontWeight:700, minWidth:28 }}>{zoom.toFixed(1)}×</span>
+            </div>
+            {/* Countdown selector */}
+            <div style={{ display:"flex", alignItems:"center", gap:4, background:"#ffffff",
+              border:"1px solid #d8cce8", borderRadius:10, padding:"6px 10px" }}>
+              <span style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>⏱</span>
+              {[0,3,5,10].map(s => (
+                <button key={s} onClick={() => setCdSecs(s)} style={{
+                  padding:"3px 6px", borderRadius:6, fontSize:"0.6rem", fontWeight:700,
+                  border:"none", cursor:"pointer",
+                  background: cdSecs===s ? "#00e5ff" : "#192435",
+                  color: cdSecs===s ? "#000" : "#6b8399"
+                }}>{s===0?"0s":`${s}s`}</button>
+              ))}
+            </div>
+            {/* Stop */}
+            <button onClick={stopCamera} style={{
+              padding:"8px 12px", borderRadius:10, cursor:"pointer", fontWeight:800,
+              background:"rgba(255,77,109,0.1)", border:"1px solid rgba(255,77,109,0.3)",
+              color:"#ff4d6d", fontSize:"0.72rem", display:"flex", flexDirection:"column",
+              alignItems:"center", gap:2
+            }}><span>⏹</span><span>Stop</span></button>
+          </>
+        )}
       </div>
-      )}
-      {/* Skeleton */}
-      {isActive && activeView!=="photo" && <SkeletonRenderer canvasRef={canvasRef} landmarks={landmarks} videoSize={videoSize} trackingState={trackState} activeView={activeView}/>}
 
-      {/* Pose engine */}
-      <PoseTracker videoRef={videoRef} active={poseActive} onLandmarks={handleLandmarks}/>
-
-      {/* Controls */}
-      <CameraControls
-        isActive={isActive} isLoading={isLoading}
-        onStart={(mode)=>startCamera(mode||facingMode)} onStop={stopCamera}
-        onFlip={flipCamera} onRecalibrate={runCalibration}
-        facingMode={facingMode} canRecalibrate={isActive&&trackState!==TRACKING_STATES.CALIBRATING}
-        zoom={zoom} onZoom={setZoom}
-        countdownSecs={countdownSecs} onCountdownChange={setCountdownSecs}
-        burstMode={burstMode} onBurstToggle={()=>setBurstMode(b=>!b)}
-        activeView={activeView} onViewChange={handleViewChange}
-        onUploadPhoto={handleUploadPhoto}
-      />
-
-      {/* Warnings */}
-      {isActive && quality.warnings.length>0 && (
-        <div style={{ display:"flex", flexDirection:"column", gap:5, marginTop:8 }}>
-          {quality.warnings.map((w,i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 12px", background:`${w.color}15`, border:`1px solid ${w.color}35`, borderRadius:8, fontSize:"0.73rem", fontWeight:600, color:w.color }}>
-              <span>{w.icon}</span><span>{w.text}</span>
+      {/* ══ CAPTURED PHOTO + ANALYSIS ════════════════════════════════════════ */}
+      {capturedImg && (
+        <div style={{ background:"#0d0d1a", border:"1px solid rgba(0,229,255,0.25)",
+          borderRadius:14, overflow:"hidden", marginBottom:12, animation:"fadeIn 0.3s ease" }}>
+          {/* Header */}
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+            padding:"9px 13px", borderBottom:"1px solid rgba(0,229,255,0.15)",
+            background:"rgba(0,229,255,0.04)" }}>
+            <div style={{ fontSize:"0.65rem", fontWeight:800, color:"#00e5ff" }}>
+              📸 Captured — {capturedView?.charAt(0).toUpperCase()+capturedView?.slice(1)} View
+              {analysing ? " — Analysing…" : capturedLm ? " — Pose Grid Applied ✓" : analyseError ? " — Detection Failed" : ""}
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Readiness / stability badge */}
-      {isActive && trackState!==TRACKING_STATES.CALIBRATING && (
-        <div style={{ marginTop:8, padding:"7px 12px", background:quality.ready?"rgba(0,201,122,0.08)":"rgba(255,179,0,0.08)", border:`1px solid ${quality.ready?"rgba(0,201,122,0.25)":"rgba(255,179,0,0.2)"}`, borderRadius:8, fontSize:"0.72rem", fontWeight:700, color:quality.ready?"#00c97a":"#ffb300", display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
-          <span>{quality.ready ? (isStable?"✓":"○") : "⚠"}</span>
-          <span>{quality.ready ? (isStable ? "Body stable — tap 📸 or use countdown capture" : "Full body detected — hold still for stable capture") : "Position body: head · shoulders · hips · feet all visible"}</span>
-          {quality.ready && isStable && (
-            <span style={{ marginLeft:"auto", fontSize:"0.62rem", padding:"2px 8px", borderRadius:7, background:"rgba(0,229,255,0.1)", color:"#00e5ff", border:"1px solid rgba(0,229,255,0.25)" }}>Ready for {activeView}</span>
-          )}
-        </div>
-      )}
-
-      {/* ── MULTI-VIEW CAPTURE BANK ── */}
-      {showViewBank && Object.values(viewCaptures).some(v => v !== null) && (
-        <div style={{marginTop:10,background:"#0a0a14",border:"1px solid rgba(0,229,255,0.2)",borderRadius:12,overflow:"hidden"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderBottom:"1px solid rgba(0,229,255,0.15)",background:"rgba(0,229,255,0.04)"}}>
-            <div style={{fontSize:"0.62rem",fontWeight:800,color:"#00e5ff",letterSpacing:"0.5px"}}>
-              📸 View Capture Bank — {Object.values(viewCaptures).filter(v=>v).length}/4 Views
-            </div>
-            <div style={{display:"flex",gap:6}}>
-              <button onClick={()=>setShowComparison(s=>!s)}
-                style={{padding:"4px 9px",background:"rgba(127,90,240,0.12)",border:"1px solid rgba(127,90,240,0.3)",borderRadius:7,color:"#7f5af0",fontSize:"0.6rem",fontWeight:700,cursor:"pointer"}}>
-                {showComparison?"▲ Hide":"⇄ Compare"}
-              </button>
-              <button onClick={()=>{setViewCaptures({anterior:null,posterior:null,left:null,right:null});setShowViewBank(false);setLastCapture(null);setShowComparison(false);}}
-                style={{padding:"4px 9px",background:"rgba(255,77,109,0.08)",border:"1px solid rgba(255,77,109,0.2)",borderRadius:7,color:"#ff4d6d",fontSize:"0.6rem",fontWeight:700,cursor:"pointer"}}>✕ Clear All</button>
+            <div style={{ display:"flex", gap:6 }}>
+              {!analysing && (
+                <button onClick={() => startCamera(facingMode)} style={{
+                  padding:"4px 10px", background:"rgba(0,229,255,0.1)", border:"1px solid rgba(0,229,255,0.25)",
+                  borderRadius:7, color:"#00e5ff", fontSize:"0.62rem", fontWeight:700, cursor:"pointer"
+                }}>📷 Retake</button>
+              )}
+              <button onClick={() => { setCapturedImg(null); setCapturedLm(null); setAnalysis(null); setAnalyseError(null); }} style={{
+                padding:"4px 10px", background:"rgba(255,77,109,0.1)", border:"1px solid rgba(255,77,109,0.25)",
+                borderRadius:7, color:"#ff4d6d", fontSize:"0.62rem", fontWeight:700, cursor:"pointer"
+              }}>✕ Clear</button>
             </div>
           </div>
 
-          {/* 4-view grid */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:1,background:"rgba(0,229,255,0.05)"}}>
+          {/* Photo + overlay */}
+          <div style={{ position:"relative", width:"100%", background:"#0d0d1a" }}>
+            <img src={capturedImg} alt="Captured posture"
+              style={{ width:"100%", display:"block", maxHeight:520, objectFit:"contain" }}/>
+            {capturedLm && (
+              <CanvasOverlayOnImage photoUrl={capturedImg} landmarks={capturedLm} view={capturedView}/>
+            )}
+            {/* Analysing spinner */}
+            {analysing && (
+              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column",
+                alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.6)", gap:10 }}>
+                <div style={{ width:44, height:44, border:"3px solid rgba(0,229,255,0.2)",
+                  borderTop:"3px solid #00e5ff", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
+                <div style={{ fontSize:"0.75rem", color:"#00e5ff", fontWeight:700 }}>Running MediaPipe analysis…</div>
+                <div style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>Detecting 33 landmarks · Calculating deviations</div>
+              </div>
+            )}
+          </div>
+
+          {/* Detection error */}
+          {analyseError && !analysing && (
+            <div style={{ padding:"12px 14px", background:"rgba(255,77,109,0.08)",
+              borderTop:"1px solid rgba(255,77,109,0.2)" }}>
+              <div style={{ fontSize:"0.72rem", color:"#ff4d6d", fontWeight:700, marginBottom:4 }}>
+                ⚠ {analyseError}
+              </div>
+              <div style={{ fontSize:"0.65rem", color:"#c9b8e8" }}>
+                Tips: ensure full body visible from head to feet, bright even lighting, form-fitting clothing, camera 2m away.
+              </div>
+            </div>
+          )}
+
+          {/* Analysis results */}
+          {analysis && !analysing && (
+            <div style={{ padding:"12px 14px" }}>
+              {/* Score */}
+              <div style={{ display:"flex", gap:10, marginBottom:12, alignItems:"center" }}>
+                <div style={{ width:56, height:56, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center",
+                  flexShrink:0, flexDirection:"column",
+                  background: (analysis.scoreData?.score||0)>=78?"rgba(0,201,122,0.12)":(analysis.scoreData?.score||0)>=62?"rgba(255,179,0,0.12)":"rgba(255,77,109,0.12)",
+                  border:`2px solid ${(analysis.scoreData?.score||0)>=78?"#00c97a":(analysis.scoreData?.score||0)>=62?"#ffb300":"#ff4d6d"}` }}>
+                  <div style={{ fontSize:"1.3rem", fontWeight:900,
+                    color:(analysis.scoreData?.score||0)>=78?"#00c97a":(analysis.scoreData?.score||0)>=62?"#ffb300":"#ff4d6d" }}>
+                    {analysis.scoreData?.score ?? "--"}
+                  </div>
+                  <div style={{ fontSize:"0.48rem", color:"#7e6a9a", fontWeight:700 }}>SCORE</div>
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#00e5ff", marginBottom:3 }}>
+                    {analysis.scoreData?.category || "Assessment Complete"}
+                  </div>
+                  <div style={{ fontSize:"0.65rem", color:"#7e6a9a", lineHeight:1.4 }}>
+                    {analysis.findings.filter(f=>f.severity==="high").length} high priority ·{" "}
+                    {analysis.findings.filter(f=>f.severity!=="high").length} moderate findings
+                  </div>
+                </div>
+              </div>
+
+              {/* Findings list */}
+              {analysis.findings.length > 0 ? (
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {analysis.findings.map((f, i) => (
+                    <div key={i} style={{
+                      padding:"8px 11px", borderRadius:9,
+                      background: f.severity==="high" ? "rgba(255,77,109,0.08)" : "rgba(255,179,0,0.07)",
+                      borderLeft:`3px solid ${f.severity==="high"?"#ff4d6d":"#ffb300"}`,
+                      fontSize:"0.7rem", color:"#e2d9f3", lineHeight:1.5
+                    }}>
+                      <span style={{ fontWeight:700, color: f.severity==="high"?"#ff4d6d":"#ffb300", marginRight:6 }}>
+                        {f.severity==="high"?"🔴":"🟡"} {f.title || f.label}
+                      </span>
+                      {f.detail || f.description || ""}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding:"10px 12px", background:"rgba(0,201,122,0.08)",
+                  borderRadius:9, fontSize:"0.72rem", color:"#00c97a", fontWeight:700, textAlign:"center" }}>
+                  ✅ No significant postural findings detected for {capturedView} view
+                </div>
+              )}
+
+              {/* Save to record */}
+              {activePatient && (
+                <button onClick={() => {
+                  const rec = { view:capturedView, img:capturedImg, findings:analysis.findings,
+                    score:analysis.scoreData?.score, date:new Date().toISOString() };
+                  set?.(prev => ({...prev, postureCaptures:[...(prev.postureCaptures||[]),rec]}));
+                }} style={{
+                  width:"100%", marginTop:10, padding:"10px", borderRadius:10, cursor:"pointer",
+                  background:"linear-gradient(135deg,#00c97a,#059669)",
+                  border:"none", color:"#fff", fontWeight:800, fontSize:"0.78rem"
+                }}>
+                  💾 Save to Patient Record
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══ UPLOADED PHOTO + ANALYSIS ════════════════════════════════════════ */}
+      {uploadImg && (
+        <div style={{ background:"#1a1a2e", border:"1px solid rgba(127,90,240,0.3)",
+          borderRadius:14, overflow:"hidden", marginBottom:12, animation:"fadeIn 0.3s ease" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+            padding:"9px 13px", borderBottom:"1px solid rgba(127,90,240,0.2)",
+            background:"rgba(127,90,240,0.04)" }}>
+            <div style={{ fontSize:"0.65rem", fontWeight:800, color:"#7f5af0" }}>
+              📷 Uploaded Photo — {uploadView?.charAt(0).toUpperCase()+uploadView?.slice(1)} View
+              {uploadBusy ? " — Analysing…" : uploadLm ? " — Pose Grid Applied ✓" : uploadError ? " — Detection Failed" : ""}
+            </div>
+            <div style={{ display:"flex", gap:6 }}>
+              {/* View switch for upload */}
+              {["anterior","posterior","left","right"].map(v => (
+                <button key={v} onClick={() => setUploadView(v)} style={{
+                  padding:"2px 6px", borderRadius:5, fontSize:"0.55rem", fontWeight:700,
+                  border:"none", cursor:"pointer",
+                  background: uploadView===v ? "#7f5af0" : "#1a2d45",
+                  color: uploadView===v ? "#fff" : "#6b8399"
+                }}>{v[0].toUpperCase()}</button>
+              ))}
+              <button onClick={() => {
+                setUploadImg(null); setUploadLm(null); setUploadAnal(null); setUploadError(null);
+                if(uploadObjRef.current){URL.revokeObjectURL(uploadObjRef.current);uploadObjRef.current=null;}
+              }} style={{ padding:"4px 9px", background:"rgba(255,77,109,0.1)",
+                border:"1px solid rgba(255,77,109,0.25)", borderRadius:7,
+                color:"#ff4d6d", fontSize:"0.62rem", fontWeight:700, cursor:"pointer" }}>✕</button>
+            </div>
+          </div>
+
+          <div style={{ position:"relative", width:"100%", background:"#1a1a2e" }}>
+            <img src={uploadImg} alt="Uploaded posture"
+              style={{ width:"100%", display:"block", maxHeight:520, objectFit:"contain" }}/>
+            {uploadLm && (
+              <CanvasOverlayOnImage photoUrl={uploadImg} landmarks={uploadLm} view={uploadView}/>
+            )}
+            {uploadBusy && (
+              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column",
+                alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.6)", gap:10 }}>
+                <div style={{ width:44, height:44, border:"3px solid rgba(127,90,240,0.2)",
+                  borderTop:"3px solid #7f5af0", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
+                <div style={{ fontSize:"0.75rem", color:"#7f5af0", fontWeight:700 }}>Analysing pose…</div>
+              </div>
+            )}
+          </div>
+
+          {uploadError && !uploadBusy && (
+            <div style={{ padding:"12px 14px", background:"rgba(255,77,109,0.08)", borderTop:"1px solid rgba(255,77,109,0.2)" }}>
+              <div style={{ fontSize:"0.72rem", color:"#ff4d6d", fontWeight:700 }}>⚠ {uploadError}</div>
+            </div>
+          )}
+
+          {uploadAnal && !uploadBusy && (
+            <div style={{ padding:"12px 14px" }}>
+              <div style={{ display:"flex", gap:10, marginBottom:10, alignItems:"center" }}>
+                <div style={{ width:52, height:52, borderRadius:"50%", display:"flex", alignItems:"center",
+                  justifyContent:"center", flexDirection:"column", flexShrink:0,
+                  background:(uploadAnal.scoreData?.score||0)>=78?"rgba(0,201,122,0.12)":"rgba(255,179,0,0.12)",
+                  border:`2px solid ${(uploadAnal.scoreData?.score||0)>=78?"#00c97a":"#ffb300"}` }}>
+                  <div style={{ fontSize:"1.2rem", fontWeight:900,
+                    color:(uploadAnal.scoreData?.score||0)>=78?"#00c97a":"#ffb300" }}>
+                    {uploadAnal.scoreData?.score ?? "--"}
+                  </div>
+                  <div style={{ fontSize:"0.48rem", color:"#7e6a9a" }}>SCORE</div>
+                </div>
+                <div>
+                  <div style={{ fontSize:"0.78rem", fontWeight:800, color:"#7f5af0", marginBottom:3 }}>
+                    {uploadAnal.scoreData?.category || "Assessment Complete"}
+                  </div>
+                  <div style={{ fontSize:"0.63rem", color:"#7e6a9a" }}>
+                    {uploadAnal.findings.filter(f=>f.severity==="high").length} high · {uploadAnal.findings.filter(f=>f.severity!=="high").length} moderate
+                  </div>
+                </div>
+              </div>
+              {uploadAnal.findings.map((f,i) => (
+                <div key={i} style={{ padding:"7px 10px", borderRadius:8, marginBottom:5,
+                  background:f.severity==="high"?"rgba(255,77,109,0.08)":"rgba(255,179,0,0.07)",
+                  borderLeft:`3px solid ${f.severity==="high"?"#ff4d6d":"#ffb300"}`,
+                  fontSize:"0.68rem", color:"#e2d9f3", lineHeight:1.5 }}>
+                  <span style={{ fontWeight:700, color:f.severity==="high"?"#ff4d6d":"#ffb300", marginRight:5 }}>
+                    {f.severity==="high"?"🔴":"🟡"} {f.title||f.label}
+                  </span>
+                  {f.detail||f.description||""}
+                </div>
+              ))}
+              {/* Re-analyse with different view */}
+              <div style={{ marginTop:8, display:"flex", gap:6, flexWrap:"wrap" }}>
+                {["anterior","posterior","left","right"].map(v => (
+                  <button key={v} onClick={() => { setUploadView(v); if(uploadImg){ handleUploadFile({name:"rerun"}); } }} style={{
+                    padding:"4px 10px", borderRadius:7, fontSize:"0.62rem", fontWeight:700,
+                    border:"none", cursor:"pointer",
+                    background: uploadView===v ? "#7f5af0" : "#1a2d45",
+                    color: uploadView===v ? "#fff" : "#6b8399"
+                  }}>{v.charAt(0).toUpperCase()+v.slice(1)}</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══ MULTI-VIEW BANK ═══════════════════════════════════════════════════ */}
+      {Object.values(viewBank).some(v => v !== null) && (
+        <div style={{ background:"#0a0a14", border:"1px solid rgba(0,229,255,0.18)",
+          borderRadius:12, overflow:"hidden", marginBottom:12 }}>
+          <div style={{ padding:"8px 12px", borderBottom:"1px solid rgba(0,229,255,0.12)",
+            background:"rgba(0,229,255,0.03)", fontSize:"0.62rem", fontWeight:800, color:"#00e5ff" }}>
+            📸 View Bank — {Object.values(viewBank).filter(Boolean).length}/4 Captured
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, background:"rgba(0,229,255,0.04)" }}>
             {["anterior","posterior","left","right"].map(v => {
-              const cap = viewCaptures[v];
+              const cap = viewBank[v];
               const labels = {anterior:"Front",posterior:"Back",left:"L Side",right:"R Side"};
               const icons  = {anterior:"⬆",posterior:"⬇",left:"◀",right:"▶"};
-              const col    = cap?.scoreData?.score >= 78 ? "#00c97a" : cap?.scoreData?.score >= 62 ? "#ffb300" : "#ff4d6d";
+              const col = cap?.scoreData?.score >= 78 ? "#00c97a" : cap?.scoreData?.score >= 62 ? "#ffb300" : "#ff4d6d";
               return (
-                <div key={v} style={{position:"relative",background:"#0d0d1a",minHeight:90}}>
+                <div key={v} style={{ position:"relative", background:"#0d0d1a", minHeight:80 }}>
                   {cap ? (
                     <>
-                      <img src={cap.img} alt={v} style={{width:"100%",display:"block",maxHeight:160,objectFit:"cover"}}/>
-                      <div style={{position:"absolute",top:0,left:0,right:0,padding:"4px 6px",background:"rgba(0,0,0,0.55)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <span style={{fontSize:"0.6rem",fontWeight:800,color:"#00e5ff"}}>{icons[v]} {labels[v].toUpperCase()}</span>
-                        {cap.scoreData?.score && <span style={{fontSize:"0.65rem",fontWeight:900,color:col}}>{cap.scoreData?.score}</span>}
+                      <img src={cap.img} alt={v} style={{ width:"100%", display:"block", maxHeight:140, objectFit:"cover" }}/>
+                      <div style={{ position:"absolute", top:0, left:0, right:0, padding:"3px 6px",
+                        background:"rgba(0,0,0,0.6)", display:"flex", justifyContent:"space-between" }}>
+                        <span style={{ fontSize:"0.58rem", fontWeight:800, color:"#00e5ff" }}>{icons[v]} {labels[v]}</span>
+                        {cap.scoreData?.score && <span style={{ fontSize:"0.62rem", fontWeight:900, color:col }}>{cap.scoreData.score}</span>}
                       </div>
-                      <div style={{padding:"4px 6px",borderTop:"1px solid rgba(0,229,255,0.1)"}}>
-                        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                          <span style={{fontSize:"0.55rem",padding:"1px 5px",borderRadius:5,background:"rgba(255,77,109,0.15)",color:"#ff4d6d",fontWeight:700}}>
-                            🔴 {cap.findings.filter(f=>f.severity==="high").length} HIGH
-                          </span>
-                          <span style={{fontSize:"0.55rem",padding:"1px 5px",borderRadius:5,background:"rgba(255,179,0,0.15)",color:"#ffb300",fontWeight:700}}>
-                            🟡 {cap.findings.filter(f=>f.severity!=="high").length} MOD
-                          </span>
-                          {!baselineCapture && (
-                            <button onClick={()=>setBaselineCapture({...cap,date:new Date().toLocaleDateString("en-AU",{day:"2-digit",month:"short",year:"numeric"})})}
-                              style={{fontSize:"0.55rem",padding:"1px 6px",borderRadius:5,background:"rgba(0,201,122,0.12)",border:"1px solid rgba(0,201,122,0.3)",color:"#00c97a",cursor:"pointer",fontWeight:700,marginLeft:"auto"}}>
-                              📌 Set Baseline
-                            </button>
-                          )}
-                        </div>
+                      <div style={{ padding:"3px 6px", borderTop:"1px solid rgba(0,229,255,0.08)",
+                        display:"flex", gap:4, flexWrap:"wrap" }}>
+                        <span style={{ fontSize:"0.52rem", padding:"1px 5px", borderRadius:4,
+                          background:"rgba(255,77,109,0.15)", color:"#ff4d6d", fontWeight:700 }}>
+                          🔴 {cap.findings.filter(f=>f.severity==="high").length}
+                        </span>
+                        <span style={{ fontSize:"0.52rem", padding:"1px 5px", borderRadius:4,
+                          background:"rgba(255,179,0,0.15)", color:"#ffb300", fontWeight:700 }}>
+                          🟡 {cap.findings.filter(f=>f.severity!=="high").length}
+                        </span>
                       </div>
                     </>
                   ) : (
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:90,gap:4,opacity:0.4}}>
-                      <span style={{fontSize:"1.4rem"}}>{icons[v]}</span>
-                      <span style={{fontSize:"0.6rem",color:"#6b8399",fontWeight:600}}>{labels[v]}</span>
+                    <div style={{ display:"flex", flexDirection:"column", alignItems:"center",
+                      justifyContent:"center", height:80, gap:3, opacity:0.35 }}>
+                      <span style={{ fontSize:"1.3rem" }}>{icons[v]}</span>
+                      <span style={{ fontSize:"0.58rem", color:"#6b8399" }}>{labels[v]}</span>
                     </div>
                   )}
                 </div>
               );
             })}
           </div>
-
-          {/* Before/After comparison */}
-          {showComparison && baselineCapture && (
-            <div style={{padding:"10px 12px",borderTop:"1px solid rgba(127,90,240,0.2)",background:"rgba(127,90,240,0.03)"}}>
-              <div style={{fontSize:"0.6rem",fontWeight:700,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>⇄ Before / After Comparison</div>
-              {["anterior","posterior","left","right"].map(v => {
-                const current = viewCaptures[v];
-                const isBaseline = baselineCapture.view === v;
-                if (!current || !isBaseline) return null;
-                const bScore = baselineCapture.scoreData?.score ?? null;
-                const cScore = current.scoreData?.score ?? null;
-                const delta  = bScore !== null && cScore !== null ? cScore - bScore : null;
-                const deltaCol = delta === null ? "#6b8399" : delta >= 0 ? "#00c97a" : "#ff4d6d";
-                return (
-                  <div key={v} style={{marginBottom:10}}>
-                    <div style={{fontSize:"0.65rem",fontWeight:700,color:"#00e5ff",marginBottom:6}}>{v.toUpperCase()} VIEW</div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center"}}>
-                      <div style={{textAlign:"center"}}>
-                        <img src={baselineCapture.img} alt="baseline" style={{width:"100%",borderRadius:7,border:"2px solid rgba(127,90,240,0.4)"}}/>
-                        <div style={{fontSize:"0.6rem",color:"#7f5af0",marginTop:3,fontWeight:700}}>BASELINE · {baselineCapture.date}</div>
-                        {bScore && <div style={{fontSize:"1.1rem",fontWeight:900,color:"#7f5af0"}}>{bScore}</div>}
-                      </div>
-                      <div style={{textAlign:"center",padding:"0 4px"}}>
-                        {delta !== null && (
-                          <div style={{fontSize:"1.2rem",fontWeight:900,color:deltaCol}}>
-                            {delta >= 0 ? "▲" : "▼"} {Math.abs(delta)}
-                          </div>
-                        )}
-                        <div style={{fontSize:"0.55rem",color:"#6b8399",marginTop:2}}>pts</div>
-                      </div>
-                      <div style={{textAlign:"center"}}>
-                        <img src={current.img} alt="current" style={{width:"100%",borderRadius:7,border:"2px solid rgba(0,229,255,0.4)"}}/>
-                        <div style={{fontSize:"0.6rem",color:"#00e5ff",marginTop:3,fontWeight:700}}>CURRENT · {current.time}</div>
-                        {cScore && <div style={{fontSize:"1.1rem",fontWeight:900,color:"#00e5ff"}}>{cScore}</div>}
-                      </div>
-                    </div>
-                    {/* Finding delta */}
-                    {(() => {
-                      const bHigh = (baselineCapture.findings||[]).filter(f=>f.severity==="high").length;
-                      const cHigh = current.findings.filter(f=>f.severity==="high").length;
-                      const dHigh = bHigh - cHigh;
-                      return (
-                        <div style={{marginTop:6,padding:"5px 8px",borderRadius:7,background:"rgba(0,0,0,0.2)",fontSize:"0.65rem",color:"#c9b8e8",display:"flex",gap:10,flexWrap:"wrap"}}>
-                          <span>High priority: {bHigh} → {cHigh} <span style={{color:dHigh>0?"#00c97a":dHigh<0?"#ff4d6d":"#6b8399",fontWeight:700}}>{dHigh>0?`(−${dHigh} resolved)`:dHigh<0?`(+${Math.abs(dHigh)} new)`:"(unchanged)"}</span></span>
-                          <span>Total findings: {(baselineCapture.findings||[]).length} → {current.findings.length}</span>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                );
-              })}
-              {!["anterior","posterior","left","right"].some(v => viewCaptures[v] && baselineCapture.view === v) && (
-                <div style={{fontSize:"0.7rem",color:"#6b8399",textAlign:"center",padding:"8px"}}>
-                  Capture the same view as your baseline ({baselineCapture.view}) to compare
-                </div>
-              )}
-              <button onClick={()=>setBaselineCapture(null)} style={{marginTop:6,padding:"5px 10px",background:"rgba(255,77,109,0.08)",border:"1px solid rgba(255,77,109,0.2)",borderRadius:7,color:"#ff4d6d",fontSize:"0.62rem",cursor:"pointer",fontWeight:600}}>
-                ✕ Clear Baseline
-              </button>
-            </div>
-          )}
-
-          {/* Multi-view PDF export */}
-          {Object.values(viewCaptures).filter(v=>v).length >= 2 && (
-            <div style={{padding:"8px 12px",borderTop:"1px solid rgba(0,229,255,0.1)",background:"rgba(0,229,255,0.02)"}}>
-              <button onClick={generateMultiViewPDF}
-                style={{width:"100%",padding:"10px",background:"linear-gradient(135deg,#00e5ff,#7f5af0)",border:"none",borderRadius:9,color:"#000",fontWeight:800,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
-                📄 Export Multi-View Postural Report ({Object.values(viewCaptures).filter(v=>v).length} views)
-              </button>
-            </div>
-          )}
+          <button onClick={() => setViewBank({anterior:null,posterior:null,left:null,right:null})} style={{
+            width:"100%", padding:"8px", background:"rgba(255,77,109,0.06)",
+            border:"none", borderTop:"1px solid rgba(255,77,109,0.12)",
+            color:"#ff4d6d", fontSize:"0.65rem", fontWeight:700, cursor:"pointer"
+          }}>✕ Clear All Views</button>
         </div>
-      )}
-
-      {/* ── UPLOADED PHOTO PREVIEW WITH ANALYSIS GRID ── */}
-      {uploadedPhotoUrl && (
-        <div style={{marginTop:10,background:"#1a1a2e",border:"1px solid rgba(127,90,240,0.3)",borderRadius:12,overflow:"hidden",minHeight:220}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 12px",borderBottom:"1px solid rgba(127,90,240,0.2)"}}>
-            <div style={{fontSize:"0.62rem",fontWeight:800,color:"#7f5af0"}}>
-              📷 Uploaded Photo — {activeView.charAt(0).toUpperCase()+activeView.slice(1)} View {uploadedPhotoLm ? "— Pose Grid Applied" : uploadAnalysing ? "— Analysing…" : uploadedAnalysis?._error ? "— Detection Failed" : ""}
-            </div>
-            <div style={{display:"flex",gap:6}}>
-              <button onClick={()=>{ setUploadedPhotoUrl(null); setUploadedPhotoLm(null); setUploadedAnalysis(null); setUploadAnalysing(false); if(uploadObjRef.current){URL.revokeObjectURL(uploadObjRef.current);uploadObjRef.current=null;} }}
-                style={{padding:"4px 10px",background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.25)",borderRadius:7,color:"#ff4d6d",fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>✕ Clear</button>
-            </div>
-          </div>
-          {/* Photo display with live canvas overlay — works even when toDataURL fails on mobile */}
-          <div style={{position:"relative",width:"100%",background:"#1a1a2e"}}>
-            <img src={uploadedPhotoUrl} alt="Uploaded posture photo"
-              id="posture-upload-img"
-              style={{width:"100%",display:"block",maxHeight:500,objectFit:"contain",background:"#1a1a2e"}}/>
-            {uploadedPhotoLm && (
-              <CanvasOverlayOnImage
-                photoUrl={uploadedPhotoUrl}
-                landmarks={uploadedPhotoLm}
-                view={activeView}
-              />
-            )}
-          </div>
-          {/* Analysing spinner */}
-          {uploadAnalysing && (
-            <div style={{padding:"10px 12px",borderTop:"1px solid rgba(127,90,240,0.15)",display:"flex",alignItems:"center",gap:8,color:"#7f5af0",fontSize:"0.73rem",fontWeight:600}}>
-              <span style={{animation:"spin 1s linear infinite",display:"inline-block"}}>⟳</span> Detecting pose landmarks…
-            </div>
-          )}
-          {/* MediaPipe findings (if landmarks detected) */}
-          {uploadedPhotoLm && (() => {
-            try {
-              const m = AdvancedMeasurementEngine ? AdvancedMeasurementEngine(uploadedPhotoLm, null) : {};
-              const rel = ReliabilityEngine ? ReliabilityEngine(uploadedPhotoLm) : { blocked: false };
-              if (rel.blocked) return (
-                <div style={{padding:"10px 12px",borderTop:"1px solid rgba(255,77,109,0.2)",background:"rgba(255,77,109,0.06)"}}>
-                  <div style={{fontSize:"0.72rem",color:"#ff4d6d",fontWeight:700}}>🚫 Image quality insufficient</div>
-                  <div style={{fontSize:"0.65rem",color:"rgba(255,77,109,0.75)",marginTop:4,lineHeight:1.5}}>
-                    {(rel.warnings[0]?.text)||"Improve lighting, ensure full body is visible, and use form-fitting clothing."}
-                  </div>
-                </div>
-              );
-              const findings = ClinicalFindingsEngine ? ClinicalFindingsEngine(uploadedPhotoLm, activeView, m) : [];
-              if (!findings.length) return (
-                <div style={{padding:"10px 12px",borderTop:"1px solid rgba(0,201,122,0.2)",color:"#00c97a",fontSize:"0.72rem",fontWeight:600}}>
-                  ✅ Pose detected — no significant postural findings flagged for the {activeView} view.
-                </div>
-              );
-              return (
-                <div style={{padding:"10px 12px",borderTop:"1px solid rgba(127,90,240,0.15)"}}>
-                  <div style={{fontSize:"0.6rem",fontWeight:700,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📊 Posture Findings</div>
-                  {findings.map((f,i)=>(
-                    <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",padding:"6px 10px",marginBottom:5,
-                      background:f.severity==="high"?"rgba(255,77,109,0.08)":"rgba(255,179,0,0.07)",
-                      border:`1px solid ${f.severity==="high"?"rgba(255,77,109,0.3)":"rgba(255,179,0,0.25)"}`,borderRadius:9}}>
-                      <span style={{fontSize:"1rem",flexShrink:0,marginTop:1}}>{f.icon}</span>
-                      <div style={{flex:1}}>
-                        <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
-                          <span style={{fontWeight:800,fontSize:"0.74rem",color:f.severity==="high"?"#ff4d6d":"#ffb300"}}>{f.region}</span>
-                          <span style={{fontSize:"0.58rem",padding:"1px 6px",borderRadius:6,background:f.severity==="high"?"rgba(255,77,109,0.15)":"rgba(255,179,0,0.15)",
-                            color:f.severity==="high"?"#ff4d6d":"#ffb300",fontWeight:700,textTransform:"uppercase"}}>{f.severity}</span>
-                          {f.icd&&<span style={{fontSize:"0.55rem",color:"rgba(127,90,240,0.6)",marginLeft:"auto"}}>{f.icd}</span>}
-                        </div>
-                        <div style={{fontSize:"0.76rem",color:"#e2d9f3",marginBottom:3,lineHeight:1.4}}>{f.text}</div>
-                        {f.correction&&<div style={{fontSize:"0.67rem",color:"#7e6a9a",lineHeight:1.4,borderTop:"1px solid rgba(127,90,240,0.1)",paddingTop:3,marginTop:3}}>
-                          <span style={{color:"#7f5af0",fontWeight:700}}>Rx: </span>{f.correction}
-                        </div>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            } catch (err) {
-              console.error("Posture findings render failed:", err);
-              return (
-                <div style={{padding:"10px 12px",borderTop:"1px solid rgba(255,77,109,0.2)",color:"#ff4d6d",fontSize:"0.72rem",fontWeight:600}}>
-                  ⚠ Findings could not be rendered: {err?.message || "engine error"}. Photo is still visible above.
-                </div>
-              );
-            }
-          })()}
-          {/* No-detection / error message — shown when MediaPipe couldn't find landmarks */}
-          {!uploadedPhotoLm && !uploadAnalysing && uploadedAnalysis && (
-            <div style={{padding:"12px 14px",borderTop:"1px solid rgba(255,179,0,0.2)",background:"rgba(255,179,0,0.05)"}}>
-              <div style={{fontSize:"0.7rem",fontWeight:800,color:"#ffb300",textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>
-                ⚠ Pose Not Detected
-              </div>
-              <div style={{fontSize:"0.78rem",color:"#e2d9f3",lineHeight:1.55,marginBottom:8}}>
-                {uploadedAnalysis.summary}
-              </div>
-              <div style={{fontSize:"0.7rem",color:"#c9b8e8",lineHeight:1.6,opacity:0.85}}>
-                <strong style={{color:"#7f5af0"}}>Tips for a successful detection:</strong>
-                <ul style={{margin:"4px 0 0 16px",padding:0}}>
-                  <li>Full body visible from head to feet</li>
-                  <li>Plain, contrasting background</li>
-                  <li>Even, bright lighting (no harsh shadows)</li>
-                  <li>Form-fitting clothing (avoid baggy garments)</li>
-                  <li>Subject facing the camera squarely for the selected view</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* ── PDF REPORT GENERATOR — only when MediaPipe detected landmarks ── */}
-          {uploadedPhotoLm && !uploadAnalysing && (
-            <div style={{padding:"12px",borderTop:"1px solid rgba(127,90,240,0.2)",background:"rgba(127,90,240,0.04)"}}>
-              <div style={{fontSize:"0.6rem",fontWeight:700,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>
-                📄 Generate PDF Report
-              </div>
-              <div style={{display:"flex",gap:7,marginBottom:8}}>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:"0.58rem",color:"rgba(200,185,230,0.7)",marginBottom:3,fontWeight:600}}>Patient Name</div>
-                  <input
-                    type="text" placeholder="e.g. John Smith"
-                    value={reportPatient} onChange={e=>setReportPatient(e.target.value)}
-                    style={{width:"100%",padding:"8px 10px",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(127,90,240,0.3)",borderRadius:8,color:"#e2d9f3",fontSize:"0.75rem",outline:"none",boxSizing:"border-box"}}
-                  />
-                </div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:"0.58rem",color:"rgba(200,185,230,0.7)",marginBottom:3,fontWeight:600}}>Clinician Name</div>
-                  <input
-                    type="text" placeholder="e.g. Dr. Jones"
-                    value={reportClinician} onChange={e=>setReportClinician(e.target.value)}
-                    style={{width:"100%",padding:"8px 10px",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(127,90,240,0.3)",borderRadius:8,color:"#e2d9f3",fontSize:"0.75rem",outline:"none",boxSizing:"border-box"}}
-                  />
-                </div>
-              </div>
-
-              {/* Save to patient record button — only shown when patient is loaded */}
-              {set && (
-                <button
-                  onClick={savePostureToRecord}
-                  style={{
-                    width:"100%",padding:"10px",marginBottom:7,
-                    background:savedToRecord?"rgba(0,201,122,0.15)":"rgba(0,201,122,0.08)",
-                    border:`1px solid ${savedToRecord?"rgba(0,201,122,0.6)":"rgba(0,201,122,0.25)"}`,
-                    borderRadius:9,color:savedToRecord?"#00c97a":"rgba(0,201,122,0.8)",
-                    fontWeight:700,fontSize:"0.78rem",cursor:"pointer",
-                    display:"flex",alignItems:"center",justifyContent:"center",gap:7,
-                    transition:"all 0.3s",
-                  }}>
-                  {savedToRecord ? "✅  Saved to Patient Record" : "💾  Save to Patient Record"}
-                </button>
-              )}
-              {!set && (
-                <div style={{padding:"7px 10px",marginBottom:7,borderRadius:8,background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",fontSize:"0.67rem",color:"rgba(255,179,0,0.8)",textAlign:"center"}}>
-                  ⚠ No patient loaded — create or load a patient to save this assessment
-                </div>
-              )}
-
-              <button
-                onClick={generatePostureReportPDF}
-                disabled={reportExporting}
-                style={{
-                  width:"100%",padding:"12px",
-                  background:reportExporting?"rgba(127,90,240,0.2)":"linear-gradient(135deg,#7f5af0,#00e5ff)",
-                  border:"none",borderRadius:10,
-                  color:reportExporting?"#7f5af0":"#000",
-                  fontWeight:800,fontSize:"0.82rem",cursor:reportExporting?"not-allowed":"pointer",
-                  display:"flex",alignItems:"center",justifyContent:"center",gap:8,
-                  letterSpacing:"0.3px",
-                }}>
-                {reportExporting ? "⏳  Generating Report…" : "📄  Export Postural Assessment PDF"}
-              </button>
-              <div style={{fontSize:"0.6rem",color:"rgba(127,90,240,0.55)",textAlign:"center",marginTop:6,lineHeight:1.5}}>
-                Opens print dialog → <strong style={{color:"rgba(127,90,240,0.8)"}}>Save as PDF</strong> · Includes: photo · score · ASIS/PSIS · knee · shoulder · spine · measurements · Rx
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Manual capture button — always visible when camera active */}
-      {isActive && activeView!=="photo" && (
-        <div style={{marginTop:8,display:"flex",gap:8}}>
-          <button onClick={triggerCountdownCapture} disabled={captureCountdown!==null}
-            style={{flex:1,padding:"12px",background:captureCountdown!==null?"rgba(0,229,255,0.08)":"linear-gradient(135deg,#00e5ff,#7f5af0)",border:"none",borderRadius:10,color:captureCountdown!==null?"#00e5ff":"#000",fontWeight:800,fontSize:"0.82rem",cursor:captureCountdown!==null?"not-allowed":"pointer"}}>
-            {captureCountdown!==null ? `📸 Capturing in ${captureCountdown}s…` : `📸 Capture Photo (${countdownSecs}s)`}
-          </button>
-        </div>
-      )}
-
-      {/* Joint confidence panel */}
-      {trackState===TRACKING_STATES.STABLE && landmarks && (
-        <div style={{ marginTop:10, background:"#ffffff", border:"1px solid #d8cce8", borderRadius:10, padding:"9px 13px" }}>
-          <div style={{ fontSize:"0.6rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>Joint Confidence</div>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
-            {Object.entries(KEY_JOINTS).map(([idx, name]) => {
-              const v = landmarks[Number(idx)]?.visibility || 0;
-              const col = v>0.7?"#00c97a":v>0.4?"#ffb300":"#ff4d6d";
-              return <div key={idx} style={{ fontSize:"0.62rem", padding:"2px 7px", borderRadius:7, background:`${col}14`, color:col, border:`1px solid ${col}28`, fontWeight:600 }}>{name} {Math.round(v*100)}%</div>;
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── Multi-View Analysis Engine ── */}
-      {trackState===TRACKING_STATES.STABLE && landmarks && quality.ready && (
-        <PostureLiveAnalysis landmarks={landmarks} canvasRef={canvasRef} videoSize={videoSize}/>
       )}
 
       {/* Footer */}
-      <div style={{ marginTop:10, fontSize:"0.62rem", color:"#7e6a9a", padding:"7px 11px", background:"#ffffff", borderRadius:8, lineHeight:1.5, border:"1px solid #d8cce8" }}>
-        <strong style={{ color:"#1a1025" }}>Privacy:</strong> All processing runs locally in your browser. No video is uploaded or stored.
+      <div style={{ marginTop:8, fontSize:"0.62rem", color:"#7e6a9a", padding:"7px 11px",
+        background:"#ffffff", borderRadius:8, lineHeight:1.5, border:"1px solid #d8cce8" }}>
+        <strong style={{ color:"#1a1025" }}>Privacy:</strong> All processing runs locally in your browser. No video or photos are uploaded to any server.
       </div>
     </div>
   );
+}
+
+}
+
+
 }
 
 
@@ -11656,7 +11289,7 @@ function AppInner() {
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo}/>
               ):tests==="SUBJECTIVE_MODULE"?(
-                <SubjectiveModule data={data} set={set}/>
+                <SubjectiveModule data={data} set={set} onNav={navTo}/>
               ):tests==="PALPATION_MODULE"?(
                 <PalpationModule data={data} set={set}/>
               ):tests==="POSTURE_DEFECT_MODULE"?(
