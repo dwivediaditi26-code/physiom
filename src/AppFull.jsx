@@ -1460,11 +1460,6 @@ function PostureCameraModule({ activePatient, set }) {
   );
 }
 
-}
-
-
-}
-
 
 // ════════════════════════════════════════════════════════════════════════
 // NEW ADVANCED POSTURE ANALYSIS ENGINE — integrated from PostureAnalysisModule
