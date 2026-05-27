@@ -2835,36 +2835,184 @@ function measureLandmarks(lm, calibration) {
   const spinalDeviation    = V(0)&&hipMid?r1((g(0).x-hipMid.x)*100):null;
   const waistAsymmetry     = Vb(11,13)&&Vb(12,14)?r1(Math.abs(Math.abs(g(13).x-g(11).x)-Math.abs(g(14).x-g(12).x))*100):null;
 
-  // CVA
-  let cvaAngle=null;
-  if(earMid&&shMid){
-    const dx=Math.abs(earMid.x-shMid.x), dy=Math.abs(earMid.y-shMid.y);
-    if(dy>0.04&&earMid.visibility>=0.35) cvaAngle=r1(clamp(Math.atan2(dy,dx)*180/Math.PI,20,88));
-  }
-  const fhpNorm = shMid&&earMid?r1((earMid.x-shMid.x)*100):null;
+  // ══════════════════════════════════════════════════════════════════════════
+  // SAGITTAL ANALYSIS ENGINE v2 (Kendall / Janda / Sahrmann)
+  // ──────────────────────────────────────────────────────────────────────────
+  // Uses a true 5-point sagittal plumb line: ear→acromion→GT→knee→malleolus.
+  // For lateral view: landmark 7 (L ear) or 8 (R ear) is visible — not the
+  // bilateral midpoint. We use whichever ear is more visible.
+  //
+  // CM thresholds (Kendall 2005 / clinical norms):
+  //   Ear vs acromion:      >2cm anterior = FHP
+  //   Acromion vs GT:       >2cm anterior = rounded shoulder tendency
+  //   GT vs ankle plumb:    >2cm = global alignment shift
+  //   Knee deviation:       >1.5cm posterior = recurvatum tendency
+  //
+  // When pixPerCm is unavailable, normalised image-fraction units are used
+  // with scaled thresholds. Confidence is penalised accordingly.
+  // ══════════════════════════════════════════════════════════════════════════
 
-  // Cervical compressive load (Hansraj 2014 model)
-  // Neutral head load ~4.5kg; adds ~2.7kg per 2.5cm of forward head displacement
-  // fhpNorm is a % of image width — scale to cm using typical shoulder-width ~40cm as reference
-  const shoulderWidthPx = shMid&&Vb(11,12)?dist2D(g(11),g(12)):null;
+  // ── Sagittal-specific landmark selection ────────────────────────────────────
+  // Use the more visible ear (left view = lm[7], right view = lm[8])
+  const earL  = g(7), earR  = g(8);
+  const earVis = (earL?.visibility||0) >= MIN_VIS || (earR?.visibility||0) >= MIN_VIS;
+  // Prefer the ear with higher visibility; both may be visible in a profile shot
+  const sagEar = ((earL?.visibility||0) >= (earR?.visibility||0)) ? earL : earR;
+  const sagEarVis = (sagEar?.visibility||0) >= MIN_VIS;
+
+  // Shoulder: for true lateral view use the nearer shoulder (more visible)
+  const shL = g(11), shR = g(12);
+  const sagSh = ((shL?.visibility||0) >= (shR?.visibility||0)) ? shL : shR;
+  const sagShVis = (sagSh?.visibility||0) >= MIN_VIS;
+
+  // Greater trochanter proxy: use whichever hip is more visible
+  const hipL = g(23), hipR = g(24);
+  const sagHip = ((hipL?.visibility||0) >= (hipR?.visibility||0)) ? hipL : hipR;
+  const sagHipVis = (sagHip?.visibility||0) >= MIN_VIS;
+
+  // Knee (lateral view): one knee visible
+  const kneeL = g(25), kneeR = g(26);
+  const sagKnee = ((kneeL?.visibility||0) >= (kneeR?.visibility||0)) ? kneeL : kneeR;
+  const sagKneeVis = (sagKnee?.visibility||0) >= MIN_VIS;
+
+  // Lateral malleolus proxy: ankle
+  const ankleL = g(27), ankleR = g(28);
+  const sagAnkle = ((ankleL?.visibility||0) >= (ankleR?.visibility||0)) ? ankleL : ankleR;
+  const sagAnkleVis = (sagAnkle?.visibility||0) >= MIN_VIS;
+
+  // Heel
+  const heelL = g(29), heelR = g(30);
+  const sagHeel = ((heelL?.visibility||0) >= (heelR?.visibility||0)) ? heelL : heelR;
+  const sagHeelVis = (sagHeel?.visibility||0) >= MIN_VIS;
+
+  // ── Sagittal plumb reference: anchor at lateral malleolus ─────────────────
+  // Clinical standard (Kendall): plumb line passes through the lateral malleolus
+  // vertically. Positive deviation = anterior to plumb (forward).
+  const plumbX = sagAnkleVis ? sagAnkle.x : (sagHeelVis ? sagHeel.x : 0.5);
+
+  // ── Convert normalised x-deviation to estimated cm ─────────────────────────
+  // If pixPerCm is available from height calibration, use it.
+  // Otherwise estimate from image height: typical standing person in frame ~170cm
+  const estPxPerCm = pixPerCm ? pixPerCm : (imgH ? imgH / 170 : null);
+
+  // devCm: deviation in cm from plumb (positive = anterior)
+  // Normalised x coords: deviation in image-fraction units × imgH / estPxPerCm
+  const devCm = (normX) => {
+    if (normX === null || normX === undefined) return null;
+    if (estPxPerCm && imgH) return r1((normX - plumbX) * imgH / estPxPerCm);
+    // Fallback: normalised fraction — scale with typical body height
+    return r1((normX - plumbX) * 170); // 170 = typical standing height in cm
+  };
+
+  // ── 5-point plumb line deviations ─────────────────────────────────────────
+  const plumb = {
+    ear:     sagEarVis   ? devCm(sagEar.x)   : null, // + = anterior (FHP)
+    shoulder:sagShVis    ? devCm(sagSh.x)    : null, // + = anterior (rounded sh)
+    hip:     sagHipVis   ? devCm(sagHip.x)   : null, // + = anterior (APT) / - = posterior (PPT)
+    knee:    sagKneeVis  ? devCm(sagKnee.x)  : null, // - = posterior (recurvatum)
+    ankle:   0,                                       // reference = 0 by definition
+  };
+
+  // ── Sagittal confidence score ─────────────────────────────────────────────
+  // Based on how many of the 5 chain points are visible + image alignment
+  const sagVisPoints = [sagEarVis, sagShVis, sagHipVis, sagKneeVis, sagAnkleVis].filter(Boolean).length;
+  // Penalise if using bilateral midpoints (frontal, not lateral view)
+  const isTrueLateral = sagVisPoints >= 3;
+  const sagConfidenceBase = Math.round((sagVisPoints / 5) * 100);
+  // Reduce confidence if no calibration (cm values are estimates)
+  const sagConfidencePenalty = pixPerCm ? 0 : 10;
+  const sagConfidence = clamp(sagConfidenceBase - sagConfidencePenalty, 0, 100);
+
+  // ── 1. CVA — Craniovertebral Angle ─────────────────────────────────────────
+  // Clinical: angle between horizontal and line from C7 (acromion proxy) to ear.
+  // Normal: >52°. Mild FHP: 48–52°. Moderate: 44–48°. Severe: <44°.
+  // (Neiva et al. 2009; Ruivo et al. 2017)
+  let cvaAngle = null;
+  if (sagEarVis && sagShVis) {
+    const dx = Math.abs(sagEar.x - sagSh.x);
+    const dy = Math.abs(sagEar.y - sagSh.y);
+    if (dy > 0.03) {
+      // atan2(vertical, horizontal) gives angle from horizontal
+      cvaAngle = r1(clamp(Math.atan2(dy, dx) * 180 / Math.PI, 15, 90));
+    }
+  }
+
+  // ── 2. FHP metrics ─────────────────────────────────────────────────────────
+  // fhpNorm: retained for backward compatibility (% image width)
+  const shoulderWidthPx = shMid && Vb(11,12) ? dist2D(g(11),g(12)) : null;
+  const fhpNorm = sagEarVis && sagShVis ? r1((sagEar.x - sagSh.x) * 100) : null;
+
+  // fhpCm: ear deviation from shoulder in cm (clinical plumb line method)
+  // Positive = ear anterior to acromion
+  const fhpDevCm = plumb.ear !== null && plumb.shoulder !== null
+    ? r1(plumb.ear - plumb.shoulder) : null;
+
+  // Cervical load (Hansraj 2014) — only if FHP confirmed by CVA
   let cervicalLoadKg = null;
-  if(fhpNorm!==null&&shoulderWidthPx!==null&&shoulderWidthPx>0.05){
-    // Convert normalised FHP offset to estimated cm (shoulder width reference 40cm)
-    const fhpCm = Math.max(0,(fhpNorm/100)/shoulderWidthPx*40);
-    cervicalLoadKg = r1(clamp(4.5 + fhpCm*1.08, 4.5, 32));
+  if (fhpDevCm !== null && fhpDevCm > 0 && cvaAngle !== null && cvaAngle < 55) {
+    cervicalLoadKg = r1(clamp(4.5 + fhpDevCm * 1.08, 4.5, 32));
   }
 
-  // Thoracic kyphosis proxy
-  let thoracicAngle=null;
-  if(shMid&&hipMid){
-    const dx=shMid.x-hipMid.x, dy=Math.abs(shMid.y-hipMid.y);
-    if(dy>0.06) thoracicAngle=r1(clamp(32+Math.atan2(Math.abs(dx),dy)*180/Math.PI*1.8,20,80));
+  // ── 3. Thoracic kyphosis proxy ─────────────────────────────────────────────
+  // Better method: shoulder→hip sagittal horizontal displacement vs vertical span.
+  // Positive horizontal offset of shoulder ANTERIOR to hip = kyphotic tendency.
+  // Note: in lateral view, shoulder visible = one-sided measurement is meaningful.
+  let thoracicAngle = null;
+  if (sagShVis && sagHipVis) {
+    const dx = sagSh.x - sagHip.x;   // positive = shoulder anterior to hip
+    const dy = Math.abs(sagSh.y - sagHip.y);
+    if (dy > 0.06) {
+      // Angle from vertical: higher angle = more trunk lean / kyphosis tendency
+      const rawAngle = Math.atan2(Math.abs(dx), dy) * 180 / Math.PI;
+      // Calibrate to clinical kyphosis scale (32° normal baseline)
+      thoracicAngle = r1(clamp(32 + rawAngle * 1.8, 20, 80));
+    }
   }
 
-  // Lumbar proxy
-  let lumbarProxy=null;
-  if(hipMid&&kneeMid&&heelMid) lumbarProxy=r1((hipMid.x-(kneeMid.x+heelMid.x)/2)*100);
-  const hipExtensionProxy = hipMid&&ankleMid?r1((hipMid.x-ankleMid.x)*100):null;
+  // ── 4. Trunk lean (global sagittal alignment) ──────────────────────────────
+  // Shoulder vs ankle horizontal: positive = shoulder anterior to ankle
+  const trunkSagLean = sagShVis && sagAnkleVis
+    ? r1((sagSh.x - sagAnkle.x) * 100) : null;
+
+  // ── 5. Pelvic position — sagittal ──────────────────────────────────────────
+  // Hip (GT) vs plumb line: anterior = APT tendency, posterior = PPT tendency.
+  // Lumbar proxy: retain original for backward compatibility
+  let lumbarProxy = null;
+  if (hipMid && kneeMid && heelMid) lumbarProxy = r1((hipMid.x - (kneeMid.x + heelMid.x) / 2) * 100);
+
+  // sagPelvicShift: true plumb line pelvic deviation in cm (+ = anterior)
+  const sagPelvicShift = plumb.hip; // already in cm from plumb
+
+  // ── 6. Hip position vs ankle plumb ─────────────────────────────────────────
+  const hipExtensionProxy = hipMid && ankleMid ? r1((hipMid.x - ankleMid.x) * 100) : null;
+
+  // sagHipShift: hip in cm vs plumb (+ = anterior, - = posterior / sway-back pattern)
+  const sagHipShift = plumb.hip;
+
+  // ── 7. Shoulder position vs plumb ──────────────────────────────────────────
+  // Positive = shoulder anterior to ankle plumb = rounded shoulder tendency
+  const sagShoulderShift = plumb.shoulder;
+
+  // ── 8. Knee sagittal position ───────────────────────────────────────────────
+  // Knee anterior to plumb: genu flexum tendency
+  // Knee posterior to plumb: genu recurvatum tendency (negative value)
+  const sagKneeShift = plumb.knee;
+
+  // ── 9. Sagittal chain deviations summary (new structured format) ───────────
+  // Each segment relative to plumb (cm). Positive = anterior.
+  const sagChain = {
+    earCm:      plumb.ear,
+    shoulderCm: plumb.shoulder,
+    hipCm:      plumb.hip,
+    kneeCm:     plumb.knee,
+    confidence: sagConfidence,
+    isTrueLateral,
+  };
+
+  // ── Backward-compatible vars ────────────────────────────────────────────────
+  // These feed into the existing buildFindings thresholds
+  // Re-express plumb deviations as % for backward compatibility where needed
+  const fhpFromPlumb = fhpDevCm; // ear vs shoulder in cm (+ = FHP)
 
   // Knees
   const leftKneeAngle  = Vb(23,25,27)?vec3Angle(g(23),g(25),g(27)):null;
@@ -3025,7 +3173,9 @@ function measureLandmarks(lm, calibration) {
   return {
     shoulderAngle, pelvisAngle, eyeLevelAngle, headTiltAngle, headTiltSide,
     headLateralOffset, trunkLateralShift, weightBearingShift, spinalDeviation, waistAsymmetry,
-    cvaAngle, fhpNorm, cervicalLoadKg, thoracicAngle, lumbarProxy, hipExtensionProxy,
+    cvaAngle, fhpNorm, fhpDevCm, cervicalLoadKg, thoracicAngle, lumbarProxy, hipExtensionProxy,
+    sagChain, sagConfidence, sagPelvicShift, sagShoulderShift, sagKneeShift, sagHipShift,
+    trunkSagLean, plumb, fhpFromPlumb,
     leftKneeDev, rightKneeDev, leftKneeFrontal, rightKneeFrontal,
     lldProxy, lldSide, ucsIndex, lcsIndex, kneeSymmetry,
     pelvicTiltSagittal: lumbarProxy,
@@ -3649,118 +3799,159 @@ function buildFindings(lm, view, m) {
     const sagRel = checkLandmarkReliability(lm, LANDMARK_GROUPS.sagittal);
     const sagConf = getLandmarkConfidence(lm, LANDMARK_GROUPS.sagittal);
 
-    // ── Forward head posture / CVA ───────────────────────────────────────────
+    // ── SAGITTAL CHAIN ENGINE ─────────────────────────────────────────────────
+    // Uses plumb-line deviations in cm (Kendall thresholds).
+    // Falls back to angle/proxy measures when plumb data unavailable.
+    // Confidence is taken from sagChain.confidence (0–100).
+    // Movement chain: FHP → rounded shoulder → thoracic kyphosis → APT → recurvatum.
+
+    const sagChainConf = m.sagChain?.confidence ?? 60;
+    const sagLateral = m.sagChain?.isTrueLateral ?? false;
+
+    // ── 1. Forward Head Posture ───────────────────────────────────────────────
+    // Primary: CVA < 52° (Neiva et al. 2009). Secondary: ear >2cm anterior to shoulder.
+    // Thresholds: mild CVA 48–52°, moderate 44–48°, severe <44° (Ruivo 2017)
     if (m.cvaAngle !== null) {
-      const sev = classifySeverity(m.cvaAngle, POSTURE_THRESHOLDS.cvaAngle, true);
-      const earRel = checkLandmarkReliability(lm, [7, 8, 11, 12]);
-      const conf = getLandmarkConfidence(lm, [7, 8, 11, 12]);
-      if (sev && earRel.reliable) {
+      const cvaRel = checkLandmarkReliability(lm, [7, 8, 11, 12]);
+      const cvaConf = getLandmarkConfidence(lm, [7, 8, 11, 12]);
+      const fhpCm = m.fhpDevCm ?? m.fhpFromPlumb ?? null;
+
+      // Only trigger if CVA is meaningfully reduced
+      if (m.cvaAngle < 52 && cvaConf >= 35) {
+        const sev = m.cvaAngle < 44 ? "high" : m.cvaAngle < 48 ? "moderate" : "mild";
+        const loadStr = m.cervicalLoadKg ? ` Estimated cervical load increase: ~${m.cervicalLoadKg.toFixed(1)}kg (proxy, Hansraj 2014).` : "";
+        const fhpCmStr = fhpCm !== null && fhpCm > 0 ? ` Ear ~${fhpCm.toFixed(1)}cm anterior to acromion.` : "";
+
         add({
           region: "Cervical / CVA",
           findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >52°)`,
-          severity: sev, confidenceScore: conf,
-          clinicalSignificance: sev === "high" ? "high" : "moderate",
-          interpretation: INTERPRETATIONS.fhp(m.cvaAngle, m.cervicalLoadKg),
-          musclePattern: MUSCLE_PATTERNS.fhp,
-          functionalCorrelation: FUNCTIONAL_CORRELATIONS.fhp,
-          objectiveAssessments: OBJECTIVE_ASSESSMENTS.fhp,
-          correction: `DNF chin nod ×10 ×3 daily. Thoracic extension foam roller T4–T8. Pec minor stretch 30s×3.${m.cervicalLoadKg ? ` Est. cervical load ~${m.cervicalLoadKg.toFixed(1)}kg (proxy).` : ""}`,
+          severity: sev, confidenceScore: cvaConf,
+          clinicalSignificance: sev,
+          interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this.${loadStr}`,
+          possibleMusclePatterns: {
+            tight: ["Suboccipital extensors", "Cervical extensors (semispinalis, splenius)","Sternocleidomastoid","Pectoralis minor"],
+            weak:  ["Deep cervical flexors (longus colli, longus capitis)","Lower trapezius","Serratus anterior"],
+          },
+          functionalCorrelation: "May increase cervical extensor loading during prolonged sitting and screen use. May reduce cervicothoracic mobility during shoulder flexion tasks.",
+          recommendedObjectiveAssessment: [
+            "Craniovertebral angle measurement (goniometer — seated)",
+            "Craniocervical flexion test (CCFT) — deep cervical flexor capacity",
+            "Cervical AROM — flexion/extension bilateral",
+            "Upper cervical passive accessory movement testing (C0–C2)",
+          ],
+          correction: `DNF chin nod ×10 ×3 daily. Thoracic extension foam roller T4–T8. Pec minor stretch doorframe 30s×3. Ergonomic screen height review.${loadStr}`,
           icd: "M43.1", norm: "CVA >52°",
         });
-      } else if (sev && !earRel.reliable) {
-        // Still add but low confidence — ear landmarks unreliable
-        add({
-          region: "Cervical / CVA",
-          findingName: `Possible forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (ear visibility limited)`,
-          severity: "mild", confidenceScore: Math.min(conf, 40),
-          clinicalSignificance: "low",
-          interpretation: "CVA calculation may be affected by reduced ear landmark visibility. Clinical measurement recommended for confirmation.",
-          musclePattern: MUSCLE_PATTERNS.fhp,
-          functionalCorrelation: FUNCTIONAL_CORRELATIONS.fhp,
-          objectiveAssessments: OBJECTIVE_ASSESSMENTS.fhp,
-          correction: "Confirm CVA clinically. DNF chin nod if confirmed.",
-          icd: "M43.1", norm: "CVA >52°",
-        });
+
+        // ── Posture chain note: FHP → thoracic ──────────────────────────────
+        // Only add chain finding if thoracic finding won't fire separately
+        const willFireKyphosis = m.thoracicAngle !== null && m.thoracicAngle > POSTURE_THRESHOLDS.thoracicAngle.mild;
+        if (!willFireKyphosis && sev !== "mild" && m.thoracicAngle !== null && m.thoracicAngle > 40) {
+          add({
+            region: "Upper Crossed Syndrome (UCS)",
+            findingName: `Possible UCS pattern — forward head (CVA ${m.cvaAngle.toFixed(0)}°) + thoracic tendency (${m.thoracicAngle.toFixed(0)}°)`,
+            severity: sev, confidenceScore: Math.min(cvaConf, sagChainConf),
+            clinicalSignificance: sev,
+            interpretation: `The combination of reduced CVA and increased thoracic curvature may be consistent with characteristics of the upper crossed pattern (Janda). Possible overactivity: upper trapezius, levator scapulae, SCM, pectoralis minor. Possible underactivity: deep cervical flexors, lower trapezius, serratus anterior. Clinical muscle testing is required to confirm this pattern.`,
+            possibleMusclePatterns: MUSCLE_PATTERNS.ucs,
+            functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
+            recommendedObjectiveAssessment: OBJECTIVE_ASSESSMENTS.ucs,
+            correction: "NKT Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: DNF (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
+            icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
+          });
+        }
       }
     }
 
-    // ── Thoracic kyphosis ────────────────────────────────────────────────────
+    // ── 2. Rounded Shoulder Tendency ─────────────────────────────────────────
+    // Acromion anterior to plumb by >2cm = rounded shoulder tendency.
+    // If CVA also reduced: correlate as UCS chain.
+    if (m.sagShoulderShift !== null && m.sagShoulderShift > 2.0 && sagChainConf >= 40) {
+      const sev = m.sagShoulderShift > 5 ? "high" : m.sagShoulderShift > 3 ? "moderate" : "mild";
+      const fhpAlso = m.cvaAngle !== null && m.cvaAngle < 52;
+      add({
+        region: "Shoulder / Rounded Tendency",
+        findingName: `Anterior shoulder position tendency (~${m.sagShoulderShift.toFixed(1)}cm anterior to plumb)`,
+        severity: sev, confidenceScore: sagConf,
+        clinicalSignificance: sev,
+        interpretation: `Acromion positioned ${m.sagShoulderShift.toFixed(1)}cm anterior to the lateral malleolus plumb line may be consistent with a rounded shoulder tendency.` +
+          (fhpAlso ? " This finding combined with reduced CVA may reflect an upper crossed pattern tendency (Janda)." : "") +
+          " Possible contributing factors include pectoralis minor shortening and reduced serratus anterior contribution. Clinical assessment is required to confirm.",
+        possibleMusclePatterns: {
+          tight: ["Pectoralis minor","Pectoralis major","Subscapularis"],
+          weak:  ["Serratus anterior","Lower trapezius","Middle trapezius"],
+        },
+        functionalCorrelation: "May alter scapulohumeral rhythm and reduce subacromial space during shoulder elevation tasks.",
+        recommendedObjectiveAssessment: [
+          "Pectoralis minor length test (supine — coracoid offset from table)",
+          "Serratus anterior strength (push-up plus)",
+          "Shoulder passive range of motion — horizontal adduction",
+        ],
+        correction: "Pec minor stretch (corner/doorframe) 30s×3. Serratus anterior: wall slide progression ×15. Lower trap Y-T-W ×15.",
+        icd: "M79.2", norm: "Acromion within 2cm of plumb line",
+      });
+    }
+
+    // ── 3. Thoracic Kyphosis ─────────────────────────────────────────────────
     if (m.thoracicAngle !== null) {
       const sev = classifySeverity(m.thoracicAngle, POSTURE_THRESHOLDS.thoracicAngle);
       const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
       if (sev && sagRel.reliable) {
+        const shiftStr = m.sagShoulderShift !== null
+          ? ` (shoulder ~${m.sagShoulderShift.toFixed(1)}cm anterior to plumb)` : "";
         add({
           region: "Thoracic Kyphosis",
-          findingName: `Increased thoracic curvature (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,
+          findingName: `Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,
           severity: sev, confidenceScore: conf, clinicalSignificance: sev,
-          interpretation: INTERPRETATIONS.kyphosis(m.thoracicAngle),
-          musclePattern: MUSCLE_PATTERNS.kyphosis,
-          functionalCorrelation: FUNCTIONAL_CORRELATIONS.kyphosis,
-          objectiveAssessments: OBJECTIVE_ASSESSMENTS.kyphosis,
-          correction: "Thoracic extension foam roller T4–T8 ×2min. Pec stretch bilateral. Lower trap activation Y-T-W ×15.",
+          interpretation: `Increased thoracic curvature (${m.thoracicAngle.toFixed(1)}°)${shiftStr} may be consistent with a kyphotic tendency. This may be associated with possible pectoralis major/minor overactivity and reduced middle/lower trapezius and thoracic extensor contribution. ` +
+            (m.cvaAngle !== null && m.cvaAngle < 52
+              ? "The combination with reduced CVA may be consistent with an upper crossed pattern tendency (Janda)."
+              : "Static posture alone cannot confirm these muscle contributions."),
+          possibleMusclePatterns: MUSCLE_PATTERNS.kyphosis,
+          functionalCorrelation: "May reduce thoracic extension mobility and alter rib cage mechanics during breathing. May contribute to impingement risk during overhead tasks.",
+          recommendedObjectiveAssessment: OBJECTIVE_ASSESSMENTS.kyphosis,
+          correction: "Thoracic extension foam roller T4–T8 ×2min. Pec stretch bilateral. Lower trap activation Y-T-W ×15. Postural cueing.",
           icd: "M40.0", norm: "Thoracic kyphosis 20–45°",
         });
       }
     }
 
-    // ── Pelvic tilt (sagittal) ───────────────────────────────────────────────
-    if (m.lumbarProxy !== null && Math.abs(m.lumbarProxy) > 0) {
-      const abs = Math.abs(m.lumbarProxy);
-      const sev = classifySeverity(abs, POSTURE_THRESHOLDS.lumbarProxy);
+    // ── 4. Pelvic Tilt (sagittal) ────────────────────────────────────────────
+    // Primary: plumb-line hip deviation. Fallback: lumbarProxy.
+    const pelvisCm = m.sagPelvicShift ?? null;
+    const pelvisProxy = m.lumbarProxy ?? null;
+
+    // Use cm deviation if available, otherwise use normalised proxy
+    const pelvisValue = pelvisCm !== null ? pelvisCm : (pelvisProxy !== null ? pelvisProxy : null);
+    const pelvisIsCm  = pelvisCm !== null;
+
+    if (pelvisValue !== null && Math.abs(pelvisValue) > (pelvisIsCm ? 2.0 : 5.0)) {
+      const abs = Math.abs(pelvisValue);
+      const sev = pelvisIsCm
+        ? (abs > 5 ? "high" : abs > 3 ? "moderate" : "mild")
+        : classifySeverity(abs, POSTURE_THRESHOLDS.lumbarProxy) ?? "mild";
       const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.knee]);
       if (sev && sagRel.reliable) {
-        const dir = m.lumbarProxy > 0 ? "Anterior" : "Posterior";
+        const dir = pelvisValue > 0 ? "Anterior" : "Posterior";
+        const measureStr = pelvisIsCm
+          ? `hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`
+          : `proxy deviation ${abs.toFixed(1)}%`;
         add({
           region: "Pelvis / Lumbar",
-          findingName: `${dir} pelvic tilt tendency (${abs.toFixed(1)}%)`,
+          findingName: `${dir} pelvic tendency (${measureStr})`,
           severity: sev, confidenceScore: conf, clinicalSignificance: sev,
-          interpretation: INTERPRETATIONS.lumbar(m.lumbarProxy, dir),
-          musclePattern: m.lumbarProxy > 0 ? MUSCLE_PATTERNS.lumbarAnt : MUSCLE_PATTERNS.lumbarPost,
-          functionalCorrelation: m.lumbarProxy > 0 ? FUNCTIONAL_CORRELATIONS.lumbarAnt : FUNCTIONAL_CORRELATIONS.lumbarPost,
-          objectiveAssessments: m.lumbarProxy > 0 ? OBJECTIVE_ASSESSMENTS.lumbarAnt : OBJECTIVE_ASSESSMENTS.lumbarPost,
-          correction: m.lumbarProxy > 0
+          interpretation: INTERPRETATIONS.lumbar(pelvisValue, dir) + 
+            (m.cvaAngle !== null && m.cvaAngle < 52 && dir === "Anterior"
+              ? " Combined with forward head tendency, this may be consistent with a combined UCS and LCS pattern (Janda)." : ""),
+          possibleMusclePatterns: pelvisValue > 0 ? MUSCLE_PATTERNS.lumbarAnt : MUSCLE_PATTERNS.lumbarPost,
+          functionalCorrelation: pelvisValue > 0
+            ? FUNCTIONAL_CORRELATIONS.lumbarAnt
+            : FUNCTIONAL_CORRELATIONS.lumbarPost,
+          recommendedObjectiveAssessment: pelvisValue > 0 ? OBJECTIVE_ASSESSMENTS.lumbarAnt : OBJECTIVE_ASSESSMENTS.lumbarPost,
+          correction: pelvisValue > 0
             ? "Hip flexor stretch (Thomas test position 30s×3). Glute activation: bridges ×20. Abdominal hollowing."
             : "Hamstring stretch 30s×3. Hip flexor activation. Lumbar extension mobility.",
-          icd: "M40.3", norm: "<5% pelvic tilt proxy",
-        });
-      }
-    }
-
-    // ── Knee hyperextension/recurvatum ───────────────────────────────────────
-    if (m.leftKneeDev !== null && m.leftKneeDev < 0) {
-      const abs = Math.abs(m.leftKneeDev);
-      const sev = classifySeverity(abs, POSTURE_THRESHOLDS.kneeRecurvatum);
-      const conf = getLandmarkConfidence(lm, [23, 25, 27]);
-      if (sev) {
-        add({
-          region: "Knee",
-          findingName: `Knee hyperextension tendency (${abs.toFixed(1)}°)`,
-          severity: sev, confidenceScore: conf, clinicalSignificance: sev,
-          interpretation: `Knee hyperextension of ${abs.toFixed(1)}° may be associated with posterior capsule laxity or habitual hyperextension posture. Beighton hypermobility screening is recommended if this exceeds 10°.`,
-          musclePattern: { tight: ["Posterior capsule (passive)"], weak: ["Hamstrings","Popliteus"] },
-          functionalCorrelation: "May increase posterior knee joint loading in single-leg stance and stair descent.",
-          objectiveAssessments: ["Beighton hypermobility score","Hamstring strength (60°/s isokinetic or manual)","Posterior capsule laxity assessment"],
-          correction: "Hamstring strengthening. Avoid terminal knee lock in stance. Proprioception training: single-leg balance.",
-          icd: "M21.1", norm: "0–5° knee flexion at rest",
-        });
-      }
-    }
-
-    // ── LCS index ────────────────────────────────────────────────────────────
-    if (m.lcsIndex !== null) {
-      const sev = classifySeverity(m.lcsIndex, POSTURE_THRESHOLDS.lcsIndex);
-      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.knee]);
-      if (sev && sagRel.reliable) {
-        add({
-          region: "Lower Crossed Syndrome",
-          findingName: `Possible lower crossed pattern (index ${m.lcsIndex.toFixed(1)})`,
-          severity: sev, confidenceScore: conf, clinicalSignificance: sev,
-          interpretation: INTERPRETATIONS.lcs(m.lcsIndex),
-          musclePattern: MUSCLE_PATTERNS.lcs,
-          functionalCorrelation: FUNCTIONAL_CORRELATIONS.lcs,
-          objectiveAssessments: OBJECTIVE_ASSESSMENTS.lcs,
-          correction: "INHIBIT: hip flexors, QL. ACTIVATE: glutes (bridges), transverse abdominis. MOBILISE: hip flexor.",
-          icd: "M62.9", norm: "LCS index <0.5",
+          icd: "M40.3", norm: pelvisIsCm ? "Hip within 2cm of plumb" : "<5% pelvic tilt proxy",
         });
       }
     }
