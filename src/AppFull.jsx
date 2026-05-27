@@ -3287,13 +3287,13 @@ const POSTURE_THRESHOLDS = {
   neckLateralAngle:    { mild:5,  moderate:8,  severe:12  }, // degrees
   tibialVarum:         { mild:5,  moderate:10, severe:15  }, // degrees
   ankleLLD:            { mild:6,  moderate:12, severe:18  }, // mm
-  // Sagittal
-  cvaAngle:            { mild:52, moderate:48, severe:44  }, // degrees (lower = worse)
-  thoracicAngle:       { mild:47, moderate:53, severe:60  }, // degrees (higher = worse)
-  lumbarProxy:         { mild:5,  moderate:9,  severe:14  }, // %
-  hipDisplacement:     { mild:5,  moderate:9,  severe:14  }, // %
-  kneeRecurvatum:      { mild:5,  moderate:10, severe:15  }, // degrees
-  lcsIndex:            { mild:0.5,moderate:0.9,severe:1.4 }, // index
+  // Sagittal — recalibrated to clinical norms (Kendall 2005; Neiva 2009; Ruivo 2017)
+  cvaAngle:            { mild:54, moderate:50, severe:45  }, // degrees (lower = worse); normal >54
+  thoracicAngle:       { mild:44, moderate:50, severe:58  }, // degrees; normal 20-45; mild fires at 44+
+  lumbarProxy:         { mild:4,  moderate:8,  severe:13  }, // % — mild threshold lowered to catch mild APT
+  hipDisplacement:     { mild:4,  moderate:8,  severe:13  }, // %
+  kneeRecurvatum:      { mild:4,  moderate:8,  severe:13  }, // degrees — lowered to catch early recurvatum
+  lcsIndex:            { mild:0.4,moderate:0.8,severe:1.3 }, // index
 };
 
 // ── 2. SEVERITY CLASSIFIER ────────────────────────────────────────────────────
@@ -3483,10 +3483,14 @@ function buildFinding({
   musclePattern, functionalCorrelation, objectiveAssessments,
   correction, icd = "M99.0", norm = "", plain = "",
   clinicalSignificance = "moderate",
+  clusterBoost = 0,     // bonus applied by clustering logic (+0 to +20)
 }) {
-  // Clinical significance: suppress low-confidence, low-severity findings
-  if (severity === "mild" && confidenceScore < 55) return null;
-  if (severity === "moderate" && confidenceScore < 35) return null;
+  // Clinical significance filter:
+  // Sagittal findings use lower gates (lateral landmarks naturally less visible).
+  // clusterBoost allows clustered mild findings to survive by lifting effective conf.
+  const effectiveConf = Math.min(100, (confidenceScore || 50) + clusterBoost);
+  if (severity === "mild"     && effectiveConf < 42) return null;  // was 55 — too aggressive
+  if (severity === "moderate" && effectiveConf < 28) return null;  // was 35
   return {
     region,
     text:        findingName,
@@ -3527,6 +3531,92 @@ const MAX_FINDINGS_FRONTAL  = 7;
 const MAX_FINDINGS_SAGITTAL = 6;
 const MAX_FINDINGS_TOTAL    = 10;
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SAGITTAL POSTURE CHAIN CLUSTERING ENGINE
+// Implements requirements 2, 3, 4, 7, 10 from the spec.
+//
+// How it works:
+// 1. After buildFindings runs all individual checks, collect what fired.
+// 2. Group related findings into posture chains (cervical→shoulder→thoracic→pelvis).
+// 3. Apply cluster confidence boost: 2 related mild findings → boost to moderate significance.
+// 4. Apply weighted cluster score to decide overall pattern label.
+// 5. Replace suppressed mild findings with cluster-level summary if 2+ related patterns found.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Posture chain membership: which regions belong to which chain segment
+const POSTURE_CHAIN = {
+  cervical:  ["Cervical / CVA", "Head / Cervical"],
+  shoulder:  ["Shoulder / Rounded Tendency", "Upper Crossed Syndrome (UCS)", "Upper Crossed Syndrome"],
+  thoracic:  ["Thoracic Kyphosis"],
+  pelvis:    ["Pelvis / Lumbar", "Lower Crossed Syndrome (LCS)", "Lower Crossed Syndrome"],
+  knee:      ["Knee", "Knee Alignment"],
+};
+
+// Weighted chain score: how many chain segments are present
+function computeChainScore(findings) {
+  const scores = {};
+  Object.entries(POSTURE_CHAIN).forEach(([seg, regions]) => {
+    const present = findings.some(f => regions.some(r => f.region.includes(r)));
+    scores[seg] = present ? 1 : 0;
+  });
+  return scores;
+}
+
+// Cluster boost: return confidence bonus for a finding based on related findings
+// Isolated mild finding → no boost
+// 2 related findings present → +15 boost
+// 3+ related findings (full chain) → +25 boost
+function getClusterBoost(finding, allFindings) {
+  const chains = Object.entries(POSTURE_CHAIN);
+  // Find which chain segments are present
+  const activeSegments = chains.filter(([, regions]) =>
+    allFindings.some(f => regions.some(r => f.region.includes(r)))
+  ).length;
+
+  // Boost applied when finding is part of a multi-segment chain
+  if (activeSegments >= 3) return 25;
+  if (activeSegments === 2) return 15;
+  return 0;
+}
+
+// Generate chain correlation note for multi-segment patterns
+function buildChainNote(chainScore) {
+  const active = Object.entries(chainScore).filter(([, v]) => v === 1).map(([k]) => k);
+  if (active.length === 0) return null;
+
+  if (active.includes("cervical") && active.includes("thoracic") && active.includes("pelvis")) {
+    return "Multiple sagittal chain segments affected (cervical, thoracic, pelvis). Combined findings may be consistent with upper and lower crossed pattern characteristics. Clinical assessment is recommended to confirm.";
+  }
+  if (active.includes("cervical") && active.includes("thoracic")) {
+    return "Forward head tendency and thoracic curvature observed together. These findings may be consistent with upper crossed pattern characteristics. Clinical confirmation recommended.";
+  }
+  if (active.includes("cervical") && active.includes("shoulder")) {
+    return "Forward head and anterior shoulder tendencies observed together. Pattern may reflect a cervicothoracic adaptation. Clinical confirmation recommended.";
+  }
+  if (active.includes("thoracic") && active.includes("pelvis")) {
+    return "Thoracic and pelvic chain findings observed together. May reflect compensatory spinal load distribution. Clinical assessment recommended.";
+  }
+  if (active.length === 1) return null; // single segment — no chain note needed
+  return `Findings observed across ${active.join(" and ")} regions. Pattern clustering increases clinical relevance.`;
+}
+
+// Clinically realistic nil-finding messages (spec requirement 5)
+function buildSagittalNilMessage(sagConf, measurements) {
+  const cva = measurements?.cvaAngle;
+  const thor = measurements?.thoracicAngle;
+  const hasSubthreshold = (cva !== null && cva < 58) ||
+    (thor !== null && thor > 40) ||
+    (measurements?.lumbarProxy !== null && Math.abs(measurements?.lumbarProxy || 0) > 2);
+
+  if (sagConf < 50) {
+    return "Sagittal assessment confidence is limited — landmark visibility was reduced. Clinical measurement is recommended for accurate evaluation.";
+  }
+  if (hasSubthreshold) {
+    return "Mild postural variations observed but below the threshold for clinical significance at this assessment. These may represent low-level postural adaptation patterns. Reassess if symptoms are present.";
+  }
+  return "No major sagittal deviations detected in this assessment. This finding reflects the current static posture snapshot — functional and dynamic assessment is recommended for a complete picture.";
+}
 function buildFindings(lm, view, m) {
   if (!lm || !m) return [];
   const out = [];
@@ -3796,7 +3886,11 @@ function buildFindings(lm, view, m) {
   // SAGITTAL VIEW FINDINGS
   // ══════════════════════════════════════════════════════════════════════════
   if (isLat) {
-    const sagRel = checkLandmarkReliability(lm, LANDMARK_GROUPS.sagittal);
+    // In lateral view, far-side landmarks are naturally low-visibility — use visible side only
+    const visibleSagLandmarks = LANDMARK_GROUPS.sagittal.filter(i => (lm[i]?.visibility || 0) >= MIN_VIS);
+    const sagRel = visibleSagLandmarks.length >= 3
+      ? { reliable: true, reason: "" }
+      : checkLandmarkReliability(lm, LANDMARK_GROUPS.sagittal);
     const sagConf = getLandmarkConfidence(lm, LANDMARK_GROUPS.sagittal);
 
     // ── SAGITTAL CHAIN ENGINE ─────────────────────────────────────────────────
@@ -3812,17 +3906,23 @@ function buildFindings(lm, view, m) {
     // Primary: CVA < 52° (Neiva et al. 2009). Secondary: ear >2cm anterior to shoulder.
     // Thresholds: mild CVA 48–52°, moderate 44–48°, severe <44° (Ruivo 2017)
     if (m.cvaAngle !== null) {
-      const cvaRel = checkLandmarkReliability(lm, [7, 8, 11, 12]);
-      const cvaConf = getLandmarkConfidence(lm, [7, 8, 11, 12]);
+      // In lateral view, use only the visible-side ear and shoulder for reliability
+      const cvaVisLandmarks = [7, 8, 11, 12].filter(i => (lm[i]?.visibility || 0) >= MIN_VIS);
+      const cvaRel = cvaVisLandmarks.length >= 2
+        ? { reliable: true, reason: "" }
+        : checkLandmarkReliability(lm, [7, 8, 11, 12]);
+      const cvaConf = getLandmarkConfidence(lm, cvaVisLandmarks.length >= 2 ? cvaVisLandmarks : [7, 8, 11, 12]);
       const fhpCm = m.fhpDevCm ?? m.fhpFromPlumb ?? null;
 
-      // Only trigger if CVA is meaningfully reduced
-      if (m.cvaAngle < 52 && cvaConf >= 35) {
-        const sev = m.cvaAngle < 44 ? "high" : m.cvaAngle < 48 ? "moderate" : "mild";
+      // Threshold: mild at <54° (Neiva 2009 — normal >54°); lowered confidence gate for sagittal
+      if (m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild && cvaConf >= 28) {
+        const sev = m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.severe ? "high"
+          : m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.moderate ? "moderate" : "mild";
         const loadStr = m.cervicalLoadKg ? ` Estimated cervical load increase: ~${m.cervicalLoadKg.toFixed(1)}kg (proxy, Hansraj 2014).` : "";
         const fhpCmStr = fhpCm !== null && fhpCm > 0 ? ` Ear ~${fhpCm.toFixed(1)}cm anterior to acromion.` : "";
 
         add({
+          clusterBoost: 15, // sagittal provisional — refined by clustering step
           region: "Cervical / CVA",
           findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >52°)`,
           severity: sev, confidenceScore: cvaConf,
@@ -3848,6 +3948,7 @@ function buildFindings(lm, view, m) {
         const willFireKyphosis = m.thoracicAngle !== null && m.thoracicAngle > POSTURE_THRESHOLDS.thoracicAngle.mild;
         if (!willFireKyphosis && sev !== "mild" && m.thoracicAngle !== null && m.thoracicAngle > 40) {
           add({
+          clusterBoost: 15, // sagittal provisional — refined by clustering step
             region: "Upper Crossed Syndrome (UCS)",
             findingName: `Possible UCS pattern — forward head (CVA ${m.cvaAngle.toFixed(0)}°) + thoracic tendency (${m.thoracicAngle.toFixed(0)}°)`,
             severity: sev, confidenceScore: Math.min(cvaConf, sagChainConf),
@@ -3866,9 +3967,9 @@ function buildFindings(lm, view, m) {
     // ── 2. Rounded Shoulder Tendency ─────────────────────────────────────────
     // Acromion anterior to plumb by >2cm = rounded shoulder tendency.
     // If CVA also reduced: correlate as UCS chain.
-    if (m.sagShoulderShift !== null && m.sagShoulderShift > 2.0 && sagChainConf >= 40) {
+    if (m.sagShoulderShift !== null && m.sagShoulderShift > 2.0 && sagChainConf >= 28) {
       const sev = m.sagShoulderShift > 5 ? "high" : m.sagShoulderShift > 3 ? "moderate" : "mild";
-      const fhpAlso = m.cvaAngle !== null && m.cvaAngle < 52;
+      const fhpAlso = m.cvaAngle !== null && m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild;
       add({
         region: "Shoulder / Rounded Tendency",
         findingName: `Anterior shoulder position tendency (~${m.sagShoulderShift.toFixed(1)}cm anterior to plumb)`,
@@ -3895,16 +3996,18 @@ function buildFindings(lm, view, m) {
     // ── 3. Thoracic Kyphosis ─────────────────────────────────────────────────
     if (m.thoracicAngle !== null) {
       const sev = classifySeverity(m.thoracicAngle, POSTURE_THRESHOLDS.thoracicAngle);
-      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
-      if (sev && sagRel.reliable) {
+      const visShHip = [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip].filter(i=>(lm[i]?.visibility||0)>=MIN_VIS);
+      const conf = getLandmarkConfidence(lm, visShHip.length>=2?visShHip:[...LANDMARK_GROUPS.shoulder,...LANDMARK_GROUPS.hip]);
+      if (sev && (sagRel.reliable || visShHip.length>=2)) {
         const shiftStr = m.sagShoulderShift !== null
           ? ` (shoulder ~${m.sagShoulderShift.toFixed(1)}cm anterior to plumb)` : "";
         add({
+          clusterBoost: 15, // sagittal provisional — refined by clustering step
           region: "Thoracic Kyphosis",
           findingName: `Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,
           severity: sev, confidenceScore: conf, clinicalSignificance: sev,
           interpretation: `Increased thoracic curvature (${m.thoracicAngle.toFixed(1)}°)${shiftStr} may be consistent with a kyphotic tendency. This may be associated with possible pectoralis major/minor overactivity and reduced middle/lower trapezius and thoracic extensor contribution. ` +
-            (m.cvaAngle !== null && m.cvaAngle < 52
+            (m.cvaAngle !== null && m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild
               ? "The combination with reduced CVA may be consistent with an upper crossed pattern tendency (Janda)."
               : "Static posture alone cannot confirm these muscle contributions."),
           possibleMusclePatterns: MUSCLE_PATTERNS.kyphosis,
@@ -3930,18 +4033,20 @@ function buildFindings(lm, view, m) {
       const sev = pelvisIsCm
         ? (abs > 5 ? "high" : abs > 3 ? "moderate" : "mild")
         : classifySeverity(abs, POSTURE_THRESHOLDS.lumbarProxy) ?? "mild";
-      const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.knee]);
-      if (sev && sagRel.reliable) {
+      const visHipKnee = [...LANDMARK_GROUPS.hip,...LANDMARK_GROUPS.knee].filter(i=>(lm[i]?.visibility||0)>=MIN_VIS);
+      const conf = getLandmarkConfidence(lm, visHipKnee.length>=2?visHipKnee:[...LANDMARK_GROUPS.hip,...LANDMARK_GROUPS.knee]);
+      if (sev && (sagRel.reliable || visHipKnee.length>=2)) {
         const dir = pelvisValue > 0 ? "Anterior" : "Posterior";
         const measureStr = pelvisIsCm
           ? `hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`
           : `proxy deviation ${abs.toFixed(1)}%`;
         add({
+          clusterBoost: 15, // sagittal provisional — refined by clustering step
           region: "Pelvis / Lumbar",
           findingName: `${dir} pelvic tendency (${measureStr})`,
           severity: sev, confidenceScore: conf, clinicalSignificance: sev,
           interpretation: INTERPRETATIONS.lumbar(pelvisValue, dir) + 
-            (m.cvaAngle !== null && m.cvaAngle < 52 && dir === "Anterior"
+            (m.cvaAngle !== null && m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild && dir === "Anterior"
               ? " Combined with forward head tendency, this may be consistent with a combined UCS and LCS pattern (Janda)." : ""),
           possibleMusclePatterns: pelvisValue > 0 ? MUSCLE_PATTERNS.lumbarAnt : MUSCLE_PATTERNS.lumbarPost,
           functionalCorrelation: pelvisValue > 0
@@ -3957,11 +4062,11 @@ function buildFindings(lm, view, m) {
     }
 
     // ── UCS sagittal — skip if UCS already in findings from dedicated block ────
-    const hasUCS_sag = m.cvaAngle !== null && m.cvaAngle < 52 && m.thoracicAngle !== null && m.thoracicAngle > 45;
+    const hasUCS_sag = m.cvaAngle !== null && m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild && m.thoracicAngle !== null && m.thoracicAngle > (POSTURE_THRESHOLDS.thoracicAngle.mild - 2);
     const ucsAlreadyAdded = out.some(x => x.region === "Upper Crossed Syndrome" || x.region === "Upper Crossed Syndrome (UCS)");
     if (hasUCS_sag && sagRel.reliable && !ucsAlreadyAdded) {
       const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.upperBody);
-      const sev = m.cvaAngle < 45 ? "high" : "moderate";
+      const sev = m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.severe ? "high" : "moderate";
       add({
         region: "Upper Crossed Syndrome (UCS)",
         findingName: `Possible UCS pattern — forward head (CVA ${m.cvaAngle.toFixed(0)}°) + thoracic curvature (${m.thoracicAngle.toFixed(0)}°)`,
@@ -3976,14 +4081,14 @@ function buildFindings(lm, view, m) {
     }
 
     // ── LCS sagittal — skip if LCS already in findings from dedicated block ────
-    const hasLCS_sag = m.lumbarProxy !== null && m.lumbarProxy > 5 && m.thoracicAngle !== null && m.thoracicAngle > 42;
+    const hasLCS_sag = m.lumbarProxy !== null && m.lumbarProxy > POSTURE_THRESHOLDS.lumbarProxy.mild && m.thoracicAngle !== null && m.thoracicAngle > (POSTURE_THRESHOLDS.thoracicAngle.mild - 2);
     const lcsAlreadyAdded = out.some(x => x.region === "Lower Crossed Syndrome" || x.region === "Lower Crossed Syndrome (LCS)");
     if (hasLCS_sag && sagRel.reliable && !lcsAlreadyAdded) {
       const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.knee]);
       add({
         region: "Lower Crossed Syndrome (LCS)",
         findingName: `Possible LCS pattern — anterior pelvic tilt (${m.lumbarProxy.toFixed(1)}%) + increased thoracic curvature`,
-        severity: m.lumbarProxy > 10 ? "high" : "moderate",
+        severity: m.lumbarProxy > POSTURE_THRESHOLDS.lumbarProxy.moderate + 2 ? "high" : "moderate",
         confidenceScore: conf, clinicalSignificance: "moderate",
         interpretation: INTERPRETATIONS.lcs(m.lcsIndex || 0.6),
         musclePattern: MUSCLE_PATTERNS.lcs,
@@ -3995,10 +4100,10 @@ function buildFindings(lm, view, m) {
     }
 
     // ── Named sagittal pattern (Kendall classification) ───────────────────────
-    const hasFHP   = m.cvaAngle !== null && m.cvaAngle < 52;
-    const hasKyph  = m.thoracicAngle !== null && m.thoracicAngle > 48;
-    const hasLord  = m.lumbarProxy !== null && m.lumbarProxy > 8;
-    const hasFlat  = m.lumbarProxy !== null && m.lumbarProxy < -5;
+    const hasFHP   = m.cvaAngle !== null && m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild;
+    const hasKyph  = m.thoracicAngle !== null && m.thoracicAngle > POSTURE_THRESHOLDS.thoracicAngle.mild;
+    const hasLord  = m.lumbarProxy !== null && m.lumbarProxy > POSTURE_THRESHOLDS.lumbarProxy.moderate;
+    const hasFlat  = m.lumbarProxy !== null && m.lumbarProxy < -POSTURE_THRESHOLDS.lumbarProxy.mild;
     const hipBehindPlumb  = m.hipExtensionProxy !== null && m.hipExtensionProxy < -4;
     const hasReducedLord  = m.lumbarProxy !== null && m.lumbarProxy < -3;
     const hasSway  = hipBehindPlumb && hasReducedLord;
@@ -4066,6 +4171,68 @@ function buildFindings(lm, view, m) {
         "moderate",
         "Thoracic mobility: foam roller extension T4–T8 ×2min. Rib expansion breathing ×10. Restore lordosis: McKenzie press-ups. Cervical retraction.",
         "M40.4");
+    }
+
+    // ── POSTURE CHAIN CLUSTERING ─────────────────────────────────────────────
+    // After all individual sagittal findings are added to `out`,
+    // apply cluster boost and add chain correlation note.
+    {
+      const sagFindings = out.filter(f =>
+        Object.values(POSTURE_CHAIN).some(regions => regions.some(r => f.region.includes(r)))
+      );
+      const chainScore = computeChainScore(sagFindings);
+      const boost = sagFindings.length >= 2 ? getClusterBoost(sagFindings[0], sagFindings) : 0;
+
+      // Apply boost to all sagittal findings that are in a chain
+      if (boost > 0) {
+        sagFindings.forEach(f => {
+          f.confidenceScore = Math.min(100, (f.confidenceScore || 50) + boost);
+          // Upgrade clinical significance for clustered findings
+          if (sagFindings.length >= 3 && f.clinicalSignificance === "low") {
+            f.clinicalSignificance = "moderate";
+          }
+        });
+      }
+
+      // Add chain correlation note as a finding if 2+ segments active
+      const chainNote = buildChainNote(chainScore);
+      if (chainNote && sagFindings.length >= 2) {
+        const activeCount = Object.values(chainScore).filter(v => v === 1).length;
+        const chainSev = activeCount >= 3 ? "moderate" : "mild";
+        const chainConf = Math.min(100, (sagChainConf || 60) + boost);
+        // Only add if not already captured by a named pattern
+        const hasNamedPattern = out.some(f => f.region && f.region.startsWith("◈"));
+        if (!hasNamedPattern) {
+          addLegacy(
+            "Sagittal Chain Pattern",
+            chainNote,
+            chainSev,
+            "Address highest-priority individual findings above in order of clinical significance.",
+            "M62.9",
+            chainNote,
+            "Ideal: ear over acromion over greater trochanter over lateral malleolus"
+          );
+        }
+      }
+
+      // If no sagittal findings at all — add clinically realistic nil-finding message
+      const hasSagittalFindings = out.some(f => {
+        const sagRegions = ["Cervical / CVA","Shoulder / Rounded","Thoracic Kyphosis",
+          "Pelvis / Lumbar","Lower Crossed","Upper Crossed","Knee","◈ Sagittal","Sagittal Chain"];
+        return sagRegions.some(r => f.region.includes(r));
+      });
+      if (!hasSagittalFindings && sagChainConf >= 30) {
+        const nilMsg = buildSagittalNilMessage(sagChainConf, m);
+        if (nilMsg) {
+          addLegacy(
+            "Sagittal Assessment — Summary",
+            nilMsg,
+            "mild",
+            "Continue current activity. Reassess if postural symptoms develop.",
+            "Z00.0", nilMsg, ""
+          );
+        }
+      }
     }
 
   } // end isLat — sagittal findings
