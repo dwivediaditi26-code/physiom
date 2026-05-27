@@ -938,9 +938,17 @@ const SPECIAL_TESTS_DATA = {
 };
 
 // ─── SPECIAL TESTS COMPONENT ──────────────────────────────────────────────────
-function SpecialTestsSection({ data, set }) {
-  const [region, setRegion] = useState("shoulder");
-  const [openTest, setOpenTest] = useState(null);
+function SpecialTestsSection({ data, set, navContext={} }) {
+  const VALID_ST_REGIONS = Object.keys(SPECIAL_TESTS_DATA);
+  const [region, setRegion] = useState(()=>{
+    if(navContext.specialRegion && VALID_ST_REGIONS.includes(navContext.specialRegion)) return navContext.specialRegion;
+    return "shoulder";
+  });
+  const [openTest, setOpenTest] = useState(()=>navContext.highlightTest||null);
+  React.useEffect(()=>{
+    if(navContext.specialRegion && VALID_ST_REGIONS.includes(navContext.specialRegion)) setRegion(navContext.specialRegion);
+    if(navContext.highlightTest) setOpenTest(navContext.highlightTest);
+  },[navContext.specialRegion, navContext.highlightTest]);
   const [modalTest, setModalTest] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -2849,6 +2857,107 @@ UNIV_S.hypermobility = {
 //           Brukner & Khan(5th) · NICE NG59 · ASAS · STarT Back
 // ══════════════════════════════════════════════════════════════════════
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REGION-SPECIFIC NAV CONFIG
+// Maps each subjective region → exact module + navContext payload
+// All region keys must match runEngineV6 output strings exactly.
+// ══════════════════════════════════════════════════════════════════════════════
+const REGION_NAV = {
+  "Cervical spine": [
+    { label:"Cervical ROM",      icon:"📐", nav:"rom",     ctx:{ romRegion:"Cervical" },                     col:"#9333ea", why:"Assess all planes — flexion, extension, rotation, lateral flexion. Overpressure each direction to provoke / clear." },
+    { label:"Cervical MMT",      icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Cervical" },                     col:"#7c3aed", why:"Deep cervical flexors, SCM, longissimus, scalenes. Key for motor control and disc level localisation." },
+    { label:"Spurling / Neural", icon:"🔬", nav:"special",  ctx:{ specialRegion:"cervical" },                 col:"#0891b2", why:"Spurling, distraction, ULNT 1-4, VBI screen. Hypothesis-driven — increases/decreases radiculopathy probability." },
+    { label:"Neurological",      icon:"⚡", nav:"neuro",    ctx:{},                                           col:"#dc2626", why:"Dermatomes C4-T1, myotomes, biceps/brachioradialis/triceps reflexes. Essential for nerve root level localisation." },
+    { label:"Posture Analysis",  icon:"🧍", nav:"posture",  ctx:{ region:"Cervical" },                        col:"#059669", why:"CVA, forward head, thoracic kyphosis, shoulder alignment — all feed cervical loading." },
+    { label:"NKT Assessment",    icon:"⚡", nav:"nkt",      ctx:{ nktRegion:"cervical" },                     col:"#d97706", why:"DNF inhibition → SCM dominance. NKT identifies the inhibitor-facilitator relationship driving FHP." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"thoracic" },                      col:"#7c3aed", why:"Thoracic kyphosis drives cervical loading. Cervicothoracic junction is the primary kinetic chain link." },
+    { label:"Fascial Assessment",icon:"🧬", nav:"fascia",   ctx:{},                                           col:"#0891b2", why:"SBL (superficial back line) and DFL (deep front line) tension patterns affecting cervical position." },
+  ],
+  "Lumbar / SI": [
+    { label:"Lumbar ROM",        icon:"📐", nav:"rom",     ctx:{ romRegion:"Lumbar" },                       col:"#9333ea", why:"Flexion, extension, lateral flexion, rotation. Note direction of pain provocation — guides McKenzie classification." },
+    { label:"Lumbar MMT",        icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Spine & Core" },                 col:"#7c3aed", why:"Multifidus, QL, erector spinae, transverse abdominis. Segmental stability before global loading." },
+    { label:"SLR / Slump",       icon:"🔬", nav:"special",  ctx:{ specialRegion:"lumbar" },                   col:"#0891b2", why:"SLR, slump test, Kemp's, FABER, FADIR — all guided by clinical hypothesis from subjective findings." },
+    { label:"Neurological",      icon:"⚡", nav:"neuro",    ctx:{},                                           col:"#dc2626", why:"Dermatomes L1–S2, myotomes, patella/achilles reflexes. Localise disc level and rule out cauda equina." },
+    { label:"Posture Analysis",  icon:"🧍", nav:"posture",  ctx:{ region:"Lumbar" },                          col:"#059669", why:"Anterior pelvic tilt, lumbar lordosis, sway-back posture — all contribute to lumbar loading patterns." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"lumbar_pelvis" },                 col:"#7c3aed", why:"Hip mobility and ankle DF restriction drive lumbar compensation. Address below before loading lumbar." },
+    { label:"NKT Assessment",    icon:"⚡", nav:"nkt",      ctx:{ nktRegion:"lumbar" },                       col:"#d97706", why:"Multifidus inhibition → global extensor compensation. TA inhibition → IAP loss. Core motor control pattern." },
+    { label:"Functional",        icon:"🏃", nav:"fma",      ctx:{ fmaTests:["squat","bend","single_leg"] },   col:"#059669", why:"Squat, forward bend, single-leg stance — essential functional screen for lumbar loading patterns." },
+  ],
+  "Shoulder (L)": [
+    { label:"Shoulder ROM",      icon:"📐", nav:"rom",     ctx:{ romRegion:"Shoulder" },                     col:"#9333ea", why:"Abduction, ER, IR, flexion, horizontal adduction. Painful arc (60-120°) = subacromial. Full loss = capsular." },
+    { label:"Shoulder MMT",      icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Shoulder & Scapula" },           col:"#7c3aed", why:"Supraspinatus (empty can), infraspinatus (ER), subscapularis (lift-off), lower trap, serratus anterior." },
+    { label:"Special Tests",     icon:"🔬", nav:"special",  ctx:{ specialRegion:"shoulder" },                 col:"#0891b2", why:"Hawkins-Kennedy, Neer, empty can, O'Brien — ordered by clinical suspicion from subjective presentation." },
+    { label:"Posture Analysis",  icon:"🧍", nav:"posture",  ctx:{ region:"Shoulder" },                        col:"#059669", why:"Scapular position, thoracic kyphosis, forward head — all reduce subacromial space. Must assess posture chain." },
+    { label:"NKT Assessment",    icon:"⚡", nav:"nkt",      ctx:{ nktRegion:"shoulder" },                     col:"#d97706", why:"Upper trap / pec minor overactive. Lower trap / serratus anterior inhibited. Classic impingement motor pattern." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"thoracic" },                      col:"#7c3aed", why:"T4-T6 kyphosis reduces scapular upward rotation — indirect impingement driver. Thoracic mobility first." },
+    { label:"Functional",        icon:"🏃", nav:"fma",      ctx:{ fmaTests:["overhead","pushup_plus","upper_reach"] }, col:"#059669", why:"Overhead reach, push-up plus (scapular control), upper limb functional reach — shoulder chain assessment." },
+  ],
+  "Shoulder (R)": [
+    { label:"Shoulder ROM",      icon:"📐", nav:"rom",     ctx:{ romRegion:"Shoulder" },                     col:"#9333ea", why:"Abduction, ER, IR, flexion, horizontal adduction. Compare bilateral — note side difference." },
+    { label:"Shoulder MMT",      icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Shoulder & Scapula" },           col:"#7c3aed", why:"Rotator cuff: supraspinatus, infraspinatus, subscapularis, teres minor. Periscapular: lower trap, serratus." },
+    { label:"Special Tests",     icon:"🔬", nav:"special",  ctx:{ specialRegion:"shoulder" },                 col:"#0891b2", why:"Hypothesis-driven: impingement tests, RC integrity tests, instability tests, AC joint provocation." },
+    { label:"Posture Analysis",  icon:"🧍", nav:"posture",  ctx:{ region:"Shoulder" },                        col:"#059669", why:"Scapular dyskinesis, rounded shoulder, thoracic kyphosis — all alter glenohumeral mechanics." },
+    { label:"NKT Assessment",    icon:"⚡", nav:"nkt",      ctx:{ nktRegion:"shoulder" },                     col:"#d97706", why:"Motor control pattern: pec minor / upper trap overactive → lower trap / serratus inhibited." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"thoracic" },                      col:"#7c3aed", why:"Thoracic mobility is the primary proximal driver of shoulder function." },
+    { label:"Functional",        icon:"🏃", nav:"fma",      ctx:{ fmaTests:["overhead","pushup_plus","upper_reach"] }, col:"#059669", why:"Overhead reach, push-up plus, upper limb functional reach — complete shoulder chain screen." },
+  ],
+  "Knee (L)": [
+    { label:"Knee ROM",          icon:"📐", nav:"rom",     ctx:{ romRegion:"Knee" },                         col:"#9333ea", why:"Flexion, extension, patellar mobility. Extension lag = quad inhibition. Loss of full flexion = PFJ or meniscal." },
+    { label:"Knee MMT",          icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Knee" },                         col:"#7c3aed", why:"VMO (quad), hamstrings, hip abductors. VMO inhibition drives PFJ maltracking — most important single test." },
+    { label:"Knee Special Tests",icon:"🔬", nav:"special",  ctx:{ specialRegion:"knee" },                     col:"#0891b2", why:"McMurray, Thessaly (meniscus), Lachman, Anterior Drawer (ACL), Valgus/Varus stress (collaterals), Clarke (PFJ)." },
+    { label:"Hip & Pelvis MMT",  icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Hip & Pelvis" },                 col:"#7c3aed", why:"Glute med weakness is the primary proximal driver of knee valgus and PFJ pain. Assess before knee MMT." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"knee" },                          col:"#7c3aed", why:"Ankle DF restriction and hip abductor weakness both drive knee valgus. Joint-by-joint chain analysis." },
+    { label:"Gait Analysis",     icon:"🚶", nav:"gait",    ctx:{},                                           col:"#059669", why:"Dynamic valgus, knee recurvatum, antalgic gait pattern — observe under functional loading." },
+    { label:"Functional",        icon:"🏃", nav:"fma",      ctx:{ fmaTests:["squat","step_down","single_leg","lunge"] }, col:"#059669", why:"Step-down (most sensitive for PFJ/glute med), squat, single-leg stance, lunge — full functional screen." },
+  ],
+  "Knee (R)": [
+    { label:"Knee ROM",          icon:"📐", nav:"rom",     ctx:{ romRegion:"Knee" },                         col:"#9333ea", why:"Flexion, extension, patellar mobility. Compare bilateral." },
+    { label:"Knee MMT",          icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Knee" },                         col:"#7c3aed", why:"VMO, hamstrings, hip abductors. VMO inhibition drives PFJ maltracking." },
+    { label:"Knee Special Tests",icon:"🔬", nav:"special",  ctx:{ specialRegion:"knee" },                     col:"#0891b2", why:"McMurray, Thessaly, Lachman, Anterior Drawer, Valgus/Varus stress, Clarke's." },
+    { label:"Hip & Pelvis MMT",  icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Hip & Pelvis" },                 col:"#7c3aed", why:"Glute med weakness — primary proximal driver of knee valgus." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"knee" },                          col:"#7c3aed", why:"Ankle DF + hip abductor deficits both drive dynamic valgus." },
+    { label:"Gait Analysis",     icon:"🚶", nav:"gait",    ctx:{},                                           col:"#059669", why:"Dynamic valgus, antalgic pattern under functional loading." },
+    { label:"Functional",        icon:"🏃", nav:"fma",      ctx:{ fmaTests:["squat","step_down","single_leg","lunge"] }, col:"#059669", why:"Step-down (highest sensitivity), squat, single-leg stance." },
+  ],
+  "Hip / Groin": [
+    { label:"Hip ROM",           icon:"📐", nav:"rom",     ctx:{ romRegion:"Hip" },                          col:"#9333ea", why:"Flexion, extension, IR, ER, abduction, adduction. FADIR = impingement reproduction. Capsular pattern: IR > ER > abduction." },
+    { label:"Hip MMT",           icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Hip & Pelvis" },                 col:"#7c3aed", why:"Glute max (extension), glute med (abduction), adductors, hip flexors. Critical for load transfer." },
+    { label:"Hip Special Tests", icon:"🔬", nav:"special",  ctx:{ specialRegion:"hip" },                      col:"#0891b2", why:"FADIR, FABER, Thomas test, SLR (neural), Trendelenburg — all hypothesis-driven." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"hip" },                           col:"#7c3aed", why:"Hip is the STABILITY joint of the lower chain. Restricted ER/abduction drives lumbar and knee overload." },
+    { label:"Gait Analysis",     icon:"🚶", nav:"gait",    ctx:{},                                           col:"#059669", why:"Trendelenburg sign, hip hike, antalgic gait — reveal hip loading strategy under walk cycle." },
+    { label:"Functional",        icon:"🏃", nav:"fma",      ctx:{ fmaTests:["single_leg","squat","lunge","step_down"] }, col:"#059669", why:"Single-leg stance, squat, lunge, step-down — assess hip strategy under load." },
+    { label:"NKT Assessment",    icon:"⚡", nav:"nkt",      ctx:{ nktRegion:"hip" },                          col:"#d97706", why:"Hip flexor / adductor dominance → glute inhibition. Classic lower crossed NKT pattern." },
+  ],
+  "Ankle / Foot": [
+    { label:"Ankle ROM",         icon:"📐", nav:"rom",     ctx:{ romRegion:"Ankle" },                        col:"#9333ea", why:"DF (critical — <35° weight-bearing = kinetic chain driver), plantarflexion, inversion, eversion." },
+    { label:"Ankle MMT",         icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Ankle & Foot" },                 col:"#7c3aed", why:"Tibialis posterior, peroneals, gastroc/soleus, intrinsics. Posterior tib weakness = medial arch collapse." },
+    { label:"Ankle Special Tests",icon:"🔬",nav:"special",  ctx:{ specialRegion:"ankle_foot" },               col:"#0891b2", why:"Ottawa rules, ATFL stress test, Thompson test (Achilles), windlass (plantar fascia), talar tilt." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"foot_ankle" },                    col:"#7c3aed", why:"Ankle is the BASE of the kinetic chain. DF restriction drives tibial IR → knee valgus → hip adduction → lumbar extension." },
+    { label:"Gait Analysis",     icon:"🚶", nav:"gait",    ctx:{},                                           col:"#059669", why:"Heel strike, midstance pronation control, push-off efficiency — observe the chain from foot up." },
+    { label:"Functional",        icon:"🏃", nav:"fma",      ctx:{ fmaTests:["gait","squat","single_leg"] },   col:"#059669", why:"Weight-bearing squat (DF demand), single-leg stance (proprioception), gait (push-off pattern)." },
+    { label:"Posture Analysis",  icon:"🧍", nav:"posture",  ctx:{ region:"Ankle" },                           col:"#059669", why:"Foot pronation, arch height, pelvic alignment — foot posture drives the entire sagittal chain." },
+  ],
+  "Elbow/Wrist/Hand": [
+    { label:"Elbow/Wrist ROM",   icon:"📐", nav:"rom",     ctx:{ romRegion:"Elbow" },                        col:"#9333ea", why:"Elbow flex/ext, forearm sup/pro, wrist flex/ext, radial/ulnar deviation. Note end-feel quality." },
+    { label:"Elbow/Wrist MMT",   icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Elbow & Forearm" },              col:"#7c3aed", why:"Wrist extensors (tennis elbow), wrist flexors (golfer's elbow), grip strength dynamometry." },
+    { label:"Special Tests",     icon:"🔬", nav:"special",  ctx:{ specialRegion:"elbow_wrist" },              col:"#0891b2", why:"Cozen's, Mill's (lateral epicondylalgia), Phalen's, Tinel's (CTS), valgus/varus stress (collaterals)." },
+    { label:"Cervical Screen",   icon:"🔬", nav:"special",  ctx:{ specialRegion:"cervical" },                 col:"#dc2626", why:"ULNT 1-4 — double crush phenomenon. Always screen cervical before isolating elbow/wrist. Spurling if radicular." },
+    { label:"Cervical ROM",      icon:"📐", nav:"rom",     ctx:{ romRegion:"Cervical" },                     col:"#7c3aed", why:"C5/C6 referral mimics lateral elbow pain. Cervical AROM must be cleared in all elbow/wrist presentations." },
+    { label:"Functional",        icon:"🏃", nav:"fma",      ctx:{ fmaTests:["upper_reach","pushup_plus"] },   col:"#059669", why:"Upper limb functional reach, push-up plus — assess the full proximal chain contributing to elbow/wrist overload." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"thoracic" },                      col:"#7c3aed", why:"Thoracic rotation deficit → compensatory forearm/wrist overload in throwing/racquet sports." },
+  ],
+  "Thoracic spine": [
+    { label:"Thoracic ROM",      icon:"📐", nav:"rom",     ctx:{ romRegion:"Thoracic" },                     col:"#9333ea", why:"Rotation (most important), extension, flexion. Rib excursion. Thoracic rotation <30° = significant restriction." },
+    { label:"Spinal MMT",        icon:"💪", nav:"mmt",     ctx:{ mmtRegion:"Spine & Core" },                 col:"#7c3aed", why:"Thoracic erectors, rhomboids, mid/lower trapezius, serratus anterior. Assess periscapular strength." },
+    { label:"Special Tests",     icon:"🔬", nav:"special",  ctx:{ specialRegion:"cervical" },                 col:"#0891b2", why:"Thoracic outlet, rib provocation. Also cervical screen — T4 syndrome can mimic cervical pathology." },
+    { label:"Posture Analysis",  icon:"🧍", nav:"posture",  ctx:{ region:"Thoracic" },                        col:"#059669", why:"Kyphosis angle, rib symmetry, scoliotic curve, scapular position — thoracic posture drives cervical and shoulder loading." },
+    { label:"Kinetic Chain",     icon:"⛓️", nav:"kinetic",  ctx:{ kcRegion:"thoracic" },                      col:"#7c3aed", why:"Thoracic MOBILITY joint drives cervical, shoulder, and lumbar STABILITY demands." },
+    { label:"NKT Assessment",    icon:"⚡", nav:"nkt",      ctx:{ nktRegion:"shoulder" },                     col:"#d97706", why:"Periscapular NKT pattern: pec major/minor overactive → lower trap/serratus inhibited → kyphosis maintained." },
+    { label:"Functional",        icon:"🏃", nav:"fma",      ctx:{ fmaTests:["overhead","rotary_stability","pushup_plus"] }, col:"#059669", why:"Overhead reach (thoracic extension demand), rotary stability (anti-rotation core control), push-up plus." },
+  ],
+};
+
 function runEngineV6(data, selectedRegions) {
   if (!selectedRegions || selectedRegions.length === 0) return null;
 
@@ -4237,29 +4346,58 @@ function SubjectiveModule({ data, set, onNav }) {
       {activeTab === "results" && insight && showInsight && (
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
 
-          {/* ── QUICK JUMP BAR ── */}
-          {onNav && (
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap", padding:"10px 12px",
-              background: PC.s2, borderRadius:10, border:`1px solid ${PC.border}` }}>
-              <span style={{ fontSize:"0.58rem", fontWeight:800, color:PC.muted, alignSelf:"center",
-                textTransform:"uppercase", letterSpacing:1, marginRight:4, whiteSpace:"nowrap" }}>Jump to:</span>
-              {[
-                { key:"rom",       label:"📐 ROM",         col:PC.accent },
-                { key:"mmt",       label:"💪 MMT",         col:PC.accent },
-                { key:"special",   label:"🔬 Special Tests", col:PC.a3 },
-                { key:"nkt",       label:"⚡ NKT",         col:PC.a2 },
-                { key:"kinetic",   label:"⛓️ Kinetic Chain", col:PC.a2 },
-                { key:"fma",       label:"🏃 Functional",   col:PC.a4 },
-                { key:"posture",   label:"🧍 Posture",      col:PC.a4 },
-              ].map(({key,label,col})=>(
-                <button key={key} onClick={()=>onNav(key)} style={{
-                  fontSize:"0.62rem", fontWeight:700, padding:"4px 10px",
-                  background: col+"15", border:`1px solid ${col}33`,
-                  borderRadius:20, color:col, cursor:"pointer", whiteSpace:"nowrap"
-                }}>{label}</button>
-              ))}
-            </div>
-          )}
+          {/* ── REGION-SPECIFIC SMART ACTION CARDS ── */}
+          {onNav && insight && insight.regionResults && insight.regionResults.map((r, ri) => {
+            const regionBtns = REGION_NAV[r.region] || [];
+            if (!regionBtns.length) return null;
+            const regCol = r.urgentFlag ? PC.red : ["#9333ea","#7c3aed","#0891b2","#059669","#d97706"][ri % 5];
+            return (
+              <div key={ri} style={{ background: PC.s2, border:`1px solid ${PC.border}`, borderRadius:12, overflow:"hidden", marginBottom:4 }}>
+                {/* Header */}
+                <div style={{ background:`${regCol}12`, borderBottom:`1px solid ${regCol}22`, padding:"8px 14px", display:"flex", alignItems:"center", gap:8 }}>
+                  <div style={{ width:6, height:6, borderRadius:"50%", background:regCol, flexShrink:0 }}/>
+                  <span style={{ fontSize:"0.65rem", fontWeight:800, color:regCol, letterSpacing:"0.5px" }}>{r.region}</span>
+                  <span style={{ fontSize:"0.6rem", color:PC.muted, marginLeft:4 }}>— Guided assessment workflow</span>
+                </div>
+                {/* Action button grid */}
+                <div style={{ padding:"10px 12px", display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                  {regionBtns.map((btn, bi) => {
+                    const [showWhy, setShowWhy] = React.useState(false);
+                    return (
+                      <div key={bi} style={{ display:"flex", flexDirection:"column", gap:0 }}>
+                        <div style={{ display:"flex", gap:4 }}>
+                          <button
+                            onClick={()=>onNav(btn.nav, btn.ctx)}
+                            style={{ flex:1, display:"flex", alignItems:"center", gap:6, padding:"7px 10px",
+                              background:`${btn.col}12`, border:`1px solid ${btn.col}30`, borderRadius:"7px 0 0 7px",
+                              color:btn.col, cursor:"pointer", fontSize:"0.67rem", fontWeight:700,
+                              textAlign:"left", transition:"all 0.15s" }}>
+                            <span style={{fontSize:"0.9rem",flexShrink:0}}>{btn.icon}</span>
+                            <span>{btn.label}</span>
+                          </button>
+                          <button
+                            onClick={()=>setShowWhy(w=>!w)}
+                            style={{ padding:"7px 7px", background:`${btn.col}08`,
+                              border:`1px solid ${btn.col}20`, borderLeft:"none",
+                              borderRadius:"0 7px 7px 0", color:PC.muted, cursor:"pointer",
+                              fontSize:"0.55rem", fontWeight:700 }}>
+                            ?
+                          </button>
+                        </div>
+                        {showWhy && (
+                          <div style={{ fontSize:"0.62rem", color:PC.muted, padding:"5px 8px",
+                            background:PC.s3, borderRadius:"0 0 6px 6px",
+                            border:`1px solid ${btn.col}20`, borderTop:"none", lineHeight:1.4 }}>
+                            {btn.why}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
 
           {/* ── URGENT FLAGS BANNER ── */}
           {insight.anyUrgent && (
@@ -5665,8 +5803,9 @@ const KC_REGIONS = {
 };
 
 // ─── KINETIC CHAIN SECTION COMPONENT ─────────────────────────────────────────
-function KineticChainSection({ data, set }) {
-  const [region, setRegion] = useState("foot_ankle");
+function KineticChainSection({ data, set, navContext={} }) {
+  const [region, setRegion] = useState(navContext.kcRegion||"foot_ankle");
+  React.useEffect(()=>{ if(navContext.kcRegion) setRegion(navContext.kcRegion); },[navContext.kcRegion]);
   const [openTest, setOpenTest] = useState(null);
   const [modalTest, setModalTest] = useState(null);
   const reg = KC_REGIONS[region];
@@ -8328,8 +8467,9 @@ function FasciaSection({ data, set }) {
 
 
 // ─── NKT REGION COMPONENT ────────────────────────────────────────────────────
-function NKTSection({ data, set }) {
-  const [region, setRegion] = useState("cervical");
+function NKTSection({ data, set, navContext={} }) {
+  const [region, setRegion] = useState(navContext.nktRegion||"cervical");
+  React.useEffect(()=>{ if(navContext.nktRegion) setRegion(navContext.nktRegion); },[navContext.nktRegion]);
   const [openTest, setOpenTest] = useState(null);
   const [modalTest, setModalTest] = useState(null);
   const reg = NKT_REGIONS[region];

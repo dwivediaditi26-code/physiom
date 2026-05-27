@@ -558,8 +558,15 @@ function genROMSoap(data){
   return findings.length===0?"No significant ROM restrictions recorded.":`ROM restrictions identified:\n${findings.join("\n")}`;
 }
 
-function ROMModule({data,set}){
-  const [region,setRegion]=useState(ROM_REGIONS[0]);
+function ROMModule({data,set,navContext={}}){
+  const [region,setRegion]=useState(()=>{
+    if(navContext.romRegion && ROM_REGIONS.includes(navContext.romRegion)) return navContext.romRegion;
+    return ROM_REGIONS[0];
+  });
+  // Auto-select region when navContext changes
+  React.useEffect(()=>{
+    if(navContext.romRegion && ROM_REGIONS.includes(navContext.romRegion)) setRegion(navContext.romRegion);
+  },[navContext.romRegion]);
   const [selected,setSelected]=useState(null);
   const [showSoap,setShowSoap]=useState(false);
   const [mode,setMode]=useState("arom"); // arom | prom | resisted
@@ -1135,8 +1142,14 @@ const KINETIC_CHAINS=[
   {muscles:["mmt_peronls","mmt_tp","mmt_abdhal"],label:"Ankle Stability Complex",interpretation:"Weakness: recurrent lateral sprain + progressive flatfoot + plantar fasciitis."},
 ];
 
-function MMTModule({data,set}){
-  const [region,setRegion]=useState(MMT_REGIONS[0]);
+function MMTModule({data,set,navContext={}}){
+  const [region,setRegion]=useState(()=>{
+    if(navContext.mmtRegion && MMT_REGIONS.includes(navContext.mmtRegion)) return navContext.mmtRegion;
+    return MMT_REGIONS[0];
+  });
+  React.useEffect(()=>{
+    if(navContext.mmtRegion && MMT_REGIONS.includes(navContext.mmtRegion)) setRegion(navContext.mmtRegion);
+  },[navContext.mmtRegion]);
   const [selected,setSelected]=useState(null);
   const [showInterp,setShowInterp]=useState(false);
 
