@@ -10365,6 +10365,7 @@ function AppInner() {
   Object.assign(C, TC);
 
   const [active, setActive] = useState("home");
+  const [navContext, setNavContext] = useState({});
 
   // ── Deferred mounting: heavy tabs only render after first visit ──────────
   // This cuts initial render time dramatically
