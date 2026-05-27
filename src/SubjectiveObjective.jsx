@@ -2858,6 +2858,42 @@ UNIV_S.hypermobility = {
 // ══════════════════════════════════════════════════════════════════════
 
 
+
+// ── NavActionBtn — stable component so hooks are never called inside .map() ──
+function NavActionBtn({ btn, onNav, PC }) {
+  const [showWhy, setShowWhy] = React.useState(false);
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+      <div style={{ display:"flex", gap:4 }}>
+        <button
+          onClick={()=>onNav(btn.nav, btn.ctx)}
+          style={{ flex:1, display:"flex", alignItems:"center", gap:6, padding:"7px 10px",
+            background:`${btn.col}12`, border:`1px solid ${btn.col}30`, borderRadius:"7px 0 0 7px",
+            color:btn.col, cursor:"pointer", fontSize:"0.67rem", fontWeight:700,
+            textAlign:"left", transition:"all 0.15s" }}>
+          <span style={{fontSize:"0.9rem",flexShrink:0}}>{btn.icon}</span>
+          <span>{btn.label}</span>
+        </button>
+        <button
+          onClick={()=>setShowWhy(w=>!w)}
+          style={{ padding:"7px 8px", background:`${btn.col}08`,
+            border:`1px solid ${btn.col}20`, borderLeft:"none",
+            borderRadius:"0 7px 7px 0", color:PC.muted, cursor:"pointer",
+            fontSize:"0.58rem", fontWeight:800 }}>
+          ?
+        </button>
+      </div>
+      {showWhy && (
+        <div style={{ fontSize:"0.62rem", color:PC.muted, padding:"5px 8px",
+          background:PC.s3, borderRadius:"0 0 6px 6px",
+          border:`1px solid ${btn.col}20`, borderTop:"none", lineHeight:1.5 }}>
+          {btn.why}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // REGION-SPECIFIC NAV CONFIG
 // Maps each subjective region → exact module + navContext payload
@@ -4361,39 +4397,9 @@ function SubjectiveModule({ data, set, onNav }) {
                 </div>
                 {/* Action button grid */}
                 <div style={{ padding:"10px 12px", display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
-                  {regionBtns.map((btn, bi) => {
-                    const [showWhy, setShowWhy] = React.useState(false);
-                    return (
-                      <div key={bi} style={{ display:"flex", flexDirection:"column", gap:0 }}>
-                        <div style={{ display:"flex", gap:4 }}>
-                          <button
-                            onClick={()=>onNav(btn.nav, btn.ctx)}
-                            style={{ flex:1, display:"flex", alignItems:"center", gap:6, padding:"7px 10px",
-                              background:`${btn.col}12`, border:`1px solid ${btn.col}30`, borderRadius:"7px 0 0 7px",
-                              color:btn.col, cursor:"pointer", fontSize:"0.67rem", fontWeight:700,
-                              textAlign:"left", transition:"all 0.15s" }}>
-                            <span style={{fontSize:"0.9rem",flexShrink:0}}>{btn.icon}</span>
-                            <span>{btn.label}</span>
-                          </button>
-                          <button
-                            onClick={()=>setShowWhy(w=>!w)}
-                            style={{ padding:"7px 7px", background:`${btn.col}08`,
-                              border:`1px solid ${btn.col}20`, borderLeft:"none",
-                              borderRadius:"0 7px 7px 0", color:PC.muted, cursor:"pointer",
-                              fontSize:"0.55rem", fontWeight:700 }}>
-                            ?
-                          </button>
-                        </div>
-                        {showWhy && (
-                          <div style={{ fontSize:"0.62rem", color:PC.muted, padding:"5px 8px",
-                            background:PC.s3, borderRadius:"0 0 6px 6px",
-                            border:`1px solid ${btn.col}20`, borderTop:"none", lineHeight:1.4 }}>
-                            {btn.why}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {regionBtns.map((btn, bi) => (
+                    <NavActionBtn key={bi} btn={btn} onNav={onNav} PC={PC}/>
+                  ))}
                 </div>
               </div>
             );
