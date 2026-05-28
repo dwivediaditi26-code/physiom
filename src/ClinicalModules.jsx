@@ -2193,24 +2193,61 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const sex = v("dem_sex") || v("dem_gender");
   const occ = v("dem_occupation");
   const cc = v("cc_main");
-  // Location: new regional IDs first, fall back to old
-  const location = _allLoc || a("cc_location") || a("cc_region");
-  const radiation = _allRad || a("cc_radiation");
-  const symType = a("cc_quality") || a("cc_symptom_type");
+  // ── Direct scan of ALL regional prefix fields (cx_, lx_, sh_, hp_, kn_, af_, ew_, tx_) ──
+  const KNOWN_PREFIXES = ["cx","lx","sh","hp","kn","af","ew","tx","th"];
+  const activePrefixes = KNOWN_PREFIXES.filter(px =>
+    Object.keys(data).some(k => k.startsWith(px + "_"))
+  );
+  const _scan = (suf) => activePrefixes.flatMap(px => {
+    const x = data[`${px}_${suf}`];
+    if (!x) return [];
+    return String(x).split("|||").filter(Boolean);
+  }).join(", ");
+
+  // Location: scan regional loc fields first, then fall back
+  const location = _allLoc
+    || _scan("loc") || _scan("location")
+    || a("cc_location") || a("cc_region");
+  // Radiation
+  const radiation = _allRad
+    || activePrefixes.flatMap(px => {
+      const x = data[`${px}_radiation`];
+      if (!x) return [];
+      return String(x).split("|||").filter(s => s && !s.toLowerCase().includes("no radiation"));
+    }).join(", ")
+    || a("cc_radiation");
+  // Aggravating
+  const agg = _allAgg
+    || activePrefixes.flatMap(px =>
+      ["agg_mov","agg_post","agg_act","agg_other"].map(s => {
+        const x = data[`${px}_${s}`];
+        return x ? String(x).split("|||").filter(Boolean).join(", ") : "";
+      }).filter(Boolean)
+    ).join("; ")
+    || [a("agg_activity"), a("agg_movement")].filter(Boolean).join(", ");
+  // Easing
+  const ease = _allRel
+    || activePrefixes.flatMap(px =>
+      ["rel_mov","rel_post","rel_manual","rel_med","rel"].map(s => {
+        const x = data[`${px}_${s}`];
+        return x ? String(x).split("|||").filter(Boolean).join(", ") : "";
+      }).filter(Boolean)
+    ).join("; ")
+    || [a("rel_posture"), a("rel_manual")].filter(Boolean).join(", ");
+  // Pain quality — both global and regional
+  const symType = a("cc_quality") || _scan("quality") || a("cc_symptom_type");
   const duration = a("cc_duration");
   const onset = a("cc_onset");
-  const moiType = _allMoi || a("moi_type");
+  const moiType = _allMoi || _scan("moi") || a("moi_type");
   const moiActivity = v("moi_activity");
   const vasNow = nrs("cc_vas_now") || nrs("pa_vas_now");
   const vasWorst = nrs("cc_vas_worst") || nrs("pa_vas_worst");
   const vasBest = nrs("cc_vas_best") || nrs("pa_vas_best");
-  const painQ = a("cc_quality") || a("pa_quality");
+  const painQ = a("cc_quality") || _scan("quality") || a("pa_quality");
   const painNature = a("pa_nature");
-  const painPatt = _allPattern || a("pa_pattern");
-  const agg = _allAgg || [a("agg_activity"), a("agg_movement")].filter(Boolean).join(", ");
-  const ease = _allRel || [a("rel_posture"), a("rel_manual")].filter(Boolean).join(", ");
-  const morningBx = _allMorning || a("sb_morning");
-  const nightBx = _allNight || a("sb_night");
+  const painPatt = _allPattern || _scan("pattern") || _scan("sb_pattern") || a("pa_pattern");
+  const morningBx = _allMorning || _scan("morning") || _scan("sb_morning") || a("sb_morning");
+  const nightBx = _allNight || _scan("night") || _scan("sb_night") || a("sb_night");
   // PMH: new IDs first
   const phx = a("pmh_conditions") || a("phx_conditions");
   const meds = a("med_current") || v("meds_current");
@@ -2222,24 +2259,25 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   ].filter(Boolean);
   const workStatus = v("dem_work_status");
 
-  // Opening demographics
-  let intro = "";
-  if (name) {
-    intro += `${name}`;
-    const demo = [age && `${age}y`, sex, occ && `occupation: ${occ}`, workStatus && workStatus !== "" && workStatus !== name && `status: ${workStatus}`].filter(Boolean);
-    if (demo.length) intro += ` (${demo.join(", ")})`;
-  } else {
-    intro += "Patient";
+  // Opening demographics — only write if actual data is present
+  const hasAnySubjective = name || cc || location || vasNow !== null || duration || onset || agg;
+  if (hasAnySubjective) {
+    let intro = "";
+    if (name) {
+      intro += `${name}`;
+      const demo = [age && `${age}y`, sex, occ && `occupation: ${occ}`, workStatus && workStatus !== "" && workStatus !== name && `status: ${workStatus}`].filter(Boolean);
+      if (demo.length) intro += ` (${demo.join(", ")})`;
+    } else {
+      intro += "Patient";
+    }
+    intro += " presents";
+    if (cc) {
+      intro += ` with: "${cc}"`;
+    } else if (location) {
+      intro += ` with complaints in the ${location} region`;
+    }
+    S_parts.push(intro + ".");
   }
-  intro += " presents";
-  if (cc) {
-    intro += ` with: "${cc}"`;
-  } else if (location) {
-    intro += ` with complaints in the ${location} region`;
-  } else {
-    intro += " for physiotherapy assessment";
-  }
-  S_parts.push(intro + ".");
 
   const detail = [];
   if (location && cc) detail.push(`Pain location: ${location}`);
@@ -2582,9 +2620,9 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
         if (d.evidence?.length) A_parts.push(`     Evidence: ${d.evidence.join(", ")}.`);
         if (d.mechanism) A_parts.push(`     Mechanism: ${d.mechanism}`);
       });
-    } else {
-      const ccText = v("cc_main") || (location ? `${location} dysfunction` : "musculoskeletal complaint");
-      A_parts.push(`Clinical Impression: ${ccText}. Full clinical pattern assessment completed — see findings above.`);
+    } else if (v("cc_main") || location) {
+      const ccText = v("cc_main") || `${location} dysfunction`;
+      A_parts.push(`Clinical Impression: ${ccText}. Objective assessment required to confirm working hypothesis.`);
     }
   }
 
@@ -2648,7 +2686,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 
   // ── P: PLAN ────────────────────────────────────────────────────────────────
   const P_parts = [];
-  P_parts.push("Treatment Plan:");
+  // P section header only added if there is actual plan content
 
   if (dx?.dx?.length && dx.dx[0].treatment?.length) {
     dx.dx[0].treatment.forEach(t => P_parts.push(`  • ${t}`));
@@ -2693,11 +2731,14 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 
   const freq = v("tx_frequency") || v("tx_freq");
   const dur = v("tx_duration_plan");
-  P_parts.push(`\nReview: ${freq ? `${freq}${dur?` for ${dur}`:""}` : "Reassess in 2–4 weeks"}.`);
+  if (freq) P_parts.push(`\nReview: ${freq}${dur?` for ${dur}`:""}.`);
 
   const referral = v("referral_plan") || v("referral_notes");
   if (referral) P_parts.push(`Referral: ${referral}.`);
   if (extraP) P_parts.push(`\n${extraP}`);
+
+  // Only add Treatment Plan header if there's actual plan content
+  if (P_parts.length > 0) P_parts.unshift("Treatment Plan:");
 
   return {
     S: S_parts.join("\n"),
@@ -6370,26 +6411,23 @@ function LiveSOAPPanel({ data, onNavigate }) {
 
   // Count filled fields per section for live badges
   const sectionCounts = React.useMemo(() => {
-    const v = (k) => !!(data[k] && String(data[k]).trim());
-    const subjectiveKeys = ["cc_main","cc_location","cc_vas_now","cc_quality","dem_name",
-      "cc_duration","cc_onset","cc_aggravating","cc_easing"];
-    const objectiveKeys  = Object.keys(data).filter(k =>
+    const allKeys = Object.keys(data).filter(k => data[k] && String(data[k]).trim());
+    const KNOWN_PX = ["cx","lx","sh","hp","kn","af","ew","tx","th"];
+    const hasRegional = allKeys.some(k => KNOWN_PX.some(px => k.startsWith(px + "_")));
+    const subjectiveKeys = ["cc_main","cc_vas_now","cc_quality","dem_name",
+      "cc_duration","cc_onset"];
+    const vk = (k) => !!(data[k] && String(data[k]).trim());
+    const sCount = subjectiveKeys.filter(vk).length + (hasRegional ? Math.min(allKeys.filter(k => KNOWN_PX.some(px=>k.startsWith(px+"_"))).length, 8) : 0);
+    const oCount = allKeys.filter(k =>
       k.startsWith("rom_") || k.startsWith("mmt_") || k.startsWith("st_") ||
-      k.startsWith("gait_") || k.startsWith("lx_") || k.startsWith("post_") ||
-      k.startsWith("palp_") || k.startsWith("om_")
-    );
-    const hasRegionalData = Object.keys(data).some(k =>
-      ["cx_","lx_","sh_","hp_","kn_","af_","tx_","ew_"].some(px => k.startsWith(px))
-    );
-    return {
-      S: subjectiveKeys.filter(v).length + (hasRegionalData ? 2 : 0),
-      O: Math.min(objectiveKeys.length, 20),
-      A: !!(data["cc_main"] || Object.keys(data).some(k => k.startsWith("cx_")||k.startsWith("lx_")||k.startsWith("sh_"))) ? 1 : 0,
-      P: !!(data["tx_techniques"] || data["hep_programme"] || data["tx_frequency"]) ? 1 : 0,
-    };
+      k.startsWith("gait_") || k.startsWith("post_") || k.startsWith("palp_") || k.startsWith("om_")
+    ).length;
+    const aCount = (vk("cc_main") || hasRegional) ? 1 : 0;
+    const pCount = (data["tx_techniques"] || data["hep_programme"] || data["tx_frequency"]) ? 1 : 0;
+    return { S: sCount, O: Math.min(oCount, 20), A: aCount, P: pCount };
   }, [data]);
 
-  const totalFilled = sectionCounts.S + sectionCounts.O;
+  const totalFilled = sectionCounts.S + sectionCounts.O + sectionCounts.A;
   const hasContent  = totalFilled > 0;
 
   const copySection = (text) => {
