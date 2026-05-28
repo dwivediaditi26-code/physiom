@@ -6,7 +6,7 @@ import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection,
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
   ErgoModule, CyriaxModule, CyriaxRegionTests, generateDiagnosis,
   PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
-import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule,
+import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule, LiveSOAPPanel,
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
   buildClinicalInterpretation, Sparkline } from "./ClinicalModules.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
@@ -10365,7 +10365,6 @@ function AppInner() {
   Object.assign(C, TC);
 
   const [active, setActive] = useState("home");
-  const [navContext, setNavContext] = useState({});
 
   // ── Deferred mounting: heavy tabs only render after first visit ──────────
   // This cuts initial render time dramatically
@@ -10665,9 +10664,8 @@ function AppInner() {
   };
 
   const runDx = () => { setDx(generateDiagnosis(data)); setShowDx(true); };
-  const navTo = useCallback((key, ctx = {}) => {
+  const navTo = useCallback((key) => {
     setActive(key);
-    setNavContext(ctx);
     setNavOpen(false);
     // Mount tab on first visit
     setMountedTabs(prev => {
@@ -11286,7 +11284,7 @@ function AppInner() {
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo}/>
               ):tests==="SUBJECTIVE_MODULE"?(
-                <SubjectiveModule data={data} set={set} onNav={navTo}/>
+                <SubjectiveModule data={data} set={set}/>
               ):tests==="PALPATION_MODULE"?(
                 <PalpationModule data={data} set={set}/>
               ):tests==="POSTURE_DEFECT_MODULE"?(
@@ -11294,15 +11292,15 @@ function AppInner() {
               ):tests==="CYRIAX_MODULE"?(
                 <CyriaxModule data={data} set={set}/>
               ):tests==="SPECIAL_TESTS_MODULE"?(
-                <SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
+                <SpecialTestsSection data={data} set={set}/>
               ):tests==="NKT_REGION"?(
-                <NKTSection data={data} set={set} navContext={active==="nkt"?navContext:{}}/>
+                <NKTSection data={data} set={set}/>
               ):tests==="FMA_REGION"?(
                 <FMASection data={data} set={set}/>
               ):tests==="FASCIA_REGION"?(
                 <FasciaSection data={data} set={set}/>
               ):tests==="KC_REGION"?(
-                <KineticChainSection data={data} set={set} navContext={active==="kinetic"?navContext:{}}/>
+                <KineticChainSection data={data} set={set}/>
               ):tests==="CYRIAX_REGION"?(
                 <CyriaxRegionTests data={data} set={set}/>
               ):tests==="NEURO_MODULE"?(
@@ -11310,9 +11308,9 @@ function AppInner() {
               ):tests==="GAIT_MODULE"?(
                 <GaitModule data={data} set={set}/>
               ):tests==="MMT_MODULE"?(
-                <MMTModule data={data} set={set} navContext={active==="mmt"?navContext:{}}/>
+                <MMTModule data={data} set={set}/>
               ):tests==="ROM_MODULE"?(
-                <ROMModule data={data} set={set} navContext={active==="rom"?navContext:{}}/>
+                <ROMModule data={data} set={set}/>
               ):tests==="OUTCOME_MODULE"?(
                 <OutcomeMeasuresModule/>
               ):tests==="EXERCISE_MODULE"?(
@@ -11458,6 +11456,8 @@ function AppInner() {
           })()}
         </div>
       </nav>
+      {/* ── Live SOAP Panel — always visible floating panel ── */}
+      <LiveSOAPPanel data={data} onNavigate={navTo}/>
     </div>
   );
 }

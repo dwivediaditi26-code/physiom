@@ -6348,6 +6348,341 @@ function TreatmentSessionLogModule({ data, set }) {
   );
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LIVE SOAP PANEL — Real-time floating clinical documentation
+// Reads data from all assessment tabs and auto-builds SOAP in real time.
+// Always visible as a collapsible floating panel anchored bottom-right.
+// No navigation required — works on top of any assessment module.
+// ══════════════════════════════════════════════════════════════════════════════
+
+function LiveSOAPPanel({ data, onNavigate }) {
+  const [open,    setOpen]    = React.useState(false);
+  const [tab,     setTab]     = React.useState("S");   // "S" | "O" | "A" | "P"
+  const [copied,  setCopied]  = React.useState(null);
+  const [minimal, setMinimal] = React.useState(false); // compact pill mode
+
+  // Build SOAP in real time — only when panel is open (perf)
+  const soap = React.useMemo(() => {
+    if (!open) return null;
+    return buildRealtimeSOAP(data);
+  }, [data, open]);
+
+  // Count filled fields per section for live badges
+  const sectionCounts = React.useMemo(() => {
+    const v = (k) => !!(data[k] && String(data[k]).trim());
+    const subjectiveKeys = ["cc_main","cc_location","cc_vas_now","cc_quality","dem_name",
+      "cc_duration","cc_onset","cc_aggravating","cc_easing"];
+    const objectiveKeys  = Object.keys(data).filter(k =>
+      k.startsWith("rom_") || k.startsWith("mmt_") || k.startsWith("st_") ||
+      k.startsWith("gait_") || k.startsWith("lx_") || k.startsWith("post_") ||
+      k.startsWith("palp_") || k.startsWith("om_")
+    );
+    const hasRegionalData = Object.keys(data).some(k =>
+      ["cx_","lx_","sh_","hp_","kn_","af_","tx_","ew_"].some(px => k.startsWith(px))
+    );
+    return {
+      S: subjectiveKeys.filter(v).length + (hasRegionalData ? 2 : 0),
+      O: Math.min(objectiveKeys.length, 20),
+      A: !!(data["cc_main"] || Object.keys(data).some(k => k.startsWith("cx_")||k.startsWith("lx_")||k.startsWith("sh_"))) ? 1 : 0,
+      P: !!(data["tx_techniques"] || data["hep_programme"] || data["tx_frequency"]) ? 1 : 0,
+    };
+  }, [data]);
+
+  const totalFilled = sectionCounts.S + sectionCounts.O;
+  const hasContent  = totalFilled > 0;
+
+  const copySection = (text) => {
+    if (!text) return;
+    navigator.clipboard?.writeText(text).catch(() => {
+      const el = document.createElement("textarea");
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    });
+    setCopied(tab);
+    setTimeout(() => setCopied(null), 1800);
+  };
+
+  const exportPDF = () => {
+    if (!soap) return;
+    const patName = String(data["dem_name"] || "Patient").replace(/[^a-zA-Z0-9 ]/g,"").trim();
+    const date    = new Date().toLocaleDateString("en-AU");
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>SOAP Note — ${patName}</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #1a1025; line-height: 1.6; }
+  h1 { color: #7c3aed; font-size: 1.4rem; border-bottom: 2px solid #7c3aed; padding-bottom: 8px; }
+  h2 { font-size: 1rem; color: #7c3aed; margin: 20px 0 6px; text-transform: uppercase; letter-spacing: 1px; }
+  pre { background: #f5f0fb; padding: 12px 16px; border-radius: 8px; white-space: pre-wrap; font-size: 0.82rem; font-family: inherit; }
+  .meta { font-size: 0.8rem; color: #7e6a9a; margin-bottom: 24px; }
+  @media print { body { margin: 20px; } }
+</style></head><body>
+<h1>SOAP Note — ${patName}</h1>
+<div class="meta">Date: ${date} · Auto-generated from PhysioMaster assessment</div>
+<h2>S — Subjective</h2><pre>${(soap.S||"").replace(/</g,"&lt;")}</pre>
+<h2>O — Objective</h2><pre>${(soap.O||"").replace(/</g,"&lt;")}</pre>
+<h2>A — Assessment</h2><pre>${(soap.A||"").replace(/</g,"&lt;")}</pre>
+<h2>P — Plan</h2><pre>${(soap.P||"").replace(/</g,"&lt;")}</pre>
+</body></html>`;
+    const w = window.open("","_blank","width=900,height=700");
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 600); }
+  };
+
+  const SECTION_LABELS = {
+    S: { label:"Subjective", col:"#9333ea", icon:"💬" },
+    O: { label:"Objective",  col:"#0891b2", icon:"📋" },
+    A: { label:"Assessment", col:"#059669", icon:"🧠" },
+    P: { label:"Plan",       col:"#d97706", icon:"📝" },
+  };
+
+  const currentSec = SECTION_LABELS[tab];
+  const currentText = soap ? soap[tab] : null;
+
+  // ── Minimal pill (when closed) ───────────────────────────────────────────
+  const pillStyle = {
+    position:"fixed", bottom:24, right:16, zIndex:9999,
+    display:"flex", alignItems:"center", gap:8,
+    background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+    border:"none", borderRadius:24, padding:"10px 16px",
+    color:"#fff", cursor:"pointer", boxShadow:"0 4px 20px rgba(124,58,237,0.4)",
+    fontSize:"0.72rem", fontWeight:800, letterSpacing:"0.3px",
+    transition:"all 0.2s",
+  };
+
+  if (!open) {
+    return (
+      <button onClick={()=>setOpen(true)} style={pillStyle} title="Open Live SOAP Panel">
+        <span style={{fontSize:"1rem"}}>📋</span>
+        <span>Live SOAP</span>
+        {hasContent && (
+          <span style={{
+            background:"rgba(255,255,255,0.25)", borderRadius:10,
+            padding:"1px 7px", fontSize:"0.62rem", fontWeight:800
+          }}>{totalFilled}</span>
+        )}
+      </button>
+    );
+  }
+
+  // ── Expanded panel ───────────────────────────────────────────────────────
+  return (
+    <div style={{
+      position:"fixed", bottom:0, right:0, zIndex:9999,
+      width: minimal ? 260 : 380,
+      maxHeight:"92vh",
+      display:"flex", flexDirection:"column",
+      background:"#ffffff",
+      border:"1px solid rgba(124,58,237,0.2)",
+      borderBottom:"none",
+      borderRadius:"16px 16px 0 0",
+      boxShadow:"0 -4px 32px rgba(124,58,237,0.18)",
+      overflow:"hidden",
+      transition:"width 0.2s",
+    }}>
+
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <div style={{
+        background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+        padding:"10px 14px",
+        display:"flex", alignItems:"center", gap:8,
+        flexShrink:0,
+      }}>
+        <span style={{fontSize:"1rem"}}>📋</span>
+        <span style={{flex:1, fontSize:"0.75rem", fontWeight:800, color:"#fff", letterSpacing:"0.3px"}}>
+          Live SOAP Documentation
+        </span>
+        {/* Live indicator */}
+        <div style={{display:"flex",alignItems:"center",gap:4}}>
+          <div style={{
+            width:6,height:6,borderRadius:"50%",
+            background:"#4ade80",
+            boxShadow:"0 0 6px #4ade80",
+            animation:"pulse 2s infinite"
+          }}/>
+          <span style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.8)",fontWeight:700}}>LIVE</span>
+        </div>
+        <button onClick={()=>setMinimal(m=>!m)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:6,color:"#fff",padding:"3px 7px",cursor:"pointer",fontSize:"0.6rem",fontWeight:700}}>
+          {minimal?"⬆":"⬇"}
+        </button>
+        <button onClick={()=>setOpen(false)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:6,color:"#fff",padding:"3px 8px",cursor:"pointer",fontSize:"0.7rem",fontWeight:700}}>
+          ✕
+        </button>
+      </div>
+
+      {/* ── Section tabs ─────────────────────────────────────────────────── */}
+      <div style={{
+        display:"flex", borderBottom:"1px solid rgba(124,58,237,0.12)",
+        background:"#faf5ff", flexShrink:0,
+      }}>
+        {Object.entries(SECTION_LABELS).map(([key,sec]) => {
+          const count = sectionCounts[key];
+          const active = tab===key;
+          return (
+            <button key={key} onClick={()=>setTab(key)} style={{
+              flex:1, padding:"8px 4px", border:"none", cursor:"pointer",
+              background:active ? "#fff" : "transparent",
+              borderBottom: active ? `2px solid ${sec.col}` : "2px solid transparent",
+              display:"flex", flexDirection:"column", alignItems:"center", gap:2,
+              transition:"all 0.15s",
+            }}>
+              <span style={{fontSize:"0.7rem"}}>{sec.icon}</span>
+              <span style={{fontSize:"0.6rem",fontWeight:active?800:600,color:active?sec.col:"#7e6a9a"}}>{key}</span>
+              {count > 0 && (
+                <span style={{
+                  fontSize:"0.5rem",fontWeight:800,
+                  background:sec.col+"15",color:sec.col,
+                  padding:"0px 5px",borderRadius:8
+                }}>{count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Content area ─────────────────────────────────────────────────── */}
+      {!minimal && (
+        <div style={{
+          flex:1, overflowY:"auto",
+          padding:"12px 14px",
+          background:"#fff",
+        }}>
+          {/* Section title */}
+          <div style={{
+            display:"flex", justifyContent:"space-between", alignItems:"center",
+            marginBottom:10,
+          }}>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:"0.9rem"}}>{currentSec.icon}</span>
+              <span style={{fontSize:"0.72rem",fontWeight:800,color:currentSec.col,letterSpacing:"0.5px",textTransform:"uppercase"}}>
+                {currentSec.label}
+              </span>
+            </div>
+            <div style={{display:"flex",gap:5}}>
+              <button onClick={()=>copySection(currentText)} style={{
+                padding:"3px 8px",background:"transparent",
+                border:`1px solid ${currentSec.col}33`,
+                borderRadius:6,color:currentSec.col,
+                cursor:"pointer",fontSize:"0.58rem",fontWeight:700,
+              }}>
+                {copied===tab ? "✅ Copied" : "📋 Copy"}
+              </button>
+            </div>
+          </div>
+
+          {/* SOAP text */}
+          {currentText ? (
+            <div style={{
+              fontSize:"0.67rem", color:"#1a1025",
+              lineHeight:1.65, whiteSpace:"pre-wrap",
+              background:"#faf5ff", borderRadius:8,
+              padding:"10px 12px",
+              border:"1px solid rgba(124,58,237,0.1)",
+              fontFamily:"'Segoe UI',system-ui,sans-serif",
+            }}>
+              {currentText}
+            </div>
+          ) : (
+            <div style={{
+              textAlign:"center",padding:"24px 12px",
+              color:"#7e6a9a",fontSize:"0.68rem",lineHeight:1.6,
+            }}>
+              <div style={{fontSize:"1.5rem",marginBottom:8}}>
+                {tab==="S"?"💬":tab==="O"?"📊":tab==="A"?"🧠":"📝"}
+              </div>
+              <div style={{fontWeight:600,marginBottom:4}}>
+                {tab==="S" ? "Complete the Subjective Assessment" :
+                 tab==="O" ? "Perform assessments to auto-fill Objective" :
+                 tab==="A" ? "Assessment generates after findings are entered" :
+                 "Plan auto-generates from assessment findings"}
+              </div>
+              <div style={{fontSize:"0.62rem",color:"#a09ab8"}}>
+                Fill any assessment tab — this updates automatically
+              </div>
+            </div>
+          )}
+
+          {/* Quick links to relevant module if empty */}
+          {!currentText && onNavigate && (
+            <div style={{marginTop:10,display:"flex",flexWrap:"wrap",gap:5}}>
+              {(tab==="S" ? [["💬","Subjective","subjective"]] :
+                tab==="O" ? [["📐","ROM","rom"],["💪","MMT","mmt"],["🔬","Special Tests","special"],["🚶","Gait","gait"]] :
+                tab==="A" ? [["🧠","SOAP + AI","soap"]] :
+                [["💊","Treatment","treatment"],["🏃","Exercise","exercise"]]
+              ).map(([icon,label,key]) => (
+                <button key={key} onClick={()=>{ onNavigate(key); setOpen(false); }} style={{
+                  padding:"4px 10px",background:"rgba(124,58,237,0.06)",
+                  border:"1px solid rgba(124,58,237,0.2)",borderRadius:20,
+                  color:"#7c3aed",cursor:"pointer",fontSize:"0.62rem",fontWeight:700,
+                }}>
+                  {icon} {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Footer: PDF + Copy All ─────────────────────────────────────── */}
+      <div style={{
+        padding:"10px 14px",
+        borderTop:"1px solid rgba(124,58,237,0.1)",
+        background:"#faf5ff",
+        display:"flex", gap:8, flexShrink:0,
+      }}>
+        <button onClick={exportPDF} style={{
+          flex:1,padding:"7px 10px",
+          background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+          border:"none",borderRadius:8,color:"#fff",
+          cursor:"pointer",fontSize:"0.65rem",fontWeight:800,
+          display:"flex",alignItems:"center",justifyContent:"center",gap:5,
+        }}>
+          <span>📄</span> Export PDF
+        </button>
+        <button onClick={()=>{
+          const full = soap ? `S — SUBJECTIVE
+${soap.S}
+
+O — OBJECTIVE
+${soap.O}
+
+A — ASSESSMENT
+${soap.A}
+
+P — PLAN
+${soap.P}` : "";
+          copySection(full);
+        }} style={{
+          flex:1,padding:"7px 10px",
+          background:"rgba(124,58,237,0.08)",
+          border:"1px solid rgba(124,58,237,0.2)",
+          borderRadius:8,color:"#7c3aed",
+          cursor:"pointer",fontSize:"0.65rem",fontWeight:800,
+          display:"flex",alignItems:"center",justifyContent:"center",gap:5,
+        }}>
+          📋 Copy All
+        </button>
+        {onNavigate && (
+          <button onClick={()=>{ onNavigate("soap"); setOpen(false); }} style={{
+            padding:"7px 10px",
+            background:"rgba(5,150,105,0.08)",
+            border:"1px solid rgba(5,150,105,0.2)",
+            borderRadius:8,color:"#059669",
+            cursor:"pointer",fontSize:"0.65rem",fontWeight:800,
+          }} title="Open full SOAP editor">
+            🔗
+          </button>
+        )}
+      </div>
+
+      {/* Pulse animation */}
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
+    </div>
+  );
+}
+
 export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP,
   SOAPNoteModule, EXERCISE_DB, ExercisePrescriptionModule, PalpationModule,
-  TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline };
+  TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel };
