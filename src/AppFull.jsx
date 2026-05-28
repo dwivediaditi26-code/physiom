@@ -10365,6 +10365,7 @@ function AppInner() {
   Object.assign(C, TC);
 
   const [active, setActive] = useState("home");
+  const [navContext, setNavContext] = useState({});
 
   // ── Deferred mounting: heavy tabs only render after first visit ──────────
   // This cuts initial render time dramatically
@@ -10664,8 +10665,9 @@ function AppInner() {
   };
 
   const runDx = () => { setDx(generateDiagnosis(data)); setShowDx(true); };
-  const navTo = useCallback((key) => {
+  const navTo = useCallback((key, ctx = {}) => {
     setActive(key);
+    setNavContext(ctx);
     setNavOpen(false);
     // Mount tab on first visit
     setMountedTabs(prev => {
@@ -11284,7 +11286,7 @@ function AppInner() {
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo}/>
               ):tests==="SUBJECTIVE_MODULE"?(
-                <SubjectiveModule data={data} set={set}/>
+                <SubjectiveModule data={data} set={set} onNav={navTo}/>
               ):tests==="PALPATION_MODULE"?(
                 <PalpationModule data={data} set={set}/>
               ):tests==="POSTURE_DEFECT_MODULE"?(
@@ -11292,15 +11294,15 @@ function AppInner() {
               ):tests==="CYRIAX_MODULE"?(
                 <CyriaxModule data={data} set={set}/>
               ):tests==="SPECIAL_TESTS_MODULE"?(
-                <SpecialTestsSection data={data} set={set}/>
+                <SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
               ):tests==="NKT_REGION"?(
-                <NKTSection data={data} set={set}/>
+                <NKTSection data={data} set={set} navContext={active==="nkt"?navContext:{}}/>
               ):tests==="FMA_REGION"?(
                 <FMASection data={data} set={set}/>
               ):tests==="FASCIA_REGION"?(
                 <FasciaSection data={data} set={set}/>
               ):tests==="KC_REGION"?(
-                <KineticChainSection data={data} set={set}/>
+                <KineticChainSection data={data} set={set} navContext={active==="kinetic"?navContext:{}}/>
               ):tests==="CYRIAX_REGION"?(
                 <CyriaxRegionTests data={data} set={set}/>
               ):tests==="NEURO_MODULE"?(
@@ -11308,9 +11310,9 @@ function AppInner() {
               ):tests==="GAIT_MODULE"?(
                 <GaitModule data={data} set={set}/>
               ):tests==="MMT_MODULE"?(
-                <MMTModule data={data} set={set}/>
+                <MMTModule data={data} set={set} navContext={active==="mmt"?navContext:{}}/>
               ):tests==="ROM_MODULE"?(
-                <ROMModule data={data} set={set}/>
+                <ROMModule data={data} set={set} navContext={active==="rom"?navContext:{}}/>
               ):tests==="OUTCOME_MODULE"?(
                 <OutcomeMeasuresModule/>
               ):tests==="EXERCISE_MODULE"?(
