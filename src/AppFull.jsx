@@ -1513,7 +1513,7 @@ const CLINICAL_NORMS = {
   lordosisAngle:     { normal:[40,60],   mild:[60,70],   severe:[70,90],  unit:"°", label:"Lumbar Lordosis (L1–S1)",   ref:"Normal 40–60°. >70° hyperlordosis. <30° flat-back. Assessed lateral view only." },
   shoulderAngle:     { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"°", label:"Shoulder Tilt (bilateral)", ref:"<3° within normal variation. 3–7° mild asymmetry. >7° refer for LLD/scoliosis screen." },
   pelvisAngle:       { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"°", label:"Pelvic Obliquity",          ref:"<3° normal. >7° — screen for LLD, SIJ dysfunction, hip asymmetry." },
-  kneeValgus:        { normal:[0,5],     mild:[5,10],    severe:[10,30],  unit:"°", label:"Knee Valgus/Varus",         ref:"<5° normal Q-angle variation. >10° — glute med inhibition, foot pronation driver." },
+  kneeValgus:        { normal:[0,5],     mild:[5,10],    severe:[10,30],  unit:"°", label:"Knee Valgus/Varus",         ref:"<5° normal Q-angle variation. >10° — may involve altered hip abductor contribution and/or foot pronation tendency." },
   cobbEstimate:      { normal:[0,5],     mild:[5,10],    severe:[10,90],  unit:"°", label:"Scoliosis Screen (Cobb est.)", ref:"<5° normal. 5–10° monitor with repeat. >10° refer for standing X-ray (true Cobb)." },
   weightBearingShift:{ normal:[0,3],     mild:[3,6],     severe:[6,30],   unit:"%", label:"Weight-Bearing Asymmetry",  ref:"<3% acceptable. >6% — assess LLD, pain-avoidance posture, hip OA." },
   cogDeviation:      { normal:[0,4],     mild:[4,7],     severe:[7,30],   unit:"%", label:"Centre of Gravity Deviation", ref:"<4% normal. >7% global postural collapse — multi-system retraining needed." },
@@ -1851,8 +1851,11 @@ function ReliabilityEngine(lm) {
 }
 
 // ─── CLINICAL FINDINGS ENGINE ─────────────────────────────────────────────────
-// Thresholds: Kendall (2005), Magee (2014), Levangie & Norkin (2011),
+// Evidence references: Kendall (2005), Magee (2014), Levangie & Norkin (2011),
 // Sahrmann (2002), Comerford & Mottram (2012), Hansraj (2014)
+// CLINICAL INTENT: Findings are screening observations for clinical support only.
+// They do not constitute diagnosis or exercise/treatment prescription.
+// All findings must be confirmed with objective clinical assessment before intervention.
 function ClinicalFindingsEngine(lm, view, measurements) {
   if (!lm || !measurements) return [];
   const findings = [];
@@ -1886,7 +1889,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
       const abs = Math.abs(shoulderAngle); const side = shoulderAngle > 0 ? "Left" : "Right";
       add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
-        `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s × 3. Activate: lower trapezius Y-T-W × 15. NKT: check ipsilateral QL — QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
+        `Assess cervical-thoracic mobility (rotation and lateral flexion). Evaluate ipsilateral QL contribution. Assess lower trapezius activation capacity (prone Y). Palpate upper trapezius and levator scapulae for tone asymmetry. Consider ocular righting reflex if persistent.`,
         "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis.`, "Normal: <3°", abs);
     }
 
@@ -1894,7 +1897,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (headLateralOffset !== null && Math.abs(headLateralOffset) > 2.5) {
       const abs = Math.abs(headLateralOffset); const side = headLateralOffset > 0 ? "right" : "left";
       add("Cervical", `Head laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 5 ? "high" : "moderate",
-        `Cervical lateral flexion mobilisation contralateral. SCM and scalene release ipsilateral. Assess ocular/vestibular contributions. Pillow height review.`,
+        `Assess cervical AROM — lateral flexion and rotation bilaterally. Evaluate C1–C2 mobility (Flexion-Rotation Test). Consider vestibular and visual contributions. Assess sleeping posture and pillow height.`,
         "M54.2", "↔", `Persistent shift: C2–C4 facet dysfunction, alar ligament laxity, or habitual visual dominance.`, "Normal: <2.5%", abs);
     }
 
@@ -1904,7 +1907,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const lldNote = lldProxy !== null && lldProxy > 5
         ? ` Knee height asymmetry suggests ~${lldProxy.toFixed(0)}mm functional LLD (${lldSide} side shorter).` : "";
       add("Pelvis / SIJ", `${high} ASIS elevated (${abs.toFixed(1)}°)${lldNote ? " + LLD suspected" : ""}`, abs > 7 ? "high" : "moderate",
-        `Functional LLD: tape iliac crest to medial malleolus bilateral. If LLD >5mm: heel wedge trial 3–5mm. QL release elevated side. Hip abductor strengthening depressed side. SIJ provocation cluster (distraction, compression, thigh thrust, Gaenslen, sacral thrust — positive ≥3/5). Lumbar PA L4–S1.`,
+        `Assess true LLD: tape measure ASIS to medial malleolus bilaterally. Assess SIJ provocation cluster (Laslett criteria ≥3/5). Evaluate hip abductor strength bilaterally (Trendelenburg). Palpate QL tone elevated side. Assess lumbar mobility (PA glides L4–S1).`,
         "M53.3", "⊖", `${abs.toFixed(1)}°. >7° — structural LLD screen (long-leg X-ray).${lldNote}`, "Normal: <3°", abs);
     }
 
@@ -1912,7 +1915,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (trunkLateralShift !== null && Math.abs(trunkLateralShift) > 3.5) {
       const abs = Math.abs(trunkLateralShift); const side = trunkLateralShift > 0 ? "right" : "left";
       add("Thoracic", `Trunk laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 7 ? "high" : "moderate",
-        `Assess antalgic lean (disc/radiculopathy — trunk shifts AWAY from herniation in paracentral disc, TOWARD in lateral disc). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.`,
+        `Assess for antalgic lean pattern — note direction relative to any reported leg symptoms. Neurological screen (SLR, dermatomal sensation). Assess lumbar and rib cage mobility. Monitor for change with movement.`,
         "M54.5", "⇒", `Lateral trunk shift highly associated with L4/L5 disc herniation.`, "Normal: <3.5%", abs);
     }
 
@@ -1920,13 +1923,13 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (spinalDeviation !== null && Math.abs(spinalDeviation) > 4) {
       const abs = Math.abs(spinalDeviation);
       add("Spine", `C-plumb deviation — head not centred over pelvis (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
-        `Adam's forward bend test — observe for rib hump. Confirm in posterior view. Refer for standing AP X-ray if structural scoliosis suspected. Schroth method if confirmed.`,
+        `Perform Adam's forward bend test — observe for rib hump or rotational asymmetry. Confirm in posterior view. Standing AP X-ray indicated if structural scoliosis suspected. Differentiate functional from structural presentation.`,
         "M41.9", "〜", `Must distinguish functional (reversible) from structural (fixed) scoliosis via Adam's bend test.`, "Normal: <4%", abs);
     }
 
     if (cobbEstimate !== null && cobbEstimate > 5) {
       add("Spine", `Scoliosis screen — estimated Cobb equivalent ${cobbEstimate.toFixed(0)}° (shoulder-pelvis differential)`, cobbEstimate > 10 ? "high" : "moderate",
-        `Adam's forward bend test immediately. If rib prominence: refer for standing AP spine X-ray. Cobb >10° = confirmed scoliosis. >25° = bracing. >45° = surgical threshold. Schroth physiotherapy.`,
+        `Adam's forward bend test — observe for rib hump. If positive, refer for standing AP spine X-ray for Cobb angle measurement. Cobb >10° confirms scoliosis; screening for bracing and surgical thresholds requires specialist review.`,
         "M41.9", "〜", `Shoulder (${shoulderAngle?.toFixed(1)}°) vs pelvis (${pelvisAngle?.toFixed(1)}°) differential.`, "Normal: <5°", cobbEstimate);
     }
 
@@ -1950,23 +1953,23 @@ function ClinicalFindingsEngine(lm, view, measurements) {
           const worseSide = lAbs >= rAbs ? "L" : "R";
           text = `Bilateral knee valgus — ${worseSide} worse (L: ${lAbs.toFixed(1)}° R: ${rAbs.toFixed(1)}°)`;
           severity = worseAbs > 10 ? "high" : "moderate";
-          correction = `Glute med: clamshells × 15, lateral band walks × 20m. VMO: terminal knee extensions × 15. Single-leg squat with valgus mirror correction. Foot tripod activation. Address ankle pronation if present.`;
+          correction = `Assess single-leg squat (observe dynamic valgus). Evaluate hip abductor strength (side-lying abduction). Assess foot posture index — subtalar pronation contribution. Gait analysis for functional loading pattern.`;
         } else if (lSig) {
           text = `Left knee ${lPattern} — hip-knee-ankle misalignment (${lAbs.toFixed(1)}°)`;
           severity = lAbs > 10 ? "high" : "moderate";
           correction = lv < 0
-            ? `Glute med: clamshells, lateral band walks. VMO activation. SL squat correction. Foot tripod.`
-            : `Hip ER strengthening. Ober test (ITB/TFL). Lateral chain SMR. Subtalar supination assessment.`;
+            ? `Assess hip abductor and external rotator strength. Single-leg squat assessment. Foot posture index — subtalar pronation.`
+            : `Ober test (ITB/TFL length). Hip external rotator assessment. Subtalar supination pattern.`;
         } else {
           text = `Right knee ${rPattern} — hip-knee-ankle misalignment (${rAbs.toFixed(1)}°)`;
           severity = rAbs > 10 ? "high" : "moderate";
           correction = rv < 0
-            ? `Glute med: clamshells, lateral band walks. VMO activation. SL squat correction. Foot tripod.`
-            : `Hip ER strengthening. Ober test (ITB/TFL). Lateral chain SMR. Subtalar supination assessment.`;
+            ? `Assess hip abductor and external rotator strength. Single-leg squat assessment. Foot posture index — subtalar pronation.`
+            : `Ober test (ITB/TFL length). Hip external rotator assessment. Subtalar supination pattern.`;
         }
         add("Knee Alignment", text, severity, correction,
           "M21.0", "⊾",
-          `Dynamic valgus: primary driver of PFP, ACL injury, medial compartment OA. Glute med weakness in 80% of functional valgus cases.`,
+          `Knee frontal plane asymmetry may be associated with altered hip abductor/external rotator contribution and subtalar pronation tendency. Functional assessment required to confirm dynamic pattern.`,
           "Normal: <5° deviation", Math.max(lAbs, rAbs));
       }
     }
@@ -1975,7 +1978,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (weightBearingShift !== null && Math.abs(weightBearingShift) > 4) {
       const abs = Math.abs(weightBearingShift); const side = weightBearingShift > 0 ? "right" : "left";
       add("Balance / Loading", `Weight-bearing asymmetry — loading toward ${side} (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
-        `Mirror biofeedback bilateral stance. Scales under each foot if available. Retrain equal loading. Identify driver: pain avoidance, LLD, or habit.`,
+        `Quantify with bathroom scales under each foot. Assess for pain avoidance pattern. Evaluate LLD and proprioceptive contribution. Monitor for change with balance challenges.`,
         "M62.9", "⊖", `Asymmetric loading >6% associated with increased ipsilateral knee/hip OA progression.`, "Normal: <4%", abs);
     }
 
@@ -1985,8 +1988,8 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(angle);
       add("Foot / Ankle", `${side} foot ${angle > 0 ? "externally" : "internally"} rotated (${abs.toFixed(0)}°)`, abs > 30 ? "high" : "moderate",
         angle > 0
-          ? `Check tibial external torsion, hip ER contracture, glute med/TFL balance. Gait retraining feet-parallel.`
-          : `Check tibial internal torsion, hip IR dominance, in-toeing gait. Refer podiatry if structural torsion.`,
+          ? `Assess tibial torsion contribution. Evaluate hip external rotator mobility and strength. Gait observation — footfall pattern.`
+          : `Assess tibial torsion. Evaluate hip internal rotator dominance. Assess foot posture. Refer for specialist assessment if structural torsion suspected.`,
         "M21.6", "↻", `Normal foot progression angle 5–12° external.`, "Normal: 5–12°", abs);
     });
 
@@ -1994,22 +1997,22 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (cogDeviation !== null && Math.abs(cogDeviation) > 5) {
       const abs = Math.abs(cogDeviation);
       add("Global Posture", `COG shifted ${cogDeviation > 0 ? "right" : "left"} (${abs.toFixed(1)}%)`, abs > 9 ? "high" : "moderate",
-        `Global postural reset: proprioceptive training single-leg stance, mirror biofeedback, perturbation training. Identify structural driver before retraining.`,
+        `Assess single-leg stance balance and proprioceptive capacity. Identify structural driver (LLD, pain, habit). Gait analysis. Evaluate with balance testing before intervention.`,
         "M62.9", "⊕", "", "Normal: <5%", abs);
     }
 
     // UCS pattern
     if (ucsIndex !== null && ucsIndex > 0.6) {
       add("Upper Crossed Syndrome", `UCS pattern detected — index ${ucsIndex.toFixed(1)} (${ucsIndex > 1.0 ? "severe" : "moderate"})`, ucsIndex > 1.0 ? "high" : "moderate",
-        `INHIBIT (SMR ×90s): upper trap, SCM, pec minor, levator scapulae. ACTIVATE: deep neck flexors (chin nod ×10 ×3), lower trap (Y-T-W ×15), serratus (wall push-up plus ×15). MOBILISE: thoracic extension foam roller T4–T8 ×2min. CORRECT: monitor height +5cm. NKT reprogram within 30s of release.`,
-        "M62.9", "✗", `UCS (Janda 1979): overactive upper trap/SCM/pec minor ↔ inhibited DNF/lower trap/serratus. Drives FHP, rounded shoulders, kyphosis, cervicogenic headache.`, "UCS Index: <0.4 normal", ucsIndex);
+        `Assess craniocervical flexion test (CCFT) — deep cervical flexor capacity. Evaluate pectoralis minor length (supine offset test). Assess thoracic extension mobility. Upper trapezius and levator scapulae tone assessment. Cervicothoracic mobility screen.`,
+        "M62.9", "✗", `Observation consistent with possible upper crossed pattern characteristics (Janda). May involve altered cervicothoracic muscle recruitment. Clinical muscle testing required to confirm.`, "UCS Index: <0.4 normal", ucsIndex);
     }
 
     // LCS pattern
     if (lcsIndex !== null && lcsIndex > 0.5) {
       add("Lower Crossed Syndrome", `LCS pattern detected — index ${lcsIndex.toFixed(1)} (${lcsIndex > 1.0 ? "severe" : "moderate"})`, lcsIndex > 1.0 ? "high" : "moderate",
-        `INHIBIT (SMR ×90s): hip flexors (psoas, RF, TFL), thoracolumbar erectors, QL. ACTIVATE: glute max (bridges ×15, hip thrusts ×10), glute med (clamshells, lateral band walks), TA/core (dead bug ×10). STRETCH: couch stretch 90s/side. CORRECT: pelvic neutral awareness, seated posture retraining.`,
-        "M62.9", "✗", `LCS (Janda): overactive hip flexors/lumbar extensors ↔ inhibited glutes/abdominals. Drives APT, hyperlordosis, knee valgus.`, "LCS Index: <0.4 normal", lcsIndex);
+        `Thomas test — assess hip flexor length bilaterally. Gluteus maximus strength assessment (prone hip extension). Transverse abdominis activation assessment. Lumbar mobility (PA glides). Pelvic tilt awareness and control assessment.`,
+        "M62.9", "✗", `Observation consistent with possible lower crossed pattern characteristics (Janda). May involve altered hip flexor and gluteal recruitment. Clinical muscle testing required to confirm.`, "LCS Index: <0.4 normal", lcsIndex);
     }
   }
 
@@ -2045,7 +2048,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
 
     if (scapularAsymm !== null && scapularAsymm > 2.5) {
       add("Scapula", `Scapular height asymmetry — posterior view (${scapularAsymm.toFixed(1)}° differential)`, scapularAsymm > 5 ? "high" : "moderate",
-        `NKT screen: serratus anterior vs pec minor. Lower trap Y-T-W ×15. Wall push-up plus (serratus). Thoracic extension mobility. If winging visible: test serratus (wall push-up — medial border lifting = Type II dyskinesis).`,
+        `Assess serratus anterior strength (push-up plus — observe medial border). Pectoralis minor length test. Thoracic extension mobility. If winging present: classify as Type I, II or III (Kibler) via push-up test. Scapular dyskinesis assessment.`,
         "M89.8", "⇑", `Kibler types: I=inferior angle, II=medial border (serratus weakness), III=superior elevation (upper trap dominant).`, "Normal: <2.5°", scapularAsymm);
     }
 
@@ -2071,12 +2074,12 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const sev = cvaAngle < 42 ? "high" : "moderate";
       const loadStr = cervicalLoadKg !== null ? ` Est. cervical load: ${cervicalLoadKg}kg (neutral=4.5kg).` : "";
       add("Cervical — Forward Head", `Forward head posture — CVA ${cvaAngle.toFixed(0)}° (normal >55°)${forwardHeadCm !== null ? ` / ${forwardHeadCm.toFixed(1)}cm anterior` : ""}`, sev,
-        `IMMEDIATE: supine chin nod (NOT chin tuck) ×10 ×3 sets, 10s hold. Thoracic extension foam roller T4–T8 ×2min daily. Suboccipital release 90s. Ergonomic: raise monitor 5–10cm, keyboard at elbow height. NKT: SCM+scalenes overactive → inhibit → activate DNF within 30s. Home cue: tongue to roof of mouth.`,
+        `Assess CVA with goniometer (seated). Craniocervical flexion test (CCFT) — deep cervical flexor endurance. Cervical AROM — flexion and extension. Assess thoracic extension mobility. Ergonomic review (screen height, keyboard position). Palpate suboccipital and cervical extensor tone.`,
         "M43.6", "⇒", `CVA ${cvaAngle.toFixed(0)}° (Yip 2008).${loadStr} Each 2.5cm FHP adds ~5kg to cervical extensors (Hansraj 2014).`, "Normal: >55°", cvaAngle);
     } else if (cvaAngle === null && forwardHeadMm !== null && Math.abs(forwardHeadMm) > 3) {
       const abs = Math.abs(forwardHeadMm);
       add("Cervical — Forward Head", `Forward head posture — ear anterior to acromion (${abs.toFixed(1)}% offset)`, abs > 7 ? "high" : "moderate",
-        `Deep cervical flexor activation. Thoracic extension foam roller. Ergonomic review. Take true lateral photo for CVA measurement.`,
+        `Obtain lateral view photo for accurate CVA measurement. Assess cervical AROM. Ergonomic review. Craniocervical flexion test if symptoms present.`,
         "M43.6", "⇒", "Obtain lateral photo for CVA measurement — more accurate than frontal view proxy.", "Normal: ear over acromion", abs);
     }
 
@@ -2084,7 +2087,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (thoracicAngle !== null && thoracicAngle - 45 > 8) {
       const excess = thoracicAngle - 45;
       add("Thoracic Kyphosis", `Increased thoracic kyphosis (~${thoracicAngle.toFixed(0)}°, normal 20–45°)`, excess > 18 ? "high" : "moderate",
-        `Thoracic extension HVLA T4–T8 (PA + rotation). Foam roller extension apex ×2min daily. Wall angels ×15. Pec minor stretch 60s ×3. Lower trap: prone Y-T-W. Rib expansion breathing. Seated posture: lumbar roll support.`,
+        `Assess passive thoracic extension ROM. Pectoralis major and minor length assessment (supine). Lower and mid-trapezius strength (prone Y/T). Rib cage expansion assessment. Thoracic PA mobility testing (T4–T8). Seated posture evaluation.`,
         "M40.2", "⌒", `Normal Cobb T1–T12 = 20–45°. Hyperkyphosis >50°. If structural: Scheuermann's (>5° wedging ≥3 vertebrae on X-ray).`, "Normal: 20–45°", thoracicAngle);
     }
 
@@ -2097,8 +2100,8 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         ant ? `Anterior pelvic tilt${angleNote} — increased lumbar lordosis` : `Posterior pelvic tilt${angleNote} — flat back`,
         abs > 9 ? "high" : "moderate",
         ant
-          ? `INHIBIT (SMR ×90s): psoas, RF, TFL. STRETCH: couch stretch 90s/side, 90-90 hip flexor. ACTIVATE: glute max (bridges ×15), TA (dead bug ×10). CORRECT: pelvic posterior tilt awareness. Thomas test to confirm hip flexor contracture. 90/90 hamstring length check.`
-          : `Lumbar extension mobilisation PA L1–L5 grade III–IV. McKenzie extension: prone → press-up. Hip flexor facilitation. Assess erector spinae/multifidus tone. Sahrmann lumbar flexion syndrome screen.`,
+          ? `Thomas test — hip flexor length bilaterally. Modified Ober test — TFL/ITB length. Gluteus maximus strength (prone hip extension). Pelvic tilt control assessment. Lumbar mobility screen.`
+          : `Hamstring length (90/90 SLR). Lumbar extension mobility (PA glides L1–L5). Erector spinae and multifidus tone palpation. Sahrmann lumbar flexion syndrome screen.`,
         "M53.3", "↕",
         ant
           ? `ASIS drops below PSIS — hip flexor/erector overactivity. LCS pattern. Increases lumbar disc posterior load.${lordNote}`
@@ -2108,8 +2111,8 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(lumbarProxy); const ant = lumbarProxy > 0;
       add("Lumbar / Pelvis", `${ant ? "Anterior" : "Posterior"} pelvic tilt pattern`, abs > 8 ? "high" : "moderate",
         ant
-          ? `Hip flexor stretch ×60s. Glute activation — bridges ×15. TVA bracing. Pelvic tilt awareness drills.`
-          : `Lumbar extension mobilisation. Hip flexor facilitation. Multifidus activation. McKenzie extension.`,
+          ? `Thomas test — hip flexor length. Gluteus maximus activation capacity. Pelvic tilt awareness and control assessment.`
+          : `Lumbar extension mobility. Hamstring length assessment. Multifidus palpation and tone assessment.`,
         "M53.3", "↕", "", "", abs);
     }
 
@@ -2120,7 +2123,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         add("Lumbar — Hyperlordosis",
           `Increased lumbar lordosis (~${lordosisAngle.toFixed(0)}°, normal 40–60°)`,
           excess > 20 ? "high" : "moderate",
-          `INHIBIT: iliopsoas (couch stretch 90s×2), rectus femoris (prone heel-to-glute). ACTIVATE: glute max (bridges ×15 with posterior pelvic tilt), TA (dead bug). Pelvic clock: anterior → neutral → posterior tilt awareness. Assess hip flexor contracture (Thomas test).`,
+          `Thomas test — assess hip flexor contracture bilaterally. Ely's test — rectus femoris length. Gluteus maximus strength (prone hip extension). Transverse abdominis activation assessment. Pelvic tilt control evaluation.`,
           "M40.5", "↕",
           `Hyperlordosis: ASIS drops below PSIS. Increases L4–L5 disc posterior compression and facet loading. Associated with hip flexor tightness and gluteal inhibition.`,
           "Normal: 40–60°", lordosisAngle);
@@ -2128,7 +2131,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         add("Lumbar — Flat Back / Reduced Lordosis",
           `Reduced lumbar lordosis (~${lordosisAngle.toFixed(0)}°, normal 40–60°)`,
           lordosisAngle < 20 ? "high" : "moderate",
-          `McKenzie extension progression: prone → prone on elbows → press-up. Lumbar PA mobilisation Grade III–IV L1–L5. Hip flexor facilitation. Erector spinae activation. Sahrmann lumbar flexion syndrome screen. Lumbar roll support for sitting.`,
+          `McKenzie directional preference assessment. Hamstring length (90/90 SLR). Lumbar PA mobility (L1–L5). Erector spinae and multifidus tone assessment. Sahrmann lumbar flexion syndrome screen.`,
           "M40.4", "↕",
           `Flat back: PSIS at same level or below ASIS. Increases anterior disc shear force and hamstring/abdominal overactivity. Reduced shock absorption capacity.`,
           "Normal: 40–60°", lordosisAngle);
@@ -2144,7 +2147,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       add("Posture Pattern — Sway-Back",
         `Sway-back posture: hips posterior to plumb, flat lumbar, thoracic lean`,
         "moderate",
-        `INHIBIT: hamstrings (slump stretch, seated), abdominals (reduce over-bracing). ACTIVATE: hip flexors (psoas activation — standing hip flexion ×15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles. Lumbar roll support in sitting.`,
+        `Hamstring length assessment (slump test / 90-90 SLR). Hip flexor strength and activation capacity. Lumbar extension mobility. Assess standing balance — anterior-posterior sway. Proprioceptive contribution to habitual posture.`,
         "M40.3", "⟲",
         `Sway-back: pelvis shifts anterior, hips posterior to plumb. Hamstring + abdominal overactivity. Hip ligament loading increases. Associated with inactive standing posture and hypermobility.`,
         "Ideal: hip over plumb", null);
@@ -2159,7 +2162,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       add("Posture Pattern — Military / Flat Back",
         `Military/flat-back posture: reduced thoracic kyphosis and lumbar lordosis`,
         "moderate",
-        `Thoracic mobility: foam roller extension at T4–T8 ×2min daily. Rib expansion breathing ×10. Restore natural curve: McKenzie press-ups (lumbar). Cervical retraction (NOT chin tuck). Reassure: flat-back is not always symptomatic — assess function.`,
+        `Thoracic passive extension ROM. Lumbar extension mobility (PA glides + McKenzie screen). Rib cage expansion assessment. Cervical neutral alignment assessment. Functional assessment — this pattern is often asymptomatic. Screen for Scheuermann's if adolescent.`,
         "M40.4", "⊥",
         `Flat/military: all spinal curves reduced. Poor sagittal shock absorption. Often asymptomatic but predisposes to disc overload in end-range activities. Screen for Scheuermann's.`,
         "Normal: T kyphosis 20–45°, L lordosis 40–60°", null);
@@ -2174,9 +2177,9 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       add("Upper Crossed Syndrome (UCS)",
         `UCS pattern: forward head + thoracic kyphosis + rounded shoulders`,
         cvaAngle < 45 ? "high" : "moderate",
-        `NKT Protocol — INHIBIT (90s SMR each): upper trapezius, SCM, scalenes, pec minor. ACTIVATE (3×15): deep cervical flexors (chin nod), lower trapezius (prone Y), serratus anterior (wall slide). CORRECT: thoracic extension foam roller T4–T8. Ergonomic: monitor at eye level, chair with lumbar support. Home: hourly upper trap/pec minor stretch.`,
+        `Craniocervical flexion test (CCFT). Pectoralis minor length (supine coracoid offset). Thoracic extension passive ROM. Cervical AROM — assess restriction. Upper trapezius and pec minor tone palpation. Ergonomic review.`,
         "M62.8", "⊕",
-        `Janda UCS: tight pec minor + SCM + upper trap → inhibit lower trap + DNF + rhomboids. Creates forward head, kyphosis, shoulder impingement. CVA ${cvaAngle?.toFixed(0)}° confirms FHP component.`,
+        `Observation may be consistent with upper crossed pattern characteristics (Janda). May involve possible overactivity tendency of upper trapezius, SCM, pec minor, and possible reduced deep cervical flexor contribution. Clinical confirmation required.`,
         "Ideal: CVA >55°, kyphosis 20–45°", cvaAngle);
     }
 
@@ -2188,9 +2191,9 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       add("Lower Crossed Syndrome (LCS)",
         `LCS pattern: anterior pelvic tilt + hyperlordosis + hip flexor dominance`,
         pelvicTiltSagittal > 10 ? "high" : "moderate",
-        `NKT Protocol — INHIBIT (90s SMR each): iliopsoas, rectus femoris, TFL. ACTIVATE (3×15): glute max (bridges with posterior tilt), glute med (clams), TVA (dead bug). CORRECT: pelvic tilt awareness (posterior tilt drill ×20). Thomas test to confirm hip flexor contracture. Ely's test for RF.`,
+        `Thomas test — hip flexor length bilaterally. Ely's test — rectus femoris length. Gluteus maximus and medius strength assessment. Transverse abdominis activation assessment. Pelvic tilt control and lumbar mobility evaluation.`,
         "M62.8", "⊕",
-        `Janda LCS: tight iliopsoas + erector spinae → inhibit glute max + transversus abdominis. Creates anterior pelvic tilt, hyperlordosis, increased L4–L5 posterior disc load. APT ${pelvicTiltSagittal?.toFixed(1)}% confirms pelvic component.`,
+        `Observation may be consistent with lower crossed pattern characteristics (Janda). May involve possible overactivity tendency of hip flexors and thoracolumbar extensors, and possible reduced gluteal and abdominal contribution. Clinical confirmation required.`,
         "Ideal: APT <7° female / <5° male", pelvicTiltSagittal);
     }
 
@@ -2211,42 +2214,42 @@ function ClinicalFindingsEngine(lm, view, measurements) {
 
       if (hasSway_f) {
         patternName = "Sway-Back Posture";
-        patternTx   = "Activate hip flexors. Shift hips forward. Lumbar extension mobility.";
+        patternTx   = "Assess hamstring length. Evaluate hip flexor activation capacity. Lumbar extension mobility assessment.";
         patternNote = "Hips posterior to plumb, flat lumbar, forward trunk lean. Hamstring/abdominal dominance.";
         patternSev  = "moderate";
       } else if (hasMilitary_f) {
         patternName = "Military / Flat-Back Posture";
-        patternTx   = "Restore thoracic curve: foam roller extension. Restore lordosis: McKenzie.";
+        patternTx   = "Assess thoracic extension ROM. McKenzie directional preference screen. Functional assessment — often asymptomatic.";
         patternNote = "Reduced thoracic kyphosis and lumbar lordosis. All curves diminished.";
         patternSev  = "moderate";
       } else if (hasFHP_f && hasKyph_f && hasLord_f) {
         patternName = "Lordotic-Kyphotic (UCS + LCS)";
-        patternTx   = "Full postural correction programme. Address UCS and LCS simultaneously.";
+        patternTx   = "Comprehensive postural assessment indicated. Assess UCS and LCS characteristics. Prioritise objective testing before intervention planning.";
         patternNote = "FHP + hyperkyphosis + hyperlordosis. Classic combined Upper and Lower Crossed Syndrome.";
         patternSev  = "high";
       } else if (hasKyph_f && hasLord_f) {
         patternName = "Lordotic-Kyphotic Posture";
-        patternTx   = "Thoracic extension + hip flexor stretch + glute activation.";
+        patternTx   = "Assess thoracic extension ROM and hip flexor length. Evaluate gluteal activation capacity.";
         patternNote = "Thoracic kyphosis increased + lumbar lordosis increased. S-curve amplification.";
         patternSev  = "moderate";
       } else if (hasKyph_f && !hasLord_f) {
         patternName = "Kyphotic Posture (Thoracic)";
-        patternTx   = "Thoracic extension foam roller + lower trapezius + pec minor stretch.";
+        patternTx   = "Assess thoracic extension mobility. Evaluate lower trapezius and pectoralis minor contribution.";
         patternNote = "Increased thoracic kyphosis as primary finding. Scheuermann's or sedentary posture.";
         patternSev  = "moderate";
       } else if (hasLord_f && !hasKyph_f) {
         patternName = "Lordotic Posture";
-        patternTx   = "Hip flexor inhibition + glute max activation + pelvic tilt awareness.";
+        patternTx   = "Assess hip flexor length and gluteus maximus activation. Evaluate pelvic tilt control.";
         patternNote = "Hyperlordosis + anterior pelvic tilt. LCS pattern without significant thoracic component.";
         patternSev  = "moderate";
       } else if (hasFlat_f) {
         patternName = "Flat-Back Posture";
-        patternTx   = "McKenzie extension + lumbar roll support + erector facilitation.";
+        patternTx   = "McKenzie directional preference assessment. Assess lumbar extension mobility. Evaluate hamstring and abdominal contribution.";
         patternNote = "Reduced lumbar lordosis. Disc anterior shear risk. Assess hamstring and abdominal dominance.";
         patternSev  = "moderate";
       } else if (hasFHP_f && !hasKyph_f) {
         patternName = "Forward Head Posture (Isolated)";
-        patternTx   = "DNF activation. Thoracic extension. Ergonomic review.";
+        patternTx   = "Craniocervical flexion test. Thoracic extension mobility assessment. Ergonomic review.";
         patternNote = "FHP without significant thoracic kyphosis. Cervical extensor overactivation. Screen and desk posture.";
         patternSev  = "moderate";
       }
@@ -3285,7 +3288,7 @@ function buildFindings(lm, view, m) {
           musclePattern: MUSCLE_PATTERNS.shoulder,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.shoulder,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.shoulder,
-          correction: "Release upper trapezius + levator scapulae. Activate lower trapezius Y-T-W ×15. Assess ipsilateral QL overactivity.",
+          correction: "Assess cervical-thoracic mobility (rotation and lateral flexion). Evaluate ipsilateral QL tone. Lower trapezius activation assessment (prone Y). Upper trapezius and levator scapulae palpation.",
           icd: "M54.2",
           norm: "<3° shoulder level difference",
         });
@@ -3393,7 +3396,7 @@ function buildFindings(lm, view, m) {
             musclePattern: MUSCLE_PATTERNS.kneeFrontal,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
-            correction: "Glute med: clamshells ×15, lateral band walks ×20m. VMO: terminal knee extensions ×15. Single-leg squat with mirror correction. Foot tripod activation.",
+            correction: "Single-leg squat assessment (observe dynamic valgus/varus). Hip abductor and external rotator strength testing. Foot posture index — subtalar pronation. Gait analysis for frontal plane loading pattern.",
             icd: "M21.0", norm: "<6° knee frontal deviation",
           });
         } else if (lSev) {
@@ -3406,7 +3409,7 @@ function buildFindings(lm, view, m) {
             musclePattern: MUSCLE_PATTERNS.kneeFrontal,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
-            correction: lv < 0 ? "Glute med + VMO activation. Foot tripod." : "Hip ER strengthening. ITB/TFL SMR.",
+            correction: lv < 0 ? "Assess hip abductor strength. Single-leg squat observation. Foot posture index." : "Ober test (ITB/TFL length). Hip external rotator assessment. Subtalar supination pattern.",
             icd: "M21.0", norm: "<6° knee frontal deviation",
           });
         } else if (rSev) {
@@ -3419,7 +3422,7 @@ function buildFindings(lm, view, m) {
             musclePattern: MUSCLE_PATTERNS.kneeFrontal,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
-            correction: rv < 0 ? "Glute med + VMO activation. Foot tripod." : "Hip ER strengthening. ITB/TFL SMR.",
+            correction: rv < 0 ? "Assess hip abductor strength. Single-leg squat observation. Foot posture index." : "Ober test (ITB/TFL length). Hip external rotator assessment. Subtalar supination pattern.",
             icd: "M21.0", norm: "<6° knee frontal deviation",
           });
         }
@@ -3440,7 +3443,7 @@ function buildFindings(lm, view, m) {
           musclePattern: MUSCLE_PATTERNS.ucs,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.ucs,
-          correction: "INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep neck flexors, lower trap Y-T-W, serratus. MOBILISE: thoracic extension T4–T8.",
+          correction: "Craniocervical flexion test (CCFT). Pectoralis minor length assessment. Thoracic extension ROM. Upper trapezius and cervical tone palpation. Cervicothoracic mobility screen.",
           icd: "M62.9", norm: "UCS index <0.6",
         });
       }
@@ -3460,7 +3463,7 @@ function buildFindings(lm, view, m) {
           musclePattern: MUSCLE_PATTERNS.pelvis,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.pelvis,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.pelvis,
-          correction: "Confirm with tape measure ASIS→medial malleolus. If LLD >5mm: heel wedge trial 3–5mm. Treat SIJ/QL if functional.",
+          correction: "Confirm with tape measure ASIS→medial malleolus bilaterally. SIJ provocation cluster (Laslett). Hip abductor strength — Trendelenburg test. Assess QL tone elevated side.",
           icd: "M21.7", norm: "LLD <5mm",
         });
       }
@@ -3502,7 +3505,7 @@ function buildFindings(lm, view, m) {
           musclePattern: null,
           functionalCorrelation: "May be associated with altered foot pronation patterns and medial knee loading.",
           objectiveAssessments: ["Subtalar neutral assessment", "Foot posture index", "Weight-bearing lower limb alignment X-ray if severe"],
-          correction: "Assess subtalar neutral. Foot orthotic with lateral wedge if pronation-driven. Tibialis posterior strengthening.",
+          correction: "Subtalar neutral assessment. Foot posture index. Weight-bearing lower limb alignment assessment. Tibialis posterior and peroneal contribution evaluation. Specialist review if structural torsion suspected.",
           icd: "M21.1", norm: "<5° tibial varum",
         });
       }
@@ -3567,7 +3570,7 @@ function buildFindings(lm, view, m) {
             "Cervical AROM — flexion/extension bilateral",
             "Upper cervical passive accessory movement testing (C0–C2)",
           ],
-          correction: `DNF chin nod ×10 ×3 daily. Thoracic extension foam roller T4–T8. Pec minor stretch doorframe 30s×3. Ergonomic screen height review.${loadStr}`,
+          correction: `Craniocervical flexion test (CCFT) — deep cervical flexor endurance. Cervical AROM assessment. Thoracic extension passive ROM. Pectoralis minor length assessment. Ergonomic screen height and workstation review.${loadStr}`,
           icd: "M43.1", norm: "CVA >52°",
         });
 
@@ -3585,7 +3588,7 @@ function buildFindings(lm, view, m) {
             possibleMusclePatterns: MUSCLE_PATTERNS.ucs,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
             recommendedObjectiveAssessment: OBJECTIVE_ASSESSMENTS.ucs,
-            correction: "NKT Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: DNF (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
+            correction: "Craniocervical flexion test. Pectoralis minor length assessment. Thoracic extension mobility. Cervical AROM and joint mobility screen.",
             icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
           });
         }
@@ -3616,7 +3619,7 @@ function buildFindings(lm, view, m) {
           "Serratus anterior strength (push-up plus)",
           "Shoulder passive range of motion — horizontal adduction",
         ],
-        correction: "Pec minor stretch (corner/doorframe) 30s×3. Serratus anterior: wall slide progression ×15. Lower trap Y-T-W ×15.",
+        correction: "Pectoralis minor length test (supine — coracoid offset from table). Serratus anterior strength (push-up plus). Shoulder passive ROM — horizontal adduction. Lower and mid-trapezius assessment.",
         icd: "M79.2", norm: "Acromion within 2cm of plumb line",
       });
     }
@@ -3641,7 +3644,7 @@ function buildFindings(lm, view, m) {
           possibleMusclePatterns: MUSCLE_PATTERNS.kyphosis,
           functionalCorrelation: "May reduce thoracic extension mobility and alter rib cage mechanics during breathing. May contribute to impingement risk during overhead tasks.",
           recommendedObjectiveAssessment: OBJECTIVE_ASSESSMENTS.kyphosis,
-          correction: "Thoracic extension foam roller T4–T8 ×2min. Pec stretch bilateral. Lower trap activation Y-T-W ×15. Postural cueing.",
+          correction: "Passive thoracic extension ROM. Pectoralis major and minor length assessment. Lower and mid-trapezius strength. Thoracic PA mobility testing (T4–T8). Rib cage expansion assessment.",
           icd: "M40.0", norm: "Thoracic kyphosis 20–45°",
         });
       }
@@ -3682,7 +3685,7 @@ function buildFindings(lm, view, m) {
             : FUNCTIONAL_CORRELATIONS.lumbarPost,
           recommendedObjectiveAssessment: pelvisValue > 0 ? OBJECTIVE_ASSESSMENTS.lumbarAnt : OBJECTIVE_ASSESSMENTS.lumbarPost,
           correction: pelvisValue > 0
-            ? "Hip flexor stretch (Thomas test position 30s×3). Glute activation: bridges ×20. Abdominal hollowing."
+            ? "Thomas test — hip flexor length bilaterally. Gluteus maximus activation assessment. Transverse abdominis function. Pelvic tilt control evaluation."
             : "Hamstring stretch 30s×3. Hip flexor activation. Lumbar extension mobility.",
           icd: "M40.3", norm: pelvisIsCm ? "Hip within 2cm of plumb" : "<5% pelvic tilt proxy",
         });
@@ -3703,7 +3706,7 @@ function buildFindings(lm, view, m) {
         musclePattern: MUSCLE_PATTERNS.ucs,
         functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
         objectiveAssessments: OBJECTIVE_ASSESSMENTS.ucs,
-        correction: "NKT Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep cervical flexors (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
+        correction: "Craniocervical flexion test. Pectoralis minor length assessment. Thoracic extension ROM. Upper trapezius and cervical tone palpation.",
         icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
       });
     }
@@ -3722,7 +3725,7 @@ function buildFindings(lm, view, m) {
         musclePattern: MUSCLE_PATTERNS.lcs,
         functionalCorrelation: FUNCTIONAL_CORRELATIONS.lcs,
         objectiveAssessments: OBJECTIVE_ASSESSMENTS.lcs,
-        correction: "NKT Protocol — INHIBIT: iliopsoas, rectus femoris, TFL. ACTIVATE: glute max (bridges), glute med (clamshells), TVA (dead bug). Thomas test to confirm hip flexor length.",
+        correction: "Thomas test — hip flexor length bilaterally. Gluteus maximus and medius strength assessment. Transverse abdominis activation. Pelvic tilt control evaluation. Lumbar mobility screen.",
         icd: "M62.8", norm: "Anterior pelvic tilt <5% + thoracic kyphosis <42°",
       });
     }
@@ -3742,35 +3745,35 @@ function buildFindings(lm, view, m) {
     let patternName = null, patternTx = null, patternNote = null, patternSev = "moderate";
     if (hasSway) {
       patternName = "Sway-Back Posture";
-      patternTx   = "Activate hip flexors. Shift hips forward over ankles. Lumbar extension mobility.";
+      patternTx   = "Assess hamstring length and hip flexor activation capacity. Lumbar extension mobility assessment.";
       patternNote = "Hips posterior to plumb, flat lumbar, forward trunk lean.";
     } else if (isMilitary) {
       patternName = "Military / Flat-Back";
-      patternTx   = "Restore thoracic curve: foam roller extension. Restore lordosis: McKenzie.";
+      patternTx   = "Assess thoracic extension ROM. McKenzie directional preference screen.";
       patternNote = "All spinal curves diminished. Poor sagittal shock absorption.";
     } else if (hasFHP && hasKyph && hasLord) {
       patternName = "Lordotic-Kyphotic (UCS + LCS)"; patternSev = "high";
-      patternTx   = "Full postural correction programme addressing UCS and LCS simultaneously.";
+      patternTx   = "Comprehensive postural and movement assessment indicated. Prioritise objective testing across cervical, thoracic, and lumbopelvic regions.";
       patternNote = `FHP (CVA ${m.cvaAngle.toFixed(0)}°) + increased thoracic curvature (${m.thoracicAngle.toFixed(0)}°) + anterior pelvic tilt. Findings may be consistent with combined upper and lower crossed pattern characteristics.`;
     } else if (hasKyph && hasLord) {
       patternName = "Lordotic-Kyphotic Posture";
-      patternTx   = "Thoracic extension + hip flexor stretch + glute activation.";
+      patternTx   = "Assess thoracic extension ROM and hip flexor length. Evaluate gluteal activation.";
       patternNote = `Thoracic curvature (${m.thoracicAngle.toFixed(0)}°) and anterior pelvic tilt both elevated.`;
     } else if (hasKyph && !hasLord) {
       patternName = "Kyphotic Posture";
-      patternTx   = "Thoracic extension foam roller + lower trapezius + pec minor stretch.";
+      patternTx   = "Assess thoracic extension mobility. Evaluate lower trapezius and pectoralis minor contribution.";
       patternNote = `Increased thoracic curvature (${m.thoracicAngle.toFixed(0)}°) as primary observation.`;
     } else if (hasLord && !hasKyph) {
       patternName = "Lordotic Posture";
-      patternTx   = "Hip flexor inhibition + glute max activation + pelvic tilt awareness.";
+      patternTx   = "Assess hip flexor length and gluteal activation capacity. Pelvic tilt control evaluation.";
       patternNote = "Anterior pelvic tilt tendency without significant thoracic component.";
     } else if (hasFlat) {
       patternName = "Flat-Back Posture";
-      patternTx   = "McKenzie extension + lumbar roll support + erector facilitation.";
+      patternTx   = "McKenzie directional preference assessment. Hamstring and abdominal contribution evaluation.";
       patternNote = "Reduced lumbar lordosis. Hamstring and abdominal dominance possible.";
     } else if (hasFHP && !hasKyph) {
       patternName = "Forward Head Posture (Isolated)";
-      patternTx   = "DNF activation (chin nod ×10 ×3). Thoracic extension. Ergonomic screen.";
+      patternTx   = "Craniocervical flexion test. Thoracic extension mobility assessment. Ergonomic screen.";
       patternNote = `FHP without significant thoracic kyphosis (CVA ${m.cvaAngle.toFixed(0)}°).`;
     }
 
@@ -3790,14 +3793,14 @@ function buildFindings(lm, view, m) {
       addLegacy("Posture Pattern — Sway-Back",
         "Sway-back posture: hips posterior to plumb, flat lumbar",
         "moderate",
-        "INHIBIT: hamstrings. ACTIVATE: hip flexors (psoas — standing hip flexion ×15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles.",
+        "Hamstring length assessment (90-90 SLR). Hip flexor activation capacity. Lumbar extension mobility. Balance and anterior-posterior sway assessment.",
         "M40.3");
     }
     if (isMilitary && sagRel.reliable) {
       addLegacy("Posture Pattern — Military / Flat Back",
         `Flat-back posture: reduced thoracic curvature (${m.thoracicAngle.toFixed(0)}°) and lumbar lordosis`,
         "moderate",
-        "Thoracic mobility: foam roller extension T4–T8 ×2min. Rib expansion breathing ×10. Restore lordosis: McKenzie press-ups. Cervical retraction.",
+        "Thoracic passive extension ROM. McKenzie directional preference screen. Rib cage expansion assessment. Note: often asymptomatic — assess functional relevance.",
         "M40.4");
     }
 
@@ -4597,7 +4600,20 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
             <div style={{ marginBottom:6, fontStyle:"italic", color:PC.muted }}>{f.detail}</div>
           )}
           {f.correction && (
-            <div><strong style={{ color:col }}>Treatment: </strong>{f.correction}</div>
+            <div style={{marginBottom:4}}><strong style={{ color:col }}>Suggested Assessment: </strong>{f.correction}</div>
+          {f.functionalCorrelation && (
+            <div style={{marginTop:5,padding:"5px 8px",borderRadius:6,background:`${col}0a`,border:`1px solid ${col}20`,fontSize:"0.63rem",color:PC.muted,lineHeight:1.5}}>
+              <strong style={{color:col,fontSize:"0.6rem"}}>Functional Correlation: </strong>{f.functionalCorrelation}
+            </div>
+          )}
+          {f.recommendedObjectiveAssessment && f.recommendedObjectiveAssessment.length>0 && (
+            <div style={{marginTop:5}}>
+              <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.accent,marginBottom:3}}>Suggested Objective Assessment:</div>
+              {f.recommendedObjectiveAssessment.map((a,i)=>(
+                <div key={i} style={{fontSize:"0.62rem",color:PC.muted,lineHeight:1.5,paddingLeft:8,borderLeft:`2px solid ${PC.accent}30`,marginBottom:2}}>• {a}</div>
+              ))}
+            </div>
+          )}
           )}
           {f.norm && (
             <div style={{ marginTop:5, fontSize:"0.6rem", fontStyle:"italic" }}>
@@ -4639,7 +4655,20 @@ function FindingCard({f}){
       {open&&(
         <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${col}20`,fontSize:"0.68rem",color:PC.muted,lineHeight:1.6}}>
           {f.detail&&<div style={{marginBottom:6,fontStyle:"italic",color:PC.muted}}>{f.detail}</div>}
-          <div><strong style={{color:col}}>Treatment: </strong>{f.correction}</div>
+          <div style={{marginBottom:4}}><strong style={{color:col}}>Suggested Assessment: </strong>{f.correction}</div>
+          {f.functionalCorrelation&&(
+            <div style={{marginTop:5,padding:"5px 8px",borderRadius:6,background:`${col}0a`,border:`1px solid ${col}20`,fontSize:"0.63rem",color:PC.muted,lineHeight:1.5}}>
+              <strong style={{color:col,fontSize:"0.6rem"}}>Functional Correlation: </strong>{f.functionalCorrelation}
+            </div>
+          )}
+          {f.recommendedObjectiveAssessment&&f.recommendedObjectiveAssessment.length>0&&(
+            <div style={{marginTop:5}}>
+              <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.accent,marginBottom:3}}>Suggested Objective Assessment:</div>
+              {f.recommendedObjectiveAssessment.map((a,i)=>(
+                <div key={i} style={{fontSize:"0.62rem",color:PC.muted,lineHeight:1.5,paddingLeft:8,borderLeft:`2px solid ${PC.accent}30`,marginBottom:2}}>• {a}</div>
+              ))}
+            </div>
+          )}
           {f.norm&&<div style={{marginTop:5,fontSize:"0.6rem",fontStyle:"italic"}}>Reference: {f.norm}</div>}
         </div>
       )}
@@ -4669,6 +4698,7 @@ function MetricRow({label,value,unit,normal,abnormal}){
 
 // ── Muscle Imbalance Engine ───────────────────────────────────────────────────
 // Maps each finding region key → { tight: [...], weak: [...] }
+// Keys renamed: tight → possibleOveractive, weak → possibleUnderactive for clinical conservatism
 const MUSCLE_MAP = {
   // Frontal
   "Shoulder Girdle":          { tight:["Upper Trapezius","Levator Scapulae"],                  weak:["Lower Trapezius","Serratus Anterior","Rhomboids"] },
@@ -5067,7 +5097,7 @@ function MuscleImbalanceCard({ findings, isWide }) {
       </div>
       {/* Legend */}
       <div style={{padding:"8px 14px",background:PC.s2,borderTop:`1px solid ${PC.border}`,fontSize:"0.58rem",color:PC.muted}}>
-        ■ Tight = inhibit first (SMR/stretch)  ·  ⚡ Weak = activate after inhibition  ·  HIGH = high-severity finding source
+        ■ Possible overactivity tendency  ·  ⚡ Possible reduced contribution  ·  Findings from static posture only — confirm with clinical muscle testing  ·  HIGH = higher clinical priority
       </div>
     </div>
   );
@@ -5872,14 +5902,14 @@ function PostureAnalysisModule(){
               </div>
             </div>
           )}
-          {/* ── TOP 3 PRIORITY TREATMENT CARD ─────────────────────────────── */}
+          {/* ── ASSESSMENT PRIORITIES CARD ─────────────────────────────── */}
           {findings.length>0&&(()=>{
             // Pick top 3: confirmed high > high > confirmed moderate > moderate
             const ranked = [...findings].sort((a,b)=>{
               const score = f => (f.confirmed?8:0)+(f.severity==="high"?4:f.severity==="moderate"?2:1);
               return score(b)-score(a);
             });
-            // Exclude low-confidence metrics from Top 3 treatment priorities
+            // Exclude low-confidence metrics from Assessment Priorities card
             const LOW_CONF = ["neck lateral inclination","carrying angle","tibial bowing","ankle height","tibial varum"];
             const isVerify = (f) => LOW_CONF.some(m => (f.text||"").toLowerCase().includes(m));
             const top3 = ranked.filter(f => !isVerify(f)).slice(0,3);
@@ -5890,14 +5920,14 @@ function PostureAnalysisModule(){
                 <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
                   <span style={{fontSize:"0.95rem"}}>◎</span>
                   <div>
-                    <div style={{fontSize:isWide?"0.8rem":"0.72rem",fontWeight:900,color:PC.accent}}>Top 3 — Treat Now</div>
-                    <div style={{fontSize:"0.58rem",color:PC.muted,marginTop:1}}>Highest clinical priority · Address in this order</div>
+                    <div style={{fontSize:isWide?"0.8rem":"0.72rem",fontWeight:900,color:PC.accent}}>Assessment Priorities</div>
+                    <div style={{fontSize:"0.58rem",color:PC.muted,marginTop:1}}>Highest clinical priority · Confirm with objective assessment before intervention</div>
                   </div>
                 </div>
                 {top3.map((f,i)=>{
                   const col=f.severity==="high"?PC.red:f.severity==="moderate"?PC.yellow:PC.green;
-                  // Pull first sentence of correction as the key action
-                  const keyAction = f.correction?.split(/\.\s/)[0]||f.correction||"";
+                  // Show functional correlation as key action (no exercise prescription)
+                  const keyAction = f.functionalCorrelation || f.recommendedObjectiveAssessment?.[0] || f.interpretation?.split(".")[0] || "";
                   return(
                     <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",
                       padding:"9px 0",borderTop:i>0?`1px solid ${PC.border}`:"none"}}>
@@ -10041,17 +10071,17 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
       forward_head:"Chin tucks x15 daily - DNF activation - Pec minor stretch",
       rounded_shoulders:"Band pull-apart x20 - Face pulls x15 - Pec doorway stretch",
       thoracic_kyphosis:"Foam roller extension T4-T8 - T-spine rotation - Prone Y-T-W",
-      lumbar_hyperlordosis:"Hip flexor couch stretch - Glute bridges 3x15 - Dead bug",
+      lumbar_hyperlordosis:"Thomas test — hip flexor length. Gluteal activation assessment. Pelvic tilt control evaluation.",
       anterior_pelvic_tilt:"Pelvic tilts - Couch stretch - Glute activation",
       posterior_pelvic_tilt:"Hip flexor stretching - Lumbar extension - Cat-cow",
       lateral_pelvic_tilt:"Side-lying hip abduction - Clamshells - QL stretch",
       genu_valgum:"Clamshells - Monster walks - Single-leg squat with knee tracking",
       genu_varum:"IT band foam rolling - Hip adductor strengthening",
       foot_pronation:"Short foot exercise - Calf raises - Tib posterior strengthening",
-      foot_supination:"Peroneal strengthening - Single-leg balance - Lateral band walks",
+      foot_supination:"Foot posture index. Subtalar assessment. Tibialis posterior and peroneal contribution evaluation.",
       scoliosis:"Schroth breathing - Concave-side stretch - Convex-side strengthening",
       head_tilt:"Contralat cervical lat flexion stretch - Upper trap SMR",
-      scapular_winging:"Serratus ant wall push-ups - Lower trap Y-T-W",
+      scapular_winging:"Serratus anterior push-up plus assessment. Scapular dyskinesis classification. Lower trapezius strength (prone Y).",
     };
     const selectedDefects = Object.keys(DEFECT_LABELS).filter(function(id) { return d["posture_defect_" + id]; });
     const dxLabel = escHtml((dx && dx.dx && dx.dx[0] && dx.dx[0].label) ? dx.dx[0].label : (d.cc_main || "Postural Dysfunction"));
@@ -10127,7 +10157,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
 
     var defectSection = selectedDefects.length > 0
       ? sectionCard("Regional Postural Findings", "&#128450;",
-          '<table><thead><tr><th>Region / Defect</th><th>Severity</th><th>Tight Structures</th><th>Clinical Action</th></tr></thead>'
+          '<table><thead><tr><th>Region / Finding</th><th>Severity</th><th>Possible Overactivity Tendency</th><th>Suggested Assessment</th></tr></thead>'
           + '<tbody>' + defectRows + '</tbody></table>', "#64748b")
       : sectionCard("Regional Postural Findings", "&#128450;",
           '<div style="padding:12px;text-align:center;color:#94a3b8;font-size:10px;">No postural defects recorded. Use the Posture Defect Assessment module to document findings.</div>',
