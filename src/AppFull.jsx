@@ -4601,6 +4601,7 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
           )}
           {f.correction && (
             <div style={{marginBottom:4}}><strong style={{ color:col }}>Suggested Assessment: </strong>{f.correction}</div>
+          )}
           {f.functionalCorrelation && (
             <div style={{marginTop:5,padding:"5px 8px",borderRadius:6,background:`${col}0a`,border:`1px solid ${col}20`,fontSize:"0.63rem",color:PC.muted,lineHeight:1.5}}>
               <strong style={{color:col,fontSize:"0.6rem"}}>Functional Correlation: </strong>{f.functionalCorrelation}
@@ -4613,7 +4614,6 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
                 <div key={i} style={{fontSize:"0.62rem",color:PC.muted,lineHeight:1.5,paddingLeft:8,borderLeft:`2px solid ${PC.accent}30`,marginBottom:2}}>• {a}</div>
               ))}
             </div>
-          )}
           )}
           {f.norm && (
             <div style={{ marginTop:5, fontSize:"0.6rem", fontStyle:"italic" }}>
