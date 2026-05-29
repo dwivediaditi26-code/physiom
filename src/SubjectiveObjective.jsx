@@ -3009,7 +3009,6 @@ const REGION_NAV = {
   ],
   "Thoracic spine": [
     { label:"Thoracic ROM",          icon:"📐", nav:"rom",   ctx:{ romRegion:"Thoracic", romHighlights:["rom_throtl","rom_throtr","rom_thflex","rom_thext"] },                                  col:"#9333ea", why:"Thoracic rotation — most clinically significant thoracic ROM. <30° bilateral = significant restriction." },
-                                   col:"#9333ea", why:"Extension loss drives kyphotic posture, increases cervical and shoulder loading. Assess before treating." },
     { label:"Thoracic MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_trapL","mmt_trapM","mmt_serratus","mmt_trapU","mmt_rhomb"] },                         col:"#7c3aed", why:"Lower trapezius — scapular depression and posterior tilt. Weakness = shoulder and thoracic impingement driver." },
     { label:"Posture Analysis",    icon:"🧍", nav:"posture", ctx:{ region:"Thoracic" },                                                               col:"#059669", why:"Kyphosis angle, scoliotic curve, rib symmetry, scapular position — thoracic posture drives all chains above and below." },
     { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic" },                                                             col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
