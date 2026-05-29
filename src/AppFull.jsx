@@ -9494,127 +9494,565 @@ function HomeModule({ onNav }) {
 // THERAPIST DASHBOARD MODULE
 // ═══════════════════════════════════════════════════════════════════════════
 function TherapistDashboardModule({ patients, data, onNav }) {
-  const PC = getC();
-  const patientName = data["dem_name"] || "No patient selected";
-  const completedFields = Object.keys(data).filter(k=>data[k]&&data[k]!=="").length;
-  const totalSections = 19;
-  const sectionsWithData = [
-    data["sub_complaint"], data["pal_findings"]||data["lx_palpation"],
-    data["posture_defect_anterior_pelvic_tilt"]||data["posture_defect_forward_head"],
-    data["lx_flex"]||data["rom_cflex"],
-    data["mmt_l_hip_flex_left"]||data["mmt_shoulder_abd_left"],
-    data["st_spurling"]||data["st_neer"],
-    data["neuro_l4_reflex_left"],
-    data["gait_overall"]||data["gait_cadence"],
-  ].filter(Boolean).length;
+  const { useState, useEffect, useMemo } = React;
+  const [activeTab, setActiveTab] = useState("all");
+  const [mounted,   setMounted]   = useState(false);
+  useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
 
-  const recentPatients = patients.slice(0, 5);
+  // ── LIVE DATA DERIVATION ────────────────────────────────────────────────────
+  const derived = useMemo(() => {
+    const today = new Date().toDateString();
 
-  const quickStats = [
-    { label:"Total Patients", value:patients.length, icon:"👥", color:"#7c3aed" },
-    { label:"Active Session", value:patientName.split(" ")[0]||"—", icon:"🏃", color:"#9333ea" },
-    { label:"Fields Completed", value:completedFields, icon:"✅", color:"#059669" },
-    { label:"Sections Assessed", value:`${sectionsWithData}/8`, icon:"📋", color:"#b45309" },
+    // Today's schedule — patients touched today, sorted by updatedAt time
+    const schedule = [...patients]
+      .filter(p => p.id !== "demo") // exclude demo patient
+      .sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      .slice(0,8) // max 8
+      .map((p,i) => {
+        const d = p.data || {};
+        const sessions = Array.isArray(d.tx_sessions) ? d.tx_sessions : [];
+        const lastSess = sessions[sessions.length-1];
+        const isToday  = new Date(p.updatedAt).toDateString() === today;
+        const hasTx    = !!(d.tx_techniques || (lastSess && lastSess.treatmentGiven));
+        const hasROM   = !!(d.rom_cflex || d.rom_lflex || d.rom_sflex_left || d.rom_kflex_left);
+        const status   = hasTx ? "completed" : isToday && i===0 ? "in-progress" : "upcoming";
+        const colors   = ["#6D28D9","#0891B2","#059669","#D97706","#DC2626","#7C3AED","#0E7490","#047857"];
+        const name     = d.dem_name || p.name || "Patient";
+        const initials = name.split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+        const time     = new Date(p.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+        const dx       = d.cc_main ? d.cc_main.slice(0,38)+(d.cc_main.length>38?"…":"")
+                       : p.lastDx  ? p.lastDx.slice(0,38)
+                       : "Assessment pending";
+        return { id:p.id, name, initials, color:colors[i%colors.length], time, dx, status,
+                 sessionCount: sessions.length, hasRedFlags: p.hasRedFlags };
+      });
+
+    // Active patient data (current data prop)
+    const activeName     = data["dem_name"] || "No patient";
+    const activeNRS      = parseFloat(data["cc_vas_now"] || "0");
+    const activeNRSWorst = parseFloat(data["cc_vas_worst"] || "0");
+    const activeSessions = Array.isArray(data.tx_sessions) ? data.tx_sessions : [];
+    const activeCC       = (data["cc_main"]||"Assessment").slice(0,40);
+    // Recovery % = improvement from worst NRS to current, blended with session count
+    const nrsImprove = activeNRSWorst > 0 ? Math.round(((activeNRSWorst - activeNRS) / activeNRSWorst)*100) : 0;
+    const sessBonus  = Math.min(activeSessions.length * 5, 30);
+    const recoveryPct = Math.min(Math.max(nrsImprove + sessBonus, 0), 100);
+
+    // Quick stats
+    const todayCount   = patients.filter(p => new Date(p.updatedAt).toDateString()===today).length;
+    const totalSoap    = patients.filter(p => p.data && (p.data.tx_techniques||(Array.isArray(p.data.tx_sessions)&&p.data.tx_sessions.length>0))).length;
+    const pendingSoap  = Math.max(patients.length - totalSoap, 0);
+    const avgRecovery  = patients.length > 0 ? Math.round(patients.reduce((sum,p)=>{
+      const d2 = p.data||{}, nw=parseFloat(d2.cc_vas_now||"5"), nb=parseFloat(d2.cc_vas_worst||"5");
+      return sum + (nb>0 ? Math.round(((nb-nw)/nb)*100) : 50);
+    },0) / patients.length) : 0;
+
+    // ROM from current patient
+    const romRows = [
+      { label:"Cervical Flex", current:parseFloat(data.rom_cflex||"0"),   normal:45,  color:"#6D28D9" },
+      { label:"Lumbar Flex",   current:parseFloat(data.rom_lflex||"0"),   normal:60,  color:"#0891B2" },
+      { label:"Shoulder Abd",  current:parseFloat(data.rom_sabd_right||data.rom_sabd_left||"0"), normal:180, color:"#8B5CF6" },
+      { label:"Knee Flex",     current:parseFloat(data.rom_kflex_right||data.rom_kflex_left||"0"), normal:140, color:"#059669" },
+      { label:"Hip Flex",      current:parseFloat(data.rom_hflex_right||data.rom_hflex_left||"0"), normal:120, color:"#D97706" },
+      { label:"Ankle DF",      current:parseFloat(data.rom_adf_right||data.rom_adf_left||"0"),    normal:20,  color:"#0E7490" },
+    ].filter(r => r.current > 0);
+
+    // Pending tasks from current patient data
+    const tasks = [];
+    const ptName = data["dem_name"] || "Current patient";
+    if (data["cc_main"] && !data["tx_techniques"] && activeSessions.length===0)
+      tasks.push({ icon:"📋", label:"SOAP note not started", patient:ptName, urgency:"high",   nav:"soap" });
+    if (data["cc_main"] && activeSessions.length>0 && !activeSessions[activeSessions.length-1]?.vasEnd)
+      tasks.push({ icon:"📝", label:"Session outcome not recorded", patient:ptName, urgency:"high", nav:"tx_sessions" });
+    const hasAnyROM = !!(data.rom_cflex||data.rom_lflex||data.rom_sflex_left||data.rom_kflex_left||data.rom_hflex_left||data.rom_adf_left);
+    if (data["cc_main"] && !hasAnyROM)
+      tasks.push({ icon:"📐", label:"ROM assessment missing", patient:ptName, urgency:"medium", nav:"rom" });
+    const hasMMT = Object.keys(data).some(k=>k.startsWith("mmt_")&&data[k]);
+    if (data["cc_main"] && !hasMMT)
+      tasks.push({ icon:"💪", label:"MMT not recorded", patient:ptName, urgency:"medium", nav:"mmt" });
+    if (data["cx_rf_myelopathy"]||data["lx_rf_cauda"]||data["cx_rf_vbi"])
+      tasks.push({ icon:"🚨", label:"Red flags require urgent review", patient:ptName, urgency:"high", nav:"subjective" });
+    // Add per-patient pending tasks
+    patients.filter(p=>p.data&&p.data.cc_main&&!p.data.tx_techniques&&!(Array.isArray(p.data.tx_sessions)&&p.data.tx_sessions.length>0))
+      .slice(0,2)
+      .forEach(p => {
+        const pn = p.data.dem_name||p.name||"Patient";
+        if (pn !== ptName) tasks.push({ icon:"📋", label:"SOAP pending", patient:pn, urgency:"low", nav:"soap" });
+      });
+
+    // Recovery trend — from tx_sessions VAS improvement across current patient
+    let trendData = [0,0,0,0,0,0,0,0,0,0,0,0];
+    if (activeSessions.length > 0) {
+      activeSessions.slice(-12).forEach((sess,i) => {
+        const vs = parseFloat(sess.vasStart||"5"), ve = parseFloat(sess.vasEnd||"5");
+        const improve = vs > 0 ? Math.round(((vs-ve)/vs)*100) : 0;
+        trendData[i] = Math.max(0, improve);
+      });
+    } else if (patients.length > 0) {
+      // Fallback: use all patients' NRS improvement by month
+      patients.forEach(p => {
+        const d2=p.data||{};
+        const mn = new Date(p.updatedAt).getMonth();
+        const vs=parseFloat(d2.cc_vas_worst||"0"), vc=parseFloat(d2.cc_vas_now||"0");
+        if (vs>0) trendData[mn] = Math.round(((vs-vc)/vs)*100);
+      });
+    }
+
+    // Patient outcome donuts from all patients
+    const total = Math.max(patients.length, 1);
+    const soapDonePct = Math.round((patients.filter(p=>p.data&&(p.data.tx_techniques||(Array.isArray(p.data.tx_sessions)&&p.data.tx_sessions.length>0))).length/total)*100);
+    const romDonePct  = Math.round((patients.filter(p=>p.data&&Object.keys(p.data).some(k=>k.startsWith("rom_")&&p.data[k])).length/total)*100);
+    const assessPct   = Math.round((patients.filter(p=>p.data&&p.data.cc_main).length/total)*100);
+    const redFlagPct  = Math.round((patients.filter(p=>p.hasRedFlags).length/total)*100);
+
+    return { schedule, activeName, activeNRS, activeNRSWorst, activeCC, activeSessions,
+             recoveryPct, todayCount, pendingSoap, avgRecovery, romRows, tasks, trendData,
+             soapDonePct, romDonePct, assessPct, redFlagPct,
+             totalPatients:patients.length };
+  }, [patients, data]);
+
+  const {
+    schedule, activeName, activeNRS, activeNRSWorst, activeCC, activeSessions,
+    recoveryPct, todayCount, pendingSoap, avgRecovery, romRows, tasks, trendData,
+    soapDonePct, romDonePct, assessPct, redFlagPct, totalPatients
+  } = derived;
+
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour<12?"Good morning":hour<17?"Good afternoon":"Good evening";
+  const dateStr = now.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+
+  // ── INLINE COMPONENTS ───────────────────────────────────────────────────────
+  const Donut = ({ pct, color, size=62, stroke=7, label }) => {
+    const [val,setVal] = useState(0);
+    useEffect(()=>{const t=setTimeout(()=>setVal(pct),500);return()=>clearTimeout(t);},[pct]);
+    const r=(size-stroke)/2, circ=2*Math.PI*r, offset=circ-(val/100)*circ;
+    return (
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5}}>
+        <div style={{position:"relative",width:size,height:size}}>
+          <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#F1F5F9" strokeWidth={stroke}/>
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+              strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+              style={{transition:"stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",
+            justifyContent:"center",fontSize:12,fontWeight:800,color:"#111827"}}>{val}%</div>
+        </div>
+        <div style={{fontSize:10,color:"#6B7280",fontWeight:600,textAlign:"center",lineHeight:1.3}}>{label}</div>
+      </div>
+    );
+  };
+
+  const ROMBar = ({ label, current, normal, color }) => {
+    const [anim,setAnim] = useState(false);
+    useEffect(()=>{const t=setTimeout(()=>setAnim(true),400);return()=>clearTimeout(t);},[]);
+    const pct = Math.min(Math.round((current/normal)*100),100);
+    const flagColor = pct < 50 ? "#EF4444" : pct < 75 ? "#D97706" : color;
+    return (
+      <div style={{marginBottom:10}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+          <span style={{fontSize:11,fontWeight:600,color:"#374151"}}>{label}</span>
+          <span style={{fontSize:11,fontWeight:700,color:flagColor}}>
+            {current}° <span style={{color:"#9CA3AF",fontWeight:400}}>/ {normal}°</span>
+            <span style={{marginLeft:4,fontSize:10}}>{pct<75?"⚠":""}</span>
+          </span>
+        </div>
+        <div style={{height:5,background:"#F1F5F9",borderRadius:99,overflow:"hidden"}}>
+          <div style={{height:"100%",width:anim?`${pct}%`:"0%",
+            background:`linear-gradient(90deg,${color}80,${flagColor})`,
+            borderRadius:99,transition:"width 1.1s cubic-bezier(.4,0,.2,1)"}}/>
+        </div>
+      </div>
+    );
+  };
+
+  const TrendChart = ({ data: d }) => {
+    const [anim,setAnim] = useState(false);
+    useEffect(()=>{const t=setTimeout(()=>setAnim(true),400);return()=>clearTimeout(t);},[]);
+    const w=280,h=72,max=Math.max(...d,1),min=0;
+    const pts = d.map((v,i)=>{
+      const x=(i/(d.length-1||1))*w;
+      const y=h-((v-min)/(max-min||1))*(h-10)-5;
+      return [x,y];
+    });
+    const pathD = pts.map((p,i)=>`${i===0?"M":"L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+    const areaD = `${pathD} L${w},${h} L0,${h} Z`;
+    const months = ["J","F","M","A","M","J","J","A","S","O","N","D"];
+    return (
+      <svg width="100%" viewBox={`0 0 ${w} ${h+16}`} style={{overflow:"visible",display:"block"}}>
+        <defs>
+          <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6D28D9" stopOpacity="0.2"/>
+            <stop offset="100%" stopColor="#6D28D9" stopOpacity="0"/>
+          </linearGradient>
+          <clipPath id="tc">
+            <rect x="0" y="0" width={anim?w:0} height={h+16}
+              style={{transition:"width 1.4s cubic-bezier(.4,0,.2,1)"}}/>
+          </clipPath>
+        </defs>
+        <path d={areaD} fill="url(#tg)" clipPath="url(#tc)"/>
+        <path d={pathD} fill="none" stroke="#6D28D9" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round" clipPath="url(#tc)"/>
+        {pts.map((p,i)=> i%3===0 && (
+          <text key={i} x={p[0]} y={h+14} textAnchor="middle" fontSize="8" fill="#9CA3AF">{months[i]}</text>
+        ))}
+        {pts[pts.length-1] && (
+          <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]}
+            r="4" fill="#6D28D9" stroke="white" strokeWidth="2"/>
+        )}
+      </svg>
+    );
+  };
+
+  const statusCfg = {
+    "in-progress":{ bg:"#ECFDF5",color:"#059669",dot:"#10B981",label:"Active"    },
+    "upcoming":   { bg:"#EFF6FF",color:"#2563EB",dot:"#3B82F6",label:"Upcoming"  },
+    "completed":  { bg:"#F3F4F6",color:"#6B7280",dot:"#9CA3AF",label:"Done"      },
+  };
+
+  const s = {fontFamily:"'DM Sans','Helvetica Neue',sans-serif"};
+  const STATS = [
+    {label:"Today",   value:String(todayCount),              sub:"patients",  icon:"👥",color:"#6D28D9",bg:"#EDE9FE",nav:"subjective"},
+    {label:"Active",  value:String(activeSessions.length||1),sub:"sessions",  icon:"📅",color:"#059669",bg:"#ECFDF5",nav:"tx_sessions"},
+    {label:"SOAP",    value:String(pendingSoap),              sub:"pending",   icon:"📋",color:"#D97706",bg:"#FEF3C7",nav:"soap"},
+    {label:"Avg",     value:String(avgRecovery)+"%",          sub:"recovery",  icon:"📈",color:"#0891B2",bg:"#E0F2FE",nav:"subjective"},
   ];
+  const filteredSchedule = schedule.filter(s2=>activeTab==="all"||s2.status===activeTab);
 
   return (
-    <div style={{maxWidth:900,margin:"0 auto"}}>
-      {/* Header */}
-      <div style={{marginBottom:24}}>
-        <h2 style={{fontSize:"clamp(1.1rem,3vw,1.4rem)",fontWeight:900,color:"#1a1025",margin:"0 0 4px",letterSpacing:"-0.4px"}}>
-          Therapist Dashboard
-        </h2>
-        <p style={{fontSize:"0.82rem",color:"#7e6a9a",margin:0}}>Overview of your clinic, patients, and current assessment.</p>
-      </div>
+    <div style={{...s,background:"#F8FAFC",minHeight:"100vh",padding:"0 0 24px"}}>
+      <style>{`
+        @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulseDot{0%,100%{opacity:1}50%{opacity:0.35}}
+        .dc{animation:fadeUp 0.45s ease both}
+      `}</style>
 
-      {/* Quick stats */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:12,marginBottom:28}}>
-        {quickStats.map((s,i)=>(
-          <div key={i} style={{background:"#fff",border:"1px solid #d8cce8",borderRadius:14,padding:"16px",boxShadow:"0 2px 10px rgba(124,58,237,0.06)"}}>
-            <div style={{fontSize:"1.2rem",marginBottom:8}}>{s.icon}</div>
-            <div style={{fontSize:"clamp(1.2rem,3vw,1.6rem)",fontWeight:900,color:s.color,lineHeight:1,marginBottom:4}}>{s.value}</div>
-            <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.5px"}}>{s.label}</div>
+      {/* ── HEADER ── */}
+      <div style={{background:"white",padding:"20px 16px 14px",borderBottom:"1px solid #F1F5F9",
+        position:"sticky",top:0,zIndex:20,boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500,marginBottom:2}}>{dateStr}</div>
+            <div style={{fontSize:16,fontWeight:800,color:"#111827",letterSpacing:"-0.4px"}}>
+              {greeting}, Dr. Priya 👋
+            </div>
           </div>
-        ))}
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {tasks.some(t=>t.urgency==="high") && (
+              <div style={{position:"relative",cursor:"pointer"}} onClick={()=>onNav("soap")}>
+                <div style={{width:38,height:38,borderRadius:11,background:"#FEF2F2",
+                  border:"1px solid #FECACA",display:"flex",alignItems:"center",
+                  justifyContent:"center",fontSize:"1rem"}}>🔔</div>
+                <div style={{position:"absolute",top:8,right:8,width:7,height:7,
+                  background:"#EF4444",borderRadius:"50%",border:"1.5px solid white"}}/>
+              </div>
+            )}
+            <div style={{width:38,height:38,borderRadius:11,
+              background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:13,fontWeight:800,color:"white",cursor:"pointer"}}
+              onClick={()=>onNav("subjective")}>DP</div>
+          </div>
+        </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:24}}>
-        {/* Current Assessment Progress */}
-        <div style={{background:"#fff",border:"1px solid #d8cce8",borderRadius:16,padding:"20px",boxShadow:"0 2px 10px rgba(124,58,237,0.06)"}}>
-          <div style={{fontWeight:800,color:"#7c3aed",fontSize:"0.82rem",marginBottom:14,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Current Assessment</div>
-          <div style={{fontWeight:700,color:"#1a1025",fontSize:"0.95rem",marginBottom:4}}>{patientName}</div>
-          {data["dem_age"]&&<div style={{fontSize:"0.75rem",color:"#7e6a9a",marginBottom:14}}>{data["dem_age"]}y · {data["dem_gender"]||""} · {data["dem_occupation"]||""}</div>}
-          {[
-            {label:"Subjective",done:!!data["sub_complaint"],nav:"subjective"},
-            {label:"Palpation",done:!!data["lx_palpation"],nav:"palpation"},
-            {label:"Posture",done:!!(data["posture_defect_anterior_pelvic_tilt"]||data["posture_defect_forward_head"]),nav:"posture"},
-            {label:"ROM",done:!!(data["lx_flex"]||data["rom_cflex"]),nav:"rom"},
-            {label:"Special Tests",done:!!(data["st_spurling"]||data["st_neer"]),nav:"special"},
-            {label:"SOAP + AI",done:false,nav:"soap"},
-          ].map((item,i)=>(
-            <div key={i} onClick={()=>onNav(item.nav)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:i<5?"1px solid #ede7f6":"none",cursor:"pointer"}}>
-              <div style={{width:18,height:18,borderRadius:"50%",background:item.done?"rgba(5,150,105,0.12)":"rgba(124,58,237,0.08)",border:`1.5px solid ${item.done?"#059669":"#d8cce8"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.6rem",color:item.done?"#059669":"#d8cce8",flexShrink:0}}>
-                {item.done?"✓":""}
+      <div style={{padding:"16px 14px",display:"flex",flexDirection:"column",gap:16}}>
+
+        {/* ── QUICK STATS — all live ── */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          {STATS.map((st,i)=>(
+            <div key={st.label} className="dc" style={{
+              background:"white",borderRadius:16,padding:"14px 14px",
+              border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
+              animationDelay:`${i*0.07}s`,cursor:"pointer",
+            }} onClick={()=>onNav(st.nav)}>
+              <div style={{width:32,height:32,borderRadius:9,background:st.bg,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:14,marginBottom:10}}>{st.icon}</div>
+              <div style={{fontSize:26,fontWeight:800,color:"#111827",letterSpacing:"-1px",lineHeight:1}}>
+                {st.value}
               </div>
-              <div style={{flex:1,fontSize:"0.78rem",color:"#1a1025",fontWeight:600}}>{item.label}</div>
-              <div style={{fontSize:"0.68rem",color:"#7c3aed",fontWeight:700}}>→</div>
+              <div style={{fontSize:11,color:"#6B7280",marginTop:3}}>
+                {st.label} <span style={{color:st.color}}>{st.sub}</span>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div style={{background:"#fff",border:"1px solid #d8cce8",borderRadius:16,padding:"20px",boxShadow:"0 2px 10px rgba(124,58,237,0.06)"}}>
-          <div style={{fontWeight:800,color:"#7c3aed",fontSize:"0.82rem",marginBottom:14,textTransform:"uppercase",letterSpacing:"0.5px"}}>⚡ Quick Actions</div>
-          {[
-            {label:"Start New Assessment",icon:"📝",nav:"subjective",primary:true},
-            {label:"Generate SOAP + AI",icon:"🤖",nav:"soap",primary:false},
-            {label:"Treatment Prescription",icon:"💊",nav:"exercise",primary:false},
-            {label:"Run Special Tests",icon:"🔬",nav:"special",primary:false},
-            {label:"Posture Camera",icon:"📷",nav:"posture",primary:false},
-            {label:"Session Log",icon:"📋",nav:"tx_sessions",primary:false},
-          ].map((a,i)=>(
-            <button key={i} onClick={()=>onNav(a.nav)} style={{
-              width:"100%",padding:"10px 14px",marginBottom:7,
-              background:a.primary?"linear-gradient(135deg,#7c3aed,#9333ea)":"#f5f0fb",
-              border:a.primary?"none":"1px solid #d8cce8",
-              borderRadius:10,color:a.primary?"#fff":"#1a1025",
-              fontWeight:700,fontSize:"0.78rem",cursor:"pointer",
-              display:"flex",alignItems:"center",gap:8,textAlign:"left"
-            }}>
-              <span>{a.icon}</span>{a.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent patients */}
-      {recentPatients.length > 0 && (
-        <div style={{background:"#fff",border:"1px solid #d8cce8",borderRadius:16,padding:"20px",boxShadow:"0 2px 10px rgba(124,58,237,0.06)"}}>
-          <div style={{fontWeight:800,color:"#7c3aed",fontSize:"0.82rem",marginBottom:14,textTransform:"uppercase",letterSpacing:"0.5px"}}>👥 Recent Patients</div>
-          <div style={{display:"grid",gap:8}}>
-            {recentPatients.map((p,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:"#f5f0fb",borderRadius:10,border:"1px solid #ede7f6"}}>
-                <div style={{width:34,height:34,borderRadius:"50%",background:"linear-gradient(135deg,#7c3aed,#9333ea)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.8rem",color:"#fff",fontWeight:800,flexShrink:0}}>
-                  {(p.name||"P")[0].toUpperCase()}
+        {/* ── ACTIVE PATIENT — 100% live ── */}
+        {activeName !== "No patient" ? (
+          <div className="dc" style={{
+            background:"linear-gradient(135deg,#6D28D9 0%,#7C3AED 55%,#8B5CF6 100%)",
+            borderRadius:20,padding:"18px",
+            boxShadow:"0 8px 28px rgba(109,40,217,0.28)",
+            animationDelay:"0.1s",cursor:"pointer",
+          }} onClick={()=>onNav("subjective")}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+              <div>
+                <div style={{fontSize:9.5,fontWeight:700,color:"rgba(255,255,255,0.6)",
+                  textTransform:"uppercase",letterSpacing:"0.9px",marginBottom:3}}>Active Patient</div>
+                <div style={{fontSize:17,fontWeight:800,color:"white",letterSpacing:"-0.4px"}}>{activeName}</div>
+                <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:2,
+                  maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                  {activeCC} · {activeSessions.length} session{activeSessions.length!==1?"s":""}
                 </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:700,color:"#1a1025",fontSize:"0.82rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name||"Unnamed"}</div>
-                  <div style={{fontSize:"0.65rem",color:"#7e6a9a"}}>{p.lastDx||"No diagnosis"} · {p.updatedAt?new Date(p.updatedAt).toLocaleDateString():"—"}</div>
-                </div>
-                {p.hasRedFlags&&<span style={{fontSize:"0.6rem",padding:"2px 7px",background:"rgba(220,38,38,0.1)",color:"#dc2626",borderRadius:6,fontWeight:700}}>⚠ Flags</span>}
               </div>
+              <div style={{width:44,height:44,borderRadius:13,
+                background:"rgba(255,255,255,0.18)",border:"2px solid rgba(255,255,255,0.25)",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:14,fontWeight:800,color:"white",flexShrink:0}}>
+                {activeName.split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase()}
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8,marginBottom:14}}>
+              {[
+                {l:"Pain NRS", v:activeNRS>0?`${activeNRS}/10`:"—",     s:activeNRSWorst>activeNRS?`↓ from ${activeNRSWorst}`:"not recorded"},
+                {l:"Sessions", v:activeSessions.length>0?`${activeSessions.length}`:  "0", s:"recorded"},
+                {l:"Recovery", v:`${recoveryPct}%`,  s:recoveryPct>50?"on track":"early stage"},
+              ].map(m=>(
+                <div key={m.l} style={{flex:1,background:"rgba(255,255,255,0.14)",borderRadius:11,padding:"8px 9px"}}>
+                  <div style={{fontSize:14,fontWeight:800,color:"white",lineHeight:1}}>{m.v}</div>
+                  <div style={{fontSize:9,color:"rgba(255,255,255,0.6)",marginTop:2,fontWeight:600}}>{m.l}</div>
+                  <div style={{fontSize:9,color:"rgba(255,255,255,0.45)",marginTop:1}}>{m.s}</div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                <span style={{fontSize:10,color:"rgba(255,255,255,0.65)",fontWeight:600}}>Recovery Progress</span>
+                <span style={{fontSize:10,color:"white",fontWeight:800}}>{recoveryPct}%</span>
+              </div>
+              <div style={{height:5,background:"rgba(255,255,255,0.18)",borderRadius:99,overflow:"hidden"}}>
+                <div style={{height:"100%",width:mounted?`${recoveryPct}%`:"0%",
+                  background:"white",borderRadius:99,
+                  transition:"width 1.3s cubic-bezier(.4,0,.2,1) 0.2s"}}/>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="dc" style={{background:"white",borderRadius:20,padding:"20px",
+            border:"2px dashed #E5E7EB",textAlign:"center",animationDelay:"0.1s",cursor:"pointer"}}
+            onClick={()=>onNav("subjective")}>
+            <div style={{fontSize:"1.5rem",marginBottom:8}}>👤</div>
+            <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>No active patient</div>
+            <div style={{fontSize:11,color:"#9CA3AF",marginTop:4}}>Create or load a patient to begin</div>
+          </div>
+        )}
+
+        {/* ── TODAY'S SCHEDULE — live from patients ── */}
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
+              Recent Patients
+              <span style={{fontSize:11,fontWeight:500,color:"#9CA3AF",marginLeft:6}}>
+                ({totalPatients} total)
+              </span>
+            </div>
+            <span style={{fontSize:11,fontWeight:600,color:"#6D28D9",cursor:"pointer"}}
+              onClick={()=>onNav("subjective")}>See all →</span>
+          </div>
+          <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:2}}>
+            {[["All","all"],["Active","in-progress"],["Upcoming","upcoming"],["Done","completed"]].map(([l,v])=>(
+              <button key={v} onClick={()=>setActiveTab(v)} style={{
+                padding:"5px 14px",borderRadius:99,border:"none",cursor:"pointer",
+                fontSize:11,fontWeight:700,whiteSpace:"nowrap",
+                background:activeTab===v?"#6D28D9":"#F3F4F6",
+                color:activeTab===v?"white":"#6B7280",transition:"all 0.2s",
+              }}>{l}</button>
             ))}
           </div>
+          {schedule.length === 0 ? (
+            <div style={{background:"white",borderRadius:14,padding:"20px",
+              border:"1px solid #F1F5F9",textAlign:"center",color:"#9CA3AF",fontSize:12}}>
+              No patients yet — create your first patient to get started
+            </div>
+          ) : (
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {(filteredSchedule.length>0?filteredSchedule:schedule).slice(0,5).map((appt,i)=>{
+                const sc = statusCfg[appt.status];
+                return (
+                  <div key={appt.id} style={{
+                    background:"white",borderRadius:15,padding:"12px 14px",
+                    border:`1px solid ${appt.hasRedFlags?"#FECACA":"#F1F5F9"}`,
+                    boxShadow:"0 1px 5px rgba(0,0,0,0.04)",
+                    display:"flex",alignItems:"center",gap:12,
+                    opacity:appt.status==="completed"?0.7:1,cursor:"pointer",
+                    animation:"fadeUp 0.4s ease both",animationDelay:`${i*0.06}s`,
+                  }} onClick={()=>onNav("subjective")}>
+                    <div style={{width:40,height:40,borderRadius:11,
+                      background:`${appt.color}18`,border:`1.5px solid ${appt.color}25`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:12,fontWeight:800,color:appt.color,flexShrink:0,
+                      position:"relative"}}>
+                      {appt.initials}
+                      {appt.hasRedFlags && (
+                        <div style={{position:"absolute",top:-3,right:-3,width:10,height:10,
+                          background:"#EF4444",borderRadius:"50%",border:"1.5px solid white",
+                          fontSize:6,display:"flex",alignItems:"center",justifyContent:"center",color:"white"}}>!</div>
+                      )}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#111827",
+                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{appt.name}</div>
+                      <div style={{fontSize:11,color:"#6B7280",marginTop:1,
+                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{appt.dx}</div>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:4,
+                        padding:"3px 8px",background:sc.bg,borderRadius:99}}>
+                        <div style={{width:5,height:5,borderRadius:"50%",background:sc.dot,
+                          animation:appt.status==="in-progress"?"pulseDot 1.5s infinite":"none"}}/>
+                        <span style={{fontSize:9.5,fontWeight:700,color:sc.color}}>{sc.label}</span>
+                      </div>
+                      <div style={{fontSize:10,color:"#9CA3AF"}}>
+                        {appt.sessionCount} session{appt.sessionCount!==1?"s":""}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* ── ROM — live from data ── */}
+        {romRows.length > 0 && (
+          <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
+            border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
+            animationDelay:"0.15s"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
+                ROM — {activeName}
+              </div>
+              <button style={{fontSize:11,fontWeight:600,color:"#6D28D9",background:"none",
+                border:"none",cursor:"pointer"}} onClick={()=>onNav("rom")}>
+                Measure →
+              </button>
+            </div>
+            {romRows.map(r=><ROMBar key={r.label} {...r}/>)}
+          </div>
+        )}
+
+        {/* ── PENDING TASKS — live ── */}
+        {tasks.length > 0 && (
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
+              <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
+                Pending Tasks
+              </div>
+              <div style={{fontSize:11,fontWeight:700,color:"white",
+                background:tasks.some(t=>t.urgency==="high")?"#EF4444":"#6B7280",
+                padding:"2px 9px",borderRadius:99}}>
+                {tasks.length}
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {tasks.map((t,i)=>{
+                const uc={high:"#EF4444",medium:"#D97706",low:"#6B7280"}[t.urgency];
+                const ub={high:"#FEF2F2",medium:"#FFFBEB",low:"#F9FAFB"}[t.urgency];
+                return (
+                  <div key={i} style={{
+                    background:"white",borderRadius:13,padding:"11px 14px",
+                    border:`1px solid ${t.urgency==="high"?"#FECACA":"#F1F5F9"}`,
+                    display:"flex",alignItems:"center",gap:11,
+                    animation:"fadeUp 0.4s ease both",animationDelay:`${i*0.06}s`,cursor:"pointer",
+                  }} onClick={()=>onNav(t.nav)}>
+                    <div style={{width:34,height:34,borderRadius:9,background:ub,
+                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>
+                      {t.icon}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:12.5,fontWeight:700,color:"#111827"}}>{t.label}</div>
+                      <div style={{fontSize:11,color:"#6B7280",marginTop:1}}>{t.patient}</div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{width:6,height:6,borderRadius:"50%",background:uc,flexShrink:0}}/>
+                      <div style={{color:"#9CA3AF",fontSize:16}}>›</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── RECOVERY TREND — live from tx_sessions VAS ── */}
+        <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
+          border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
+          animationDelay:"0.2s"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div>
+              <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
+                Recovery Trend
+              </div>
+              <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
+                {activeSessions.length > 0 ? `${activeSessions.length} sessions · NRS improvement` : "All patients · by month"}
+              </div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#6D28D9",letterSpacing:"-1px"}}>
+                {recoveryPct}%
+              </div>
+              <div style={{fontSize:10,color:recoveryPct>50?"#059669":"#9CA3AF",fontWeight:600}}>
+                {recoveryPct>50?"↑ improving":"↗ in progress"}
+              </div>
+            </div>
+          </div>
+          <TrendChart data={trendData}/>
+        </div>
+
+        {/* ── PATIENT OUTCOMES — live from all patients ── */}
+        <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
+          border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
+          animationDelay:"0.25s"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
+              Patient Outcomes
+            </div>
+            <div style={{fontSize:11,color:"#9CA3AF"}}>{totalPatients} patients</div>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-around"}}>
+            <Donut pct={assessPct}    color="#6D28D9" label="Assessed"   size={62} stroke={7}/>
+            <Donut pct={romDonePct}   color="#0891B2" label="ROM Done"   size={62} stroke={7}/>
+            <Donut pct={soapDonePct}  color="#059669" label="SOAP Done"  size={62} stroke={7}/>
+            <Donut pct={100-redFlagPct} color="#10B981" label="No Red Flags" size={62} stroke={7}/>
+          </div>
+          {totalPatients === 0 && (
+            <div style={{textAlign:"center",color:"#9CA3AF",fontSize:11,marginTop:12}}>
+              Add patients to see outcome analytics
+            </div>
+          )}
+        </div>
+
+        {/* ── START ASSESSMENT CTA ── */}
+        <div className="dc" style={{
+          background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",
+          borderRadius:20,padding:"20px",
+          boxShadow:"0 4px 20px rgba(109,40,217,0.25)",
+          animationDelay:"0.3s",
+          display:"flex",justifyContent:"space-between",alignItems:"center",
+          cursor:"pointer",
+        }} onClick={()=>onNav("subjective")}>
+          <div>
+            <div style={{fontSize:15,fontWeight:800,color:"white",letterSpacing:"-0.3px"}}>
+              Start Assessment
+            </div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:3}}>
+              Subjective → ROM → MMT → Special Tests
+            </div>
+          </div>
+          <div style={{width:44,height:44,borderRadius:13,background:"rgba(255,255,255,0.2)",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>
+            →
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PDF REPORTS MODULE — 3 World-Class Clinical PDF Documents
-// Assessment Report · Treatment Plan · Home Exercise Protocol
-// ═══════════════════════════════════════════════════════════════════════════
 
 function PdfReportsModal({ data, dx, onClose }) {
   const [generating, setGenerating] = useState(null);
