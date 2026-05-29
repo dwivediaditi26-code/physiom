@@ -2406,79 +2406,250 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   // ── O: OBJECTIVE ──────────────────────────────────────────────────────────
   const O_parts = [];
 
-  // Posture / Observation
-  const postureD = [];
-  Object.values(typeof POSTURE_DEFECTS !== "undefined" ? POSTURE_DEFECTS : {}).forEach(d => {
-    if (data[`posture_defect_${d.id}`]) postureD.push(d.label);
-  });
-  const postureManual = [
-    v("post_fhp") && v("post_fhp") !== "--" && `FHP: ${v("post_fhp")}`,
-    v("post_kyphosis") && v("post_kyphosis") !== "--" && `Thoracic kyphosis: ${v("post_kyphosis")}`,
-    v("post_lordosis") && v("post_lordosis") !== "--" && `Lumbar lordosis: ${v("post_lordosis")}`,
-    v("post_pelvis") && v("post_pelvis") !== "--" && `Pelvic position: ${v("post_pelvis")}`,
-    v("post_sh") && v("post_sh") !== "--" && `Shoulder level: ${v("post_sh")}`,
-    v("post_scoliosis") && v("post_scoliosis") !== "--" && `Scoliosis: ${v("post_scoliosis")}`,
-  ].filter(Boolean);
-  const allPosture = [...postureD, ...postureManual];
-  if (allPosture.length) O_parts.push(`Observation/Posture: ${allPosture.join("; ")}.`);
+  // ── POSTURE / OBSERVATION ─────────────────────────────────────────────────
+  {
+    const postureD = [];
+    // Posture defects (clicked in PostureModule)
+    const DEFECT_IDS = [
+      ["forward_head","Forward Head Posture"],["rounded_shoulders","Rounded/Protracted Shoulders"],
+      ["thoracic_kyphosis","Increased Thoracic Kyphosis"],["lumbar_hyperlordosis","Lumbar Hyperlordosis"],
+      ["anterior_pelvic_tilt","Anterior Pelvic Tilt"],["posterior_pelvic_tilt","Posterior Pelvic Tilt"],
+      ["lateral_pelvic_tilt","Lateral Pelvic Tilt"],["genu_valgum","Genu Valgum"],
+      ["genu_varum","Genu Varum"],["foot_pronation","Foot Overpronation"],
+      ["foot_supination","Foot Supination"],["scoliosis","Scoliosis"],
+      ["head_tilt","Lateral Head Tilt"],["scapular_winging","Scapular Winging"],
+    ];
+    DEFECT_IDS.forEach(([id, label]) => {
+      if (data[`posture_defect_${id}`]) postureD.push(label);
+    });
+    // Sagittal engine outputs
+    const sagLines = [];
+    if (data.sagFHPCm || data.fhpDevCm) sagLines.push(`FHP ${data.sagFHPCm||data.fhpDevCm}cm anterior`);
+    if (data.cvaAngle) sagLines.push(`CVA ${data.cvaAngle}°`);
+    if (data.sagThorKyph) sagLines.push(`Thoracic kyphosis ${data.sagThorKyph}°`);
+    if (data.sagLumLord) sagLines.push(`Lumbar lordosis ${data.sagLumLord}°`);
+    if (data.sagPelvicShift) sagLines.push(`Pelvic shift ${data.sagPelvicShift}cm`);
+    // Manual posture entries
+    ["post_fhp","post_kyphosis","post_lordosis","post_pelvis","post_sh","post_scoliosis","post_notes"].forEach(k => {
+      const val = v(k);
+      if (val && val !== "--") sagLines.push(val);
+    });
+    const allP = [...postureD, ...sagLines];
+    if (allP.length) O_parts.push(`Observation/Posture:\n  ${allP.join("\n  ")}.`);
+  }
 
-  // Palpation
-  const palpParts = [
-    v("lx_palpation"), v("palp_tenderness") && `Tenderness: ${v("palp_tenderness")}`,
-    v("palp_tone") && `Tone: ${v("palp_tone")}`,
-    v("palp_swelling") && `Swelling: ${v("palp_swelling")}`,
-    v("palp_temp") && `Temperature: ${v("palp_temp")}`,
-    v("palp_crepitus") && `Crepitus: ${v("palp_crepitus")}`,
-  ].filter(Boolean);
-  if (palpParts.length) O_parts.push(`Palpation: ${palpParts.join(". ")}.`);
+  // ── PALPATION ────────────────────────────────────────────────────────────
+  {
+    const palpRows = [];
+    // Read serialized pins from data
+    try {
+      const pins = JSON.parse(data.palp_pins || "[]");
+      if (pins.length > 0) {
+        const graded = pins.filter(p => p.tenderness);
+        const GRADE_LABELS = { 0:"Grade 0 (no tenderness)", 1:"Grade 1+ (mild)", 2:"Grade 2+ (moderate — grimace)", 3:"Grade 3+ (severe — withdrawal)", 4:"Grade 4+ (excruciating — jump sign)" };
+        // Group by grade
+        const byGrade = {};
+        graded.forEach(p => {
+          const g = String(p.tenderness);
+          byGrade[g] = byGrade[g] || [];
+          byGrade[g].push(p.label + (p.side && p.side !== "bilateral" ? ` (${p.side})` : p.side === "bilateral" ? " (bilateral)" : ""));
+        });
+        Object.entries(byGrade).sort(([a],[b]) => Number(b)-Number(a)).forEach(([grade, labels]) => {
+          const gradeLabel = GRADE_LABELS[grade] || `Grade ${grade}+`;
+          palpRows.push(`  ${gradeLabel}: ${labels.join(", ")}`);
+        });
+        // Tissue quality and temp
+        const warm = pins.filter(p => p.temp === "Warm" || p.temp === "Hot");
+        const tight = pins.filter(p => p.texture && p.texture.includes("Tight"));
+        const crepit = pins.filter(p => p.texture && p.texture.includes("Crepitus"));
+        if (warm.length) palpRows.push(`  Increased tissue temp: ${warm.map(p=>p.label).join(", ")}`);
+        if (tight.length) palpRows.push(`  Tight/restricted: ${tight.map(p=>p.label).join(", ")}`);
+        if (crepit.length) palpRows.push(`  Crepitus: ${crepit.map(p=>p.label).join(", ")}`);
+        // Clinical notes
+        const withNotes = pins.filter(p => p.notes && p.notes.trim());
+        if (withNotes.length) {
+          withNotes.slice(0,3).forEach(p => palpRows.push(`  ${p.label}: ${p.notes.trim().slice(0,80)}`));
+        }
+      }
+    } catch(e) {}
+    // Also read regional palpation fields (cx_palpation, lx_palpation etc)
+    const KNOWN_PX2 = ["cx","lx","sh","hp","kn","af","ew","tx","th"];
+    KNOWN_PX2.forEach(px => {
+      const palp = data[`${px}_palpation`] || data[`${px}_palp`];
+      if (palp) palpRows.push(`  ${px.toUpperCase()}: ${String(palp).slice(0,80)}`);
+    });
+    if (palpRows.length) O_parts.push(`Palpation:\n${palpRows.join("\n")}.`);
+  }
 
-  // ROM
-  const romRows = [];
-  const romPairs = [
-    ["Cervical Flex/Ext","rom_cx_flex","rom_cx_ext","50/60°"],
-    ["Cervical Rot L/R","rom_cx_rot_left","rom_cx_rot_right","80/80°"],
-    ["Cervical Lat Flex L/R","rom_cx_lat_left","rom_cx_lat_right","45/45°"],
-    ["Lumbar Flex/Ext","lx_flex","lx_ext","80/25°"],
-    ["Lumbar Lat Flex L/R","lx_lat_left","lx_lat_right","35/35°"],
-    ["Lumbar Rot L/R","lx_rot_left","lx_rot_right","45/45°"],
-    ["SLR L/R","lx_slr_left","lx_slr_right","70/70°"],
-    ["Shoulder Flex L/R","rom_sh_flex_left","rom_sh_flex_right","180/180°"],
-    ["Shoulder Abd L/R","rom_sh_abd_left","rom_sh_abd_right","180/180°"],
-    ["Shoulder ER L/R","rom_sh_er_left","rom_sh_er_right","90/90°"],
-    ["Shoulder IR L/R","rom_sh_ir_left","rom_sh_ir_right","70/70°"],
-    ["Elbow Flex L/R","rom_el_flex_left","rom_el_flex_right","145/145°"],
-    ["Hip Flex L/R","rom_hip_flex_left","rom_hip_flex_right","120/120°"],
-    ["Hip Abd L/R","rom_hip_abd_left","rom_hip_abd_right","45/45°"],
-    ["Knee Flex L/R","rom_kn_flex_left","rom_kn_flex_right","140/140°"],
-    ["Ankle DF L/R","rom_ank_df_left","rom_ank_df_right","20/20°"],
-  ];
-  romPairs.forEach(([label, k1, k2, norm]) => {
-    const v1 = v(k1), v2 = v(k2);
-    if (v1 || v2) romRows.push(`${label}: ${v1||"—"}°/${v2||"—"}° (norm: ${norm})`);
-  });
-  if (romRows.length) O_parts.push(`Range of Motion:\n  ${romRows.join("\n  ")}`);
+  // ── ROM — correct field IDs from ROM_DATA ───────────────────────────────
+  {
+    const romRows = [];
+    // Unilateral movements (single value)
+    const uniPairs = [
+      // Cervical
+      ["C-Flex","rom_cflex",45],["C-Ext","rom_cext",45],
+      ["C-Lat Flex L","rom_clatl",45],["C-Lat Flex R","rom_clatr",45],
+      ["C-Rot L","rom_crotl",60],["C-Rot R","rom_crotr",60],
+      // Thoracic
+      ["Th-Flex","rom_thflex",50],["Th-Ext","rom_thext",25],
+      ["Th-Rot L","rom_throtl",35],["Th-Rot R","rom_throtr",35],
+      // Lumbar
+      ["L-Flex","rom_lflex",60],["L-Ext","rom_lext",25],
+      ["L-Lat Flex L","rom_llfl",25],["L-Lat Flex R","rom_llfr",25],
+      ["L-Rot L","rom_lrotl",5],["L-Rot R","rom_lrotr",5],
+    ];
+    // Bilateral movements (left and right stored as romKey_left / romKey_right)
+    const bilaPairs = [
+      // Shoulder
+      ["Sh-Flex","rom_sflex",180],["Sh-Ext","rom_sext",60],
+      ["Sh-Abd","rom_sabd",180],["Sh-Add","rom_sadd",30],
+      ["Sh-ER","rom_ser",90],["Sh-IR","rom_sir",70],
+      // Elbow
+      ["El-Flex","rom_eflex",145],["El-Ext","rom_eext",0],
+      ["El-Sup","rom_esup",90],["El-Pro","rom_epro",90],
+      // Wrist
+      ["Wr-Flex","rom_wflex",80],["Wr-Ext","rom_wext",70],
+      // Hip
+      ["Hip-Flex","rom_hflex",120],["Hip-Ext","rom_hext",20],
+      ["Hip-Abd","rom_habd",45],["Hip-Add","rom_hadd",30],
+      ["Hip-ER","rom_her",45],["Hip-IR","rom_hir",45],
+      // Knee
+      ["Kn-Flex","rom_kflex",140],["Kn-Ext","rom_kext",0],
+      // Ankle
+      ["Ank-DF","rom_adf",20],["Ank-PF","rom_apf",50],
+      ["Ank-Inv","rom_ainv",35],["Ank-Ev","rom_aev",15],
+    ];
+    // Helper to format single value with norm comparison
+    const fmtVal = (val, norm) => {
+      if (!val) return null;
+      const num = parseFloat(val);
+      const pct = norm > 0 ? Math.round((num/norm)*100) : null;
+      const flag = pct !== null && pct < 75 ? " ⚠" : pct !== null && pct < 50 ? " ❌" : "";
+      return `${val}° (norm ${norm}°${flag})`;
+    };
+    uniPairs.forEach(([label, key, norm]) => {
+      const val = v(key);
+      if (val) {
+        const fmt = fmtVal(val, norm);
+        const pain = v(key+"_pain");
+        romRows.push(`  ${label}: ${fmt}${pain ? " — "+pain : ""}`);
+      }
+    });
+    bilaPairs.forEach(([label, key, norm]) => {
+      const vL = v(key+"_left"), vR = v(key+"_right");
+      if (vL || vR) {
+        const fL = vL ? fmtVal(vL, norm) : "—";
+        const fR = vR ? fmtVal(vR, norm) : "—";
+        const pain = v(key+"_pain_left")||v(key+"_pain_right");
+        romRows.push(`  ${label}: L ${fL} / R ${fR}${pain ? " — "+pain : ""}`);
+      }
+    });
+    // SLR from neurological module
+    const slrL = v("nt_slr_left")||v("nt_slr"), slrR = v("nt_slr_right");
+    if (slrL||slrR) romRows.push(`  SLR: L ${slrL||"—"} / R ${slrR||"—"} (norm >70°)`);
+    if (romRows.length) O_parts.push(`Range of Motion:\n${romRows.join("\n")}.`);
+  }
 
-  // MMT
-  const mmtF = [];
-  Object.keys(data).filter(k => k.startsWith("mmt_")).forEach(k => {
-    const mv = String(data[k]||"");
-    if (mv && !mv.includes("5") || mv.match(/[1-4]/)) {
-      const label = k.replace("mmt_","").replace(/_/g," ");
-      if (mv.match(/[1-4]/) && !mv.includes("5")) mmtF.push(`${label}: ${mv}/5`);
+  // ── MMT ─────────────────────────────────────────────────────────────────
+  {
+    // MMT label map for clean display
+    const MMT_LABELS = {
+      mmt_dnf:"Deep Neck Flexors",mmt_supra:"Supraspinatus",mmt_infra:"Infraspinatus",
+      mmt_subscap:"Subscapularis",mmt_serratus:"Serratus Anterior",mmt_trapL:"Lower Trap",
+      mmt_trapM:"Mid Trap",mmt_trapU:"Upper Trap",mmt_deltA:"Ant Deltoid",mmt_deltM:"Mid Deltoid",
+      mmt_deltP:"Post Deltoid",mmt_bicep:"Biceps",mmt_brach:"Brachialis",mmt_brachio:"Brachioradialis",
+      mmt_tricep:"Triceps",mmt_ecrb:"Wrist Ext (ECRB)",mmt_fcr:"Wrist Flex (FCR)",
+      mmt_edc:"Finger Ext",mmt_fdp:"Finger Flex",mmt_apbrev:"APB",mmt_adpoll:"Adductor Pollicis",
+      mmt_diaphragm:"Diaphragm",mmt_ta:"Transversus Abdominis",mmt_multif:"Multifidus",
+      mmt_ql:"Quadratus Lumborum",mmt_psoas:"Iliopsoas",mmt_gmax:"Gluteus Maximus",
+      mmt_gmed:"Gluteus Medius",mmt_tfl:"TFL",mmt_adduc:"Adductors",mmt_quad:"Quadriceps",
+      mmt_hamst:"Hamstrings",mmt_gastroc:"Gastrocnemius",mmt_soleus:"Soleus",
+      mmt_ta:"Tibialis Anterior",mmt_tp:"Tibialis Posterior",mmt_peronls:"Peroneals",
+      mmt_ehl:"EHL",mmt_edl:"EDL",mmt_abdhal:"Abductor Hallucis",
+    };
+    const mmtDeficit = [], mmtNormal = [];
+    Object.keys(data).filter(k => k.startsWith("mmt_")).forEach(k => {
+      const raw = String(data[k]||"").trim();
+      if (!raw) return;
+      const num = parseFloat(raw);
+      const label = MMT_LABELS[k] || k.replace("mmt_","").replace(/_/g," ");
+      if (!isNaN(num)) {
+        if (num < 5) mmtDeficit.push(`${label} ${num}/5${num <= 2 ? " ❌" : num <= 3 ? " ⚠" : ""}`);
+        else mmtNormal.push(label);
+      } else if (raw) {
+        mmtDeficit.push(`${label}: ${raw}`);
+      }
+    });
+    const mmtLines = [];
+    if (mmtDeficit.length) mmtLines.push(`  Weakness: ${mmtDeficit.join(", ")}`);
+    if (mmtNormal.length && mmtDeficit.length) mmtLines.push(`  Within normal limits (5/5): ${mmtNormal.slice(0,6).join(", ")}${mmtNormal.length>6?" + more":""}`);
+    if (v("mmt_notes")) mmtLines.push(`  Notes: ${v("mmt_notes")}`);
+    if (mmtLines.length) O_parts.push(`Muscle Strength (MMT):\n${mmtLines.join("\n")}.`);
+  }
+
+  // ── NEUROLOGICAL ────────────────────────────────────────────────────────
+  {
+    const neuroLines = [];
+    // Dermatomes (n_c3–n_s2, n_c3_left/_right etc)
+    const dermatomes = ["c3","c4","c5","c6","c7","c8","t1","t2","l1","l2","l3","l4","l5","s1","s2"];
+    const dermAbnormal = [];
+    dermatomes.forEach(level => {
+      const left = v(`n_${level}_left`)||v(`n_${level}`), right = v(`n_${level}_right`);
+      const abnL = left && !left.toLowerCase().includes("normal") && !left.toLowerCase().includes("intact");
+      const abnR = right && !right.toLowerCase().includes("normal") && !right.toLowerCase().includes("intact");
+      if (abnL || abnR) {
+        if (left && right) dermAbnormal.push(`${level.toUpperCase()}: L=${left} R=${right}`);
+        else if (left) dermAbnormal.push(`${level.toUpperCase()}: ${left}`);
+      }
+    });
+    if (dermAbnormal.length) neuroLines.push(`  Dermatomal: ${dermAbnormal.join("; ")}`);
+    // Myotomes  
+    const myoKeys = ["n_c5","n_c6","n_c7","n_c8","n_t1","n_l3","n_l4","n_l5","n_s1","n_s2"];
+    const myoAbn = [];
+    myoKeys.forEach(k => {
+      const val = v(k);
+      if (val && val.match(/[1-4]\/5|weak|reduced/i)) myoAbn.push(`${k.replace("n_","").toUpperCase()}: ${val}`);
+    });
+    if (myoAbn.length) neuroLines.push(`  Myotomes: ${myoAbn.join("; ")}`);
+    // Reflexes  
+    const refKeys = [["n_biceps","Biceps (C5/6)"],["n_brachio","Brachio (C6)"],["n_triceps","Triceps (C7)"],
+                     ["n_patella","Patella (L3/4)"],["n_achilles","Achilles (S1)"],["n_babinski","Babinski"]];
+    const refAbn = [];
+    refKeys.forEach(([k,label]) => {
+      const val = v(k);
+      if (val && (val.includes("+") || val.toLowerCase().includes("abn") || val.toLowerCase().includes("hyper") || val.toLowerCase().includes("absent")))
+        refAbn.push(`${label}: ${val}`);
+    });
+    if (refAbn.length) neuroLines.push(`  Reflexes: ${refAbn.join("; ")}`);
+    // Neural tension tests
+    const ntTests = [["nt_slump","Slump"],["nt_slr","SLR"],["nt_ultt1","ULTT1"],
+                     ["nt_ultt2","ULTT2"],["nt_ultt3","ULTT3"],["nt_femoral","Femoral stretch"]];
+    const ntPos = [], ntNeg = [];
+    ntTests.forEach(([k,label]) => {
+      const val = v(k);
+      if (!val) return;
+      if (val.toLowerCase().includes("positive") || val.toLowerCase().includes("pos ")) ntPos.push(`${label} (${val.slice(0,40)})`);
+      else if (val.toLowerCase().includes("negative") || val.toLowerCase().includes("neg ")) ntNeg.push(label);
+    });
+    if (ntPos.length) neuroLines.push(`  Neural Tension +ve: ${ntPos.join("; ")}`);
+    if (ntNeg.length) neuroLines.push(`  Neural Tension -ve: ${ntNeg.join(", ")}`);
+    // Red flags neurological
+    const nrfKeys = [["nrf_myelopathy","Myelopathy signs"],["nrf_cauda","Cauda equina"],
+                     ["nrf_saddle","Saddle anaesthesia"],["nrf_sphincter","Sphincter dysfunction"],
+                     ["nrf_bilateral","Bilateral signs"],["nrf_prog_weak","Progressive weakness"]];
+    const nrfFlags = nrfKeys.filter(([k]) => data[k] === true || String(data[k]).includes("yes") || String(data[k]).includes("present"))
+                              .map(([,label]) => label);
+    if (nrfFlags.length) neuroLines.push(`  ⚠️ Red Flags: ${nrfFlags.join(", ")}`);
+    // GCS if recorded
+    const gcsE = v("gcs_eye"), gcsV = v("gcs_verbal"), gcsM = v("gcs_motor");
+    if (gcsE||gcsV||gcsM) {
+      const total = (Number(gcsE)||0)+(Number(gcsV)||0)+(Number(gcsM)||0);
+      neuroLines.push(`  GCS: E${gcsE||"?"}+V${gcsV||"?"}+M${gcsM||"?"} = ${total||"?"}/15`);
     }
-  });
-  if (mmtF.length) O_parts.push(`Muscle Strength (MMT):\n  Deficit noted: ${mmtF.join("; ")}.`);
-  if (v("mmt_notes")) O_parts.push(`MMT Notes: ${v("mmt_notes")}.`);
-
-  // Neurological
-  const neuroF = [
-    v("neuro_sensation") && `Sensation: ${v("neuro_sensation")}`,
-    v("neuro_reflex") && `Reflexes: ${v("neuro_reflex")}`,
-    v("neuro_motor") && `Motor: ${v("neuro_motor")}`,
-    v("neuro_tension") && `Neural tension: ${v("neuro_tension")}`,
-    v("neuro_dermatomal") && `Dermatomal: ${v("neuro_dermatomal")}`,
-  ].filter(Boolean);
-  if (neuroF.length) O_parts.push(`Neurological:\n  ${neuroF.join("\n  ")}.`);
+    // General neuro notes
+    if (v("neuro_clinician_notes")) neuroLines.push(`  Notes: ${v("neuro_clinician_notes")}`);
+    if (neuroLines.length) O_parts.push(`Neurological:\n${neuroLines.join("\n")}.`);
+  }
 
   // Special Tests
   const allStKeys = Object.keys(data).filter(k => k.startsWith("st_") || k.startsWith("lx_kemp") || k.startsWith("lx_slump") || k.startsWith("lx_slr") || k.startsWith("lx_prone"));
@@ -2495,34 +2666,163 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     O_parts.push(`Special Tests:\n${stLines.join("\n")}.`);
   }
 
-  // NKT
-  const nktInh = [], nktFac = [];
-  if (typeof NKT_REGIONS !== "undefined") {
-    Object.values(NKT_REGIONS).forEach(region => region.tests?.forEach(t => {
-      const tv = String(data[t.id]||"");
-      if (tv === "Inhibited") nktInh.push(t.label);
-      else if (tv === "Facilitated") nktFac.push(t.label);
-    }));
-  }
-  if (nktInh.length || nktFac.length) {
+  // ── NKT (Neurokinetic Therapy) ──────────────────────────────────────────
+  {
+    // All 47 NKT test IDs in order
+    const NKT_IDS = [
+      ["nkt_dnf","Deep Neck Flexors"],["nkt_scm","SCM"],["nkt_suboccip","Suboccipitals"],
+      ["nkt_upper_trap","Upper Trap"],["nkt_scalenes","Scalenes"],["nkt_levator_scap","Levator Scapulae"],
+      ["nkt_splenius","Splenius"],["nkt_semispinalis","Semispinalis"],["nkt_lower_trap","Lower Trap"],
+      ["nkt_serratus","Serratus Anterior"],["nkt_infraspinatus","Infraspinatus/Teres Minor"],
+      ["nkt_subscapularis","Subscapularis"],["nkt_mid_trap","Mid Trap/Rhomboids"],
+      ["nkt_pec_minor","Pec Minor"],["nkt_ant_deltoid","Ant Deltoid"],["nkt_post_deltoid","Post Deltoid"],
+      ["nkt_teres_major","Teres Major"],["nkt_ta","Transversus Abdominis"],
+      ["nkt_multifidus","Multifidus"],["nkt_diaphragm","Diaphragm"],["nkt_ql","Quadratus Lumborum"],
+      ["nkt_psoas","Iliopsoas"],["nkt_erector_spinae","Erector Spinae"],["nkt_obliques","Obliques"],
+      ["nkt_pelvic_floor","Pelvic Floor"],["nkt_gmax","Glute Max"],["nkt_gmed","Glute Med"],
+      ["nkt_piriformis","Piriformis"],["nkt_hip_flex_fo","Hip Ext Firing Order"],["nkt_vmo","VMO"],
+      ["nkt_hamstrings","Hamstrings"],["nkt_adductors","Adductors"],["nkt_tfl","TFL"],
+      ["nkt_rectus_fem","Rectus Femoris"],["nkt_popliteus","Popliteus"],["nkt_tib_ant","Tib Anterior"],
+      ["nkt_tib_post","Tib Posterior"],["nkt_gastroc","Gastroc/Soleus"],["nkt_peroneals","Peroneals"],
+      ["nkt_fhl","FHL"],["nkt_foot_intrinsics","Foot Intrinsics"],["nkt_biceps","Biceps"],
+      ["nkt_triceps","Triceps"],["nkt_wrist_ext","Wrist Ext"],["nkt_wrist_flex","Wrist Flex"],
+      ["nkt_pronator","Pronator Teres"],["nkt_grip","Grip/Intrinsics"],
+    ];
+    const nktInh = [], nktFac = [], nktNorm = [];
+    NKT_IDS.forEach(([id, label]) => {
+      const val = String(data[id]||"").trim();
+      if (val === "Inhibited") nktInh.push(label);
+      else if (val === "Facilitated") nktFac.push(label);
+      else if (val === "Normal") nktNorm.push(label);
+    });
     const nktLines = [];
-    if (nktInh.length) nktLines.push(`  Inhibited: ${nktInh.join(", ")}`);
-    if (nktFac.length) nktLines.push(`  Facilitated: ${nktFac.join(", ")}`);
-    O_parts.push(`Neuromuscular (NKT):\n${nktLines.join("\n")}.`);
+    if (nktInh.length) nktLines.push(`  Inhibited (MCC dysfunction): ${nktInh.join(", ")}`);
+    if (nktFac.length) nktLines.push(`  Facilitated/Overactive (compensating): ${nktFac.join(", ")}`);
+    if (nktNorm.length && (nktInh.length || nktFac.length)) nktLines.push(`  Normal: ${nktNorm.slice(0,5).join(", ")}${nktNorm.length>5?` + ${nktNorm.length-5} more`:""}`);
+    if (v("nkt_notes")) nktLines.push(`  Notes: ${v("nkt_notes")}`);
+    if (nktLines.length) O_parts.push(`Neuromuscular Assessment (NKT):\n${nktLines.join("\n")}.`);
   }
 
-  // ── NEUROLOGICAL EXAMINATION ───────────────────────────────────────────────
-  const neuroLines = [
-    v("neuro_sensation")       && `  Sensation:       ${v("neuro_sensation")}`,
-    v("neuro_reflex")          && `  Reflexes:        ${v("neuro_reflex")}`,
-    v("neuro_motor")           && `  Motor:           ${v("neuro_motor")}`,
-    v("neuro_tension")         && `  Neural Tension:  ${v("neuro_tension")}`,
-    v("neuro_dermatomal")      && `  Dermatomal:      ${v("neuro_dermatomal")}`,
-    v("g_neuro_findings")      && `  Gait Neuro:      ${v("g_neuro_findings")}`,
-    v("neuro_clinician_notes") && `  Clinician Notes: ${v("neuro_clinician_notes")}`,
-  ].filter(Boolean);
-  if (neuroLines.length) {
-    O_parts.push(`Neurological Examination:\n${neuroLines.join("\n")}.`);
+  // ── FUNCTIONAL MOVEMENT ASSESSMENT ─────────────────────────────────────
+  {
+    const fmaLines = [];
+    const FMA_MOVEMENTS = [
+      ["squat","Bilateral Squat"],["gait","Gait"],["single_leg","Single Leg Stance"],
+      ["lunge","Forward Lunge"],["bend","Forward Bend/Hip Hinge"],["overhead","Overhead Reach"],
+      ["step_down","Step Down"],["pushup_plus","Push-Up Plus"],
+      ["rotary_stability","Rotary Stability"],["upper_reach","Upper Limb Reach"],
+    ];
+    const FMS_SCORES = [
+      ["sp_fms_sq","Deep Squat"],["sp_fms_hs_l","Hurdle Step L"],["sp_fms_hs_r","Hurdle Step R"],
+      ["sp_fms_il_l","Inline Lunge L"],["sp_fms_il_r","Inline Lunge R"],
+      ["sp_fms_sm_l","Shoulder Mob L"],["sp_fms_sm_r","Shoulder Mob R"],
+      ["sp_fms_aslr_l","ASLR L"],["sp_fms_aslr_r","ASLR R"],
+      ["sp_fms_tspu","TSPU"],["sp_fms_rs_l","Rotary Stab L"],["sp_fms_rs_r","Rotary Stab R"],
+    ];
+    FMA_MOVEMENTS.forEach(([id, label]) => {
+      const comp = data[`fma_compensation_${id}`] || data[`fma_${id}`];
+      const score = data[`fma_score_${id}`];
+      const notes = data[`fma_notes_${id}`];
+      if (comp || score || notes) {
+        let line = `  ${label}:`;
+        if (score) line += ` Score ${score}`;
+        if (comp) line += ` — Compensations: ${Array.isArray(comp)?comp.join(", "):comp}`;
+        if (notes) line += ` (${String(notes).slice(0,60)})`;
+        fmaLines.push(line);
+      }
+    });
+    // FMS scoring
+    const fmsScores = FMS_SCORES.filter(([k]) => data[k]).map(([k, label]) => `${label}: ${data[k]}/3`);
+    if (fmsScores.length) {
+      const total = FMS_SCORES.reduce((sum,[k]) => sum+(Number(data[k])||0), 0);
+      fmaLines.push(`  FMS Scores: ${fmsScores.join(", ")} [Total: ${total}/21]${total<14?" ⚠️ elevated injury risk":""}`);
+    }
+    if (v("fma_notes")) fmaLines.push(`  Notes: ${v("fma_notes")}`);
+    if (fmaLines.length) O_parts.push(`Functional Movement Assessment:\n${fmaLines.join("\n")}.`);
+  }
+
+  // ── KINETIC CHAIN ─────────────────────────────────────────────────────────
+  {
+    const kcLines = [];
+    const KC_IDS = [
+      ["kc_ankle_df","Ankle DF Lunge Test"],["kc_subtalar","Subtalar Mobility"],
+      ["kc_great_toe","1st MTP Extension"],["kc_knee_stability","Knee Valgus Stress"],
+      ["kc_patellar_mobility","Patellar Mobility"],["kc_tibiofemoral_rot","Tibial Rotation"],
+      ["kc_hip_ir_mob","Hip IR Mobility"],["kc_hip_ext_mob","Hip Ext — Thomas Test"],
+      ["kc_hip_er_mob","Hip ER Mobility"],["kc_hip_abd_mob","Hip Abd Mobility"],
+      ["kc_lumbar_stability","Lumbar Stability"],["kc_lumbar_flexion_ctrl","Lumbar Flex Control"],
+      ["kc_lumbar_rotation_ctrl","Lumbar Rot Control"],["kc_thoracic_rotation","Thoracic Rotation"],
+      ["kc_thoracic_extension","Thoracic Extension"],["kc_rib_mobility","Rib Cage Mobility"],
+      ["kc_scapulohumeral_rhythm","Scapulohumeral Rhythm"],["kc_gh_ir_mob","GH IR — GIRD"],
+      ["kc_cervical_thoracic_jct","CT Junction"],["kc_cervical_rot_mob","Cervical Rotation"],
+      ["kc_cervical_flex_ext","Cervical Flex/Ext"],
+    ];
+    const kcFail = [], kcPass = [];
+    KC_IDS.forEach(([id, label]) => {
+      const val = String(data[id]||"").trim().toLowerCase();
+      if (!val) return;
+      if (val.includes("restricted") || val.includes("fail") || val.includes("limited") || val.includes("dysfunc") || val.includes("unstable") || val.includes("abnormal"))
+        kcFail.push(`${label} (${data[id].toString().slice(0,30)})`);
+      else if (val.includes("normal") || val.includes("pass") || val.includes("adequate"))
+        kcPass.push(label);
+    });
+    const kcNotes = data["kc_notes"] || data["kc_summary"];
+    if (kcFail.length) kcLines.push(`  Dysfunction identified: ${kcFail.join("; ")}`);
+    if (kcPass.length && kcFail.length) kcLines.push(`  Normal: ${kcPass.slice(0,5).join(", ")}`);
+    if (kcNotes) kcLines.push(`  Notes: ${String(kcNotes).slice(0,120)}`);
+    if (kcLines.length) O_parts.push(`Kinetic Chain Assessment:\n${kcLines.join("\n")}.`);
+  }
+
+  // ── CYRIAX / END-FEEL ASSESSMENT ─────────────────────────────────────────
+  {
+    const cyriaxLines = [];
+    // Cyriax fields are stored as cy_ prefix
+    const CY_MOVEMENTS = [
+      ["cy_a_flex","Active Flex"],["cy_a_ext","Active Ext"],["cy_a_rotl","Active Rot L"],
+      ["cy_a_rotr","Active Rot R"],["cy_a_sfl","Active Lat Flex L"],["cy_a_sfr","Active Lat Flex R"],
+      ["cy_p_flex","Passive Flex"],["cy_p_ext","Passive Ext"],["cy_p_rotl","Passive Rot L"],
+      ["cy_p_rotr","Passive Rot R"],["cy_r_flex","Resisted Flex"],["cy_r_ext","Resisted Ext"],
+    ];
+    CY_MOVEMENTS.forEach(([k, label]) => {
+      const val = v(k);
+      if (val) cyriaxLines.push(`  ${label}: ${val}`);
+    });
+    // End-feel
+    const efKeys = Object.keys(data).filter(k => k.startsWith("ef_") || k.startsWith("endfeel_"));
+    efKeys.forEach(k => {
+      const val = v(k);
+      if (val) cyriaxLines.push(`  End-feel ${k.replace("ef_","").replace("endfeel_","").replace(/_/g," ")}: ${val}`);
+    });
+    // Cyriax scan - contractile vs non-contractile
+    if (v("cy_contractile")) cyriaxLines.push(`  Contractile: ${v("cy_contractile")}`);
+    if (v("cy_non_contractile")) cyriaxLines.push(`  Non-contractile: ${v("cy_non_contractile")}`);
+    if (v("cy_capsular_pattern")) cyriaxLines.push(`  Capsular pattern: ${v("cy_capsular_pattern")}`);
+    if (v("cy_notes")) cyriaxLines.push(`  Notes: ${v("cy_notes")}`);
+    if (cyriaxLines.length) O_parts.push(`Cyriax / Selective Tissue Tension:\n${cyriaxLines.join("\n")}.`);
+  }
+
+  // ── FASCIAL ASSESSMENT ────────────────────────────────────────────────────
+  {
+    const faLines = [];
+    const FA_FIELDS = [
+      ["fa_passive_tension","Passive Line Tension"],["fa_active_line_load","Active Line Loading"],
+      ["fa_densification","Fascial Densification (Stecco)"],["fa_sbl_hamstring","SBL — Hamstring"],
+      ["fa_dfl_arch","DFL — Arch"],["fa_dfl_breathing","DFL — Breathing"],
+      ["fa_ll_test","Lateral Line"],["fa_spiral_rot","Spiral Line Rotation"],
+      ["fa_tlf","Thoracolumbar Fascia"],["fa_remote_test","Remote Tension Test"],
+      ["fa_scar","Scar/Adhesion"],["fa_skin_roll","Skin Rolling"],
+      ["fa_force_closure","Force Closure"],["fa_compensation_map","Compensation Map"],
+    ];
+    FA_FIELDS.forEach(([k, label]) => {
+      const val = v(k);
+      if (val && val.trim()) faLines.push(`  ${label}: ${val.slice(0,80)}`);
+    });
+    // Also scan fa_ fields not in list
+    Object.keys(data).filter(k => k.startsWith("fa_") && !FA_FIELDS.some(([fk]) => fk===k)).forEach(k => {
+      const val = v(k);
+      if (val) faLines.push(`  ${k.replace("fa_","").replace(/_/g," ")}: ${val.slice(0,60)}`);
+    });
+    if (faLines.length) O_parts.push(`Fascial Assessment:\n${faLines.join("\n")}.`);
   }
 
   // ── BODY CHART ANNOTATIONS ─────────────────────────────────────────────────
@@ -5429,6 +5729,12 @@ function PalpationModule({ data, set }) {
       }, 80);
     }
   }, [selected]);
+
+  // Serialize pins to shared data whenever they change
+  useEffect(() => {
+    if (!set) return;
+    set(prev => ({ ...prev, palp_pins: JSON.stringify(pins) }));
+  }, [pins]);
 
   const inp = {
     width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8,
