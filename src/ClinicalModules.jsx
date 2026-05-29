@@ -2194,7 +2194,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const occ = v("dem_occupation");
   const cc = v("cc_main");
   // ── Direct scan of ALL regional prefix fields (cx_, lx_, sh_, hp_, kn_, af_, ew_, tx_) ──
-  const KNOWN_PREFIXES = ["cx","lx","sh","hp","kn","af","ew","tx","th"];
+  const KNOWN_PREFIXES = ["cx","lx","shl","shr","hp","knl","knr","af","ew","tx"];
   const activePrefixes = KNOWN_PREFIXES.filter(px =>
     Object.keys(data).some(k => k.startsWith(px + "_"))
   );
@@ -2473,7 +2473,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       }
     } catch(e) {}
     // Also read regional palpation fields (cx_palpation, lx_palpation etc)
-    const KNOWN_PX2 = ["cx","lx","sh","hp","kn","af","ew","tx","th"];
+    const KNOWN_PX2 = ["cx","lx","shl","shr","hp","knl","knr","af","ew","tx"];
     KNOWN_PX2.forEach(px => {
       const palp = data[`${px}_palpation`] || data[`${px}_palp`];
       if (palp) palpRows.push(`  ${px.toUpperCase()}: ${String(palp).slice(0,80)}`);
@@ -6718,7 +6718,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
   // Count filled fields per section for live badges
   const sectionCounts = React.useMemo(() => {
     const allKeys = Object.keys(data).filter(k => data[k] && String(data[k]).trim());
-    const KNOWN_PX = ["cx","lx","sh","hp","kn","af","ew","tx","th"];
+    const KNOWN_PX = ["cx","lx","shl","shr","hp","knl","knr","af","ew","tx"];
     const hasRegional = allKeys.some(k => KNOWN_PX.some(px => k.startsWith(px + "_")));
     const subjectiveKeys = ["cc_main","cc_vas_now","cc_quality","dem_name",
       "cc_duration","cc_onset"];
