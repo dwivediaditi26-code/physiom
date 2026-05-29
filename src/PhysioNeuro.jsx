@@ -587,15 +587,26 @@ function ROMModule({data,set,navContext={}}){
   },[navContext.romRegion]);
 
   React.useEffect(()=>{
-    if(navContext.romHighlight && hlRef.current[navContext.romHighlight]){
-      const el = hlRef.current[navContext.romHighlight];
-      setTimeout(()=>{
-        el.scrollIntoView({ behavior:"smooth", block:"center" });
-        el.classList.add("physio-highlight");
-        setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
-      }, 350);
-    }
-  },[navContext.romHighlight]);
+    // Support both single romHighlight and array romHighlights
+    const targets = navContext.romHighlights
+      ? navContext.romHighlights
+      : navContext.romHighlight
+        ? [navContext.romHighlight]
+        : [];
+    if(targets.length === 0) return;
+    setTimeout(()=>{
+      let scrolled = false;
+      targets.forEach((id, i) => {
+        const el = hlRef.current[id];
+        if(el){
+          // Scroll to first match only
+          if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
+          el.classList.add("physio-highlight");
+          setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+        }
+      });
+    }, 350);
+  },[navContext.romHighlight, navContext.romHighlights]);
   const [selected,setSelected]=useState(null);
   const [showSoap,setShowSoap]=useState(false);
   const [mode,setMode]=useState("arom"); // arom | prom | resisted
@@ -1183,15 +1194,25 @@ function MMTModule({data,set,navContext={}}){
   },[navContext.mmtRegion]);
 
   React.useEffect(()=>{
-    if(navContext.mmtHighlight && mmtHlRef.current[navContext.mmtHighlight]){
-      const el = mmtHlRef.current[navContext.mmtHighlight];
-      setTimeout(()=>{
-        el.scrollIntoView({ behavior:"smooth", block:"center" });
-        el.classList.add("physio-highlight");
-        setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
-      }, 350);
-    }
-  },[navContext.mmtHighlight]);
+    // Support both single mmtHighlight and array mmtHighlights
+    const targets = navContext.mmtHighlights
+      ? navContext.mmtHighlights
+      : navContext.mmtHighlight
+        ? [navContext.mmtHighlight]
+        : [];
+    if(targets.length === 0) return;
+    setTimeout(()=>{
+      let scrolled = false;
+      targets.forEach((id) => {
+        const el = mmtHlRef.current[id];
+        if(el){
+          if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
+          el.classList.add("physio-highlight");
+          setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+        }
+      });
+    }, 350);
+  },[navContext.mmtHighlight, navContext.mmtHighlights]);
   const [selected,setSelected]=useState(null);
   const [showInterp,setShowInterp]=useState(false);
 
