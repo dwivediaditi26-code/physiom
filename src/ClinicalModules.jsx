@@ -6797,46 +6797,77 @@ function LiveSOAPPanel({ data, onNavigate }) {
   };
 
   if (!open) {
+    const isMobilePill = typeof window !== "undefined" && window.innerWidth <= 480;
+    const mobilePillStyle = isMobilePill ? {
+      position:"fixed", bottom:0, left:0, right:0, zIndex:9999,
+      display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+      background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+      border:"none", borderTop:"2px solid rgba(255,255,255,0.15)",
+      borderRadius:"12px 12px 0 0",
+      padding:"12px 20px",
+      color:"#fff", cursor:"pointer",
+      boxShadow:"0 -4px 20px rgba(124,58,237,0.35)",
+      fontSize:"0.8rem", fontWeight:800, letterSpacing:"0.3px",
+    } : pillStyle;
+
     return (
-      <button onClick={()=>setOpen(true)} style={pillStyle} title="Open Live SOAP Panel">
-        <span style={{fontSize:"1rem"}}>📋</span>
+      <button onClick={()=>setOpen(true)} style={mobilePillStyle} title="Open Live SOAP Panel">
+        <span style={{fontSize:isMobilePill?"1.1rem":"1rem"}}>📋</span>
         <span>Live SOAP</span>
         {hasContent && (
           <span style={{
             background:"rgba(255,255,255,0.25)", borderRadius:10,
-            padding:"1px 7px", fontSize:"0.62rem", fontWeight:800
-          }}>{totalFilled}</span>
+            padding:"2px 8px", fontSize:"0.65rem", fontWeight:800
+          }}>{totalFilled} fields</span>
         )}
       </button>
     );
   }
 
   // ── Expanded panel ───────────────────────────────────────────────────────
+  // Detect mobile: screen width <= 480px
+  const isMobile = typeof window !== "undefined" && window.innerWidth <= 480;
+
   return (
     <div style={{
       position:"fixed", bottom:0, right:0, zIndex:9999,
-      width: minimal ? 260 : 380,
-      maxHeight:"92vh",
+      // Mobile: full width, max 72vh so header is always visible
+      // Desktop: fixed 380px wide
+      width: isMobile ? "100vw" : (minimal ? 260 : 380),
+      maxHeight: isMobile ? "72vh" : "92vh",
       display:"flex", flexDirection:"column",
       background:"#ffffff",
       border:"1px solid rgba(124,58,237,0.2)",
       borderBottom:"none",
-      borderRadius:"16px 16px 0 0",
+      borderRadius: isMobile ? "16px 16px 0 0" : "16px 16px 0 0",
       boxShadow:"0 -4px 32px rgba(124,58,237,0.18)",
       overflow:"hidden",
-      transition:"width 0.2s",
+      transition:"width 0.2s, max-height 0.2s",
+      left: isMobile ? 0 : "auto",
     }}>
+
+      {/* ── Drag handle (mobile only) — tap to close ─────────────────────── */}
+      {isMobile && (
+        <div onClick={()=>setOpen(false)} style={{
+          display:"flex", justifyContent:"center", alignItems:"center",
+          padding:"8px 0 4px",
+          background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+          cursor:"pointer", flexShrink:0,
+        }}>
+          <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,0.5)"}}/>
+        </div>
+      )}
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div style={{
         background:"linear-gradient(135deg,#7c3aed,#9333ea)",
-        padding:"10px 14px",
+        padding: isMobile ? "8px 14px" : "10px 14px",
         display:"flex", alignItems:"center", gap:8,
         flexShrink:0,
       }}>
         <span style={{fontSize:"1rem"}}>📋</span>
         <span style={{flex:1, fontSize:"0.75rem", fontWeight:800, color:"#fff", letterSpacing:"0.3px"}}>
-          Live SOAP Documentation
+          Live SOAP
         </span>
         {/* Live indicator */}
         <div style={{display:"flex",alignItems:"center",gap:4}}>
@@ -6848,10 +6879,18 @@ function LiveSOAPPanel({ data, onNavigate }) {
           }}/>
           <span style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.8)",fontWeight:700}}>LIVE</span>
         </div>
-        <button onClick={()=>setMinimal(m=>!m)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:6,color:"#fff",padding:"3px 7px",cursor:"pointer",fontSize:"0.6rem",fontWeight:700}}>
-          {minimal?"⬆":"⬇"}
-        </button>
-        <button onClick={()=>setOpen(false)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:6,color:"#fff",padding:"3px 8px",cursor:"pointer",fontSize:"0.7rem",fontWeight:700}}>
+        {!isMobile && (
+          <button onClick={()=>setMinimal(m=>!m)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:6,color:"#fff",padding:"3px 7px",cursor:"pointer",fontSize:"0.6rem",fontWeight:700}}>
+            {minimal?"⬆":"⬇"}
+          </button>
+        )}
+        <button onClick={()=>setOpen(false)} style={{
+          background:"rgba(255,255,255,0.2)", border:"none", borderRadius:6,
+          color:"#fff", padding: isMobile ? "5px 10px" : "3px 8px",
+          cursor:"pointer", fontSize: isMobile ? "0.9rem" : "0.7rem", fontWeight:700,
+          minWidth: isMobile ? 36 : "auto", minHeight: isMobile ? 36 : "auto",
+          display:"flex", alignItems:"center", justifyContent:"center",
+        }}>
           ✕
         </button>
       </div>

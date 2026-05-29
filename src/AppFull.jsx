@@ -11078,13 +11078,7 @@ function AppInner() {
             )}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:7,flexShrink:0}}>
-            {/* Fields badge */}
-            {completedCount>0&&(
-              <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",background:PC.accentSoft||"rgba(56,189,248,0.1)",border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:20}}>
-                <span style={{fontSize:"0.62rem",color:PC.accent,fontWeight:700}}>{completedCount}</span>
-                <span style={{fontSize:"0.58rem",color:PC.muted,fontWeight:600,letterSpacing:"0.3px"}}>fields</span>
-              </div>
-            )}
+
             {/* Red flag indicator */}
             {hasRedFlags && (
               <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:urgentFlags.length>0?"rgba(248,113,113,0.12)":"rgba(251,191,36,0.1)",border:`1px solid ${urgentFlags.length>0?"rgba(248,113,113,0.3)":"rgba(251,191,36,0.3)"}`,borderRadius:20}}>
@@ -11097,12 +11091,8 @@ function AppInner() {
               <span style={{fontSize:"0.85rem"}}>👥</span>
               <span>{patients.length} Patients</span>
             </button>
-            {/* Theme toggle */}
-            <button onClick={toggleTheme} title={theme==="dark"?"Light Mode":"Dark Mode"}
-              style={{width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,cursor:"pointer",fontSize:"0.9rem"}}>
-              {theme==="dark"?"☀️":"🌙"}
-            </button>
-            <button onClick={()=>setShowJsonPanel(true)} style={{width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.green,fontWeight:800,fontSize:"0.85rem",cursor:"pointer"}}>💾</button>
+
+
             <button onClick={()=>setShowPdfReports(true)} title="Generate PDF Reports" style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",background:"linear-gradient(135deg,rgba(220,38,38,0.12),rgba(185,28,28,0.08))",border:"1px solid rgba(220,38,38,0.3)",borderRadius:9,color:"#dc2626",fontWeight:800,fontSize:"0.72rem",cursor:"pointer",whiteSpace:"nowrap"}}>
               <span>📄</span><span>Reports</span>
             </button>
