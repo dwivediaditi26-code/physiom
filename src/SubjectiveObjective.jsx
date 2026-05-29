@@ -1643,7 +1643,8 @@ function cyriaxAutoReason(regionId, data) {
 }
 
 // ─── CYRIAX MODULE COMPONENT ─────────────────────────────────────────────────
-function CyriaxModule({ data, set }) {
+function CyriaxModule({ data, set, navContext={} }) {
+  const cyriaxHlRef = React.useRef({});
   const [region, setRegion] = useState("shoulder");
   const [tab, setTab] = useState("active");
   const [reasoning, setReasoning] = useState(null);
@@ -1651,6 +1652,34 @@ function CyriaxModule({ data, set }) {
 
   const reg = CYRIAX_REGIONS_DATA[region];
   const prefix = `cyriax_${region}_`;
+
+  // Deep-link: switch region+tab, scroll+highlight specific movement cards
+  React.useEffect(()=>{
+    const targets = navContext.cyriaxHighlights
+      ? navContext.cyriaxHighlights
+      : navContext.cyriaxHighlight ? [navContext.cyriaxHighlight] : [];
+    if(!targets.length) return;
+    // Infer region + tab from first target ID prefix
+    const first = targets[0];
+    const regionMap = { cx:"cervical", sh:"shoulder", el:"elbow", wr:"wrist_hand" };
+    const tabMap = { a:"active", p:"passive", r:"resisted", jp:"joint_play" };
+    const parts = first.split("_");  // e.g. "sh_a_abd" → ["sh","a","abd"]
+    const inferredRegion = regionMap[parts[0]] || region;
+    const inferredTab = tabMap[parts[1]] || "active";
+    setRegion(inferredRegion);
+    setTab(inferredTab);
+    setTimeout(()=>{
+      let scrolled = false;
+      targets.forEach(id => {
+        const el = cyriaxHlRef.current[id];
+        if(el){
+          if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
+          el.classList.add("physio-highlight");
+          setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+        }
+      });
+    }, 500);
+  },[navContext.cyriaxHighlight, navContext.cyriaxHighlights]);
   const v = (id) => data[prefix + id] || "";
   const sv = (id, val) => set(prefix + id, val);
 
@@ -1721,7 +1750,7 @@ function CyriaxModule({ data, set }) {
             </div>
 
             {reg.activeROM.map(t => (
-              <div key={t.id} style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:9, padding:12, marginBottom:9 }}>
+              <div key={t.id} ref={el=>{if(el)cyriaxHlRef.current[t.id]=el;}} style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:9, padding:12, marginBottom:9 }}>
                 <div style={{ fontWeight:700, color:C.text, marginBottom:6, fontSize:"0.82rem" }}>{t.label} <span style={{ color:C.muted, fontWeight:400, fontSize:"0.72rem" }}>Normal: {t.normal}</span></div>
                 <div style={{ background:C.s3, borderRadius:7, padding:9, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6 }}>
                   <strong style={{ color:C.yellow }}>How: </strong>{t.how}
@@ -1788,7 +1817,7 @@ function CyriaxModule({ data, set }) {
             </div>
 
             {reg.passiveROM.map(t => (
-              <div key={t.id} style={{ ...boxStyle }}>
+              <div key={t.id} ref={el=>{if(el)cyriaxHlRef.current[t.id]=el;}} style={{ ...boxStyle }}>
                 <div style={{ fontWeight:700, color:C.text, marginBottom:6, fontSize:"0.82rem" }}>{t.label}</div>
                 <div style={{ background:C.s3, borderRadius:7, padding:9, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6 }}>
                   <strong style={{ color:C.yellow }}>Method: </strong>{t.how}
@@ -2932,6 +2961,8 @@ const REGION_NAV = {
     { label:"Posture Analysis",   icon:"🧍", nav:"posture", ctx:{ region:"Cervical" },                                                                col:"#059669", why:"CVA, forward head, thoracic kyphosis — all increase cervical loading. Assess before treating." },
     { label:"NKT Assessment",     icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition → SCM/scalene dominance → FHP maintained. NKT identifies the exact inhibitor." },
     { label:"Kinetic Chain",      icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_cervical_thoracic_jct"] }, col:"#7c3aed", why:"Thoracic kyphosis is the primary driver of cervical loading. Address thoracic before cervical." },
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_a_rotl","cx_a_rotr","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Selective tissue tension — differentiate contractile vs non-contractile cervical pain source." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Cervical fascial lines — skin rolling and passive tension identify SBL and thoracolumbar restriction." },
   ],
   "Lumbar / SI": [
     { label:"Lumbar ROM",           icon:"📐", nav:"rom",    ctx:{ romRegion:"Lumbar", romHighlights:["rom_lflex","rom_lext","rom_llfl","rom_llfr","rom_lrotl","rom_lrotr"] },                                     col:"#9333ea", why:"Lumbar flexion — establishes direction of pain provocation. McKenzie: flexion or extension preference?" },
@@ -2944,6 +2975,8 @@ const REGION_NAV = {
     { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fmaTests:["squat","bend","single_leg"], fmaHighlights:["squat","bend","single_leg"] }, col:"#059669", why:"Forward bend — observe hip hinge vs lumbar flexion. Squat — global lower chain. Single-leg — SIJ control." },
   ],
   "Shoulder (L)": [
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Lumbar Cyriax — disc vs facet differentiation via contractile/non-contractile tissue tension testing." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring","fa_tlf"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia is the primary fascial structure linking lumbar extensors to contralateral shoulder." },
     { label:"Shoulder ROM",         icon:"📐", nav:"rom",    ctx:{ romRegion:"Shoulder", romHighlights:["rom_sabd","rom_ser","rom_sflex","rom_sir","rom_sext","rom_sadd"] }, col:"#9333ea", why:"Painful arc 60-120° = subacromial. Full loss = capsular. Immediate clinical differentiator." },
 
     { label:"Shoulder MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_supra","mmt_infra","mmt_serratus","mmt_trapL","mmt_subscap"] },                         col:"#7c3aed", why:"Supraspinatus — initiates abduction 0-30°. Most common RC tear location. Empty can position." },
@@ -2954,6 +2987,8 @@ const REGION_NAV = {
     { label:"Push-Up Plus FMA",    icon:"🏃", nav:"fma",     ctx:{ fmaTests:["pushup_plus","overhead","upper_reach"], fmaHighlights:["pushup_plus","overhead","upper_reach"] }, col:"#059669", why:"Push-up plus — best functional screen for serratus anterior. Scapular winging visible immediately." },
   ],
   "Shoulder (R)": [
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
     { label:"Shoulder ROM",         icon:"📐", nav:"rom",    ctx:{ romRegion:"Shoulder", romHighlights:["rom_sabd","rom_ser","rom_sflex","rom_sir","rom_sext","rom_sadd"] }, col:"#9333ea", why:"Painful arc 60-120° = subacromial. Full loss = capsular. Primary ROM differentiator." },
 
     { label:"Shoulder MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_supra","mmt_infra","mmt_serratus","mmt_trapL","mmt_subscap"] },                         col:"#7c3aed", why:"Supraspinatus — most common RC tear site. Empty can test position." },
@@ -2965,6 +3000,8 @@ const REGION_NAV = {
   ],
   "Knee (L)": [
     { label:"Knee ROM",             icon:"📐", nav:"rom",    ctx:{ romRegion:"Knee", romHighlights:["rom_kflex","rom_kext"] },                          col:"#9333ea", why:"Knee flexion loss indicates joint effusion, posterior capsule tightness, or meniscal block. Measure first." },
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
     { label:"Knee MMT",             icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Knee", mmtHighlights:["mmt_quad","mmt_gastroc","mmt_poplit"] },           col:"#7c3aed", why:"VMO inhibition is the primary driver of PFJ maltracking. Single most important knee MMT." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmed","mmt_gmax","mmt_tfl","mmt_adduc","mmt_gmin"] }, col:"#7c3aed", why:"Glute med weakness drives dynamic knee valgus — assess proximal before isolating the knee." },
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Best ACL test at 20-30° flexion. Run before pivot shift." },
@@ -2974,6 +3011,7 @@ const REGION_NAV = {
   ],
   "Knee (R)": [
     { label:"Knee ROM",             icon:"📐", nav:"rom",    ctx:{ romRegion:"Knee", romHighlights:["rom_kflex","rom_kext"] },                          col:"#9333ea", why:"Flexion loss indicates effusion, capsule tightness, or meniscal block." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL posterior chain — hamstring and IT band fascial restriction drives patellofemoral and knee pain patterns." },
     { label:"Knee MMT",             icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Knee", mmtHighlights:["mmt_quad","mmt_gastroc","mmt_poplit"] },           col:"#7c3aed", why:"VMO inhibition drives PFJ maltracking. Primary knee MMT." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmed","mmt_gmax","mmt_tfl","mmt_adduc","mmt_gmin"] }, col:"#7c3aed", why:"Proximal hip abductor weakness drives dynamic valgus — always assess before knee." },
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Gold standard test at 20-30° flexion." },
@@ -2983,6 +3021,7 @@ const REGION_NAV = {
   ],
   "Hip / Groin": [
     { label:"Hip ROM",              icon:"📐", nav:"rom",    ctx:{ romRegion:"Hip", romHighlights:["rom_hir","rom_her","rom_hflex","rom_hext","rom_habd","rom_hadd"] },                                          col:"#9333ea", why:"IR most restricted in hip OA (capsular pattern: IR > ER > abduction). FADIR reproduces impingement." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL posterior chain — hamstring and IT band fascial restriction drives patellofemoral and knee pain patterns." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmax","mmt_gmed","mmt_tfl","mmt_adduc","mmt_psoas"] },                                col:"#7c3aed", why:"Glute max — primary hip stabiliser and load transfer muscle. Prone hip extension with knee bent." },
     { label:"FADIR Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_fadir_test" },                              col:"#0891b2", why:"FADIR — hip impingement (FAI) provocation. Flexion + adduction + IR reproduces anterior groin pain." },
     { label:"FABER Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" },                              col:"#0891b2", why:"FABER — hip, SIJ, and adductor provocation. Figure-4 position stresses all three simultaneously." },
@@ -2991,6 +3030,7 @@ const REGION_NAV = {
   ],
   "Ankle / Foot": [
     { label:"Ankle ROM",            icon:"📐", nav:"rom",    ctx:{ romRegion:"Ankle", romHighlights:["rom_adf","rom_apf","rom_ainv","rom_aev"] },                                        col:"#9333ea", why:"Dorsiflexion — <35° weight-bearing is clinically significant. Primary kinetic chain driver." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring"] }, col:"#059669", why:"Hip and lumbar fascial lines — TLF and SBL restriction commonly present with hip flexor and posterior chain tightness." },
     { label:"Ankle MMT",            icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Ankle & Foot", mmtHighlights:["mmt_tp","mmt_ta","mmt_soleus","mmt_peronls","mmt_ehl"] },                                  col:"#7c3aed", why:"Tibialis posterior — medial arch controller. Weakness = pronation, tibial IR, knee valgus cascade." },
     { label:"Anterior Drawer",     icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_ant_drawer_ankle" },                 col:"#0891b2", why:"Anterior drawer — ATFL integrity. Most commonly injured ankle ligament. 73% sensitivity." },
     { label:"Thompson Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_thompson_test" },                    col:"#0891b2", why:"Thompson test — Achilles tendon rupture screen. 96% sensitivity. Squeeze calf = plantarflexion response." },
@@ -3000,6 +3040,7 @@ const REGION_NAV = {
   ],
   "Elbow/Wrist/Hand": [
     { label:"Elbow / Wrist ROM",   icon:"📐", nav:"rom",    ctx:{ romRegion:"Elbow", romHighlights:["rom_eflex","rom_eext","rom_esup","rom_epro","rom_wflex","rom_wext"] },                                      col:"#9333ea", why:"Elbow flexion/extension, forearm sup/pro — establish mobility baseline and end-feel quality." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL and plantar fascia — posterior chain restriction from hamstring to plantar fascia drives ankle/foot pain." },
     { label:"Elbow / Wrist MMT",   icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Wrist & Hand", mmtHighlights:["mmt_ecrb","mmt_fcr","mmt_bicep","mmt_tricep","mmt_brachio"] },                                col:"#7c3aed", why:"ECRB — primary lateral epicondylalgia culprit. Test in elbow extension for maximum provocation." },
     { label:"Cozen's Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_cozens" },                          col:"#0891b2", why:"Cozen's — lateral epicondylalgia provocation. Resisted wrist extension with pronation. High specificity." },
     { label:"Phalen's Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_phalen" },                          col:"#0891b2", why:"Phalen's — carpal tunnel screen. 68% sensitivity. Wrist flexion 60s reproduces median nerve symptoms." },
@@ -3009,6 +3050,7 @@ const REGION_NAV = {
   ],
   "Thoracic spine": [
     { label:"Thoracic ROM",          icon:"📐", nav:"rom",   ctx:{ romRegion:"Thoracic", romHighlights:["rom_throtl","rom_throtr","rom_thflex","rom_thext"] },                                  col:"#9333ea", why:"Thoracic rotation — most clinically significant thoracic ROM. <30° bilateral = significant restriction." },
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["el_a_flex","el_a_ext","el_r_wext","el_r_wflex","el_r_grip","wr_r_ext","wr_r_flex"] }, col:"#f59e0b", why:"Elbow/wrist Cyriax — resisted wrist extension = lateral epicondylalgia; resisted grip differentiates tendon pathology." },
     { label:"Thoracic MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_trapL","mmt_trapM","mmt_serratus","mmt_trapU","mmt_rhomb"] },                         col:"#7c3aed", why:"Lower trapezius — scapular depression and posterior tilt. Weakness = shoulder and thoracic impingement driver." },
     { label:"Posture Analysis",    icon:"🧍", nav:"posture", ctx:{ region:"Thoracic" },                                                               col:"#059669", why:"Kyphosis angle, scoliotic curve, rib symmetry, scapular position — thoracic posture drives all chains above and below." },
     { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_scapulohumeral_rhythm"] }, col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
@@ -3017,6 +3059,7 @@ const REGION_NAV = {
   ],
 };
 
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_densification","fa_sbl_hamstring"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia links lumbar extensors to contralateral shoulder girdle." },
 function runEngineV6(data, selectedRegions) {
   if (!selectedRegions || selectedRegions.length === 0) return null;
 
@@ -8427,12 +8470,37 @@ function FasciaBodyMap({ selected, onSelect }) {
 }
 
 // ─── FASCIA SECTION COMPONENT ────────────────────────────────────────────────
-function FasciaSection({ data, set }) {
+function FasciaSection({ data, set, navContext={} }) {
+  const fasciaHlRef = React.useRef({});
   const [region, setRegion] = useState("screening");
   const [openTest, setOpenTest] = useState(null);
   const [modalTest, setModalTest] = useState(null);
   const [selectedLine, setSelectedLine] = useState(null);
   const reg = FASCIA_REGIONS_DATA[region];
+
+  // Deep-link: switch to relevant region and highlight test cards
+  React.useEffect(()=>{
+    const targets = navContext.fasciaHighlights
+      ? navContext.fasciaHighlights
+      : navContext.fasciaHighlight ? [navContext.fasciaHighlight] : [];
+    if(!targets.length) return;
+    // Infer region from target ID
+    const first = targets[0];
+    if(first.includes("sbl")||first.includes("sfl")||first.includes("tlf")) setRegion("sbl_sfl");
+    else setRegion("screening");
+    setTimeout(()=>{
+      let scrolled=false;
+      targets.forEach(id=>{
+        const el = fasciaHlRef.current[id];
+        if(el){
+          if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
+          el.classList.add("physio-highlight");
+          setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+        }
+      });
+    }, 450);
+  },[navContext.fasciaHighlight, navContext.fasciaHighlights]);
+
   return (
     <div>
       <FasciaBodyMap selected={selectedLine} onSelect={setSelectedLine} />
@@ -8450,7 +8518,7 @@ function FasciaSection({ data, set }) {
         const currentOption=t.options.find(o=>o.val===currentVal);
         const isOpen=openTest===t.id;
         return (
-          <div key={t.id} style={{background:C.surface,border:`1px solid ${currentVal?reg.color+"40":C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
+          <div key={t.id} ref={el=>{if(el)fasciaHlRef.current[t.id]=el;}} style={{background:C.surface,border:`1px solid ${currentVal?reg.color+"40":C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
             <div onClick={()=>setOpenTest(isOpen?null:t.id)} style={{padding:"12px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}`}}>
               <div style={{flex:1}}>
                 <div style={{display:"flex",gap:7,alignItems:"center",marginBottom:3}}>

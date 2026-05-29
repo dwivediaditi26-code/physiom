@@ -11292,7 +11292,7 @@ function AppInner() {
               ):tests==="POSTURE_DEFECT_MODULE"?(
                 <PostureDefectModule/>
               ):tests==="CYRIAX_MODULE"?(
-                <CyriaxModule data={data} set={set}/>
+                <CyriaxModule data={data} set={set} navContext={active==="cyriax"?navContext:{}}/>
               ):tests==="SPECIAL_TESTS_MODULE"?(
                 <SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
               ):tests==="NKT_REGION"?(
@@ -11300,7 +11300,7 @@ function AppInner() {
               ):tests==="FMA_REGION"?(
                 <FMASection data={data} set={set} navContext={active==="fma"?navContext:{}}/>
               ):tests==="FASCIA_REGION"?(
-                <FasciaSection data={data} set={set}/>
+                <FasciaSection data={data} set={set} navContext={active==="fascia"?navContext:{}}/>
               ):tests==="KC_REGION"?(
                 <KineticChainSection data={data} set={set} navContext={active==="kinetic"?navContext:{}}/>
               ):tests==="CYRIAX_REGION"?(
