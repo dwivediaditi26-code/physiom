@@ -1617,7 +1617,6 @@ function CollapsibleHow({ title, children }) {
 }
 
 function NeurologicalModule({ data, set, navContext={} }) {
-  const neuroHlRef = React.useRef({});
   const [tab, setTab] = useState("dermatomes");
   const [expandedLevel, setExpandedLevel] = useState(null);
   const [expandedTest, setExpandedTest] = useState(null);
@@ -1639,7 +1638,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
     setTimeout(()=>{
       let scrolled=false;
       targets.forEach(id=>{
-        const el=neuroHlRef.current[id];
+        const el=document.querySelector(`[data-neuro-id="${id}"]`);
         if(el){ if(!scrolled){el.scrollIntoView({behavior:"smooth",block:"center"});scrolled=true;}
           el.classList.add("physio-highlight"); setTimeout(()=>el.classList.remove("physio-highlight"),4000); }
       });
@@ -1840,7 +1839,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
             const lCol=getSensoryColor(lv), rCol=getSensoryColor(rv);
             const abnormal=(lv&&lv!=="Normal")||(rv&&rv!=="Normal");
             return(
-              <div key={d.id} ref={el=>{if(el)neuroHlRef.current[d.id]=el;}} style={{background:C.surface,border:`1px solid ${abnormal?C.red+"50":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
+              <div key={d.id} data-neuro-id={d.id} style={{background:C.surface,border:`1px solid ${abnormal?C.red+"50":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8,flexWrap:"wrap"}}>
                   <div>
                     <span style={{fontWeight:800,color:abnormal?C.red:C.accent,marginRight:8}}>{d.level}</span>

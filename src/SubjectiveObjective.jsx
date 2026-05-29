@@ -1644,8 +1644,7 @@ function cyriaxAutoReason(regionId, data) {
 
 // ─── CYRIAX MODULE COMPONENT ─────────────────────────────────────────────────
 function CyriaxModule({ data, set, navContext={} }) {
-  const cyriaxHlRef = React.useRef({});
-  const [region, setRegion] = useState("shoulder");
+    const [region, setRegion] = useState("shoulder");
   const [tab, setTab] = useState("active");
   const [reasoning, setReasoning] = useState(null);
   const [showRed, setShowRed] = useState(false);
@@ -1671,7 +1670,7 @@ function CyriaxModule({ data, set, navContext={} }) {
     setTimeout(()=>{
       let scrolled = false;
       targets.forEach(id => {
-        const el = cyriaxHlRef.current[id];
+        const el = document.querySelector(`[data-cy-id="${id}"]`);
         if(el){
           if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
           el.classList.add("physio-highlight");
@@ -1750,7 +1749,7 @@ function CyriaxModule({ data, set, navContext={} }) {
             </div>
 
             {reg.activeROM.map(t => (
-              <div key={t.id} ref={el=>{if(el)cyriaxHlRef.current[t.id]=el;}} style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:9, padding:12, marginBottom:9 }}>
+              <div key={t.id} data-cy-id={t.id} style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:9, padding:12, marginBottom:9 }}>
                 <div style={{ fontWeight:700, color:C.text, marginBottom:6, fontSize:"0.82rem" }}>{t.label} <span style={{ color:C.muted, fontWeight:400, fontSize:"0.72rem" }}>Normal: {t.normal}</span></div>
                 <div style={{ background:C.s3, borderRadius:7, padding:9, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6 }}>
                   <strong style={{ color:C.yellow }}>How: </strong>{t.how}
@@ -1817,7 +1816,7 @@ function CyriaxModule({ data, set, navContext={} }) {
             </div>
 
             {reg.passiveROM.map(t => (
-              <div key={t.id} ref={el=>{if(el)cyriaxHlRef.current[t.id]=el;}} style={{ ...boxStyle }}>
+              <div key={t.id} data-cy-id={t.id} style={{ ...boxStyle }}>
                 <div style={{ fontWeight:700, color:C.text, marginBottom:6, fontSize:"0.82rem" }}>{t.label}</div>
                 <div style={{ background:C.s3, borderRadius:7, padding:9, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6 }}>
                   <strong style={{ color:C.yellow }}>Method: </strong>{t.how}
@@ -5884,8 +5883,7 @@ const KC_REGIONS = {
 
 // ─── KINETIC CHAIN SECTION COMPONENT ─────────────────────────────────────────
 function KineticChainSection({ data, set, navContext={} }) {
-  const kcHlRef = React.useRef({});
-  const [region, setRegion] = useState(navContext.kcRegion||"foot_ankle");
+    const [region, setRegion] = useState(navContext.kcRegion||"foot_ankle");
   React.useEffect(()=>{ if(navContext.kcRegion) setRegion(navContext.kcRegion); },[navContext.kcRegion]);
   React.useEffect(()=>{
     const targets=navContext.kcHighlights?navContext.kcHighlights:navContext.kcHighlight?[navContext.kcHighlight]:[];
@@ -5893,7 +5891,7 @@ function KineticChainSection({ data, set, navContext={} }) {
     setTimeout(()=>{
       let scrolled=false;
       targets.forEach(id=>{
-        const el=kcHlRef.current[id];
+        const el=document.querySelector(`[data-kc-id="${id}"]`);
         if(el){ if(!scrolled){el.scrollIntoView({behavior:"smooth",block:"center"});scrolled=true;}
           el.classList.add("physio-highlight"); setTimeout(()=>el.classList.remove("physio-highlight"),4000); }
       });
@@ -5952,7 +5950,7 @@ function KineticChainSection({ data, set, navContext={} }) {
         const isOpen = openTest === t.id;
 
         return (
-          <div key={t.id} ref={el=>{if(el)nktHlRef.current[t.id]=el;}} style={{ background:C.surface, border:`1px solid ${currentVal?reg.color+"40":C.border}`, borderRadius:12, marginBottom:10, overflow:"hidden" }}>
+          <div key={t.id} data-kc-id={t.id} style={{ background:C.surface, border:`1px solid ${currentVal?reg.color+"40":C.border}`, borderRadius:12, marginBottom:10, overflow:"hidden" }}>
             {/* Header */}
             <div onClick={()=>setOpenTest(isOpen?null:t.id)}
               style={{ padding:"12px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}` }}>
@@ -7811,8 +7809,7 @@ function loadFMSReport(){try{return JSON.parse(localStorage.getItem(FMS_STORAGE_
 function saveFMSReport(r){try{localStorage.setItem(FMS_STORAGE_KEY2,JSON.stringify(r));}catch{}}
 
 function FMASection({ navContext={} }){
-  const fmaHlRef = React.useRef({});
-  const [selectedTests,setSelectedTests]=useState(()=>{
+    const [selectedTests,setSelectedTests]=useState(()=>{
     const saved=loadFMSReport();
     return Object.keys(saved).length>0?Object.keys(saved):[];
   });
@@ -7875,7 +7872,7 @@ function FMASection({ navContext={} }){
     setTimeout(()=>{
       let scrolled=false;
       targets.forEach(id=>{
-        const el=fmaHlRef.current[id];
+        const el=document.querySelector(`[data-fma-id="${id}"]`);
         if(el){ if(!scrolled){el.scrollIntoView({behavior:"smooth",block:"center"});scrolled=true;}
           el.classList.add("physio-highlight"); setTimeout(()=>el.classList.remove("physio-highlight"),4000); }
       });
@@ -7927,7 +7924,7 @@ function FMASection({ navContext={} }){
               const defCount=getTestDefects(id).length;
               const score=scores[id];
               return(
-                <div key={id} ref={el=>{if(el)fmaHlRef.current[id]=el;}} onClick={()=>toggleTest(id)}
+                <div key={id} data-fma-id={id} onClick={()=>toggleTest(id)}
                   style={{padding:"11px 12px",borderRadius:10,border:`2px solid ${sel?C.accent:C.border}`,background:sel?"rgba(0,229,255,0.08)":C.s2,cursor:"pointer",transition:"all 0.15s",position:"relative"}}>
                   {sel&&<div style={{position:"absolute",top:6,right:8,width:16,height:16,borderRadius:"50%",background:C.accent,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"#000",fontSize:"0.6rem",fontWeight:900}}>✓</span></div>}
                   <div style={{fontSize:"1.4rem",marginBottom:4}}>{test.icon}</div>
@@ -8470,8 +8467,7 @@ function FasciaBodyMap({ selected, onSelect }) {
 
 // ─── FASCIA SECTION COMPONENT ────────────────────────────────────────────────
 function FasciaSection({ data, set, navContext={} }) {
-  const fasciaHlRef = React.useRef({});
-  const [region, setRegion] = useState("screening");
+    const [region, setRegion] = useState("screening");
   const [openTest, setOpenTest] = useState(null);
   const [modalTest, setModalTest] = useState(null);
   const [selectedLine, setSelectedLine] = useState(null);
@@ -8490,7 +8486,7 @@ function FasciaSection({ data, set, navContext={} }) {
     setTimeout(()=>{
       let scrolled=false;
       targets.forEach(id=>{
-        const el = fasciaHlRef.current[id];
+        const el = document.querySelector(`[data-fa-id="${id}"]`);
         if(el){
           if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
           el.classList.add("physio-highlight");
@@ -8517,7 +8513,7 @@ function FasciaSection({ data, set, navContext={} }) {
         const currentOption=t.options.find(o=>o.val===currentVal);
         const isOpen=openTest===t.id;
         return (
-          <div key={t.id} ref={el=>{if(el)fasciaHlRef.current[t.id]=el;}} style={{background:C.surface,border:`1px solid ${currentVal?reg.color+"40":C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
+          <div key={t.id} data-fa-id={t.id} style={{background:C.surface,border:`1px solid ${currentVal?reg.color+"40":C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
             <div onClick={()=>setOpenTest(isOpen?null:t.id)} style={{padding:"12px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}`}}>
               <div style={{flex:1}}>
                 <div style={{display:"flex",gap:7,alignItems:"center",marginBottom:3}}>
@@ -8600,8 +8596,7 @@ function FasciaSection({ data, set, navContext={} }) {
 
 // ─── NKT REGION COMPONENT ────────────────────────────────────────────────────
 function NKTSection({ data, set, navContext={} }) {
-  const nktHlRef = React.useRef({});
-  const [region, setRegion] = useState(navContext.nktRegion||"cervical");
+    const [region, setRegion] = useState(navContext.nktRegion||"cervical");
   React.useEffect(()=>{ if(navContext.nktRegion) setRegion(navContext.nktRegion); },[navContext.nktRegion]);
   React.useEffect(()=>{
     const targets=navContext.nktHighlights?navContext.nktHighlights:navContext.nktHighlight?[navContext.nktHighlight]:[];
@@ -8609,7 +8604,7 @@ function NKTSection({ data, set, navContext={} }) {
     setTimeout(()=>{
       let scrolled=false;
       targets.forEach(id=>{
-        const el=nktHlRef.current[id];
+        const el=document.querySelector(`[data-nkt-id="${id}"]`);
         if(el){ if(!scrolled){el.scrollIntoView({behavior:"smooth",block:"center"});scrolled=true;}
           el.classList.add("physio-highlight"); setTimeout(()=>el.classList.remove("physio-highlight"),4000); }
       });
@@ -8642,7 +8637,7 @@ function NKTSection({ data, set, navContext={} }) {
         const currentOption = t.options.find(o=>o.val===currentVal);
         const isOpen = openTest === t.id;
         return (
-          <div key={t.id} ref={el=>{if(el)kcHlRef.current[t.id]=el;}} style={{ background:C.surface, border:`1px solid ${currentVal?reg.color+"40":C.border}`, borderRadius:12, marginBottom:10, overflow:"hidden" }}>
+          <div key={t.id} data-nkt-id={t.id} style={{ background:C.surface, border:`1px solid ${currentVal?reg.color+"40":C.border}`, borderRadius:12, marginBottom:10, overflow:"hidden" }}>
             {/* Header */}
             <div onClick={()=>setOpenTest(isOpen?null:t.id)}
               style={{ padding:"12px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}` }}>
