@@ -1616,7 +1616,8 @@ function CollapsibleHow({ title, children }) {
   );
 }
 
-function NeurologicalModule({ data, set }) {
+function NeurologicalModule({ data, set, navContext={} }) {
+  const neuroHlRef = React.useRef({});
   const [tab, setTab] = useState("dermatomes");
   const [expandedLevel, setExpandedLevel] = useState(null);
   const [expandedTest, setExpandedTest] = useState(null);
@@ -1624,6 +1625,26 @@ function NeurologicalModule({ data, set }) {
   const [showAsiaGuide, setShowAsiaGuide] = useState(false);
 
   const inp = { width:"100%", background:C.s3, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit" };
+
+  // Deep-link highlight: scroll to specific dermatome or neural test card
+  React.useEffect(()=>{
+    const targets=navContext.neuroHighlights?navContext.neuroHighlights:navContext.neuroHighlight?[navContext.neuroHighlight]:[];
+    if(!targets.length) return;
+    // Switch to correct tab
+    const first=targets[0];
+    if(first.startsWith("nt_")||first.startsWith("nrf_")) setTab("neural_tension");
+    else if(first.startsWith("gcs_")) setTab("gcs");
+    else if(first.startsWith("dtr_")) setTab("reflexes");
+    else setTab("dermatomes");
+    setTimeout(()=>{
+      let scrolled=false;
+      targets.forEach(id=>{
+        const el=neuroHlRef.current[id];
+        if(el){ if(!scrolled){el.scrollIntoView({behavior:"smooth",block:"center"});scrolled=true;}
+          el.classList.add("physio-highlight"); setTimeout(()=>el.classList.remove("physio-highlight"),4000); }
+      });
+    },500);
+  },[navContext.neuroHighlight,navContext.neuroHighlights]);
 
   const getSensoryColor = (val) => {
     if(!val||val==="") return C.muted;
@@ -1819,7 +1840,7 @@ function NeurologicalModule({ data, set }) {
             const lCol=getSensoryColor(lv), rCol=getSensoryColor(rv);
             const abnormal=(lv&&lv!=="Normal")||(rv&&rv!=="Normal");
             return(
-              <div key={d.id} style={{background:C.surface,border:`1px solid ${abnormal?C.red+"50":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
+              <div key={d.id} ref={el=>{if(el)neuroHlRef.current[d.id]=el;}} style={{background:C.surface,border:`1px solid ${abnormal?C.red+"50":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8,flexWrap:"wrap"}}>
                   <div>
                     <span style={{fontWeight:800,color:abnormal?C.red:C.accent,marginRight:8}}>{d.level}</span>
