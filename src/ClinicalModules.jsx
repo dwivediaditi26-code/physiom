@@ -6710,10 +6710,10 @@ function LiveSOAPPanel({ data, onNavigate }) {
   const [minimal, setMinimal] = React.useState(false); // compact pill mode
 
   // Build SOAP in real time — only when panel is open (perf)
+  // Always compute SOAP so ROM values update even before panel opens
   const soap = React.useMemo(() => {
-    if (!open) return null;
     return buildRealtimeSOAP(data);
-  }, [data, open]);
+  }, [data]);
 
   // Count filled fields per section for live badges
   const sectionCounts = React.useMemo(() => {
