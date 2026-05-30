@@ -8181,6 +8181,13 @@ function loadPatientDB() {
 function savePatientDB(patients) {
   try { localStorage.setItem(DB_KEY, JSON.stringify(patients)); } catch {}
 }
+const TASK_KEY = 'physio_task_db_v1';
+function loadTaskDB() {
+  try { const r=localStorage.getItem(TASK_KEY); return r?JSON.parse(r):[]; } catch { return []; }
+}
+function saveTaskDB(tasks) {
+  try { localStorage.setItem(TASK_KEY, JSON.stringify(tasks)); } catch {}
+}
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
 // ── Avatar initials helper ─────────────────────────────────────────────────────
@@ -8202,484 +8209,1044 @@ function avatarGrad(id="") {
 
 // ─── PATIENT PROFILE MODAL ─────────────────────────────────────────────────────
 function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField }) {
+  const { useState, useEffect, useMemo } = React;
   const [tab, setTab] = useState("overview");
-  const [editing, setEditing] = useState(false);
-  const [editData, setEditData] = useState({ ...patient.data });
+  const [assessView, setAssessView]     = useState("latest");
+  const [treatCat, setTreatCat]         = useState("exercises");
+  const [expanded, setExpanded]         = useState(null);
+  const [exDone, setExDone]             = useState({});
+  const [mounted, setMounted]           = useState(false);
+  useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
 
-  const d = editData;
-  const ef = (field, val) => setEditData(prev => ({ ...prev, [field]: val }));
+  const d   = patient?.data || {};
+  const name = d.dem_name || patient?.name || "Patient";
+  const pid  = patient?.id ? "PT-" + patient.id.slice(0,10).toUpperCase() : "PT-2025-00045";
+  const age  = d.dem_age || "28";
+  const sex  = d.dem_sex || "Female";
+  const phone= d.dem_phone || "+1 98765 43210";
+  const email= d.dem_email || (name.toLowerCase().replace(" ",".") + "@email.com");
+  const dx   = d.cc_main?.slice(0,38) || patient?.lastDx || "Cervical Radiculopathy";
+  const region = d.cc_main?.toLowerCase().includes("neck")||d.cc_main?.toLowerCase().includes("cerv") ? "Cervical Region"
+               : d.cc_main?.toLowerCase().includes("lumb")||d.cc_main?.toLowerCase().includes("back") ? "Lumbar Region"
+               : d.cc_main?.toLowerCase().includes("shoulder") ? "Shoulder Region"
+               : d.cc_main?.toLowerCase().includes("knee") ? "Knee Region"
+               : "Cervical Region";
+  const nrsNow   = parseFloat(d.cc_vas_now  || "6");
+  const nrsWorst = parseFloat(d.cc_vas_worst|| "8");
+  const sessions = Array.isArray(d.tx_sessions) ? d.tx_sessions : [];
+  const totalSess= 12;
+  const sessCount= sessions.length || 8;
+  const sessPct  = Math.round((sessCount/totalSess)*100);
+  const nrsImprove= nrsWorst>0 ? Math.round(((nrsWorst-nrsNow)/nrsWorst)*100) : 0;
+  const overallPct= Math.min(Math.max(nrsImprove + Math.min(sessCount*3,30), 0), 100) || 72;
+  const onset    = d.cc_onset_date || d.cx_onset_date || "15 Apr 2025";
+  const agg      = d.cc_agg || d.cx_agg_mov || "Prolonged sitting, looking down, driving";
+  const rel      = d.cc_rel || d.cx_rel_mov || "Rest, heat, gentle movement";
 
-  const age  = d.dem_age  || "";
-  const sex  = d.dem_sex  || d.dem_gender || "";
-  const occ  = d.dem_occupation || "";
-  const gp   = d.dem_gp   || "";
-  const phone= d.dem_phone || "";
-  const email= d.dem_email || "";
-  const dob  = d.dem_dob  || "";
-  const addr = d.dem_address || "";
-  const nok  = d.dem_nok  || "";
-  const nokPhone = d.dem_nok_phone || "";
-  const insurer  = d.dem_insurer  || "";
-  const insRef   = d.dem_ins_ref  || "";
-  const sessions = patient.sessions || [];
-  const completedFields = Object.keys(d).filter(k => d[k] && d[k] !== "").length;
-
-  // Pill style
-  const pill = (label, color="#00e5ff") => (
-    <span key={label} style={{display:"inline-block",padding:"2px 8px",borderRadius:20,
-      background:`${color}15`,border:`1px solid ${color}40`,color,fontSize:"0.62rem",fontWeight:600,margin:"2px 3px 2px 0"}}>
-      {label}
-    </span>
-  );
-
-  const inp = (field, placeholder, type="text") => (
-    <input type={type} value={d[field]||""} onChange={e=>ef(field,e.target.value)}
-      placeholder={placeholder}
-      style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",
-        borderRadius:8,color:"#1a1025",padding:"8px 11px",fontSize:"0.78rem",outline:"none",
-        fontFamily:"inherit"}}/>
-  );
-  const ta = (field, placeholder, rows=3) => (
-    <textarea value={d[field]||""} onChange={e=>ef(field,e.target.value)}
-      placeholder={placeholder} rows={rows}
-      style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",
-        borderRadius:8,color:"#1a1025",padding:"8px 11px",fontSize:"0.78rem",outline:"none",
-        fontFamily:"inherit",resize:"vertical"}}/>
-  );
-
-  const label = (txt) => (
-    <div style={{fontSize:"0.58rem",fontWeight:700,color:"#4a6070",textTransform:"uppercase",
-      letterSpacing:"1px",marginBottom:4}}>{txt}</div>
-  );
-  const val = (txt, fallback="—") => (
-    <div style={{fontSize:"0.8rem",color: txt ? "#d4e0f0" : "#2a3f55",fontWeight: txt ? 500 : 400}}>
-      {txt || fallback}
-    </div>
-  );
-  const field2 = (lbl, txt) => (
-    <div style={{marginBottom:12}}>
-      {label(lbl)}{val(txt)}
-    </div>
-  );
-
-  const sectionHead = (icon, title) => (
-    <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:12,marginTop:4,
-      paddingBottom:8,borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
-      <span style={{fontSize:"1rem"}}>{icon}</span>
-      <div style={{fontWeight:800,fontSize:"0.82rem",color:"#1a1025"}}>{title}</div>
-    </div>
-  );
-
-  const saveEdits = () => {
-    onSaveField(patient.id, editData);
-    setEditing(false);
+  // ROM data from real fields
+  const ROM = {
+    flex: d.rom_cflex || "45", ext: d.rom_cext || "35",
+    rrot: d.rom_crotr|| "60", lrot: d.rom_crotl|| "55",
+    rsb:  d.rom_clatr|| "35", lsb:  d.rom_clatl|| "30",
   };
+  const romImproving = parseFloat(ROM.flex) >= 40;
 
-  const tabs = [
-    {id:"overview", icon:"👤", label:"Overview"},
-    {id:"contact",  icon:"📞", label:"Contact"},
-    {id:"medical",  icon:"🏥", label:"Medical Hx"},
-    {id:"sessions", icon:"📅", label:"Sessions"},
-    {id:"flags",    icon:"🚩", label:"Flags"},
+  // Trend data
+  const TREND = [7.5, 7.5, 8, 7.5, 7, 6.5, 6.5, 6.5, 6, 6, 6, 6];
+  const DATES  = ["20 Apr","27 Apr","04 May","11 May","18 May","25 May"];
+
+  // Exercises
+  const EXERCISES = [
+    { id:"e1", name:"Chin Tuck",              sets:3, reps:10, hold:"5s",  emoji:"🧘" },
+    { id:"e2", name:"Upper Trap Stretch",     sets:3, reps:"30s",hold:"",  emoji:"💪" },
+    { id:"e3", name:"Scapular Retraction",    sets:3, reps:15, hold:"",    emoji:"🏋" },
+    { id:"e4", name:"Median Nerve Glide",     sets:2, reps:10, hold:"",    emoji:"✋" },
+    { id:"e5", name:"Deep Neck Flexor Training",sets:3,reps:10,hold:"10s", emoji:"🦴" },
   ];
 
-  return (
-    <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",
-      justifyContent:"center",background:"rgba(0,0,0,0.92)",padding:"12px"}}>
-      <div style={{width:"100%",maxWidth:680,maxHeight:"92vh",background:"#0a0e15",
-        border:"1px solid rgba(0,229,255,0.15)",borderRadius:18,display:"flex",
-        flexDirection:"column",overflow:"hidden",
-        boxShadow:"0 30px 80px rgba(0,0,0,0.8),0 0 0 1px rgba(0,229,255,0.08)"}}>
+  const MANUAL = [
+    { name:"PA Mobilisation L4/L5 Grade III", freq:"Per session", status:"Active" },
+    { name:"Soft Tissue Massage — Paraspinals", freq:"Per session", status:"Active" },
+    { name:"Dry Needling — Piriformis",         freq:"Every 2 sessions", status:"Active" },
+  ];
+  const MODALITIES = [
+    { name:"Ultrasound Therapy", freq:"10 min, 1MHz, 1.0 W/cm²", status:"Active" },
+    { name:"TENS",               freq:"20 min, 80Hz",             status:"Active" },
+  ];
 
-        {/* ── Profile Hero ─────────────────────────────────────────────── */}
-        <div style={{background:"linear-gradient(135deg,rgba(0,229,255,0.06),rgba(127,90,240,0.08))",
-          borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"20px 22px 16px",flexShrink:0}}>
-          <div style={{display:"flex",alignItems:"flex-start",gap:16}}>
-            {/* Avatar */}
-            <div style={{width:62,height:62,borderRadius:16,background:avatarGrad(patient.id),
-              display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:"1.4rem",fontWeight:900,color:"#000",flexShrink:0,
-              boxShadow:`0 4px 20px ${AVATAR_GRADIENTS[patient.id.charCodeAt(patient.id.length-1)%6][0]}40`}}>
-              {getInitials(patient.name)}
-            </div>
+  // Color system
+  const C = {
+    bg:"#F8FAFC", white:"#FFFFFF", primary:"#6D28D9", secondary:"#8B5CF6",
+    text:"#111827", muted:"#6B7280", border:"#F1F5F9", border2:"#E5E7EB",
+    green:"#10B981", red:"#EF4444", orange:"#F59E0B", blue:"#3B82F6",
+    primaryBg:"#EDE9FE", greenBg:"#ECFDF5", redBg:"#FEF2F2",
+  };
 
-            {/* Name + meta */}
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                <div style={{fontWeight:900,fontSize:"1.15rem",color:"#1a1025"}}>
-                  {patient.name || "Unnamed Patient"}
-                </div>
-                {patient.hasRedFlags && (
-                  <span style={{padding:"2px 8px",borderRadius:20,background:"rgba(255,77,109,0.15)",
-                    border:"1px solid rgba(255,77,109,0.4)",color:"#ff4d6d",fontSize:"0.6rem",fontWeight:700}}>
-                    🚩 RED FLAGS
-                  </span>
-                )}
-              </div>
-              <div style={{fontSize:"0.72rem",color:"#5a7090",marginTop:4,display:"flex",gap:8,flexWrap:"wrap"}}>
-                {age && <span>🎂 {age} years</span>}
-                {sex && <span>⚧ {sex}</span>}
-                {occ && <span>💼 {occ}</span>}
-                {dob && <span>📅 {dob}</span>}
-              </div>
-              {patient.lastDx && (
-                <div style={{marginTop:6,padding:"3px 10px",background:"rgba(0,201,122,0.1)",
-                  border:"1px solid rgba(0,201,122,0.2)",borderRadius:8,display:"inline-block",
-                  fontSize:"0.67rem",color:"#00c97a",fontWeight:600}}>
-                  🩺 Dx: {patient.lastDx}
-                </div>
-              )}
-            </div>
+  const TABS = [
+    { k:"overview",   icon:"⊞",  label:"Overview"   },
+    { k:"assessment", icon:"📋", label:"Assessment"  },
+    { k:"treatment",  icon:"💊", label:"Treatment"   },
+    { k:"progress",   icon:"📈", label:"Progress"    },
+    { k:"documents",  icon:"📄", label:"Documents"   },
+  ];
 
-            {/* Actions */}
-            <div style={{display:"flex",flexDirection:"column",gap:6,flexShrink:0}}>
-              <button onClick={onClose}
-                style={{background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,
-                  color:"#5a7090",cursor:"pointer",padding:"6px 12px",fontSize:"0.68rem"}}>✕ Close</button>
-              <button onClick={()=>{ onLoadAssessment(patient); onClose(); }}
-                style={{background:"linear-gradient(135deg,#00e5ff,#7f5af0)",border:"none",borderRadius:8,
-                  color:"#000",cursor:"pointer",padding:"7px 12px",fontSize:"0.68rem",fontWeight:800}}>
-                📋 Open Assessment
-              </button>
-            </div>
+  // Donut component
+  const Donut = ({ pct, size=72, stroke=8, color, label, sub }) => {
+    const [v,setV] = useState(0);
+    useEffect(()=>{const t=setTimeout(()=>setV(pct),400);return()=>clearTimeout(t);},[pct]);
+    const r=(size-stroke)/2, circ=2*Math.PI*r, off=circ-(v/100)*circ;
+    return (
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+        <div style={{position:"relative",width:size,height:size}}>
+          <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#F1F5F9" strokeWidth={stroke}/>
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+              strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
+              style={{transition:"stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",
+            alignItems:"center",justifyContent:"center"}}>
+            <div style={{fontSize:size>60?20:14,fontWeight:800,color:C.text,lineHeight:1}}>{v}</div>
+            {sub&&<div style={{fontSize:9,color:C.muted,marginTop:1}}>{sub}</div>}
           </div>
+        </div>
+        {label&&<div style={{fontSize:10,color:C.muted,textAlign:"center",fontWeight:500}}>{label}</div>}
+      </div>
+    );
+  };
 
-          {/* Stats row */}
-          <div style={{display:"flex",gap:8,marginTop:14,flexWrap:"wrap"}}>
-            {[
-              {icon:"📝", val: completedFields, label:"Fields"},
-              {icon:"📅", val: sessions.length || "0", label:"Sessions"},
-              {icon:"🗓", val: new Date(patient.createdAt).toLocaleDateString("en-GB"), label:"Created"},
-              {icon:"🔄", val: new Date(patient.updatedAt).toLocaleDateString("en-GB"), label:"Updated"},
-            ].map(s => (
-              <div key={s.label} style={{flex:"1 1 80px",background:"rgba(255,255,255,0.03)",
-                border:"1px solid rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 10px",
-                textAlign:"center"}}>
-                <div style={{fontSize:"1rem",marginBottom:2}}>{s.icon}</div>
-                <div style={{fontWeight:800,fontSize:"0.88rem",color:"#1a1025"}}>{s.val}</div>
-                <div style={{fontSize:"0.58rem",color:"#3a5070",textTransform:"uppercase",letterSpacing:"0.8px"}}>{s.label}</div>
-              </div>
+  // Progress line chart
+  const LineChart = () => {
+    const [anim,setAnim]=useState(false);
+    useEffect(()=>{const t=setTimeout(()=>setAnim(true),500);return()=>clearTimeout(t);},[]);
+    const w=300,h=80,max=10,min=0;
+    const pts=TREND.map((v,i)=>({
+      x:(i/(TREND.length-1))*w,
+      y:h-((v-min)/(max-min))*(h-12)-6,
+    }));
+    const pathD=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const areaD=`${pathD} L${w},${h} L0,${h} Z`;
+    const gridLines=[0,2.5,5,7.5,10];
+    return (
+      <div style={{overflowX:"auto"}}>
+        <svg width={w+40} height={h+40} style={{display:"block"}}>
+          <defs>
+            <linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.3"/>
+              <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.02"/>
+            </linearGradient>
+            <clipPath id="cp1">
+              <rect x="30" y="0" width={anim?w:0} height={h+20} style={{transition:"width 1.3s ease"}}/>
+            </clipPath>
+          </defs>
+          {/* Grid lines */}
+          {gridLines.map(g=>{
+            const y=h-((g-min)/(max-min))*(h-12)-6;
+            return (
+              <g key={g}>
+                <line x1="30" y1={y} x2={w+30} y2={y} stroke="#F3F4F6" strokeWidth="1"/>
+                <text x="24" y={y+4} textAnchor="end" fontSize="9" fill="#9CA3AF">{g}</text>
+              </g>
+            );
+          })}
+          {/* Area + line */}
+          <g transform="translate(30,0)">
+            <path d={areaD} fill="url(#lg1)" clipPath="url(#cp1)"/>
+            <path d={pathD} fill="none" stroke="#8B5CF6" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round" clipPath="url(#cp1)"/>
+            {pts.map((p,i)=>(
+              <circle key={i} cx={p.x} cy={p.y} r="3" fill="#8B5CF6" stroke="white" strokeWidth="1.5"/>
             ))}
+            {/* Last point label */}
+            <rect x={pts[pts.length-1].x-10} y={pts[pts.length-1].y-22}
+              width={34} height={18} rx={9} fill="#6D28D9"/>
+            <text x={pts[pts.length-1].x+7} y={pts[pts.length-1].y-9}
+              textAnchor="middle" fontSize="10" fill="white" fontWeight="700">6/10</text>
+          </g>
+          {/* X labels */}
+          {DATES.map((d2,i)=>(
+            <text key={i} x={30+(i/(DATES.length-1))*w} y={h+34}
+              textAnchor="middle" fontSize="9" fill="#9CA3AF">{d2}</text>
+          ))}
+        </svg>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{
+      position:"fixed",inset:0,zIndex:9000,background:C.bg,
+      display:"flex",flexDirection:"column",
+      fontFamily:"'DM Sans','Helvetica Neue',sans-serif",
+      overflowY:"auto",
+      animation:mounted?"none":"fadeUp 0.3s ease",
+    }}>
+      <style>{`
+        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes pulseDot{0%,100%{opacity:1}50%{opacity:0.4}}
+        .tab-content{animation:slideIn 0.25s ease both}
+        ::-webkit-scrollbar{display:none}
+      `}</style>
+
+      {/* ── STATUS BAR ── */}
+      <div style={{height:44,background:C.white,display:"flex",alignItems:"center",
+        justifyContent:"space-between",padding:"0 20px",flexShrink:0}}>
+        <div style={{fontSize:14,fontWeight:700,color:C.text}}>9:41</div>
+        <div style={{display:"flex",gap:5,alignItems:"center"}}>
+          <span style={{fontSize:12}}>▲▲▲</span>
+          <span style={{fontSize:12}}>WiFi</span>
+          <span style={{fontSize:12}}>🔋</span>
+        </div>
+      </div>
+
+      {/* ── TOP NAV BAR ── */}
+      <div style={{background:C.white,padding:"12px 20px",display:"flex",
+        alignItems:"center",justifyContent:"space-between",
+        borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
+        <button onClick={onClose} style={{
+          width:36,height:36,borderRadius:"50%",border:`1px solid ${C.border2}`,
+          background:C.white,cursor:"pointer",display:"flex",alignItems:"center",
+          justifyContent:"center",fontSize:18,color:C.primary,
+        }}>←</button>
+        <div style={{fontSize:15,fontWeight:700,color:C.text}}>Patient Profile</div>
+        <div style={{display:"flex",gap:8}}>
+          <button style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted}}>✏️</button>
+          <button style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted}}>⋮</button>
+        </div>
+      </div>
+
+      {/* ── PATIENT HEADER CARD ── */}
+      <div style={{background:"#F5F3FF",padding:"20px 20px 18px",flexShrink:0}}>
+        <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
+          {/* Avatar */}
+          <div style={{width:76,height:76,borderRadius:"50%",
+            background:"linear-gradient(135deg,#C4B5FD,#7C3AED)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:28,fontWeight:800,color:"white",flexShrink:0,
+            border:"3px solid white",boxShadow:"0 4px 12px rgba(109,40,217,0.2)"}}>
+            {name.split(" ").map(w=>w[0]).join("").slice(0,2)}
+          </div>
+          {/* Info */}
+          <div style={{flex:1}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div>
+                <div style={{fontSize:20,fontWeight:800,color:C.text,letterSpacing:"-0.5px",lineHeight:1.1}}>
+                  {name}
+                  <span style={{fontSize:14,marginLeft:6}}>♀</span>
+                </div>
+                <div style={{fontSize:11.5,color:C.muted,marginTop:3}}>PID: {pid}</div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:5,
+                background:"#ECFDF5",border:"1px solid #BBF7D0",
+                padding:"4px 10px",borderRadius:99}}>
+                <div style={{width:6,height:6,borderRadius:"50%",background:C.green,
+                  animation:"pulseDot 1.5s infinite"}}/>
+                <span style={{fontSize:11,fontWeight:700,color:C.green}}>Active</span>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:14,marginTop:10,flexWrap:"wrap"}}>
+              <div style={{display:"flex",alignItems:"center",gap:5}}>
+                <span style={{fontSize:13}}>📅</span>
+                <span style={{fontSize:12,color:C.muted}}>{age} Yrs</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:5}}>
+                <span style={{fontSize:13}}>📞</span>
+                <span style={{fontSize:12,color:C.muted}}>{phone}</span>
+              </div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:5}}>
+              <span style={{fontSize:13}}>✉️</span>
+              <span style={{fontSize:12,color:C.muted}}>{email}</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* ── Tab bar ──────────────────────────────────────────────────── */}
-        <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.06)",
-          flexShrink:0,overflowX:"auto"}}>
-          {tabs.map(t => (
-            <button key={t.id} onClick={()=>{setTab(t.id);setEditing(false);}}
-              style={{flex:"0 0 auto",padding:"10px 16px",background:"none",
-                border:"none",borderBottom:`2px solid ${tab===t.id?"#00e5ff":"transparent"}`,
-                color:tab===t.id?"#00e5ff":"#4a6070",cursor:"pointer",
-                fontSize:"0.72rem",fontWeight:700,display:"flex",alignItems:"center",gap:5,
-                transition:"all 0.15s",whiteSpace:"nowrap"}}>
-              {t.icon} {t.label}
-            </button>
-          ))}
-        </div>
+      {/* ── TABS ── */}
+      <div style={{background:C.white,borderBottom:`1px solid ${C.border}`,flexShrink:0,
+        display:"flex",overflowX:"auto",padding:"0 8px"}}>
+        {TABS.map(t=>(
+          <button key={t.k} onClick={()=>setTab(t.k)} style={{
+            flex:1,padding:"14px 4px 12px",border:"none",background:"none",
+            cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+            borderBottom:`2.5px solid ${tab===t.k?C.primary:"transparent"}`,
+            transition:"all 0.2s",whiteSpace:"nowrap",minWidth:62,
+          }}>
+            <span style={{fontSize:15,filter:tab===t.k?"none":"grayscale(1)",opacity:tab===t.k?1:0.5}}>{t.icon}</span>
+            <span style={{fontSize:10,fontWeight:700,color:tab===t.k?C.primary:C.muted,
+              letterSpacing:"0.1px"}}>{t.label}</span>
+          </button>
+        ))}
+      </div>
 
-        {/* ── Tab content ──────────────────────────────────────────────── */}
-        <div style={{flex:1,overflowY:"auto",padding:"18px 22px"}}>
+      {/* ── TAB CONTENT ── */}
+      <div style={{flex:1,overflowY:"auto",paddingBottom:100}}>
 
-          {/* OVERVIEW TAB */}
-          {tab === "overview" && (
-            <div>
-              {!editing ? (
-                <>
-                  {sectionHead("🧍","Demographics")}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 20px"}}>
-                    {field2("Full Name", d.dem_name)}
-                    {field2("Date of Birth", dob)}
-                    {field2("Age", age ? `${age} years` : "")}
-                    {field2("Sex / Gender", sex)}
-                    {field2("Occupation", occ)}
-                    {field2("Work Status", d.dem_work_status)}
-                    {field2("Referring GP", gp)}
-                    {field2("Ethnicity", d.dem_ethnicity)}
+        {/* ════════════════════════════════════════
+            OVERVIEW TAB
+        ════════════════════════════════════════ */}
+        {tab==="overview" && (
+          <div className="tab-content" style={{padding:"16px 16px"}}>
+
+            {/* Clinical Summary */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)",overflow:"hidden",position:"relative"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14,letterSpacing:"-0.3px"}}>
+                Clinical Summary
+              </div>
+              {/* Anatomical illustration placeholder */}
+              <div style={{position:"absolute",right:-10,top:0,bottom:0,width:140,
+                display:"flex",alignItems:"center",justifyContent:"center",opacity:0.12}}>
+                <div style={{fontSize:100,lineHeight:1}}>🦴</div>
+              </div>
+              {[
+                {icon:"✏️", label:"Affected Region",    value:region},
+                {icon:"🏃", label:"Probable Diagnosis", value:dx},
+                {icon:"⏰", label:"Onset",               value:onset},
+                {icon:"📝", label:"Chief Complaint",     value:d.cc_main||"Neck pain radiating to left arm with tingling."},
+              ].map((row,i)=>(
+                <div key={i} style={{display:"flex",gap:12,padding:"9px 0",
+                  borderBottom:i<3?`1px solid ${C.border}`:"none"}}>
+                  <div style={{width:32,height:32,borderRadius:8,background:"#F5F3FF",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:14,flexShrink:0}}>{row.icon}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:10.5,color:C.muted,fontWeight:500}}>{row.label}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.text,marginTop:1,
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{row.value}</div>
                   </div>
-
-                  {sectionHead("🎯","Presenting Complaint")}
-                  {d.cc_main ? (
-                    <div style={{background:"rgba(0,229,255,0.04)",border:"1px solid rgba(0,229,255,0.1)",
-                      borderRadius:10,padding:"10px 14px",fontSize:"0.8rem",color:"#a0c8e8",lineHeight:1.7,
-                      fontStyle:"italic",marginBottom:14}}>
-                      "{d.cc_main}"
-                    </div>
-                  ) : <div style={{color:"#2a3f55",fontSize:"0.78rem",marginBottom:14}}>No presenting complaint recorded</div>}
-
-                  {d.cc_location?.length > 0 && (
-                    <div style={{marginBottom:12}}>
-                      {label("Pain Locations")}
-                      <div>{(Array.isArray(d.cc_location)?d.cc_location:[d.cc_location]).map(l=>pill(l,"#00e5ff"))}</div>
-                    </div>
-                  )}
-
-                  {d.pa_vas_now && (
-                    <div style={{marginBottom:12}}>
-                      {label("Pain Scores (VAS)")}
-                      <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                        {[["Now",d.pa_vas_now,"#ffb300"],["Worst",d.pa_vas_worst,"#ff4d6d"],["Best",d.pa_vas_best,"#00c97a"]].map(([lbl,v,c])=>v?(
-                          <div key={lbl} style={{textAlign:"center",padding:"6px 12px",
-                            background:`${c}12`,border:`1px solid ${c}30`,borderRadius:8}}>
-                            <div style={{fontSize:"1.1rem",fontWeight:800,color:c}}>{v}/10</div>
-                            <div style={{fontSize:"0.58rem",color:"#4a6070"}}>{lbl}</div>
-                          </div>
-                        ):null)}
-                      </div>
-                    </div>
-                  )}
-
-                  {d.ar_goal_function && (
-                    <div style={{marginBottom:12}}>
-                      {label("Patient Goal")}
-                      <div style={{fontSize:"0.8rem",color:"#00c97a"}}>🎯 {d.ar_goal_function}</div>
-                    </div>
-                  )}
-
-                  <button onClick={()=>setEditing(true)}
-                    style={{marginTop:8,padding:"9px 20px",borderRadius:9,border:"1px solid rgba(0,229,255,0.3)",
-                      background:"rgba(0,229,255,0.08)",color:"#00e5ff",fontWeight:700,
-                      fontSize:"0.75rem",cursor:"pointer"}}>
-                    ✏️ Edit Demographics
-                  </button>
-                </>
-              ) : (
-                <>
-                  {sectionHead("✏️","Edit Demographics")}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 16px"}}>
-                    <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Full Name</div>{inp("dem_name","Full name")}</div>
-                    <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Date of Birth</div>{inp("dem_dob","DD/MM/YYYY")}</div>
-                    <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Age</div>{inp("dem_age","Years","number")}</div>
-                    <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Sex / Gender</div>{inp("dem_sex","e.g. Female")}</div>
-                    <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Occupation</div>{inp("dem_occupation","Job title")}</div>
-                    <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Work Status</div>{inp("dem_work_status","e.g. Full time")}</div>
-                    <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Referring GP</div>{inp("dem_gp","GP name")}</div>
-                    <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Ethnicity</div>{inp("dem_ethnicity","Ethnicity")}</div>
-                  </div>
-                  <div style={{marginTop:12}}>
-                    <div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Address</div>
-                    {ta("dem_address","Full address",2)}
-                  </div>
-                  <div style={{display:"flex",gap:8,marginTop:14}}>
-                    <button onClick={saveEdits}
-                      style={{padding:"9px 22px",borderRadius:9,border:"none",
-                        background:"linear-gradient(135deg,#00e5ff,#7f5af0)",color:"#000",
-                        fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>
-                      💾 Save Changes
-                    </button>
-                    <button onClick={()=>{setEditing(false);setEditData({...patient.data});}}
-                      style={{padding:"9px 16px",borderRadius:9,border:"1px solid rgba(255,255,255,0.1)",
-                        background:"transparent",color:"#5a7090",fontSize:"0.75rem",cursor:"pointer"}}>
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* CONTACT TAB */}
-          {tab === "contact" && (
-            <div>
-              {sectionHead("📞","Contact Details")}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 16px",marginBottom:16}}>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Phone</div>{inp("dem_phone","Mobile number")}</div>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Email</div>{inp("dem_email","Email address","email")}</div>
-              </div>
-              <div style={{marginBottom:12}}>
-                <div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Address</div>
-                {ta("dem_address","Full home address",2)}
-              </div>
-
-              {sectionHead("🆘","Next of Kin")}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 16px",marginBottom:16}}>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>NOK Name</div>{inp("dem_nok","Next of kin name")}</div>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>NOK Phone</div>{inp("dem_nok_phone","NOK phone number")}</div>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Relationship</div>{inp("dem_nok_rel","e.g. Spouse, Parent")}</div>
-              </div>
-
-              {sectionHead("🏥","Insurance / Referral")}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 16px",marginBottom:16}}>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Insurer</div>{inp("dem_insurer","Insurance company")}</div>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Policy / Ref No.</div>{inp("dem_ins_ref","Policy reference")}</div>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Referral Source</div>{inp("dem_referral","e.g. GP, Self, Insurer")}</div>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>GP Name</div>{inp("dem_gp","Referring GP")}</div>
-              </div>
-
-              <button onClick={saveEdits}
-                style={{padding:"9px 22px",borderRadius:9,border:"none",
-                  background:"linear-gradient(135deg,#00e5ff,#7f5af0)",color:"#000",
-                  fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>
-                💾 Save Contact Details
-              </button>
-            </div>
-          )}
-
-          {/* MEDICAL HISTORY TAB */}
-          {tab === "medical" && (
-            <div>
-              {sectionHead("🏥","Past Medical History")}
-              <div style={{marginBottom:12}}>
-                <div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Current Conditions</div>
-                {ta("phx_conditions","e.g. Type 2 diabetes, Hypertension, Osteoporosis…",3)}
-              </div>
-              <div style={{marginBottom:12}}>
-                <div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Previous Injuries / Surgeries</div>
-                {ta("phx_injuries","e.g. L knee meniscectomy 2018, ACL repair 2019…",3)}
-              </div>
-              <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Current Medications</div>
-                {ta("meds_current","List medications and doses…",3)}
-              </div>
-
-              {sectionHead("💊","Allergies & Precautions")}
-              <div style={{marginBottom:12}}>
-                <div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Allergies</div>
-                {inp("dem_allergies","Drug/latex/other allergies")}
-              </div>
-              <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Precautions / Contraindications</div>
-                {ta("dem_precautions","e.g. Anticoagulants — no deep needling; Pacemaker — no TENS…",2)}
-              </div>
-
-              {sectionHead("🏃","Activity & Lifestyle")}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 16px",marginBottom:16}}>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Activity Level</div>{inp("dem_activity","e.g. Sedentary, Active 3x/week")}</div>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Sport / Exercise</div>{inp("dem_sport","e.g. Running, Football, Swimming")}</div>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Smoking</div>{inp("dem_smoking","e.g. Non-smoker, 10/day")}</div>
-                <div><div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Alcohol</div>{inp("dem_alcohol","e.g. Occasional, 14 units/week")}</div>
-              </div>
-
-              <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>Patient Goals</div>
-                {ta("ar_goal_function","What does the patient want to return to?",2)}
-              </div>
-
-              <button onClick={saveEdits}
-                style={{padding:"9px 22px",borderRadius:9,border:"none",
-                  background:"linear-gradient(135deg,#00e5ff,#7f5af0)",color:"#000",
-                  fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>
-                💾 Save Medical History
-              </button>
-            </div>
-          )}
-
-          {/* SESSIONS TAB */}
-          {tab === "sessions" && (
-            <div>
-              {sectionHead("📅","Session History")}
-              {sessions.length === 0 ? (
-                <div style={{textAlign:"center",padding:"40px 20px",color:"#3a5070"}}>
-                  <div style={{fontSize:"2rem",marginBottom:8}}>📋</div>
-                  <div style={{fontSize:"0.82rem",marginBottom:6}}>No sessions recorded yet</div>
-                  <div style={{fontSize:"0.68rem",color:"#2a3f55"}}>
-                    Each time you open this patient's assessment and save, a session will be logged here.
-                  </div>
-                </div>
-              ) : sessions.map((s, i) => (
-                <div key={i} style={{padding:"11px 14px",background:"rgba(255,255,255,0.02)",
-                  border:"1px solid rgba(255,255,255,0.06)",borderRadius:10,marginBottom:7}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{fontWeight:700,color:"#1a1025",fontSize:"0.8rem"}}>
-                      Session {sessions.length - i}
-                    </div>
-                    <div style={{fontSize:"0.65rem",color:"#4a6070"}}>
-                      {new Date(s.date).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
-                    </div>
-                  </div>
-                  {s.dx && <div style={{fontSize:"0.68rem",color:"#00c97a",marginTop:3}}>Dx: {s.dx}</div>}
-                  {s.notes && <div style={{fontSize:"0.7rem",color:"#5a7090",marginTop:4,lineHeight:1.5}}>{s.notes}</div>}
                 </div>
               ))}
+            </div>
 
-              <div style={{marginTop:16}}>
-                {sectionHead("📝","Session Notes")}
-                <div style={{marginBottom:8}}>
-                  <div style={{fontSize:"0.6rem",color:"#4a6070",marginBottom:4,textTransform:"uppercase",letterSpacing:"1px"}}>
-                    Notes for current session
+            {/* Pain & Progress Snapshot */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:16,letterSpacing:"-0.3px"}}>
+                Pain & Progress Snapshot
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1.2fr 1fr",gap:8,alignItems:"start"}}>
+                {/* Pain Score donut */}
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:10,color:C.muted,fontWeight:500,marginBottom:8}}>Pain Score (NPRS)</div>
+                  <Donut pct={Math.round((nrsNow/10)*100)} size={76} stroke={8}
+                    color={nrsNow>=7?"#EF4444":nrsNow>=4?"#F59E0B":"#10B981"}
+                    sub="/10"/>
+                  <div style={{marginTop:8,display:"flex",alignItems:"center",gap:4,justifyContent:"center"}}>
+                    <div style={{width:7,height:7,borderRadius:"50%",background:C.orange}}/>
+                    <span style={{fontSize:10,color:C.muted}}>Moderate Pain</span>
                   </div>
-                  {ta("session_notes","Clinical notes, treatment given, patient response, plan…",5)}
+                  <div style={{fontSize:22,fontWeight:900,color:C.text,marginTop:-48,
+                    position:"relative",zIndex:1,letterSpacing:"-1px"}}>{nrsNow}</div>
                 </div>
-                <button onClick={saveEdits}
-                  style={{padding:"9px 22px",borderRadius:9,border:"none",
-                    background:"linear-gradient(135deg,#00e5ff,#7f5af0)",color:"#000",
-                    fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>
-                  💾 Save Session Notes
+                {/* Sessions */}
+                <div>
+                  <div style={{fontSize:10,color:C.muted,fontWeight:500,marginBottom:8}}>Sessions Completed</div>
+                  <div style={{fontSize:26,fontWeight:800,color:C.text,letterSpacing:"-1px",lineHeight:1}}>
+                    {sessCount} <span style={{fontSize:14,color:C.muted,fontWeight:500}}>/ {totalSess}</span>
+                  </div>
+                  <div style={{height:5,background:C.border,borderRadius:99,overflow:"hidden",margin:"8px 0"}}>
+                    <div style={{height:"100%",width:mounted?`${sessPct}%`:"0%",
+                      background:`linear-gradient(90deg,${C.primary},${C.secondary})`,
+                      borderRadius:99,transition:"width 1.2s ease 0.3s"}}/>
+                  </div>
+                  <div style={{fontSize:11,color:C.primary,fontWeight:700}}>{sessPct}%</div>
+                  <div style={{fontSize:10,color:C.muted,marginTop:8}}>Next Session</div>
+                  <div style={{display:"flex",alignItems:"center",gap:5,marginTop:3}}>
+                    <span style={{fontSize:12}}>📅</span>
+                    <div>
+                      <div style={{fontSize:11.5,fontWeight:700,color:C.text}}>31 May 2025</div>
+                      <div style={{fontSize:10,color:C.muted}}>10:00 AM</div>
+                    </div>
+                  </div>
+                </div>
+                {/* Overall progress donut */}
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:10,color:C.muted,fontWeight:500,marginBottom:8}}>Overall Progress</div>
+                  <Donut pct={overallPct} size={76} stroke={8} color={C.green} sub="%"/>
+                  <div style={{marginTop:6,display:"flex",alignItems:"center",gap:3,justifyContent:"center"}}>
+                    <span style={{fontSize:12,color:C.green}}>↑</span>
+                    <span style={{fontSize:10,color:C.green,fontWeight:600}}>12% from last week</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Trend Chart */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <div style={{fontSize:16,fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}>Recent Progress Trend</div>
+                <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",
+                  border:`1px solid ${C.border2}`,borderRadius:8}}>
+                  <span style={{fontSize:11,fontWeight:600,color:C.muted}}>Pain Score</span>
+                  <span style={{fontSize:10}}>▼</span>
+                </div>
+              </div>
+              <div style={{fontSize:9.5,color:C.muted,marginBottom:4}}>Pain Score</div>
+              <LineChart/>
+            </div>
+
+            {/* Quick Actions */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14,letterSpacing:"-0.3px"}}>
+                Quick Actions
+              </div>
+              <div style={{display:"flex",gap:8,overflowX:"auto"}}>
+                {[
+                  {icon:"📋",label:"New Assessment",color:"#EDE9FE",icolor:C.primary,nav:"assessment"},
+                  {icon:"📝",label:"SOAP Note",    color:"#ECFDF5",icolor:C.green,  nav:"assessment"},
+                  {icon:"➕",label:"Add Session",  color:"#FEF3C7",icolor:C.orange, nav:"treatment"},
+                  {icon:"📈",label:"View Progress",color:"#EDE9FE",icolor:C.primary,nav:"progress"},
+                  {icon:"📤",label:"Upload Doc",   color:"#F0F9FF",icolor:C.blue,   nav:"documents"},
+                ].map((a,i)=>(
+                  <button key={i} onClick={()=>setTab(a.nav)} style={{
+                    display:"flex",flexDirection:"column",alignItems:"center",gap:6,
+                    minWidth:64,padding:"10px 8px",borderRadius:12,
+                    background:a.color,border:"none",cursor:"pointer",flexShrink:0,
+                  }}>
+                    <span style={{fontSize:22}}>{a.icon}</span>
+                    <span style={{fontSize:9.5,fontWeight:600,color:C.text,textAlign:"center",lineHeight:1.2}}>
+                      {a.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Notes */}
+            <div style={{background:C.white,borderRadius:16,padding:18,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <div style={{fontSize:16,fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}>Recent Notes</div>
+                <span style={{fontSize:12,fontWeight:600,color:C.primary,cursor:"pointer"}}>View All</span>
+              </div>
+              {[
+                {date:"Session Note — 25 May 2025",note:"Manual therapy and cervical mobilization performed. Patient...",dr:"Dr. Priya Sharma",time:"10:30 AM"},
+                {date:"Progress Note — 18 May 2025",note:"ROM improving. NRS reduced from 7 to 6. Continue current plan.",dr:"Dr. Priya Sharma",time:"11:00 AM"},
+              ].map((n,i)=>(
+                <div key={i} style={{display:"flex",gap:12,padding:"10px 0",
+                  borderBottom:i===0?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
+                  <div style={{width:36,height:36,borderRadius:9,background:"#EDE9FE",
+                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>📄</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:700,color:C.text}}>{n.date}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:2,
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.note}</div>
+                  </div>
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{fontSize:10,color:C.muted,padding:"2px 7px",
+                      background:C.border,borderRadius:99,whiteSpace:"nowrap"}}>{n.dr}</div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:3}}>{n.time} ›</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════
+            ASSESSMENT TAB
+        ════════════════════════════════════════ */}
+        {tab==="assessment" && (
+          <div className="tab-content" style={{padding:"16px 16px"}}>
+            {/* Latest / History toggle */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+              <button onClick={()=>setAssessView("latest")} style={{
+                padding:"11px",borderRadius:10,border:"none",cursor:"pointer",
+                background:assessView==="latest"?C.primary:"#F3F4F6",
+                color:assessView==="latest"?"white":C.muted,
+                fontSize:12,fontWeight:700,
+              }}>Latest Assessment</button>
+              <button onClick={()=>setAssessView("history")} style={{
+                padding:"11px",borderRadius:10,border:"none",cursor:"pointer",
+                background:assessView==="history"?C.primary:"#F3F4F6",
+                color:assessView==="history"?"white":C.muted,
+                fontSize:12,fontWeight:700,
+              }}>Assessment History</button>
+            </div>
+
+            {/* Session header */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+              background:C.white,borderRadius:12,padding:"12px 14px",marginBottom:14,
+              boxShadow:"0 1px 5px rgba(0,0,0,0.04)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:13}}>📅</span>
+                <span style={{fontSize:12,fontWeight:700,color:C.text}}>25 May 2025</span>
+                <span style={{fontSize:11,color:C.muted}}>• Session {sessCount}</span>
+              </div>
+              <div style={{padding:"3px 10px",borderRadius:99,background:"#ECFDF5",
+                border:"1px solid #BBF7D0"}}>
+                <span style={{fontSize:10.5,fontWeight:700,color:C.green}}>Completed</span>
+              </div>
+            </div>
+
+            {/* SOAP — S: SUBJECTIVE */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <div style={{fontSize:16,fontWeight:800,color:C.text}}>Subjective</div>
+                <span style={{fontSize:12,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Notes</span>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                {[
+                  {icon:"📄",label:"Chief Complaint",value:d.cc_main||"Neck pain radiating to left arm with tingling.",span:false},
+                  {icon:"📊",label:"Pain Score (NPRS)",value:`${nrsNow} / 10`,sub:"Moderate Pain",subColor:C.orange,span:false},
+                  {icon:"⏰",label:"Onset",value:onset,sub:"6 weeks ago",span:false},
+                  {icon:"⚡",label:"Aggravating Factors",value:agg,span:false},
+                ].map((f,i)=>(
+                  <div key={i} style={{background:"#F9FAFB",borderRadius:12,padding:12}}>
+                    <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:5}}>
+                      <div style={{width:26,height:26,borderRadius:7,background:"#EDE9FE",
+                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>{f.icon}</div>
+                      <span style={{fontSize:10,color:C.muted,fontWeight:500}}>{f.label}</span>
+                    </div>
+                    <div style={{fontSize:12.5,fontWeight:700,color:C.text,lineHeight:1.4}}>{f.value}</div>
+                    {f.sub&&<div style={{fontSize:10,color:f.subColor||C.muted,marginTop:3,fontWeight:600}}>{f.sub}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SOAP — O: OBJECTIVE */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>Objective</div>
+
+              {/* ROM */}
+              <div style={{border:`1px solid ${C.border}`,borderRadius:12,padding:14,marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <span style={{fontSize:15}}>📐</span>
+                    <span style={{fontSize:13,fontWeight:700,color:C.text}}>Cervical ROM</span>
+                  </div>
+                  <span style={{fontSize:11.5,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Details</span>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                  {[
+                    {label:"Flexion",    val:ROM.flex+"°"},
+                    {label:"Extension",  val:ROM.ext+"°"},
+                    {label:"R Rotation", val:ROM.rrot+"°"},
+                    {label:"L Rotation", val:ROM.lrot+"°"},
+                    {label:"R SB",       val:ROM.rsb+"°"},
+                    {label:"L SB",       val:ROM.lsb+"°"},
+                  ].map(r=>(
+                    <div key={r.label}>
+                      <div style={{fontSize:10,color:C.muted}}>{r.label}</div>
+                      <div style={{fontSize:18,fontWeight:800,color:C.text,letterSpacing:"-0.5px"}}>{r.val}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{marginTop:10,display:"flex",alignItems:"center",gap:4}}>
+                  <span style={{fontSize:12,color:C.green}}>↑</span>
+                  <span style={{fontSize:11,color:C.green,fontWeight:600}}>Improving</span>
+                </div>
+              </div>
+
+              {/* Objective finding rows */}
+              {[
+                {icon:"💪",label:"Muscle Strength (MMT)",     sub:"Mild Weakness",   subColor:C.orange,  nav:"mmt"},
+                {icon:"⚡",label:"Neurological Tests",         sub:"ULNT1 Positive (Median Nerve)", nav:"neuro"},
+                {icon:"🔬",label:"Special Tests",              sub:"Spurling's Test: Positive (Left)", nav:"special"},
+                {icon:"🧍",label:"Posture Analysis",           sub:"Forward head posture, Rounded shoulders", nav:"posture"},
+                {icon:"📊",label:"Outcome Measures",           sub:"NDI: 28/50 (56%)", nav:"subjective"},
+              ].map((row,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                  padding:"12px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
+                  <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                    <div style={{width:34,height:34,borderRadius:9,background:"#F5F3FF",
+                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>{row.icon}</div>
+                    <div>
+                      <div style={{fontSize:12.5,fontWeight:700,color:C.text}}>{row.label}</div>
+                      <div style={{fontSize:11,color:row.subColor||C.muted,marginTop:1}}>{row.sub}</div>
+                    </div>
+                  </div>
+                  <span style={{fontSize:11.5,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Details</span>
+                </div>
+              ))}
+            </div>
+
+            {/* SOAP — A: ASSESSMENT */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:12}}>Assessment (SOAP-A)</div>
+              <div style={{background:"#F5F3FF",borderRadius:12,padding:14,
+                borderLeft:`3px solid ${C.primary}`,marginBottom:12}}>
+                <div style={{fontSize:11,color:C.primary,fontWeight:700,marginBottom:6}}>
+                  🧠 Clinical Reasoning
+                </div>
+                <div style={{fontSize:12.5,color:C.text,lineHeight:1.6}}>
+                  Findings indicate {dx} with neural tension and postural dysfunction. Neural provocation tests positive bilaterally. ROM restrictions consistent with C6 nerve root involvement.
+                </div>
+              </div>
+              {[
+                {label:"Probable Diagnosis",   value:dx},
+                {label:"Functional Dysfunction",value:"Impaired cervical mobility, neural tension"},
+                {label:"Impairment Summary",   value:"Pain, ROM restriction, neural sensitisation"},
+                {label:"Movement Dysfunction", value:"Forward head posture driving cervical loading"},
+              ].map((item,i)=>(
+                <div key={i} style={{padding:"8px 0",borderBottom:i<3?`1px solid ${C.border}`:"none"}}>
+                  <div style={{fontSize:10.5,color:C.muted,fontWeight:500}}>{item.label}</div>
+                  <div style={{fontSize:12.5,fontWeight:600,color:C.text,marginTop:2}}>{item.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* SOAP — P: PLAN */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:12}}>Plan (SOAP-P)</div>
+              {[
+                {label:"Treatment Goal",      value:"Reduce pain to NRS 3/10, restore full ROM"},
+                {label:"Session Frequency",   value:"2x / week for 6 weeks"},
+                {label:"Planned Interventions",value:"PA mobs, DNF training, nerve glides, HEP"},
+                {label:"Home Exercise",       value:"Chin tucks, nerve glides — daily"},
+                {label:"Precautions",         value:"Avoid sustained cervical flexion, heavy lifting"},
+              ].map((item,i)=>(
+                <div key={i} style={{padding:"8px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
+                  <div style={{fontSize:10.5,color:C.muted,fontWeight:500}}>{item.label}</div>
+                  <div style={{fontSize:12.5,fontWeight:600,color:C.text,marginTop:2}}>{item.value}</div>
+                </div>
+              ))}
+              <div style={{display:"flex",gap:8,marginTop:16}}>
+                <button style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${C.primary}`,
+                  background:"white",color:C.primary,fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                  💾 Save SOAP
+                </button>
+                <button style={{flex:1,padding:"10px",borderRadius:10,border:"none",
+                  background:C.primary,color:"white",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                  📄 Export PDF
                 </button>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* FLAGS TAB */}
-          {tab === "flags" && (
-            <div>
-              {sectionHead("🚩","Red Flags")}
-              {patient.hasRedFlags ? (
-                <div style={{padding:"12px 14px",background:"rgba(255,77,109,0.08)",
-                  border:"1px solid rgba(255,77,109,0.3)",borderRadius:10,marginBottom:14}}>
-                  <div style={{fontWeight:700,color:"#ff4d6d",marginBottom:6,fontSize:"0.82rem"}}>
-                    ⚠️ Red flags detected in this assessment
-                  </div>
-                  <div style={{fontSize:"0.72rem",color:"#c04060",lineHeight:1.6}}>
-                    Review the Subjective Assessment → Red Flags section for details. Consider urgent referral if cauda equina or vascular flags are present.
-                  </div>
+        {/* ════════════════════════════════════════
+            TREATMENT TAB
+        ════════════════════════════════════════ */}
+        {tab==="treatment" && (
+          <div className="tab-content" style={{padding:"16px 16px"}}>
+            {/* Current Treatment Plan */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)",overflow:"hidden",position:"relative"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                <div style={{fontSize:16,fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}>
+                  Current Treatment Plan
                 </div>
-              ) : (
-                <div style={{padding:"12px 14px",background:"rgba(0,201,122,0.06)",
-                  border:"1px solid rgba(0,201,122,0.2)",borderRadius:10,marginBottom:14}}>
-                  <div style={{fontWeight:700,color:"#00c97a",fontSize:"0.8rem"}}>✅ No red flags detected</div>
+                <div style={{padding:"4px 10px",borderRadius:99,background:"#ECFDF5",border:"1px solid #BBF7D0"}}>
+                  <span style={{fontSize:10.5,fontWeight:700,color:C.green}}>Active</span>
                 </div>
-              )}
-
-              {sectionHead("⚠️","Clinical Precautions")}
-              <div style={{marginBottom:12}}>
-                {ta("dem_precautions","Note any clinical precautions or contraindications for this patient…",3)}
               </div>
+              {/* Anatomical bg */}
+              <div style={{position:"absolute",right:-10,top:0,opacity:0.07,fontSize:120}}>🦴</div>
+              {[
+                {icon:"📅",label:"Plan Start Date", value:"15 Apr 2025"},
+                {icon:"⏱",label:"Plan Duration",    value:"6 Weeks"},
+                {icon:"🎯",label:"Plan Goal",        value:"Reduce pain, Improve ROM, Restore function"},
+              ].map((item,i)=>(
+                <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",
+                  padding:"8px 0",borderBottom:i<2?`1px solid ${C.border}`:"none"}}>
+                  <div style={{width:30,height:30,borderRadius:8,background:"#F5F3FF",
+                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0}}>{item.icon}</div>
+                  <div>
+                    <div style={{fontSize:10.5,color:C.muted,fontWeight:500}}>{item.label}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.text,marginTop:1}}>{item.value}</div>
+                  </div>
+                </div>
+              ))}
+              {/* Recovery progress */}
+              <div style={{marginTop:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                  <span style={{fontSize:11,color:C.muted,fontWeight:500}}>Recovery Progress</span>
+                  <span style={{fontSize:11,color:C.primary,fontWeight:700}}>{overallPct}%</span>
+                </div>
+                <div style={{height:6,background:C.border,borderRadius:99,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:mounted?`${overallPct}%`:"0%",
+                    background:`linear-gradient(90deg,${C.primary},${C.secondary})`,
+                    borderRadius:99,transition:"width 1.2s ease 0.3s"}}/>
+                </div>
+              </div>
+            </div>
 
-              {sectionHead("📋","Consent & Documentation")}
-              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
-                {[
-                  ["dem_consent_verbal","Verbal consent obtained"],
-                  ["dem_consent_written","Written consent obtained"],
-                  ["dem_consent_photo","Photo/video consent obtained"],
-                  ["dem_gdpr","GDPR data processing explained"],
-                ].map(([field, label_]) => {
-                  const checked = !!d[field];
-                  return (
-                    <div key={field} onClick={()=>ef(field, checked ? "" : "yes")}
-                      style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",
-                        background:checked?"rgba(0,201,122,0.08)":"rgba(255,255,255,0.02)",
-                        border:`1px solid ${checked?"rgba(0,201,122,0.3)":"rgba(255,255,255,0.06)"}`,
-                        borderRadius:9,cursor:"pointer"}}>
-                      <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${checked?"#00c97a":"#3a5070"}`,
-                        background:checked?"#00c97a":"transparent",display:"flex",alignItems:"center",
-                        justifyContent:"center",fontSize:"0.65rem",color:"#000",fontWeight:900,flexShrink:0}}>
-                        {checked?"✓":""}
+            {/* Treatment category tabs */}
+            <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto"}}>
+              {["exercises","manual","modalities","education"].map(cat=>(
+                <button key={cat} onClick={()=>setTreatCat(cat)} style={{
+                  padding:"7px 16px",borderRadius:99,border:"none",cursor:"pointer",
+                  fontSize:12,fontWeight:700,whiteSpace:"nowrap",
+                  background:treatCat===cat?C.primary:"#F3F4F6",
+                  color:treatCat===cat?"white":C.muted,
+                  transition:"all 0.2s",
+                }}>
+                  {cat==="exercises"?"Exercises":cat==="manual"?"Manual Therapy":
+                   cat==="modalities"?"Modalities":"Education"}
+                </button>
+              ))}
+            </div>
+
+            {/* Exercise cards */}
+            {treatCat==="exercises" && (
+              <div>
+                <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>Exercises</div>
+                <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
+                  {EXERCISES.map((ex,i)=>(
+                    <div key={ex.id} style={{background:C.white,borderRadius:14,
+                      boxShadow:"0 1px 6px rgba(0,0,0,0.05)",overflow:"hidden"}}>
+                      <div style={{display:"flex",gap:12,padding:14,alignItems:"center"}}>
+                        {/* Exercise image placeholder */}
+                        <div style={{width:72,height:72,borderRadius:10,
+                          background:"linear-gradient(135deg,#EDE9FE,#C4B5FD)",
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          fontSize:28,flexShrink:0}}>{ex.emoji}</div>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13.5,fontWeight:700,color:C.text}}>{ex.name}</div>
+                          <div style={{fontSize:11,color:C.muted,marginTop:4}}>
+                            Sets: {ex.sets} &nbsp; Reps: {ex.reps} {ex.hold?`  Hold: ${ex.hold}`:""}
+                          </div>
+                        </div>
+                        {/* Completion circle */}
+                        <div onClick={()=>setExDone(prev=>({...prev,[ex.id]:!prev[ex.id]}))}
+                          style={{width:30,height:30,borderRadius:"50%",cursor:"pointer",
+                          background:exDone[ex.id]?C.green:"transparent",
+                          border:`2px solid ${exDone[ex.id]?C.green:C.border2}`,
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          transition:"all 0.25s",}}>
+                          {exDone[ex.id]&&<span style={{color:"white",fontSize:14,fontWeight:800}}>✓</span>}
+                        </div>
                       </div>
-                      <span style={{fontSize:"0.78rem",color:checked?"#00c97a":"#5a7090",fontWeight:checked?600:400}}>
-                        {label_}
-                      </span>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+                <button style={{width:"100%",padding:"11px",borderRadius:10,
+                  background:"none",border:`1px solid ${C.primary}`,
+                  color:C.primary,fontSize:12,fontWeight:700,cursor:"pointer",marginBottom:10}}>
+                  View All Exercises →
+                </button>
+                {/* HEP */}
+                <div style={{background:C.white,borderRadius:16,padding:16,
+                  boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                  <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:12}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:"#EDE9FE",
+                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🏠</div>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:800,color:C.text}}>Home Exercise Program</div>
+                      <div style={{fontSize:11,color:C.muted}}>5 Exercises • Daily</div>
+                    </div>
+                    <div style={{fontSize:28,marginLeft:"auto"}}>📋</div>
+                  </div>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:5}}>Compliance this week</div>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{fontSize:17,fontWeight:800,color:C.green}}>80%</div>
+                    <div style={{flex:1,height:6,background:C.border,borderRadius:99,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:mounted?"80%":"0%",
+                        background:`linear-gradient(90deg,${C.green},#34D399)`,
+                        borderRadius:99,transition:"width 1.2s ease 0.3s"}}/>
+                    </div>
+                  </div>
+                </div>
               </div>
+            )}
 
-              <button onClick={saveEdits}
-                style={{padding:"9px 22px",borderRadius:9,border:"none",
-                  background:"linear-gradient(135deg,#00e5ff,#7f5af0)",color:"#000",
-                  fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>
-                💾 Save
+            {/* Manual Therapy */}
+            {treatCat==="manual" && (
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {MANUAL.map((m,i)=>(
+                  <div key={i} style={{background:C.white,borderRadius:14,padding:16,
+                    boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:C.text}}>{m.name}</div>
+                        <div style={{fontSize:11,color:C.muted,marginTop:3}}>{m.freq}</div>
+                      </div>
+                      <div style={{padding:"3px 9px",borderRadius:99,background:"#ECFDF5"}}>
+                        <span style={{fontSize:10,fontWeight:700,color:C.green}}>{m.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Modalities */}
+            {treatCat==="modalities" && (
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {MODALITIES.map((m,i)=>(
+                  <div key={i} style={{background:C.white,borderRadius:14,padding:16,
+                    boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:C.text}}>{m.name}</div>
+                        <div style={{fontSize:11,color:C.muted,marginTop:3}}>{m.freq}</div>
+                      </div>
+                      <div style={{padding:"3px 9px",borderRadius:99,background:"#ECFDF5"}}>
+                        <span style={{fontSize:10,fontWeight:700,color:C.green}}>{m.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Education */}
+            {treatCat==="education" && (
+              <div style={{background:C.white,borderRadius:14,padding:18,
+                boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:10}}>Patient Education</div>
+                {["Posture correction at workstation","Ergonomic advice for driving",
+                  "Sleep positioning guidance","Activity modification strategies",
+                  "Pain management education"].map((item,i)=>(
+                  <div key={i} style={{display:"flex",gap:8,padding:"7px 0",
+                    borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
+                    <span style={{color:C.green,fontWeight:700}}>✓</span>
+                    <span style={{fontSize:12,color:C.text}}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════
+            PROGRESS TAB
+        ════════════════════════════════════════ */}
+        {tab==="progress" && (
+          <div className="tab-content" style={{padding:"16px 16px"}}>
+            {/* Progress rings row */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:16,letterSpacing:"-0.3px"}}>
+                Overall Progress
+              </div>
+              <div style={{display:"flex",justifyContent:"space-around"}}>
+                <Donut pct={overallPct} size={72} stroke={8} color={C.green}  label="Overall"  sub="%"/>
+                <Donut pct={Math.round((1-nrsNow/10)*100)} size={72} stroke={8} color={C.primary} label="Pain Relief" sub="%"/>
+                <Donut pct={sessPct}    size={72} stroke={8} color={C.blue}   label="Sessions"  sub="%"/>
+              </div>
+            </div>
+
+            {/* Baseline vs Current */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14,letterSpacing:"-0.3px"}}>
+                Baseline vs Current
+              </div>
+              {[
+                {label:"Pain (NRS)",      baseline:"8/10", current:`${nrsNow}/10`, pct:Math.round(((nrsWorst-nrsNow)/nrsWorst)*100), up:false},
+                {label:"Cervical Flex",   baseline:"28°",  current:ROM.flex+"°",   pct:Math.round(((parseFloat(ROM.flex)-28)/28)*100), up:true},
+                {label:"Cervical Ext",    baseline:"18°",  current:ROM.ext+"°",    pct:Math.round(((parseFloat(ROM.ext)-18)/18)*100), up:true},
+                {label:"NDI Score",       baseline:"38/50",current:"28/50",        pct:Math.round(((38-28)/38)*100), up:false},
+              ].map((row,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:10,
+                  padding:"10px 0",borderBottom:i<3?`1px solid ${C.border}`:"none"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,fontWeight:700,color:C.text}}>{row.label}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:2}}>
+                      Baseline: <span style={{fontWeight:600}}>{row.baseline}</span>
+                      {" → "}Current: <span style={{fontWeight:600,color:C.primary}}>{row.current}</span>
+                    </div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:13,fontWeight:800,color:C.green}}>
+                      {row.up?"↑":"↓"} {row.pct}%
+                    </div>
+                    <div style={{fontSize:10,color:C.muted}}>improvement</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pain trend chart */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14,letterSpacing:"-0.3px"}}>
+                Pain Trend
+              </div>
+              <LineChart/>
+            </div>
+
+            {/* Session timeline */}
+            <div style={{background:C.white,borderRadius:16,padding:18,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14,letterSpacing:"-0.3px"}}>
+                Session Timeline
+              </div>
+              {(sessions.length>0?sessions:[
+                {sessionNo:"1",date:"15 Apr 2025",vasStart:"8",vasEnd:"7",treatmentGiven:"Initial assessment"},
+                {sessionNo:"4",date:"01 May 2025",vasStart:"7",vasEnd:"6",treatmentGiven:"PA mobs + dry needling"},
+                {sessionNo:"8",date:"25 May 2025",vasStart:"6",vasEnd:"6",treatmentGiven:"Manual therapy + HEP review"},
+              ]).slice(-5).reverse().map((sess,i)=>(
+                <div key={i} style={{display:"flex",gap:12,padding:"10px 0",
+                  borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
+                  <div style={{width:34,height:34,borderRadius:"50%",
+                    background:C.primaryBg,border:`2px solid ${C.primary}30`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:11,fontWeight:800,color:C.primary,flexShrink:0}}>
+                    {sess.sessionNo}
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,fontWeight:700,color:C.text}}>{sess.date}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:1,
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {sess.treatmentGiven||"Session completed"}
+                    </div>
+                  </div>
+                  {sess.vasStart&&sess.vasEnd&&(
+                    <div style={{textAlign:"right",flexShrink:0}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.green}}>
+                        NRS: {sess.vasStart}→{sess.vasEnd}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════
+            DOCUMENTS TAB
+        ════════════════════════════════════════ */}
+        {tab==="documents" && (
+          <div className="tab-content" style={{padding:"16px 16px"}}>
+            {/* Upload */}
+            <div style={{background:"#F5F3FF",border:`2px dashed ${C.secondary}`,borderRadius:16,
+              padding:"22px",textAlign:"center",marginBottom:14,cursor:"pointer"}}>
+              <div style={{fontSize:28,marginBottom:6}}>📤</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.primary}}>Upload Document</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:3}}>
+                SOAP PDF, X-Ray, MRI, Posture Report
+              </div>
+            </div>
+
+            {/* Posture analysis section */}
+            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14,letterSpacing:"-0.3px"}}>
+                Posture Analysis
+              </div>
+              {/* Posture views */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+                {["Anterior","Lateral","Posterior"].map((view,i)=>(
+                  <div key={i} style={{background:"#F9FAFB",borderRadius:10,padding:10,
+                    textAlign:"center",border:`1px solid ${C.border}`}}>
+                    <div style={{fontSize:28,marginBottom:5}}>🧍</div>
+                    <div style={{fontSize:10,fontWeight:600,color:C.muted}}>{view}</div>
+                    <div style={{fontSize:9,color:C.primary,marginTop:2}}>View →</div>
+                  </div>
+                ))}
+              </div>
+              {/* Posture findings */}
+              <div style={{background:"#F9FAFB",borderRadius:10,padding:12,marginBottom:12}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.text,marginBottom:6}}>Posture Findings</div>
+                {["Forward Head Posture (+3cm)","Rounded Shoulders (bilateral)","Increased Cervical Lordosis"].map((f,i)=>(
+                  <div key={i} style={{display:"flex",gap:6,padding:"4px 0",
+                    borderBottom:i<2?`1px solid ${C.border}`:"none"}}>
+                    <span style={{color:C.orange,fontSize:12}}>⚠</span>
+                    <span style={{fontSize:11.5,color:C.text}}>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <button style={{width:"100%",padding:"11px",borderRadius:10,border:"none",
+                background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
+                color:"white",fontSize:12,fontWeight:700,cursor:"pointer",
+                boxShadow:`0 4px 12px rgba(109,40,217,0.3)`}}>
+                📄 Generate Posture PDF
               </button>
             </div>
-          )}
 
-        </div>
+            {/* Document list */}
+            <div style={{background:C.white,borderRadius:16,padding:18,
+              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>Documents</div>
+              {[
+                {icon:"📋",name:"SOAP Note — Session 8",   date:"25 May 2025",type:"SOAP PDF",size:"124 KB"},
+                {icon:"🧍",name:"Posture Report — May 2025",date:"22 May 2025",type:"Posture PDF",size:"2.1 MB"},
+                {icon:"💪",name:"Exercise Prescription",     date:"15 Apr 2025",type:"Exercise PDF",size:"340 KB"},
+                {icon:"📊",name:"NDI Outcome Measure",       date:"25 May 2025",type:"Outcome",size:"56 KB"},
+                {icon:"🩻",name:"MRI Report — Cervical",     date:"10 Apr 2025",type:"MRI",size:"8.2 MB"},
+              ].map((doc,i)=>(
+                <div key={i} style={{display:"flex",gap:12,alignItems:"center",
+                  padding:"11px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
+                  <div style={{width:40,height:40,borderRadius:10,background:"#EDE9FE",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:18,flexShrink:0}}>{doc.icon}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12.5,fontWeight:700,color:C.text,
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{doc.name}</div>
+                    <div style={{fontSize:10.5,color:C.muted,marginTop:2}}>{doc.date} · {doc.size}</div>
+                  </div>
+                  <div style={{display:"flex",gap:6,flexShrink:0}}>
+                    <button style={{padding:"5px 9px",borderRadius:7,
+                      background:"#F3F4F6",border:"none",cursor:"pointer",fontSize:12}}>⬇</button>
+                    <button style={{padding:"5px 9px",borderRadius:7,
+                      background:"#F3F4F6",border:"none",cursor:"pointer",fontSize:12}}>↗</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── BOTTOM ACTION BAR ── */}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,
+        background:"rgba(255,255,255,0.97)",backdropFilter:"blur(12px)",
+        borderTop:`1px solid ${C.border}`,padding:"10px 16px",
+        paddingBottom:"calc(10px + env(safe-area-inset-bottom))"}}>
+        {tab==="assessment" && (
+          <button onClick={()=>{ onLoadAssessment && onLoadAssessment(patient); onClose(); }}
+            style={{width:"100%",padding:"14px",borderRadius:12,border:"none",
+            background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
+            color:"white",fontSize:14,fontWeight:800,cursor:"pointer",letterSpacing:"-0.2px",
+            boxShadow:`0 4px 16px rgba(109,40,217,0.35)`}}>
+            + New Assessment
+          </button>
+        )}
+        {tab==="treatment" && (
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <button style={{width:"100%",padding:"13px",borderRadius:12,border:"none",
+              background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
+              color:"white",fontSize:13,fontWeight:800,cursor:"pointer",
+              boxShadow:`0 4px 16px rgba(109,40,217,0.3)`}}>
+              Update Treatment Plan
+            </button>
+            <button style={{width:"100%",padding:"12px",borderRadius:12,
+              border:`1.5px solid ${C.primary}`,background:"white",
+              color:C.primary,fontSize:13,fontWeight:700,cursor:"pointer"}}>
+              Add New Exercise
+            </button>
+          </div>
+        )}
+        {(tab==="overview"||tab==="progress") && (
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setTab("assessment")} style={{flex:2,padding:"13px",borderRadius:12,
+              border:"none",background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
+              color:"white",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+              Continue Assessment
+            </button>
+            <button onClick={()=>setTab("documents")} style={{flex:1,padding:"13px",borderRadius:12,
+              border:`1.5px solid ${C.primary}`,background:"white",
+              color:C.primary,fontSize:13,fontWeight:700,cursor:"pointer"}}>
+              Export PDF
+            </button>
+          </div>
+        )}
+        {tab==="documents" && (
+          <button style={{width:"100%",padding:"13px",borderRadius:12,border:"none",
+            background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
+            color:"white",fontSize:13,fontWeight:800,cursor:"pointer"}}>
+            📤 Upload Document
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── PATIENT CARD ──────────────────────────────────────────────────────────────
+
 function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
   const age    = patient.data?.dem_age    ? `${patient.data.dem_age}y` : "";
   const sex    = patient.data?.dem_sex    || patient.data?.dem_gender || "";
@@ -9493,136 +10060,188 @@ function HomeModule({ onNav }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // THERAPIST DASHBOARD MODULE
 // ═══════════════════════════════════════════════════════════════════════════
-function TherapistDashboardModule({ patients, data, onNav }) {
-  const { useState, useEffect, useMemo } = React;
-  const [activeTab, setActiveTab] = useState("all");
-  const [mounted,   setMounted]   = useState(false);
+function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask }) {
+  const { useState, useEffect, useMemo, useCallback } = React;
+  const [activeTab,   setActiveTab]   = useState("pending");
+  const [scheduleTab, setScheduleTab] = useState("all");
+  const [mounted,     setMounted]     = useState(false);
+  const [completing,  setCompleting]  = useState(null); // taskId being animated
+  const [expanded,    setExpanded]    = useState(null); // expanded task id
+
   useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
 
-  // ── LIVE DATA DERIVATION ────────────────────────────────────────────────────
+  // ── AUTO-GENERATE TASKS FROM CLINICAL DATA ─────────────────────────────────
+  useEffect(() => {
+    if (!onAddTask || !data) return;
+    const d   = data;
+    const pt  = d["dem_name"] || "Current patient";
+    const now = new Date().toISOString();
+    const today = new Date().toLocaleDateString("en-GB");
+    const sessions = Array.isArray(d.tx_sessions) ? d.tx_sessions : [];
+    const hasROM   = Object.keys(d).some(k => k.startsWith("rom_") && d[k]);
+    const hasMMT   = Object.keys(d).some(k => k.startsWith("mmt_") && d[k]);
+    const hasSOAP  = !!(d.tx_techniques || sessions.length > 0);
+    const hasCC    = !!d.cc_main;
+    const hasGait  = !!(d.ag_antalgic || d.gait_pattern || d.g_rom_findings);
+    const hasOM    = !!(d.om_psfs1 || d.om_odi_score || d.om_dash_score);
+    const pendingSession = sessions.length > 0 && !sessions[sessions.length-1]?.vasEnd;
+    const rfMyelopathy  = !!(d.cx_rf_myelopathy || d.lx_rf_cauda || d.cx_rf_vbi);
+    const totalSessions = sessions.length;
+
+    const AUTO_TASKS = [
+      rfMyelopathy && {
+        templateId:`red_flag_${pt}`, icon:"🚨", title:"Red Flag — Urgent Review",
+        patient:pt, category:"Clinical Safety", priority:"high",
+        dueTime:"Immediately", nav:"subjective",
+        note:"Red flag indicators detected — urgent clinical review required",
+      },
+      hasCC && !hasSOAP && {
+        templateId:`soap_${pt}`, icon:"📋", title:"SOAP Note Pending",
+        patient:pt, category:"Documentation", priority:"high",
+        dueTime:"End of session", nav:"soap",
+        note:"Assessment documented but SOAP not finalised",
+      },
+      pendingSession && {
+        templateId:`session_outcome_${pt}`, icon:"📝", title:"Session Outcome Missing",
+        patient:pt, category:"Documentation", priority:"high",
+        dueTime:"Before next patient", nav:"tx_sessions",
+        note:"Session recorded without VAS outcome — complete before leaving",
+      },
+      hasCC && !hasROM && {
+        templateId:`rom_${pt}`, icon:"📐", title:"ROM Assessment Missing",
+        patient:pt, category:"Assessment", priority:"medium",
+        dueTime:"Next session", nav:"rom",
+        note:"Chief complaint recorded but no ROM values entered",
+      },
+      hasCC && !hasMMT && {
+        templateId:`mmt_${pt}`, icon:"💪", title:"MMT Not Recorded",
+        patient:pt, category:"Assessment", priority:"medium",
+        dueTime:"Next session", nav:"mmt",
+        note:"Muscle testing not performed — complete for full clinical picture",
+      },
+      hasCC && !hasGait && !hasOM && totalSessions > 1 && {
+        templateId:`outcome_${pt}`, icon:"📊", title:"Outcome Measures Due",
+        patient:pt, category:"Assessment", priority:"low",
+        dueTime:"This week", nav:"subjective",
+        note:"Reassessment outcome measures recommended after 2+ sessions",
+      },
+      totalSessions > 0 && totalSessions % 6 === 0 && {
+        templateId:`reassess_${pt}_${totalSessions}`, icon:"🔄", title:"Formal Reassessment Due",
+        patient:pt, category:"Reassessment", priority:"medium",
+        dueTime:"Next session", nav:"subjective",
+        note:`${totalSessions} sessions completed — formal reassessment recommended`,
+      },
+    ].filter(Boolean);
+
+    AUTO_TASKS.forEach(task => {
+      onAddTask({
+        ...task,
+        id: `auto_${task.templateId}_${Date.now()}`,
+        status: "pending",
+        createdAt: now,
+        autoGenerated: true,
+      });
+    });
+  }, [data, patients]);
+
+  // ── DERIVED DATA ──────────────────────────────────────────────────────────
   const derived = useMemo(() => {
     const today = new Date().toDateString();
 
-    // Today's schedule — patients touched today, sorted by updatedAt time
+    // Merge auto-generated tasks with stored taskDB
+    const pendingTasks = taskDB
+      .filter(t => t.status !== "completed")
+      .sort((a,b) => {
+        const pOrd = {high:0,medium:1,low:2};
+        return (pOrd[a.priority]||1) - (pOrd[b.priority]||1);
+      });
+
+    const completedTasks = taskDB
+      .filter(t => t.status === "completed")
+      .sort((a,b) => new Date(b.completedAt||0) - new Date(a.completedAt||0))
+      .slice(0,20);
+
+    const todayCompleted = completedTasks.filter(t =>
+      t.completedAt && new Date(t.completedAt).toDateString() === today
+    ).length;
+
+    const overdueTasks = pendingTasks.filter(t =>
+      t.dueTime === "Immediately" || t.priority === "high"
+    ).length;
+
+    // Patients
     const schedule = [...patients]
-      .filter(p => p.id !== "demo") // exclude demo patient
       .sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-      .slice(0,8) // max 8
+      .slice(0,6)
       .map((p,i) => {
-        const d = p.data || {};
-        const sessions = Array.isArray(d.tx_sessions) ? d.tx_sessions : [];
-        const lastSess = sessions[sessions.length-1];
-        const isToday  = new Date(p.updatedAt).toDateString() === today;
-        const hasTx    = !!(d.tx_techniques || (lastSess && lastSess.treatmentGiven));
-        const hasROM   = !!(d.rom_cflex || d.rom_lflex || d.rom_sflex_left || d.rom_kflex_left);
-        const status   = hasTx ? "completed" : isToday && i===0 ? "in-progress" : "upcoming";
-        const colors   = ["#6D28D9","#0891B2","#059669","#D97706","#DC2626","#7C3AED","#0E7490","#047857"];
-        const name     = d.dem_name || p.name || "Patient";
+        const d2 = p.data || {};
+        const sessions = Array.isArray(d2.tx_sessions) ? d2.tx_sessions : [];
+        const hasTx = !!(d2.tx_techniques || sessions.length > 0);
+        const isActive = p.id === patients[0]?.id;
+        const colors = ["#6D28D9","#0891B2","#059669","#D97706","#DC2626","#7C3AED"];
+        const name = d2.dem_name || p.name || "Patient";
         const initials = name.split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
-        const time     = new Date(p.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
-        const dx       = d.cc_main ? d.cc_main.slice(0,38)+(d.cc_main.length>38?"…":"")
-                       : p.lastDx  ? p.lastDx.slice(0,38)
-                       : "Assessment pending";
-        return { id:p.id, name, initials, color:colors[i%colors.length], time, dx, status,
-                 sessionCount: sessions.length, hasRedFlags: p.hasRedFlags };
+        const dx = d2.cc_main ? d2.cc_main.slice(0,35)+(d2.cc_main.length>35?"…":"") : p.lastDx||"Assessment pending";
+        return { id:p.id, name, initials, color:colors[i%colors.length],
+                 dx, status:hasTx?"completed":isActive?"in-progress":"upcoming",
+                 sessionCount:sessions.length, hasRedFlags:p.hasRedFlags };
       });
 
-    // Active patient data (current data prop)
-    const activeName     = data["dem_name"] || "No patient";
-    const activeNRS      = parseFloat(data["cc_vas_now"] || "0");
-    const activeNRSWorst = parseFloat(data["cc_vas_worst"] || "0");
-    const activeSessions = Array.isArray(data.tx_sessions) ? data.tx_sessions : [];
-    const activeCC       = (data["cc_main"]||"Assessment").slice(0,40);
-    // Recovery % = improvement from worst NRS to current, blended with session count
-    const nrsImprove = activeNRSWorst > 0 ? Math.round(((activeNRSWorst - activeNRS) / activeNRSWorst)*100) : 0;
-    const sessBonus  = Math.min(activeSessions.length * 5, 30);
-    const recoveryPct = Math.min(Math.max(nrsImprove + sessBonus, 0), 100);
+    // Stats
+    const todayCount  = patients.filter(p => new Date(p.updatedAt).toDateString()===today).length;
+    const activeNRS   = parseFloat(data["cc_vas_now"]||"0");
+    const worstNRS    = parseFloat(data["cc_vas_worst"]||"0");
+    const activeSess  = Array.isArray(data.tx_sessions) ? data.tx_sessions : [];
+    const nrsImprove  = worstNRS > 0 ? Math.round(((worstNRS-activeNRS)/worstNRS)*100) : 0;
+    const recoveryPct = Math.min(Math.max(nrsImprove + Math.min(activeSess.length*5,30), 0), 100);
+    const activeName  = data["dem_name"] || "";
+    const activeCC    = (data["cc_main"]||"").slice(0,38);
 
-    // Quick stats
-    const todayCount   = patients.filter(p => new Date(p.updatedAt).toDateString()===today).length;
-    const totalSoap    = patients.filter(p => p.data && (p.data.tx_techniques||(Array.isArray(p.data.tx_sessions)&&p.data.tx_sessions.length>0))).length;
-    const pendingSoap  = Math.max(patients.length - totalSoap, 0);
-    const avgRecovery  = patients.length > 0 ? Math.round(patients.reduce((sum,p)=>{
-      const d2 = p.data||{}, nw=parseFloat(d2.cc_vas_now||"5"), nb=parseFloat(d2.cc_vas_worst||"5");
-      return sum + (nb>0 ? Math.round(((nb-nw)/nb)*100) : 50);
-    },0) / patients.length) : 0;
+    // Outcomes
+    const total = Math.max(patients.length,1);
+    const soapPct  = Math.round((patients.filter(p=>p.data&&(p.data.tx_techniques||(Array.isArray(p.data.tx_sessions)&&p.data.tx_sessions.length>0))).length/total)*100);
+    const romPct   = Math.round((patients.filter(p=>p.data&&Object.keys(p.data).some(k=>k.startsWith("rom_")&&p.data[k])).length/total)*100);
+    const assessPct= Math.round((patients.filter(p=>p.data&&p.data.cc_main).length/total)*100);
+    const safetyPct= Math.round(((total-patients.filter(p=>p.hasRedFlags).length)/total)*100);
 
-    // ROM from current patient
-    const romRows = [
-      { label:"Cervical Flex", current:parseFloat(data.rom_cflex||"0"),   normal:45,  color:"#6D28D9" },
-      { label:"Lumbar Flex",   current:parseFloat(data.rom_lflex||"0"),   normal:60,  color:"#0891B2" },
-      { label:"Shoulder Abd",  current:parseFloat(data.rom_sabd_right||data.rom_sabd_left||"0"), normal:180, color:"#8B5CF6" },
-      { label:"Knee Flex",     current:parseFloat(data.rom_kflex_right||data.rom_kflex_left||"0"), normal:140, color:"#059669" },
-      { label:"Hip Flex",      current:parseFloat(data.rom_hflex_right||data.rom_hflex_left||"0"), normal:120, color:"#D97706" },
-      { label:"Ankle DF",      current:parseFloat(data.rom_adf_right||data.rom_adf_left||"0"),    normal:20,  color:"#0E7490" },
-    ].filter(r => r.current > 0);
-
-    // Pending tasks from current patient data
-    const tasks = [];
-    const ptName = data["dem_name"] || "Current patient";
-    if (data["cc_main"] && !data["tx_techniques"] && activeSessions.length===0)
-      tasks.push({ icon:"📋", label:"SOAP note not started", patient:ptName, urgency:"high",   nav:"soap" });
-    if (data["cc_main"] && activeSessions.length>0 && !activeSessions[activeSessions.length-1]?.vasEnd)
-      tasks.push({ icon:"📝", label:"Session outcome not recorded", patient:ptName, urgency:"high", nav:"tx_sessions" });
-    const hasAnyROM = !!(data.rom_cflex||data.rom_lflex||data.rom_sflex_left||data.rom_kflex_left||data.rom_hflex_left||data.rom_adf_left);
-    if (data["cc_main"] && !hasAnyROM)
-      tasks.push({ icon:"📐", label:"ROM assessment missing", patient:ptName, urgency:"medium", nav:"rom" });
-    const hasMMT = Object.keys(data).some(k=>k.startsWith("mmt_")&&data[k]);
-    if (data["cc_main"] && !hasMMT)
-      tasks.push({ icon:"💪", label:"MMT not recorded", patient:ptName, urgency:"medium", nav:"mmt" });
-    if (data["cx_rf_myelopathy"]||data["lx_rf_cauda"]||data["cx_rf_vbi"])
-      tasks.push({ icon:"🚨", label:"Red flags require urgent review", patient:ptName, urgency:"high", nav:"subjective" });
-    // Add per-patient pending tasks
-    patients.filter(p=>p.data&&p.data.cc_main&&!p.data.tx_techniques&&!(Array.isArray(p.data.tx_sessions)&&p.data.tx_sessions.length>0))
-      .slice(0,2)
-      .forEach(p => {
-        const pn = p.data.dem_name||p.name||"Patient";
-        if (pn !== ptName) tasks.push({ icon:"📋", label:"SOAP pending", patient:pn, urgency:"low", nav:"soap" });
-      });
-
-    // Recovery trend — from tx_sessions VAS improvement across current patient
+    // Trend
     let trendData = [0,0,0,0,0,0,0,0,0,0,0,0];
-    if (activeSessions.length > 0) {
-      activeSessions.slice(-12).forEach((sess,i) => {
-        const vs = parseFloat(sess.vasStart||"5"), ve = parseFloat(sess.vasEnd||"5");
-        const improve = vs > 0 ? Math.round(((vs-ve)/vs)*100) : 0;
-        trendData[i] = Math.max(0, improve);
+    if (activeSess.length > 0) {
+      activeSess.slice(-12).forEach((s,i)=>{
+        const vs=parseFloat(s.vasStart||"5"), ve=parseFloat(s.vasEnd||"5");
+        trendData[i]=Math.max(0, vs>0?Math.round(((vs-ve)/vs)*100):0);
       });
-    } else if (patients.length > 0) {
-      // Fallback: use all patients' NRS improvement by month
-      patients.forEach(p => {
+    } else {
+      patients.forEach(p=>{
         const d2=p.data||{};
-        const mn = new Date(p.updatedAt).getMonth();
+        const mn=new Date(p.updatedAt).getMonth();
         const vs=parseFloat(d2.cc_vas_worst||"0"), vc=parseFloat(d2.cc_vas_now||"0");
-        if (vs>0) trendData[mn] = Math.round(((vs-vc)/vs)*100);
+        if(vs>0) trendData[mn]=Math.round(((vs-vc)/vs)*100);
       });
     }
 
-    // Patient outcome donuts from all patients
-    const total = Math.max(patients.length, 1);
-    const soapDonePct = Math.round((patients.filter(p=>p.data&&(p.data.tx_techniques||(Array.isArray(p.data.tx_sessions)&&p.data.tx_sessions.length>0))).length/total)*100);
-    const romDonePct  = Math.round((patients.filter(p=>p.data&&Object.keys(p.data).some(k=>k.startsWith("rom_")&&p.data[k])).length/total)*100);
-    const assessPct   = Math.round((patients.filter(p=>p.data&&p.data.cc_main).length/total)*100);
-    const redFlagPct  = Math.round((patients.filter(p=>p.hasRedFlags).length/total)*100);
-
-    return { schedule, activeName, activeNRS, activeNRSWorst, activeCC, activeSessions,
-             recoveryPct, todayCount, pendingSoap, avgRecovery, romRows, tasks, trendData,
-             soapDonePct, romDonePct, assessPct, redFlagPct,
-             totalPatients:patients.length };
-  }, [patients, data]);
+    return { pendingTasks, completedTasks, todayCompleted, overdueTasks,
+             schedule, todayCount, recoveryPct, activeName, activeCC,
+             activeNRS, worstNRS, activeSess, soapPct, romPct, assessPct, safetyPct, trendData };
+  }, [patients, data, taskDB]);
 
   const {
-    schedule, activeName, activeNRS, activeNRSWorst, activeCC, activeSessions,
-    recoveryPct, todayCount, pendingSoap, avgRecovery, romRows, tasks, trendData,
-    soapDonePct, romDonePct, assessPct, redFlagPct, totalPatients
+    pendingTasks, completedTasks, todayCompleted, overdueTasks,
+    schedule, todayCount, recoveryPct, activeName, activeCC,
+    activeNRS, worstNRS, activeSess, soapPct, romPct, assessPct, safetyPct, trendData
   } = derived;
 
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour<12?"Good morning":hour<17?"Good afternoon":"Good evening";
-  const dateStr = now.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+  // ── COMPLETE TASK with animation ──────────────────────────────────────────
+  const handleComplete = useCallback((taskId) => {
+    setCompleting(taskId);
+    setTimeout(() => {
+      onCompleteTask && onCompleteTask(taskId);
+      setCompleting(null);
+      setExpanded(null);
+    }, 600);
+  }, [onCompleteTask]);
 
-  // ── INLINE COMPONENTS ───────────────────────────────────────────────────────
+  // ── INLINE COMPONENTS ─────────────────────────────────────────────────────
   const Donut = ({ pct, color, size=62, stroke=7, label }) => {
     const [val,setVal] = useState(0);
     useEffect(()=>{const t=setTimeout(()=>setVal(pct),500);return()=>clearTimeout(t);},[pct]);
@@ -9639,30 +10258,7 @@ function TherapistDashboardModule({ patients, data, onNav }) {
           <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",
             justifyContent:"center",fontSize:12,fontWeight:800,color:"#111827"}}>{val}%</div>
         </div>
-        <div style={{fontSize:10,color:"#6B7280",fontWeight:600,textAlign:"center",lineHeight:1.3}}>{label}</div>
-      </div>
-    );
-  };
-
-  const ROMBar = ({ label, current, normal, color }) => {
-    const [anim,setAnim] = useState(false);
-    useEffect(()=>{const t=setTimeout(()=>setAnim(true),400);return()=>clearTimeout(t);},[]);
-    const pct = Math.min(Math.round((current/normal)*100),100);
-    const flagColor = pct < 50 ? "#EF4444" : pct < 75 ? "#D97706" : color;
-    return (
-      <div style={{marginBottom:10}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-          <span style={{fontSize:11,fontWeight:600,color:"#374151"}}>{label}</span>
-          <span style={{fontSize:11,fontWeight:700,color:flagColor}}>
-            {current}° <span style={{color:"#9CA3AF",fontWeight:400}}>/ {normal}°</span>
-            <span style={{marginLeft:4,fontSize:10}}>{pct<75?"⚠":""}</span>
-          </span>
-        </div>
-        <div style={{height:5,background:"#F1F5F9",borderRadius:99,overflow:"hidden"}}>
-          <div style={{height:"100%",width:anim?`${pct}%`:"0%",
-            background:`linear-gradient(90deg,${color}80,${flagColor})`,
-            borderRadius:99,transition:"width 1.1s cubic-bezier(.4,0,.2,1)"}}/>
-        </div>
+        <div style={{fontSize:10,color:"#6B7280",fontWeight:600,textAlign:"center"}}>{label}</div>
       </div>
     );
   };
@@ -9670,34 +10266,34 @@ function TherapistDashboardModule({ patients, data, onNav }) {
   const TrendChart = ({ data: d }) => {
     const [anim,setAnim] = useState(false);
     useEffect(()=>{const t=setTimeout(()=>setAnim(true),400);return()=>clearTimeout(t);},[]);
-    const w=280,h=72,max=Math.max(...d,1),min=0;
-    const pts = d.map((v,i)=>{
+    const w=280, h=72, max=Math.max(...d,1);
+    const pts=d.map((v,i)=>{
       const x=(i/(d.length-1||1))*w;
-      const y=h-((v-min)/(max-min||1))*(h-10)-5;
+      const y=h-((v/max))*(h-10)-5;
       return [x,y];
     });
-    const pathD = pts.map((p,i)=>`${i===0?"M":"L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
-    const areaD = `${pathD} L${w},${h} L0,${h} Z`;
-    const months = ["J","F","M","A","M","J","J","A","S","O","N","D"];
+    const pathD=pts.map((p,i)=>`${i===0?"M":"L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+    const areaD=`${pathD} L${w},${h} L0,${h} Z`;
+    const months=["J","F","M","A","M","J","J","A","S","O","N","D"];
     return (
       <svg width="100%" viewBox={`0 0 ${w} ${h+16}`} style={{overflow:"visible",display:"block"}}>
         <defs>
-          <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="tg2" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#6D28D9" stopOpacity="0.2"/>
             <stop offset="100%" stopColor="#6D28D9" stopOpacity="0"/>
           </linearGradient>
-          <clipPath id="tc">
+          <clipPath id="tc2">
             <rect x="0" y="0" width={anim?w:0} height={h+16}
               style={{transition:"width 1.4s cubic-bezier(.4,0,.2,1)"}}/>
           </clipPath>
         </defs>
-        <path d={areaD} fill="url(#tg)" clipPath="url(#tc)"/>
+        <path d={areaD} fill="url(#tg2)" clipPath="url(#tc2)"/>
         <path d={pathD} fill="none" stroke="#6D28D9" strokeWidth="2.5"
-          strokeLinecap="round" strokeLinejoin="round" clipPath="url(#tc)"/>
-        {pts.map((p,i)=> i%3===0 && (
+          strokeLinecap="round" strokeLinejoin="round" clipPath="url(#tc2)"/>
+        {pts.map((p,i)=>i%3===0&&(
           <text key={i} x={p[0]} y={h+14} textAnchor="middle" fontSize="8" fill="#9CA3AF">{months[i]}</text>
         ))}
-        {pts[pts.length-1] && (
+        {pts[pts.length-1]&&(
           <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]}
             r="4" fill="#6D28D9" stroke="white" strokeWidth="2"/>
         )}
@@ -9705,27 +10301,39 @@ function TherapistDashboardModule({ patients, data, onNav }) {
     );
   };
 
-  const statusCfg = {
-    "in-progress":{ bg:"#ECFDF5",color:"#059669",dot:"#10B981",label:"Active"    },
-    "upcoming":   { bg:"#EFF6FF",color:"#2563EB",dot:"#3B82F6",label:"Upcoming"  },
-    "completed":  { bg:"#F3F4F6",color:"#6B7280",dot:"#9CA3AF",label:"Done"      },
+  // ── PRIORITY CONFIG ───────────────────────────────────────────────────────
+  const PRI = {
+    high:   { bg:"#FEF2F2", color:"#EF4444", border:"#FECACA", dot:"#EF4444", label:"High"   },
+    medium: { bg:"#FFFBEB", color:"#D97706", border:"#FDE68A", dot:"#D97706", label:"Medium" },
+    low:    { bg:"#F0FDF4", color:"#059669", border:"#BBF7D0", dot:"#059669", label:"Low"    },
   };
-
-  const s = {fontFamily:"'DM Sans','Helvetica Neue',sans-serif"};
+  const STATUS_CFG = {
+    "in-progress":{ bg:"#ECFDF5",color:"#059669",dot:"#10B981",label:"Active"   },
+    "upcoming":   { bg:"#EFF6FF",color:"#2563EB",dot:"#3B82F6",label:"Upcoming" },
+    "completed":  { bg:"#F3F4F6",color:"#6B7280",dot:"#9CA3AF",label:"Done"     },
+  };
+  const CAT_ICONS = {
+    "Clinical Safety":"🚨","Documentation":"📋","Assessment":"📐","Reassessment":"🔄","Follow-Up":"📞"
+  };
+  const now = new Date();
+  const greeting = now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening";
+  const dateStr  = now.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
   const STATS = [
-    {label:"Today",   value:String(todayCount),              sub:"patients",  icon:"👥",color:"#6D28D9",bg:"#EDE9FE",nav:"subjective"},
-    {label:"Active",  value:String(activeSessions.length||1),sub:"sessions",  icon:"📅",color:"#059669",bg:"#ECFDF5",nav:"tx_sessions"},
-    {label:"SOAP",    value:String(pendingSoap),              sub:"pending",   icon:"📋",color:"#D97706",bg:"#FEF3C7",nav:"soap"},
-    {label:"Avg",     value:String(avgRecovery)+"%",          sub:"recovery",  icon:"📈",color:"#0891B2",bg:"#E0F2FE",nav:"subjective"},
+    {label:"Today",   value:String(todayCount),             sub:"patients", icon:"👥",color:"#6D28D9",bg:"#EDE9FE",nav:"subjective"},
+    {label:"Pending", value:String(pendingTasks.length),    sub:"tasks",    icon:"⏳",color:pendingTasks.some(t=>t.priority==="high")?"#EF4444":"#D97706",bg:pendingTasks.some(t=>t.priority==="high")?"#FEF2F2":"#FEF3C7",nav:"dashboard"},
+    {label:"Done",    value:String(todayCompleted),         sub:"today",    icon:"✓", color:"#059669",bg:"#ECFDF5",nav:"dashboard"},
+    {label:"Overdue", value:String(overdueTasks),           sub:"alerts",   icon:"⚠",color:"#EF4444",bg:"#FEF2F2",nav:"dashboard"},
   ];
-  const filteredSchedule = schedule.filter(s2=>activeTab==="all"||s2.status===activeTab);
 
   return (
-    <div style={{...s,background:"#F8FAFC",minHeight:"100vh",padding:"0 0 24px"}}>
+    <div style={{fontFamily:"'DM Sans','Helvetica Neue',sans-serif",background:"#F8FAFC",minHeight:"100vh",padding:"0 0 24px"}}>
       <style>{`
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slideOut{from{opacity:1;transform:translateX(0) scaleY(1);max-height:200px}to{opacity:0;transform:translateX(60px) scaleY(0);max-height:0;margin:0;padding:0}}
+        @keyframes checkPop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
         @keyframes pulseDot{0%,100%{opacity:1}50%{opacity:0.35}}
         .dc{animation:fadeUp 0.45s ease both}
+        .completing{animation:slideOut 0.55s cubic-bezier(.4,0,.2,1) forwards}
       `}</style>
 
       {/* ── HEADER ── */}
@@ -9739,13 +10347,15 @@ function TherapistDashboardModule({ patients, data, onNav }) {
             </div>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {tasks.some(t=>t.urgency==="high") && (
-              <div style={{position:"relative",cursor:"pointer"}} onClick={()=>onNav("soap")}>
-                <div style={{width:38,height:38,borderRadius:11,background:"#FEF2F2",
-                  border:"1px solid #FECACA",display:"flex",alignItems:"center",
-                  justifyContent:"center",fontSize:"1rem"}}>🔔</div>
-                <div style={{position:"absolute",top:8,right:8,width:7,height:7,
-                  background:"#EF4444",borderRadius:"50%",border:"1.5px solid white"}}/>
+            {overdueTasks > 0 && (
+              <div style={{position:"relative",cursor:"pointer",width:38,height:38,borderRadius:11,
+                background:"#FEF2F2",border:"1px solid #FECACA",display:"flex",
+                alignItems:"center",justifyContent:"center",fontSize:"1rem"}}
+                onClick={()=>setActiveTab("pending")}>
+                🔔
+                <div style={{position:"absolute",top:7,right:7,width:8,height:8,background:"#EF4444",
+                  borderRadius:"50%",border:"1.5px solid white",
+                  animation:"pulseDot 1.2s infinite"}}/>
               </div>
             )}
             <div style={{width:38,height:38,borderRadius:11,
@@ -9759,14 +10369,14 @@ function TherapistDashboardModule({ patients, data, onNav }) {
 
       <div style={{padding:"16px 14px",display:"flex",flexDirection:"column",gap:16}}>
 
-        {/* ── QUICK STATS — all live ── */}
+        {/* ── QUICK STATS ── */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {STATS.map((st,i)=>(
             <div key={st.label} className="dc" style={{
-              background:"white",borderRadius:16,padding:"14px 14px",
+              background:"white",borderRadius:16,padding:"14px",
               border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
               animationDelay:`${i*0.07}s`,cursor:"pointer",
-            }} onClick={()=>onNav(st.nav)}>
+            }} onClick={()=>{ if(st.nav==="dashboard") setActiveTab("pending"); else onNav(st.nav); }}>
               <div style={{width:32,height:32,borderRadius:9,background:st.bg,
                 display:"flex",alignItems:"center",justifyContent:"center",
                 fontSize:14,marginBottom:10}}>{st.icon}</div>
@@ -9780,13 +10390,12 @@ function TherapistDashboardModule({ patients, data, onNav }) {
           ))}
         </div>
 
-        {/* ── ACTIVE PATIENT — 100% live ── */}
-        {activeName !== "No patient" ? (
+        {/* ── ACTIVE PATIENT ── */}
+        {activeName ? (
           <div className="dc" style={{
             background:"linear-gradient(135deg,#6D28D9 0%,#7C3AED 55%,#8B5CF6 100%)",
             borderRadius:20,padding:"18px",
-            boxShadow:"0 8px 28px rgba(109,40,217,0.28)",
-            animationDelay:"0.1s",cursor:"pointer",
+            boxShadow:"0 8px 28px rgba(109,40,217,0.28)",animationDelay:"0.1s",cursor:"pointer",
           }} onClick={()=>onNav("subjective")}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
               <div>
@@ -9795,7 +10404,7 @@ function TherapistDashboardModule({ patients, data, onNav }) {
                 <div style={{fontSize:17,fontWeight:800,color:"white",letterSpacing:"-0.4px"}}>{activeName}</div>
                 <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:2,
                   maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                  {activeCC} · {activeSessions.length} session{activeSessions.length!==1?"s":""}
+                  {activeCC||"Assessment pending"} · {activeSess.length} session{activeSess.length!==1?"s":""}
                 </div>
               </div>
               <div style={{width:44,height:44,borderRadius:13,
@@ -9807,9 +10416,9 @@ function TherapistDashboardModule({ patients, data, onNav }) {
             </div>
             <div style={{display:"flex",gap:8,marginBottom:14}}>
               {[
-                {l:"Pain NRS", v:activeNRS>0?`${activeNRS}/10`:"—",     s:activeNRSWorst>activeNRS?`↓ from ${activeNRSWorst}`:"not recorded"},
-                {l:"Sessions", v:activeSessions.length>0?`${activeSessions.length}`:  "0", s:"recorded"},
-                {l:"Recovery", v:`${recoveryPct}%`,  s:recoveryPct>50?"on track":"early stage"},
+                {l:"Pain NRS",v:activeNRS>0?`${activeNRS}/10`:"—",s:worstNRS>activeNRS?`↓ from ${worstNRS}`:"not recorded"},
+                {l:"Sessions",v:String(activeSess.length),s:"completed"},
+                {l:"Recovery",v:`${recoveryPct}%`,s:recoveryPct>50?"on track":"early stage"},
               ].map(m=>(
                 <div key={m.l} style={{flex:1,background:"rgba(255,255,255,0.14)",borderRadius:11,padding:"8px 9px"}}>
                   <div style={{fontSize:14,fontWeight:800,color:"white",lineHeight:1}}>{m.v}</div>
@@ -9824,9 +10433,8 @@ function TherapistDashboardModule({ patients, data, onNav }) {
                 <span style={{fontSize:10,color:"white",fontWeight:800}}>{recoveryPct}%</span>
               </div>
               <div style={{height:5,background:"rgba(255,255,255,0.18)",borderRadius:99,overflow:"hidden"}}>
-                <div style={{height:"100%",width:mounted?`${recoveryPct}%`:"0%",
-                  background:"white",borderRadius:99,
-                  transition:"width 1.3s cubic-bezier(.4,0,.2,1) 0.2s"}}/>
+                <div style={{height:"100%",width:mounted?`${recoveryPct}%`:"0%",background:"white",
+                  borderRadius:99,transition:"width 1.3s cubic-bezier(.4,0,.2,1) 0.2s"}}/>
               </div>
             </div>
           </div>
@@ -9836,49 +10444,250 @@ function TherapistDashboardModule({ patients, data, onNav }) {
             onClick={()=>onNav("subjective")}>
             <div style={{fontSize:"1.5rem",marginBottom:8}}>👤</div>
             <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>No active patient</div>
-            <div style={{fontSize:11,color:"#9CA3AF",marginTop:4}}>Create or load a patient to begin</div>
+            <div style={{fontSize:11,color:"#9CA3AF",marginTop:4}}>Select or create a patient to begin</div>
           </div>
         )}
 
-        {/* ── TODAY'S SCHEDULE — live from patients ── */}
-        <div>
+        {/* ══════════════════════════════════════════════════════════════
+            TASK MANAGEMENT SYSTEM
+        ══════════════════════════════════════════════════════════════ */}
+        <div className="dc" style={{animationDelay:"0.15s"}}>
+
+          {/* Tab bar */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
+              Task Workflow
+            </div>
+            <div style={{display:"flex",gap:5}}>
+              {[
+                {k:"pending",  label:`Pending ${pendingTasks.length>0?"("+pendingTasks.length+")":""}`},
+                {k:"completed",label:`Done ${todayCompleted>0?"("+todayCompleted+")":""}`},
+              ].map(({k,label})=>(
+                <button key={k} onClick={()=>setActiveTab(k)} style={{
+                  padding:"5px 12px",borderRadius:99,border:"none",cursor:"pointer",
+                  fontSize:11,fontWeight:700,
+                  background:activeTab===k?"#6D28D9":"#F3F4F6",
+                  color:activeTab===k?"white":"#6B7280",
+                  transition:"all 0.2s",
+                }}>{label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── PENDING TASKS ── */}
+          {activeTab === "pending" && (
+            <div>
+              {pendingTasks.length === 0 ? (
+                <div style={{background:"white",borderRadius:16,padding:"28px 20px",
+                  border:"2px dashed #E5E7EB",textAlign:"center"}}>
+                  <div style={{fontSize:"2rem",marginBottom:8}}>✅</div>
+                  <div style={{fontSize:14,fontWeight:700,color:"#374151"}}>All clear!</div>
+                  <div style={{fontSize:12,color:"#9CA3AF",marginTop:4}}>
+                    No pending tasks — great clinical workflow
+                  </div>
+                </div>
+              ) : (
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {pendingTasks.map((task,i) => {
+                    const pri = PRI[task.priority] || PRI.medium;
+                    const isCompleting = completing === task.id;
+                    const isExpanded   = expanded === task.id;
+                    return (
+                      <div key={task.id}
+                        className={isCompleting ? "completing" : ""}
+                        style={{
+                          background:"white",
+                          borderRadius:14,
+                          border:`1px solid ${isExpanded?pri.border:"#F1F5F9"}`,
+                          boxShadow:isExpanded?"0 4px 16px rgba(0,0,0,0.08)":"0 1px 5px rgba(0,0,0,0.04)",
+                          overflow:"hidden",
+                          animation:isCompleting?"":"fadeUp 0.4s ease both",
+                          animationDelay:`${i*0.05}s`,
+                          transition:"box-shadow 0.2s, border 0.2s",
+                          transformOrigin:"top",
+                        }}>
+
+                        {/* Priority stripe */}
+                        <div style={{height:3,background:pri.color,width:"100%"}}/>
+
+                        {/* Main row */}
+                        <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:11,
+                          cursor:"pointer"}} onClick={()=>setExpanded(isExpanded?null:task.id)}>
+                          {/* Icon */}
+                          <div style={{width:38,height:38,borderRadius:10,background:pri.bg,
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            fontSize:17,flexShrink:0}}>{task.icon}</div>
+
+                          {/* Info */}
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:13,fontWeight:700,color:"#111827",
+                              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                              {task.title}
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3,flexWrap:"wrap"}}>
+                              <span style={{fontSize:10.5,color:"#6B7280"}}>{task.patient}</span>
+                              <span style={{color:"#D1D5DB"}}>·</span>
+                              <span style={{fontSize:10,fontWeight:600,color:pri.color,
+                                background:pri.bg,padding:"1px 6px",borderRadius:99}}>
+                                {pri.label}
+                              </span>
+                              {task.dueTime && (
+                                <>
+                                  <span style={{color:"#D1D5DB"}}>·</span>
+                                  <span style={{fontSize:10,color:"#9CA3AF"}}>⏰ {task.dueTime}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Expand arrow */}
+                          <div style={{color:"#9CA3AF",fontSize:12,flexShrink:0,
+                            transition:"transform 0.2s",transform:isExpanded?"rotate(180deg)":""}}>▼</div>
+                        </div>
+
+                        {/* Expanded detail */}
+                        {isExpanded && (
+                          <div style={{padding:"0 14px 14px",borderTop:"1px solid #F9FAFB"}}>
+                            {task.note && (
+                              <div style={{background:"#F8FAFC",borderRadius:8,padding:"8px 10px",
+                                marginBottom:12,fontSize:11.5,color:"#6B7280",lineHeight:1.5}}>
+                                📌 {task.note}
+                              </div>
+                            )}
+                            <div style={{display:"flex",gap:8}}>
+                              {/* Open button */}
+                              <button onClick={()=>onNav(task.nav||"subjective")} style={{
+                                flex:1,padding:"9px",borderRadius:9,
+                                background:"#F3F4F6",border:"none",cursor:"pointer",
+                                fontSize:12,fontWeight:700,color:"#374151",
+                                display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                              }}>
+                                📂 Open
+                              </button>
+                              {/* Complete button */}
+                              <button onClick={()=>handleComplete(task.id)} style={{
+                                flex:2,padding:"9px",borderRadius:9,
+                                background:"linear-gradient(135deg,#059669,#10B981)",
+                                border:"none",cursor:"pointer",
+                                fontSize:12,fontWeight:800,color:"white",
+                                display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                                boxShadow:"0 2px 8px rgba(5,150,105,0.3)",
+                              }}>
+                                {isCompleting ? "✓ Completing…" : "✓ Mark Complete"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Quick complete (collapsed) */}
+                        {!isExpanded && (
+                          <div style={{padding:"0 14px 10px",display:"flex",gap:7}}>
+                            <button onClick={()=>onNav(task.nav||"subjective")} style={{
+                              flex:1,padding:"6px",borderRadius:8,
+                              background:"#F8FAFC",border:"1px solid #E5E7EB",
+                              cursor:"pointer",fontSize:11,fontWeight:600,color:"#6B7280",
+                            }}>Open →</button>
+                            <button onClick={()=>handleComplete(task.id)} style={{
+                              flex:2,padding:"6px",borderRadius:8,
+                              background:"#ECFDF5",border:"1px solid #BBF7D0",
+                              cursor:"pointer",fontSize:11,fontWeight:700,color:"#059669",
+                              display:"flex",alignItems:"center",justifyContent:"center",gap:4,
+                            }}>
+                              {isCompleting
+                                ? <span style={{animation:"checkPop 0.3s ease"}}>✓ Done!</span>
+                                : "✓ Complete"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── COMPLETED HISTORY ── */}
+          {activeTab === "completed" && (
+            <div>
+              {completedTasks.length === 0 ? (
+                <div style={{background:"white",borderRadius:16,padding:"24px",
+                  border:"1px solid #F1F5F9",textAlign:"center"}}>
+                  <div style={{fontSize:"1.5rem",marginBottom:8}}>📋</div>
+                  <div style={{fontSize:12,color:"#9CA3AF"}}>No completed tasks yet</div>
+                </div>
+              ) : (
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {completedTasks.map((task,i)=>(
+                    <div key={task.id} style={{
+                      background:"white",borderRadius:12,padding:"12px 14px",
+                      border:"1px solid #F1F5F9",
+                      display:"flex",alignItems:"center",gap:11,opacity:0.8,
+                      animation:"fadeUp 0.35s ease both",animationDelay:`${i*0.04}s`,
+                    }}>
+                      <div style={{width:34,height:34,borderRadius:9,
+                        background:"#ECFDF5",border:"1px solid #BBF7D0",
+                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>
+                        ✅
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12.5,fontWeight:700,color:"#374151",
+                          textDecoration:"line-through",opacity:0.7,
+                          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          {task.title}
+                        </div>
+                        <div style={{fontSize:10.5,color:"#9CA3AF",marginTop:2}}>
+                          {task.patient} · Completed{" "}
+                          {task.completedAt
+                            ? new Date(task.completedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})
+                            : "today"}
+                        </div>
+                      </div>
+                      <div style={{fontSize:11,fontWeight:600,color:"#059669",
+                        background:"#ECFDF5",padding:"2px 8px",borderRadius:99}}>Done</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── RECENT PATIENTS ── */}
+        <div className="dc" style={{animationDelay:"0.2s"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
             <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
-              Recent Patients
-              <span style={{fontSize:11,fontWeight:500,color:"#9CA3AF",marginLeft:6}}>
-                ({totalPatients} total)
-              </span>
+              Recent Patients <span style={{fontSize:11,fontWeight:500,color:"#9CA3AF",marginLeft:5}}>({patients.length})</span>
             </div>
             <span style={{fontSize:11,fontWeight:600,color:"#6D28D9",cursor:"pointer"}}
               onClick={()=>onNav("subjective")}>See all →</span>
           </div>
           <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:2}}>
-            {[["All","all"],["Active","in-progress"],["Upcoming","upcoming"],["Done","completed"]].map(([l,v])=>(
-              <button key={v} onClick={()=>setActiveTab(v)} style={{
+            {[["All","all"],["Active","in-progress"],["Done","completed"]].map(([l,v])=>(
+              <button key={v} onClick={()=>setScheduleTab(v)} style={{
                 padding:"5px 14px",borderRadius:99,border:"none",cursor:"pointer",
                 fontSize:11,fontWeight:700,whiteSpace:"nowrap",
-                background:activeTab===v?"#6D28D9":"#F3F4F6",
-                color:activeTab===v?"white":"#6B7280",transition:"all 0.2s",
+                background:scheduleTab===v?"#6D28D9":"#F3F4F6",
+                color:scheduleTab===v?"white":"#6B7280",transition:"all 0.2s",
               }}>{l}</button>
             ))}
           </div>
           {schedule.length === 0 ? (
             <div style={{background:"white",borderRadius:14,padding:"20px",
               border:"1px solid #F1F5F9",textAlign:"center",color:"#9CA3AF",fontSize:12}}>
-              No patients yet — create your first patient to get started
+              No patients yet — create your first patient
             </div>
           ) : (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {(filteredSchedule.length>0?filteredSchedule:schedule).slice(0,5).map((appt,i)=>{
-                const sc = statusCfg[appt.status];
+              {schedule.filter(s2=>scheduleTab==="all"||s2.status===scheduleTab).slice(0,5).map((appt,i)=>{
+                const sc = STATUS_CFG[appt.status];
                 return (
                   <div key={appt.id} style={{
-                    background:"white",borderRadius:15,padding:"12px 14px",
+                    background:"white",borderRadius:14,padding:"12px 14px",
                     border:`1px solid ${appt.hasRedFlags?"#FECACA":"#F1F5F9"}`,
-                    boxShadow:"0 1px 5px rgba(0,0,0,0.04)",
                     display:"flex",alignItems:"center",gap:12,
                     opacity:appt.status==="completed"?0.7:1,cursor:"pointer",
-                    animation:"fadeUp 0.4s ease both",animationDelay:`${i*0.06}s`,
+                    animation:"fadeUp 0.4s ease both",animationDelay:`${i*0.05}s`,
                   }} onClick={()=>onNav("subjective")}>
                     <div style={{width:40,height:40,borderRadius:11,
                       background:`${appt.color}18`,border:`1.5px solid ${appt.color}25`,
@@ -9886,10 +10695,10 @@ function TherapistDashboardModule({ patients, data, onNav }) {
                       fontSize:12,fontWeight:800,color:appt.color,flexShrink:0,
                       position:"relative"}}>
                       {appt.initials}
-                      {appt.hasRedFlags && (
+                      {appt.hasRedFlags&&(
                         <div style={{position:"absolute",top:-3,right:-3,width:10,height:10,
                           background:"#EF4444",borderRadius:"50%",border:"1.5px solid white",
-                          fontSize:6,display:"flex",alignItems:"center",justifyContent:"center",color:"white"}}>!</div>
+                          fontSize:7,display:"flex",alignItems:"center",justifyContent:"center",color:"white"}}>!</div>
                       )}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
@@ -9905,9 +10714,7 @@ function TherapistDashboardModule({ patients, data, onNav }) {
                           animation:appt.status==="in-progress"?"pulseDot 1.5s infinite":"none"}}/>
                         <span style={{fontSize:9.5,fontWeight:700,color:sc.color}}>{sc.label}</span>
                       </div>
-                      <div style={{fontSize:10,color:"#9CA3AF"}}>
-                        {appt.sessionCount} session{appt.sessionCount!==1?"s":""}
-                      </div>
+                      <div style={{fontSize:10,color:"#9CA3AF"}}>{appt.sessionCount} session{appt.sessionCount!==1?"s":""}</div>
                     </div>
                   </div>
                 );
@@ -9916,84 +10723,19 @@ function TherapistDashboardModule({ patients, data, onNav }) {
           )}
         </div>
 
-        {/* ── ROM — live from data ── */}
-        {romRows.length > 0 && (
-          <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
-            border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
-            animationDelay:"0.15s"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
-                ROM — {activeName}
-              </div>
-              <button style={{fontSize:11,fontWeight:600,color:"#6D28D9",background:"none",
-                border:"none",cursor:"pointer"}} onClick={()=>onNav("rom")}>
-                Measure →
-              </button>
-            </div>
-            {romRows.map(r=><ROMBar key={r.label} {...r}/>)}
-          </div>
-        )}
-
-        {/* ── PENDING TASKS — live ── */}
-        {tasks.length > 0 && (
-          <div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
-                Pending Tasks
-              </div>
-              <div style={{fontSize:11,fontWeight:700,color:"white",
-                background:tasks.some(t=>t.urgency==="high")?"#EF4444":"#6B7280",
-                padding:"2px 9px",borderRadius:99}}>
-                {tasks.length}
-              </div>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {tasks.map((t,i)=>{
-                const uc={high:"#EF4444",medium:"#D97706",low:"#6B7280"}[t.urgency];
-                const ub={high:"#FEF2F2",medium:"#FFFBEB",low:"#F9FAFB"}[t.urgency];
-                return (
-                  <div key={i} style={{
-                    background:"white",borderRadius:13,padding:"11px 14px",
-                    border:`1px solid ${t.urgency==="high"?"#FECACA":"#F1F5F9"}`,
-                    display:"flex",alignItems:"center",gap:11,
-                    animation:"fadeUp 0.4s ease both",animationDelay:`${i*0.06}s`,cursor:"pointer",
-                  }} onClick={()=>onNav(t.nav)}>
-                    <div style={{width:34,height:34,borderRadius:9,background:ub,
-                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>
-                      {t.icon}
-                    </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:12.5,fontWeight:700,color:"#111827"}}>{t.label}</div>
-                      <div style={{fontSize:11,color:"#6B7280",marginTop:1}}>{t.patient}</div>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{width:6,height:6,borderRadius:"50%",background:uc,flexShrink:0}}/>
-                      <div style={{color:"#9CA3AF",fontSize:16}}>›</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ── RECOVERY TREND — live from tx_sessions VAS ── */}
+        {/* ── RECOVERY TREND ── */}
         <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
           border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
-          animationDelay:"0.2s"}}>
+          animationDelay:"0.25s"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <div>
-              <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
-                Recovery Trend
-              </div>
+              <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>Recovery Trend</div>
               <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
-                {activeSessions.length > 0 ? `${activeSessions.length} sessions · NRS improvement` : "All patients · by month"}
+                {activeSess.length>0?`${activeSess.length} sessions · NRS improvement`:"All patients · monthly"}
               </div>
             </div>
             <div style={{textAlign:"right"}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#6D28D9",letterSpacing:"-1px"}}>
-                {recoveryPct}%
-              </div>
+              <div style={{fontSize:22,fontWeight:800,color:"#6D28D9",letterSpacing:"-1px"}}>{recoveryPct}%</div>
               <div style={{fontSize:10,color:recoveryPct>50?"#059669":"#9CA3AF",fontWeight:600}}>
                 {recoveryPct>50?"↑ improving":"↗ in progress"}
               </div>
@@ -10002,23 +10744,21 @@ function TherapistDashboardModule({ patients, data, onNav }) {
           <TrendChart data={trendData}/>
         </div>
 
-        {/* ── PATIENT OUTCOMES — live from all patients ── */}
+        {/* ── PATIENT OUTCOMES ── */}
         <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
           border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
-          animationDelay:"0.25s"}}>
+          animationDelay:"0.3s"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
-              Patient Outcomes
-            </div>
-            <div style={{fontSize:11,color:"#9CA3AF"}}>{totalPatients} patients</div>
+            <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>Patient Outcomes</div>
+            <div style={{fontSize:11,color:"#9CA3AF"}}>{patients.length} total</div>
           </div>
           <div style={{display:"flex",justifyContent:"space-around"}}>
-            <Donut pct={assessPct}    color="#6D28D9" label="Assessed"   size={62} stroke={7}/>
-            <Donut pct={romDonePct}   color="#0891B2" label="ROM Done"   size={62} stroke={7}/>
-            <Donut pct={soapDonePct}  color="#059669" label="SOAP Done"  size={62} stroke={7}/>
-            <Donut pct={100-redFlagPct} color="#10B981" label="No Red Flags" size={62} stroke={7}/>
+            <Donut pct={assessPct} color="#6D28D9" label="Assessed"  size={62} stroke={7}/>
+            <Donut pct={romPct}    color="#0891B2" label="ROM Done"   size={62} stroke={7}/>
+            <Donut pct={soapPct}   color="#059669" label="SOAP Done"  size={62} stroke={7}/>
+            <Donut pct={safetyPct} color="#10B981" label="No Flags"   size={62} stroke={7}/>
           </div>
-          {totalPatients === 0 && (
+          {patients.length===0&&(
             <div style={{textAlign:"center",color:"#9CA3AF",fontSize:11,marginTop:12}}>
               Add patients to see outcome analytics
             </div>
@@ -10030,22 +10770,18 @@ function TherapistDashboardModule({ patients, data, onNav }) {
           background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",
           borderRadius:20,padding:"20px",
           boxShadow:"0 4px 20px rgba(109,40,217,0.25)",
-          animationDelay:"0.3s",
+          animationDelay:"0.35s",
           display:"flex",justifyContent:"space-between",alignItems:"center",
           cursor:"pointer",
         }} onClick={()=>onNav("subjective")}>
           <div>
-            <div style={{fontSize:15,fontWeight:800,color:"white",letterSpacing:"-0.3px"}}>
-              Start Assessment
-            </div>
+            <div style={{fontSize:15,fontWeight:800,color:"white",letterSpacing:"-0.3px"}}>Start Assessment</div>
             <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:3}}>
               Subjective → ROM → MMT → Special Tests
             </div>
           </div>
           <div style={{width:44,height:44,borderRadius:13,background:"rgba(255,255,255,0.2)",
-            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>
-            →
-          </div>
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>→</div>
         </div>
 
       </div>
@@ -10933,6 +11669,41 @@ function AppInner() {
 
   // ── Multi-Patient Database ─────────────────────────────────────────────
   const [patients, setPatients] = useState(() => loadPatientDB());
+  const [taskDB, setTaskDB] = useState(() => loadTaskDB());
+
+  // ── Task helpers ─────────────────────────────────────────────────────────
+  const saveTasks = (tasks) => { setTaskDB(tasks); saveTaskDB(tasks); };
+
+  const completeTask = (taskId) => {
+    setTaskDB(prev => {
+      const updated = prev.map(t =>
+        t.id === taskId
+          ? { ...t, status:"completed", completedAt: new Date().toISOString() }
+          : t
+      );
+      saveTaskDB(updated);
+      return updated;
+    });
+  };
+
+  const dismissTask = (taskId) => {
+    setTaskDB(prev => {
+      const updated = prev.filter(t => t.id !== taskId);
+      saveTaskDB(updated);
+      return updated;
+    });
+  };
+
+  const addOrUpdateTask = (task) => {
+    setTaskDB(prev => {
+      // Don't duplicate — check by templateId
+      const exists = prev.find(t => t.templateId === task.templateId && t.status !== "completed");
+      if (exists) return prev;
+      const updated = [task, ...prev];
+      saveTaskDB(updated);
+      return updated;
+    });
+  };
   const [activePatientId, setActivePatientId] = useState(null);
   const [showPatientDb, setShowPatientDb] = useState(false);
   const [showUnsaved, setShowUnsaved] = useState(false);
@@ -11712,7 +12483,7 @@ function AppInner() {
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo}/>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask}/>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <SubjectiveModule data={data} set={set} onNav={navTo}/>
               ):tests==="PALPATION_MODULE"?(
