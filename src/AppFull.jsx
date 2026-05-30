@@ -8208,71 +8208,135 @@ function avatarGrad(id="") {
 }
 
 // ─── PATIENT PROFILE MODAL ─────────────────────────────────────────────────────
-function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField }) {
+function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav }) {
   const { useState, useEffect, useMemo } = React;
   const [tab, setTab] = useState("overview");
   const [assessView, setAssessView]     = useState("latest");
   const [treatCat, setTreatCat]         = useState("exercises");
   const [expanded, setExpanded]         = useState(null);
-  const [exDone, setExDone]             = useState({});
-  const [mounted, setMounted]           = useState(false);
+  const [exDone,     setExDone]     = useState({});
+  const [mounted,    setMounted]    = useState(false);
+  const [uploadedDocs, setUploadedDocs] = useState(() => {
+    try {
+      const key = `physio_docs_${patient?.id||"demo"}`;
+      return JSON.parse(localStorage.getItem(key) || "[]");
+    } catch { return []; }
+  });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef(null);
+
+  const saveDocs = (docs) => {
+    try {
+      localStorage.setItem(`physio_docs_${patient?.id||"demo"}`, JSON.stringify(docs));
+    } catch { alert("Storage full — file too large"); }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File too large. Maximum size is 5MB.");
+      return;
+    }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const newDoc = {
+        id: Date.now().toString(),
+        name: file.name,
+        date: new Date().toLocaleDateString("en-GB", {day:"2-digit",month:"short",year:"numeric"}),
+        size: file.size > 1024*1024
+          ? (file.size/(1024*1024)).toFixed(1)+" MB"
+          : Math.round(file.size/1024)+" KB",
+        type: file.type,
+        icon: file.type.includes("pdf") ? "📋"
+            : file.type.includes("image") ? "🖼"
+            : file.type.includes("video") ? "🎥"
+            : "📄",
+        dataUrl: ev.target.result,
+        uploadedAt: new Date().toISOString(),
+      };
+      const updated = [newDoc, ...uploadedDocs];
+      setUploadedDocs(updated);
+      saveDocs(updated);
+      setUploading(false);
+    };
+    reader.onerror = () => { setUploading(false); alert("Failed to read file."); };
+    reader.readAsDataURL(file);
+    e.target.value = ""; // reset input
+  };
+
+  const handleDeleteDoc = (id) => {
+    const updated = uploadedDocs.filter(d => d.id !== id);
+    setUploadedDocs(updated);
+    saveDocs(updated);
+  };
+
+  const handleDownloadDoc = (doc) => {
+    const a = document.createElement("a");
+    a.href = doc.dataUrl;
+    a.download = doc.name;
+    a.click();
+  };
+
+  const handlePreviewDoc = (doc) => {
+    const w = window.open();
+    if (doc.type.includes("image")) {
+      w.document.write(`<img src="${doc.dataUrl}" style="max-width:100%;"/>`);
+    } else {
+      w.document.write(`<iframe src="${doc.dataUrl}" style="width:100%;height:100vh;border:none;"></iframe>`);
+    }
+  };
+
   useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
 
   const d   = patient?.data || {};
-  const name = d.dem_name || patient?.name || "Patient";
-  const pid  = patient?.id ? "PT-" + patient.id.slice(0,10).toUpperCase() : "PT-2025-00045";
-  const age  = d.dem_age || "28";
-  const sex  = d.dem_sex || "Female";
-  const phone= d.dem_phone || "+1 98765 43210";
-  const email= d.dem_email || (name.toLowerCase().replace(" ",".") + "@email.com");
-  const dx   = d.cc_main?.slice(0,38) || patient?.lastDx || "Cervical Radiculopathy";
+  const name = d.dem_name || patient?.name || "";
+  const pid  = patient?.id ? "PT-" + patient.id.slice(0,10).toUpperCase() : "";
+  const age  = d.dem_age || "";
+  const sex  = d.dem_sex || "";
+  const phone= d.dem_phone || "";
+  const email= d.dem_email || "";
+  const dx   = d.cc_main?.slice(0,38) || patient?.lastDx || "";
   const region = d.cc_main?.toLowerCase().includes("neck")||d.cc_main?.toLowerCase().includes("cerv") ? "Cervical Region"
                : d.cc_main?.toLowerCase().includes("lumb")||d.cc_main?.toLowerCase().includes("back") ? "Lumbar Region"
                : d.cc_main?.toLowerCase().includes("shoulder") ? "Shoulder Region"
                : d.cc_main?.toLowerCase().includes("knee") ? "Knee Region"
-               : "Cervical Region";
-  const nrsNow   = parseFloat(d.cc_vas_now  || "6");
-  const nrsWorst = parseFloat(d.cc_vas_worst|| "8");
+               : d.cc_main ? "Musculoskeletal" : "";
+  const nrsNow   = parseFloat(d.cc_vas_now  || "0");
+  const nrsWorst = parseFloat(d.cc_vas_worst|| "0");
   const sessions = Array.isArray(d.tx_sessions) ? d.tx_sessions : [];
   const totalSess= 12;
-  const sessCount= sessions.length || 8;
+  const sessCount= sessions.length;
   const sessPct  = Math.round((sessCount/totalSess)*100);
   const nrsImprove= nrsWorst>0 ? Math.round(((nrsWorst-nrsNow)/nrsWorst)*100) : 0;
-  const overallPct= Math.min(Math.max(nrsImprove + Math.min(sessCount*3,30), 0), 100) || 72;
-  const onset    = d.cc_onset_date || d.cx_onset_date || "15 Apr 2025";
-  const agg      = d.cc_agg || d.cx_agg_mov || "Prolonged sitting, looking down, driving";
-  const rel      = d.cc_rel || d.cx_rel_mov || "Rest, heat, gentle movement";
+  const overallPct= Math.min(Math.max(nrsImprove + Math.min(sessCount*3,30), 0), 100);
+  const onset    = d.cc_onset_date || d.cx_onset_date || (Array.isArray(d.cc_onset)?d.cc_onset[0]:d.cc_onset) || "";
+  const agg      = d.cc_agg || (Array.isArray(d.cx_agg_mov)?d.cx_agg_mov.join(", "):d.cx_agg_mov) || "";
+  const rel      = d.cc_rel || (Array.isArray(d.cx_rel_mov)?d.cx_rel_mov.join(", "):d.cx_rel_mov) || "";
 
-  // ROM data from real fields
+  // ROM — real values only, no fallbacks
   const ROM = {
-    flex: d.rom_cflex || "45", ext: d.rom_cext || "35",
-    rrot: d.rom_crotr|| "60", lrot: d.rom_crotl|| "55",
-    rsb:  d.rom_clatr|| "35", lsb:  d.rom_clatl|| "30",
+    flex: d.rom_cflex || "", ext: d.rom_cext || "",
+    rrot: d.rom_crotr || "", lrot: d.rom_crotl || "",
+    rsb:  d.rom_clatr || "", lsb:  d.rom_clatl || "",
   };
-  const romImproving = parseFloat(ROM.flex) >= 40;
+  const hasROM = Object.values(ROM).some(v => v !== "");
+  const romImproving = parseFloat(ROM.flex||"0") >= 40;
 
-  // Trend data
-  const TREND = [7.5, 7.5, 8, 7.5, 7, 6.5, 6.5, 6.5, 6, 6, 6, 6];
-  const DATES  = ["20 Apr","27 Apr","04 May","11 May","18 May","25 May"];
+  // Trend from real sessions
+  const TREND = sessions.length > 0
+    ? sessions.slice(-12).map(s => parseFloat(s.vasEnd||s.vasStart||"0"))
+    : [];
+  const DATES = sessions.slice(-6).map(s => s.date || "");
 
-  // Exercises
-  const EXERCISES = [
-    { id:"e1", name:"Chin Tuck",              sets:3, reps:10, hold:"5s",  emoji:"🧘" },
-    { id:"e2", name:"Upper Trap Stretch",     sets:3, reps:"30s",hold:"",  emoji:"💪" },
-    { id:"e3", name:"Scapular Retraction",    sets:3, reps:15, hold:"",    emoji:"🏋" },
-    { id:"e4", name:"Median Nerve Glide",     sets:2, reps:10, hold:"",    emoji:"✋" },
-    { id:"e5", name:"Deep Neck Flexor Training",sets:3,reps:10,hold:"10s", emoji:"🦴" },
-  ];
+  // Exercises from real treatment data
+  const hepExercises = Array.isArray(d.hep_exercises) ? d.hep_exercises : [];
+  const EXERCISES = hepExercises.length > 0 ? hepExercises : [];
 
-  const MANUAL = [
-    { name:"PA Mobilisation L4/L5 Grade III", freq:"Per session", status:"Active" },
-    { name:"Soft Tissue Massage — Paraspinals", freq:"Per session", status:"Active" },
-    { name:"Dry Needling — Piriformis",         freq:"Every 2 sessions", status:"Active" },
-  ];
-  const MODALITIES = [
-    { name:"Ultrasound Therapy", freq:"10 min, 1MHz, 1.0 W/cm²", status:"Active" },
-    { name:"TENS",               freq:"20 min, 80Hz",             status:"Active" },
-  ];
+  // Manual therapy from real data
+  const MANUAL = Array.isArray(d.manual_therapy) ? d.manual_therapy : [];
+  const MODALITIES_LIST = Array.isArray(d.modalities) ? d.modalities : [];
 
   // Color system
   const C = {
@@ -8722,16 +8786,16 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField }
                     <span style={{fontSize:15}}>📐</span>
                     <span style={{fontSize:13,fontWeight:700,color:C.text}}>Cervical ROM</span>
                   </div>
-                  <span style={{fontSize:11.5,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Details</span>
+                  <span onClick={()=>onNav&&onNav("rom")} style={{fontSize:11.5,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Details →</span>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
                   {[
-                    {label:"Flexion",    val:ROM.flex+"°"},
-                    {label:"Extension",  val:ROM.ext+"°"},
-                    {label:"R Rotation", val:ROM.rrot+"°"},
-                    {label:"L Rotation", val:ROM.lrot+"°"},
-                    {label:"R SB",       val:ROM.rsb+"°"},
-                    {label:"L SB",       val:ROM.lsb+"°"},
+                    {label:"Flexion",    val:ROM.flex?ROM.flex+"°":"—"},
+                    {label:"Extension",  val:ROM.ext?ROM.ext+"°":"—"},
+                    {label:"R Rotation", val:ROM.rrot?ROM.rrot+"°":"—"},
+                    {label:"L Rotation", val:ROM.lrot?ROM.lrot+"°":"—"},
+                    {label:"R SB",       val:ROM.rsb?ROM.rsb+"°":"—"},
+                    {label:"L SB",       val:ROM.lsb?ROM.lsb+"°":"—"},
                   ].map(r=>(
                     <div key={r.label}>
                       <div style={{fontSize:10,color:C.muted}}>{r.label}</div>
@@ -8747,14 +8811,31 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField }
 
               {/* Objective finding rows */}
               {[
-                {icon:"💪",label:"Muscle Strength (MMT)",     sub:"Mild Weakness",   subColor:C.orange,  nav:"mmt"},
-                {icon:"⚡",label:"Neurological Tests",         sub:"ULNT1 Positive (Median Nerve)", nav:"neuro"},
-                {icon:"🔬",label:"Special Tests",              sub:"Spurling's Test: Positive (Left)", nav:"special"},
-                {icon:"🧍",label:"Posture Analysis",           sub:"Forward head posture, Rounded shoulders", nav:"posture"},
-                {icon:"📊",label:"Outcome Measures",           sub:"NDI: 28/50 (56%)", nav:"subjective"},
+                {icon:"💪",label:"Muscle Strength (MMT)",
+                  sub: Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]).length>0
+                    ? Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]).slice(0,2).map(k=>k.replace("mmt_","").replace(/_/g," ")).join(", ")
+                    : "Not recorded",
+                  subColor: Object.keys(d).some(k=>k.startsWith("mmt_")&&d[k]) ? C.orange : C.muted, nav:"mmt"},
+                {icon:"⚡",label:"Neurological Tests",
+                  sub: d.neuro_ultt1_left||d.neuro_ultt1_right ? "ULNT1 Positive" : d.neuro_slr_left||d.neuro_slr_right ? "SLR Positive" : "Not recorded",
+                  nav:"neuro"},
+                {icon:"🔬",label:"Special Tests",
+                  sub: Object.keys(d).filter(k=>k.startsWith("st_")&&d[k]==="Positive").length>0
+                    ? Object.keys(d).filter(k=>k.startsWith("st_")&&d[k]==="Positive").slice(0,1).map(k=>k.replace("st_","").replace(/_/g," ")+" Positive").join(", ")
+                    : "Not recorded",
+                  nav:"special"},
+                {icon:"🧍",label:"Posture Analysis",
+                  sub: Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]).length>0
+                    ? Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]).slice(0,2).map(k=>k.replace("posture_defect_","").replace(/_/g," ")).join(", ")
+                    : "Not recorded",
+                  nav:"posture"},
+                {icon:"📊",label:"Outcome Measures",
+                  sub: d.om_odi_score ? "ODI: "+d.om_odi_score+"%" : d.om_dash_score ? "DASH: "+d.om_dash_score : d.om_psfs1 ? "PSFS recorded" : "Not recorded",
+                  nav:"outcome"},
               ].map((row,i)=>(
                 <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                  padding:"12px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
+                  padding:"12px 0",borderBottom:i<4?`1px solid ${C.border}`:"none",cursor:"pointer"}}
+                  onClick={()=>onNav&&onNav(row.nav)}>
                   <div style={{display:"flex",gap:10,alignItems:"center"}}>
                     <div style={{width:34,height:34,borderRadius:9,background:"#F5F3FF",
                       display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>{row.icon}</div>
@@ -8763,7 +8844,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField }
                       <div style={{fontSize:11,color:row.subColor||C.muted,marginTop:1}}>{row.sub}</div>
                     </div>
                   </div>
-                  <span style={{fontSize:11.5,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Details</span>
+                  <span style={{fontSize:11.5,fontWeight:600,color:C.primary}}>View Details →</span>
                 </div>
               ))}
             </div>
@@ -9112,48 +9193,106 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField }
         {tab==="documents" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
 
-            {/* Upload zone */}
-            <div style={{background:"#F5F3FF",border:`2px dashed ${C.secondary}`,borderRadius:16,
-              padding:"28px 20px",textAlign:"center",marginBottom:16,cursor:"pointer"}}>
-              <div style={{fontSize:36,marginBottom:8}}>📤</div>
-              <div style={{fontSize:14,fontWeight:700,color:C.primary}}>Upload Document</div>
-              <div style={{fontSize:12,color:C.muted,marginTop:4}}>
-                SOAP PDF, X-Ray, MRI, Posture Report
-              </div>
+            {/* Hidden real file input */}
+            <input ref={fileInputRef} type="file" style={{display:"none"}}
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4"
+              onChange={handleFileUpload}/>
+
+            {/* Upload zone — tapping opens file picker */}
+            <div onClick={()=>fileInputRef.current?.click()}
+              style={{background:"#F5F3FF",border:`2px dashed ${C.secondary}`,borderRadius:16,
+              padding:"28px 20px",textAlign:"center",marginBottom:16,cursor:"pointer",
+              transition:"background 0.2s",
+              opacity: uploading ? 0.6 : 1}}>
+              {uploading ? (
+                <>
+                  <div style={{fontSize:36,marginBottom:8}}>⏳</div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.primary}}>Uploading…</div>
+                </>
+              ) : (
+                <>
+                  <div style={{fontSize:36,marginBottom:8}}>📤</div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.primary}}>Upload Document</div>
+                  <div style={{fontSize:12,color:C.muted,marginTop:4}}>
+                    PDF, Image, MRI, X-Ray — max 5MB
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Document list */}
+            {/* Uploaded documents list */}
             <div style={{background:C.white,borderRadius:16,padding:18,
               boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
-              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14,
-                letterSpacing:"-0.3px"}}>Documents</div>
-              {[
-                {icon:"📋",name:"SOAP Note — Session 8",    date:"25 May 2025",size:"124 KB"},
-                {icon:"🧍",name:"Posture Report — May 2025", date:"22 May 2025",size:"2.1 MB"},
-                {icon:"💪",name:"Exercise Prescription",      date:"15 Apr 2025",size:"340 KB"},
-                {icon:"📊",name:"NDI Outcome Measure",        date:"25 May 2025",size:"56 KB"},
-                {icon:"🩻",name:"MRI Report — Cervical",      date:"10 Apr 2025",size:"8.2 MB"},
-              ].map((doc,i)=>(
-                <div key={i} style={{display:"flex",gap:12,alignItems:"center",
-                  padding:"12px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
-                  <div style={{width:42,height:42,borderRadius:11,background:"#EDE9FE",
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:19,flexShrink:0}}>{doc.icon}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.text,
-                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{doc.name}</div>
-                    <div style={{fontSize:11,color:C.muted,marginTop:2}}>{doc.date} · {doc.size}</div>
-                  </div>
-                  <div style={{display:"flex",gap:6,flexShrink:0}}>
-                    <button style={{width:32,height:32,borderRadius:8,
-                      background:"#F3F4F6",border:"none",cursor:"pointer",
-                      fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>⬇</button>
-                    <button style={{width:32,height:32,borderRadius:8,
-                      background:"#F3F4F6",border:"none",cursor:"pointer",
-                      fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>↗</button>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                marginBottom:14}}>
+                <div style={{fontSize:15,fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}>
+                  Documents
+                </div>
+                <div style={{fontSize:11,color:C.muted,fontWeight:500}}>
+                  {uploadedDocs.length} file{uploadedDocs.length!==1?"s":""}
+                </div>
+              </div>
+
+              {uploadedDocs.length === 0 ? (
+                <div style={{textAlign:"center",padding:"24px 0"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>📂</div>
+                  <div style={{fontSize:13,fontWeight:600,color:C.muted}}>No documents yet</div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:4}}>
+                    Tap the upload zone above to add files
                   </div>
                 </div>
-              ))}
+              ) : (
+                uploadedDocs.map((doc,i)=>(
+                  <div key={doc.id} style={{display:"flex",gap:12,alignItems:"center",
+                    padding:"12px 0",
+                    borderBottom:i<uploadedDocs.length-1?`1px solid ${C.border}`:"none",
+                    animation:"fadeUp 0.35s ease both",
+                    animationDelay:`${i*0.04}s`}}>
+                    {/* Icon / preview */}
+                    <div onClick={()=>handlePreviewDoc(doc)}
+                      style={{width:44,height:44,borderRadius:11,background:"#EDE9FE",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:20,flexShrink:0,cursor:"pointer",position:"relative",
+                      overflow:"hidden"}}>
+                      {doc.type?.includes("image") ? (
+                        <img src={doc.dataUrl} alt=""
+                          style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:11}}/>
+                      ) : (
+                        <span>{doc.icon}</span>
+                      )}
+                    </div>
+                    {/* Info */}
+                    <div style={{flex:1,minWidth:0,cursor:"pointer"}}
+                      onClick={()=>handlePreviewDoc(doc)}>
+                      <div style={{fontSize:13,fontWeight:700,color:C.text,
+                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                        {doc.name}
+                      </div>
+                      <div style={{fontSize:11,color:C.muted,marginTop:2}}>
+                        {doc.date} · {doc.size}
+                      </div>
+                    </div>
+                    {/* Actions */}
+                    <div style={{display:"flex",gap:5,flexShrink:0}}>
+                      <button onClick={()=>handleDownloadDoc(doc)}
+                        style={{width:32,height:32,borderRadius:8,background:"#EDE9FE",
+                        border:"none",cursor:"pointer",fontSize:14,
+                        display:"flex",alignItems:"center",justifyContent:"center"}}
+                        title="Download">⬇</button>
+                      <button onClick={()=>handlePreviewDoc(doc)}
+                        style={{width:32,height:32,borderRadius:8,background:"#F3F4F6",
+                        border:"none",cursor:"pointer",fontSize:14,
+                        display:"flex",alignItems:"center",justifyContent:"center"}}
+                        title="Preview">👁</button>
+                      <button onClick={()=>handleDeleteDoc(doc.id)}
+                        style={{width:32,height:32,borderRadius:8,background:"#FEF2F2",
+                        border:"none",cursor:"pointer",fontSize:14,
+                        display:"flex",alignItems:"center",justifyContent:"center"}}
+                        title="Delete">🗑</button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -9203,9 +9342,11 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField }
           </div>
         )}
         {tab==="documents" && (
-          <button style={{width:"100%",padding:"13px",borderRadius:12,border:"none",
+          <button onClick={()=>fileInputRef.current?.click()}
+            style={{width:"100%",padding:"13px",borderRadius:12,border:"none",
             background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
-            color:"white",fontSize:13,fontWeight:800,cursor:"pointer"}}>
+            color:"white",fontSize:13,fontWeight:800,cursor:"pointer",
+            boxShadow:"0 4px 16px rgba(109,40,217,0.3)"}}>
             📤 Upload Document
           </button>
         )}
@@ -9347,6 +9488,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
         onClose={()=>setProfilePatient(null)}
         onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); }}
         onSaveField={handleSaveField}
+        onNav={(key)=>{ setProfilePatient(null); onSelect(profilePatient); navTo(key); }}
       />
     )}
 
