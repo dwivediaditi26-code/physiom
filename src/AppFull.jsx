@@ -8330,13 +8330,30 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     : [];
   const DATES = sessions.slice(-6).map(s => s.date || "");
 
-  // Exercises from real treatment data
+  // Exercises — real data if available, else show template
   const hepExercises = Array.isArray(d.hep_exercises) ? d.hep_exercises : [];
-  const EXERCISES = hepExercises.length > 0 ? hepExercises : [];
+  const EXERCISES = hepExercises.length > 0 ? hepExercises : [
+    { id:"e1", name:"Chin Tuck",                sets:3, reps:10, hold:"5s",  emoji:"🧘" },
+    { id:"e2", name:"Upper Trap Stretch",        sets:3, reps:"30s",hold:"", emoji:"💪" },
+    { id:"e3", name:"Scapular Retraction",       sets:3, reps:15, hold:"",   emoji:"🏋" },
+    { id:"e4", name:"Median Nerve Glide",        sets:2, reps:10, hold:"",   emoji:"✋" },
+    { id:"e5", name:"Deep Neck Flexor Training", sets:3, reps:10, hold:"10s",emoji:"🦴" },
+  ];
 
-  // Manual therapy from real data
-  const MANUAL = Array.isArray(d.manual_therapy) ? d.manual_therapy : [];
-  const MODALITIES_LIST = Array.isArray(d.modalities) ? d.modalities : [];
+  // Manual therapy — real data if available, else show template
+  const rawManual = Array.isArray(d.manual_therapy) ? d.manual_therapy : [];
+  const MANUAL = rawManual.length > 0 ? rawManual : [
+    { name:"PA Mobilisation Grade III", freq:"Per session",      status:"Active" },
+    { name:"Soft Tissue Release",       freq:"Per session",      status:"Active" },
+    { name:"Dry Needling",              freq:"Every 2 sessions", status:"Active" },
+  ];
+
+  // Modalities — real data if available, else template
+  const rawModalities = Array.isArray(d.modalities) ? d.modalities : [];
+  const MODALITIES = rawModalities.length > 0 ? rawModalities : [
+    { name:"Ultrasound Therapy", freq:"10 min, 1MHz, 1.0 W/cm²", status:"Active" },
+    { name:"TENS",               freq:"20 min, 80Hz",             status:"Active" },
+  ];
 
   // Color system
   const C = {
