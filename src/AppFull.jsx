@@ -8400,10 +8400,18 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   const LineChart = () => {
     const [anim,setAnim]=useState(false);
     useEffect(()=>{const t=setTimeout(()=>setAnim(true),500);return()=>clearTimeout(t);},[]);
+    // Guard: need at least 2 points to draw a line
+    if(!TREND||TREND.length<2) return (
+      <div style={{height:80,display:"flex",alignItems:"center",justifyContent:"center",
+        color:"#9CA3AF",fontSize:12}}>
+        No trend data yet — complete sessions to see progress
+      </div>
+    );
     const w=300,h=80,max=10,min=0;
-    const pts=TREND.map((v,i)=>({
-      x:(i/(TREND.length-1))*w,
-      y:h-((v-min)/(max-min))*(h-12)-6,
+    const safeTREND=TREND.map(v=>isNaN(v)?0:v);
+    const pts=safeTREND.map((v,i)=>({
+      x:(i/(safeTREND.length-1))*w,
+      y:h-((v-min)/(max-min||1))*(h-12)-6,
     }));
     const pathD=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
     const areaD=`${pathD} L${w},${h} L0,${h} Z`;
@@ -8439,13 +8447,19 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               <circle key={i} cx={p.x} cy={p.y} r="3" fill="#8B5CF6" stroke="white" strokeWidth="1.5"/>
             ))}
             {/* Last point label */}
-            <rect x={pts[pts.length-1].x-10} y={pts[pts.length-1].y-22}
-              width={34} height={18} rx={9} fill="#6D28D9"/>
-            <text x={pts[pts.length-1].x+7} y={pts[pts.length-1].y-9}
-              textAnchor="middle" fontSize="10" fill="white" fontWeight="700">6/10</text>
+            {pts.length>0&&(
+              <>
+                <rect x={(pts[pts.length-1]?.x||0)-10} y={(pts[pts.length-1]?.y||0)-22}
+                  width={34} height={18} rx={9} fill="#6D28D9"/>
+                <text x={(pts[pts.length-1]?.x||0)+7} y={(pts[pts.length-1]?.y||0)-9}
+                  textAnchor="middle" fontSize="10" fill="white" fontWeight="700">
+                  {safeTREND[safeTREND.length-1]}/10
+                </text>
+              </>
+            )}
           </g>
           {/* X labels */}
-          {DATES.map((d2,i)=>(
+          {DATES.length>1&&DATES.map((d2,i)=>(
             <text key={i} x={30+(i/(DATES.length-1))*w} y={h+34}
               textAnchor="middle" fontSize="9" fill="#9CA3AF">{d2}</text>
           ))}
@@ -10393,9 +10407,15 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
   const TrendChart = ({ data: d }) => {
     const [anim,setAnim] = useState(false);
     useEffect(()=>{const t=setTimeout(()=>setAnim(true),400);return()=>clearTimeout(t);},[]);
-    const w=280, h=72, max=Math.max(...d,1);
-    const pts=d.map((v,i)=>{
-      const x=(i/(d.length-1||1))*w;
+    // Guard against empty/single-point arrays
+    if(!d||d.length<2) return (
+      <div style={{height:72,display:"flex",alignItems:"center",justifyContent:"center",
+        color:"#9CA3AF",fontSize:11}}>No trend data yet</div>
+    );
+    const safeD = d.map(v=>isNaN(v)?0:Number(v));
+    const w=280, h=72, max=Math.max(...safeD,1);
+    const pts=safeD.map((v,i)=>{
+      const x=(i/(safeD.length-1))*w;
       const y=h-((v/max))*(h-10)-5;
       return [x,y];
     });
@@ -10417,10 +10437,10 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
         <path d={areaD} fill="url(#tg2)" clipPath="url(#tc2)"/>
         <path d={pathD} fill="none" stroke="#6D28D9" strokeWidth="2.5"
           strokeLinecap="round" strokeLinejoin="round" clipPath="url(#tc2)"/>
-        {pts.map((p,i)=>i%3===0&&(
+        {pts.map((p,i)=>i%3===0&&p&&(
           <text key={i} x={p[0]} y={h+14} textAnchor="middle" fontSize="8" fill="#9CA3AF">{months[i]}</text>
         ))}
-        {pts[pts.length-1]&&(
+        {pts.length>0&&pts[pts.length-1]&&(
           <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]}
             r="4" fill="#6D28D9" stroke="white" strokeWidth="2"/>
         )}
