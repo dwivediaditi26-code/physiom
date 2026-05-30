@@ -2564,7 +2564,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       mmt_ql:"Quadratus Lumborum",mmt_psoas:"Iliopsoas",mmt_gmax:"Gluteus Maximus",
       mmt_gmed:"Gluteus Medius",mmt_tfl:"TFL",mmt_adduc:"Adductors",mmt_quad:"Quadriceps",
       mmt_hamst:"Hamstrings",mmt_gastroc:"Gastrocnemius",mmt_soleus:"Soleus",
-      mmt_ta:"Tibialis Anterior",mmt_tp:"Tibialis Posterior",mmt_peronls:"Peroneals",
+      mmt_tib_ant:"Tibialis Anterior",mmt_tp:"Tibialis Posterior",mmt_peronls:"Peroneals",
       mmt_ehl:"EHL",mmt_edl:"EDL",mmt_abdhal:"Abductor Hallucis",
     };
     const mmtDeficit = [], mmtNormal = [];
