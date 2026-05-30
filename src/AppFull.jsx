@@ -9111,78 +9111,46 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField }
         ════════════════════════════════════════ */}
         {tab==="documents" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
-            {/* Upload */}
+
+            {/* Upload zone */}
             <div style={{background:"#F5F3FF",border:`2px dashed ${C.secondary}`,borderRadius:16,
-              padding:"22px",textAlign:"center",marginBottom:14,cursor:"pointer"}}>
-              <div style={{fontSize:28,marginBottom:6}}>📤</div>
-              <div style={{fontSize:13,fontWeight:700,color:C.primary}}>Upload Document</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:3}}>
+              padding:"28px 20px",textAlign:"center",marginBottom:16,cursor:"pointer"}}>
+              <div style={{fontSize:36,marginBottom:8}}>📤</div>
+              <div style={{fontSize:14,fontWeight:700,color:C.primary}}>Upload Document</div>
+              <div style={{fontSize:12,color:C.muted,marginTop:4}}>
                 SOAP PDF, X-Ray, MRI, Posture Report
               </div>
-            </div>
-
-            {/* Posture analysis section */}
-            <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
-              boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
-              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14,letterSpacing:"-0.3px"}}>
-                Posture Analysis
-              </div>
-              {/* Posture views */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
-                {["Anterior","Lateral","Posterior"].map((view,i)=>(
-                  <div key={i} style={{background:"#F9FAFB",borderRadius:10,padding:10,
-                    textAlign:"center",border:`1px solid ${C.border}`}}>
-                    <div style={{fontSize:28,marginBottom:5}}>🧍</div>
-                    <div style={{fontSize:10,fontWeight:600,color:C.muted}}>{view}</div>
-                    <div style={{fontSize:9,color:C.primary,marginTop:2}}>View →</div>
-                  </div>
-                ))}
-              </div>
-              {/* Posture findings */}
-              <div style={{background:"#F9FAFB",borderRadius:10,padding:12,marginBottom:12}}>
-                <div style={{fontSize:11,fontWeight:700,color:C.text,marginBottom:6}}>Posture Findings</div>
-                {["Forward Head Posture (+3cm)","Rounded Shoulders (bilateral)","Increased Cervical Lordosis"].map((f,i)=>(
-                  <div key={i} style={{display:"flex",gap:6,padding:"4px 0",
-                    borderBottom:i<2?`1px solid ${C.border}`:"none"}}>
-                    <span style={{color:C.orange,fontSize:12}}>⚠</span>
-                    <span style={{fontSize:11.5,color:C.text}}>{f}</span>
-                  </div>
-                ))}
-              </div>
-              <button style={{width:"100%",padding:"11px",borderRadius:10,border:"none",
-                background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
-                color:"white",fontSize:12,fontWeight:700,cursor:"pointer",
-                boxShadow:`0 4px 12px rgba(109,40,217,0.3)`}}>
-                📄 Generate Posture PDF
-              </button>
             </div>
 
             {/* Document list */}
             <div style={{background:C.white,borderRadius:16,padding:18,
               boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
-              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14}}>Documents</div>
+              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14,
+                letterSpacing:"-0.3px"}}>Documents</div>
               {[
-                {icon:"📋",name:"SOAP Note — Session 8",   date:"25 May 2025",type:"SOAP PDF",size:"124 KB"},
-                {icon:"🧍",name:"Posture Report — May 2025",date:"22 May 2025",type:"Posture PDF",size:"2.1 MB"},
-                {icon:"💪",name:"Exercise Prescription",     date:"15 Apr 2025",type:"Exercise PDF",size:"340 KB"},
-                {icon:"📊",name:"NDI Outcome Measure",       date:"25 May 2025",type:"Outcome",size:"56 KB"},
-                {icon:"🩻",name:"MRI Report — Cervical",     date:"10 Apr 2025",type:"MRI",size:"8.2 MB"},
+                {icon:"📋",name:"SOAP Note — Session 8",    date:"25 May 2025",size:"124 KB"},
+                {icon:"🧍",name:"Posture Report — May 2025", date:"22 May 2025",size:"2.1 MB"},
+                {icon:"💪",name:"Exercise Prescription",      date:"15 Apr 2025",size:"340 KB"},
+                {icon:"📊",name:"NDI Outcome Measure",        date:"25 May 2025",size:"56 KB"},
+                {icon:"🩻",name:"MRI Report — Cervical",      date:"10 Apr 2025",size:"8.2 MB"},
               ].map((doc,i)=>(
                 <div key={i} style={{display:"flex",gap:12,alignItems:"center",
-                  padding:"11px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
-                  <div style={{width:40,height:40,borderRadius:10,background:"#EDE9FE",
+                  padding:"12px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
+                  <div style={{width:42,height:42,borderRadius:11,background:"#EDE9FE",
                     display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:18,flexShrink:0}}>{doc.icon}</div>
+                    fontSize:19,flexShrink:0}}>{doc.icon}</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12.5,fontWeight:700,color:C.text,
+                    <div style={{fontSize:13,fontWeight:700,color:C.text,
                       overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{doc.name}</div>
-                    <div style={{fontSize:10.5,color:C.muted,marginTop:2}}>{doc.date} · {doc.size}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:2}}>{doc.date} · {doc.size}</div>
                   </div>
                   <div style={{display:"flex",gap:6,flexShrink:0}}>
-                    <button style={{padding:"5px 9px",borderRadius:7,
-                      background:"#F3F4F6",border:"none",cursor:"pointer",fontSize:12}}>⬇</button>
-                    <button style={{padding:"5px 9px",borderRadius:7,
-                      background:"#F3F4F6",border:"none",cursor:"pointer",fontSize:12}}>↗</button>
+                    <button style={{width:32,height:32,borderRadius:8,
+                      background:"#F3F4F6",border:"none",cursor:"pointer",
+                      fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>⬇</button>
+                    <button style={{width:32,height:32,borderRadius:8,
+                      background:"#F3F4F6",border:"none",cursor:"pointer",
+                      fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>↗</button>
                   </div>
                 </div>
               ))}
