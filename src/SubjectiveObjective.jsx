@@ -2731,7 +2731,7 @@ const needsSleep_S=(d,regions)=>{
 };
 
 const needsSport_S=(d,regions)=>{
-  const onset=(d.cc_onset||"").toLowerCase();
+  const onset=(Array.isArray(d.cc_onset)?d.cc_onset.join(" "):(d.cc_onset||"")).toLowerCase();
   const isSport=onset.includes("sport");
   const sportRegs=["Knee (L)","Knee (R)","Ankle / Foot","Hip / Groin","Shoulder (L)","Shoulder (R)","Lumbar / SI"];
   return isSport||sportRegs.some(r=>regions.includes(r));

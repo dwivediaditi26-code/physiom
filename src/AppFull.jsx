@@ -10060,7 +10060,7 @@ function HomeModule({ onNav }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // THERAPIST DASHBOARD MODULE
 // ═══════════════════════════════════════════════════════════════════════════
-function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask }) {
+function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask, onProfile }) {
   const { useState, useEffect, useMemo, useCallback } = React;
   const [activeTab,   setActiveTab]   = useState("pending");
   const [scheduleTab, setScheduleTab] = useState("all");
@@ -10688,7 +10688,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                     display:"flex",alignItems:"center",gap:12,
                     opacity:appt.status==="completed"?0.7:1,cursor:"pointer",
                     animation:"fadeUp 0.4s ease both",animationDelay:`${i*0.05}s`,
-                  }} onClick={()=>onNav("subjective")}>
+                  }} onClick={()=>onProfile ? onProfile(patients.find(p2=>p2.id===appt.id)||patients[i]) : onNav("subjective")}>
                     <div style={{width:40,height:40,borderRadius:11,
                       background:`${appt.color}18`,border:`1.5px solid ${appt.color}25`,
                       display:"flex",alignItems:"center",justifyContent:"center",
@@ -10969,7 +10969,7 @@ function PdfReportsModal({ data, dx, onClose }) {
     }
     if (exs.length === 0) {
       const dxLabel = (dx?.dx?.[0]?.label||"").toLowerCase();
-      const cc = (d.cc_location||"").toLowerCase();
+      const cc = (Array.isArray(d.cc_location)?d.cc_location.join(" "):(d.cc_location||"")).toLowerCase();
       const isLumbar = dxLabel.includes("lumbar")||dxLabel.includes("back")||cc.includes("back")||cc.includes("lumbar");
       const isCervical = dxLabel.includes("cervical")||dxLabel.includes("neck")||cc.includes("neck");
       const isKnee = dxLabel.includes("knee")||cc.includes("knee");
@@ -12483,7 +12483,7 @@ function AppInner() {
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo}/>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)}/>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <SubjectiveModule data={data} set={set} onNav={navTo}/>
               ):tests==="PALPATION_MODULE"?(
