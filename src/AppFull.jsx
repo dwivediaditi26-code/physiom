@@ -34,22 +34,22 @@ function computeQuality(lm) {
 
   // Centering check
   const noseX = vis(0) > 0.3 ? lm[0].x : null;
-  if (noseX !== null && (noseX < 0.3 || noseX > 0.7)) warnings.push({ text: "Center your body in frame", icon: "↔", color: "#ffb300", priority: 2 });
+  if (noseX !== null && (noseX < 0.3 || noseX > 0.7)) warnings.push({ text: "Center your body in frame", icon: "?", color: "#ffb300", priority: 2 });
 
   // Distance via shoulder span
   let distanceHint = null;
   if (v(11) && v(12)) {
     const span = Math.abs(lm[11].x - lm[12].x);
-    if (span > 0.5) { warnings.push({ text: "Too close - step back", icon: "⬅", color: "#ff4d6d", priority: 1 }); distanceHint = "back"; }
-    else if (span < 0.1) { warnings.push({ text: "Too far - step closer", icon: "➡", color: "#ffb300", priority: 2 }); distanceHint = "closer"; }
-    else if (lm[11].y < 0.08 || lm[12].y < 0.08) warnings.push({ text: "Lower camera to hip height", icon: "⬇", color: "#ffb300", priority: 3 });
+    if (span > 0.5) { warnings.push({ text: "Too close - step back", icon: "<", color: "#ff4d6d", priority: 1 }); distanceHint = "back"; }
+    else if (span < 0.1) { warnings.push({ text: "Too far - step closer", icon: ">", color: "#ffb300", priority: 2 }); distanceHint = "closer"; }
+    else if (lm[11].y < 0.08 || lm[12].y < 0.08) warnings.push({ text: "Lower camera to hip height", icon: "v", color: "#ffb300", priority: 3 });
   }
 
   // Visibility checks
   if (avgBody < 0.35) warnings.push({ text: "Low confidence - improve lighting", icon: "💡", color: "#ff4d6d", priority: 1 });
   if (!v(0)) warnings.push({ text: "Head not visible", icon: "👤", color: "#ff4d6d", priority: 1 });
-  if (!v(11) || !v(12)) warnings.push({ text: "Shoulders not detected", icon: "🦴", color: "#ffb300", priority: 2 });
-  if (!v(23) && !v(24)) warnings.push({ text: "Hips/ASIS not visible - step back", icon: "🦴", color: "#ff4d6d", priority: 1 });
+  if (!v(11) || !v(12)) warnings.push({ text: "Shoulders not detected", icon: "bone", color: "#ffb300", priority: 2 });
+  if (!v(23) && !v(24)) warnings.push({ text: "Hips/ASIS not visible - step back", icon: "bone", color: "#ff4d6d", priority: 1 });
   if (!v(7) && !v(8)) warnings.push({ text: "Ears not detected - check head angle", icon: "👂", color: "#ffb300", priority: 2 });
   if (!v(31) && !v(32)) warnings.push({ text: "Feet not visible - move camera back", icon: "👣", color: "#ffb300", priority: 2 });
   else if (!v(27) && !v(28)) warnings.push({ text: "Ankles out of frame", icon: "📏", color: "#ffb300", priority: 3 });
@@ -368,7 +368,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
               color:"#ff4d6d", fontWeight:800, fontSize:"0.7rem", cursor:"pointer",
               display:"flex", flexDirection:"column", alignItems:"center", gap:4
             }}>
-              <span style={{fontSize:"1.1rem"}}>⏹</span>
+              <span style={{fontSize:"1.1rem"}}>[]</span>
               <span>Stop</span>
             </button>
           )}
@@ -379,9 +379,9 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
             width:"100%", padding:"12px", borderRadius:11, border:"none", cursor:isLoading?"not-allowed":"pointer",
             background:isLoading?"#1a2d45":"linear-gradient(135deg,#00e5ff,#7f5af0)",
             color:isLoading?"#6b8399":"#000", fontWeight:800, fontSize:"0.8rem"
-          }}>{isLoading?"⏳ Loading camera...":"> Start Camera"}</button>
+          }}>{isLoading?"... Loading camera...":"> Start Camera"}</button>
         )}
-        {canRecalibrate && <button onClick={onRecalibrate} style={{width:"100%",marginTop:6,padding:"8px",borderRadius:9,border:"1px solid rgba(255,179,0,0.3)",background:"rgba(255,179,0,0.08)",color:"#ffb300",fontWeight:700,fontSize:"0.72rem",cursor:"pointer"}}>⟳ Recalibrate</button>}
+        {canRecalibrate && <button onClick={onRecalibrate} style={{width:"100%",marginTop:6,padding:"8px",borderRadius:9,border:"1px solid rgba(255,179,0,0.3)",background:"rgba(255,179,0,0.08)",color:"#ffb300",fontWeight:700,fontSize:"0.72rem",cursor:"pointer"}}>R Recalibrate</button>}
       </div>
 
       {/* -- VIEW SELECTOR - always visible (Front/Back/Left/Right) -- */}
@@ -389,9 +389,9 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
         <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📐 Posture View - select before capturing</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:6 }}>
           {[
-            { v:"anterior",  icon:"⬆", label:"Front",  color:"#00e5ff" },
-            { v:"posterior", icon:"⬇", label:"Back",   color:"#7f5af0" },
-            { v:"left",      icon:"◀", label:"Left",   color:"#00c97a" },
+            { v:"anterior",  icon:"^", label:"Front",  color:"#00e5ff" },
+            { v:"posterior", icon:"v", label:"Back",   color:"#7f5af0" },
+            { v:"left",      icon:"<", label:"Left",   color:"#00c97a" },
             { v:"right",     icon:">", label:"Right",  color:"#ffb300" },
           ].map(({ v, icon, label, color }) => {
             const active = activeView === v;
@@ -431,7 +431,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
 
           {/* Countdown timer */}
           <div style={{ display:"flex", alignItems:"center", gap:5, background:"#ffffff", border:"1px solid #d8cce8", borderRadius:9, padding:"5px 10px" }}>
-            <span style={{ fontSize:"0.65rem", color:"#7e6a9a" }}>⏱</span>
+            <span style={{ fontSize:"0.65rem", color:"#7e6a9a" }}>T</span>
             {[3,5,10].map(s => (
               <button key={s} onClick={() => onCountdownChange&&onCountdownChange(s)} style={{
                 padding:"3px 7px", borderRadius:6, fontSize:"0.62rem", fontWeight:700, border:"none", cursor:"pointer",
@@ -900,9 +900,9 @@ function PostureCameraModule({ activePatient, set }) {
   const isLoad  = camState === "loading";
 
   const VIEWS = [
-    { v:"anterior",  icon:"⬆", label:"Front",  col:"#00e5ff" },
-    { v:"posterior", icon:"⬇", label:"Back",   col:"#7f5af0" },
-    { v:"left",      icon:"◀", label:"Left",   col:"#00c97a" },
+    { v:"anterior",  icon:"^", label:"Front",  col:"#00e5ff" },
+    { v:"posterior", icon:"v", label:"Back",   col:"#7f5af0" },
+    { v:"left",      icon:"<", label:"Left",   col:"#00c97a" },
     { v:"right",     icon:">", label:"Right",  col:"#ffb300" },
   ];
 
@@ -1081,7 +1081,7 @@ function PostureCameraModule({ activePatient, set }) {
                 cursor:cdCount!==null?"not-allowed":"pointer",
                 fontSize:"0.6rem", fontWeight:800, color:"#fff", display:"flex",
                 flexDirection:"column", alignItems:"center", justifyContent:"center", gap:1 }}>
-              ⚡<span>Now</span>
+              !<span>Now</span>
             </button>
 
             {/* Main capture button */}
@@ -1131,7 +1131,7 @@ function PostureCameraModule({ activePatient, set }) {
         {isLoad && (
           <div style={{ flex:1, padding:"12px", borderRadius:11, background:"#1a2d45",
             color:"#6b8399", fontWeight:700, fontSize:"0.78rem", textAlign:"center" }}>
-            ⏳ Starting camera...
+            ... Starting camera...
           </div>
         )}
         {isLive && (
@@ -1147,7 +1147,7 @@ function PostureCameraModule({ activePatient, set }) {
             {/* Countdown selector */}
             <div style={{ display:"flex", alignItems:"center", gap:4, background:"#ffffff",
               border:"1px solid #d8cce8", borderRadius:10, padding:"6px 10px" }}>
-              <span style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>⏱</span>
+              <span style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>T</span>
               {[0,3,5,10].map(s => (
                 <button key={s} onClick={() => setCdSecs(s)} style={{
                   padding:"3px 6px", borderRadius:6, fontSize:"0.6rem", fontWeight:700,
@@ -1163,7 +1163,7 @@ function PostureCameraModule({ activePatient, set }) {
               background:"rgba(255,77,109,0.1)", border:"1px solid rgba(255,77,109,0.3)",
               color:"#ff4d6d", fontSize:"0.72rem", display:"flex", flexDirection:"column",
               alignItems:"center", gap:2
-            }}><span>⏹</span><span>Stop</span></button>
+            }}><span>[]</span><span>Stop</span></button>
           </>
         )}
       </div>
@@ -1218,7 +1218,7 @@ function PostureCameraModule({ activePatient, set }) {
             <div style={{ padding:"12px 14px", background:"rgba(255,77,109,0.08)",
               borderTop:"1px solid rgba(255,77,109,0.2)" }}>
               <div style={{ fontSize:"0.72rem", color:"#ff4d6d", fontWeight:700, marginBottom:4 }}>
-                ⚠ {analyseError}
+                ? {analyseError}
               </div>
               <div style={{ fontSize:"0.65rem", color:"#c9b8e8" }}>
                 Tips: ensure full body visible from head to feet, bright even lighting, form-fitting clothing, camera 2m away.
@@ -1272,7 +1272,7 @@ function PostureCameraModule({ activePatient, set }) {
               ) : (
                 <div style={{ padding:"10px 12px", background:"rgba(0,201,122,0.08)",
                   borderRadius:9, fontSize:"0.72rem", color:"#00c97a", fontWeight:700, textAlign:"center" }}>
-                  ✅ No significant postural findings detected for {capturedView} view
+                  ? No significant postural findings detected for {capturedView} view
                 </div>
               )}
 
@@ -1343,7 +1343,7 @@ function PostureCameraModule({ activePatient, set }) {
 
           {uploadError && !uploadBusy && (
             <div style={{ padding:"12px 14px", background:"rgba(255,77,109,0.08)", borderTop:"1px solid rgba(255,77,109,0.2)" }}>
-              <div style={{ fontSize:"0.72rem", color:"#ff4d6d", fontWeight:700 }}>⚠ {uploadError}</div>
+              <div style={{ fontSize:"0.72rem", color:"#ff4d6d", fontWeight:700 }}>? {uploadError}</div>
             </div>
           )}
 
@@ -1408,7 +1408,7 @@ function PostureCameraModule({ activePatient, set }) {
             {["anterior","posterior","left","right"].map(v => {
               const cap = viewBank[v];
               const labels = {anterior:"Front",posterior:"Back",left:"L Side",right:"R Side"};
-              const icons  = {anterior:"⬆",posterior:"⬇",left:"◀",right:">"};
+              const icons  = {anterior:"^",posterior:"v",left:"<",right:">"};
               const col = cap?.scoreData?.score >= 78 ? "#00c97a" : cap?.scoreData?.score >= 62 ? "#ffb300" : "#ff4d6d";
               return (
                 <div key={v} style={{ position:"relative", background:"#0d0d1a", minHeight:80 }}>
@@ -1815,7 +1815,7 @@ function ReliabilityEngine(lm) {
   if (blocked) {
     warnings.push({ icon:"🚫", text:"Image quality insufficient for reliable analysis - improve lighting, ensure full body visible, use form-fitting clothing", color:PC.red, priority:6 });
   } else if (mean < 0.55) {
-    warnings.push({ icon:"⚠", text:"Low confidence - findings may be inaccurate. Improve lighting and camera distance", color:PC.red, priority:5 });
+    warnings.push({ icon:"?", text:"Low confidence - findings may be inaccurate. Improve lighting and camera distance", color:PC.red, priority:5 });
   } else if (mean < 0.70) {
     warnings.push({ icon:"o", text:"Partial tracking - some measurements limited. Ensure full body in frame", color:PC.yellow, priority:3 });
   }
@@ -1826,7 +1826,7 @@ function ReliabilityEngine(lm) {
 
   const lShVis = lm[11]?.visibility||0, rShVis = lm[12]?.visibility||0;
   if (!blocked && Math.abs(lShVis-rShVis) > 0.40)
-    warnings.push({ icon:"↔", text:"Asymmetric shoulder visibility - bilateral shoulder measurements may be inaccurate", color:PC.yellow, priority:3 });
+    warnings.push({ icon:"?", text:"Asymmetric shoulder visibility - bilateral shoulder measurements may be inaccurate", color:PC.yellow, priority:3 });
 
   if (!blocked && (lm[23]?.visibility||0) < 0.45 || (lm[24]?.visibility||0) < 0.45)
     warnings.push({ icon:"-", text:"Hip/ASIS partially occluded - pelvic measurements flagged unreliable", color:PC.yellow, priority:3 });
@@ -1887,7 +1887,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(shoulderAngle); const side = shoulderAngle > 0 ? "Left" : "Right";
       add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}deg)`, abs > 7 ? "high" : "moderate",
         `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s x 3. Activate: lower trapezius Y-T-W x 15. NKT: check ipsilateral QL - QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
-        "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis.`, "Normal: <3deg", abs);
+        "M54.2", "?", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis.`, "Normal: <3deg", abs);
     }
 
     // Head lateral offset
@@ -1895,7 +1895,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(headLateralOffset); const side = headLateralOffset > 0 ? "right" : "left";
       add("Cervical", `Head laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 5 ? "high" : "moderate",
         `Cervical lateral flexion mobilisation contralateral. SCM and scalene release ipsilateral. Assess ocular/vestibular contributions. Pillow height review.`,
-        "M54.2", "↔", `Persistent shift: C2-C4 facet dysfunction, alar ligament laxity, or habitual visual dominance.`, "Normal: <2.5%", abs);
+        "M54.2", "?", `Persistent shift: C2-C4 facet dysfunction, alar ligament laxity, or habitual visual dominance.`, "Normal: <2.5%", abs);
     }
 
     // Pelvic obliquity + LLD prompt
@@ -1913,7 +1913,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(trunkLateralShift); const side = trunkLateralShift > 0 ? "right" : "left";
       add("Thoracic", `Trunk laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 7 ? "high" : "moderate",
         `Assess antalgic lean (disc/radiculopathy - trunk shifts AWAY from herniation in paracentral disc, TOWARD in lateral disc). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.`,
-        "M54.5", "⇒", `Lateral trunk shift highly associated with L4/L5 disc herniation.`, "Normal: <3.5%", abs);
+        "M54.5", "?", `Lateral trunk shift highly associated with L4/L5 disc herniation.`, "Normal: <3.5%", abs);
     }
 
     // Scoliosis / spinal deviation
@@ -1965,7 +1965,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
             : `Hip ER strengthening. Ober test (ITB/TFL). Lateral chain SMR. Subtalar supination assessment.`;
         }
         add("Knee Alignment", text, severity, correction,
-          "M21.0", "⊾",
+          "M21.0", "?",
           `Dynamic valgus: primary driver of PFP, ACL injury, medial compartment OA. Glute med weakness in 80% of functional valgus cases.`,
           "Normal: <5deg deviation", Math.max(lAbs, rAbs));
       }
@@ -1987,7 +1987,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         angle > 0
           ? `Check tibial external torsion, hip ER contracture, glute med/TFL balance. Gait retraining feet-parallel.`
           : `Check tibial internal torsion, hip IR dominance, in-toeing gait. Refer podiatry if structural torsion.`,
-        "M21.6", "↻", `Normal foot progression angle 5-12deg external.`, "Normal: 5-12deg", abs);
+        "M21.6", "?", `Normal foot progression angle 5-12deg external.`, "Normal: 5-12deg", abs);
     });
 
     // COG deviation
@@ -2002,14 +2002,14 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (ucsIndex !== null && ucsIndex > 0.6) {
       add("Upper Crossed Syndrome", `UCS pattern detected - index ${ucsIndex.toFixed(1)} (${ucsIndex > 1.0 ? "severe" : "moderate"})`, ucsIndex > 1.0 ? "high" : "moderate",
         `INHIBIT (SMR x90s): upper trap, SCM, pec minor, levator scapulae. ACTIVATE: deep neck flexors (chin nod x10 x3), lower trap (Y-T-W x15), serratus (wall push-up plus x15). MOBILISE: thoracic extension foam roller T4-T8 x2min. CORRECT: monitor height +5cm. NKT reprogram within 30s of release.`,
-        "M62.9", "x", `UCS (Janda 1979): overactive upper trap/SCM/pec minor ↔ inhibited DNF/lower trap/serratus. Drives FHP, rounded shoulders, kyphosis, cervicogenic headache.`, "UCS Index: <0.4 normal", ucsIndex);
+        "M62.9", "x", `UCS (Janda 1979): overactive upper trap/SCM/pec minor ? inhibited DNF/lower trap/serratus. Drives FHP, rounded shoulders, kyphosis, cervicogenic headache.`, "UCS Index: <0.4 normal", ucsIndex);
     }
 
     // LCS pattern
     if (lcsIndex !== null && lcsIndex > 0.5) {
       add("Lower Crossed Syndrome", `LCS pattern detected - index ${lcsIndex.toFixed(1)} (${lcsIndex > 1.0 ? "severe" : "moderate"})`, lcsIndex > 1.0 ? "high" : "moderate",
         `INHIBIT (SMR x90s): hip flexors (psoas, RF, TFL), thoracolumbar erectors, QL. ACTIVATE: glute max (bridges x15, hip thrusts x10), glute med (clamshells, lateral band walks), TA/core (dead bug x10). STRETCH: couch stretch 90s/side. CORRECT: pelvic neutral awareness, seated posture retraining.`,
-        "M62.9", "x", `LCS (Janda): overactive hip flexors/lumbar extensors ↔ inhibited glutes/abdominals. Drives APT, hyperlordosis, knee valgus.`, "LCS Index: <0.4 normal", lcsIndex);
+        "M62.9", "x", `LCS (Janda): overactive hip flexors/lumbar extensors ? inhibited glutes/abdominals. Drives APT, hyperlordosis, knee valgus.`, "LCS Index: <0.4 normal", lcsIndex);
     }
   }
 
@@ -2020,7 +2020,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(shoulderAngle); const side = shoulderAngle > 0 ? "Left" : "Right";
       add("Shoulder Girdle", `${side} shoulder elevated - posterior view (${abs.toFixed(1)}deg)`, abs > 7 ? "high" : "moderate",
         `Upper trapezius and levator scapulae release ipsilateral. Lower trapezius facilitation. Confirm anterior view finding.`,
-        "M54.2", "⇑", "", "Normal: <3deg", abs);
+        "M54.2", "?", "", "Normal: <3deg", abs);
     }
 
     if (cobbEstimate !== null && cobbEstimate > 5) {
@@ -2046,13 +2046,13 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (scapularAsymm !== null && scapularAsymm > 2.5) {
       add("Scapula", `Scapular height asymmetry - posterior view (${scapularAsymm.toFixed(1)}deg differential)`, scapularAsymm > 5 ? "high" : "moderate",
         `NKT screen: serratus anterior vs pec minor. Lower trap Y-T-W x15. Wall push-up plus (serratus). Thoracic extension mobility. If winging visible: test serratus (wall push-up - medial border lifting = Type II dyskinesis).`,
-        "M89.8", "⇑", `Kibler types: I=inferior angle, II=medial border (serratus weakness), III=superior elevation (upper trap dominant).`, "Normal: <2.5deg", scapularAsymm);
+        "M89.8", "?", `Kibler types: I=inferior angle, II=medial border (serratus weakness), III=superior elevation (upper trap dominant).`, "Normal: <2.5deg", scapularAsymm);
     }
 
     if (trunkRotationProxy !== null && Math.abs(trunkRotationProxy) > 8) {
       add("Thoracic", `Trunk rotation asymmetry (shoulder-to-hip width ratio ${Math.abs(trunkRotationProxy).toFixed(0)}%)`, Math.abs(trunkRotationProxy) > 15 ? "high" : "moderate",
         `Thoracic rotation PA mobilisation bilateral. Foam roller thoracic rotation stretch. Assess axial rotation restriction.`,
-        "M99.0", "↻", "", "Normal: <8%", Math.abs(trunkRotationProxy));
+        "M99.0", "?", "", "Normal: <8%", Math.abs(trunkRotationProxy));
     }
 
     if (weightBearingShift !== null && Math.abs(weightBearingShift) > 4) {
@@ -2072,12 +2072,12 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const loadStr = cervicalLoadKg !== null ? ` Est. cervical load: ${cervicalLoadKg}kg (neutral=4.5kg).` : "";
       add("Cervical - Forward Head", `Forward head posture - CVA ${cvaAngle.toFixed(0)}deg (normal >55deg)${forwardHeadCm !== null ? ` / ${forwardHeadCm.toFixed(1)}cm anterior` : ""}`, sev,
         `IMMEDIATE: supine chin nod (NOT chin tuck) x10 x3 sets, 10s hold. Thoracic extension foam roller T4-T8 x2min daily. Suboccipital release 90s. Ergonomic: raise monitor 5-10cm, keyboard at elbow height. NKT: SCM+scalenes overactive -> inhibit -> activate DNF within 30s. Home cue: tongue to roof of mouth.`,
-        "M43.6", "⇒", `CVA ${cvaAngle.toFixed(0)}deg (Yip 2008).${loadStr} Each 2.5cm FHP adds ~5kg to cervical extensors (Hansraj 2014).`, "Normal: >55deg", cvaAngle);
+        "M43.6", "?", `CVA ${cvaAngle.toFixed(0)}deg (Yip 2008).${loadStr} Each 2.5cm FHP adds ~5kg to cervical extensors (Hansraj 2014).`, "Normal: >55deg", cvaAngle);
     } else if (cvaAngle === null && forwardHeadMm !== null && Math.abs(forwardHeadMm) > 3) {
       const abs = Math.abs(forwardHeadMm);
       add("Cervical - Forward Head", `Forward head posture - ear anterior to acromion (${abs.toFixed(1)}% offset)`, abs > 7 ? "high" : "moderate",
         `Deep cervical flexor activation. Thoracic extension foam roller. Ergonomic review. Take true lateral photo for CVA measurement.`,
-        "M43.6", "⇒", "Obtain lateral photo for CVA measurement - more accurate than frontal view proxy.", "Normal: ear over acromion", abs);
+        "M43.6", "?", "Obtain lateral photo for CVA measurement - more accurate than frontal view proxy.", "Normal: ear over acromion", abs);
     }
 
     // Thoracic kyphosis
@@ -2085,7 +2085,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const excess = thoracicAngle - 45;
       add("Thoracic Kyphosis", `Increased thoracic kyphosis (~${thoracicAngle.toFixed(0)}deg, normal 20-45deg)`, excess > 18 ? "high" : "moderate",
         `Thoracic extension HVLA T4-T8 (PA + rotation). Foam roller extension apex x2min daily. Wall angels x15. Pec minor stretch 60s x3. Lower trap: prone Y-T-W. Rib expansion breathing. Seated posture: lumbar roll support.`,
-        "M40.2", "⌒", `Normal Cobb T1-T12 = 20-45deg. Hyperkyphosis >50deg. If structural: Scheuermann's (>5deg wedging >=3 vertebrae on X-ray).`, "Normal: 20-45deg", thoracicAngle);
+        "M40.2", "?", `Normal Cobb T1-T12 = 20-45deg. Hyperkyphosis >50deg. If structural: Scheuermann's (>5deg wedging >=3 vertebrae on X-ray).`, "Normal: 20-45deg", thoracicAngle);
     }
 
     // Pelvic tilt sagittal
@@ -2099,7 +2099,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         ant
           ? `INHIBIT (SMR x90s): psoas, RF, TFL. STRETCH: couch stretch 90s/side, 90-90 hip flexor. ACTIVATE: glute max (bridges x15), TA (dead bug x10). CORRECT: pelvic posterior tilt awareness. Thomas test to confirm hip flexor contracture. 90/90 hamstring length check.`
           : `Lumbar extension mobilisation PA L1-L5 grade III-IV. McKenzie extension: prone -> press-up. Hip flexor facilitation. Assess erector spinae/multifidus tone. Sahrmann lumbar flexion syndrome screen.`,
-        "M53.3", "↕",
+        "M53.3", "?",
         ant
           ? `ASIS drops below PSIS - hip flexor/erector overactivity. LCS pattern. Increases lumbar disc posterior load.${lordNote}`
           : `PSIS inferior to ASIS - hamstring/abdominal overactivity or gluteal inhibition.${lordNote}`,
@@ -2110,7 +2110,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         ant
           ? `Hip flexor stretch x60s. Glute activation - bridges x15. TVA bracing. Pelvic tilt awareness drills.`
           : `Lumbar extension mobilisation. Hip flexor facilitation. Multifidus activation. McKenzie extension.`,
-        "M53.3", "↕", "", "", abs);
+        "M53.3", "?", "", "", abs);
     }
 
     // -- LUMBAR LORDOSIS - independent finding ---------------------------------
@@ -2121,7 +2121,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
           `Increased lumbar lordosis (~${lordosisAngle.toFixed(0)}deg, normal 40-60deg)`,
           excess > 20 ? "high" : "moderate",
           `INHIBIT: iliopsoas (couch stretch 90sx2), rectus femoris (prone heel-to-glute). ACTIVATE: glute max (bridges x15 with posterior pelvic tilt), TA (dead bug). Pelvic clock: anterior -> neutral -> posterior tilt awareness. Assess hip flexor contracture (Thomas test).`,
-          "M40.5", "↕",
+          "M40.5", "?",
           `Hyperlordosis: ASIS drops below PSIS. Increases L4-L5 disc posterior compression and facet loading. Associated with hip flexor tightness and gluteal inhibition.`,
           "Normal: 40-60deg", lordosisAngle);
       } else if (lordosisAngle < 30) {
@@ -2129,7 +2129,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
           `Reduced lumbar lordosis (~${lordosisAngle.toFixed(0)}deg, normal 40-60deg)`,
           lordosisAngle < 20 ? "high" : "moderate",
           `McKenzie extension progression: prone -> prone on elbows -> press-up. Lumbar PA mobilisation Grade III-IV L1-L5. Hip flexor facilitation. Erector spinae activation. Sahrmann lumbar flexion syndrome screen. Lumbar roll support for sitting.`,
-          "M40.4", "↕",
+          "M40.4", "?",
           `Flat back: PSIS at same level or below ASIS. Increases anterior disc shear force and hamstring/abdominal overactivity. Reduced shock absorption capacity.`,
           "Normal: 40-60deg", lordosisAngle);
       }
@@ -2145,7 +2145,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         `Sway-back posture: hips posterior to plumb, flat lumbar, thoracic lean`,
         "moderate",
         `INHIBIT: hamstrings (slump stretch, seated), abdominals (reduce over-bracing). ACTIVATE: hip flexors (psoas activation - standing hip flexion x15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles. Lumbar roll support in sitting.`,
-        "M40.3", "⟲",
+        "M40.3", "?",
         `Sway-back: pelvis shifts anterior, hips posterior to plumb. Hamstring + abdominal overactivity. Hip ligament loading increases. Associated with inactive standing posture and hypermobility.`,
         "Ideal: hip over plumb", null);
     }
@@ -2160,7 +2160,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         `Military/flat-back posture: reduced thoracic kyphosis and lumbar lordosis`,
         "moderate",
         `Thoracic mobility: foam roller extension at T4-T8 x2min daily. Rib expansion breathing x10. Restore natural curve: McKenzie press-ups (lumbar). Cervical retraction (NOT chin tuck). Reassure: flat-back is not always symptomatic - assess function.`,
-        "M40.4", "⊥",
+        "M40.4", "?",
         `Flat/military: all spinal curves reduced. Poor sagittal shock absorption. Often asymptomatic but predisposes to disc overload in end-range activities. Screen for Scheuermann's.`,
         "Normal: T kyphosis 20-45deg, L lordosis 40-60deg", null);
     }
@@ -2297,7 +2297,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (hipExtensionProxy !== null && hipExtensionProxy > 8) {
       add("Hip / Lumbar", `Hip anterior to ankle plumb - hip flexion pattern in stance (${hipExtensionProxy.toFixed(1)}%)`, hipExtensionProxy > 15 ? "high" : "moderate",
         `Thomas test: confirm hip flexor contracture. Couch stretch x90s. Hip extension: prone hip extension, RDL, glute bridge. Assess lumbar compensation.`,
-        "M24.1", "⇒", "Hip anterior to ankle plumb suggests hip flexor tightness or hip flexion movement pattern.", "Normal: hip over ankle", hipExtensionProxy);
+        "M24.1", "?", "Hip anterior to ankle plumb suggests hip flexor tightness or hip flexion movement pattern.", "Normal: hip over ankle", hipExtensionProxy);
     }
 
     // Ankle dorsiflexion
@@ -2305,7 +2305,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       if (angle === null || angle >= 80) return;
       add("Ankle - Dorsiflexion", `${side} ankle dorsiflexion restriction (~${angle.toFixed(0)}deg, normal >80deg)`, angle < 60 ? "high" : "moderate",
         `Gastrocnemius: straight-knee wall lean 60s x3. Soleus: bent-knee wall lean 60s x3. Talar anterior glide mobilisation (knee-to-wall >10cm target). SL heel raise full ROM. Assess talocrural vs subtalar restriction.`,
-        "M24.2", "↕", `Ankle DF <80deg -> compensatory foot pronation, knee valgus, APT in squat. Primary ACL injury risk factor.`, "Normal: >80deg (knee-to-wall >=10cm)", angle);
+        "M24.2", "?", `Ankle DF <80deg -> compensatory foot pronation, knee valgus, APT in squat. Primary ACL injury risk factor.`, "Normal: >80deg (knee-to-wall >=10cm)", angle);
     });
   }
 
@@ -2345,7 +2345,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       `Body working harder than normal - ${pliLabel}`,
       severity,
       `Start with the highest-priority finding above. Fixing one problem often reduces the overall load score automatically. Aim for: 1 targeted exercise per problem area, 10-15 min daily. Re-assess in 4-6 weeks.`,
-      "M62.9", "⚑", pliDetail, "Target: <35/100", posturalLoadIndex);
+      "M62.9", "?", pliDetail, "Target: <35/100", posturalLoadIndex);
   }
 
   return findings;
@@ -2836,7 +2836,7 @@ function measureLandmarks(lm, calibration) {
 
 // --- Reliability Engine -------------------------------------------------------
 function calcReliability(lm) {
-  if(!lm||lm.length<33) return {score:0,status:"No Pose",blocked:true,warnings:[{icon:"❌",text:"No pose detected",color:PC.red}],icc:null,confidence:{}};
+  if(!lm||lm.length<33) return {score:0,status:"No Pose",blocked:true,warnings:[{icon:"?",text:"No pose detected",color:PC.red}],icc:null,confidence:{}};
   const KEY=[0,2,5,7,8,11,12,23,24,25,26,27,28,29,30,31,32];
   const NAMES={0:"Head",2:"L.Eye",5:"R.Eye",7:"L.Ear",8:"R.Ear",11:"L.Shoulder",12:"R.Shoulder",
     23:"L.Hip",24:"R.Hip",25:"L.Knee",26:"R.Knee",27:"L.Ankle",28:"R.Ankle",
@@ -2855,20 +2855,20 @@ function calcReliability(lm) {
   if(blocked){
     warnings.push({icon:"x",text:"Image quality insufficient - improve lighting, ensure full body visible",color:PC.red,priority:6});
   } else if(avg<0.55){
-    warnings.push({icon:"⚠",text:"Low confidence - findings may be inaccurate. Improve lighting and camera distance",color:PC.red,priority:5});
+    warnings.push({icon:"?",text:"Low confidence - findings may be inaccurate. Improve lighting and camera distance",color:PC.red,priority:5});
   } else if(avg<0.70){
     warnings.push({icon:"o",text:"Partial tracking - some measurements limited. Ensure full body in frame",color:PC.yellow,priority:3});
   }
   const low=KEY.filter(i=>(lm[i]?.visibility||0)<MIN_VIS);
   if(!blocked&&low.length>5) warnings.push({icon:"o",text:`${low.length} landmarks low confidence - affected measurements unreliable`,color:PC.yellow,priority:4});
   if(!blocked&&Math.abs((lm[11]?.visibility||0)-(lm[12]?.visibility||0))>0.40)
-    warnings.push({icon:"↔",text:"Asymmetric shoulder visibility - bilateral measurements may be inaccurate",color:PC.yellow,priority:3});
+    warnings.push({icon:"?",text:"Asymmetric shoulder visibility - bilateral measurements may be inaccurate",color:PC.yellow,priority:3});
   if(!blocked&&((lm[23]?.visibility||0)<MIN_VIS||(lm[24]?.visibility||0)<MIN_VIS))
     warnings.push({icon:"-",text:"Hip partially occluded - pelvic measurements flagged unreliable",color:PC.yellow,priority:3});
   if((lm[7]?.visibility||0)<MIN_VIS&&(lm[8]?.visibility||0)<MIN_VIS)
-    warnings.push({icon:"☉",text:"Ears not detected - CVA and forward head posture cannot be assessed",color:PC.yellow,priority:2});
+    warnings.push({icon:"?",text:"Ears not detected - CVA and forward head posture cannot be assessed",color:PC.yellow,priority:2});
   if((lm[31]?.visibility||0)<0.35&&(lm[32]?.visibility||0)<0.35)
-    warnings.push({icon:"⬡",text:"Feet not visible - move camera back for full-body capture",color:PC.yellow,priority:2});
+    warnings.push({icon:"?",text:"Feet not visible - move camera back for full-body capture",color:PC.yellow,priority:2});
   warnings.sort((a,b)=>(b.priority||0)-(a.priority||0));
   const status=blocked?"Insufficient":avg>0.80?"Excellent":avg>0.65?"Good":avg>0.50?"Fair":"Poor";
   const icc=r1(Math.min(0.95, 0.35+avg*0.60));
@@ -2885,7 +2885,7 @@ function calcManualReliability(placedCount, totalPoints) {
     status,
     blocked: score < 60,
     isManual: true,
-    warnings: score < 60 ? [{icon:"⚠", text:`Place at least ${Math.ceil(totalPoints*0.6)} points to analyse`, color:PC.yellow}] : [],
+    warnings: score < 60 ? [{icon:"?", text:`Place at least ${Math.ceil(totalPoints*0.6)} points to analyse`, color:PC.yellow}] : [],
   };
 }
 
@@ -4144,7 +4144,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     // Lat malleolus anchor
     if(V(iAnk)){ const p=PX(iAnk); ctx.beginPath(); ctx.arc(p[0],p[1],6,0,Math.PI*2); ctx.fillStyle="rgba(0,229,255,1)"; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke(); ctx.font="bold 9px system-ui"; ctx.fillStyle="rgba(0,229,255,1)"; ctx.textAlign="left"; ctx.fillText("Lat. Malleolus",p[0]+8,p[1]+4); }
     // CVA angle
-    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}deg ${cva>=52?"v":"⚠"}`; ctx.font="bold 10px system-ui"; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+8,17,4); else ctx.rect(cx,cy,ctw+8,17); ctx.fill(); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.fillText(ct,cx+4,cy+12); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; ctx.font="bold 9px system-ui"; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(fx-4,ep[1]-21,ftw+8,15,3); else ctx.rect(fx-4,ep[1]-21,ftw+8,15); ctx.fill(); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.fillText(fl,fx,ep[1]-10); } }
+    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}deg ${cva>=52?"v":"?"}`; ctx.font="bold 10px system-ui"; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+8,17,4); else ctx.rect(cx,cy,ctw+8,17); ctx.fill(); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.fillText(ct,cx+4,cy+12); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; ctx.font="bold 9px system-ui"; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(fx-4,ep[1]-21,ftw+8,15,3); else ctx.rect(fx-4,ep[1]-21,ftw+8,15); ctx.fill(); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.fillText(fl,fx,ep[1]-10); } }
     // Trunk inclination
     if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}deg`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; ctx.font="bold 9px system-ui"; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+8:mx-tw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(tx,my-8,tw+8,15,3); else ctx.rect(tx,my-8,tw+8,15); ctx.fill(); ctx.fillStyle=tc; ctx.textAlign="left"; ctx.fillText(tt,tx+4,my+3); }
     // Knee sagittal angle
@@ -4401,13 +4401,13 @@ const MP_CDN="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404";
 
 // --- View config --------------------------------------------------------------
 const VIEWS={
-  anterior:{label:"Frontal",short:"Frontal",badge:"+ Frontal plumb",colour:PC.accent,icon:"⬆",
+  anterior:{label:"Frontal",short:"Frontal",badge:"+ Frontal plumb",colour:PC.accent,icon:"^",
     helper:"Patient faces camera, feet hip-width, arms relaxed.",
     checks:["Full body in frame","Camera at pelvis height","Feet hip-width apart","Arms relaxed","Minimal clothing"]},
-  posterior:{label:"Back",short:"Back",badge:"+ Frontal plumb",colour:PC.a2,icon:"⬇",
+  posterior:{label:"Back",short:"Back",badge:"+ Frontal plumb",colour:PC.a2,icon:"v",
     helper:"Patient faces away. Scapulae and heels visible.",
     checks:["Hair off shoulders","Scapulae visible","Equal weight both feet","Arms relaxed","Heel tendon visible"]},
-  left:{label:"Sagittal L",short:"Sag L",badge:"+ Sagittal plumb",colour:PC.yellow,icon:"◀",
+  left:{label:"Sagittal L",short:"Sag L",badge:"+ Sagittal plumb",colour:PC.yellow,icon:"<",
     helper:"Left side toward camera. Ear-shoulder-hip-ankle in frame.",
     checks:["Ear-shoulder-hip-ankle aligned","Neutral gaze","Knees not locked","Arms visible","Full body in frame"]},
   right:{label:"Sagittal R",short:"Sag R",badge:"+ Sagittal plumb",colour:PC.green,icon:">",
@@ -4527,8 +4527,8 @@ function FindingsDisplay({ findings, PC }) {
             border:`1px solid ${PC.border}`, background: PC.s2,
             color: PC.muted, fontSize:"0.7rem", fontWeight:700, cursor:"pointer" }}>
           {showAll
-            ? `▲ Show primary findings only`
-            : `▼ Show all ${rest.length} additional findings`}
+            ? `^ Show primary findings only`
+            : `v Show all ${rest.length} additional findings`}
         </button>
       )}
 
@@ -4537,7 +4537,7 @@ function FindingsDisplay({ findings, PC }) {
         background: PC.accent+"08", border:`1px solid ${PC.border}`,
         fontSize:"0.62rem", color:PC.muted, lineHeight:1.5 }}>
         v Confirmed = seen in >=2 views · o Single-view = verify clinically ·
-        ⚡ Low confidence = verify with goniometer
+        ! Low confidence = verify with goniometer
       </div>
     </div>
   );
@@ -4578,7 +4578,7 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
           {isLowConf && (
             <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
               background: PC.yellow+"20", color: PC.yellow, border:`1px solid ${PC.yellow}44` }}>
-              ⚡ VERIFY
+              ! VERIFY
             </span>
           )}
           {!isConfirmed && !isLowConf && (
@@ -4587,7 +4587,7 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
               o SINGLE VIEW
             </span>
           )}
-          <div style={{ color:PC.muted, fontSize:"0.8rem" }}>{open ? "▲" : "▼"}</div>
+          <div style={{ color:PC.muted, fontSize:"0.8rem" }}>{open ? "^" : "v"}</div>
         </div>
       </div>
       {open && (
@@ -4607,7 +4607,7 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
           {isLowConf && (
             <div style={{ marginTop:6, padding:"4px 8px", borderRadius:6,
               background: PC.yellow+"12", color: PC.yellow, fontSize:"0.6rem", fontWeight:600 }}>
-              ⚡ Landmark confidence may be affected by lighting or clothing.
+              ! Landmark confidence may be affected by lighting or clothing.
               Verify with goniometry or clinical assessment.
             </div>
           )}
@@ -4634,7 +4634,7 @@ function FindingCard({f}){
           <div style={{fontSize:"0.6rem",color:PC.muted,marginTop:2}}>{f.region} · {f.icd}</div>
         </div>
         <div style={{fontSize:"0.65rem",color:col,fontWeight:700,flexShrink:0}}>{f.severity?.toUpperCase()}</div>
-        <div style={{color:PC.muted,fontSize:"0.8rem"}}>{open?"▲":"▼"}</div>
+        <div style={{color:PC.muted,fontSize:"0.8rem"}}>{open?"^":"v"}</div>
       </div>
       {open&&(
         <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${col}20`,fontSize:"0.68rem",color:PC.muted,lineHeight:1.6}}>
@@ -5036,7 +5036,7 @@ function MuscleImbalanceCard({ findings, isWide }) {
     <div style={{marginBottom:16,borderRadius:14,border:`1px solid ${PC.border}`,overflow:"hidden"}}>
       {/* Header */}
       <div style={{padding:"11px 14px",background:`linear-gradient(135deg,rgba(220,38,38,0.08),rgba(37,99,235,0.08))`,borderBottom:`1px solid ${PC.border}`,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{fontSize:"1rem"}}>⚡</span>
+        <span style={{fontSize:"1rem"}}>!</span>
         <div>
           <div style={{fontWeight:800,fontSize:"0.78rem",color:PC.text}}>Muscle Imbalance Table</div>
           <div style={{fontSize:"0.6rem",color:PC.muted}}>Derived from findings - confirm clinically</div>
@@ -5057,7 +5057,7 @@ function MuscleImbalanceCard({ findings, isWide }) {
         {/* Weak / Underactive */}
         <div style={{padding:"12px 12px"}}>
           <div style={{fontSize:"0.62rem",fontWeight:800,color:col.weak,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
-            <span>⚡</span> WEAK / UNDERACTIVE
+            <span>!</span> WEAK / UNDERACTIVE
           </div>
           {weak.length === 0
             ? <div style={{fontSize:"0.65rem",color:PC.muted,fontStyle:"italic"}}>None identified</div>
@@ -5067,7 +5067,7 @@ function MuscleImbalanceCard({ findings, isWide }) {
       </div>
       {/* Legend */}
       <div style={{padding:"8px 14px",background:PC.s2,borderTop:`1px solid ${PC.border}`,fontSize:"0.58rem",color:PC.muted}}>
-        # Tight = inhibit first (SMR/stretch)  ·  ⚡ Weak = activate after inhibition  ·  HIGH = high-severity finding source
+        # Tight = inhibit first (SMR/stretch)  ·  ! Weak = activate after inhibition  ·  HIGH = high-severity finding source
       </div>
     </div>
   );
@@ -5094,7 +5094,7 @@ function SpecialTestsCard({ findings, isWide }) {
         </div>
         {tests.length > (isWide ? 6 : 4) && (
           <button onClick={()=>setOpenAll(o=>!o)} style={{fontSize:"0.62rem",fontWeight:700,color:PC.accent,background:"none",border:"none",cursor:"pointer"}}>
-            {openAll ? "▲ Less" : `▼ All ${tests.length}`}
+            {openAll ? "^ Less" : `v All ${tests.length}`}
           </button>
         )}
       </div>
@@ -5130,8 +5130,8 @@ function SpecialTestsCard({ findings, isWide }) {
 // -- Exercise Plan Tab Component -----------------------------------------------
 const PHASE_META = {
   1: { label:"Phase 1 - Inhibit & Release",  icon:"#", colour:"#dc2626", desc:"SMR and stretching of overactive muscles. Do before activation.",    category:"inhibit" },
-  2: { label:"Phase 2 - Activate & Strengthen", icon:"⚡", colour:"#2563eb", desc:"Re-educate and strengthen underactive muscles after inhibition.", category:"activate" },
-  3: { label:"Phase 3 - Integrate & Correct",   icon:"↻", colour:"#059669", desc:"Movement re-education, postural correction and functional loading.", category:"correct" },
+  2: { label:"Phase 2 - Activate & Strengthen", icon:"!", colour:"#2563eb", desc:"Re-educate and strengthen underactive muscles after inhibition.", category:"activate" },
+  3: { label:"Phase 3 - Integrate & Correct",   icon:"?", colour:"#059669", desc:"Movement re-education, postural correction and functional loading.", category:"correct" },
 };
 
 function ExercisePlanTab({ findings, isWide }) {
@@ -5252,7 +5252,7 @@ function ExerciseItem({ ex, idx, isWide, isLast, isRightCol, expanded, onToggle,
             </span>
           </div>
         </div>
-        <span style={{fontSize:"0.65rem",color:PC.muted,flexShrink:0,marginTop:2}}>{expanded?"▲":"▼"}</span>
+        <span style={{fontSize:"0.65rem",color:PC.muted,flexShrink:0,marginTop:2}}>{expanded?"^":"v"}</span>
       </div>
       {expanded && (
         <div style={{marginTop:9,paddingTop:9,borderTop:`1px solid ${catBorder[cat]}`,
@@ -5764,7 +5764,7 @@ function PostureAnalysisModule(){
       {/* Tab bar */}
       {(measurements||capturedImg)&&(
         <div style={{borderBottom:`1px solid ${PC.border}`,background:PC.surface,display:"flex",position: isWide?"sticky":"static",top:0,zIndex:5}}>
-          {[["findings",`⌕ Findings${findings.length?" ("+findings.length+")":""}`],["muscles","⚡ Muscles"],["plan","> Plan"],["tests","+ Tests"],["metrics","≡ Metrics"],["history","▤ History"]].map(([t,label])=>(
+          {[["findings",`? Findings${findings.length?" ("+findings.length+")":""}`],["muscles","! Muscles"],["plan","> Plan"],["tests","+ Tests"],["metrics","? Metrics"],["history","? History"]].map(([t,label])=>(
             <button key={t} onClick={()=>setTab(t)}
               style={{flex:1,padding: isWide?"12px 8px":"10px 8px",border:"none",borderBottom:`3px solid ${tab===t?PC.accent:"transparent"}`,background:"transparent",color:tab===t?PC.accent:PC.muted,fontWeight:700,fontSize: isWide?"0.78rem":"0.68rem",cursor:"pointer",whiteSpace:"nowrap"}}>
               {label}
@@ -5845,7 +5845,7 @@ function PostureAnalysisModule(){
                         background:measurements.trunkShiftCm>5?"rgba(156,163,175,0.15)":"rgba(180,83,9,0.1)",
                         color:measurements.trunkShiftCm>5?PC.muted:PC.yellow,
                         border:`1px solid ${measurements.trunkShiftCm>5?PC.muted:PC.yellow}40`}}>
-                        Trunk shift {measurements.trunkShiftCm}cm{measurements.trunkShiftCm>5?" ⚠ verify positioning":""}
+                        Trunk shift {measurements.trunkShiftCm}cm{measurements.trunkShiftCm>5?" ? verify positioning":""}
                       </span>
                     )}
                   </div>
@@ -5888,7 +5888,7 @@ function PostureAnalysisModule(){
                 background:"linear-gradient(135deg,rgba(124,58,237,0.06),rgba(147,51,234,0.04))",
                 border:`1.5px solid ${PC.accent}30`}}>
                 <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
-                  <span style={{fontSize:"0.95rem"}}>◎</span>
+                  <span style={{fontSize:"0.95rem"}}>o</span>
                   <div>
                     <div style={{fontSize:isWide?"0.8rem":"0.72rem",fontWeight:900,color:PC.accent}}>Top 3 - Treat Now</div>
                     <div style={{fontSize:"0.58rem",color:PC.muted,marginTop:1}}>Highest clinical priority · Address in this order</div>
@@ -5932,7 +5932,7 @@ function PostureAnalysisModule(){
 
           {findings.length===0&&(
             <div style={{textAlign:"center",padding:"40px 20px",color:PC.muted,fontSize: isWide?"0.9rem":"0.8rem"}}>
-              {!measurements?"Upload or capture a photo to begin.":`✅ No significant postural deviations detected in ${VIEWS[view]?.label} view.`}
+              {!measurements?"Upload or capture a photo to begin.":`? No significant postural deviations detected in ${VIEWS[view]?.label} view.`}
             </div>
           )}
           {/* Wide: two-column findings grid */}
@@ -5940,7 +5940,7 @@ function PostureAnalysisModule(){
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               {highFindings.length>0&&(
                 <div style={{gridColumn:"1/-1",marginBottom:4}}>
-                  <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>⚠ High Priority</div>
+                  <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>? High Priority</div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                     {highFindings.map((f,i)=><FindingCard key={i} f={f}/>)}
                   </div>
@@ -5959,7 +5959,7 @@ function PostureAnalysisModule(){
             <>
               {highFindings.length>0&&(
                 <div style={{marginBottom:10}}>
-                  <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>⚠ High Priority</div>
+                  <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>? High Priority</div>
                   {highFindings.map((f,i)=><FindingCard key={i} f={f}/>)}
                 </div>
               )}
@@ -6280,7 +6280,7 @@ function PostureAnalysisModule(){
                 <div>
                   <div style={{fontSize:"0.82rem",fontWeight:900,color:PC.accent}}>{sessions[sessions.length-1].score} <span style={{fontSize:"0.65rem",fontWeight:400,color:PC.muted}}>latest</span></div>
                   <div style={{fontSize:"0.65rem",color:sessions[sessions.length-1].score>=sessions[sessions.length-2].score?PC.green:PC.red}}>
-                    {sessions[sessions.length-1].score>=sessions[sessions.length-2].score?"▲":"▼"} {Math.abs(sessions[sessions.length-1].score-sessions[sessions.length-2].score)} vs prev
+                    {sessions[sessions.length-1].score>=sessions[sessions.length-2].score?"^":"v"} {Math.abs(sessions[sessions.length-1].score-sessions[sessions.length-2].score)} vs prev
                   </div>
                 </div>
               </div>
@@ -6319,8 +6319,8 @@ function PostureAnalysisModule(){
   const assessModeToggle = (
     <div style={{padding:isWide?"8px 20px":"8px 16px",background:PC.bg,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:6}}>
       {[
-        ["single","▣ Single View","Quick screen - one view"],
-        ["multi", "☰ Multi-View", "Full assessment - 2-4 views"],
+        ["single","? Single View","Quick screen - one view"],
+        ["multi", "? Multi-View", "Full assessment - 2-4 views"],
       ].map(([m,label,sub])=>(
         <button key={m} onClick={()=>{ setAssessMode(m); if(m==="single"){setMvResults({});setMvComposite(null);} }}
           style={{flex:1,padding:isWide?"9px 8px":"8px 6px",borderRadius:10,
@@ -6339,7 +6339,7 @@ function PostureAnalysisModule(){
   const mvCaptureStrip = assessMode==="multi" && (
     <div style={{padding:isWide?"12px 20px":"10px 16px",background:PC.s2,borderBottom:`1px solid ${PC.border}`}}>
       <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span>☰ Multi-View Progress ({mvCapturedCount}/4)</span>
+        <span>? Multi-View Progress ({mvCapturedCount}/4)</span>
         {mvCapturedCount>0&&<button onClick={handleClearMv} style={{fontSize:"0.58rem",color:PC.red,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>Reset all</button>}
       </div>
       {/* Per-view dots */}
@@ -6350,7 +6350,7 @@ function PostureAnalysisModule(){
             <button key={vk} onClick={()=>setView(vk)} style={{padding:"6px 4px",borderRadius:9,
               border:`1px solid ${done?PC.green:isAct?meta.colour:PC.border}`,
               background:done?`${PC.green}12`:isAct?`${meta.colour}12`:"transparent",cursor:"pointer",textAlign:"center"}}>
-              <div style={{fontSize:"0.9rem"}}>{done?"✅":meta.icon}</div>
+              <div style={{fontSize:"0.9rem"}}>{done?"?":meta.icon}</div>
               <div style={{fontSize:"0.55rem",fontWeight:700,color:done?PC.green:isAct?meta.colour:PC.muted,marginTop:2}}>{meta.short}</div>
             </button>
           );
@@ -6538,7 +6538,7 @@ function PostureAnalysisModule(){
 
       {/* Mode toggle */}
       <div style={{padding: isWide?"10px 20px":"10px 16px",background:PC.surface,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:8}}>
-        {[["upload","^ Upload"],["live","▣ Live"]].map(([m,label])=>(
+        {[["upload","^ Upload"],["live","? Live"]].map(([m,label])=>(
           <button key={m} onClick={()=>{setMode(m);if(m==="live")setTab("capture");else{stopCamera();setTab("capture");}}}
             style={{flex:1,padding: isWide?"10px":"9px",borderRadius:10,border:`1px solid ${mode===m?viewMeta.colour:PC.border}`,background:mode===m?`${viewMeta.colour}15`:"transparent",color:mode===m?viewMeta.colour:PC.muted,fontWeight:700,fontSize: isWide?"0.85rem":"0.78rem",cursor:"pointer"}}>
             {label}
@@ -6549,7 +6549,7 @@ function PostureAnalysisModule(){
       {/* AI/Manual toggle */}
       {!isLive&&(
         <div style={{padding: isWide?"8px 20px":"8px 16px",background:PC.s3,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:6}}>
-          {[["ai","⚙ AI Auto (~70-80%)"],["manual","✋ Manual Points (~90-95%)"]].map(([m,label])=>(
+          {[["ai","? AI Auto (~70-80%)"],["manual","? Manual Points (~90-95%)"]].map(([m,label])=>(
             <button key={m} onClick={()=>handleModeSwitch(m)}
               style={{flex:1,padding:"7px 6px",borderRadius:9,border:`1px solid ${inputMode===m?PC.accent:PC.border}`,background:inputMode===m?`${PC.accent}18`:"transparent",color:inputMode===m?PC.accent:PC.muted,fontWeight:700,fontSize: isWide?"0.75rem":"0.68rem",cursor:"pointer",textAlign:"center"}}>
               {label}
@@ -6598,14 +6598,14 @@ function PostureAnalysisModule(){
               <div style={{padding: isWide?"20px":"16px",display:"flex",flexDirection:"column",gap:10}}>
                 {error&&<div style={{padding:"10px 13px",background:"rgba(220,38,38,0.08)",border:`1px solid ${PC.red}30`,borderRadius:9,fontSize:"0.76rem",color:PC.red}}>{error}</div>}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                  {[["environment","▣ Back Camera"],["user","⎇ Front Camera"]].map(([f,label])=>(
+                  {[["environment","? Back Camera"],["user","? Front Camera"]].map(([f,label])=>(
                     <button key={f} onClick={()=>startCamera(f)} disabled={mpStatus!=="ready"}
                       style={{padding: isWide?"16px":"13px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface,color:mpStatus==="ready"?PC.text:PC.muted,fontWeight:700,fontSize: isWide?"0.85rem":"0.78rem",cursor:mpStatus==="ready"?"pointer":"not-allowed"}}>
                       {label}
                     </button>
                   ))}
                 </div>
-                {camStatus==="starting"&&<div style={{textAlign:"center",color:PC.yellow,fontSize:"0.78rem"}}>⏳ Starting camera...</div>}
+                {camStatus==="starting"&&<div style={{textAlign:"center",color:PC.yellow,fontSize:"0.78rem"}}>... Starting camera...</div>}
               </div>
             ):(
               <div>
@@ -6625,7 +6625,7 @@ function PostureAnalysisModule(){
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:hasData?PC.green:PC.yellow}}>
                       {hasData?`. Tracking · ${reliability?.score}% · ICC ${reliability?.icc??"-"}`:". Searching..."}
                     </div>
-                    {motionWarning&&<div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:PC.yellow}}>⟳ Hold still</div>}
+                    {motionWarning&&<div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:PC.yellow}}>R Hold still</div>}
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:PC.a3}}>- {patientHeightCm}cm</div>
                   </div>
                   {scoreData&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
@@ -6638,14 +6638,14 @@ function PostureAnalysisModule(){
                 <div style={{padding:"10px 14px",background:PC.surface,borderTop:`1px solid ${PC.border}`,display:"flex",gap:8}}>
                   <button onClick={()=>capturePhoto(0)} disabled={!hasData}
                     style={{flex:2,padding: isWide?"13px":"11px",background:hasData?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#e5e7eb",border:"none",borderRadius:10,color:hasData?"#fff":PC.muted,fontWeight:800,fontSize: isWide?"0.85rem":"0.78rem",cursor:hasData?"pointer":"not-allowed"}}>
-                    ☉ Capture
+                    ? Capture
                   </button>
                   <button onClick={()=>capturePhoto(3)} disabled={!hasData}
                     style={{flex:1,padding:"11px",background:`${PC.a2}20`,border:`1px solid ${PC.a2}30`,borderRadius:10,color:PC.a2,fontWeight:700,fontSize:"0.75rem",cursor:hasData?"pointer":"not-allowed"}}>
-                    ⏳ 3s
+                    ... 3s
                   </button>
-                  <button onClick={flipCamera} style={{flex:"0 0 44px",padding:"11px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,cursor:"pointer"}}>↻</button>
-                  <button onClick={stopCamera} style={{flex:"0 0 44px",padding:"11px",background:"rgba(220,38,38,0.1)",border:`1px solid ${PC.red}30`,borderRadius:10,color:PC.red,cursor:"pointer"}}>⏹</button>
+                  <button onClick={flipCamera} style={{flex:"0 0 44px",padding:"11px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,cursor:"pointer"}}>?</button>
+                  <button onClick={stopCamera} style={{flex:"0 0 44px",padding:"11px",background:"rgba(220,38,38,0.1)",border:`1px solid ${PC.red}30`,borderRadius:10,color:PC.red,cursor:"pointer"}}>[]</button>
                 </div>
               </div>
             )}
@@ -6656,7 +6656,7 @@ function PostureAnalysisModule(){
             <button onClick={()=>fileInputRef.current?.click()}
               disabled={inputMode==="ai"?(mpStatus!=="ready"||analysing):false}
               style={{width:"100%",padding: isWide?"20px":"16px",borderRadius:14,border:`2px dashed ${viewMeta.colour}`,background:`${viewMeta.colour}08`,color:viewMeta.colour,fontWeight:700,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer",textAlign:"center",marginBottom:14}}>
-              {analysing?"⏳ Analysing...":"▤ Tap to upload photo"}
+              {analysing?"... Analysing...":"? Tap to upload photo"}
               <div style={{fontSize: isWide?"0.72rem":"0.65rem",fontWeight:400,marginTop:5,color:PC.muted}}>
                 {inputMode==="manual"?"Upload photo - then tap each anatomical point":"JPG, PNG - full body, clear background"}
               </div>
@@ -6668,11 +6668,11 @@ function PostureAnalysisModule(){
               <div>
                 <div style={{marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                    <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.accent}}>✋ Manual Points: {manualPlacedCount} / {manualTotal}</div>
+                    <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.accent}}>? Manual Points: {manualPlacedCount} / {manualTotal}</div>
                     <div style={{display:"flex",gap:6}}>
                       <button onClick={undoLastManual} disabled={manualPlacedCount===0}
                         style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.65rem",fontWeight:700,color:PC.muted,cursor:manualPlacedCount>0?"pointer":"not-allowed"}}>
-                        ↩ Undo
+                        ? Undo
                       </button>
                       <button onClick={resetManual} disabled={manualPlacedCount===0}
                         style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${PC.red}30`,background:"rgba(220,38,38,0.06)",fontSize:"0.65rem",fontWeight:700,color:PC.red,cursor:manualPlacedCount>0?"pointer":"not-allowed"}}>
@@ -6730,7 +6730,7 @@ function PostureAnalysisModule(){
                 {manualCanAnalyse&&(
                   <button onClick={analyseManualPoints}
                     style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer"}}>
-                    ✋ Analyse Now - {manualPlacedCount}/{manualTotal} points
+                    ? Analyse Now - {manualPlacedCount}/{manualTotal} points
                   </button>
                 )}
               </div>
@@ -6757,7 +6757,7 @@ function PostureAnalysisModule(){
                 {/* Analysing spinner */}
                 {analysing&&(
                   <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.35)"}}>
-                    <div style={{padding:"10px 18px",borderRadius:10,background:"rgba(0,0,0,0.75)",color:"#fff",fontSize:"0.78rem",fontWeight:700}}>⏳ Analysing...</div>
+                    <div style={{padding:"10px 18px",borderRadius:10,background:"rgba(0,0,0,0.75)",color:"#fff",fontSize:"0.78rem",fontWeight:700}}>... Analysing...</div>
                   </div>
                 )}
               </div>
@@ -6889,7 +6889,7 @@ function PostureAnalysisModule(){
       </div>`;
     const footer = (page,total,type) => `
       <div style="position:absolute;bottom:0;left:0;right:0;border-top:1px solid ${C.border};padding:8px 32px;display:flex;justify-content:space-between;background:#f8fafc;">
-        <div style="font-size:0.55rem;color:${C.muted}">⚠ Screening tool only - not a substitute for clinical diagnosis. Confirm with clinical examination before prescribing.</div>
+        <div style="font-size:0.55rem;color:${C.muted}">? Screening tool only - not a substitute for clinical diagnosis. Confirm with clinical examination before prescribing.</div>
         <div style="font-size:0.55rem;color:${C.muted};white-space:nowrap;margin-left:8px">${type} · ${d.clinician.date} · Page ${page}/${total}</div>
       </div>`;
     const hdr = (title,sub) => `
@@ -6912,7 +6912,7 @@ function PostureAnalysisModule(){
       const trafficPill = r => {
         const col = r.bad?C.red:r.warn?C.yellow:C.green;
         const bg = r.bad?"#fef2f2":r.warn?"#fffbeb":"#f0fdf4";
-        const txt = r.bad?"x Needs Attention":r.warn?"⚠ Moderate":"v Normal";
+        const txt = r.bad?"x Needs Attention":r.warn?"? Moderate":"v Normal";
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:6px;background:${bg};margin-bottom:4px;border:1px solid ${col}30"><span style="font-size:0.72rem;font-weight:600;color:${C.primary}">${r.label}</span><span style="font-size:0.65rem;font-weight:700;color:${col}">${txt}</span></div>`;
       };
       return `
@@ -6976,7 +6976,7 @@ function PostureAnalysisModule(){
                   <div>
                     <div style="font-family:Fraunces;font-size:0.82rem;font-weight:700;color:${C.primary};margin-bottom:4px">${f.region}</div>
                     <div style="font-size:0.68rem;color:${C.primary};line-height:1.6;margin-bottom:6px">${f.plain||f.text}</div>
-                    <div style="font-size:0.6rem;color:${C.red};line-height:1.5;padding:4px 8px;background:rgba(220,38,38,.06);border-radius:4px">⚠ If untreated: ${f.whatIfUntreated}</div>
+                    <div style="font-size:0.6rem;color:${C.red};line-height:1.5;padding:4px 8px;background:rgba(220,38,38,.06);border-radius:4px">? If untreated: ${f.whatIfUntreated}</div>
                   </div>
                 </div>
               </div>`).join("")}
@@ -7034,7 +7034,7 @@ function PostureAnalysisModule(){
             </div>
             <div style="margin-top:14px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#f8fafc,#f0f9ff);border:1px solid #bae6fd;display:flex;justify-content:space-between;align-items:center">
               <div style="font-size:0.58rem;color:${C.muted}">Generated by <strong>PostureAI</strong> · Basic Report · ${credits} credits</div>
-              <div style="font-size:0.58rem;color:${C.muted}">50 credits = ₹99 / $10</div>
+              <div style="font-size:0.58rem;color:${C.muted}">50 credits = Rs99 / $10</div>
             </div>
           </div>
           ${footer(2,2,"Basic Report")}
@@ -7307,7 +7307,7 @@ function PostureAnalysisModule(){
           </div>
           <div style="margin-top:14px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#f8fafc,#f0f9ff);border:1px solid #bae6fd;display:flex;justify-content:space-between;align-items:center">
             <div style="font-size:0.58rem;color:${C.muted}">Generated by <strong>PostureAI</strong> · Detailed Report · ${credits} credits used</div>
-            <div style="font-size:0.58rem;color:${C.muted}">50 credits = ₹99 / $10 · ID: ${Date.now().toString(36).toUpperCase()}</div>
+            <div style="font-size:0.58rem;color:${C.muted}">50 credits = Rs99 / $10 · ID: ${Date.now().toString(36).toUpperCase()}</div>
           </div>
         </div>
         ${footer(5,5,"Detailed Clinical Report")}
@@ -7380,7 +7380,7 @@ function PostureAnalysisModule(){
         {/* Credits note */}
         <div style={{padding:"8px 12px",borderRadius:8,background:`${PC.accent}08`,
           border:`1px solid ${PC.accent}25`,marginBottom:16,fontSize:"0.62rem",color:PC.accent}}>
-          {reportType==="basic"?2:5} credits will be used · 50 credits = ₹99 / $10
+          {reportType==="basic"?2:5} credits will be used · 50 credits = Rs99 / $10
         </div>
 
         <div style={{display:"flex",gap:10}}>
@@ -7406,7 +7406,7 @@ function PostureAnalysisModule(){
       {/* -- Header -- */}
       <div style={{padding:isWide?"14px 28px":"12px 16px",borderBottom:`1px solid ${PC.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",background:PC.surface,position:"sticky",top:0,zIndex:20,boxShadow:isWide?"0 1px 8px rgba(0,0,0,0.06)":"none"}}>
         <div style={{display:"flex",alignItems:"center",gap:isWide?14:8}}>
-          <div style={{width:isWide?40:32,height:isWide?40:32,borderRadius:isWide?12:9,background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:isWide?"1.3rem":"1rem",flexShrink:0}}>∠</div>
+          <div style={{width:isWide?40:32,height:isWide?40:32,borderRadius:isWide?12:9,background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:isWide?"1.3rem":"1rem",flexShrink:0}}>?</div>
           <div>
             <div style={{fontWeight:900,fontSize:isWide?"1.1rem":"0.95rem",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
               Posture Analysis
@@ -7419,7 +7419,7 @@ function PostureAnalysisModule(){
             background:mpStatus==="ready"?"rgba(5,150,105,0.12)":mpStatus==="loading"?"rgba(180,83,9,0.12)":"rgba(220,38,38,0.12)",
             color:mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red,
             border:`1px solid ${mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red}40`}}>
-            {mpStatus==="ready"?"⚙ AI Ready":mpStatus==="loading"?"⏳ Loading...":"❌ AI Error"}
+            {mpStatus==="ready"?"? AI Ready":mpStatus==="loading"?"... Loading...":"? AI Error"}
           </div>
           <button onClick={()=>setShowReportModal(true)}
             style={{padding:isWide?"6px 14px":"4px 9px",
@@ -7431,7 +7431,7 @@ function PostureAnalysisModule(){
           </button>
           <button onClick={()=>setShowHistory(h=>!h)}
             style={{padding:isWide?"6px 14px":"4px 9px",background:`${PC.a2}15`,border:`1px solid ${PC.a2}30`,borderRadius:9,color:PC.a2,fontSize:isWide?"0.72rem":"0.65rem",fontWeight:700,cursor:"pointer"}}>
-            ▤ {sessions.length}
+            ? {sessions.length}
           </button>
         </div>
       </div>
@@ -7454,7 +7454,7 @@ function PostureAnalysisModule(){
                 borderBottom:`3px solid ${mobilePanel==="camera"?PC.accent:"transparent"}`,
                 background:"transparent",color:mobilePanel==="camera"?PC.accent:PC.muted,
                 fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>
-              ▣ Camera
+              ? Camera
             </button>
             <button onClick={()=>setMobilePanel("results")}
               style={{flex:1,padding:"10px 8px",border:"none",
@@ -7463,7 +7463,7 @@ function PostureAnalysisModule(){
                 color:mobilePanel==="results"?PC.accent:PC.muted,
                 fontWeight:800,fontSize:"0.78rem",cursor:"pointer",
                 position:"relative"}}>
-              ≡ Results
+              ? Results
               {findings.length>0&&(
                 <span style={{marginLeft:5,padding:"1px 6px",borderRadius:10,
                   background:scoreData?.colour||PC.accent,color:"#fff",
@@ -7536,7 +7536,7 @@ function PostureAnalysisModule(){
       {showHistory&&(
         <div onClick={()=>setShowHistory(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:50,display:"flex",alignItems:isWide?"center":"flex-end",justifyContent:"center"}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:isWide?560:600,margin:isWide?"auto":"0 auto",background:PC.surface,borderRadius:isWide?"16px":"16px 16px 0 0",padding:"24px 20px",maxHeight:"70vh",overflowY:"auto"}}>
-            <div style={{fontWeight:800,fontSize:"0.95rem",color:PC.text,marginBottom:14}}>▤ Session History ({sessions.length})</div>
+            <div style={{fontWeight:800,fontSize:"0.95rem",color:PC.text,marginBottom:14}}>? Session History ({sessions.length})</div>
             {sessions.length===0&&<div style={{color:PC.muted,fontSize:"0.82rem"}}>No sessions yet.</div>}
             {[...sessions].reverse().map((s,i)=>(
               <div key={i} style={{padding:"11px 14px",borderRadius:11,border:`1px solid ${PC.border}`,marginBottom:8}}>
@@ -7610,7 +7610,7 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
 
       {/* Tabs */}
       <div style={{ display:"flex", borderBottom:"1px solid #d8cce8" }}>
-        {[["findings",`🔍 Findings (${f.length})`],["metrics","📐 Metrics"],["bilateral","⚖ Balance"],["actions","💊 Actions"]].map(([t,lbl])=>(
+        {[["findings",`🔍 Findings (${f.length})`],["metrics","📐 Metrics"],["bilateral","? Balance"],["actions","pill Actions"]].map(([t,lbl])=>(
           <button key={t} onClick={()=>setTab(t)} style={{ flex:1, padding:"8px 2px", border:"none", borderBottom:`2px solid ${tab===t?C2.accent:"transparent"}`, background:"transparent", color:tab===t?C2.accent:C2.muted, fontWeight:tab===t?800:500, fontSize:"0.58rem", cursor:"pointer", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{lbl}</button>
         ))}
       </div>
@@ -7618,7 +7618,7 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
       <div style={{ padding:"10px 12px" }}>
         {tab==="findings" && (
           f.length===0
-            ? <div style={{ padding:"12px", textAlign:"center", background:"rgba(0,201,122,0.07)", border:`1px solid ${C2.green}30`, borderRadius:9 }}><div style={{ fontWeight:700, color:C2.green, fontSize:"0.78rem" }}>✅ No significant deviations</div></div>
+            ? <div style={{ padding:"12px", textAlign:"center", background:"rgba(0,201,122,0.07)", border:`1px solid ${C2.green}30`, borderRadius:9 }}><div style={{ fontWeight:700, color:C2.green, fontSize:"0.78rem" }}>? No significant deviations</div></div>
             : <div>{f.map((fi,i)=><FindingCardNew key={i} f={fi} defaultOpen={i===0&&fi.severity==="high"}/>)}</div>
         )}
         {tab==="metrics" && (
@@ -7782,7 +7782,7 @@ function PhotoUploadAnalyzer() {
       <div style={{padding:"11px 14px",borderBottom:`1px solid ${C2.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:7}}>
         <div>
           <div style={{fontWeight:800,fontSize:"0.9rem",color:C2.accent}}>📷 Photo Upload Analysis</div>
-          <div style={{fontSize:"0.65rem",color:C2.muted,marginTop:2}}>{mpReady?"✅ AI Ready - Advanced Biomechanical Engine":"⏳ Loading AI engine..."}</div>
+          <div style={{fontSize:"0.65rem",color:C2.muted,marginTop:2}}>{mpReady?"? AI Ready - Advanced Biomechanical Engine":"... Loading AI engine..."}</div>
         </div>
         <div style={{display:"flex",gap:6}}>
           <button onClick={()=>setShowHistory(true)} style={{padding:"4px 10px",background:`${C2.a2}15`,border:`1px solid ${C2.a2}30`,borderRadius:7,color:C2.a2,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>📁 History</button>
@@ -7833,7 +7833,7 @@ function PhotoUploadAnalyzer() {
               <div style={{position:"relative",borderRadius:12,overflow:"hidden",background:"#f5f0fb",marginBottom:9}}>
                 <img ref={imgRef} src={image} alt="Upload" style={{width:"100%",display:"block",maxHeight:360,objectFit:"contain"}}/>
                 <canvas ref={canvasRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-                {loading&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{color:C2.accent,fontSize:"1.1rem",fontWeight:700}}>⏳ Analysing...</div><div style={{fontSize:"0.7rem",color:C2.muted}}>Running AI pose detection</div></div>}
+                {loading&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{color:C2.accent,fontSize:"1.1rem",fontWeight:700}}>... Analysing...</div><div style={{fontSize:"0.7rem",color:C2.muted}}>Running AI pose detection</div></div>}
                 {scoreData&&!loading&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingNew score={scoreData?.score} band={scoreData?.band} colour={scoreData?.colour} size={72}/></div>}
               </div>
               {/* Overlay controls */}
@@ -7863,7 +7863,7 @@ function PhotoUploadAnalyzer() {
               <div style={{fontSize:"0.68rem",color:C2.muted,marginBottom:5}}>
                 {analysisResult.view && (
                   <span style={{padding:"1px 7px",borderRadius:5,background:`${vm.colour}15`,color:vm.colour,fontWeight:700,marginRight:6,fontSize:"0.62rem"}}>
-                    {({anterior:"⬆ Anterior",posterior:"⬇ Posterior",left:"◀ Left Lateral",right:"> Right Lateral"})[analysisResult.view]||analysisResult.view} View
+                    {({anterior:"^ Anterior",posterior:"v Posterior",left:"< Left Lateral",right:"> Right Lateral"})[analysisResult.view]||analysisResult.view} View
                   </span>
                 )}
                 {new Date(analysisResult.capturedAt).toLocaleTimeString()}
@@ -7879,7 +7879,7 @@ function PhotoUploadAnalyzer() {
           {/* Findings */}
           {findings?.length===0?(
             <div style={{padding:"14px",textAlign:"center",background:"rgba(0,201,122,0.07)",border:`1px solid ${C2.green}30`,borderRadius:10,marginBottom:10}}>
-              <div style={{fontSize:"1.2rem",marginBottom:6}}>✅</div>
+              <div style={{fontSize:"1.2rem",marginBottom:6}}>?</div>
               <div style={{fontWeight:700,color:C2.green,fontSize:"0.82rem"}}>No significant deviations detected</div>
             </div>
           ):(
@@ -7946,7 +7946,7 @@ function PhotoUploadAnalyzer() {
                 {label:"Cervical Load Est.",    value:measurements.cervicalLoadKg,   unit:"kg", t:[6,10],  norm:"Neutral: 4.5kg"},
                 {label:"Thoracic Kyphosis",     value:measurements.thoracicAngle,    unit:"deg",  t:[45,55], norm:"20-45deg normal"},
                 {label:"Lumbar Lordosis Est.",  value:measurements.lordosisAngle,    unit:"deg",  t:[60,70], norm:"40-60deg normal"},
-                {label:"Ant. Pelvic Tilt",      value:measurements.anteriorPelvicTiltDeg, unit:"deg", t:[12,20], norm:"♀<=12deg ♂<=7deg"},
+                {label:"Ant. Pelvic Tilt",      value:measurements.anteriorPelvicTiltDeg, unit:"deg", t:[12,20], norm:"?<=12deg ?<=7deg"},
                 // Frontal
                 {label:"Shoulder Tilt",         value:measurements.shoulderAngle,    unit:"deg",  t:[3,7],   norm:"<3deg normal"},
                 {label:"Pelvic Obliquity",      value:measurements.pelvisAngle,      unit:"deg",  t:[3,7],   norm:"<3deg normal"},
@@ -7990,7 +7990,7 @@ function PhotoUploadAnalyzer() {
               })}
             </div>
           )}
-          <div style={{fontSize:"0.62rem",color:C2.muted,padding:"7px 10px",background:C2.s2,borderRadius:7,lineHeight:1.6}}>⚠ Observational AI analysis - not a clinical diagnosis. All findings require clinical correlation and manual assessment.</div>
+          <div style={{fontSize:"0.62rem",color:C2.muted,padding:"7px 10px",background:C2.s2,borderRadius:7,lineHeight:1.6}}>? Observational AI analysis - not a clinical diagnosis. All findings require clinical correlation and manual assessment.</div>
 
         </div>
       )}
@@ -8336,8 +8336,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     { id:"e1", name:"Chin Tuck",                sets:3, reps:10, hold:"5s",  emoji:"🧘" },
     { id:"e2", name:"Upper Trap Stretch",        sets:3, reps:"30s",hold:"", emoji:"💪" },
     { id:"e3", name:"Scapular Retraction",       sets:3, reps:15, hold:"",   emoji:"🏋" },
-    { id:"e4", name:"Median Nerve Glide",        sets:2, reps:10, hold:"",   emoji:"✋" },
-    { id:"e5", name:"Deep Neck Flexor Training", sets:3, reps:10, hold:"10s",emoji:"🦴" },
+    { id:"e4", name:"Median Nerve Glide",        sets:2, reps:10, hold:"",   emoji:"?" },
+    { id:"e5", name:"Deep Neck Flexor Training", sets:3, reps:10, hold:"10s",emoji:"bone" },
   ];
 
   // Manual therapy - real data if available, else show template
@@ -8366,7 +8366,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   const TABS = [
     { k:"overview",   icon:"+",  label:"Overview"   },
     { k:"assessment", icon:"📋", label:"Assessment"  },
-    { k:"treatment",  icon:"💊", label:"Treatment"   },
+    { k:"treatment",  icon:"pill", label:"Treatment"   },
     { k:"progress",   icon:"📈", label:"Progress"    },
     { k:"documents",  icon:"📄", label:"Documents"   },
   ];
@@ -8489,9 +8489,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         justifyContent:"space-between",padding:"0 20px",flexShrink:0}}>
         <div style={{fontSize:14,fontWeight:700,color:C.text}}>9:41</div>
         <div style={{display:"flex",gap:5,alignItems:"center"}}>
-          <span style={{fontSize:12}}>▲▲▲</span>
+          <span style={{fontSize:12}}>|||</span>
           <span style={{fontSize:12}}>WiFi</span>
-          <span style={{fontSize:12}}>🔋</span>
+          <span style={{fontSize:12}}>[=]</span>
         </div>
       </div>
 
@@ -8528,7 +8528,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               <div>
                 <div style={{fontSize:20,fontWeight:800,color:C.text,letterSpacing:"-0.5px",lineHeight:1.1}}>
                   {name}
-                  <span style={{fontSize:14,marginLeft:6}}>♀</span>
+                  <span style={{fontSize:14,marginLeft:6}}>?</span>
                 </div>
                 <div style={{fontSize:11.5,color:C.muted,marginTop:3}}>PID: {pid}</div>
               </div>
@@ -8551,7 +8551,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               </div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:5,marginTop:5}}>
-              <span style={{fontSize:13}}>✉</span>
+              <span style={{fontSize:13}}>?</span>
               <span style={{fontSize:12,color:C.muted}}>{email}</span>
             </div>
           </div>
@@ -8593,12 +8593,12 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               {/* Anatomical illustration placeholder */}
               <div style={{position:"absolute",right:-10,top:0,bottom:0,width:140,
                 display:"flex",alignItems:"center",justifyContent:"center",opacity:0.12}}>
-                <div style={{fontSize:100,lineHeight:1}}>🦴</div>
+                <div style={{fontSize:100,lineHeight:1}}>bone</div>
               </div>
               {[
                 {icon:"edit", label:"Affected Region",    value:region},
                 {icon:"🏃", label:"Probable Diagnosis", value:dx},
-                {icon:"⏰", label:"Onset",               value:onset},
+                {icon:"?", label:"Onset",               value:onset},
                 {icon:"📝", label:"Chief Complaint",     value:d.cc_main||"Neck pain radiating to left arm with tingling."},
               ].map((row,i)=>(
                 <div key={i} style={{display:"flex",gap:12,padding:"9px 0",
@@ -8676,7 +8676,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",
                   border:`1px solid ${C.border2}`,borderRadius:8}}>
                   <span style={{fontSize:11,fontWeight:600,color:C.muted}}>Pain Score</span>
-                  <span style={{fontSize:10}}>▼</span>
+                  <span style={{fontSize:10}}>v</span>
                 </div>
               </div>
               <div style={{fontSize:9.5,color:C.muted,marginBottom:4}}>Pain Score</div>
@@ -8693,7 +8693,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 {[
                   {icon:"📋",label:"New Assessment",color:"#EDE9FE",icolor:C.primary,nav:"assessment"},
                   {icon:"📝",label:"SOAP Note",    color:"#ECFDF5",icolor:C.green,  nav:"assessment"},
-                  {icon:"➕",label:"Add Session",  color:"#FEF3C7",icolor:C.orange, nav:"treatment"},
+                  {icon:"?",label:"Add Session",  color:"#FEF3C7",icolor:C.orange, nav:"treatment"},
                   {icon:"📈",label:"View Progress",color:"#EDE9FE",icolor:C.primary,nav:"progress"},
                   {icon:"📤",label:"Upload Doc",   color:"#F0F9FF",icolor:C.blue,   nav:"documents"},
                 ].map((a,i)=>(
@@ -8734,7 +8734,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   <div style={{textAlign:"right",flexShrink:0}}>
                     <div style={{fontSize:10,color:C.muted,padding:"2px 7px",
                       background:C.border,borderRadius:99,whiteSpace:"nowrap"}}>{n.dr}</div>
-                    <div style={{fontSize:10,color:C.muted,marginTop:3}}>{n.time} ›</div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:3}}>{n.time} ?</div>
                   </div>
                 </div>
               ))}
@@ -8789,8 +8789,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 {[
                   {icon:"📄",label:"Chief Complaint",value:d.cc_main||"Neck pain radiating to left arm with tingling.",span:false},
                   {icon:"📊",label:"Pain Score (NPRS)",value:`${nrsNow} / 10`,sub:"Moderate Pain",subColor:C.orange,span:false},
-                  {icon:"⏰",label:"Onset",value:onset,sub:"6 weeks ago",span:false},
-                  {icon:"⚡",label:"Aggravating Factors",value:agg,span:false},
+                  {icon:"?",label:"Onset",value:onset,sub:"6 weeks ago",span:false},
+                  {icon:"!",label:"Aggravating Factors",value:agg,span:false},
                 ].map((f,i)=>(
                   <div key={i} style={{background:"#F9FAFB",borderRadius:12,padding:12}}>
                     <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:5}}>
@@ -8847,7 +8847,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     ? Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]).slice(0,2).map(k=>k.replace("mmt_","").replace(/_/g," ")).join(", ")
                     : "Not recorded",
                   subColor: Object.keys(d).some(k=>k.startsWith("mmt_")&&d[k]) ? C.orange : C.muted, nav:"mmt"},
-                {icon:"⚡",label:"Neurological Tests",
+                {icon:"!",label:"Neurological Tests",
                   sub: d.neuro_ultt1_left||d.neuro_ultt1_right ? "ULNT1 Positive" : d.neuro_slr_left||d.neuro_slr_right ? "SLR Positive" : "Not recorded",
                   nav:"neuro"},
                 {icon:"🔬",label:"Special Tests",
@@ -8953,10 +8953,10 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 </div>
               </div>
               {/* Anatomical bg */}
-              <div style={{position:"absolute",right:-10,top:0,opacity:0.07,fontSize:120}}>🦴</div>
+              <div style={{position:"absolute",right:-10,top:0,opacity:0.07,fontSize:120}}>bone</div>
               {[
                 {icon:"📅",label:"Plan Start Date", value:"15 Apr 2025"},
-                {icon:"⏱",label:"Plan Duration",    value:"6 Weeks"},
+                {icon:"T",label:"Plan Duration",    value:"6 Weeks"},
                 {icon:"🎯",label:"Plan Goal",        value:"Reduce pain, Improve ROM, Restore function"},
               ].map((item,i)=>(
                 <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",
@@ -9237,7 +9237,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               opacity: uploading ? 0.6 : 1}}>
               {uploading ? (
                 <>
-                  <div style={{fontSize:36,marginBottom:8}}>⏳</div>
+                  <div style={{fontSize:36,marginBottom:8}}>...</div>
                   <div style={{fontSize:14,fontWeight:700,color:C.primary}}>Uploading...</div>
                 </>
               ) : (
@@ -9309,7 +9309,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         style={{width:32,height:32,borderRadius:8,background:"#EDE9FE",
                         border:"none",cursor:"pointer",fontSize:14,
                         display:"flex",alignItems:"center",justifyContent:"center"}}
-                        title="Download">⬇</button>
+                        title="Download">v</button>
                       <button onClick={()=>handlePreviewDoc(doc)}
                         style={{width:32,height:32,borderRadius:8,background:"#F3F4F6",
                         border:"none",cursor:"pointer",fontSize:14,
@@ -9424,7 +9424,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
             {[age,sex,occ].filter(Boolean).join(" · ") || "No demographics"}
           </div>
           {dx && <div style={{fontSize:"0.6rem",color:"rgba(0,201,122,0.7)",marginTop:2,
-            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>🩺 {dx}</div>}
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>+ {dx}</div>}
         </div>
 
         <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3,flexShrink:0}}>
@@ -9695,7 +9695,7 @@ const POSTURE_DEFECTS = {
     exercises:["Hip flexor couch stretch","Glute bridges 3x15","Dead bug","TA activation"]
   },
   anterior_pelvic_tilt: {
-    id:"anterior_pelvic_tilt", icon:"⬇", label:"Anterior Pelvic Tilt", region:"Lumbar/Pelvis",
+    id:"anterior_pelvic_tilt", icon:"v", label:"Anterior Pelvic Tilt", region:"Lumbar/Pelvis",
     view:["lateral"],
     description:"ASIS positioned anterior and inferior to PSIS. Often co-exists with lumbar hyperlordosis.",
     tight_muscles:["Iliopsoas","Rectus femoris","TFL","Lumbar erectors"],
@@ -9704,7 +9704,7 @@ const POSTURE_DEFECTS = {
     exercises:["Pelvic tilts","Couch stretch","Glute activation","Posterior pelvic tilt cues"]
   },
   posterior_pelvic_tilt: {
-    id:"posterior_pelvic_tilt", icon:"⬆", label:"Posterior Pelvic Tilt", region:"Lumbar/Pelvis",
+    id:"posterior_pelvic_tilt", icon:"^", label:"Posterior Pelvic Tilt", region:"Lumbar/Pelvis",
     view:["lateral"],
     description:"PSIS positioned inferior to ASIS. Flattens lumbar lordosis, often associated with prolonged sitting.",
     tight_muscles:["Hamstrings","Gluteus maximus","Rectus abdominis"],
@@ -9713,7 +9713,7 @@ const POSTURE_DEFECTS = {
     exercises:["Hip flexor stretching","Lumbar extension exercises","Prone hip extension","Cat-cow"]
   },
   lateral_pelvic_tilt: {
-    id:"lateral_pelvic_tilt", icon:"↔", label:"Lateral Pelvic Tilt", region:"Lumbar/Pelvis",
+    id:"lateral_pelvic_tilt", icon:"?", label:"Lateral Pelvic Tilt", region:"Lumbar/Pelvis",
     view:["anterior","posterior"],
     description:"Unilateral elevation of the iliac crest. May indicate leg length discrepancy or hip abductor weakness.",
     tight_muscles:["Ipsilateral QL","Ipsilateral TFL","Ipsilateral hip adductors"],
@@ -9731,7 +9731,7 @@ const POSTURE_DEFECTS = {
     exercises:["Clamshells","Monster walks","Single-leg squat with knee tracking","VMO terminal extensions"]
   },
   genu_varum: {
-    id:"genu_varum", icon:"🦴", label:"Genu Varum (Bow Legs)", region:"Knee",
+    id:"genu_varum", icon:"bone", label:"Genu Varum (Bow Legs)", region:"Knee",
     view:["anterior","posterior"],
     description:"Lateral deviation of the knee. Increases lateral compartment loading and IT band tension.",
     tight_muscles:["IT band","Biceps femoris","Hip ER","Lateral gastrocnemius"],
@@ -9767,7 +9767,7 @@ const POSTURE_DEFECTS = {
     exercises:["Schroth breathing","Concave-side stretch","Convex-side strengthening","Pilates side-lying"]
   },
   head_tilt: {
-    id:"head_tilt", icon:"↙", label:"Lateral Head Tilt", region:"Cervical",
+    id:"head_tilt", icon:"?", label:"Lateral Head Tilt", region:"Cervical",
     view:["anterior","posterior"],
     description:"Ipsilateral ear approaches ipsilateral shoulder. May indicate upper trap tightness or C-spine dysfunction.",
     tight_muscles:["Ipsilateral upper trapezius","Ipsilateral SCM","Ipsilateral scalenes","Ipsilateral levator scapulae"],
@@ -9877,7 +9877,7 @@ function PostureDefectModule() {
     }).join("");
 
     const bodyHTML = `
-      <div class="disclaimer">⚠ Manual observational assessment. For clinical use only. Not a substitute for comprehensive evaluation.</div>
+      <div class="disclaimer">? Manual observational assessment. For clinical use only. Not a substitute for comprehensive evaluation.</div>
       <div class="info-grid">
         <div class="info-box"><div class="info-label">Patient</div><div class="info-value">${patientName || "-"}</div></div>
         <div class="info-box"><div class="info-label">Clinician</div><div class="info-value">${clinicianName || "-"}</div></div>
@@ -9906,9 +9906,9 @@ function PostureDefectModule() {
   };
 
   const PLAN_VIEWS = [
-    {key:"anterior",  label:"Anterior",   icon:"⬆", tip:"Facing camera - head, shoulders, pelvis, knees, feet"},
-    {key:"posterior", label:"Posterior",  icon:"⬇", tip:"Back to camera - scapulae, spine alignment, calcanei"},
-    {key:"lateral",   label:"L Lateral",  icon:"◀", tip:"Left side - ear, shoulder, hip, knee, ankle plumb line"},
+    {key:"anterior",  label:"Anterior",   icon:"^", tip:"Facing camera - head, shoulders, pelvis, knees, feet"},
+    {key:"posterior", label:"Posterior",  icon:"v", tip:"Back to camera - scapulae, spine alignment, calcanei"},
+    {key:"lateral",   label:"L Lateral",  icon:"<", tip:"Left side - ear, shoulder, hip, knee, ankle plumb line"},
     {key:"right_lateral",label:"R Lateral",icon:">",tip:"Right side - same as left for asymmetry comparison"},
   ];
 
@@ -10080,7 +10080,7 @@ function PostureDefectModule() {
       {openDefect && <PostureDefectDetail defectId={openDefect} onClose={() => setOpenDefect(null)}/>}
 
       <div style={{padding:"7px 11px",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,fontSize:"0.6rem",color:"#7e6a9a",lineHeight:1.5}}>
-        ⚠ Manual observational assessment. Select all defects observed across each view. Tap any finding card for full clinical detail, muscles, kinetic chain, and exercise programme.
+        ? Manual observational assessment. Select all defects observed across each view. Tap any finding card for full clinical detail, muscles, kinetic chain, and exercise programme.
       </div>
     </div>
   );
@@ -10098,11 +10098,11 @@ function HomeModule({ onNav }) {
     { icon:"📐", title:"Range of Motion", desc:"Full-body ROM assessment with bilateral comparison, normal values, end-feel grading, and clinical interpretation.", nav:"rom", color:"#9333ea" },
     { icon:"💪", title:"Muscle Strength (MMT)", desc:"Oxford Scale manual muscle testing across all major muscle groups with clinical grading.", nav:"mmt", color:"#7c3aed" },
     { icon:"🔬", title:"100+ Special Tests", desc:"Evidence-based special tests for cervical, shoulder, elbow, wrist, hip, knee, and ankle with sensitivity/specificity data.", nav:"special", color:"#9333ea" },
-    { icon:"⚡", title:"Neurological Assessment", desc:"Dermatomes, myotomes, reflexes, neural tension tests, and red flag neurological screening.", nav:"neuro", color:"#7c3aed" },
+    { icon:"!", title:"Neurological Assessment", desc:"Dermatomes, myotomes, reflexes, neural tension tests, and red flag neurological screening.", nav:"neuro", color:"#7c3aed" },
     { icon:"🚶", title:"Gait Analysis", desc:"Observational gait analysis across stance, swing, and double support phases with clinical correlations.", nav:"gait", color:"#9333ea" },
     { icon:"🧠", title:"NKT Assessment", desc:"Neurokinetic Therapy muscle testing with inhibitor-facilitator relationships across regions.", nav:"nkt", color:"#7c3aed" },
-    { icon:"⛓", title:"Kinetic Chain", desc:"Joint-by-joint analysis of the kinetic chain from foot to cervical spine.", nav:"kinetic", color:"#9333ea" },
-    { icon:"💊", title:"Treatment Prescription", desc:"Evidence-based exercise programming, HEP generation, treatment technique logging, and session records.", nav:"exercise", color:"#7c3aed" },
+    { icon:"?", title:"Kinetic Chain", desc:"Joint-by-joint analysis of the kinetic chain from foot to cervical spine.", nav:"kinetic", color:"#9333ea" },
+    { icon:"pill", title:"Treatment Prescription", desc:"Evidence-based exercise programming, HEP generation, treatment technique logging, and session records.", nav:"exercise", color:"#7c3aed" },
     { icon:"🤖", title:"SOAP Notes + AI", desc:"AI-powered SOAP note generation from your assessment data with Anthropic Claude integration.", nav:"soap", color:"#9333ea" },
   ];
 
@@ -10117,7 +10117,7 @@ function HomeModule({ onNav }) {
         <div style={{position:"absolute",top:-40,right:-40,width:200,height:200,background:"rgba(255,255,255,0.06)",borderRadius:"50%"}}/>
         <div style={{position:"absolute",bottom:-60,left:-20,width:160,height:160,background:"rgba(255,255,255,0.04)",borderRadius:"50%"}}/>
         <div style={{position:"relative",zIndex:1}}>
-          <div style={{fontSize:"2.4rem",marginBottom:8}}>🩺</div>
+          <div style={{fontSize:"2.4rem",marginBottom:8}}>+</div>
           <h1 style={{fontSize:"clamp(1.4rem,4vw,2rem)",fontWeight:900,color:"#fff",margin:"0 0 10px",letterSpacing:"-0.5px",lineHeight:1.1}}>
             PhysioMind Pro
           </h1>
@@ -10467,9 +10467,9 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
   const dateStr  = now.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
   const STATS = [
     {label:"Today",   value:String(todayCount),             sub:"patients", icon:"👥",color:"#6D28D9",bg:"#EDE9FE",nav:"subjective"},
-    {label:"Pending", value:String(pendingTasks.length),    sub:"tasks",    icon:"⏳",color:pendingTasks.some(t=>t.priority==="high")?"#EF4444":"#D97706",bg:pendingTasks.some(t=>t.priority==="high")?"#FEF2F2":"#FEF3C7",nav:"dashboard"},
+    {label:"Pending", value:String(pendingTasks.length),    sub:"tasks",    icon:"...",color:pendingTasks.some(t=>t.priority==="high")?"#EF4444":"#D97706",bg:pendingTasks.some(t=>t.priority==="high")?"#FEF2F2":"#FEF3C7",nav:"dashboard"},
     {label:"Done",    value:String(todayCompleted),         sub:"today",    icon:"v", color:"#059669",bg:"#ECFDF5",nav:"dashboard"},
-    {label:"Overdue", value:String(overdueTasks),           sub:"alerts",   icon:"⚠",color:"#EF4444",bg:"#FEF2F2",nav:"dashboard"},
+    {label:"Overdue", value:String(overdueTasks),           sub:"alerts",   icon:"?",color:"#EF4444",bg:"#FEF2F2",nav:"dashboard"},
   ];
 
   return (
@@ -10627,7 +10627,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
               {pendingTasks.length === 0 ? (
                 <div style={{background:"white",borderRadius:16,padding:"28px 20px",
                   border:"2px dashed #E5E7EB",textAlign:"center"}}>
-                  <div style={{fontSize:"2rem",marginBottom:8}}>✅</div>
+                  <div style={{fontSize:"2rem",marginBottom:8}}>?</div>
                   <div style={{fontSize:14,fontWeight:700,color:"#374151"}}>All clear!</div>
                   <div style={{fontSize:12,color:"#9CA3AF",marginTop:4}}>
                     No pending tasks - great clinical workflow
@@ -10681,7 +10681,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                               {task.dueTime && (
                                 <>
                                   <span style={{color:"#D1D5DB"}}>·</span>
-                                  <span style={{fontSize:10,color:"#9CA3AF"}}>⏰ {task.dueTime}</span>
+                                  <span style={{fontSize:10,color:"#9CA3AF"}}>? {task.dueTime}</span>
                                 </>
                               )}
                             </div>
@@ -10689,7 +10689,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
 
                           {/* Expand arrow */}
                           <div style={{color:"#9CA3AF",fontSize:12,flexShrink:0,
-                            transition:"transform 0.2s",transform:isExpanded?"rotate(180deg)":""}}>▼</div>
+                            transition:"transform 0.2s",transform:isExpanded?"rotate(180deg)":""}}>v</div>
                         </div>
 
                         {/* Expanded detail */}
@@ -10775,7 +10775,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                       <div style={{width:34,height:34,borderRadius:9,
                         background:"#ECFDF5",border:"1px solid #BBF7D0",
                         display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>
-                        ✅
+                        ?
                       </div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:12.5,fontWeight:700,color:"#374151",
@@ -10884,7 +10884,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
             <div style={{textAlign:"right"}}>
               <div style={{fontSize:22,fontWeight:800,color:"#6D28D9",letterSpacing:"-1px"}}>{recoveryPct}%</div>
               <div style={{fontSize:10,color:recoveryPct>50?"#059669":"#9CA3AF",fontWeight:600}}>
-                {recoveryPct>50?"^ improving":"↗ in progress"}
+                {recoveryPct>50?"^ improving":"? in progress"}
               </div>
             </div>
           </div>
@@ -11640,7 +11640,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
                   <div style={{display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"18px 20px",borderLeft:"1px solid #e2e8f0",minWidth:130,gap:10}}>
                     {done[report.id] && <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"rgba(5,150,105,0.1)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:8}}><span style={{color:"#059669",fontSize:"0.65rem",fontWeight:700}}>v Generated</span></div>}
                     <button onClick={()=>generatePdf(report.id)} disabled={generating!==null} style={{width:"100%",padding:"12px 16px",background:generating===report.id?"#94a3b8":report.gradient,border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:generating?"not-allowed":"pointer",opacity:generating&&generating!==report.id?0.5:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
-                      {generating===report.id?"⏳ Generating...":"📥 Generate PDF"}
+                      {generating===report.id?"... Generating...":"📥 Generate PDF"}
                     </button>
                     <div style={{fontSize:"0.65rem",color:"#94a3b8",textAlign:"center",lineHeight:1.4}}>Opens in new tab<br/>Print {"->"}  Save as PDF</div>
                   </div>
@@ -11883,7 +11883,7 @@ function AppInner() {
     setData({});
     setActivePatientId(newP.id);
     setShowPatientDb(false);
-    setJsonMsg({ type:"success", text:"✅ New patient created" });
+    setJsonMsg({ type:"success", text:"? New patient created" });
     setTimeout(() => setJsonMsg(null), 2500);
   };
 
@@ -11893,7 +11893,7 @@ function AppInner() {
     setData(p.data || {});
     setActivePatientId(p.id);
     setShowPatientDb(false);
-    setJsonMsg({ type:"success", text:`✅ Loaded: ${p.name || "Patient"}` });
+    setJsonMsg({ type:"success", text:`? Loaded: ${p.name || "Patient"}` });
     setTimeout(() => setJsonMsg(null), 2500);
   };
 
@@ -11933,7 +11933,7 @@ function AppInner() {
     setData(newP.data);
     setActivePatientId(newP.id);
     setShowPatientDb(false);
-    setJsonMsg({ type:"success", text:`✅ Imported: ${newP.name}` });
+    setJsonMsg({ type:"success", text:`? Imported: ${newP.name}` });
     setTimeout(() => setJsonMsg(null), 3000);
   };
 
@@ -11994,7 +11994,7 @@ function AppInner() {
         return updated;
       });
     }
-    setJsonMsg({type:"success", text:"✅ Assessment exported successfully!"});
+    setJsonMsg({type:"success", text:"? Assessment exported successfully!"});
     setTimeout(()=>setJsonMsg(null), 3000);
   };
 
@@ -12005,10 +12005,10 @@ function AppInner() {
       setData(parsed.data);
       setJsonImportText("");
       setShowJsonPanel(false);
-      setJsonMsg({type:"success", text:`✅ Assessment loaded: ${parsed.patientName || "Patient"}`});
+      setJsonMsg({type:"success", text:`? Assessment loaded: ${parsed.patientName || "Patient"}`});
       setTimeout(()=>setJsonMsg(null), 4000);
     } catch(e) {
-      setJsonMsg({type:"error", text:`❌ Import failed: ${e.message}`});
+      setJsonMsg({type:"error", text:`? Import failed: ${e.message}`});
       setTimeout(()=>setJsonMsg(null), 4000);
     }
   };
@@ -12046,7 +12046,7 @@ function AppInner() {
             const col=isNaN(num)?PC.muted:num<(t.normal||0)*0.8?PC.red:num<(t.normal||0)*0.9?PC.yellow:PC.green;
             return(
               <div key={sfx}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,color:col,marginBottom:3}}>{side} {!isNaN(num)&&num<(t.normal||0)*0.8?"⚠ LIMITED":""}</div>
+                <div style={{fontSize:"0.62rem",fontWeight:700,color:col,marginBottom:3}}>{side} {!isNaN(num)&&num<(t.normal||0)*0.8?"? LIMITED":""}</div>
                 <input type="number" value={sv} onChange={e=>set(t.id+sfx,e.target.value)} placeholder={`N=${t.normal||""}deg`} style={{...base,borderColor:!isNaN(num)&&num<(t.normal||0)*0.8?PC.red:PC.border}} />
               </div>
             );
@@ -12062,7 +12062,7 @@ function AppInner() {
             const sv=data[t.id+sfx]||"",prob=isProb(sv);
             return(
               <div key={sfx}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,color:prob?PC.red:PC.muted,marginBottom:3}}>{side} {prob?"⚠":""}</div>
+                <div style={{fontSize:"0.62rem",fontWeight:700,color:prob?PC.red:PC.muted,marginBottom:3}}>{side} {prob?"?":""}</div>
                 <select value={sv} onChange={e=>set(t.id+sfx,e.target.value)} style={{...base,borderColor:prob?PC.red:PC.border}}>
                   <option value="">- select -</option>
                   {t.options.map(o=><option key={o} value={o}>{o}</option>)}
@@ -12156,7 +12156,7 @@ function AppInner() {
         }}>
           <span style={{fontSize:"0.85rem",flexShrink:0}}>{icon}</span>
           <div style={{flex:1,fontSize:"0.72rem",fontWeight:700,color:isOpen?accentColor:PC.text,textTransform:"uppercase",letterSpacing:"0.5px"}}>{label}</div>
-          <span style={{fontSize:"0.65rem",color:isOpen?accentColor:PC.muted,transition:"transform 0.2s",display:"inline-block",transform:isOpen?"rotate(0deg)":"rotate(-90deg)"}}>▾</span>
+          <span style={{fontSize:"0.65rem",color:isOpen?accentColor:PC.muted,transition:"transform 0.2s",display:"inline-block",transform:isOpen?"rotate(0deg)":"rotate(-90deg)"}}>?</span>
         </div>
         {isOpen && (
           <div style={{paddingBottom:4}}>
@@ -12205,7 +12205,7 @@ function AppInner() {
       <div style={{height:1,background:PC.border,margin:"6px 12px"}}/>
 
       {/* 3. Assessment (collapsible) */}
-      <SidebarGroup groupKey="assessment" icon="🩺" label="Assessment" accentColor="#7c3aed">
+      <SidebarGroup groupKey="assessment" icon="+" label="Assessment" accentColor="#7c3aed">
         <SidebarItem navKey="subjective"    icon="📝" label="Subjective Assessment"/>
         <SidebarItem navKey="posture"       icon="🧍" label="Observation & Posture"/>
         <SidebarItem navKey="palpation"     icon="🖐" label="Palpation"/>
@@ -12213,21 +12213,21 @@ function AppInner() {
         <SidebarItem navKey="mmt"           icon="💪" label="MMT"/>
         <SidebarItem navKey="fma"           icon="🏃" label="Functional Assessment"/>
         <SidebarItem navKey="special"       icon="🔬" label="Special Tests (100+)"/>
-        <SidebarItem navKey="neuro"         icon="⚡" label="Neurological"/>
+        <SidebarItem navKey="neuro"         icon="!" label="Neurological"/>
         <SidebarItem navKey="gait"          icon="🚶" label="Gait Analysis"/>
         <SidebarItem navKey="outcome"       icon="📈" label="Outcome Measures"/>
       </SidebarGroup>
 
       {/* 4. Advanced Clinical Assessment (collapsible) */}
       <SidebarGroup groupKey="advanced" icon="🔭" label="Advanced Assessment" accentColor="#9333ea">
-        <SidebarItem navKey="cyriax_full"  icon="🦴" label="Cyriax"/>
-        <SidebarItem navKey="kinetic"      icon="⛓" label="Kinetic Chain"/>
+        <SidebarItem navKey="cyriax_full"  icon="bone" label="Cyriax"/>
+        <SidebarItem navKey="kinetic"      icon="?" label="Kinetic Chain"/>
         <SidebarItem navKey="nkt"          icon="🧠" label="NKT"/>
         <SidebarItem navKey="fascia"       icon="🕸" label="Fascia Integration"/>
       </SidebarGroup>
 
       {/* 5. Treatment (collapsible) */}
-      <SidebarGroup groupKey="treatment" icon="💊" label="Treatment" accentColor="#059669">
+      <SidebarGroup groupKey="treatment" icon="pill" label="Treatment" accentColor="#059669">
         <SidebarItem navKey="exercise"     icon="🏋" label="Exercise Prescription"/>
         <SidebarItem navKey="tx_techniques" icon="🤲" label="Tx Techniques"/>
       </SidebarGroup>
@@ -12307,7 +12307,7 @@ function AppInner() {
       {showUnsaved && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{background:"#0e1118",border:"1px solid rgba(255,179,0,0.3)",borderRadius:14,padding:24,maxWidth:380,width:"100%"}}>
-            <div style={{fontSize:"1.2rem",marginBottom:8}}>⚠</div>
+            <div style={{fontSize:"1.2rem",marginBottom:8}}>?</div>
             <div style={{fontWeight:800,color:"#1a1025",fontSize:"0.92rem",marginBottom:6}}>Unsaved Changes</div>
             <div style={{fontSize:"0.78rem",color:"#5a7090",marginBottom:20,lineHeight:1.6}}>
               You have unsaved changes for <strong style={{color:"#1a1025"}}>{activePatient?.name || "this patient"}</strong>. What would you like to do?
@@ -12317,7 +12317,7 @@ function AppInner() {
                 💾 Save & Switch Patient
               </button>
               <button onClick={()=>confirmSwitchPatient(false)} style={{padding:"11px",background:"rgba(255,179,0,0.1)",border:"1px solid rgba(255,179,0,0.3)",borderRadius:9,color:"#ffb300",fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>
-                ↩ Discard Changes & Switch
+                ? Discard Changes & Switch
               </button>
               <button onClick={()=>{setShowUnsaved(false);setPendingPatient(null);}} style={{padding:"10px",background:"transparent",border:"1px solid rgba(255,255,255,0.08)",borderRadius:9,color:"#5a7090",fontSize:"0.78rem",cursor:"pointer"}}>
                 Cancel
@@ -12331,7 +12331,7 @@ function AppInner() {
       {hasRedFlags && (
         <div style={{position:"sticky",top:54,zIndex:98,background:urgentFlags.length>0?"rgba(255,77,109,0.97)":"rgba(255,179,0,0.95)",borderBottom:`2px solid ${urgentFlags.length>0?"#ff4d6d":"#ffb300"}`,padding:"8px 20px",display:"flex",gap:12,alignItems:"flex-start",flexWrap:"wrap"}}>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-            <span style={{fontSize:"1.1rem"}}>{urgentFlags.length>0?"🚨":"⚠"}</span>
+            <span style={{fontSize:"1.1rem"}}>{urgentFlags.length>0?"🚨":"?"}</span>
             <div>
               <div style={{fontWeight:800,fontSize:"0.78rem",color:"#000"}}>{urgentFlags.length>0?"URGENT RED FLAGS DETECTED":"RED FLAGS PRESENT"}</div>
               <div style={{fontSize:"0.62rem",color:"rgba(0,0,0,0.7)",fontWeight:600}}>{urgentFlags.length>0?"Do not proceed - refer immediately":"Review before proceeding with treatment"}</div>
@@ -12378,7 +12378,7 @@ function AppInner() {
             <div style={{marginBottom:14}}>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📤 Export</div>
               <button onClick={exportJSON} style={{width:"100%",padding:"12px",background:"rgba(0,201,122,0.12)",border:`1px solid rgba(0,201,122,0.3)`,borderRadius:10,color:PC.green,fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>
-                ⬇ Download Assessment JSON
+                v Download Assessment JSON
               </button>
               <div style={{fontSize:"0.65rem",color:PC.muted,marginTop:5}}>Saves all {completedCount} completed fields. Reload anytime to resume.</div>
             </div>
@@ -12401,7 +12401,7 @@ function AppInner() {
             </div>
 
             <div style={{marginTop:10,padding:"8px 12px",background:PC.s3,border:`1px solid ${PC.border}`,borderRadius:8,fontSize:"0.62rem",color:PC.muted,lineHeight:1.5}}>
-              ⚠ Loading an assessment will replace all current data. Export first if needed.
+              ? Loading an assessment will replace all current data. Export first if needed.
             </div>
           </div>
         </div>
@@ -12418,7 +12418,7 @@ function AppInner() {
       <div className="pm-header" style={{background:PC.isDark?`linear-gradient(180deg,${PC.headerBg},${PC.surface})`:`${PC.headerBg}`,borderBottom:`1px solid ${PC.border}`,padding:"0 24px",position:"sticky",top:0,zIndex:100,boxShadow:PC.isDark?"0 1px 20px rgba(0,0,0,0.4)":"0 1px 12px rgba(0,20,50,0.06)"}}>
         <div className="pm-header-inner" style={{maxWidth:1400,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:60,gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
-            <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation">☰</button>
+            <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation">?</button>
             {/* Logo mark */}
             <div style={{width:36,height:36,background:`linear-gradient(135deg,${PC.accent}22,${PC.a2}22)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.1rem"}}>+</div>
             <div style={{minWidth:0}}>
@@ -12533,14 +12533,14 @@ function AppInner() {
                             </div>
                             <div style={{fontWeight:700,fontSize:"0.86rem"}}>{i+1}. {d.name}</div>
                           </div>
-                          <span style={{color:PC.muted,fontSize:"0.75rem"}}>{exp?"▲":"▼"}</span>
+                          <span style={{color:PC.muted,fontSize:"0.75rem"}}>{exp?"^":"v"}</span>
                         </div>
                         {exp&&(
                           <div style={{padding:"0 13px 13px 16px"}}>
                             <div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Evidence</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{d.evidence.map((e,j)=><span key={j} style={{fontSize:"0.68rem",padding:"2px 7px",borderRadius:7,background:PC.s3,color:PC.text,border:`1px solid ${PC.border}`}}>v {e}</span>)}</div></div>
                             {d.mechanism&&<div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Mechanism</div><div style={{background:PC.s3,borderRadius:8,padding:10,fontSize:"0.76rem",color:PC.text,lineHeight:1.6}}>{d.mechanism}</div></div>}
                             {d.treatment&&d.treatment.length>0&&<div><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Treatment Plan</div>{d.treatment.map((t,j)=><div key={j} style={{display:"flex",gap:8,padding:"5px 9px",background:PC.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}><span style={{color:PC.a3,fontWeight:700,flexShrink:0}}>{"->"}</span><span style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.5}}>{t}</span></div>)}</div>}
-                            {d.interpretation&&<div style={{marginTop:10,padding:"8px 11px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.68rem",color:PC.yellow,lineHeight:1.5}}>⚠ {d.interpretation}</div>}
+                            {d.interpretation&&<div style={{marginTop:10,padding:"8px 11px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.68rem",color:PC.yellow,lineHeight:1.5}}>? {d.interpretation}</div>}
                           </div>
                         )}
                       </div>
@@ -12549,7 +12549,7 @@ function AppInner() {
                   {dx.fmsTotal!==null&&(
                     <div style={{marginTop:10,padding:12,background:PC.s2,borderRadius:8,border:`1px solid ${PC.border}`,display:"flex",alignItems:"center",gap:12}}>
                       <div style={{textAlign:"center",minWidth:55}}><div style={{fontSize:"1.8rem",fontWeight:800,color:dx.fmsTotal>=17?PC.green:dx.fmsTotal>=15?PC.yellow:PC.red}}>{dx.fmsTotal}</div><div style={{fontSize:"0.58rem",color:PC.muted}}>FMS/21</div></div>
-                      <div style={{fontSize:"0.76rem",color:PC.muted}}>{dx.fmsTotal>=17?"✅ Low risk":dx.fmsTotal>=15?"⚠ Moderate risk - corrective exercises":"🔴 High risk - corrective exercises before loading"}</div>
+                      <div style={{fontSize:"0.76rem",color:PC.muted}}>{dx.fmsTotal>=17?"? Low risk":dx.fmsTotal>=15?"? Moderate risk - corrective exercises":"🔴 High risk - corrective exercises before loading"}</div>
                     </div>
                   )}
                 </>
@@ -12688,7 +12688,7 @@ function AppInner() {
         aria-label={bnavHidden?"Show navigation":"Hide navigation"}
       >
         <span className="pm-bnav-handle-label">Nav</span>
-        <span className="pm-bnav-handle-arrow">▾</span>
+        <span className="pm-bnav-handle-arrow">?</span>
       </button>
 
       <nav className={`pm-bnav${bnavHidden?" bnav-hidden":""}`} aria-label="Section navigation">
@@ -12724,13 +12724,13 @@ function AppInner() {
                 <BnavItem navKey="mmt"         icon="💪" label="MMT"/>
                 <BnavItem navKey="fma"         icon="🏃" label="Functional Assessment"/>
                 <BnavItem navKey="special"     icon="🔬" label="Special Tests (100+)"/>
-                <BnavItem navKey="neuro"       icon="⚡" label="Neurological"/>
+                <BnavItem navKey="neuro"       icon="!" label="Neurological"/>
                 <BnavItem navKey="gait"        icon="🚶" label="Gait Analysis"/>
                 <BnavItem navKey="outcome"     icon="📈" label="Outcome Measures"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="advanced"?" open":""}`}>
-                <BnavItem navKey="cyriax_full" icon="🦴" label="Cyriax"/>
-                <BnavItem navKey="kinetic"     icon="⛓" label="Kinetic Chain"/>
+                <BnavItem navKey="cyriax_full" icon="bone" label="Cyriax"/>
+                <BnavItem navKey="kinetic"     icon="?" label="Kinetic Chain"/>
                 <BnavItem navKey="nkt"         icon="🧠" label="NKT"/>
                 <BnavItem navKey="fascia"      icon="🕸" label="Fascia Integration"/>
               </div>
@@ -12773,10 +12773,10 @@ function AppInner() {
 
             return (
               <>
-                <TabBtn id="top"           icon="☰"  label="Menu"    matchKeys={topKeys}/>
-                <TabBtn id="assessment"    icon="🩺" label="Assess"  matchKeys={assessKeys}/>
+                <TabBtn id="top"           icon="?"  label="Menu"    matchKeys={topKeys}/>
+                <TabBtn id="assessment"    icon="+" label="Assess"  matchKeys={assessKeys}/>
                 <TabBtn id="advanced"      icon="🔭" label="Adv."    matchKeys={advKeys}/>
-                <TabBtn id="treatment"     icon="💊" label="Treat"   matchKeys={treatKeys}/>
+                <TabBtn id="treatment"     icon="pill" label="Treat"   matchKeys={treatKeys}/>
                 <TabBtn id="documentation" icon="📋" label="Docs"    matchKeys={docKeys}/>
               </>
             );
