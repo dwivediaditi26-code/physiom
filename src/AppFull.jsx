@@ -12223,7 +12223,7 @@ function AppInner() {
         <SidebarItem navKey="cyriax_full"  icon="🦴" label="Cyriax"/>
         <SidebarItem navKey="kinetic"      icon="⛓️" label="Kinetic Chain"/>
         <SidebarItem navKey="nkt"          icon="🧠" label="NKT"/>
-        <SidebarItem navKey="fascia"       icon="🕸️" label="Fascia Integration"/>
+        <SidebarItem navKey="fascia"       icon="🕸" label="Fascia Integration"/>
       </SidebarGroup>
 
       {/* 5. Treatment (collapsible) */}
@@ -12732,7 +12732,7 @@ function AppInner() {
                 <BnavItem navKey="cyriax_full" icon="🦴" label="Cyriax"/>
                 <BnavItem navKey="kinetic"     icon="⛓️" label="Kinetic Chain"/>
                 <BnavItem navKey="nkt"         icon="🧠" label="NKT"/>
-                <BnavItem navKey="fascia"      icon="🕸️" label="Fascia Integration"/>
+                <BnavItem navKey="fascia"      icon="🕸" label="Fascia Integration"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="treatment"?" open":""}`}>
                 <BnavItem navKey="exercise"      icon="🏋" label="Exercise Prescription"/>
