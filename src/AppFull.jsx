@@ -8499,11 +8499,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
       <div style={{background:C.white,padding:"12px 20px",display:"flex",
         alignItems:"center",justifyContent:"space-between",
         borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
-        <button onClick={onClose} style={{
-          width:36,height:36,borderRadius:"50%",border:`1px solid ${C.border2}`,
-          background:C.white,cursor:"pointer",display:"flex",alignItems:"center",
-          justifyContent:"center",fontSize:18,color:C.primary,
-        }>Back</button>
+        <button onClick={onClose} style={{width:36,height:36,borderRadius:"50%",border:"1px solid #ddd",background:C.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:C.primary}}>Back</button>
         <div style={{fontSize:15,fontWeight:700,color:C.text}}>Patient Profile</div>
         <div style={{display:"flex",gap:8}}>
           <button style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted}}>{"edit"}</button>
