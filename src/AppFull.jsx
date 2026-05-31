@@ -12571,27 +12571,6 @@ function AppInner() {
                   {activePatient&&activePatient.data?.dem_occupation?activePatient.data.dem_occupation:"Start by entering patient details below"}
                 </div>
               </div>
-              {/* Metric cards */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:12,marginBottom:16}}>
-                {[
-                  { label:"Fields Completed", value:completedCount||"—", unit:"", color:PC.accent, icon:"📋", show:true },
-                  { label:"Active Patients", value:patients.length||"—", unit:"", color:PC.a3, icon:"👥", show:true },
-                  { label:"Exercises Prescribed", value:Array.isArray(data?.hep_programme)&&data.hep_programme.length>0?data.hep_programme.length:null, unit:"", color:PC.a2, icon:"🏋", show:Array.isArray(data?.hep_programme)&&data.hep_programme.length>0 },
-                  { label:"Session", value:Array.isArray(data?.tx_sessions)&&data.tx_sessions.length>0?data.tx_sessions.length:null, unit:Array.isArray(data?.tx_sessions)&&data.tx_sessions.length===1?" recorded":" recorded", color:PC.a4, icon:"📅", show:Array.isArray(data?.tx_sessions)&&data.tx_sessions.length>0 },
-                  { label:"Pain Level", value:data?.sub_vas?`${data.sub_vas}/10`:null, unit:"", color:data?.sub_vas>=7?PC.red:data?.sub_vas>=4?PC.yellow:PC.green, icon:"⚡", show:!!data?.sub_vas },
-                  { label:"Red Flags", value:hasRedFlags?(urgentFlags.length>0?"⚠ Urgent":"⚠ Present"):"Clear", unit:"", color:hasRedFlags?(urgentFlags.length>0?PC.red:PC.yellow):PC.green, icon:hasRedFlags?"🚨":"✅", show:true },
-                ].filter(m=>m.show).map((m,i)=>(
-                  <div key={i} style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${m.color},${m.color}40)`}}/>
-                    <div style={{fontSize:"1.4rem",marginBottom:8,lineHeight:1}}>{m.icon}</div>
-                    <div style={{fontSize:"clamp(1.2rem,4vw,1.7rem)",fontWeight:800,letterSpacing:"-0.5px",color:m.color,lineHeight:1,marginBottom:4}}>{m.value}{m.unit}</div>
-                    <div style={{fontSize:"0.6rem",fontWeight:700,letterSpacing:"0.7px",textTransform:"uppercase",color:PC.muted}}>{m.label}</div>
-                  </div>
-                ))}
-              </div>
-              {/* Subtle divider */}
-              <div style={{height:"1px",background:`linear-gradient(90deg,${PC.accent}30,${PC.border},transparent)`,marginBottom:8}}/>
-            </div>
           )}
 
           {/* Section header */}
