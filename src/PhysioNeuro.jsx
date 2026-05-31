@@ -1816,7 +1816,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontWeight:700,color:C.accent,marginBottom:6,fontSize:"0.72rem"}}>🖐️ Light Touch Method</div>
-                <div style={{fontSize:"0.71rem",lineHeight:1.7}}>• Use wisp of cotton wool or fingertip<br/>• Touch LIGHTLY - less than 1g pressure<br/>• Apply randomly, unpredictably<br/>• Ask: "Does this feel the same as here?"<br/>• Move distal -> proximal along dermatome</div>
+                <div style={{fontSize:"0.71rem",lineHeight:1.7}}>• Use wisp of cotton wool or fingertip<br/>• Touch LIGHTLY - less than 1g pressure<br/>• Apply randomly, unpredictably<br/>• Ask: "Does this feel the same as here?"<br/>• Move distal {"->"}  proximal along dermatome</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontWeight:700,color:C.red,marginBottom:6,fontSize:"0.72rem"}}>📍 Pin Prick Method</div>
@@ -2051,7 +2051,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                 <div>• <strong>Hoffmann's +ve</strong> (upper limb)</div>
                 <div>• <strong>Spasticity</strong> (clasp-knife tone)</div>
                 <div>• <strong>No wasting</strong> (initially)</div>
-                <div style={{marginTop:5,fontSize:"0.68rem",color:C.red,fontWeight:600}}>-> Lesion: brain, brainstem, spinal cord</div>
+                <div style={{marginTop:5,fontSize:"0.68rem",color:C.red,fontWeight:600}}>{"->"}  Lesion: brain, brainstem, spinal cord</div>
               </div>
             </div>
             <div style={{background:"rgba(255,179,0,0.07)",border:`1px solid ${C.yellow}30`,borderRadius:10,padding:"10px 13px"}}>
@@ -2063,7 +2063,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                 <div>• <strong>Fasciculations</strong> (visible twitching)</div>
                 <div>• <strong>Flaccid tone</strong> (reduced resistance)</div>
                 <div>• <strong>Muscle wasting</strong> (denervation atrophy)</div>
-                <div style={{marginTop:5,fontSize:"0.68rem",color:C.yellow,fontWeight:600}}>-> Lesion: anterior horn, nerve root, peripheral nerve</div>
+                <div style={{marginTop:5,fontSize:"0.68rem",color:C.yellow,fontWeight:600}}>{"->"}  Lesion: anterior horn, nerve root, peripheral nerve</div>
               </div>
             </div>
           </div>
@@ -2170,7 +2170,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontWeight:700,color:C.accent,marginBottom:6,fontSize:"0.72rem"}}>🔍 Sensitising Components</div>
-                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}><strong style={{color:C.yellow}}>Add to increase load:</strong> cervical contralateral lateral flexion, ankle dorsiflexion, wrist extension, neck flexion (slump)<br/><strong style={{color:C.a3}}>Release to decrease:</strong> cervical ipsilateral flex, plantarflexion, wrist neutral<br/>-> Symptoms change with these = neural, not muscular</div>
+                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}><strong style={{color:C.yellow}}>Add to increase load:</strong> cervical contralateral lateral flexion, ankle dorsiflexion, wrist extension, neck flexion (slump)<br/><strong style={{color:C.a3}}>Release to decrease:</strong> cervical ipsilateral flex, plantarflexion, wrist neutral<br/>{"->"}  Symptoms change with these = neural, not muscular</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontWeight:700,color:C.a3,marginBottom:6,fontSize:"0.72rem"}}>📊 HOW TO MARK</div>
@@ -2447,15 +2447,15 @@ function NeurologicalModule({ data, set, navContext={} }) {
               <div style={{fontWeight:700,color:C.a2,marginBottom:8,fontSize:"0.73rem"}}>🔑 AIS DECISION ALGORITHM</div>
               <div style={{fontSize:"0.68rem",color:C.muted,lineHeight:1.9}}>
                 <span style={{color:C.red,fontWeight:700}}>Step 1:</span> Is there any sacral sparing (S4/5 sensation, VAC, or DAP)?<br/>
-                -> <strong style={{color:C.red}}>NO sacral sparing -> AIS A (Complete)</strong><br/>
-                -> <strong style={{color:"#ff8c42"}}>YES sacral sparing -> go to Step 2</strong><br/>
+                -> <strong style={{color:C.red}}>NO sacral sparing {"->"}  AIS A (Complete)</strong><br/>
+                -> <strong style={{color:"#ff8c42"}}>YES sacral sparing {"->"}  go to Step 2</strong><br/>
                 <span style={{color:"#ff8c42",fontWeight:700}}>Step 2:</span> Is there any motor function more than 3 levels below the motor level?<br/>
-                -> <strong style={{color:"#ff8c42"}}>NO -> AIS B (Sensory Incomplete)</strong><br/>
-                -> <strong style={{color:C.yellow}}>YES -> go to Step 3</strong><br/>
+                -> <strong style={{color:"#ff8c42"}}>NO {"->"}  AIS B (Sensory Incomplete)</strong><br/>
+                -> <strong style={{color:C.yellow}}>YES {"->"}  go to Step 3</strong><br/>
                 <span style={{color:C.yellow,fontWeight:700}}>Step 3:</span> Is at least half the key muscles below NLI graded >=3/5?<br/>
-                -> <strong style={{color:C.yellow}}>NO (majority &lt;3) -> AIS C (Motor Incomplete)</strong><br/>
-                -> <strong style={{color:C.a3}}>YES (majority >=3) -> AIS D (Motor Incomplete - functional)</strong><br/>
-                <span style={{color:C.green,fontWeight:700}}>Special:</span> If all segments normal but patient had prior SCI deficits -> <strong style={{color:C.green}}>AIS E</strong>
+                -> <strong style={{color:C.yellow}}>NO (majority &lt;3) {"->"}  AIS C (Motor Incomplete)</strong><br/>
+                -> <strong style={{color:C.a3}}>YES (majority >=3) {"->"}  AIS D (Motor Incomplete - functional)</strong><br/>
+                <span style={{color:C.green,fontWeight:700}}>Special:</span> If all segments normal but patient had prior SCI deficits {"->"}  <strong style={{color:C.green}}>AIS E</strong>
               </div>
             </div>
 
@@ -2624,7 +2624,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                   <select value={val} onChange={e=>set(q.id,e.target.value)} style={{...inp,borderColor:present?C.green:absent?C.red:C.border}}>
                     {q.options.map(o=><option key={o} value={o}>{o}</option>)}
                   </select>
-                  {present&&<div style={{marginTop:7,fontSize:"0.72rem",color:C.green,fontWeight:600}}>✅ Sacral sparing present -> SCI is INCOMPLETE</div>}
+                  {present&&<div style={{marginTop:7,fontSize:"0.72rem",color:C.green,fontWeight:600}}>✅ Sacral sparing present {"->"}  SCI is INCOMPLETE</div>}
                   {absent&&<div style={{marginTop:7,fontSize:"0.72rem",color:C.red,fontWeight:600}}>🔴 No sacral sparing at this level</div>}
                 </div>
               );
@@ -2687,7 +2687,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                       <span style={{fontSize:"0.6rem",padding:"1px 7px",borderRadius:8,fontWeight:700,background:isEmerg?"rgba(255,77,109,0.2)":"rgba(255,179,0,0.2)",color:isEmerg?C.red:C.yellow}}>{rf.severity}</span>
                     </div>
                     <div style={{fontSize:"0.74rem",color:C.muted,marginBottom:6,lineHeight:1.5}}>{rf.description}</div>
-                    {active&&<div style={{padding:"6px 10px",borderRadius:6,background:isEmerg?"rgba(255,77,109,0.15)":"rgba(255,179,0,0.1)",fontSize:"0.74rem",color:isEmerg?C.red:C.yellow,fontWeight:600}}>-> {rf.action}</div>}
+                    {active&&<div style={{padding:"6px 10px",borderRadius:6,background:isEmerg?"rgba(255,77,109,0.15)":"rgba(255,179,0,0.1)",fontSize:"0.74rem",color:isEmerg?C.red:C.yellow,fontWeight:600}}>{"->"}  {rf.action}</div>}
                   </div>
                   <select value={val} onChange={e=>set(rf.id,e.target.value)} style={{...inp,width:"auto",minWidth:110,flexShrink:0,borderColor:active?(isEmerg?C.red:C.yellow):C.border}}>
                     <option value="">- screen -</option>
