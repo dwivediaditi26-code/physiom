@@ -10,7 +10,7 @@ function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder
     <div style={{background:C.surface,border:`1px solid ${filled?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:6}}>
         <label style={{fontSize:"0.78rem",fontWeight:600,color:filled?C.text:C.muted,lineHeight:1.4,flex:1}}>
-          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>✓</span>}
+          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>v</span>}
         </label>
         {unit&&<span style={{fontSize:"0.62rem",color:C.muted,flexShrink:0}}>{unit}</span>}
       </div>
@@ -80,7 +80,7 @@ function ErgoModule({ data, set }) {
   }
 
   const overallCol = risks.overall==="High"?C.red:risks.overall==="Moderate"?C.yellow:C.green;
-  const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"⏱️"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
+  const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"⏱"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
   const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.72rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
 
   const SH = ({id,label,children})=>{
@@ -245,7 +245,7 @@ function ErgoModule({ data, set }) {
               </div>
             </div>
             <div style={{fontSize:"0.72rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
-              {risks.overall==="High"?"⚠️ Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"⚡ Moderate ergonomic exposure. Targeted corrections advised.":"✅ Low ergonomic risk. Maintenance and monitoring."}
+              {risks.overall==="High"?"⚠ Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"⚡ Moderate ergonomic exposure. Targeted corrections advised.":"✅ Low ergonomic risk. Maintenance and monitoring."}
             </div>
           </div>
           <div style={{height:6,background:C.s3,borderRadius:4}}><div style={{height:"100%",width:`${Math.round(risks.total/risks.maxTotal*100)}%`,background:`linear-gradient(90deg,${C.green},${C.yellow},${C.red})`,borderRadius:4,transition:"width 0.5s"}}/></div>
@@ -461,10 +461,10 @@ function GaitModule({ data, set }) {
 
   const tabs = [
     {key:"profile",  label:"Profile",        icon:"👤"},
-    {key:"oga",      label:"Observation",    icon:"👁️"},
+    {key:"oga",      label:"Observation",    icon:"👁"},
     {key:"phases",   label:"Gait Phases",    icon:"🔄"},
     {key:"spatio",   label:"Parameters",     icon:"📐"},
-    {key:"timed",    label:"Timed Tests",    icon:"⏱️"},
+    {key:"timed",    label:"Timed Tests",    icon:"⏱"},
     {key:"scales",   label:"Scales",         icon:"📊"},
     {key:"abnormal", label:"Gait Pattern",   icon:"🚨"},
     {key:"muscles",  label:"Muscle/Joint",   icon:"💪"},
@@ -476,7 +476,7 @@ function GaitModule({ data, set }) {
     const val=data[id]||"";
     return(
       <div style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,padding:"9px 12px",marginBottom:7}}>
-        <div style={{fontSize:"0.76rem",fontWeight:600,color:val?C.text:C.muted,marginBottom:5}}>{label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>✓</span>}</div>
+        <div style={{fontSize:"0.76rem",fontWeight:600,color:val?C.text:C.muted,marginBottom:5}}>{label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>v</span>}</div>
         {note&&<div style={{fontSize:"0.67rem",color:C.muted,marginBottom:5,fontStyle:"italic"}}>{note}</div>}
         {type==="select"&&<select value={val} onChange={e=>set(id,e.target.value)} style={inp}><option value="">- select -</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>}
         {type==="text"&&<input value={val} onChange={e=>set(id,e.target.value)} style={inp}/>}
@@ -607,7 +607,7 @@ function GaitModule({ data, set }) {
                   </div>
                   <select value={dev} onChange={e=>set(p.id+"_dev",e.target.value)} style={{...inp,marginBottom:hasDeviation?7:0,borderColor:hasDeviation?C.yellow+"60":C.border}}>
                     <option value="">- select deviation -</option>
-                    <option value="None">✓ No deviation</option>
+                    <option value="None">v No deviation</option>
                     {p.deviations.map(d=><option key={d} value={d}>{d}</option>)}
                     <option value="Other - see notes">Other - see notes</option>
                   </select>
@@ -637,7 +637,7 @@ function GaitModule({ data, set }) {
           return(
             <div key={p.id} style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:7}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                <span style={{fontSize:"0.78rem",fontWeight:600,color:val?C.text:C.muted}}>{p.label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>✓</span>}</span>
+                <span style={{fontSize:"0.78rem",fontWeight:600,color:val?C.text:C.muted}}>{p.label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>v</span>}</span>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
                   <span style={{fontSize:"0.62rem",color:C.muted}}>Normal: {p.normal} {p.unit}</span>
                   {val&&<span style={{fontSize:"0.72rem",fontWeight:700,color:C.accent}}>{val} {p.unit}</span>}
@@ -667,7 +667,7 @@ function GaitModule({ data, set }) {
             <div key={t.id} style={{background:C.surface,border:`1px solid ${flagged?C.red+"50":val?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:8}}>
                 <div>
-                  <div style={{fontSize:"0.8rem",fontWeight:700,color:flagged?C.red:val?C.text:C.muted}}>{t.label}{flagged&&" ⚠️"}</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:700,color:flagged?C.red:val?C.text:C.muted}}>{t.label}{flagged&&" ⚠"}</div>
                   <div style={{fontSize:"0.67rem",color:C.muted,marginTop:2}}>{t.note}</div>
                 </div>
                 <span style={{fontSize:"0.62rem",color:C.muted,flexShrink:0,textAlign:"right"}}>Normal: {t.normal}</span>
@@ -720,7 +720,7 @@ function GaitModule({ data, set }) {
                 </div>
                 <select value={val} onChange={e=>set(g.id,e.target.value)} style={{...inp,width:"auto",minWidth:100,flexShrink:0,borderColor:present?C.yellow:C.border}}>
                   <option value="">- screen -</option>
-                  <option value="Absent">✓ Absent</option>
+                  <option value="Absent">v Absent</option>
                   <option value="Present">⚠ Present</option>
                   <option value="Suspected">? Suspected</option>
                 </select>
@@ -1621,7 +1621,7 @@ function OutcomeMeasuresModule() {
             </div>
 
             <button onClick={() => setActive(null)} style={{ marginTop:13, width:"100%", padding:"10px", background:"rgba(0,229,255,0.07)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:9, color:"#00e5ff", fontWeight:700, fontSize:"0.75rem", cursor:"pointer" }}>
-              ✓ Done - Collapse
+              v Done - Collapse
             </button>
           </div>
         );
@@ -1965,11 +1965,11 @@ function buildClinicalInterpretation(data) {
       text:"Positive Spurling test (specificity 92-93%) indicates foraminal compression of the cervical nerve root. Correlate with dermatomes, myotomes, and reflexes to identify level (C5: deltoid/biceps, C6: wrist ext/brachioradialis, C7: triceps/wrist flex, C8: finger flex)." });
   }
   if (vbi) {
-    rules.push({ module:"Special Tests", confidence:"URGENT", tag:"⚠️ VBI Screen POSITIVE - Contraindication",
+    rules.push({ module:"Special Tests", confidence:"URGENT", tag:"⚠ VBI Screen POSITIVE - Contraindication",
       text:"VBI / vertebral artery screening POSITIVE. ABSOLUTE CONTRAINDICATION to cervical manipulation or high-velocity thrust techniques. Vertebrobasilar insufficiency requires urgent medical review before further cervical intervention. Document clearly and refer." });
   }
   if (sharpPurser) {
-    rules.push({ module:"Special Tests", confidence:"URGENT", tag:"⚠️ C1/C2 Instability - URGENT",
+    rules.push({ module:"Special Tests", confidence:"URGENT", tag:"⚠ C1/C2 Instability - URGENT",
       text:"Sharp-Purser test positive indicates atlantoaxial (C1/C2) instability. URGENT referral to spinal surgeon or emergency department. No manual therapy to cervical spine. Immobilise if necessary. Rule out rheumatoid arthritis, Down syndrome, trauma." });
   }
 
@@ -2015,7 +2015,7 @@ function buildClinicalInterpretation(data) {
   const hasHoffmann = Object.keys(data).some(k => k.includes("hoffmann") && String(data[k]).toLowerCase().includes("positive"));
 
   if (hasBabinski || hasHoffmann) {
-    rules.push({ module:"Neurology", confidence:"URGENT", tag:"⚠️ Upper Motor Neuron - URGENT REFERRAL",
+    rules.push({ module:"Neurology", confidence:"URGENT", tag:"⚠ Upper Motor Neuron - URGENT REFERRAL",
       text:"PATHOLOGICAL REFLEX POSITIVE (Babinski/Hoffmann). Upper motor neuron lesion above segmental level. Urgent exclusion of cervical myelopathy, spinal cord compression, stroke, or intracranial pathology required. REFER IMMEDIATELY. Do not proceed with spinal manipulation." });
   }
 
@@ -2031,7 +2031,7 @@ function buildClinicalInterpretation(data) {
   }
 
   if (neuroDerm.includes("saddle") || val("cc_main").includes("saddle") || val("rf_cauda").includes("cauda")) {
-    rules.push({ module:"Neurology", confidence:"URGENT", tag:"⚠️ Cauda Equina Syndrome - EMERGENCY",
+    rules.push({ module:"Neurology", confidence:"URGENT", tag:"⚠ Cauda Equina Syndrome - EMERGENCY",
       text:"CAUDA EQUINA SYNDROME INDICATORS PRESENT. Saddle anaesthesia and/or bladder/bowel dysfunction with lumbar symptoms. EMERGENCY referral to Emergency Department. Do not delay. MRI lumbar spine urgent." });
   }
 
@@ -2639,7 +2639,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
                      ["nrf_bilateral","Bilateral signs"],["nrf_prog_weak","Progressive weakness"]];
     const nrfFlags = nrfKeys.filter(([k]) => data[k] === true || String(data[k]).includes("yes") || String(data[k]).includes("present"))
                               .map(([,label]) => label);
-    if (nrfFlags.length) neuroLines.push(`  ⚠️ Red Flags: ${nrfFlags.join(", ")}`);
+    if (nrfFlags.length) neuroLines.push(`  ⚠ Red Flags: ${nrfFlags.join(", ")}`);
     // GCS if recorded
     const gcsE = v("gcs_eye"), gcsV = v("gcs_verbal"), gcsM = v("gcs_motor");
     if (gcsE||gcsV||gcsM) {
@@ -2735,7 +2735,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     const fmsScores = FMS_SCORES.filter(([k]) => data[k]).map(([k, label]) => `${label}: ${data[k]}/3`);
     if (fmsScores.length) {
       const total = FMS_SCORES.reduce((sum,[k]) => sum+(Number(data[k])||0), 0);
-      fmaLines.push(`  FMS Scores: ${fmsScores.join(", ")} [Total: ${total}/21]${total<14?" ⚠️ elevated injury risk":""}`);
+      fmaLines.push(`  FMS Scores: ${fmsScores.join(", ")} [Total: ${total}/21]${total<14?" ⚠ elevated injury risk":""}`);
     }
     if (v("fma_notes")) fmaLines.push(`  Notes: ${v("fma_notes")}`);
     if (fmaLines.length) O_parts.push(`Functional Movement Assessment:\n${fmaLines.join("\n")}.`);
@@ -2833,7 +2833,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       .map(ann => {
         const side = ann.side === "back" ? "Posterior" : "Anterior";
         const region = ann.region ? ` - ${ann.region}` : "";
-        return `  • [${side}${region}] ${ann.text}`;
+        return `  . [${side}${region}] ${ann.text}`;
       });
     if (annNotes.length) {
       O_parts.push(`Pain Chart (Body Diagram):\n${annNotes.join("\n")}`);
@@ -2932,17 +2932,17 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const corrConf = interps.filter(r => r.module === "Correlation");
   if (highConf.length) {
     A_parts.push("\nKey Clinical Findings:");
-    highConf.forEach(r => A_parts.push(`  • [${r.module}] ${r.tag}: ${r.text}`));
+    highConf.forEach(r => A_parts.push(`  . [${r.module}] ${r.tag}: ${r.text}`));
   }
   if (corrConf.length) {
     A_parts.push("\nCorrelated Patterns:");
-    corrConf.forEach(r => A_parts.push(`  • ${r.tag}: ${r.text}`));
+    corrConf.forEach(r => A_parts.push(`  . ${r.tag}: ${r.text}`));
   }
 
   // ── FMS INDIVIDUAL MOVEMENT SCORES ────────────────────────────────────────
   if (dx?.fmsTotal !== null && dx?.fmsTotal !== undefined) {
     const fmsRisk = dx.fmsTotal >= 17 ? "Low" : dx.fmsTotal >= 15 ? "Moderate" : "High";
-    const fmsFlag = dx.fmsTotal >= 17 ? "✅" : dx.fmsTotal >= 15 ? "⚠️" : "🔴";
+    const fmsFlag = dx.fmsTotal >= 17 ? "✅" : dx.fmsTotal >= 15 ? "⚠" : "🔴";
     const fmsMovements = [
       ["Deep Squat",           "sp_fms_sq"],
       ["Hurdle Step L",        "sp_fms_hs_l"],
@@ -2961,7 +2961,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       .map(([label, key]) => {
         const score = v(key);
         if (!score) return null;
-        const flag = score === "0" ? " 🔴" : score === "1" ? " ⚠️" : "";
+        const flag = score === "0" ? " 🔴" : score === "1" ? " ⚠" : "";
         return `  ${label.padEnd(22)}: ${score}/3${flag}`;
       })
       .filter(Boolean);
@@ -2976,7 +2976,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     });
     let fmsBlock = `FMS Total: ${dx.fmsTotal}/21 - ${fmsFlag} ${fmsRisk} injury risk`;
     if (fmsRows.length) fmsBlock += `\n${fmsRows.join("\n")}`;
-    if (asymmetries.length) fmsBlock += `\n  ⚠️ Asymmetries: ${asymmetries.join(", ")}`;
+    if (asymmetries.length) fmsBlock += `\n  ⚠ Asymmetries: ${asymmetries.join(", ")}`;
     A_parts.push(`\n${fmsBlock}`);
   }
 
@@ -2989,7 +2989,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   // P section header only added if there is actual plan content
 
   if (dx?.dx?.length && dx.dx[0].treatment?.length) {
-    dx.dx[0].treatment.forEach(t => P_parts.push(`  • ${t}`));
+    dx.dx[0].treatment.forEach(t => P_parts.push(`  . ${t}`));
   }
 
   // Treatment techniques
@@ -2997,13 +2997,13 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   if (txTechniques.length) {
     P_parts.push("\nTreatment Techniques Applied:");
     txTechniques.forEach(t => {
-      if (t.type==="manual") P_parts.push(`  • Joint Mobilisation - ${t.technique||""}${t.grade?` Grade ${t.grade}`:""}${t.region?` - ${t.region}`:""}${t.laterality?` (${t.laterality})`:""}${t.dosage?`. Dosage: ${t.dosage}`:""}`);
-      else if (t.type==="dn") P_parts.push(`  • Dry Needling - ${t.dn_muscle||""}${t.laterality?` (${t.laterality})`:""}${t.dn_needles?`, ${t.dn_needles} needles`:""}${t.dn_depth?`, depth ${t.dn_depth}`:""}${t.dn_twitch?`. LTR: ${t.dn_twitch}`:""}`);
-      else if (t.type==="taping") P_parts.push(`  • Taping - ${t.tape_type||""}${t.tape_goal?`. Goal: ${t.tape_goal}`:""}`);
-      else if (t.type==="st") P_parts.push(`  • Soft Tissue - ${t.st_technique||""}${t.st_region?` - ${t.st_region}`:""}${t.duration?`, ${t.duration}`:""}`);
-      else if (t.type==="us") P_parts.push(`  • Ultrasound - ${t.us_freq||""} ${t.us_mode||""}${t.us_intensity?`, ${t.us_intensity}W/cm²`:""}${t.us_area?` - ${t.us_area}`:""}`);
-      else if (t.type==="electro") P_parts.push(`  • ${t.electro_type||"Electrotherapy"}${t.electro_params?` - ${t.electro_params}`:""}`);
-      else if (t.technique) P_parts.push(`  • ${t.technique}${t.region?` - ${t.region}`:""}`);
+      if (t.type==="manual") P_parts.push(`  . Joint Mobilisation - ${t.technique||""}${t.grade?` Grade ${t.grade}`:""}${t.region?` - ${t.region}`:""}${t.laterality?` (${t.laterality})`:""}${t.dosage?`. Dosage: ${t.dosage}`:""}`);
+      else if (t.type==="dn") P_parts.push(`  . Dry Needling - ${t.dn_muscle||""}${t.laterality?` (${t.laterality})`:""}${t.dn_needles?`, ${t.dn_needles} needles`:""}${t.dn_depth?`, depth ${t.dn_depth}`:""}${t.dn_twitch?`. LTR: ${t.dn_twitch}`:""}`);
+      else if (t.type==="taping") P_parts.push(`  . Taping - ${t.tape_type||""}${t.tape_goal?`. Goal: ${t.tape_goal}`:""}`);
+      else if (t.type==="st") P_parts.push(`  . Soft Tissue - ${t.st_technique||""}${t.st_region?` - ${t.st_region}`:""}${t.duration?`, ${t.duration}`:""}`);
+      else if (t.type==="us") P_parts.push(`  . Ultrasound - ${t.us_freq||""} ${t.us_mode||""}${t.us_intensity?`, ${t.us_intensity}W/cm²`:""}${t.us_area?` - ${t.us_area}`:""}`);
+      else if (t.type==="electro") P_parts.push(`  . ${t.electro_type||"Electrotherapy"}${t.electro_params?` - ${t.electro_params}`:""}`);
+      else if (t.technique) P_parts.push(`  . ${t.technique}${t.region?` - ${t.region}`:""}`);
       if (t.response) P_parts.push(`    Response: ${t.response}`);
     });
   }
@@ -3025,7 +3025,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     P_parts.push("\nPostural Correction Exercises:");
     selDef.slice(0,3).forEach(d => {
       P_parts.push(`  ${d.label}:`);
-      d.exercises?.slice(0,3).forEach(e => P_parts.push(`    • ${e}`));
+      d.exercises?.slice(0,3).forEach(e => P_parts.push(`    . ${e}`));
     });
   }
 
@@ -3262,7 +3262,7 @@ function SOAPNoteModule({ data }) {
               border:"1px solid rgba(220,38,38,0.4)",borderRadius:20,
               fontSize:"0.65rem",fontWeight:800,color:"#dc2626",
               animation:"pm-pulse 1.5s ease-in-out infinite"}}>
-              ⚠️ {urgentRules.length} URGENT
+              ⚠ {urgentRules.length} URGENT
             </div>
           )}
         </div>
@@ -3299,8 +3299,8 @@ function SOAPNoteModule({ data }) {
       <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
         {tabBtn("soap","📄 SOAP Note")}
         {tabBtn("interp","🧠 Suggested Interpretation", totalRules)}
-        {tabBtn("both","⊞ Split View")}
-        {tabBtn("extra","✏️ Add Notes")}
+        {tabBtn("both","+ Split View")}
+        {tabBtn("extra","edit Add Notes")}
         {tabBtn("ai","🤖 AI Assistant")}
       </div>
 
@@ -3314,10 +3314,10 @@ function SOAPNoteModule({ data }) {
             {/* Copy/print toolbar */}
             <div style={{display:"flex",gap:7,marginBottom:10,flexWrap:"wrap"}}>
               <button onClick={copyFull} style={{padding:"7px 14px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}40`,borderRadius:8,color:PC.accent,fontSize:"0.7rem",fontWeight:700,cursor:"pointer"}}>
-                {copied==="all"?"✓ Copied!":"📋 Copy Full SOAP"}
+                {copied==="all"?"v Copied!":"📋 Copy Full SOAP"}
               </button>
               <button onClick={printNote} style={{padding:"7px 14px",background:`${PC.a3}12`,border:`1px solid ${PC.a3}35`,borderRadius:8,color:PC.a3,fontSize:"0.7rem",fontWeight:700,cursor:"pointer"}}>
-                🖨️ Print / PDF
+                🖨 Print / PDF
               </button>
               <div style={{marginLeft:"auto",fontSize:"0.62rem",color:PC.muted,display:"flex",alignItems:"center"}}>
                 Updates live as you fill assessment fields ↗
@@ -3376,7 +3376,7 @@ function SOAPNoteModule({ data }) {
                       borderRadius:9,color:"#ffffff",
                       fontSize:"0.65rem",fontWeight:800,cursor:"pointer",
                       boxShadow:`0 2px 8px ${sectionColors[key]}45`,flexShrink:0}}>
-                    {copied===key?"✓ Copied":"Copy"}
+                    {copied===key?"v Copied":"Copy"}
                   </button>
                 </div>
 
@@ -3420,7 +3420,7 @@ function SOAPNoteModule({ data }) {
                       <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:6,flexWrap:"wrap"}}>
                         <span style={{fontSize:"0.75rem"}}>{
                           {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
-                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐️",Correlation:"🔗"}[r.module]||"⚕️"
+                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐",Correlation:"🔗"}[r.module]||"⚕"
                         }</span>
                         <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,
                           textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
@@ -3507,7 +3507,7 @@ function SOAPNoteModule({ data }) {
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7,flexWrap:"wrap"}}>
                         <span style={{fontSize:"0.82rem"}}>{
                           {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
-                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐️"}[r.module]||"⚕️"
+                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐"}[r.module]||"⚕"
                         }</span>
                         <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,
                           textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
@@ -3534,7 +3534,7 @@ function SOAPNoteModule({ data }) {
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                         <span style={{fontSize:"0.82rem"}}>{
                           {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
-                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐️"}[r.module]||"⚕️"
+                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐"}[r.module]||"⚕"
                         }</span>
                         <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,
                           textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
@@ -3557,7 +3557,7 @@ function SOAPNoteModule({ data }) {
       {activeTab==="extra" && (
         <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"14px"}}>
           <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
-            ✏️ Additional Clinical Notes (appended to auto-generated SOAP)
+            edit Additional Clinical Notes (appended to auto-generated SOAP)
           </div>
           <div style={{display:"grid",gap:10}}>
             {["S","O","A","P"].map(key=>(
@@ -3595,7 +3595,7 @@ function SOAPNoteModule({ data }) {
             <div>
               <div style={{fontSize:"0.73rem",color:PC.muted,marginBottom:10,lineHeight:1.65}}>
                 Enter your free <strong style={{color:PC.text}}>Groq API key</strong> to enable AI clinical reasoning.<br/>
-                <span style={{color:"#059669"}}>✓ 100% free · 30 req/min · Llama 3.3 70B</span>
+                <span style={{color:"#059669"}}>v 100% free · 30 req/min · Llama 3.3 70B</span>
               </div>
               <div style={{display:"flex",gap:8}}>
                 <input value={aiKeyInput} onChange={e=>{setAiKeyInput(e.target.value);setAiError(null);}}
@@ -3611,7 +3611,7 @@ function SOAPNoteModule({ data }) {
           ) : (
             <div>
               <div style={{display:"flex",gap:6,marginBottom:13}}>
-                {[{id:"ask",icon:"💬",label:"Ask AI"},{id:"ddx",icon:"🔬",label:"Full DDx"},{id:"enhance",icon:"✨",label:"Enhance SOAP"}].map(({id,icon,label})=>(
+                {[{id:"ask",icon:"💬",label:"Ask AI"},{id:"ddx",icon:"🔬",label:"Full DDx"},{id:"enhance",icon:"*",label:"Enhance SOAP"}].map(({id,icon,label})=>(
                   <button key={id} onClick={()=>{setAiMode(id);setAiResponse(null);setAiError(null);}}
                     style={{flex:1,padding:"8px 4px",background:aiMode===id?"rgba(127,90,240,0.2)":"rgba(127,90,240,0.06)",border:`1px solid ${aiMode===id?"rgba(127,90,240,0.5)":"rgba(127,90,240,0.2)"}`,borderRadius:8,color:aiMode===id?"#a78bfa":"#6b8399",fontWeight:aiMode===id?800:500,fontSize:"0.66rem",cursor:"pointer",fontFamily:"inherit"}}>
                     <div style={{fontSize:"1rem",marginBottom:2}}>{icon}</div>{label}
@@ -3650,7 +3650,7 @@ function SOAPNoteModule({ data }) {
                 <div>
                   <div style={{fontSize:"0.68rem",color:PC.muted,marginBottom:12,lineHeight:1.65}}>AI will rewrite the auto-generated SOAP note with professional clinical language, proper terminology, and medico-legally defensible documentation.</div>
                   <button onClick={runEnhance} disabled={aiLoading} style={{width:"100%",padding:"12px",background:aiLoading?"rgba(0,201,122,0.15)":"linear-gradient(135deg,#00c97a,#00e5ff)",border:"none",borderRadius:8,color:aiLoading?"#6b8399":"#000",fontWeight:800,fontSize:"0.8rem",cursor:aiLoading?"default":"pointer"}}>
-                    {aiLoading?"🔄 Enhancing SOAP note...":"✨ Enhance SOAP Note with AI"}
+                    {aiLoading?"🔄 Enhancing SOAP note...":"* Enhance SOAP Note with AI"}
                   </button>
                 </div>
               )}
@@ -3691,10 +3691,10 @@ function SOAPNoteModule({ data }) {
 // Drop-in Exercise Prescription module for PhysioMind
 //
 // EXPORTS:
-//   • EXERCISE_DB           - full exercise database (214 exercises, 18 regions)
-//   • PROGRAMME_TEMPLATES   - 37 quick-load evidence-based HEP templates
-//   • ALL_EXERCISES         - flat array of every exercise (for search)
-//   • ExercisePrescriptionModule - React component
+//   . EXERCISE_DB           - full exercise database (214 exercises, 18 regions)
+//   . PROGRAMME_TEMPLATES   - 37 quick-load evidence-based HEP templates
+//   . ALL_EXERCISES         - flat array of every exercise (for search)
+//   . ExercisePrescriptionModule - React component
 //
 // PROPS:
 //   <ExercisePrescriptionModule data={data} set={set} />
@@ -4087,7 +4087,7 @@ const EXERCISE_DB = {
     }
   },
   cardiac: {
-    label:"Cardiac Rehab", icon:"❤", color:"#ef4444",
+    label:"Cardiac Rehab", icon:"♥", color:"#ef4444",
     categories: {
       "Phase 2-3 Cardiac Rehab": [
         { id:"card_walk_prog",      name:"Supervised Walking Programme",             target:"Cardiorespiratory - Phase 2 cardiac rehab",        desc:"Treadmill or overground. Start 10-15 min. Progress 5 min/week. RPE 11-13.", sets:1, reps:1,  hold:0,  freq:"5x/week",  phase:"Phase 1", evidence:"Strongest", cues:"Borg RPE 11-13 (moderate). Stop if chest pain/dizziness.", progression:"Increase duration -> Add interval -> Cycle/swim" },
@@ -5754,7 +5754,7 @@ function PalpationModule({ data, set }) {
         border:`1px solid ${C.border}`, borderRadius:12, padding:"12px 16px", marginBottom:14 }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
           <div>
-            <div style={{ fontWeight:800, fontSize:"0.95rem", color:C.accent }}>🖐️ Palpation Map</div>
+            <div style={{ fontWeight:800, fontSize:"0.95rem", color:C.accent }}>🖐 Palpation Map</div>
             <div style={{ fontSize:"0.68rem", color:C.muted, marginTop:2 }}>
               Tap any region on the body - anatomical point auto-generates. Record tenderness, tissue quality & findings.
             </div>
@@ -5878,7 +5878,7 @@ function PalpationModule({ data, set }) {
           {!selPin && pins.length === 0 && (
             <div style={{ background:C.surface, border:`1px dashed ${C.border}`,
               borderRadius:12, padding:"28px 20px", textAlign:"center" }}>
-              <div style={{ fontSize:"2.2rem", marginBottom:10 }}>🖐️</div>
+              <div style={{ fontSize:"2.2rem", marginBottom:10 }}>🖐</div>
               <div style={{ fontWeight:700, color:C.text, marginBottom:6 }}>
                 Tap any point on the body
               </div>
@@ -6047,7 +6047,7 @@ function PalpationModule({ data, set }) {
                         style={{ padding:"4px 10px", borderRadius:8, fontSize:"0.65rem", fontWeight:sel ? 700 : 400,
                           border:`1px solid ${sel ? C.a2 : C.border}`, background:sel ? "rgba(127,90,240,0.14)" : "transparent",
                           color:sel ? C.a2 : C.muted, cursor:"pointer", transition:"all 0.12s" }}>
-                        {sel ? "✓ " : ""}{tex}
+                        {sel ? "v " : ""}{tex}
                       </button>
                     );
                   })}
@@ -6381,7 +6381,7 @@ function TreatmentTechniquesModule({ data, set }) {
       {/* ── Technique Entry Form ── */}
       <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
         <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>
-          {editing?"✏️ Edit Technique":"➕ Add Treatment Technique"}
+          {editing?"edit Edit Technique":"➕ Add Treatment Technique"}
         </div>
 
         {/* Type tabs */}
@@ -6431,7 +6431,7 @@ function TreatmentTechniquesModule({ data, set }) {
                     {t.response&&<div style={{marginTop:4,fontSize:"0.65rem",color:PC.a3,lineHeight:1.4}}>↳ {t.response}</div>}
                   </div>
                   <div style={{display:"flex",gap:5,flexShrink:0}}>
-                    <button onClick={()=>editEntry(t)} style={{background:`${typeColor(t.type)}15`,border:`1px solid ${typeColor(t.type)}40`,borderRadius:6,color:typeColor(t.type),cursor:"pointer",fontSize:"0.6rem",padding:"3px 8px",fontWeight:700}}>✏️</button>
+                    <button onClick={()=>editEntry(t)} style={{background:`${typeColor(t.type)}15`,border:`1px solid ${typeColor(t.type)}40`,borderRadius:6,color:typeColor(t.type),cursor:"pointer",fontSize:"0.6rem",padding:"3px 8px",fontWeight:700}}>edit</button>
                     <button onClick={()=>deleteTechnique(t.id)} style={{background:"none",border:"none",color:"rgba(255,77,109,0.5)",cursor:"pointer",fontSize:"0.7rem",padding:"3px 5px"}}>x</button>
                   </div>
                 </div>
@@ -6558,7 +6558,7 @@ function TreatmentSessionLogModule({ data, set }) {
       {/* ── Session Entry Form ── */}
       <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
         <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
-          {editing?"✏️ Edit Session Log":"📋 Log Treatment Session"}
+          {editing?"edit Edit Session Log":"📋 Log Treatment Session"}
         </div>
 
         {/* Auto-pull banner */}
@@ -6594,7 +6594,7 @@ function TreatmentSessionLogModule({ data, set }) {
             </div>
           </div>
         </div>
-        {(form.vasStart||form.vasEnd)&&(()=>{const ch=vasChange(form.vasStart,form.vasEnd);return ch!==null?<div style={{marginBottom:8,padding:"6px 10px",background:ch<0?"rgba(0,201,122,0.1)":ch>0?"rgba(255,77,109,0.1)":"rgba(255,179,0,0.1)",border:`1px solid ${ch<0?"rgba(0,201,122,0.3)":ch>0?"rgba(255,77,109,0.3)":"rgba(255,179,0,0.3)"}`,borderRadius:8,fontSize:"0.68rem",fontWeight:700,color:ch<0?PC.green:ch>0?PC.red:PC.yellow}}>VAS change: {ch>0?"+":""}{ch} - {ch<0?"✅ Improved":ch>0?"⚠️ Increased":"-> No change"}</div>:null;})()}
+        {(form.vasStart||form.vasEnd)&&(()=>{const ch=vasChange(form.vasStart,form.vasEnd);return ch!==null?<div style={{marginBottom:8,padding:"6px 10px",background:ch<0?"rgba(0,201,122,0.1)":ch>0?"rgba(255,77,109,0.1)":"rgba(255,179,0,0.1)",border:`1px solid ${ch<0?"rgba(0,201,122,0.3)":ch>0?"rgba(255,77,109,0.3)":"rgba(255,179,0,0.3)"}`,borderRadius:8,fontSize:"0.68rem",fontWeight:700,color:ch<0?PC.green:ch>0?PC.red:PC.yellow}}>VAS change: {ch>0?"+":""}{ch} - {ch<0?"✅ Improved":ch>0?"⚠ Increased":"-> No change"}</div>:null;})()}
 
         {/* Treatment given */}
         <div style={{marginBottom:8}}>
@@ -6678,7 +6678,7 @@ function TreatmentSessionLogModule({ data, set }) {
                     {s.goals&&<div style={{marginTop:8}}><div style={{fontSize:"0.58rem",fontWeight:700,color:PC.yellow,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Goals</div><div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6}}>{s.goals}</div></div>}
                     {s.notes&&<div style={{marginTop:6,fontSize:"0.65rem",color:PC.muted,fontStyle:"italic"}}>{s.notes}</div>}
                     <div style={{display:"flex",gap:6,marginTop:10}}>
-                      <button onClick={()=>editSession(s)} style={{padding:"6px 12px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}40`,borderRadius:7,color:PC.accent,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>✏️ Edit</button>
+                      <button onClick={()=>editSession(s)} style={{padding:"6px 12px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}40`,borderRadius:7,color:PC.accent,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>edit Edit</button>
                       <button onClick={()=>deleteSession(s.id)} style={{padding:"6px 10px",background:"rgba(255,77,109,0.08)",border:"1px solid rgba(255,77,109,0.25)",borderRadius:7,color:"#ff4d6d",fontSize:"0.65rem",cursor:"pointer"}}>🗑 Delete</button>
                     </div>
                   </div>
