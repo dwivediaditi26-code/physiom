@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, Component } f
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC } from "./utils.jsx";
 
 const TEST_SVG = {
-  // ─── SHOULDER ───────────────────────────────────────────────────────────
+  // ??? SHOULDER ???????????????????????????????????????????????????????????
   neer: (
     <svg viewBox="0 0 120 140" width="100%" height="100">
       <rect x="45" y="0" width="20" height="50" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
@@ -125,7 +125,7 @@ const TEST_SVG = {
       <rect x="25" y="65" width="22" height="45" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
       <rect x="65" y="75" width="22" height="35" rx="8" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(15,76,85)"/>
       <path d="M15,68 L95,78" stroke="#ff4d6d" strokeWidth="2" strokeDasharray="4,2"/>
-      <text x="5" y="90" fontSize="9" fill="#ff4d6d">↘ Pelvis drops</text>
+      <text x="5" y="90" fontSize="9" fill="#ff4d6d">? Pelvis drops</text>
       <text x="5" y="128" fontSize="8" fill="#94a3b8">Single leg stance</text>
       <text x="5" y="138" fontSize="8" fill="#94a3b8">Watch pelvis level</text>
     </svg>
@@ -215,7 +215,7 @@ const TEST_SVG = {
   ),
 };
 
-// ─── COMPLETE SPECIAL TESTS DATABASE 100+ ────────────────────────────────────
+// ??? COMPLETE SPECIAL TESTS DATABASE 100+ ????????????????????????????????????
 const SPECIAL_TESTS_DATA = {
 
   cervical:{
@@ -239,7 +239,7 @@ const SPECIAL_TESTS_DATA = {
         sensitivity:"69%", specificity:"96%",
         positive:"URGENT - click or symptom change indicates instability",
         negative:"No movement or symptoms",
-        how:"⚠ PERFORM WITH CAUTION. Patient seated, head in flexion. Therapist places palm on forehead, thumb on C2 spinous process. Apply POSTERIOR translation of head on C2. Positive if clunk or reduction in symptoms. POSITIVE = refer immediately. Do NOT manipulate this patient.",
+        how:"? PERFORM WITH CAUTION. Patient seated, head in flexion. Therapist places palm on forehead, thumb on C2 spinous process. Apply POSTERIOR translation of head on C2. Positive if clunk or reduction in symptoms. POSITIVE = refer immediately. Do NOT manipulate this patient.",
         options:["Negative","Positive - clunk present (C1/C2 instability - REFER URGENT)","Inconclusive"],
       },
       { id:"st_vbi", label:"VBI / 3-Part Test", structure:"Vertebral artery patency",
@@ -937,7 +937,7 @@ const SPECIAL_TESTS_DATA = {
   },
 };
 
-// ─── SPECIAL TESTS COMPONENT ──────────────────────────────────────────────────
+// ??? SPECIAL TESTS COMPONENT ??????????????????????????????????????????????????
 
 // Deep-link highlight animation
 if (typeof document !== "undefined" && !document.getElementById("physio-hl-style")) {
@@ -1028,7 +1028,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
               <button key={key} type="button" onClick={() => { setRegion(key); setOpenTest(null); }}
                 style={{ padding:"6px 12px", borderRadius:20, border:`1px solid ${region===key ? r.color : filled>0 ? r.color+"50" : C.border}`, background:region===key ? `${r.color}18` : "transparent", color:region===key ? r.color : C.muted, fontSize:"0.73rem", fontWeight:region===key ? 700 : 500, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
                 {r.icon} {r.label}
-                {positives > 0 && <span style={{ background:C.red, color:"#fff", borderRadius:10, padding:"0 5px", fontSize:"0.6rem", fontWeight:800 }}>⚠{positives}</span>}
+                {positives > 0 && <span style={{ background:C.red, color:"#fff", borderRadius:10, padding:"0 5px", fontSize:"0.6rem", fontWeight:800 }}>?{positives}</span>}
                 {filled > 0 && positives === 0 && <span style={{ background:r.color, color:"#000", borderRadius:10, padding:"0 5px", fontSize:"0.6rem", fontWeight:800 }}>{filled}</span>}
               </button>
             );
@@ -1057,7 +1057,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", gap:7, alignItems:"center", marginBottom:3, flexWrap:"wrap" }}>
                     <span style={{ fontSize:"0.75rem", fontWeight:700, color:color }}>{t.label}</span>
-                    {anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(255,77,109,0.2)", color:C.red, fontSize:"0.65rem", fontWeight:700 }}>⚠ POSITIVE</span>}
+                    {anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(255,77,109,0.2)", color:C.red, fontSize:"0.65rem", fontWeight:700 }}>? POSITIVE</span>}
                     {anyVal && !anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(0,201,122,0.15)", color:C.green, fontSize:"0.65rem", fontWeight:700 }}>v Recorded</span>}
                   </div>
                   <div style={{ fontSize:"0.7rem", color:C.muted }}>Structure: {t.structure}</div>
@@ -1071,7 +1071,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                 <div style={{ display:"flex", gap:7, alignItems:"center", flexShrink:0, marginLeft:10 }}>
                   <button type="button" onClick={e => { e.stopPropagation(); setModalTest(t); }}
                     style={{ padding:"3px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.62rem", fontWeight:700, cursor:"pointer" }}>i</button>
-                  <span style={{ color:C.muted, fontSize:"0.72rem" }}>{isOpen ? "▲" : "▼"}</span>
+                  <span style={{ color:C.muted, fontSize:"0.72rem" }}>{isOpen ? "^" : "v"}</span>
                 </div>
               </div>
 
@@ -1083,7 +1083,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                     <div style={{ background:C.s2, borderRadius:8, padding:8, border:`1px solid ${C.border}`, width:120, flexShrink:0 }}>
                       {svgEl || (
                         <svg viewBox="0 0 120 100" width="120" height="90">
-                          <text x="50%" y="40%" textAnchor="middle" fontSize="22" fill={color}>⚕</text>
+                          <text x="50%" y="40%" textAnchor="middle" fontSize="22" fill={color}>+</text>
                           <text x="50%" y="65%" textAnchor="middle" fontSize="9" fill={C.muted}>{t.label.split(" ")[0]}</text>
                         </svg>
                       )}
@@ -1102,7 +1102,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                           <div style={{ fontSize:"0.72rem", color:C.text }}>{t.negative}</div>
                         </div>
                         <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.25)", borderRadius:7, padding:"6px 9px" }}>
-                          <div style={{ fontSize:"0.6rem", fontWeight:700, color:C.red, marginBottom:2 }}>⚠ POSITIVE means</div>
+                          <div style={{ fontSize:"0.6rem", fontWeight:700, color:C.red, marginBottom:2 }}>? POSITIVE means</div>
                           <div style={{ fontSize:"0.72rem", color:C.text }}>{t.positive}</div>
                         </div>
                       </div>
@@ -1120,7 +1120,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                           const sidePos = isPositive(sideVal);
                           return (
                             <div key={side}>
-                              <div style={{ fontSize:"0.65rem", fontWeight:700, color:sidePos ? C.red : C.muted, marginBottom:4 }}>{side.toUpperCase()} {sidePos && "⚠"}</div>
+                              <div style={{ fontSize:"0.65rem", fontWeight:700, color:sidePos ? C.red : C.muted, marginBottom:4 }}>{side.toUpperCase()} {sidePos && "?"}</div>
                               <select value={sideVal} onChange={e => setTestResult(t.id, side, e.target.value)}
                                 style={{ width:"100%", background:C.s3, border:`1px solid ${sidePos ? C.red : C.border}`, borderRadius:7, color:C.text, padding:"7px 9px", fontSize:"0.76rem", outline:"none", fontFamily:"inherit" }}>
                                 <option value="">- not tested -</option>
@@ -1164,7 +1164,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
               <div style={{ display:"inline-block", maxWidth:200 }}>
                 {TEST_SVG[modalTest.id.replace("st_","")] || (
                   <svg viewBox="0 0 120 100" width="180" height="140">
-                    <text x="50%" y="40%" textAnchor="middle" fontSize="32" fill={C.accent}>⚕</text>
+                    <text x="50%" y="40%" textAnchor="middle" fontSize="32" fill={C.accent}>+</text>
                     <text x="50%" y="65%" textAnchor="middle" fontSize="11" fill={C.muted}>Clinical Illustration</text>
                     <text x="50%" y="78%" textAnchor="middle" fontSize="10" fill={C.muted}>{modalTest.label.split(" ").slice(0,3).join(" ")}</text>
                   </svg>
@@ -1183,7 +1183,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                 <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.negative}</div>
               </div>
               <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.25)", borderRadius:8, padding:10 }}>
-                <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.red, textTransform:"uppercase", marginBottom:5 }}>⚠ Positive</div>
+                <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.red, textTransform:"uppercase", marginBottom:5 }}>? Positive</div>
                 <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.positive}</div>
               </div>
             </div>
@@ -1192,7 +1192,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
               <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Result Options</div>
               {modalTest.options.map((o, i) => (
                 <div key={i} style={{ padding:"6px 10px", borderRadius:7, marginBottom:5, background:C.s2, border:`1px solid ${C.border}`, fontSize:"0.78rem", color:isPositive(o) ? C.red : C.text }}>
-                  {isPositive(o) ? "⚠ " : "o "}{o}
+                  {isPositive(o) ? "? " : "o "}{o}
                 </div>
               ))}
             </div>
@@ -1206,31 +1206,31 @@ function SpecialTestsSection({ data, set, navContext={} }) {
 }
 
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????
 // CYRIAX COMPLETE ASSESSMENT MODULE
 // Full STTT . Active/Passive ROM . End-Feel . Resisted Tests . Joint Play
 // Auto Clinical Reasoning . Tissue Diagnosis . Treatment Direction
-// ═══════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????
 
-// ─── CYRIAX CORE DATA ────────────────────────────────────────────────────────
+// ??? CYRIAX CORE DATA ????????????????????????????????????????????????????????
 
 const CYRIAX_STTT_INTERPRETATION = {
   "Strong & Painless": {
-    color:"#00c97a", icon:"✅",
+    color:"#00c97a", icon:"?",
     tissue:"Normal contractile tissue",
     meaning:"No lesion in the tested contractile unit. The muscle, musculotendinous junction, and tendon are intact and healthy. Look elsewhere for the pain source.",
     nextStep:"Test passive movements (inert tissue). If passive also normal, consider referred pain or visceral source.",
     dx:"Normal - no contractile lesion at this movement",
   },
   "Strong & Painful": {
-    color:"#ffb300", icon:"⚠",
+    color:"#ffb300", icon:"?",
     tissue:"Minor contractile lesion",
     meaning:"The contractile unit can generate near-normal force BUT the lesion is provoked by tension. Indicates MINOR lesion: partial muscle tear, tendinopathy, tenoperiosteal lesion, or musculotendinous junction injury. The structure is intact enough to generate force.",
     nextStep:"Palpate the exact site of lesion. Deep Transverse Friction Massage (DTFM) at the exact lesion site. Eccentric loading protocol.",
     dx:"Minor lesion of contractile tissue - tendinopathy / partial tear / tenoperiosteal",
   },
   "Weak & Painless": {
-    color:"#7f5af0", icon:"⚡",
+    color:"#7f5af0", icon:"!",
     tissue:"Neurological deficit OR complete rupture",
     meaning:"Cannot generate force AND no pain. Two possible causes: (1) Complete structural rupture (tendon/muscle torn completely - cannot generate force, no tissue left to be painful), OR (2) Neurological inhibition - nerve root lesion, peripheral nerve palsy, or UMN lesion. Must differentiate urgently.",
     nextStep:"Check dermatomes, myotomes, reflexes. If neurological: refer for nerve conduction study / MRI spine. If complete rupture: refer for imaging and surgical consultation.",
@@ -1265,7 +1265,7 @@ const CAPSULAR_PATTERNS = {
   lumbar: { name:"Lumbar spine", pattern:"Side-flex both directions equally, Extension > Flexion", dx:"Lumbar OA / spondylosis / disc degeneration" },
 };
 
-// ─── CYRIAX REGION DATA ───────────────────────────────────────────────────────
+// ??? CYRIAX REGION DATA ???????????????????????????????????????????????????????
 const CYRIAX_REGIONS_DATA = {
 
   cervical: {
@@ -1542,7 +1542,7 @@ const CYRIAX_REGIONS_DATA = {
   },
 };
 
-// ─── CYRIAX CLINICAL REASONING ENGINE ────────────────────────────────────────
+// ??? CYRIAX CLINICAL REASONING ENGINE ????????????????????????????????????????
 function cyriaxAutoReason(regionId, data) {
   const reg = CYRIAX_REGIONS_DATA[regionId];
   if (!reg) return null;
@@ -1576,15 +1576,15 @@ function cyriaxAutoReason(regionId, data) {
 
   // TISSUE TYPE DETERMINATION
   if (weakPainful.length > 0) {
-    tissueType = "⚠ SERIOUS CONTRACTILE LESION";
+    tissueType = "? SERIOUS CONTRACTILE LESION";
     confidence = "High";
     findings.push(`🚨 SERIOUS: ${weakPainful.map(r => r.label).join(", ")} - Weak & Painful`);
     diagnoses.push({ name:"Serious Contractile Lesion", confidence:"High", detail:"Weak + painful = serious: complete rupture + surrounding tissue damage, fracture through insertion, or neoplasm. URGENT imaging required." });
     treatment.push("URGENT: Do NOT load or treat. Refer for imaging (X-ray + MRI) immediately.", "Rule out fracture, complete rupture, neoplasm.", "Surgical consultation if rupture confirmed.");
   } else if (weakPainless.length > 0) {
-    tissueType = "⚡ NEUROLOGICAL DEFICIT OR COMPLETE RUPTURE";
+    tissueType = "! NEUROLOGICAL DEFICIT OR COMPLETE RUPTURE";
     confidence = "High";
-    findings.push(`⚡ Neurological finding: ${weakPainless.map(r => `${r.label} (${r.muscle})`).join(", ")} - Weak & Painless`);
+    findings.push(`! Neurological finding: ${weakPainless.map(r => `${r.label} (${r.muscle})`).join(", ")} - Weak & Painless`);
     diagnoses.push({ name:"Neurological Deficit or Complete Structural Rupture", confidence:"High", detail:"Weak + painless = nerve root lesion (check dermatomes + reflexes) OR complete rupture (no structure left to be painful)." });
     treatment.push("Neurological assessment: dermatomes, myotomes, reflexes.", "If neurological: nerve conduction study, MRI spine.", "If complete rupture: refer orthopaedic.");
   } else if (strongPainful.length > 0 && abnormalEndfeels.length === 0) {
@@ -1613,7 +1613,7 @@ function cyriaxAutoReason(regionId, data) {
       }
     });
   } else if (strongPainless.length === resistedResults.filter(r => r.result).length && resistedResults.filter(r => r.result).length > 0) {
-    tissueType = "✅ ALL CONTRACTILE TESTS NORMAL";
+    tissueType = "? ALL CONTRACTILE TESTS NORMAL";
     confidence = "Moderate";
     findings.push("All resisted tests strong and painless - contractile tissue normal");
     diagnoses.push({ name:"Inert Tissue Pathology (all contractile normal)", confidence:"Moderate", detail:"Pain is not arising from contractile tissue. Inert structures (capsule, ligament, bursa, disc) are the source. Focus passive assessment." });
@@ -1642,7 +1642,7 @@ function cyriaxAutoReason(regionId, data) {
   return { findings, diagnoses: diagnoses.slice(0, 5), treatment: [...new Set(treatment)].slice(0, 8), tissueType, confidence, nextTests, differentials: reg.differentials };
 }
 
-// ─── CYRIAX MODULE COMPONENT ─────────────────────────────────────────────────
+// ??? CYRIAX MODULE COMPONENT ?????????????????????????????????????????????????
 function CyriaxModule({ data, set, navContext={} }) {
     const [region, setRegion] = useState("shoulder");
   const [tab, setTab] = useState("active");
@@ -1703,7 +1703,7 @@ function CyriaxModule({ data, set, navContext={} }) {
     <div>
       {/* Region selector */}
       <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:12, padding:14, marginBottom:14 }}>
-        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ Cyriax STTT - Region-Specific Assessment</div>
+        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>+ Cyriax STTT - Region-Specific Assessment</div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
           {Object.entries(CYRIAX_REGIONS_DATA).map(([key, r]) => {
             const hasData = Object.keys(data).some(k => k.startsWith(`cyriax_${key}_`) && data[k]);
@@ -1733,7 +1733,7 @@ function CyriaxModule({ data, set, navContext={} }) {
         ))}
       </div>
 
-      {/* ── ACTIVE ROM TAB ── */}
+      {/* ?? ACTIVE ROM TAB ?? */}
       {tab === "active" && (
         <div>
           <div style={{ ...boxStyle, borderColor:"rgba(0,229,255,0.2)" }}>
@@ -1791,7 +1791,7 @@ function CyriaxModule({ data, set, navContext={} }) {
         </div>
       )}
 
-      {/* ── PASSIVE ROM TAB ── */}
+      {/* ?? PASSIVE ROM TAB ?? */}
       {tab === "passive" && (
         <div>
           <div style={{ ...boxStyle, borderColor:"rgba(127,90,240,0.3)" }}>
@@ -1869,7 +1869,7 @@ function CyriaxModule({ data, set, navContext={} }) {
         </div>
       )}
 
-      {/* ── RESISTED TESTS TAB ── */}
+      {/* ?? RESISTED TESTS TAB ?? */}
       {tab === "resisted" && (
         <div>
           {/* STTT Key */}
@@ -1915,7 +1915,7 @@ function CyriaxModule({ data, set, navContext={} }) {
         </div>
       )}
 
-      {/* ── JOINT PLAY TAB ── */}
+      {/* ?? JOINT PLAY TAB ?? */}
       {tab === "joint_play" && (
         <div>
           <div style={boxStyle}>
@@ -1978,7 +1978,7 @@ function CyriaxModule({ data, set, navContext={} }) {
         </div>
       )}
 
-      {/* ── CLINICAL REASONING TAB ── */}
+      {/* ?? CLINICAL REASONING TAB ?? */}
       {tab === "reason" && (
         <div>
           <button type="button" onClick={runReasoning}
@@ -1996,8 +1996,8 @@ function CyriaxModule({ data, set, navContext={} }) {
 
               {/* Red flags */}
               <div style={{ background:"rgba(255,77,109,0.08)", border:`1px solid ${C.red}40`, borderRadius:10, padding:12, marginBottom:12 }}>
-                <div style={{ fontWeight:800, color:C.red, marginBottom:8, fontSize:"0.85rem", cursor:"pointer" }} onClick={()=>setShowRed(r=>!r)}>🚨 Red Flags for {reg.label} {showRed?"▲":"▼"}</div>
-                {showRed && reg.redFlags.map((rf,i)=><div key={i} style={{ padding:"4px 8px", fontSize:"0.76rem", color:C.text, borderBottom:`1px solid rgba(255,77,109,0.1)` }}>⚠ {rf}</div>)}
+                <div style={{ fontWeight:800, color:C.red, marginBottom:8, fontSize:"0.85rem", cursor:"pointer" }} onClick={()=>setShowRed(r=>!r)}>🚨 Red Flags for {reg.label} {showRed?"^":"v"}</div>
+                {showRed && reg.redFlags.map((rf,i)=><div key={i} style={{ padding:"4px 8px", fontSize:"0.76rem", color:C.text, borderBottom:`1px solid rgba(255,77,109,0.1)` }}>? {rf}</div>)}
               </div>
 
               {/* Findings */}
@@ -2061,7 +2061,7 @@ function CyriaxModule({ data, set, navContext={} }) {
             </div>
           ) : (
             <div style={{ textAlign:"center", padding:30, color:C.muted, background:C.s2, borderRadius:12, border:`1px solid ${C.border}` }}>
-              <div style={{ fontSize:"2rem", marginBottom:8 }}>⚕</div>
+              <div style={{ fontSize:"2rem", marginBottom:8 }}>+</div>
               <div style={{ fontWeight:700, color:C.text, marginBottom:4 }}>Complete Active, Passive, and Resisted tabs</div>
               <div style={{ fontSize:"0.8rem" }}>Then click Generate to receive Cyriax clinical reasoning, tissue diagnosis, and treatment direction.</div>
             </div>
@@ -2155,9 +2155,9 @@ const UNIV_S={
     {id:"ls_notes",label:"Lifestyle Notes",type:"textarea"},
   ]},
 };
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 // REGION MODULES
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 const REG_MOD_S={
 "Cervical spine":{prefix:"cx",sections:{
   cx_location:{label:"Cervical - Location",icon:"📍",color:"#7c3aed",fields:[
@@ -2166,7 +2166,7 @@ const REG_MOD_S={
     {id:"cx_dermatomal",label:"Dermatomal distribution",type:"multicheck",options:["Not dermatomal / not applicable","C4 - lateral shoulder / clavicle","C5 - lateral upper arm / elbow","C6 - thumb / index finger / radial forearm","C7 - middle finger / posterior forearm","C8 - ring / little finger / medial forearm","T1 - medial upper arm","Bilateral - concerning for cord","Non-dermatomal diffuse"]},
     {id:"cx_loc_notes",label:"Location Notes",type:"textarea",placeholder:"Specific location details, depth, character, patient description"},
   ]},
-  cx_mechanism:{label:"Cervical - Mechanism",icon:"⚡",color:"#7c3aed",fields:[
+  cx_mechanism:{label:"Cervical - Mechanism",icon:"!",color:"#7c3aed",fields:[
     {id:"cx_moi",label:"Mechanism type",type:"multicheck",options:["No clear mechanism - insidious onset","Whiplash - rear-end MVA","Whiplash - front-end MVA","Whiplash - side impact MVA","Hyperflexion (head forced forward)","Hyperextension (head forced back)","Combined flexion + rotation","Direct trauma to head / neck","Diving / swimming impact","Sustained poor posture over time","Sleeping position","Lifting heavy load","Post-surgical","Post-illness / meningism"]},
     {id:"cx_moi_wad",label:"WAD Grade (if whiplash)",type:"select",options:["N/A - not a whiplash","Grade 0 - no pain, no signs","Grade I - pain only","Grade II - pain + musculoskeletal signs","Grade III - neurological signs","Grade IV - fracture or dislocation"]},
     {id:"cx_moi_loc",label:"Loss of consciousness at injury",type:"select",options:["N/A - no trauma","No LOC","Brief LOC <5 min","Prolonged LOC","Amnesia around event","Unsure"]},
@@ -2217,9 +2217,9 @@ const REG_MOD_S={
     {id:"cx_ha_notes",label:"Headache Notes",type:"textarea",placeholder:"Duration per episode, associated symptoms, previous diagnosis, medication use"},
   ]},
   cx_redflags:{label:"Cervical - Red Flags",icon:"🚨",color:"#dc2626",fields:[
-    {id:"cx_rf_myelopathy",label:"⚠ Myelopathy / UMN Screen",type:"multicheck",options:["No myelopathy signs","Bilateral hand symptoms (grip clumsiness / numbness)","Loss of fine motor control (buttons / writing)","Gait disturbance / wide-based gait / ataxia","Unexplained falls","Bilateral lower limb weakness or stiffness","Hyperreflexia (known)","Babinski positive (known)","Hoffman's sign (known)","Bladder dysfunction - new onset","Bowel dysfunction - new onset","Lhermitte's sign","Rapidly progressive neurological symptoms"]},
-    {id:"cx_rf_vbi",label:"⚠ VBI / Vertebrobasilar Screen (5 Ds + 3 Ns)",type:"multicheck",options:["No VBI signs","Dizziness with neck movement - specific","Diplopia (double vision)","Drop attacks","Dysarthria (slurred speech)","Dysphagia (difficulty swallowing)","Ataxia (coordination loss)","Nausea with neck movement","Nystagmus (eye oscillation)","Numbness - face or bilateral limbs","Thunderclap headache - sudden worst ever","Horner's syndrome (drooping eyelid + small pupil)"]},
-    {id:"cx_rf_instability",label:"⚠ Craniovertebral Instability Screen",type:"multicheck",options:["No instability signs","Rheumatoid arthritis - known","Down syndrome / trisomy 21","Recent significant trauma","Post-surgical cervical fusion","Sense of head not stable on neck","Constant occipital / suboccipital pain unrelieved","Muscle spasm severe - guarding","Sharp pain on neck flexion"]},
+    {id:"cx_rf_myelopathy",label:"? Myelopathy / UMN Screen",type:"multicheck",options:["No myelopathy signs","Bilateral hand symptoms (grip clumsiness / numbness)","Loss of fine motor control (buttons / writing)","Gait disturbance / wide-based gait / ataxia","Unexplained falls","Bilateral lower limb weakness or stiffness","Hyperreflexia (known)","Babinski positive (known)","Hoffman's sign (known)","Bladder dysfunction - new onset","Bowel dysfunction - new onset","Lhermitte's sign","Rapidly progressive neurological symptoms"]},
+    {id:"cx_rf_vbi",label:"? VBI / Vertebrobasilar Screen (5 Ds + 3 Ns)",type:"multicheck",options:["No VBI signs","Dizziness with neck movement - specific","Diplopia (double vision)","Drop attacks","Dysarthria (slurred speech)","Dysphagia (difficulty swallowing)","Ataxia (coordination loss)","Nausea with neck movement","Nystagmus (eye oscillation)","Numbness - face or bilateral limbs","Thunderclap headache - sudden worst ever","Horner's syndrome (drooping eyelid + small pupil)"]},
+    {id:"cx_rf_instability",label:"? Craniovertebral Instability Screen",type:"multicheck",options:["No instability signs","Rheumatoid arthritis - known","Down syndrome / trisomy 21","Recent significant trauma","Post-surgical cervical fusion","Sense of head not stable on neck","Constant occipital / suboccipital pain unrelieved","Muscle spasm severe - guarding","Sharp pain on neck flexion"]},
     {id:"cx_rf_other",label:"Other cervical red flags",type:"multicheck",options:["No other red flags","Carotid / vertebral artery dissection symptoms","Thunderclap headache - sudden onset worst ever","Known cervical cancer / tumour","Recent high-energy trauma to neck","Torticollis - acute with fever (retropharyngeal abscess risk)","Constitutional symptoms with neck pain"]},
     {id:"cx_rf_action",label:"Action taken",type:"select",options:["No red flags - proceed with assessment","Red flags noted - monitor and reassess","GP referral - routine","GP referral - urgent","Emergency department referral","Urgent neurology / neurosurgery referral","Manipulation contraindicated - mobilisation only","Manipulation contraindicated - exercise only"]},
     {id:"cx_rf_notes",label:"Red Flag Notes",type:"textarea"},
@@ -2240,7 +2240,7 @@ const REG_MOD_S={
     {id:"lx_below_knee",label:"Does pain extend below the knee?",type:"select",options:["No leg pain - back pain only","Leg pain - thigh only / above knee","Leg pain - below knee (radiculopathy threshold)","Leg pain - extends to foot","Leg pain - bilateral (cauda equina / stenosis flag)"]},
     {id:"lx_loc_notes",label:"Location Notes",type:"textarea"},
   ]},
-  lx_mechanism:{label:"Lumbar - Mechanism",icon:"⚡",color:"#dc2626",fields:[
+  lx_mechanism:{label:"Lumbar - Mechanism",icon:"!",color:"#dc2626",fields:[
     {id:"lx_moi",label:"Mechanism type",type:"multicheck",options:["No clear mechanism - insidious onset","Lifting - spine flexed","Lifting - spine rotated","Lifting - spine flexed AND rotated (most common disc mechanism)","Lifting - from floor (deadlift position)","Twisting without lifting","Bending forward without lifting","Coughing / sneezing - onset","Straining on toilet (Valsalva)","Stumble / trip without full fall","Fall onto back / buttocks","Fall from height","Motor vehicle accident","Sport - specific (notes)","Sustained poor posture over time","Post-surgical","Post-partum","Post-illness","No identified mechanism"]},
     {id:"lx_moi_load",label:"Load estimate at injury",type:"select",options:["N/A - no trauma","Body weight only","Light (<10kg)","Moderate (10-25kg)","Heavy (25-50kg)","Very heavy / awkward (>50kg)","Repetitive load - accumulated","Unknown"]},
     {id:"lx_moi_position",label:"Spine position at injury",type:"multicheck",options:["Not applicable","Flexed forward","Extended backward","Rotated left","Rotated right","Side bent","Flexed + rotated (highest disc risk)","Flexed + side bent","Neutral - unexpected load","Asymmetric / awkward"]},
@@ -2273,7 +2273,7 @@ const REG_MOD_S={
     {id:"lx_irritability",label:"Irritability (Maitland SIN)",type:"select",options:["Low - hard to provoke, settles quickly","Moderate - provoked with sustained activity, settles reasonably","High - easily provoked, slow to settle (hours)","Very high - minimal provocation, prolonged aggravation (24hrs+)"]},
     {id:"lx_symp_notes",label:"Symptom Notes",type:"textarea"},
   ]},
-  lx_neuro:{label:"Lumbar - Neurological Symptoms",icon:"⚡",color:"#7c3aed",fields:[
+  lx_neuro:{label:"Lumbar - Neurological Symptoms",icon:"!",color:"#7c3aed",fields:[
     {id:"lx_neuro_present",label:"Leg neurological symptoms?",type:"select",options:["No leg neurological symptoms","Yes - unilateral (L)","Yes - unilateral (R)","Yes - bilateral (cauda equina / stenosis flag)"]},
     {id:"lx_neuro_quality",label:"Leg symptom quality",type:"multicheck",options:["Not applicable","Aching - diffuse","Sharp - specific","Burning - constant","Shooting - intermittent","Electric shock quality","Tingling","Pins and needles","Numbness - objective","Weakness - functional limitation","Heaviness","Cramping","Cold sensation","Hot sensation","Hypersensitivity - light touch painful"]},
     {id:"lx_neuro_signs",label:"Neurological signs reported",type:"multicheck",options:["No neurological signs","Numbness - specific dermatome","Foot drop - difficulty clearing foot","Heel walking difficult (L4/L5)","Toe walking difficult (S1)","Quad weakness - difficulty stairs","Reduced or absent ankle reflex (S1)","Reduced or absent knee reflex (L3/L4)","Saddle area numbness (S3/S4) - cauda equina flag","Bladder difficulty - retention - cauda flag","Bladder incontinence - new onset - cauda flag","Bowel incontinence - new onset - cauda flag","Sexual dysfunction - new onset - cauda flag","Bilateral lower limb involvement"]},
@@ -2282,7 +2282,7 @@ const REG_MOD_S={
     {id:"lx_neuro_notes",label:"Neurological Notes",type:"textarea"},
   ]},
   lx_redflags:{label:"Lumbar - Red Flags",icon:"🚨",color:"#dc2626",fields:[
-    {id:"lx_rf_cauda",label:"⚠ Cauda Equina Screen (urgent)",type:"multicheck",options:["No cauda equina signs","Bilateral leg weakness - new onset","Saddle area anaesthesia - perineum / inner thighs","Bladder retention - cannot urinate","Bladder incontinence - new onset / unexpected","Bowel incontinence - new onset / unexpected","Reduced anal tone (if assessed)","Sexual dysfunction - new onset","Rapidly progressive bilateral neurological deficit","Bilateral sciatica - new onset"]},
+    {id:"lx_rf_cauda",label:"? Cauda Equina Screen (urgent)",type:"multicheck",options:["No cauda equina signs","Bilateral leg weakness - new onset","Saddle area anaesthesia - perineum / inner thighs","Bladder retention - cannot urinate","Bladder incontinence - new onset / unexpected","Bowel incontinence - new onset / unexpected","Reduced anal tone (if assessed)","Sexual dysfunction - new onset","Rapidly progressive bilateral neurological deficit","Bilateral sciatica - new onset"]},
     {id:"lx_rf_fracture",label:"Fracture risk indicators",type:"multicheck",options:["No fracture indicators","Major high-energy trauma","Minor trauma + known osteoporosis","Minor trauma + age >70","Long-term corticosteroid use","History of previous vertebral fracture","Point bone tenderness on spinous process","Severe unrelenting pain unaffected by position","Post-menopausal woman + acute onset"]},
     {id:"lx_rf_inflammatory",label:"Inflammatory / spondyloarthropathy indicators (ASAS)",type:"multicheck",options:["No inflammatory features","Age of onset <45","Insidious onset over weeks-months","Morning stiffness >30 minutes","Stiffness improves with movement / exercise","Worse with rest - restlessness at night","Alternating buttock pain (R to L)","Family history of AS / psoriasis / IBD / uveitis","Psoriasis - personal history","IBD (Crohn's / colitis) - personal history","Uveitis / iritis - personal history","Peripheral joint involvement","NSAIDs very effective (ASAS criterion)","HLA-B27 positive (known)","Elevated ESR / CRP (known)"]},
     {id:"lx_rf_serious",label:"Other serious pathology indicators",type:"multicheck",options:["No other red flags","Constant pain - completely unaffected by position or movement","Progressive night pain","Thoracic pain accompanying lumbar pain","Abdominal pain accompanying","Pulsatile abdominal mass (AAA)","Unexplained weight loss","History of cancer - any","IV drug use - risk of discitis","Recent bacterial infection elsewhere","Fever / systemically unwell with back pain","Pain radiating to flank / loin (renal / ureteric)"]},
@@ -2313,7 +2313,7 @@ const REG_MOD_S={
     {id:"shl_radiation",label:"Radiation",type:"multicheck",options:["No radiation","Down to deltoid insertion (typical referred pattern)","Down to elbow","Down to hand (concerning - cervical differential)","Up to neck (cervical origin likely)","To scapula / interscapular","Anterior chest","Bilateral shoulders"]},
     {id:"shl_loc_notes",label:"Location Notes",type:"textarea"},
   ]},
-  shl_mechanism:{label:"Shoulder L - Mechanism",icon:"⚡",color:"#0891b2",fields:[
+  shl_mechanism:{label:"Shoulder L - Mechanism",icon:"!",color:"#0891b2",fields:[
     {id:"shl_moi",label:"Mechanism type",type:"multicheck",options:["No clear mechanism - insidious","FOOSH (fall onto outstretched hand)","Fall directly onto shoulder point","Direct blow to shoulder","Throwing / overhead sport injury","Forced abduction + external rotation (dislocation mechanism)","Reaching backward suddenly","Reaching across body forcefully","Lifting heavy load above shoulder","Overhead repetitive overuse","Competitive swimming - stroke / volume","Racquet sport - serving / overhead","Workplace overhead task","Post-surgical","Age-related degenerative"]},
     {id:"shl_moi_pop",label:"Heard / felt pop at injury?",type:"select",options:["No","Yes - clear pop / crack","Yes - felt something give / tear","Yes - felt shoulder come out of joint","Unsure","Not applicable"]},
     {id:"shl_moi_first",label:"Immediate symptoms",type:"multicheck",options:["Not applicable","Immediate severe pain","Inability to lift arm","Visible deformity","Immediate weakness","Felt shoulder dislocate","Bruising within 24 hours","Swelling within 24 hours","Numbness in arm immediately"]},
@@ -2365,7 +2365,7 @@ const REG_MOD_S={
     {id:"shr_radiation",label:"Radiation",type:"multicheck",options:["No radiation","Down to deltoid insertion","Down to elbow","Down to hand (concerning)","Up to neck","To scapula","Anterior chest","Bilateral shoulders"]},
     {id:"shr_loc_notes",label:"Location Notes",type:"textarea"},
   ]},
-  shr_mechanism:{label:"Shoulder R - Mechanism",icon:"⚡",color:"#06b6d4",fields:[
+  shr_mechanism:{label:"Shoulder R - Mechanism",icon:"!",color:"#06b6d4",fields:[
     {id:"shr_moi",label:"Mechanism type",type:"multicheck",options:["No clear mechanism - insidious","FOOSH","Fall directly onto shoulder point","Direct blow","Throwing / overhead sport","Forced abduction + external rotation (dislocation)","Reaching backward suddenly","Lifting heavy load above shoulder","Overhead repetitive overuse","Post-surgical","Age-related degenerative"]},
     {id:"shr_moi_pop",label:"Heard / felt pop?",type:"select",options:["No","Yes - clear pop / crack","Yes - felt something tear","Yes - felt shoulder dislocate","Unsure","N/A"]},
     {id:"shr_moi_notes",label:"Mechanism Notes",type:"textarea"},
@@ -2410,7 +2410,7 @@ const REG_MOD_S={
     {id:"knl_radiation",label:"Pain radiation",type:"multicheck",options:["No radiation - local only","Down lateral lower leg (ITB / LCL)","Down medial lower leg","Up anterior thigh","To hip (referred - L3)","Around whole knee","Referred from lumbar spine (L3)","Referred from hip"]},
     {id:"knl_loc_notes",label:"Location Notes",type:"textarea"},
   ]},
-  knl_mechanism:{label:"Knee L - Mechanism",icon:"⚡",color:"#f59e0b",fields:[
+  knl_mechanism:{label:"Knee L - Mechanism",icon:"!",color:"#f59e0b",fields:[
     {id:"knl_moi",label:"Mechanism type",type:"multicheck",options:["No clear mechanism - insidious / overuse","Twisting injury - non-contact (ACL pattern)","Twisting injury - contact / tackle","Hyperextension mechanism","Hyperflexion - full squat / kneeling fall","Direct blow medial (valgus stress - MCL)","Direct blow lateral (varus stress - LCL)","Direct blow anterior patella","Fall onto knee directly","Fall with foot planted","Pivoting / cutting / direction change","Jumping - landing injury","Jumping - take-off injury","Running - gradual overuse","Cycling - overuse","Post-surgical"]},
     {id:"knl_pop",label:"Heard / felt pop at injury?",type:"select",options:["No","Yes - clear pop (ACL flag)","Yes - felt tear or give","Multiple pops","Unsure","Not applicable"]},
     {id:"knl_swelling",label:"Swelling onset after injury",type:"select",options:["No swelling","Immediate within 2 hours (haemarthrosis - ACL / fracture flag)","4-12 hours post-injury","24 hours post-injury","2-3 days post-injury (reactive synovitis)","Gradual over weeks","Recurrent effusion pattern","Cyclical - related to activity level"]},
@@ -2465,7 +2465,7 @@ const REG_MOD_S={
     {id:"knr_radiation",label:"Radiation",type:"multicheck",options:["No radiation","Down lateral lower leg","Down medial lower leg","Up thigh","From lumbar spine (L3)","From hip"]},
     {id:"knr_loc_notes",label:"Location Notes",type:"textarea"},
   ]},
-  knr_mechanism:{label:"Knee R - Mechanism",icon:"⚡",color:"#eab308",fields:[
+  knr_mechanism:{label:"Knee R - Mechanism",icon:"!",color:"#eab308",fields:[
     {id:"knr_moi",label:"Mechanism type",type:"multicheck",options:["No clear mechanism - insidious","Twisting - non-contact (ACL)","Twisting - contact","Hyperextension","Direct blow medial / lateral","Fall onto knee","Pivoting / cutting","Jumping / landing","Overuse - running / sport","Post-surgical"]},
     {id:"knr_pop",label:"Heard / felt pop?",type:"select",options:["No","Yes - clear pop (ACL flag)","Yes - felt tear","Unsure","N/A"]},
     {id:"knr_swelling",label:"Swelling onset",type:"select",options:["No swelling","Immediate <2hrs (haemarthrosis flag)","4-12 hours","24 hours","2-3 days","Gradual / chronic","Recurrent"]},
@@ -2511,7 +2511,7 @@ const REG_MOD_S={
     {id:"hp_loc_pattern",label:"Dominant location pattern",type:"select",options:["Groin-dominant - likely intra-articular (FAI / OA / labral)","Lateral hip - likely trochanteric / abductor tendinopathy","Posterior / buttock - likely SIJ / deep gluteal / referred lumbar","Ischial tuberosity - likely proximal hamstring tendinopathy","Adductor - likely adductor strain / tendinopathy","Pubic symphysis - athletic pubalgia / osteitis pubis","Diffuse / multiple - multiple pathologies or referred"]},
     {id:"hp_loc_notes",label:"Location Notes",type:"textarea"},
   ]},
-  hp_mechanism:{label:"Hip - Mechanism",icon:"⚡",color:"#d946ef",fields:[
+  hp_mechanism:{label:"Hip - Mechanism",icon:"!",color:"#d946ef",fields:[
     {id:"hp_moi",label:"Mechanism type",type:"multicheck",options:["Insidious onset - gradual","Twisting / pivoting injury","Fall - directly onto hip","Fall - from standing","High-speed sport - sprint / tackle","Kicking mechanism - adductor strain","Lunging mechanism - groin strain","Overuse - repetitive running / sport","Return to sport after break / pregnancy","Post-partum - pubic symphysis / pelvic floor","Post hip replacement - same side","Post hip replacement - other side","Occupational overuse","Age-related degenerative - no specific event"]},
     {id:"hp_moi_notes",label:"Mechanism Notes",type:"textarea"},
   ]},
@@ -2551,7 +2551,7 @@ const REG_MOD_S={
     {id:"af_radiation",label:"Radiation",type:"multicheck",options:["No radiation","Up calf","Into toes - specific (specify in notes)","Burning between 3rd / 4th toes (Morton's neuroma pattern)","Referred from lumbar spine (L5/S1)","Referred from tarsal tunnel (tibial nerve - medial ankle)"]},
     {id:"af_loc_notes",label:"Location Notes",type:"textarea"},
   ]},
-  af_mechanism:{label:"Ankle - Mechanism",icon:"⚡",color:"#16a34a",fields:[
+  af_mechanism:{label:"Ankle - Mechanism",icon:"!",color:"#16a34a",fields:[
     {id:"af_moi",label:"Mechanism type",type:"multicheck",options:["Insidious onset - overuse / gradual","Inversion sprain - foot rolled in","Eversion sprain - foot rolled out","High ankle sprain - external rotation mechanism","Direct impact / crush","Fall from height","Sudden push-off / sprint start","Landing from jump","Stepping on uneven ground","Running - gradual volume overuse","Sudden increase in training load","Return to sport after break","Change in footwear recently","Change in running surface","Post-surgical","Post-plaster cast removal"]},
     {id:"af_moi_pop",label:"Heard / felt pop or snap?",type:"select",options:["No","Yes - at lateral ankle (ATFL ligament)","Yes - felt at Achilles insertion (rupture flag)","Yes - felt at mid-Achilles (rupture flag)","Yes - at medial ankle","Multiple pops","Unsure","N/A"]},
     {id:"af_moi_weightbear",label:"Could weight bear immediately?",type:"select",options:["Yes - full weight bearing","Partial - with limp","No - required assistance / hopped","Stopped activity immediately","Continued then could not weight bear later"]},
@@ -2596,7 +2596,7 @@ const REG_MOD_S={
     {id:"ew_radiation",label:"Radiation / distribution",type:"multicheck",options:["Localised - no radiation","Down forearm into hand","Down to specific finger(s) - specify in notes","Median nerve distribution - thumb / index / middle / radial half of ring","Ulnar nerve distribution - little / ulnar half of ring","Radial nerve distribution - dorsum of hand / first webspace","From neck - cervical referred","From elbow - into forearm and hand"]},
     {id:"ew_loc_notes",label:"Location Notes",type:"textarea"},
   ]},
-  ew_mechanism:{label:"Elbow/Wrist - Mechanism",icon:"⚡",color:"#059669",fields:[
+  ew_mechanism:{label:"Elbow/Wrist - Mechanism",icon:"!",color:"#059669",fields:[
     {id:"ew_moi",label:"Mechanism type",type:"multicheck",options:["Insidious - overuse / gradual","FOOSH - fall onto outstretched hand","FOOSH - wrist dorsiflexion impact (scaphoid / distal radius)","Direct trauma - elbow","Direct trauma - wrist / hand","Twisting injury - forearm","Repetitive gripping / wringing overuse","Computer / keyboard / mouse overuse","Tool use - vibration exposure","Sport - racquet (lateral elbow - tennis elbow)","Sport - golf swing (medial elbow - golfer's elbow)","Sport - throwing mechanism","Occupational repetitive strain","New baby / childcare - de Quervain's pattern","Post-surgical","Post-plaster cast removal"]},
     {id:"ew_moi_notes",label:"Mechanism Notes",type:"textarea"},
   ]},
@@ -2633,7 +2633,7 @@ const REG_MOD_S={
     {id:"tx_radiation",label:"Radiation",type:"multicheck",options:["No radiation - local","Around chest wall - dermatomal","To shoulder blade - interscapular referred","To anterior chest - cardiac / visceral differential","To abdomen - visceral differential","To groin / hip - lower thoracic referred","Bilateral chest / girdle","Cardiac-like radiation - left chest / arm (urgent flag)"]},
     {id:"tx_loc_notes",label:"Location Notes",type:"textarea"},
   ]},
-  tx_mechanism:{label:"Thoracic - Mechanism",icon:"⚡",color:"#d97706",fields:[
+  tx_mechanism:{label:"Thoracic - Mechanism",icon:"!",color:"#d97706",fields:[
     {id:"tx_moi",label:"Mechanism type",type:"multicheck",options:["Insidious - postural / sustained","Lifting injury","Rotation injury","Fall / direct trauma","MVA - thoracic component","Prolonged computer / desk posture","Post-surgical","Post-partum - breastfeeding posture","Osteoporotic fracture - minimal trauma","Viral illness - post-viral costochondritis","No clear mechanism"]},
     {id:"tx_moi_notes",label:"Mechanism Notes",type:"textarea"},
   ]},
@@ -2664,9 +2664,9 @@ const REG_MOD_S={
   ]},
 }},
 }; // end REGION_MODULES
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 // CONDITIONAL SECTIONS
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 const BPS_S={
   bps:{label:"Biopsychosocial Assessment",icon:"🧠",color:"#90caf9",
     description:"Auto-loaded: chronic (>3 months), NRS>=7, off work, or recurring",
@@ -2710,9 +2710,9 @@ const SPORT_S={
   ]},
 };
 
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 // CONDITIONAL LOAD TRIGGERS
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 const needsBPS_S=(d)=>
   /3-6 months|6-12 months|1-2 years|> 2 years|Recurring/.test(d.cc_duration||"")||
   parseFloat(d.cc_vas_worst)>=7||
@@ -2737,18 +2737,18 @@ const needsSport_S=(d,regions)=>{
   return isSport||sportRegs.some(r=>regions.includes(r));
 };
 
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 // CLINICAL ENGINE v5 - Multi-region, cross-region reasoning
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 
 const needsHypermobility_S=(d)=>{
   const hm=String(d.hm_screen||"").toLowerCase();
   return /multiple joint|beighton|loose.*since childhood|recurrent disloc/.test(hm);
 };
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 // MISSING CONDITIONS ADDITIONS
 // Appended to existing modules via REGION_MODULES extension
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 
 // Extend Ankle / Foot module with calf strain, shin splints, Lisfranc
 Object.assign(REG_MOD_S["Ankle / Foot"].sections, {
@@ -2900,17 +2900,17 @@ UNIV_S.hypermobility = {
   ],
 };
 
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 // CLINICAL INTERPRETATION ENGINE v6
 // Ranked differentials · Confidence scoring · NRS integration
 // Partial-data tolerant · Pattern-specific objective suggestions
 // Evidence: Magee(7th) · Petty(5th) · Maitland(8th) · Butler
 //           Brukner & Khan(5th) · NICE NG59 · ASAS · STarT Back
-// ══════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????
 
 
 
-// ── NavActionBtn - stable component so hooks are never called inside .map() ──
+// ?? NavActionBtn - stable component so hooks are never called inside .map() ??
 function NavActionBtn({ btn, onNav, PC }) {
   const [showWhy, setShowWhy] = React.useState(false);
   return (
@@ -2945,21 +2945,21 @@ function NavActionBtn({ btn, onNav, PC }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????????????
 // REGION-SPECIFIC NAV CONFIG
 // Maps each subjective region -> exact module + navContext payload
 // All region keys must match runEngineV6 output strings exactly.
-// ══════════════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????????????
 const REGION_NAV = {
   "Cervical spine": [
     { label:"Cervical ROM",       icon:"📐", nav:"rom",    ctx:{ romRegion:"Cervical", romHighlights:["rom_crotl","rom_crotr","rom_cflex","rom_cext","rom_clatl","rom_clatr"] }, col:"#9333ea", why:"Cervical rotation - most restricted in facet arthropathy and disc. Compare bilateral immediately." },
     { label:"Cervical MMT",       icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Cervical", mmtHighlights:["mmt_dnf","mmt_scm","mmt_trapU","mmt_scalenes","mmt_suboccip"] },        col:"#7c3aed", why:"Deep neck flexors - the single most important cervical motor control test (CCFT protocol)." },
     { label:"Spurling Test",      icon:"🔬", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_spurling" },                            col:"#0891b2", why:"Highest specificity (92%) for cervical radiculopathy - foramen closure test. Run first if arm symptoms." },
     { label:"Slump / ULTT",       icon:"🔬", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },                            col:"#0891b2", why:"Slump test - neural tension screen. ULTT 1-4 differentiates median, radial, ulnar nerve involvement." },
-    { label:"Neurological Screen",icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"] }, col:"#dc2626", why:"C5-T1 dermatomes, myotomes, biceps/brachio/triceps reflexes. Localise nerve root level." },
+    { label:"Neurological Screen",icon:"!", nav:"neuro",   ctx:{ neuroHighlights:["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"] }, col:"#dc2626", why:"C5-T1 dermatomes, myotomes, biceps/brachio/triceps reflexes. Localise nerve root level." },
     { label:"Posture Analysis",   icon:"🧍", nav:"posture", ctx:{ region:"Cervical" },                                                                col:"#059669", why:"CVA, forward head, thoracic kyphosis - all increase cervical loading. Assess before treating." },
-    { label:"NKT Assessment",     icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition -> SCM/scalene dominance -> FHP maintained. NKT identifies the exact inhibitor." },
-    { label:"Kinetic Chain",      icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_cervical_thoracic_jct"] }, col:"#7c3aed", why:"Thoracic kyphosis is the primary driver of cervical loading. Address thoracic before cervical." },
+    { label:"NKT Assessment",     icon:"!", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition -> SCM/scalene dominance -> FHP maintained. NKT identifies the exact inhibitor." },
+    { label:"Kinetic Chain",      icon:"?", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_cervical_thoracic_jct"] }, col:"#7c3aed", why:"Thoracic kyphosis is the primary driver of cervical loading. Address thoracic before cervical." },
     { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_a_rotl","cx_a_rotr","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Selective tissue tension - differentiate contractile vs non-contractile cervical pain source." },
     { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Cervical fascial lines - skin rolling and passive tension identify SBL and thoracolumbar restriction." },
   ],
@@ -2970,7 +2970,7 @@ const REGION_NAV = {
     { label:"SLR Test",            icon:"🔬", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_slr_test" },                             col:"#0891b2", why:"SLR - 80% sensitivity for L4/L5/S1 nerve root compression. Positive < 60deg = neural involvement." },
     { label:"Slump Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },                           col:"#0891b2", why:"Slump - more sensitive than SLR for disc herniation. Reproduces radicular symptoms in flexed posture." },
     { label:"Kemp's Test",         icon:"🔬", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_kemp" },                                 col:"#0891b2", why:"Kemp's - facet loading test. Positive = ipsilateral facet referral or foraminal stenosis." },
-    { label:"Neurological Screen", icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_l4","n_l5","n_s1","n_s2","nt_slr","nt_slump_test"] }, col:"#dc2626", why:"L1-S2 dermatomes, myotomes, patella/achilles reflexes. Localise disc level. Rule out cauda equina." },
+    { label:"Neurological Screen", icon:"!", nav:"neuro",   ctx:{ neuroHighlights:["n_l4","n_l5","n_s1","n_s2","nt_slr","nt_slump_test"] }, col:"#dc2626", why:"L1-S2 dermatomes, myotomes, patella/achilles reflexes. Localise disc level. Rule out cauda equina." },
     { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fmaTests:["squat","bend","single_leg"], fmaHighlights:["squat","bend","single_leg"] }, col:"#059669", why:"Forward bend - observe hip hinge vs lumbar flexion. Squat - global lower chain. Single-leg - SIJ control." },
   ],
   "Shoulder (L)": [
@@ -2982,7 +2982,7 @@ const REGION_NAV = {
 
     { label:"Hawkins-Kennedy",     icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_hawkins" },                            col:"#0891b2", why:"79% sensitivity for subacromial impingement. Most sensitive impingement test. Run first for overhead pain." },
     { label:"Empty Can Test",      icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_empty_can" },                          col:"#0891b2", why:"Supraspinatus integrity - 69% sensitivity. Combine with full can for RC tear screening." },
-    { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Upper trap/pec minor overactive -> lower trap/serratus inhibited. Primary impingement motor pattern." },
+    { label:"NKT Assessment",      icon:"!", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Upper trap/pec minor overactive -> lower trap/serratus inhibited. Primary impingement motor pattern." },
     { label:"Push-Up Plus FMA",    icon:"🏃", nav:"fma",     ctx:{ fmaTests:["pushup_plus","overhead","upper_reach"], fmaHighlights:["pushup_plus","overhead","upper_reach"] }, col:"#059669", why:"Push-up plus - best functional screen for serratus anterior. Scapular winging visible immediately." },
   ],
   "Shoulder (R)": [
@@ -2994,7 +2994,7 @@ const REGION_NAV = {
     { label:"Serratus Anterior",   icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlight:"mmt_serratus" },                      col:"#7c3aed", why:"Serratus anterior - scapular winging indicates inhibition. Run wall push-up plus." },
     { label:"Hawkins-Kennedy",     icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_hawkins" },                            col:"#0891b2", why:"79% sensitivity for subacromial impingement. Most useful first impingement test." },
     { label:"Empty Can Test",      icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_empty_can" },                          col:"#0891b2", why:"Supraspinatus integrity test. Combine with full can for RC tear probability." },
-    { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Identify pec minor / upper trap inhibiting lower trap / serratus - the impingement motor pattern." },
+    { label:"NKT Assessment",      icon:"!", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Identify pec minor / upper trap inhibiting lower trap / serratus - the impingement motor pattern." },
     { label:"Push-Up Plus FMA",    icon:"🏃", nav:"fma",     ctx:{ fmaTests:["pushup_plus","overhead","upper_reach"], fmaHighlights:["pushup_plus","overhead","upper_reach"] }, col:"#059669", why:"Push-up plus screens serratus anterior function dynamically." },
   ],
   "Knee (L)": [
@@ -3006,7 +3006,7 @@ const REGION_NAV = {
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Best ACL test at 20-30deg flexion. Run before pivot shift." },
     { label:"McMurray Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_mcmurray_test" },                          col:"#0891b2", why:"McMurray - meniscal integrity. Medial: valgus + ER. Lateral: varus + IR. Listen for click." },
     { label:"Step-Down Test",      icon:"🏃", nav:"fma",     ctx:{ fmaTests:["step_down","squat","single_leg"], fmaHighlights:["step_down","squat","single_leg"] }, col:"#059669", why:"Step-down - highest sensitivity test for PFJ and glute med weakness. Observe dynamic valgus." },
-    { label:"Kinetic Chain",       icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF restriction and hip abductor weakness both drive knee valgus. Assess chain first." },
+    { label:"Kinetic Chain",       icon:"?", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF restriction and hip abductor weakness both drive knee valgus. Assess chain first." },
   ],
   "Knee (R)": [
     { label:"Knee ROM",             icon:"📐", nav:"rom",    ctx:{ romRegion:"Knee", romHighlights:["rom_kflex","rom_kext"] },                          col:"#9333ea", why:"Flexion loss indicates effusion, capsule tightness, or meniscal block." },
@@ -3016,7 +3016,7 @@ const REGION_NAV = {
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Gold standard test at 20-30deg flexion." },
     { label:"McMurray Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_mcmurray_test" },                          col:"#0891b2", why:"Meniscal integrity - medial and lateral compartment provocation." },
     { label:"Step-Down Test",      icon:"🏃", nav:"fma",     ctx:{ fmaTests:["step_down","squat","single_leg"], fmaHighlights:["step_down","squat","single_leg"] }, col:"#059669", why:"Highest sensitivity for PFJ / glute med - observe dynamic valgus under load." },
-    { label:"Kinetic Chain",       icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF and hip abductor chain - both drive valgus. Address before isolated knee work." },
+    { label:"Kinetic Chain",       icon:"?", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF and hip abductor chain - both drive valgus. Address before isolated knee work." },
   ],
   "Hip / Groin": [
     { label:"Hip ROM",              icon:"📐", nav:"rom",    ctx:{ romRegion:"Hip", romHighlights:["rom_hir","rom_her","rom_hflex","rom_hext","rom_habd","rom_hadd"] },                                          col:"#9333ea", why:"IR most restricted in hip OA (capsular pattern: IR > ER > abduction). FADIR reproduces impingement." },
@@ -3025,7 +3025,7 @@ const REGION_NAV = {
     { label:"FADIR Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_fadir_test" },                              col:"#0891b2", why:"FADIR - hip impingement (FAI) provocation. Flexion + adduction + IR reproduces anterior groin pain." },
     { label:"FABER Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" },                              col:"#0891b2", why:"FABER - hip, SIJ, and adductor provocation. Figure-4 position stresses all three simultaneously." },
     { label:"Step-Down / SLS",     icon:"🏃", nav:"fma",     ctx:{ fmaTests:["single_leg","step_down","squat"], fmaHighlights:["single_leg","step_down","squat"] }, col:"#059669", why:"Single-leg stance and step-down - reveal hip strategy and Trendelenburg under functional load." },
-    { label:"Kinetic Chain",       icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"hip", kcHighlights:["kc_hip_ir_mob","kc_hip_ext_mob","kc_hip_er_mob","kc_hip_abd_mob","kc_lumbar_stability"] }, col:"#7c3aed", why:"Hip is the stability joint. Restricted ER drives lumbar and knee chain overload." },
+    { label:"Kinetic Chain",       icon:"?", nav:"kinetic", ctx:{ kcRegion:"hip", kcHighlights:["kc_hip_ir_mob","kc_hip_ext_mob","kc_hip_er_mob","kc_hip_abd_mob","kc_lumbar_stability"] }, col:"#7c3aed", why:"Hip is the stability joint. Restricted ER drives lumbar and knee chain overload." },
   ],
   "Ankle / Foot": [
     { label:"Ankle ROM",            icon:"📐", nav:"rom",    ctx:{ romRegion:"Ankle", romHighlights:["rom_adf","rom_apf","rom_ainv","rom_aev"] },                                        col:"#9333ea", why:"Dorsiflexion - <35deg weight-bearing is clinically significant. Primary kinetic chain driver." },
@@ -3034,7 +3034,7 @@ const REGION_NAV = {
     { label:"Anterior Drawer",     icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_ant_drawer_ankle" },                 col:"#0891b2", why:"Anterior drawer - ATFL integrity. Most commonly injured ankle ligament. 73% sensitivity." },
     { label:"Thompson Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_thompson_test" },                    col:"#0891b2", why:"Thompson test - Achilles tendon rupture screen. 96% sensitivity. Squeeze calf = plantarflexion response." },
     { label:"Windlass Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_windlass_test" },                    col:"#0891b2", why:"Windlass - plantar fascia load test. Hallux extension tightens plantar fascia. Reproduces heel pain." },
-    { label:"Foot / Ankle Chain",  icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"foot_ankle", kcHighlights:["kc_ankle_df","kc_subtalar","kc_great_toe","kc_tibiofemoral_rot"] }, col:"#7c3aed", why:"Ankle DF restriction drives tibial IR -> knee valgus -> hip adduction -> lumbar extension cascade." },
+    { label:"Foot / Ankle Chain",  icon:"?", nav:"kinetic", ctx:{ kcRegion:"foot_ankle", kcHighlights:["kc_ankle_df","kc_subtalar","kc_great_toe","kc_tibiofemoral_rot"] }, col:"#7c3aed", why:"Ankle DF restriction drives tibial IR -> knee valgus -> hip adduction -> lumbar extension cascade." },
     { label:"Gait Analysis",       icon:"🚶", nav:"gait",   ctx:{},                                                                                   col:"#059669", why:"Observe heel strike, midstance pronation control, push-off - ankle function visible in gait." },
   ],
   "Elbow/Wrist/Hand": [
@@ -3052,8 +3052,8 @@ const REGION_NAV = {
     { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["el_a_flex","el_a_ext","el_r_wext","el_r_wflex","el_r_grip","wr_r_ext","wr_r_flex"] }, col:"#f59e0b", why:"Elbow/wrist Cyriax - resisted wrist extension = lateral epicondylalgia; resisted grip differentiates tendon pathology." },
     { label:"Thoracic MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_trapL","mmt_trapM","mmt_serratus","mmt_trapU","mmt_rhomb"] },                         col:"#7c3aed", why:"Lower trapezius - scapular depression and posterior tilt. Weakness = shoulder and thoracic impingement driver." },
     { label:"Posture Analysis",    icon:"🧍", nav:"posture", ctx:{ region:"Thoracic" },                                                               col:"#059669", why:"Kyphosis angle, scoliotic curve, rib symmetry, scapular position - thoracic posture drives all chains above and below." },
-    { label:"Kinetic Chain",       icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_scapulohumeral_rhythm"] }, col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
-    { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_pec_minor","nkt_upper_trap","nkt_lower_trap","nkt_serratus","nkt_mid_trap"] }, col:"#d97706", why:"Pec major/minor overactive -> lower trap/serratus inhibited -> kyphosis maintained. Treat motor pattern." },
+    { label:"Kinetic Chain",       icon:"?", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_scapulohumeral_rhythm"] }, col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
+    { label:"NKT Assessment",      icon:"!", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_pec_minor","nkt_upper_trap","nkt_lower_trap","nkt_serratus","nkt_mid_trap"] }, col:"#d97706", why:"Pec major/minor overactive -> lower trap/serratus inhibited -> kyphosis maintained. Treat motor pattern." },
     { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fmaTests:["overhead","rotary_stability","pushup_plus"], fmaHighlights:["overhead","rotary_stability","pushup_plus"] }, col:"#059669", why:"Overhead reach (thoracic extension demand), rotary stability (anti-rotation), push-up plus (scapular chain)." },
     { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_densification","fa_sbl_hamstring"] }, col:"#059669", why:"TLF and SBL - thoracolumbar fascia links lumbar extensors to contralateral shoulder girdle." },
   ],
@@ -3061,14 +3061,14 @@ const REGION_NAV = {
 function runEngineV6(data, selectedRegions) {
   if (!selectedRegions || selectedRegions.length === 0) return null;
 
-  // ── Utility functions ──────────────────────────────────────────────
+  // ?? Utility functions ??????????????????????????????????????????????
   const av = (k) => { const x = data[k]; if (!x) return ""; return String(x).split(SEP_S).filter(Boolean).join(", "); };
   const vl = (k) => String(data[k] || "").trim();
   const L  = (s) => String(s || "").toLowerCase();
   const any = (txt, ...keys) => keys.some(k => L(txt).includes(L(k)));
   const count = (txt, ...keys) => keys.filter(k => L(txt).includes(L(k))).length;
 
-  // ── Universal data ─────────────────────────────────────────────────
+  // ?? Universal data ?????????????????????????????????????????????????
   const nrsNow    = parseFloat(vl("cc_vas_now"))    || 0;
   const nrsWorst  = parseFloat(vl("cc_vas_worst"))  || 0;
   const nrsBest   = parseFloat(vl("cc_vas_best"))   || 0;
@@ -3085,37 +3085,37 @@ function runEngineV6(data, selectedRegions) {
   const bpsFear   = L(av("bps_fear"));
   const bpsWork   = L(av("bps_work_facs"));
 
-  // ── Duration classification ────────────────────────────────────────
+  // ?? Duration classification ????????????????????????????????????????
   const isAcute    = /< 1 week|1-2 weeks|2-6 weeks/.test(dur);
   const isSubacute = /6 weeks-3 months/.test(dur);
   const isChronic  = /3-6 months|6-12|1-2 years|> 2 years|recurring/.test(dur);
 
-  // ── NRS severity classification ────────────────────────────────────
+  // ?? NRS severity classification ????????????????????????????????????
   const nrsSevere   = nrsWorst >= 8;
   const nrsModerate = nrsWorst >= 5 && nrsWorst < 8;
   const nrsMild     = nrsWorst > 0 && nrsWorst < 5;
   const nrsVariance = nrsWorst - nrsBest; // large variance = mechanical
 
-  // ── Global red flags ───────────────────────────────────────────────
+  // ?? Global red flags ???????????????????????????????????????????????
   const globalRedFlags = [];
   const malignancy = any(grfCancer,"active cancer","past cancer - <5 years","known bone metastases") || any(grf,"unexplained weight loss","night sweats","fever");
   const fracRisk   = any(grfFract,"major trauma","known osteoporosis","long-term corticosteroid","point bone tenderness","fragility fractures");
-  if (malignancy) globalRedFlags.push("⚠ URGENT - Possible malignancy / serious pathology: urgent medical review before physiotherapy");
-  if (fracRisk)   globalRedFlags.push("⚠ Fracture risk indicators: imaging before loading; manipulation contraindicated");
+  if (malignancy) globalRedFlags.push("? URGENT - Possible malignancy / serious pathology: urgent medical review before physiotherapy");
+  if (fracRisk)   globalRedFlags.push("? Fracture risk indicators: imaging before loading; manipulation contraindicated");
 
-  // ── Psychosocial load ──────────────────────────────────────────────
+  // ?? Psychosocial load ??????????????????????????????????????????????
   const psychLoad = count(bpsBeliefs,"catastrophising","hopeless","believes cannot recover","nocebo","passive") +
                     count(bpsFear,"severe avoidance","kinesiophobia","catastrophising") +
                     count(bpsWork,"litigation","compensation","solicitor");
   const highPsych = psychLoad >= 2;
 
-  // ── Hypermobility / paediatric flags ──────────────────────────────
+  // ?? Hypermobility / paediatric flags ??????????????????????????????
   const isHypermobile = count(hmScreen,"multiple joint disloc","beighton","loose","since childhood") >= 1;
   const isPaediatric  = any(pedAge,"child","adolescent","growth");
 
-  // ══════════════════════════════════════════════════════════════════
+  // ??????????????????????????????????????????????????????????????????
   // PER-REGION ANALYSIS
-  // ══════════════════════════════════════════════════════════════════
+  // ??????????????????????????????????????????????????????????????????
   const regionResults = selectedRegions.map(region => {
     const mod = REG_MOD_S[region];
     if (!mod) return null;
@@ -3141,7 +3141,7 @@ function runEngineV6(data, selectedRegions) {
     const inMoi     = L(rf("moi"));
     const inSb24hr  = L(rf("sb_24hr") || rf("24hr"));
 
-    // ── Irritability (Maitland SIN) with NRS override ──────────────
+    // ?? Irritability (Maitland SIN) with NRS override ??????????????
     let irritLevel = inIrrit;
     if (!irritLevel && nrsWorst >= 8 && isAcute) irritLevel = "high";
     else if (!irritLevel && nrsWorst >= 6) irritLevel = "moderate";
@@ -3171,14 +3171,14 @@ function runEngineV6(data, selectedRegions) {
     }
 
     // Irritability tags
-    if (highIrrit) tags.push("⚠ High irritability");
+    if (highIrrit) tags.push("? High irritability");
     else if (modIrrit) tags.push("Moderate irritability");
     else if (lowIrrit) tags.push("Low irritability");
 
     // Irritability precautions
     if (highIrrit) prec.push("High irritability - short-duration low-load testing; no end-range or combined loading; monitor 24hr response (Maitland)");
 
-    // ── Universal pattern analysis ─────────────────────────────────
+    // ?? Universal pattern analysis ?????????????????????????????????
     const constantPain   = any(inPattern, "constant - never goes away", "constant - varies");
     const morningStiff30 = any(inMorning, ">30 min", "stays bad", "stays painful all morning", ">1 hour", "30-60 min");
     const easesWithMove  = any(inRelMov, "walking") || any(inPattern, "eases with movement", "improves with movement");
@@ -3188,27 +3188,27 @@ function runEngineV6(data, selectedRegions) {
     const nsaidEffective = any(inRelMed, "nsaids - effective", "nsaids very effective");
     const noMedHelps     = any(inRelMed, "no medication helps", "no meds help", "no meds effective");
 
-    // ── Inflammatory pattern ───────────────────────────────────────
+    // ?? Inflammatory pattern ???????????????????????????????????????
     const inflammatoryPattern = (morningStiff30 && easesWithMove) ||
       any(inSb24hr, "inflammatory") ||
       any(rf("rf_inflammatory"), "morning stiffness", "improves with movement", "alternating buttock") ||
       (nsaidEffective && morningStiff30);
     if (inflammatoryPattern) tags.push("Inflammatory pattern");
 
-    // ── Mechanical pattern ─────────────────────────────────────────
+    // ?? Mechanical pattern ?????????????????????????????????????????
     const aggCount = (inAggMov + inAggPost + inAggAct).split(",").filter(s => s.trim()).length;
     const relCount = (inRelMov + inRelPost + inRelMan).split(",").filter(s => s.trim()).length;
     const mechanicalPattern = !constantPain && aggCount >= 2 && relCount >= 1 && largeNrsVar;
     if (mechanicalPattern) tags.push("Mechanical");
 
-    // ── Tendinopathic pattern ──────────────────────────────────────
+    // ?? Tendinopathic pattern ??????????????????????????????????????
     const tendinopathicPattern = warmUpPattern && (
       any(onset, "repetitive", "overuse", "gradual", "sport") ||
       postActDelay ||
       any(inMoi, "overuse", "repetitive", "gradual", "marathon", "training load")
     );
 
-    // ── Neural signals ─────────────────────────────────────────────
+    // ?? Neural signals ?????????????????????????????????????????????
     const neuralQuality = any(rf("arm_quality"), "burning", "shooting", "tingling", "numbness", "electric") ||
                           any(rf("neuro_quality"), "burning", "shooting", "tingling", "numbness") ||
                           any(rf("neuro"), "burning", "shooting", "tingling", "numbness", "electric");
@@ -3226,17 +3226,17 @@ function runEngineV6(data, selectedRegions) {
     if (radiculopathySig) tags.push("Radiculopathy");
     else if (neurodynamicSig) tags.push("Neurodynamic");
 
-    // ── Nociplastic signal ─────────────────────────────────────────
+    // ?? Nociplastic signal ?????????????????????????????????????????
     const nociplasticSig = (isChronic && constantPain && noMedHelps) ||
                            (isChronic && highPsych && constantPain) ||
                            (selectedRegions.length >= 3);
     if (nociplasticSig && !urgentFlag) tags.push("Nociplastic risk");
 
-    // ══════════════════════════════════════════════════════════════
+    // ??????????????????????????????????????????????????????????????
     // REGION-SPECIFIC PATTERN RECOGNITION
-    // ══════════════════════════════════════════════════════════════
+    // ??????????????????????????????????????????????????????????????
 
-    // ─── CERVICAL SPINE ──────────────────────────────────────────
+    // ??? CERVICAL SPINE ??????????????????????????????????????????
     if (region === "Cervical spine") {
       const myelop  = any(av("cx_rf_myelopathy"), "bilateral hand", "fine motor", "gait disturbance", "ataxia", "bladder", "bowel", "lhermitte");
       const vbi     = any(av("cx_rf_vbi"), "dizziness", "diplopia", "drop attacks", "dysarthria", "dysphagia", "thunderclap", "horner");
@@ -3251,10 +3251,10 @@ function runEngineV6(data, selectedRegions) {
       const cxCervicogenic = headache && any(haType, "cervicogenic");
 
       // Urgent flags first
-      if (fracSc)  { prec.push("⚠ URGENT - Cervical fracture indicators: immobilise; do not move; emergency department"); urgentFlag = true; tags.push("⚠ Fracture screen"); }
-      if (myelop)  { prec.push("⚠ URGENT - Myelopathy features: neurosurgical opinion before any cervical loading or manipulation"); urgentFlag = true; tags.push("⚠ Myelopathy"); }
-      if (vbi)     { prec.push("⚠ URGENT - VBI screen positive: cervical manipulation absolutely contraindicated; urgent medical review"); urgentFlag = true; tags.push("⚠ VBI"); }
-      if (instab)  { prec.push("⚠ Craniovertebral instability risk - Sharp-Purser / alar ligament testing before any mobilisation"); tags.push("Instability risk"); }
+      if (fracSc)  { prec.push("? URGENT - Cervical fracture indicators: immobilise; do not move; emergency department"); urgentFlag = true; tags.push("? Fracture screen"); }
+      if (myelop)  { prec.push("? URGENT - Myelopathy features: neurosurgical opinion before any cervical loading or manipulation"); urgentFlag = true; tags.push("? Myelopathy"); }
+      if (vbi)     { prec.push("? URGENT - VBI screen positive: cervical manipulation absolutely contraindicated; urgent medical review"); urgentFlag = true; tags.push("? VBI"); }
+      if (instab)  { prec.push("? Craniovertebral instability risk - Sharp-Purser / alar ligament testing before any mobilisation"); tags.push("Instability risk"); }
 
       // Build differentials
       if (radiculopathySig) {
@@ -3298,7 +3298,7 @@ function runEngineV6(data, selectedRegions) {
       }
 
       // Primary pattern from highest confidence differential
-      if (urgentFlag) primaryPattern = differentials.length > 0 ? `⚠ ${differentials[0].label} - Urgent` : "⚠ Urgent referral required";
+      if (urgentFlag) primaryPattern = differentials.length > 0 ? `? ${differentials[0].label} - Urgent` : "? Urgent referral required";
       else if (differentials.length > 0) {
         differentials.sort((a,b) => (b.confidence==="HIGH"?2:b.confidence==="MODERATE"?1:0) - (a.confidence==="HIGH"?2:a.confidence==="MODERATE"?1:0));
         primaryPattern = differentials[0].label;
@@ -3314,7 +3314,7 @@ function runEngineV6(data, selectedRegions) {
          highIrrit ? "HIGH IRRITABILITY - limit to 1-2 test movements; assess 24hr response before progressing" : ""];
     }
 
-    // ─── LUMBAR / SI ──────────────────────────────────────────────
+    // ??? LUMBAR / SI ??????????????????????????????????????????????
     if (region === "Lumbar / SI") {
       const cauda    = any(av("lx_rf_cauda"), "bilateral leg weakness", "saddle", "bladder retention", "bladder incontinence", "bowel incontinence", "rapidly progressive");
       const lxFract  = any(av("lx_rf_fracture"), "major high-energy", "known osteoporosis", "long-term corticosteroid", "point bone tenderness") || fracRisk;
@@ -3328,8 +3328,8 @@ function runEngineV6(data, selectedRegions) {
       const spondylolisthesis = any(inAggMov, "backward bending") && any(av("lx_spondylo_screen"), "forward slip", "spondylolisthesis", "young athlete");
 
       // Urgent flags
-      if (cauda)   { prec.push("⚠ URGENT - Cauda equina indicators: same-day emergency medical review; do not defer (NICE NG59)"); urgentFlag = true; tags.push("⚠ Cauda equina"); }
-      if (lxFract) { prec.push("⚠ Fracture risk: imaging before any loading; manipulation absolutely contraindicated"); tags.push("⚠ Fracture risk"); }
+      if (cauda)   { prec.push("? URGENT - Cauda equina indicators: same-day emergency medical review; do not defer (NICE NG59)"); urgentFlag = true; tags.push("? Cauda equina"); }
+      if (lxFract) { prec.push("? Fracture risk: imaging before any loading; manipulation absolutely contraindicated"); tags.push("? Fracture risk"); }
       if (inflammL && !urgentFlag) prec.push("Inflammatory / spondyloarthropathy features - rheumatology referral; ESR, CRP, HLA-B27");
 
       // Build differentials - all confidence scored
@@ -3388,7 +3388,7 @@ function runEngineV6(data, selectedRegions) {
       if (any(startBack,"high risk")) { prec.push("STarT Back HIGH RISK - psychologically-informed physiotherapy (PIP); standard physio alone insufficient"); tags.push("STarT High"); }
       else if (any(startBack,"medium risk")) { prec.push("STarT Back MEDIUM RISK - enhanced physiotherapy addressing psychosocial factors"); tags.push("STarT Medium"); }
 
-      primaryPattern = urgentFlag ? "⚠ Urgent referral required" :
+      primaryPattern = urgentFlag ? "? Urgent referral required" :
         (differentials.sort((a,b)=>(b.confidence==="HIGH"?2:b.confidence==="MODERATE"?1:0)-(a.confidence==="HIGH"?2:a.confidence==="MODERATE"?1:0)), differentials[0].label);
       confidence = urgentFlag ? "HIGH" : differentials[0]?.confidence || "LOW";
 
@@ -3401,7 +3401,7 @@ function runEngineV6(data, selectedRegions) {
          highIrrit ? "HIGH IRRITABILITY - assess single movement then stop; 24hr monitoring" : ""];
     }
 
-    // ─── SHOULDER ─────────────────────────────────────────────────
+    // ??? SHOULDER ?????????????????????????????????????????????????
     if (region === "Shoulder (L)" || region === "Shoulder (R)") {
       const nightSleep   = any(rv("night"), "wakes multiple", "cannot sleep on affected", "constant night pain");
       const painfulArc   = any(rv("arc"), "60", "120deg");
@@ -3418,9 +3418,9 @@ function runEngineV6(data, selectedRegions) {
       const proxBicepsR  = any(av(`${px}_extra`) || "", "felt pop in upper arm", "popeye sign");
 
       // Urgent flags
-      if (any(rfField,"suspected fracture","suspected unreduced","acute hot","vascular compromise")) { prec.push(`⚠ Red flags - ${region}: urgent orthopaedic review`); urgentFlag = true; }
-      if (dropArm && isAcute) { prec.push(`⚠ Drop arm sign - possible acute massive rotator cuff tear: urgent orthopaedic referral`); urgentFlag = true; tags.push("⚠ Drop arm"); }
-      if (brachNeuritis) { prec.push("⚠ Possible brachial neuritis (Parsonage-Turner) - urgent neurology referral; EMG/NCS; do not exercise into weakness"); urgentFlag = true; tags.push("⚠ Brachial neuritis"); }
+      if (any(rfField,"suspected fracture","suspected unreduced","acute hot","vascular compromise")) { prec.push(`? Red flags - ${region}: urgent orthopaedic review`); urgentFlag = true; }
+      if (dropArm && isAcute) { prec.push(`? Drop arm sign - possible acute massive rotator cuff tear: urgent orthopaedic referral`); urgentFlag = true; tags.push("? Drop arm"); }
+      if (brachNeuritis) { prec.push("? Possible brachial neuritis (Parsonage-Turner) - urgent neurology referral; EMG/NCS; do not exercise into weakness"); urgentFlag = true; tags.push("? Brachial neuritis"); }
 
       // Differentials
       if (capsPattern || (progStiff && isChronic)) {
@@ -3473,7 +3473,7 @@ function runEngineV6(data, selectedRegions) {
       }
 
       differentials.sort((a,b)=>(b.confidence==="HIGH"?2:b.confidence==="MODERATE"?1:0)-(a.confidence==="HIGH"?2:a.confidence==="MODERATE"?1:0));
-      primaryPattern = urgentFlag ? `⚠ ${differentials[0]?.label || "Urgent referral required"}` : differentials[0].label;
+      primaryPattern = urgentFlag ? `? ${differentials[0]?.label || "Urgent referral required"}` : differentials[0].label;
       confidence = urgentFlag ? "HIGH" : differentials[0].confidence;
       objTests = urgentFlag ? ["Do not load shoulder - urgent referral"] :
         ["Postural observation - shoulder height / scapular position","GH AROM all planes","Rotator cuff isometric testing (ER/IR/abduction)","Scapular dyskinesis assessment",
@@ -3483,7 +3483,7 @@ function runEngineV6(data, selectedRegions) {
          highIrrit?"HIGH IRRITABILITY - assess resting position only first session":""];
     }
 
-    // ─── KNEE ─────────────────────────────────────────────────────
+    // ??? KNEE ?????????????????????????????????????????????????????
     if (region === "Knee (L)" || region === "Knee (R)") {
       const pop         = any(rv("pop"), "clear pop");
       const haemSwelling= any(rv("swelling"), "immediate within 2", "immediate <2hrs", "haemarthrosis");
@@ -3501,7 +3501,7 @@ function runEngineV6(data, selectedRegions) {
       const osgood      = any(inLoc, "tibial tuberosity") && isPaediatric;
       const pfpsConfidence = (any(rv("movie"),"yes - typical pfps") ? 1:0) + (any(rv("descent"),"worse going down")?1:0) + (any(inAggAct,"sitting prolonged")?1:0);
 
-      // ── NEW: MCL / LCL sprain detection ──────────────────────────────
+      // ?? NEW: MCL / LCL sprain detection ??????????????????????????????
       const mclMoi      = any(inMoi, "direct blow medial", "valgus stress");
       const lclMoi      = any(inMoi, "direct blow lateral", "varus stress");
       const mclLoc      = any(inLoc, "medial collateral region");
@@ -3509,7 +3509,7 @@ function runEngineV6(data, selectedRegions) {
       const mcl         = (mclMoi || mclLoc) && !pop; // pop = likely ACL not isolated MCL
       const lcl         = (lclMoi || lclLoc) && !pop;
 
-      // ── NEW: Knee OA detection ────────────────────────────────────────
+      // ?? NEW: Knee OA detection ????????????????????????????????????????
       const oaCrep      = any(rv("clicking"), "grinding / crepitus - coarse", "grinding");
       const oaPattern   = any(inPattern, "morning stiffness", "warms up", "getting worse over time");
       const oaAge       = parseInt(data.dem_dob ? (new Date().getFullYear() - parseInt((data.dem_dob||"").split("/")[2]||"0")) : 0) >= 45;
@@ -3518,16 +3518,16 @@ function runEngineV6(data, selectedRegions) {
       const oaScore     = (oaCrep?2:0)+(oaPattern?1:0)+(oaAge?1:0)+(oaLoc?1:0)+(oaAggAct?1:0)+(isChronic?1:0);
       const kneeOA      = oaScore >= 3 && !isPaediatric;
 
-      // ── NEW: Fat pad (Hoffa) impingement detection ────────────────────
+      // ?? NEW: Fat pad (Hoffa) impingement detection ????????????????????
       const fatPad      = any(inLoc, "patellar tendon - inferior pole", "anterior knee - diffuse") &&
                           any(inAggAct, "stairs - going up", "hills - going up", "full extension", "prolonged standing") &&
                           !patellarT; // distinguish from patellar tendinopathy
 
       // Urgent flags
-      if (locked)  { prec.push(`⚠ Locked knee ${region} - possible bucket-handle meniscal tear: urgent orthopaedic referral`); urgentFlag = true; }
-      if (septic)  { prec.push(`⚠ Possible septic arthritis ${region} - same-day emergency medical review`); urgentFlag = true; }
-      if (ottawa)  { prec.push(`Ottawa Rules positive - ${region}: x-ray required; do not load until cleared`); tags.push("⚠ Ottawa +ve"); }
-      if (pcl && haemSwelling && isAcute) { prec.push(`⚠ Possible PCL injury - ${region}: posterior drawer test; imaging`); tags.push("⚠ PCL suspected"); }
+      if (locked)  { prec.push(`? Locked knee ${region} - possible bucket-handle meniscal tear: urgent orthopaedic referral`); urgentFlag = true; }
+      if (septic)  { prec.push(`? Possible septic arthritis ${region} - same-day emergency medical review`); urgentFlag = true; }
+      if (ottawa)  { prec.push(`Ottawa Rules positive - ${region}: x-ray required; do not load until cleared`); tags.push("? Ottawa +ve"); }
+      if (pcl && haemSwelling && isAcute) { prec.push(`? Possible PCL injury - ${region}: posterior drawer test; imaging`); tags.push("? PCL suspected"); }
 
       // Differentials
       if (pop && haemSwelling) {
@@ -3644,7 +3644,7 @@ function runEngineV6(data, selectedRegions) {
       }
 
       differentials.sort((a,b)=>(b.confidence==="HIGH"?2:b.confidence==="MODERATE"?1:0)-(a.confidence==="HIGH"?2:a.confidence==="MODERATE"?1:0));
-      primaryPattern = urgentFlag ? `⚠ ${differentials[0]?.label || "Urgent referral"}` : differentials[0]?.label || `Mechanical knee dysfunction - ${region}`;
+      primaryPattern = urgentFlag ? `? ${differentials[0]?.label || "Urgent referral"}` : differentials[0]?.label || `Mechanical knee dysfunction - ${region}`;
       confidence = urgentFlag ? "HIGH" : differentials[0]?.confidence || "LOW";
       objTests = urgentFlag ? ["Defer loading - urgent referral as above"] :
         ["Gait observation - antalgic / varus thrust / valgus alignment","Knee AROM - extension and flexion (OA: flexion > extension loss)","Valgus/varus stress 0deg + 30deg",
@@ -3658,7 +3658,7 @@ function runEngineV6(data, selectedRegions) {
          highIrrit?"HIGH IRRITABILITY - passive ROM only first session":""];
     }
 
-    // ─── HIP / GROIN ──────────────────────────────────────────────
+    // ??? HIP / GROIN ??????????????????????????????????????????????
     if (region === "Hip / Groin") {
       const rfField    = av("hp_rf");
       const avn        = any(rfField,"avascular necrosis");
@@ -3675,9 +3675,9 @@ function runEngineV6(data, selectedRegions) {
       const meralgia   = any(av("hp_meralgia")||"","lateral thigh burning","no back pain","worse standing","tight clothing","pregnancy");
       const pubicSPD   = any(inLoc,"pubic symphysis") && any(inMoi,"post-partum","pregnancy");
 
-      if (avn)      { prec.push("⚠ Avascular necrosis risk - urgent imaging before weight-bearing; no loading until MRI"); urgentFlag = true; }
-      if (fracHip)  { prec.push("⚠ Possible hip fracture - non-weight bearing; emergency imaging"); urgentFlag = true; }
-      if (septicHip){ prec.push("⚠ Possible septic hip - same-day emergency medical review; aspiration"); urgentFlag = true; }
+      if (avn)      { prec.push("? Avascular necrosis risk - urgent imaging before weight-bearing; no loading until MRI"); urgentFlag = true; }
+      if (fracHip)  { prec.push("? Possible hip fracture - non-weight bearing; emergency imaging"); urgentFlag = true; }
+      if (septicHip){ prec.push("? Possible septic hip - same-day emergency medical review; aspiration"); urgentFlag = true; }
 
       if (hamstrStrain) {
         differentials.push({ label:"Hamstring muscle strain",
@@ -3735,7 +3735,7 @@ function runEngineV6(data, selectedRegions) {
       }
 
       differentials.sort((a,b)=>(b.confidence==="HIGH"?2:b.confidence==="MODERATE"?1:0)-(a.confidence==="HIGH"?2:a.confidence==="MODERATE"?1:0));
-      primaryPattern = urgentFlag ? "⚠ Urgent referral required" : differentials[0]?.label || "Hip / groin dysfunction";
+      primaryPattern = urgentFlag ? "? Urgent referral required" : differentials[0]?.label || "Hip / groin dysfunction";
       confidence = urgentFlag ? "HIGH" : differentials[0]?.confidence || "LOW";
       objTests = urgentFlag ? ["Emergency referral - no loading"] :
         ["Gait observation - Trendelenburg / antalgic","Hip AROM all planes (flexion/ER/IR/abduction)",
@@ -3747,7 +3747,7 @@ function runEngineV6(data, selectedRegions) {
          highIrrit?"Limit to passive ROM and observation first session":""];
     }
 
-    // ─── ANKLE / FOOT ─────────────────────────────────────────────
+    // ??? ANKLE / FOOT ?????????????????????????????????????????????
     if (region === "Ankle / Foot") {
       const rfField    = av("af_rf");
       const plantar    = any(rv("morning"), "first step severely painful", "first step painful - then eases", "plantar fascia classic");
@@ -3763,10 +3763,10 @@ function runEngineV6(data, selectedRegions) {
       const lisfranc   = any(av("af_lisfranc")||"","midfoot pain","bruising on plantar","sole of foot");
       const peroneal   = any(av("af_peroneal")||"","clicking / snapping behind lateral","felt tendon flick");
 
-      if (rupture || achRupture) { prec.push("⚠ Possible Achilles rupture - Thompson test urgently; do not weight bear; urgent orthopaedic referral"); urgentFlag = true; tags.push("⚠ Achilles rupture"); }
-      if (ottawaAF) { prec.push("Ottawa Rules positive - ankle x-ray required before physiotherapy loading"); tags.push("⚠ Ottawa +ve"); }
-      if (lisfranc) { prec.push("⚠ Possible Lisfranc injury - urgent orthopaedic review; non-weight bearing until x-ray + CT cleared"); tags.push("⚠ Lisfranc screen"); urgentFlag = true; }
-      if (any(rfField,"compartment syndrome")) { prec.push("⚠ Compartment syndrome - emergency surgical review"); urgentFlag = true; }
+      if (rupture || achRupture) { prec.push("? Possible Achilles rupture - Thompson test urgently; do not weight bear; urgent orthopaedic referral"); urgentFlag = true; tags.push("? Achilles rupture"); }
+      if (ottawaAF) { prec.push("Ottawa Rules positive - ankle x-ray required before physiotherapy loading"); tags.push("? Ottawa +ve"); }
+      if (lisfranc) { prec.push("? Possible Lisfranc injury - urgent orthopaedic review; non-weight bearing until x-ray + CT cleared"); tags.push("? Lisfranc screen"); urgentFlag = true; }
+      if (any(rfField,"compartment syndrome")) { prec.push("? Compartment syndrome - emergency surgical review"); urgentFlag = true; }
 
       if (calfStrain || any(inMoi,"inversion sprain") && any(inLoc,"calf")) {
         differentials.push({ label:"Calf muscle strain (gastrocnemius / soleus)",
@@ -3831,7 +3831,7 @@ function runEngineV6(data, selectedRegions) {
       }
 
       differentials.sort((a,b)=>(b.confidence==="HIGH"?2:b.confidence==="MODERATE"?1:0)-(a.confidence==="HIGH"?2:a.confidence==="MODERATE"?1:0));
-      primaryPattern = urgentFlag ? `⚠ ${differentials[0]?.label || "Urgent referral"}` : differentials[0]?.label || "Ankle / foot dysfunction";
+      primaryPattern = urgentFlag ? `? ${differentials[0]?.label || "Urgent referral"}` : differentials[0]?.label || "Ankle / foot dysfunction";
       confidence = urgentFlag ? "HIGH" : differentials[0]?.confidence || "LOW";
       objTests = urgentFlag ? ["Emergency referral - no loading until cleared"] :
         ["Gait observation - antalgic / foot mechanics","Ankle AROM all planes","Weight-bearing DF ROM (knee-to-wall test)",
@@ -3841,7 +3841,7 @@ function runEngineV6(data, selectedRegions) {
          highIrrit?"Limit to observation + gentle PROM only":""];
     }
 
-    // ─── ELBOW / WRIST / HAND ─────────────────────────────────────
+    // ??? ELBOW / WRIST / HAND ?????????????????????????????????????
     if (region === "Elbow/Wrist/Hand") {
       const rfField    = av("ew_rf");
       const scaph      = any(rfField,"suspected scaphoid","anatomical snuffbox");
@@ -3859,10 +3859,10 @@ function runEngineV6(data, selectedRegions) {
       const bicepsR    = any(av("ew_biceps_rupture")||"","pop in anterior elbow","hook test","distal","visible muscle deformity");
       const pectR      = any(av("ew_pect_rupture")||"","bench press","pop in chest","immediate weakness horizontal");
 
-      if (scaph)      { prec.push("⚠ Suspected scaphoid fracture - immobilise in scaphoid cast; MRI/CT recommended (x-ray false negative up to 20%); orthopaedic referral"); urgentFlag = true; tags.push("⚠ Scaphoid"); }
-      if (compartment){ prec.push("⚠ Acute compartment syndrome - emergency surgical review; do not elevate above heart level"); urgentFlag = true; }
-      if (crps)       { prec.push("⚠ CRPS features - pain clinic referral; avoid aggressive manual therapy; graded motor imagery approach"); tags.push("⚠ CRPS"); urgentFlag = true; }
-      if (bicepsR)    { prec.push("⚠ Possible distal biceps rupture - urgent orthopaedic review within 2 weeks for surgical candidates"); tags.push("⚠ Biceps rupture"); urgentFlag = true; }
+      if (scaph)      { prec.push("? Suspected scaphoid fracture - immobilise in scaphoid cast; MRI/CT recommended (x-ray false negative up to 20%); orthopaedic referral"); urgentFlag = true; tags.push("? Scaphoid"); }
+      if (compartment){ prec.push("? Acute compartment syndrome - emergency surgical review; do not elevate above heart level"); urgentFlag = true; }
+      if (crps)       { prec.push("? CRPS features - pain clinic referral; avoid aggressive manual therapy; graded motor imagery approach"); tags.push("? CRPS"); urgentFlag = true; }
+      if (bicepsR)    { prec.push("? Possible distal biceps rupture - urgent orthopaedic review within 2 weeks for surgical candidates"); tags.push("? Biceps rupture"); urgentFlag = true; }
 
       if (lateralEpi) {
         differentials.push({ label:"Lateral epicondylalgia (common extensor tendinopathy)",
@@ -3925,7 +3925,7 @@ function runEngineV6(data, selectedRegions) {
       }
 
       differentials.sort((a,b)=>(b.confidence==="HIGH"?2:b.confidence==="MODERATE"?1:0)-(a.confidence==="HIGH"?2:a.confidence==="MODERATE"?1:0));
-      primaryPattern = urgentFlag ? `⚠ ${differentials[0]?.label || "Urgent referral"}` : differentials[0]?.label || "Upper limb dysfunction";
+      primaryPattern = urgentFlag ? `? ${differentials[0]?.label || "Urgent referral"}` : differentials[0]?.label || "Upper limb dysfunction";
       confidence = urgentFlag ? "HIGH" : differentials[0]?.confidence || "LOW";
       objTests = urgentFlag ? ["Defer assessment - urgent referral as above"] :
         ["Observation - wasting / deformity / posture","AROM - elbow / wrist / fingers / thumb","Grip strength (dynamometer)","Pinch strength",
@@ -3934,7 +3934,7 @@ function runEngineV6(data, selectedRegions) {
          "Cervical screen - AROM + ULNT (exclude double crush)"];
     }
 
-    // ─── THORACIC ─────────────────────────────────────────────────
+    // ??? THORACIC ?????????????????????????????????????????????????
     if (region === "Thoracic spine") {
       const txRF   = av("tx_rf");
       const cardiac= any(txRF,"cardiac symptoms","cardiac history","radiation to left arm / jaw");
@@ -3946,10 +3946,10 @@ function runEngineV6(data, selectedRegions) {
       const facet  = any(inAggMov,"rotation") && mechanicalPattern && !constantPain;
       const postural= any(inAggPost,"computer","sitting","driving","backpack") && !constantPain;
 
-      if (cardiac) { prec.push("⚠ Cardiac symptoms with thoracic pain - urgent ECG / medical review; not MSK until cardiac excluded"); urgentFlag = true; tags.push("⚠ Cardiac screen"); }
-      if (cord)    { prec.push("⚠ Cord compression signs - urgent neurosurgical opinion"); urgentFlag = true; }
-      if (fracT)   { prec.push("⚠ Thoracic fracture risk - imaging before loading; manipulation contraindicated"); tags.push("⚠ Fracture risk"); }
-      if (serious && !cardiac && !cord) { prec.push("⚠ Thoracic red flags: visceral, malignancy, fracture differentials require urgent medical screening"); urgentFlag = true; }
+      if (cardiac) { prec.push("? Cardiac symptoms with thoracic pain - urgent ECG / medical review; not MSK until cardiac excluded"); urgentFlag = true; tags.push("? Cardiac screen"); }
+      if (cord)    { prec.push("? Cord compression signs - urgent neurosurgical opinion"); urgentFlag = true; }
+      if (fracT)   { prec.push("? Thoracic fracture risk - imaging before loading; manipulation contraindicated"); tags.push("? Fracture risk"); }
+      if (serious && !cardiac && !cord) { prec.push("? Thoracic red flags: visceral, malignancy, fracture differentials require urgent medical screening"); urgentFlag = true; }
 
       if (rib) {
         differentials.push({ label: any(av("tx_rib_screen")||"","stress fracture","rowing","coughing athlete") ? "Rib stress fracture" : "Rib fracture / contusion",
@@ -3976,13 +3976,13 @@ function runEngineV6(data, selectedRegions) {
           tests:["Thoracic kyphosis assessment","Scapular position / winging","Pectoralis minor length","Mid-thoracic AROM","PA pressures"] });
       }
       if (!differentials.length) {
-        differentials.push({ label: serious ? "⚠ Thoracic pain with red flag indicators" : "Mechanical thoracic dysfunction", confidence: serious ? "HIGH" : "LOW",
+        differentials.push({ label: serious ? "? Thoracic pain with red flag indicators" : "Mechanical thoracic dysfunction", confidence: serious ? "HIGH" : "LOW",
           evidence: serious ? "Red flags identified - require urgent medical screening" : "Mechanical pattern, no specific classification features",
           tests: serious ? ["Urgent medical referral - do not treat as MSK yet"] : ["Thoracic AROM","PA pressures","Rib springing","Postural assessment"] });
       }
 
       differentials.sort((a,b)=>(b.confidence==="HIGH"?2:b.confidence==="MODERATE"?1:0)-(a.confidence==="HIGH"?2:a.confidence==="MODERATE"?1:0));
-      primaryPattern = urgentFlag ? `⚠ ${differentials[0]?.label || "Urgent referral"}` : differentials[0]?.label || "Thoracic dysfunction";
+      primaryPattern = urgentFlag ? `? ${differentials[0]?.label || "Urgent referral"}` : differentials[0]?.label || "Thoracic dysfunction";
       confidence = urgentFlag ? "HIGH" : differentials[0]?.confidence || "LOW";
       objTests = urgentFlag ? ["Urgent medical referral - do not treat as MSK until cleared"] :
         ["Postural observation - thoracic kyphosis","Thoracic AROM all planes","PA central + unilateral pressures T1-T12",
@@ -4004,9 +4004,9 @@ function runEngineV6(data, selectedRegions) {
     };
   }).filter(Boolean);
 
-  // ══════════════════════════════════════════════════════════════════
+  // ??????????????????????????????????????????????????????????????????
   // CROSS-REGION ANALYSIS (unchanged - clinically correct)
-  // ══════════════════════════════════════════════════════════════════
+  // ??????????????????????????????????????????????????????????????????
   const cross = [];
   const rgs = selectedRegions;
   const hasCx  = rgs.includes("Cervical spine");
@@ -4033,7 +4033,7 @@ function runEngineV6(data, selectedRegions) {
   if (hasCx && hasLx)
     cross.push({type:"Clinical note",title:"Cervical + Lumbar - Multi-level Spinal",detail:"Multi-level spinal raises: axial spondyloarthropathy (AS), DISH, generalised degenerative polyarthropathy, or nociplastic pain. ESR, CRP, HLA-B27, spinal x-rays, rheumatology review if constitutional symptoms. Multi-site pain alone increases nociplastic probability.",refs:"Magee Ch.3+Ch.9 / ASAS / NICE"});
   if (hasSHL && hasSHR)
-    cross.push({type:"⚠ Clinical flag",title:"Bilateral Shoulder - Systemic Screen",detail:"Screen for: PMR (age >50, bilateral shoulder + pelvic girdle, elevated ESR, prednisolone responsive - classically missed), bilateral RCT, RA, thoracic outlet. Check ESR, CRP, RF urgently. PMR responds dramatically to low-dose prednisolone.",refs:"EULAR PMR guidelines / Magee Ch.5 / BSR"});
+    cross.push({type:"? Clinical flag",title:"Bilateral Shoulder - Systemic Screen",detail:"Screen for: PMR (age >50, bilateral shoulder + pelvic girdle, elevated ESR, prednisolone responsive - classically missed), bilateral RCT, RA, thoracic outlet. Check ESR, CRP, RF urgently. PMR responds dramatically to low-dose prednisolone.",refs:"EULAR PMR guidelines / Magee Ch.5 / BSR"});
   if (hasKnL && hasKnR)
     cross.push({type:"Clinical note",title:"Bilateral Knee - Systemic Screen",detail:"Screen for: crystal arthropathy (gout/pseudogout - acute hot joint), inflammatory arthritis (RA, psoriatic, reactive), obesity-related bilateral OA, bilateral PFPS in adolescent females. ESR, CRP, uric acid if inflammatory pattern suspected.",refs:"Magee Ch.12 / NICE / BSR"});
   if (hasCx && hasEW)
@@ -4043,7 +4043,7 @@ function runEngineV6(data, selectedRegions) {
   if (hasHp && hasAF)
     cross.push({type:"Clinical note",title:"Hip + Ankle - Pelvic Kinetic Chain",detail:"Hip abductor weakness + ankle hyperpronation often co-exist driving a medial collapse pattern. Address both simultaneously. Meralgia paraesthetica (LFCN) can be aggravated by hip position changes secondary to ankle pronation compensation.",refs:"Sahrmann / Brukner & Khan"});
   if (rgs.length >= 3)
-    cross.push({type:"⚠ Clinical flag",title:`${rgs.length} Simultaneous Regions - Nociplastic Screening`,detail:`${rgs.length} simultaneous pain regions significantly raises the prior probability of nociplastic pain regardless of local structural findings. The number of pain sites is independently predictive of central sensitisation. Complete: CSI (>=40 = positive), STarT Back, Örebro, PCS-13, TSK-11. Prioritise pain neurophysiology education and multidisciplinary assessment.`,refs:"Woolf (nociplastic pain - IASP 2017) / Moseley & Butler / Nijs"});
+    cross.push({type:"? Clinical flag",title:`${rgs.length} Simultaneous Regions - Nociplastic Screening`,detail:`${rgs.length} simultaneous pain regions significantly raises the prior probability of nociplastic pain regardless of local structural findings. The number of pain sites is independently predictive of central sensitisation. Complete: CSI (>=40 = positive), STarT Back, Örebro, PCS-13, TSK-11. Prioritise pain neurophysiology education and multidisciplinary assessment.`,refs:"Woolf (nociplastic pain - IASP 2017) / Moseley & Butler / Nijs"});
 
   const anyUrgent = regionResults.some(r => r.urgentFlag);
   return { regionResults, cross, anyUrgent };
@@ -4063,7 +4063,7 @@ function SubjectiveModule({ data, set, onNav }) {
   const [activeTab, setActiveTab] = useState("form");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // ── Field update helpers ────────────────────────────────────────────
+  // ?? Field update helpers ????????????????????????????????????????????
   const setField = useCallback((id, val) => set({ ...data, [id]: val }), [data, set]);
   const toggleMulti = useCallback((id, opt) => {
     const cur = data[id] ? String(data[id]).split(SEP_S).filter(Boolean) : [];
@@ -4081,7 +4081,7 @@ function SubjectiveModule({ data, set, onNav }) {
     setInsight(null);
   }, []);
 
-  // ── Build active sections ───────────────────────────────────────────
+  // ?? Build active sections ???????????????????????????????????????????
   const sections = useMemo(() => {
     // ORDER:
     // 1. Demographics + Chief Complaint (always first - core identity)
@@ -4092,25 +4092,25 @@ function SubjectiveModule({ data, set, onNav }) {
 
     const m = {};
 
-    // ── Step 1: Core opening sections (demographics + complaint only) ──
+    // ?? Step 1: Core opening sections (demographics + complaint only) ??
     m.demographics   = UNIV_S.demographics;
     m.complaint      = UNIV_S.complaint;
 
-    // ── Step 2: Region-specific modules ───────────────────────────────
+    // ?? Step 2: Region-specific modules ???????????????????????????????
     selectedRegions.forEach(r => {
       const mod = REG_MOD_S[r];
       if (!mod) return;
       Object.entries(mod.sections).forEach(([k, s]) => { m[k] = s; });
     });
 
-    // ── Step 3: Trailing universal sections ───────────────────────────
+    // ?? Step 3: Trailing universal sections ???????????????????????????
     m.goals          = UNIV_S.goals;
     m.history        = UNIV_S.history;
     m.red_flags      = UNIV_S.red_flags;
     m.pmh            = UNIV_S.pmh;
     m.lifestyle      = UNIV_S.lifestyle;
 
-    // ── Step 4: Conditional sections ──────────────────────────────────
+    // ?? Step 4: Conditional sections ??????????????????????????????????
     // Paediatric - if age <18 or paediatric selected
     const age = parseInt(data.dem_age || "99");
     if (age < 18 || /child|adolescent/.test((data.ped_age_group||"").toLowerCase()))
@@ -4125,7 +4125,7 @@ function SubjectiveModule({ data, set, onNav }) {
     // Sport - if sport-related onset or sport region
     if (needsSport_S(data, selectedRegions)) Object.assign(m, SPORT_S);
 
-    // ── Step 5: Biopsychosocial - always last ──────────────────────────
+    // ?? Step 5: Biopsychosocial - always last ??????????????????????????
     if (needsBPS_S(data)) Object.assign(m, BPS_S);
 
     return m;
@@ -4134,7 +4134,7 @@ function SubjectiveModule({ data, set, onNav }) {
   const sec = sections[activeSection] || sections.demographics;
   const secColor = sec.color || PC.accent;
 
-  // ── Progress (exclude notes fields) ────────────────────────────────
+  // ?? Progress (exclude notes fields) ????????????????????????????????
   const { totalF, totalD, pct } = useMemo(() => {
     const notesTypes = ["textarea"];
     const noteIds = ["_notes","_psfs","_detail","_findings"];
@@ -4150,7 +4150,7 @@ function SubjectiveModule({ data, set, onNav }) {
     return s.fields.filter(f => data[f.id] && data[f.id] !== "").length;
   };
 
-  // ── Run engine ──────────────────────────────────────────────────────
+  // ?? Run engine ??????????????????????????????????????????????????????
   const runInterpretation = () => {
     if (selectedRegions.length === 0) return;
     const result = runEngineV6(data, selectedRegions);
@@ -4159,7 +4159,7 @@ function SubjectiveModule({ data, set, onNav }) {
     setShowInsight(true);
   };
 
-  // ── Inline field renderer (app UI style) ───────────────────────────
+  // ?? Inline field renderer (app UI style) ???????????????????????????
   const renderField = (f) => {
     const val = data[f.id] || "";
     const inputStyle = {
@@ -4178,7 +4178,7 @@ function SubjectiveModule({ data, set, onNav }) {
         <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
           {opts.map(opt => {
             const on = selected.includes(opt);
-            const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("⚠");
+            const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("?");
             return (
               <button key={opt} type="button"
                 onClick={() => toggleMulti(f.id, opt)}
@@ -4246,17 +4246,17 @@ function SubjectiveModule({ data, set, onNav }) {
     );
   };
 
-  // ── Confidence colour helpers ───────────────────────────────────────
+  // ?? Confidence colour helpers ???????????????????????????????????????
   const confColor = (c) => c === "HIGH" ? PC.green : c === "MODERATE" ? PC.yellow : PC.muted;
   const confBg    = (c) => c === "HIGH" ? PC.green+"12" : c === "MODERATE" ? PC.yellow+"12" : PC.s2;
 
-  // ══════════════════════════════════════════════════════════════════
+  // ??????????????????????????????????????????????????????????????????
   // RENDER
-  // ══════════════════════════════════════════════════════════════════
+  // ??????????????????????????????????????????????????????????????????
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14, maxWidth:"100%" }}>
 
-      {/* ── Region selector ── */}
+      {/* ?? Region selector ?? */}
       <div style={{ background: PC.surface, borderRadius:12, padding:"14px 16px", border:`1px solid ${PC.border}`, boxShadow:`0 1px 4px ${PC.border}` }}>
         <div style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:PC.muted, marginBottom:10 }}>
           Select Regions (max 3) - {selectedRegions.length} / 3
@@ -4294,7 +4294,7 @@ function SubjectiveModule({ data, set, onNav }) {
         )}
       </div>
 
-      {/* ── Progress bar ── */}
+      {/* ?? Progress bar ?? */}
       <div style={{ background: PC.surface, borderRadius:10, padding:"10px 14px", border:`1px solid ${PC.border}` }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
           <span style={{ fontSize:"0.68rem", color: PC.muted }}>{totalD} / {totalF} clinical fields</span>
@@ -4306,7 +4306,7 @@ function SubjectiveModule({ data, set, onNav }) {
         </div>
       </div>
 
-      {/* ── Generate button - above tabs for instant access ── */}
+      {/* ?? Generate button - above tabs for instant access ?? */}
       <button type="button" onClick={runInterpretation}
         disabled={selectedRegions.length === 0}
         style={{
@@ -4330,7 +4330,7 @@ function SubjectiveModule({ data, set, onNav }) {
         )}
       </button>
 
-      {/* ── Tabs ── */}
+      {/* ?? Tabs ?? */}
       <div style={{ display:"flex", borderBottom:`1px solid ${PC.border}`, gap:0 }}>
         {[["form","📝 Assessment"],["results","🧠 Interpretation"]].map(([t, label]) => (
           <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
@@ -4343,16 +4343,16 @@ function SubjectiveModule({ data, set, onNav }) {
             {t==="results" && insight && (
               <span style={{ marginLeft:5, background: insight.anyUrgent ? PC.red : PC.green,
                 color:"#fff", fontSize:"0.55rem", padding:"1px 6px", borderRadius:99, fontWeight:700 }}>
-                {insight.anyUrgent ? "⚠" : "v"}
+                {insight.anyUrgent ? "?" : "v"}
               </span>
             )}
           </button>
         ))}
       </div>
 
-      {/* ════════════════════════════════════════════════════
+      {/* ????????????????????????????????????????????????????
           FORM TAB
-      ════════════════════════════════════════════════════ */}
+      ???????????????????????????????????????????????????? */}
       {activeTab === "form" && (
         <>
           {/* Section nav */}
@@ -4389,7 +4389,7 @@ function SubjectiveModule({ data, set, onNav }) {
           {selectedRegions.length === 0 && !["demographics","complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
             <div style={{ background:"#fffbeb", border:`1px solid ${PC.yellow}55`, borderRadius:10,
               padding:"12px 16px", color: PC.yellow, fontSize:"0.78rem" }}>
-              ⚠ Select at least one region above to load the region-specific assessment module
+              ? Select at least one region above to load the region-specific assessment module
             </div>
           )}
 
@@ -4442,9 +4442,9 @@ function SubjectiveModule({ data, set, onNav }) {
         </>
       )}
 
-      {/* ════════════════════════════════════════════════════
+      {/* ????????????????????????????????????????????????????
           RESULTS TAB
-      ════════════════════════════════════════════════════ */}
+      ???????????????????????????????????????????????????? */}
       {activeTab === "results" && !insight && (
         <div style={{ background: PC.surface, borderRadius:12, padding:28,
           border:`1px solid ${PC.border}`, textAlign:"center", color: PC.muted, fontSize:"0.8rem" }}>
@@ -4455,7 +4455,7 @@ function SubjectiveModule({ data, set, onNav }) {
       {activeTab === "results" && insight && showInsight && (
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
 
-          {/* ── REGION-SPECIFIC SMART ACTION CARDS ── */}
+          {/* ?? REGION-SPECIFIC SMART ACTION CARDS ?? */}
           {onNav && insight && insight.regionResults && insight.regionResults.map((r, ri) => {
             const regionBtns = REGION_NAV[r.region] || [];
             if (!regionBtns.length) return null;
@@ -4478,7 +4478,7 @@ function SubjectiveModule({ data, set, onNav }) {
             );
           })}
 
-          {/* ── URGENT FLAGS BANNER ── */}
+          {/* ?? URGENT FLAGS BANNER ?? */}
           {insight.anyUrgent && (
             <div style={{ background: PC.red+"12", border:`2px solid ${PC.red}`, borderRadius:12,
               padding:"12px 16px", display:"flex", gap:10, alignItems:"flex-start" }}>
@@ -4496,13 +4496,13 @@ function SubjectiveModule({ data, set, onNav }) {
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════
+          {/* ??????????????????????????????????????????????
               PER-REGION: 7-PHASE CLINICAL REASONING
-          ══════════════════════════════════════════════ */}
+          ?????????????????????????????????????????????? */}
           {insight.regionResults.map((r, ri) => {
             const regCol = RC_S[r.region] || PC.accent;
 
-            // ── Derive observation suggestions from pattern ──
+            // ?? Derive observation suggestions from pattern ??
             const obsItems = [];
             if (r.inflammatoryPattern) obsItems.push({item:"Joint swelling / synovitis signs",why:"Inflammatory pattern detected - assess for active synovitis"});
             if (r.mechanicalPattern)   obsItems.push({item:"Antalgic posture / guarding",why:"Mechanical pattern - look for protective posture and movement avoidance"});
@@ -4522,7 +4522,7 @@ function SubjectiveModule({ data, set, onNav }) {
             };
             const obsForRegion = (regionObs[r.region] || []).concat(obsItems).slice(0, 5);
 
-            // ── ROM priority from pattern ──
+            // ?? ROM priority from pattern ??
             const romPriority = {
               "Cervical spine":    [{mv:"Rotation L + R",imp:"High",why:"Most clinically relevant - C1/C2 restriction (FRT); 90deg norm; <60deg = significant"},{mv:"Flexion",imp:"High",why:"Discogenic aggravator - centralisation testing; chin to chest norm"},{mv:"Extension + rotation quadrant",imp:"High",why:"Facet loading - reproduces facet / radicular pain"},{mv:"Side flexion L + R",imp:"Moderate",why:"Lateral canal narrowing - radiculopathy screen"}],
               "Thoracic spine":    [{mv:"Rotation (seated)",imp:"High",why:"Most restricted in thoracic dysfunction; norm 35-45 degrees; compare bilaterally"},{mv:"Flexion - forward bend",imp:"High",why:"Thoracic kyphosis angle + rib hump screen (scoliosis); segmental stiffness"},{mv:"Extension",imp:"High",why:"Facet / costovertebral provocation - restricted in hyperkyphosis"},{mv:"Rib cage expansion",imp:"Moderate",why:"Costochondritis / rib fracture - compare inhalation expansion bilaterally (norm >5cm)"}],
@@ -4537,7 +4537,7 @@ function SubjectiveModule({ data, set, onNav }) {
             };
             const romForRegion = romPriority[r.region] || [{mv:"All planes AROM",imp:"High",why:"Screen all movement directions"}];
 
-            // ── MMT from pattern ──
+            // ?? MMT from pattern ??
             const mmtForRegion = {
               "Cervical spine":   [{m:"Deep cervical flexors (craniocervical flexion test)",why:"Most commonly inhibited in cervical dysfunction - forward head posture driver (Jull 2008)"},{m:"Lower trapezius",why:"Scapular stabiliser - inhibited in cervical + shoulder patterns; test prone"},{m:"Serratus anterior",why:"Inhibition causes scapular winging and cervical overload"},{m:"Deep neck extensors (multifidus cervical)",why:"Segmental stabiliser - atrophies in chronic cervical pain (Elliott 2006)"}],
               "Thoracic spine":   [{m:"Thoracic multifidus / erector spinae",why:"Segmental thoracic stabiliser - inhibited in thoracic pain and kyphosis"},{m:"Lower trapezius",why:"Scapular retraction and depression - critical for thoracic postural correction"},{m:"Serratus anterior",why:"Rib cage stability + scapular protraction - inhibited in thoracic dysfunction"},{m:"Diaphragm (breath hold test)",why:"Diaphragm is primary thoracic stabiliser - poor control = thoracic accessory muscle overuse"},{m:"Rhomboids",why:"Scapular retraction - often inhibited; upper trap compensates in thoracic kyphosis"}],
@@ -4552,7 +4552,7 @@ function SubjectiveModule({ data, set, onNav }) {
             };
             const mmtItems = mmtForRegion[r.region] || [{m:"Full MMT all planes",why:"Screen all muscle groups"}];
 
-            // ── Functional assessment ──
+            // ?? Functional assessment ??
             const funcForRegion = {
               "Cervical spine":   ["Sustained sitting posture (computer/phone) - time to symptom onset","Cervical rotation for driving - bilateral range check","Overhead reach - axial cervical load provocation","Sustained reading position - flexion tolerance","Lifting / carrying - assess breath hold and axial load strategy"],
               "Thoracic spine":   ["Sustained sitting - thoracic kyphosis and symptom onset","Rotation for driving / sport - bilateral symmetry","Overhead bilateral reach - thoracic extension demand","Deep breathing / cough - costovertebral / rib provocation","Forward bend functional screen - thoracic vs lumbar contribution"],
@@ -4567,7 +4567,7 @@ function SubjectiveModule({ data, set, onNav }) {
             };
             const funcItems = funcForRegion[r.region] || ["Functional movement screen relevant to complaint"];
 
-            // ── Special tests from suspicion ──
+            // ?? Special tests from suspicion ??
             // Already in differentials[].tests - extract and label by suspicion level
             const testsByDx = r.differentials.map((d,di)=>({
               label: d.label,
@@ -4576,7 +4576,7 @@ function SubjectiveModule({ data, set, onNav }) {
               why: `Suspicion level ${d.confidence} based on: ${d.evidence}`,
             }));
 
-            // ── Treatment direction from patterns ──
+            // ?? Treatment direction from patterns ??
             const txDir = [];
             if (r.mechanicalPattern && !r.radiculopathySig) txDir.push({phase:"Load Management",detail:"Identify movement threshold and stay 20% below - gradual graded exposure (O'Sullivan, CSEP)"});
             if (r.inflammatoryPattern) txDir.push({phase:"Inflammation Control",detail:"Activity modification, relative rest, ice/NSAID phase, avoid compressive loading - 3-5 day acute phase"});
@@ -4594,7 +4594,7 @@ function SubjectiveModule({ data, set, onNav }) {
             if (r.region === "Elbow/Wrist/Hand") txDir.push({phase:"Kinetic Chain",detail:"Upper limb kinetic chain: thoracic rotation -> shoulder ER / scapular control -> elbow -> wrist -> hand. In throwing / racquet sport, proximal strength deficit drives distal overload (Kibler). Assess cervical and shoulder before isolating elbow/wrist"});
             if (r.region === "Cervical spine") txDir.push({phase:"Motor Control",detail:"Deep cervical flexor (DNF) training using craniocervical flexion test protocol (Jull 2008). Progress: CCFT biofeedback (22-26 mmHg) -> functional positions -> sustained posture endurance -> cervical loading. Address thoracic kyphosis concurrently"});
 
-            // ── NKT / Motor Control ──
+            // ?? NKT / Motor Control ??
             const nktMap = {
               "Cervical spine":   {over:["Upper trapezius","Sternocleidomastoid","Suboccipital muscles","Scalenes (accessory breathing)"],under:["Deep cervical flexors (DNF)","Lower trapezius","Serratus anterior","Cervical multifidus (segmental)"]},
               "Thoracic spine":   {over:["Superficial thoracic erectors","Upper trapezius","Scalenes","Pectoralis major / minor"],under:["Thoracic multifidus","Lower trapezius","Serratus anterior","Rhomboids","Diaphragm (stabiliser role)"]},
@@ -4632,7 +4632,7 @@ function SubjectiveModule({ data, set, onNav }) {
 
                 <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:12 }}>
 
-                  {/* ── PHASE 1: CLINICAL HYPOTHESES ── */}
+                  {/* ?? PHASE 1: CLINICAL HYPOTHESES ?? */}
                   <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px",
                     borderLeft:`4px solid ${regCol}` }}>
                     <div style={{ fontSize:"0.6rem", fontWeight:800, textTransform:"uppercase",
@@ -4655,7 +4655,7 @@ function SubjectiveModule({ data, set, onNav }) {
                           <div style={{ fontSize: di===0?"0.8rem":"0.73rem",
                             fontWeight: di===0?800:600,
                             color: di===0 ? PC.text : PC.muted }}>
-                            {di===0?"🔵 High probability":di===1?"🟡 Moderate probability":"⚪ Lower probability"}&nbsp;&nbsp;
+                            {di===0?"🔵 High probability":di===1?"🟡 Moderate probability":"? Lower probability"}&nbsp;&nbsp;
                             {d.label}
                           </div>
                           <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px",
@@ -4684,13 +4684,13 @@ function SubjectiveModule({ data, set, onNav }) {
                           background: p.on ? p.col+"15" : PC.s3,
                           color: p.on ? p.col : PC.border,
                           border:`1px solid ${p.on ? p.col+"44" : PC.border}` }}>
-                          {p.on ? "🟢" : "⚪"} {p.label}
+                          {p.on ? "🟢" : "?"} {p.label}
                         </span>
                       ))}
                     </div>
                   </div>
 
-                  {/* ── PHASE 2: OBSERVATION ── */}
+                  {/* ?? PHASE 2: OBSERVATION ?? */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", alignItems:"center", gap:8 }}>
                       <span style={{ fontSize:"0.68rem", fontWeight:800, textTransform:"uppercase",
@@ -4710,7 +4710,7 @@ function SubjectiveModule({ data, set, onNav }) {
                     </div>
                   </div>
 
-                  {/* ── PHASE 3: ROM + MMT ── */}
+                  {/* ?? PHASE 3: ROM + MMT ?? */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
                     {/* ROM */}
                     <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
@@ -4761,7 +4761,7 @@ function SubjectiveModule({ data, set, onNav }) {
                     </div>
                   </div>
 
-                  {/* ── PHASE 4: FUNCTIONAL ASSESSMENT ── */}
+                  {/* ?? PHASE 4: FUNCTIONAL ASSESSMENT ?? */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
@@ -4785,7 +4785,7 @@ function SubjectiveModule({ data, set, onNav }) {
                     </div>
                   </div>
 
-                  {/* ── PHASE 5: SPECIAL TESTS BY SUSPICION ── */}
+                  {/* ?? PHASE 5: SPECIAL TESTS BY SUSPICION ?? */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <div>
@@ -4859,7 +4859,7 @@ function SubjectiveModule({ data, set, onNav }) {
                     </div>
                   </div>
 
-                  {/* ── PHASE 6: NKT / MOTOR CONTROL ── */}
+                  {/* ?? PHASE 6: NKT / MOTOR CONTROL ?? */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
@@ -4897,7 +4897,7 @@ function SubjectiveModule({ data, set, onNav }) {
                     </div>
                   </div>
 
-                  {/* ── PHASE 7: TREATMENT DIRECTION ── */}
+                  {/* ?? PHASE 7: TREATMENT DIRECTION ?? */}
                   <div style={{ background: regCol+"08", borderRadius:10, padding:"12px 14px",
                     border:`1px solid ${regCol}33` }}>
                     <div style={{ fontSize:"0.6rem", fontWeight:800, textTransform:"uppercase",
@@ -4922,7 +4922,7 @@ function SubjectiveModule({ data, set, onNav }) {
             );
           })}
 
-          {/* ── KINETIC CHAIN / CROSS-REGION ── */}
+          {/* ?? KINETIC CHAIN / CROSS-REGION ?? */}
           {insight.cross && insight.cross.length > 0 && (
             <div style={{ background: PC.surface, borderRadius:12, padding:"14px 16px",
               border:`1px solid ${PC.accent}33` }}>
@@ -4956,7 +4956,7 @@ function SubjectiveModule({ data, set, onNav }) {
             </div>
           )}
 
-          {/* ── SUMMARY FOOTER ── */}
+          {/* ?? SUMMARY FOOTER ?? */}
           <div style={{ background: PC.green+"08", border:`1px solid ${PC.green}33`,
             borderRadius:12, padding:"12px 16px" }}>
             <div style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase",
@@ -4967,7 +4967,7 @@ function SubjectiveModule({ data, set, onNav }) {
               {insight.regionResults.length} region{insight.regionResults.length>1?"s":""} assessed.{" "}
               {insight.anyUrgent && (
                 <span style={{ color: PC.red, fontWeight:700 }}>
-                  ⚠ Urgent flags present - do not defer.{" "}
+                  ? Urgent flags present - do not defer.{" "}
                 </span>
               )}
               {insight.cross && insight.cross.length > 0 &&
@@ -4989,7 +4989,7 @@ function SubjectiveModule({ data, set, onNav }) {
 
 
 
-// ─── NKT REGION DATABASE ─────────────────────────────────────────────────────
+// ??? NKT REGION DATABASE ?????????????????????????????????????????????????????
 const NKT_REGIONS = {
   cervical:{
     label:"Cervical / Head & Neck", color:"#00e5ff",
@@ -5556,7 +5556,7 @@ const NKT_REGIONS = {
   },
 };
 
-// ─── KINETIC CHAIN REGION DATABASE ───────────────────────────────────────────
+// ??? KINETIC CHAIN REGION DATABASE ???????????????????????????????????????????
 const KC_REGIONS = {
   foot_ankle:{
     label:"Foot & Ankle", color:"#ffb300", role:"MOBILITY",
@@ -5881,7 +5881,7 @@ const KC_REGIONS = {
   },
 };
 
-// ─── KINETIC CHAIN SECTION COMPONENT ─────────────────────────────────────────
+// ??? KINETIC CHAIN SECTION COMPONENT ?????????????????????????????????????????
 function KineticChainSection({ data, set, navContext={} }) {
     const [region, setRegion] = useState(navContext.kcRegion||"foot_ankle");
   React.useEffect(()=>{ if(navContext.kcRegion) setRegion(navContext.kcRegion); },[navContext.kcRegion]);
@@ -5907,7 +5907,7 @@ function KineticChainSection({ data, set, navContext={} }) {
     <div>
       {/* Theory banner */}
       <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:12, padding:14, marginBottom:16 }}>
-        <div style={{ fontWeight:800, color:C.accent, marginBottom:8, fontSize:"0.9rem" }}>⛓ Joint-by-Joint Theory (Cook & Boyle)</div>
+        <div style={{ fontWeight:800, color:C.accent, marginBottom:8, fontSize:"0.9rem" }}>? Joint-by-Joint Theory (Cook & Boyle)</div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
           {[
             ["Foot","MOBILITY","#00c97a"],["Ankle","MOBILITY","#00c97a"],["Knee","STABILITY","#ff4d6d"],
@@ -5972,7 +5972,7 @@ function KineticChainSection({ data, set, navContext={} }) {
                   style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer" }}>
                   i How to Test
                 </button>
-                <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
+                <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"^":"v"}</span>
               </div>
             </div>
 
@@ -6005,7 +6005,7 @@ function KineticChainSection({ data, set, navContext={} }) {
 
                 {/* Chain Effect */}
                 <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:8, padding:11, marginBottom:10 }}>
-                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓ Kinetic Chain Effect</div>
+                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>? Kinetic Chain Effect</div>
                   <div style={{ fontSize:"0.77rem", color:C.text, lineHeight:1.6 }}>{t.chainEffect}</div>
                 </div>
 
@@ -6048,7 +6048,7 @@ function KineticChainSection({ data, set, navContext={} }) {
             </div>
 
             <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:8, padding:12, marginBottom:14 }}>
-              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓ Kinetic Chain Effect</div>
+              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>? Kinetic Chain Effect</div>
               <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.chainEffect}</div>
             </div>
 
@@ -6067,7 +6067,7 @@ function KineticChainSection({ data, set, navContext={} }) {
 
 
 
-// ─── FUNCTIONAL MOVEMENT ANALYSIS ENGINE ─────────────────────────────────────
+// ??? FUNCTIONAL MOVEMENT ANALYSIS ENGINE ?????????????????????????????????????
 
 // All compensation options with their rule-based analysis
 const COMPENSATIONS = {
@@ -6077,18 +6077,18 @@ const COMPENSATIONS = {
   anterior_pelvic_tilt:{ label:"Anterior Pelvic Tilt", icon:"🍑", color:"#ffb300" },
   posterior_pelvic_tilt:{ label:"Posterior Pelvic Tilt", icon:"🍑", color:"#ffb300" },
   trunk_lean_forward:  { label:"Trunk Lean Forward", icon:"🏋", color:"#ff8c42" },
-  trunk_lean_lateral:  { label:"Trunk Lean Lateral", icon:"↔", color:"#ff8c42" },
-  trunk_shift:         { label:"Trunk Shift", icon:"↕", color:"#ffb300" },
+  trunk_lean_lateral:  { label:"Trunk Lean Lateral", icon:"?", color:"#ff8c42" },
+  trunk_shift:         { label:"Trunk Shift", icon:"?", color:"#ffb300" },
   foot_pronation:      { label:"Foot Pronation", icon:"👣", color:"#ff8c42" },
   foot_supination:     { label:"Foot Supination", icon:"👣", color:"#ffb300" },
   heel_rise:           { label:"Heel Rise", icon:"👟", color:"#ff4d6d" },
-  asymmetric_loading:  { label:"Asymmetric Loading", icon:"⚖", color:"#ff4d6d" },
-  instability:         { label:"Instability / Wobbling", icon:"⚡", color:"#ff4d6d" },
+  asymmetric_loading:  { label:"Asymmetric Loading", icon:"?", color:"#ff4d6d" },
+  instability:         { label:"Instability / Wobbling", icon:"!", color:"#ff4d6d" },
   limited_depth:       { label:"Limited Depth / ROM", icon:"📏", color:"#ffb300" },
   scapular_winging:    { label:"Scapular Winging", icon:"🪶", color:"#ff4d6d" },
   lumbar_flexion_comp: { label:"Lumbar Flexion Compensation", icon:"🔩", color:"#ff4d6d" },
   lumbar_extension_comp:{ label:"Lumbar Extension Compensation", icon:"🔩", color:"#ffb300" },
-  pain_avoidance:      { label:"Pain Avoidance Movement", icon:"⚠", color:"#ff4d6d" },
+  pain_avoidance:      { label:"Pain Avoidance Movement", icon:"?", color:"#ff4d6d" },
   forward_head:        { label:"Forward Head", icon:"🗣", color:"#ffb300" },
   shoulder_elevation:  { label:"Shoulder Elevation", icon:"🫱", color:"#ffb300" },
   trunk_rotation:      { label:"Trunk Rotation", icon:"🔄", color:"#ff4d6d" },
@@ -6417,7 +6417,7 @@ const RULES = {
       progression:["Pain control -> neutral spine -> gradual loading"],
     },
   },
-  // ── STEP DOWN ──────────────────────────────────────────────────────────────
+  // ?? STEP DOWN ??????????????????????????????????????????????????????????????
   step_down:{
     knee_valgus:{
       weak:["Gluteus Medius","VMO","Hip External Rotators"],
@@ -6475,7 +6475,7 @@ const RULES = {
       progression:["Pain-free movement -> load progression -> return to function"],
     },
   },
-  // ── PUSH-UP PLUS ──────────────────────────────────────────────────────────
+  // ?? PUSH-UP PLUS ??????????????????????????????????????????????????????????
   pushup_plus:{
     scapular_winging:{
       weak:["Serratus Anterior (primary)","Lower Trapezius","Middle Trapezius"],
@@ -6522,7 +6522,7 @@ const RULES = {
       progression:["Chin tuck isolated -> integrated into push-up position -> loaded with neutral cervical"],
     },
   },
-  // ── ROTARY STABILITY ──────────────────────────────────────────────────────
+  // ?? ROTARY STABILITY ??????????????????????????????????????????????????????
   rotary_stability:{
     trunk_rotation:{
       weak:["Transverse Abdominis","Multifidus","Obliques","Gluteus Medius"],
@@ -6569,7 +6569,7 @@ const RULES = {
       progression:["Symmetry achieved at each level before progressing load"],
     },
   },
-  // ── UPPER LIMB REACH ──────────────────────────────────────────────────────
+  // ?? UPPER LIMB REACH ??????????????????????????????????????????????????????
   upper_reach:{
     shoulder_elevation:{
       weak:["Lower Trapezius","Serratus Anterior","Rotator Cuff (ER)"],
@@ -6704,7 +6704,7 @@ const MOVEMENTS = {
   },
 };
 
-// ─── RULE-BASED ANALYSIS FUNCTION ────────────────────────────────────────────
+// ??? RULE-BASED ANALYSIS FUNCTION ????????????????????????????????????????????
 function analyzeMovement(movementId, selectedCompensations) {
   if (!selectedCompensations || selectedCompensations.length === 0) return null;
 
@@ -6752,8 +6752,8 @@ function analyzeMovement(movementId, selectedCompensations) {
   };
 }
 
-// ─── FMA SECTION COMPONENT ───────────────────────────────────────────────────
-// ─── FMS CLINICAL DATABASE ────────────────────────────────────────────────────
+// ??? FMA SECTION COMPONENT ???????????????????????????????????????????????????
+// ??? FMS CLINICAL DATABASE ????????????????????????????????????????????????????
 const FMS_DB = {
   sq:{
     label:"Deep Squat", icon:"🏋",
@@ -7500,11 +7500,11 @@ function loadScriptFMS(src){
 }
 
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????
 // SHARED PDF EXPORT UTILITY - replaces all window.print() calls
 // Uses jsPDF loaded from CDN. Generates proper A4 PDFs that download
 // directly without opening a print dialog.
-// ═══════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????
 
 async function loadJsPDF() {
   if (window.jspdf?.jsPDF) return window.jspdf.jsPDF;
@@ -7519,7 +7519,7 @@ async function loadJsPDF() {
   return window.jspdf.jsPDF;
 }
 
-// ── Core renderer - builds A4 pages from an HTML string via iframe ────────
+// ?? Core renderer - builds A4 pages from an HTML string via iframe ????????
 async function downloadPDFFromHTML(html, filename) {
   // Mobile-safe strategy: Blob URL -> new tab -> auto print
   // Works on iOS Safari, Android Chrome, and desktop browsers.
@@ -7566,7 +7566,7 @@ async function downloadPDFFromHTML(html, filename) {
   });
 }
 
-// ── Shared page styles ─────────────────────────────────────────────────────
+// ?? Shared page styles ?????????????????????????????????????????????????????
 const PDF_BASE_STYLES = `
   @page { size: A4; margin: 18mm 20mm; }
   @media print {
@@ -7663,7 +7663,7 @@ ${bodyHTML}
 </html>`;
 }
 
-// ─── PDF GENERATOR ────────────────────────────────────────────────────────────
+// ??? PDF GENERATOR ????????????????????????????????????????????????????????????
 async function generateFMSReportPDF(report){
   if(!window.jspdf){
     await new Promise((res,rej)=>{
@@ -7699,7 +7699,7 @@ async function generateFMSReportPDF(report){
       if(y>255){doc.addPage();y=20;}
 
       doc.setTextColor(255,179,0); doc.setFont("helvetica","bold"); doc.setFontSize(9);
-      doc.text(`⚠ ${def.label}`,pad+3,y); y+=6;
+      doc.text(`? ${def.label}`,pad+3,y); y+=6;
 
       doc.setTextColor(30,50,80); doc.setFontSize(8); doc.setFont("helvetica","bold");
       doc.text("Type:",pad+5,y); doc.setFont("helvetica","normal"); doc.text(def.type,pad+20,y); y+=5;
@@ -7738,7 +7738,7 @@ async function generateFMSReportPDF(report){
   doc.save(fname);
 }
 
-// ─── AI CAMERA PANEL (Optional) ───────────────────────────────────────────────
+// ??? AI CAMERA PANEL (Optional) ???????????????????????????????????????????????
 function FMSCameraPanel({onClose}){
   const videoRef=useRef(null), canvasRef=useRef(null), streamRef=useRef(null);
   const poseRef=useRef(null), cameraRef=useRef(null);
@@ -7789,7 +7789,7 @@ function FMSCameraPanel({onClose}){
         <video ref={videoRef} style={{width:"100%",height:"100%",objectFit:"cover",transform:"scaleX(-1)"}} playsInline muted autoPlay/>
         <canvas ref={canvasRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",transform:"scaleX(-1)",pointerEvents:"none"}}/>
         <div style={{position:"absolute",top:8,left:8,padding:"3px 8px",borderRadius:8,background:status==="active"?"rgba(0,201,122,0.85)":status==="loading"?"rgba(255,179,0,0.85)":"rgba(255,77,109,0.85)",fontSize:"0.62rem",color:"#fff",fontWeight:700}}>
-          {status==="active"?"🟢 AI Pose Active":status==="loading"?"⏳ Loading...":status==="cam-only"?"📷 Camera Only":"❌ Error"}
+          {status==="active"?"🟢 AI Pose Active":status==="loading"?"... Loading...":status==="cam-only"?"📷 Camera Only":"? Error"}
         </div>
         <div style={{position:"absolute",top:8,right:8,display:"flex",gap:6}}>
           <button type="button" onClick={flipCam} style={{padding:"5px 9px",background:"rgba(0,0,0,0.7)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:7,color:"#fff",fontSize:"0.7rem",cursor:"pointer"}}>🔄</button>
@@ -7797,13 +7797,13 @@ function FMSCameraPanel({onClose}){
         </div>
       </div>
       <div style={{padding:"8px 12px",background:"rgba(0,229,255,0.05)",borderTop:"1px solid rgba(0,229,255,0.15)",fontSize:"0.7rem",color:"rgba(0,229,255,0.8)"}}>
-        ⚠ AI camera is assistive only - use it to observe posture. All clinical decisions remain manual.
+        ? AI camera is assistive only - use it to observe posture. All clinical decisions remain manual.
       </div>
     </div>
   );
 }
 
-// ─── MAIN FMA SECTION ─────────────────────────────────────────────────────────
+// ??? MAIN FMA SECTION ?????????????????????????????????????????????????????????
 const FMS_STORAGE_KEY2="fms_clinical_v1";
 function loadFMSReport(){try{return JSON.parse(localStorage.getItem(FMS_STORAGE_KEY2)||"{}");}catch{return{};}}
 function saveFMSReport(r){try{localStorage.setItem(FMS_STORAGE_KEY2,JSON.stringify(r));}catch{}}
@@ -7914,7 +7914,7 @@ function FMASection({ navContext={} }){
         ))}
       </div>
 
-      {/* ── SELECT TESTS VIEW ── */}
+      {/* ?? SELECT TESTS VIEW ?? */}
       {activeSection==="select"&&(
         <div>
           <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:8}}>Select Any Test(s)</div>
@@ -7931,7 +7931,7 @@ function FMASection({ navContext={} }){
                   <div style={{fontSize:"0.78rem",fontWeight:700,color:sel?C.accent:C.text,marginBottom:3}}>{test.label}</div>
                   {sel&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
                     {score!==undefined&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:5,background:`${sc2col(score)}20`,color:sc2col(score),fontWeight:700}}>Score {score}</span>}
-                    {defCount>0&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:5,background:"rgba(255,77,109,0.15)",color:C.red,fontWeight:700}}>⚠{defCount}</span>}
+                    {defCount>0&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:5,background:"rgba(255,77,109,0.15)",color:C.red,fontWeight:700}}>?{defCount}</span>}
                   </div>}
                   {!sel&&<div style={{fontSize:"0.65rem",color:C.muted}}>Tap to add</div>}
                 </div>
@@ -7946,7 +7946,7 @@ function FMASection({ navContext={} }){
         </div>
       )}
 
-      {/* ── ASSESS VIEW ── */}
+      {/* ?? ASSESS VIEW ?? */}
       {activeSection==="test"&&(
         <div>
           {selectedTests.length===0&&(
@@ -8023,7 +8023,7 @@ function FMASection({ navContext={} }){
 
                 {/* Defect selection */}
                 <div style={{marginBottom:10}}>
-                  <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:8}}>⚠ Select Observed Defects</div>
+                  <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:8}}>? Select Observed Defects</div>
                   <div style={{display:"grid",gap:6}}>
                     {Object.entries(test.defects).map(([defId,def])=>{
                       const sel=selectedDefs.includes(defId);
@@ -8043,7 +8043,7 @@ function FMASection({ navContext={} }){
                             <button type="button"
                               onClick={e=>{e.stopPropagation();setExpandedDef(isExp?null:`${activeTest}_${defId}`);}}
                               style={{flexShrink:0,padding:"3px 8px",background:"rgba(127,90,240,0.12)",border:`1px solid ${C.a2}30`,borderRadius:6,color:C.a2,fontSize:"0.62rem",cursor:"pointer",fontWeight:700}}>
-                              {isExp?"▲ Hide":"▼ Detail"}
+                              {isExp?"^ Hide":"v Detail"}
                             </button>
                           </div>
 
@@ -8057,7 +8057,7 @@ function FMASection({ navContext={} }){
                               </div>
                               {/* Biomech */}
                               <div style={{background:"rgba(127,90,240,0.06)",border:"1px solid rgba(127,90,240,0.2)",borderRadius:8,padding:"8px 10px",marginBottom:8}}>
-                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.purple,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>⚙ Biomechanical Reason</div>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.purple,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>? Biomechanical Reason</div>
                                 <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.6}}>{def.biomech}</div>
                               </div>
                               {/* Muscles */}
@@ -8073,7 +8073,7 @@ function FMASection({ navContext={} }){
                               </div>
                               {/* Kinetic chain */}
                               <div style={{background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:8,padding:"8px 10px",marginBottom:8}}>
-                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>⛓ Kinetic Chain</div>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>? Kinetic Chain</div>
                                 <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.6}}>{def.kinetic}</div>
                               </div>
                               {/* Compensation */}
@@ -8114,7 +8114,7 @@ function FMASection({ navContext={} }){
         </div>
       )}
 
-      {/* ── REPORT VIEW ── */}
+      {/* ?? REPORT VIEW ?? */}
       {activeSection==="report"&&(
         <div>
           {Object.keys(report).length===0||Object.values(report).every(t=>!t.defects?.length)?(
@@ -8141,7 +8141,7 @@ function FMASection({ navContext={} }){
                         <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:2}}>{test.label}</div>
                         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
                           {sc!==undefined&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:4,background:`${sc2col(sc)}15`,color:sc2col(sc),fontWeight:700}}>{sc}/3</span>}
-                          {defs.length>0&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:4,background:"rgba(255,179,0,0.15)",color:C.yellow,fontWeight:700}}>⚠{defs.length}</span>}
+                          {defs.length>0&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:4,background:"rgba(255,179,0,0.15)",color:C.yellow,fontWeight:700}}>?{defs.length}</span>}
                         </div>
                       </div>
                     );
@@ -8164,7 +8164,7 @@ function FMASection({ navContext={} }){
                       return(
                         <div key={defId} style={{background:C.surface,border:`1px solid ${C.yellow}30`,borderRadius:11,padding:14,marginBottom:8}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                            <div style={{fontWeight:700,color:C.yellow,fontSize:"0.85rem"}}>⚠ {def.label}</div>
+                            <div style={{fontWeight:700,color:C.yellow,fontSize:"0.85rem"}}>? {def.label}</div>
                             <span style={{padding:"2px 8px",borderRadius:8,background:`rgba(127,90,240,0.15)`,color:C.purple,fontSize:"0.62rem",fontWeight:700}}>{def.type}</span>
                           </div>
 
@@ -8185,7 +8185,7 @@ function FMASection({ navContext={} }){
                           </div>
 
                           <div style={{background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:7,padding:"7px 9px",marginBottom:8}}>
-                            <div style={{fontSize:"0.58rem",fontWeight:700,color:C.accent,marginBottom:3}}>⛓ KINETIC CHAIN</div>
+                            <div style={{fontSize:"0.58rem",fontWeight:700,color:C.accent,marginBottom:3}}>? KINETIC CHAIN</div>
                             <div style={{fontSize:"0.73rem",color:C.text,lineHeight:1.6}}>{def.kinetic}</div>
                           </div>
 
@@ -8212,7 +8212,7 @@ function FMASection({ navContext={} }){
   );
 }
 
-// ─── FASCIA LINE DATA ─────────────────────────────────────────────────────────
+// ??? FASCIA LINE DATA ?????????????????????????????????????????????????????????
 const FASCIA_LINES_DATA = {
   sbl:{ label:"Superficial Back Line", color:"#ff6b35", route:"Plantar fascia -> Gastrocnemius -> Hamstrings -> Sacrotuberous lig -> Erector spinae -> Suboccipitals -> Scalp", restrictions:"Plantar fasciitis, hamstring tightness, thoracolumbar restriction, suboccipital tension, forward head, limited forward bend", compensation:"Plantar restriction pulls entire posterior chain -> suboccipital compression -> forward head posture" },
   sfl:{ label:"Superficial Front Line", color:"#00d4ff", route:"Dorsum foot -> Tibialis anterior -> Quadriceps -> Rectus abdominis -> SCM -> Scalp", restrictions:"Anterior ankle restriction, quad tightness, abdominal restriction, chest tightness, SCM overactivity", compensation:"SFL short = SBL stretched and overloaded -> kyphosis + forward head" },
@@ -8397,7 +8397,7 @@ const FASCIA_REGIONS_DATA = {
   },
 };
 
-// ─── FASCIA LINE BODY MAP ─────────────────────────────────────────────────────
+// ??? FASCIA LINE BODY MAP ?????????????????????????????????????????????????????
 function FasciaBodyMap({ selected, onSelect }) {
   const lines = {
     sbl:{ d:"M124,385 L125,340 L127,295 L130,250 L133,205 L137,165 L140,130 L143,95 L146,72 L148,58 L150,38", color:"#ff6b35", label:"SBL" },
@@ -8465,7 +8465,7 @@ function FasciaBodyMap({ selected, onSelect }) {
   );
 }
 
-// ─── FASCIA SECTION COMPONENT ────────────────────────────────────────────────
+// ??? FASCIA SECTION COMPONENT ????????????????????????????????????????????????
 function FasciaSection({ data, set, navContext={} }) {
     const [region, setRegion] = useState("screening");
   const [openTest, setOpenTest] = useState(null);
@@ -8528,7 +8528,7 @@ function FasciaSection({ data, set, navContext={} }) {
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0,marginLeft:10}}>
                 <button type="button" onClick={e=>{e.stopPropagation();setModalTest(t);}} style={{padding:"3px 10px",background:"rgba(127,90,240,0.15)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>i Info</button>
-                <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
+                <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"^":"v"}</span>
               </div>
             </div>
             {isOpen&&(
@@ -8594,7 +8594,7 @@ function FasciaSection({ data, set, navContext={} }) {
 }
 
 
-// ─── NKT REGION COMPONENT ────────────────────────────────────────────────────
+// ??? NKT REGION COMPONENT ????????????????????????????????????????????????????
 function NKTSection({ data, set, navContext={} }) {
     const [region, setRegion] = useState(navContext.nktRegion||"cervical");
   React.useEffect(()=>{ if(navContext.nktRegion) setRegion(navContext.nktRegion); },[navContext.nktRegion]);
@@ -8643,7 +8643,7 @@ function NKTSection({ data, set, navContext={} }) {
               style={{ padding:"12px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}` }}>
               <div>
                 <div style={{ fontWeight:700, fontSize:"0.88rem", color:C.text }}>{t.label}</div>
-                <div style={{ fontSize:"0.7rem", color:C.muted, marginTop:2 }}>🎯 Muscle: {t.muscle} &nbsp;|&nbsp; ⚠ Compensator: {t.compensator}</div>
+                <div style={{ fontSize:"0.7rem", color:C.muted, marginTop:2 }}>🎯 Muscle: {t.muscle} &nbsp;|&nbsp; ? Compensator: {t.compensator}</div>
                 {currentVal && <div style={{ marginTop:5, display:"inline-flex", alignItems:"center", gap:6, padding:"2px 8px", borderRadius:8, background:`${currentOption?.color||C.muted}18`, border:`1px solid ${currentOption?.color||C.muted}40` }}>
                   <div style={{ width:7, height:7, borderRadius:"50%", background:currentOption?.color||C.muted }} />
                   <span style={{ fontSize:"0.68rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
@@ -8654,7 +8654,7 @@ function NKTSection({ data, set, navContext={} }) {
                   style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer" }}>
                   i How to Perform
                 </button>
-                <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
+                <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"^":"v"}</span>
               </div>
             </div>
 
@@ -8711,7 +8711,7 @@ function NKTSection({ data, set, navContext={} }) {
               <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8 }}>{modalTest.how}</div>
             </div>
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>⚠ What Each Result Means</div>
+              <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>? What Each Result Means</div>
               {modalTest.options.map(opt=>(
                 <div key={opt.val} style={{ padding:"8px 12px", borderRadius:8, marginBottom:6, border:`1px solid ${opt.color}30`, background:`${opt.color}08` }}>
                   <div style={{ fontWeight:700, fontSize:"0.78rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -8731,7 +8731,7 @@ function NKTSection({ data, set, navContext={} }) {
   );
 }
 
-// ─── CYRIAX REGION COMPONENT ─────────────────────────────────────────────────
+// ??? CYRIAX REGION COMPONENT ?????????????????????????????????????????????????
 const CYRIAX_REGIONS = {
   cervical:{ label:"Cervical", tests:[
     { id:"cy_c_flex", label:"Resisted Cervical Flexion", muscle:"SCM / deep neck flexors", how:"Patient seated, chin neutral. Resist forehead with palm. POSITIVE = pain or weakness at neck flexors.", sig:"Weak+painless = C3/4 neuropraxia. Weak+painful = serious lesion or C4 disc." },
@@ -8836,7 +8836,7 @@ function CyriaxRegionTests({ data, set }) {
   );
 }
 
-// ─── DIAGNOSIS ENGINE ────────────────────────────────────────────────────────
+// ??? DIAGNOSIS ENGINE ????????????????????????????????????????????????????????
 function generateDiagnosis(data) {
   const dx=[], redFlags=[];
   const v=id=>data[id]||"";
@@ -8863,7 +8863,7 @@ function generateDiagnosis(data) {
   if(data["nq_bilateral_legs"]==="Yes")redFlags.push({label:"Bilateral leg neurological signs",severity:"urgent"});
   if(data["nq_bowel"]==="Yes")redFlags.push({label:"New onset bowel dysfunction - cauda equina screen",severity:"urgent"});
 
-  // ─── NEW: Full Neurological Module Integration ─────────────────────────────
+  // ??? NEW: Full Neurological Module Integration ?????????????????????????????
   // Collect all dermatomal, myotomal, reflex and neural tension findings
   const neuroLevelFindings={};
   const DERM_LEVELS=[
@@ -8983,7 +8983,7 @@ function generateDiagnosis(data) {
   if(cyriaxLesion.length>0||isCap){
     const serious=cyriaxLesion.filter(l=>l.type==="serious"),minor=cyriaxLesion.filter(l=>l.type==="minor"),neuro=cyriaxLesion.filter(l=>l.type==="neuro");
     dx.push({system:"Cyriax",name:`Tissue Lesion: ${serious.length>0?"Serious Contractile":minor.length>0?"Minor Contractile":isCap?"Inert (Capsular)":"Neurological"} Pathology`,confidence:serious.length>0?"High":minor.length>0?"High":"Moderate",
-      evidence:[...minor.map(l=>l.finding),...serious.map(l=>"⚠ "+l.finding),...neuro.map(l=>"⚡ "+l.finding),isCap?"Capsular pattern confirmed":null,has("cy_endfeel","Empty")?"Empty end-feel - serious pathology":null].filter(Boolean),
+      evidence:[...minor.map(l=>l.finding),...serious.map(l=>"? "+l.finding),...neuro.map(l=>"! "+l.finding),isCap?"Capsular pattern confirmed":null,has("cy_endfeel","Empty")?"Empty end-feel - serious pathology":null].filter(Boolean),
       mechanism:"Cyriax STTT systematically differentiates inert vs contractile tissue to identify the exact structure at fault.",
       treatment:minor.length>0?["Deep Transverse Friction Massage (DTFM) to exact lesion site","Eccentric loading program for tendinopathy","Relative rest - modify aggravating activities","Progressive loading when pain-free"]:serious.length>0?["Refer for MRI/ultrasound immediately","Protect structure - splinting/bracing","Surgical consultation if rupture confirmed"]:isCap?["Maitland Grade III-IV joint mobilisation","End-range stretching program","Heat before mobilisation, ice after","Corticosteroid injection referral if severe"]:[]
     });
@@ -9001,7 +9001,7 @@ function generateDiagnosis(data) {
     const pain0=Object.values(fmsS).some(s=>s===0);
     if(fmsTotal<=14||pain0||hasAsym){
       dx.push({system:"FMS",name:`Movement Dysfunction - FMS ${fmsTotal}/21${hasAsym?" + Asymmetry":""}`,confidence:"High",
-        evidence:[`FMS Total: ${fmsTotal}/21 (threshold <=14 = high risk)`,hasAsym?"⚠ Bilateral asymmetry - highest injury predictor":null,pain0?"🔴 Score 0 present - pain during testing":null].filter(Boolean),
+        evidence:[`FMS Total: ${fmsTotal}/21 (threshold <=14 = high risk)`,hasAsym?"? Bilateral asymmetry - highest injury predictor":null,pain0?"🔴 Score 0 present - pain during testing":null].filter(Boolean),
         mechanism:"Movement pattern deficits indicate mobility/stability imbalances increasing injury risk.",
         treatment:["Corrective priority: lowest FMS score first","Asymmetry: match bilateral scores before progressing","Deep Squat corrective: ankle DF drills + hip mobility + thoracic extension","Core control: dead bug, bird-dog, Pallof press progressions","Re-screen FMS after 6 weeks of corrective program"]
       });
@@ -9039,11 +9039,11 @@ function generateDiagnosis(data) {
   if(has("m_dnf","deficit")||has("m_dnf","Severe"))muscImb.push("Deep Neck Flexors deficit - cervicogenic pattern");
   if(muscImb.length>0){dx.push({system:"Muscle Activation",name:"Muscle Activation Imbalance",confidence:"High",evidence:muscImb,mechanism:"Underactive muscles fail to generate force -> synergists dominate -> joint compression and overuse.",treatment:["INHIBIT overactive synergists first (SMR 90s)","ISOLATED ACTIVATION: low-load, high-rep isolation",weakMMT("m_gmax")||weakMMT("m_gmed")?"Glute program: bridges -> clamshells -> hip thrusts":null,weakMMT("m_lt")||weakMMT("m_sa")?"Scapular program: Y-T-W -> wall slides -> push-up plus":null,"INTEGRATE: progress to multi-joint functional movements"].filter(Boolean)});}
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ???????????????????????????????????????????????????????????????????????????
   // SHOULDER - Full diagnostic battery (Magee; Cleland, Netter's; Kendall)
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ???????????????????????????????????????????????????????????????????????????
 
-  // ── Helper: empty/full can weakness (tear pattern) ────────────────────────
+  // ?? Helper: empty/full can weakness (tear pattern) ????????????????????????
   const emptyCan_weak  = isBilPos("st_empty_can") && (has("st_empty_can_left","weak")||has("st_empty_can_right","weak")||has("st_empty_can","weak"));
   const emptyCan_pain  = isBilPos("st_empty_can") && !emptyCan_weak;
   const fullCan_weak   = isBilPos("st_full_can") && (has("st_full_can_left","weak")||has("st_full_can_right","weak")||has("st_full_can","weak"));
@@ -9051,7 +9051,7 @@ function generateDiagnosis(data) {
   const neerPos        = isBilPos("st_neer");
   const impingementTests = [neerPos, hawkinsPos, (emptyCan_pain||emptyCan_weak)].filter(Boolean).length;
 
-  // ── 1. Subacromial Impingement Syndrome - Magee; Park et al.; Netter's ────
+  // ?? 1. Subacromial Impingement Syndrome - Magee; Park et al.; Netter's ????
   // Clinical rule: >=2 of Neer/Hawkins/painful arc (Cleland). Empty can adds specificity.
   if(impingementTests >= 2){
     dx.push({system:"Structural",name:"Subacromial Impingement Syndrome",confidence:impingementTests>=3?"High":"Moderate",
@@ -9060,7 +9060,7 @@ function generateDiagnosis(data) {
       treatment:["Rotator cuff ER/IR progressive strengthening (theraband -> dumbbell)","Scapular stability: serratus anterior, lower/mid trapezius","Thoracic extension and rotation mobility","Posterior capsule stretch (sleeper stretch)","Avoid overhead reaching in early rehab - progressive reloading"]});
   }
 
-  // ── 2. Rotator Cuff Tear (supraspinatus) - Magee; Netter's ───────────────
+  // ?? 2. Rotator Cuff Tear (supraspinatus) - Magee; Netter's ???????????????
   // Weakness on resisted testing distinguishes tear from tendinopathy
   if(emptyCan_weak || fullCan_weak){
     dx.push({system:"Structural",name:"Supraspinatus Rotator Cuff Tear (Partial or Complete)",confidence:(emptyCan_weak&&fullCan_weak)?"High":"Moderate",
@@ -9069,7 +9069,7 @@ function generateDiagnosis(data) {
       treatment:["Urgent orthopaedic referral + MRI - confirm tear size and surgical candidacy","If conservative: pain-free range isometrics progressing to resisted ER/IR","Rotator cuff interval and posterior capsule mobilisation","Deltoid strengthening (compensatory) during recovery","Avoid overhead loading until MRI-guided plan confirmed"]});
   }
 
-  // ── 3. Subscapularis tear - Magee; Netter's ──────────────────────────────
+  // ?? 3. Subscapularis tear - Magee; Netter's ??????????????????????????????
   const liftOffPos   = isBilPos("st_lift_off") && (has("st_lift_off_left","cannot")||has("st_lift_off_right","cannot")||has("st_lift_off","cannot"));
   const liftOffWeak  = isBilPos("st_lift_off") && (has("st_lift_off_left","weakness")||has("st_lift_off_right","weakness")||has("st_lift_off","weakness"));
   const bearHugPos   = isBilPos("st_bear_hug");
@@ -9082,7 +9082,7 @@ function generateDiagnosis(data) {
       treatment:["Orthopaedic referral + MRI urgently if cannot lift off","If partial: progressive IR strengthening (internal rotation with ER control)","Pectoralis minor stretching (commonly overactive)","Avoid forced external rotation in early stages"]});
   }
 
-  // ── 4. SLAP Lesion - O'Brien; Magee; Netter's ────────────────────────────
+  // ?? 4. SLAP Lesion - O'Brien; Magee; Netter's ????????????????????????????
   const obrienSLAP = has("st_obrien_left","SLAP")||has("st_obrien_right","SLAP")||has("st_obrien","SLAP")||has("st_obrien_left","Both")||has("st_obrien_right","Both")||has("st_obrien","Both");
   const speedsPos  = isBilPos("st_speeds");
   if(obrienSLAP || (speedsPos && obrienSLAP)){
@@ -9092,7 +9092,7 @@ function generateDiagnosis(data) {
       treatment:["Avoid overhead loading and provocative positions initially","Rotator cuff and scapular stabiliser strengthening - reduce biceps anchor load","Orthopaedic referral + MRI arthrogram if symptoms persist >6 weeks","Young overhead athletes: lower threshold for surgical referral (type II SLAP)"]});
   }
 
-  // ── 5. AC Joint Pathology - Magee; Netter's ──────────────────────────────
+  // ?? 5. AC Joint Pathology - Magee; Netter's ??????????????????????????????
   const crossArmPos  = isBilPos("st_cross_arm");
   const obrienAC     = has("st_obrien_left","AC")||has("st_obrien_right","AC")||has("st_obrien","AC")||has("st_obrien_left","Both")||has("st_obrien_right","Both")||has("st_obrien","Both");
   if(crossArmPos || obrienAC){
@@ -9102,7 +9102,7 @@ function generateDiagnosis(data) {
       treatment:["AC joint mobilisation (Grade I-II): inferior glide","Clavicle bracing / sling if acute Grade II-III sprain","AC joint injection if refractory","Grade III rupture: orthopaedic referral for surgical consideration","Scapular stabilisation to reduce AC joint load"]});
   }
 
-  // ── 6. Anterior GH Instability / Bankart - Magee; Netter's ──────────────
+  // ?? 6. Anterior GH Instability / Bankart - Magee; Netter's ??????????????
   const apprehensionPos = isBilPos("st_apprehension") && (has("st_apprehension_left","apprehension")||has("st_apprehension_right","apprehension")||has("st_apprehension","apprehension"));
   const relocationPos   = isBilPos("st_relocation");
   if(apprehensionPos || (isBilPos("st_apprehension") && relocationPos)){
@@ -9112,7 +9112,7 @@ function generateDiagnosis(data) {
       treatment:["Acute: immobilise 2-4 weeks in ER (reduces recurrence), then progressive rehab","Rotator cuff (ER emphasis) and scapular stability strengthening","Proprioceptive training in functional positions","Orthopaedic referral - young athletes: earlier surgical (Bankart repair) given high recurrence rate","Older/low-demand patients: conservative acceptable"]});
   }
 
-  // ── 7. Multidirectional Instability (MDI) - Magee; Netter's ─────────────
+  // ?? 7. Multidirectional Instability (MDI) - Magee; Netter's ?????????????
   const sulcusGrade2 = has("st_sulcus_left","Grade 2")||has("st_sulcus_right","Grade 2")||has("st_sulcus_left","Grade 3")||has("st_sulcus_right","Grade 3")||has("st_sulcus","Grade 2")||has("st_sulcus","Grade 3");
   if(sulcusGrade2){
     dx.push({system:"Structural",name:"Multidirectional Glenohumeral Instability (MDI)",confidence:"Moderate",
@@ -9121,7 +9121,7 @@ function generateDiagnosis(data) {
       treatment:["Dynamic stabiliser strengthening program - 12+ weeks minimum","Rotator cuff: emphasis on ER and IR co-contraction","Scapular stabilisers: serratus anterior, lower trap","Proprioception: perturbation training in vulnerable positions","Surgical (capsular plication/shift) only after failed 6-month conservative trial"]});
   }
 
-  // ── 8. Biceps LH Tendinopathy / Subluxation - Magee ─────────────────────
+  // ?? 8. Biceps LH Tendinopathy / Subluxation - Magee ?????????????????????
   const yergasonPos  = isBilPos("st_yergason");
   const yergSubl     = has("st_yergason_left","subluxes")||has("st_yergason_right","subluxes")||has("st_yergason","subluxes");
   if(speedsPos || yergasonPos){
@@ -9131,7 +9131,7 @@ function generateDiagnosis(data) {
       treatment:yergSubl?["Urgent orthopaedic referral - surgical repair/tenodesis indicated for subluxation","Avoid supination resistance loading until assessed"]:["Bicipital groove friction massage and ultrasound","Eccentric biceps loading (slowly lower resisted curl)","Address coexisting impingement/SLAP if present","Shoulder ER and scapular stabiliser strengthening"]});
   }
 
-  // ── 9. Adhesive Capsulitis (Frozen Shoulder) - Magee; Netter's ───────────
+  // ?? 9. Adhesive Capsulitis (Frozen Shoulder) - Magee; Netter's ???????????
   // Classical: global passive ROM loss; ER most restricted, then Abd, then IR (capsular pattern)
   const shER_l=parseFloat(data.rom_sh_er_left||""), shER_r=parseFloat(data.rom_sh_er_right||"");
   const shAbd_l=parseFloat(data.rom_sh_abd_left||""), shAbd_r=parseFloat(data.rom_sh_abd_right||"");
@@ -9147,7 +9147,7 @@ function generateDiagnosis(data) {
       treatment:["Patient education: natural history (1-3 years), reassurance","Corticosteroid injection (most evidence in freezing phase) - reduces pain, may shorten duration","Capsular stretching: end-range ER, Abd, IR stretching with warmth first","GH inferior and posterior capsule mobilisation (Grade III-IV Maitland when pain allows)","MUA or hydrodilatation if failed conservative treatment >3-6 months","Treat underlying cause: diabetes, thyroid (strong associations)"]});
   }
 
-  // ── 10. Calcific Tendinopathy ─────────────────────────────────────────────
+  // ?? 10. Calcific Tendinopathy ?????????????????????????????????????????????
   // Usually severe acute pain + impingement tests positive in middle-aged patient
   // No specific test - but if impingement present + acute severe pain + age 35-60, flag it
   if(impingementTests>=1){
@@ -9171,7 +9171,7 @@ function generateDiagnosis(data) {
       treatment:["Avoid deep knee flexion and pivoting acutely","Quadriceps and hamstring co-contraction strengthening","MRI referral if mechanical locking/giving way or failed conservative care at 6 weeks","Load management and graded return to sport"]});
   }
 
-  // ── PCL tear - Magee; Netter's ───────────────────────────────────────────
+  // ?? PCL tear - Magee; Netter's ???????????????????????????????????????????
   if(isBilPos("st_posterior_drawer")){
     dx.push({system:"Structural",name:"PCL Insufficiency (Posterior Cruciate Ligament)",confidence:"High",
       evidence:["Posterior drawer positive - posterior tibial sag or translation","Posterior drawer for PCL: sens ~0.90, spec ~0.99 (Magee; Cleland, Netter's)"],
@@ -9179,7 +9179,7 @@ function generateDiagnosis(data) {
       treatment:["MRI to confirm and grade (I-III)","Grade I-II: conservative - quadriceps strengthening (PCL unloads in extension), progressive loading","Grade III + instability: orthopaedic referral for surgical assessment","Avoid posterior tibial force (resisted knee flexion early)","Proprioception and functional rehabilitation"]});
   }
 
-  // ── PFPS / Chondromalacia patellae - Magee; Netter's ─────────────────────
+  // ?? PFPS / Chondromalacia patellae - Magee; Netter's ?????????????????????
   const clarkes=isBilPos("st_clarkes");
   const patelGrind=isBilPos("st_patellar_grind");
   const patelEffusion=isPos("st_effusion")||isBilPos("st_effusion");
@@ -9191,7 +9191,7 @@ function generateDiagnosis(data) {
       treatment:["VMO activation: terminal knee extensions, step-downs","Hip abductor + ER strengthening (reduces dynamic valgus)","Patellar taping (McConnell) for immediate pain relief","Foot orthoses if excessive pronation","Avoid aggravating: deep squats, stairs, prolonged sitting ('cinema sign')","Quadriceps stretching and ITB/TFL release"]});
   }
 
-  // ── IT Band Syndrome - Magee; Noble; Fredericson ─────────────────────────
+  // ?? IT Band Syndrome - Magee; Noble; Fredericson ?????????????????????????
   const noblePos=isBilPos("st_noble");
   const oberPos=isBilPos("st_ober_test");
   if(noblePos){
@@ -9201,7 +9201,7 @@ function generateDiagnosis(data) {
       treatment:["Load management: reduce running volume 50% acutely","Hip abductor/glute med strengthening (Fredericson protocol - strong evidence)","TFL and lateral quad foam rolling/stretching","Running biomechanics analysis: increase cadence, reduce crossover step","Avoid direct ITB stretching acutely (increases compression)","Corticosteroid injection at lateral epicondyle if failed 6 weeks conservative"]});
   }
 
-  // ── MCL / LCL Sprain - Magee; Netter's ──────────────────────────────────
+  // ?? MCL / LCL Sprain - Magee; Netter's ??????????????????????????????????
   const valgusKnee=isBilPos("st_valgus_stress_knee");
   const varusKnee=isBilPos("st_varus_stress_knee");
   if(valgusKnee){
@@ -9218,7 +9218,7 @@ function generateDiagnosis(data) {
       treatment:["MRI - assess posterolateral corner structures","Check peroneal nerve function (dorsiflexion, EHL)","Grade I-II: conservative with bracing and progressive loading","Grade III or PLC involvement: orthopaedic referral - higher failure rate with conservative management"]});
   }
 
-  // ── Lateral Epicondylalgia (Tennis Elbow) - Magee; Coombes; Netter's ─────
+  // ?? Lateral Epicondylalgia (Tennis Elbow) - Magee; Coombes; Netter's ?????
   const cozens=isBilPos("st_cozens");
   const mills=isBilPos("st_mills");
   if(cozens||mills){
@@ -9228,7 +9228,7 @@ function generateDiagnosis(data) {
       treatment:["Eccentric/isometric wrist extension loading (Coombes protocol - strong RCT evidence)","Pain-free grip strengthening progression","Counterforce brace (epicondyle strap) for symptom management","Assess workstation ergonomics and tool handle size","Avoid corticosteroid injection beyond 6 weeks (worse long-term outcomes vs wait-and-see - Coombes et al.)","Dry needling or PRP if chronic tendinosis >3 months"]});
   }
 
-  // ── Medial Epicondylalgia (Golfer's Elbow) - Magee; Netter's ─────────────
+  // ?? Medial Epicondylalgia (Golfer's Elbow) - Magee; Netter's ?????????????
   const golfersPos=isBilPos("st_golfers");
   if(golfersPos){
     dx.push({system:"Structural",name:"Medial Epicondylalgia (Golfer's Elbow / FCU-PT Tendinopathy)",confidence:"High",
@@ -9237,7 +9237,7 @@ function generateDiagnosis(data) {
       treatment:["Eccentric wrist flexion and forearm pronation loading","Cervical screen - medial epicondylalgia can be referred from C6/C7","Assess throwing mechanics if sport-related","UCL stress test if throwing athlete (valgus stress, milking manoeuvre)","Treat coexisting cubital tunnel syndrome if tingling present"]});
   }
 
-  // ── Cubital Tunnel Syndrome (Ulnar Nerve) - Magee; Netter's ─────────────
+  // ?? Cubital Tunnel Syndrome (Ulnar Nerve) - Magee; Netter's ?????????????
   const tinelElbow=isBilPos("st_tinel_elbow");
   if(tinelElbow){
     dx.push({system:"Structural",name:"Cubital Tunnel Syndrome (Ulnar Nerve Entrapment)",confidence:"Moderate",
@@ -9246,7 +9246,7 @@ function generateDiagnosis(data) {
       treatment:["Night splinting in elbow extension (20-30deg) - reduces sustained flexion compression","Ulnar nerve gliding/mobilisation exercises","Avoid prolonged elbow flexion and elbow resting on hard surfaces","Nerve conduction study if persistent/progressive","Orthopaedic referral if intrinsic wasting or failed conservative care 3 months"]});
   }
 
-  // ── Carpal Tunnel Syndrome - Magee; Phalen; Netter's ─────────────────────
+  // ?? Carpal Tunnel Syndrome - Magee; Phalen; Netter's ?????????????????????
   const phalenPos=isBilPos("st_phalen");
   const tinelWrist=isBilPos("st_tinel_wrist");
   if(phalenPos||tinelWrist){
@@ -9257,7 +9257,7 @@ function generateDiagnosis(data) {
       treatment:["Neutral-position wrist splinting at night (strong evidence)","Nerve and tendon gliding exercises","Address systemic causes: thyroid, glucose, BMI, pregnancy","Corticosteroid injection for moderate-severe: effective short-term (3-6 months)","Surgical decompression if thenar wasting, EMG-confirmed moderate-severe, or failed conservative care 3 months","Ergonomic assessment: keyboard, mouse, tool vibration"]});
   }
 
-  // ── De Quervain's Tenosynovitis - Magee; Finkelstein ────────────────────
+  // ?? De Quervain's Tenosynovitis - Magee; Finkelstein ????????????????????
   const finkelPos=isBilPos("st_finkelstein");
   if(finkelPos){
     dx.push({system:"Structural",name:"De Quervain's Tenosynovitis (APL / EPB)",confidence:"High",
@@ -9266,7 +9266,7 @@ function generateDiagnosis(data) {
       treatment:["Thumb spica splint (3-6 weeks) immobilising CMC and IP joint","Activity modification - avoid repetitive thumb pinch/grip","Corticosteroid injection into first compartment: high success rate (80-90%) - first-line if >3 weeks duration","Eccentric loading of APL/EPB if failed injection at 3 months","Surgical decompression (first compartment release) if failed 2 injections + 6 months conservative"]});
   }
 
-  // ── Scapholunate Instability - Watson; Magee; Netter's ───────────────────
+  // ?? Scapholunate Instability - Watson; Magee; Netter's ???????????????????
   const watsonPos=isBilPos("st_watson");
   if(watsonPos){
     const clunk=has("st_watson_left","clunk")||has("st_watson_right","clunk")||has("st_watson","clunk");
@@ -9276,7 +9276,7 @@ function generateDiagnosis(data) {
       treatment:[clunk?"Urgent hand surgery referral - complete SL rupture requires surgical repair":"Hand therapy referral + orthopaedic review","Wrist immobilisation in neutral during acute phase","X-ray with weight-bearing (clenched fist): Terry-Thomas gap","MR arthrogram for definitive ligament assessment","Early surgical repair (within 3 months) has best outcomes for complete rupture"]});
   }
 
-  // ── Lumbar Facet Syndrome - Kemp; Magee; Netter's ────────────────────────
+  // ?? Lumbar Facet Syndrome - Kemp; Magee; Netter's ????????????????????????
   const kempPos=isBilPos("st_kemp");
   if(kempPos&&!has("st_kemp_left","radicular")&&!has("st_kemp_right","radicular")&&!has("st_kemp","radicular")){
     dx.push({system:"Structural",name:"Lumbar Facet Joint Syndrome",confidence:"Moderate",
@@ -9285,7 +9285,7 @@ function generateDiagnosis(data) {
       treatment:["Lumbar mobilisation: PA glides at identified levels (Maitland Grade III-IV)","Flexion-biased exercise program (McKenzie if flexion preference)","Postural correction: reduce lumbar lordosis in standing","Facet joint injection if failed 6-week conservative trial","Address thoracic stiffness driving lumbar compensation"]});
   }
 
-  // ── Lumbar Segmental Instability - McGill; O'Sullivan; Magee ─────────────
+  // ?? Lumbar Segmental Instability - McGill; O'Sullivan; Magee ?????????????
   const proneInstab=isBilPos("st_prone_instab")||isPos("st_prone_instab");
   if(proneInstab){
     dx.push({system:"Structural",name:"Lumbar Segmental Instability",confidence:"Moderate",
@@ -9294,7 +9294,7 @@ function generateDiagnosis(data) {
       treatment:["Motor control training: TrA + multifidus activation (Richardson/Hodges protocol)","Progression from isolation -> functional movement -> sport","Avoid high-load spinal flexion early (Flexion Relaxation Phenomenon - McGill)","McGill 'Big 3': curl-up, side plank, bird-dog","Avoid passive treatment as sole approach - active rehab is essential","Address contributing factors: fatigue, fear-avoidance, deconditioning"]});
   }
 
-  // ── Spondylolysis / Spondylolisthesis - Magee; Netter's ─────────────────
+  // ?? Spondylolysis / Spondylolisthesis - Magee; Netter's ?????????????????
   const storkPos=isBilPos("st_stork")||isPos("st_stork");
   if(storkPos){
     dx.push({system:"Structural",name:"Suspected Spondylolysis / Spondylolisthesis",confidence:"Moderate",
@@ -9303,7 +9303,7 @@ function generateDiagnosis(data) {
       treatment:["Urgent X-ray (lateral, oblique - 'Scotty dog' sign) + CT if X-ray equivocal","Activity modification: avoid extension loading for 3-6 months","Lumbar bracing if acute (Boston brace or thoracolumbar corset)","Core stability: TrA + multifidus (non-extension)","Refer orthopaedic if Grade II+ spondylolisthesis or neurological signs","Graded return to sport with imaging follow-up"]});
   }
 
-  // ── Hip Flexor Tightness / Iliopsoas Syndrome - Thomas test; Magee ───────
+  // ?? Hip Flexor Tightness / Iliopsoas Syndrome - Thomas test; Magee ???????
   const thomasIliopsoas=isBilPos("st_thomas_test")&&(has("st_thomas_test_left","iliopsoas")||has("st_thomas_test_right","iliopsoas")||has("st_thomas_test","iliopsoas")||has("st_thomas_test_left","thigh elevated")||has("st_thomas_test_right","thigh elevated")||has("st_thomas_test","thigh elevated"));
   const thomasRF=isBilPos("st_thomas_test")&&(has("st_thomas_test_left","rectus")||has("st_thomas_test_right","rectus")||has("st_thomas_test","rectus")||has("st_thomas_test_left","knee extends")||has("st_thomas_test_right","knee extends")||has("st_thomas_test","knee extends"));
   if(thomasIliopsoas||thomasRF){
@@ -9313,7 +9313,7 @@ function generateDiagnosis(data) {
       treatment:[thomasIliopsoas?"Iliopsoas stretch: kneeling lunge with posterior pelvic tilt (neutralise lumbar extension compensation)":null,thomasRF?"Rectus femoris stretch: prone knee flexion with stable pelvis":null,"Address Lower Crossed Syndrome: activate glutes + deep abdominals","NKT: check for psoas inhibition of opposite gluteus maximus","Progress to dynamic hip flexor loading (eccentric) once flexibility improves"].filter(Boolean)});
   }
 
-  // ── Piriformis Syndrome / Sciatic Nerve Compression - Magee ─────────────
+  // ?? Piriformis Syndrome / Sciatic Nerve Compression - Magee ?????????????
   const piriformisPos=isBilPos("st_piriformis_test");
   if(piriformisPos){
     const sciatic=has("st_piriformis_test_left","sciatic")||has("st_piriformis_test_right","sciatic")||has("st_piriformis_test","sciatic");
@@ -9323,7 +9323,7 @@ function generateDiagnosis(data) {
       treatment:["Piriformis stretching (supine knee-to-opposite-shoulder, FAIR position)","Deep gluteal soft tissue: instrument-assisted or trigger point release","Glute med/max activation to reduce piriformis compensation","Lumbar spine clearing essential before labelling piriformis","Ultrasound-guided injection if failed 6-week conservative","MRI/MR neurography if neural compression suspected - rule out space-occupying lesion"]});
   }
 
-  // ── Teres Minor Tear / Posterosuperior RC - Magee ────────────────────────
+  // ?? Teres Minor Tear / Posterosuperior RC - Magee ????????????????????????
   const hornblowerPos=isBilPos("st_hornblower");
   const erLagPos=isBilPos("st_er_lag");
   if(hornblowerPos||erLagPos){
@@ -9333,7 +9333,7 @@ function generateDiagnosis(data) {
       treatment:["Urgent orthopaedic referral + MRI - large/massive posterior tears have poor spontaneous healing","If surgical: early repair within 6 weeks before retraction and fatty infiltration","If conservative: deltoid strengthening, pain-free ROM","ER strengthening in functional range once repair protected"]});
   }
 
-  // ── Scapular Dyskinesis - Kibler; Magee; Kendall ─────────────────────────
+  // ?? Scapular Dyskinesis - Kibler; Magee; Kendall ?????????????????????????
   const scapDysk=isPos("st_scapular_dyskinesis")||isBilPos("st_scapular_dyskinesis");
   const kibleSlide=isPos("st_kibler_slide")||isBilPos("st_kibler_slide");
   if(scapDysk||kibleSlide){
@@ -9363,7 +9363,7 @@ function generateDiagnosis(data) {
       treatment:["Cervical traction (intermittent or sustained) - supported by Wainner-positive subgroup","Neural mobilisation - median/ulnar/radial nerve gliding to affected level","Deep neck flexor (DNF) stabilisation program","Postural correction: chin tuck, scapular setting","Imaging (MRI) if no improvement at 6 weeks or progressive motor deficit","Refer neurosurgery if progressive weakness or myelopathic signs"]});
   }
 
-  // ── Cervicogenic Headache (C0-C2) - Hall; Magee; IHS criteria ────────────
+  // ?? Cervicogenic Headache (C0-C2) - Hall; Magee; IHS criteria ????????????
   // FRT (flexion-rotation test) is the key test: <32deg rotation = C1/C2 restriction.
   const frtPos = has("st_flex_rot","Positive")||has("st_flex_rot_left","Positive")||has("st_flex_rot_right","Positive")||has("st_flex_rot","restriction");
   const ccText = (v("cc_main")+" "+(v("cx_loc_primary")||"")).toLowerCase();
@@ -9382,7 +9382,7 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
   else if(isPos("st_si_distraction")||isPos("st_si_compression")){dx.push({system:"Structural",name:"Possible Sacroiliac Joint Involvement (single test)",confidence:"Low",evidence:["Only 1 SIJ provocation test positive - insufficient for diagnosis (Laslett cluster requires >=3 of 5)"],mechanism:"Isolated positive SIJ test has poor diagnostic value; complete the full Laslett cluster before concluding SIJ pathology.",treatment:["Complete Laslett provocation cluster (5 tests)","Re-assess with lumbar clearing tests","Avoid over-attributing pain to SIJ on a single test"]});}
   if(isPos("st_windlass_test")){dx.push({system:"Structural",name:"Plantar Fasciitis / Fasciopathy",confidence:"High",evidence:["Windlass test positive","Windlass test specificity is high (~1.0) though sensitivity is modest (~0.32) - a positive test is meaningful (Magee)"],mechanism:"Plantar fascia overloaded at the medial calcaneal tubercle. Dorsiflexing the hallux tensions the fascia (windlass mechanism) and reproduces pain.",treatment:["Plantar fascia + gastroc/soleus stretching","Night splinting for first-step pain","Foot orthoses / arch support assessment","Shockwave therapy if symptoms >3 months"]});}
 
-  // ── Ankle ligament injury (ATFL/CFL) - Magee; Ottawa Ankle Rules ─────────
+  // ?? Ankle ligament injury (ATFL/CFL) - Magee; Ottawa Ankle Rules ?????????
   const ankleDrawer=isBilPos("st_ant_drawer_ankle")||isBilPos("st_ant_drawer_ankle");
   const talarTilt=isBilPos("st_talar_tilt");
   if(ankleDrawer||talarTilt){
@@ -9392,7 +9392,7 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
       treatment:["Apply Ottawa Ankle Rules - refer for X-ray if bony tenderness at malleoli/navicular/5th MT base or unable to weight-bear 4 steps","Acute: relative rest, compression, elevation; early protected weight-bearing","Peroneal strengthening + proprioception (single-leg balance, wobble board)","Progressive return-to-sport; bracing/taping for high-demand activity","Refer if Grade III instability or failed conservative care at 6 weeks"]});
   }
 
-  // ── Gluteal tendinopathy / GTPS - Grimaldi; Magee ────────────────────────
+  // ?? Gluteal tendinopathy / GTPS - Grimaldi; Magee ????????????????????????
   // FADIR option text: "Positive - anterior groin pain (FAI)" vs "Positive - lateral hip pain"
   const fadirGroin = has("st_fadir_test_left","groin")||has("st_fadir_test_right","groin")||has("st_fadir_test","groin");
   const fadirLateral = has("st_fadir_test_left","lateral")||has("st_fadir_test_right","lateral")||has("st_fadir_test","lateral");
@@ -9406,7 +9406,7 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
       treatment:["AVOID hip adduction/compression: no leg-crossing, no side-lying on affected hip, avoid hip-hitched standing","Isometric abductor loading early (pain-modulating), progress to isotonic","Gluteus medius/minimus progressive strengthening (Grimaldi LEAP protocol)","Load management education - reduce tendon compression","Corticosteroid injection only if refractory; address biomechanics first"]});
   }
 
-  // ── Hip OA / FAI - Cleland Netter's hip cluster; Magee ───────────────────
+  // ?? Hip OA / FAI - Cleland Netter's hip cluster; Magee ???????????????????
   const hipIRlimited=(()=>{const l=parseFloat(data.rom_hir_left||""),r=parseFloat(data.rom_hir_right||"");return (!isNaN(l)&&l<35)||(!isNaN(r)&&r<35);})();
   const groinPain=((v("hp_loc_primary")||"").toLowerCase().includes("groin"))||((v("cc_main")||"").toLowerCase().includes("groin"))||fadirGroin;
   const ageNum=parseInt(data.dem_age||"0");
@@ -9418,7 +9418,7 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
       treatment:likelyFAI?["Hip mobility within pain-free range; avoid end-range FADIR loading","Deep hip stabiliser + glute strengthening","Movement re-education (hip hinge, squat depth modification)","Orthopaedic referral + imaging (X-ray/MRA) if persistent or mechanical symptoms"]:["Hip strengthening (abductors, extensors) - GLA:D programme evidence-based","Range-of-motion and capsular mobilisation","Weight management and activity modification","Orthopaedic referral if functional decline / consider arthroplasty work-up"]});
   }
 
-  // ── Inflammatory arthropathy soft red-flag - Magee red-flag screen ───────
+  // ?? Inflammatory arthropathy soft red-flag - Magee red-flag screen ???????
   const morningStiffAll=["cx","tx","lx","sh","hp","kn"].map(p=>(data[`${p}_sb_morning`]||"")).join(" ").toLowerCase();
   const prolongedAMstiff=morningStiffAll.includes(">30")||morningStiffAll.includes(">60")||morningStiffAll.includes("stays bad")||morningStiffAll.includes("over an hour");
   const bilateralSymmetric=(()=>{const loc=(v("cc_main")+" "+(data.pa_pattern||"")).toLowerCase();return loc.includes("both")||loc.includes("bilateral")||loc.includes("symmetric")||loc.includes("hands")||loc.includes("multiple joint");})();
@@ -9431,7 +9431,7 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
   }
 
 
-  // ── ERGONOMIC MODULE INTEGRATION ─────────────────────────────────────────
+  // ?? ERGONOMIC MODULE INTEGRATION ?????????????????????????????????????????
   const ergoScore=parseInt(data.ergo_total_score||"0");
   const ergoRisks=[];
   if((data.ergo_cervical_risk||"").includes("High"))ergoRisks.push("High cervical strain risk from workstation");
@@ -9447,7 +9447,7 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
     });
   }
 
-  // ── ALWAYS-PRESENT FALLBACK: build from whatever fields ARE filled ────────
+  // ?? ALWAYS-PRESENT FALLBACK: build from whatever fields ARE filled ????????
   if (dx.length === 0) {
     const sympEvidence = [];
     const sympTreatment = [];
@@ -9563,7 +9563,7 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
     });
   }
 
-  // ── Deduplicate diagnoses by base name ───────────────────────────────────
+  // ?? Deduplicate diagnoses by base name ???????????????????????????????????
   // Radiculopathy and other dx can fire from both the neuro-integration block
   // and the special-tests block. Merge duplicates: keep highest confidence,
   // combine unique evidence, prefer the richer treatment list.
@@ -9588,9 +9588,9 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
   return { dx: dedupDx, redFlags, fmsTotal };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // ERGONOMIC & WORKSTATION ASSESSMENT MODULE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
 const ERGO_RISK_CFG = {
   ergo_monitor_height: { w:3, domain:"cervical", bad: v => v==="Too high - head tilted back"||v==="Too low - forward head flexion" },
@@ -9712,7 +9712,7 @@ function ErgoModule({ data, set }) {
   }
 
   const overallCol = risks.overall==="High"?C.red:risks.overall==="Moderate"?C.yellow:C.green;
-  const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"⏱"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
+  const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"T"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
   const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.72rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
 
   const SH = ({id,label,children})=>{
@@ -9721,7 +9721,7 @@ function ErgoModule({ data, set }) {
       <div style={{marginBottom:14}}>
         <button type="button" onClick={()=>setOpen(p=>({...p,[id]:!isOpen}))} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",background:"transparent",border:"none",cursor:"pointer",padding:"6px 0",marginBottom:isOpen?8:0}}>
           <div style={{fontSize:"0.63rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
-          <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"▲":"▼"}</span>
+          <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"^":"v"}</span>
         </button>
         {isOpen&&children}
       </div>
@@ -9732,7 +9732,7 @@ function ErgoModule({ data, set }) {
     const cfg=ERGO_RISK_CFG[id]; if(!cfg) return null;
     const val=data[id]||"";
     if(!val||!cfg.bad(val)) return null;
-    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.7rem",color:C.yellow}}><span style={{flexShrink:0}}>⚠</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
+    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.7rem",color:C.yellow}}><span style={{flexShrink:0}}>?</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
   };
 
   const WorkstationTab = ()=>(
@@ -9877,7 +9877,7 @@ function ErgoModule({ data, set }) {
               </div>
             </div>
             <div style={{fontSize:"0.72rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
-              {risks.overall==="High"?"⚠ Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"⚡ Moderate ergonomic exposure. Targeted corrections advised.":"✅ Low ergonomic risk. Maintenance and monitoring."}
+              {risks.overall==="High"?"? Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"! Moderate ergonomic exposure. Targeted corrections advised.":"? Low ergonomic risk. Maintenance and monitoring."}
             </div>
           </div>
           <div style={{height:6,background:C.s3,borderRadius:4}}><div style={{height:"100%",width:`${Math.round(risks.total/risks.maxTotal*100)}%`,background:`linear-gradient(90deg,${C.green},${C.yellow},${C.red})`,borderRadius:4,transition:"width 0.5s"}}/></div>
@@ -9924,7 +9924,7 @@ function ErgoModule({ data, set }) {
         {/* Future hooks */}
         <div style={{marginTop:16,background:C.s2,border:`1px solid ${C.a2}30`,borderRadius:10,padding:"12px 14px"}}>
           <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8}}>🔮 Future Integration Hooks</div>
-          {[{icon:"📷",label:"Webcam Posture Analysis",desc:"Real-time AI posture angle measurement"},{icon:"⌚",label:"Wearable Sensor Integration",desc:"IMU / smartwatch postural load import"},{icon:"🤖",label:"AI Posture Tracking",desc:"Continuous scoring with deviation alerts"},{icon:"📈",label:"Longitudinal Risk Tracking",desc:"Session-to-session score comparison"}].map(h=>(
+          {[{icon:"📷",label:"Webcam Posture Analysis",desc:"Real-time AI posture angle measurement"},{icon:"?",label:"Wearable Sensor Integration",desc:"IMU / smartwatch postural load import"},{icon:"🤖",label:"AI Posture Tracking",desc:"Continuous scoring with deviation alerts"},{icon:"📈",label:"Longitudinal Risk Tracking",desc:"Session-to-session score comparison"}].map(h=>(
             <div key={h.label} style={{display:"flex",gap:10,alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
               <span style={{fontSize:"1rem",flexShrink:0}}>{h.icon}</span>
               <div style={{flex:1}}><div style={{fontSize:"0.74rem",fontWeight:600,color:C.muted}}>{h.label}</div><div style={{fontSize:"0.66rem",color:C.muted,opacity:0.7}}>{h.desc}</div></div>
@@ -10009,7 +10009,7 @@ function ErgoModule({ data, set }) {
                   <div key={mp.label} style={{background:C.surface,border:`1px solid ${C.a3}30`,borderRadius:10,padding:"11px 13px",marginBottom:8}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:C.a3}}>{mp.label}</div>
-                      <span style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
+                      <span style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>T {mp.freq}</span>
                     </div>
                     {mp.ex.map((e,i)=><div key={i} style={{display:"flex",gap:8,padding:"3px 0",fontSize:"0.76rem",color:C.text}}><span style={{color:C.a3,flexShrink:0}}>-></span><span>{e}</span></div>)}
                   </div>
@@ -10030,7 +10030,7 @@ function ErgoModule({ data, set }) {
     <div>
       {risks.total>0&&(
         <div style={{background:`${overallCol}10`,border:`1px solid ${overallCol}40`,borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-          <div style={{fontWeight:800,color:overallCol,fontSize:"0.88rem"}}>{risks.overall==="High"?"🔴":risks.overall==="Moderate"?"🟡":"✅"} Ergonomic Risk: {risks.overall}</div>
+          <div style={{fontWeight:800,color:overallCol,fontSize:"0.88rem"}}>{risks.overall==="High"?"🔴":risks.overall==="Moderate"?"🟡":"?"} Ergonomic Risk: {risks.overall}</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {Object.entries(ERGO_DOMAIN_LABELS).map(([d,l])=>{
               const col=risks[d]==="High"?C.red:risks[d]==="Moderate"?C.yellow:null;
@@ -10051,9 +10051,9 @@ function ErgoModule({ data, set }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // GAIT ANALYSIS MODULE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
 
 export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML };
