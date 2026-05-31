@@ -379,7 +379,7 @@ function ErgoModule({ data, set }) {
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:C.a3}}>{mp.label}</div>
                       <span style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
                     </div>
-                    {mp.ex.map((e,i)=><div key={i} style={{display:"flex",gap:8,padding:"3px 0",fontSize:"0.76rem",color:C.text}}><span style={{color:C.a3,flexShrink:0}}>-></span><span>{e}</span></div>)}
+                    {mp.ex.map((e,i)=><div key={i} style={{display:"flex",gap:8,padding:"3px 0",fontSize:"0.76rem",color:C.text}}><span style={{color:C.a3,flexShrink:0}}>{"->"}</span><span>{e}</span></div>)}
                   </div>
                 ))}
               </div>
@@ -1517,7 +1517,7 @@ function OutcomeMeasuresModule() {
                   {change > 0 ? "+" : ""}{Math.round(change * 10) / 10}{m.unit} {isImproved(m.id,change)?"▲":"▼"} from S1
                 </div>
               )}
-              {!score && score !== 0 && <div style={{ fontSize:"0.6rem", color:"#3a5070" }}>Tap to complete -></div>}
+              {!score && score !== 0 && <div style={{ fontSize:"0.6rem", color:"#3a5070" }}>Tap to complete {"->"} </div>}
             </div>
           );
         })}
@@ -3464,7 +3464,7 @@ function SOAPNoteModule({ data }) {
               <div style={{fontWeight:700,color:PC.text,fontSize:"0.9rem",marginBottom:6}}>No findings yet</div>
               <div style={{color:PC.muted,fontSize:"0.78rem",lineHeight:1.7}}>
                 Start filling assessment fields in any module<br/>
-                <span style={{color:PC.accent,fontWeight:700}}>Subjective -> Posture -> ROM -> MMT -> Special Tests</span><br/>
+                <span style={{color:PC.accent,fontWeight:700}}>Subjective -> Posture -> ROM -> MMT {"->"}  Special Tests</span><br/>
                 and interpretations will appear here automatically.
               </div>
             </div>
@@ -5956,7 +5956,7 @@ function PalpationModule({ data, set }) {
                   <button onClick={() => setSelected(null)}
                     style={{ padding:"4px 10px", borderRadius:7, border:`1px solid ${C.border}`,
                       background:"transparent", color:C.muted, fontSize:"0.62rem", cursor:"pointer" }}>
-                    <- Back
+                    Back
                   </button>
                   <button onClick={() => removePin(selPin.id)}
                     style={{ padding:"4px 9px", borderRadius:7, border:`1px solid ${C.red}40`,
@@ -6117,7 +6117,7 @@ function PalpationModule({ data, set }) {
                         style={{ padding:"5px 12px", borderRadius:8, border:`1px solid ${C.border}`,
                           background:"transparent", color:prev ? C.muted : "transparent",
                           fontSize:"0.65rem", cursor:prev ? "pointer" : "default" }}>
-                        <- Prev
+                        Prev
                       </button>
                       <span style={{ fontSize:"0.6rem", color:C.muted, alignSelf:"center" }}>
                         {idx + 1} / {pins.length}
