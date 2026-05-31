@@ -80,7 +80,7 @@ function ErgoModule({ data, set }) {
   }
 
   const overallCol = risks.overall==="High"?C.red:risks.overall==="Moderate"?C.yellow:C.green;
-  const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"⏱"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
+  const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"T"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
   const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.72rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
 
   const SH = ({id,label,children})=>{
@@ -89,7 +89,7 @@ function ErgoModule({ data, set }) {
       <div style={{marginBottom:14}}>
         <button type="button" onClick={()=>setOpen(p=>({...p,[id]:!isOpen}))} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",background:"transparent",border:"none",cursor:"pointer",padding:"6px 0",marginBottom:isOpen?8:0}}>
           <div style={{fontSize:"0.63rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
-          <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"▲":"▼"}</span>
+          <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"^":"v"}</span>
         </button>
         {isOpen&&children}
       </div>
@@ -100,7 +100,7 @@ function ErgoModule({ data, set }) {
     const cfg=ERGO_RISK_CFG[id]; if(!cfg) return null;
     const val=data[id]||"";
     if(!val||!cfg.bad(val)) return null;
-    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.7rem",color:C.yellow}}><span style={{flexShrink:0}}>⚠</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
+    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.7rem",color:C.yellow}}><span style={{flexShrink:0}}>?</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
   };
 
   const WorkstationTab = ()=>(
@@ -245,7 +245,7 @@ function ErgoModule({ data, set }) {
               </div>
             </div>
             <div style={{fontSize:"0.72rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
-              {risks.overall==="High"?"⚠ Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"⚡ Moderate ergonomic exposure. Targeted corrections advised.":"✅ Low ergonomic risk. Maintenance and monitoring."}
+              {risks.overall==="High"?"? Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"! Moderate ergonomic exposure. Targeted corrections advised.":"? Low ergonomic risk. Maintenance and monitoring."}
             </div>
           </div>
           <div style={{height:6,background:C.s3,borderRadius:4}}><div style={{height:"100%",width:`${Math.round(risks.total/risks.maxTotal*100)}%`,background:`linear-gradient(90deg,${C.green},${C.yellow},${C.red})`,borderRadius:4,transition:"width 0.5s"}}/></div>
@@ -292,7 +292,7 @@ function ErgoModule({ data, set }) {
         {/* Future hooks */}
         <div style={{marginTop:16,background:C.s2,border:`1px solid ${C.a2}30`,borderRadius:10,padding:"12px 14px"}}>
           <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8}}>🔮 Future Integration Hooks</div>
-          {[{icon:"📷",label:"Webcam Posture Analysis",desc:"Real-time AI posture angle measurement"},{icon:"⌚",label:"Wearable Sensor Integration",desc:"IMU / smartwatch postural load import"},{icon:"🤖",label:"AI Posture Tracking",desc:"Continuous scoring with deviation alerts"},{icon:"📈",label:"Longitudinal Risk Tracking",desc:"Session-to-session score comparison"}].map(h=>(
+          {[{icon:"📷",label:"Webcam Posture Analysis",desc:"Real-time AI posture angle measurement"},{icon:"?",label:"Wearable Sensor Integration",desc:"IMU / smartwatch postural load import"},{icon:"🤖",label:"AI Posture Tracking",desc:"Continuous scoring with deviation alerts"},{icon:"📈",label:"Longitudinal Risk Tracking",desc:"Session-to-session score comparison"}].map(h=>(
             <div key={h.label} style={{display:"flex",gap:10,alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
               <span style={{fontSize:"1rem",flexShrink:0}}>{h.icon}</span>
               <div style={{flex:1}}><div style={{fontSize:"0.74rem",fontWeight:600,color:C.muted}}>{h.label}</div><div style={{fontSize:"0.66rem",color:C.muted,opacity:0.7}}>{h.desc}</div></div>
@@ -377,7 +377,7 @@ function ErgoModule({ data, set }) {
                   <div key={mp.label} style={{background:C.surface,border:`1px solid ${C.a3}30`,borderRadius:10,padding:"11px 13px",marginBottom:8}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:C.a3}}>{mp.label}</div>
-                      <span style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
+                      <span style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>T {mp.freq}</span>
                     </div>
                     {mp.ex.map((e,i)=><div key={i} style={{display:"flex",gap:8,padding:"3px 0",fontSize:"0.76rem",color:C.text}}><span style={{color:C.a3,flexShrink:0}}>{"->"}</span><span>{e}</span></div>)}
                   </div>
@@ -398,7 +398,7 @@ function ErgoModule({ data, set }) {
     <div>
       {risks.total>0&&(
         <div style={{background:`${overallCol}10`,border:`1px solid ${overallCol}40`,borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-          <div style={{fontWeight:800,color:overallCol,fontSize:"0.88rem"}}>{risks.overall==="High"?"🔴":risks.overall==="Moderate"?"🟡":"✅"} Ergonomic Risk: {risks.overall}</div>
+          <div style={{fontWeight:800,color:overallCol,fontSize:"0.88rem"}}>{risks.overall==="High"?"🔴":risks.overall==="Moderate"?"🟡":"?"} Ergonomic Risk: {risks.overall}</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {Object.entries(ERGO_DOMAIN_LABELS).map(([d,l])=>{
               const col=risks[d]==="High"?C.red:risks[d]==="Moderate"?C.yellow:null;
@@ -419,9 +419,9 @@ function ErgoModule({ data, set }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // GAIT ANALYSIS MODULE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
 const GAIT_PHASES = [
   {id:"g_ic",   phase:"Initial Contact",  pct:"0%",    type:"stance", deviations:["Foot flat contact","Heel strike absent","Excessive plantarflexion","Knee hyperextension at contact"]},
@@ -464,7 +464,7 @@ function GaitModule({ data, set }) {
     {key:"oga",      label:"Observation",    icon:"👁"},
     {key:"phases",   label:"Gait Phases",    icon:"🔄"},
     {key:"spatio",   label:"Parameters",     icon:"📐"},
-    {key:"timed",    label:"Timed Tests",    icon:"⏱"},
+    {key:"timed",    label:"Timed Tests",    icon:"T"},
     {key:"scales",   label:"Scales",         icon:"📊"},
     {key:"abnormal", label:"Gait Pattern",   icon:"🚨"},
     {key:"muscles",  label:"Muscle/Joint",   icon:"💪"},
@@ -492,7 +492,7 @@ function GaitModule({ data, set }) {
     return(<div style={{marginBottom:12}}>
       <button type="button" onClick={()=>setOpenSec(p=>({...p,[id]:!isOpen}))} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",background:"transparent",border:"none",cursor:"pointer",padding:"5px 0",marginBottom:isOpen?7:0}}>
         <div style={{fontSize:"0.63rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
-        <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"▲":"▼"}</span>
+        <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"^":"v"}</span>
       </button>
       {isOpen&&children}
     </div>);
@@ -525,7 +525,7 @@ function GaitModule({ data, set }) {
         {tabs.map(t=><button key={t.key} type="button" onClick={()=>setTab(t.key)} style={tb(t.key)}>{t.icon} {t.label}</button>)}
       </div>
 
-      {/* ── PROFILE ── */}
+      {/* ?? PROFILE ?? */}
       {tab==="profile"&&<div>
         <SH id="pf_basic" label="Patient Profile">
           {row("Chief Complaint","g_complaint","textarea")}
@@ -539,7 +539,7 @@ function GaitModule({ data, set }) {
         </SH>
       </div>}
 
-      {/* ── OBSERVATIONAL GAIT ANALYSIS ── */}
+      {/* ?? OBSERVATIONAL GAIT ANALYSIS ?? */}
       {tab==="oga"&&<div>
         <div style={{background:C.s2,borderRadius:10,padding:"9px 14px",marginBottom:12,fontSize:"0.75rem",color:C.muted,lineHeight:1.6}}>
           <strong style={{color:C.accent}}>OGA:</strong> Observe from all 3 planes. Record what is present, not what is expected.
@@ -573,7 +573,7 @@ function GaitModule({ data, set }) {
         {row("General OGA notes","g_oga_notes","textarea",null,"Additional observations, compensatory strategies, video notes...")}
       </div>}
 
-      {/* ── GAIT PHASES ── */}
+      {/* ?? GAIT PHASES ?? */}
       {tab==="phases"&&<div>
         <div style={{background:C.s2,borderRadius:10,padding:"9px 14px",marginBottom:12,fontSize:"0.75rem",color:C.muted,lineHeight:1.6}}>
           <strong style={{color:C.accent}}>Gait Cycle:</strong> Stance 60% | Swing 40%. Flag deviations found in each sub-phase.
@@ -619,7 +619,7 @@ function GaitModule({ data, set }) {
         ))}
       </div>}
 
-      {/* ── SPATIOTEMPORAL ── */}
+      {/* ?? SPATIOTEMPORAL ?? */}
       {tab==="spatio"&&<div>
         <div style={{background:C.s2,borderRadius:10,padding:"9px 14px",marginBottom:12,fontSize:"0.75rem",color:C.muted}}>Compare patient values to normal reference ranges.</div>
         {[
@@ -650,7 +650,7 @@ function GaitModule({ data, set }) {
         {row("Spatiotemporal notes","g_spatio_notes","textarea")}
       </div>}
 
-      {/* ── TIMED TESTS ── */}
+      {/* ?? TIMED TESTS ?? */}
       {tab==="timed"&&<div>
         {[
           {id:"g_tug",   label:"Timed Up & Go (TUG)", unit:"sec", normal:"<12s | Risk >13.5s", note:"Stand from chair, walk 3m, return, sit. Start on 'Go'."},
@@ -667,7 +667,7 @@ function GaitModule({ data, set }) {
             <div key={t.id} style={{background:C.surface,border:`1px solid ${flagged?C.red+"50":val?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:8}}>
                 <div>
-                  <div style={{fontSize:"0.8rem",fontWeight:700,color:flagged?C.red:val?C.text:C.muted}}>{t.label}{flagged&&" ⚠"}</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:700,color:flagged?C.red:val?C.text:C.muted}}>{t.label}{flagged&&" ?"}</div>
                   <div style={{fontSize:"0.67rem",color:C.muted,marginTop:2}}>{t.note}</div>
                 </div>
                 <span style={{fontSize:"0.62rem",color:C.muted,flexShrink:0,textAlign:"right"}}>Normal: {t.normal}</span>
@@ -676,13 +676,13 @@ function GaitModule({ data, set }) {
                 <input type="number" value={val} onChange={e=>set(t.id,e.target.value)} placeholder="Enter result" step="0.1" style={{...inp,flex:1}}/>
                 <span style={{fontSize:"0.76rem",color:C.muted,flexShrink:0}}>{t.unit}</span>
               </div>
-              {flagged&&<div style={{marginTop:6,fontSize:"0.72rem",color:C.red,fontWeight:600}}>⚠ TUG >=13.5s - High fall risk. Refer for falls prevention program.</div>}
+              {flagged&&<div style={{marginTop:6,fontSize:"0.72rem",color:C.red,fontWeight:600}}>? TUG >=13.5s - High fall risk. Refer for falls prevention program.</div>}
             </div>
           );
         })}
       </div>}
 
-      {/* ── SCALES ── */}
+      {/* ?? SCALES ?? */}
       {tab==="scales"&&<div>
         {GAIT_SCALES.map(s=>{
           const val=data[s.id]||"";
@@ -702,7 +702,7 @@ function GaitModule({ data, set }) {
         {row("Additional scale notes / clinical interpretation","g_scale_notes","textarea")}
       </div>}
 
-      {/* ── ABNORMAL GAIT ── */}
+      {/* ?? ABNORMAL GAIT ?? */}
       {tab==="abnormal"&&<div>
         <div style={{background:C.s2,borderRadius:10,padding:"9px 14px",marginBottom:12,fontSize:"0.75rem",color:C.muted,lineHeight:1.6}}>
           Mark all patterns observed. Multiple patterns may coexist.
@@ -721,7 +721,7 @@ function GaitModule({ data, set }) {
                 <select value={val} onChange={e=>set(g.id,e.target.value)} style={{...inp,width:"auto",minWidth:100,flexShrink:0,borderColor:present?C.yellow:C.border}}>
                   <option value="">- screen -</option>
                   <option value="Absent">v Absent</option>
-                  <option value="Present">⚠ Present</option>
+                  <option value="Present">? Present</option>
                   <option value="Suspected">? Suspected</option>
                 </select>
               </div>
@@ -738,7 +738,7 @@ function GaitModule({ data, set }) {
         )}
       </div>}
 
-      {/* ── MUSCLE / JOINT ── */}
+      {/* ?? MUSCLE / JOINT ?? */}
       {tab==="muscles"&&<div>
         {[
           {id:"g_weak_primary",  label:"Primary Weak Muscles",      note:"Muscles most contributing to gait deviation"},
@@ -757,7 +757,7 @@ function GaitModule({ data, set }) {
         {row("Neurological Findings","g_neuro_findings","textarea",null,"Tone, reflexes, sensation relevant to gait")}
       </div>}
 
-      {/* ── PLAN & GOALS ── */}
+      {/* ?? PLAN & GOALS ?? */}
       {tab==="plan"&&<div>
         <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Short Term Goals (2-4 weeks)</div>
         {row("Goal 1","g_stg1")} {row("Goal 2","g_stg2")} {row("Goal 3","g_stg3")}
@@ -788,13 +788,13 @@ function GaitModule({ data, set }) {
   );
 }
 
-// ─── SIMPLE FIELD INPUTS ─────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════════════════════
+// ??? SIMPLE FIELD INPUTS ?????????????????????????????????????????????????????
+// ???????????????????????????????????????????????????????????????????????????????
 // OUTCOME MEASURES MODULE - Full scored questionnaires with interpretation
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
 const OUTCOME_DB = {
-  // ── PAIN ────────────────────────────────────────────────────────────────────
+  // ?? PAIN ????????????????????????????????????????????????????????????????????
   nrs: {
     id:"nrs", label:"NRS - Numerical Rating Scale", icon:"🔢", category:"Pain",
     description:"0-10 numeric pain rating. MCID = 2 points. Widely used, quick, valid for all musculoskeletal conditions.",
@@ -854,7 +854,7 @@ const OUTCOME_DB = {
     mcid:2, unit:"/10 avg",
   },
 
-  // ── SPINE ───────────────────────────────────────────────────────────────────
+  // ?? SPINE ???????????????????????????????????????????????????????????????????
   odi: {
     id:"odi", label:"ODI - Oswestry Disability Index", icon:"🦴", category:"Spine - Lumbar",
     description:"10 sections, each scored 0-5. Total expressed as %. Gold standard for low back disability. MCID = 10%.",
@@ -915,7 +915,7 @@ const OUTCOME_DB = {
     mcid:8, unit:"%",
   },
 
-  // ── UPPER LIMB ─────────────────────────────────────────────────────────────
+  // ?? UPPER LIMB ?????????????????????????????????????????????????????????????
   dash: {
     id:"dash", label:"DASH - Disabilities of Arm, Shoulder & Hand", icon:"💪", category:"Upper Limb",
     description:"30-item questionnaire measuring physical function and symptoms in upper limb conditions. Score 0-100 (higher = more disability). MCID = 10.2.",
@@ -965,7 +965,7 @@ const OUTCOME_DB = {
     mcid:10, unit:"/100",
   },
 
-  // ── LOWER LIMB ─────────────────────────────────────────────────────────────
+  // ?? LOWER LIMB ?????????????????????????????????????????????????????????????
   lefs: {
     id:"lefs", label:"LEFS - Lower Extremity Functional Scale", icon:"🦵", category:"Lower Limb",
     description:"20 activities scored 0-4 each. Total /80. Higher = better function. MCID = 9 points.",
@@ -1050,7 +1050,7 @@ const OUTCOME_DB = {
     mcid:10, unit:"/100",
   },
 
-  // ── PSYCHOLOGICAL ──────────────────────────────────────────────────────────
+  // ?? PSYCHOLOGICAL ??????????????????????????????????????????????????????????
   tsk: {
     id:"tsk", label:"TSK-11 - Tampa Scale of Kinesiophobia", icon:"🧠", category:"Psychological",
     description:"11 items scored 1-4. Total 11-44. Higher = more fear of movement. MCID = 3.8. Critical for identifying fear-avoidance pattern.",
@@ -1087,7 +1087,7 @@ const OUTCOME_DB = {
   },
 
   fabq: {
-    id:"fabq", label:"FABQ - Fear Avoidance Beliefs Questionnaire", icon:"⚠", category:"Psychological",
+    id:"fabq", label:"FABQ - Fear Avoidance Beliefs Questionnaire", icon:"?", category:"Psychological",
     description:"16 items on 0-6 scale. Two subscales: Physical Activity (FABQ-PA, 4 items) and Work (FABQ-W, 7 items). High scores predict chronicity.",
     fields:[
       {id:"fabq_pa1", label:"PA1. My pain was caused by physical activity", type:"select_fabq"},
@@ -1120,9 +1120,9 @@ const OUTCOME_DB = {
     mcid:null, unit:"dual subscale",
   },
 
-  // ── SPORT ──────────────────────────────────────────────────────────────────
+  // ?? SPORT ??????????????????????????????????????????????????????????????????
   acl_rsi: {
-    id:"acl_rsi", label:"ACL-RSI - Return to Sport after ACL", icon:"⚽", category:"Sport",
+    id:"acl_rsi", label:"ACL-RSI - Return to Sport after ACL", icon:"?", category:"Sport",
     description:"12 items scored 0-10. Mean score /100. Measures psychological readiness to return to sport after ACL injury/reconstruction. MCID = 14.8.",
     fields:[
       "I am afraid of re-injuring my knee when I return to sport",
@@ -1152,7 +1152,7 @@ const OUTCOME_DB = {
   },
 };
 
-// ─── Category colours ─────────────────────────────────────────────────────────
+// ??? Category colours ?????????????????????????????????????????????????????????
 const OM_CAT_COLOR = {
   "Pain":"#ff4d6d", "Function":"#00e5ff", "Spine - Lumbar":"#ffb300",
   "Spine - Cervical":"#ff8c00", "Upper Limb":"#7f5af0", "Lower Limb":"#00c97a",
@@ -1160,13 +1160,13 @@ const OM_CAT_COLOR = {
   "Psychological":"#f97316", "Sport":"#a3e635",
 };
 
-// ─── Select options helpers ───────────────────────────────────────────────────
+// ??? Select options helpers ???????????????????????????????????????????????????
 const DASH_OPTS    = ["1 - No difficulty","2 - Mild difficulty","3 - Moderate difficulty","4 - Severe difficulty","5 - Unable"];
 const LEFS_OPTS    = ["0 - Extreme difficulty / unable","1 - Quite a bit of difficulty","2 - Moderate difficulty","3 - A little bit of difficulty","4 - No difficulty"];
 const TSK_OPTS     = ["1 - Strongly disagree","2 - Somewhat disagree","3 - Somewhat agree","4 - Strongly agree"];
 const FABQ_OPTS    = ["0 - Completely disagree","1","2","3 - Unsure","4","5","6 - Completely agree"];
 
-// ─── Slider component ────────────────────────────────────────────────────────
+// ??? Slider component ????????????????????????????????????????????????????????
 function OMSlider({id, min=0, max=10, step=1, value, onChange, showVal=true}){
   const pct = max===min?0:((+value-min)/(max-min))*100;
   const col  = pct<=30?"#00c97a":pct<=60?"#ffb300":"#ff4d6d";
@@ -1187,7 +1187,7 @@ function OMSlider({id, min=0, max=10, step=1, value, onChange, showVal=true}){
   );
 }
 
-// ─── Score ring ───────────────────────────────────────────────────────────────
+// ??? Score ring ???????????????????????????????????????????????????????????????
 function ScoreRing({score, maxScore, color, size=80}){
   const pct  = maxScore?Math.min(100,Math.round(score/maxScore*100)):0;
   const r    = (size-8)/2;
@@ -1205,11 +1205,11 @@ function ScoreRing({score, maxScore, color, size=80}){
   );
 }
 
-// ─── Outcome score severity helpers ──────────────────────────────────────────
+// ??? Outcome score severity helpers ??????????????????????????????????????????
 const LOWER_IS_BETTER = ["odi","ndi","dash","tsk","vas","nrs","fabq"];
 function isImproved(id, change) { return LOWER_IS_BETTER.includes(id) ? change < 0 : change > 0; }
 
-// ─── Score Gauge Bar ──────────────────────────────────────────────────────────
+// ??? Score Gauge Bar ??????????????????????????????????????????????????????????
 function ScoreGauge({ score, maxScore, color, label, mcid }) {
   const pct = maxScore ? Math.min(100, Math.round((score / maxScore) * 100)) : 0;
   return (
@@ -1233,7 +1233,7 @@ function ScoreGauge({ score, maxScore, color, label, mcid }) {
   );
 }
 
-// ─── Mini sparkline chart ─────────────────────────────────────────────────────
+// ??? Mini sparkline chart ?????????????????????????????????????????????????????
 function Sparkline({ values, color, improved }) {
   if (values.length < 2) return null;
   const min = Math.min(...values), max = Math.max(...values);
@@ -1254,7 +1254,7 @@ function Sparkline({ values, color, improved }) {
   );
 }
 
-// ─── OutcomeMeasuresModule ────────────────────────────────────────────────────
+// ??? OutcomeMeasuresModule ????????????????????????????????????????????????????
 function OutcomeMeasuresModule() {
   const categories = [...new Set(Object.values(OUTCOME_DB).map(m => m.category))];
   const [catFilter,   setCatFilter]   = useState("All");
@@ -1290,7 +1290,7 @@ function OutcomeMeasuresModule() {
     const updated = [...sessions, snap];
     setSessions(updated);
     try { localStorage.setItem("physio_om_sessions", JSON.stringify(updated.slice(-20))); } catch {}
-    showToast(`✅ Session ${updated.length} saved - ${Object.keys(snap.scores).length} measures recorded`);
+    showToast(`? Session ${updated.length} saved - ${Object.keys(snap.scores).length} measures recorded`);
   };
 
   const clearHistory = () => {
@@ -1329,13 +1329,13 @@ function OutcomeMeasuresModule() {
             ${history.length >= 2 && change !== null ? `
               <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:6px 10px;font-size:10px;">
                 <strong>Progress:</strong> ${history.join(" -> ")}${m.unit}
-                &nbsp;|&nbsp; <strong style="color:${isImproved(m.id, change) ? "#15803d" : "#b91c1c"}">${change > 0 ? "+" : ""}${Math.round(change * 10) / 10}${m.unit} ${isImproved(m.id, change) ? "▲ Improved" : "▼ Declined"}</strong>
+                &nbsp;|&nbsp; <strong style="color:${isImproved(m.id, change) ? "#15803d" : "#b91c1c"}">${change > 0 ? "+" : ""}${Math.round(change * 10) / 10}${m.unit} ${isImproved(m.id, change) ? "^ Improved" : "v Declined"}</strong>
                 ${Math.abs(change) >= (m.mcid || 0) ? `&nbsp;·&nbsp; <strong style="color:#15803d">Clinically significant</strong>` : ""}
               </div>` : ""}
           </div>
         </div>`).join("")}
       <div style="margin-top:14px;padding:8px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:9px;color:#78350f;">
-        ⚠ Scores calculated per original validated scoring criteria. MCID values reflect published literature. All findings require clinical correlation.
+        ? Scores calculated per original validated scoring criteria. MCID values reflect published literature. All findings require clinical correlation.
       </div>`;
     const html = makePDFPage("Outcome Measures Report", metaRight, bodyHTML);
     downloadPDFFromHTML(html, `Outcome_Measures_${Date.now()}.pdf`);
@@ -1367,7 +1367,7 @@ function OutcomeMeasuresModule() {
         </div>
       )}
 
-      {/* ── Summary bar ── */}
+      {/* ?? Summary bar ?? */}
       <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
         <div style={{ flex:1, background:"#ffffff", border:"1px solid #d8cce8", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:12 }}>
           <div>
@@ -1391,7 +1391,7 @@ function OutcomeMeasuresModule() {
         </div>
       </div>
 
-      {/* ── Session history panel ── */}
+      {/* ?? Session history panel ?? */}
       <div style={{ marginBottom:14 }}>
         <div style={{ display:"flex", gap:6, marginBottom: showHistory ? 8 : 0 }}>
           <button onClick={() => setShowHistory(h => !h)} style={{ padding:"6px 12px", background: showHistory?"rgba(127,90,240,0.15)":"transparent", border:`1px solid ${showHistory?"rgba(127,90,240,0.35)":"#1a2d45"}`, borderRadius:8, color: showHistory?"#7f5af0":"#6b8399", fontWeight:700, fontSize:"0.68rem", cursor:"pointer" }}>
@@ -1424,7 +1424,7 @@ function OutcomeMeasuresModule() {
                       <div style={{ fontSize:"1.1rem", fontWeight:900, color: col, fontFamily:"monospace" }}>{latest}{m.unit}</div>
                       {change !== null && (
                         <div style={{ fontSize:"0.65rem", fontWeight:800, color: improved?"#00c97a":"#ff4d6d" }}>
-                          {change > 0 ? "+" : ""}{Math.round(change * 10) / 10}{m.unit} {improved ? "▲" : "▼"}
+                          {change > 0 ? "+" : ""}{Math.round(change * 10) / 10}{m.unit} {improved ? "^" : "v"}
                         </div>
                       )}
                     </div>
@@ -1435,7 +1435,7 @@ function OutcomeMeasuresModule() {
                       {/* MCID check */}
                       {change !== null && m.mcid && (
                         <div style={{ padding:"4px 8px", background: Math.abs(change) >= m.mcid ? (improved?"rgba(0,201,122,0.1)":"rgba(255,77,109,0.1)") : "rgba(255,179,0,0.08)", border:`1px solid ${Math.abs(change)>=m.mcid?(improved?"rgba(0,201,122,0.3)":"rgba(255,77,109,0.3)"):"rgba(255,179,0,0.25)"}`, borderRadius:7, fontSize:"0.6rem", color: Math.abs(change)>=m.mcid?(improved?"#00c97a":"#ff4d6d"):"#ffb300", fontWeight:700 }}>
-                          {Math.abs(change) >= m.mcid ? (improved ? "✅ Exceeds MCID - Clinically significant improvement" : "⚠ Exceeds MCID - Clinically significant decline") : `⬤ Below MCID (need ${m.mcid}${m.unit})`}
+                          {Math.abs(change) >= m.mcid ? (improved ? "? Exceeds MCID - Clinically significant improvement" : "? Exceeds MCID - Clinically significant decline") : `? Below MCID (need ${m.mcid}${m.unit})`}
                         </div>
                       )}
                       {/* Session dots */}
@@ -1458,7 +1458,7 @@ function OutcomeMeasuresModule() {
         )}
       </div>
 
-      {/* ── Category filter ── */}
+      {/* ?? Category filter ?? */}
       <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:12 }}>
         {["All", ...categories].map(c => (
           <button key={c} onClick={() => setCatFilter(c)}
@@ -1468,7 +1468,7 @@ function OutcomeMeasuresModule() {
         ))}
       </div>
 
-      {/* ── Measure cards ── */}
+      {/* ?? Measure cards ?? */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(165px,1fr))", gap:8, marginBottom:14 }}>
         {filteredMeasures.map(m => {
           const score  = getScore(m);
@@ -1514,7 +1514,7 @@ function OutcomeMeasuresModule() {
               {/* Progress change */}
               {change !== null && (
                 <div style={{ fontSize:"0.58rem", color: isImproved(m.id,change)?"#00c97a":"#ff4d6d", fontWeight:700 }}>
-                  {change > 0 ? "+" : ""}{Math.round(change * 10) / 10}{m.unit} {isImproved(m.id,change)?"▲":"▼"} from S1
+                  {change > 0 ? "+" : ""}{Math.round(change * 10) / 10}{m.unit} {isImproved(m.id,change)?"^":"v"} from S1
                 </div>
               )}
               {!score && score !== 0 && <div style={{ fontSize:"0.6rem", color:"#3a5070" }}>Tap to complete {"->"} </div>}
@@ -1523,7 +1523,7 @@ function OutcomeMeasuresModule() {
         })}
       </div>
 
-      {/* ── Active questionnaire ── */}
+      {/* ?? Active questionnaire ?? */}
       {activeMeasure && (()=>{
         const score  = getScore(activeMeasure);
         const interp = score !== null ? activeMeasure.interpret(score) : null;
@@ -1595,8 +1595,8 @@ function OutcomeMeasuresModule() {
                   </div>
                   <div style={{ flex:1, padding:"6px 10px", background: Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"rgba(0,201,122,0.1)":"rgba(255,77,109,0.1)"):"rgba(255,179,0,0.08)", border:`1px solid ${Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"rgba(0,201,122,0.3)":"rgba(255,77,109,0.3)"):"rgba(255,179,0,0.25)"}`, borderRadius:8, fontSize:"0.65rem", color:Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"#00c97a":"#ff4d6d"):"#ffb300", fontWeight:700 }}>
                     {Math.abs(change) >= mcid
-                      ? (isImproved(activeMeasure.id,change) ? "✅ Exceeds MCID - Clinically significant improvement" : "⚠ Exceeds MCID - Clinically significant decline")
-                      : `⬤ Below MCID - need ${(mcid - Math.abs(change)).toFixed(1)} more to be clinically significant`}
+                      ? (isImproved(activeMeasure.id,change) ? "? Exceeds MCID - Clinically significant improvement" : "? Exceeds MCID - Clinically significant decline")
+                      : `? Below MCID - need ${(mcid - Math.abs(change)).toFixed(1)} more to be clinically significant`}
                   </div>
                 </div>
                 {history.length >= 2 && (
@@ -1628,21 +1628,21 @@ function OutcomeMeasuresModule() {
       })()}
 
       <div style={{ padding:"8px 12px", background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:8, fontSize:"0.6rem", color:"#7e6a9a", lineHeight:1.6 }}>
-        ⚠ Scores calculated per original validated questionnaire criteria. MCID = Minimum Clinically Important Difference per published literature. Session history persists across browser sessions via localStorage. Use 💾 Save Session after each clinical appointment.
+        ? Scores calculated per original validated questionnaire criteria. MCID = Minimum Clinically Important Difference per published literature. Session history persists across browser sessions via localStorage. Use 💾 Save Session after each clinical appointment.
       </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // SOAP NOTE GENERATOR - Auto-pulls from all assessment data
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // REAL-TIME CLINICAL INTERPRETATION ENGINE
 // Rule-based deterministic reasoning - NOT generative AI
 // Updates live as any field in any assessment module is filled
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
 function buildClinicalInterpretation(data) {
   const rules = [];
@@ -1662,7 +1662,7 @@ function buildClinicalInterpretation(data) {
   const paPattern = getArr("pa_pattern").join(" ");
   const aggAct = getArr("agg_activity").concat(getArr("agg_movement")).join(" ");
 
-  // ── SUBJECTIVE ────────────────────────────────────────────────────────────
+  // ?? SUBJECTIVE ????????????????????????????????????????????????????????????
   if (loc.includes("neck") || loc.includes("cervical")) {
     if (aggAct.includes("sit") || subj.includes("prolonged") || subj.includes("posture") || subj.includes("headache") || subj.includes("stiff")) {
       rules.push({ module:"Subjective", confidence:"HIGH", tag:"Postural Cervical Dysfunction",
@@ -1734,7 +1734,7 @@ function buildClinicalInterpretation(data) {
       text:"Burning, shooting, or electric quality pain indicates neuropathic pain mechanism. Peripheral nerve entrapment, nerve root compression, and central sensitisation should be differentiated. Quantitative sensory testing and neural tension assessment indicated." });
   }
 
-  // ── POSTURE ───────────────────────────────────────────────────────────────
+  // ?? POSTURE ???????????????????????????????????????????????????????????????
   const fhp = val("post_fhp");
   const kyphosis = val("post_kyphosis");
   const lordosis = val("post_lordosis");
@@ -1777,7 +1777,7 @@ function buildClinicalInterpretation(data) {
       text:"Scapular malposition (protraction/elevation) noted. Indicates serratus anterior inhibition and upper trapezius overactivity. Contributes to reduced subacromial space and altered scapulohumeral rhythm. Scapular stabilisation programme is a primary treatment target." });
   }
 
-  // ── ROM ───────────────────────────────────────────────────────────────────
+  // ?? ROM ???????????????????????????????????????????????????????????????????
   const romChecks = [
     ["rom_cx_flex","Cervical Flexion",50],["rom_cx_ext","Cervical Extension",60],
     ["rom_cx_rot_left","Cervical Rotation L",80],["rom_cx_rot_right","Cervical Rotation R",80],
@@ -1819,7 +1819,7 @@ function buildClinicalInterpretation(data) {
       text:`SLR reduced (${!isNaN(slrL)?`L ${slrL}deg`:""}${!isNaN(slrR)?` R ${slrR}deg`:""} - normal >70deg). Limited SLR indicates sciatic nerve mechanosensitivity, L4/L5/S1 nerve root irritation, or hamstring restriction. Sensitising manoeuvres (ankle DF, neck flex) differentiate neural vs. muscular limitation.` });
   }
 
-  // ── MMT / MUSCLE WEAKNESS ──────────────────────────────────────────────────
+  // ?? MMT / MUSCLE WEAKNESS ??????????????????????????????????????????????????
   const mmtText = Object.keys(data).filter(k => k.startsWith("mmt_")).map(k => `${k}:${String(data[k]||"")}`).join(" ").toLowerCase();
   const myoText = Object.keys(data).filter(k => k.startsWith("myo_")).map(k => `${k}:${String(data[k]||"")}`).join(" ").toLowerCase();
   const neuroMotor = val("neuro_motor") + " " + mmtText + " " + myoText;
@@ -1869,7 +1869,7 @@ function buildClinicalInterpretation(data) {
       text:"Myotomal weakness identified in neurological examination. Correlate with dermatomal sensory changes, reflex findings, and special test results to identify specific nerve root level of involvement." });
   }
 
-  // ── SPECIAL TESTS ─────────────────────────────────────────────────────────
+  // ?? SPECIAL TESTS ?????????????????????????????????????????????????????????
   const allData = Object.keys(data);
   const stKeys = allData.filter(k => k.startsWith("st_") || (k.startsWith("lx_") && !k.startsWith("lx_palpation")));
   const posTests = stKeys.filter(k => String(data[k]).toLowerCase().includes("positive"));
@@ -1965,11 +1965,11 @@ function buildClinicalInterpretation(data) {
       text:"Positive Spurling test (specificity 92-93%) indicates foraminal compression of the cervical nerve root. Correlate with dermatomes, myotomes, and reflexes to identify level (C5: deltoid/biceps, C6: wrist ext/brachioradialis, C7: triceps/wrist flex, C8: finger flex)." });
   }
   if (vbi) {
-    rules.push({ module:"Special Tests", confidence:"URGENT", tag:"⚠ VBI Screen POSITIVE - Contraindication",
+    rules.push({ module:"Special Tests", confidence:"URGENT", tag:"? VBI Screen POSITIVE - Contraindication",
       text:"VBI / vertebral artery screening POSITIVE. ABSOLUTE CONTRAINDICATION to cervical manipulation or high-velocity thrust techniques. Vertebrobasilar insufficiency requires urgent medical review before further cervical intervention. Document clearly and refer." });
   }
   if (sharpPurser) {
-    rules.push({ module:"Special Tests", confidence:"URGENT", tag:"⚠ C1/C2 Instability - URGENT",
+    rules.push({ module:"Special Tests", confidence:"URGENT", tag:"? C1/C2 Instability - URGENT",
       text:"Sharp-Purser test positive indicates atlantoaxial (C1/C2) instability. URGENT referral to spinal surgeon or emergency department. No manual therapy to cervical spine. Immobilise if necessary. Rule out rheumatoid arthritis, Down syndrome, trauma." });
   }
 
@@ -2004,7 +2004,7 @@ function buildClinicalInterpretation(data) {
       text:"Single positive CTS test (Phalen or Tinel). Complete the cluster and assess thenar atrophy and grip strength. Electrodiagnostic studies confirm diagnosis and severity." });
   }
 
-  // ── NEUROLOGICAL ───────────────────────────────────────────────────────────
+  // ?? NEUROLOGICAL ???????????????????????????????????????????????????????????
   const neuroSens = val("neuro_sensation");
   const neuroRef = val("neuro_reflex");
   const neuroMot = val("neuro_motor");
@@ -2015,7 +2015,7 @@ function buildClinicalInterpretation(data) {
   const hasHoffmann = Object.keys(data).some(k => k.includes("hoffmann") && String(data[k]).toLowerCase().includes("positive"));
 
   if (hasBabinski || hasHoffmann) {
-    rules.push({ module:"Neurology", confidence:"URGENT", tag:"⚠ Upper Motor Neuron - URGENT REFERRAL",
+    rules.push({ module:"Neurology", confidence:"URGENT", tag:"? Upper Motor Neuron - URGENT REFERRAL",
       text:"PATHOLOGICAL REFLEX POSITIVE (Babinski/Hoffmann). Upper motor neuron lesion above segmental level. Urgent exclusion of cervical myelopathy, spinal cord compression, stroke, or intracranial pathology required. REFER IMMEDIATELY. Do not proceed with spinal manipulation." });
   }
 
@@ -2031,11 +2031,11 @@ function buildClinicalInterpretation(data) {
   }
 
   if (neuroDerm.includes("saddle") || val("cc_main").includes("saddle") || val("rf_cauda").includes("cauda")) {
-    rules.push({ module:"Neurology", confidence:"URGENT", tag:"⚠ Cauda Equina Syndrome - EMERGENCY",
+    rules.push({ module:"Neurology", confidence:"URGENT", tag:"? Cauda Equina Syndrome - EMERGENCY",
       text:"CAUDA EQUINA SYNDROME INDICATORS PRESENT. Saddle anaesthesia and/or bladder/bowel dysfunction with lumbar symptoms. EMERGENCY referral to Emergency Department. Do not delay. MRI lumbar spine urgent." });
   }
 
-  // ── GAIT ───────────────────────────────────────────────────────────────────
+  // ?? GAIT ???????????????????????????????????????????????????????????????????
   const gaitText = val("gait_pattern") + " " + val("gait_obs") + " " + val("gait_notes") + " " + getArr("gait_deviations").join(" ");
   if (gaitText.includes("trendelenburg") || gaitText.includes("pelvic drop") || gaitText.includes("hip abduct")) {
     rules.push({ module:"Gait", confidence:"HIGH", tag:"Trendelenburg Gait - Hip Abductor Insufficiency",
@@ -2054,7 +2054,7 @@ function buildClinicalInterpretation(data) {
       text:"Foot drop (steppage gait) indicates L4/5 nerve root involvement or common peroneal nerve palsy. Urgent neurological investigation required. Ankle-foot orthosis (AFO) may be required for safe ambulation." });
   }
 
-  // ── FUNCTIONAL MOVEMENT ────────────────────────────────────────────────────
+  // ?? FUNCTIONAL MOVEMENT ????????????????????????????????????????????????????
   const fmaText = val("fma_squat") + " " + val("fma_notes") + " " + val("fma_movement") + " " + val("functional_notes");
   if (fmaText.includes("valgus") || fmaText.includes("knee in")) {
     rules.push({ module:"Functional", confidence:"HIGH", tag:"Dynamic Knee Valgus",
@@ -2069,7 +2069,7 @@ function buildClinicalInterpretation(data) {
       text:"Asymmetric movement pattern noted during functional assessment. Neuromuscular control, mobility, or loading tolerance difference between sides. FMS composite score and specific pattern scoring guides treatment prioritisation." });
   }
 
-  // ── PALPATION ──────────────────────────────────────────────────────────────
+  // ?? PALPATION ??????????????????????????????????????????????????????????????
   const palpText = val("palp_tenderness") + " " + val("palp_tone") + " " + val("palp_swelling") + " " + val("palp_notes") + " " + val("lx_palpation");
   if (palpText.includes("trigger") || palpText.includes("hypertonic") || (palpText.includes("tender") && (palpText.includes("+++") || palpText.includes("++")))) {
     rules.push({ module:"Palpation", confidence:"MOD", tag:"Myofascial Trigger Points",
@@ -2080,7 +2080,7 @@ function buildClinicalInterpretation(data) {
       text:"Swelling or effusion detected. Arthrogenic muscle inhibition of surrounding musculature is expected - particularly significant for quadriceps inhibition with knee effusion (even small amounts suppress VMO). PRICE, effusion management, and gradual loading are priorities." });
   }
 
-  // ── CROSS-MODULE CORRELATIONS ──────────────────────────────────────────────
+  // ?? CROSS-MODULE CORRELATIONS ??????????????????????????????????????????????
   // Cervical postural dysfunction cluster
   if (fhpActive && dnfWeak && romMild.some(r => r.includes("Cervical"))) {
     rules.push({ module:"Correlation", confidence:"HIGH", tag:"Cervical Postural Dysfunction Cluster",
@@ -2109,10 +2109,10 @@ function buildClinicalInterpretation(data) {
   return rules;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // REAL-TIME SOAP BUILDER
 // Pulls from ALL assessment data fields and auto-populates S, O, A, P in real time
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
 function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const v = (k) => String(data[k] || "").trim();
@@ -2125,7 +2125,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const has = (k) => !!(data[k] && String(data[k]).trim() && String(data[k]).trim() !== "");
   const nrs = (k) => { const n = parseFloat(v(k)); return isNaN(n) ? null : n; };
 
-  // ── NEW FIELD BRIDGE - maps v5 regional IDs -> legacy SOAP field names ──────
+  // ?? NEW FIELD BRIDGE - maps v5 regional IDs -> legacy SOAP field names ??????
   // Determine which region prefix to use
   const _soap_regions = (typeof REG_MOD_S !== "undefined") ? Object.keys(REG_MOD_S).filter(r => {
     const px = REG_MOD_S[r]?.prefix;
@@ -2186,14 +2186,14 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     return x ? String(x).split("|||").filter(Boolean) : [];
   }).join(", ");
 
-  // ── S: SUBJECTIVE ──────────────────────────────────────────────────────────
+  // ?? S: SUBJECTIVE ??????????????????????????????????????????????????????????
   const S_parts = [];
   const name = v("dem_name");
   const age = v("dem_age");
   const sex = v("dem_sex") || v("dem_gender");
   const occ = v("dem_occupation");
   const cc = v("cc_main");
-  // ── Direct scan of ALL regional prefix fields (cx_, lx_, sh_, hp_, kn_, af_, ew_, tx_) ──
+  // ?? Direct scan of ALL regional prefix fields (cx_, lx_, sh_, hp_, kn_, af_, ew_, tx_) ??
   const KNOWN_PREFIXES = ["cx","lx","shl","shr","hp","knl","knr","af","ew","tx"];
   const activePrefixes = KNOWN_PREFIXES.filter(px =>
     Object.keys(data).some(k => k.startsWith(px + "_"))
@@ -2324,11 +2324,11 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       if (!rfFlags.includes(label)) rfFlags.push(label);
     }
   });
-  if (rfFlags.length) S_parts.push(`⚠ RED FLAGS IDENTIFIED: ${rfFlags.join(", ")} - medical review indicated.`);
+  if (rfFlags.length) S_parts.push(`? RED FLAGS IDENTIFIED: ${rfFlags.join(", ")} - medical review indicated.`);
 
   if (goals.length) S_parts.push(`Patient goals: ${goals.join("; ")}.`);
 
-  // ── New v5 fields: previous history, lifestyle ─────────────────────────────
+  // ?? New v5 fields: previous history, lifestyle ?????????????????????????????
   const prevPhysio = v("hx_prev_physio");
   const prevImaging = a("hx_imaging");
   const prevInjections = a("hx_injections");
@@ -2403,10 +2403,10 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 
   if (extraS) S_parts.push(extraS);
 
-  // ── O: OBJECTIVE ──────────────────────────────────────────────────────────
+  // ?? O: OBJECTIVE ??????????????????????????????????????????????????????????
   const O_parts = [];
 
-  // ── POSTURE / OBSERVATION ─────────────────────────────────────────────────
+  // ?? POSTURE / OBSERVATION ?????????????????????????????????????????????????
   {
     const postureD = [];
     // Posture defects (clicked in PostureModule)
@@ -2438,7 +2438,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (allP.length) O_parts.push(`Observation/Posture:\n  ${allP.join("\n  ")}.`);
   }
 
-  // ── PALPATION ────────────────────────────────────────────────────────────
+  // ?? PALPATION ????????????????????????????????????????????????????????????
   {
     const palpRows = [];
     // Read serialized pins from data
@@ -2481,7 +2481,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (palpRows.length) O_parts.push(`Palpation:\n${palpRows.join("\n")}.`);
   }
 
-  // ── ROM - correct field IDs from ROM_DATA ───────────────────────────────
+  // ?? ROM - correct field IDs from ROM_DATA ???????????????????????????????
   {
     const romRows = [];
     // Unilateral movements (single value)
@@ -2524,7 +2524,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       if (!val) return null;
       const num = parseFloat(val);
       const pct = norm > 0 ? Math.round((num/norm)*100) : null;
-      const flag = pct !== null && pct < 75 ? " ⚠" : pct !== null && pct < 50 ? " ❌" : "";
+      const flag = pct !== null && pct < 75 ? " ?" : pct !== null && pct < 50 ? " ?" : "";
       return `${val}deg (norm ${norm}deg${flag})`;
     };
     uniPairs.forEach(([label, key, norm]) => {
@@ -2550,7 +2550,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (romRows.length) O_parts.push(`Range of Motion:\n${romRows.join("\n")}.`);
   }
 
-  // ── MMT ─────────────────────────────────────────────────────────────────
+  // ?? MMT ?????????????????????????????????????????????????????????????????
   {
     // MMT label map for clean display
     const MMT_LABELS = {
@@ -2574,7 +2574,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       const num = parseFloat(raw);
       const label = MMT_LABELS[k] || k.replace("mmt_","").replace(/_/g," ");
       if (!isNaN(num)) {
-        if (num < 5) mmtDeficit.push(`${label} ${num}/5${num <= 2 ? " ❌" : num <= 3 ? " ⚠" : ""}`);
+        if (num < 5) mmtDeficit.push(`${label} ${num}/5${num <= 2 ? " ?" : num <= 3 ? " ?" : ""}`);
         else mmtNormal.push(label);
       } else if (raw) {
         mmtDeficit.push(`${label}: ${raw}`);
@@ -2587,7 +2587,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (mmtLines.length) O_parts.push(`Muscle Strength (MMT):\n${mmtLines.join("\n")}.`);
   }
 
-  // ── NEUROLOGICAL ────────────────────────────────────────────────────────
+  // ?? NEUROLOGICAL ????????????????????????????????????????????????????????
   {
     const neuroLines = [];
     // Dermatomes (n_c3-n_s2, n_c3_left/_right etc)
@@ -2639,7 +2639,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
                      ["nrf_bilateral","Bilateral signs"],["nrf_prog_weak","Progressive weakness"]];
     const nrfFlags = nrfKeys.filter(([k]) => data[k] === true || String(data[k]).includes("yes") || String(data[k]).includes("present"))
                               .map(([,label]) => label);
-    if (nrfFlags.length) neuroLines.push(`  ⚠ Red Flags: ${nrfFlags.join(", ")}`);
+    if (nrfFlags.length) neuroLines.push(`  ? Red Flags: ${nrfFlags.join(", ")}`);
     // GCS if recorded
     const gcsE = v("gcs_eye"), gcsV = v("gcs_verbal"), gcsM = v("gcs_motor");
     if (gcsE||gcsV||gcsM) {
@@ -2666,7 +2666,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     O_parts.push(`Special Tests:\n${stLines.join("\n")}.`);
   }
 
-  // ── NKT (Neurokinetic Therapy) ──────────────────────────────────────────
+  // ?? NKT (Neurokinetic Therapy) ??????????????????????????????????????????
   {
     // All 47 NKT test IDs in order
     const NKT_IDS = [
@@ -2703,7 +2703,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (nktLines.length) O_parts.push(`Neuromuscular Assessment (NKT):\n${nktLines.join("\n")}.`);
   }
 
-  // ── FUNCTIONAL MOVEMENT ASSESSMENT ─────────────────────────────────────
+  // ?? FUNCTIONAL MOVEMENT ASSESSMENT ?????????????????????????????????????
   {
     const fmaLines = [];
     const FMA_MOVEMENTS = [
@@ -2735,13 +2735,13 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     const fmsScores = FMS_SCORES.filter(([k]) => data[k]).map(([k, label]) => `${label}: ${data[k]}/3`);
     if (fmsScores.length) {
       const total = FMS_SCORES.reduce((sum,[k]) => sum+(Number(data[k])||0), 0);
-      fmaLines.push(`  FMS Scores: ${fmsScores.join(", ")} [Total: ${total}/21]${total<14?" ⚠ elevated injury risk":""}`);
+      fmaLines.push(`  FMS Scores: ${fmsScores.join(", ")} [Total: ${total}/21]${total<14?" ? elevated injury risk":""}`);
     }
     if (v("fma_notes")) fmaLines.push(`  Notes: ${v("fma_notes")}`);
     if (fmaLines.length) O_parts.push(`Functional Movement Assessment:\n${fmaLines.join("\n")}.`);
   }
 
-  // ── KINETIC CHAIN ─────────────────────────────────────────────────────────
+  // ?? KINETIC CHAIN ?????????????????????????????????????????????????????????
   {
     const kcLines = [];
     const KC_IDS = [
@@ -2773,7 +2773,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (kcLines.length) O_parts.push(`Kinetic Chain Assessment:\n${kcLines.join("\n")}.`);
   }
 
-  // ── CYRIAX / END-FEEL ASSESSMENT ─────────────────────────────────────────
+  // ?? CYRIAX / END-FEEL ASSESSMENT ?????????????????????????????????????????
   {
     const cyriaxLines = [];
     // Cyriax fields are stored as cy_ prefix
@@ -2801,7 +2801,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (cyriaxLines.length) O_parts.push(`Cyriax / Selective Tissue Tension:\n${cyriaxLines.join("\n")}.`);
   }
 
-  // ── FASCIAL ASSESSMENT ────────────────────────────────────────────────────
+  // ?? FASCIAL ASSESSMENT ????????????????????????????????????????????????????
   {
     const faLines = [];
     const FA_FIELDS = [
@@ -2825,7 +2825,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (faLines.length) O_parts.push(`Fascial Assessment:\n${faLines.join("\n")}.`);
   }
 
-  // ── BODY CHART ANNOTATIONS ─────────────────────────────────────────────────
+  // ?? BODY CHART ANNOTATIONS ?????????????????????????????????????????????????
   try {
     const annotations = JSON.parse(data.body_chart_annotations || "[]");
     const annNotes = annotations
@@ -2871,10 +2871,10 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 
   if (extraO) O_parts.push(extraO);
 
-  // ── A: ASSESSMENT ──────────────────────────────────────────────────────────
+  // ?? A: ASSESSMENT ??????????????????????????????????????????????????????????
   const A_parts = [];
 
-  // ── Try v6 engine first (new regional subjective) ──────────────────────────
+  // ?? Try v6 engine first (new regional subjective) ??????????????????????????
   const _v6Regions = _soap_regions.length > 0 ? _soap_regions : null;
   const _v6Result = (_v6Regions && typeof runEngineV6 === "function")
     ? runEngineV6(data, _v6Regions)
@@ -2891,13 +2891,13 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       if (r.differentials?.length > 1) {
         A_parts.push(`  Differentials:`);
         r.differentials.forEach((d, j) => {
-          A_parts.push(`    ${j===0?"①":j===1?"②":"③"} ${d.label} [${d.confidence}]`);
+          A_parts.push(`    ${j===0?"?":j===1?"?":"?"} ${d.label} [${d.confidence}]`);
           if (d.evidence) A_parts.push(`       Evidence: ${d.evidence}`);
         });
       }
       if (r.precautions?.filter(p=>p).length > 0) {
         A_parts.push(`  Precautions/Red Flags:`);
-        r.precautions.filter(p=>p).forEach(p => A_parts.push(`    ⚠ ${p}`));
+        r.precautions.filter(p=>p).forEach(p => A_parts.push(`    ? ${p}`));
       }
     });
     if (_v6Result.cross?.length > 0) {
@@ -2908,7 +2908,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       });
     }
     if (_v6Result.anyUrgent) {
-      A_parts.push("\n⚠ URGENT FLAGS IDENTIFIED - Medical review required before physiotherapy treatment");
+      A_parts.push("\n? URGENT FLAGS IDENTIFIED - Medical review required before physiotherapy treatment");
     }
   } else {
     // Fall back to legacy diagnosis engine
@@ -2939,10 +2939,10 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     corrConf.forEach(r => A_parts.push(`  . ${r.tag}: ${r.text}`));
   }
 
-  // ── FMS INDIVIDUAL MOVEMENT SCORES ────────────────────────────────────────
+  // ?? FMS INDIVIDUAL MOVEMENT SCORES ????????????????????????????????????????
   if (dx?.fmsTotal !== null && dx?.fmsTotal !== undefined) {
     const fmsRisk = dx.fmsTotal >= 17 ? "Low" : dx.fmsTotal >= 15 ? "Moderate" : "High";
-    const fmsFlag = dx.fmsTotal >= 17 ? "✅" : dx.fmsTotal >= 15 ? "⚠" : "🔴";
+    const fmsFlag = dx.fmsTotal >= 17 ? "?" : dx.fmsTotal >= 15 ? "?" : "🔴";
     const fmsMovements = [
       ["Deep Squat",           "sp_fms_sq"],
       ["Hurdle Step L",        "sp_fms_hs_l"],
@@ -2961,7 +2961,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       .map(([label, key]) => {
         const score = v(key);
         if (!score) return null;
-        const flag = score === "0" ? " 🔴" : score === "1" ? " ⚠" : "";
+        const flag = score === "0" ? " 🔴" : score === "1" ? " ?" : "";
         return `  ${label.padEnd(22)}: ${score}/3${flag}`;
       })
       .filter(Boolean);
@@ -2976,7 +2976,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     });
     let fmsBlock = `FMS Total: ${dx.fmsTotal}/21 - ${fmsFlag} ${fmsRisk} injury risk`;
     if (fmsRows.length) fmsBlock += `\n${fmsRows.join("\n")}`;
-    if (asymmetries.length) fmsBlock += `\n  ⚠ Asymmetries: ${asymmetries.join(", ")}`;
+    if (asymmetries.length) fmsBlock += `\n  ? Asymmetries: ${asymmetries.join(", ")}`;
     A_parts.push(`\n${fmsBlock}`);
   }
 
@@ -2984,7 +2984,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   if (prog) A_parts.push(`\nPrognosis: ${prog}.`);
   if (extraA) A_parts.push(`\n${extraA}`);
 
-  // ── P: PLAN ────────────────────────────────────────────────────────────────
+  // ?? P: PLAN ????????????????????????????????????????????????????????????????
   const P_parts = [];
   // P section header only added if there is actual plan content
 
@@ -3048,9 +3048,9 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // SOAP NOTE MODULE - Upgraded with Real-Time SOAP + Suggested Interpretation
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 function SOAPNoteModule({ data }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
@@ -3079,7 +3079,7 @@ function SOAPNoteModule({ data }) {
   const modRules = interpretations.filter(r => r.confidence === "MOD");
   const totalRules = interpretations.length;
 
-  // ── AI Clinical Assistant ─────────────────────────────────────────────────
+  // ?? AI Clinical Assistant ?????????????????????????????????????????????????
   const [aiKey,       setAiKey]       = useState(() => localStorage.getItem("groq_api_key") || "");
   const [aiKeyInput,  setAiKeyInput]  = useState("");
   const [aiKeySet,    setAiKeySet]    = useState(() => !!localStorage.getItem("groq_api_key"));
@@ -3147,7 +3147,7 @@ function SOAPNoteModule({ data }) {
     setAiLoading(false);
   };
 
-  // ── Copy helpers ──────────────────────────────────────────────────────────
+  // ?? Copy helpers ??????????????????????????????????????????????????????????
   const copySection = (key, text) => {
     navigator.clipboard?.writeText(text).then(() => { setCopied(key); setTimeout(()=>setCopied(null),2000); });
   };
@@ -3157,7 +3157,7 @@ function SOAPNoteModule({ data }) {
       `SOAP CLINICAL NOTE`,
       `Patient: ${data["dem_name"]||"-"} | Date: ${d2} | Session: ${session}`,
       `Clinician: ${clinician||"-"} | Clinic: ${clinic||"-"}`,
-      "═".repeat(60),
+      "?".repeat(60),
       `\nSUBJECTIVE (S):\n${soap.S}`,
       `\nOBJECTIVE (O):\n${soap.O}`,
       `\nASSESSMENT (A):\n${soap.A}`,
@@ -3194,7 +3194,7 @@ function SOAPNoteModule({ data }) {
     }
   };
 
-  // ── Styles ────────────────────────────────────────────────────────────────
+  // ?? Styles ????????????????????????????????????????????????????????????????
   const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.76rem"};
   const ta  = {...inp,resize:"vertical",minHeight:60};
   const lbl = {fontSize:"0.6rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.8px"};
@@ -3220,7 +3220,7 @@ function SOAPNoteModule({ data }) {
     </button>
   );
 
-  // ── Interpretation badge confidence render ────────────────────────────────
+  // ?? Interpretation badge confidence render ????????????????????????????????
   const confBadge = (conf) => {
     const cfg = {
       HIGH:   {bg:"rgba(16,185,129,0.12)",color:"#059669"},
@@ -3238,7 +3238,7 @@ function SOAPNoteModule({ data }) {
   return (
     <div>
 
-      {/* ── LIVE STATUS BAR ────────────────────────────────────────────────── */}
+      {/* ?? LIVE STATUS BAR ?????????????????????????????????????????????????? */}
       <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
         background:`${PC.accent}0a`,border:`1px solid ${PC.accent}25`,
         borderRadius:12,marginBottom:12,flexWrap:"wrap"}}>
@@ -3262,13 +3262,13 @@ function SOAPNoteModule({ data }) {
               border:"1px solid rgba(220,38,38,0.4)",borderRadius:20,
               fontSize:"0.65rem",fontWeight:800,color:"#dc2626",
               animation:"pm-pulse 1.5s ease-in-out infinite"}}>
-              ⚠ {urgentRules.length} URGENT
+              ? {urgentRules.length} URGENT
             </div>
           )}
         </div>
       </div>
 
-      {/* ── URGENT FLAGS - always visible at top ───────────────────────────── */}
+      {/* ?? URGENT FLAGS - always visible at top ????????????????????????????? */}
       {urgentRules.map((r,i) => (
         <div key={i} style={{background:"rgba(220,38,38,0.07)",
           border:"1.5px solid rgba(220,38,38,0.6)",borderRadius:12,
@@ -3281,7 +3281,7 @@ function SOAPNoteModule({ data }) {
         </div>
       ))}
 
-      {/* ── SESSION DETAILS ─────────────────────────────────────────────────── */}
+      {/* ?? SESSION DETAILS ??????????????????????????????????????????????????? */}
       <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
         <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>📋 Session Details</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
@@ -3295,7 +3295,7 @@ function SOAPNoteModule({ data }) {
         </div>
       </div>
 
-      {/* ── MAIN TAB BAR ──────────────────────────────────────────────────────── */}
+      {/* ?? MAIN TAB BAR ???????????????????????????????????????????????????????? */}
       <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
         {tabBtn("soap","📄 SOAP Note")}
         {tabBtn("interp","🧠 Suggested Interpretation", totalRules)}
@@ -3304,9 +3304,9 @@ function SOAPNoteModule({ data }) {
         {tabBtn("ai","🤖 AI Assistant")}
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════
+      {/* ??????????????????????????????????????????????????????????????
           SOAP TAB - Real-time auto-filled note
-      ══════════════════════════════════════════════════════════════ */}
+      ?????????????????????????????????????????????????????????????? */}
       {(activeTab==="soap"||activeTab==="both") && (
         <div style={activeTab==="both"?{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}:{}}>
 
@@ -3320,7 +3320,7 @@ function SOAPNoteModule({ data }) {
                 🖨 Print / PDF
               </button>
               <div style={{marginLeft:"auto",fontSize:"0.62rem",color:PC.muted,display:"flex",alignItems:"center"}}>
-                Updates live as you fill assessment fields ↗
+                Updates live as you fill assessment fields ?
               </div>
             </div>
 
@@ -3331,7 +3331,7 @@ function SOAPNoteModule({ data }) {
                 borderRadius:16,overflow:"hidden",
                 boxShadow:`0 3px 16px ${sectionColors[key]}18`}}>
 
-                {/* ── Colourful Header ── */}
+                {/* ?? Colourful Header ?? */}
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                   padding:"12px 16px",
                   background:`linear-gradient(120deg,${sectionColors[key]}22 0%,${sectionColors[key]}0a 100%)`,
@@ -3380,7 +3380,7 @@ function SOAPNoteModule({ data }) {
                   </button>
                 </div>
 
-                {/* ── Dark Black Body Text ── */}
+                {/* ?? Dark Black Body Text ?? */}
                 <div style={{padding:"14px 18px",background:"#ffffff"}}>
                   <pre style={{margin:0,
                     fontSize:"0.83rem",
@@ -3420,7 +3420,7 @@ function SOAPNoteModule({ data }) {
                       <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:6,flexWrap:"wrap"}}>
                         <span style={{fontSize:"0.75rem"}}>{
                           {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
-                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐",Correlation:"🔗"}[r.module]||"⚕"
+                           Neurology:"!",Gait:"🚶",Functional:"🏃",Palpation:"🖐",Correlation:"🔗"}[r.module]||"+"
                         }</span>
                         <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,
                           textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
@@ -3437,9 +3437,9 @@ function SOAPNoteModule({ data }) {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════
+      {/* ??????????????????????????????????????????????????????????????
           INTERPRETATION TAB - Suggested Interpretation full panel
-      ══════════════════════════════════════════════════════════════ */}
+      ?????????????????????????????????????????????????????????????? */}
       {activeTab==="interp" && (
         <div>
           {/* Header card */}
@@ -3507,7 +3507,7 @@ function SOAPNoteModule({ data }) {
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7,flexWrap:"wrap"}}>
                         <span style={{fontSize:"0.82rem"}}>{
                           {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
-                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐"}[r.module]||"⚕"
+                           Neurology:"!",Gait:"🚶",Functional:"🏃",Palpation:"🖐"}[r.module]||"+"
                         }</span>
                         <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,
                           textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
@@ -3534,7 +3534,7 @@ function SOAPNoteModule({ data }) {
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                         <span style={{fontSize:"0.82rem"}}>{
                           {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
-                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐"}[r.module]||"⚕"
+                           Neurology:"!",Gait:"🚶",Functional:"🏃",Palpation:"🖐"}[r.module]||"+"
                         }</span>
                         <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,
                           textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
@@ -3551,9 +3551,9 @@ function SOAPNoteModule({ data }) {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════
+      {/* ??????????????????????????????????????????????????????????????
           ADD NOTES TAB - Additional clinical notes per SOAP section
-      ══════════════════════════════════════════════════════════════ */}
+      ?????????????????????????????????????????????????????????????? */}
       {activeTab==="extra" && (
         <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"14px"}}>
           <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
@@ -3582,9 +3582,9 @@ function SOAPNoteModule({ data }) {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════
+      {/* ??????????????????????????????????????????????????????????????
           AI ASSISTANT TAB
-      ══════════════════════════════════════════════════════════════ */}
+      ?????????????????????????????????????????????????????????????? */}
       {activeTab==="ai" && (
         <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"14px"}}>
           <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
@@ -3664,7 +3664,7 @@ function SOAPNoteModule({ data }) {
                     <button onClick={()=>navigator.clipboard?.writeText(aiResponse)} style={{padding:"2px 9px",background:"rgba(0,229,255,0.1)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:5,color:"#00e5ff",fontSize:"0.6rem",cursor:"pointer"}}>Copy</button>
                   </div>
                   <div style={{padding:"13px 14px",fontSize:"0.75rem",color:PC.text,lineHeight:1.8,whiteSpace:"pre-wrap",maxHeight:480,overflowY:"auto"}}>{aiResponse}</div>
-                  <div style={{padding:"7px 13px",fontSize:"0.58rem",color:PC.muted,borderTop:`1px solid ${PC.border}`}}>⚠ AI-generated - for clinical decision support only. Clinician responsible for all clinical decisions.</div>
+                  <div style={{padding:"7px 13px",fontSize:"0.58rem",color:PC.muted,borderTop:`1px solid ${PC.border}`}}>? AI-generated - for clinical decision support only. Clinician responsible for all clinical decisions.</div>
                 </div>
               )}
 
@@ -3682,9 +3682,9 @@ function SOAPNoteModule({ data }) {
 
 
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // EXERCISE PRESCRIPTION MODULE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
 // ============================================================
 // ExercisePrescription.jsx
@@ -4030,7 +4030,7 @@ const EXERCISE_DB = {
     }
   },
   sports: {
-    label:"Sports Rehab & Performance", icon:"⚽", color:"#84cc16",
+    label:"Sports Rehab & Performance", icon:"?", color:"#84cc16",
     categories: {
       "Return to Running": [
         { id:"sp_run_walk",         name:"Run-Walk Protocol",                        target:"Lower limb - return to sport progressive loading", desc:"Week 1: Walk 1min, run 1min x10. Week 2: run 2min x7. Progress weekly.",   sets:1, reps:1,  hold:0,  freq:"3x/week",  phase:"Phase 3", evidence:"Strong",    cues:"Stop if NRS >3/10. 48h recovery between sessions.",       progression:"Increase run intervals -> Continuous -> Speed" },
@@ -4087,7 +4087,7 @@ const EXERCISE_DB = {
     }
   },
   cardiac: {
-    label:"Cardiac Rehab", icon:"♥", color:"#ef4444",
+    label:"Cardiac Rehab", icon:"?", color:"#ef4444",
     categories: {
       "Phase 2-3 Cardiac Rehab": [
         { id:"card_walk_prog",      name:"Supervised Walking Programme",             target:"Cardiorespiratory - Phase 2 cardiac rehab",        desc:"Treadmill or overground. Start 10-15 min. Progress 5 min/week. RPE 11-13.", sets:1, reps:1,  hold:0,  freq:"5x/week",  phase:"Phase 1", evidence:"Strongest", cues:"Borg RPE 11-13 (moderate). Stop if chest pain/dizziness.", progression:"Increase duration -> Add interval -> Cycle/swim" },
@@ -4184,7 +4184,7 @@ const ALL_EXERCISES = Object.values(EXERCISE_DB).flatMap(region =>
 );
 
 
-// ─── KNEE EVIDENCE-BASED PROTOCOLS ───────────────────────────────────────────
+// ??? KNEE EVIDENCE-BASED PROTOCOLS ???????????????????????????????????????????
 const KNEE_PROTOCOLS = [
   {
     id:"knee_oa",
@@ -4403,7 +4403,7 @@ const KNEE_PROTOCOLS = [
   {
     id:"knee_patellar_tendon",
     label:"Patellar Tendinopathy",
-    icon:"⚡",
+    icon:"!",
     color:"#00c97a",
     evidence:"Purdam 2004 / Kongsgaard 2009 / Rio 2015",
     phases:[
@@ -4441,7 +4441,7 @@ const KNEE_PROTOCOLS = [
   },
 ];
 
-// ─── SHOULDER EVIDENCE-BASED PROTOCOLS ───────────────────────────────────────
+// ??? SHOULDER EVIDENCE-BASED PROTOCOLS ???????????????????????????????????????
 const SHOULDER_PROTOCOLS = [
   {
     id:"shoulder_rct", label:"Rotator Cuff Tendinopathy", icon:"💪", color:"#7f5af0",
@@ -4530,7 +4530,7 @@ const SHOULDER_PROTOCOLS = [
   },
 ];
 
-// ─── ELBOW EVIDENCE-BASED PROTOCOLS ──────────────────────────────────────────
+// ??? ELBOW EVIDENCE-BASED PROTOCOLS ??????????????????????????????????????????
 const ELBOW_PROTOCOLS = [
   {
     id:"elbow_lateral", label:"Lateral Epicondylalgia (Tennis Elbow)", icon:"🎾", color:"#ff4d6d",
@@ -4561,7 +4561,7 @@ const ELBOW_PROTOCOLS = [
     ]
   },
   {
-    id:"elbow_medial", label:"Medial Epicondylalgia (Golfer's Elbow)", icon:"⛳", color:"#00c97a",
+    id:"elbow_medial", label:"Medial Epicondylalgia (Golfer's Elbow)", icon:"?", color:"#00c97a",
     evidence:"Sims 2014 / Steunebrink 2010 / JOSPT Clinical Practice Guidelines",
     phases:[
       { phase:"Phase 1 - Load Reduction & Isometrics (Weeks 1-4)", color:"#00c97a", exercises:[
@@ -4586,7 +4586,7 @@ const ELBOW_PROTOCOLS = [
     ]
   },
   {
-    id:"elbow_cubital", label:"Cubital Tunnel Syndrome (Ulnar Nerve)", icon:"⚡", color:"#ffb300",
+    id:"elbow_cubital", label:"Cubital Tunnel Syndrome (Ulnar Nerve)", icon:"!", color:"#ffb300",
     evidence:"Caliandro 2016 Cochrane / Svernlöv 2009 RCT / AAOS Guidelines",
     phases:[
       { phase:"Phase 1 - Nerve Protection & Neural Mobility (Weeks 1-6)", color:"#00c97a", exercises:[
@@ -4634,7 +4634,7 @@ const ELBOW_PROTOCOLS = [
   },
 ];
 
-// ─── HIP EVIDENCE-BASED PROTOCOLS ────────────────────────────────────────────
+// ??? HIP EVIDENCE-BASED PROTOCOLS ????????????????????????????????????????????
 const HIP_PROTOCOLS = [
   {
     id:"hip_oa", label:"Hip Osteoarthritis", icon:"🦴", color:"#ff7043",
@@ -4723,7 +4723,7 @@ const HIP_PROTOCOLS = [
     ]
   },
   {
-    id:"hip_piriformis", label:"Piriformis Syndrome / Deep Gluteal", icon:"⚡", color:"#00c97a",
+    id:"hip_piriformis", label:"Piriformis Syndrome / Deep Gluteal", icon:"!", color:"#00c97a",
     evidence:"Boyajian-O'Neill 2008 / Hopayian 2010 / JOSPT Clinical Guidelines",
     phases:[
       { phase:"Phase 1 - Neural & Muscle Release (Weeks 1-4)", color:"#00c97a", exercises:[
@@ -4799,7 +4799,7 @@ const HIP_PROTOCOLS = [
   },
 ];
 
-// ─── SHARED PROTOCOL PANEL RENDERER ──────────────────────────────────────────
+// ??? SHARED PROTOCOL PANEL RENDERER ??????????????????????????????????????????
 function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPhase, togglePhase }) {
   return (
     <div style={{ borderTop:"1px solid rgba(0,0,0,0.08)", padding:"10px 14px 14px" }}>
@@ -4843,7 +4843,7 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
                   <div style={{ fontWeight:800, fontSize:"0.72rem", color:ph.color }}>{ph.phase}</div>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     <span style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>{ph.exercises.length} exercises</span>
-                    <span style={{ color:ph.color, fontSize:"0.7rem" }}>{openPhase[`${p.id}_${pi}`] ? "▲" : "▼"}</span>
+                    <span style={{ color:ph.color, fontSize:"0.7rem" }}>{openPhase[`${p.id}_${pi}`] ? "^" : "v"}</span>
                   </div>
                 </div>
                 {openPhase[`${p.id}_${pi}`] && (
@@ -4886,7 +4886,7 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
   );
 }
 
-// ─── REGION TEMPLATE MAP ──────────────────────────────────────────────────────
+// ??? REGION TEMPLATE MAP ??????????????????????????????????????????????????????
 const REGION_TEMPLATE_MAP = {
   "Lumbar":       ["lbp_acute","lbp_core","lbp_radicular"],
   "Cervical":     ["neck_acute","posture_correction"],
@@ -4898,7 +4898,7 @@ const REGION_TEMPLATE_MAP = {
   "Pelvic Floor": ["pf_incontinence","pf_prolapse"],
 };
 
-// ─── QUICK TEMPLATES PANEL ────────────────────────────────────────────────────
+// ??? QUICK TEMPLATES PANEL ????????????????????????????????????????????????????
 function QuickTemplatesPanel({ applyTemplate }) {
   const [openRegion,     setOpenRegion]     = useState(null);
   const [openKnee,       setOpenKnee]       = useState(null);
@@ -4921,14 +4921,14 @@ function QuickTemplatesPanel({ applyTemplate }) {
   return (
     <div style={{ marginBottom:12 }}>
 
-      {/* ── QUICK PROGRAMME TEMPLATES ── */}
+      {/* ?? QUICK PROGRAMME TEMPLATES ?? */}
       <div style={{ background:"#ffffff", border:"1px solid #d8cce8", borderRadius:12, marginBottom:10, overflow:"hidden" }}>
         <div onClick={() => setTemplatesOpen(o => !o)}
           style={{ padding:"12px 14px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#7e6a9a" }}>⚡ Quick Programme Templates</div>
+          <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#7e6a9a" }}>! Quick Programme Templates</div>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <span style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>Select by region</span>
-            <span style={{ color:"#7e6a9a", fontSize:"0.75rem" }}>{templatesOpen ? "▲" : "▼"}</span>
+            <span style={{ color:"#7e6a9a", fontSize:"0.75rem" }}>{templatesOpen ? "^" : "v"}</span>
           </div>
         </div>
         {templatesOpen && (
@@ -4965,7 +4965,7 @@ function QuickTemplatesPanel({ applyTemplate }) {
         )}
       </div>
 
-      {/* ── KNEE EVIDENCE-BASED PROTOCOLS ── */}
+      {/* ?? KNEE EVIDENCE-BASED PROTOCOLS ?? */}
       <div style={{ background:"#ffffff", border:"1px solid rgba(255,77,109,0.25)", borderRadius:12, overflow:"hidden" }}>
         <div onClick={() => setKneeOpen(o => !o)}
           style={{ padding:"12px 14px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -4976,7 +4976,7 @@ function QuickTemplatesPanel({ applyTemplate }) {
               <div style={{ fontSize:"0.6rem", color:"#7e6a9a", marginTop:1 }}>Exercise + Treatment · {KNEE_PROTOCOLS.length} conditions covered</div>
             </div>
           </div>
-          <span style={{ color:"#ff4d6d", fontSize:"0.75rem" }}>{kneeOpen ? "▲" : "▼"}</span>
+          <span style={{ color:"#ff4d6d", fontSize:"0.75rem" }}>{kneeOpen ? "^" : "v"}</span>
         </div>
         {kneeOpen && (
           <div style={{ borderTop:"1px solid rgba(255,77,109,0.15)", padding:"10px 14px 14px" }}>
@@ -5028,7 +5028,7 @@ function QuickTemplatesPanel({ applyTemplate }) {
                         <div style={{ fontWeight:800, fontSize:"0.72rem", color:ph.color }}>{ph.phase}</div>
                         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                           <span style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>{ph.exercises.length} exercises</span>
-                          <span style={{ color:ph.color, fontSize:"0.7rem" }}>{openPhase[`${kp.id}_${pi}`] ? "▲" : "▼"}</span>
+                          <span style={{ color:ph.color, fontSize:"0.7rem" }}>{openPhase[`${kp.id}_${pi}`] ? "^" : "v"}</span>
                         </div>
                       </div>
                       {openPhase[`${kp.id}_${pi}`] && (
@@ -5073,7 +5073,7 @@ function QuickTemplatesPanel({ applyTemplate }) {
         )}
       </div>
 
-      {/* ── SHOULDER EVIDENCE-BASED PROTOCOLS ── */}
+      {/* ?? SHOULDER EVIDENCE-BASED PROTOCOLS ?? */}
       <div style={{ background:"#ffffff", border:"1px solid rgba(127,90,240,0.25)", borderRadius:12, overflow:"hidden", marginTop:10 }}>
         <div onClick={() => setShoulderOpen(o => !o)}
           style={{ padding:"12px 14px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -5084,12 +5084,12 @@ function QuickTemplatesPanel({ applyTemplate }) {
               <div style={{ fontSize:"0.6rem", color:"#7e6a9a", marginTop:1 }}>Exercise + Treatment · {SHOULDER_PROTOCOLS.length} conditions covered</div>
             </div>
           </div>
-          <span style={{ color:"#7f5af0", fontSize:"0.75rem" }}>{shoulderOpen ? "▲" : "▼"}</span>
+          <span style={{ color:"#7f5af0", fontSize:"0.75rem" }}>{shoulderOpen ? "^" : "v"}</span>
         </div>
         {shoulderOpen && <ProtocolPanel protocols={SHOULDER_PROTOCOLS} openId={openShoulder} setOpenId={setOpenShoulder} openTx={openShoulderTx} setOpenTx={setOpenShoulderTx} openPhase={openPhase} togglePhase={togglePhase} />}
       </div>
 
-      {/* ── ELBOW EVIDENCE-BASED PROTOCOLS ── */}
+      {/* ?? ELBOW EVIDENCE-BASED PROTOCOLS ?? */}
       <div style={{ background:"#ffffff", border:"1px solid rgba(255,179,0,0.25)", borderRadius:12, overflow:"hidden", marginTop:10 }}>
         <div onClick={() => setElbowOpen(o => !o)}
           style={{ padding:"12px 14px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -5100,12 +5100,12 @@ function QuickTemplatesPanel({ applyTemplate }) {
               <div style={{ fontSize:"0.6rem", color:"#7e6a9a", marginTop:1 }}>Exercise + Treatment · {ELBOW_PROTOCOLS.length} conditions covered</div>
             </div>
           </div>
-          <span style={{ color:"#ffb300", fontSize:"0.75rem" }}>{elbowOpen ? "▲" : "▼"}</span>
+          <span style={{ color:"#ffb300", fontSize:"0.75rem" }}>{elbowOpen ? "^" : "v"}</span>
         </div>
         {elbowOpen && <ProtocolPanel protocols={ELBOW_PROTOCOLS} openId={openElbow} setOpenId={setOpenElbow} openTx={openElbowTx} setOpenTx={setOpenElbowTx} openPhase={openPhase} togglePhase={togglePhase} />}
       </div>
 
-      {/* ── HIP EVIDENCE-BASED PROTOCOLS ── */}
+      {/* ?? HIP EVIDENCE-BASED PROTOCOLS ?? */}
       <div style={{ background:"#ffffff", border:"1px solid rgba(255,112,67,0.25)", borderRadius:12, overflow:"hidden", marginTop:10 }}>
         <div onClick={() => setHipOpen(o => !o)}
           style={{ padding:"12px 14px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -5116,7 +5116,7 @@ function QuickTemplatesPanel({ applyTemplate }) {
               <div style={{ fontSize:"0.6rem", color:"#7e6a9a", marginTop:1 }}>Exercise + Treatment · {HIP_PROTOCOLS.length} conditions covered</div>
             </div>
           </div>
-          <span style={{ color:"#ff7043", fontSize:"0.75rem" }}>{hipOpen ? "▲" : "▼"}</span>
+          <span style={{ color:"#ff7043", fontSize:"0.75rem" }}>{hipOpen ? "^" : "v"}</span>
         </div>
         {hipOpen && <ProtocolPanel protocols={HIP_PROTOCOLS} openId={openHip} setOpenId={setOpenHip} openTx={openHipTx} setOpenTx={setOpenHipTx} openPhase={openPhase} togglePhase={togglePhase} />}
       </div>
@@ -5161,7 +5161,7 @@ function ExercisePrescriptionModule({ data, set }) {
 </head><body>
 <div class="header"><div><div class="logo">Physio<span>Pro</span></div><div style="font-size:11px;color:#555;margin-top:2px">Home Exercise Programme</div></div><div class="meta"><div><b>Patient:</b> ${patientName||"-"}</div><div><b>Date:</b> ${new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"})}</div><div><b>Clinician:</b> ${clinician||"-"}</div>${reviewDate?`<div><b>Review:</b> ${reviewDate}</div>`:""}</div></div>
 <p style="font-size:10px;color:#555;margin-bottom:14px">Perform exercises as prescribed. Stop if severe pain. Mild discomfort is normal. Contact your physiotherapist if unsure.</p>
-${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-title">${i+1}. ${ex.name}</span><span class="ex-phase">${ex.phase||""}</span></div><div class="ex-body"><div class="ex-target">🎯 ${ex.target}</div><div class="ex-grid"><div class="ex-stat"><div class="ex-stat-val">${ex.customSets}</div><div class="ex-stat-label">Sets</div></div><div class="ex-stat"><div class="ex-stat-val">${ex.customReps}</div><div class="ex-stat-label">Reps</div></div><div class="ex-stat"><div class="ex-stat-val">${ex.customHold}s</div><div class="ex-stat-label">Hold</div></div><div class="ex-stat"><div class="ex-stat-val" style="font-size:9px">${ex.customFreq}</div><div class="ex-stat-label">Freq</div></div></div><div class="ex-desc">${ex.desc}</div><div class="ex-cues">💡 ${ex.cues}</div>${ex.notes?`<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px;font-size:10px;margin-top:5px"><b>Notes:</b> ${ex.notes}</div>`:""}<div class="ex-prog">📈 ${ex.progression}</div><div style="margin-top:8px;font-size:9px;color:#94a3b8">Pain (0-10): ___/10 &nbsp;&nbsp; ☐ Mon ☐ Tue ☐ Wed ☐ Thu ☐ Fri ☐ Sat ☐ Sun</div></div></div>`).join("")}
+${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-title">${i+1}. ${ex.name}</span><span class="ex-phase">${ex.phase||""}</span></div><div class="ex-body"><div class="ex-target">🎯 ${ex.target}</div><div class="ex-grid"><div class="ex-stat"><div class="ex-stat-val">${ex.customSets}</div><div class="ex-stat-label">Sets</div></div><div class="ex-stat"><div class="ex-stat-val">${ex.customReps}</div><div class="ex-stat-label">Reps</div></div><div class="ex-stat"><div class="ex-stat-val">${ex.customHold}s</div><div class="ex-stat-label">Hold</div></div><div class="ex-stat"><div class="ex-stat-val" style="font-size:9px">${ex.customFreq}</div><div class="ex-stat-label">Freq</div></div></div><div class="ex-desc">${ex.desc}</div><div class="ex-cues">💡 ${ex.cues}</div>${ex.notes?`<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px;font-size:10px;margin-top:5px"><b>Notes:</b> ${ex.notes}</div>`:""}<div class="ex-prog">📈 ${ex.progression}</div><div style="margin-top:8px;font-size:9px;color:#94a3b8">Pain (0-10): ___/10 &nbsp;&nbsp; ? Mon ? Tue ? Wed ? Thu ? Fri ? Sat ? Sun</div></div></div>`).join("")}
 <div class="sig"><div style="flex:1"><div class="sig-line"></div><div class="sig-label">Clinician Signature</div></div><div style="flex:1"><div class="sig-line"></div><div class="sig-label">Patient Signature</div></div></div>
 <div class="footer">Generated by PhysioPro · ${new Date().toLocaleString()}</div>
 </body></html>`;
@@ -5172,7 +5172,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
 
   return(
     <div>
-      {/* ── QUICK TEMPLATES + KNEE PROTOCOLS ── */}
+      {/* ?? QUICK TEMPLATES + KNEE PROTOCOLS ?? */}
       <QuickTemplatesPanel applyTemplate={applyTemplate} />
 
       {/* Region tabs */}
@@ -5210,12 +5210,12 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
                         <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
                           <span style={{fontSize:"0.75rem",fontWeight:700,color:"#1a1025"}}>{ex.name}</span>
                           <span style={{fontSize:"0.55rem",padding:"1px 6px",borderRadius:5,background:`${phaseColor[ex.phase]||"#1a2d45"}18`,color:phaseColor[ex.phase]||"#6b8399",border:`1px solid ${phaseColor[ex.phase]||"#1a2d45"}40`,fontWeight:700}}>{ex.phase}</span>
-                          <span style={{fontSize:"0.55rem",color:"#ffb300",fontWeight:700}}>⭐ {ex.evidence?.split(" - ")[0]}</span>
+                          <span style={{fontSize:"0.55rem",color:"#ffb300",fontWeight:700}}>? {ex.evidence?.split(" - ")[0]}</span>
                         </div>
                         <div style={{fontSize:"0.63rem",color:"#7e6a9a",marginTop:2}}>{ex.target}</div>
                       </div>
                       <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0}}>
-                        <span style={{fontSize:"0.6rem",color:"#7e6a9a"}}>{isOpen?"▲":"▼"}</span>
+                        <span style={{fontSize:"0.6rem",color:"#7e6a9a"}}>{isOpen?"^":"v"}</span>
                         <button onClick={e=>{e.stopPropagation();inProg?removeEx(ex.id):addEx(ex);}} style={{padding:"4px 10px",borderRadius:7,fontSize:"0.62rem",fontWeight:800,border:`1px solid ${inProg?"rgba(255,77,109,0.4)":"rgba(0,201,122,0.4)"}`,background:inProg?"rgba(255,77,109,0.12)":"rgba(0,201,122,0.12)",color:inProg?"#ff4d6d":"#00c97a",cursor:"pointer"}}>{inProg?"x Remove":"+ Add"}</button>
                       </div>
                     </div>
@@ -5279,18 +5279,18 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
       )}
 
       <div style={{padding:"7px 11px",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,fontSize:"0.6rem",color:"#7e6a9a",lineHeight:1.5}}>
-        ⚠ Exercise prescriptions are clinical suggestions. Modify sets/reps/frequency based on individual patient capacity, irritability, and response. Evidence ratings reflect current literature.
+        ? Exercise prescriptions are clinical suggestions. Modify sets/reps/frequency based on individual patient capacity, irritability, and response. Evidence ratings reflect current literature.
       </div>
     </div>
   );
 }
 
-// ─── Tenderness grade colours ─────────────────────────────────────────────────
+// ??? Tenderness grade colours ?????????????????????????????????????????????????
 const GRADE_COLOR = {
   "0":"#00c97a","1+":"#a3e635","2+":"#ffb300","3+":"#ff4d6d","4+":"#dc2626",
 };
 
-// ─── Comprehensive anatomical point map ───────────────────────────────────────
+// ??? Comprehensive anatomical point map ???????????????????????????????????????
 // Each zone: { label, structures[], side }
 // Coordinates are % of SVG viewBox (0-100 x 0-200 for front; 0-100 x 0-200 for back)
 // Front body occupies x:5-95, y:0-200; Back body: same
@@ -5300,7 +5300,7 @@ const GRADE_COLOR = {
 // Format: { id, label, structures, x (%), y (%), r (radius px in SVG), side:"front"|"back"|"both" }
 
 const ANATOMICAL_HOTSPOTS = [
-  // ── HEAD & NECK (front) ─────────────────────────────────────────────────────
+  // ?? HEAD & NECK (front) ?????????????????????????????????????????????????????
   { id:"scalp",           x:50,  y:6,   r:14, side:"front", label:"Scalp / Occiput",
     structures:["Occipitofrontalis","Temporalis","Suboccipital muscles","Occipital protuberance","Mastoid process"] },
   { id:"tmj_r",           x:62,  y:13,  r:7,  side:"front", label:"Right TMJ",
@@ -5314,7 +5314,7 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"ant_cervical",    x:50,  y:19,  r:6,  side:"front", label:"Anterior Cervical Spine",
     structures:["C2-C7 anterior vertebral bodies","Longus colli / longus capitis","Thyroid cartilage (C4/5)","Hyoid bone (C3)","Carotid pulse"] },
 
-  // ── NECK (back) ──────────────────────────────────────────────────────────────
+  // ?? NECK (back) ??????????????????????????????????????????????????????????????
   { id:"post_cervical",   x:50,  y:10,  r:10, side:"back", label:"Posterior Cervical Spine",
     structures:["C2-C7 spinous processes","Suboccipital triangle","Semispinalis capitis","Splenius capitis","Trapezius - upper fibres","Facet joints C2-C7"] },
   { id:"cerv_lat_r",      x:62,  y:15,  r:7,  side:"back", label:"Right Lateral Cervical",
@@ -5322,7 +5322,7 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"cerv_lat_l",      x:38,  y:15,  r:7,  side:"back", label:"Left Lateral Cervical",
     structures:["Levator scapulae origin","Scalenes - posterior","C3-C5 transverse processes","Upper trapezius lateral border"] },
 
-  // ── SHOULDER (front) ─────────────────────────────────────────────────────────
+  // ?? SHOULDER (front) ?????????????????????????????????????????????????????????
   { id:"ac_joint_r",      x:72,  y:24,  r:6,  side:"front", label:"Right AC Joint",
     structures:["Acromioclavicular joint","AC ligament","Coracoclavicular ligaments (conoid & trapezoid)","Acromion tip"] },
   { id:"ac_joint_l",      x:28,  y:24,  r:6,  side:"front", label:"Left AC Joint",
@@ -5342,7 +5342,7 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"pec_major_l",     x:37,  y:30,  r:8,  side:"front", label:"Left Pectoralis Major",
     structures:["Pectoralis major - clavicular head","Pectoralis major - sternal head","Pectoralis minor (deep - coracoid)","Anterior axillary fold"] },
 
-  // ── SHOULDER (back) ──────────────────────────────────────────────────────────
+  // ?? SHOULDER (back) ??????????????????????????????????????????????????????????
   { id:"post_deltoid_r",  x:76,  y:28,  r:7,  side:"back", label:"Right Posterior Deltoid",
     structures:["Posterior deltoid - spinal head","Infraspinatus insertion (greater tuberosity)","Teres minor insertion","Posterior glenohumeral joint line"] },
   { id:"post_deltoid_l",  x:24,  y:28,  r:7,  side:"back", label:"Left Posterior Deltoid",
@@ -5364,13 +5364,13 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"scapula_l",       x:29,  y:33,  r:8,  side:"back", label:"Left Scapula / Rhomboids",
     structures:["Scapular spine","Medial scapular border","Rhomboid major / minor","Mid trapezius","Serratus anterior (lateral border)"] },
 
-  // ── THORACIC SPINE (back) ────────────────────────────────────────────────────
+  // ?? THORACIC SPINE (back) ????????????????????????????????????????????????????
   { id:"thoracic_spine",  x:50,  y:32,  r:8,  side:"back", label:"Thoracic Spine (T1-T12)",
     structures:["T1-T12 spinous processes","Thoracic facet joints","Erector spinae (iliocostalis / longissimus)","Multifidus","Costotransverse joints"] },
   { id:"mid_trap",        x:50,  y:28,  r:6,  side:"back", label:"Mid Trapezius / Interscapular",
     structures:["Middle trapezius","Lower trapezius","Rhomboid major","Interscapular trigger point zone","T2-T5 spinous processes"] },
 
-  // ── ELBOW (front) ────────────────────────────────────────────────────────────
+  // ?? ELBOW (front) ????????????????????????????????????????????????????????????
   { id:"lat_epicon_r",    x:81,  y:46,  r:6,  side:"front", label:"Right Lateral Epicondyle",
     structures:["Lateral epicondyle","ECRB origin (tennis elbow)","EDC origin","Radiohumeral joint","Lateral collateral ligament origin"] },
   { id:"lat_epicon_l",    x:19,  y:46,  r:6,  side:"front", label:"Left Lateral Epicondyle",
@@ -5384,23 +5384,23 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"ant_cubital_l",   x:22,  y:47,  r:5,  side:"front", label:"Left Antecubital Fossa",
     structures:["Biceps tendon","Brachialis","Brachial artery","Median nerve","Bicipital aponeurosis"] },
 
-  // ── FOREARM (front) ──────────────────────────────────────────────────────────
+  // ?? FOREARM (front) ??????????????????????????????????????????????????????????
   { id:"ant_forearm_r",   x:80,  y:53,  r:6,  side:"front", label:"Right Anterior Forearm",
     structures:["Flexor digitorum superficialis","Flexor carpi radialis","Palmaris longus","Pronator teres","Median nerve (midforearm)"] },
   { id:"ant_forearm_l",   x:20,  y:53,  r:6,  side:"front", label:"Left Anterior Forearm",
     structures:["Flexor digitorum superficialis","Flexor carpi radialis","Palmaris longus","Pronator teres","Median nerve (midforearm)"] },
 
-  // ── WRIST & HAND ─────────────────────────────────────────────────────────────
+  // ?? WRIST & HAND ?????????????????????????????????????????????????????????????
   { id:"wrist_r",         x:81,  y:61,  r:6,  side:"front", label:"Right Wrist / Carpal Tunnel",
     structures:["Carpal tunnel (median nerve)","Flexor retinaculum","Radial styloid (De Quervain's)","Scaphoid tubercle","Pisiform (ulnar nerve / FCU)"] },
   { id:"wrist_l",         x:19,  y:61,  r:6,  side:"front", label:"Left Wrist / Carpal Tunnel",
     structures:["Carpal tunnel (median nerve)","Flexor retinaculum","Radial styloid (De Quervain's)","Scaphoid tubercle","Pisiform (ulnar nerve / FCU)"] },
 
-  // ── ABDOMEN / LUMBAR (front) ─────────────────────────────────────────────────
+  // ?? ABDOMEN / LUMBAR (front) ?????????????????????????????????????????????????
   { id:"abdomen",         x:50,  y:50,  r:10, side:"front", label:"Abdomen",
     structures:["Rectus abdominis","External oblique","Linea alba","Umbilical region","Inguinal ligament","McBurney's point (appendix)"] },
 
-  // ── LUMBAR SPINE (back) ──────────────────────────────────────────────────────
+  // ?? LUMBAR SPINE (back) ??????????????????????????????????????????????????????
   { id:"lumbar_spine",    x:50,  y:49,  r:9,  side:"back", label:"Lumbar Spine (L1-L5)",
     structures:["L1-L5 spinous processes","Lumbar facet joints","Erector spinae (paraspinal)","Multifidus","Interspinous ligaments","L4/L5 - most common disc level"] },
   { id:"si_joint_r",      x:60,  y:55,  r:7,  side:"back", label:"Right Sacroiliac Joint",
@@ -5412,7 +5412,7 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"ql_l",            x:37,  y:49,  r:6,  side:"back", label:"Left Quadratus Lumborum",
     structures:["Quadratus lumborum","QL trigger point zone","12th rib attachment","Iliac crest insertion","L1-L4 transverse processes"] },
 
-  // ── HIP (front) ──────────────────────────────────────────────────────────────
+  // ?? HIP (front) ??????????????????????????????????????????????????????????????
   { id:"asis_r",          x:65,  y:60,  r:7,  side:"front", label:"Right ASIS / Hip Flexors",
     structures:["Anterior superior iliac spine (ASIS)","Sartorius origin","TFL origin","Inguinal ligament lateral end","Femoral nerve (medial to ASIS)"] },
   { id:"asis_l",          x:35,  y:60,  r:7,  side:"front", label:"Left ASIS / Hip Flexors",
@@ -5422,7 +5422,7 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"groin_l",         x:38,  y:65,  r:7,  side:"front", label:"Left Groin / Adductor Origin",
     structures:["Adductor longus origin (pubic tubercle)","Adductor brevis","Gracilis origin","Iliopsoas tendon (lesser trochanter)","Femoral triangle"] },
 
-  // ── HIP (back) ───────────────────────────────────────────────────────────────
+  // ?? HIP (back) ???????????????????????????????????????????????????????????????
   { id:"gmax_r",          x:65,  y:62,  r:9,  side:"back", label:"Right Gluteus Maximus",
     structures:["Gluteus maximus - posterior ilium","Sacrotuberous ligament","Gluteal fold","Greater trochanter (posterolateral)","Ischial tuberosity (proximal hamstrings)"] },
   { id:"gmax_l",          x:35,  y:62,  r:9,  side:"back", label:"Left Gluteus Maximus",
@@ -5436,13 +5436,13 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"piriformis_l",    x:37,  y:62,  r:6,  side:"back", label:"Left Piriformis / Deep Gluteal",
     structures:["Piriformis (mid-point PSIS -> GT)","Sciatic nerve (deep gluteal)","Obturator internus","Quadratus femoris","Deep gluteal syndrome zone"] },
 
-  // ── THIGH (front) ────────────────────────────────────────────────────────────
+  // ?? THIGH (front) ????????????????????????????????????????????????????????????
   { id:"quad_r",          x:68,  y:76,  r:8,  side:"front", label:"Right Quadriceps",
     structures:["Rectus femoris - central belly","Vastus lateralis","Vastus medialis oblique (VMO)","Quadriceps tendon (suprapatellar)","TFL / IT band (lateral thigh)"] },
   { id:"quad_l",          x:32,  y:76,  r:8,  side:"front", label:"Left Quadriceps",
     structures:["Rectus femoris - central belly","Vastus lateralis","Vastus medialis oblique (VMO)","Quadriceps tendon (suprapatellar)","TFL / IT band (lateral thigh)"] },
 
-  // ── THIGH (back) ─────────────────────────────────────────────────────────────
+  // ?? THIGH (back) ?????????????????????????????????????????????????????????????
   { id:"hamstring_r",     x:67,  y:75,  r:9,  side:"back", label:"Right Hamstrings",
     structures:["Biceps femoris - long head","Semitendinosus","Semimembranosus","Proximal hamstring origin (ischial tuberosity)","Sciatic nerve (posterior thigh)"] },
   { id:"hamstring_l",     x:33,  y:75,  r:9,  side:"back", label:"Left Hamstrings",
@@ -5452,7 +5452,7 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"itband_l",        x:24,  y:76,  r:6,  side:"back", label:"Left IT Band / Lateral Thigh",
     structures:["Iliotibial band","TFL belly","Vastus lateralis (lateral)","IT band - mid thigh friction zone"] },
 
-  // ── KNEE (front) ─────────────────────────────────────────────────────────────
+  // ?? KNEE (front) ?????????????????????????????????????????????????????????????
   { id:"patella_r",       x:68,  y:87,  r:6,  side:"front", label:"Right Patella / Extensor Mechanism",
     structures:["Patella (superior / inferior pole)","Patellar tendon","Tibial tuberosity (Osgood-Schlatter)","Infrapatellar fat pad","Medial patellar facet","Lateral patellar facet"] },
   { id:"patella_l",       x:32,  y:87,  r:6,  side:"front", label:"Left Patella / Extensor Mechanism",
@@ -5466,25 +5466,25 @@ const ANATOMICAL_HOTSPOTS = [
   { id:"lat_knee_l",      x:26,  y:88,  r:5,  side:"front", label:"Left Lateral Knee",
     structures:["LCL (lateral collateral ligament)","Lateral meniscus (joint line)","IT band - Gerdy's tubercle","Biceps femoris insertion (fibula head)","Popliteus tendon"] },
 
-  // ── KNEE (back) ──────────────────────────────────────────────────────────────
+  // ?? KNEE (back) ??????????????????????????????????????????????????????????????
   { id:"popliteal_r",     x:67,  y:88,  r:7,  side:"back", label:"Right Popliteal Fossa",
     structures:["Popliteal fossa","Popliteal artery (pulse)","Common peroneal nerve","Posterior capsule","Baker's cyst zone","Popliteus muscle"] },
   { id:"popliteal_l",     x:33,  y:88,  r:7,  side:"back", label:"Left Popliteal Fossa",
     structures:["Popliteal fossa","Popliteal artery (pulse)","Common peroneal nerve","Posterior capsule","Baker's cyst zone","Popliteus muscle"] },
 
-  // ── LOWER LEG (front) ────────────────────────────────────────────────────────
+  // ?? LOWER LEG (front) ????????????????????????????????????????????????????????
   { id:"ant_shin_r",      x:69,  y:97,  r:6,  side:"front", label:"Right Anterior Shin / Tibialis Anterior",
     structures:["Tibialis anterior - belly","Tibial crest (shin splints / MTSS)","Extensor digitorum longus","Anterior compartment","Deep peroneal nerve"] },
   { id:"ant_shin_l",      x:31,  y:97,  r:6,  side:"front", label:"Left Anterior Shin / Tibialis Anterior",
     structures:["Tibialis anterior - belly","Tibial crest (shin splints / MTSS)","Extensor digitorum longus","Anterior compartment","Deep peroneal nerve"] },
 
-  // ── LOWER LEG (back) ─────────────────────────────────────────────────────────
+  // ?? LOWER LEG (back) ?????????????????????????????????????????????????????????
   { id:"gastroc_r",       x:67,  y:96,  r:7,  side:"back", label:"Right Gastrocnemius / Soleus",
     structures:["Gastrocnemius - medial head","Gastrocnemius - lateral head","Soleus","Achilles tendon (proximal)","Sural nerve","Musculotendinous junction"] },
   { id:"gastroc_l",       x:33,  y:96,  r:7,  side:"back", label:"Left Gastrocnemius / Soleus",
     structures:["Gastrocnemius - medial head","Gastrocnemius - lateral head","Soleus","Achilles tendon (proximal)","Sural nerve","Musculotendinous junction"] },
 
-  // ── ANKLE & FOOT ─────────────────────────────────────────────────────────────
+  // ?? ANKLE & FOOT ?????????????????????????????????????????????????????????????
   { id:"achilles_r",      x:67,  y:108, r:5,  side:"back", label:"Right Achilles Tendon",
     structures:["Achilles tendon - mid-portion (2-6cm from insertion)","Achilles insertion (calcaneum)","Retrocalcaneal bursa","Haglund's deformity zone","Kager's fat pad"] },
   { id:"achilles_l",      x:33,  y:108, r:5,  side:"back", label:"Left Achilles Tendon",
@@ -5503,7 +5503,7 @@ const ANATOMICAL_HOTSPOTS = [
     structures:["Plantar fascia - calcaneal origin","Calcaneal fat pad","Medial calcaneal tubercle","Plantar fascia - mid-band","1st MTP joint (hallux rigidus)"] },
 ];
 
-// ─── Palpation finding options ────────────────────────────────────────────────
+// ??? Palpation finding options ????????????????????????????????????????????????
 const GRADES = ["0","1+","2+","3+","4+"];
 const TEMPS  = ["Normal","Warm","Hot","Cool","Cold"];
 const TEXTURES = ["Normal / Soft","Tight / Restricted","Spasm","Trigger Point","Thickened / Fibrosed","Crepitus","Fluctuant / Oedema"];
@@ -5512,7 +5512,7 @@ const FINDING_COLORS = {
   "Normal":"#00c97a","Warm":"#ffb300","Hot":"#ff4d6d","Cool":"#38bdf8","Cold":"#0ea5e9",
 };
 
-// ─── SVG Body Figure ──────────────────────────────────────────────────────────
+// ??? SVG Body Figure ??????????????????????????????????????????????????????????
 // Draws a clean anatomical outline - front (left) and back (right) in one SVG
 // ViewBox: 0 0 200 130  (front occupies 0-90, back 110-200, y 0-130)
 // All hotspot coordinates use this viewBox scale
@@ -5530,12 +5530,12 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
 
   return (
     <g transform={`translate(${offsetX}, 0)`}>
-      {/* ── Label ── */}
+      {/* ?? Label ?? */}
       <text x="45" y="6" textAnchor="middle" fontSize="4" fill="#6b8399" fontWeight="700" letterSpacing="1">
         {view === "front" ? "ANTERIOR" : "POSTERIOR"}
       </text>
 
-      {/* ── HEAD ── */}
+      {/* ?? HEAD ?? */}
       <ellipse cx="45" cy="16" rx="10" ry="12" fill={bodyColor} stroke={sk} strokeWidth="0.8"/>
       {/* ears */}
       <ellipse cx="35.5" cy="16" rx="2" ry="3.5" fill={bodyColor} stroke={sk} strokeWidth="0.6"/>
@@ -5543,7 +5543,7 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
       {/* neck */}
       <rect x="40" y="26.5" width="10" height="8" rx="2" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
 
-      {/* ── TORSO ── */}
+      {/* ?? TORSO ?? */}
       {/* shoulders */}
       <path d="M28,33 Q20,32 18,38 L20,48 Q22,50 25,49 L30,38Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
       <path d="M62,33 Q70,32 72,38 L70,48 Q68,50 65,49 L60,38Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
@@ -5559,40 +5559,40 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
       {/* spine line (back only) */}
       {view === "back" && <line x1="45" y1="33" x2="45" y2="76" stroke={sk} strokeWidth="0.5" opacity="0.4"/>}
 
-      {/* ── PELVIS ── */}
+      {/* ?? PELVIS ?? */}
       <path d="M27,68 Q45,80 63,68 L65,78 Q58,86 45,87 Q32,86 25,78Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
       {/* iliac crests */}
       <path d="M27,68 Q24,72 25,78" fill="none" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
       <path d="M63,68 Q66,72 65,78" fill="none" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
 
-      {/* ── UPPER ARMS ── */}
+      {/* ?? UPPER ARMS ?? */}
       <path d="M20,38 L14,60 Q13,63 16,64 L22,62 L25,49Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
       <path d="M70,38 L76,60 Q77,63 74,64 L68,62 L65,49Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
 
-      {/* ── FOREARMS ── */}
+      {/* ?? FOREARMS ?? */}
       <path d="M14,60 L10,80 Q9,83 12,84 L16,83 L22,62Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
       <path d="M76,60 L80,80 Q81,83 78,84 L74,83 L68,62Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
 
-      {/* ── HANDS ── */}
+      {/* ?? HANDS ?? */}
       <ellipse cx="11" cy="87" rx="4" ry="5.5" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
       <ellipse cx="79" cy="87" rx="4" ry="5.5" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
       {/* fingers */}
       {[8,10,12,14].map((x,i)=><line key={i} x1={x} y1="91" x2={x-0.5} y2="95" stroke={sk} strokeWidth="0.5" opacity="0.6"/>)}
       {[76,78,80,82].map((x,i)=><line key={i} x1={x} y1="91" x2={x+0.5} y2="95" stroke={sk} strokeWidth="0.5" opacity="0.6"/>)}
 
-      {/* ── THIGHS ── */}
+      {/* ?? THIGHS ?? */}
       <path d="M25,78 L22,108 Q22,112 25,113 L34,113 Q37,112 37,108 L38,78Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
       <path d="M65,78 L68,108 Q68,112 65,113 L56,113 Q53,112 53,108 L52,78Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
 
-      {/* ── LOWER LEGS ── */}
+      {/* ?? LOWER LEGS ?? */}
       <path d="M22,108 L21,120 Q21,122 24,122 L28,122 Q31,122 32,120 L34,113 Q26,113 22,108Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
       <path d="M68,108 L69,120 Q69,122 66,122 L62,122 Q59,122 58,120 L56,113 Q64,113 68,108Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
 
-      {/* ── FEET ── */}
+      {/* ?? FEET ?? */}
       <path d="M21,120 Q18,122 17,124 L30,124 Q32,124 32,122 L28,122Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
       <path d="M69,120 Q72,122 73,124 L60,124 Q58,124 58,122 L62,122Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
 
-      {/* ── SCAPULAE (back only) ── */}
+      {/* ?? SCAPULAE (back only) ?? */}
       {view === "back" && <>
         <path d="M27,35 Q24,42 26,48 Q30,52 34,48 Q36,42 33,35Z" fill="none" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
         <path d="M63,35 Q66,42 64,48 Q60,52 56,48 Q54,42 57,35Z" fill="none" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
@@ -5601,13 +5601,13 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
         <line x1="64" y1="37" x2="56" y2="37" stroke={sk} strokeWidth="0.4" opacity="0.5"/>
       </>}
 
-      {/* ── KNEE CAPS (front) ── */}
+      {/* ?? KNEE CAPS (front) ?? */}
       {view === "front" && <>
         <ellipse cx="29" cy="108" rx="5" ry="4" fill={bodyColor} stroke={sk} strokeWidth="0.6" opacity="0.7"/>
         <ellipse cx="61" cy="108" rx="5" ry="4" fill={bodyColor} stroke={sk} strokeWidth="0.6" opacity="0.7"/>
       </>}
 
-      {/* ── HOTSPOT INTERACTIVE ZONES ── */}
+      {/* ?? HOTSPOT INTERACTIVE ZONES ?? */}
       {ANATOMICAL_HOTSPOTS.filter(h => h.side === view || h.side === "both").map(h => {
         // convert % coords to SVG space (viewbox 90x125 per body)
         const sx = (h.x / 100) * 90;
@@ -5653,7 +5653,7 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
   );
 }
 
-// ─── Tenderness Grade Selector ────────────────────────────────────────────────
+// ??? Tenderness Grade Selector ????????????????????????????????????????????????
 function GradeChip({ value, selected, onClick }) {
   const color = GRADE_COLOR[value] || C.muted;
   return (
@@ -5670,7 +5670,7 @@ function GradeChip({ value, selected, onClick }) {
   );
 }
 
-// ─── Main PalpationModule ─────────────────────────────────────────────────────
+// ??? Main PalpationModule ?????????????????????????????????????????????????????
 function PalpationModule({ data, set }) {
   const C = getC();
   const [pins, setPins]           = useState([]); // { id, hotspotId, label, structures, tenderness, temp, texture, notes, side }
@@ -5749,7 +5749,7 @@ function PalpationModule({ data, set }) {
         @keyframes slideIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
 
-      {/* ── Header ── */}
+      {/* ?? Header ?? */}
       <div style={{ background:`linear-gradient(135deg,rgba(0,229,255,0.06),rgba(127,90,240,0.06))`,
         border:`1px solid ${C.border}`, borderRadius:12, padding:"12px 16px", marginBottom:14 }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
@@ -5787,7 +5787,7 @@ function PalpationModule({ data, set }) {
         </div>
       </div>
 
-      {/* ── View toggle ── */}
+      {/* ?? View toggle ?? */}
       <div style={{ display:"flex", gap:6, marginBottom:12 }}>
         {[["front","Anterior View 🫀"],["back","Posterior View 🦴"]].map(([v,l]) => (
           <button key={v} onClick={() => setView(v)}
@@ -5800,7 +5800,7 @@ function PalpationModule({ data, set }) {
         ))}
       </div>
 
-      {/* ── Body Map + Panel ── */}
+      {/* ?? Body Map + Panel ?? */}
       <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
 
         {/* SVG Body */}
@@ -5983,7 +5983,7 @@ function PalpationModule({ data, set }) {
                 </div>
               </div>
 
-              {/* ── Tenderness Grade ── */}
+              {/* ?? Tenderness Grade ?? */}
               <div style={{ marginBottom:10 }}>
                 <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
@@ -6011,7 +6011,7 @@ function PalpationModule({ data, set }) {
                 )}
               </div>
 
-              {/* ── Tissue Temperature ── */}
+              {/* ?? Tissue Temperature ?? */}
               <div style={{ marginBottom:10 }}>
                 <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
@@ -6033,7 +6033,7 @@ function PalpationModule({ data, set }) {
                 </div>
               </div>
 
-              {/* ── Tissue Quality ── */}
+              {/* ?? Tissue Quality ?? */}
               <div style={{ marginBottom:10 }}>
                 <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
@@ -6054,7 +6054,7 @@ function PalpationModule({ data, set }) {
                 </div>
               </div>
 
-              {/* ── Bilateral comparison ── */}
+              {/* ?? Bilateral comparison ?? */}
               <div style={{ marginBottom:10 }}>
                 <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>
@@ -6076,7 +6076,7 @@ function PalpationModule({ data, set }) {
                 </div>
               </div>
 
-              {/* ── Clinical Notes ── */}
+              {/* ?? Clinical Notes ?? */}
               <div style={{ marginBottom:10 }}>
                 <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>
@@ -6137,7 +6137,7 @@ function PalpationModule({ data, set }) {
         </div>
       </div>
 
-      {/* ── Full findings table ── */}
+      {/* ?? Full findings table ?? */}
       {pins.length > 0 && (
         <div style={{ marginTop:16, background:C.surface, border:`1px solid ${C.border}`,
           borderRadius:12, overflow:"hidden" }}>
@@ -6202,9 +6202,9 @@ function PalpationModule({ data, set }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // TREATMENT TECHNIQUES MODULE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
 function TreatmentTechniquesModule({ data, set }) {
   const PC = getC();
@@ -6219,7 +6219,7 @@ function TreatmentTechniquesModule({ data, set }) {
   const showToast = (msg, type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null), 2800); };
   const save = (next) => { setTechniques(next); if(set) set("tx_techniques", next); };
 
-  // ── Lookup tables ──────────────────────────────────────────────────────────
+  // ?? Lookup tables ??????????????????????????????????????????????????????????
   const MAITLAND_GRADES = [
     { grade:"I",   desc:"Small amplitude, beginning of range - pain control, acute"},
     { grade:"II",  desc:"Large amplitude, within range (no resistance) - pain control"},
@@ -6240,7 +6240,7 @@ function TreatmentTechniquesModule({ data, set }) {
   const ta  = { ...inp, resize:"vertical", minHeight:60 };
   const lbl = { fontSize:"0.6rem", fontWeight:700, color:PC.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:"0.8px" };
 
-  // ── Entry form state ───────────────────────────────────────────────────────
+  // ?? Entry form state ???????????????????????????????????????????????????????
   const blank = { id:null, type:"manual", region:"", technique:"", grade:"", laterality:"", dosage:"", duration:"", response:"", notes:"", dn_muscle:"", dn_needles:"", dn_depth:"", dn_twitch:"", us_freq:"", us_intensity:"", us_mode:"", us_area:"", tape_type:"", tape_goal:"", st_technique:"", st_region:"", electro_type:"", electro_params:"" };
   const [form, setForm] = useState(blank);
   const [editing, setEditing] = useState(false);
@@ -6251,7 +6251,7 @@ function TreatmentTechniquesModule({ data, set }) {
     const entry = { ...form, id: form.id || genId(), savedAt: new Date().toISOString() };
     const next = form.id ? techniques.map(t=>t.id===form.id?entry:t) : [...techniques, entry];
     save(next); setForm(blank); setEditing(false);
-    showToast(form.id ? "✅ Technique updated" : "✅ Technique recorded");
+    showToast(form.id ? "? Technique updated" : "? Technique recorded");
   };
   const deleteTechnique = (id) => { save(techniques.filter(t=>t.id!==id)); showToast("Deleted"); };
   const editEntry = (t) => { setForm({...blank,...t}); setEditing(true); setActiveTab(t.type||"manual"); };
@@ -6262,7 +6262,7 @@ function TreatmentTechniquesModule({ data, set }) {
     { key:"st",       label:"Soft Tissue", icon:"🤲" },
     { key:"taping",   label:"Taping", icon:"🩹" },
     { key:"us",       label:"Ultrasound", icon:"🔊" },
-    { key:"electro",  label:"Electrotherapy", icon:"⚡" },
+    { key:"electro",  label:"Electrotherapy", icon:"!" },
     { key:"other",    label:"Other", icon:"📋" },
   ];
 
@@ -6370,7 +6370,7 @@ function TreatmentTechniquesModule({ data, set }) {
     return t.technique || "Other";
   };
 
-  const typeIcon = (type) => ({manual:"🦴",dn:"🪡",st:"🤲",taping:"🩹",us:"🔊",electro:"⚡",other:"📋"}[type]||"📋");
+  const typeIcon = (type) => ({manual:"🦴",dn:"🪡",st:"🤲",taping:"🩹",us:"🔊",electro:"!",other:"📋"}[type]||"📋");
   const typeColor = (type) => ({manual:PC.accent,dn:"#7f5af0",st:PC.green,taping:"#ffb300",us:"#00c97a",electro:"#ff4d6d",other:PC.muted}[type]||PC.muted);
 
   return (
@@ -6378,10 +6378,10 @@ function TreatmentTechniquesModule({ data, set }) {
       {/* Toast */}
       {toast && <div style={{position:"fixed",top:70,right:16,zIndex:999,padding:"9px 16px",background:toast.type==="success"?"rgba(0,201,122,0.9)":"rgba(255,179,0,0.9)",borderRadius:10,color:"#000",fontWeight:700,fontSize:"0.78rem",boxShadow:"0 4px 20px rgba(0,0,0,0.4)"}}>{toast.msg}</div>}
 
-      {/* ── Technique Entry Form ── */}
+      {/* ?? Technique Entry Form ?? */}
       <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
         <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>
-          {editing?"edit Edit Technique":"➕ Add Treatment Technique"}
+          {editing?"edit Edit Technique":"? Add Treatment Technique"}
         </div>
 
         {/* Type tabs */}
@@ -6414,7 +6414,7 @@ function TreatmentTechniquesModule({ data, set }) {
         </div>
       </div>
 
-      {/* ── Recorded Techniques ── */}
+      {/* ?? Recorded Techniques ?? */}
       {techniques.length>0&&(
         <div>
           <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>
@@ -6428,7 +6428,7 @@ function TreatmentTechniquesModule({ data, set }) {
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text,lineHeight:1.3}}>{techniqueLabel(t)}</div>
                     {t.dosage&&<div style={{fontSize:"0.62rem",color:PC.muted,marginTop:1}}>{t.dosage}{t.duration?` · ${t.duration}`:""}</div>}
-                    {t.response&&<div style={{marginTop:4,fontSize:"0.65rem",color:PC.a3,lineHeight:1.4}}>↳ {t.response}</div>}
+                    {t.response&&<div style={{marginTop:4,fontSize:"0.65rem",color:PC.a3,lineHeight:1.4}}>? {t.response}</div>}
                   </div>
                   <div style={{display:"flex",gap:5,flexShrink:0}}>
                     <button onClick={()=>editEntry(t)} style={{background:`${typeColor(t.type)}15`,border:`1px solid ${typeColor(t.type)}40`,borderRadius:6,color:typeColor(t.type),cursor:"pointer",fontSize:"0.6rem",padding:"3px 8px",fontWeight:700}}>edit</button>
@@ -6449,7 +6449,7 @@ function TreatmentTechniquesModule({ data, set }) {
         <div style={{textAlign:"center",padding:"24px",color:PC.muted,fontSize:"0.76rem"}}>No techniques recorded yet - add your first above.</div>
       )}
 
-      {/* ── Maitland Grade Reference ── */}
+      {/* ?? Maitland Grade Reference ?? */}
       <div style={{marginTop:14,background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"13px"}}>
         <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:9}}>📚 Maitland Grade Reference</div>
         <div style={{display:"flex",flexDirection:"column",gap:5}}>
@@ -6465,9 +6465,9 @@ function TreatmentTechniquesModule({ data, set }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 // TREATMENT SESSION LOG MODULE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ???????????????????????????????????????????????????????????????????????????????
 
 function TreatmentSessionLogModule({ data, set }) {
   const PC = getC();
@@ -6545,7 +6545,7 @@ function TreatmentSessionLogModule({ data, set }) {
     const entry = { ...form, id: form.id||genId(), savedAt: new Date().toISOString() };
     const next = form.id ? sessions.map(s=>s.id===form.id?entry:s) : [entry,...sessions];
     save(next); setForm(blankForm()); setEditing(false);
-    showToast(form.id?"✅ Session updated":"✅ Session logged");
+    showToast(form.id?"? Session updated":"? Session logged");
   };
 
   const deleteSession = (id) => { save(sessions.filter(s=>s.id!==id)); showToast("Session deleted"); };
@@ -6555,7 +6555,7 @@ function TreatmentSessionLogModule({ data, set }) {
     <div>
       {toast && <div style={{position:"fixed",top:70,right:16,zIndex:999,padding:"9px 16px",background:"rgba(0,201,122,0.9)",borderRadius:10,color:"#000",fontWeight:700,fontSize:"0.78rem",boxShadow:"0 4px 20px rgba(0,0,0,0.4)"}}>{toast.msg}</div>}
 
-      {/* ── Session Entry Form ── */}
+      {/* ?? Session Entry Form ?? */}
       <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
         <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
           {editing?"edit Edit Session Log":"📋 Log Treatment Session"}
@@ -6594,7 +6594,7 @@ function TreatmentSessionLogModule({ data, set }) {
             </div>
           </div>
         </div>
-        {(form.vasStart||form.vasEnd)&&(()=>{const ch=vasChange(form.vasStart,form.vasEnd);return ch!==null?<div style={{marginBottom:8,padding:"6px 10px",background:ch<0?"rgba(0,201,122,0.1)":ch>0?"rgba(255,77,109,0.1)":"rgba(255,179,0,0.1)",border:`1px solid ${ch<0?"rgba(0,201,122,0.3)":ch>0?"rgba(255,77,109,0.3)":"rgba(255,179,0,0.3)"}`,borderRadius:8,fontSize:"0.68rem",fontWeight:700,color:ch<0?PC.green:ch>0?PC.red:PC.yellow}}>VAS change: {ch>0?"+":""}{ch} - {ch<0?"✅ Improved":ch>0?"⚠ Increased":"-> No change"}</div>:null;})()}
+        {(form.vasStart||form.vasEnd)&&(()=>{const ch=vasChange(form.vasStart,form.vasEnd);return ch!==null?<div style={{marginBottom:8,padding:"6px 10px",background:ch<0?"rgba(0,201,122,0.1)":ch>0?"rgba(255,77,109,0.1)":"rgba(255,179,0,0.1)",border:`1px solid ${ch<0?"rgba(0,201,122,0.3)":ch>0?"rgba(255,77,109,0.3)":"rgba(255,179,0,0.3)"}`,borderRadius:8,fontSize:"0.68rem",fontWeight:700,color:ch<0?PC.green:ch>0?PC.red:PC.yellow}}>VAS change: {ch>0?"+":""}{ch} - {ch<0?"? Improved":ch>0?"? Increased":"-> No change"}</div>:null;})()}
 
         {/* Treatment given */}
         <div style={{marginBottom:8}}>
@@ -6636,14 +6636,14 @@ function TreatmentSessionLogModule({ data, set }) {
         <div style={{display:"flex",gap:7}}>
           <button onClick={commit}
             style={{flex:1,padding:"11px",background:`linear-gradient(135deg,${PC.a3},${PC.accent})`,border:"none",borderRadius:10,color:"#000",fontWeight:900,fontSize:"0.82rem",cursor:"pointer"}}>
-            {editing?"💾 Update Session":"✅ Save Session Log"}
+            {editing?"💾 Update Session":"? Save Session Log"}
           </button>
           {editing&&<button onClick={()=>{setForm(blankForm());setEditing(false);}}
             style={{padding:"11px 14px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.75rem",cursor:"pointer"}}>Cancel</button>}
         </div>
       </div>
 
-      {/* ── Session History ── */}
+      {/* ?? Session History ?? */}
       {sessions.length>0&&(
         <div>
           <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:9}}>
@@ -6665,7 +6665,7 @@ function TreatmentSessionLogModule({ data, set }) {
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
                     {ch!==null&&<span style={{fontSize:"0.65rem",fontWeight:700,padding:"2px 7px",borderRadius:7,background:ch<0?"rgba(0,201,122,0.12)":ch>0?"rgba(255,77,109,0.12)":"rgba(255,179,0,0.1)",color:ch<0?PC.green:ch>0?PC.red:PC.yellow}}>{ch>0?"+":""}{ch} VAS</span>}
-                    <span style={{color:PC.muted,fontSize:"0.65rem"}}>{isOpen?"▲":"▼"}</span>
+                    <span style={{color:PC.muted,fontSize:"0.65rem"}}>{isOpen?"^":"v"}</span>
                   </div>
                 </div>
 
@@ -6696,12 +6696,12 @@ function TreatmentSessionLogModule({ data, set }) {
 }
 
 
-// ══════════════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????????????
 // LIVE SOAP PANEL - Real-time floating clinical documentation
 // Reads data from all assessment tabs and auto-builds SOAP in real time.
 // Always visible as a collapsible floating panel anchored bottom-right.
 // No navigation required - works on top of any assessment module.
-// ══════════════════════════════════════════════════════════════════════════════
+// ??????????????????????????????????????????????????????????????????????????????
 
 function LiveSOAPPanel({ data, onNavigate }) {
   const [open,    setOpen]    = React.useState(false);
@@ -6785,7 +6785,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
   const currentSec = SECTION_LABELS[tab];
   const currentText = soap ? soap[tab] : null;
 
-  // ── Minimal pill (when closed) ───────────────────────────────────────────
+  // ?? Minimal pill (when closed) ???????????????????????????????????????????
   const pillStyle = {
     position:"fixed", bottom:24, right:16, zIndex:9999,
     display:"flex", alignItems:"center", gap:8,
@@ -6824,7 +6824,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
     );
   }
 
-  // ── Expanded panel ───────────────────────────────────────────────────────
+  // ?? Expanded panel ???????????????????????????????????????????????????????
   // Detect mobile: screen width <= 480px
   const isMobile = typeof window !== "undefined" && window.innerWidth <= 480;
 
@@ -6846,7 +6846,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
       left: isMobile ? 0 : "auto",
     }}>
 
-      {/* ── Drag handle (mobile only) - tap to close ─────────────────────── */}
+      {/* ?? Drag handle (mobile only) - tap to close ??????????????????????? */}
       {isMobile && (
         <div onClick={()=>setOpen(false)} style={{
           display:"flex", justifyContent:"center", alignItems:"center",
@@ -6858,7 +6858,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
         </div>
       )}
 
-      {/* ── Header ───────────────────────────────────────────────────────── */}
+      {/* ?? Header ????????????????????????????????????????????????????????? */}
       <div style={{
         background:"linear-gradient(135deg,#7c3aed,#9333ea)",
         padding: isMobile ? "8px 14px" : "10px 14px",
@@ -6881,7 +6881,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
         </div>
         {!isMobile && (
           <button onClick={()=>setMinimal(m=>!m)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:6,color:"#fff",padding:"3px 7px",cursor:"pointer",fontSize:"0.6rem",fontWeight:700}}>
-            {minimal?"⬆":"⬇"}
+            {minimal?"^":"v"}
           </button>
         )}
         <button onClick={()=>setOpen(false)} style={{
@@ -6895,7 +6895,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
         </button>
       </div>
 
-      {/* ── Section tabs ─────────────────────────────────────────────────── */}
+      {/* ?? Section tabs ??????????????????????????????????????????????????? */}
       <div style={{
         display:"flex", borderBottom:"1px solid rgba(124,58,237,0.12)",
         background:"#faf5ff", flexShrink:0,
@@ -6925,7 +6925,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
         })}
       </div>
 
-      {/* ── Content area ─────────────────────────────────────────────────── */}
+      {/* ?? Content area ??????????????????????????????????????????????????? */}
       {!minimal && (
         <div style={{
           flex:1, overflowY:"auto",
@@ -6950,7 +6950,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
                 borderRadius:6,color:currentSec.col,
                 cursor:"pointer",fontSize:"0.58rem",fontWeight:700,
               }}>
-                {copied===tab ? "✅ Copied" : "📋 Copy"}
+                {copied===tab ? "? Copied" : "📋 Copy"}
               </button>
             </div>
           </div>
@@ -7008,7 +7008,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
         </div>
       )}
 
-      {/* ── Footer: PDF + Copy All ─────────────────────────────────────── */}
+      {/* ?? Footer: PDF + Copy All ??????????????????????????????????????? */}
       <div style={{
         padding:"10px 14px",
         borderTop:"1px solid rgba(124,58,237,0.1)",
