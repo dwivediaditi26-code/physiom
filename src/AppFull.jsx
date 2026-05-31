@@ -1,4 +1,4 @@
-// AppFull.jsx — Posture engine, camera, patient DB, dashboard, AppInner, App
+// AppFull.jsx - Posture engine, camera, patient DB, dashboard, AppInner, App
 import React, { useState, useCallback, useRef, useEffect, useMemo, Component, Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
@@ -40,18 +40,18 @@ function computeQuality(lm) {
   let distanceHint = null;
   if (v(11) && v(12)) {
     const span = Math.abs(lm[11].x - lm[12].x);
-    if (span > 0.5) { warnings.push({ text: "Too close — step back", icon: "⬅", color: "#ff4d6d", priority: 1 }); distanceHint = "back"; }
-    else if (span < 0.1) { warnings.push({ text: "Too far — step closer", icon: "➡", color: "#ffb300", priority: 2 }); distanceHint = "closer"; }
+    if (span > 0.5) { warnings.push({ text: "Too close - step back", icon: "⬅", color: "#ff4d6d", priority: 1 }); distanceHint = "back"; }
+    else if (span < 0.1) { warnings.push({ text: "Too far - step closer", icon: "➡", color: "#ffb300", priority: 2 }); distanceHint = "closer"; }
     else if (lm[11].y < 0.08 || lm[12].y < 0.08) warnings.push({ text: "Lower camera to hip height", icon: "⬇", color: "#ffb300", priority: 3 });
   }
 
   // Visibility checks
-  if (avgBody < 0.35) warnings.push({ text: "Low confidence — improve lighting", icon: "💡", color: "#ff4d6d", priority: 1 });
+  if (avgBody < 0.35) warnings.push({ text: "Low confidence - improve lighting", icon: "💡", color: "#ff4d6d", priority: 1 });
   if (!v(0)) warnings.push({ text: "Head not visible", icon: "👤", color: "#ff4d6d", priority: 1 });
   if (!v(11) || !v(12)) warnings.push({ text: "Shoulders not detected", icon: "🦴", color: "#ffb300", priority: 2 });
-  if (!v(23) && !v(24)) warnings.push({ text: "Hips/ASIS not visible — step back", icon: "🦴", color: "#ff4d6d", priority: 1 });
-  if (!v(7) && !v(8)) warnings.push({ text: "Ears not detected — check head angle", icon: "👂", color: "#ffb300", priority: 2 });
-  if (!v(31) && !v(32)) warnings.push({ text: "Feet not visible — move camera back", icon: "👣", color: "#ffb300", priority: 2 });
+  if (!v(23) && !v(24)) warnings.push({ text: "Hips/ASIS not visible - step back", icon: "🦴", color: "#ff4d6d", priority: 1 });
+  if (!v(7) && !v(8)) warnings.push({ text: "Ears not detected - check head angle", icon: "👂", color: "#ffb300", priority: 2 });
+  if (!v(31) && !v(32)) warnings.push({ text: "Feet not visible - move camera back", icon: "👣", color: "#ffb300", priority: 2 });
   else if (!v(27) && !v(28)) warnings.push({ text: "Ankles out of frame", icon: "📏", color: "#ffb300", priority: 3 });
 
   const ready = v(0) && v(11) && v(12) && v(23) && v(24) && (v(27) || v(28)) && avgBody > 0.5;
@@ -59,7 +59,7 @@ function computeQuality(lm) {
   return { score: avgBody, warnings: warnings.slice(0, 3), ready, distanceHint };
 }
 
-// --- AdaptiveSmoother — confidence-weighted EMA -------------------------------
+// --- AdaptiveSmoother - confidence-weighted EMA -------------------------------
 function createSmoother() {
   const buf = {};
   return (raw) => {
@@ -84,7 +84,7 @@ function CalibrationSystem({ state, countdown, quality }) {
       {isCalib ? (
         <div style={{ textAlign: "center" }}>
           <div style={{ width: 80, height: 80, borderRadius: "50%", border: "3px solid #00e5ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", fontWeight: 900, color: "#00e5ff", background: "rgba(6,9,15,0.75)", margin: "0 auto 10px", boxShadow: "0 0 24px rgba(0,229,255,0.4)" }}>{countdown}</div>
-          <div style={{ fontSize: "0.78rem", color: "#00e5ff", fontWeight: 700, background: "rgba(6,9,15,0.7)", padding: "4px 14px", borderRadius: 20 }}>Stand still — calibrating…</div>
+          <div style={{ fontSize: "0.78rem", color: "#00e5ff", fontWeight: 700, background: "rgba(6,9,15,0.7)", padding: "4px 14px", borderRadius: 20 }}>Stand still - calibrating...</div>
         </div>
       ) : (
         quality.ready ? null : (
@@ -97,7 +97,7 @@ function CalibrationSystem({ state, countdown, quality }) {
   );
 }
 
-// --- SkeletonRenderer — Full analysis overlay (head, ASIS, pelvis, lumbar, PSIS) --
+// --- SkeletonRenderer - Full analysis overlay (head, ASIS, pelvis, lumbar, PSIS) --
 function SkeletonRenderer({ canvasRef, landmarks, videoSize, trackingState, activeView }) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -139,13 +139,13 @@ function SkeletonRenderer({ canvasRef, landmarks, videoSize, trackingState, acti
   return null;
 }
 
-// --- BodyAlignmentGuide — Professional physiotherapy overlay ------------------
+// --- BodyAlignmentGuide - Professional physiotherapy overlay ------------------
 function BodyAlignmentGuide({ show, ready }) {
   if (!show) return null;
   const op = ready ? 0.18 : 0.42;
   return (
     <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }} viewBox="0 0 100 150" preserveAspectRatio="xMidYMid meet">
-      {/* Background grid — alignment reference */}
+      {/* Background grid - alignment reference */}
       {[16.6,33.3,50,66.6,83.3].map(x=><line key={x} x1={x} y1="0" x2={x} y2="150" stroke="#00e5ff" strokeWidth="0.18" strokeDasharray="2,4" opacity={op*0.5}/>)}
       {[18.75,37.5,56.25,75,93.75].map(y=><line key={y} x1="0" y1={y} x2="100" y2={y} stroke="#00e5ff" strokeWidth="0.18" strokeDasharray="2,4" opacity={op*0.5}/>)}
 
@@ -196,12 +196,12 @@ function BodyAlignmentGuide({ show, ready }) {
 function TrackingStateBar({ state, quality }) {
   const cfg = {
     [TRACKING_STATES.IDLE]:       { label:"Camera Ready",      color:"#7e6a9a", pulse:false },
-    [TRACKING_STATES.LOADING]:    { label:"Loading Model…",    color:"#7f5af0", pulse:true  },
+    [TRACKING_STATES.LOADING]:    { label:"Loading Model...",    color:"#7f5af0", pulse:true  },
     [TRACKING_STATES.CALIBRATING]:{ label:"Calibrating",       color:"#ffb300", pulse:true  },
-    [TRACKING_STATES.DETECTING]:  { label:"Detecting Body…",   color:"#ffb300", pulse:true  },
+    [TRACKING_STATES.DETECTING]:  { label:"Detecting Body...",   color:"#ffb300", pulse:true  },
     [TRACKING_STATES.STABLE]:     { label:"Tracking Stable",   color:"#00c97a", pulse:false },
     [TRACKING_STATES.LOST]:       { label:"Tracking Lost",     color:"#ff4d6d", pulse:true  },
-  }[state] || { label:"—", color:"#7e6a9a", pulse:false };
+  }[state] || { label:"-", color:"#7e6a9a", pulse:false };
 
   const qLabel = quality === null ? "" : quality > 0.75 ? "Excellent" : quality > 0.5 ? "Good" : quality > 0.3 ? "Fair" : "Poor";
   const qColor = quality === null ? "" : quality > 0.75 ? "#00c97a" : quality > 0.5 ? "#ffb300" : "#ff4d6d";
@@ -224,7 +224,7 @@ function TrackingStateBar({ state, quality }) {
   );
 }
 
-// --- CameraView — Professional full-screen responsive camera preview ----------
+// --- CameraView - Professional full-screen responsive camera preview ----------
 function CameraView({ videoRef, canvasRef, isActive, facingMode, children, onTapFocus, zoom }) {
   const flip = facingMode === "user" ? "scaleX(-1)" : "none";
   const [tapFlash, setTapFlash] = useState(null);
@@ -267,7 +267,7 @@ function CameraView({ videoRef, canvasRef, isActive, facingMode, children, onTap
   );
 }
 
-// --- CameraControls — Professional touch-friendly physiotherapy controls ------
+// --- CameraControls - Professional touch-friendly physiotherapy controls ------
 function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecalibrate, facingMode, canRecalibrate, zoom, onZoom, countdownSecs, onCountdownChange, burstMode, onBurstToggle, activeView, onViewChange, onUploadPhoto }) {
   const views = ["anterior","posterior","left","right","photo"];
   const uploadRef = React.useRef(null);
@@ -284,7 +284,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
   );
   return (
     <div style={{ marginTop:10 }}>
-      {/* -- UPLOAD PHOTO BUTTON — Always visible at top -- */}
+      {/* -- UPLOAD PHOTO BUTTON - Always visible at top -- */}
       <input
         ref={uploadRef}
         type="file"
@@ -320,7 +320,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
         Upload Patient Photo
         <span style={{fontSize:"0.65rem",opacity:0.75,fontWeight:600}}>JPG / PNG</span>
       </button>
-      {/* Front / Back camera toggle — always visible */}
+      {/* Front / Back camera toggle - always visible */}
       <div style={{ marginBottom:10 }}>
         <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📷 Camera</div>
         <div style={{ display:"flex", gap:6, marginBottom:8 }}>
@@ -379,14 +379,14 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
             width:"100%", padding:"12px", borderRadius:11, border:"none", cursor:isLoading?"not-allowed":"pointer",
             background:isLoading?"#1a2d45":"linear-gradient(135deg,#00e5ff,#7f5af0)",
             color:isLoading?"#6b8399":"#000", fontWeight:800, fontSize:"0.8rem"
-          }}>{isLoading?"⏳ Loading camera…":"▶ Start Camera"}</button>
+          }}>{isLoading?"⏳ Loading camera...":"▶ Start Camera"}</button>
         )}
         {canRecalibrate && <button onClick={onRecalibrate} style={{width:"100%",marginTop:6,padding:"8px",borderRadius:9,border:"1px solid rgba(255,179,0,0.3)",background:"rgba(255,179,0,0.08)",color:"#ffb300",fontWeight:700,fontSize:"0.72rem",cursor:"pointer"}}>⟳ Recalibrate</button>}
       </div>
 
-      {/* -- VIEW SELECTOR — always visible (Front/Back/Left/Right) -- */}
+      {/* -- VIEW SELECTOR - always visible (Front/Back/Left/Right) -- */}
       <div style={{ marginBottom:10 }}>
-        <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📐 Posture View — select before capturing</div>
+        <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📐 Posture View - select before capturing</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:6 }}>
           {[
             { v:"anterior",  icon:"⬆", label:"Front",  color:"#00e5ff" },
@@ -426,7 +426,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
             <span style={{ fontSize:"0.65rem", color:"#7e6a9a", whiteSpace:"nowrap" }}>🔍 Zoom</span>
             <input type="range" min="1" max="2.5" step="0.1" value={zoom||1} onChange={e=>onZoom&&onZoom(Number(e.target.value))}
               style={{ flex:1, accentColor:"#00e5ff", cursor:"pointer", minWidth:60 }}/>
-            <span style={{ fontSize:"0.65rem", color:"#00e5ff", minWidth:26, fontWeight:700 }}>{(zoom||1).toFixed(1)}×</span>
+            <span style={{ fontSize:"0.65rem", color:"#00e5ff", minWidth:26, fontWeight:700 }}>{(zoom||1).toFixed(1)}x</span>
           </div>
 
           {/* Countdown timer */}
@@ -452,7 +452,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
   );
 }
 
-// --- CameraPositionGuide — Professional clinical setup -----------------------
+// --- CameraPositionGuide - Professional clinical setup -----------------------
 function CameraPositionGuide() {
   return (
     <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.18)", borderRadius:12, padding:14, marginBottom:12 }}>
@@ -521,7 +521,7 @@ function PoseTracker({ videoRef, active, onLandmarks }) {
   return null;
 }
 
-// --- UploadedPhotoOverlay — renders uploaded image with full analysis grid -----
+// --- UploadedPhotoOverlay - renders uploaded image with full analysis grid -----
 function UploadedPhotoOverlay({ photoUrl, landmarks, view }) {
   const canvasRef = useRef(null);
 
@@ -557,7 +557,7 @@ function UploadedPhotoOverlay({ photoUrl, landmarks, view }) {
       img2.onerror = () => console.error("UploadedPhotoOverlay: failed to load photo");
       img2.src = photoUrl;
     };
-    // Set src AFTER onload — critical for already-cached blob URLs
+    // Set src AFTER onload - critical for already-cached blob URLs
     img.src = photoUrl;
     return () => { cancelled = true; };
   }, [photoUrl, landmarks, view]);
@@ -571,7 +571,7 @@ function UploadedPhotoOverlay({ photoUrl, landmarks, view }) {
 }
 
 
-// --- CanvasOverlayOnImage — draws analysis overlay directly on top of img -----
+// --- CanvasOverlayOnImage - draws analysis overlay directly on top of img -----
 // Fallback approach: instead of baking into canvas (fails on mobile with large images),
 // overlay a transparent canvas positioned absolutely on top of the photo
 function CanvasOverlayOnImage({ photoUrl, landmarks, view }) {
@@ -631,7 +631,7 @@ function CanvasOverlayOnImage({ photoUrl, landmarks, view }) {
   );
 }
 
-// --- Main PostureCameraModule — New Live Camera + Capture → Analysis -----------
+// --- Main PostureCameraModule - New Live Camera + Capture -> Analysis -----------
 
 function PostureCameraModule({ activePatient, set }) {
   // -- refs ------------------------------------------------------------------
@@ -708,7 +708,7 @@ function PostureCameraModule({ activePatient, set }) {
     } catch(err) {
       setCamState("error");
       setCamError(
-        err.name === "NotAllowedError" ? "Camera permission denied — allow access in browser settings." :
+        err.name === "NotAllowedError" ? "Camera permission denied - allow access in browser settings." :
         err.name === "NotFoundError"   ? "No camera found on this device." :
         `Camera error: ${err.message}`
       );
@@ -842,7 +842,7 @@ function PostureCameraModule({ activePatient, set }) {
           [activeView]: { img:imgUrl, lm, measurements:m, findings:f, scoreData:s, time, view:activeView }
         }));
       } else {
-        setAnalyseError("Pose landmarks not detected — ensure full body is visible, lighting is good, and try again.");
+        setAnalyseError("Pose landmarks not detected - ensure full body is visible, lighting is good, and try again.");
       }
     } catch(e) {
       setAnalyseError(`Analysis failed: ${e.message}`);
@@ -864,7 +864,7 @@ function PostureCameraModule({ activePatient, set }) {
     }, 1000);
   }, [cdCount, cdSecs, doCapture]);
 
-  // -- Upload Photo → MediaPipe Analysis ------------------------------------
+  // -- Upload Photo -> MediaPipe Analysis ------------------------------------
   const handleUploadFile = useCallback(async (file) => {
     if (!file) return;
     if (uploadObjRef.current) URL.revokeObjectURL(uploadObjRef.current);
@@ -885,7 +885,7 @@ function PostureCameraModule({ activePatient, set }) {
         const s = PostureScoreEngine(m, f, rel);
         setUploadAnal({ measurements:m, findings:f, scoreData:s });
       } else {
-        setUploadError("Pose not detected — ensure full body, good lighting, form-fitting clothing.");
+        setUploadError("Pose not detected - ensure full body, good lighting, form-fitting clothing.");
       }
     } catch(e) {
       setUploadError(`Upload analysis failed: ${e.message}`);
@@ -923,12 +923,12 @@ function PostureCameraModule({ activePatient, set }) {
             border:"1px solid rgba(0,229,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.3rem" }}>🎥</div>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:800, fontSize:"0.93rem", color:"#00e5ff" }}>Posture Assessment Camera</div>
-            <div style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>Live Capture → MediaPipe Pose Analysis · Physiotherapy Grade</div>
+            <div style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>Live Capture -> MediaPipe Pose Analysis · Physiotherapy Grade</div>
           </div>
           {isLive && videoSize && (
             <div style={{ fontSize:"0.58rem", padding:"2px 8px", borderRadius:7,
               background:"rgba(0,229,255,0.08)", color:"#00e5ff", border:"1px solid rgba(0,229,255,0.2)", fontWeight:700 }}>
-              {videoSize.w}×{videoSize.h}
+              {videoSize.w}x{videoSize.h}
             </div>
           )}
         </div>
@@ -938,7 +938,7 @@ function PostureCameraModule({ activePatient, set }) {
             background: isLive ? "#00c97a" : isLoad ? "#ffb300" : isError ? "#ff4d6d" : "#3d3d5c",
             boxShadow: isLive ? "0 0 8px #00c97a88" : "none" }}/>
           <span style={{ fontSize:"0.68rem", fontWeight:700, color: isLive ? "#00c97a" : isError ? "#ff4d6d" : "#7e6a9a" }}>
-            {isLoad ? "Starting camera…" : isLive ? (quality.ready ? "v Full body detected — ready to capture" : "Waiting for full body…") : isError ? camError : "Camera off"}
+            {isLoad ? "Starting camera..." : isLive ? (quality.ready ? "v Full body detected - ready to capture" : "Waiting for full body...") : isError ? camError : "Camera off"}
           </span>
         </div>
       </div>
@@ -1131,7 +1131,7 @@ function PostureCameraModule({ activePatient, set }) {
         {isLoad && (
           <div style={{ flex:1, padding:"12px", borderRadius:11, background:"#1a2d45",
             color:"#6b8399", fontWeight:700, fontSize:"0.78rem", textAlign:"center" }}>
-            ⏳ Starting camera…
+            ⏳ Starting camera...
           </div>
         )}
         {isLive && (
@@ -1142,7 +1142,7 @@ function PostureCameraModule({ activePatient, set }) {
               <span style={{ fontSize:"0.65rem", color:"#7e6a9a" }}>🔍</span>
               <input type="range" min="1" max="2.5" step="0.1" value={zoom} onChange={e=>setZoom(Number(e.target.value))}
                 style={{ flex:1, accentColor:"#00e5ff", cursor:"pointer" }}/>
-              <span style={{ fontSize:"0.65rem", color:"#00e5ff", fontWeight:700, minWidth:28 }}>{zoom.toFixed(1)}×</span>
+              <span style={{ fontSize:"0.65rem", color:"#00e5ff", fontWeight:700, minWidth:28 }}>{zoom.toFixed(1)}x</span>
             </div>
             {/* Countdown selector */}
             <div style={{ display:"flex", alignItems:"center", gap:4, background:"#ffffff",
@@ -1177,8 +1177,8 @@ function PostureCameraModule({ activePatient, set }) {
             padding:"9px 13px", borderBottom:"1px solid rgba(0,229,255,0.15)",
             background:"rgba(0,229,255,0.04)" }}>
             <div style={{ fontSize:"0.65rem", fontWeight:800, color:"#00e5ff" }}>
-              📸 Captured — {capturedView?.charAt(0).toUpperCase()+capturedView?.slice(1)} View
-              {analysing ? " — Analysing…" : capturedLm ? " — Pose Grid Applied v" : analyseError ? " — Detection Failed" : ""}
+              📸 Captured - {capturedView?.charAt(0).toUpperCase()+capturedView?.slice(1)} View
+              {analysing ? " - Analysing..." : capturedLm ? " - Pose Grid Applied v" : analyseError ? " - Detection Failed" : ""}
             </div>
             <div style={{ display:"flex", gap:6 }}>
               {!analysing && (
@@ -1190,7 +1190,7 @@ function PostureCameraModule({ activePatient, set }) {
               <button onClick={() => { setCapturedImg(null); setCapturedLm(null); setAnalysis(null); setAnalyseError(null); }} style={{
                 padding:"4px 10px", background:"rgba(255,77,109,0.1)", border:"1px solid rgba(255,77,109,0.25)",
                 borderRadius:7, color:"#ff4d6d", fontSize:"0.62rem", fontWeight:700, cursor:"pointer"
-              }}>✕ Clear</button>
+              }}>x Clear</button>
             </div>
           </div>
 
@@ -1207,7 +1207,7 @@ function PostureCameraModule({ activePatient, set }) {
                 alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.6)", gap:10 }}>
                 <div style={{ width:44, height:44, border:"3px solid rgba(0,229,255,0.2)",
                   borderTop:"3px solid #00e5ff", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
-                <div style={{ fontSize:"0.75rem", color:"#00e5ff", fontWeight:700 }}>Running MediaPipe analysis…</div>
+                <div style={{ fontSize:"0.75rem", color:"#00e5ff", fontWeight:700 }}>Running MediaPipe analysis...</div>
                 <div style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>Detecting 33 landmarks · Calculating deviations</div>
               </div>
             )}
@@ -1303,8 +1303,8 @@ function PostureCameraModule({ activePatient, set }) {
             padding:"9px 13px", borderBottom:"1px solid rgba(127,90,240,0.2)",
             background:"rgba(127,90,240,0.04)" }}>
             <div style={{ fontSize:"0.65rem", fontWeight:800, color:"#7f5af0" }}>
-              📷 Uploaded Photo — {uploadView?.charAt(0).toUpperCase()+uploadView?.slice(1)} View
-              {uploadBusy ? " — Analysing…" : uploadLm ? " — Pose Grid Applied v" : uploadError ? " — Detection Failed" : ""}
+              📷 Uploaded Photo - {uploadView?.charAt(0).toUpperCase()+uploadView?.slice(1)} View
+              {uploadBusy ? " - Analysing..." : uploadLm ? " - Pose Grid Applied v" : uploadError ? " - Detection Failed" : ""}
             </div>
             <div style={{ display:"flex", gap:6 }}>
               {/* View switch for upload */}
@@ -1321,7 +1321,7 @@ function PostureCameraModule({ activePatient, set }) {
                 if(uploadObjRef.current){URL.revokeObjectURL(uploadObjRef.current);uploadObjRef.current=null;}
               }} style={{ padding:"4px 9px", background:"rgba(255,77,109,0.1)",
                 border:"1px solid rgba(255,77,109,0.25)", borderRadius:7,
-                color:"#ff4d6d", fontSize:"0.62rem", fontWeight:700, cursor:"pointer" }}>✕</button>
+                color:"#ff4d6d", fontSize:"0.62rem", fontWeight:700, cursor:"pointer" }}>x</button>
             </div>
           </div>
 
@@ -1336,7 +1336,7 @@ function PostureCameraModule({ activePatient, set }) {
                 alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.6)", gap:10 }}>
                 <div style={{ width:44, height:44, border:"3px solid rgba(127,90,240,0.2)",
                   borderTop:"3px solid #7f5af0", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
-                <div style={{ fontSize:"0.75rem", color:"#7f5af0", fontWeight:700 }}>Analysing pose…</div>
+                <div style={{ fontSize:"0.75rem", color:"#7f5af0", fontWeight:700 }}>Analysing pose...</div>
               </div>
             )}
           </div>
@@ -1402,7 +1402,7 @@ function PostureCameraModule({ activePatient, set }) {
           borderRadius:12, overflow:"hidden", marginBottom:12 }}>
           <div style={{ padding:"8px 12px", borderBottom:"1px solid rgba(0,229,255,0.12)",
             background:"rgba(0,229,255,0.03)", fontSize:"0.62rem", fontWeight:800, color:"#00e5ff" }}>
-            📸 View Bank — {Object.values(viewBank).filter(Boolean).length}/4 Captured
+            📸 View Bank - {Object.values(viewBank).filter(Boolean).length}/4 Captured
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, background:"rgba(0,229,255,0.04)" }}>
             {["anterior","posterior","left","right"].map(v => {
@@ -1447,7 +1447,7 @@ function PostureCameraModule({ activePatient, set }) {
             width:"100%", padding:"8px", background:"rgba(255,77,109,0.06)",
             border:"none", borderTop:"1px solid rgba(255,77,109,0.12)",
             color:"#ff4d6d", fontSize:"0.65rem", fontWeight:700, cursor:"pointer"
-          }}>✕ Clear All Views</button>
+          }}>x Clear All Views</button>
         </div>
       )}
 
@@ -1462,7 +1462,7 @@ function PostureCameraModule({ activePatient, set }) {
 
 
 // ========================================================================
-// NEW ADVANCED POSTURE ANALYSIS ENGINE — integrated from PostureAnalysisModule
+// NEW ADVANCED POSTURE ANALYSIS ENGINE - integrated from PostureAnalysisModule
 // ========================================================================
 
 //  • Spinal curvature estimation (cervical/thoracic/lumbar)
@@ -1470,7 +1470,7 @@ function PostureCameraModule({ activePatient, set }) {
 //  • Temporal trend tracking (session history + progress charting)
 //  • Burst capture + before/after comparison
 //  • Export: annotated image + PDF-ready JSON report
-//  • Offline capable — no API cost, runs entirely in browser
+//  • Offline capable - no API cost, runs entirely in browser
 // ============================================================================
 
 // --- Colours -----------------------------------------------------------------
@@ -1508,17 +1508,17 @@ const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
 // Levangie & Norkin (2011), Magee (2014), Singla & Veqar (2014)
 // -----------------------------------------------------------------------------
 const CLINICAL_NORMS = {
-  cvaAngle:          { normal:[55,90],   mild:[49,55],   severe:[0,49],   unit:"°", label:"CVA (Craniovertebral Angle)", ref:"Yip et al. (2008): >55° normal. 49–55° mild FHP. <49° pathological — cervicogenic headache risk." },
-  thoracicAngle:     { normal:[20,45],   mild:[45,55],   severe:[55,90],  unit:"°", label:"Thoracic Kyphosis (T1–T12)", ref:"Normal Cobb equivalent 20–45°. >50° hyperkyphosis. Assessed lateral view only." },
-  lordosisAngle:     { normal:[40,60],   mild:[60,70],   severe:[70,90],  unit:"°", label:"Lumbar Lordosis (L1–S1)",   ref:"Normal 40–60°. >70° hyperlordosis. <30° flat-back. Assessed lateral view only." },
-  shoulderAngle:     { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"°", label:"Shoulder Tilt (bilateral)", ref:"<3° within normal variation. 3–7° mild asymmetry. >7° refer for LLD/scoliosis screen." },
-  pelvisAngle:       { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"°", label:"Pelvic Obliquity",          ref:"<3° normal. >7° — screen for LLD, SIJ dysfunction, hip asymmetry." },
-  kneeValgus:        { normal:[0,5],     mild:[5,10],    severe:[10,30],  unit:"°", label:"Knee Valgus/Varus",         ref:"<5° normal Q-angle variation. >10° — glute med inhibition, foot pronation driver." },
-  cobbEstimate:      { normal:[0,5],     mild:[5,10],    severe:[10,90],  unit:"°", label:"Scoliosis Screen (Cobb est.)", ref:"<5° normal. 5–10° monitor with repeat. >10° refer for standing X-ray (true Cobb)." },
-  weightBearingShift:{ normal:[0,3],     mild:[3,6],     severe:[6,30],   unit:"%", label:"Weight-Bearing Asymmetry",  ref:"<3% acceptable. >6% — assess LLD, pain-avoidance posture, hip OA." },
-  cogDeviation:      { normal:[0,4],     mild:[4,7],     severe:[7,30],   unit:"%", label:"Centre of Gravity Deviation", ref:"<4% normal. >7% global postural collapse — multi-system retraining needed." },
-  leftKneeDev:       { normal:[-5,5],    mild:[-12,-5],  severe:[-30,-12],unit:"°", label:"Knee Hyperextension (Genu Recurvatum)", ref:">5° increases posterior capsule & ACL load. >10° — Beighton hypermobility score." },
-  rightKneeDev:      { normal:[-5,5],    mild:[-12,-5],  severe:[-30,-12],unit:"°", label:"Knee Hyperextension (Genu Recurvatum)", ref:">5° increases posterior capsule & ACL load. >10° — Beighton hypermobility score." },
+  cvaAngle:          { normal:[55,90],   mild:[49,55],   severe:[0,49],   unit:"deg", label:"CVA (Craniovertebral Angle)", ref:"Yip et al. (2008): >55deg normal. 49-55deg mild FHP. <49deg pathological - cervicogenic headache risk." },
+  thoracicAngle:     { normal:[20,45],   mild:[45,55],   severe:[55,90],  unit:"deg", label:"Thoracic Kyphosis (T1-T12)", ref:"Normal Cobb equivalent 20-45deg. >50deg hyperkyphosis. Assessed lateral view only." },
+  lordosisAngle:     { normal:[40,60],   mild:[60,70],   severe:[70,90],  unit:"deg", label:"Lumbar Lordosis (L1-S1)",   ref:"Normal 40-60deg. >70deg hyperlordosis. <30deg flat-back. Assessed lateral view only." },
+  shoulderAngle:     { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"deg", label:"Shoulder Tilt (bilateral)", ref:"<3deg within normal variation. 3-7deg mild asymmetry. >7deg refer for LLD/scoliosis screen." },
+  pelvisAngle:       { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"deg", label:"Pelvic Obliquity",          ref:"<3deg normal. >7deg - screen for LLD, SIJ dysfunction, hip asymmetry." },
+  kneeValgus:        { normal:[0,5],     mild:[5,10],    severe:[10,30],  unit:"deg", label:"Knee Valgus/Varus",         ref:"<5deg normal Q-angle variation. >10deg - glute med inhibition, foot pronation driver." },
+  cobbEstimate:      { normal:[0,5],     mild:[5,10],    severe:[10,90],  unit:"deg", label:"Scoliosis Screen (Cobb est.)", ref:"<5deg normal. 5-10deg monitor with repeat. >10deg refer for standing X-ray (true Cobb)." },
+  weightBearingShift:{ normal:[0,3],     mild:[3,6],     severe:[6,30],   unit:"%", label:"Weight-Bearing Asymmetry",  ref:"<3% acceptable. >6% - assess LLD, pain-avoidance posture, hip OA." },
+  cogDeviation:      { normal:[0,4],     mild:[4,7],     severe:[7,30],   unit:"%", label:"Centre of Gravity Deviation", ref:"<4% normal. >7% global postural collapse - multi-system retraining needed." },
+  leftKneeDev:       { normal:[-5,5],    mild:[-12,-5],  severe:[-30,-12],unit:"deg", label:"Knee Hyperextension (Genu Recurvatum)", ref:">5deg increases posterior capsule & ACL load. >10deg - Beighton hypermobility score." },
+  rightKneeDev:      { normal:[-5,5],    mild:[-12,-5],  severe:[-30,-12],unit:"deg", label:"Knee Hyperextension (Genu Recurvatum)", ref:">5deg increases posterior capsule & ACL load. >10deg - Beighton hypermobility score." },
 };
 
 // Cervical compressive load (Hansraj 2014 model: 4.5kg neutral + ~2.7kg/2.5cm FHP)
@@ -1533,7 +1533,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   // calibration: { pixPerCm, frameHeightPx, patientHeightCm }
   if (!lm || lm.length < 33) return {};
   const g    = i => lm[i];
-  // Strict visibility threshold — landmark must be >= MIN_VIS to be used
+  // Strict visibility threshold - landmark must be >= MIN_VIS to be used
   const V    = i => (lm[i]?.visibility||0) >= MIN_VIS;
   // Confidence-weighted value: returns value only if BOTH landmarks meet threshold
   const Vboth = (...idxs) => idxs.every(i => V(i));
@@ -1570,7 +1570,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const eyeLevelAngle = Vboth(2,5)   ? calcAngleDeg(g(5),  g(2))  : null;
 
   // Head lateral offset: nose X minus shoulder midpoint X (normalised to frame width)
-  // Expressed as % of frame width — more stable than absolute pixels
+  // Expressed as % of frame width - more stable than absolute pixels
   const headLateralOffset = shMid && V(0) ? r1((g(0).x - shMid.x)*100) : null;
   // Trunk lateral shift: shoulder midpoint minus hip midpoint (% of frame width)
   const trunkLateralShift = shMid && hipMid ? r1((shMid.x - hipMid.x)*100) : null;
@@ -1593,7 +1593,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   // Gold standard: lateral photo, line from tragus to C7 spinous process vs horizontal.
   // MediaPipe proxy: angle of ear-to-shoulder vector from vertical.
   // Valid ONLY in lateral view (left or right). Frontal view CVA = null.
-  // Using 2D only (X and Y) — Z-based CVA was producing unreliable values.
+  // Using 2D only (X and Y) - Z-based CVA was producing unreliable values.
   let cvaAngle = null;
   if (earMid && shMid) {
     const dx = Math.abs((earMid.x||0)-(shMid.x||0));
@@ -1602,7 +1602,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     // and the landmarks are reliably detected (both ears must be visible for earMid)
     if (dy > 0.04 && earMid.visibility >= 0.35) {
       // CVA = arctan(dy/dx) converted to degrees from vertical
-      // When head is directly above shoulder: dx ≈ 0, CVA ≈ 90° (ideal)
+      // When head is directly above shoulder: dx ~ 0, CVA ~ 90deg (ideal)
       // As head moves forward: dx increases, CVA decreases
       const rawCVA = Math.atan2(dy, dx) * 180 / Math.PI;
       cvaAngle = r1(clamp(rawCVA, 20, 88));
@@ -1626,7 +1626,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   // Estimated from shoulder-to-hip vector deviation from vertical (proxy method).
   // In a lateral view: sagittal trunk inclination reflects combined C/T/L curves.
   // The thoracic kyphosis estimate is only clinically interpretable in a lateral view.
-  // Normal: 20–45° Cobb equivalent. This is a SCREEN, not a Cobb measurement.
+  // Normal: 20-45deg Cobb equivalent. This is a SCREEN, not a Cobb measurement.
   let thoracicAngle = null;
   if (shMid && hipMid) {
     const dx = shMid.x - hipMid.x; // +ve = shoulders anterior to hips
@@ -1634,22 +1634,22 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     if (dy > 0.06) {
       // Base angle from trunk inclination; offset to clinical kyphosis range
       const inclination = Math.atan2(Math.abs(dx), dy) * 180 / Math.PI;
-      // Inclination 0° = perfectly vertical trunk → normal kyphosis ~32°
-      // Inclination 5° → ~40°, 10° → ~50°, 15° → ~60°
+      // Inclination 0deg = perfectly vertical trunk -> normal kyphosis ~32deg
+      // Inclination 5deg -> ~40deg, 10deg -> ~50deg, 15deg -> ~60deg
       thoracicAngle = r1(clamp(32 + inclination * 1.8, 20, 80));
     }
   }
 
   // -- LUMBAR / PELVIC TILT (lateral view) -----------------------------------
   // Lumbar proxy: horizontal offset of hip midpoint from midpoint of knee+heel
-  // +ve = hips anterior to knees → anterior pelvic tilt / hyperlordosis
-  // -ve = hips posterior → posterior tilt / flat back
+  // +ve = hips anterior to knees -> anterior pelvic tilt / hyperlordosis
+  // -ve = hips posterior -> posterior tilt / flat back
   let lumbarProxy = null, lordosisAngle = null;
   if (hipMid && kneeMid && heelMid) {
     const kneeHeelMidX = (kneeMid.x + heelMid.x) / 2;
     lumbarProxy = r1((hipMid.x - kneeHeelMidX) * 100);
   }
-  // Lordosis angle from Z-depth only — guard with meaningful Z difference
+  // Lordosis angle from Z-depth only - guard with meaningful Z difference
   if (hasZ && hipZ !== null && kneeZ !== null && Math.abs(hipZ-kneeZ) > 0.005)
     lordosisAngle = r1(clamp(50 + (hipZ-kneeZ)*100*2.2, 15, 85));
 
@@ -1663,9 +1663,9 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
 
   // -- KNEE ANGLES ------------------------------------------------------------
   // vec3Angle computes the interior angle at the middle point (knee)
-  // using hip-knee-ankle triangle. 180° = fully extended (neutral).
-  // < 180° = flexed; > 180° not geometrically possible in 2D — treated as 180°.
-  // Deviation from 180° in hyperextension direction requires lateral view context.
+  // using hip-knee-ankle triangle. 180deg = fully extended (neutral).
+  // < 180deg = flexed; > 180deg not geometrically possible in 2D - treated as 180deg.
+  // Deviation from 180deg in hyperextension direction requires lateral view context.
   const leftKneeAngle  = Vboth(23,25,27) ? vec3Angle(g(23),g(25),g(27)) : null;
   const rightKneeAngle = Vboth(24,26,28) ? vec3Angle(g(24),g(26),g(28)) : null;
   const leftKneeDev    = leftKneeAngle  !== null ? r1(leftKneeAngle  - 180) : null; // -ve = hyperext
@@ -1676,14 +1676,14 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const rightAnkleAngle = Vboth(26,28,32) ? vec3Angle(g(26),g(28),g(32)) : null;
 
   // -- BILATERAL SYMMETRY -----------------------------------------------------
-  // Expressed as Y-coordinate difference × 100 (normalised to frame height)
+  // Expressed as Y-coordinate difference x 100 (normalised to frame height)
   const shoulderSymmetry = Vboth(11,12) ? { left:g(11).y, right:g(12).y, diff:r1((g(11).y-g(12).y)*100) } : null;
   const hipSymmetry      = Vboth(23,24) ? { left:g(23).y, right:g(24).y, diff:r1((g(23).y-g(24).y)*100) } : null;
   const kneeSymmetry     = Vboth(25,26) ? { left:g(25).y, right:g(26).y, diff:r1((g(25).y-g(26).y)*100) } : null;
   const ankleSymmetry    = Vboth(27,28) ? { left:g(27).y, right:g(28).y, diff:r1((g(27).y-g(28).y)*100) } : null;
 
-  // Leg length discrepancy proxy (Woerman indirect method — knee height asymmetry)
-  // Clinical note: >5mm LLD is clinically significant; proxy only — confirm with tape measure
+  // Leg length discrepancy proxy (Woerman indirect method - knee height asymmetry)
+  // Clinical note: >5mm LLD is clinically significant; proxy only - confirm with tape measure
   const lldProxy = kneeSymmetry ? r1(Math.abs(kneeSymmetry.diff)*1.8) : null;
   const lldSide  = kneeSymmetry ? (kneeSymmetry.diff > 0 ? "Left" : "Right") : null;
 
@@ -1692,7 +1692,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const scapularAbduction= shoulderWidth && hipWidth ? r1((shoulderWidth-hipWidth)*100) : null;
 
   // -- FOOT PROGRESSION ANGLES ------------------------------------------------
-  // Angle of foot vector (ankle to toe) from vertical — normal: 0–15° toe-out
+  // Angle of foot vector (ankle to toe) from vertical - normal: 0-15deg toe-out
   const leftFootAngle  = Vboth(31,27) ? r1(Math.atan2(g(31).y-g(27).y, g(31).x-g(27).x)*180/Math.PI) : null;
   const rightFootAngle = Vboth(32,28) ? r1(Math.atan2(g(32).y-g(28).y, g(32).x-g(28).x)*180/Math.PI) : null;
 
@@ -1706,7 +1706,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
 
   // -- CENTRE OF GRAVITY -----------------------------------------------------
   // Weighted average of key body segment centres (head, shoulder, hip, foot)
-  // Normal: within ±4% of frame centre (0.5)
+  // Normal: within +/-4% of frame centre (0.5)
   const cogParts    = [V(0)?g(0):null, shMid, hipMid, footMid].filter(Boolean);
   const cogX        = cogParts.length >= 2 ? cogParts.reduce((s,p)=>s+(p.x||0),0)/cogParts.length : null;
   const cogDeviation= cogX !== null ? r1((cogX - 0.5)*100) : null;
@@ -1774,7 +1774,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
 
 // --- RELIABILITY ENGINE -------------------------------------------------------
 // Assesses MediaPipe landmark confidence and returns:
-//   score: 0–100 overall confidence
+//   score: 0-100 overall confidence
 //   status: Excellent / Good / Fair / Poor / Insufficient
 //   blocked: true if image quality is too low to produce any findings
 //   warnings: clinician-facing messages
@@ -1794,7 +1794,7 @@ function ReliabilityEngine(lm) {
   const visValues = KEY.map(i => lm[i]?.visibility||0);
   const mean = visValues.reduce((s,v)=>s+v,0)/KEY.length;
 
-  // CRITICAL landmarks — if these are below threshold, the analysis is unreliable
+  // CRITICAL landmarks - if these are below threshold, the analysis is unreliable
   const criticalLandmarks = [
     { idx:11, name:"L.Shoulder" }, { idx:12, name:"R.Shoulder" },
     { idx:23, name:"L.Hip/ASIS" }, { idx:24, name:"R.Hip/ASIS" },
@@ -1813,33 +1813,33 @@ function ReliabilityEngine(lm) {
   const warnings = [];
 
   if (blocked) {
-    warnings.push({ icon:"🚫", text:"Image quality insufficient for reliable analysis — improve lighting, ensure full body visible, use form-fitting clothing", color:PC.red, priority:6 });
+    warnings.push({ icon:"🚫", text:"Image quality insufficient for reliable analysis - improve lighting, ensure full body visible, use form-fitting clothing", color:PC.red, priority:6 });
   } else if (mean < 0.55) {
-    warnings.push({ icon:"⚠", text:"Low confidence — findings may be inaccurate. Improve lighting and camera distance", color:PC.red, priority:5 });
+    warnings.push({ icon:"⚠", text:"Low confidence - findings may be inaccurate. Improve lighting and camera distance", color:PC.red, priority:5 });
   } else if (mean < 0.70) {
-    warnings.push({ icon:"○", text:"Partial tracking — some measurements limited. Ensure full body in frame", color:PC.yellow, priority:3 });
+    warnings.push({ icon:"○", text:"Partial tracking - some measurements limited. Ensure full body in frame", color:PC.yellow, priority:3 });
   }
 
   const lowVis = KEY.filter(i => (lm[i]?.visibility||0) < 0.45);
   if (!blocked && lowVis.length > 5)
-    warnings.push({ icon:"👁", text:`${lowVis.length} landmarks low confidence — affected measurements marked unreliable`, color:PC.yellow, priority:4 });
+    warnings.push({ icon:"👁", text:`${lowVis.length} landmarks low confidence - affected measurements marked unreliable`, color:PC.yellow, priority:4 });
 
   const lShVis = lm[11]?.visibility||0, rShVis = lm[12]?.visibility||0;
   if (!blocked && Math.abs(lShVis-rShVis) > 0.40)
-    warnings.push({ icon:"↔", text:"Asymmetric shoulder visibility — bilateral shoulder measurements may be inaccurate", color:PC.yellow, priority:3 });
+    warnings.push({ icon:"↔", text:"Asymmetric shoulder visibility - bilateral shoulder measurements may be inaccurate", color:PC.yellow, priority:3 });
 
   if (!blocked && (lm[23]?.visibility||0) < 0.45 || (lm[24]?.visibility||0) < 0.45)
-    warnings.push({ icon:"⊖", text:"Hip/ASIS partially occluded — pelvic measurements flagged unreliable", color:PC.yellow, priority:3 });
+    warnings.push({ icon:"⊖", text:"Hip/ASIS partially occluded - pelvic measurements flagged unreliable", color:PC.yellow, priority:3 });
 
   if ((lm[7]?.visibility||0) < 0.45 && (lm[8]?.visibility||0) < 0.45)
-    warnings.push({ icon:"👂", text:"Ears not detected — CVA and forward head posture cannot be assessed", color:PC.yellow, priority:2 });
+    warnings.push({ icon:"👂", text:"Ears not detected - CVA and forward head posture cannot be assessed", color:PC.yellow, priority:2 });
 
   if ((lm[31]?.visibility||0) < 0.35 && (lm[32]?.visibility||0) < 0.35)
-    warnings.push({ icon:"🦶", text:"Feet not visible — move camera back or lower for full-body capture", color:PC.yellow, priority:2 });
+    warnings.push({ icon:"🦶", text:"Feet not visible - move camera back or lower for full-body capture", color:PC.yellow, priority:2 });
 
   const hasZ = lm[7] && lm[11] && Math.abs((lm[7].z||0)-(lm[11].z||0)) > 0.002;
   if (!hasZ && !blocked)
-    warnings.push({ icon:"📐", text:"Sagittal depth data limited — use lateral view for kyphosis/CVA assessment", color:PC.muted, priority:1 });
+    warnings.push({ icon:"📐", text:"Sagittal depth data limited - use lateral view for kyphosis/CVA assessment", color:PC.muted, priority:1 });
 
   warnings.sort((a,b) => (b.priority||0)-(a.priority||0));
 
@@ -1877,17 +1877,17 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     // Eye level tilt
     if (eyeLevelAngle !== null && Math.abs(eyeLevelAngle) > 2) {
       const side = eyeLevelAngle > 0 ? "Left" : "Right"; const abs = Math.abs(eyeLevelAngle);
-      add("Cranial / Cervical", `Eye level tilted — ${side} eye lower (${abs.toFixed(1)}°)`, abs > 5 ? "high" : "moderate",
-        `Check ocular righting reflex. Cervical lateral flexion mobility assessment. Consider vestibular/visual dominance contributing to head tilt. Refer optometry if >5° and consistent.`,
-        "H53.9", "👁", `Ocular reflex drives cervical compensation — rule out visual asymmetry before treating neck.`, "Normal: <2°", abs);
+      add("Cranial / Cervical", `Eye level tilted - ${side} eye lower (${abs.toFixed(1)}deg)`, abs > 5 ? "high" : "moderate",
+        `Check ocular righting reflex. Cervical lateral flexion mobility assessment. Consider vestibular/visual dominance contributing to head tilt. Refer optometry if >5deg and consistent.`,
+        "H53.9", "👁", `Ocular reflex drives cervical compensation - rule out visual asymmetry before treating neck.`, "Normal: <2deg", abs);
     }
 
     // Shoulder elevation
     if (shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
       const abs = Math.abs(shoulderAngle); const side = shoulderAngle > 0 ? "Left" : "Right";
-      add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
-        `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s × 3. Activate: lower trapezius Y-T-W × 15. NKT: check ipsilateral QL — QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
-        "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis.`, "Normal: <3°", abs);
+      add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}deg)`, abs > 7 ? "high" : "moderate",
+        `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s x 3. Activate: lower trapezius Y-T-W x 15. NKT: check ipsilateral QL - QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
+        "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis.`, "Normal: <3deg", abs);
     }
 
     // Head lateral offset
@@ -1895,7 +1895,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(headLateralOffset); const side = headLateralOffset > 0 ? "right" : "left";
       add("Cervical", `Head laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 5 ? "high" : "moderate",
         `Cervical lateral flexion mobilisation contralateral. SCM and scalene release ipsilateral. Assess ocular/vestibular contributions. Pillow height review.`,
-        "M54.2", "↔", `Persistent shift: C2–C4 facet dysfunction, alar ligament laxity, or habitual visual dominance.`, "Normal: <2.5%", abs);
+        "M54.2", "↔", `Persistent shift: C2-C4 facet dysfunction, alar ligament laxity, or habitual visual dominance.`, "Normal: <2.5%", abs);
     }
 
     // Pelvic obliquity + LLD prompt
@@ -1903,34 +1903,34 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(pelvisAngle); const high = pelvisAngle > 0 ? "Left" : "Right";
       const lldNote = lldProxy !== null && lldProxy > 5
         ? ` Knee height asymmetry suggests ~${lldProxy.toFixed(0)}mm functional LLD (${lldSide} side shorter).` : "";
-      add("Pelvis / SIJ", `${high} ASIS elevated (${abs.toFixed(1)}°)${lldNote ? " + LLD suspected" : ""}`, abs > 7 ? "high" : "moderate",
-        `Functional LLD: tape iliac crest to medial malleolus bilateral. If LLD >5mm: heel wedge trial 3–5mm. QL release elevated side. Hip abductor strengthening depressed side. SIJ provocation cluster (distraction, compression, thigh thrust, Gaenslen, sacral thrust — positive ≥3/5). Lumbar PA L4–S1.`,
-        "M53.3", "⊖", `${abs.toFixed(1)}°. >7° — structural LLD screen (long-leg X-ray).${lldNote}`, "Normal: <3°", abs);
+      add("Pelvis / SIJ", `${high} ASIS elevated (${abs.toFixed(1)}deg)${lldNote ? " + LLD suspected" : ""}`, abs > 7 ? "high" : "moderate",
+        `Functional LLD: tape iliac crest to medial malleolus bilateral. If LLD >5mm: heel wedge trial 3-5mm. QL release elevated side. Hip abductor strengthening depressed side. SIJ provocation cluster (distraction, compression, thigh thrust, Gaenslen, sacral thrust - positive >=3/5). Lumbar PA L4-S1.`,
+        "M53.3", "⊖", `${abs.toFixed(1)}deg. >7deg - structural LLD screen (long-leg X-ray).${lldNote}`, "Normal: <3deg", abs);
     }
 
     // Trunk lateral shift
     if (trunkLateralShift !== null && Math.abs(trunkLateralShift) > 3.5) {
       const abs = Math.abs(trunkLateralShift); const side = trunkLateralShift > 0 ? "right" : "left";
       add("Thoracic", `Trunk laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 7 ? "high" : "moderate",
-        `Assess antalgic lean (disc/radiculopathy — trunk shifts AWAY from herniation in paracentral disc, TOWARD in lateral disc). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.`,
+        `Assess antalgic lean (disc/radiculopathy - trunk shifts AWAY from herniation in paracentral disc, TOWARD in lateral disc). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.`,
         "M54.5", "⇒", `Lateral trunk shift highly associated with L4/L5 disc herniation.`, "Normal: <3.5%", abs);
     }
 
     // Scoliosis / spinal deviation
     if (spinalDeviation !== null && Math.abs(spinalDeviation) > 4) {
       const abs = Math.abs(spinalDeviation);
-      add("Spine", `C-plumb deviation — head not centred over pelvis (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
-        `Adam's forward bend test — observe for rib hump. Confirm in posterior view. Refer for standing AP X-ray if structural scoliosis suspected. Schroth method if confirmed.`,
+      add("Spine", `C-plumb deviation - head not centred over pelvis (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
+        `Adam's forward bend test - observe for rib hump. Confirm in posterior view. Refer for standing AP X-ray if structural scoliosis suspected. Schroth method if confirmed.`,
         "M41.9", "〜", `Must distinguish functional (reversible) from structural (fixed) scoliosis via Adam's bend test.`, "Normal: <4%", abs);
     }
 
     if (cobbEstimate !== null && cobbEstimate > 5) {
-      add("Spine", `Scoliosis screen — estimated Cobb equivalent ${cobbEstimate.toFixed(0)}° (shoulder-pelvis differential)`, cobbEstimate > 10 ? "high" : "moderate",
-        `Adam's forward bend test immediately. If rib prominence: refer for standing AP spine X-ray. Cobb >10° = confirmed scoliosis. >25° = bracing. >45° = surgical threshold. Schroth physiotherapy.`,
-        "M41.9", "〜", `Shoulder (${shoulderAngle?.toFixed(1)}°) vs pelvis (${pelvisAngle?.toFixed(1)}°) differential.`, "Normal: <5°", cobbEstimate);
+      add("Spine", `Scoliosis screen - estimated Cobb equivalent ${cobbEstimate.toFixed(0)}deg (shoulder-pelvis differential)`, cobbEstimate > 10 ? "high" : "moderate",
+        `Adam's forward bend test immediately. If rib prominence: refer for standing AP spine X-ray. Cobb >10deg = confirmed scoliosis. >25deg = bracing. >45deg = surgical threshold. Schroth physiotherapy.`,
+        "M41.9", "〜", `Shoulder (${shoulderAngle?.toFixed(1)}deg) vs pelvis (${pelvisAngle?.toFixed(1)}deg) differential.`, "Normal: <5deg", cobbEstimate);
     }
 
-    // Knee alignment frontal plane — merge bilateral into one finding
+    // Knee alignment frontal plane - merge bilateral into one finding
     {
       const lv = leftKneeFrontal, rv = rightKneeFrontal;
       const lAbs = lv !== null ? Math.abs(lv) : 0;
@@ -1948,17 +1948,17 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         if (bilateral) {
           const worseAbs = Math.max(lAbs, rAbs);
           const worseSide = lAbs >= rAbs ? "L" : "R";
-          text = `Bilateral knee valgus — ${worseSide} worse (L: ${lAbs.toFixed(1)}° R: ${rAbs.toFixed(1)}°)`;
+          text = `Bilateral knee valgus - ${worseSide} worse (L: ${lAbs.toFixed(1)}deg R: ${rAbs.toFixed(1)}deg)`;
           severity = worseAbs > 10 ? "high" : "moderate";
-          correction = `Glute med: clamshells × 15, lateral band walks × 20m. VMO: terminal knee extensions × 15. Single-leg squat with valgus mirror correction. Foot tripod activation. Address ankle pronation if present.`;
+          correction = `Glute med: clamshells x 15, lateral band walks x 20m. VMO: terminal knee extensions x 15. Single-leg squat with valgus mirror correction. Foot tripod activation. Address ankle pronation if present.`;
         } else if (lSig) {
-          text = `Left knee ${lPattern} — hip-knee-ankle misalignment (${lAbs.toFixed(1)}°)`;
+          text = `Left knee ${lPattern} - hip-knee-ankle misalignment (${lAbs.toFixed(1)}deg)`;
           severity = lAbs > 10 ? "high" : "moderate";
           correction = lv < 0
             ? `Glute med: clamshells, lateral band walks. VMO activation. SL squat correction. Foot tripod.`
             : `Hip ER strengthening. Ober test (ITB/TFL). Lateral chain SMR. Subtalar supination assessment.`;
         } else {
-          text = `Right knee ${rPattern} — hip-knee-ankle misalignment (${rAbs.toFixed(1)}°)`;
+          text = `Right knee ${rPattern} - hip-knee-ankle misalignment (${rAbs.toFixed(1)}deg)`;
           severity = rAbs > 10 ? "high" : "moderate";
           correction = rv < 0
             ? `Glute med: clamshells, lateral band walks. VMO activation. SL squat correction. Foot tripod.`
@@ -1967,14 +1967,14 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         add("Knee Alignment", text, severity, correction,
           "M21.0", "⊾",
           `Dynamic valgus: primary driver of PFP, ACL injury, medial compartment OA. Glute med weakness in 80% of functional valgus cases.`,
-          "Normal: <5° deviation", Math.max(lAbs, rAbs));
+          "Normal: <5deg deviation", Math.max(lAbs, rAbs));
       }
     }
 
     // Weight-bearing asymmetry
     if (weightBearingShift !== null && Math.abs(weightBearingShift) > 4) {
       const abs = Math.abs(weightBearingShift); const side = weightBearingShift > 0 ? "right" : "left";
-      add("Balance / Loading", `Weight-bearing asymmetry — loading toward ${side} (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
+      add("Balance / Loading", `Weight-bearing asymmetry - loading toward ${side} (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
         `Mirror biofeedback bilateral stance. Scales under each foot if available. Retrain equal loading. Identify driver: pain avoidance, LLD, or habit.`,
         "M62.9", "⊖", `Asymmetric loading >6% associated with increased ipsilateral knee/hip OA progression.`, "Normal: <4%", abs);
     }
@@ -1983,11 +1983,11 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     [[leftFootAngle,"Left"],[rightFootAngle,"Right"]].forEach(([angle,side])=>{
       if (angle === null || Math.abs(angle) <= 20) return;
       const abs = Math.abs(angle);
-      add("Foot / Ankle", `${side} foot ${angle > 0 ? "externally" : "internally"} rotated (${abs.toFixed(0)}°)`, abs > 30 ? "high" : "moderate",
+      add("Foot / Ankle", `${side} foot ${angle > 0 ? "externally" : "internally"} rotated (${abs.toFixed(0)}deg)`, abs > 30 ? "high" : "moderate",
         angle > 0
           ? `Check tibial external torsion, hip ER contracture, glute med/TFL balance. Gait retraining feet-parallel.`
           : `Check tibial internal torsion, hip IR dominance, in-toeing gait. Refer podiatry if structural torsion.`,
-        "M21.6", "↻", `Normal foot progression angle 5–12° external.`, "Normal: 5–12°", abs);
+        "M21.6", "↻", `Normal foot progression angle 5-12deg external.`, "Normal: 5-12deg", abs);
     });
 
     // COG deviation
@@ -2000,15 +2000,15 @@ function ClinicalFindingsEngine(lm, view, measurements) {
 
     // UCS pattern
     if (ucsIndex !== null && ucsIndex > 0.6) {
-      add("Upper Crossed Syndrome", `UCS pattern detected — index ${ucsIndex.toFixed(1)} (${ucsIndex > 1.0 ? "severe" : "moderate"})`, ucsIndex > 1.0 ? "high" : "moderate",
-        `INHIBIT (SMR ×90s): upper trap, SCM, pec minor, levator scapulae. ACTIVATE: deep neck flexors (chin nod ×10 ×3), lower trap (Y-T-W ×15), serratus (wall push-up plus ×15). MOBILISE: thoracic extension foam roller T4–T8 ×2min. CORRECT: monitor height +5cm. NKT reprogram within 30s of release.`,
+      add("Upper Crossed Syndrome", `UCS pattern detected - index ${ucsIndex.toFixed(1)} (${ucsIndex > 1.0 ? "severe" : "moderate"})`, ucsIndex > 1.0 ? "high" : "moderate",
+        `INHIBIT (SMR x90s): upper trap, SCM, pec minor, levator scapulae. ACTIVATE: deep neck flexors (chin nod x10 x3), lower trap (Y-T-W x15), serratus (wall push-up plus x15). MOBILISE: thoracic extension foam roller T4-T8 x2min. CORRECT: monitor height +5cm. NKT reprogram within 30s of release.`,
         "M62.9", "✗", `UCS (Janda 1979): overactive upper trap/SCM/pec minor ↔ inhibited DNF/lower trap/serratus. Drives FHP, rounded shoulders, kyphosis, cervicogenic headache.`, "UCS Index: <0.4 normal", ucsIndex);
     }
 
     // LCS pattern
     if (lcsIndex !== null && lcsIndex > 0.5) {
-      add("Lower Crossed Syndrome", `LCS pattern detected — index ${lcsIndex.toFixed(1)} (${lcsIndex > 1.0 ? "severe" : "moderate"})`, lcsIndex > 1.0 ? "high" : "moderate",
-        `INHIBIT (SMR ×90s): hip flexors (psoas, RF, TFL), thoracolumbar erectors, QL. ACTIVATE: glute max (bridges ×15, hip thrusts ×10), glute med (clamshells, lateral band walks), TA/core (dead bug ×10). STRETCH: couch stretch 90s/side. CORRECT: pelvic neutral awareness, seated posture retraining.`,
+      add("Lower Crossed Syndrome", `LCS pattern detected - index ${lcsIndex.toFixed(1)} (${lcsIndex > 1.0 ? "severe" : "moderate"})`, lcsIndex > 1.0 ? "high" : "moderate",
+        `INHIBIT (SMR x90s): hip flexors (psoas, RF, TFL), thoracolumbar erectors, QL. ACTIVATE: glute max (bridges x15, hip thrusts x10), glute med (clamshells, lateral band walks), TA/core (dead bug x10). STRETCH: couch stretch 90s/side. CORRECT: pelvic neutral awareness, seated posture retraining.`,
         "M62.9", "✗", `LCS (Janda): overactive hip flexors/lumbar extensors ↔ inhibited glutes/abdominals. Drives APT, hyperlordosis, knee valgus.`, "LCS Index: <0.4 normal", lcsIndex);
     }
   }
@@ -2018,35 +2018,35 @@ function ClinicalFindingsEngine(lm, view, measurements) {
 
     if (shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
       const abs = Math.abs(shoulderAngle); const side = shoulderAngle > 0 ? "Left" : "Right";
-      add("Shoulder Girdle", `${side} shoulder elevated — posterior view (${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
+      add("Shoulder Girdle", `${side} shoulder elevated - posterior view (${abs.toFixed(1)}deg)`, abs > 7 ? "high" : "moderate",
         `Upper trapezius and levator scapulae release ipsilateral. Lower trapezius facilitation. Confirm anterior view finding.`,
-        "M54.2", "⇑", "", "Normal: <3°", abs);
+        "M54.2", "⇑", "", "Normal: <3deg", abs);
     }
 
     if (cobbEstimate !== null && cobbEstimate > 5) {
-      add("Spine", `Scoliosis suspected — Cobb estimate ${cobbEstimate.toFixed(0)}° (posterior definitive view)`, cobbEstimate > 10 ? "high" : "moderate",
-        `Adam's forward bend test immediately (rib hump = positive → refer). Standing AP spine X-ray for true Cobb. Cobb 10–25°: monitor + Schroth. >25°: bracing. >45°: surgical threshold.`,
-        "M41.9", "〜", `C7 plumb: ${c7PlumbDev !== null ? Math.abs(c7PlumbDev).toFixed(1)+"% from sacral midpoint" : "not calculated"}. Shoulder ${shoulderAngle?.toFixed(1)}° vs pelvis ${pelvisAngle?.toFixed(1)}°.`, "Normal: <5°", cobbEstimate);
+      add("Spine", `Scoliosis suspected - Cobb estimate ${cobbEstimate.toFixed(0)}deg (posterior definitive view)`, cobbEstimate > 10 ? "high" : "moderate",
+        `Adam's forward bend test immediately (rib hump = positive -> refer). Standing AP spine X-ray for true Cobb. Cobb 10-25deg: monitor + Schroth. >25deg: bracing. >45deg: surgical threshold.`,
+        "M41.9", "〜", `C7 plumb: ${c7PlumbDev !== null ? Math.abs(c7PlumbDev).toFixed(1)+"% from sacral midpoint" : "not calculated"}. Shoulder ${shoulderAngle?.toFixed(1)}deg vs pelvis ${pelvisAngle?.toFixed(1)}deg.`, "Normal: <5deg", cobbEstimate);
     }
 
     if (c7PlumbDev !== null && Math.abs(c7PlumbDev) > 4) {
       const abs = Math.abs(c7PlumbDev);
-      add("Spine", `C7 plumb deviation — head shifted ${c7PlumbDev > 0 ? "right" : "left"} of sacral midpoint (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
+      add("Spine", `C7 plumb deviation - head shifted ${c7PlumbDev > 0 ? "right" : "left"} of sacral midpoint (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
         `C7 plumb gold standard for coronal balance. If structural deviation >4cm: orthopaedic spine referral. If functional: treat driver (LLD, pain, QL).`,
         "M41.9", "〜", "", "Normal: <4%", abs);
     }
 
     if (pelvisAngle !== null && Math.abs(pelvisAngle) > 3) {
       const abs = Math.abs(pelvisAngle);
-      add("Pelvis / SIJ", `Pelvic obliquity posterior — ${pelvisAngle > 0 ? "Left" : "Right"} elevated (${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
+      add("Pelvis / SIJ", `Pelvic obliquity posterior - ${pelvisAngle > 0 ? "Left" : "Right"} elevated (${abs.toFixed(1)}deg)`, abs > 7 ? "high" : "moderate",
         `Confirm with LLD tape measure. SIJ provocation cluster. QL release elevated side.`,
-        "M53.3", "⊖", "", "Normal: <3°", abs);
+        "M53.3", "⊖", "", "Normal: <3deg", abs);
     }
 
     if (scapularAsymm !== null && scapularAsymm > 2.5) {
-      add("Scapula", `Scapular height asymmetry — posterior view (${scapularAsymm.toFixed(1)}° differential)`, scapularAsymm > 5 ? "high" : "moderate",
-        `NKT screen: serratus anterior vs pec minor. Lower trap Y-T-W ×15. Wall push-up plus (serratus). Thoracic extension mobility. If winging visible: test serratus (wall push-up — medial border lifting = Type II dyskinesis).`,
-        "M89.8", "⇑", `Kibler types: I=inferior angle, II=medial border (serratus weakness), III=superior elevation (upper trap dominant).`, "Normal: <2.5°", scapularAsymm);
+      add("Scapula", `Scapular height asymmetry - posterior view (${scapularAsymm.toFixed(1)}deg differential)`, scapularAsymm > 5 ? "high" : "moderate",
+        `NKT screen: serratus anterior vs pec minor. Lower trap Y-T-W x15. Wall push-up plus (serratus). Thoracic extension mobility. If winging visible: test serratus (wall push-up - medial border lifting = Type II dyskinesis).`,
+        "M89.8", "⇑", `Kibler types: I=inferior angle, II=medial border (serratus weakness), III=superior elevation (upper trap dominant).`, "Normal: <2.5deg", scapularAsymm);
     }
 
     if (trunkRotationProxy !== null && Math.abs(trunkRotationProxy) > 8) {
@@ -2057,7 +2057,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
 
     if (weightBearingShift !== null && Math.abs(weightBearingShift) > 4) {
       const abs = Math.abs(weightBearingShift);
-      add("Balance / Loading", `Weight-bearing asymmetry posterior — shifted ${weightBearingShift > 0 ? "right" : "left"} (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
+      add("Balance / Loading", `Weight-bearing asymmetry posterior - shifted ${weightBearingShift > 0 ? "right" : "left"} (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
         `Quantify with scales. Mirror biofeedback. Treat driver: pain, LLD, or proprioceptive deficit.`,
         "M62.9", "⊖", "", "Normal: <4%", abs);
     }
@@ -2066,72 +2066,72 @@ function ClinicalFindingsEngine(lm, view, measurements) {
   // -- LATERAL VIEW ---------------------------------------------------------
   if (view === "left" || view === "right") {
 
-    // CVA — primary lateral finding
+    // CVA - primary lateral finding
     if (cvaAngle !== null && cvaAngle < 55) {
       const sev = cvaAngle < 42 ? "high" : "moderate";
       const loadStr = cervicalLoadKg !== null ? ` Est. cervical load: ${cervicalLoadKg}kg (neutral=4.5kg).` : "";
-      add("Cervical — Forward Head", `Forward head posture — CVA ${cvaAngle.toFixed(0)}° (normal >55°)${forwardHeadCm !== null ? ` / ${forwardHeadCm.toFixed(1)}cm anterior` : ""}`, sev,
-        `IMMEDIATE: supine chin nod (NOT chin tuck) ×10 ×3 sets, 10s hold. Thoracic extension foam roller T4–T8 ×2min daily. Suboccipital release 90s. Ergonomic: raise monitor 5–10cm, keyboard at elbow height. NKT: SCM+scalenes overactive → inhibit → activate DNF within 30s. Home cue: tongue to roof of mouth.`,
-        "M43.6", "⇒", `CVA ${cvaAngle.toFixed(0)}° (Yip 2008).${loadStr} Each 2.5cm FHP adds ~5kg to cervical extensors (Hansraj 2014).`, "Normal: >55°", cvaAngle);
+      add("Cervical - Forward Head", `Forward head posture - CVA ${cvaAngle.toFixed(0)}deg (normal >55deg)${forwardHeadCm !== null ? ` / ${forwardHeadCm.toFixed(1)}cm anterior` : ""}`, sev,
+        `IMMEDIATE: supine chin nod (NOT chin tuck) x10 x3 sets, 10s hold. Thoracic extension foam roller T4-T8 x2min daily. Suboccipital release 90s. Ergonomic: raise monitor 5-10cm, keyboard at elbow height. NKT: SCM+scalenes overactive -> inhibit -> activate DNF within 30s. Home cue: tongue to roof of mouth.`,
+        "M43.6", "⇒", `CVA ${cvaAngle.toFixed(0)}deg (Yip 2008).${loadStr} Each 2.5cm FHP adds ~5kg to cervical extensors (Hansraj 2014).`, "Normal: >55deg", cvaAngle);
     } else if (cvaAngle === null && forwardHeadMm !== null && Math.abs(forwardHeadMm) > 3) {
       const abs = Math.abs(forwardHeadMm);
-      add("Cervical — Forward Head", `Forward head posture — ear anterior to acromion (${abs.toFixed(1)}% offset)`, abs > 7 ? "high" : "moderate",
+      add("Cervical - Forward Head", `Forward head posture - ear anterior to acromion (${abs.toFixed(1)}% offset)`, abs > 7 ? "high" : "moderate",
         `Deep cervical flexor activation. Thoracic extension foam roller. Ergonomic review. Take true lateral photo for CVA measurement.`,
-        "M43.6", "⇒", "Obtain lateral photo for CVA measurement — more accurate than frontal view proxy.", "Normal: ear over acromion", abs);
+        "M43.6", "⇒", "Obtain lateral photo for CVA measurement - more accurate than frontal view proxy.", "Normal: ear over acromion", abs);
     }
 
     // Thoracic kyphosis
     if (thoracicAngle !== null && thoracicAngle - 45 > 8) {
       const excess = thoracicAngle - 45;
-      add("Thoracic Kyphosis", `Increased thoracic kyphosis (~${thoracicAngle.toFixed(0)}°, normal 20–45°)`, excess > 18 ? "high" : "moderate",
-        `Thoracic extension HVLA T4–T8 (PA + rotation). Foam roller extension apex ×2min daily. Wall angels ×15. Pec minor stretch 60s ×3. Lower trap: prone Y-T-W. Rib expansion breathing. Seated posture: lumbar roll support.`,
-        "M40.2", "⌒", `Normal Cobb T1–T12 = 20–45°. Hyperkyphosis >50°. If structural: Scheuermann's (>5° wedging ≥3 vertebrae on X-ray).`, "Normal: 20–45°", thoracicAngle);
+      add("Thoracic Kyphosis", `Increased thoracic kyphosis (~${thoracicAngle.toFixed(0)}deg, normal 20-45deg)`, excess > 18 ? "high" : "moderate",
+        `Thoracic extension HVLA T4-T8 (PA + rotation). Foam roller extension apex x2min daily. Wall angels x15. Pec minor stretch 60s x3. Lower trap: prone Y-T-W. Rib expansion breathing. Seated posture: lumbar roll support.`,
+        "M40.2", "⌒", `Normal Cobb T1-T12 = 20-45deg. Hyperkyphosis >50deg. If structural: Scheuermann's (>5deg wedging >=3 vertebrae on X-ray).`, "Normal: 20-45deg", thoracicAngle);
     }
 
     // Pelvic tilt sagittal
     if (pelvicTiltSagittal !== null && Math.abs(pelvicTiltSagittal) > 4) {
       const abs = Math.abs(pelvicTiltSagittal); const ant = pelvicTiltSagittal > 0;
-      const angleNote = anteriorPelvicTiltDeg !== null ? ` (~${anteriorPelvicTiltDeg.toFixed(0)}° tilt, female norm ~12°, male norm ~7°)` : "";
-      const lordNote  = lordosisAngle !== null ? ` Est. lordosis: ${lordosisAngle.toFixed(0)}° (normal 40–60°).` : "";
+      const angleNote = anteriorPelvicTiltDeg !== null ? ` (~${anteriorPelvicTiltDeg.toFixed(0)}deg tilt, female norm ~12deg, male norm ~7deg)` : "";
+      const lordNote  = lordosisAngle !== null ? ` Est. lordosis: ${lordosisAngle.toFixed(0)}deg (normal 40-60deg).` : "";
       add("Lumbar / Pelvis",
-        ant ? `Anterior pelvic tilt${angleNote} — increased lumbar lordosis` : `Posterior pelvic tilt${angleNote} — flat back`,
+        ant ? `Anterior pelvic tilt${angleNote} - increased lumbar lordosis` : `Posterior pelvic tilt${angleNote} - flat back`,
         abs > 9 ? "high" : "moderate",
         ant
-          ? `INHIBIT (SMR ×90s): psoas, RF, TFL. STRETCH: couch stretch 90s/side, 90-90 hip flexor. ACTIVATE: glute max (bridges ×15), TA (dead bug ×10). CORRECT: pelvic posterior tilt awareness. Thomas test to confirm hip flexor contracture. 90/90 hamstring length check.`
-          : `Lumbar extension mobilisation PA L1–L5 grade III–IV. McKenzie extension: prone → press-up. Hip flexor facilitation. Assess erector spinae/multifidus tone. Sahrmann lumbar flexion syndrome screen.`,
+          ? `INHIBIT (SMR x90s): psoas, RF, TFL. STRETCH: couch stretch 90s/side, 90-90 hip flexor. ACTIVATE: glute max (bridges x15), TA (dead bug x10). CORRECT: pelvic posterior tilt awareness. Thomas test to confirm hip flexor contracture. 90/90 hamstring length check.`
+          : `Lumbar extension mobilisation PA L1-L5 grade III-IV. McKenzie extension: prone -> press-up. Hip flexor facilitation. Assess erector spinae/multifidus tone. Sahrmann lumbar flexion syndrome screen.`,
         "M53.3", "↕",
         ant
-          ? `ASIS drops below PSIS — hip flexor/erector overactivity. LCS pattern. Increases lumbar disc posterior load.${lordNote}`
-          : `PSIS inferior to ASIS — hamstring/abdominal overactivity or gluteal inhibition.${lordNote}`,
-        ant ? "Normal APT: female ≤12°, male ≤7°" : "Normal lordosis: 40–60°", abs);
+          ? `ASIS drops below PSIS - hip flexor/erector overactivity. LCS pattern. Increases lumbar disc posterior load.${lordNote}`
+          : `PSIS inferior to ASIS - hamstring/abdominal overactivity or gluteal inhibition.${lordNote}`,
+        ant ? "Normal APT: female <=12deg, male <=7deg" : "Normal lordosis: 40-60deg", abs);
     } else if ((pelvicTiltSagittal === null) && lumbarProxy !== null && Math.abs(lumbarProxy) > 4) {
       const abs = Math.abs(lumbarProxy); const ant = lumbarProxy > 0;
       add("Lumbar / Pelvis", `${ant ? "Anterior" : "Posterior"} pelvic tilt pattern`, abs > 8 ? "high" : "moderate",
         ant
-          ? `Hip flexor stretch ×60s. Glute activation — bridges ×15. TVA bracing. Pelvic tilt awareness drills.`
+          ? `Hip flexor stretch x60s. Glute activation - bridges x15. TVA bracing. Pelvic tilt awareness drills.`
           : `Lumbar extension mobilisation. Hip flexor facilitation. Multifidus activation. McKenzie extension.`,
         "M53.3", "↕", "", "", abs);
     }
 
-    // -- LUMBAR LORDOSIS — independent finding ---------------------------------
+    // -- LUMBAR LORDOSIS - independent finding ---------------------------------
     if (lordosisAngle !== null) {
       if (lordosisAngle > 60) {
         const excess = lordosisAngle - 60;
-        add("Lumbar — Hyperlordosis",
-          `Increased lumbar lordosis (~${lordosisAngle.toFixed(0)}°, normal 40–60°)`,
+        add("Lumbar - Hyperlordosis",
+          `Increased lumbar lordosis (~${lordosisAngle.toFixed(0)}deg, normal 40-60deg)`,
           excess > 20 ? "high" : "moderate",
-          `INHIBIT: iliopsoas (couch stretch 90s×2), rectus femoris (prone heel-to-glute). ACTIVATE: glute max (bridges ×15 with posterior pelvic tilt), TA (dead bug). Pelvic clock: anterior → neutral → posterior tilt awareness. Assess hip flexor contracture (Thomas test).`,
+          `INHIBIT: iliopsoas (couch stretch 90sx2), rectus femoris (prone heel-to-glute). ACTIVATE: glute max (bridges x15 with posterior pelvic tilt), TA (dead bug). Pelvic clock: anterior -> neutral -> posterior tilt awareness. Assess hip flexor contracture (Thomas test).`,
           "M40.5", "↕",
-          `Hyperlordosis: ASIS drops below PSIS. Increases L4–L5 disc posterior compression and facet loading. Associated with hip flexor tightness and gluteal inhibition.`,
-          "Normal: 40–60°", lordosisAngle);
+          `Hyperlordosis: ASIS drops below PSIS. Increases L4-L5 disc posterior compression and facet loading. Associated with hip flexor tightness and gluteal inhibition.`,
+          "Normal: 40-60deg", lordosisAngle);
       } else if (lordosisAngle < 30) {
-        add("Lumbar — Flat Back / Reduced Lordosis",
-          `Reduced lumbar lordosis (~${lordosisAngle.toFixed(0)}°, normal 40–60°)`,
+        add("Lumbar - Flat Back / Reduced Lordosis",
+          `Reduced lumbar lordosis (~${lordosisAngle.toFixed(0)}deg, normal 40-60deg)`,
           lordosisAngle < 20 ? "high" : "moderate",
-          `McKenzie extension progression: prone → prone on elbows → press-up. Lumbar PA mobilisation Grade III–IV L1–L5. Hip flexor facilitation. Erector spinae activation. Sahrmann lumbar flexion syndrome screen. Lumbar roll support for sitting.`,
+          `McKenzie extension progression: prone -> prone on elbows -> press-up. Lumbar PA mobilisation Grade III-IV L1-L5. Hip flexor facilitation. Erector spinae activation. Sahrmann lumbar flexion syndrome screen. Lumbar roll support for sitting.`,
           "M40.4", "↕",
           `Flat back: PSIS at same level or below ASIS. Increases anterior disc shear force and hamstring/abdominal overactivity. Reduced shock absorption capacity.`,
-          "Normal: 40–60°", lordosisAngle);
+          "Normal: 40-60deg", lordosisAngle);
       }
     }
 
@@ -2141,10 +2141,10 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     const hipBehindPlumb = hipExtensionProxy !== null && hipExtensionProxy < -4;
     const hasReducedLordosis = lumbarProxy !== null && lumbarProxy < -3;
     if (hipBehindPlumb && hasReducedLordosis) {
-      add("Posture Pattern — Sway-Back",
+      add("Posture Pattern - Sway-Back",
         `Sway-back posture: hips posterior to plumb, flat lumbar, thoracic lean`,
         "moderate",
-        `INHIBIT: hamstrings (slump stretch, seated), abdominals (reduce over-bracing). ACTIVATE: hip flexors (psoas activation — standing hip flexion ×15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles. Lumbar roll support in sitting.`,
+        `INHIBIT: hamstrings (slump stretch, seated), abdominals (reduce over-bracing). ACTIVATE: hip flexors (psoas activation - standing hip flexion x15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles. Lumbar roll support in sitting.`,
         "M40.3", "⟲",
         `Sway-back: pelvis shifts anterior, hips posterior to plumb. Hamstring + abdominal overactivity. Hip ligament loading increases. Associated with inactive standing posture and hypermobility.`,
         "Ideal: hip over plumb", null);
@@ -2156,16 +2156,16 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       && (lumbarProxy === null || Math.abs(lumbarProxy) < 3)
       && (cvaAngle === null || cvaAngle > 58);
     if (isMilitaryPosture) {
-      add("Posture Pattern — Military / Flat Back",
+      add("Posture Pattern - Military / Flat Back",
         `Military/flat-back posture: reduced thoracic kyphosis and lumbar lordosis`,
         "moderate",
-        `Thoracic mobility: foam roller extension at T4–T8 ×2min daily. Rib expansion breathing ×10. Restore natural curve: McKenzie press-ups (lumbar). Cervical retraction (NOT chin tuck). Reassure: flat-back is not always symptomatic — assess function.`,
+        `Thoracic mobility: foam roller extension at T4-T8 x2min daily. Rib expansion breathing x10. Restore natural curve: McKenzie press-ups (lumbar). Cervical retraction (NOT chin tuck). Reassure: flat-back is not always symptomatic - assess function.`,
         "M40.4", "⊥",
         `Flat/military: all spinal curves reduced. Poor sagittal shock absorption. Often asymptomatic but predisposes to disc overload in end-range activities. Screen for Scheuermann's.`,
-        "Normal: T kyphosis 20–45°, L lordosis 40–60°", null);
+        "Normal: T kyphosis 20-45deg, L lordosis 40-60deg", null);
     }
 
-    // -- UPPER CROSSED SYNDROME (UCS) — sagittal flag -------------------------
+    // -- UPPER CROSSED SYNDROME (UCS) - sagittal flag -------------------------
     // FHP + thoracic kyphosis + rounded shoulders (shoulder anterior to plumb)
     const shAnteriorToPlumb = hipExtensionProxy !== null && shPt && shPt.x !== undefined;
     const hasUCS_sagittal = cvaAngle !== null && cvaAngle < 52
@@ -2174,13 +2174,13 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       add("Upper Crossed Syndrome (UCS)",
         `UCS pattern: forward head + thoracic kyphosis + rounded shoulders`,
         cvaAngle < 45 ? "high" : "moderate",
-        `NKT Protocol — INHIBIT (90s SMR each): upper trapezius, SCM, scalenes, pec minor. ACTIVATE (3×15): deep cervical flexors (chin nod), lower trapezius (prone Y), serratus anterior (wall slide). CORRECT: thoracic extension foam roller T4–T8. Ergonomic: monitor at eye level, chair with lumbar support. Home: hourly upper trap/pec minor stretch.`,
+        `NKT Protocol - INHIBIT (90s SMR each): upper trapezius, SCM, scalenes, pec minor. ACTIVATE (3x15): deep cervical flexors (chin nod), lower trapezius (prone Y), serratus anterior (wall slide). CORRECT: thoracic extension foam roller T4-T8. Ergonomic: monitor at eye level, chair with lumbar support. Home: hourly upper trap/pec minor stretch.`,
         "M62.8", "⊕",
-        `Janda UCS: tight pec minor + SCM + upper trap → inhibit lower trap + DNF + rhomboids. Creates forward head, kyphosis, shoulder impingement. CVA ${cvaAngle?.toFixed(0)}° confirms FHP component.`,
-        "Ideal: CVA >55°, kyphosis 20–45°", cvaAngle);
+        `Janda UCS: tight pec minor + SCM + upper trap -> inhibit lower trap + DNF + rhomboids. Creates forward head, kyphosis, shoulder impingement. CVA ${cvaAngle?.toFixed(0)}deg confirms FHP component.`,
+        "Ideal: CVA >55deg, kyphosis 20-45deg", cvaAngle);
     }
 
-    // -- LOWER CROSSED SYNDROME (LCS) — sagittal flag -------------------------
+    // -- LOWER CROSSED SYNDROME (LCS) - sagittal flag -------------------------
     // Anterior pelvic tilt + hyperlordosis + hip anterior to plumb
     const hasLCS_sagittal = pelvicTiltSagittal !== null && pelvicTiltSagittal > 5
       && thoracicAngle !== null && thoracicAngle > 42;
@@ -2188,13 +2188,13 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       add("Lower Crossed Syndrome (LCS)",
         `LCS pattern: anterior pelvic tilt + hyperlordosis + hip flexor dominance`,
         pelvicTiltSagittal > 10 ? "high" : "moderate",
-        `NKT Protocol — INHIBIT (90s SMR each): iliopsoas, rectus femoris, TFL. ACTIVATE (3×15): glute max (bridges with posterior tilt), glute med (clams), TVA (dead bug). CORRECT: pelvic tilt awareness (posterior tilt drill ×20). Thomas test to confirm hip flexor contracture. Ely's test for RF.`,
+        `NKT Protocol - INHIBIT (90s SMR each): iliopsoas, rectus femoris, TFL. ACTIVATE (3x15): glute max (bridges with posterior tilt), glute med (clams), TVA (dead bug). CORRECT: pelvic tilt awareness (posterior tilt drill x20). Thomas test to confirm hip flexor contracture. Ely's test for RF.`,
         "M62.8", "⊕",
-        `Janda LCS: tight iliopsoas + erector spinae → inhibit glute max + transversus abdominis. Creates anterior pelvic tilt, hyperlordosis, increased L4–L5 posterior disc load. APT ${pelvicTiltSagittal?.toFixed(1)}% confirms pelvic component.`,
-        "Ideal: APT <7° female / <5° male", pelvicTiltSagittal);
+        `Janda LCS: tight iliopsoas + erector spinae -> inhibit glute max + transversus abdominis. Creates anterior pelvic tilt, hyperlordosis, increased L4-L5 posterior disc load. APT ${pelvicTiltSagittal?.toFixed(1)}% confirms pelvic component.`,
+        "Ideal: APT <7deg female / <5deg male", pelvicTiltSagittal);
     }
 
-    // -- POSTURAL PATTERN LABEL — sagittal classification ---------------------
+    // -- POSTURAL PATTERN LABEL - sagittal classification ---------------------
     // Adds a clear top-level pattern label to findings (Kendall classification)
     {
       const hasFHP_f      = cvaAngle !== null && cvaAngle < 52;
@@ -2252,7 +2252,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       }
 
       if (patternSev !== null) {
-        add(`Sagittal Pattern — ${patternName}`,
+        add(`Sagittal Pattern - ${patternName}`,
           `Classification: ${patternName}`,
           patternSev,
           patternTx,
@@ -2274,8 +2274,8 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       // and relabel the visible knee with the correct side from the view selection
       if (isLateralView) {
         // Only process the knee that MediaPipe would most reliably see in this view
-        // Right lateral → right-side landmarks visible → rightKneeDev is reliable
-        // Left lateral → left-side landmarks visible → leftKneeDev is reliable
+        // Right lateral -> right-side landmarks visible -> rightKneeDev is reliable
+        // Left lateral -> left-side landmarks visible -> leftKneeDev is reliable
         const expectedSide = view === "right" ? "Right" : "Left";
         if (side !== expectedSide) return; // skip the occluded knee
         // Relabel: in a right lateral photo, the visible knee is the RIGHT knee
@@ -2283,46 +2283,46 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       }
       if (dev < -5) {
         const abs = Math.abs(dev);
-        add("Knee — Genu Recurvatum", `${side} knee hyperextension (genu recurvatum) — ${abs.toFixed(0)}° past neutral`, abs > 12 ? "high" : "moderate",
+        add("Knee - Genu Recurvatum", `${side} knee hyperextension (genu recurvatum) - ${abs.toFixed(0)}deg past neutral`, abs > 12 ? "high" : "moderate",
           `Hamstring eccentric: nordic curls, RDL. Calf eccentric: heel drops. Proprioception: SL stance with slight knee flexion cue. Avoid terminal knee locking. Lachman + anterior drawer. Check posterior capsule laxity.`,
-          "M21.1", "⌣", `>5° increases posterior capsule strain and ACL load. >10° — Beighton score for hypermobility.`, "Normal: 0–5°", abs);
+          "M21.1", "⌣", `>5deg increases posterior capsule strain and ACL load. >10deg - Beighton score for hypermobility.`, "Normal: 0-5deg", abs);
       } else if (dev > 10) {
-        add("Knee — Flexion Stance", `${side} knee flexion in stance — ${dev.toFixed(0)}° (antalgic / contracture)`, dev > 20 ? "high" : "moderate",
+        add("Knee - Flexion Stance", `${side} knee flexion in stance - ${dev.toFixed(0)}deg (antalgic / contracture)`, dev > 20 ? "high" : "moderate",
           `Hamstring 90/90 test. Thomas test hip flexor. Treat pain source if antalgic. Terminal knee extension drills. Gait conscious extension cue.`,
-          "M21.9", "⌣", "", "Normal: 0–5° flexion", dev);
+          "M21.9", "⌣", "", "Normal: 0-5deg flexion", dev);
       }
     });
 
     // Hip extension proxy
     if (hipExtensionProxy !== null && hipExtensionProxy > 8) {
-      add("Hip / Lumbar", `Hip anterior to ankle plumb — hip flexion pattern in stance (${hipExtensionProxy.toFixed(1)}%)`, hipExtensionProxy > 15 ? "high" : "moderate",
-        `Thomas test: confirm hip flexor contracture. Couch stretch ×90s. Hip extension: prone hip extension, RDL, glute bridge. Assess lumbar compensation.`,
+      add("Hip / Lumbar", `Hip anterior to ankle plumb - hip flexion pattern in stance (${hipExtensionProxy.toFixed(1)}%)`, hipExtensionProxy > 15 ? "high" : "moderate",
+        `Thomas test: confirm hip flexor contracture. Couch stretch x90s. Hip extension: prone hip extension, RDL, glute bridge. Assess lumbar compensation.`,
         "M24.1", "⇒", "Hip anterior to ankle plumb suggests hip flexor tightness or hip flexion movement pattern.", "Normal: hip over ankle", hipExtensionProxy);
     }
 
     // Ankle dorsiflexion
     [[leftAnkleAngle,"Left"],[rightAnkleAngle,"Right"]].forEach(([angle,side])=>{
       if (angle === null || angle >= 80) return;
-      add("Ankle — Dorsiflexion", `${side} ankle dorsiflexion restriction (~${angle.toFixed(0)}°, normal >80°)`, angle < 60 ? "high" : "moderate",
-        `Gastrocnemius: straight-knee wall lean 60s ×3. Soleus: bent-knee wall lean 60s ×3. Talar anterior glide mobilisation (knee-to-wall >10cm target). SL heel raise full ROM. Assess talocrural vs subtalar restriction.`,
-        "M24.2", "↕", `Ankle DF <80° → compensatory foot pronation, knee valgus, APT in squat. Primary ACL injury risk factor.`, "Normal: >80° (knee-to-wall ≥10cm)", angle);
+      add("Ankle - Dorsiflexion", `${side} ankle dorsiflexion restriction (~${angle.toFixed(0)}deg, normal >80deg)`, angle < 60 ? "high" : "moderate",
+        `Gastrocnemius: straight-knee wall lean 60s x3. Soleus: bent-knee wall lean 60s x3. Talar anterior glide mobilisation (knee-to-wall >10cm target). SL heel raise full ROM. Assess talocrural vs subtalar restriction.`,
+        "M24.2", "↕", `Ankle DF <80deg -> compensatory foot pronation, knee valgus, APT in squat. Primary ACL injury risk factor.`, "Normal: >80deg (knee-to-wall >=10cm)", angle);
     });
   }
 
-  // -- GLOBAL — all views ----------------------------------------------------
+  // -- GLOBAL - all views ----------------------------------------------------
   if (posturalLoadIndex !== null && posturalLoadIndex > 55) {
-    // Plain-language contributor list — what is actually elevated and by how much
+    // Plain-language contributor list - what is actually elevated and by how much
     const pliContributors = [];
     if (Math.abs(shoulderAngle||0) > 3)
-      pliContributors.push({ label:"Uneven shoulders", value:`${Math.abs(shoulderAngle).toFixed(1)}°`, normal:"<3°" });
+      pliContributors.push({ label:"Uneven shoulders", value:`${Math.abs(shoulderAngle).toFixed(1)}deg`, normal:"<3deg" });
     if (Math.abs(pelvisAngle||0) > 3)
-      pliContributors.push({ label:"Uneven pelvis/hips", value:`${Math.abs(pelvisAngle).toFixed(1)}°`, normal:"<3°" });
+      pliContributors.push({ label:"Uneven pelvis/hips", value:`${Math.abs(pelvisAngle).toFixed(1)}deg`, normal:"<3deg" });
     if (Math.abs(fhpNorm||0) > 3)
       pliContributors.push({ label:"Head too far forward", value:`${Math.abs(fhpNorm).toFixed(1)}%`, normal:"<3%" });
     if (Math.abs(trunkLateralShift||0) > 4)
       pliContributors.push({ label:"Body leaning to one side", value:`${Math.abs(trunkLateralShift).toFixed(1)}%`, normal:"<4%" });
     if (Math.abs(cobbEstimate||0) > 5)
-      pliContributors.push({ label:"Spinal curve (scoliosis screen)", value:`${Math.abs(cobbEstimate).toFixed(1)}°`, normal:"<5°" });
+      pliContributors.push({ label:"Spinal curve (scoliosis screen)", value:`${Math.abs(cobbEstimate).toFixed(1)}deg`, normal:"<5deg" });
     if (Math.abs(cogDeviation||0) > 4)
       pliContributors.push({ label:"Body weight off-centre", value:`${Math.abs(cogDeviation).toFixed(1)}%`, normal:"<4%" });
     if (Math.abs(lumbarProxy||0) > 4)
@@ -2330,21 +2330,21 @@ function ClinicalFindingsEngine(lm, view, measurements) {
 
     // Simple plain-English severity label
     const pliLabel = posturalLoadIndex > 80
-      ? "Very High — multiple areas need attention"
+      ? "Very High - multiple areas need attention"
       : posturalLoadIndex > 65
-      ? "High — several postural areas are stressed"
-      : "Elevated — more than one area is affected";
+      ? "High - several postural areas are stressed"
+      : "Elevated - more than one area is affected";
 
     // Build simple detail string (no jargon)
     const pliDetail = pliContributors.length > 0
-      ? `What is contributing to this score:\n${pliContributors.map(c=>`• ${c.label}: ${c.value} (normal ${c.normal})`).join("\n")}\n\nThis does not mean all these things are painful or dangerous — it means the body is working harder than it should to stay balanced. Each problem adds up and increases strain on muscles and joints over time.`
+      ? `What is contributing to this score:\n${pliContributors.map(c=>`• ${c.label}: ${c.value} (normal ${c.normal})`).join("\n")}\n\nThis does not mean all these things are painful or dangerous - it means the body is working harder than it should to stay balanced. Each problem adds up and increases strain on muscles and joints over time.`
       : "Multiple small postural deviations are adding up across different body areas, increasing overall strain.";
 
     const severity = posturalLoadIndex > 75 ? "high" : "moderate";
-    add("Global — Body Load Summary",
-      `Body working harder than normal — ${pliLabel}`,
+    add("Global - Body Load Summary",
+      `Body working harder than normal - ${pliLabel}`,
       severity,
-      `Start with the highest-priority finding above. Fixing one problem often reduces the overall load score automatically. Aim for: 1 targeted exercise per problem area, 10–15 min daily. Re-assess in 4–6 weeks.`,
+      `Start with the highest-priority finding above. Fixing one problem often reduces the overall load score automatically. Aim for: 1 targeted exercise per problem area, 10-15 min daily. Re-assess in 4-6 weeks.`,
       "M62.9", "⚑", pliDetail, "Target: <35/100", posturalLoadIndex);
   }
 
@@ -2436,7 +2436,7 @@ function measureLandmarks(lm, calibration) {
   // If not available, all *Cm fields remain null (% values still shown)
   const pixPerCm = calibration?.pixPerCm || null;
   // toCm: converts a normalised 0-1 distance to cm using image height as scale reference
-  // We need the image height in pixels — stored in calibration.imgH
+  // We need the image height in pixels - stored in calibration.imgH
   const imgH = calibration?.imgH || null;
   const toCm = (normDist) => {
     if(normDist===null||normDist===undefined||!pixPerCm||!imgH) return null;
@@ -2466,8 +2466,8 @@ function measureLandmarks(lm, calibration) {
   // ==========================================================================
   // SAGITTAL ANALYSIS ENGINE v2 (Kendall / Janda / Sahrmann)
   // --------------------------------------------------------------------------
-  // Uses a true 5-point sagittal plumb line: ear→acromion→GT→knee→malleolus.
-  // For lateral view: landmark 7 (L ear) or 8 (R ear) is visible — not the
+  // Uses a true 5-point sagittal plumb line: ear->acromion->GT->knee->malleolus.
+  // For lateral view: landmark 7 (L ear) or 8 (R ear) is visible - not the
   // bilateral midpoint. We use whichever ear is more visible.
   //
   // CM thresholds (Kendall 2005 / clinical norms):
@@ -2524,11 +2524,11 @@ function measureLandmarks(lm, calibration) {
   const estPxPerCm = pixPerCm ? pixPerCm : (imgH ? imgH / 170 : null);
 
   // devCm: deviation in cm from plumb (positive = anterior)
-  // Normalised x coords: deviation in image-fraction units × imgH / estPxPerCm
+  // Normalised x coords: deviation in image-fraction units x imgH / estPxPerCm
   const devCm = (normX) => {
     if (normX === null || normX === undefined) return null;
     if (estPxPerCm && imgH) return r1((normX - plumbX) * imgH / estPxPerCm);
-    // Fallback: normalised fraction — scale with typical body height
+    // Fallback: normalised fraction - scale with typical body height
     return r1((normX - plumbX) * 170); // 170 = typical standing height in cm
   };
 
@@ -2551,9 +2551,9 @@ function measureLandmarks(lm, calibration) {
   const sagConfidencePenalty = pixPerCm ? 0 : 10;
   const sagConfidence = clamp(sagConfidenceBase - sagConfidencePenalty, 0, 100);
 
-  // -- 1. CVA — Craniovertebral Angle -----------------------------------------
+  // -- 1. CVA - Craniovertebral Angle -----------------------------------------
   // Clinical: angle between horizontal and line from C7 (acromion proxy) to ear.
-  // Normal: >52°. Mild FHP: 48–52°. Moderate: 44–48°. Severe: <44°.
+  // Normal: >52deg. Mild FHP: 48-52deg. Moderate: 44-48deg. Severe: <44deg.
   // (Neiva et al. 2009; Ruivo et al. 2017)
   let cvaAngle = null;
   if (sagEarVis && sagShVis) {
@@ -2575,14 +2575,14 @@ function measureLandmarks(lm, calibration) {
   const fhpDevCm = plumb.ear !== null && plumb.shoulder !== null
     ? r1(plumb.ear - plumb.shoulder) : null;
 
-  // Cervical load (Hansraj 2014) — only if FHP confirmed by CVA
+  // Cervical load (Hansraj 2014) - only if FHP confirmed by CVA
   let cervicalLoadKg = null;
   if (fhpDevCm !== null && fhpDevCm > 0 && cvaAngle !== null && cvaAngle < 55) {
     cervicalLoadKg = r1(clamp(4.5 + fhpDevCm * 1.08, 4.5, 32));
   }
 
   // -- 3. Thoracic kyphosis proxy ---------------------------------------------
-  // Better method: shoulder→hip sagittal horizontal displacement vs vertical span.
+  // Better method: shoulder->hip sagittal horizontal displacement vs vertical span.
   // Positive horizontal offset of shoulder ANTERIOR to hip = kyphotic tendency.
   // Note: in lateral view, shoulder visible = one-sided measurement is meaningful.
   let thoracicAngle = null;
@@ -2592,7 +2592,7 @@ function measureLandmarks(lm, calibration) {
     if (dy > 0.06) {
       // Angle from vertical: higher angle = more trunk lean / kyphosis tendency
       const rawAngle = Math.atan2(Math.abs(dx), dy) * 180 / Math.PI;
-      // Calibrate to clinical kyphosis scale (32° normal baseline)
+      // Calibrate to clinical kyphosis scale (32deg normal baseline)
       thoracicAngle = r1(clamp(32 + rawAngle * 1.8, 20, 80));
     }
   }
@@ -2602,7 +2602,7 @@ function measureLandmarks(lm, calibration) {
   const trunkSagLean = sagShVis && sagAnkleVis
     ? r1((sagSh.x - sagAnkle.x) * 100) : null;
 
-  // -- 5. Pelvic position — sagittal ------------------------------------------
+  // -- 5. Pelvic position - sagittal ------------------------------------------
   // Hip (GT) vs plumb line: anterior = APT tendency, posterior = PPT tendency.
   // Lumbar proxy: retain original for backward compatibility
   let lumbarProxy = null;
@@ -2672,7 +2672,7 @@ function measureLandmarks(lm, calibration) {
   const shoulderWidthNorm= Vb(11,12)?r1(dist2D(g(11),g(12))*100):null;
   const hipWidthNorm     = Vb(23,24)?r1(dist2D(g(23),g(24))*100):null;
 
-  // Foot progression angles (ankle → toe vector from vertical)
+  // Foot progression angles (ankle -> toe vector from vertical)
   const leftFootAngle  = Vb(31,27)?r1(Math.atan2(g(31).y-g(27).y, g(31).x-g(27).x)*180/Math.PI):null;
   const rightFootAngle = Vb(32,28)?r1(Math.atan2(g(32).y-g(28).y, g(32).x-g(28).x)*180/Math.PI):null;
 
@@ -2714,11 +2714,11 @@ function measureLandmarks(lm, calibration) {
 
   // -- NEW: Frontal Plane Measurements (Feature 2) ---------------------------
 
-  // Head tilt angle (ear-to-ear line vs horizontal) — normal <2 deg
-  // (already computed above as headTiltAngle — alias for clarity)
+  // Head tilt angle (ear-to-ear line vs horizontal) - normal <2 deg
+  // (already computed above as headTiltAngle - alias for clarity)
   const headTiltFrontal = headTiltAngle;
 
-  // Neck lateral angle: ear–shoulder vector from vertical — normal <4 deg
+  // Neck lateral angle: ear-shoulder vector from vertical - normal <4 deg
   // Left side
   const neckLateralL = Vb(7,11) ? r1(Math.abs(
     Math.atan2(Math.abs(g(7).x - g(11).x), Math.abs(g(7).y - g(11).y)) * 180 / Math.PI
@@ -2732,7 +2732,7 @@ function measureLandmarks(lm, calibration) {
   const neckLateralSide = (neckLateralL!==null&&neckLateralR!==null)
     ? (neckLateralL>neckLateralR?"Left":"Right") : null;
 
-  // Waist triangle asymmetry: elbow-to-hip space L vs R — normal <3%
+  // Waist triangle asymmetry: elbow-to-hip space L vs R - normal <3%
   // Already computed as waistAsymmetry above; add waistTriangleAsymmetry alias with more detail
   const waistTriangleL = Vb(11,13,23) ? r1(dist2D(g(13),g(23))*100) : null;
   const waistTriangleR = Vb(12,14,24) ? r1(dist2D(g(14),g(24))*100) : null;
@@ -2741,13 +2741,13 @@ function measureLandmarks(lm, calibration) {
   const waistTriangleSide = (waistTriangleL!==null&&waistTriangleR!==null)
     ? (waistTriangleL < waistTriangleR ? "Left" : "Right") : null; // narrower side
 
-  // Ankle LLD proxy in mm: medial malleolus height difference — normal <5mm
+  // Ankle LLD proxy in mm: medial malleolus height difference - normal <5mm
   // Uses y-coordinate difference of ankles (lower y = higher in frame = shorter limb)
   const ankleLLDmm = Vb(27,28) ? r1(Math.abs(g(27).y - g(28).y) * 1000) : null;
   const ankleLLDSide = (ankleLLDmm!==null&&Vb(27,28))
     ? (g(27).y > g(28).y ? "Right" : "Left") : null; // higher ankle = shorter side
 
-  // Tibial varum L/R: tibial segment angle from vertical — normal <5 deg
+  // Tibial varum L/R: tibial segment angle from vertical - normal <5 deg
   const tibialVarumL = Vb(25,27) ? r1(Math.abs(
     Math.atan2(Math.abs(g(25).x - g(27).x), Math.abs(g(25).y - g(27).y)) * 180 / Math.PI
   )) : null;
@@ -2763,7 +2763,7 @@ function measureLandmarks(lm, calibration) {
   const kneeAnklePattern = kneeAnkleRatio!==null
     ? (kneeAnkleRatio>1.15?"Valgus":kneeAnkleRatio<0.85?"Varus":"Normal") : null;
 
-  // Carrying angle L/R (elbow cubitus valgus) — normal 5–15 deg
+  // Carrying angle L/R (elbow cubitus valgus) - normal 5-15 deg
   const carryingAngleL = Vb(11,13,15) ? r1(Math.abs(vec3Angle(g(11),g(13),g(15))-180)) : null;
   const carryingAngleR = Vb(12,14,16) ? r1(Math.abs(vec3Angle(g(12),g(14),g(16))-180)) : null;
 
@@ -2773,7 +2773,7 @@ function measureLandmarks(lm, calibration) {
   const shoulderHipRatio = (shoulderWidth&&hipWidth&&hipWidth>0)
     ? r1(shoulderWidth/hipWidth) : null;
 
-  // -- Real-world measurements (cm) — only populated when calibration available -
+  // -- Real-world measurements (cm) - only populated when calibration available -
   // Forward head posture in cm (most clinically used number)
   const fhpCm = (fhpNorm!==null && shoulderWidthPx!==null && shoulderWidthPx>0.05 && pixPerCm && imgH)
     ? r1(Math.max(0,(fhpNorm/100) / shoulderWidthPx * 40)) : null;
@@ -2853,22 +2853,22 @@ function calcReliability(lm) {
   const blocked=avg<0.40||failedCritical.length>1||bothShLow||bothHipLow;
   const warnings=[];
   if(blocked){
-    warnings.push({icon:"✕",text:"Image quality insufficient — improve lighting, ensure full body visible",color:PC.red,priority:6});
+    warnings.push({icon:"x",text:"Image quality insufficient - improve lighting, ensure full body visible",color:PC.red,priority:6});
   } else if(avg<0.55){
-    warnings.push({icon:"⚠",text:"Low confidence — findings may be inaccurate. Improve lighting and camera distance",color:PC.red,priority:5});
+    warnings.push({icon:"⚠",text:"Low confidence - findings may be inaccurate. Improve lighting and camera distance",color:PC.red,priority:5});
   } else if(avg<0.70){
-    warnings.push({icon:"○",text:"Partial tracking — some measurements limited. Ensure full body in frame",color:PC.yellow,priority:3});
+    warnings.push({icon:"○",text:"Partial tracking - some measurements limited. Ensure full body in frame",color:PC.yellow,priority:3});
   }
   const low=KEY.filter(i=>(lm[i]?.visibility||0)<MIN_VIS);
-  if(!blocked&&low.length>5) warnings.push({icon:"◉",text:`${low.length} landmarks low confidence — affected measurements unreliable`,color:PC.yellow,priority:4});
+  if(!blocked&&low.length>5) warnings.push({icon:"◉",text:`${low.length} landmarks low confidence - affected measurements unreliable`,color:PC.yellow,priority:4});
   if(!blocked&&Math.abs((lm[11]?.visibility||0)-(lm[12]?.visibility||0))>0.40)
-    warnings.push({icon:"↔",text:"Asymmetric shoulder visibility — bilateral measurements may be inaccurate",color:PC.yellow,priority:3});
+    warnings.push({icon:"↔",text:"Asymmetric shoulder visibility - bilateral measurements may be inaccurate",color:PC.yellow,priority:3});
   if(!blocked&&((lm[23]?.visibility||0)<MIN_VIS||(lm[24]?.visibility||0)<MIN_VIS))
-    warnings.push({icon:"⊖",text:"Hip partially occluded — pelvic measurements flagged unreliable",color:PC.yellow,priority:3});
+    warnings.push({icon:"⊖",text:"Hip partially occluded - pelvic measurements flagged unreliable",color:PC.yellow,priority:3});
   if((lm[7]?.visibility||0)<MIN_VIS&&(lm[8]?.visibility||0)<MIN_VIS)
-    warnings.push({icon:"☉",text:"Ears not detected — CVA and forward head posture cannot be assessed",color:PC.yellow,priority:2});
+    warnings.push({icon:"☉",text:"Ears not detected - CVA and forward head posture cannot be assessed",color:PC.yellow,priority:2});
   if((lm[31]?.visibility||0)<0.35&&(lm[32]?.visibility||0)<0.35)
-    warnings.push({icon:"⬡",text:"Feet not visible — move camera back for full-body capture",color:PC.yellow,priority:2});
+    warnings.push({icon:"⬡",text:"Feet not visible - move camera back for full-body capture",color:PC.yellow,priority:2});
   warnings.sort((a,b)=>(b.priority||0)-(a.priority||0));
   const status=blocked?"Insufficient":avg>0.80?"Excellent":avg>0.65?"Good":avg>0.50?"Fair":"Poor";
   const icc=r1(Math.min(0.95, 0.35+avg*0.60));
@@ -2892,7 +2892,7 @@ function calcManualReliability(placedCount, totalPoints) {
 // --- Findings Engine ----------------------------------------------------------
 
 // ===============================================================================
-// POSTURE ANALYSIS ENGINE — v2 (Kendall / Janda / Sahrmann)
+// POSTURE ANALYSIS ENGINE - v2 (Kendall / Janda / Sahrmann)
 // Items: thresholds, severity, confidence, landmark reliability,
 //        clinical significance filter, interpretation, muscle patterns,
 //        functional correlations, prioritisation
@@ -2915,12 +2915,12 @@ const POSTURE_THRESHOLDS = {
   neckLateralAngle:    { mild:5,  moderate:8,  severe:12  }, // degrees
   tibialVarum:         { mild:5,  moderate:10, severe:15  }, // degrees
   ankleLLD:            { mild:6,  moderate:12, severe:18  }, // mm
-  // Sagittal — recalibrated to clinical norms (Kendall 2005; Neiva 2009; Ruivo 2017)
+  // Sagittal - recalibrated to clinical norms (Kendall 2005; Neiva 2009; Ruivo 2017)
   cvaAngle:            { mild:54, moderate:50, severe:45  }, // degrees (lower = worse); normal >54
   thoracicAngle:       { mild:44, moderate:50, severe:58  }, // degrees; normal 20-45; mild fires at 44+
-  lumbarProxy:         { mild:4,  moderate:8,  severe:13  }, // % — mild threshold lowered to catch mild APT
+  lumbarProxy:         { mild:4,  moderate:8,  severe:13  }, // % - mild threshold lowered to catch mild APT
   hipDisplacement:     { mild:4,  moderate:8,  severe:13  }, // %
-  kneeRecurvatum:      { mild:4,  moderate:8,  severe:13  }, // degrees — lowered to catch early recurvatum
+  kneeRecurvatum:      { mild:4,  moderate:8,  severe:13  }, // degrees - lowered to catch early recurvatum
   lcsIndex:            { mild:0.4,moderate:0.8,severe:1.3 }, // index
 };
 
@@ -3010,40 +3010,40 @@ function checkAnatomicalOrder(lm, indices) {
 }
 
 // -- 5. INTERPRETATION ENGINE --------------------------------------------------
-// Conservative physiotherapy wording — never certain, always "may indicate"
+// Conservative physiotherapy wording - never certain, always "may indicate"
 const INTERPRETATIONS = {
   shoulder: (side, deg) =>
-    `Observation may be consistent with ${side.toLowerCase()} shoulder elevation (${deg.toFixed(1)}°). ` +
+    `Observation may be consistent with ${side.toLowerCase()} shoulder elevation (${deg.toFixed(1)}deg). ` +
     `May be associated with ipsilateral upper trapezius and levator scapulae overactivity, ` +
     `and contralateral lower trapezius underactivity. Confirm clinically.`,
   pelvis: (side, deg) =>
-    `Observation may indicate ${side.toLowerCase()} pelvic elevation (${deg.toFixed(1)}°). ` +
+    `Observation may indicate ${side.toLowerCase()} pelvic elevation (${deg.toFixed(1)}deg). ` +
     `May be associated with ipsilateral quadratus lumborum overactivity or leg length asymmetry. ` +
     `True leg length difference should be assessed clinically before conclusion.`,
   headTilt: (side, deg) =>
-    `Head lateral inclination toward ${side.toLowerCase()} (${deg.toFixed(1)}°) may be associated with ` +
+    `Head lateral inclination toward ${side.toLowerCase()} (${deg.toFixed(1)}deg) may be associated with ` +
     `ipsilateral sternocleidomastoid and scalene overactivity. Upper cervical joint restriction ` +
-    `(C1–C2) is a possible contributing factor. Clinical assessment recommended.`,
+    `(C1-C2) is a possible contributing factor. Clinical assessment recommended.`,
   trunkShift: (side, pct) =>
     `Lateral trunk displacement toward ${side.toLowerCase()} (${pct.toFixed(1)}%) may reflect ` +
     `a pain-avoidance strategy, lateral hip weakness, or thoracolumbar muscle asymmetry. ` +
     `Disc-related antalgic lean should be considered if accompanied by leg symptoms.`,
   kneeFrontal: (side, deg, pattern) =>
-    `${side} knee ${pattern} tendency (${deg.toFixed(1)}°) may be associated with reduced ` +
+    `${side} knee ${pattern} tendency (${deg.toFixed(1)}deg) may be associated with reduced ` +
     `hip abductor and external rotator contribution, or increased subtalar pronation. ` +
-    `Static posture alone is insufficient to confirm this pattern — functional assessment recommended.`,
+    `Static posture alone is insufficient to confirm this pattern - functional assessment recommended.`,
   ucs: (idx) =>
     `Observation may be consistent with characteristics of upper crossed pattern (index ${idx.toFixed(1)}). ` +
     `Possible overactivity: upper trapezius, levator scapulae, SCM, pectoralis minor. ` +
     `Possible underactivity: deep cervical flexors, lower trapezius, serratus anterior. ` +
     `Clinical muscle testing required to confirm.`,
   fhp: (cva, load) =>
-    `Reduced CVA (${cva.toFixed(1)}°) may indicate a forward head tendency. ` +
+    `Reduced CVA (${cva.toFixed(1)}deg) may indicate a forward head tendency. ` +
     `This pattern may be associated with suboccipital and cervical extensor overactivity ` +
     `and reduced deep cervical flexor contribution.` +
-    (load ? ` Estimated cervical load increase: ~${load.toFixed(1)}kg (Hansraj 2014 model — proxy only).` : ""),
+    (load ? ` Estimated cervical load increase: ~${load.toFixed(1)}kg (Hansraj 2014 model - proxy only).` : ""),
   kyphosis: (deg) =>
-    `Increased thoracic curvature (${deg.toFixed(1)}°) may be consistent with a kyphotic tendency. ` +
+    `Increased thoracic curvature (${deg.toFixed(1)}deg) may be consistent with a kyphotic tendency. ` +
     `Possible overactivity: pectoralis major/minor, upper trapezius. ` +
     `Possible underactivity: middle and lower trapezius, rhomboids, thoracic erectors.`,
   lumbar: (proxy, dir) =>
@@ -3093,10 +3093,10 @@ const FUNCTIONAL_CORRELATIONS = {
 // -- 8. RECOMMENDED OBJECTIVE ASSESSMENT --------------------------------------
 const OBJECTIVE_ASSESSMENTS = {
   shoulder:    ["Muscle length: upper trapezius passive stretch test","Muscle strength: lower trapezius (prone Y)","SIJ screen if pelvis also elevated"],
-  pelvis:      ["True LLD: tape measure ASIS → medial malleolus","SIJ provocation cluster (Laslett)","Hip abductor strength (Trendelenburg test)"],
-  headTilt:    ["Cervical AROM — rotation range bilateral","FRT (Flexion-Rotation Test) for C1–C2","Cranial nerve screen if accompanied by symptoms"],
-  trunkShift:  ["Neurological screen: SLR, sensation L3–S1","Kemp's test (facet load)","Hip abductor strength — single-leg balance"],
-  kneeFrontal: ["Single-leg squat (observe dynamic valgus/varus)","Hip abductor strength: side-lying abduction","Foot posture index — subtalar pronation"],
+  pelvis:      ["True LLD: tape measure ASIS -> medial malleolus","SIJ provocation cluster (Laslett)","Hip abductor strength (Trendelenburg test)"],
+  headTilt:    ["Cervical AROM - rotation range bilateral","FRT (Flexion-Rotation Test) for C1-C2","Cranial nerve screen if accompanied by symptoms"],
+  trunkShift:  ["Neurological screen: SLR, sensation L3-S1","Kemp's test (facet load)","Hip abductor strength - single-leg balance"],
+  kneeFrontal: ["Single-leg squat (observe dynamic valgus/varus)","Hip abductor strength: side-lying abduction","Foot posture index - subtalar pronation"],
   fhp:         ["Craniovertebral angle measurement (goniometer)","Deep cervical flexor strength: craniocervical flexion test","Upper cervical joint mobility: ULPA"],
   kyphosis:    ["Passive thoracic extension ROM","Muscle length: pectoralis major (supine)","Strength: lower/mid trapezius (prone Y/T)"],
   lumbarAnt:   ["Thomas test: hip flexor length","Modified Ober test: TFL/ITB length","Glute max strength: prone hip extension"],
@@ -3105,7 +3105,7 @@ const OBJECTIVE_ASSESSMENTS = {
   lcs:         ["Thomas test bilateral","Gluteus maximus strength: prone hip extension","Transverse abdominis function: TrA activation test"],
 };
 
-// -- 9. FINDING BUILDER — creates structured finding object --------------------
+// -- 9. FINDING BUILDER - creates structured finding object --------------------
 function buildFinding({
   region, findingName, severity, confidenceScore, interpretation,
   musclePattern, functionalCorrelation, objectiveAssessments,
@@ -3117,7 +3117,7 @@ function buildFinding({
   // Sagittal findings use lower gates (lateral landmarks naturally less visible).
   // clusterBoost allows clustered mild findings to survive by lifting effective conf.
   const effectiveConf = Math.min(100, (confidenceScore || 50) + clusterBoost);
-  if (severity === "mild"     && effectiveConf < 42) return null;  // was 55 — too aggressive
+  if (severity === "mild"     && effectiveConf < 42) return null;  // was 55 - too aggressive
   if (severity === "moderate" && effectiveConf < 28) return null;  // was 35
   return {
     region,
@@ -3166,8 +3166,8 @@ const MAX_FINDINGS_TOTAL    = 10;
 //
 // How it works:
 // 1. After buildFindings runs all individual checks, collect what fired.
-// 2. Group related findings into posture chains (cervical→shoulder→thoracic→pelvis).
-// 3. Apply cluster confidence boost: 2 related mild findings → boost to moderate significance.
+// 2. Group related findings into posture chains (cervical->shoulder->thoracic->pelvis).
+// 3. Apply cluster confidence boost: 2 related mild findings -> boost to moderate significance.
 // 4. Apply weighted cluster score to decide overall pattern label.
 // 5. Replace suppressed mild findings with cluster-level summary if 2+ related patterns found.
 // ==============================================================================
@@ -3192,9 +3192,9 @@ function computeChainScore(findings) {
 }
 
 // Cluster boost: return confidence bonus for a finding based on related findings
-// Isolated mild finding → no boost
-// 2 related findings present → +15 boost
-// 3+ related findings (full chain) → +25 boost
+// Isolated mild finding -> no boost
+// 2 related findings present -> +15 boost
+// 3+ related findings (full chain) -> +25 boost
 function getClusterBoost(finding, allFindings) {
   const chains = Object.entries(POSTURE_CHAIN);
   // Find which chain segments are present
@@ -3225,7 +3225,7 @@ function buildChainNote(chainScore) {
   if (active.includes("thoracic") && active.includes("pelvis")) {
     return "Thoracic and pelvic chain findings observed together. May reflect compensatory spinal load distribution. Clinical assessment recommended.";
   }
-  if (active.length === 1) return null; // single segment — no chain note needed
+  if (active.length === 1) return null; // single segment - no chain note needed
   return `Findings observed across ${active.join(" and ")} regions. Pattern clustering increases clinical relevance.`;
 }
 
@@ -3238,12 +3238,12 @@ function buildSagittalNilMessage(sagConf, measurements) {
     (measurements?.lumbarProxy !== null && Math.abs(measurements?.lumbarProxy || 0) > 2);
 
   if (sagConf < 50) {
-    return "Sagittal assessment confidence is limited — landmark visibility was reduced. Clinical measurement is recommended for accurate evaluation.";
+    return "Sagittal assessment confidence is limited - landmark visibility was reduced. Clinical measurement is recommended for accurate evaluation.";
   }
   if (hasSubthreshold) {
     return "Mild postural variations observed but below the threshold for clinical significance at this assessment. These may represent low-level postural adaptation patterns. Reassess if symptoms are present.";
   }
-  return "No major sagittal deviations detected in this assessment. This finding reflects the current static posture snapshot — functional and dynamic assessment is recommended for a complete picture.";
+  return "No major sagittal deviations detected in this assessment. This finding reflects the current static posture snapshot - functional and dynamic assessment is recommended for a complete picture.";
 }
 function buildFindings(lm, view, m) {
   if (!lm || !m) return [];
@@ -3256,7 +3256,7 @@ function buildFindings(lm, view, m) {
     if (f) out.push(f);
   };
 
-  // -- Helper: legacy add (for pattern summaries — keep existing format) ------
+  // -- Helper: legacy add (for pattern summaries - keep existing format) ------
   const addLegacy = (region, text, severity, correction, icd="M99.0", detail="", norm="") => {
     out.push({ region, text, plain: text, severity, correction, icd, detail, norm,
       confidenceScore: 70, clinicalSignificance: "moderate" });
@@ -3277,7 +3277,7 @@ function buildFindings(lm, view, m) {
         const side = m.shoulderAngle > 0 ? "Left" : "Right";
         add({
           region: "Shoulder Girdle",
-          findingName: `${side} shoulder elevation (${abs.toFixed(1)}°)`,
+          findingName: `${side} shoulder elevation (${abs.toFixed(1)}deg)`,
           severity: sev,
           confidenceScore: conf,
           clinicalSignificance: sev === "high" ? "high" : "moderate",
@@ -3285,9 +3285,9 @@ function buildFindings(lm, view, m) {
           musclePattern: MUSCLE_PATTERNS.shoulder,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.shoulder,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.shoulder,
-          correction: "Release upper trapezius + levator scapulae. Activate lower trapezius Y-T-W ×15. Assess ipsilateral QL overactivity.",
+          correction: "Release upper trapezius + levator scapulae. Activate lower trapezius Y-T-W x15. Assess ipsilateral QL overactivity.",
           icd: "M54.2",
-          norm: "<3° shoulder level difference",
+          norm: "<3deg shoulder level difference",
         });
       }
     }
@@ -3300,10 +3300,10 @@ function buildFindings(lm, view, m) {
       const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.hip);
       if (sev && rel.reliable) {
         const side = m.pelvisAngle > 0 ? "Left" : "Right";
-        const lldNote = m.lldProxy && m.lldProxy > 5 ? " — leg length asymmetry possible" : "";
+        const lldNote = m.lldProxy && m.lldProxy > 5 ? " - leg length asymmetry possible" : "";
         add({
           region: "Pelvis / SIJ",
-          findingName: `${side} ASIS elevated (${abs.toFixed(1)}°)${lldNote}`,
+          findingName: `${side} ASIS elevated (${abs.toFixed(1)}deg)${lldNote}`,
           severity: sev,
           confidenceScore: conf,
           clinicalSignificance: sev === "high" ? "high" : "moderate",
@@ -3311,9 +3311,9 @@ function buildFindings(lm, view, m) {
           musclePattern: MUSCLE_PATTERNS.pelvis,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.pelvis,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.pelvis,
-          correction: "Assess true LLD (tape ASIS→medial malleolus). QL release elevated side. Hip abductor activation. SIJ provocation cluster.",
+          correction: "Assess true LLD (tape ASIS->medial malleolus). QL release elevated side. Hip abductor activation. SIJ provocation cluster.",
           icd: "M53.3",
-          norm: "<3° pelvic level difference",
+          norm: "<3deg pelvic level difference",
         });
       }
     }
@@ -3328,7 +3328,7 @@ function buildFindings(lm, view, m) {
         const side = m.headTiltSide || "";
         add({
           region: "Head / Cervical",
-          findingName: `Head tilt — ${side} ear lower (${abs.toFixed(1)}°)`,
+          findingName: `Head tilt - ${side} ear lower (${abs.toFixed(1)}deg)`,
           severity: sev,
           confidenceScore: conf,
           clinicalSignificance: "moderate",
@@ -3336,9 +3336,9 @@ function buildFindings(lm, view, m) {
           musclePattern: MUSCLE_PATTERNS.headTilt,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.headTilt,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.headTilt,
-          correction: "Assess C1–C2 rotation restriction. Inhibit ipsilateral SCM + scalene. Activate contralateral deep neck flexors.",
+          correction: "Assess C1-C2 rotation restriction. Inhibit ipsilateral SCM + scalene. Activate contralateral deep neck flexors.",
           icd: "M43.6",
-          norm: "<3° head lateral tilt",
+          norm: "<3deg head lateral tilt",
         });
       }
     }
@@ -3385,7 +3385,7 @@ function buildFindings(lm, view, m) {
           const worstSev = (lSev === "high" || rSev === "high") ? "high" : "moderate";
           add({
             region: "Knee Alignment",
-            findingName: `Bilateral knee ${pattern} — ${worseSide} worse (L:${Math.abs(lv).toFixed(1)}° R:${Math.abs(rv).toFixed(1)}°)`,
+            findingName: `Bilateral knee ${pattern} - ${worseSide} worse (L:${Math.abs(lv).toFixed(1)}deg R:${Math.abs(rv).toFixed(1)}deg)`,
             severity: worstSev,
             confidenceScore: kneeConf,
             clinicalSignificance: worstSev,
@@ -3393,34 +3393,34 @@ function buildFindings(lm, view, m) {
             musclePattern: MUSCLE_PATTERNS.kneeFrontal,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
-            correction: "Glute med: clamshells ×15, lateral band walks ×20m. VMO: terminal knee extensions ×15. Single-leg squat with mirror correction. Foot tripod activation.",
-            icd: "M21.0", norm: "<6° knee frontal deviation",
+            correction: "Glute med: clamshells x15, lateral band walks x20m. VMO: terminal knee extensions x15. Single-leg squat with mirror correction. Foot tripod activation.",
+            icd: "M21.0", norm: "<6deg knee frontal deviation",
           });
         } else if (lSev) {
           const pattern = lv < 0 ? "valgus" : "varus";
           add({
             region: "Knee Alignment",
-            findingName: `Left knee ${pattern} tendency (${Math.abs(lv).toFixed(1)}°)`,
+            findingName: `Left knee ${pattern} tendency (${Math.abs(lv).toFixed(1)}deg)`,
             severity: lSev, confidenceScore: kneeConf, clinicalSignificance: lSev,
             interpretation: INTERPRETATIONS.kneeFrontal("Left", Math.abs(lv), pattern),
             musclePattern: MUSCLE_PATTERNS.kneeFrontal,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
             correction: lv < 0 ? "Glute med + VMO activation. Foot tripod." : "Hip ER strengthening. ITB/TFL SMR.",
-            icd: "M21.0", norm: "<6° knee frontal deviation",
+            icd: "M21.0", norm: "<6deg knee frontal deviation",
           });
         } else if (rSev) {
           const pattern = rv < 0 ? "valgus" : "varus";
           add({
             region: "Knee Alignment",
-            findingName: `Right knee ${pattern} tendency (${Math.abs(rv).toFixed(1)}°)`,
+            findingName: `Right knee ${pattern} tendency (${Math.abs(rv).toFixed(1)}deg)`,
             severity: rSev, confidenceScore: kneeConf, clinicalSignificance: rSev,
             interpretation: INTERPRETATIONS.kneeFrontal("Right", Math.abs(rv), pattern),
             musclePattern: MUSCLE_PATTERNS.kneeFrontal,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
             correction: rv < 0 ? "Glute med + VMO activation. Foot tripod." : "Hip ER strengthening. ITB/TFL SMR.",
-            icd: "M21.0", norm: "<6° knee frontal deviation",
+            icd: "M21.0", norm: "<6deg knee frontal deviation",
           });
         }
       }
@@ -3440,7 +3440,7 @@ function buildFindings(lm, view, m) {
           musclePattern: MUSCLE_PATTERNS.ucs,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.ucs,
-          correction: "INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep neck flexors, lower trap Y-T-W, serratus. MOBILISE: thoracic extension T4–T8.",
+          correction: "INHIBIT: upper trap, SCM, pec minor x90s. ACTIVATE: deep neck flexors, lower trap Y-T-W, serratus. MOBILISE: thoracic extension T4-T8.",
           icd: "M62.9", norm: "UCS index <0.6",
         });
       }
@@ -3453,14 +3453,14 @@ function buildFindings(lm, view, m) {
       if (sev) {
         add({
           region: "Leg Length",
-          findingName: `Possible functional LLD — ~${m.lldProxy.toFixed(0)}mm (${m.lldSide || ""} shorter)`,
-          severity: sev, confidenceScore: Math.min(conf, 70), // cap — proxy measure
+          findingName: `Possible functional LLD - ~${m.lldProxy.toFixed(0)}mm (${m.lldSide || ""} shorter)`,
+          severity: sev, confidenceScore: Math.min(conf, 70), // cap - proxy measure
           clinicalSignificance: "moderate",
-          interpretation: `Ankle height asymmetry may indicate functional or structural leg length difference (~${m.lldProxy.toFixed(0)}mm). This is a proxy measurement only — clinical confirmation is essential before any orthotic intervention.`,
+          interpretation: `Ankle height asymmetry may indicate functional or structural leg length difference (~${m.lldProxy.toFixed(0)}mm). This is a proxy measurement only - clinical confirmation is essential before any orthotic intervention.`,
           musclePattern: MUSCLE_PATTERNS.pelvis,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.pelvis,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.pelvis,
-          correction: "Confirm with tape measure ASIS→medial malleolus. If LLD >5mm: heel wedge trial 3–5mm. Treat SIJ/QL if functional.",
+          correction: "Confirm with tape measure ASIS->medial malleolus. If LLD >5mm: heel wedge trial 3-5mm. Treat SIJ/QL if functional.",
           icd: "M21.7", norm: "LLD <5mm",
         });
       }
@@ -3474,12 +3474,12 @@ function buildFindings(lm, view, m) {
         const side = m.waistTriangleSide || "";
         add({
           region: "Scoliosis / Waist Asymmetry",
-          findingName: `Waist triangle asymmetry — ${side} narrower (${m.waistTriangleAsymmetry.toFixed(1)}%)`,
+          findingName: `Waist triangle asymmetry - ${side} narrower (${m.waistTriangleAsymmetry.toFixed(1)}%)`,
           severity: sev, confidenceScore: conf, clinicalSignificance: sev,
-          interpretation: `Waist triangle asymmetry of ${m.waistTriangleAsymmetry.toFixed(1)}% may be associated with lateral trunk deviation or spinal curvature. This finding alone is insufficient to diagnose scoliosis — Adam's forward bend test and clinical assessment are required.`,
+          interpretation: `Waist triangle asymmetry of ${m.waistTriangleAsymmetry.toFixed(1)}% may be associated with lateral trunk deviation or spinal curvature. This finding alone is insufficient to diagnose scoliosis - Adam's forward bend test and clinical assessment are required.`,
           musclePattern: MUSCLE_PATTERNS.trunkShift,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.trunkShift,
-          objectiveAssessments: ["Adam's forward bend test — observe for rib hump", "Trunk lateral shift assessment", "Standing AP X-ray if structural scoliosis suspected"],
+          objectiveAssessments: ["Adam's forward bend test - observe for rib hump", "Trunk lateral shift assessment", "Standing AP X-ray if structural scoliosis suspected"],
           correction: "Adam's forward bend test. Treat lateral trunk shift driver. Rib cage mobilisation. Mirror biofeedback.",
           icd: "M41.9", norm: "Waist triangle asymmetry <4%",
         });
@@ -3496,25 +3496,25 @@ function buildFindings(lm, view, m) {
         const worse = tibL > tibR ? "Left" : "Right";
         add({
           region: "Tibial Varum",
-          findingName: `Tibial bowing — ${worse} worse (L:${tibL.toFixed(1)}° R:${tibR.toFixed(1)}°, normal <5°)`,
+          findingName: `Tibial bowing - ${worse} worse (L:${tibL.toFixed(1)}deg R:${tibR.toFixed(1)}deg, normal <5deg)`,
           severity: sev, confidenceScore: Math.min(conf, 65), clinicalSignificance: "moderate",
-          interpretation: `Tibial bowing tendency observed (${worse} worse). This measure is sensitive to rotation and camera angle — clinical confirmation is essential. May be associated with subtalar pronation compensation.`,
+          interpretation: `Tibial bowing tendency observed (${worse} worse). This measure is sensitive to rotation and camera angle - clinical confirmation is essential. May be associated with subtalar pronation compensation.`,
           musclePattern: null,
           functionalCorrelation: "May be associated with altered foot pronation patterns and medial knee loading.",
           objectiveAssessments: ["Subtalar neutral assessment", "Foot posture index", "Weight-bearing lower limb alignment X-ray if severe"],
           correction: "Assess subtalar neutral. Foot orthotic with lateral wedge if pronation-driven. Tibialis posterior strengthening.",
-          icd: "M21.1", norm: "<5° tibial varum",
+          icd: "M21.1", norm: "<5deg tibial varum",
         });
       }
     }
 
-  } // end if(!isLat) — frontal findings
+  } // end if(!isLat) - frontal findings
 
   // ==========================================================================
   // SAGITTAL VIEW FINDINGS
   // ==========================================================================
   if (isLat) {
-    // In lateral view, far-side landmarks are naturally low-visibility — use visible side only
+    // In lateral view, far-side landmarks are naturally low-visibility - use visible side only
     const visibleSagLandmarks = LANDMARK_GROUPS.sagittal.filter(i => (lm[i]?.visibility || 0) >= MIN_VIS);
     const sagRel = visibleSagLandmarks.length >= 3
       ? { reliable: true, reason: "" }
@@ -3524,15 +3524,15 @@ function buildFindings(lm, view, m) {
     // -- SAGITTAL CHAIN ENGINE -------------------------------------------------
     // Uses plumb-line deviations in cm (Kendall thresholds).
     // Falls back to angle/proxy measures when plumb data unavailable.
-    // Confidence is taken from sagChain.confidence (0–100).
-    // Movement chain: FHP → rounded shoulder → thoracic kyphosis → APT → recurvatum.
+    // Confidence is taken from sagChain.confidence (0-100).
+    // Movement chain: FHP -> rounded shoulder -> thoracic kyphosis -> APT -> recurvatum.
 
     const sagChainConf = m.sagChain?.confidence ?? 60;
     const sagLateral = m.sagChain?.isTrueLateral ?? false;
 
     // -- 1. Forward Head Posture -----------------------------------------------
-    // Primary: CVA < 52° (Neiva et al. 2009). Secondary: ear >2cm anterior to shoulder.
-    // Thresholds: mild CVA 48–52°, moderate 44–48°, severe <44° (Ruivo 2017)
+    // Primary: CVA < 52deg (Neiva et al. 2009). Secondary: ear >2cm anterior to shoulder.
+    // Thresholds: mild CVA 48-52deg, moderate 44-48deg, severe <44deg (Ruivo 2017)
     if (m.cvaAngle !== null) {
       // In lateral view, use only the visible-side ear and shoulder for reliability
       const cvaVisLandmarks = [7, 8, 11, 12].filter(i => (lm[i]?.visibility || 0) >= MIN_VIS);
@@ -3542,7 +3542,7 @@ function buildFindings(lm, view, m) {
       const cvaConf = getLandmarkConfidence(lm, cvaVisLandmarks.length >= 2 ? cvaVisLandmarks : [7, 8, 11, 12]);
       const fhpCm = m.fhpDevCm ?? m.fhpFromPlumb ?? null;
 
-      // Threshold: mild at <54° (Neiva 2009 — normal >54°); lowered confidence gate for sagittal
+      // Threshold: mild at <54deg (Neiva 2009 - normal >54deg); lowered confidence gate for sagittal
       if (m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild && cvaConf >= 28) {
         const sev = m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.severe ? "high"
           : m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.moderate ? "moderate" : "mild";
@@ -3550,43 +3550,43 @@ function buildFindings(lm, view, m) {
         const fhpCmStr = fhpCm !== null && fhpCm > 0 ? ` Ear ~${fhpCm.toFixed(1)}cm anterior to acromion.` : "";
 
         add({
-          clusterBoost: 15, // sagittal provisional — refined by clustering step
+          clusterBoost: 15, // sagittal provisional - refined by clustering step
           region: "Cervical / CVA",
-          findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >52°)`,
+          findingName: `Forward head tendency - CVA ${m.cvaAngle.toFixed(1)}deg (normal >52deg)`,
           severity: sev, confidenceScore: cvaConf,
           clinicalSignificance: sev,
-          interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this.${loadStr}`,
+          interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}deg) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this.${loadStr}`,
           possibleMusclePatterns: {
             tight: ["Suboccipital extensors", "Cervical extensors (semispinalis, splenius)","Sternocleidomastoid","Pectoralis minor"],
             weak:  ["Deep cervical flexors (longus colli, longus capitis)","Lower trapezius","Serratus anterior"],
           },
           functionalCorrelation: "May increase cervical extensor loading during prolonged sitting and screen use. May reduce cervicothoracic mobility during shoulder flexion tasks.",
           recommendedObjectiveAssessment: [
-            "Craniovertebral angle measurement (goniometer — seated)",
-            "Craniocervical flexion test (CCFT) — deep cervical flexor capacity",
-            "Cervical AROM — flexion/extension bilateral",
-            "Upper cervical passive accessory movement testing (C0–C2)",
+            "Craniovertebral angle measurement (goniometer - seated)",
+            "Craniocervical flexion test (CCFT) - deep cervical flexor capacity",
+            "Cervical AROM - flexion/extension bilateral",
+            "Upper cervical passive accessory movement testing (C0-C2)",
           ],
-          correction: `DNF chin nod ×10 ×3 daily. Thoracic extension foam roller T4–T8. Pec minor stretch doorframe 30s×3. Ergonomic screen height review.${loadStr}`,
-          icd: "M43.1", norm: "CVA >52°",
+          correction: `DNF chin nod x10 x3 daily. Thoracic extension foam roller T4-T8. Pec minor stretch doorframe 30sx3. Ergonomic screen height review.${loadStr}`,
+          icd: "M43.1", norm: "CVA >52deg",
         });
 
-        // -- Posture chain note: FHP → thoracic ------------------------------
+        // -- Posture chain note: FHP -> thoracic ------------------------------
         // Only add chain finding if thoracic finding won't fire separately
         const willFireKyphosis = m.thoracicAngle !== null && m.thoracicAngle > POSTURE_THRESHOLDS.thoracicAngle.mild;
         if (!willFireKyphosis && sev !== "mild" && m.thoracicAngle !== null && m.thoracicAngle > 40) {
           add({
-          clusterBoost: 15, // sagittal provisional — refined by clustering step
+          clusterBoost: 15, // sagittal provisional - refined by clustering step
             region: "Upper Crossed Syndrome (UCS)",
-            findingName: `Possible UCS pattern — forward head (CVA ${m.cvaAngle.toFixed(0)}°) + thoracic tendency (${m.thoracicAngle.toFixed(0)}°)`,
+            findingName: `Possible UCS pattern - forward head (CVA ${m.cvaAngle.toFixed(0)}deg) + thoracic tendency (${m.thoracicAngle.toFixed(0)}deg)`,
             severity: sev, confidenceScore: Math.min(cvaConf, sagChainConf),
             clinicalSignificance: sev,
             interpretation: `The combination of reduced CVA and increased thoracic curvature may be consistent with characteristics of the upper crossed pattern (Janda). Possible overactivity: upper trapezius, levator scapulae, SCM, pectoralis minor. Possible underactivity: deep cervical flexors, lower trapezius, serratus anterior. Clinical muscle testing is required to confirm this pattern.`,
             possibleMusclePatterns: MUSCLE_PATTERNS.ucs,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
             recommendedObjectiveAssessment: OBJECTIVE_ASSESSMENTS.ucs,
-            correction: "NKT Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: DNF (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
-            icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
+            correction: "NKT Protocol - INHIBIT: upper trap, SCM, pec minor x90s. ACTIVATE: DNF (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4-T8.",
+            icd: "M62.8", norm: "CVA >52deg + thoracic kyphosis 20-45deg",
           });
         }
       }
@@ -3612,11 +3612,11 @@ function buildFindings(lm, view, m) {
         },
         functionalCorrelation: "May alter scapulohumeral rhythm and reduce subacromial space during shoulder elevation tasks.",
         recommendedObjectiveAssessment: [
-          "Pectoralis minor length test (supine — coracoid offset from table)",
+          "Pectoralis minor length test (supine - coracoid offset from table)",
           "Serratus anterior strength (push-up plus)",
-          "Shoulder passive range of motion — horizontal adduction",
+          "Shoulder passive range of motion - horizontal adduction",
         ],
-        correction: "Pec minor stretch (corner/doorframe) 30s×3. Serratus anterior: wall slide progression ×15. Lower trap Y-T-W ×15.",
+        correction: "Pec minor stretch (corner/doorframe) 30sx3. Serratus anterior: wall slide progression x15. Lower trap Y-T-W x15.",
         icd: "M79.2", norm: "Acromion within 2cm of plumb line",
       });
     }
@@ -3630,19 +3630,19 @@ function buildFindings(lm, view, m) {
         const shiftStr = m.sagShoulderShift !== null
           ? ` (shoulder ~${m.sagShoulderShift.toFixed(1)}cm anterior to plumb)` : "";
         add({
-          clusterBoost: 15, // sagittal provisional — refined by clustering step
+          clusterBoost: 15, // sagittal provisional - refined by clustering step
           region: "Thoracic Kyphosis",
-          findingName: `Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,
+          findingName: `Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}deg, normal 20-45deg)`,
           severity: sev, confidenceScore: conf, clinicalSignificance: sev,
-          interpretation: `Increased thoracic curvature (${m.thoracicAngle.toFixed(1)}°)${shiftStr} may be consistent with a kyphotic tendency. This may be associated with possible pectoralis major/minor overactivity and reduced middle/lower trapezius and thoracic extensor contribution. ` +
+          interpretation: `Increased thoracic curvature (${m.thoracicAngle.toFixed(1)}deg)${shiftStr} may be consistent with a kyphotic tendency. This may be associated with possible pectoralis major/minor overactivity and reduced middle/lower trapezius and thoracic extensor contribution. ` +
             (m.cvaAngle !== null && m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild
               ? "The combination with reduced CVA may be consistent with an upper crossed pattern tendency (Janda)."
               : "Static posture alone cannot confirm these muscle contributions."),
           possibleMusclePatterns: MUSCLE_PATTERNS.kyphosis,
           functionalCorrelation: "May reduce thoracic extension mobility and alter rib cage mechanics during breathing. May contribute to impingement risk during overhead tasks.",
           recommendedObjectiveAssessment: OBJECTIVE_ASSESSMENTS.kyphosis,
-          correction: "Thoracic extension foam roller T4–T8 ×2min. Pec stretch bilateral. Lower trap activation Y-T-W ×15. Postural cueing.",
-          icd: "M40.0", norm: "Thoracic kyphosis 20–45°",
+          correction: "Thoracic extension foam roller T4-T8 x2min. Pec stretch bilateral. Lower trap activation Y-T-W x15. Postural cueing.",
+          icd: "M40.0", norm: "Thoracic kyphosis 20-45deg",
         });
       }
     }
@@ -3669,7 +3669,7 @@ function buildFindings(lm, view, m) {
           ? `hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`
           : `proxy deviation ${abs.toFixed(1)}%`;
         add({
-          clusterBoost: 15, // sagittal provisional — refined by clustering step
+          clusterBoost: 15, // sagittal provisional - refined by clustering step
           region: "Pelvis / Lumbar",
           findingName: `${dir} pelvic tendency (${measureStr})`,
           severity: sev, confidenceScore: conf, clinicalSignificance: sev,
@@ -3682,14 +3682,14 @@ function buildFindings(lm, view, m) {
             : FUNCTIONAL_CORRELATIONS.lumbarPost,
           recommendedObjectiveAssessment: pelvisValue > 0 ? OBJECTIVE_ASSESSMENTS.lumbarAnt : OBJECTIVE_ASSESSMENTS.lumbarPost,
           correction: pelvisValue > 0
-            ? "Hip flexor stretch (Thomas test position 30s×3). Glute activation: bridges ×20. Abdominal hollowing."
-            : "Hamstring stretch 30s×3. Hip flexor activation. Lumbar extension mobility.",
+            ? "Hip flexor stretch (Thomas test position 30sx3). Glute activation: bridges x20. Abdominal hollowing."
+            : "Hamstring stretch 30sx3. Hip flexor activation. Lumbar extension mobility.",
           icd: "M40.3", norm: pelvisIsCm ? "Hip within 2cm of plumb" : "<5% pelvic tilt proxy",
         });
       }
     }
 
-    // -- UCS sagittal — skip if UCS already in findings from dedicated block ----
+    // -- UCS sagittal - skip if UCS already in findings from dedicated block ----
     const hasUCS_sag = m.cvaAngle !== null && m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild && m.thoracicAngle !== null && m.thoracicAngle > (POSTURE_THRESHOLDS.thoracicAngle.mild - 2);
     const ucsAlreadyAdded = out.some(x => x.region === "Upper Crossed Syndrome" || x.region === "Upper Crossed Syndrome (UCS)");
     if (hasUCS_sag && sagRel.reliable && !ucsAlreadyAdded) {
@@ -3697,33 +3697,33 @@ function buildFindings(lm, view, m) {
       const sev = m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.severe ? "high" : "moderate";
       add({
         region: "Upper Crossed Syndrome (UCS)",
-        findingName: `Possible UCS pattern — forward head (CVA ${m.cvaAngle.toFixed(0)}°) + thoracic curvature (${m.thoracicAngle.toFixed(0)}°)`,
+        findingName: `Possible UCS pattern - forward head (CVA ${m.cvaAngle.toFixed(0)}deg) + thoracic curvature (${m.thoracicAngle.toFixed(0)}deg)`,
         severity: sev, confidenceScore: conf, clinicalSignificance: sev,
         interpretation: INTERPRETATIONS.ucs(m.ucsIndex || 0.8),
         musclePattern: MUSCLE_PATTERNS.ucs,
         functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
         objectiveAssessments: OBJECTIVE_ASSESSMENTS.ucs,
-        correction: "NKT Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep cervical flexors (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
-        icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
+        correction: "NKT Protocol - INHIBIT: upper trap, SCM, pec minor x90s. ACTIVATE: deep cervical flexors (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4-T8.",
+        icd: "M62.8", norm: "CVA >52deg + thoracic kyphosis 20-45deg",
       });
     }
 
-    // -- LCS sagittal — skip if LCS already in findings from dedicated block ----
+    // -- LCS sagittal - skip if LCS already in findings from dedicated block ----
     const hasLCS_sag = m.lumbarProxy !== null && m.lumbarProxy > POSTURE_THRESHOLDS.lumbarProxy.mild && m.thoracicAngle !== null && m.thoracicAngle > (POSTURE_THRESHOLDS.thoracicAngle.mild - 2);
     const lcsAlreadyAdded = out.some(x => x.region === "Lower Crossed Syndrome" || x.region === "Lower Crossed Syndrome (LCS)");
     if (hasLCS_sag && sagRel.reliable && !lcsAlreadyAdded) {
       const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.knee]);
       add({
         region: "Lower Crossed Syndrome (LCS)",
-        findingName: `Possible LCS pattern — anterior pelvic tilt (${m.lumbarProxy.toFixed(1)}%) + increased thoracic curvature`,
+        findingName: `Possible LCS pattern - anterior pelvic tilt (${m.lumbarProxy.toFixed(1)}%) + increased thoracic curvature`,
         severity: m.lumbarProxy > POSTURE_THRESHOLDS.lumbarProxy.moderate + 2 ? "high" : "moderate",
         confidenceScore: conf, clinicalSignificance: "moderate",
         interpretation: INTERPRETATIONS.lcs(m.lcsIndex || 0.6),
         musclePattern: MUSCLE_PATTERNS.lcs,
         functionalCorrelation: FUNCTIONAL_CORRELATIONS.lcs,
         objectiveAssessments: OBJECTIVE_ASSESSMENTS.lcs,
-        correction: "NKT Protocol — INHIBIT: iliopsoas, rectus femoris, TFL. ACTIVATE: glute max (bridges), glute med (clamshells), TVA (dead bug). Thomas test to confirm hip flexor length.",
-        icd: "M62.8", norm: "Anterior pelvic tilt <5% + thoracic kyphosis <42°",
+        correction: "NKT Protocol - INHIBIT: iliopsoas, rectus femoris, TFL. ACTIVATE: glute max (bridges), glute med (clamshells), TVA (dead bug). Thomas test to confirm hip flexor length.",
+        icd: "M62.8", norm: "Anterior pelvic tilt <5% + thoracic kyphosis <42deg",
       });
     }
 
@@ -3751,15 +3751,15 @@ function buildFindings(lm, view, m) {
     } else if (hasFHP && hasKyph && hasLord) {
       patternName = "Lordotic-Kyphotic (UCS + LCS)"; patternSev = "high";
       patternTx   = "Full postural correction programme addressing UCS and LCS simultaneously.";
-      patternNote = `FHP (CVA ${m.cvaAngle.toFixed(0)}°) + increased thoracic curvature (${m.thoracicAngle.toFixed(0)}°) + anterior pelvic tilt. Findings may be consistent with combined upper and lower crossed pattern characteristics.`;
+      patternNote = `FHP (CVA ${m.cvaAngle.toFixed(0)}deg) + increased thoracic curvature (${m.thoracicAngle.toFixed(0)}deg) + anterior pelvic tilt. Findings may be consistent with combined upper and lower crossed pattern characteristics.`;
     } else if (hasKyph && hasLord) {
       patternName = "Lordotic-Kyphotic Posture";
       patternTx   = "Thoracic extension + hip flexor stretch + glute activation.";
-      patternNote = `Thoracic curvature (${m.thoracicAngle.toFixed(0)}°) and anterior pelvic tilt both elevated.`;
+      patternNote = `Thoracic curvature (${m.thoracicAngle.toFixed(0)}deg) and anterior pelvic tilt both elevated.`;
     } else if (hasKyph && !hasLord) {
       patternName = "Kyphotic Posture";
       patternTx   = "Thoracic extension foam roller + lower trapezius + pec minor stretch.";
-      patternNote = `Increased thoracic curvature (${m.thoracicAngle.toFixed(0)}°) as primary observation.`;
+      patternNote = `Increased thoracic curvature (${m.thoracicAngle.toFixed(0)}deg) as primary observation.`;
     } else if (hasLord && !hasKyph) {
       patternName = "Lordotic Posture";
       patternTx   = "Hip flexor inhibition + glute max activation + pelvic tilt awareness.";
@@ -3770,14 +3770,14 @@ function buildFindings(lm, view, m) {
       patternNote = "Reduced lumbar lordosis. Hamstring and abdominal dominance possible.";
     } else if (hasFHP && !hasKyph) {
       patternName = "Forward Head Posture (Isolated)";
-      patternTx   = "DNF activation (chin nod ×10 ×3). Thoracic extension. Ergonomic screen.";
-      patternNote = `FHP without significant thoracic kyphosis (CVA ${m.cvaAngle.toFixed(0)}°).`;
+      patternTx   = "DNF activation (chin nod x10 x3). Thoracic extension. Ergonomic screen.";
+      patternNote = `FHP without significant thoracic kyphosis (CVA ${m.cvaAngle.toFixed(0)}deg).`;
     }
 
     if (patternName && sagRel.reliable) {
       const patConf = getLandmarkConfidence(lm, LANDMARK_GROUPS.sagittal);
       addLegacy(
-        `◈ Sagittal Pattern — ${patternName}`,
+        `◈ Sagittal Pattern - ${patternName}`,
         `Classification: ${patternName}`,
         patternSev, patternTx, "Z96.89",
         patternNote,
@@ -3787,17 +3787,17 @@ function buildFindings(lm, view, m) {
 
     // -- Sway-back pattern ----------------------------------------------------
     if (hasSway && sagRel.reliable) {
-      addLegacy("Posture Pattern — Sway-Back",
+      addLegacy("Posture Pattern - Sway-Back",
         "Sway-back posture: hips posterior to plumb, flat lumbar",
         "moderate",
-        "INHIBIT: hamstrings. ACTIVATE: hip flexors (psoas — standing hip flexion ×15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles.",
+        "INHIBIT: hamstrings. ACTIVATE: hip flexors (psoas - standing hip flexion x15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles.",
         "M40.3");
     }
     if (isMilitary && sagRel.reliable) {
-      addLegacy("Posture Pattern — Military / Flat Back",
-        `Flat-back posture: reduced thoracic curvature (${m.thoracicAngle.toFixed(0)}°) and lumbar lordosis`,
+      addLegacy("Posture Pattern - Military / Flat Back",
+        `Flat-back posture: reduced thoracic curvature (${m.thoracicAngle.toFixed(0)}deg) and lumbar lordosis`,
         "moderate",
-        "Thoracic mobility: foam roller extension T4–T8 ×2min. Rib expansion breathing ×10. Restore lordosis: McKenzie press-ups. Cervical retraction.",
+        "Thoracic mobility: foam roller extension T4-T8 x2min. Rib expansion breathing x10. Restore lordosis: McKenzie press-ups. Cervical retraction.",
         "M40.4");
     }
 
@@ -3843,7 +3843,7 @@ function buildFindings(lm, view, m) {
         }
       }
 
-      // If no sagittal findings at all — add clinically realistic nil-finding message
+      // If no sagittal findings at all - add clinically realistic nil-finding message
       const hasSagittalFindings = out.some(f => {
         const sagRegions = ["Cervical / CVA","Shoulder / Rounded","Thoracic Kyphosis",
           "Pelvis / Lumbar","Lower Crossed","Upper Crossed","Knee","◈ Sagittal","Sagittal Chain"];
@@ -3853,7 +3853,7 @@ function buildFindings(lm, view, m) {
         const nilMsg = buildSagittalNilMessage(sagChainConf, m);
         if (nilMsg) {
           addLegacy(
-            "Sagittal Assessment — Summary",
+            "Sagittal Assessment - Summary",
             nilMsg,
             "mild",
             "Continue current activity. Reassess if postural symptoms develop.",
@@ -3863,23 +3863,23 @@ function buildFindings(lm, view, m) {
       }
     }
 
-  } // end isLat — sagittal findings
+  } // end isLat - sagittal findings
 
   // ==========================================================================
-  // GLOBAL — all views
+  // GLOBAL - all views
   // ==========================================================================
   if (m.posturalLoadIndex !== null && m.posturalLoadIndex > 55) {
     const pliLabel = m.posturalLoadIndex > 80
-      ? "Very High — multiple areas need attention"
+      ? "Very High - multiple areas need attention"
       : m.posturalLoadIndex > 65
-      ? "High — several postural areas are stressed"
-      : "Elevated — more than one area is affected";
-    addLegacy("Global — Body Load Summary",
+      ? "High - several postural areas are stressed"
+      : "Elevated - more than one area is affected";
+    addLegacy("Global - Body Load Summary",
       `Overall postural load ${pliLabel} (PLI ${m.posturalLoadIndex}/100)`,
       m.posturalLoadIndex > 75 ? "high" : "moderate",
-      "Address highest-priority findings above. Aim for 1 targeted exercise per area, 10–15 min daily. Re-assess in 4–6 weeks.",
+      "Address highest-priority findings above. Aim for 1 targeted exercise per area, 10-15 min daily. Re-assess in 4-6 weeks.",
       "M62.9",
-      `PLI ${m.posturalLoadIndex}/100 — multiple postural deviations contributing.`,
+      `PLI ${m.posturalLoadIndex}/100 - multiple postural deviations contributing.`,
       "Target: PLI <35/100");
   }
 
@@ -3890,7 +3890,7 @@ function buildFindings(lm, view, m) {
     return true;
   });
 
-  // 2. Deduplicate by region — keep first (highest priority) occurrence
+  // 2. Deduplicate by region - keep first (highest priority) occurrence
   const seenRegions = new Set();
   const deduped = filtered.filter(f => {
     if (seenRegions.has(f.region)) return false;
@@ -3901,7 +3901,7 @@ function buildFindings(lm, view, m) {
   // 3. Prioritise: high severity + confidence + clinical significance first
   const prioritised = prioritiseFindings(deduped);
 
-  // 4. Cap output — always keep pattern/global findings
+  // 4. Cap output - always keep pattern/global findings
   const maxFindings = isLat ? MAX_FINDINGS_SAGITTAL : MAX_FINDINGS_FRONTAL;
   const isPattern = f => f.region.startsWith("◈") || f.region.startsWith("Global") || f.region.includes("Sway") || f.region.includes("Military");
   const patternFindings = prioritised.filter(isPattern);
@@ -3934,7 +3934,7 @@ function scorePosture(m, findings, reliability) {
   const relFactor=0.5+((reliability?.score||50)/100)*0.5;
   penalty*=relFactor;
   const rawScore=clamp(Math.round(100-penalty),0,100);
-  // PLI–score coherence: high PLI floors the score (can't score high with poor posture load)
+  // PLI-score coherence: high PLI floors the score (can't score high with poor posture load)
   const pli=m.posturalLoadIndex??0;
   const pliBand=pli>70?0:pli>50?20:pli>35?40:pli>20?60:100;
   const score=clamp(Math.min(rawScore, pliBand+30),0,100);
@@ -3962,7 +3962,7 @@ function mergeViewResults(viewResults) {
   const hasSagittal = capturedViews.some(v => VIEW_PLANE[v] === "sagittal");
   const coverage = { frontal: hasFrontal, sagittal: hasSagittal, viewCount: viewResults.length };
 
-  // Group findings by region; confirmed = seen in ≥2 views
+  // Group findings by region; confirmed = seen in >=2 views
   const byRegion = {};
   viewResults.forEach(({ view, findings }) => {
     (findings || []).forEach(f => {
@@ -4012,7 +4012,7 @@ function mergeViewResults(viewResults) {
   const hasLLD        = mergedFindings.some(f => f.region?.includes("Leg Length") && f.confirmed);
   const hasUCS_front  = mergedFindings.some(f => f.region==="Upper Crossed Syndrome" && f.confirmed);
   const hasShoulderEl = mergedFindings.some(f => f.region==="Shoulder Girdle" && f.confirmed);
-  const frontalPattern = hasScoliosis?"Scoliosis Pattern — refer for X-ray"
+  const frontalPattern = hasScoliosis?"Scoliosis Pattern - refer for X-ray"
     :(hasUCS_front&&hasShoulderEl)?"Upper Crossed + Shoulder Asymmetry"
     :hasLLD?"Limb Length Discrepancy Pattern"
     :hasShoulderEl?"Coronal Asymmetry":null;
@@ -4022,7 +4022,7 @@ function mergeViewResults(viewResults) {
   const planesCovered  = [hasFrontal&&"frontal", hasSagittal&&"sagittal"].filter(Boolean).join(" + ");
   let summary = `Assessment covers ${planesCovered} plane${coverage.viewCount>1?"s":""} (${coverage.viewCount} view${coverage.viewCount>1?"s":""}).`;
   summary += confirmedCount>0
-    ? ` ${confirmedCount} finding${confirmedCount>1?"s":""} confirmed across multiple views${highCount>0?` — ${highCount} high priority`:""}.`
+    ? ` ${confirmedCount} finding${confirmedCount>1?"s":""} confirmed across multiple views${highCount>0?` - ${highCount} high priority`:""}.`
     : " No findings confirmed across multiple views.";
   if (!hasFrontal||!hasSagittal) summary += ` Add ${!hasFrontal?"a frontal":"a lateral"} view to complete the assessment.`;
 
@@ -4090,7 +4090,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,0.95)"; ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
     ctx.restore(); ctx.setLineDash([]);
-  // -- Legend (top-right) — mirrors Image 2 ---------------------------------
+  // -- Legend (top-right) - mirrors Image 2 ---------------------------------
   if(!isLat){
     const legendItems=[
       {col:"rgba(0,201,122,0.95)", label:"Normal"},
@@ -4128,7 +4128,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,1)"; ctx.lineWidth=3;
     ctx.beginPath(); ctx.moveTo(plumbX,0); ctx.lineTo(plumbX,H); ctx.stroke();
     ctx.shadowBlur=0; ctx.setLineDash([]); ctx.restore();
-    // Clinical reference points — cm deviation (Kendall 2005 norms)
+    // Clinical reference points - cm deviation (Kendall 2005 norms)
     [{idx:iEar,label:"EAM",normRange:2},{idx:iSh,label:"Acromion",normRange:2},{idx:iHip,label:"G. Trochanter",normRange:2},{idx:iKnee,label:"Knee",normRange:2}].filter(s=>V(s.idx)).forEach(({idx,label,normRange})=>{
       const pt=PX(idx); if(!pt) return;
       const devPx=pt[0]-plumbX, devCm=devPx/pixPerCm, absD=Math.abs(devCm);
@@ -4144,11 +4144,11 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     // Lat malleolus anchor
     if(V(iAnk)){ const p=PX(iAnk); ctx.beginPath(); ctx.arc(p[0],p[1],6,0,Math.PI*2); ctx.fillStyle="rgba(0,229,255,1)"; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke(); ctx.font="bold 9px system-ui"; ctx.fillStyle="rgba(0,229,255,1)"; ctx.textAlign="left"; ctx.fillText("Lat. Malleolus",p[0]+8,p[1]+4); }
     // CVA angle
-    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"v":"⚠"}`; ctx.font="bold 10px system-ui"; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+8,17,4); else ctx.rect(cx,cy,ctw+8,17); ctx.fill(); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.fillText(ct,cx+4,cy+12); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; ctx.font="bold 9px system-ui"; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(fx-4,ep[1]-21,ftw+8,15,3); else ctx.rect(fx-4,ep[1]-21,ftw+8,15); ctx.fill(); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.fillText(fl,fx,ep[1]-10); } }
+    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}deg ${cva>=52?"v":"⚠"}`; ctx.font="bold 10px system-ui"; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+8,17,4); else ctx.rect(cx,cy,ctw+8,17); ctx.fill(); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.fillText(ct,cx+4,cy+12); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; ctx.font="bold 9px system-ui"; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(fx-4,ep[1]-21,ftw+8,15,3); else ctx.rect(fx-4,ep[1]-21,ftw+8,15); ctx.fill(); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.fillText(fl,fx,ep[1]-10); } }
     // Trunk inclination
-    if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}°`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; ctx.font="bold 9px system-ui"; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+8:mx-tw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(tx,my-8,tw+8,15,3); else ctx.rect(tx,my-8,tw+8,15); ctx.fill(); ctx.fillStyle=tc; ctx.textAlign="left"; ctx.fillText(tt,tx+4,my+3); }
+    if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}deg`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; ctx.font="bold 9px system-ui"; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+8:mx-tw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(tx,my-8,tw+8,15,3); else ctx.rect(tx,my-8,tw+8,15); ctx.fill(); ctx.fillStyle=tc; ctx.textAlign="left"; ctx.fillText(tt,tx+4,my+3); }
     // Knee sagittal angle
-    if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; ctx.font="bold 9px system-ui"; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+8:kp[0]-ktw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(kx,kp[1]+6,ktw+8,15,3); else ctx.rect(kx,kp[1]+6,ktw+8,15); ctx.fill(); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.fillText(kt,kx+4,kp[1]+17); }
+    if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}deg ${kl}`; ctx.font="bold 9px system-ui"; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+8:kp[0]-ktw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(kx,kp[1]+6,ktw+8,15,3); else ctx.rect(kx,kp[1]+6,ktw+8,15); ctx.fill(); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.fillText(kt,kx+4,kp[1]+17); }
   }
 
   // -- Skeleton connections --------------------------------------------------
@@ -4189,10 +4189,10 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.restore();
       if(tiltAbs!==null){
         const mx=(pL[0]+pR[0])/2, my=(pL[1]+pR[1])/2-16;
-        drawBadge(ctx, mx, my, `Tilt ${tiltAbs.toFixed(1)}°`, tiltColor);
+        drawBadge(ctx, mx, my, `Tilt ${tiltAbs.toFixed(1)}deg`, tiltColor);
       }
     }
-    // Horizontal level lines — full width with right-edge angle readings (like Image 2)
+    // Horizontal level lines - full width with right-edge angle readings (like Image 2)
     const LEVELS=[
       {idxL:7,  idxR:8,  label:"Eye Level\nEars / C-spine", color:"rgba(0,229,255,0.8)"},
       {idxL:11, idxR:12, label:"Shoulders",      color:"rgba(147,51,234,0.9)"},
@@ -4220,7 +4220,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.fill(); ctx.font="bold 8px system-ui"; ctx.textAlign="left"; ctx.fillStyle=color;
       lines.forEach((ln,i)=>ctx.fillText(ln,6,my-bh/2+lh*(i+0.85)));
       // Right-edge angle badge
-      const angText=(angleDeg>=0?"+":"")+angleDeg.toFixed(1)+"°";
+      const angText=(angleDeg>=0?"+":"")+angleDeg.toFixed(1)+"deg";
       ctx.font="bold 9px system-ui"; const atw=ctx.measureText(angText).width;
       ctx.fillStyle="rgba(0,0,0,0.82)";
       if(ctx.roundRect) ctx.roundRect(W-atw-14,my-9,atw+10,16,3); else ctx.rect(W-atw-14,my-9,atw+10,16);
@@ -4295,7 +4295,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.fillStyle="rgba(6,9,15,0.85)";
       ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(bx,by,66,22,5); else ctx.rect(bx,by,66,22); ctx.fill();
       ctx.fillStyle=col; ctx.font="bold 9.5px system-ui"; ctx.textAlign="left";
-      ctx.fillText(`${lbl} ${fa.toFixed(0)}°`,bx+5,by+15);
+      ctx.fillText(`${lbl} ${fa.toFixed(0)}deg`,bx+5,by+15);
     });
   }
 
@@ -4318,7 +4318,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
   });
 }
 
-// --- renderPostureOverlay — alias for drawOverlay used throughout app ----------
+// --- renderPostureOverlay - alias for drawOverlay used throughout app ----------
 // Maps the showHeatmap/showLabels/view params to drawOverlay signature
 function renderPostureOverlay({ ctx, W, H, lm, measurements, showGrid, showHeatmap, showLabels, view }) {
   // Map view names to drawOverlay's expected format
@@ -4364,7 +4364,7 @@ function drawManualOverlay({ctx, W, H, placed, pointDefs, connections, currentId
 
   // Highlight next point to place
   if (currentIdx !== undefined && currentIdx < pointDefs.length) {
-    // pulsing ring hint — drawn as dashed circle at canvas centre placeholder
+    // pulsing ring hint - drawn as dashed circle at canvas centre placeholder
     // (actual pulse is CSS; here we just mark "next" label)
   }
 }
@@ -4382,7 +4382,7 @@ function computeCalibration(lm, patientHeightCm, imgH) {
                : V(30) ? lm[30].y : null;
   if(headY===null||heelY===null) return null;
   const spanNorm = Math.abs(heelY - headY);      // 0-1 normalised
-  if(spanNorm < 0.3) return null;                // too small — likely partial body
+  if(spanNorm < 0.3) return null;                // too small - likely partial body
   const spanPx = spanNorm * imgH;
   const pixPerCm = spanPx / patientHeightCm;
   return { pixPerCm, imgH, spanPx, patientHeightCm };
@@ -4408,11 +4408,11 @@ const VIEWS={
     helper:"Patient faces away. Scapulae and heels visible.",
     checks:["Hair off shoulders","Scapulae visible","Equal weight both feet","Arms relaxed","Heel tendon visible"]},
   left:{label:"Sagittal L",short:"Sag L",badge:"+ Sagittal plumb",colour:PC.yellow,icon:"◀",
-    helper:"Left side toward camera. Ear–shoulder–hip–ankle in frame.",
-    checks:["Ear–shoulder–hip–ankle aligned","Neutral gaze","Knees not locked","Arms visible","Full body in frame"]},
+    helper:"Left side toward camera. Ear-shoulder-hip-ankle in frame.",
+    checks:["Ear-shoulder-hip-ankle aligned","Neutral gaze","Knees not locked","Arms visible","Full body in frame"]},
   right:{label:"Sagittal R",short:"Sag R",badge:"+ Sagittal plumb",colour:PC.green,icon:"▶",
-    helper:"Right side toward camera. Ear–shoulder–hip–ankle in frame.",
-    checks:["Ear–shoulder–hip–ankle aligned","Neutral gaze","Knees not locked","Arms visible","Full body in frame"]},
+    helper:"Right side toward camera. Ear-shoulder-hip-ankle in frame.",
+    checks:["Ear-shoulder-hip-ankle aligned","Neutral gaze","Knees not locked","Arms visible","Full body in frame"]},
 };
 
 // --- Sparkline ----------------------------------------------------------------
@@ -4462,7 +4462,7 @@ function ScoreRingBand({score,band,colour,size=80}){
 
 // --- Finding Card -------------------------------------------------------------
 
-// --- FindingsDisplay — Priority top 5 + show all toggle ----------------------
+// --- FindingsDisplay - Priority top 5 + show all toggle ----------------------
 function FindingsDisplay({ findings, PC }) {
   const [showAll, setShowAll] = useState(false);
 
@@ -4482,7 +4482,7 @@ function FindingsDisplay({ findings, PC }) {
   const rest       = sorted.slice(5);
   const shown      = showAll ? sorted : top5;
 
-  // Landmark confidence check — flag low-visibility metrics
+  // Landmark confidence check - flag low-visibility metrics
   const lowConfMetrics = ["neck lateral inclination","carrying angle","tibial bowing","ankle height"];
   const hasLowConf = (text) => lowConfMetrics.some(m => text.toLowerCase().includes(m));
 
@@ -4536,14 +4536,14 @@ function FindingsDisplay({ findings, PC }) {
       <div style={{ marginTop:10, padding:"8px 12px", borderRadius:8,
         background: PC.accent+"08", border:`1px solid ${PC.border}`,
         fontSize:"0.62rem", color:PC.muted, lineHeight:1.5 }}>
-        v Confirmed = seen in ≥2 views · ○ Single-view = verify clinically ·
+        v Confirmed = seen in >=2 views · ○ Single-view = verify clinically ·
         ⚡ Low confidence = verify with goniometer
       </div>
     </div>
   );
 }
 
-// --- FindingCardV2 — Enhanced with confidence badge --------------------------
+// --- FindingCardV2 - Enhanced with confidence badge --------------------------
 function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
   const [open, setOpen] = useState(false);
   return (
@@ -4668,7 +4668,7 @@ function MetricRow({label,value,unit,normal,abnormal}){
 // -----------------------------------------------------------------------------
 
 // -- Muscle Imbalance Engine ---------------------------------------------------
-// Maps each finding region key → { tight: [...], weak: [...] }
+// Maps each finding region key -> { tight: [...], weak: [...] }
 const MUSCLE_MAP = {
   // Frontal
   "Shoulder Girdle":          { tight:["Upper Trapezius","Levator Scapulae"],                  weak:["Lower Trapezius","Serratus Anterior","Rhomboids"] },
@@ -4690,15 +4690,15 @@ const MUSCLE_MAP = {
   "Lower Crossed Syndrome":   { tight:["Iliopsoas","Rectus Femoris","TFL","Thoracolumbar Fascia"], weak:["Glute Max","Glute Med","Transverse Abdominis"] },
   "Lower Crossed Syndrome (LCS)": { tight:["Iliopsoas","Rectus Femoris","TFL","Thoracolumbar Fascia"], weak:["Glute Max","Glute Med","Transverse Abdominis"] },
   "Upper Crossed Syndrome (UCS)": { tight:["Upper Trapezius","Levator Scapulae","SCM","Pec Minor","Scalenes"], weak:["Deep Cervical Flexors","Lower Trapezius","Serratus Anterior","Mid Thoracic Extensors"] },
-  "Posture Pattern — Sway-Back": { tight:["Hamstrings","Abdominals","Hip Extensors"],          weak:["Hip Flexors (Iliopsoas)","Lumbar Extensors"] },
-  "Posture Pattern — Military / Flat Back": { tight:["Abdominals","Hamstrings"],               weak:["Thoracic Extensors","Lumbar Extensors","Hip Flexors"] },
+  "Posture Pattern - Sway-Back": { tight:["Hamstrings","Abdominals","Hip Extensors"],          weak:["Hip Flexors (Iliopsoas)","Lumbar Extensors"] },
+  "Posture Pattern - Military / Flat Back": { tight:["Abdominals","Hamstrings"],               weak:["Thoracic Extensors","Lumbar Extensors","Hip Flexors"] },
   "Tibial Varum":             { tight:["Peroneals","Gastrocnemius/Soleus"],                     weak:["Tibialis Posterior","Tibialis Anterior"] },
   "Ankle":                    { tight:["Gastrocnemius","Soleus"],                               weak:["Tibialis Anterior","Peroneals"] },
   "Knee (Sagittal)":           { tight:["TFL / ITB","Rectus Femoris"],                           weak:["Glute Med","VMO","Hamstrings"] },
 };
 
 function buildMuscleImbalance(findings) {
-  const tightSet = new Map(); // muscle → [regions]
+  const tightSet = new Map(); // muscle -> [regions]
   const weakSet  = new Map();
 
   findings.forEach(f => {
@@ -4706,7 +4706,7 @@ function buildMuscleImbalance(findings) {
     let key = f.region;
     let entry = MUSCLE_MAP[key];
     if (!entry) {
-      // Try prefix match (e.g. "◈ Sagittal Pattern — Lordotic-Kyphotic" → check "Pelvis / Lumbar" etc)
+      // Try prefix match (e.g. "◈ Sagittal Pattern - Lordotic-Kyphotic" -> check "Pelvis / Lumbar" etc)
       const matchKey = Object.keys(MUSCLE_MAP).find(k => key.includes(k) || k.includes(key.replace(/◈\s*/,"")));
       if (matchKey) entry = MUSCLE_MAP[matchKey];
     }
@@ -4737,22 +4737,22 @@ function buildMuscleImbalance(findings) {
 // -- Special Tests Engine ------------------------------------------------------
 const SPECIAL_TESTS_MAP = {
   "Shoulder Girdle":          [
-    { name:"Apley Scratch Test",   purpose:"Shoulder ROM — reaching ability bilaterally" },
+    { name:"Apley Scratch Test",   purpose:"Shoulder ROM - reaching ability bilaterally" },
     { name:"Shoulder Shrug Test",  purpose:"Upper trap / levator overactivation" },
     { name:"Lower Trap Test",      purpose:"Lower trapezius force couple strength (prone Y)" },
   ],
   "Head / Cervical":          [
-    { name:"Cervical Rotation AROM", purpose:"C1–C2 restriction screen (normal >80° each side)" },
+    { name:"Cervical Rotation AROM", purpose:"C1-C2 restriction screen (normal >80deg each side)" },
     { name:"Cervical Lateral Flexion AROM", purpose:"Scalene/SCM length asymmetry" },
-    { name:"Deep Neck Flexor Endurance Test", purpose:"DNF weakness — hold chin nod in supine (normal >38s)" },
+    { name:"Deep Neck Flexor Endurance Test", purpose:"DNF weakness - hold chin nod in supine (normal >38s)" },
   ],
   "Neck / Cervical":          [
-    { name:"Adson's Test",         purpose:"Thoracic outlet — anterior scalene compression" },
-    { name:"Roos Test (EAST)",     purpose:"Thoracic outlet — 3 min overhead arm elevation" },
+    { name:"Adson's Test",         purpose:"Thoracic outlet - anterior scalene compression" },
+    { name:"Roos Test (EAST)",     purpose:"Thoracic outlet - 3 min overhead arm elevation" },
     { name:"Spurling's Test",      purpose:"Cervical nerve root compression / foraminal stenosis" },
   ],
   "Cervical / CVA":           [
-    { name:"Deep Neck Flexor Endurance Test", purpose:"DNF strength — chin nod hold in supine (normal >38s)" },
+    { name:"Deep Neck Flexor Endurance Test", purpose:"DNF strength - chin nod hold in supine (normal >38s)" },
     { name:"Cranio-Cervical Flexion Test", purpose:"DNF activation pattern (pressure biofeedback)" },
     { name:"Cervical Retraction AROM", purpose:"Assess available retraction range" },
   ],
@@ -4760,23 +4760,23 @@ const SPECIAL_TESTS_MAP = {
     { name:"FABER (Patrick's) Test", purpose:"SIJ / hip pathology provocation" },
     { name:"FADIR Test",           purpose:"Hip impingement / labral pathology screen" },
     { name:"SIJ Compression Test", purpose:"SIJ provocation" },
-    { name:"Trendelenburg Test",   purpose:"Glute med weakness — single-leg stance" },
+    { name:"Trendelenburg Test",   purpose:"Glute med weakness - single-leg stance" },
   ],
   "Pelvis / Lumbar":          [
-    { name:"Thomas Test",          purpose:"Hip flexor contracture — iliopsoas / rectus femoris" },
-    { name:"Ely's Test",           purpose:"Rectus femoris tightness — prone knee bend" },
+    { name:"Thomas Test",          purpose:"Hip flexor contracture - iliopsoas / rectus femoris" },
+    { name:"Ely's Test",           purpose:"Rectus femoris tightness - prone knee bend" },
     { name:"Modified Ober Test",   purpose:"TFL / ITB tightness" },
     { name:"FABER Test",           purpose:"SIJ / hip provocation" },
   ],
   "Hip / Global":             [
-    { name:"Thomas Test",          purpose:"Hip flexor length — passive hip extension in supine" },
-    { name:"Hip Extension Prone",  purpose:"Glute max firing pattern — timing vs hamstrings" },
+    { name:"Thomas Test",          purpose:"Hip flexor length - passive hip extension in supine" },
+    { name:"Hip Extension Prone",  purpose:"Glute max firing pattern - timing vs hamstrings" },
     { name:"Trendelenburg Test",   purpose:"Glute medius weakness" },
   ],
   "Thoracic Kyphosis":        [
-    { name:"Pec Minor Length Test", purpose:"Assess pec minor shortening — supine shoulder drop" },
+    { name:"Pec Minor Length Test", purpose:"Assess pec minor shortening - supine shoulder drop" },
     { name:"Wall Angel Test",      purpose:"Thoracic mobility and scapular upward rotation" },
-    { name:"Thoracic Extension ROM", purpose:"Foam roller passive extension range (T4–T8)" },
+    { name:"Thoracic Extension ROM", purpose:"Foam roller passive extension range (T4-T8)" },
   ],
   "Upper Crossed Syndrome":   [
     { name:"Deep Neck Flexor Endurance Test", purpose:"DNF endurance (chin nod hold)" },
@@ -4786,27 +4786,27 @@ const SPECIAL_TESTS_MAP = {
   ],
   "Upper Crossed Syndrome (UCS)": [
     { name:"Deep Neck Flexor Endurance Test", purpose:"DNF endurance (chin nod hold, normal >38s)" },
-    { name:"Lower Trap Test",      purpose:"Lower trap strength — prone Y position" },
-    { name:"Pec Minor Length",     purpose:"Supine shoulder drop test — bilaterally compare" },
+    { name:"Lower Trap Test",      purpose:"Lower trap strength - prone Y position" },
+    { name:"Pec Minor Length",     purpose:"Supine shoulder drop test - bilaterally compare" },
     { name:"Adson's / Roos Test",  purpose:"Rule out thoracic outlet component" },
   ],
   "Lower Crossed Syndrome":   [
     { name:"Thomas Test",          purpose:"Hip flexor contracture confirmation" },
-    { name:"Ely's Test",           purpose:"Rectus femoris tightness — prone knee bend" },
+    { name:"Ely's Test",           purpose:"Rectus femoris tightness - prone knee bend" },
     { name:"Bridge with Posterior Tilt", purpose:"Glute max activation pattern" },
     { name:"Dead Bug",             purpose:"TVA endurance and lumbopelvic control" },
   ],
   "Lower Crossed Syndrome (LCS)": [
-    { name:"Thomas Test",          purpose:"Hip flexor contracture — iliopsoas / RF" },
-    { name:"Ely's Test",           purpose:"RF tightness — prone knee flexion" },
+    { name:"Thomas Test",          purpose:"Hip flexor contracture - iliopsoas / RF" },
+    { name:"Ely's Test",           purpose:"RF tightness - prone knee flexion" },
     { name:"Modified Ober Test",   purpose:"TFL / ITB tightness" },
     { name:"Hip Extensor Firing Pattern", purpose:"Glute max vs hamstring dominance" },
   ],
   "Knee":                     [
     { name:"Valgus Stress Test",   purpose:"MCL integrity / medial instability" },
-    { name:"VMO Activation Test",  purpose:"Single leg terminal knee extension — VMO bulk" },
+    { name:"VMO Activation Test",  purpose:"Single leg terminal knee extension - VMO bulk" },
     { name:"Single-Leg Squat",     purpose:"Functional valgus / glute med weakness under load" },
-    { name:"Beighton Score",       purpose:"Generalised hypermobility — 9-point screen" },
+    { name:"Beighton Score",       purpose:"Generalised hypermobility - 9-point screen" },
   ],
   "Knee Alignment Pattern":   [
     { name:"Single-Leg Squat",     purpose:"Dynamic valgus / varus under load" },
@@ -4815,25 +4815,25 @@ const SPECIAL_TESTS_MAP = {
     { name:"Subtalar Neutral Test", purpose:"Foot pronation driving valgus" },
   ],
   "Leg Length":               [
-    { name:"Tape Measure LLD",     purpose:"True LLD: ASIS → medial malleolus bilaterally" },
+    { name:"Tape Measure LLD",     purpose:"True LLD: ASIS -> medial malleolus bilaterally" },
     { name:"Supine-to-Sit Test",   purpose:"Functional vs true LLD differentiation" },
     { name:"FABER Test",           purpose:"SIJ involvement with LLD" },
     { name:"Pelvic Landmark Palpation", purpose:"Iliac crest height bilaterally in standing" },
   ],
   "Scoliosis Screen":         [
-    { name:"Adam's Forward Bend Test", purpose:"Rib hump — structural vs functional scoliosis" },
-    { name:"Scoliometer / Inclinometer", purpose:"Angle of trunk rotation (ATR) — >5° refers for X-ray" },
+    { name:"Adam's Forward Bend Test", purpose:"Rib hump - structural vs functional scoliosis" },
+    { name:"Scoliometer / Inclinometer", purpose:"Angle of trunk rotation (ATR) - >5deg refers for X-ray" },
     { name:"Leg Length Measurement", purpose:"LLD as scoliosis driver" },
   ],
   "Spine":                    [
-    { name:"Adam's Forward Bend Test", purpose:"Structural scoliosis screen — rib hump" },
-    { name:"C7 Plumb Line",        purpose:"Coronal balance — spinous process alignment" },
+    { name:"Adam's Forward Bend Test", purpose:"Structural scoliosis screen - rib hump" },
+    { name:"C7 Plumb Line",        purpose:"Coronal balance - spinous process alignment" },
   ],
   "Tibial Varum":             [
     { name:"Subtalar Neutral Assessment", purpose:"Forefoot varus / calcaneal eversion compensation" },
     { name:"Weight-Bearing Foot Posture", purpose:"Pronation / supination index" },
   ],
-  "Posture Pattern — Sway-Back": [
+  "Posture Pattern - Sway-Back": [
     { name:"Thomas Test",          purpose:"Hip flexor weakness confirmation" },
     { name:"Hamstring Length Test (SLR)", purpose:"Hamstring shortening contribution to sway-back" },
     { name:"Abdominal Bracing Test", purpose:"Over-bracing pattern assessment" },
@@ -4841,7 +4841,7 @@ const SPECIAL_TESTS_MAP = {
 };
 
 function buildSpecialTests(findings) {
-  const testMap = new Map(); // test name → { purpose, regions[] }
+  const testMap = new Map(); // test name -> { purpose, regions[] }
 
   findings.forEach(f => {
     let key = f.region;
@@ -4864,106 +4864,106 @@ function buildSpecialTests(findings) {
 }
 
 // -- Exercise Plan Engine ------------------------------------------------------
-// Converts findings → deduplicated, phased, numbered exercise programme
+// Converts findings -> deduplicated, phased, numbered exercise programme
 const EXERCISE_MAP = {
   "Shoulder Girdle":        [
-    { phase:1, name:"Upper Trapezius SMR",         sets:"90s each side", cue:"Foam roller / lacrosse ball — superior trap between neck and shoulder. Slow sustained pressure.", category:"inhibit" },
-    { phase:1, name:"Levator Scapulae Stretch",    sets:"3×30s",         cue:"Head down and away 45°. Gentle overpressure with same-side hand on back of head.", category:"inhibit" },
-    { phase:2, name:"Prone Y (Lower Trap)",        sets:"3×15",          cue:"Prone, arms in Y position. Lift arms thumbs-up — feel mid-back, not neck. Hold 2s.", category:"activate" },
-    { phase:2, name:"Wall Slide (Serratus)",       sets:"3×12",          cue:"Back flat on wall, arms in W. Slide up to Y maintaining contact. Breathe normally.", category:"activate" },
+    { phase:1, name:"Upper Trapezius SMR",         sets:"90s each side", cue:"Foam roller / lacrosse ball - superior trap between neck and shoulder. Slow sustained pressure.", category:"inhibit" },
+    { phase:1, name:"Levator Scapulae Stretch",    sets:"3x30s",         cue:"Head down and away 45deg. Gentle overpressure with same-side hand on back of head.", category:"inhibit" },
+    { phase:2, name:"Prone Y (Lower Trap)",        sets:"3x15",          cue:"Prone, arms in Y position. Lift arms thumbs-up - feel mid-back, not neck. Hold 2s.", category:"activate" },
+    { phase:2, name:"Wall Slide (Serratus)",       sets:"3x12",          cue:"Back flat on wall, arms in W. Slide up to Y maintaining contact. Breathe normally.", category:"activate" },
   ],
   "Head / Cervical":        [
-    { phase:1, name:"SCM / Scalene Stretch",       sets:"3×30s/side",    cue:"Tilt head away, rotate slightly toward. Anchor shoulder by holding chair.", category:"inhibit" },
-    { phase:2, name:"Chin Nod (DNF Activation)",   sets:"3×10 holds 10s",cue:"Supine, small chin nod — 'yes' motion only. Do NOT lift head. Feel deep neck muscles.", category:"activate" },
+    { phase:1, name:"SCM / Scalene Stretch",       sets:"3x30s/side",    cue:"Tilt head away, rotate slightly toward. Anchor shoulder by holding chair.", category:"inhibit" },
+    { phase:2, name:"Chin Nod (DNF Activation)",   sets:"3x10 holds 10s",cue:"Supine, small chin nod - 'yes' motion only. Do NOT lift head. Feel deep neck muscles.", category:"activate" },
   ],
   "Neck / Cervical":        [
     { phase:1, name:"Scalene Release",             sets:"90s/side",      cue:"Side-lying, finger-tip release to anterior neck. Very gentle. Breathe into the tension.", category:"inhibit" },
-    { phase:2, name:"Chin Nod (DNF Activation)",   sets:"3×10 holds 10s",cue:"Supine, gentle nod — not a full crunch. Long neck, not tucked.", category:"activate" },
+    { phase:2, name:"Chin Nod (DNF Activation)",   sets:"3x10 holds 10s",cue:"Supine, gentle nod - not a full crunch. Long neck, not tucked.", category:"activate" },
   ],
   "Cervical / CVA":         [
     { phase:1, name:"Suboccipital Release",        sets:"5min",          cue:"Supine, fingertips at base of skull, let head sink. Gentle, no traction.", category:"inhibit" },
-    { phase:1, name:"Pec Minor Stretch",           sets:"3×30s",         cue:"Doorframe at 90° elbow. Lean forward gently. Feel front of shoulder.", category:"inhibit" },
-    { phase:2, name:"Chin Nod (DNF)",              sets:"3×10 holds 10s",cue:"Supine. Small nod, NOT a crunch. Maintain length. Build to 10-second holds.", category:"activate" },
-    { phase:3, name:"Thoracic Extension (T4–T8)",  sets:"2min",          cue:"Foam roller across mid-back, arms crossed on chest, head supported. Let gravity extend.", category:"correct" },
+    { phase:1, name:"Pec Minor Stretch",           sets:"3x30s",         cue:"Doorframe at 90deg elbow. Lean forward gently. Feel front of shoulder.", category:"inhibit" },
+    { phase:2, name:"Chin Nod (DNF)",              sets:"3x10 holds 10s",cue:"Supine. Small nod, NOT a crunch. Maintain length. Build to 10-second holds.", category:"activate" },
+    { phase:3, name:"Thoracic Extension (T4-T8)",  sets:"2min",          cue:"Foam roller across mid-back, arms crossed on chest, head supported. Let gravity extend.", category:"correct" },
   ],
   "Thoracic Kyphosis":      [
-    { phase:1, name:"Thoracic Extension Foam Roller",sets:"2×2min T4–T8",cue:"Roller across mid-back. Arms crossed. Support head. Let gravity do the work.", category:"correct" },
-    { phase:1, name:"Pec Stretch (Bilateral)",     sets:"3×30s",         cue:"Doorframe, forearm at 90°. Lean forward gently.", category:"inhibit" },
-    { phase:2, name:"Prone Y–T–W",                 sets:"3×10 each",     cue:"Prone, lift arms in Y, T, then W shape. Light — this is activation, not load.", category:"activate" },
-    { phase:2, name:"Band Pull-Apart",             sets:"3×15",          cue:"Resistance band at shoulder height, arms straight. Pull to chest. Squeeze mid-back.", category:"activate" },
+    { phase:1, name:"Thoracic Extension Foam Roller",sets:"2x2min T4-T8",cue:"Roller across mid-back. Arms crossed. Support head. Let gravity do the work.", category:"correct" },
+    { phase:1, name:"Pec Stretch (Bilateral)",     sets:"3x30s",         cue:"Doorframe, forearm at 90deg. Lean forward gently.", category:"inhibit" },
+    { phase:2, name:"Prone Y-T-W",                 sets:"3x10 each",     cue:"Prone, lift arms in Y, T, then W shape. Light - this is activation, not load.", category:"activate" },
+    { phase:2, name:"Band Pull-Apart",             sets:"3x15",          cue:"Resistance band at shoulder height, arms straight. Pull to chest. Squeeze mid-back.", category:"activate" },
   ],
   "Pelvis / Lumbar":        [
-    { phase:1, name:"Hip Flexor Stretch (Thomas)",  sets:"3×30s/side",   cue:"One knee on floor, other foot forward. Tuck pelvis under first, THEN lunge forward.", category:"inhibit" },
-    { phase:1, name:"QL Release",                  sets:"90s/side",      cue:"Side-lying over foam roller at iliac crest level. Very tender area — go slowly.", category:"inhibit" },
-    { phase:2, name:"Glute Bridge",                sets:"3×20",          cue:"Supine, feet flat, drive hips up. Squeeze glutes at top, posterior pelvic tilt cue.", category:"activate" },
-    { phase:2, name:"Dead Bug (TVA)",              sets:"3×8/side",      cue:"Supine, arms/knees up. Flatten back to floor — hold. Slowly lower opposite arm+leg.", category:"activate" },
+    { phase:1, name:"Hip Flexor Stretch (Thomas)",  sets:"3x30s/side",   cue:"One knee on floor, other foot forward. Tuck pelvis under first, THEN lunge forward.", category:"inhibit" },
+    { phase:1, name:"QL Release",                  sets:"90s/side",      cue:"Side-lying over foam roller at iliac crest level. Very tender area - go slowly.", category:"inhibit" },
+    { phase:2, name:"Glute Bridge",                sets:"3x20",          cue:"Supine, feet flat, drive hips up. Squeeze glutes at top, posterior pelvic tilt cue.", category:"activate" },
+    { phase:2, name:"Dead Bug (TVA)",              sets:"3x8/side",      cue:"Supine, arms/knees up. Flatten back to floor - hold. Slowly lower opposite arm+leg.", category:"activate" },
   ],
   "Hip / Global":           [
-    { phase:1, name:"Hip Flexor Stretch",          sets:"3×30s/side",    cue:"Kneeling lunge. Posterior pelvic tilt first. Shift weight forward slowly.", category:"inhibit" },
-    { phase:2, name:"Prone Hip Extension",         sets:"3×15/side",     cue:"Prone, tighten glute, lift leg 5–10cm. Hold 2s. Do NOT hyperextend lumbar.", category:"activate" },
-    { phase:3, name:"Standing Alignment Drill",    sets:"3×60s",         cue:"Mirror feedback: stack ear–shoulder–hip–ankle. Small weight shift forward to correct sway.", category:"correct" },
+    { phase:1, name:"Hip Flexor Stretch",          sets:"3x30s/side",    cue:"Kneeling lunge. Posterior pelvic tilt first. Shift weight forward slowly.", category:"inhibit" },
+    { phase:2, name:"Prone Hip Extension",         sets:"3x15/side",     cue:"Prone, tighten glute, lift leg 5-10cm. Hold 2s. Do NOT hyperextend lumbar.", category:"activate" },
+    { phase:3, name:"Standing Alignment Drill",    sets:"3x60s",         cue:"Mirror feedback: stack ear-shoulder-hip-ankle. Small weight shift forward to correct sway.", category:"correct" },
   ],
   "Lower Crossed Syndrome": [
     { phase:1, name:"Iliopsoas SMR",               sets:"90s/side",      cue:"Foam roller inner hip/groin. Lie face down, roller under hip flexor. Breathe out tension.", category:"inhibit" },
-    { phase:1, name:"Rectus Femoris Stretch",      sets:"3×30s/side",    cue:"Kneeling, heel to glute. Tuck pelvis FIRST. Reach for ankle only if comfortable.", category:"inhibit" },
-    { phase:2, name:"Glute Bridge",                sets:"3×20",          cue:"Focus: posterior tilt at top, squeeze glutes. Avoid hamstring dominance.", category:"activate" },
-    { phase:2, name:"Clamshell",                   sets:"3×20/side",     cue:"Side-lying, hips 45°. Open top knee toward ceiling. Band above knees to increase demand.", category:"activate" },
-    { phase:2, name:"Dead Bug",                    sets:"3×8/side",      cue:"Press lumbar flat. Alternate opposite arm/leg. Do not allow back to arch.", category:"activate" },
+    { phase:1, name:"Rectus Femoris Stretch",      sets:"3x30s/side",    cue:"Kneeling, heel to glute. Tuck pelvis FIRST. Reach for ankle only if comfortable.", category:"inhibit" },
+    { phase:2, name:"Glute Bridge",                sets:"3x20",          cue:"Focus: posterior tilt at top, squeeze glutes. Avoid hamstring dominance.", category:"activate" },
+    { phase:2, name:"Clamshell",                   sets:"3x20/side",     cue:"Side-lying, hips 45deg. Open top knee toward ceiling. Band above knees to increase demand.", category:"activate" },
+    { phase:2, name:"Dead Bug",                    sets:"3x8/side",      cue:"Press lumbar flat. Alternate opposite arm/leg. Do not allow back to arch.", category:"activate" },
   ],
   "Lower Crossed Syndrome (LCS)": [
     { phase:1, name:"Iliopsoas / TFL SMR",         sets:"90s/side",      cue:"Foam roller inner thigh and outer hip region. Sustained pressure on tender spots.", category:"inhibit" },
-    { phase:2, name:"Glute Bridge with Posterior Tilt", sets:"3×15",     cue:"Flatten lumbar at top of bridge. Conscious posterior tilt, not just hip extension.", category:"activate" },
-    { phase:2, name:"Dead Bug",                    sets:"3×8/side",      cue:"Abdominal hollowing first, then alternate limb lowering. No lumbar arch.", category:"activate" },
-    { phase:3, name:"Pelvic Tilt Awareness",       sets:"3×20 reps",     cue:"Standing, anterior/posterior tilt oscillation. Find neutral between the two extremes.", category:"correct" },
+    { phase:2, name:"Glute Bridge with Posterior Tilt", sets:"3x15",     cue:"Flatten lumbar at top of bridge. Conscious posterior tilt, not just hip extension.", category:"activate" },
+    { phase:2, name:"Dead Bug",                    sets:"3x8/side",      cue:"Abdominal hollowing first, then alternate limb lowering. No lumbar arch.", category:"activate" },
+    { phase:3, name:"Pelvic Tilt Awareness",       sets:"3x20 reps",     cue:"Standing, anterior/posterior tilt oscillation. Find neutral between the two extremes.", category:"correct" },
   ],
   "Upper Crossed Syndrome": [
     { phase:1, name:"Upper Trap SMR",              sets:"90s/side",      cue:"Lacrosse ball, superior trap. Sustained pressure. Breathe into tender spots.", category:"inhibit" },
-    { phase:1, name:"Pec Minor Stretch",           sets:"3×30s/side",    cue:"Doorframe at 90°. Lean gently. Feel coracoid process area, not the front of shoulder joint.", category:"inhibit" },
-    { phase:2, name:"Chin Nod (DNF)",              sets:"3×10 holds 10s",cue:"Supine. Gentle nod — long neck. Do NOT lift head. Press tongue to roof of mouth.", category:"activate" },
-    { phase:2, name:"Prone Y (Lower Trap)",        sets:"3×15",          cue:"Prone, arms in Y, thumbs-up. Lift away from floor. Feel mid-scapular — not neck.", category:"activate" },
-    { phase:3, name:"Thoracic Extension",          sets:"2min T4–T8",    cue:"Foam roller across mid-back. Gravity-assisted extension. Progress to arms overhead.", category:"correct" },
+    { phase:1, name:"Pec Minor Stretch",           sets:"3x30s/side",    cue:"Doorframe at 90deg. Lean gently. Feel coracoid process area, not the front of shoulder joint.", category:"inhibit" },
+    { phase:2, name:"Chin Nod (DNF)",              sets:"3x10 holds 10s",cue:"Supine. Gentle nod - long neck. Do NOT lift head. Press tongue to roof of mouth.", category:"activate" },
+    { phase:2, name:"Prone Y (Lower Trap)",        sets:"3x15",          cue:"Prone, arms in Y, thumbs-up. Lift away from floor. Feel mid-scapular - not neck.", category:"activate" },
+    { phase:3, name:"Thoracic Extension",          sets:"2min T4-T8",    cue:"Foam roller across mid-back. Gravity-assisted extension. Progress to arms overhead.", category:"correct" },
   ],
   "Upper Crossed Syndrome (UCS)": [
-    { phase:1, name:"Upper Trap SMR",              sets:"90s/side",      cue:"Lacrosse ball. Slow, sustained — not rolling. Breathe out through tender spots.", category:"inhibit" },
-    { phase:1, name:"SCM / Scalene Stretch",       sets:"3×30s/side",    cue:"Tilt and rotate away. Anchor shoulder. 3 repetitions, progressive gentle overpressure.", category:"inhibit" },
-    { phase:1, name:"Pec Minor Stretch",           sets:"3×30s",         cue:"Corner stretch or doorframe. Focus on front-of-shoulder length, not shoulder blade pinch.", category:"inhibit" },
-    { phase:2, name:"Chin Nod",                    sets:"3×10 holds 10s",cue:"Supine. Small nod — long neck. Build hold time. Not a crunch.", category:"activate" },
-    { phase:2, name:"Prone Y",                     sets:"3×15",          cue:"Prone Y. Thumbs up. Lift. No neck firing. 2s hold at top.", category:"activate" },
-    { phase:2, name:"Serratus Wall Slide",         sets:"3×12",          cue:"Wall angels — maintain scapular contact throughout. Slow controlled.", category:"activate" },
-    { phase:3, name:"Thoracic Foam Roller T4–T8",  sets:"2×2min",        cue:"Arms crossed, head supported. Let gravity drop thoracic into extension.", category:"correct" },
+    { phase:1, name:"Upper Trap SMR",              sets:"90s/side",      cue:"Lacrosse ball. Slow, sustained - not rolling. Breathe out through tender spots.", category:"inhibit" },
+    { phase:1, name:"SCM / Scalene Stretch",       sets:"3x30s/side",    cue:"Tilt and rotate away. Anchor shoulder. 3 repetitions, progressive gentle overpressure.", category:"inhibit" },
+    { phase:1, name:"Pec Minor Stretch",           sets:"3x30s",         cue:"Corner stretch or doorframe. Focus on front-of-shoulder length, not shoulder blade pinch.", category:"inhibit" },
+    { phase:2, name:"Chin Nod",                    sets:"3x10 holds 10s",cue:"Supine. Small nod - long neck. Build hold time. Not a crunch.", category:"activate" },
+    { phase:2, name:"Prone Y",                     sets:"3x15",          cue:"Prone Y. Thumbs up. Lift. No neck firing. 2s hold at top.", category:"activate" },
+    { phase:2, name:"Serratus Wall Slide",         sets:"3x12",          cue:"Wall angels - maintain scapular contact throughout. Slow controlled.", category:"activate" },
+    { phase:3, name:"Thoracic Foam Roller T4-T8",  sets:"2x2min",        cue:"Arms crossed, head supported. Let gravity drop thoracic into extension.", category:"correct" },
   ],
   "Knee":                   [
-    { phase:1, name:"TFL / ITB SMR",               sets:"90s/side",      cue:"Foam roller lateral thigh. Bend knee to control intensity. Find tender spot — pause.", category:"inhibit" },
-    { phase:2, name:"Clamshell",                   sets:"3×20/side",     cue:"Band above knee. Open top knee to ceiling. Do NOT roll pelvis back.", category:"activate" },
-    { phase:2, name:"Terminal Knee Extension (VMO)",sets:"3×15/side",    cue:"Band behind knee in standing. Small knee bend and straighten. Feel inner quad.", category:"activate" },
-    { phase:3, name:"Step-Down (Eccentric VMO)",   sets:"3×12/side",     cue:"Stand on step, slow single-leg lowering. Control valgus with mirror cue.", category:"correct" },
+    { phase:1, name:"TFL / ITB SMR",               sets:"90s/side",      cue:"Foam roller lateral thigh. Bend knee to control intensity. Find tender spot - pause.", category:"inhibit" },
+    { phase:2, name:"Clamshell",                   sets:"3x20/side",     cue:"Band above knee. Open top knee to ceiling. Do NOT roll pelvis back.", category:"activate" },
+    { phase:2, name:"Terminal Knee Extension (VMO)",sets:"3x15/side",    cue:"Band behind knee in standing. Small knee bend and straighten. Feel inner quad.", category:"activate" },
+    { phase:3, name:"Step-Down (Eccentric VMO)",   sets:"3x12/side",     cue:"Stand on step, slow single-leg lowering. Control valgus with mirror cue.", category:"correct" },
   ],
   "Knee Alignment Pattern":  [
     { phase:1, name:"ITB / TFL SMR",               sets:"90s/side",      cue:"Lateral thigh roller. Slow. Find tender points and breathe through.", category:"inhibit" },
-    { phase:2, name:"Lateral Band Walk",           sets:"3×20 steps/dir",cue:"Band above knees. Hinge forward slightly. Step out — don't let knees cave.", category:"activate" },
-    { phase:2, name:"Single-Leg Balance",          sets:"3×30s/side",    cue:"Maintain foot tripod (heel, 1st, 5th metatarsal). Don't let arch collapse.", category:"activate" },
-    { phase:3, name:"Single-Leg Squat with Mirror",sets:"3×10/side",     cue:"Watch knee tracks over 2nd toe. Stop depth before valgus appears.", category:"correct" },
+    { phase:2, name:"Lateral Band Walk",           sets:"3x20 steps/dir",cue:"Band above knees. Hinge forward slightly. Step out - don't let knees cave.", category:"activate" },
+    { phase:2, name:"Single-Leg Balance",          sets:"3x30s/side",    cue:"Maintain foot tripod (heel, 1st, 5th metatarsal). Don't let arch collapse.", category:"activate" },
+    { phase:3, name:"Single-Leg Squat with Mirror",sets:"3x10/side",     cue:"Watch knee tracks over 2nd toe. Stop depth before valgus appears.", category:"correct" },
   ],
   "Leg Length":              [
-    { phase:1, name:"QL Stretch (elevated side)",  sets:"3×30s",         cue:"Standing, reach over and away on the elevated-hip side. Feel side waist lengthening.", category:"inhibit" },
-    { phase:2, name:"Glute Med Strengthening",     sets:"3×15/side",     cue:"Clamshell or standing hip abduction. Focus on low-side glute.", category:"activate" },
+    { phase:1, name:"QL Stretch (elevated side)",  sets:"3x30s",         cue:"Standing, reach over and away on the elevated-hip side. Feel side waist lengthening.", category:"inhibit" },
+    { phase:2, name:"Glute Med Strengthening",     sets:"3x15/side",     cue:"Clamshell or standing hip abduction. Focus on low-side glute.", category:"activate" },
   ],
   "Scoliosis Screen":        [
-    { phase:1, name:"Lateral Trunk Stretch",       sets:"3×30s/side",    cue:"Overhead reach toward ceiling, sidebend away from tight side. Breathe into the stretch.", category:"inhibit" },
-    { phase:2, name:"Side-Lying Hip Abduction",    sets:"3×15/side",     cue:"Lateral trunk stabiliser activation — bottom oblique also works.", category:"activate" },
-    { phase:3, name:"Mirror Biofeedback Standing", sets:"3×60s",         cue:"Standing in front of mirror. Level shoulders. Level pelvis. Breathe. Note how corrected feels.", category:"correct" },
+    { phase:1, name:"Lateral Trunk Stretch",       sets:"3x30s/side",    cue:"Overhead reach toward ceiling, sidebend away from tight side. Breathe into the stretch.", category:"inhibit" },
+    { phase:2, name:"Side-Lying Hip Abduction",    sets:"3x15/side",     cue:"Lateral trunk stabiliser activation - bottom oblique also works.", category:"activate" },
+    { phase:3, name:"Mirror Biofeedback Standing", sets:"3x60s",         cue:"Standing in front of mirror. Level shoulders. Level pelvis. Breathe. Note how corrected feels.", category:"correct" },
   ],
   "Spine":                   [
     { phase:3, name:"Adam's Test Self-Check",      sets:"weekly",        cue:"Forward bend, hands together, observe for rib hump. Monitor for change.", category:"correct" },
   ],
-  "Posture Pattern — Sway-Back": [
-    { phase:1, name:"Hamstring Stretch (Slump)",   sets:"3×30s/side",    cue:"Seated slump, extend one leg, flex foot. Hold and breathe.", category:"inhibit" },
-    { phase:2, name:"Standing Hip Flexor Activation", sets:"3×15/side",  cue:"Standing high knee drive. Activate psoas consciously.", category:"activate" },
-    { phase:3, name:"Hip Shift Alignment Drill",   sets:"3×60s",         cue:"Mirror: shift hips forward over ankles. Feel weight move to ball of foot.", category:"correct" },
+  "Posture Pattern - Sway-Back": [
+    { phase:1, name:"Hamstring Stretch (Slump)",   sets:"3x30s/side",    cue:"Seated slump, extend one leg, flex foot. Hold and breathe.", category:"inhibit" },
+    { phase:2, name:"Standing Hip Flexor Activation", sets:"3x15/side",  cue:"Standing high knee drive. Activate psoas consciously.", category:"activate" },
+    { phase:3, name:"Hip Shift Alignment Drill",   sets:"3x60s",         cue:"Mirror: shift hips forward over ankles. Feel weight move to ball of foot.", category:"correct" },
   ],
   "Tibial Varum":            [
     { phase:1, name:"Calf / Gastrosoleus SMR",     sets:"90s/side",      cue:"Foam roller medial calf. Work from Achilles to knee.", category:"inhibit" },
-    { phase:2, name:"Tibialis Posterior Strengthening", sets:"3×15/side",cue:"Single-leg heel raise with slight inward roll. Controlled lowering.", category:"activate" },
+    { phase:2, name:"Tibialis Posterior Strengthening", sets:"3x15/side",cue:"Single-leg heel raise with slight inward roll. Controlled lowering.", category:"activate" },
   ],
 };
 
@@ -5039,7 +5039,7 @@ function MuscleImbalanceCard({ findings, isWide }) {
         <span style={{fontSize:"1rem"}}>⚡</span>
         <div>
           <div style={{fontWeight:800,fontSize:"0.78rem",color:PC.text}}>Muscle Imbalance Table</div>
-          <div style={{fontSize:"0.6rem",color:PC.muted}}>Derived from findings — confirm clinically</div>
+          <div style={{fontSize:"0.6rem",color:PC.muted}}>Derived from findings - confirm clinically</div>
         </div>
       </div>
       {/* Two columns */}
@@ -5114,7 +5114,7 @@ function SpecialTestsCard({ findings, isWide }) {
                 <div style={{marginTop:4,display:"flex",flexWrap:"wrap",gap:3}}>
                   {t.regions.slice(0,2).map(r=>(
                     <span key={r} style={{fontSize:"0.54rem",padding:"1px 6px",borderRadius:4,background:`${PC.accent}10`,color:PC.accent,fontWeight:600}}>
-                      {r.replace(/◈\s*/,"").split(" — ")[0].slice(0,28)}
+                      {r.replace(/◈\s*/,"").split(" - ")[0].slice(0,28)}
                     </span>
                   ))}
                 </div>
@@ -5129,9 +5129,9 @@ function SpecialTestsCard({ findings, isWide }) {
 
 // -- Exercise Plan Tab Component -----------------------------------------------
 const PHASE_META = {
-  1: { label:"Phase 1 — Inhibit & Release",  icon:"□", colour:"#dc2626", desc:"SMR and stretching of overactive muscles. Do before activation.",    category:"inhibit" },
-  2: { label:"Phase 2 — Activate & Strengthen", icon:"⚡", colour:"#2563eb", desc:"Re-educate and strengthen underactive muscles after inhibition.", category:"activate" },
-  3: { label:"Phase 3 — Integrate & Correct",   icon:"↻", colour:"#059669", desc:"Movement re-education, postural correction and functional loading.", category:"correct" },
+  1: { label:"Phase 1 - Inhibit & Release",  icon:"□", colour:"#dc2626", desc:"SMR and stretching of overactive muscles. Do before activation.",    category:"inhibit" },
+  2: { label:"Phase 2 - Activate & Strengthen", icon:"⚡", colour:"#2563eb", desc:"Re-educate and strengthen underactive muscles after inhibition.", category:"activate" },
+  3: { label:"Phase 3 - Integrate & Correct",   icon:"↻", colour:"#059669", desc:"Movement re-education, postural correction and functional loading.", category:"correct" },
 };
 
 function ExercisePlanTab({ findings, isWide }) {
@@ -5141,7 +5141,7 @@ function ExercisePlanTab({ findings, isWide }) {
   const totalCount = Object.values(phases).reduce((s,a)=>s+a.length,0);
   if (totalCount === 0) return (
     <div style={{padding:isWide?"20px 24px":"14px 16px",textAlign:"center",color:PC.muted,fontSize:"0.8rem",paddingTop:40}}>
-      No findings detected yet — analyse a photo to generate a programme.
+      No findings detected yet - analyse a photo to generate a programme.
     </div>
   );
 
@@ -5158,7 +5158,7 @@ function ExercisePlanTab({ findings, isWide }) {
           <div style={{fontSize:"0.62rem",color:PC.muted,marginTop:2}}>{totalCount} exercises in 3 phases · Based on {findings.length} findings</div>
         </div>
         <div style={{padding:"4px 10px",borderRadius:8,background:`${PC.accent}12`,border:`1px solid ${PC.accent}25`,fontSize:"0.6rem",fontWeight:700,color:PC.accent}}>
-          10–15 min/day
+          10-15 min/day
         </div>
       </div>
 
@@ -5208,7 +5208,7 @@ function ExercisePlanTab({ findings, isWide }) {
 
       {/* Footer disclaimer */}
       <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.6rem",color:PC.muted,lineHeight:1.6}}>
-        i️ This programme is generated from postural analysis findings. Always confirm with clinical examination before prescribing. Adjust load and range to individual tolerance. Reassess in 4–6 weeks.
+        i️ This programme is generated from postural analysis findings. Always confirm with clinical examination before prescribing. Adjust load and range to individual tolerance. Reassess in 4-6 weeks.
       </div>
     </div>
   );
@@ -5266,7 +5266,7 @@ function ExerciseItem({ ex, idx, isWide, isLast, isRightCol, expanded, onToggle,
             </span>
             <span style={{fontSize:"0.6rem",color:PC.muted,padding:"2px 7px",borderRadius:5,
               background:"rgba(124,58,237,0.07)",border:"1px solid rgba(124,58,237,0.15)"}}>
-              Frequency: Daily · Reassess 4–6 wks
+              Frequency: Daily · Reassess 4-6 wks
             </span>
           </div>
           <span style={{fontSize:"0.6rem",fontWeight:700,color:catColor[cat]}}>Technique: </span>
@@ -5326,7 +5326,7 @@ function PostureAnalysisModule(){
   const [showHistory,setShowHistory]=useState(false);
   const [motionWarning,setMotionWarning]=useState(false);
   const prevLmRef=useRef(null);
-  // Calibration: patient height (cm) → pixPerCm conversion for real-world measurements
+  // Calibration: patient height (cm) -> pixPerCm conversion for real-world measurements
   const [patientHeightCm,setPatientHeightCm]=useState(170);
   const [showCalib,setShowCalib]=useState(false);
   // Mobile panel toggle: "camera" = left panel, "results" = right panel
@@ -5408,7 +5408,7 @@ function PostureAnalysisModule(){
 
     // -- STEP 1: Decode pixel data completely independently via fetch+createImageBitmap.
     // This is the ONLY reliable way to get clean canvas pixels on Android Chrome.
-    // img.crossOrigin="anonymous" on blob URLs silently poisons drawImage → black canvas.
+    // img.crossOrigin="anonymous" on blob URLs silently poisons drawImage -> black canvas.
     // createImageBitmap(blob) bypasses the img element entirely for pixel decoding.
     let srcCanvas;
     try {
@@ -5421,19 +5421,19 @@ function PostureAnalysisModule(){
       const srcCtx=srcCanvas.getContext("2d");
       srcCtx.fillStyle="#ffffff";
       srcCtx.fillRect(0,0,W,H);
-      srcCtx.drawImage(bitmap,0,0,W,H); // bitmap is always clean — no CORS taint
+      srcCtx.drawImage(bitmap,0,0,W,H); // bitmap is always clean - no CORS taint
       bitmap.close();
     } catch(e) {
-      // createImageBitmap not supported (very old browser) — fall back to img element
+      // createImageBitmap not supported (very old browser) - fall back to img element
       srcCanvas=null;
     }
 
-    // -- STEP 2: Load img element separately for MediaPipe — NO crossOrigin attribute.
+    // -- STEP 2: Load img element separately for MediaPipe - NO crossOrigin attribute.
     // blob URLs from file input are always same-origin. crossOrigin is not needed
-    // and actively causes Android Chrome to mark the canvas as tainted → black.
+    // and actively causes Android Chrome to mark the canvas as tainted -> black.
     return new Promise(resolve=>{
       const img=new Image();
-      // ← deliberately NO crossOrigin here
+      // <- deliberately NO crossOrigin here
       img.onload=async()=>{
         const W=img.naturalWidth, H=img.naturalHeight;
 
@@ -5474,7 +5474,7 @@ function PostureAnalysisModule(){
         finally{ clearTimeout(t); }
       };
       img.onerror=()=>resolve(null);
-      img.src=url; // blob URL — always same-origin, no crossOrigin needed
+      img.src=url; // blob URL - always same-origin, no crossOrigin needed
     });
   }
 
@@ -5494,7 +5494,7 @@ function PostureAnalysisModule(){
     const result=await analysePhoto(url,view);
     setAnalysing(false);
     if(result){
-      // Show annotated overlay — analysePhoto uses createImageBitmap (clean, no taint)
+      // Show annotated overlay - analysePhoto uses createImageBitmap (clean, no taint)
       if(result.annotated) setUploadedImg(result.annotated);
       if(assessMode==="multi"){
         const m=measureLandmarks(result.lm);
@@ -5508,13 +5508,13 @@ function PostureAnalysisModule(){
         if(isMobile) setMobilePanel("results");
       }
     } else {
-      setError("Could not analyse photo — ensure full body is visible.");
+      setError("Could not analyse photo - ensure full body is visible.");
     }
     e.target.value="";
   }
 
   async function startCamera(facing="environment"){
-    if(!poseRef.current||mpStatus!=="ready"){setError("AI not ready yet — wait for AI Ready status");return;}
+    if(!poseRef.current||mpStatus!=="ready"){setError("AI not ready yet - wait for AI Ready status");return;}
     setCamStatus("starting"); setError(null);
     try{
       // Progressive constraint fallback for mobile compatibility
@@ -5573,7 +5573,7 @@ function PostureAnalysisModule(){
       liveHandlerRef.current=handler;
       poseRef.current.onResults(handler);
 
-      // Throttled loop — mobile cannot sustain 60fps ML inference
+      // Throttled loop - mobile cannot sustain 60fps ML inference
       let lastSend=0;
       const INTERVAL=120; // ~8fps inference; display still renders at browser fps
       const loop=async()=>{
@@ -5753,7 +5753,7 @@ function PostureAnalysisModule(){
       const result=await analysePhoto(objectUrlRef.current,newView);
       setAnalysing(false);
       if(result){ /* findings updated via processLandmarks/setFindings; keep original photo */ }
-      else{ setError("Could not re-analyse — ensure full body is visible"); }
+      else{ setError("Could not re-analyse - ensure full body is visible"); }
     }
   }
 
@@ -5784,7 +5784,7 @@ function PostureAnalysisModule(){
                 <div style={{fontSize: isWide?"0.72rem":"0.65rem",color:PC.muted,marginTop:2}}>
                   Score {scoreData.score}/100 &nbsp;·&nbsp;
                   <span style={{color:scoreData.colour,fontWeight:700}}>
-                    {scoreData.score>=88?"Excellent posture":scoreData.score>=74?"Minor deviations":scoreData.score>=58?"Moderate — intervention advised":scoreData.score>=40?"Significant — prioritise treatment":"Urgent — multiple areas affected"}
+                    {scoreData.score>=88?"Excellent posture":scoreData.score>=74?"Minor deviations":scoreData.score>=58?"Moderate - intervention advised":scoreData.score>=40?"Significant - prioritise treatment":"Urgent - multiple areas affected"}
                   </span>
                 </div>
                 <div style={{fontSize: isWide?"0.68rem":"0.62rem",color:PC.muted,marginTop:2}}>
@@ -5807,13 +5807,13 @@ function PostureAnalysisModule(){
                 {/* Real cm measurements row */}
                 {measurements?._calibrated&&(
                   <div style={{marginTop:8,display:"flex",flexWrap:"wrap",gap:5}}>
-                    {/* CVA — most important single measure; always first if present */}
+                    {/* CVA - most important single measure; always first if present */}
                     {measurements.cvaAngle!=null&&(
                       <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.62rem",fontWeight:700,
                         background:measurements.cvaAngle<49?"rgba(220,38,38,0.1)":measurements.cvaAngle<55?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
                         color:measurements.cvaAngle<49?PC.red:measurements.cvaAngle<55?PC.yellow:PC.green,
                         border:`1px solid ${measurements.cvaAngle<49?PC.red:measurements.cvaAngle<55?PC.yellow:PC.green}40`}}>
-                        CVA {measurements.cvaAngle.toFixed(1)}° {measurements.cvaAngle>=55?"v":`(normal >55°)`}
+                        CVA {measurements.cvaAngle.toFixed(1)}deg {measurements.cvaAngle>=55?"v":`(normal >55deg)`}
                       </span>
                     )}
                     {measurements.fhpCm!=null&&(
@@ -5890,7 +5890,7 @@ function PostureAnalysisModule(){
                 <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
                   <span style={{fontSize:"0.95rem"}}>◎</span>
                   <div>
-                    <div style={{fontSize:isWide?"0.8rem":"0.72rem",fontWeight:900,color:PC.accent}}>Top 3 — Treat Now</div>
+                    <div style={{fontSize:isWide?"0.8rem":"0.72rem",fontWeight:900,color:PC.accent}}>Top 3 - Treat Now</div>
                     <div style={{fontSize:"0.58rem",color:PC.muted,marginTop:1}}>Highest clinical priority · Address in this order</div>
                   </div>
                 </div>
@@ -5972,7 +5972,7 @@ function PostureAnalysisModule(){
             </>
           )}
 
-          {/* Clinical reasoning cards — inline on findings tab when there are findings */}
+          {/* Clinical reasoning cards - inline on findings tab when there are findings */}
           {findings.length > 0 && (
             <div style={{marginTop:18}}>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Clinical Reasoning</div>
@@ -5980,7 +5980,7 @@ function PostureAnalysisModule(){
               <SpecialTestsCard findings={findings} isWide={isWide}/>
               <div style={{padding:"8px 13px",borderRadius:10,background:`${PC.accent}08`,border:`1px solid ${PC.accent}20`,fontSize:"0.62rem",color:PC.accent,fontWeight:600,cursor:"pointer",textAlign:"center",marginTop:2}}
                 onClick={()=>setTab("plan")}>
-                ▶ View Full Exercise Programme →
+                ▶ View Full Exercise Programme ->
               </div>
             </div>
           )}
@@ -5999,7 +5999,7 @@ function PostureAnalysisModule(){
             </>
           ) : (
             <div style={{textAlign:"center",color:PC.muted,fontSize:"0.8rem",paddingTop:40}}>
-              No findings yet — analyse a photo to populate the muscle imbalance table.
+              No findings yet - analyse a photo to populate the muscle imbalance table.
             </div>
           )}
         </div>
@@ -6022,7 +6022,7 @@ function PostureAnalysisModule(){
             </>
           ) : (
             <div style={{textAlign:"center",color:PC.muted,fontSize:"0.8rem",paddingTop:40}}>
-              No findings yet — analyse a photo to generate special test recommendations.
+              No findings yet - analyse a photo to generate special test recommendations.
             </div>
           )}
         </div>
@@ -6036,39 +6036,39 @@ function PostureAnalysisModule(){
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 32px"}}>
               <div>
                 <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Frontal Plane</div>
-                <MetricRow label="Shoulder Tilt" value={measurements.shoulderAngle} unit="°" normal={3} abnormal={7}/>
-                <MetricRow label="Pelvic Obliquity" value={measurements.pelvisAngle} unit="°" normal={3} abnormal={7}/>
-                <MetricRow label="Head Tilt" value={measurements.headTiltAngle} unit="°" normal={2} abnormal={5}/>
+                <MetricRow label="Shoulder Tilt" value={measurements.shoulderAngle} unit="deg" normal={3} abnormal={7}/>
+                <MetricRow label="Pelvic Obliquity" value={measurements.pelvisAngle} unit="deg" normal={3} abnormal={7}/>
+                <MetricRow label="Head Tilt" value={measurements.headTiltAngle} unit="deg" normal={2} abnormal={5}/>
                 <MetricRow label="Trunk Lateral Shift" value={measurements.trunkLateralShift} unit="%" normal={3.5} abnormal={7}/>
                 <MetricRow label="Head Lateral Offset" value={measurements.headLateralOffset} unit="%" normal={2.5} abnormal={6}/>
                 <MetricRow label="Spinal Deviation" value={measurements.spinalDeviation} unit="%" normal={4} abnormal={8}/>
                 <MetricRow label="Waist Asymmetry" value={measurements.waistAsymmetry} unit="%" normal={3} abnormal={6}/>
-                <MetricRow label="L Knee Frontal" value={measurements.leftKneeFrontal} unit="°" normal={5} abnormal={10}/>
-                <MetricRow label="R Knee Frontal" value={measurements.rightKneeFrontal} unit="°" normal={5} abnormal={10}/>
+                <MetricRow label="L Knee Frontal" value={measurements.leftKneeFrontal} unit="deg" normal={5} abnormal={10}/>
+                <MetricRow label="R Knee Frontal" value={measurements.rightKneeFrontal} unit="deg" normal={5} abnormal={10}/>
                 <MetricRow label="Weight-Bearing Shift" value={measurements.weightBearingShift} unit="%" normal={4} abnormal={8}/>
                 <MetricRow label="LLD Proxy" value={measurements.lldProxy} unit="mm" normal={5} abnormal={10}/>
-                <MetricRow label="Neck Lateral Angle" value={measurements.neckLateralAngle} unit="°" normal={4} abnormal={8}/>
+                <MetricRow label="Neck Lateral Angle" value={measurements.neckLateralAngle} unit="deg" normal={4} abnormal={8}/>
                 <MetricRow label="Waist Triangle Asymm." value={measurements.waistTriangleAsymmetry} unit="%" normal={3} abnormal={6}/>
                 <MetricRow label="Ankle LLD" value={measurements.ankleLLDmm} unit="mm" normal={5} abnormal={10}/>
-                <MetricRow label="Tibial Varum L" value={measurements.tibialVarumL} unit="°" normal={5} abnormal={10}/>
-                <MetricRow label="Tibial Varum R" value={measurements.tibialVarumR} unit="°" normal={5} abnormal={10}/>
-                <MetricRow label="Carrying Angle L" value={measurements.carryingAngleL} unit="°" normal={15} abnormal={20}/>
-                <MetricRow label="Carrying Angle R" value={measurements.carryingAngleR} unit="°" normal={15} abnormal={20}/>
+                <MetricRow label="Tibial Varum L" value={measurements.tibialVarumL} unit="deg" normal={5} abnormal={10}/>
+                <MetricRow label="Tibial Varum R" value={measurements.tibialVarumR} unit="deg" normal={5} abnormal={10}/>
+                <MetricRow label="Carrying Angle L" value={measurements.carryingAngleL} unit="deg" normal={15} abnormal={20}/>
+                <MetricRow label="Carrying Angle R" value={measurements.carryingAngleR} unit="deg" normal={15} abnormal={20}/>
               </div>
               <div>
                 <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Sagittal Plane</div>
-                {/* CVA — most important sagittal metric, shown prominently */}
+                {/* CVA - most important sagittal metric, shown prominently */}
                 <div style={{marginBottom:8,padding:"8px 10px",borderRadius:8,
                   background:measurements.cvaAngle!=null&&measurements.cvaAngle<49?"rgba(220,38,38,0.07)":measurements.cvaAngle!=null&&measurements.cvaAngle<55?"rgba(180,83,9,0.07)":"rgba(5,150,105,0.07)",
                   border:`1px solid ${measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}25`}}>
-                  <div style={{fontSize:"0.58rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>CVA — Primary FHP Marker</div>
+                  <div style={{fontSize:"0.58rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>CVA - Primary FHP Marker</div>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
                     <span style={{fontSize:"0.67rem",color:PC.text}}>Craniovertebral Angle</span>
                     <span style={{fontSize:"0.82rem",fontWeight:900,color:measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}}>
-                      {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
+                      {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}deg`:"-"}
                     </span>
                   </div>
-                  <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2}}>Normal &gt;55° · &lt;49° = High load · Hansraj cervical load model</div>
+                  <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2}}>Normal &gt;55deg · &lt;49deg = High load · Hansraj cervical load model</div>
                 </div>
                 {measurements.cervicalLoadKg!=null&&(
                   <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
@@ -6077,30 +6077,30 @@ function PostureAnalysisModule(){
                   </div>
                 )}
                 <MetricRow label="Forward Head" value={measurements.fhpNorm} unit="%" normal={3} abnormal={7}/>
-                <MetricRow label="Thoracic Kyphosis" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
-                {/* Lumbar lordosis: paired with kyphosis — show together */}
+                <MetricRow label="Thoracic Kyphosis" value={measurements.thoracicAngle} unit="deg" normal={45} abnormal={55}/>
+                {/* Lumbar lordosis: paired with kyphosis - show together */}
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
                   <div style={{flex:1}}>
                     <div style={{fontSize:"0.68rem",color:PC.muted}}>Lumbar Lordosis (proxy)</div>
-                    <div style={{fontSize:"0.55rem",color:PC.muted,marginTop:1}}>Normal 20–40° · Pairs with thoracic kyphosis — assess together</div>
+                    <div style={{fontSize:"0.55rem",color:PC.muted,marginTop:1}}>Normal 20-40deg · Pairs with thoracic kyphosis - assess together</div>
                   </div>
                   <div style={{fontSize:"0.75rem",fontWeight:800,
                     color:measurements.lumbarProxy==null?"rgba(156,163,175,0.6)":Math.abs(measurements.lumbarProxy)>10?PC.red:Math.abs(measurements.lumbarProxy)>5?PC.yellow:PC.green}}>
-                    {measurements.lumbarProxy!=null?`${measurements.lumbarProxy>0?"↑":"↓"}${Math.abs(measurements.lumbarProxy).toFixed(1)}%`:"—"}
+                    {measurements.lumbarProxy!=null?`${measurements.lumbarProxy>0?"^":"v"}${Math.abs(measurements.lumbarProxy).toFixed(1)}%`:"-"}
                   </div>
                 </div>
                 <MetricRow label="Hip Extension Proxy" value={measurements.hipExtensionProxy} unit="%" normal={5} abnormal={10}/>
-                <MetricRow label="L Knee Deviation" value={measurements.leftKneeDev} unit="°" normal={5} abnormal={12}/>
-                <MetricRow label="R Knee Deviation" value={measurements.rightKneeDev} unit="°" normal={5} abnormal={12}/>
+                <MetricRow label="L Knee Deviation" value={measurements.leftKneeDev} unit="deg" normal={5} abnormal={12}/>
+                <MetricRow label="R Knee Deviation" value={measurements.rightKneeDev} unit="deg" normal={5} abnormal={12}/>
                 <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Global & Symmetry</div>
                 <MetricRow label="Scapular Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
                 <MetricRow label="C7 Plumb Deviation" value={measurements.c7PlumbDev} unit="%" normal={3} abnormal={6}/>
                 <MetricRow label="COG Deviation" value={measurements.cogDeviation} unit="%" normal={4} abnormal={8}/>
                 <MetricRow label="Pelvic Obliquity" value={measurements.pelvicObliquity} unit="%" normal={3} abnormal={6}/>
-                <MetricRow label="L Foot Angle" value={measurements.leftFootAngle} unit="°" normal={10} abnormal={20}/>
-                <MetricRow label="R Foot Angle" value={measurements.rightFootAngle} unit="°" normal={10} abnormal={20}/>
-                <MetricRow label="L Ankle Dorsiflexion" value={measurements.leftAnkleAngle} unit="°" normal={100} abnormal={85}/>
-                <MetricRow label="R Ankle Dorsiflexion" value={measurements.rightAnkleAngle} unit="°" normal={100} abnormal={85}/>
+                <MetricRow label="L Foot Angle" value={measurements.leftFootAngle} unit="deg" normal={10} abnormal={20}/>
+                <MetricRow label="R Foot Angle" value={measurements.rightFootAngle} unit="deg" normal={10} abnormal={20}/>
+                <MetricRow label="L Ankle Dorsiflexion" value={measurements.leftAnkleAngle} unit="deg" normal={100} abnormal={85}/>
+                <MetricRow label="R Ankle Dorsiflexion" value={measurements.rightAnkleAngle} unit="deg" normal={100} abnormal={85}/>
                 <MetricRow label="UCS Index" value={measurements.ucsIndex} unit="" normal={0.6} abnormal={1.0}/>
                 <MetricRow label="LCS Index" value={measurements.lcsIndex} unit="" normal={0.5} abnormal={1.0}/>
               </div>
@@ -6109,15 +6109,15 @@ function PostureAnalysisModule(){
             // Mobile: stacked
             <>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Frontal Plane</div>
-              <MetricRow label="Shoulder Tilt" value={measurements.shoulderAngle} unit="°" normal={3} abnormal={7}/>
-              <MetricRow label="Pelvic Obliquity" value={measurements.pelvisAngle} unit="°" normal={3} abnormal={7}/>
-              <MetricRow label="Head Tilt" value={measurements.headTiltAngle} unit="°" normal={2} abnormal={5}/>
+              <MetricRow label="Shoulder Tilt" value={measurements.shoulderAngle} unit="deg" normal={3} abnormal={7}/>
+              <MetricRow label="Pelvic Obliquity" value={measurements.pelvisAngle} unit="deg" normal={3} abnormal={7}/>
+              <MetricRow label="Head Tilt" value={measurements.headTiltAngle} unit="deg" normal={2} abnormal={5}/>
               <MetricRow label="Trunk Lateral Shift" value={measurements.trunkLateralShift} unit="%" normal={3.5} abnormal={7}/>
               <MetricRow label="Head Lateral Offset" value={measurements.headLateralOffset} unit="%" normal={2.5} abnormal={6}/>
               <MetricRow label="Spinal Deviation" value={measurements.spinalDeviation} unit="%" normal={4} abnormal={8}/>
               <MetricRow label="Waist Asymmetry" value={measurements.waistAsymmetry} unit="%" normal={3} abnormal={6}/>
-              <MetricRow label="L Knee Frontal" value={measurements.leftKneeFrontal} unit="°" normal={5} abnormal={10}/>
-              <MetricRow label="R Knee Frontal" value={measurements.rightKneeFrontal} unit="°" normal={5} abnormal={10}/>
+              <MetricRow label="L Knee Frontal" value={measurements.leftKneeFrontal} unit="deg" normal={5} abnormal={10}/>
+              <MetricRow label="R Knee Frontal" value={measurements.rightKneeFrontal} unit="deg" normal={5} abnormal={10}/>
               <MetricRow label="Weight-Bearing Shift" value={measurements.weightBearingShift} unit="%" normal={4} abnormal={8}/>
               <MetricRow label="LLD Proxy" value={measurements.lldProxy} unit="mm" normal={5} abnormal={10}/>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Sagittal Plane</div>
@@ -6125,14 +6125,14 @@ function PostureAnalysisModule(){
               <div style={{marginBottom:8,padding:"8px 10px",borderRadius:8,
                 background:measurements.cvaAngle!=null&&measurements.cvaAngle<49?"rgba(220,38,38,0.07)":measurements.cvaAngle!=null&&measurements.cvaAngle<55?"rgba(180,83,9,0.07)":"rgba(5,150,105,0.07)",
                 border:`1px solid ${measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}25`}}>
-                <div style={{fontSize:"0.56rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>CVA — Primary FHP Marker</div>
+                <div style={{fontSize:"0.56rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>CVA - Primary FHP Marker</div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
                   <span style={{fontSize:"0.65rem",color:PC.text}}>Craniovertebral Angle</span>
                   <span style={{fontSize:"0.8rem",fontWeight:900,color:measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}}>
-                    {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
+                    {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}deg`:"-"}
                   </span>
                 </div>
-                <div style={{fontSize:"0.55rem",color:PC.muted,marginTop:2}}>Normal &gt;55° · &lt;49° = High load</div>
+                <div style={{fontSize:"0.55rem",color:PC.muted,marginTop:2}}>Normal &gt;55deg · &lt;49deg = High load</div>
               </div>
               {measurements.cervicalLoadKg!=null&&(
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
@@ -6141,45 +6141,45 @@ function PostureAnalysisModule(){
                 </div>
               )}
               <MetricRow label="Forward Head" value={measurements.fhpNorm} unit="%" normal={3} abnormal={7}/>
-              <MetricRow label="Thoracic Kyphosis" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
+              <MetricRow label="Thoracic Kyphosis" value={measurements.thoracicAngle} unit="deg" normal={45} abnormal={55}/>
               {/* Lumbar lordosis paired with kyphosis */}
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
                 <div style={{flex:1}}>
                   <div style={{fontSize:"0.68rem",color:PC.muted}}>Lumbar Lordosis (proxy)</div>
-                  <div style={{fontSize:"0.54rem",color:PC.muted,marginTop:1}}>Normal 20–40° · Pairs with kyphosis</div>
+                  <div style={{fontSize:"0.54rem",color:PC.muted,marginTop:1}}>Normal 20-40deg · Pairs with kyphosis</div>
                 </div>
                 <div style={{fontSize:"0.75rem",fontWeight:800,minWidth:60,textAlign:"right",
                   color:measurements.lumbarProxy==null?"rgba(156,163,175,0.6)":Math.abs(measurements.lumbarProxy)>10?PC.red:Math.abs(measurements.lumbarProxy)>5?PC.yellow:PC.green}}>
-                  {measurements.lumbarProxy!=null?`${measurements.lumbarProxy>0?"↑":"↓"}${Math.abs(measurements.lumbarProxy).toFixed(1)}%`:"—"}
+                  {measurements.lumbarProxy!=null?`${measurements.lumbarProxy>0?"^":"v"}${Math.abs(measurements.lumbarProxy).toFixed(1)}%`:"-"}
                 </div>
               </div>
               <MetricRow label="Hip Extension Proxy" value={measurements.hipExtensionProxy} unit="%" normal={5} abnormal={10}/>
-              <MetricRow label="L Knee Deviation" value={measurements.leftKneeDev} unit="°" normal={5} abnormal={12}/>
-              <MetricRow label="R Knee Deviation" value={measurements.rightKneeDev} unit="°" normal={5} abnormal={12}/>
+              <MetricRow label="L Knee Deviation" value={measurements.leftKneeDev} unit="deg" normal={5} abnormal={12}/>
+              <MetricRow label="R Knee Deviation" value={measurements.rightKneeDev} unit="deg" normal={5} abnormal={12}/>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>New Measurements</div>
-              <MetricRow label="Neck Lateral Angle" value={measurements.neckLateralAngle} unit="°" normal={4} abnormal={8}/>
+              <MetricRow label="Neck Lateral Angle" value={measurements.neckLateralAngle} unit="deg" normal={4} abnormal={8}/>
               <MetricRow label="Waist Triangle Asymm." value={measurements.waistTriangleAsymmetry} unit="%" normal={3} abnormal={6}/>
               <MetricRow label="Ankle LLD" value={measurements.ankleLLDmm} unit="mm" normal={5} abnormal={10}/>
-              <MetricRow label="Tibial Varum L" value={measurements.tibialVarumL} unit="°" normal={5} abnormal={10}/>
-              <MetricRow label="Tibial Varum R" value={measurements.tibialVarumR} unit="°" normal={5} abnormal={10}/>
-              <MetricRow label="Carrying Angle L" value={measurements.carryingAngleL} unit="°" normal={15} abnormal={20}/>
-              <MetricRow label="Carrying Angle R" value={measurements.carryingAngleR} unit="°" normal={15} abnormal={20}/>
+              <MetricRow label="Tibial Varum L" value={measurements.tibialVarumL} unit="deg" normal={5} abnormal={10}/>
+              <MetricRow label="Tibial Varum R" value={measurements.tibialVarumR} unit="deg" normal={5} abnormal={10}/>
+              <MetricRow label="Carrying Angle L" value={measurements.carryingAngleL} unit="deg" normal={15} abnormal={20}/>
+              <MetricRow label="Carrying Angle R" value={measurements.carryingAngleR} unit="deg" normal={15} abnormal={20}/>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Bilateral Symmetry &amp; Global</div>
               <MetricRow label="Scapular Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
               <MetricRow label="C7 Plumb Deviation" value={measurements.c7PlumbDev} unit="%" normal={3} abnormal={6}/>
               <MetricRow label="COG Deviation" value={measurements.cogDeviation} unit="%" normal={4} abnormal={8}/>
               <MetricRow label="Pelvic Obliquity" value={measurements.pelvicObliquity} unit="%" normal={3} abnormal={6}/>
-              <MetricRow label="L Foot Angle" value={measurements.leftFootAngle} unit="°" normal={10} abnormal={20}/>
-              <MetricRow label="R Foot Angle" value={measurements.rightFootAngle} unit="°" normal={10} abnormal={20}/>
-              <MetricRow label="L Ankle Dorsiflexion" value={measurements.leftAnkleAngle} unit="°" normal={100} abnormal={85}/>
-              <MetricRow label="R Ankle Dorsiflexion" value={measurements.rightAnkleAngle} unit="°" normal={100} abnormal={85}/>
+              <MetricRow label="L Foot Angle" value={measurements.leftFootAngle} unit="deg" normal={10} abnormal={20}/>
+              <MetricRow label="R Foot Angle" value={measurements.rightFootAngle} unit="deg" normal={10} abnormal={20}/>
+              <MetricRow label="L Ankle Dorsiflexion" value={measurements.leftAnkleAngle} unit="deg" normal={100} abnormal={85}/>
+              <MetricRow label="R Ankle Dorsiflexion" value={measurements.rightAnkleAngle} unit="deg" normal={100} abnormal={85}/>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:10}}>Syndrome Indices</div>
               <MetricRow label="UCS Index" value={measurements.ucsIndex} unit="" normal={0.6} abnormal={1.0}/>
               <MetricRow label="LCS Index" value={measurements.lcsIndex} unit="" normal={0.5} abnormal={1.0}/>
             </>
           )}
 
-          {/* PLI — both layouts */}
+          {/* PLI - both layouts */}
           {measurements.posturalLoadIndex!=null&&(
             <>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Postural Load Index</div>
@@ -6215,9 +6215,9 @@ function PostureAnalysisModule(){
           )}
 
           {/* Calibration */}
-          <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Calibration — Real Measurements</div>
+          <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Calibration - Real Measurements</div>
           <div style={{padding:"10px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface,marginBottom:8}}>
-            <div style={{fontSize:"0.7rem",color:PC.muted,marginBottom:8}}>Patient height — used to convert % measurements to real cm</div>
+            <div style={{fontSize:"0.7rem",color:PC.muted,marginBottom:8}}>Patient height - used to convert % measurements to real cm</div>
             <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
               <input type="number" min={100} max={220} value={patientHeightCm}
                 onChange={e=>setPatientHeightCm(Number(e.target.value))}
@@ -6226,14 +6226,14 @@ function PostureAnalysisModule(){
             </div>
             {measurements?._calibrated?(
               <div>
-                <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.green,marginBottom:6}}>v Calibrated — showing real measurements</div>
+                <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.green,marginBottom:6}}>v Calibrated - showing real measurements</div>
                 {[
                   ["Forward Head Posture", measurements.fhpCm, "cm", 2, 3.5, "Normal: <1.5cm"],
                   ["Shoulder Height Diff", measurements.shoulderDiffCm, "cm", 0.8, 1.8, "Normal: <0.5cm"],
                   ["Pelvic Height Diff (ASIS)", measurements.pelvisDiffCm, "cm", 0.8, 1.5, "Normal: <0.5cm"],
                   ["Trunk Lateral Shift", measurements.trunkShiftCm, "cm", 1.5, 3, "Normal: <1cm"],
                   ["Head Lateral Offset", measurements.headOffsetCm, "cm", 1, 2.5, "Normal: <0.8cm"],
-                  ["Ankle LLD (proxy)", measurements.ankleLLDcm, "cm", 0.5, 1, "Significant: >0.5cm — confirm with tape"],
+                  ["Ankle LLD (proxy)", measurements.ankleLLDcm, "cm", 0.5, 1, "Significant: >0.5cm - confirm with tape"],
                 ].map(([label, val, unit, warn, crit, hint])=>{
                   if(val===null||val===undefined) return null;
                   const col = val>crit?PC.red:val>warn?PC.yellow:PC.green;
@@ -6319,8 +6319,8 @@ function PostureAnalysisModule(){
   const assessModeToggle = (
     <div style={{padding:isWide?"8px 20px":"8px 16px",background:PC.bg,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:6}}>
       {[
-        ["single","▣ Single View","Quick screen — one view"],
-        ["multi", "☰ Multi-View", "Full assessment — 2–4 views"],
+        ["single","▣ Single View","Quick screen - one view"],
+        ["multi", "☰ Multi-View", "Full assessment - 2-4 views"],
       ].map(([m,label,sub])=>(
         <button key={m} onClick={()=>{ setAssessMode(m); if(m==="single"){setMvResults({});setMvComposite(null);} }}
           style={{flex:1,padding:isWide?"9px 8px":"8px 6px",borderRadius:10,
@@ -6378,16 +6378,16 @@ function PostureAnalysisModule(){
         background:mvCanGenerate?`linear-gradient(135deg,${PC.accent},${PC.a2})`:PC.s3,
         color:mvCanGenerate?"#fff":PC.muted,fontWeight:800,
         fontSize:isWide?"0.85rem":"0.78rem",cursor:mvCanGenerate?"pointer":"not-allowed"}}>
-        {mvCanGenerate?`▶ Generate Composite Report (${mvCapturedCount} views)`:`Upload ≥2 views to generate report`}
+        {mvCanGenerate?`▶ Generate Composite Report (${mvCapturedCount} views)`:`Upload >=2 views to generate report`}
       </button>
     </div>
   );
 
-  // Multi-view thumbnail strip — shows captured images side by side
+  // Multi-view thumbnail strip - shows captured images side by side
   const mvThumbnailStrip = assessMode==="multi" && mvCapturedCount > 0 && (
     <div style={{padding:"10px 16px",background:PC.surface,borderBottom:`1px solid ${PC.border}`}}>
       <div style={{fontSize:"0.58rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>
-        Captured Views — {mvCapturedCount} of 4
+        Captured Views - {mvCapturedCount} of 4
       </div>
       <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
         {mvViewOrder.map(vk=>{
@@ -6429,7 +6429,7 @@ function PostureAnalysisModule(){
             {mvComposite.coverage.viewCount} views · {mvComposite.coverage.frontal?"v Frontal":"○ Frontal"} · {mvComposite.coverage.sagittal?"v Sagittal":"○ Sagittal"}
           </div>
         </div>
-        <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.68rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}>← Back</button>
+        <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.68rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}><- Back</button>
       </div>
 
       {/* Captured view thumbnails inside report */}
@@ -6471,7 +6471,7 @@ function PostureAnalysisModule(){
           </div>
           {/* Score scale legend */}
           <div style={{display:"flex",gap:4,marginTop:4}}>
-            {[["88–100","Optimal","#059669"],["74–87","Good","#22c55e"],["58–73","Fair","#f59e0b"],["40–57","Needs Attention","#f97316"],["0–39","Priority Review","#dc2626"]].map(([range,label,col])=>{
+            {[["88-100","Optimal","#059669"],["74-87","Good","#22c55e"],["58-73","Fair","#f59e0b"],["40-57","Needs Attention","#f97316"],["0-39","Priority Review","#dc2626"]].map(([range,label,col])=>{
               const isActive = (()=>{
                 const s=mvComposite.compositeScore;
                 if(range.startsWith("88"))return s>=88;
@@ -6524,7 +6524,7 @@ function PostureAnalysisModule(){
             </div>
           </div>
         )}
-        {/* -- FINDINGS — Priority top 5 with expand -- */}
+        {/* -- FINDINGS - Priority top 5 with expand -- */}
         <FindingsDisplay findings={mvComposite.mergedFindings} PC={PC}/>
       </div>
     </div>
@@ -6538,7 +6538,7 @@ function PostureAnalysisModule(){
 
       {/* Mode toggle */}
       <div style={{padding: isWide?"10px 20px":"10px 16px",background:PC.surface,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:8}}>
-        {[["upload","↑ Upload"],["live","▣ Live"]].map(([m,label])=>(
+        {[["upload","^ Upload"],["live","▣ Live"]].map(([m,label])=>(
           <button key={m} onClick={()=>{setMode(m);if(m==="live")setTab("capture");else{stopCamera();setTab("capture");}}}
             style={{flex:1,padding: isWide?"10px":"9px",borderRadius:10,border:`1px solid ${mode===m?viewMeta.colour:PC.border}`,background:mode===m?`${viewMeta.colour}15`:"transparent",color:mode===m?viewMeta.colour:PC.muted,fontWeight:700,fontSize: isWide?"0.85rem":"0.78rem",cursor:"pointer"}}>
             {label}
@@ -6605,28 +6605,28 @@ function PostureAnalysisModule(){
                     </button>
                   ))}
                 </div>
-                {camStatus==="starting"&&<div style={{textAlign:"center",color:PC.yellow,fontSize:"0.78rem"}}>⏳ Starting camera…</div>}
+                {camStatus==="starting"&&<div style={{textAlign:"center",color:PC.yellow,fontSize:"0.78rem"}}>⏳ Starting camera...</div>}
               </div>
             ):(
               <div>
                 <div style={{position:"relative",background:"#111",width:"100%",overflow:"hidden",borderRadius:0}}>
-                  {/* Video — NO scaleX flip; front camera CSS-flipped only when user-facing */}
+                  {/* Video - NO scaleX flip; front camera CSS-flipped only when user-facing */}
                   <video ref={videoRef} playsInline webkit-playsinline="true" muted autoPlay
                     style={{width:"100%",display:"block",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
                       maxHeight: isMobile?"55vw":"45vh",
                       objectFit:"cover",background:"#111"}}/>
-                  {/* Canvas overlay — matches video flip */}
+                  {/* Canvas overlay - matches video flip */}
                   <canvas ref={overlayRef}
                     style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
                       pointerEvents:"none"}}/>
                   <div style={{position:"absolute",top:8,left:8,display:"flex",gap:5,flexWrap:"wrap"}}>
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:hasData?PC.green:PC.yellow}}>
-                      {hasData?`● Tracking · ${reliability?.score}% · ICC ${reliability?.icc??"-"}`:"● Searching…"}
+                      {hasData?`● Tracking · ${reliability?.score}% · ICC ${reliability?.icc??"-"}`:"● Searching..."}
                     </div>
                     {motionWarning&&<div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:PC.yellow}}>⟳ Hold still</div>}
-                    <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:PC.a3}}>— {patientHeightCm}cm</div>
+                    <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:PC.a3}}>- {patientHeightCm}cm</div>
                   </div>
                   {scoreData&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
                   {countdown!==null&&(
@@ -6656,9 +6656,9 @@ function PostureAnalysisModule(){
             <button onClick={()=>fileInputRef.current?.click()}
               disabled={inputMode==="ai"?(mpStatus!=="ready"||analysing):false}
               style={{width:"100%",padding: isWide?"20px":"16px",borderRadius:14,border:`2px dashed ${viewMeta.colour}`,background:`${viewMeta.colour}08`,color:viewMeta.colour,fontWeight:700,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer",textAlign:"center",marginBottom:14}}>
-              {analysing?"⏳ Analysing…":"▤ Tap to upload photo"}
+              {analysing?"⏳ Analysing...":"▤ Tap to upload photo"}
               <div style={{fontSize: isWide?"0.72rem":"0.65rem",fontWeight:400,marginTop:5,color:PC.muted}}>
-                {inputMode==="manual"?"Upload photo — then tap each anatomical point":"JPG, PNG — full body, clear background"}
+                {inputMode==="manual"?"Upload photo - then tap each anatomical point":"JPG, PNG - full body, clear background"}
               </div>
             </button>
             <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleFile}/>
@@ -6686,7 +6686,7 @@ function PostureAnalysisModule(){
                 </div>
                 {nextManualIdx >= 0 ? (
                   <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.accent}10`,border:`1px solid ${PC.accent}30`,fontSize:"0.7rem",color:PC.accent,marginBottom:9,fontWeight:700}}>
-                    Next: {nextManualIdx+1}. {manualPointDefs[nextManualIdx]?.label} — {manualPointDefs[nextManualIdx]?.desc}
+                    Next: {nextManualIdx+1}. {manualPointDefs[nextManualIdx]?.label} - {manualPointDefs[nextManualIdx]?.desc}
                   </div>
                 ) : (
                   <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.green}10`,border:`1px solid ${PC.green}30`,fontSize:"0.7rem",color:PC.green,marginBottom:9,fontWeight:700}}>
@@ -6730,22 +6730,22 @@ function PostureAnalysisModule(){
                 {manualCanAnalyse&&(
                   <button onClick={analyseManualPoints}
                     style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer"}}>
-                    ✋ Analyse Now — {manualPlacedCount}/{manualTotal} points
+                    ✋ Analyse Now - {manualPlacedCount}/{manualTotal} points
                   </button>
                 )}
               </div>
             )}
 
-            {/* AI mode image — always show original photo; overlay annotated result on top */}
+            {/* AI mode image - always show original photo; overlay annotated result on top */}
             {inputMode==="ai"&&(rawUploadedImg||uploadedImg)&&(
               <div style={{borderRadius:14,overflow:"hidden",border:`1px solid ${PC.border}`,boxShadow:isWide?"0 4px 20px rgba(0,0,0,0.08)":"none",background:PC.s2,position:"relative"}}>
-                {/* Layer 1: original photo — always visible, never a blank/black canvas */}
+                {/* Layer 1: original photo - always visible, never a blank/black canvas */}
                 <img
                   src={rawUploadedImg||uploadedImg}
                   alt="Uploaded"
                   style={{width:"100%",display:"block",opacity:analysing?0.55:1,transition:"opacity 0.3s"}}
                 />
-                {/* Layer 2: annotated overlay — shown once analysis produces a result */}
+                {/* Layer 2: annotated overlay - shown once analysis produces a result */}
                 {uploadedImg&&uploadedImg!==rawUploadedImg&&!analysing&&(
                   <img
                     src={uploadedImg}
@@ -6757,7 +6757,7 @@ function PostureAnalysisModule(){
                 {/* Analysing spinner */}
                 {analysing&&(
                   <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.35)"}}>
-                    <div style={{padding:"10px 18px",borderRadius:10,background:"rgba(0,0,0,0.75)",color:"#fff",fontSize:"0.78rem",fontWeight:700}}>⏳ Analysing…</div>
+                    <div style={{padding:"10px 18px",borderRadius:10,background:"rgba(0,0,0,0.75)",color:"#fff",fontSize:"0.78rem",fontWeight:700}}>⏳ Analysing...</div>
                   </div>
                 )}
               </div>
@@ -6784,9 +6784,9 @@ function PostureAnalysisModule(){
       plain: f.plain || f.description || f.text || "",
       whatIfUntreated: f.whatIfUntreated || "May worsen without targeted intervention.",
       correction: f.correction || (f.exercises||[]).join(". ") || "See exercise plan.",
-      icd: f.icd || "—",
-      norm: f.norm || "—",
-      measured: f.measured || "—",
+      icd: f.icd || "-",
+      norm: f.norm || "-",
+      measured: f.measured || "-",
     }));
 
     // Build exercise list
@@ -6794,25 +6794,25 @@ function PostureAnalysisModule(){
       phase: ex.cat==="inhibit"?1:ex.cat==="activate"?2:3,
       category: (ex.cat||"correct").toUpperCase(),
       name: ex.name||"Exercise",
-      sets: ex.sets||"3×10",
+      sets: ex.sets||"3x10",
       freq: "Daily",
       cue: ex.cue||ex.description||"",
     }));
 
     // Goals from findings
     const goals = [];
-    if(m.cvaAngle!=null) goals.push({metric:"CVA",current:m.cvaAngle.toFixed(1)+"°",target:">52°",timeframe:"6 weeks"});
-    if(m.thoracicAngle!=null) goals.push({metric:"Thoracic Kyphosis",current:m.thoracicAngle.toFixed(1)+"°",target:"<45°",timeframe:"8 weeks"});
+    if(m.cvaAngle!=null) goals.push({metric:"CVA",current:m.cvaAngle.toFixed(1)+"deg",target:">52deg",timeframe:"6 weeks"});
+    if(m.thoracicAngle!=null) goals.push({metric:"Thoracic Kyphosis",current:m.thoracicAngle.toFixed(1)+"deg",target:"<45deg",timeframe:"8 weeks"});
     if(scoreData?.score!=null) goals.push({metric:"Posture Score",current:scoreData.score+"/100",target:">60/100",timeframe:"8 weeks"});
 
     const d = {
       patient: {
         name: patientInfo.name||"Patient",
-        age: patientInfo.age||"—",
-        sex: patientInfo.sex||"—",
+        age: patientInfo.age||"-",
+        sex: patientInfo.sex||"-",
         height: patientHeightCm+"cm",
-        weight: "—",
-        occupation: patientInfo.occupation||"—",
+        weight: "-",
+        occupation: patientInfo.occupation||"-",
       },
       clinician: {
         name: clinicianInfo.name||"Clinician",
@@ -6846,14 +6846,14 @@ function PostureAnalysisModule(){
       soap: {
         subjective: `Patient presents with postural concerns. Height ${patientHeightCm}cm. Occupation: ${patientInfo.occupation||"not specified"}. No red flags identified during screening.`,
         objective: `Postural analysis (${views.join(", ")}): ${rptFindings.map(f=>f.text).join("; ")}. Reliability ${reliability?.score||0}%. Method: ${reliability?.isManual?"Manual landmark placement":"AI landmark detection"}.`,
-        assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. Score ${scoreData.score}/100 — ${scoreData.band}. ${rptFindings.map(f=>f.region).join(", ")}. No referral indicated at this stage pending clinical correlation.`,
-        plan: `Janda Approach neuromuscular sequencing programme. Inhibit → Activate → Correct. Daily 10–15 min. Reassess in 4–6 weeks. Monitor for symptom development.`,
+        assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. Score ${scoreData.score}/100 - ${scoreData.band}. ${rptFindings.map(f=>f.region).join(", ")}. No referral indicated at this stage pending clinical correlation.`,
+        plan: `Janda Approach neuromuscular sequencing programme. Inhibit -> Activate -> Correct. Daily 10-15 min. Reassess in 4-6 weeks. Monitor for symptom development.`,
       },
       goals,
       redFlags: { triggered: false, items: [] },
     };
 
-    // Build HTML — wrap in full document so openPdf works (same as PdfReportsModal)
+    // Build HTML - wrap in full document so openPdf works (same as PdfReportsModal)
     const credits = reportType==="basic"?2:5;
     const bodyHtml = buildStaticReport(d, reportType, credits);
     const fullHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
@@ -6866,7 +6866,7 @@ function PostureAnalysisModule(){
   table{border-collapse:collapse;width:100%}
   @media print{body{background:#fff;padding:0}.page{margin:0;box-shadow:none;border-radius:0;page-break-after:always}.page:last-of-type{page-break-after:auto}}
 </style></head><body>${bodyHtml}</body></html>`;
-    // Open in new tab and print — same method as the working PdfReportsModal
+    // Open in new tab and print - same method as the working PdfReportsModal
     const win = window.open("","_blank");
     if(!win){ alert("Please allow popups to generate the PDF report."); return; }
     win.document.open(); win.document.write(fullHtml); win.document.close();
@@ -6885,11 +6885,11 @@ function PostureAnalysisModule(){
     const metRow = (label,val,norm,bad,warn) => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:6px;margin-bottom:3px;background:${bad?"#fef2f2":warn?"#fffbeb":"#f0fdf4"};border:1px solid ${bad?C.red:warn?C.yellow:C.green}20">
         <span style="font-size:0.63rem;color:${C.muted}">${label}</span>
-        <div style="text-align:right"><div style="font-size:0.7rem;font-weight:800;color:${bad?C.red:warn?C.yellow:C.green}">${val??'—'}</div><div style="font-size:0.52rem;color:${C.muted}">nrm ${norm}</div></div>
+        <div style="text-align:right"><div style="font-size:0.7rem;font-weight:800;color:${bad?C.red:warn?C.yellow:C.green}">${val??'-'}</div><div style="font-size:0.52rem;color:${C.muted}">nrm ${norm}</div></div>
       </div>`;
     const footer = (page,total,type) => `
       <div style="position:absolute;bottom:0;left:0;right:0;border-top:1px solid ${C.border};padding:8px 32px;display:flex;justify-content:space-between;background:#f8fafc;">
-        <div style="font-size:0.55rem;color:${C.muted}">⚠ Screening tool only — not a substitute for clinical diagnosis. Confirm with clinical examination before prescribing.</div>
+        <div style="font-size:0.55rem;color:${C.muted}">⚠ Screening tool only - not a substitute for clinical diagnosis. Confirm with clinical examination before prescribing.</div>
         <div style="font-size:0.55rem;color:${C.muted};white-space:nowrap;margin-left:8px">${type} · ${d.clinician.date} · Page ${page}/${total}</div>
       </div>`;
     const hdr = (title,sub) => `
@@ -6912,7 +6912,7 @@ function PostureAnalysisModule(){
       const trafficPill = r => {
         const col = r.bad?C.red:r.warn?C.yellow:C.green;
         const bg = r.bad?"#fef2f2":r.warn?"#fffbeb":"#f0fdf4";
-        const txt = r.bad?"✕ Needs Attention":r.warn?"⚠ Moderate":"v Normal";
+        const txt = r.bad?"x Needs Attention":r.warn?"⚠ Moderate":"v Normal";
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:6px;background:${bg};margin-bottom:4px;border:1px solid ${col}30"><span style="font-size:0.72rem;font-weight:600;color:${C.primary}">${r.label}</span><span style="font-size:0.65rem;font-weight:700;color:${col}">${txt}</span></div>`;
       };
       return `
@@ -6967,7 +6967,7 @@ function PostureAnalysisModule(){
             </div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
               <div style="width:3px;height:14px;border-radius:2px;background:${C.accent}"></div>
-              <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${C.accent}">What We Found — In Plain English</div>
+              <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${C.accent}">What We Found - In Plain English</div>
             </div>
             ${d.findings.slice(0,3).map((f,i)=>`
               <div style="margin-bottom:10px;padding:12px;border-radius:10px;background:${sevBg(f.severity)};border:1px solid ${sevCol(f.severity)}30">
@@ -6987,12 +6987,12 @@ function PostureAnalysisModule(){
           ${hdr("Your Exercise Plan","Personalised Programme")}
           <div style="padding:20px 32px 80px">
             <div style="padding:12px;border-radius:10px;background:#f0f9ff;border:1px solid #bae6fd;margin-bottom:16px">
-              <div style="font-family:Fraunces;font-size:0.88rem;font-weight:700;color:#0369a1;margin-bottom:4px">Your 3-Phase Programme · 10–15 min/day</div>
+              <div style="font-family:Fraunces;font-size:0.88rem;font-weight:700;color:#0369a1;margin-bottom:4px">Your 3-Phase Programme · 10-15 min/day</div>
               <div style="font-size:0.67rem;color:#0369a1;line-height:1.6">Follow this order every day. Phase 1 relaxes tight muscles so Phase 2 exercises work properly. Phase 3 trains your brain to hold the corrected position.</div>
             </div>
             ${[1,2,3].map(ph=>{
               const exs = d.exercises.filter(e=>e.phase===ph);
-              const meta = {1:{label:"Phase 1 — Inhibit (Relax Tight Muscles)",col:"#dc2626",bg:"#fef2f2",icon:"🔴"},2:{label:"Phase 2 — Activate (Strengthen Weak Muscles)",col:"#2563eb",bg:"#eff6ff",icon:"🔵"},3:{label:"Phase 3 — Correct (Train New Posture)",col:"#059669",bg:"#f0fdf4",icon:"🟢"}}[ph];
+              const meta = {1:{label:"Phase 1 - Inhibit (Relax Tight Muscles)",col:"#dc2626",bg:"#fef2f2",icon:"🔴"},2:{label:"Phase 2 - Activate (Strengthen Weak Muscles)",col:"#2563eb",bg:"#eff6ff",icon:"🔵"},3:{label:"Phase 3 - Correct (Train New Posture)",col:"#059669",bg:"#f0fdf4",icon:"🟢"}}[ph];
               return `<div style="margin-bottom:12px;border-radius:10px;border:1px solid ${meta.col}25;overflow:hidden">
                 <div style="padding:9px 14px;background:${meta.bg};border-bottom:1px solid ${meta.col}25;display:flex;align-items:center;gap:8px">
                   <span>${meta.icon}</span>
@@ -7015,7 +7015,7 @@ function PostureAnalysisModule(){
               ${d.goals.map(g=>`<div style="padding:12px;border-radius:8px;background:${C.surface};border:1px solid ${C.border};text-align:center">
                 <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;margin-bottom:4px">${g.metric}</div>
                 <div style="font-size:0.78rem;font-weight:900;color:${C.red};font-family:Fraunces">${g.current}</div>
-                <div style="font-size:0.62rem;color:${C.muted};margin:2px 0">→</div>
+                <div style="font-size:0.62rem;color:${C.muted};margin:2px 0">-></div>
                 <div style="font-size:0.78rem;font-weight:900;color:${C.green};font-family:Fraunces">${g.target}</div>
                 <div style="font-size:0.56rem;color:${C.muted};margin-top:2px">by ${g.timeframe}</div>
               </div>`).join("")}
@@ -7023,7 +7023,7 @@ function PostureAnalysisModule(){
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
               <div style="padding:12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a">
                 <div style="font-size:0.64rem;font-weight:700;color:${C.yellow};margin-bottom:4px">📅 Next Reassessment</div>
-                <div style="font-size:0.7rem;color:${C.primary}">Recommended in <strong>4–6 weeks</strong></div>
+                <div style="font-size:0.7rem;color:${C.primary}">Recommended in <strong>4-6 weeks</strong></div>
               </div>
               <div style="padding:12px;border-radius:8px;background:${C.surface};border:1px solid ${C.border}">
                 <div style="font-size:0.58rem;font-weight:700;color:${C.muted};margin-bottom:16px">PATIENT ACKNOWLEDGEMENT</div>
@@ -7041,7 +7041,7 @@ function PostureAnalysisModule(){
         </div>`;
     }
 
-    // Detailed report — 5 pages
+    // Detailed report - 5 pages
     return `
       <div class="page">
         <div style="height:7px;background:linear-gradient(90deg,${C.primary},${C.accent})"></div>
@@ -7098,10 +7098,10 @@ function PostureAnalysisModule(){
               <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">Key Measurements</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
                 ${[
-                  {label:"CVA (FHP ★)",val:m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",norm:">55°",bad:m.cvaAngle!=null&&m.cvaAngle<49,warn:m.cvaAngle!=null&&m.cvaAngle<55},
-                  {label:"Thoracic Kyphosis",val:m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—",norm:"20–45°",bad:m.thoracicAngle!=null&&m.thoracicAngle>55,warn:m.thoracicAngle!=null&&m.thoracicAngle>45},
-                  {label:"Cervical Load",val:m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"—",norm:"4.5kg",bad:m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,warn:m.cervicalLoadKg!=null&&m.cervicalLoadKg>12},
-                  {label:"LCS Index",val:m.lcsIndex!=null?m.lcsIndex.toFixed(1):"—",norm:"<0.5",bad:m.lcsIndex!=null&&m.lcsIndex>1,warn:m.lcsIndex!=null&&m.lcsIndex>0.5},
+                  {label:"CVA (FHP ★)",val:m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"deg":"-",norm:">55deg",bad:m.cvaAngle!=null&&m.cvaAngle<49,warn:m.cvaAngle!=null&&m.cvaAngle<55},
+                  {label:"Thoracic Kyphosis",val:m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"deg":"-",norm:"20-45deg",bad:m.thoracicAngle!=null&&m.thoracicAngle>55,warn:m.thoracicAngle!=null&&m.thoracicAngle>45},
+                  {label:"Cervical Load",val:m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"-",norm:"4.5kg",bad:m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,warn:m.cervicalLoadKg!=null&&m.cervicalLoadKg>12},
+                  {label:"LCS Index",val:m.lcsIndex!=null?m.lcsIndex.toFixed(1):"-",norm:"<0.5",bad:m.lcsIndex!=null&&m.lcsIndex>1,warn:m.lcsIndex!=null&&m.lcsIndex>0.5},
                 ].map(r=>`<div style="padding:5px 8px;border-radius:6px;background:${r.bad?"#fef2f2":r.warn?"#fffbeb":"#f0fdf4"};border:1px solid ${r.bad?C.red:r.warn?C.yellow:C.green}25;display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.61rem;color:${C.muted}">${r.label}</span><div style="text-align:right"><div style="font-size:0.72rem;font-weight:800;color:${r.bad?C.red:r.warn?C.yellow:C.green}">${r.val}</div><div style="font-size:0.52rem;color:${C.muted}">nrm ${r.norm}</div></div></div>`).join("")}
               </div>
             </div>
@@ -7184,20 +7184,20 @@ function PostureAnalysisModule(){
         <div style="padding:18px 32px 80px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
             <div style="width:3px;height:14px;border-radius:2px;background:${C.accent}"></div>
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${C.accent}">Muscle Imbalance — Janda Approach</div>
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${C.accent}">Muscle Imbalance - Janda Approach</div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
             <div style="border-radius:10px;overflow:hidden;border:1px solid #fca5a530">
               <div style="padding:9px 14px;background:#fef2f2;display:flex;align-items:center;gap:6px">
                 <div style="width:8px;height:8px;border-radius:50%;background:${C.red}"></div>
-                <div style="font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${C.red}">Tight / Overactive — Inhibit First</div>
+                <div style="font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${C.red}">Tight / Overactive - Inhibit First</div>
               </div>
               ${d.muscles.tight.map((mu,i)=>`<div style="padding:7px 14px;border-bottom:1px solid ${C.border};display:flex;justify-content:space-between;align-items:center;background:${i%2===0?"#fff":C.surface}"><div><div style="font-size:0.68rem;font-weight:600;color:${C.primary}">${mu.name}</div><div style="font-size:0.56rem;color:${C.muted}">${mu.source}</div></div><span style="font-size:0.56rem;font-weight:700;color:${C.red};padding:1px 6px;border-radius:4px;background:#fef2f2;border:1px solid #fca5a530">${mu.severity}</span></div>`).join("")||`<div style="padding:10px 14px;font-size:0.65rem;color:${C.muted}">None identified</div>`}
             </div>
             <div style="border-radius:10px;overflow:hidden;border:1px solid #93c5fd30">
               <div style="padding:9px 14px;background:#eff6ff;display:flex;align-items:center;gap:6px">
                 <div style="width:8px;height:8px;border-radius:50%;background:#2563eb"></div>
-                <div style="font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#2563eb">Weak / Underactive — Activate After</div>
+                <div style="font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#2563eb">Weak / Underactive - Activate After</div>
               </div>
               ${d.muscles.weak.map((mu,i)=>`<div style="padding:7px 14px;border-bottom:1px solid ${C.border};display:flex;justify-content:space-between;align-items:center;background:${i%2===0?"#fff":C.surface}"><div><div style="font-size:0.68rem;font-weight:600;color:${C.primary}">${mu.name}</div><div style="font-size:0.56rem;color:${C.muted}">${mu.source}</div></div><span style="font-size:0.56rem;font-weight:700;color:#2563eb;padding:1px 6px;border-radius:4px;background:#eff6ff;border:1px solid #93c5fd30">${mu.severity}</span></div>`).join("")||`<div style="padding:10px 14px;font-size:0.65rem;color:${C.muted}">None identified</div>`}
             </div>
@@ -7212,20 +7212,20 @@ function PostureAnalysisModule(){
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div>
               <div style="font-size:0.59rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.muted};margin-bottom:7px">Sagittal Plane</div>
-              ${metRow("CVA Angle ★",m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",">55°",m.cvaAngle!=null&&m.cvaAngle<49,m.cvaAngle!=null&&m.cvaAngle<55)}
-              ${metRow("Cervical Load (Hansraj)",m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"—","4.5kg",m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,m.cervicalLoadKg!=null&&m.cervicalLoadKg>12)}
-              ${metRow("Thoracic Kyphosis",m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—","20–45°",m.thoracicAngle!=null&&m.thoracicAngle>55,m.thoracicAngle!=null&&m.thoracicAngle>45)}
-              ${metRow("Lumbar Lordosis (proxy)",m.lumbarProxy!=null?(m.lumbarProxy>0?"↑":"↓")+Math.abs(m.lumbarProxy).toFixed(1)+"%":"—","<5%",Math.abs(m.lumbarProxy||0)>10,Math.abs(m.lumbarProxy||0)>5)}
-              ${metRow("LCS Index",m.lcsIndex!=null?m.lcsIndex.toFixed(1):"—","<0.5",m.lcsIndex!=null&&m.lcsIndex>1,m.lcsIndex!=null&&m.lcsIndex>0.5)}
+              ${metRow("CVA Angle ★",m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"deg":"-",">55deg",m.cvaAngle!=null&&m.cvaAngle<49,m.cvaAngle!=null&&m.cvaAngle<55)}
+              ${metRow("Cervical Load (Hansraj)",m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"-","4.5kg",m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,m.cervicalLoadKg!=null&&m.cervicalLoadKg>12)}
+              ${metRow("Thoracic Kyphosis",m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"deg":"-","20-45deg",m.thoracicAngle!=null&&m.thoracicAngle>55,m.thoracicAngle!=null&&m.thoracicAngle>45)}
+              ${metRow("Lumbar Lordosis (proxy)",m.lumbarProxy!=null?(m.lumbarProxy>0?"^":"v")+Math.abs(m.lumbarProxy).toFixed(1)+"%":"-","<5%",Math.abs(m.lumbarProxy||0)>10,Math.abs(m.lumbarProxy||0)>5)}
+              ${metRow("LCS Index",m.lcsIndex!=null?m.lcsIndex.toFixed(1):"-","<0.5",m.lcsIndex!=null&&m.lcsIndex>1,m.lcsIndex!=null&&m.lcsIndex>0.5)}
             </div>
             <div>
               <div style="font-size:0.59rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.muted};margin-bottom:7px">Frontal Plane</div>
-              ${metRow("Shoulder Tilt",m.shoulderAngle!=null?Math.abs(m.shoulderAngle).toFixed(1)+"°":"—","<3°",Math.abs(m.shoulderAngle||0)>7,Math.abs(m.shoulderAngle||0)>3)}
-              ${metRow("Pelvic Obliquity",m.pelvisAngle!=null?Math.abs(m.pelvisAngle).toFixed(1)+"°":"—","<3°",Math.abs(m.pelvisAngle||0)>7,Math.abs(m.pelvisAngle||0)>3)}
-              ${metRow("Trunk Shift",m.trunkShiftCm!=null?m.trunkShiftCm.toFixed(1)+"cm":"—","<2cm",m.trunkShiftCm!=null&&m.trunkShiftCm>5,m.trunkShiftCm!=null&&m.trunkShiftCm>2)}
+              ${metRow("Shoulder Tilt",m.shoulderAngle!=null?Math.abs(m.shoulderAngle).toFixed(1)+"deg":"-","<3deg",Math.abs(m.shoulderAngle||0)>7,Math.abs(m.shoulderAngle||0)>3)}
+              ${metRow("Pelvic Obliquity",m.pelvisAngle!=null?Math.abs(m.pelvisAngle).toFixed(1)+"deg":"-","<3deg",Math.abs(m.pelvisAngle||0)>7,Math.abs(m.pelvisAngle||0)>3)}
+              ${metRow("Trunk Shift",m.trunkShiftCm!=null?m.trunkShiftCm.toFixed(1)+"cm":"-","<2cm",m.trunkShiftCm!=null&&m.trunkShiftCm>5,m.trunkShiftCm!=null&&m.trunkShiftCm>2)}
               ${metRow("Reliability",m.reliability+"%",">80%",m.reliability<60,m.reliability<80)}
               <div style="margin-top:10px;padding:8px;border-radius:6px;background:${C.surface};border:1px solid ${C.border};font-size:0.56rem;color:${C.muted};line-height:1.5">
-                ★ CVA is primary FHP marker. All measurements ±5–8° accuracy. Age-adjusted norms apply.
+                ★ CVA is primary FHP marker. All measurements +/-5-8deg accuracy. Age-adjusted norms apply.
               </div>
             </div>
           </div>
@@ -7234,10 +7234,10 @@ function PostureAnalysisModule(){
       </div>
 
       <div class="page">
-        ${hdr("Exercise Programme","Inhibit → Activate → Correct (Janda Approach)")}
+        ${hdr("Exercise Programme","Inhibit -> Activate -> Correct (Janda Approach)")}
         <div style="padding:18px 32px 80px">
           <div style="padding:10px;border-radius:8px;background:#f0f9ff;border:1px solid #bae6fd;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
-            <div><div style="font-family:Fraunces;font-size:0.83rem;font-weight:700;color:#0369a1">Personalised Programme · ${d.exercises.length} exercises</div><div style="font-size:0.6rem;color:#0369a1;margin-top:1px">Daily · 10–15 min · Reassess in 4–6 weeks</div></div>
+            <div><div style="font-family:Fraunces;font-size:0.83rem;font-weight:700;color:#0369a1">Personalised Programme · ${d.exercises.length} exercises</div><div style="font-size:0.6rem;color:#0369a1;margin-top:1px">Daily · 10-15 min · Reassess in 4-6 weeks</div></div>
             <div style="font-size:0.6rem;color:#0369a1;text-align:right">Based on ${d.findings.length} findings<br/>Reliability ${m.reliability}%</div>
           </div>
           <table style="width:100%;border-collapse:collapse;font-size:0.63rem">
@@ -7391,7 +7391,7 @@ function PostureAnalysisModule(){
             style={{flex:2,padding:"11px",border:"none",borderRadius:10,
               background:findings.length&&scoreData?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",
               color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:findings.length&&scoreData?"pointer":"not-allowed"}}>
-            Generate & Open PDF →
+            Generate & Open PDF ->
           </button>
         </div>
         {!findings.length&&<div style={{fontSize:"0.62rem",color:PC.red,textAlign:"center",marginTop:8}}>Analyse a photo first to generate a report</div>}
@@ -7419,7 +7419,7 @@ function PostureAnalysisModule(){
             background:mpStatus==="ready"?"rgba(5,150,105,0.12)":mpStatus==="loading"?"rgba(180,83,9,0.12)":"rgba(220,38,38,0.12)",
             color:mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red,
             border:`1px solid ${mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red}40`}}>
-            {mpStatus==="ready"?"⚙ AI Ready":mpStatus==="loading"?"⏳ Loading…":"❌ AI Error"}
+            {mpStatus==="ready"?"⚙ AI Ready":mpStatus==="loading"?"⏳ Loading...":"❌ AI Error"}
           </div>
           <button onClick={()=>setShowReportModal(true)}
             style={{padding:isWide?"6px 14px":"4px 9px",
@@ -7487,7 +7487,7 @@ function PostureAnalysisModule(){
       {/* -- In-app Report Viewer -- */}
       {showReportViewer&&createPortal(
         <div style={{position:"fixed",inset:0,zIndex:99999,background:"#1e293b",display:"flex",flexDirection:"column"}}>
-          {/* Viewer toolbar — hidden on print */}
+          {/* Viewer toolbar - hidden on print */}
           <div className="no-print-report" style={{
             background:"#0f172a",padding:"10px 20px",
             display:"flex",alignItems:"center",justifyContent:"space-between",
@@ -7506,7 +7506,7 @@ function PostureAnalysisModule(){
                 style={{padding:"8px 16px",border:"1px solid rgba(255,255,255,0.2)",
                   borderRadius:8,background:"transparent",color:"rgba(255,255,255,0.7)",
                   fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>
-                ✕ Close
+                x Close
               </button>
             </div>
           </div>
@@ -7540,7 +7540,7 @@ function PostureAnalysisModule(){
             {sessions.length===0&&<div style={{color:PC.muted,fontSize:"0.82rem"}}>No sessions yet.</div>}
             {[...sessions].reverse().map((s,i)=>(
               <div key={i} style={{padding:"11px 14px",borderRadius:11,border:`1px solid ${PC.border}`,marginBottom:8}}>
-                <div style={{fontWeight:700,fontSize:"0.75rem"}}>{VIEWS[s.view]?.label} · Score {s.score} — {s.band}</div>
+                <div style={{fontWeight:700,fontSize:"0.75rem"}}>{VIEWS[s.view]?.label} · Score {s.score} - {s.band}</div>
                 <div style={{fontSize:"0.65rem",color:PC.muted,marginTop:2}}>{new Date(s.time).toLocaleString()} · {s.findings} findings</div>
               </div>
             ))}
@@ -7624,9 +7624,9 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
         {tab==="metrics" && (
           <div>
             {[
-              ["Shoulder",m.shoulderAngle,"°",[3,7]],["Pelvis",m.pelvisAngle,"°",[3,7]],
+              ["Shoulder",m.shoulderAngle,"deg",[3,7]],["Pelvis",m.pelvisAngle,"deg",[3,7]],
               ["Head Lat.",m.headLateralOffset,"%",[2,5]],["Trunk Shift",m.trunkLateralShift,"%",[3,7]],
-              ["Forward Head",m.forwardHeadMm,"%",[3,7]],["Cobb Est.",m.cobbEstimate,"°",[5,10]],
+              ["Forward Head",m.forwardHeadMm,"%",[3,7]],["Cobb Est.",m.cobbEstimate,"deg",[5,10]],
             ].map(([label,val,unit,t],i)=>{
               if(val===null||val===undefined) return null;
               const abs=Math.abs(val),col=abs<t[0]?"#00c97a":abs<t[1]?"#ffb300":"#ff4d6d";
@@ -7679,7 +7679,7 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
   );
 }
 
-// --- PhotoUploadAnalyzer — uses new advanced engine --------------------------
+// --- PhotoUploadAnalyzer - uses new advanced engine --------------------------
 function PhotoUploadAnalyzer() {
   const [image, setImage]         = useState(null);
   const [analysisResult, setResult] = useState(null);
@@ -7782,7 +7782,7 @@ function PhotoUploadAnalyzer() {
       <div style={{padding:"11px 14px",borderBottom:`1px solid ${C2.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:7}}>
         <div>
           <div style={{fontWeight:800,fontSize:"0.9rem",color:C2.accent}}>📷 Photo Upload Analysis</div>
-          <div style={{fontSize:"0.65rem",color:C2.muted,marginTop:2}}>{mpReady?"✅ AI Ready — Advanced Biomechanical Engine":"⏳ Loading AI engine…"}</div>
+          <div style={{fontSize:"0.65rem",color:C2.muted,marginTop:2}}>{mpReady?"✅ AI Ready - Advanced Biomechanical Engine":"⏳ Loading AI engine..."}</div>
         </div>
         <div style={{display:"flex",gap:6}}>
           <button onClick={()=>setShowHistory(true)} style={{padding:"4px 10px",background:`${C2.a2}15`,border:`1px solid ${C2.a2}30`,borderRadius:7,color:C2.a2,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>📁 History</button>
@@ -7797,7 +7797,7 @@ function PhotoUploadAnalyzer() {
       {/* View selector */}
       <div style={{padding:"10px 14px",background:C2.s2,borderBottom:`1px solid ${C2.border}`}}>
         <div style={{fontSize:"0.58rem",fontWeight:700,color:C2.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>
-          📐 Select View — choose <em>before</em> uploading
+          📐 Select View - choose <em>before</em> uploading
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:8}}>
           {Object.entries(PHOTO_VIEW_META_NEW).map(([key,meta])=>{
@@ -7814,7 +7814,7 @@ function PhotoUploadAnalyzer() {
           <span style={{color:vm.colour,fontWeight:700}}>{vm.short}: </span>{vm.helper}
         </div>
         <div style={{marginTop:6,padding:"5px 9px",background:"rgba(124,58,237,0.06)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:8,fontSize:"0.62rem",color:C2.muted,fontStyle:"italic"}}>
-          🔲 Posture grid lines will be drawn on the photo for the selected view — select view first, then upload
+          🔲 Posture grid lines will be drawn on the photo for the selected view - select view first, then upload
         </div>
       </div>
 
@@ -7833,7 +7833,7 @@ function PhotoUploadAnalyzer() {
               <div style={{position:"relative",borderRadius:12,overflow:"hidden",background:"#f5f0fb",marginBottom:9}}>
                 <img ref={imgRef} src={image} alt="Upload" style={{width:"100%",display:"block",maxHeight:360,objectFit:"contain"}}/>
                 <canvas ref={canvasRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-                {loading&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{color:C2.accent,fontSize:"1.1rem",fontWeight:700}}>⏳ Analysing…</div><div style={{fontSize:"0.7rem",color:C2.muted}}>Running AI pose detection</div></div>}
+                {loading&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{color:C2.accent,fontSize:"1.1rem",fontWeight:700}}>⏳ Analysing...</div><div style={{fontSize:"0.7rem",color:C2.muted}}>Running AI pose detection</div></div>}
                 {scoreData&&!loading&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingNew score={scoreData?.score} band={scoreData?.band} colour={scoreData?.colour} size={72}/></div>}
               </div>
               {/* Overlay controls */}
@@ -7846,7 +7846,7 @@ function PhotoUploadAnalyzer() {
               {detectedViewNotice&&<div style={{padding:"7px 11px",background:"rgba(0,229,255,0.1)",border:"1px solid rgba(0,229,255,0.35)",borderRadius:8,fontSize:"0.72rem",color:"#00e5ff",fontWeight:600,marginBottom:8}}>{detectedViewNotice}</div>}
               {error&&<div style={{padding:"8px 11px",background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.3)",borderRadius:8,fontSize:"0.74rem",color:C2.red,marginBottom:8}}>{error}</div>}
               {scoreData&&(
-                <button onClick={()=>setTab("results")} style={{width:"100%",padding:"11px",background:`linear-gradient(135deg,${C2.accent},${C2.a2})`,border:"none",borderRadius:10,color:"#1a1025",fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>View Full Analysis →</button>
+                <button onClick={()=>setTab("results")} style={{width:"100%",padding:"11px",background:`linear-gradient(135deg,${C2.accent},${C2.a2})`,border:"none",borderRadius:10,color:"#1a1025",fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>View Full Analysis -></button>
               )}
             </div>
           )}
@@ -7858,7 +7858,7 @@ function PhotoUploadAnalyzer() {
         <div style={{padding:"13px 14px"}}>
           {/* Score row */}
           <div style={{display:"flex",gap:12,alignItems:"center",padding:"11px 13px",background:`${scoreData?.colour||C2.accent}09`,border:`1px solid ${scoreData?.colour||C2.accent}25`,borderRadius:12,marginBottom:12}}>
-            <ScoreRingNew score={scoreData?.score||0} band={scoreData?.band||"—"} colour={scoreData?.colour||C2.muted} size={68}/>
+            <ScoreRingNew score={scoreData?.score||0} band={scoreData?.band||"-"} colour={scoreData?.colour||C2.muted} size={68}/>
             <div style={{flex:1}}>
               <div style={{fontSize:"0.68rem",color:C2.muted,marginBottom:5}}>
                 {analysisResult.view && (
@@ -7941,23 +7941,23 @@ function PhotoUploadAnalyzer() {
 
               {/* Full metric rows */}
               {[
-                // Sagittal — highest clinical priority
-                {label:"CVA (Forward Head)",    value:measurements.cvaAngle,        unit:"°",  t:[49,55], norm:">55° normal",  invert:true},
+                // Sagittal - highest clinical priority
+                {label:"CVA (Forward Head)",    value:measurements.cvaAngle,        unit:"deg",  t:[49,55], norm:">55deg normal",  invert:true},
                 {label:"Cervical Load Est.",    value:measurements.cervicalLoadKg,   unit:"kg", t:[6,10],  norm:"Neutral: 4.5kg"},
-                {label:"Thoracic Kyphosis",     value:measurements.thoracicAngle,    unit:"°",  t:[45,55], norm:"20–45° normal"},
-                {label:"Lumbar Lordosis Est.",  value:measurements.lordosisAngle,    unit:"°",  t:[60,70], norm:"40–60° normal"},
-                {label:"Ant. Pelvic Tilt",      value:measurements.anteriorPelvicTiltDeg, unit:"°", t:[12,20], norm:"♀≤12° ♂≤7°"},
+                {label:"Thoracic Kyphosis",     value:measurements.thoracicAngle,    unit:"deg",  t:[45,55], norm:"20-45deg normal"},
+                {label:"Lumbar Lordosis Est.",  value:measurements.lordosisAngle,    unit:"deg",  t:[60,70], norm:"40-60deg normal"},
+                {label:"Ant. Pelvic Tilt",      value:measurements.anteriorPelvicTiltDeg, unit:"deg", t:[12,20], norm:"♀<=12deg ♂<=7deg"},
                 // Frontal
-                {label:"Shoulder Tilt",         value:measurements.shoulderAngle,    unit:"°",  t:[3,7],   norm:"<3° normal"},
-                {label:"Pelvic Obliquity",      value:measurements.pelvisAngle,      unit:"°",  t:[3,7],   norm:"<3° normal"},
+                {label:"Shoulder Tilt",         value:measurements.shoulderAngle,    unit:"deg",  t:[3,7],   norm:"<3deg normal"},
+                {label:"Pelvic Obliquity",      value:measurements.pelvisAngle,      unit:"deg",  t:[3,7],   norm:"<3deg normal"},
                 {label:"Trunk Lateral Shift",   value:measurements.trunkLateralShift,unit:"%",  t:[3.5,7], norm:"<3.5% normal"},
-                {label:"Scoliosis (Cobb est.)", value:measurements.cobbEstimate,     unit:"°",  t:[5,10],  norm:"<5° normal"},
+                {label:"Scoliosis (Cobb est.)", value:measurements.cobbEstimate,     unit:"deg",  t:[5,10],  norm:"<5deg normal"},
                 {label:"C7 Plumb Deviation",    value:measurements.c7PlumbDev,       unit:"%",  t:[4,8],   norm:"<4% normal"},
                 // Knees
-                {label:"L Knee Valgus/Varus",   value:measurements.leftKneeFrontal,  unit:"°",  t:[5,10],  norm:"<5° normal"},
-                {label:"R Knee Valgus/Varus",   value:measurements.rightKneeFrontal, unit:"°",  t:[5,10],  norm:"<5° normal"},
-                {label:"L Knee Hyperext.",       value:measurements.leftKneeDev,      unit:"°",  t:[-5,-12],norm:"0 to -5° normal", invert:true},
-                {label:"R Knee Hyperext.",       value:measurements.rightKneeDev,     unit:"°",  t:[-5,-12],norm:"0 to -5° normal", invert:true},
+                {label:"L Knee Valgus/Varus",   value:measurements.leftKneeFrontal,  unit:"deg",  t:[5,10],  norm:"<5deg normal"},
+                {label:"R Knee Valgus/Varus",   value:measurements.rightKneeFrontal, unit:"deg",  t:[5,10],  norm:"<5deg normal"},
+                {label:"L Knee Hyperext.",       value:measurements.leftKneeDev,      unit:"deg",  t:[-5,-12],norm:"0 to -5deg normal", invert:true},
+                {label:"R Knee Hyperext.",       value:measurements.rightKneeDev,     unit:"deg",  t:[-5,-12],norm:"0 to -5deg normal", invert:true},
                 // Balance
                 {label:"WB Asymmetry",          value:measurements.weightBearingShift,unit:"%", t:[4,8],   norm:"<4% normal"},
                 {label:"COG Deviation",         value:measurements.cogDeviation,     unit:"%",  t:[4,8],   norm:"<4% normal"},
@@ -7990,7 +7990,7 @@ function PhotoUploadAnalyzer() {
               })}
             </div>
           )}
-          <div style={{fontSize:"0.62rem",color:C2.muted,padding:"7px 10px",background:C2.s2,borderRadius:7,lineHeight:1.6}}>⚠ Observational AI analysis — not a clinical diagnosis. All findings require clinical correlation and manual assessment.</div>
+          <div style={{fontSize:"0.62rem",color:C2.muted,padding:"7px 10px",background:C2.s2,borderRadius:7,lineHeight:1.6}}>⚠ Observational AI analysis - not a clinical diagnosis. All findings require clinical correlation and manual assessment.</div>
 
         </div>
       )}
@@ -8013,7 +8013,7 @@ function PhotoUploadAnalyzer() {
                   return(
                     <div key={i} style={{background:C2.s2,border:`1px solid ${C2.border}`,borderRadius:10,padding:"10px 12px"}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <div style={{fontWeight:700,color:C2.text,fontSize:"0.78rem"}}>{(s.view||"").toUpperCase()} · {s.band||"—"}</div>
+                        <div style={{fontWeight:700,color:C2.text,fontSize:"0.78rem"}}>{(s.view||"").toUpperCase()} · {s.band||"-"}</div>
                         <div style={{fontSize:"1.2rem",fontWeight:900,color:col}}>{s.score}</div>
                       </div>
                       <div style={{fontSize:"0.6rem",color:C2.muted,marginBottom:5}}>{new Date(s.capturedAt).toLocaleString()}</div>
@@ -8050,13 +8050,13 @@ const DEMO_PATIENTS = [
       dem_name:"Aisha Malik", dem_age:"34", dem_sex:"Female", dem_occupation:"Office administrator",
       dem_work_status:"Full time employed",
       cc_main:"My neck has been killing me for weeks. I wake up with terrible stiffness and by afternoon I can barely turn my head.",
-      cc_location:["Neck — posterior","Neck — lateral (R)","Shoulder (R)"],
+      cc_location:["Neck - posterior","Neck - lateral (R)","Shoulder (R)"],
       cc_symptom_type:["Stiffness","Aching","Sharp"],
-      cc_onset:["Gradual — insidious"], cc_duration:["1–3 months"],
+      cc_onset:["Gradual - insidious"], cc_duration:["1-3 months"],
       pa_vas_now:"5", pa_vas_worst:"8", pa_vas_best:"2",
       pa_quality:["Aching","Stiffness","Sharp"],
-      sb_morning:["Worse on waking — prolonged stiffness (>30 min)"],
-      sb_night:["Pain disturbs sleep — takes time to settle"],
+      sb_morning:["Worse on waking - prolonged stiffness (>30 min)"],
+      sb_night:["Pain disturbs sleep - takes time to settle"],
       agg_posture:["Prolonged sitting > 1 hour","Computer work","Looking down (phone use)"],
       agg_movement:["Rotation right","Looking over shoulder"],
       rel_manual:["Heat application"],
@@ -8070,19 +8070,19 @@ const DEMO_PATIENTS = [
     createdAt:"2025-01-11T10:00:00Z", updatedAt:"2025-01-11T10:00:00Z",
     data:{
       dem_name:"James Okonkwo", dem_age:"52", dem_sex:"Male", dem_occupation:"Warehouse operative",
-      dem_work_status:["Full time employed","Off work — injury"],
+      dem_work_status:["Full time employed","Off work - injury"],
       cc_main:"Sharp pain down my left leg when I bend forward. Started after lifting a heavy pallet last month.",
       cc_location:["Lower back","Buttock (L)","Thigh posterior (L)"],
       cc_radiation:["Radiates to leg (L)","Radiates to calf"],
       cc_symptom_type:["Sharp","Shooting","Tingling/pins & needles"],
-      cc_onset:["Lifting injury — flexed spine"], cc_duration:["2–4 weeks (subacute)"],
+      cc_onset:["Lifting injury - flexed spine"], cc_duration:["2-4 weeks (subacute)"],
       pa_vas_now:"6", pa_vas_worst:"9", pa_vas_best:"3",
       pa_quality:["Sharp","Shooting","Burning","Tingling"],
-      sb_morning:["Worst on waking — eases quickly (<30 min)"],
-      sb_night:["Pain wakes from sleep — can return to sleep"],
+      sb_morning:["Worst on waking - eases quickly (<30 min)"],
+      sb_night:["Pain wakes from sleep - can return to sleep"],
       agg_movement:["Forward bending","Getting in/out of car","Coughing / sneezing"],
       rel_posture:["Lying with knees bent"],
-      moi_type:["Lifting injury — flexed spine"], moi_activity:"Lifting a 40kg pallet at warehouse",
+      moi_type:["Lifting injury - flexed spine"], moi_activity:"Lifting a 40kg pallet at warehouse",
       phx_conditions:"Hypertension", meds_current:"Amlodipine 5mg",
       s_red4:"", // no bilateral pins
     }
@@ -8096,17 +8096,17 @@ const DEMO_PATIENTS = [
       cc_main:"My left knee swells up after running and feels unstable going down stairs.",
       cc_location:["Knee (L)"],
       cc_symptom_type:["Pain","Swelling","Giving way","Clicking"],
-      cc_onset:["Non-contact sport injury","Gradual — insidious"], cc_duration:["3–6 months (chronic)"],
+      cc_onset:["Non-contact sport injury","Gradual - insidious"], cc_duration:["3-6 months (chronic)"],
       pa_vas_now:"4", pa_vas_worst:"7", pa_vas_best:"0",
       pa_quality:["Aching","Sharp","Throbbing"],
       pa_pattern:["Only with specific movements","Post-activity delayed"],
-      sb_morning:["Stiff on waking — improves with movement"],
-      agg_activity:["Running","Stairs — down","Squatting","Gym — cardio"],
+      sb_morning:["Stiff on waking - improves with movement"],
+      agg_activity:["Running","Stairs - down","Squatting","Gym - cardio"],
       rel_posture:["Lying flat"],
       rel_manual:["Ice application"],
       moi_type:["Running injury"], moi_activity:"Training for half marathon",
-      ar_sport_level:["Active — 4–5x/week"],
-      ar_sports_played:["Running — road"],
+      ar_sport_level:["Active - 4-5x/week"],
+      ar_sports_played:["Running - road"],
       ar_goal_sport:"Return to running half marathon training",
       phx_conditions:"None",
     }
@@ -8120,19 +8120,19 @@ const DEMO_PATIENTS = [
       cc_main:"Both shoulders ache constantly. I can't lift my arms above my head anymore and getting dressed in the morning is a real struggle.",
       cc_location:["Shoulder (L)","Shoulder (R)","Upper arm (L)","Upper arm (R)"],
       cc_symptom_type:["Aching","Stiffness","Weakness"],
-      cc_onset:["Gradual — insidious"], cc_duration:["1–2 years"],
+      cc_onset:["Gradual - insidious"], cc_duration:["1-2 years"],
       pa_vas_now:"5", pa_vas_worst:"7", pa_vas_best:"2",
       pa_quality:["Aching","Deep","Constant ache"],
-      pa_pattern:["Constant — varies in intensity","Morning dominant"],
-      sb_morning:["Worse on waking — prolonged stiffness (>30 min)"],
-      sb_night:["Cannot sleep on affected side","Pain disturbs sleep — takes time to settle"],
+      pa_pattern:["Constant - varies in intensity","Morning dominant"],
+      sb_morning:["Worse on waking - prolonged stiffness (>30 min)"],
+      sb_night:["Cannot sleep on affected side","Pain disturbs sleep - takes time to settle"],
       agg_movement:["Reaching overhead","Reaching across body"],
       agg_activity:["Housework","Gardening"],
       rel_manual:["Heat application","Physiotherapy manual therapy"],
       phx_conditions:"Type 2 diabetes, Hypertension",
       meds_current:"Metformin 500mg, Lisinopril 10mg",
-      fl_self_care:["Dressing — upper body difficulty","Washing hair — difficulty"],
-      fl_domestic:["Cleaning — cannot vacuum","Ironing — cannot perform"],
+      fl_self_care:["Dressing - upper body difficulty","Washing hair - difficulty"],
+      fl_domestic:["Cleaning - cannot vacuum","Ironing - cannot perform"],
     }
   },
   {
@@ -8145,22 +8145,22 @@ const DEMO_PATIENTS = [
       cc_location:["Wrist (R)","Hand/fingers (R)"],
       cc_radiation:["Radiates to hand/fingers (R)"],
       cc_symptom_type:["Burning","Tingling/pins & needles","Numbness","Weakness"],
-      cc_onset:["Repetitive strain","Occupational injury"], cc_duration:["6–12 months"],
+      cc_onset:["Repetitive strain","Occupational injury"], cc_duration:["6-12 months"],
       pa_vas_now:"4", pa_vas_worst:"7", pa_vas_best:"1",
       pa_quality:["Burning","Tingling","Pins and needles","Numb"],
-      pa_nature:["Neuropathic — burning, shooting, dermatomal"],
+      pa_nature:["Neuropathic - burning, shooting, dermatomal"],
       pa_pattern:["Night pain waking patient","Activity dependent"],
       sb_night:["Wakes once per night","Arm/leg symptoms at night (neural)"],
       sb_morning:["Pain free on waking then worsens"],
       agg_activity:["Computer/keyboard work","Carrying children"],
       agg_movement:["Reaching across body"],
       rel_posture:["Lying with arms at sides"],
-      rel_manual:["Massage — general"],
+      rel_manual:["Massage - general"],
       moi_type:["Repetitive strain","Occupational injury"],
       moi_activity:"Long shifts doing patient transfers and documentation",
       phx_conditions:"Hypothyroidism", meds_current:"Levothyroxine 75mcg",
       fl_work:["Cannot sit > 1 hour","Computer work painful"],
-      fl_self_care:["Dressing — upper body difficulty"],
+      fl_self_care:["Dressing - upper body difficulty"],
     }
   },
 ];
@@ -8228,7 +8228,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   const saveDocs = (docs) => {
     try {
       localStorage.setItem(`physio_docs_${patient?.id||"demo"}`, JSON.stringify(docs));
-    } catch { alert("Storage full — file too large"); }
+    } catch { alert("Storage full - file too large"); }
   };
 
   const handleFileUpload = (e) => {
@@ -8315,7 +8315,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   const agg      = d.cc_agg || (Array.isArray(d.cx_agg_mov)?d.cx_agg_mov.join(", "):d.cx_agg_mov) || "";
   const rel      = d.cc_rel || (Array.isArray(d.cx_rel_mov)?d.cx_rel_mov.join(", "):d.cx_rel_mov) || "";
 
-  // ROM — real values only, no fallbacks
+  // ROM - real values only, no fallbacks
   const ROM = {
     flex: d.rom_cflex || "", ext: d.rom_cext || "",
     rrot: d.rom_crotr || "", lrot: d.rom_crotl || "",
@@ -8330,7 +8330,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     : [];
   const DATES = sessions.slice(-6).map(s => s.date || "");
 
-  // Exercises — real data if available, else show template
+  // Exercises - real data if available, else show template
   const hepExercises = Array.isArray(d.hep_exercises) ? d.hep_exercises : [];
   const EXERCISES = hepExercises.length > 0 ? hepExercises : [
     { id:"e1", name:"Chin Tuck",                sets:3, reps:10, hold:"5s",  emoji:"🧘" },
@@ -8340,7 +8340,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     { id:"e5", name:"Deep Neck Flexor Training", sets:3, reps:10, hold:"10s",emoji:"🦴" },
   ];
 
-  // Manual therapy — real data if available, else show template
+  // Manual therapy - real data if available, else show template
   const rawManual = Array.isArray(d.manual_therapy) ? d.manual_therapy : [];
   const MANUAL = rawManual.length > 0 ? rawManual : [
     { name:"PA Mobilisation Grade III", freq:"Per session",      status:"Active" },
@@ -8348,7 +8348,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     { name:"Dry Needling",              freq:"Every 2 sessions", status:"Active" },
   ];
 
-  // Modalities — real data if available, else template
+  // Modalities - real data if available, else template
   const rawModalities = Array.isArray(d.modalities) ? d.modalities : [];
   const MODALITIES = rawModalities.length > 0 ? rawModalities : [
     { name:"Ultrasound Therapy", freq:"10 min, 1MHz, 1.0 W/cm²", status:"Active" },
@@ -8404,7 +8404,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     if(!TREND||TREND.length<2) return (
       <div style={{height:80,display:"flex",alignItems:"center",justifyContent:"center",
         color:"#9CA3AF",fontSize:12}}>
-        No trend data yet — complete sessions to see progress
+        No trend data yet - complete sessions to see progress
       </div>
     );
     const w=300,h=80,max=10,min=0;
@@ -8503,7 +8503,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
           width:36,height:36,borderRadius:"50%",border:`1px solid ${C.border2}`,
           background:C.white,cursor:"pointer",display:"flex",alignItems:"center",
           justifyContent:"center",fontSize:18,color:C.primary,
-        }}>←</button>
+        }}><-</button>
         <div style={{fontSize:15,fontWeight:700,color:C.text}}>Patient Profile</div>
         <div style={{display:"flex",gap:8}}>
           <button style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted}}>✏️</button>
@@ -8661,7 +8661,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   <div style={{fontSize:10,color:C.muted,fontWeight:500,marginBottom:8}}>Overall Progress</div>
                   <Donut pct={overallPct} size={76} stroke={8} color={C.green} sub="%"/>
                   <div style={{marginTop:6,display:"flex",alignItems:"center",gap:3,justifyContent:"center"}}>
-                    <span style={{fontSize:12,color:C.green}}>↑</span>
+                    <span style={{fontSize:12,color:C.green}}>^</span>
                     <span style={{fontSize:10,color:C.green,fontWeight:600}}>12% from last week</span>
                   </div>
                 </div>
@@ -8719,8 +8719,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 <span style={{fontSize:12,fontWeight:600,color:C.primary,cursor:"pointer"}}>View All</span>
               </div>
               {[
-                {date:"Session Note — 25 May 2025",note:"Manual therapy and cervical mobilization performed. Patient...",dr:"Dr. Priya Sharma",time:"10:30 AM"},
-                {date:"Progress Note — 18 May 2025",note:"ROM improving. NRS reduced from 7 to 6. Continue current plan.",dr:"Dr. Priya Sharma",time:"11:00 AM"},
+                {date:"Session Note - 25 May 2025",note:"Manual therapy and cervical mobilization performed. Patient...",dr:"Dr. Priya Sharma",time:"10:30 AM"},
+                {date:"Progress Note - 18 May 2025",note:"ROM improving. NRS reduced from 7 to 6. Continue current plan.",dr:"Dr. Priya Sharma",time:"11:00 AM"},
               ].map((n,i)=>(
                 <div key={i} style={{display:"flex",gap:12,padding:"10px 0",
                   borderBottom:i===0?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
@@ -8778,7 +8778,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               </div>
             </div>
 
-            {/* SOAP — S: SUBJECTIVE */}
+            {/* SOAP - S: SUBJECTIVE */}
             <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
               boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
@@ -8805,7 +8805,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               </div>
             </div>
 
-            {/* SOAP — O: OBJECTIVE */}
+            {/* SOAP - O: OBJECTIVE */}
             <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
               boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
               <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:14}}>Objective</div>
@@ -8817,16 +8817,16 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     <span style={{fontSize:15}}>📐</span>
                     <span style={{fontSize:13,fontWeight:700,color:C.text}}>Cervical ROM</span>
                   </div>
-                  <span onClick={()=>onNav&&onNav("rom")} style={{fontSize:11.5,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Details →</span>
+                  <span onClick={()=>onNav&&onNav("rom")} style={{fontSize:11.5,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Details -></span>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
                   {[
-                    {label:"Flexion",    val:ROM.flex?ROM.flex+"°":"—"},
-                    {label:"Extension",  val:ROM.ext?ROM.ext+"°":"—"},
-                    {label:"R Rotation", val:ROM.rrot?ROM.rrot+"°":"—"},
-                    {label:"L Rotation", val:ROM.lrot?ROM.lrot+"°":"—"},
-                    {label:"R SB",       val:ROM.rsb?ROM.rsb+"°":"—"},
-                    {label:"L SB",       val:ROM.lsb?ROM.lsb+"°":"—"},
+                    {label:"Flexion",    val:ROM.flex?ROM.flex+"deg":"-"},
+                    {label:"Extension",  val:ROM.ext?ROM.ext+"deg":"-"},
+                    {label:"R Rotation", val:ROM.rrot?ROM.rrot+"deg":"-"},
+                    {label:"L Rotation", val:ROM.lrot?ROM.lrot+"deg":"-"},
+                    {label:"R SB",       val:ROM.rsb?ROM.rsb+"deg":"-"},
+                    {label:"L SB",       val:ROM.lsb?ROM.lsb+"deg":"-"},
                   ].map(r=>(
                     <div key={r.label}>
                       <div style={{fontSize:10,color:C.muted}}>{r.label}</div>
@@ -8835,7 +8835,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   ))}
                 </div>
                 <div style={{marginTop:10,display:"flex",alignItems:"center",gap:4}}>
-                  <span style={{fontSize:12,color:C.green}}>↑</span>
+                  <span style={{fontSize:12,color:C.green}}>^</span>
                   <span style={{fontSize:11,color:C.green,fontWeight:600}}>Improving</span>
                 </div>
               </div>
@@ -8875,12 +8875,12 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       <div style={{fontSize:11,color:row.subColor||C.muted,marginTop:1}}>{row.sub}</div>
                     </div>
                   </div>
-                  <span style={{fontSize:11.5,fontWeight:600,color:C.primary}}>View Details →</span>
+                  <span style={{fontSize:11.5,fontWeight:600,color:C.primary}}>View Details -></span>
                 </div>
               ))}
             </div>
 
-            {/* SOAP — A: ASSESSMENT */}
+            {/* SOAP - A: ASSESSMENT */}
             <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
               boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
               <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:12}}>Assessment (SOAP-A)</div>
@@ -8906,7 +8906,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               ))}
             </div>
 
-            {/* SOAP — P: PLAN */}
+            {/* SOAP - P: PLAN */}
             <div style={{background:C.white,borderRadius:16,padding:18,marginBottom:14,
               boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
               <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:12}}>Plan (SOAP-P)</div>
@@ -8914,7 +8914,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 {label:"Treatment Goal",      value:"Reduce pain to NRS 3/10, restore full ROM"},
                 {label:"Session Frequency",   value:"2x / week for 6 weeks"},
                 {label:"Planned Interventions",value:"PA mobs, DNF training, nerve glides, HEP"},
-                {label:"Home Exercise",       value:"Chin tucks, nerve glides — daily"},
+                {label:"Home Exercise",       value:"Chin tucks, nerve glides - daily"},
                 {label:"Precautions",         value:"Avoid sustained cervical flexion, heavy lifting"},
               ].map((item,i)=>(
                 <div key={i} style={{padding:"8px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
@@ -9035,7 +9035,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 <button style={{width:"100%",padding:"11px",borderRadius:10,
                   background:"none",border:`1px solid ${C.primary}`,
                   color:C.primary,fontSize:12,fontWeight:700,cursor:"pointer",marginBottom:10}}>
-                  View All Exercises →
+                  View All Exercises ->
                 </button>
                 {/* HEP */}
                 <div style={{background:C.white,borderRadius:16,padding:16,
@@ -9147,8 +9147,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               </div>
               {[
                 {label:"Pain (NRS)",      baseline:"8/10", current:`${nrsNow}/10`, pct:Math.round(((nrsWorst-nrsNow)/nrsWorst)*100), up:false},
-                {label:"Cervical Flex",   baseline:"28°",  current:ROM.flex+"°",   pct:Math.round(((parseFloat(ROM.flex)-28)/28)*100), up:true},
-                {label:"Cervical Ext",    baseline:"18°",  current:ROM.ext+"°",    pct:Math.round(((parseFloat(ROM.ext)-18)/18)*100), up:true},
+                {label:"Cervical Flex",   baseline:"28deg",  current:ROM.flex+"deg",   pct:Math.round(((parseFloat(ROM.flex)-28)/28)*100), up:true},
+                {label:"Cervical Ext",    baseline:"18deg",  current:ROM.ext+"deg",    pct:Math.round(((parseFloat(ROM.ext)-18)/18)*100), up:true},
                 {label:"NDI Score",       baseline:"38/50",current:"28/50",        pct:Math.round(((38-28)/38)*100), up:false},
               ].map((row,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",gap:10,
@@ -9157,12 +9157,12 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     <div style={{fontSize:12,fontWeight:700,color:C.text}}>{row.label}</div>
                     <div style={{fontSize:11,color:C.muted,marginTop:2}}>
                       Baseline: <span style={{fontWeight:600}}>{row.baseline}</span>
-                      {" → "}Current: <span style={{fontWeight:600,color:C.primary}}>{row.current}</span>
+                      {" -> "}Current: <span style={{fontWeight:600,color:C.primary}}>{row.current}</span>
                     </div>
                   </div>
                   <div style={{textAlign:"right"}}>
                     <div style={{fontSize:13,fontWeight:800,color:C.green}}>
-                      {row.up?"↑":"↓"} {row.pct}%
+                      {row.up?"^":"v"} {row.pct}%
                     </div>
                     <div style={{fontSize:10,color:C.muted}}>improvement</div>
                   </div>
@@ -9208,7 +9208,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {sess.vasStart&&sess.vasEnd&&(
                     <div style={{textAlign:"right",flexShrink:0}}>
                       <div style={{fontSize:11,fontWeight:700,color:C.green}}>
-                        NRS: {sess.vasStart}→{sess.vasEnd}
+                        NRS: {sess.vasStart}->{sess.vasEnd}
                       </div>
                     </div>
                   )}
@@ -9229,7 +9229,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4"
               onChange={handleFileUpload}/>
 
-            {/* Upload zone — tapping opens file picker */}
+            {/* Upload zone - tapping opens file picker */}
             <div onClick={()=>fileInputRef.current?.click()}
               style={{background:"#F5F3FF",border:`2px dashed ${C.secondary}`,borderRadius:16,
               padding:"28px 20px",textAlign:"center",marginBottom:16,cursor:"pointer",
@@ -9238,14 +9238,14 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               {uploading ? (
                 <>
                   <div style={{fontSize:36,marginBottom:8}}>⏳</div>
-                  <div style={{fontSize:14,fontWeight:700,color:C.primary}}>Uploading…</div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.primary}}>Uploading...</div>
                 </>
               ) : (
                 <>
                   <div style={{fontSize:36,marginBottom:8}}>📤</div>
                   <div style={{fontSize:14,fontWeight:700,color:C.primary}}>Upload Document</div>
                   <div style={{fontSize:12,color:C.muted,marginTop:4}}>
-                    PDF, Image, MRI, X-Ray — max 5MB
+                    PDF, Image, MRI, X-Ray - max 5MB
                   </div>
                 </>
               )}
@@ -9447,7 +9447,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
             <button onClick={e=>{e.stopPropagation();onDelete();}}
               style={{background:"none",border:"none",
                 color:"rgba(255,77,109,0.35)",cursor:"pointer",fontSize:"0.65rem",padding:"2px 4px"}}>
-              ✕
+              x
             </button>
           </div>
         </div>
@@ -9542,7 +9542,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
             </div>
             <button onClick={onClose}
               style={{background:"none",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,
-                color:"#4a6070",cursor:"pointer",padding:"7px 13px",fontSize:"0.7rem"}}>✕ Close</button>
+                color:"#4a6070",cursor:"pointer",padding:"7px 13px",fontSize:"0.7rem"}}>x Close</button>
           </div>
 
           {/* Search */}
@@ -9550,7 +9550,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
             <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",
               fontSize:"0.8rem",color:"#3a5070"}}>🔍</span>
             <input value={search} onChange={e=>setSearch(e.target.value)}
-              placeholder="Search name, diagnosis, occupation…"
+              placeholder="Search name, diagnosis, occupation..."
               style={{width:"100%",background:"rgba(255,255,255,0.03)",
                 border:"1px solid rgba(255,255,255,0.07)",borderRadius:9,color:"#1a1025",
                 outline:"none",padding:"8px 12px 8px 30px",fontSize:"0.76rem",boxSizing:"border-box"}}/>
@@ -9558,7 +9558,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
 
           {/* Filters row */}
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-            {[["updated","🕐 Recent"],["name","A–Z"],["age","Age"],["fields","Complete"]].map(([v,l])=>(
+            {[["updated","🕐 Recent"],["name","A-Z"],["age","Age"],["fields","Complete"]].map(([v,l])=>(
               <button key={v} onClick={()=>setSortBy(v)}
                 style={{padding:"4px 9px",borderRadius:7,
                   border:`1px solid ${sortBy===v?"rgba(0,229,255,0.35)":"rgba(255,255,255,0.06)"}`,
@@ -9599,7 +9599,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
             <div style={{textAlign:"center",padding:"40px 20px",color:"#2a3f55"}}>
               <div style={{fontSize:"2.5rem",marginBottom:8}}>👤</div>
               <div style={{fontSize:"0.82rem",color:"#3a5070"}}>
-                {search ? "No patients match your search" : "No patients — tap New Patient to start"}
+                {search ? "No patients match your search" : "No patients - tap New Patient to start"}
               </div>
             </div>
           )}
@@ -9664,8 +9664,8 @@ const POSTURE_DEFECTS = {
     description:"Ear positioned anterior to the acromion process. Each 2.5cm of forward translation adds ~10kg of effective cervical load.",
     tight_muscles:["Upper trapezius","SCM","Suboccipitals","Scalenes","Pec minor"],
     weak_muscles:["Deep neck flexors (DNF)","Lower trapezius","Serratus anterior","Rhomboids"],
-    kinetic_chain:"Forward head → cervical lordosis → thoracic kyphosis → shoulder protraction → reduced lung capacity",
-    exercises:["Chin tucks x15 3×","Wall angels x12 3×","DNF activation","Pec minor stretch"]
+    kinetic_chain:"Forward head -> cervical lordosis -> thoracic kyphosis -> shoulder protraction -> reduced lung capacity",
+    exercises:["Chin tucks x15 3x","Wall angels x12 3x","DNF activation","Pec minor stretch"]
   },
   rounded_shoulders: {
     id:"rounded_shoulders", icon:"🔄", label:"Rounded/Protracted Shoulders", region:"Thoracic/Shoulder",
@@ -9673,16 +9673,16 @@ const POSTURE_DEFECTS = {
     description:"Anterior displacement of the humeral head with scapular protraction and internal rotation.",
     tight_muscles:["Pec major","Pec minor","Anterior deltoid","Subscapularis","Upper trapezius"],
     weak_muscles:["Lower trapezius","Serratus anterior","Rhomboids","Posterior rotator cuff"],
-    kinetic_chain:"Protracted scapula → reduced subacromial space → impingement risk → compensatory cervical extension",
+    kinetic_chain:"Protracted scapula -> reduced subacromial space -> impingement risk -> compensatory cervical extension",
     exercises:["Band pull-apart x20","Face pulls x15","Pec doorway stretch","Scapular retraction holds"]
   },
   thoracic_kyphosis: {
     id:"thoracic_kyphosis", icon:"🪃", label:"Increased Thoracic Kyphosis", region:"Thoracic",
     view:["lateral","posterior"],
-    description:"Excessive posterior convexity of the thoracic spine (>40° Cobb angle). May reduce respiratory capacity.",
+    description:"Excessive posterior convexity of the thoracic spine (>40deg Cobb angle). May reduce respiratory capacity.",
     tight_muscles:["Pec major/minor","Anterior intercostals","Hip flexors"],
     weak_muscles:["Thoracic extensors","Lower trapezius","Gluteus maximus"],
-    kinetic_chain:"Thoracic kyphosis → forward head → UCS → reduced hip extension → LCS compensations",
+    kinetic_chain:"Thoracic kyphosis -> forward head -> UCS -> reduced hip extension -> LCS compensations",
     exercises:["Thoracic extension over foam roller","T-spine rotation","Prone Y-T-W","Back extension"]
   },
   lumbar_hyperlordosis: {
@@ -9691,8 +9691,8 @@ const POSTURE_DEFECTS = {
     description:"Excessive anterior lumbar curve with anterior pelvic tilt. Increases facet joint loading.",
     tight_muscles:["Hip flexors (iliopsoas, rectus femoris)","TFL","Lumbar erectors","QL"],
     weak_muscles:["Gluteus maximus","Hamstrings","Transversus abdominis","Rectus abdominis"],
-    kinetic_chain:"Anterior pelvic tilt → hip flexor tightness → glute inhibition → hamstring overload → posterior knee pain",
-    exercises:["Hip flexor couch stretch","Glute bridges 3×15","Dead bug","TA activation"]
+    kinetic_chain:"Anterior pelvic tilt -> hip flexor tightness -> glute inhibition -> hamstring overload -> posterior knee pain",
+    exercises:["Hip flexor couch stretch","Glute bridges 3x15","Dead bug","TA activation"]
   },
   anterior_pelvic_tilt: {
     id:"anterior_pelvic_tilt", icon:"⬇", label:"Anterior Pelvic Tilt", region:"Lumbar/Pelvis",
@@ -9700,7 +9700,7 @@ const POSTURE_DEFECTS = {
     description:"ASIS positioned anterior and inferior to PSIS. Often co-exists with lumbar hyperlordosis.",
     tight_muscles:["Iliopsoas","Rectus femoris","TFL","Lumbar erectors"],
     weak_muscles:["Gluteus maximus","Hamstrings","TA","Internal obliques"],
-    kinetic_chain:"APT → hip flexor tightness → glute inhibition → lumbar overload → disc stress at L4-S1",
+    kinetic_chain:"APT -> hip flexor tightness -> glute inhibition -> lumbar overload -> disc stress at L4-S1",
     exercises:["Pelvic tilts","Couch stretch","Glute activation","Posterior pelvic tilt cues"]
   },
   posterior_pelvic_tilt: {
@@ -9709,7 +9709,7 @@ const POSTURE_DEFECTS = {
     description:"PSIS positioned inferior to ASIS. Flattens lumbar lordosis, often associated with prolonged sitting.",
     tight_muscles:["Hamstrings","Gluteus maximus","Rectus abdominis"],
     weak_muscles:["Hip flexors","Lumbar extensors","TFL"],
-    kinetic_chain:"PPT → lumbar flexion bias → disc posterior loading → hamstring overuse",
+    kinetic_chain:"PPT -> lumbar flexion bias -> disc posterior loading -> hamstring overuse",
     exercises:["Hip flexor stretching","Lumbar extension exercises","Prone hip extension","Cat-cow"]
   },
   lateral_pelvic_tilt: {
@@ -9718,7 +9718,7 @@ const POSTURE_DEFECTS = {
     description:"Unilateral elevation of the iliac crest. May indicate leg length discrepancy or hip abductor weakness.",
     tight_muscles:["Ipsilateral QL","Ipsilateral TFL","Ipsilateral hip adductors"],
     weak_muscles:["Contralateral gluteus medius","Contralateral QL"],
-    kinetic_chain:"Lateral pelvic tilt → scoliotic compensation → contralateral shoulder elevation → cervical lateral flexion",
+    kinetic_chain:"Lateral pelvic tilt -> scoliotic compensation -> contralateral shoulder elevation -> cervical lateral flexion",
     exercises:["Side-lying hip abduction","Clamshells","Standing hip abduction","QL stretch"]
   },
   genu_valgum: {
@@ -9727,7 +9727,7 @@ const POSTURE_DEFECTS = {
     description:"Medial deviation of the knee relative to the mechanical axis. Increases medial compartment and patellofemoral loading.",
     tight_muscles:["TFL","IT band","Hip adductors","Medial hamstrings"],
     weak_muscles:["Gluteus medius","Gluteus maximus","VMO","Hip external rotators"],
-    kinetic_chain:"Genu valgum → hip IR → PFPS risk → medial ankle pronation → plantar fascia overload",
+    kinetic_chain:"Genu valgum -> hip IR -> PFPS risk -> medial ankle pronation -> plantar fascia overload",
     exercises:["Clamshells","Monster walks","Single-leg squat with knee tracking","VMO terminal extensions"]
   },
   genu_varum: {
@@ -9736,7 +9736,7 @@ const POSTURE_DEFECTS = {
     description:"Lateral deviation of the knee. Increases lateral compartment loading and IT band tension.",
     tight_muscles:["IT band","Biceps femoris","Hip ER","Lateral gastrocnemius"],
     weak_muscles:["Hip adductors","VMO","Medial gastrocnemius"],
-    kinetic_chain:"Genu varum → lateral knee overload → IT band syndrome → supinated foot posture",
+    kinetic_chain:"Genu varum -> lateral knee overload -> IT band syndrome -> supinated foot posture",
     exercises:["IT band foam rolling","Hip adductor strengthening","Lateral step-downs","Arch support"]
   },
   foot_pronation: {
@@ -9745,7 +9745,7 @@ const POSTURE_DEFECTS = {
     description:"Medial arch collapse with calcaneal eversion. The kinetic chain starting point for many lower limb issues.",
     tight_muscles:["Gastrocnemius","Soleus","Peroneals","Plantar fascia"],
     weak_muscles:["Tibialis posterior","FHL","Intrinsic foot muscles","Gluteus medius"],
-    kinetic_chain:"Pronation → tibial IR → genu valgum → hip IR → PFPS → LCS compensations",
+    kinetic_chain:"Pronation -> tibial IR -> genu valgum -> hip IR -> PFPS -> LCS compensations",
     exercises:["Short foot exercise","Calf raises","Tibialis posterior strengthening","Intrinsic foot doming"]
   },
   foot_supination: {
@@ -9754,7 +9754,7 @@ const POSTURE_DEFECTS = {
     description:"Elevated medial arch with reduced shock absorption. Associated with lateral ankle instability.",
     tight_muscles:["IT band","Peroneals","Plantar fascia","Gastroc lateral head"],
     weak_muscles:["Peroneals (with instability)","Intrinsic foot muscles"],
-    kinetic_chain:"Supination → lateral ankle instability → lateral knee overload → genu varum compensation",
+    kinetic_chain:"Supination -> lateral ankle instability -> lateral knee overload -> genu varum compensation",
     exercises:["Peroneal strengthening","Single-leg balance","Lateral band walks","Arch mobilisation"]
   },
   scoliosis: {
@@ -9763,7 +9763,7 @@ const POSTURE_DEFECTS = {
     description:"Lateral deviation of the spine with rotational component. Refer for Cobb angle measurement if suspected structural.",
     tight_muscles:["Ipsilateral concave paraspinals","Ipsilateral QL","Ipsilateral hip musculature"],
     weak_muscles:["Contralateral paraspinals","Convex-side core stabilisers"],
-    kinetic_chain:"Scoliosis → rib cage rotation → shoulder height asymmetry → pelvic obliquity → leg length inequality",
+    kinetic_chain:"Scoliosis -> rib cage rotation -> shoulder height asymmetry -> pelvic obliquity -> leg length inequality",
     exercises:["Schroth breathing","Concave-side stretch","Convex-side strengthening","Pilates side-lying"]
   },
   head_tilt: {
@@ -9772,7 +9772,7 @@ const POSTURE_DEFECTS = {
     description:"Ipsilateral ear approaches ipsilateral shoulder. May indicate upper trap tightness or C-spine dysfunction.",
     tight_muscles:["Ipsilateral upper trapezius","Ipsilateral SCM","Ipsilateral scalenes","Ipsilateral levator scapulae"],
     weak_muscles:["Contralateral lateral neck flexors","Contralateral upper trapezius"],
-    kinetic_chain:"Head tilt → cervical lateral flexion → ipsilateral shoulder elevation → compensatory thoracic curve",
+    kinetic_chain:"Head tilt -> cervical lateral flexion -> ipsilateral shoulder elevation -> compensatory thoracic curve",
     exercises:["Contralateral cervical lateral flexion stretch","Upper trap SMR","Levator scapulae stretch"]
   },
   scapular_winging: {
@@ -9781,7 +9781,7 @@ const POSTURE_DEFECTS = {
     description:"Medial border or inferior angle of scapula lifts from thoracic wall. Serratus anterior or trapezius dysfunction.",
     tight_muscles:["Pec minor","Pec major","Short head biceps"],
     weak_muscles:["Serratus anterior","Lower trapezius","Rhomboids"],
-    kinetic_chain:"Scapular winging → reduced force couple → rotator cuff overload → impingement → biceps tendinopathy",
+    kinetic_chain:"Scapular winging -> reduced force couple -> rotator cuff overload -> impingement -> biceps tendinopathy",
     exercises:["Serratus push-up plus","Wall slides","Lower trap Y raises","Scapular protraction resistance"]
   },
 };
@@ -9808,7 +9808,7 @@ function PostureDefectDetail({ defectId, onClose }) {
             <div style={{fontSize:"1rem",fontWeight:800,color:"#1a1025"}}>{d.label}</div>
             <span style={{fontSize:"0.65rem",padding:"2px 8px",borderRadius:6,background:"rgba(0,229,255,0.12)",color:"#00e5ff",fontWeight:700}}>{d.region}</span>
           </div>
-          <button onClick={onClose} style={{background:"none",border:"1px solid #d8cce8",borderRadius:8,color:"#7e6a9a",cursor:"pointer",padding:"5px 10px",fontSize:"0.75rem"}}>✕</button>
+          <button onClick={onClose} style={{background:"none",border:"1px solid #d8cce8",borderRadius:8,color:"#7e6a9a",cursor:"pointer",padding:"5px 10px",fontSize:"0.75rem"}}>x</button>
         </div>
         {/* Description */}
         <div style={{padding:"10px 13px",background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:10,fontSize:"0.76rem",color:"#a0c8e8",lineHeight:1.6,marginBottom:14}}>
@@ -9879,8 +9879,8 @@ function PostureDefectModule() {
     const bodyHTML = `
       <div class="disclaimer">⚠ Manual observational assessment. For clinical use only. Not a substitute for comprehensive evaluation.</div>
       <div class="info-grid">
-        <div class="info-box"><div class="info-label">Patient</div><div class="info-value">${patientName || "—"}</div></div>
-        <div class="info-box"><div class="info-label">Clinician</div><div class="info-value">${clinicianName || "—"}</div></div>
+        <div class="info-box"><div class="info-label">Patient</div><div class="info-value">${patientName || "-"}</div></div>
+        <div class="info-box"><div class="info-label">Clinician</div><div class="info-value">${clinicianName || "-"}</div></div>
         <div class="info-box"><div class="info-label">Date</div><div class="info-value">${date}</div></div>
         <div class="info-box"><div class="info-label">Findings</div><div class="info-value">${selectedDefects.length} defect${selectedDefects.length !== 1 ? "s" : ""}</div></div>
       </div>
@@ -9891,7 +9891,7 @@ function PostureDefectModule() {
         <div class="sig-col"><div class="sig-line"></div><div class="sig-label">Date</div></div>
       </div>`;
 
-    const metaRight = `<strong>Patient:</strong> ${patientName || "—"}<br/><strong>Clinician:</strong> ${clinicianName || "—"}<br/><strong>Date:</strong> ${date}`;
+    const metaRight = `<strong>Patient:</strong> ${patientName || "-"}<br/><strong>Clinician:</strong> ${clinicianName || "-"}<br/><strong>Date:</strong> ${date}`;
     const html = makePDFPage("Postural Assessment Report", metaRight, bodyHTML);
     await downloadPDFFromHTML(html, `postural-report-${(patientName || "patient").replace(/\s+/g, "-").toLowerCase()}.pdf`);
   }, []);
@@ -9906,10 +9906,10 @@ function PostureDefectModule() {
   };
 
   const PLAN_VIEWS = [
-    {key:"anterior",  label:"Anterior",   icon:"⬆", tip:"Facing camera — head, shoulders, pelvis, knees, feet"},
-    {key:"posterior", label:"Posterior",  icon:"⬇", tip:"Back to camera — scapulae, spine alignment, calcanei"},
-    {key:"lateral",   label:"L Lateral",  icon:"◀", tip:"Left side — ear, shoulder, hip, knee, ankle plumb line"},
-    {key:"right_lateral",label:"R Lateral",icon:"▶",tip:"Right side — same as left for asymmetry comparison"},
+    {key:"anterior",  label:"Anterior",   icon:"⬆", tip:"Facing camera - head, shoulders, pelvis, knees, feet"},
+    {key:"posterior", label:"Posterior",  icon:"⬇", tip:"Back to camera - scapulae, spine alignment, calcanei"},
+    {key:"lateral",   label:"L Lateral",  icon:"◀", tip:"Left side - ear, shoulder, hip, knee, ankle plumb line"},
+    {key:"right_lateral",label:"R Lateral",icon:"▶",tip:"Right side - same as left for asymmetry comparison"},
   ];
 
   // Group selected defects by their relevant views
@@ -9925,7 +9925,7 @@ function PostureDefectModule() {
     <div>
       {/* -- STEP 1: View guidance -- */}
       <div style={{marginBottom:16}}>
-        <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:9}}>📋 Assessment Views — Position patient accordingly</div>
+        <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:9}}>📋 Assessment Views - Position patient accordingly</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
           {PLAN_VIEWS.map(v => (
             <div key={v.key} style={{background:"rgba(0,229,255,0.04)",border:"1px solid rgba(0,229,255,0.14)",borderRadius:10,padding:"9px 11px"}}>
@@ -9988,7 +9988,7 @@ function PostureDefectModule() {
       {selectedDefects.length > 0 && (
         <div style={{marginBottom:14}}>
           <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
-            📌 Findings — tap card to view full clinical detail
+            📌 Findings - tap card to view full clinical detail
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:7}}>
             {selectedDefects.map(id => {
@@ -9998,7 +9998,7 @@ function PostureDefectModule() {
               const col = SEVERITY_COLOR[sev];
               return (
                 <div key={id} style={{background:"#ffffff",border:`1px solid ${col}35`,borderRadius:11,overflow:"hidden"}}>
-                  {/* Card header — clickable */}
+                  {/* Card header - clickable */}
                   <div onClick={() => setOpenDefect(id)} style={{padding:"10px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:9}}>
                     <span style={{fontSize:"1.1rem"}}>{d.icon}</span>
                     <div style={{flex:1,minWidth:0}}>
@@ -10006,8 +10006,8 @@ function PostureDefectModule() {
                       <div style={{fontSize:"0.6rem",color:"#7e6a9a",marginTop:1}}>{d.region}</div>
                     </div>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
-                      <span style={{fontSize:"0.62rem",color:"#00e5ff",fontWeight:700}}>📋 Detail →</span>
-                      <button onClick={e=>{e.stopPropagation();setSelectedDefects(p=>p.filter(s=>s!==id));}} style={{background:"none",border:"1px solid #d8cce8",borderRadius:5,color:"#7e6a9a",cursor:"pointer",fontSize:"0.6rem",padding:"1px 6px",lineHeight:1.4}}>✕</button>
+                      <span style={{fontSize:"0.62rem",color:"#00e5ff",fontWeight:700}}>📋 Detail -></span>
+                      <button onClick={e=>{e.stopPropagation();setSelectedDefects(p=>p.filter(s=>s!==id));}} style={{background:"none",border:"1px solid #d8cce8",borderRadius:5,color:"#7e6a9a",cursor:"pointer",fontSize:"0.6rem",padding:"1px 6px",lineHeight:1.4}}>x</button>
                     </div>
                   </div>
 
@@ -10033,7 +10033,7 @@ function PostureDefectModule() {
                     </div>
                     <div style={{flex:"1 1 120px"}}>
                       <div style={{fontSize:"0.55rem",fontWeight:700,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🔗 Chain</div>
-                      <div style={{fontSize:"0.62rem",color:"#1a1025",lineHeight:1.4,fontStyle:"italic"}}>{d.kinetic_chain.split("→")[0].trim()} →…</div>
+                      <div style={{fontSize:"0.62rem",color:"#1a1025",lineHeight:1.4,fontStyle:"italic"}}>{d.kinetic_chain.split("->")[0].trim()} ->...</div>
                     </div>
                   </div>
                 </div>
@@ -10055,7 +10055,7 @@ function PostureDefectModule() {
             <div style={{background:"#ffffff",border:"1px solid rgba(0,201,122,0.3)",borderRadius:12,padding:"13px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{fontSize:"0.72rem",fontWeight:800,color:"#00c97a"}}>📄 PDF Report Details</div>
-                <button onClick={() => setShowExport(false)} style={{background:"none",border:"1px solid #d8cce8",borderRadius:6,color:"#7e6a9a",cursor:"pointer",padding:"3px 8px",fontSize:"0.65rem"}}>✕</button>
+                <button onClick={() => setShowExport(false)} style={{background:"none",border:"1px solid #d8cce8",borderRadius:6,color:"#7e6a9a",cursor:"pointer",padding:"3px 8px",fontSize:"0.65rem"}}>x</button>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
                 <div>
@@ -10087,7 +10087,7 @@ function PostureDefectModule() {
 }
 
 // ===========================================================================
-// HOME MODULE — App Introduction & Feature Overview
+// HOME MODULE - App Introduction & Feature Overview
 // ===========================================================================
 function HomeModule({ onNav }) {
   const PC = getC();
@@ -10122,11 +10122,11 @@ function HomeModule({ onNav }) {
             PhysioMind Pro
           </h1>
           <p style={{fontSize:"clamp(0.85rem,2vw,1rem)",color:"rgba(255,255,255,0.85)",margin:"0 0 24px",lineHeight:1.6,maxWidth:520}}>
-            The complete clinical assessment platform for physiotherapists. Evidence-based tools, AI-powered SOAP notes, and comprehensive patient management — all in one place.
+            The complete clinical assessment platform for physiotherapists. Evidence-based tools, AI-powered SOAP notes, and comprehensive patient management - all in one place.
           </p>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
             <button onClick={()=>onNav("subjective")} style={{padding:"12px 22px",background:"#fff",border:"none",borderRadius:12,color:"#7c3aed",fontWeight:800,fontSize:"0.88rem",cursor:"pointer",boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
-              Start Assessment →
+              Start Assessment ->
             </button>
             <button onClick={()=>onNav("dashboard")} style={{padding:"12px 22px",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:12,color:"#fff",fontWeight:700,fontSize:"0.88rem",cursor:"pointer"}}>
               View Dashboard
@@ -10172,7 +10172,7 @@ function HomeModule({ onNav }) {
                 <div style={{fontSize:"0.85rem",fontWeight:700,color:"#1a1025",lineHeight:1.2}}>{f.title}</div>
               </div>
               <div style={{fontSize:"0.75rem",color:"#7e6a9a",lineHeight:1.55}}>{f.desc}</div>
-              <div style={{marginTop:10,fontSize:"0.68rem",fontWeight:700,color:f.color}}>Open →</div>
+              <div style={{marginTop:10,fontSize:"0.68rem",fontWeight:700,color:f.color}}>Open -></div>
             </button>
           ))}
         </div>
@@ -10231,10 +10231,10 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
 
     const AUTO_TASKS = [
       rfMyelopathy && {
-        templateId:`red_flag_${pt}`, icon:"🚨", title:"Red Flag — Urgent Review",
+        templateId:`red_flag_${pt}`, icon:"🚨", title:"Red Flag - Urgent Review",
         patient:pt, category:"Clinical Safety", priority:"high",
         dueTime:"Immediately", nav:"subjective",
-        note:"Red flag indicators detected — urgent clinical review required",
+        note:"Red flag indicators detected - urgent clinical review required",
       },
       hasCC && !hasSOAP && {
         templateId:`soap_${pt}`, icon:"📋", title:"SOAP Note Pending",
@@ -10246,7 +10246,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
         templateId:`session_outcome_${pt}`, icon:"📝", title:"Session Outcome Missing",
         patient:pt, category:"Documentation", priority:"high",
         dueTime:"Before next patient", nav:"tx_sessions",
-        note:"Session recorded without VAS outcome — complete before leaving",
+        note:"Session recorded without VAS outcome - complete before leaving",
       },
       hasCC && !hasROM && {
         templateId:`rom_${pt}`, icon:"📐", title:"ROM Assessment Missing",
@@ -10258,7 +10258,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
         templateId:`mmt_${pt}`, icon:"💪", title:"MMT Not Recorded",
         patient:pt, category:"Assessment", priority:"medium",
         dueTime:"Next session", nav:"mmt",
-        note:"Muscle testing not performed — complete for full clinical picture",
+        note:"Muscle testing not performed - complete for full clinical picture",
       },
       hasCC && !hasGait && !hasOM && totalSessions > 1 && {
         templateId:`outcome_${pt}`, icon:"📊", title:"Outcome Measures Due",
@@ -10270,7 +10270,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
         templateId:`reassess_${pt}_${totalSessions}`, icon:"🔄", title:"Formal Reassessment Due",
         patient:pt, category:"Reassessment", priority:"medium",
         dueTime:"Next session", nav:"subjective",
-        note:`${totalSessions} sessions completed — formal reassessment recommended`,
+        note:`${totalSessions} sessions completed - formal reassessment recommended`,
       },
     ].filter(Boolean);
 
@@ -10322,7 +10322,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
         const colors = ["#6D28D9","#0891B2","#059669","#D97706","#DC2626","#7C3AED"];
         const name = d2.dem_name || p.name || "Patient";
         const initials = name.split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
-        const dx = d2.cc_main ? d2.cc_main.slice(0,35)+(d2.cc_main.length>35?"…":"") : p.lastDx||"Assessment pending";
+        const dx = d2.cc_main ? d2.cc_main.slice(0,35)+(d2.cc_main.length>35?"...":"") : p.lastDx||"Assessment pending";
         return { id:p.id, name, initials, color:colors[i%colors.length],
                  dx, status:hasTx?"completed":isActive?"in-progress":"upcoming",
                  sessionCount:sessions.length, hasRedFlags:p.hasRedFlags };
@@ -10563,7 +10563,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
             </div>
             <div style={{display:"flex",gap:8,marginBottom:14}}>
               {[
-                {l:"Pain NRS",v:activeNRS>0?`${activeNRS}/10`:"—",s:worstNRS>activeNRS?`↓ from ${worstNRS}`:"not recorded"},
+                {l:"Pain NRS",v:activeNRS>0?`${activeNRS}/10`:"-",s:worstNRS>activeNRS?`v from ${worstNRS}`:"not recorded"},
                 {l:"Sessions",v:String(activeSess.length),s:"completed"},
                 {l:"Recovery",v:`${recoveryPct}%`,s:recoveryPct>50?"on track":"early stage"},
               ].map(m=>(
@@ -10630,7 +10630,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                   <div style={{fontSize:"2rem",marginBottom:8}}>✅</div>
                   <div style={{fontSize:14,fontWeight:700,color:"#374151"}}>All clear!</div>
                   <div style={{fontSize:12,color:"#9CA3AF",marginTop:4}}>
-                    No pending tasks — great clinical workflow
+                    No pending tasks - great clinical workflow
                   </div>
                 </div>
               ) : (
@@ -10720,7 +10720,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                                 display:"flex",alignItems:"center",justifyContent:"center",gap:6,
                                 boxShadow:"0 2px 8px rgba(5,150,105,0.3)",
                               }}>
-                                {isCompleting ? "v Completing…" : "v Mark Complete"}
+                                {isCompleting ? "v Completing..." : "v Mark Complete"}
                               </button>
                             </div>
                           </div>
@@ -10733,7 +10733,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                               flex:1,padding:"6px",borderRadius:8,
                               background:"#F8FAFC",border:"1px solid #E5E7EB",
                               cursor:"pointer",fontSize:11,fontWeight:600,color:"#6B7280",
-                            }}>Open →</button>
+                            }}>Open -></button>
                             <button onClick={()=>handleComplete(task.id)} style={{
                               flex:2,padding:"6px",borderRadius:8,
                               background:"#ECFDF5",border:"1px solid #BBF7D0",
@@ -10807,7 +10807,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
               Recent Patients <span style={{fontSize:11,fontWeight:500,color:"#9CA3AF",marginLeft:5}}>({patients.length})</span>
             </div>
             <span style={{fontSize:11,fontWeight:600,color:"#6D28D9",cursor:"pointer"}}
-              onClick={()=>onNav("subjective")}>See all →</span>
+              onClick={()=>onNav("subjective")}>See all -></span>
           </div>
           <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:2}}>
             {[["All","all"],["Active","in-progress"],["Done","completed"]].map(([l,v])=>(
@@ -10822,7 +10822,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           {schedule.length === 0 ? (
             <div style={{background:"white",borderRadius:14,padding:"20px",
               border:"1px solid #F1F5F9",textAlign:"center",color:"#9CA3AF",fontSize:12}}>
-              No patients yet — create your first patient
+              No patients yet - create your first patient
             </div>
           ) : (
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -10884,7 +10884,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
             <div style={{textAlign:"right"}}>
               <div style={{fontSize:22,fontWeight:800,color:"#6D28D9",letterSpacing:"-1px"}}>{recoveryPct}%</div>
               <div style={{fontSize:10,color:recoveryPct>50?"#059669":"#9CA3AF",fontWeight:600}}>
-                {recoveryPct>50?"↑ improving":"↗ in progress"}
+                {recoveryPct>50?"^ improving":"↗ in progress"}
               </div>
             </div>
           </div>
@@ -10924,11 +10924,11 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           <div>
             <div style={{fontSize:15,fontWeight:800,color:"white",letterSpacing:"-0.3px"}}>Start Assessment</div>
             <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:3}}>
-              Subjective → ROM → MMT → Special Tests
+              Subjective -> ROM -> MMT -> Special Tests
             </div>
           </div>
           <div style={{width:44,height:44,borderRadius:13,background:"rgba(255,255,255,0.2)",
-            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>→</div>
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>-></div>
         </div>
 
       </div>
@@ -11614,7 +11614,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
               </div>
               {patName !== "Patient" && <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",background:"rgba(255,255,255,0.12)",borderRadius:8,width:"fit-content"}}><div style={{width:6,height:6,borderRadius:"50%",background:"#34d399"}}/><span style={{fontSize:"0.8rem",fontWeight:600}}>{patName}</span>{age && age !== "--" && <span style={{fontSize:"0.72rem",opacity:0.7}}>&#183; Age {age}</span>}</div>}
             </div>
-            <button onClick={onClose} style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,color:"#fff",cursor:"pointer",padding:"8px 14px",fontSize:"0.8rem",fontWeight:600}}>✕ Close</button>
+            <button onClick={onClose} style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,color:"#fff",cursor:"pointer",padding:"8px 14px",fontSize:"0.8rem",fontWeight:600}}>x Close</button>
           </div>
         </div>
         <div style={{padding:"24px 28px"}}>
@@ -11642,7 +11642,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
                     <button onClick={()=>generatePdf(report.id)} disabled={generating!==null} style={{width:"100%",padding:"12px 16px",background:generating===report.id?"#94a3b8":report.gradient,border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:generating?"not-allowed":"pointer",opacity:generating&&generating!==report.id?0.5:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
                       {generating===report.id?"⏳ Generating...":"📥 Generate PDF"}
                     </button>
-                    <div style={{fontSize:"0.65rem",color:"#94a3b8",textAlign:"center",lineHeight:1.4}}>Opens in new tab<br/>Print → Save as PDF</div>
+                    <div style={{fontSize:"0.65rem",color:"#94a3b8",textAlign:"center",lineHeight:1.4}}>Opens in new tab<br/>Print -> Save as PDF</div>
                   </div>
                 </div>
               </div>
@@ -11658,7 +11658,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
             <div style={{fontSize:"0.7rem",fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>💡 Tips for best results</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 16px"}}>
               {["Complete patient demographics before generating","Add exercises in the Exercise Prescription module","Record ROM measurements for detailed tables","Run AI Diagnosis first for diagnostic content","Use Chrome or Edge for best PDF quality","Enable Print: Background Graphics for full colour"].map(tip=>(
-                <div key={tip} style={{fontSize:"0.72rem",color:"#94a3b8",display:"flex",gap:6,alignItems:"flex-start",padding:"2px 0"}}><span style={{color:"#7c3aed",fontWeight:700,flexShrink:0}}>→</span>{tip}</div>
+                <div key={tip} style={{fontSize:"0.72rem",color:"#94a3b8",display:"flex",gap:6,alignItems:"flex-start",padding:"2px 0"}}><span style={{color:"#7c3aed",fontWeight:700,flexShrink:0}}>-></span>{tip}</div>
               ))}
             </div>
           </div>
@@ -11692,7 +11692,7 @@ function AppInner() {
   // This cuts initial render time dramatically
   // Once mounted, component stays mounted (data preserved)
   const [mountedTabs, setMountedTabs] = useState(new Set(["home", "subjective"]));
-  // Heavy tabs — only mount on first visit
+  // Heavy tabs - only mount on first visit
   const HEAVY_TABS = new Set([
     "posture", "ddx", "fms", "nkt", "cyriax",
     "fascia", "kinetic", "soap", "treatment", "exercise",
@@ -11714,38 +11714,38 @@ function AppInner() {
 
   // -- Hypothetical demo patient: Sarah Mitchell, 34F, chronic LBP ----------
   const DEMO_DATA = {
-    dem_name:"Sarah Mitchell", dem_age:"34", dem_gender:"Female", dem_occupation:"Graphic designer (desk-based, 8–10h/day)",
+    dem_name:"Sarah Mitchell", dem_age:"34", dem_gender:"Female", dem_occupation:"Graphic designer (desk-based, 8-10h/day)",
     dem_hand:"Right", dem_contact:"0412 345 678", dem_referral:"GP",
 
     // Subjective
     sub_complaint:"Chronic lower back pain, right worse than left, radiating into right buttock and posterior thigh to knee",
     sub_onset:"Gradual onset 18 months ago after new standing desk poorly adjusted. Worsened significantly 3 months ago after long-haul flight.",
     sub_mechanism:"Prolonged sitting/standing at workstation; exacerbated by forward bending, prolonged static postures",
-    sub_behaviour:"Worse: sitting >30 min, morning stiffness for ~45 min, forward bending, end of workday. Better: walking, lying prone, heat pack. Constant dull ache 3–4/10 at rest; 7/10 with prolonged sitting.",
-    sub_24hr:"Morning stiffness 30–45 min. Improves mid-morning. Worsens through afternoon. Difficulty sleeping in positions other than side-lying with pillow between knees.",
+    sub_behaviour:"Worse: sitting >30 min, morning stiffness for ~45 min, forward bending, end of workday. Better: walking, lying prone, heat pack. Constant dull ache 3-4/10 at rest; 7/10 with prolonged sitting.",
+    sub_24hr:"Morning stiffness 30-45 min. Improves mid-morning. Worsens through afternoon. Difficulty sleeping in positions other than side-lying with pillow between knees.",
     sub_aggravating:"Prolonged sitting, driving >20 min, forward flexion, transitioning from sit to stand",
     sub_easing:"Short walks, heat, lying supine with knees bent",
     sub_vas:"5",
-    sub_previous:"Episode 4 years ago resolved with physio. GP prescribed anti-inflammatories — minimal relief.",
+    sub_previous:"Episode 4 years ago resolved with physio. GP prescribed anti-inflammatories - minimal relief.",
     sub_medical:"No significant medical history. No bladder/bowel changes. No saddle anaesthesia. No unexplained weight loss.",
     sub_medications:"Ibuprofen 400mg PRN, oral magnesium",
     sub_goals:"Return to recreational running (5km x3/week), sit pain-free at work, reduce reliance on NSAIDs",
 
-    // Red flags — all clear
+    // Red flags - all clear
     rf_malignancy:"No malignancy red flags",
     rf_cauda:"No cauda equina flags",
     rf_vascular:"No vascular red flags",
     rf_inflammatory:"No inflammatory red flags",
     rf_fracture:"No fracture red flags",
-    rf_neuro:"No red flags — proceed with assessment",
+    rf_neuro:"No red flags - proceed with assessment",
 
     // Lumbar ROM
     lx_flex:"50", lx_ext:"15", lx_lat_left:"25", lx_lat_right:"18", lx_rot_left:"30", lx_rot_right:"22",
     lx_slr_left:"75", lx_slr_right:"52",
 
-    // Special tests — lumbar
-    lx_kemp_left:"Negative", lx_kemp_right:"Positive — reproduces right buttock pain",
-    lx_slump_left:"Negative", lx_slump_right:"Positive — neural tension R",
+    // Special tests - lumbar
+    lx_kemp_left:"Negative", lx_kemp_right:"Positive - reproduces right buttock pain",
+    lx_slump_left:"Negative", lx_slump_right:"Positive - neural tension R",
     lx_prone_instability:"Negative",
     lx_psoas_left:"Normal", lx_psoas_right:"Tight",
 
@@ -11754,9 +11754,9 @@ function AppInner() {
 
     // Neurological
     neuro_l4_reflex_left:"2+", neuro_l4_reflex_right:"2+",
-    neuro_l5_motor_left:"5/5", neuro_l5_motor_right:"4+/5 — mild weakness great toe extension",
+    neuro_l5_motor_left:"5/5", neuro_l5_motor_right:"4+/5 - mild weakness great toe extension",
     neuro_s1_reflex_left:"2+", neuro_s1_reflex_right:"2+",
-    neuro_dermatomal:"Mild paraesthesia right S1 distribution (lateral foot) on prolonged sitting — intermittent",
+    neuro_dermatomal:"Mild paraesthesia right S1 distribution (lateral foot) on prolonged sitting - intermittent",
 
     // Posture
     posture_defect_anterior_pelvic_tilt: true,
@@ -11768,15 +11768,15 @@ function AppInner() {
     om_psfs2:"Recreational running 5km", om_psfs2_now:"1", om_psfs2_goal:"10",
     om_psfs3:"Long car journeys >20 min", om_psfs3_now:"2", om_psfs3_goal:"8",
 
-    // Tx Techniques — Session 1
+    // Tx Techniques - Session 1
     tx_techniques: [
-      { id:"t1", type:"manual", region:"Lumbar", technique:"PA Central", grade:"III", laterality:"Central", dosage:"3×60s oscillations", duration:"5 min", response:"ROM improved flexion from 50° to 62°. Pain eased from 5/10 to 3/10 during technique.", notes:"Performed at L4/L5 prone. Patient comfortable throughout.", savedAt:"2025-05-07T09:15:00Z" },
-      { id:"t2", type:"manual", region:"Lumbar", technique:"PA Unilateral", grade:"III", laterality:"Right", dosage:"3×30s", duration:"3 min", response:"Reproduction of right buttock pain at Grade II — eased by Grade III. Good movement gain.", savedAt:"2025-05-07T09:22:00Z" },
-      { id:"t3", type:"dn", dn_muscle:"Piriformis", laterality:"Right", dn_needles:"2", dn_depth:"40mm", dn_twitch:"Yes — elicited", notes:"Pistoning technique, needles retained 8 min, significant LTR on insertion. Post-needling stretch applied.", response:"Deep ache during LTR. Post-needling right buttock significantly less tender on palpation.", savedAt:"2025-05-07T09:35:00Z" },
-      { id:"t4", type:"st", st_technique:"Deep tissue massage", st_region:"Right paraspinals L3–S1, right QL", laterality:"Right", duration:"6 min", dosage:"Moderate-deep pressure, longitudinal and cross-fibre strokes", response:"Palpation tenderness reduced from +++ to ++. Patient reported warmth and easing.", savedAt:"2025-05-07T09:45:00Z" },
+      { id:"t1", type:"manual", region:"Lumbar", technique:"PA Central", grade:"III", laterality:"Central", dosage:"3x60s oscillations", duration:"5 min", response:"ROM improved flexion from 50deg to 62deg. Pain eased from 5/10 to 3/10 during technique.", notes:"Performed at L4/L5 prone. Patient comfortable throughout.", savedAt:"2025-05-07T09:15:00Z" },
+      { id:"t2", type:"manual", region:"Lumbar", technique:"PA Unilateral", grade:"III", laterality:"Right", dosage:"3x30s", duration:"3 min", response:"Reproduction of right buttock pain at Grade II - eased by Grade III. Good movement gain.", savedAt:"2025-05-07T09:22:00Z" },
+      { id:"t3", type:"dn", dn_muscle:"Piriformis", laterality:"Right", dn_needles:"2", dn_depth:"40mm", dn_twitch:"Yes - elicited", notes:"Pistoning technique, needles retained 8 min, significant LTR on insertion. Post-needling stretch applied.", response:"Deep ache during LTR. Post-needling right buttock significantly less tender on palpation.", savedAt:"2025-05-07T09:35:00Z" },
+      { id:"t4", type:"st", st_technique:"Deep tissue massage", st_region:"Right paraspinals L3-S1, right QL", laterality:"Right", duration:"6 min", dosage:"Moderate-deep pressure, longitudinal and cross-fibre strokes", response:"Palpation tenderness reduced from +++ to ++. Patient reported warmth and easing.", savedAt:"2025-05-07T09:45:00Z" },
     ],
 
-    // HEP — Exercise Programme
+    // HEP - Exercise Programme
     hep_programme: [
       { id:"knee_to_chest", name:"Knee-to-Chest Stretch", region:"lumbar", phase:"Phase 1", sets:"1", reps:"10", hold:"30", freq:"Daily", evidence:"A", customSets:"1", customReps:"10", customHold:"30", customFreq:"Daily", notes:"Gently pull both knees. Stop if sharp pain." },
       { id:"dead_bug", name:"Dead Bug", region:"lumbar", phase:"Phase 1", sets:"3", reps:"8", hold:"3", freq:"Daily", evidence:"A", customSets:"3", customReps:"8", customHold:"3", customFreq:"Daily", notes:"Keep lower back flat on floor throughout." },
@@ -11784,16 +11784,16 @@ function AppInner() {
       { id:"hip_flexor_stretch", name:"Hip Flexor Couch Stretch", region:"lumbar", phase:"Phase 1", sets:"2", reps:"1", hold:"45", freq:"Daily", evidence:"B", customSets:"2", customReps:"1", customHold:"45", customFreq:"Daily", notes:"Both sides. Posteriorly tilt pelvis before stretching." },
     ],
 
-    // Session Log — Session 1
+    // Session Log - Session 1
     tx_sessions: [
       {
         id:"sess1", date:"07/05/2025", sessionNo:"1", type:"Initial Assessment",
         vasStart:"5", vasEnd:"3",
-        treatmentGiven:"L4/L5 PA mobilisation Grade III (central + right unilateral). Dry needling right piriformis x2 needles — LTR elicited. Deep tissue massage right paraspinals and QL. HEP prescribed (Phase 1).",
-        techniques:"Joint Mobilisation Grade III (PA Central, Lumbar, Central); Joint Mobilisation Grade III (PA Unilateral, Lumbar, Right); Dry Needling — Piriformis (Right), 2 needles, 40mm, LTR yes; Soft Tissue — Deep tissue massage — Right paraspinals L3–S1, right QL",
-        hep:"Knee-to-Chest Stretch — 1×10, hold 30s, Daily; Dead Bug — 3×8, hold 3s, Daily; Glute Bridge — 3×15, hold 2s, Daily; Hip Flexor Couch Stretch — 2×1, hold 45s, Daily",
-        response:"ROM improved L flexion 50°→62°, lateral flexion R improved 18°→24°. Pain reduced 5/10→3/10 post-treatment. Neural tension remains positive right slump — continue to monitor. Piriformis tenderness reduced significantly post-DN. Patient tolerated all techniques well.",
-        nextPlan:"Reassess lumbar ROM and neural tension. Progress to Grade III/IV if pain settling. Add thoracic extension mobilisation. Progress to Phase 2 HEP (loading) if pain <3/10 sustained. Review sitting posture and workstation setup — consider ergonomic referral.",
+        treatmentGiven:"L4/L5 PA mobilisation Grade III (central + right unilateral). Dry needling right piriformis x2 needles - LTR elicited. Deep tissue massage right paraspinals and QL. HEP prescribed (Phase 1).",
+        techniques:"Joint Mobilisation Grade III (PA Central, Lumbar, Central); Joint Mobilisation Grade III (PA Unilateral, Lumbar, Right); Dry Needling - Piriformis (Right), 2 needles, 40mm, LTR yes; Soft Tissue - Deep tissue massage - Right paraspinals L3-S1, right QL",
+        hep:"Knee-to-Chest Stretch - 1x10, hold 30s, Daily; Dead Bug - 3x8, hold 3s, Daily; Glute Bridge - 3x15, hold 2s, Daily; Hip Flexor Couch Stretch - 2x1, hold 45s, Daily",
+        response:"ROM improved L flexion 50deg->62deg, lateral flexion R improved 18deg->24deg. Pain reduced 5/10->3/10 post-treatment. Neural tension remains positive right slump - continue to monitor. Piriformis tenderness reduced significantly post-DN. Patient tolerated all techniques well.",
+        nextPlan:"Reassess lumbar ROM and neural tension. Progress to Grade III/IV if pain settling. Add thoracic extension mobilisation. Progress to Phase 2 HEP (loading) if pain <3/10 sustained. Review sitting posture and workstation setup - consider ergonomic referral.",
         goals:"ST goal: Sit pain-free >30 min within 4 weeks. MT goal: Return to running 3 months. Patient motivated and engaged.",
         clinician:"Dr. J. Thompson (APAM)", notes:"Consent obtained. Informed of DN risks. Next appointment in 1 week.",
         savedAt:"2025-05-07T10:10:00Z"
@@ -11843,7 +11843,7 @@ function AppInner() {
 
   const addOrUpdateTask = (task) => {
     setTaskDB(prev => {
-      // Don't duplicate — check by templateId
+      // Don't duplicate - check by templateId
       const exists = prev.find(t => t.templateId === task.templateId && t.status !== "completed");
       if (exists) return prev;
       const updated = [task, ...prev];
@@ -11868,7 +11868,7 @@ function AppInner() {
         updatedAt: new Date().toISOString(),
         hasRedFlags: ["rf_malignancy","rf_cauda","rf_vascular","rf_inflammatory","rf_fracture","rf_neuro"]
           .flatMap(fid => (data[fid]||"").split("|||"))
-          .filter(v => v && !["No malignancy red flags","No cauda equina flags","No vascular red flags","No inflammatory red flags","No fracture red flags","No neurological red flags","No red flags — proceed with assessment"].includes(v)).length > 0
+          .filter(v => v && !["No malignancy red flags","No cauda equina flags","No vascular red flags","No inflammatory red flags","No fracture red flags","No neurological red flags","No red flags - proceed with assessment"].includes(v)).length > 0
       } : p);
       savePatientDB(updated);
       return updated;
@@ -11940,8 +11940,8 @@ function AppInner() {
   const activePatient = patients.find(p => p.id === activePatientId) || null;
 
   // -- Optimised set function ----------------------------------------------
-  // set(obj) — SubjectiveModule style (passes whole data object)
-  // set(id, val) — legacy field-by-field style
+  // set(obj) - SubjectiveModule style (passes whole data object)
+  // set(id, val) - legacy field-by-field style
   const set = useCallback((idOrObj, val) => {
     if (typeof idOrObj === "object" && idOrObj !== null) {
       // New style: set({ ...data, field: value })
@@ -11957,7 +11957,7 @@ function AppInner() {
 
   // -- Red flag detection -------------------------------------------------
   const RED_FLAG_FIELDS = ["rf_malignancy","rf_cauda","rf_vascular","rf_inflammatory","rf_fracture","rf_neuro"];
-  const SAFE_VALUES = ["No malignancy red flags","No cauda equina flags","No vascular red flags","No inflammatory red flags","No fracture red flags","No neurological red flags","No red flags — proceed with assessment"];
+  const SAFE_VALUES = ["No malignancy red flags","No cauda equina flags","No vascular red flags","No inflammatory red flags","No fracture red flags","No neurological red flags","No red flags - proceed with assessment"];
   const activeRedFlags = RED_FLAG_FIELDS.flatMap(fid => {
     const val = data[fid] || "";
     if (!val) return [];
@@ -12001,7 +12001,7 @@ function AppInner() {
   const importJSON = () => {
     try {
       const parsed = JSON.parse(jsonImportText);
-      if (!parsed.data) throw new Error("Invalid file — missing data field");
+      if (!parsed.data) throw new Error("Invalid file - missing data field");
       setData(parsed.data);
       setJsonImportText("");
       setShowJsonPanel(false);
@@ -12047,7 +12047,7 @@ function AppInner() {
             return(
               <div key={sfx}>
                 <div style={{fontSize:"0.62rem",fontWeight:700,color:col,marginBottom:3}}>{side} {!isNaN(num)&&num<(t.normal||0)*0.8?"⚠ LIMITED":""}</div>
-                <input type="number" value={sv} onChange={e=>set(t.id+sfx,e.target.value)} placeholder={`N=${t.normal||""}°`} style={{...base,borderColor:!isNaN(num)&&num<(t.normal||0)*0.8?PC.red:PC.border}} />
+                <input type="number" value={sv} onChange={e=>set(t.id+sfx,e.target.value)} placeholder={`N=${t.normal||""}deg`} style={{...base,borderColor:!isNaN(num)&&num<(t.normal||0)*0.8?PC.red:PC.border}} />
               </div>
             );
           })}
@@ -12064,7 +12064,7 @@ function AppInner() {
               <div key={sfx}>
                 <div style={{fontSize:"0.62rem",fontWeight:700,color:prob?PC.red:PC.muted,marginBottom:3}}>{side} {prob?"⚠":""}</div>
                 <select value={sv} onChange={e=>set(t.id+sfx,e.target.value)} style={{...base,borderColor:prob?PC.red:PC.border}}>
-                  <option value="">— select —</option>
+                  <option value="">- select -</option>
                   {t.options.map(o=><option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
@@ -12075,7 +12075,7 @@ function AppInner() {
     }
     if(t.type==="select"||t.type==="select3"){
       const prob=val&&(val.includes("Positive")||val.includes("REFER")||val.includes("Inhibited")||val.includes("Absent")||val.includes("Severe")||val.includes("Moderate")||val.includes("Significant"));
-      return(<select value={val} onChange={e=>set(t.id,e.target.value)} style={{...base,borderColor:prob?PC.red:PC.border}}><option value="">— select —</option>{t.options.map(o=><option key={o} value={o}>{o}</option>)}</select>);
+      return(<select value={val} onChange={e=>set(t.id,e.target.value)} style={{...base,borderColor:prob?PC.red:PC.border}}><option value="">- select -</option>{t.options.map(o=><option key={o} value={o}>{o}</option>)}</select>);
     }
     if(t.type==="textarea") return(<textarea value={val} onChange={e=>set(t.id,e.target.value)} placeholder={t.placeholder||""} style={{...base,resize:"vertical",minHeight:64,display:"block"}}/>);
     if(t.type==="num") return(<input type="number" value={val} onChange={e=>set(t.id,e.target.value)} placeholder={t.placeholder||""} style={base}/>);
@@ -12334,7 +12334,7 @@ function AppInner() {
             <span style={{fontSize:"1.1rem"}}>{urgentFlags.length>0?"🚨":"⚠️"}</span>
             <div>
               <div style={{fontWeight:800,fontSize:"0.78rem",color:"#000"}}>{urgentFlags.length>0?"URGENT RED FLAGS DETECTED":"RED FLAGS PRESENT"}</div>
-              <div style={{fontSize:"0.62rem",color:"rgba(0,0,0,0.7)",fontWeight:600}}>{urgentFlags.length>0?"Do not proceed — refer immediately":"Review before proceeding with treatment"}</div>
+              <div style={{fontSize:"0.62rem",color:"rgba(0,0,0,0.7)",fontWeight:600}}>{urgentFlags.length>0?"Do not proceed - refer immediately":"Review before proceeding with treatment"}</div>
             </div>
           </div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",flex:1}}>
@@ -12343,7 +12343,7 @@ function AppInner() {
             ))}
             {activeRedFlags.length>4&&<span style={{background:"rgba(0,0,0,0.18)",borderRadius:6,padding:"2px 8px",fontSize:"0.62rem",fontWeight:700,color:"#000"}}>+{activeRedFlags.length-4} more</span>}
           </div>
-          <button onClick={()=>navTo("subjective")} style={{background:"rgba(0,0,0,0.2)",border:"1px solid rgba(0,0,0,0.3)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.65rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>View →</button>
+          <button onClick={()=>navTo("subjective")} style={{background:"rgba(0,0,0,0.2)",border:"1px solid rgba(0,0,0,0.3)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.65rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>View -></button>
         </div>
       )}
 
@@ -12360,14 +12360,14 @@ function AppInner() {
           <div style={{background:PC.surface,border:`1px solid rgba(0,229,255,0.25)`,borderRadius:16,padding:22,maxWidth:500,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <div style={{fontWeight:800,color:PC.accent,fontSize:"1rem"}}>💾 Save / Load Assessment</div>
-              <button onClick={()=>setShowJsonPanel(false)} style={{background:"none",border:`1px solid ${PC.border}`,borderRadius:7,color:PC.muted,cursor:"pointer",padding:"4px 10px",fontSize:"0.72rem"}}>✕ Close</button>
+              <button onClick={()=>setShowJsonPanel(false)} style={{background:"none",border:`1px solid ${PC.border}`,borderRadius:7,color:PC.muted,cursor:"pointer",padding:"4px 10px",fontSize:"0.72rem"}}>x Close</button>
             </div>
 
             {/* Patient info preview */}
             {(data["dem_name"]||data["dem_age"]||data["dem_occupation"]) && (
               <div style={{background:PC.s2,borderRadius:10,padding:"10px 14px",marginBottom:14,border:`1px solid ${PC.border}`}}>
                 <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Current Patient</div>
-                <div style={{fontWeight:700,color:PC.text,fontSize:"0.88rem"}}>{data["dem_name"]||"—"}</div>
+                <div style={{fontWeight:700,color:PC.text,fontSize:"0.88rem"}}>{data["dem_name"]||"-"}</div>
                 <div style={{fontSize:"0.72rem",color:PC.muted,marginTop:2}}>
                   {[data["dem_age"]&&`Age ${data["dem_age"]}`,data["dem_occupation"]].filter(Boolean).join(" · ")}
                 </div>
@@ -12414,7 +12414,7 @@ function AppInner() {
         </div>
       </div>
 
-      {/* Header — Medical Professional */}
+      {/* Header - Medical Professional */}
       <div className="pm-header" style={{background:PC.isDark?`linear-gradient(180deg,${PC.headerBg},${PC.surface})`:`${PC.headerBg}`,borderBottom:`1px solid ${PC.border}`,padding:"0 24px",position:"sticky",top:0,zIndex:100,boxShadow:PC.isDark?"0 1px 20px rgba(0,0,0,0.4)":"0 1px 12px rgba(0,20,50,0.06)"}}>
         <div className="pm-header-inner" style={{maxWidth:1400,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:60,gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
@@ -12429,7 +12429,7 @@ function AppInner() {
             {activePatient&&(
               <div style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",background:PC.isDark?"rgba(129,140,248,0.08)":"rgba(79,70,229,0.05)",border:`1px solid ${PC.isDark?"rgba(129,140,248,0.2)":"rgba(79,70,229,0.15)"}`,borderRadius:20,cursor:"pointer"}} onClick={()=>setShowPatientDb(true)}>
                 <div style={{width:6,height:6,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 5px ${PC.a3}`}}/>
-                <span style={{fontSize:"0.72rem",fontWeight:700,color:PC.a2,whiteSpace:"nowrap"}}>{activePatient.name.length>16?activePatient.name.slice(0,16)+"…":activePatient.name}</span>
+                <span style={{fontSize:"0.72rem",fontWeight:700,color:PC.a2,whiteSpace:"nowrap"}}>{activePatient.name.length>16?activePatient.name.slice(0,16)+"...":activePatient.name}</span>
               </div>
             )}
           </div>
@@ -12481,7 +12481,7 @@ function AppInner() {
       )}
       {!activePatient && (
         <div style={{background:PC.isDark?"rgba(56,189,248,0.03)":"rgba(3,105,161,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"9px 24px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-          <span style={{fontSize:"0.7rem",color:PC.muted,fontWeight:500}}>No active patient — create or load a patient record to save assessments</span>
+          <span style={{fontSize:"0.7rem",color:PC.muted,fontWeight:500}}>No active patient - create or load a patient record to save assessments</span>
           <button onClick={createNewPatient} style={{padding:"5px 14px",background:`linear-gradient(135deg,${PC.accent}18,${PC.a2}12)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:7,color:PC.accent,fontSize:"0.68rem",fontWeight:700,cursor:"pointer"}}>＋ New Patient</button>
           <button onClick={()=>setShowPatientDb(true)} style={{padding:"5px 14px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.a2,fontSize:"0.68rem",fontWeight:600,cursor:"pointer"}}>Load Patient</button>
         </div>
@@ -12504,7 +12504,7 @@ function AppInner() {
                 <div style={{fontSize:"1.05rem",fontWeight:800,color:PC.accent}}>📋 Multi-System Diagnosis Report</div>
                 <div style={{display:"flex",gap:8}}>
                   <span style={{fontSize:"0.65rem",padding:"2px 8px",borderRadius:10,background:"rgba(0,229,255,0.1)",color:PC.accent}}>{completedCount} fields · {dx.dx.length} diagnoses</span>
-                  <button onClick={()=>setShowDx(false)} style={{background:"none",border:`1px solid ${PC.border}`,color:PC.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:"0.72rem"}}>✕</button>
+                  <button onClick={()=>setShowDx(false)} style={{background:"none",border:`1px solid ${PC.border}`,color:PC.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:"0.72rem"}}>x</button>
                 </div>
               </div>
               {dx.redFlags.length>0&&(
@@ -12539,7 +12539,7 @@ function AppInner() {
                           <div style={{padding:"0 13px 13px 16px"}}>
                             <div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Evidence</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{d.evidence.map((e,j)=><span key={j} style={{fontSize:"0.68rem",padding:"2px 7px",borderRadius:7,background:PC.s3,color:PC.text,border:`1px solid ${PC.border}`}}>v {e}</span>)}</div></div>
                             {d.mechanism&&<div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Mechanism</div><div style={{background:PC.s3,borderRadius:8,padding:10,fontSize:"0.76rem",color:PC.text,lineHeight:1.6}}>{d.mechanism}</div></div>}
-                            {d.treatment&&d.treatment.length>0&&<div><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Treatment Plan</div>{d.treatment.map((t,j)=><div key={j} style={{display:"flex",gap:8,padding:"5px 9px",background:PC.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}><span style={{color:PC.a3,fontWeight:700,flexShrink:0}}>→</span><span style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.5}}>{t}</span></div>)}</div>}
+                            {d.treatment&&d.treatment.length>0&&<div><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Treatment Plan</div>{d.treatment.map((t,j)=><div key={j} style={{display:"flex",gap:8,padding:"5px 9px",background:PC.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}><span style={{color:PC.a3,fontWeight:700,flexShrink:0}}>-></span><span style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.5}}>{t}</span></div>)}</div>}
                             {d.interpretation&&<div style={{marginTop:10,padding:"8px 11px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.68rem",color:PC.yellow,lineHeight:1.5}}>⚠ {d.interpretation}</div>}
                           </div>
                         )}
@@ -12549,7 +12549,7 @@ function AppInner() {
                   {dx.fmsTotal!==null&&(
                     <div style={{marginTop:10,padding:12,background:PC.s2,borderRadius:8,border:`1px solid ${PC.border}`,display:"flex",alignItems:"center",gap:12}}>
                       <div style={{textAlign:"center",minWidth:55}}><div style={{fontSize:"1.8rem",fontWeight:800,color:dx.fmsTotal>=17?PC.green:dx.fmsTotal>=15?PC.yellow:PC.red}}>{dx.fmsTotal}</div><div style={{fontSize:"0.58rem",color:PC.muted}}>FMS/21</div></div>
-                      <div style={{fontSize:"0.76rem",color:PC.muted}}>{dx.fmsTotal>=17?"✅ Low risk":dx.fmsTotal>=15?"⚠️ Moderate risk — corrective exercises":"🔴 High risk — corrective exercises before loading"}</div>
+                      <div style={{fontSize:"0.76rem",color:PC.muted}}>{dx.fmsTotal>=17?"✅ Low risk":dx.fmsTotal>=15?"⚠️ Moderate risk - corrective exercises":"🔴 High risk - corrective exercises before loading"}</div>
                     </div>
                   )}
                 </>
@@ -12557,7 +12557,7 @@ function AppInner() {
             </div>
           )}
 
-          {/* Dashboard metrics — shown on Subjective (home) tab */}
+          {/* Dashboard metrics - shown on Subjective (home) tab */}
           {active==="subjective"&&(
             <div style={{marginBottom:32}}>
               {/* Welcome / patient context */}
@@ -12585,8 +12585,8 @@ function AppInner() {
             <div style={{height:"1px",background:`linear-gradient(90deg,${PC.accent}50,${PC.a2}30,transparent)`}}/>
           </div>
 
-          {/* Posture Analysis Module — injected at top of Posture tab */}
-          {/* PostureAnalysisModule — deferred mount, hidden when not active */}
+          {/* Posture Analysis Module - injected at top of Posture tab */}
+          {/* PostureAnalysisModule - deferred mount, hidden when not active */}
           {mountedTabs.has("posture") && (
             <div style={{marginBottom:22, display: active==="posture" ? "block" : "none"}}>
               <PostureAnalysisModule activePatient={activePatient} set={set}/>
@@ -12680,7 +12680,7 @@ function AppInner() {
       </div>
 
       {/* -- BOTTOM NAV DRAWER (mobile) -- */}
-      {/* Pull handle — always visible, toggles whole drawer */}
+      {/* Pull handle - always visible, toggles whole drawer */}
       <button
         className={`pm-bnav-handle${bnavHidden?" bnav-hidden":""}`}
         style={{ bottom: bnavHidden ? 0 : (bnavTab ? "calc(62px + 220px)" : "62px") }}
@@ -12783,7 +12783,7 @@ function AppInner() {
           })()}
         </div>
       </nav>
-      {/* -- Live SOAP Panel — always visible floating panel -- */}
+      {/* -- Live SOAP Panel - always visible floating panel -- */}
       <LiveSOAPPanel data={data} onNavigate={navTo}/>
     </div>
   );
