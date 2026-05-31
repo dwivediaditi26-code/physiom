@@ -7,7 +7,7 @@ const ALL_TESTS = {
   home:{ label:"Home", icon:"🏠", desc:"App Overview & Features", groups:{ "Welcome":"HOME_MODULE" }},
   dashboard:{ label:"Dashboard", icon:"📊", desc:"Therapist Overview", groups:{ "Therapist Dashboard":"DASHBOARD_MODULE" }},
   subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
-  palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
+  palpation:{ label:"Palpation", icon:"🖐", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
   posture:{ label:"Posture", icon:"🧍", desc:"Postural Analysis", groups:{
     "Posture Defect Assessment":"POSTURE_DEFECT_MODULE",
   }},
@@ -17,8 +17,8 @@ const ALL_TESTS = {
   neuro:{ label:"Neurological", icon:"⚡", groups:{ "Full Neurological Assessment":"NEURO_MODULE" }},
   gait:{ label:"Gait Analysis", icon:"🚶", groups:{ "Full Gait Analysis":"GAIT_MODULE" }},
   nkt:{ label:"NKT Assessment", icon:"🧠", groups:{ "Region-Specific NKT Tests":"NKT_REGION" }},
-  kinetic:{ label:"Kinetic Chain", icon:"⛓️", groups:{ "Joint-by-Joint Assessment":"KC_REGION" }},
-  fascia:{ label:"Fascia Integration", icon:"🕸️", groups:{ "Fascial Assessment":"FASCIA_REGION" }},
+  kinetic:{ label:"Kinetic Chain", icon:"⛓", groups:{ "Joint-by-Joint Assessment":"KC_REGION" }},
+  fascia:{ label:"Fascia Integration", icon:"🕸", groups:{ "Fascial Assessment":"FASCIA_REGION" }},
   fma:{ label:"Functional Movement", icon:"🏃", groups:{ "Movement Analysis":"FMA_REGION" }},
   cyriax_full:{ label:"Cyriax Full Assessment", icon:"🦴", groups:{ "Complete STTT Assessment":"CYRIAX_MODULE" }},
   outcome:{ label:"Outcome Measures", icon:"📈", groups:{ "Validated Outcome Measures":"OUTCOME_MODULE" }},
@@ -786,7 +786,7 @@ function ROMModule({data,set,navContext={}}){
                   {/* Compensation + Capsular */}
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:8}}>
                     <div style={{padding:"7px 10px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:7}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:700,color:C.yellow,marginBottom:3}}>⚠️ COMPENSATION</div>
+                      <div style={{fontSize:"0.6rem",fontWeight:700,color:C.yellow,marginBottom:3}}>⚠ COMPENSATION</div>
                       <div style={{fontSize:"0.7rem",color:C.text}}>{m.compensation}</div>
                     </div>
                     <div style={{padding:"7px 10px",background:`${C.a4}0d`,border:`1px solid ${C.a4}20`,borderRadius:7}}>
@@ -1360,7 +1360,7 @@ function MMTModule({data,set,navContext={}}){
                   {/* Testing Protocol */}
                   <div style={{marginBottom:8}}>
                     <div style={{fontSize:"0.6rem",fontWeight:700,color:C.a2,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Testing Protocol</div>
-                    {[["Patient Position",m.patient,"👤"],["Therapist",m.therapist,"🙌"],["Resistance",m.resistance,"↕️"],["Gravity Eliminated",m.gravElim,"⬇️"],["Palpation",m.palpation,"👆"]].map(([lbl,val,icon])=>(
+                    {[["Patient Position",m.patient,"👤"],["Therapist",m.therapist,"🙌"],["Resistance",m.resistance,"↕"],["Gravity Eliminated",m.gravElim,"⬇"],["Palpation",m.palpation,"👆"]].map(([lbl,val,icon])=>(
                       <div key={lbl} style={{display:"flex",gap:8,padding:"5px 9px",background:C.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}>
                         <span style={{flexShrink:0}}>{icon}</span>
                         <div>
@@ -1373,7 +1373,7 @@ function MMTModule({data,set,navContext={}}){
 
                   {/* Compensations */}
                   <div style={{marginBottom:8,padding:"7px 10px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:7}}>
-                    <div style={{fontSize:"0.6rem",fontWeight:700,color:C.yellow,marginBottom:4}}>⚠️ COMPENSATION / SUBSTITUTION</div>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:C.yellow,marginBottom:4}}>⚠ COMPENSATION / SUBSTITUTION</div>
                     <div style={{fontSize:"0.73rem",color:C.text}}><strong>Compensation:</strong> {m.compensation}</div>
                     <div style={{fontSize:"0.73rem",color:C.text,marginTop:3}}><strong>Substitution:</strong> {m.substitution}</div>
                   </div>
@@ -1381,7 +1381,7 @@ function MMTModule({data,set,navContext={}}){
                   {/* Functional / Kinetic Chain */}
                   {(m.functional||m.chain)&&(
                     <div style={{marginBottom:8,padding:"7px 10px",background:`${C.a2}0d`,border:`1px solid ${C.a2}25`,borderRadius:7}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:700,color:C.a2,marginBottom:4}}>⛓️ CLINICAL INTERPRETATION</div>
+                      <div style={{fontSize:"0.6rem",fontWeight:700,color:C.a2,marginBottom:4}}>⛓ CLINICAL INTERPRETATION</div>
                       {m.functional&&<div style={{fontSize:"0.73rem",color:C.text,marginBottom:3}}>{m.functional}</div>}
                       {m.chain&&<div style={{fontSize:"0.72rem",color:C.muted,fontStyle:"italic"}}>{m.chain}</div>}
                     </div>
@@ -1390,7 +1390,7 @@ function MMTModule({data,set,navContext={}}){
                   {/* Rehab */}
                   {rehab&&(
                     <div style={{padding:"7px 10px",background:`${C.a3}0d`,border:`1px solid ${C.a3}25`,borderRadius:7}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:700,color:C.a3,marginBottom:4}}>🏋️ REHAB RECOMMENDATION</div>
+                      <div style={{fontSize:"0.6rem",fontWeight:700,color:C.a3,marginBottom:4}}>🏋 REHAB RECOMMENDATION</div>
                       <div style={{fontSize:"0.73rem",color:C.text}}>{rehab}</div>
                     </div>
                   )}
@@ -1411,7 +1411,7 @@ function MMTModule({data,set,navContext={}}){
             <div style={{marginTop:8}}>
               {chainFindings.length>0&&(
                 <div style={{marginBottom:10}}>
-                  <div style={{fontSize:"0.65rem",fontWeight:700,color:C.a4,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>⛓️ Kinetic Chain Patterns</div>
+                  <div style={{fontSize:"0.65rem",fontWeight:700,color:C.a4,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>⛓ Kinetic Chain Patterns</div>
                   {chainFindings.map((ch,i)=>(
                     <div key={i} style={{padding:"8px 10px",background:C.s2,borderRadius:8,marginBottom:6,border:`1px solid ${C.a4}30`}}>
                       <div style={{fontWeight:700,fontSize:"0.76rem",color:C.a4,marginBottom:3}}>{ch.label}</div>
@@ -1689,7 +1689,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
   });
 
   const tabs = [
-    { key:"dermatomes",  label:"Dermatomes",       icon:"🗺️" },
+    { key:"dermatomes",  label:"Dermatomes",       icon:"🗺" },
     { key:"myotomes",    label:"Myotomes",          icon:"💪" },
     { key:"reflexes",    label:"Reflexes",          icon:"🔨" },
     { key:"tension",     label:"Neural Tension",    icon:"⚡" },
@@ -1754,7 +1754,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
     const interpretations = [];
     const hasBabinski = (data["n_ref_babinski_left"]||"").includes("Positive")||(data["n_ref_babinski_right"]||"").includes("Positive");
     const hasHoffmann = (data["n_ref_hoffmann_left"]||"").includes("Positive")||(data["n_ref_hoffmann_right"]||"").includes("Positive");
-    if(hasBabinski||hasHoffmann) interpretations.push({ title:"⚠️ Upper Motor Neuron Pattern", color:C.red, text:"Pathological reflexes indicate UMN lesion above the segmental level. Consider cervical myelopathy, cord compression, or intracranial pathology. Urgent MRI required.", action:"URGENT - Neurosurgical / Neurology Referral" });
+    if(hasBabinski||hasHoffmann) interpretations.push({ title:"⚠ Upper Motor Neuron Pattern", color:C.red, text:"Pathological reflexes indicate UMN lesion above the segmental level. Consider cervical myelopathy, cord compression, or intracranial pathology. Urgent MRI required.", action:"URGENT - Neurosurgical / Neurology Referral" });
     const isMultiLevel = patterns.filter(p=>p.findings.length>=2).length>=2;
     if(isMultiLevel) interpretations.push({ title:"Multi-Level Involvement", color:C.yellow, text:"Findings span 2+ nerve root levels. Consider central stenosis, myelopathy, peripheral polyneuropathy, or multi-level disc disease.", action:"MRI full spine + neurology referral" });
     const isBilateral = involved.some(i=>i.detail.includes("Left+Right")||(involved.filter(ii=>ii.level===i.level).some(ii=>ii.detail.includes("Left"))&&involved.filter(ii=>ii.level===i.level).some(ii=>ii.detail.includes("Right"))));
@@ -1811,16 +1811,16 @@ function NeurologicalModule({ data, set, navContext={} }) {
           <CollapsibleHow title="📋 HOW TO PERFORM - Dermatomal Sensory Testing">
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:10}}>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontWeight:700,color:C.yellow,marginBottom:6,fontSize:"0.72rem"}}>⚙️ Setup</div>
-                <div style={{fontSize:"0.71rem",lineHeight:1.7}}>• Patient seated or supine, relaxed<br/>• Eyes closed throughout (prevents visual cues)<br/>• Explain test first with eyes open as reference<br/>• Establish a "normal" reference point first (e.g. forehead or sternum)</div>
+                <div style={{fontWeight:700,color:C.yellow,marginBottom:6,fontSize:"0.72rem"}}>⚙ Setup</div>
+                <div style={{fontSize:"0.71rem",lineHeight:1.7}}>. Patient seated or supine, relaxed<br/>. Eyes closed throughout (prevents visual cues)<br/>. Explain test first with eyes open as reference<br/>. Establish a "normal" reference point first (e.g. forehead or sternum)</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontWeight:700,color:C.accent,marginBottom:6,fontSize:"0.72rem"}}>🖐️ Light Touch Method</div>
-                <div style={{fontSize:"0.71rem",lineHeight:1.7}}>• Use wisp of cotton wool or fingertip<br/>• Touch LIGHTLY - less than 1g pressure<br/>• Apply randomly, unpredictably<br/>• Ask: "Does this feel the same as here?"<br/>• Move distal {"->"}  proximal along dermatome</div>
+                <div style={{fontWeight:700,color:C.accent,marginBottom:6,fontSize:"0.72rem"}}>🖐 Light Touch Method</div>
+                <div style={{fontSize:"0.71rem",lineHeight:1.7}}>. Use wisp of cotton wool or fingertip<br/>. Touch LIGHTLY - less than 1g pressure<br/>. Apply randomly, unpredictably<br/>. Ask: "Does this feel the same as here?"<br/>. Move distal {"->"}  proximal along dermatome</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontWeight:700,color:C.red,marginBottom:6,fontSize:"0.72rem"}}>📍 Pin Prick Method</div>
-                <div style={{fontSize:"0.71rem",lineHeight:1.7}}>• Use sterile neurological pin or broken stick<br/>• Apply sharp end, then blunt end randomly<br/>• Ask: "Sharp or dull?"<br/>• NEVER break skin<br/>• Compare left vs right at same level</div>
+                <div style={{fontSize:"0.71rem",lineHeight:1.7}}>. Use sterile neurological pin or broken stick<br/>. Apply sharp end, then blunt end randomly<br/>. Ask: "Sharp or dull?"<br/>. NEVER break skin<br/>. Compare left vs right at same level</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontWeight:700,color:C.a3,marginBottom:6,fontSize:"0.72rem"}}>📊 HOW TO MARK</div>
@@ -1833,7 +1833,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
           </CollapsibleHow>
 
           {/* Cervical */}
-          <div style={{marginBottom:12}}><div style={{fontSize:"0.7rem",fontWeight:700,color:C.yellow,marginBottom:8}}>● CERVICAL LEVELS</div>
+          <div style={{marginBottom:12}}><div style={{fontSize:"0.7rem",fontWeight:700,color:C.yellow,marginBottom:8}}>. CERVICAL LEVELS</div>
           {DERMATOMES.filter(d=>d.level.startsWith("C")).map(d=>{
             const lv=data[d.id+"_left"]||"", rv=data[d.id+"_right"]||"";
             const lCol=getSensoryColor(lv), rCol=getSensoryColor(rv);
@@ -1847,7 +1847,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                   </div>
                   <button type="button" onClick={()=>setExpandedLevel(expandedLevel===d.id?null:d.id)}
                     style={{padding:"2px 9px",background:"rgba(127,90,240,0.12)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>
-                    {expandedLevel===d.id?"▲ Hide":"ℹ Guide"}
+                    {expandedLevel===d.id?"▲ Hide":"i Guide"}
                   </button>
                 </div>
                 {expandedLevel===d.id&&(
@@ -1875,7 +1875,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
           </div>
 
           {/* Lumbar + Sacral */}
-          <div><div style={{fontSize:"0.7rem",fontWeight:700,color:C.a3,marginBottom:8}}>● LUMBAR & SACRAL LEVELS</div>
+          <div><div style={{fontSize:"0.7rem",fontWeight:700,color:C.a3,marginBottom:8}}>. LUMBAR & SACRAL LEVELS</div>
           {DERMATOMES.filter(d=>d.level.startsWith("L")||d.level.startsWith("S")||d.level.startsWith("T")).map(d=>{
             const lv=data[d.id+"_left"]||"", rv=data[d.id+"_right"]||"";
             const lCol=getSensoryColor(lv), rCol=getSensoryColor(rv);
@@ -1891,7 +1891,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                   </div>
                   <button type="button" onClick={()=>setExpandedLevel(expandedLevel===d.id?null:d.id)}
                     style={{padding:"2px 9px",background:"rgba(127,90,240,0.12)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>
-                    {expandedLevel===d.id?"▲ Hide":"ℹ Guide"}
+                    {expandedLevel===d.id?"▲ Hide":"i Guide"}
                   </button>
                 </div>
                 {expandedLevel===d.id&&(
@@ -1899,7 +1899,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                     <div><strong style={{color:C.yellow}}>Disc level:</strong> {d.disc}</div>
                     <div><strong style={{color:C.accent}}>Myotome:</strong> {d.myotome}</div>
                     {d.reflex&&<div><strong style={{color:C.a3}}>Reflex:</strong> {d.reflex}</div>}
-                    {isCauda&&<div style={{marginTop:6,padding:"6px 10px",borderRadius:6,background:"rgba(255,77,109,0.1)",color:C.red,fontWeight:600}}>⚠️ Any deficit here = potential cauda equina emergency. Ask about bladder/bowel dysfunction and perianal sensation immediately.</div>}
+                    {isCauda&&<div style={{marginTop:6,padding:"6px 10px",borderRadius:6,background:"rgba(255,77,109,0.1)",color:C.red,fontWeight:600}}>⚠ Any deficit here = potential cauda equina emergency. Ask about bladder/bowel dysfunction and perianal sensation immediately.</div>}
                   </div>
                 )}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
@@ -1927,8 +1927,8 @@ function NeurologicalModule({ data, set, navContext={} }) {
           <CollapsibleHow title="📋 HOW TO PERFORM - Myotome Testing">
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontWeight:700,color:C.yellow,marginBottom:6,fontSize:"0.72rem"}}>⚙️ How to Test</div>
-                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}>• Position patient so muscle can work against gravity (or gravity-eliminated for weak muscles)<br/>• Apply resistance smoothly and gradually - not a sudden jerk<br/>• Hold resistance for 3-5 seconds<br/>• Compare left vs right bilaterally<br/>• Always test proximal before distal</div>
+                <div style={{fontWeight:700,color:C.yellow,marginBottom:6,fontSize:"0.72rem"}}>⚙ How to Test</div>
+                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}>. Position patient so muscle can work against gravity (or gravity-eliminated for weak muscles)<br/>. Apply resistance smoothly and gradually - not a sudden jerk<br/>. Hold resistance for 3-5 seconds<br/>. Compare left vs right bilaterally<br/>. Always test proximal before distal</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontWeight:700,color:C.a3,marginBottom:6,fontSize:"0.72rem"}}>📊 HOW TO MARK - MRC Scale</div>
@@ -1946,8 +1946,8 @@ function NeurologicalModule({ data, set, navContext={} }) {
                 <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}><span style={{color:C.yellow}}>Grade 4 bilateral</span> - Possible nerve root irritation or pain inhibition<br/><span style={{color:"#f97316"}}>Grade 3 or below</span> - Significant axonal loss; urgent imaging<br/><span style={{color:C.red}}>Grade 0-1</span> - Severe radiculopathy or myelopathy; immediate referral<br/><span style={{color:C.muted}}>Asymmetry</span> - Even 1 grade difference is clinically significant</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontWeight:700,color:C.red,marginBottom:6,fontSize:"0.72rem"}}>⚠️ Watch For</div>
-                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}>• Pain inhibition can mimic weakness - check if pain-free testing improves grade<br/>• Compensation patterns - ensure correct muscle tested<br/>• Bilateral weakness = UMN / cord lesion, not bilateral root<br/>• Fasciculations at rest = LMN / motor neuron disease</div>
+                <div style={{fontWeight:700,color:C.red,marginBottom:6,fontSize:"0.72rem"}}>⚠ Watch For</div>
+                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}>. Pain inhibition can mimic weakness - check if pain-free testing improves grade<br/>. Compensation patterns - ensure correct muscle tested<br/>. Bilateral weakness = UMN / cord lesion, not bilateral root<br/>. Fasciculations at rest = LMN / motor neuron disease</div>
               </div>
             </div>
             <div style={{background:"rgba(0,229,255,0.07)",borderRadius:8,padding:"8px 12px",fontSize:"0.7rem",color:C.text,borderLeft:`3px solid ${C.accent}`}}>
@@ -2012,8 +2012,8 @@ function NeurologicalModule({ data, set, navContext={} }) {
           <CollapsibleHow title="📋 HOW TO PERFORM - Reflex Testing">
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontWeight:700,color:C.yellow,marginBottom:6,fontSize:"0.72rem"}}>⚙️ General Technique</div>
-                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}>• Patient RELAXED - tension suppresses reflexes<br/>• Limb in mid-range position (not taut)<br/>• Strike tendon BRISKLY with the pointed end of reflex hammer<br/>• Use a single, sharp strike - not repeated taps<br/>• Jendrassik Manoeuvre: ask patient to interlock fingers and pull apart (reinforcement) if reflex absent</div>
+                <div style={{fontWeight:700,color:C.yellow,marginBottom:6,fontSize:"0.72rem"}}>⚙ General Technique</div>
+                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}>. Patient RELAXED - tension suppresses reflexes<br/>. Limb in mid-range position (not taut)<br/>. Strike tendon BRISKLY with the pointed end of reflex hammer<br/>. Use a single, sharp strike - not repeated taps<br/>. Jendrassik Manoeuvre: ask patient to interlock fingers and pull apart (reinforcement) if reflex absent</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontWeight:700,color:C.a3,marginBottom:6,fontSize:"0.72rem"}}>📊 HOW TO MARK - Reflex Grading</div>
@@ -2027,8 +2027,8 @@ function NeurologicalModule({ data, set, navContext={} }) {
                 </div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontWeight:700,color:C.red,marginBottom:6,fontSize:"0.72rem"}}>⚠️ UMN vs LMN Pattern</div>
-                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}><span style={{color:C.red}}>UMN (cord/brain)</span>: Hyperreflexia (3+/4+), Babinski +, Hoffmann +, clonus, spasticity<br/><span style={{color:C.yellow}}>LMN (root/nerve)</span>: Hyporeflexia (0/1+), flaccidity, wasting, fasciculations<br/>• Asymmetric reflex = more significant than bilateral change<br/>• Inverted brachioradialis reflex = pathognomonic for C5/6 myelopathy</div>
+                <div style={{fontWeight:700,color:C.red,marginBottom:6,fontSize:"0.72rem"}}>⚠ UMN vs LMN Pattern</div>
+                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}><span style={{color:C.red}}>UMN (cord/brain)</span>: Hyperreflexia (3+/4+), Babinski +, Hoffmann +, clonus, spasticity<br/><span style={{color:C.yellow}}>LMN (root/nerve)</span>: Hyporeflexia (0/1+), flaccidity, wasting, fasciculations<br/>. Asymmetric reflex = more significant than bilateral change<br/>. Inverted brachioradialis reflex = pathognomonic for C5/6 myelopathy</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontWeight:700,color:C.a2,marginBottom:6,fontSize:"0.72rem"}}>🔑 Pathological Signs - Perform These</div>
@@ -2045,24 +2045,24 @@ function NeurologicalModule({ data, set, navContext={} }) {
             <div style={{background:"rgba(255,77,109,0.07)",border:`1px solid ${C.red}30`,borderRadius:10,padding:"10px 13px"}}>
               <div style={{fontSize:"0.65rem",fontWeight:800,color:C.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>🔴 UMN Pattern (Upper Motor Neuron)</div>
               <div style={{fontSize:"0.72rem",color:C.text,lineHeight:1.7}}>
-                <div>• <strong>Hyperreflexia</strong> (brisk DTRs)</div>
-                <div>• <strong>Positive Babinski</strong> (upgoing toe)</div>
-                <div>• <strong>Clonus</strong> (&gt;3 beats)</div>
-                <div>• <strong>Hoffmann's +ve</strong> (upper limb)</div>
-                <div>• <strong>Spasticity</strong> (clasp-knife tone)</div>
-                <div>• <strong>No wasting</strong> (initially)</div>
+                <div>. <strong>Hyperreflexia</strong> (brisk DTRs)</div>
+                <div>. <strong>Positive Babinski</strong> (upgoing toe)</div>
+                <div>. <strong>Clonus</strong> (&gt;3 beats)</div>
+                <div>. <strong>Hoffmann's +ve</strong> (upper limb)</div>
+                <div>. <strong>Spasticity</strong> (clasp-knife tone)</div>
+                <div>. <strong>No wasting</strong> (initially)</div>
                 <div style={{marginTop:5,fontSize:"0.68rem",color:C.red,fontWeight:600}}>{"->"}  Lesion: brain, brainstem, spinal cord</div>
               </div>
             </div>
             <div style={{background:"rgba(255,179,0,0.07)",border:`1px solid ${C.yellow}30`,borderRadius:10,padding:"10px 13px"}}>
               <div style={{fontSize:"0.65rem",fontWeight:800,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>🟡 LMN Pattern (Lower Motor Neuron)</div>
               <div style={{fontSize:"0.72rem",color:C.text,lineHeight:1.7}}>
-                <div>• <strong>Hyporeflexia / Absent DTRs</strong></div>
-                <div>• <strong>Negative Babinski</strong> (no response)</div>
-                <div>• <strong>No clonus</strong></div>
-                <div>• <strong>Fasciculations</strong> (visible twitching)</div>
-                <div>• <strong>Flaccid tone</strong> (reduced resistance)</div>
-                <div>• <strong>Muscle wasting</strong> (denervation atrophy)</div>
+                <div>. <strong>Hyporeflexia / Absent DTRs</strong></div>
+                <div>. <strong>Negative Babinski</strong> (no response)</div>
+                <div>. <strong>No clonus</strong></div>
+                <div>. <strong>Fasciculations</strong> (visible twitching)</div>
+                <div>. <strong>Flaccid tone</strong> (reduced resistance)</div>
+                <div>. <strong>Muscle wasting</strong> (denervation atrophy)</div>
                 <div style={{marginTop:5,fontSize:"0.68rem",color:C.yellow,fontWeight:600}}>{"->"}  Lesion: anterior horn, nerve root, peripheral nerve</div>
               </div>
             </div>
@@ -2078,7 +2078,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
             const groupMeta = {
               DTR:{ label:"Deep Tendon Reflexes (DTR)", color:C.accent, icon:"🔨", desc:"Segmental reflex arcs. Diminished = LMN/root. Exaggerated = UMN. Always compare bilateral." },
               UMN:{ label:"Upper Motor Neuron Signs (Pathological)", color:C.red, icon:"🔴", desc:"Any positive UMN sign in adults = corticospinal tract lesion. Requires urgent investigation." },
-              Clonus:{ label:"Clonus Tests", color:C.purple, icon:"〰️", desc:"Sustained rhythmic oscillation = UMN lesion with hyperexcitability of stretch reflex. >3 beats = positive." },
+              Clonus:{ label:"Clonus Tests", color:C.purple, icon:"〰", desc:"Sustained rhythmic oscillation = UMN lesion with hyperexcitability of stretch reflex. >3 beats = positive." },
               LMN:{ label:"Lower Motor Neuron Signs & Tone", color:C.yellow, icon:"🟡", desc:"Denervation signs. Fasciculations + wasting + flaccid tone = anterior horn / peripheral nerve / root." },
             }[grp];
             return(
@@ -2118,7 +2118,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                         </div>
                         <button type="button" onClick={()=>setExpandedLevel(expandedLevel===r.id?null:r.id)}
                           style={{padding:"2px 9px",background:`rgba(127,90,240,0.12)`,border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.62rem",fontWeight:700,cursor:"pointer",flexShrink:0}}>
-                          {expandedLevel===r.id?"▲ Hide":"ℹ Technique"}
+                          {expandedLevel===r.id?"▲ Hide":"i Technique"}
                         </button>
                       </div>
                       {expandedLevel===r.id&&(
@@ -2165,7 +2165,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
           <CollapsibleHow title="📋 HOW TO PERFORM - Neural Tension Tests (Neurodynamic Assessment)">
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontWeight:700,color:C.yellow,marginBottom:6,fontSize:"0.72rem"}}>⚙️ Principle</div>
+                <div style={{fontWeight:700,color:C.yellow,marginBottom:6,fontSize:"0.72rem"}}>⚙ Principle</div>
                 <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}>Neural tension tests load the nerve mechanically through sequential joint positions. A positive test = reproduction of the patient's FAMILIAR symptoms (not just tightness). The key differentiator: symptoms change when a sensitising component is added or released.</div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
@@ -2183,8 +2183,8 @@ function NeurologicalModule({ data, set, navContext={} }) {
                 </div>
               </div>
               <div style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontWeight:700,color:C.red,marginBottom:6,fontSize:"0.72rem"}}>⚠️ Contraindications</div>
-                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}>• Acute spinal cord injury or myelopathy signs<br/>• Severe acute radiculopathy with neurological deficit<br/>• Vertebral artery insufficiency (cervical tests)<br/>• Recent surgery to spine or peripheral nerve<br/>• Do NOT over-sensitise - stop at first symptom reproduction</div>
+                <div style={{fontWeight:700,color:C.red,marginBottom:6,fontSize:"0.72rem"}}>⚠ Contraindications</div>
+                <div style={{fontSize:"0.71rem",color:C.muted,lineHeight:1.7}}>. Acute spinal cord injury or myelopathy signs<br/>. Severe acute radiculopathy with neurological deficit<br/>. Vertebral artery insufficiency (cervical tests)<br/>. Recent surgery to spine or peripheral nerve<br/>. Do NOT over-sensitise - stop at first symptom reproduction</div>
               </div>
             </div>
             <div style={{background:"rgba(0,229,255,0.07)",borderRadius:8,padding:"8px 12px",fontSize:"0.7rem",color:C.text,borderLeft:`3px solid ${C.accent}`}}>
@@ -2217,7 +2217,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                       <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.7}}>{nt.procedure}</div>
                     </div>
                     <div style={{marginBottom:8}}>
-                      <div style={{fontSize:"0.62rem",fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>✓ Positive Finding</div>
+                      <div style={{fontSize:"0.62rem",fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>v Positive Finding</div>
                       <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.7}}>{nt.positive}</div>
                     </div>
                     <div style={{marginBottom:8}}>
@@ -2309,7 +2309,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                       <div key={opt.score} onClick={()=>set(comp.id,String(opt.score))} style={{cursor:"pointer",padding:"8px 11px",borderRadius:8,background:selected?`${comp.color}18`:C.s2,border:`1px solid ${selected?comp.color:C.border}`,transition:"all 0.15s"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                           <span style={{fontSize:"0.78rem",fontWeight:selected?700:400,color:selected?comp.color:C.text}}>{opt.label}</span>
-                          {selected&&<span style={{color:comp.color,fontSize:"0.85rem"}}>✓</span>}
+                          {selected&&<span style={{color:comp.color,fontSize:"0.85rem"}}>v</span>}
                         </div>
                         <div style={{fontSize:"0.68rem",color:C.muted,marginTop:2}}>{opt.desc}</div>
                       </div>
@@ -2397,12 +2397,12 @@ function NeurologicalModule({ data, set, navContext={} }) {
             <div style={{fontWeight:700,color:C.text,marginBottom:8,fontSize:"0.78rem"}}>📋 HOW TO PERFORM - Step-by-Step</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
               {[
-                {step:"1",title:"Position & Explain",color:C.accent,content:"• Patient supine or seated\n• Explain entire test before starting\n• Ensure privacy for sacral exam\n• Have ISNCSCI worksheet ready\n• Begin at least 72h post-injury (avoid spinal shock phase)"},
-                {step:"2",title:"Sensory - Light Touch (LT)",color:C.yellow,content:"• Use cotton wisp or fingertip\n• Test ALL 28 bilateral key points\n• Score: 0=Absent, 1=Altered, 2=Normal, NT=Not Testable\n• Always compare to C2 (forehead) as reference normal\n• Eyes closed; ask 'same or different to here?'"},
-                {step:"3",title:"Sensory - Pin Prick (PP)",color:C.red,content:"• Use disposable safety pin\n• Test same 28 bilateral key points\n• Same scoring: 0/1/2/NT\n• Ask 'sharp or dull?' for each\n• NEVER draw blood; use gentle pressure"},
-                {step:"4",title:"Motor - 10 Key Muscles",color:C.a2,content:"• Test bilaterally: C5 C6 C7 C8 T1 (upper) + L2 L3 L4 L5 S1 (lower)\n• MRC scale 0-5/5\n• Gravity-eliminated position for scores 0-2\n• Active resistance for scores 3-5\n• Record each side separately"},
-                {step:"5",title:"Sacral Exam - Critical",color:"#ff8c42",content:"• VAC: finger in anus -> ask to squeeze voluntarily\n• DAP: apply deep pressure to anorectal wall -> any sensation?\n• S4/5 sensation: perianal light touch + pin prick\n• ANY sacral sparing = INCOMPLETE injury (AIS B/C/D)\n• This step determines AIS A vs all others"},
-                {step:"6",title:"Determine NLI & AIS Grade",color:C.a3,content:"• NLI = most caudal level with normal motor AND sensory bilaterally\n• Must be 5/5 motor + normal sensation at that level\n• Level above NLI must also be 5/5 & normal\n• Apply AIS decision algorithm (A->E)\n• Document: NLI right + left + AIS grade"},
+                {step:"1",title:"Position & Explain",color:C.accent,content:". Patient supine or seated\n. Explain entire test before starting\n. Ensure privacy for sacral exam\n. Have ISNCSCI worksheet ready\n. Begin at least 72h post-injury (avoid spinal shock phase)"},
+                {step:"2",title:"Sensory - Light Touch (LT)",color:C.yellow,content:". Use cotton wisp or fingertip\n. Test ALL 28 bilateral key points\n. Score: 0=Absent, 1=Altered, 2=Normal, NT=Not Testable\n. Always compare to C2 (forehead) as reference normal\n. Eyes closed; ask 'same or different to here?'"},
+                {step:"3",title:"Sensory - Pin Prick (PP)",color:C.red,content:". Use disposable safety pin\n. Test same 28 bilateral key points\n. Same scoring: 0/1/2/NT\n. Ask 'sharp or dull?' for each\n. NEVER draw blood; use gentle pressure"},
+                {step:"4",title:"Motor - 10 Key Muscles",color:C.a2,content:". Test bilaterally: C5 C6 C7 C8 T1 (upper) + L2 L3 L4 L5 S1 (lower)\n. MRC scale 0-5/5\n. Gravity-eliminated position for scores 0-2\n. Active resistance for scores 3-5\n. Record each side separately"},
+                {step:"5",title:"Sacral Exam - Critical",color:"#ff8c42",content:". VAC: finger in anus -> ask to squeeze voluntarily\n. DAP: apply deep pressure to anorectal wall -> any sensation?\n. S4/5 sensation: perianal light touch + pin prick\n. ANY sacral sparing = INCOMPLETE injury (AIS B/C/D)\n. This step determines AIS A vs all others"},
+                {step:"6",title:"Determine NLI & AIS Grade",color:C.a3,content:". NLI = most caudal level with normal motor AND sensory bilaterally\n. Must be 5/5 motor + normal sensation at that level\n. Level above NLI must also be 5/5 & normal\n. Apply AIS decision algorithm (A->E)\n. Document: NLI right + left + AIS grade"},
               ].map(s=>(
                 <div key={s.step} style={{background:C.s3,borderRadius:8,padding:"10px 12px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
@@ -2484,7 +2484,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                       <div style={{fontWeight:700,color:sel?g.color:C.text,fontSize:"0.82rem"}}>{g.label}</div>
                       <div style={{fontSize:"0.7rem",color:C.muted,lineHeight:1.5,marginTop:2}}>{g.desc}</div>
                     </div>
-                    {sel&&<span style={{color:g.color,fontSize:"1.1rem",flexShrink:0}}>✓</span>}
+                    {sel&&<span style={{color:g.color,fontSize:"1.1rem",flexShrink:0}}>v</span>}
                   </div>
                 </div>
               );
@@ -2608,7 +2608,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
           <div style={{marginBottom:14}}>
             {sectionHead("Sacral Sparing & Voluntary Function (S4-S5)")}
             <div style={{fontSize:"0.72rem",color:C.red,fontWeight:600,marginBottom:10,padding:"8px 12px",background:"rgba(255,77,109,0.08)",borderRadius:8,border:`1px solid ${C.red}30`}}>
-              ⚠️ Sacral sparing = any sensory or motor function preserved at S4-S5. CRITICAL for AIS A vs B classification and prognosis.
+              ⚠ Sacral sparing = any sensory or motor function preserved at S4-S5. CRITICAL for AIS A vs B classification and prognosis.
             </div>
             {[
               {id:"asia_vac",label:"VAC - Voluntary Anal Contraction",desc:"Patient instructed to squeeze anal sphincter around examiner's finger. Any voluntary contraction = motor incomplete.",options:["Not tested","Absent - no voluntary contraction (AIS A/B)","Present - voluntary contraction felt (motor incomplete)"]},
@@ -2671,7 +2671,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
         <div>
           {sectionHead("Neurological Red Flags - Screening Checklist")}
           <div style={{background:"rgba(255,77,109,0.08)",border:`1px solid ${C.red}40`,borderRadius:10,padding:"11px 14px",marginBottom:14,fontSize:"0.76rem",color:C.muted,lineHeight:1.6}}>
-            <strong style={{color:C.red}}>⚠️ IMPORTANT:</strong> Any positive red flag requires immediate action. Do NOT commence physiotherapy treatment until red flags are cleared or appropriately managed.
+            <strong style={{color:C.red}}>⚠ IMPORTANT:</strong> Any positive red flag requires immediate action. Do NOT commence physiotherapy treatment until red flags are cleared or appropriately managed.
           </div>
           {RED_FLAGS_NEURO.map(rf=>{
             const val = data[rf.id]||"";
@@ -2691,7 +2691,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                   </div>
                   <select value={val} onChange={e=>set(rf.id,e.target.value)} style={{...inp,width:"auto",minWidth:110,flexShrink:0,borderColor:active?(isEmerg?C.red:C.yellow):C.border}}>
                     <option value="">- screen -</option>
-                    <option value="Cleared">✓ Cleared</option>
+                    <option value="Cleared">v Cleared</option>
                     <option value="Present">🔴 Present</option>
                     <option value="Uncertain">⚠ Uncertain</option>
                   </select>
