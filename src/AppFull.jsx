@@ -6429,7 +6429,7 @@ function PostureAnalysisModule(){
             {mvComposite.coverage.viewCount} views · {mvComposite.coverage.frontal?"v Frontal":"○ Frontal"} · {mvComposite.coverage.sagittal?"v Sagittal":"○ Sagittal"}
           </div>
         </div>
-        <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.68rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}><- Back</button>
+        <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.68rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}>Back</button>
       </div>
 
       {/* Captured view thumbnails inside report */}
@@ -8503,7 +8503,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
           width:36,height:36,borderRadius:"50%",border:`1px solid ${C.border2}`,
           background:C.white,cursor:"pointer",display:"flex",alignItems:"center",
           justifyContent:"center",fontSize:18,color:C.primary,
-        }}><-</button>
+        }>Back</button>
         <div style={{fontSize:15,fontWeight:700,color:C.text}}>Patient Profile</div>
         <div style={{display:"flex",gap:8}}>
           <button style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted}}>✏️</button>
