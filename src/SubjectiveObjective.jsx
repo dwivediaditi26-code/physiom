@@ -239,7 +239,7 @@ const SPECIAL_TESTS_DATA = {
         sensitivity:"69%", specificity:"96%",
         positive:"URGENT - click or symptom change indicates instability",
         negative:"No movement or symptoms",
-        how:"⚠️ PERFORM WITH CAUTION. Patient seated, head in flexion. Therapist places palm on forehead, thumb on C2 spinous process. Apply POSTERIOR translation of head on C2. Positive if clunk or reduction in symptoms. POSITIVE = refer immediately. Do NOT manipulate this patient.",
+        how:"⚠ PERFORM WITH CAUTION. Patient seated, head in flexion. Therapist places palm on forehead, thumb on C2 spinous process. Apply POSTERIOR translation of head on C2. Positive if clunk or reduction in symptoms. POSITIVE = refer immediately. Do NOT manipulate this patient.",
         options:["Negative","Positive - clunk present (C1/C2 instability - REFER URGENT)","Inconclusive"],
       },
       { id:"st_vbi", label:"VBI / 3-Part Test", structure:"Vertebral artery patency",
@@ -1058,7 +1058,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                   <div style={{ display:"flex", gap:7, alignItems:"center", marginBottom:3, flexWrap:"wrap" }}>
                     <span style={{ fontSize:"0.75rem", fontWeight:700, color:color }}>{t.label}</span>
                     {anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(255,77,109,0.2)", color:C.red, fontSize:"0.65rem", fontWeight:700 }}>⚠ POSITIVE</span>}
-                    {anyVal && !anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(0,201,122,0.15)", color:C.green, fontSize:"0.65rem", fontWeight:700 }}>✓ Recorded</span>}
+                    {anyVal && !anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(0,201,122,0.15)", color:C.green, fontSize:"0.65rem", fontWeight:700 }}>v Recorded</span>}
                   </div>
                   <div style={{ fontSize:"0.7rem", color:C.muted }}>Structure: {t.structure}</div>
                   <div style={{ fontSize:"0.68rem", color:C.muted }}>Sens: {t.sensitivity} · Spec: {t.specificity}</div>
@@ -1070,7 +1070,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                 </div>
                 <div style={{ display:"flex", gap:7, alignItems:"center", flexShrink:0, marginLeft:10 }}>
                   <button type="button" onClick={e => { e.stopPropagation(); setModalTest(t); }}
-                    style={{ padding:"3px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.62rem", fontWeight:700, cursor:"pointer" }}>ℹ</button>
+                    style={{ padding:"3px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.62rem", fontWeight:700, cursor:"pointer" }}>i</button>
                   <span style={{ color:C.muted, fontSize:"0.72rem" }}>{isOpen ? "▲" : "▼"}</span>
                 </div>
               </div>
@@ -1098,7 +1098,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                         <div style={{ background:"rgba(0,201,122,0.08)", border:"1px solid rgba(0,201,122,0.25)", borderRadius:7, padding:"6px 9px" }}>
-                          <div style={{ fontSize:"0.6rem", fontWeight:700, color:C.green, marginBottom:2 }}>✓ NEGATIVE means</div>
+                          <div style={{ fontSize:"0.6rem", fontWeight:700, color:C.green, marginBottom:2 }}>v NEGATIVE means</div>
                           <div style={{ fontSize:"0.72rem", color:C.text }}>{t.negative}</div>
                         </div>
                         <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.25)", borderRadius:7, padding:"6px 9px" }}>
@@ -1179,7 +1179,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
               <div style={{ background:"rgba(0,201,122,0.08)", border:"1px solid rgba(0,201,122,0.25)", borderRadius:8, padding:10 }}>
-                <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.green, textTransform:"uppercase", marginBottom:5 }}>✓ Negative</div>
+                <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.green, textTransform:"uppercase", marginBottom:5 }}>v Negative</div>
                 <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.negative}</div>
               </div>
               <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.25)", borderRadius:8, padding:10 }}>
@@ -1192,7 +1192,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
               <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Result Options</div>
               {modalTest.options.map((o, i) => (
                 <div key={i} style={{ padding:"6px 10px", borderRadius:7, marginBottom:5, background:C.s2, border:`1px solid ${C.border}`, fontSize:"0.78rem", color:isPositive(o) ? C.red : C.text }}>
-                  {isPositive(o) ? "⚠ " : "○ "}{o}
+                  {isPositive(o) ? "⚠ " : "o "}{o}
                 </div>
               ))}
             </div>
@@ -1208,8 +1208,8 @@ function SpecialTestsSection({ data, set, navContext={} }) {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CYRIAX COMPLETE ASSESSMENT MODULE
-// Full STTT • Active/Passive ROM • End-Feel • Resisted Tests • Joint Play
-// Auto Clinical Reasoning • Tissue Diagnosis • Treatment Direction
+// Full STTT . Active/Passive ROM . End-Feel . Resisted Tests . Joint Play
+// Auto Clinical Reasoning . Tissue Diagnosis . Treatment Direction
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── CYRIAX CORE DATA ────────────────────────────────────────────────────────
@@ -1223,7 +1223,7 @@ const CYRIAX_STTT_INTERPRETATION = {
     dx:"Normal - no contractile lesion at this movement",
   },
   "Strong & Painful": {
-    color:"#ffb300", icon:"⚠️",
+    color:"#ffb300", icon:"⚠",
     tissue:"Minor contractile lesion",
     meaning:"The contractile unit can generate near-normal force BUT the lesion is provoked by tension. Indicates MINOR lesion: partial muscle tear, tendinopathy, tenoperiosteal lesion, or musculotendinous junction injury. The structure is intact enough to generate force.",
     nextStep:"Palpate the exact site of lesion. Deep Transverse Friction Massage (DTFM) at the exact lesion site. Eccentric loading protocol.",
@@ -1576,7 +1576,7 @@ function cyriaxAutoReason(regionId, data) {
 
   // TISSUE TYPE DETERMINATION
   if (weakPainful.length > 0) {
-    tissueType = "⚠️ SERIOUS CONTRACTILE LESION";
+    tissueType = "⚠ SERIOUS CONTRACTILE LESION";
     confidence = "High";
     findings.push(`🚨 SERIOUS: ${weakPainful.map(r => r.label).join(", ")} - Weak & Painful`);
     diagnoses.push({ name:"Serious Contractile Lesion", confidence:"High", detail:"Weak + painful = serious: complete rupture + surrounding tissue damage, fracture through insertion, or neoplasm. URGENT imaging required." });
@@ -2004,7 +2004,7 @@ function CyriaxModule({ data, set, navContext={} }) {
               {reasoning.findings.length > 0 && (
                 <div style={{ ...boxStyle }}>
                   <div style={labelStyle}>Clinical Findings Summary</div>
-                  {reasoning.findings.map((f,i)=><div key={i} style={{ padding:"5px 0", fontSize:"0.78rem", color:C.text, borderBottom:`1px solid ${C.border}` }}>• {f}</div>)}
+                  {reasoning.findings.map((f,i)=><div key={i} style={{ padding:"5px 0", fontSize:"0.78rem", color:C.text, borderBottom:`1px solid ${C.border}` }}>. {f}</div>)}
                 </div>
               )}
 
@@ -2959,7 +2959,7 @@ const REGION_NAV = {
     { label:"Neurological Screen",icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"] }, col:"#dc2626", why:"C5-T1 dermatomes, myotomes, biceps/brachio/triceps reflexes. Localise nerve root level." },
     { label:"Posture Analysis",   icon:"🧍", nav:"posture", ctx:{ region:"Cervical" },                                                                col:"#059669", why:"CVA, forward head, thoracic kyphosis - all increase cervical loading. Assess before treating." },
     { label:"NKT Assessment",     icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition -> SCM/scalene dominance -> FHP maintained. NKT identifies the exact inhibitor." },
-    { label:"Kinetic Chain",      icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_cervical_thoracic_jct"] }, col:"#7c3aed", why:"Thoracic kyphosis is the primary driver of cervical loading. Address thoracic before cervical." },
+    { label:"Kinetic Chain",      icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_cervical_thoracic_jct"] }, col:"#7c3aed", why:"Thoracic kyphosis is the primary driver of cervical loading. Address thoracic before cervical." },
     { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_a_rotl","cx_a_rotr","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Selective tissue tension - differentiate contractile vs non-contractile cervical pain source." },
     { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Cervical fascial lines - skin rolling and passive tension identify SBL and thoracolumbar restriction." },
   ],
@@ -3006,7 +3006,7 @@ const REGION_NAV = {
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Best ACL test at 20-30deg flexion. Run before pivot shift." },
     { label:"McMurray Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_mcmurray_test" },                          col:"#0891b2", why:"McMurray - meniscal integrity. Medial: valgus + ER. Lateral: varus + IR. Listen for click." },
     { label:"Step-Down Test",      icon:"🏃", nav:"fma",     ctx:{ fmaTests:["step_down","squat","single_leg"], fmaHighlights:["step_down","squat","single_leg"] }, col:"#059669", why:"Step-down - highest sensitivity test for PFJ and glute med weakness. Observe dynamic valgus." },
-    { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF restriction and hip abductor weakness both drive knee valgus. Assess chain first." },
+    { label:"Kinetic Chain",       icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF restriction and hip abductor weakness both drive knee valgus. Assess chain first." },
   ],
   "Knee (R)": [
     { label:"Knee ROM",             icon:"📐", nav:"rom",    ctx:{ romRegion:"Knee", romHighlights:["rom_kflex","rom_kext"] },                          col:"#9333ea", why:"Flexion loss indicates effusion, capsule tightness, or meniscal block." },
@@ -3016,7 +3016,7 @@ const REGION_NAV = {
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Gold standard test at 20-30deg flexion." },
     { label:"McMurray Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_mcmurray_test" },                          col:"#0891b2", why:"Meniscal integrity - medial and lateral compartment provocation." },
     { label:"Step-Down Test",      icon:"🏃", nav:"fma",     ctx:{ fmaTests:["step_down","squat","single_leg"], fmaHighlights:["step_down","squat","single_leg"] }, col:"#059669", why:"Highest sensitivity for PFJ / glute med - observe dynamic valgus under load." },
-    { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF and hip abductor chain - both drive valgus. Address before isolated knee work." },
+    { label:"Kinetic Chain",       icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF and hip abductor chain - both drive valgus. Address before isolated knee work." },
   ],
   "Hip / Groin": [
     { label:"Hip ROM",              icon:"📐", nav:"rom",    ctx:{ romRegion:"Hip", romHighlights:["rom_hir","rom_her","rom_hflex","rom_hext","rom_habd","rom_hadd"] },                                          col:"#9333ea", why:"IR most restricted in hip OA (capsular pattern: IR > ER > abduction). FADIR reproduces impingement." },
@@ -3025,7 +3025,7 @@ const REGION_NAV = {
     { label:"FADIR Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_fadir_test" },                              col:"#0891b2", why:"FADIR - hip impingement (FAI) provocation. Flexion + adduction + IR reproduces anterior groin pain." },
     { label:"FABER Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" },                              col:"#0891b2", why:"FABER - hip, SIJ, and adductor provocation. Figure-4 position stresses all three simultaneously." },
     { label:"Step-Down / SLS",     icon:"🏃", nav:"fma",     ctx:{ fmaTests:["single_leg","step_down","squat"], fmaHighlights:["single_leg","step_down","squat"] }, col:"#059669", why:"Single-leg stance and step-down - reveal hip strategy and Trendelenburg under functional load." },
-    { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"hip", kcHighlights:["kc_hip_ir_mob","kc_hip_ext_mob","kc_hip_er_mob","kc_hip_abd_mob","kc_lumbar_stability"] }, col:"#7c3aed", why:"Hip is the stability joint. Restricted ER drives lumbar and knee chain overload." },
+    { label:"Kinetic Chain",       icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"hip", kcHighlights:["kc_hip_ir_mob","kc_hip_ext_mob","kc_hip_er_mob","kc_hip_abd_mob","kc_lumbar_stability"] }, col:"#7c3aed", why:"Hip is the stability joint. Restricted ER drives lumbar and knee chain overload." },
   ],
   "Ankle / Foot": [
     { label:"Ankle ROM",            icon:"📐", nav:"rom",    ctx:{ romRegion:"Ankle", romHighlights:["rom_adf","rom_apf","rom_ainv","rom_aev"] },                                        col:"#9333ea", why:"Dorsiflexion - <35deg weight-bearing is clinically significant. Primary kinetic chain driver." },
@@ -3034,7 +3034,7 @@ const REGION_NAV = {
     { label:"Anterior Drawer",     icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_ant_drawer_ankle" },                 col:"#0891b2", why:"Anterior drawer - ATFL integrity. Most commonly injured ankle ligament. 73% sensitivity." },
     { label:"Thompson Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_thompson_test" },                    col:"#0891b2", why:"Thompson test - Achilles tendon rupture screen. 96% sensitivity. Squeeze calf = plantarflexion response." },
     { label:"Windlass Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_windlass_test" },                    col:"#0891b2", why:"Windlass - plantar fascia load test. Hallux extension tightens plantar fascia. Reproduces heel pain." },
-    { label:"Foot / Ankle Chain",  icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"foot_ankle", kcHighlights:["kc_ankle_df","kc_subtalar","kc_great_toe","kc_tibiofemoral_rot"] }, col:"#7c3aed", why:"Ankle DF restriction drives tibial IR -> knee valgus -> hip adduction -> lumbar extension cascade." },
+    { label:"Foot / Ankle Chain",  icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"foot_ankle", kcHighlights:["kc_ankle_df","kc_subtalar","kc_great_toe","kc_tibiofemoral_rot"] }, col:"#7c3aed", why:"Ankle DF restriction drives tibial IR -> knee valgus -> hip adduction -> lumbar extension cascade." },
     { label:"Gait Analysis",       icon:"🚶", nav:"gait",   ctx:{},                                                                                   col:"#059669", why:"Observe heel strike, midstance pronation control, push-off - ankle function visible in gait." },
   ],
   "Elbow/Wrist/Hand": [
@@ -3052,7 +3052,7 @@ const REGION_NAV = {
     { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["el_a_flex","el_a_ext","el_r_wext","el_r_wflex","el_r_grip","wr_r_ext","wr_r_flex"] }, col:"#f59e0b", why:"Elbow/wrist Cyriax - resisted wrist extension = lateral epicondylalgia; resisted grip differentiates tendon pathology." },
     { label:"Thoracic MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_trapL","mmt_trapM","mmt_serratus","mmt_trapU","mmt_rhomb"] },                         col:"#7c3aed", why:"Lower trapezius - scapular depression and posterior tilt. Weakness = shoulder and thoracic impingement driver." },
     { label:"Posture Analysis",    icon:"🧍", nav:"posture", ctx:{ region:"Thoracic" },                                                               col:"#059669", why:"Kyphosis angle, scoliotic curve, rib symmetry, scapular position - thoracic posture drives all chains above and below." },
-    { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_scapulohumeral_rhythm"] }, col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
+    { label:"Kinetic Chain",       icon:"⛓", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_scapulohumeral_rhythm"] }, col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
     { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_pec_minor","nkt_upper_trap","nkt_lower_trap","nkt_serratus","nkt_mid_trap"] }, col:"#d97706", why:"Pec major/minor overactive -> lower trap/serratus inhibited -> kyphosis maintained. Treat motor pattern." },
     { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fmaTests:["overhead","rotary_stability","pushup_plus"], fmaHighlights:["overhead","rotary_stability","pushup_plus"] }, col:"#059669", why:"Overhead reach (thoracic extension demand), rotary stability (anti-rotation), push-up plus (scapular chain)." },
     { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_densification","fa_sbl_hamstring"] }, col:"#059669", why:"TLF and SBL - thoracolumbar fascia links lumbar extensors to contralateral shoulder girdle." },
@@ -4276,7 +4276,7 @@ function SubjectiveModule({ data, set, onNav }) {
                   fontSize:"0.68rem", fontWeight: on ? 700 : 500,
                   opacity: disabled ? 0.45 : 1, transition:"all 120ms",
                 }}>
-                {on ? "✓ " : ""}{r}
+                {on ? "v " : ""}{r}
               </button>
             );
           })}
@@ -4343,7 +4343,7 @@ function SubjectiveModule({ data, set, onNav }) {
             {t==="results" && insight && (
               <span style={{ marginLeft:5, background: insight.anyUrgent ? PC.red : PC.green,
                 color:"#fff", fontSize:"0.55rem", padding:"1px 6px", borderRadius:99, fontWeight:700 }}>
-                {insight.anyUrgent ? "⚠" : "✓"}
+                {insight.anyUrgent ? "⚠" : "v"}
               </span>
             )}
           </button>
@@ -4489,7 +4489,7 @@ function SubjectiveModule({ data, set, onNav }) {
                 </div>
                 {insight.regionResults.filter(r=>r.urgentFlag).map((r,i)=>(
                   r.precautions.map((p,j)=>(
-                    <div key={`${i}-${j}`} style={{ fontSize:"0.72rem", color: PC.red, marginBottom:3, lineHeight:1.5 }}>• {p}</div>
+                    <div key={`${i}-${j}`} style={{ fontSize:"0.72rem", color: PC.red, marginBottom:3, lineHeight:1.5 }}>. {p}</div>
                   ))
                 ))}
               </div>
@@ -5907,7 +5907,7 @@ function KineticChainSection({ data, set, navContext={} }) {
     <div>
       {/* Theory banner */}
       <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:12, padding:14, marginBottom:16 }}>
-        <div style={{ fontWeight:800, color:C.accent, marginBottom:8, fontSize:"0.9rem" }}>⛓️ Joint-by-Joint Theory (Cook & Boyle)</div>
+        <div style={{ fontWeight:800, color:C.accent, marginBottom:8, fontSize:"0.9rem" }}>⛓ Joint-by-Joint Theory (Cook & Boyle)</div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
           {[
             ["Foot","MOBILITY","#00c97a"],["Ankle","MOBILITY","#00c97a"],["Knee","STABILITY","#ff4d6d"],
@@ -5970,7 +5970,7 @@ function KineticChainSection({ data, set, navContext={} }) {
               <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0, marginLeft:10 }}>
                 <button type="button" onClick={e=>{ e.stopPropagation(); setModalTest(t); }}
                   style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer" }}>
-                  ℹ How to Test
+                  i How to Test
                 </button>
                 <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
               </div>
@@ -5993,7 +5993,7 @@ function KineticChainSection({ data, set, navContext={} }) {
                     <div key={opt.val} onClick={()=>set(t.id, currentVal===opt.val?"":opt.val)}
                       style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"10px 12px", borderRadius:9, marginBottom:7, cursor:"pointer", border:`1px solid ${currentVal===opt.val?opt.color:C.border}`, background:currentVal===opt.val?`${opt.color}12`:"transparent", transition:"all 0.15s" }}>
                       <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${opt.color}`, background:currentVal===opt.val?opt.color:"transparent", flexShrink:0, marginTop:2, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.55rem", fontWeight:900 }}>✓</span>}
+                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.55rem", fontWeight:900 }}>v</span>}
                       </div>
                       <div style={{ flex:1 }}>
                         <div style={{ fontWeight:700, fontSize:"0.8rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -6005,7 +6005,7 @@ function KineticChainSection({ data, set, navContext={} }) {
 
                 {/* Chain Effect */}
                 <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:8, padding:11, marginBottom:10 }}>
-                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
+                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓ Kinetic Chain Effect</div>
                   <div style={{ fontSize:"0.77rem", color:C.text, lineHeight:1.6 }}>{t.chainEffect}</div>
                 </div>
 
@@ -6048,7 +6048,7 @@ function KineticChainSection({ data, set, navContext={} }) {
             </div>
 
             <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:8, padding:12, marginBottom:14 }}>
-              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
+              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓ Kinetic Chain Effect</div>
               <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.chainEffect}</div>
             </div>
 
@@ -6076,23 +6076,23 @@ const COMPENSATIONS = {
   pelvic_drop:         { label:"Pelvic Drop", icon:"🍑", color:"#ff4d6d" },
   anterior_pelvic_tilt:{ label:"Anterior Pelvic Tilt", icon:"🍑", color:"#ffb300" },
   posterior_pelvic_tilt:{ label:"Posterior Pelvic Tilt", icon:"🍑", color:"#ffb300" },
-  trunk_lean_forward:  { label:"Trunk Lean Forward", icon:"🏋️", color:"#ff8c42" },
-  trunk_lean_lateral:  { label:"Trunk Lean Lateral", icon:"↔️", color:"#ff8c42" },
-  trunk_shift:         { label:"Trunk Shift", icon:"↕️", color:"#ffb300" },
+  trunk_lean_forward:  { label:"Trunk Lean Forward", icon:"🏋", color:"#ff8c42" },
+  trunk_lean_lateral:  { label:"Trunk Lean Lateral", icon:"↔", color:"#ff8c42" },
+  trunk_shift:         { label:"Trunk Shift", icon:"↕", color:"#ffb300" },
   foot_pronation:      { label:"Foot Pronation", icon:"👣", color:"#ff8c42" },
   foot_supination:     { label:"Foot Supination", icon:"👣", color:"#ffb300" },
   heel_rise:           { label:"Heel Rise", icon:"👟", color:"#ff4d6d" },
-  asymmetric_loading:  { label:"Asymmetric Loading", icon:"⚖️", color:"#ff4d6d" },
+  asymmetric_loading:  { label:"Asymmetric Loading", icon:"⚖", color:"#ff4d6d" },
   instability:         { label:"Instability / Wobbling", icon:"⚡", color:"#ff4d6d" },
   limited_depth:       { label:"Limited Depth / ROM", icon:"📏", color:"#ffb300" },
   scapular_winging:    { label:"Scapular Winging", icon:"🪶", color:"#ff4d6d" },
   lumbar_flexion_comp: { label:"Lumbar Flexion Compensation", icon:"🔩", color:"#ff4d6d" },
   lumbar_extension_comp:{ label:"Lumbar Extension Compensation", icon:"🔩", color:"#ffb300" },
-  pain_avoidance:      { label:"Pain Avoidance Movement", icon:"⚠️", color:"#ff4d6d" },
-  forward_head:        { label:"Forward Head", icon:"🗣️", color:"#ffb300" },
+  pain_avoidance:      { label:"Pain Avoidance Movement", icon:"⚠", color:"#ff4d6d" },
+  forward_head:        { label:"Forward Head", icon:"🗣", color:"#ffb300" },
   shoulder_elevation:  { label:"Shoulder Elevation", icon:"🫱", color:"#ffb300" },
   trunk_rotation:      { label:"Trunk Rotation", icon:"🔄", color:"#ff4d6d" },
-  tremor_shaking:      { label:"Tremor / Shaking", icon:"〰️", color:"#ff8c42" },
+  tremor_shaking:      { label:"Tremor / Shaking", icon:"〰", color:"#ff8c42" },
 };
 
 // Rule-based analysis engine
@@ -6643,7 +6643,7 @@ const RULES = {
 // Movement definitions
 const MOVEMENTS = {
   squat:{
-    label:"Bilateral Squat", icon:"🏋️",
+    label:"Bilateral Squat", icon:"🏋",
     description:"Bilateral weightbearing - tests global lower limb and core mechanics. Most comprehensive lower body screen.",
     howToObserve:"Patient performs 3 bodyweight squats to comfortable depth. Observe from anterior (knee alignment, trunk), lateral (trunk lean, heel rise, pelvic tilt), and posterior (pelvic drop, foot pronation). Ask patient to go as deep as comfortable. Repeat in slow motion.",
     checklistKeys:["knee_valgus","knee_varus","heel_rise","anterior_pelvic_tilt","posterior_pelvic_tilt","trunk_lean_forward","foot_pronation","foot_supination","limited_depth","lumbar_flexion_comp","lumbar_extension_comp","pain_avoidance","asymmetric_loading"],
@@ -6756,7 +6756,7 @@ function analyzeMovement(movementId, selectedCompensations) {
 // ─── FMS CLINICAL DATABASE ────────────────────────────────────────────────────
 const FMS_DB = {
   sq:{
-    label:"Deep Squat", icon:"🏋️",
+    label:"Deep Squat", icon:"🏋",
     how:"Stand feet shoulder-width, toes slightly out 5-10deg. Hold dowel overhead wide grip, arms fully extended. Descend as deep as possible, heels flat. Observe from anterior AND lateral.",
     cues:["Heels completely flat on floor throughout","Arms fully extended overhead - no elbow bend","Knees track over 2nd toe","Lumbar spine neutral throughout","Head neutral - no forward jut","Feet symmetrical"],
     scoring:"3=Full depth, torso parallel/vertical to tibia, knees over toes, dowel overhead. 2=Heel rise OR arm drop OR compensatory lean. 1=Unable to achieve depth even with heel lift. 0=Pain.",
@@ -7926,7 +7926,7 @@ function FMASection({ navContext={} }){
               return(
                 <div key={id} data-fma-id={id} onClick={()=>toggleTest(id)}
                   style={{padding:"11px 12px",borderRadius:10,border:`2px solid ${sel?C.accent:C.border}`,background:sel?"rgba(0,229,255,0.08)":C.s2,cursor:"pointer",transition:"all 0.15s",position:"relative"}}>
-                  {sel&&<div style={{position:"absolute",top:6,right:8,width:16,height:16,borderRadius:"50%",background:C.accent,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"#000",fontSize:"0.6rem",fontWeight:900}}>✓</span></div>}
+                  {sel&&<div style={{position:"absolute",top:6,right:8,width:16,height:16,borderRadius:"50%",background:C.accent,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"#000",fontSize:"0.6rem",fontWeight:900}}>v</span></div>}
                   <div style={{fontSize:"1.4rem",marginBottom:4}}>{test.icon}</div>
                   <div style={{fontSize:"0.78rem",fontWeight:700,color:sel?C.accent:C.text,marginBottom:3}}>{test.label}</div>
                   {sel&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
@@ -8034,7 +8034,7 @@ function FMASection({ navContext={} }){
                           <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",cursor:"pointer"}}
                             onClick={()=>toggleDefect(activeTest,defId)}>
                             <div style={{width:20,height:20,borderRadius:5,border:`2px solid ${sel?C.yellow:C.border}`,background:sel?C.yellow:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              {sel&&<span style={{color:"#000",fontSize:"0.65rem",fontWeight:900}}>✓</span>}
+                              {sel&&<span style={{color:"#000",fontSize:"0.65rem",fontWeight:900}}>v</span>}
                             </div>
                             <div style={{flex:1,minWidth:0}}>
                               <div style={{fontSize:"0.8rem",fontWeight:sel?700:500,color:sel?C.yellow:C.text}}>{def.label}</div>
@@ -8057,23 +8057,23 @@ function FMASection({ navContext={} }){
                               </div>
                               {/* Biomech */}
                               <div style={{background:"rgba(127,90,240,0.06)",border:"1px solid rgba(127,90,240,0.2)",borderRadius:8,padding:"8px 10px",marginBottom:8}}>
-                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.purple,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>⚙️ Biomechanical Reason</div>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.purple,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>⚙ Biomechanical Reason</div>
                                 <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.6}}>{def.biomech}</div>
                               </div>
                               {/* Muscles */}
                               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:8}}>
                                 <div style={{background:"rgba(255,77,109,0.07)",border:"1px solid rgba(255,77,109,0.2)",borderRadius:8,padding:"8px 10px"}}>
                                   <div style={{fontSize:"0.58rem",fontWeight:700,color:C.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>🟡 Weak / Underactive</div>
-                                  {def.weak.map((m,i)=><div key={i} style={{fontSize:"0.72rem",color:C.text,padding:"2px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>• {m}</div>)}
+                                  {def.weak.map((m,i)=><div key={i} style={{fontSize:"0.72rem",color:C.text,padding:"2px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>. {m}</div>)}
                                 </div>
                                 <div style={{background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,padding:"8px 10px"}}>
                                   <div style={{fontSize:"0.58rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>🔴 Tight / Overactive</div>
-                                  {def.tight.map((m,i)=><div key={i} style={{fontSize:"0.72rem",color:C.text,padding:"2px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>• {m}</div>)}
+                                  {def.tight.map((m,i)=><div key={i} style={{fontSize:"0.72rem",color:C.text,padding:"2px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>. {m}</div>)}
                                 </div>
                               </div>
                               {/* Kinetic chain */}
                               <div style={{background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:8,padding:"8px 10px",marginBottom:8}}>
-                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>⛓️ Kinetic Chain</div>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>⛓ Kinetic Chain</div>
                                 <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.6}}>{def.kinetic}</div>
                               </div>
                               {/* Compensation */}
@@ -8176,16 +8176,16 @@ function FMASection({ navContext={} }){
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:8}}>
                             <div style={{background:"rgba(255,77,109,0.07)",border:"1px solid rgba(255,77,109,0.2)",borderRadius:7,padding:"7px 9px"}}>
                               <div style={{fontSize:"0.58rem",fontWeight:700,color:C.red,marginBottom:4}}>🟡 WEAK / UNDERACTIVE</div>
-                              {def.weak.map((m,i)=><div key={i} style={{fontSize:"0.71rem",color:C.text,padding:"2px 0"}}>• {m}</div>)}
+                              {def.weak.map((m,i)=><div key={i} style={{fontSize:"0.71rem",color:C.text,padding:"2px 0"}}>. {m}</div>)}
                             </div>
                             <div style={{background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:7,padding:"7px 9px"}}>
                               <div style={{fontSize:"0.58rem",fontWeight:700,color:C.yellow,marginBottom:4}}>🔴 TIGHT / OVERACTIVE</div>
-                              {def.tight.map((m,i)=><div key={i} style={{fontSize:"0.71rem",color:C.text,padding:"2px 0"}}>• {m}</div>)}
+                              {def.tight.map((m,i)=><div key={i} style={{fontSize:"0.71rem",color:C.text,padding:"2px 0"}}>. {m}</div>)}
                             </div>
                           </div>
 
                           <div style={{background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:7,padding:"7px 9px",marginBottom:8}}>
-                            <div style={{fontSize:"0.58rem",fontWeight:700,color:C.accent,marginBottom:3}}>⛓️ KINETIC CHAIN</div>
+                            <div style={{fontSize:"0.58rem",fontWeight:700,color:C.accent,marginBottom:3}}>⛓ KINETIC CHAIN</div>
                             <div style={{fontSize:"0.73rem",color:C.text,lineHeight:1.6}}>{def.kinetic}</div>
                           </div>
 
@@ -8527,7 +8527,7 @@ function FasciaSection({ data, set, navContext={} }) {
                 </div>}
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0,marginLeft:10}}>
-                <button type="button" onClick={e=>{e.stopPropagation();setModalTest(t);}} style={{padding:"3px 10px",background:"rgba(127,90,240,0.15)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>ℹ Info</button>
+                <button type="button" onClick={e=>{e.stopPropagation();setModalTest(t);}} style={{padding:"3px 10px",background:"rgba(127,90,240,0.15)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>i Info</button>
                 <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
               </div>
             </div>
@@ -8543,7 +8543,7 @@ function FasciaSection({ data, set, navContext={} }) {
                     <div key={opt.val} onClick={()=>set(t.id,currentVal===opt.val?"":opt.val)}
                       style={{display:"flex",alignItems:"flex-start",gap:12,padding:"10px 12px",borderRadius:9,marginBottom:7,cursor:"pointer",border:`1px solid ${currentVal===opt.val?opt.color:C.border}`,background:currentVal===opt.val?`${opt.color}12`:"transparent",transition:"all 0.15s"}}>
                       <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${opt.color}`,background:currentVal===opt.val?opt.color:"transparent",flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        {currentVal===opt.val&&<span style={{color:"#000",fontSize:"0.55rem",fontWeight:900}}>✓</span>}
+                        {currentVal===opt.val&&<span style={{color:"#000",fontSize:"0.55rem",fontWeight:900}}>v</span>}
                       </div>
                       <div style={{flex:1}}>
                         <div style={{fontWeight:700,fontSize:"0.8rem",color:opt.color,marginBottom:3}}>{opt.val}</div>
@@ -8643,7 +8643,7 @@ function NKTSection({ data, set, navContext={} }) {
               style={{ padding:"12px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}` }}>
               <div>
                 <div style={{ fontWeight:700, fontSize:"0.88rem", color:C.text }}>{t.label}</div>
-                <div style={{ fontSize:"0.7rem", color:C.muted, marginTop:2 }}>🎯 Muscle: {t.muscle} &nbsp;|&nbsp; ⚠️ Compensator: {t.compensator}</div>
+                <div style={{ fontSize:"0.7rem", color:C.muted, marginTop:2 }}>🎯 Muscle: {t.muscle} &nbsp;|&nbsp; ⚠ Compensator: {t.compensator}</div>
                 {currentVal && <div style={{ marginTop:5, display:"inline-flex", alignItems:"center", gap:6, padding:"2px 8px", borderRadius:8, background:`${currentOption?.color||C.muted}18`, border:`1px solid ${currentOption?.color||C.muted}40` }}>
                   <div style={{ width:7, height:7, borderRadius:"50%", background:currentOption?.color||C.muted }} />
                   <span style={{ fontSize:"0.68rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
@@ -8652,7 +8652,7 @@ function NKTSection({ data, set, navContext={} }) {
               <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                 <button type="button" onClick={e=>{ e.stopPropagation(); setModalTest(t); }}
                   style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer" }}>
-                  ℹ How to Perform
+                  i How to Perform
                 </button>
                 <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
               </div>
@@ -8674,7 +8674,7 @@ function NKTSection({ data, set, navContext={} }) {
                     <div key={opt.val} onClick={()=>set(t.id, currentVal===opt.val?"":opt.val)}
                       style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"10px 12px", borderRadius:9, marginBottom:7, cursor:"pointer", border:`1px solid ${currentVal===opt.val?opt.color:C.border}`, background:currentVal===opt.val?`${opt.color}12`:"transparent", transition:"all 0.15s" }}>
                       <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${opt.color}`, background:currentVal===opt.val?opt.color:"transparent", flexShrink:0, marginTop:2, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.55rem", fontWeight:900 }}>✓</span>}
+                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.55rem", fontWeight:900 }}>v</span>}
                       </div>
                       <div style={{ flex:1 }}>
                         <div style={{ fontWeight:700, fontSize:"0.8rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -8711,7 +8711,7 @@ function NKTSection({ data, set, navContext={} }) {
               <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8 }}>{modalTest.how}</div>
             </div>
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>⚠️ What Each Result Means</div>
+              <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>⚠ What Each Result Means</div>
               {modalTest.options.map(opt=>(
                 <div key={opt.val} style={{ padding:"8px 12px", borderRadius:8, marginBottom:6, border:`1px solid ${opt.color}30`, background:`${opt.color}08` }}>
                   <div style={{ fontWeight:700, fontSize:"0.78rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -8822,7 +8822,7 @@ function CyriaxRegionTests({ data, set }) {
                   <div style={{ fontSize:"0.8rem", fontWeight:600, color:C.text }}>{t.label}</div>
                   <div style={{ fontSize:"0.68rem", color:C.muted, marginTop:1 }}>Muscle: {t.muscle}</div>
                 </div>
-                <button type="button" onClick={()=>setModalT(t)} style={{ padding:"2px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer", flexShrink:0 }}>ℹ Info</button>
+                <button type="button" onClick={()=>setModalT(t)} style={{ padding:"2px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer", flexShrink:0 }}>i Info</button>
               </div>
               <select value={val} onChange={e=>set(t.id,e.target.value)} style={{...inp, borderColor:isProb?C.red:C.border}}>
                 <option value="">- select result -</option>
@@ -8983,7 +8983,7 @@ function generateDiagnosis(data) {
   if(cyriaxLesion.length>0||isCap){
     const serious=cyriaxLesion.filter(l=>l.type==="serious"),minor=cyriaxLesion.filter(l=>l.type==="minor"),neuro=cyriaxLesion.filter(l=>l.type==="neuro");
     dx.push({system:"Cyriax",name:`Tissue Lesion: ${serious.length>0?"Serious Contractile":minor.length>0?"Minor Contractile":isCap?"Inert (Capsular)":"Neurological"} Pathology`,confidence:serious.length>0?"High":minor.length>0?"High":"Moderate",
-      evidence:[...minor.map(l=>l.finding),...serious.map(l=>"⚠️ "+l.finding),...neuro.map(l=>"⚡ "+l.finding),isCap?"Capsular pattern confirmed":null,has("cy_endfeel","Empty")?"Empty end-feel - serious pathology":null].filter(Boolean),
+      evidence:[...minor.map(l=>l.finding),...serious.map(l=>"⚠ "+l.finding),...neuro.map(l=>"⚡ "+l.finding),isCap?"Capsular pattern confirmed":null,has("cy_endfeel","Empty")?"Empty end-feel - serious pathology":null].filter(Boolean),
       mechanism:"Cyriax STTT systematically differentiates inert vs contractile tissue to identify the exact structure at fault.",
       treatment:minor.length>0?["Deep Transverse Friction Massage (DTFM) to exact lesion site","Eccentric loading program for tendinopathy","Relative rest - modify aggravating activities","Progressive loading when pain-free"]:serious.length>0?["Refer for MRI/ultrasound immediately","Protect structure - splinting/bracing","Surgical consultation if rupture confirmed"]:isCap?["Maitland Grade III-IV joint mobilisation","End-range stretching program","Heat before mobilisation, ice after","Corticosteroid injection referral if severe"]:[]
     });
@@ -9001,7 +9001,7 @@ function generateDiagnosis(data) {
     const pain0=Object.values(fmsS).some(s=>s===0);
     if(fmsTotal<=14||pain0||hasAsym){
       dx.push({system:"FMS",name:`Movement Dysfunction - FMS ${fmsTotal}/21${hasAsym?" + Asymmetry":""}`,confidence:"High",
-        evidence:[`FMS Total: ${fmsTotal}/21 (threshold <=14 = high risk)`,hasAsym?"⚠️ Bilateral asymmetry - highest injury predictor":null,pain0?"🔴 Score 0 present - pain during testing":null].filter(Boolean),
+        evidence:[`FMS Total: ${fmsTotal}/21 (threshold <=14 = high risk)`,hasAsym?"⚠ Bilateral asymmetry - highest injury predictor":null,pain0?"🔴 Score 0 present - pain during testing":null].filter(Boolean),
         mechanism:"Movement pattern deficits indicate mobility/stability imbalances increasing injury risk.",
         treatment:["Corrective priority: lowest FMS score first","Asymmetry: match bilateral scores before progressing","Deep Squat corrective: ankle DF drills + hip mobility + thoracic extension","Core control: dead bug, bird-dog, Pallof press progressions","Re-screen FMS after 6 weeks of corrective program"]
       });
@@ -9642,7 +9642,7 @@ function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder
     <div style={{background:C.surface,border:`1px solid ${filled?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:6}}>
         <label style={{fontSize:"0.78rem",fontWeight:600,color:filled?C.text:C.muted,lineHeight:1.4,flex:1}}>
-          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>✓</span>}
+          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>v</span>}
         </label>
         {unit&&<span style={{fontSize:"0.62rem",color:C.muted,flexShrink:0}}>{unit}</span>}
       </div>
@@ -9712,7 +9712,7 @@ function ErgoModule({ data, set }) {
   }
 
   const overallCol = risks.overall==="High"?C.red:risks.overall==="Moderate"?C.yellow:C.green;
-  const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"⏱️"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
+  const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"⏱"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
   const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.72rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
 
   const SH = ({id,label,children})=>{
@@ -9877,7 +9877,7 @@ function ErgoModule({ data, set }) {
               </div>
             </div>
             <div style={{fontSize:"0.72rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
-              {risks.overall==="High"?"⚠️ Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"⚡ Moderate ergonomic exposure. Targeted corrections advised.":"✅ Low ergonomic risk. Maintenance and monitoring."}
+              {risks.overall==="High"?"⚠ Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"⚡ Moderate ergonomic exposure. Targeted corrections advised.":"✅ Low ergonomic risk. Maintenance and monitoring."}
             </div>
           </div>
           <div style={{height:6,background:C.s3,borderRadius:4}}><div style={{height:"100%",width:`${Math.round(risks.total/risks.maxTotal*100)}%`,background:`linear-gradient(90deg,${C.green},${C.yellow},${C.red})`,borderRadius:4,transition:"width 0.5s"}}/></div>
