@@ -12,7 +12,7 @@ import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescription
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// --- Constants ----------------------------------------------------------------
 const POSE_CONNECTIONS = [
   [11,12],[11,13],[13,15],[12,14],[14,16],   // shoulders + arms
   [15,17],[15,19],[15,21],[17,19],            // left hand
@@ -24,7 +24,7 @@ const POSE_CONNECTIONS = [
 const KEY_JOINTS = { 0:"Nose",11:"L.Shoulder",12:"R.Shoulder",13:"L.Elbow",14:"R.Elbow",15:"L.Wrist",16:"R.Wrist",23:"L.Hip",24:"R.Hip",25:"L.Knee",26:"R.Knee",27:"L.Ankle",28:"R.Ankle",31:"L.Foot",32:"R.Foot" };
 const TRACKING_STATES = { IDLE:"idle", LOADING:"loading", CALIBRATING:"calibrating", DETECTING:"detecting", STABLE:"stable", LOST:"lost" };
 
-// ─── TrackingQualityEngine ────────────────────────────────────────────────────
+// --- TrackingQualityEngine ----------------------------------------------------
 function computeQuality(lm) {
   if (!lm) return { score: 0, warnings: [], ready: false, distanceHint: null };
   const v = (i) => lm[i] && lm[i].visibility > 0.5;
@@ -59,7 +59,7 @@ function computeQuality(lm) {
   return { score: avgBody, warnings: warnings.slice(0, 3), ready, distanceHint };
 }
 
-// ─── AdaptiveSmoother — confidence-weighted EMA ───────────────────────────────
+// --- AdaptiveSmoother — confidence-weighted EMA -------------------------------
 function createSmoother() {
   const buf = {};
   return (raw) => {
@@ -75,7 +75,7 @@ function createSmoother() {
   };
 }
 
-// ─── CalibrationSystem ────────────────────────────────────────────────────────
+// --- CalibrationSystem --------------------------------------------------------
 function CalibrationSystem({ state, countdown, quality }) {
   if (state !== TRACKING_STATES.CALIBRATING && state !== TRACKING_STATES.DETECTING) return null;
   const isCalib = state === TRACKING_STATES.CALIBRATING;
@@ -97,7 +97,7 @@ function CalibrationSystem({ state, countdown, quality }) {
   );
 }
 
-// ─── SkeletonRenderer — Full analysis overlay (head, ASIS, pelvis, lumbar, PSIS) ──
+// --- SkeletonRenderer — Full analysis overlay (head, ASIS, pelvis, lumbar, PSIS) --
 function SkeletonRenderer({ canvasRef, landmarks, videoSize, trackingState, activeView }) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -139,7 +139,7 @@ function SkeletonRenderer({ canvasRef, landmarks, videoSize, trackingState, acti
   return null;
 }
 
-// ─── BodyAlignmentGuide — Professional physiotherapy overlay ──────────────────
+// --- BodyAlignmentGuide — Professional physiotherapy overlay ------------------
 function BodyAlignmentGuide({ show, ready }) {
   if (!show) return null;
   const op = ready ? 0.18 : 0.42;
@@ -192,7 +192,7 @@ function BodyAlignmentGuide({ show, ready }) {
   );
 }
 
-// ─── TrackingStateBar ─────────────────────────────────────────────────────────
+// --- TrackingStateBar ---------------------------------------------------------
 function TrackingStateBar({ state, quality }) {
   const cfg = {
     [TRACKING_STATES.IDLE]:       { label:"Camera Ready",      color:"#7e6a9a", pulse:false },
@@ -224,7 +224,7 @@ function TrackingStateBar({ state, quality }) {
   );
 }
 
-// ─── CameraView — Professional full-screen responsive camera preview ──────────
+// --- CameraView — Professional full-screen responsive camera preview ----------
 function CameraView({ videoRef, canvasRef, isActive, facingMode, children, onTapFocus, zoom }) {
   const flip = facingMode === "user" ? "scaleX(-1)" : "none";
   const [tapFlash, setTapFlash] = useState(null);
@@ -267,7 +267,7 @@ function CameraView({ videoRef, canvasRef, isActive, facingMode, children, onTap
   );
 }
 
-// ─── CameraControls — Professional touch-friendly physiotherapy controls ──────
+// --- CameraControls — Professional touch-friendly physiotherapy controls ------
 function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecalibrate, facingMode, canRecalibrate, zoom, onZoom, countdownSecs, onCountdownChange, burstMode, onBurstToggle, activeView, onViewChange, onUploadPhoto }) {
   const views = ["anterior","posterior","left","right","photo"];
   const uploadRef = React.useRef(null);
@@ -284,7 +284,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
   );
   return (
     <div style={{ marginTop:10 }}>
-      {/* ── UPLOAD PHOTO BUTTON — Always visible at top ── */}
+      {/* -- UPLOAD PHOTO BUTTON — Always visible at top -- */}
       <input
         ref={uploadRef}
         type="file"
@@ -384,7 +384,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
         {canRecalibrate && <button onClick={onRecalibrate} style={{width:"100%",marginTop:6,padding:"8px",borderRadius:9,border:"1px solid rgba(255,179,0,0.3)",background:"rgba(255,179,0,0.08)",color:"#ffb300",fontWeight:700,fontSize:"0.72rem",cursor:"pointer"}}>⟳ Recalibrate</button>}
       </div>
 
-      {/* ── VIEW SELECTOR — always visible (Front/Back/Left/Right) ── */}
+      {/* -- VIEW SELECTOR — always visible (Front/Back/Left/Right) -- */}
       <div style={{ marginBottom:10 }}>
         <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📐 Posture View — select before capturing</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:6 }}>
@@ -452,7 +452,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
   );
 }
 
-// ─── CameraPositionGuide — Professional clinical setup ───────────────────────
+// --- CameraPositionGuide — Professional clinical setup -----------------------
 function CameraPositionGuide() {
   return (
     <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.18)", borderRadius:12, padding:14, marginBottom:12 }}>
@@ -476,7 +476,7 @@ function CameraPositionGuide() {
   );
 }
 
-// ─── PoseTracker (MediaPipe engine) ──────────────────────────────────────────
+// --- PoseTracker (MediaPipe engine) ------------------------------------------
 function PoseTracker({ videoRef, active, onLandmarks }) {
   const poseRef = useRef(null);
   const rafRef  = useRef(null);
@@ -521,7 +521,7 @@ function PoseTracker({ videoRef, active, onLandmarks }) {
   return null;
 }
 
-// ─── UploadedPhotoOverlay — renders uploaded image with full analysis grid ─────
+// --- UploadedPhotoOverlay — renders uploaded image with full analysis grid -----
 function UploadedPhotoOverlay({ photoUrl, landmarks, view }) {
   const canvasRef = useRef(null);
 
@@ -571,7 +571,7 @@ function UploadedPhotoOverlay({ photoUrl, landmarks, view }) {
 }
 
 
-// ─── CanvasOverlayOnImage — draws analysis overlay directly on top of img ─────
+// --- CanvasOverlayOnImage — draws analysis overlay directly on top of img -----
 // Fallback approach: instead of baking into canvas (fails on mobile with large images),
 // overlay a transparent canvas positioned absolutely on top of the photo
 function CanvasOverlayOnImage({ photoUrl, landmarks, view }) {
@@ -631,17 +631,17 @@ function CanvasOverlayOnImage({ photoUrl, landmarks, view }) {
   );
 }
 
-// ─── Main PostureCameraModule — New Live Camera + Capture → Analysis ───────────
+// --- Main PostureCameraModule — New Live Camera + Capture → Analysis -----------
 
 function PostureCameraModule({ activePatient, set }) {
-  // ── refs ──────────────────────────────────────────────────────────────────
+  // -- refs ------------------------------------------------------------------
   const videoRef    = useRef(null);
   const canvasRef   = useRef(null);  // skeleton overlay during live
   const streamRef   = useRef(null);
   const smoother    = useRef(createSmoother());
   const lostTimer   = useRef(null);
 
-  // ── camera state ──────────────────────────────────────────────────────────
+  // -- camera state ----------------------------------------------------------
   const [camState,   setCamState]   = useState("idle");   // idle | loading | live | error
   const [facingMode, setFacingMode] = useState("environment");
   const [camError,   setCamError]   = useState(null);
@@ -654,7 +654,7 @@ function PostureCameraModule({ activePatient, set }) {
   const [cdSecs,     setCdSecs]     = useState(3);
   const [cdCount,    setCdCount]    = useState(null);   // null = not running
 
-  // ── captured photo + analysis state ──────────────────────────────────────
+  // -- captured photo + analysis state --------------------------------------
   const [capturedImg,  setCapturedImg]  = useState(null);   // base64 still
   const [capturedLm,   setCapturedLm]   = useState(null);   // landmarks from capture
   const [capturedView, setCapturedView] = useState(null);
@@ -662,7 +662,7 @@ function PostureCameraModule({ activePatient, set }) {
   const [analysis,     setAnalysis]     = useState(null);   // { measurements, findings, scoreData }
   const [analyseError, setAnalyseError] = useState(null);
 
-  // ── upload photo ──────────────────────────────────────────────────────────
+  // -- upload photo ----------------------------------------------------------
   const uploadRef    = useRef(null);
   const uploadObjRef = useRef(null);
   const [uploadImg,   setUploadImg]   = useState(null);
@@ -672,7 +672,7 @@ function PostureCameraModule({ activePatient, set }) {
   const [uploadError, setUploadError] = useState(null);
   const [uploadAnal,  setUploadAnal]  = useState(null);
 
-  // ── multi-view bank ───────────────────────────────────────────────────────
+  // -- multi-view bank -------------------------------------------------------
   const [viewBank, setViewBank] = useState({ anterior:null, posterior:null, left:null, right:null });
 
   // Auto-fill patient name
@@ -682,7 +682,7 @@ function PostureCameraModule({ activePatient, set }) {
     else if (activePatient?.name && activePatient.name !== "New Patient") setReportPatient(activePatient.name);
   }, [activePatient?.id]);
 
-  // ── Start Camera ──────────────────────────────────────────────────────────
+  // -- Start Camera ----------------------------------------------------------
   const startCamera = async (mode) => {
     const fm = mode || facingMode;
     setCamError(null); setCamState("loading");
@@ -715,7 +715,7 @@ function PostureCameraModule({ activePatient, set }) {
     }
   };
 
-  // ── Stop Camera ───────────────────────────────────────────────────────────
+  // -- Stop Camera -----------------------------------------------------------
   const stopCamera = () => {
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     streamRef.current = null;
@@ -726,14 +726,14 @@ function PostureCameraModule({ activePatient, set }) {
     if (lostTimer.current) clearTimeout(lostTimer.current);
   };
 
-  // ── Flip Camera ───────────────────────────────────────────────────────────
+  // -- Flip Camera -----------------------------------------------------------
   const flipCamera = () => {
     const next = facingMode === "user" ? "environment" : "user";
     stopCamera();
     setTimeout(() => startCamera(next), 150);
   };
 
-  // ── Landmark handler ───────────────────────────────────────────────────────
+  // -- Landmark handler -------------------------------------------------------
   const handleLandmarks = useCallback((raw) => {
     const sm = smoother.current(raw);
     setLandmarks(sm);
@@ -748,7 +748,7 @@ function PostureCameraModule({ activePatient, set }) {
     setQuality(computeQuality(sm));
   }, []);
 
-  // ── Tap-to-focus ──────────────────────────────────────────────────────────
+  // -- Tap-to-focus ----------------------------------------------------------
   const handleTapFocus = useCallback((x, y) => {
     const v = videoRef.current;
     if (!v) return;
@@ -761,7 +761,7 @@ function PostureCameraModule({ activePatient, set }) {
     } catch {}
   }, []);
 
-  // ── Resize ────────────────────────────────────────────────────────────────
+  // -- Resize ----------------------------------------------------------------
   useEffect(() => {
     if (camState !== "live") return;
     const up = () => {
@@ -775,7 +775,7 @@ function PostureCameraModule({ activePatient, set }) {
 
   useEffect(() => { return () => stopCamera(); }, []);
 
-  // ── Run MediaPipe on image (still frame or upload) ────────────────────────
+  // -- Run MediaPipe on image (still frame or upload) ------------------------
   const runMediaPipe = async (imgEl) => {
     if (!window.Pose) {
       await new Promise((res, rej) => {
@@ -793,7 +793,7 @@ function PostureCameraModule({ activePatient, set }) {
     });
   };
 
-  // ── Capture from live camera ───────────────────────────────────────────────
+  // -- Capture from live camera -----------------------------------------------
   const doCapture = useCallback(async () => {
     const video = videoRef.current;
     if (!video || !videoSize) return;
@@ -851,7 +851,7 @@ function PostureCameraModule({ activePatient, set }) {
     }
   }, [videoRef, videoSize, facingMode, activeView]);
 
-  // ── Countdown Capture ─────────────────────────────────────────────────────
+  // -- Countdown Capture -----------------------------------------------------
   const triggerCapture = useCallback((delay = cdSecs) => {
     if (cdCount !== null) return;
     if (delay === 0) { doCapture(); return; }
@@ -864,7 +864,7 @@ function PostureCameraModule({ activePatient, set }) {
     }, 1000);
   }, [cdCount, cdSecs, doCapture]);
 
-  // ── Upload Photo → MediaPipe Analysis ────────────────────────────────────
+  // -- Upload Photo → MediaPipe Analysis ------------------------------------
   const handleUploadFile = useCallback(async (file) => {
     if (!file) return;
     if (uploadObjRef.current) URL.revokeObjectURL(uploadObjRef.current);
@@ -1112,7 +1112,7 @@ function PostureCameraModule({ activePatient, set }) {
       {isLive && <PoseTracker videoRef={videoRef} active={poseActive} onLandmarks={handleLandmarks}/>}
       {isLive && <SkeletonRenderer canvasRef={canvasRef} landmarks={landmarks} videoSize={videoSize} trackingState={quality.ready?"stable":"detecting"} activeView={activeView}/>}
 
-      {/* ── Camera start / controls ── */}
+      {/* -- Camera start / controls -- */}
       <div style={{ display:"flex", gap:8, marginBottom:12 }}>
         {!isLive && !isLoad && (
           <>
@@ -1473,7 +1473,7 @@ function PostureCameraModule({ activePatient, set }) {
 //  • Offline capable — no API cost, runs entirely in browser
 // ════════════════════════════════════════════════════════════════════════════
 
-// ─── Colours ─────────────────────────────────────────────────────────────────
+// --- Colours -----------------------------------------------------------------
 const PC = {
   bg:"#faf8fc", surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6",
   border:"#d8cce8", accent:"#7c3aed", a2:"#9333ea", a3:"#059669",
@@ -1481,7 +1481,7 @@ const PC = {
   green:"#059669", purple:"#9333ea", orange:"#f97316",
 };
 
-// ─── Additional Math Utilities ───────────────────────────────────────────────
+// --- Additional Math Utilities -----------------------------------------------
 function vec3Angle(a, b, c) {
   if (!a || !b || !c) return null;
   const ab = { x:a.x-b.x, y:a.y-b.y }, cb = { x:c.x-b.x, y:c.y-b.y };
@@ -1496,17 +1496,17 @@ function dist2D(a, b) {
 }
 const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
 
-// ─── MEDIAPIPE LANDMARK INDICES ───────────────────────────────────────────────
+// --- MEDIAPIPE LANDMARK INDICES -----------------------------------------------
 // 0=nose, 2=L_eye, 5=R_eye, 7=L_ear, 8=R_ear
 // 11=L_shoulder, 12=R_shoulder, 13=L_elbow, 14=R_elbow
 // 15=L_wrist, 16=R_wrist, 23=L_hip, 24=R_hip
 // 25=L_knee, 26=R_knee, 27=L_ankle, 28=R_ankle
 // 29=L_heel, 30=R_heel, 31=L_foot_index, 32=R_foot_index
 
-// ─── ADVANCED MEASUREMENT ENGINE ─────────────────────────────────────────────
+// --- ADVANCED MEASUREMENT ENGINE ---------------------------------------------
 // Clinical norms based on: Kendall et al. (2005), Yip et al. (2008),
 // Levangie & Norkin (2011), Magee (2014), Singla & Veqar (2014)
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 const CLINICAL_NORMS = {
   cvaAngle:          { normal:[55,90],   mild:[49,55],   severe:[0,49],   unit:"°", label:"CVA (Craniovertebral Angle)", ref:"Yip et al. (2008): >55° normal. 49–55° mild FHP. <49° pathological — cervicogenic headache risk." },
   thoracicAngle:     { normal:[20,45],   mild:[45,55],   severe:[55,90],  unit:"°", label:"Thoracic Kyphosis (T1–T12)", ref:"Normal Cobb equivalent 20–45°. >50° hyperkyphosis. Assessed lateral view only." },
@@ -1524,7 +1524,7 @@ const CLINICAL_NORMS = {
 // Cervical compressive load (Hansraj 2014 model: 4.5kg neutral + ~2.7kg/2.5cm FHP)
 const CERVICAL_LOAD_KG = (fhpCm) => fhpCm !== null && fhpCm > 0 ? r1(4.5 + fhpCm * 1.08) : null;
 
-// ── LANDMARK CONFIDENCE GUARD ─────────────────────────────────────────────────
+// -- LANDMARK CONFIDENCE GUARD -------------------------------------------------
 // Returns null for any measurement where key landmarks are below the
 // minimum confidence threshold. This prevents false findings from poor images.
 // MIN_VIS = 0.45 (defined at top of file)
@@ -1540,7 +1540,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const toCm = (normDelta) => calibration?.pixPerCm && calibration?.frameHeightPx
     ? r1((normDelta * calibration.frameHeightPx) / calibration.pixPerCm) : null;
 
-  // ── Confidence-gated landmark midpoints ───────────────────────────────────
+  // -- Confidence-gated landmark midpoints -----------------------------------
   // Only compute midpoints when BOTH landmarks are above threshold
   const shMid    = Vboth(11,12) ? mid(g(11), g(12)) : null;
   const hipMid   = Vboth(23,24) ? mid(g(23), g(24)) : null;
@@ -1551,7 +1551,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const earMid   = Vboth(7,8)   ? mid(g(7),  g(8))  : null;
   const eyeMid   = Vboth(2,5)   ? mid(g(2),  g(5))  : null;
 
-  // ── Z-depth availability ───────────────────────────────────────────────────
+  // -- Z-depth availability ---------------------------------------------------
   // MediaPipe provides normalised Z relative to hip midpoint.
   // Only trust Z when the delta is meaningful (> 0.002 avoids noise near zero).
   const hasZ  = V(7) && V(11) && Math.abs((g(7).z||0)-(g(11).z||0)) > 0.002;
@@ -1560,7 +1560,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const hipZ  = hasZ && V(23) && V(24) ? ((g(23).z||0)+(g(24).z||0))/2 : null;
   const kneeZ = hasZ && V(25) && V(26) ? ((g(25).z||0)+(g(26).z||0))/2 : null;
 
-  // ── FRONTAL PLANE MEASUREMENTS ────────────────────────────────────────────
+  // -- FRONTAL PLANE MEASUREMENTS --------------------------------------------
   // Shoulder tilt: angle of line connecting L shoulder to R shoulder from horizontal
   const shoulderAngle = Vboth(11,12) ? calcAngleDeg(g(12), g(11)) : null;
   // Pelvic obliquity: same method for ASIS landmarks
@@ -1589,7 +1589,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const leftKneeFrontal  = Vboth(23,25,27) ? r1(calcAngleDeg(g(23),g(25))-calcAngleDeg(g(25),g(27))) : null;
   const rightKneeFrontal = Vboth(24,26,28) ? r1(calcAngleDeg(g(24),g(26))-calcAngleDeg(g(26),g(28))) : null;
 
-  // ── CVA: Craniovertebral Angle (Yip et al. 2008) ─────────────────────────
+  // -- CVA: Craniovertebral Angle (Yip et al. 2008) -------------------------
   // Gold standard: lateral photo, line from tragus to C7 spinous process vs horizontal.
   // MediaPipe proxy: angle of ear-to-shoulder vector from vertical.
   // Valid ONLY in lateral view (left or right). Frontal view CVA = null.
@@ -1609,7 +1609,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     }
   }
 
-  // ── FORWARD HEAD POSTURE ───────────────────────────────────────────────────
+  // -- FORWARD HEAD POSTURE ---------------------------------------------------
   // Measured as horizontal offset of ear from shoulder midpoint.
   // In lateral view: ear should be directly over shoulder (offset = 0).
   // Expressed in normalised units (% of frame width); converted to cm if calibrated.
@@ -1622,7 +1622,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   // Cervical compressive load (Hansraj model, only if real cm measurement available)
   const cervicalLoadKg = CERVICAL_LOAD_KG(forwardHeadCm);
 
-  // ── THORACIC KYPHOSIS (lateral view only) ─────────────────────────────────
+  // -- THORACIC KYPHOSIS (lateral view only) ---------------------------------
   // Estimated from shoulder-to-hip vector deviation from vertical (proxy method).
   // In a lateral view: sagittal trunk inclination reflects combined C/T/L curves.
   // The thoracic kyphosis estimate is only clinically interpretable in a lateral view.
@@ -1640,7 +1640,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     }
   }
 
-  // ── LUMBAR / PELVIC TILT (lateral view) ───────────────────────────────────
+  // -- LUMBAR / PELVIC TILT (lateral view) -----------------------------------
   // Lumbar proxy: horizontal offset of hip midpoint from midpoint of knee+heel
   // +ve = hips anterior to knees → anterior pelvic tilt / hyperlordosis
   // -ve = hips posterior → posterior tilt / flat back
@@ -1661,7 +1661,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   // Hip plumb line deviation (lateral view)
   const hipExtensionProxy = hipMid && ankleMid ? r1((hipMid.x - ankleMid.x)*100) : null;
 
-  // ── KNEE ANGLES ────────────────────────────────────────────────────────────
+  // -- KNEE ANGLES ------------------------------------------------------------
   // vec3Angle computes the interior angle at the middle point (knee)
   // using hip-knee-ankle triangle. 180° = fully extended (neutral).
   // < 180° = flexed; > 180° not geometrically possible in 2D — treated as 180°.
@@ -1675,7 +1675,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const leftAnkleAngle  = Vboth(25,27,31) ? vec3Angle(g(25),g(27),g(31)) : null;
   const rightAnkleAngle = Vboth(26,28,32) ? vec3Angle(g(26),g(28),g(32)) : null;
 
-  // ── BILATERAL SYMMETRY ─────────────────────────────────────────────────────
+  // -- BILATERAL SYMMETRY -----------------------------------------------------
   // Expressed as Y-coordinate difference × 100 (normalised to frame height)
   const shoulderSymmetry = Vboth(11,12) ? { left:g(11).y, right:g(12).y, diff:r1((g(11).y-g(12).y)*100) } : null;
   const hipSymmetry      = Vboth(23,24) ? { left:g(23).y, right:g(24).y, diff:r1((g(23).y-g(24).y)*100) } : null;
@@ -1687,16 +1687,16 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const lldProxy = kneeSymmetry ? r1(Math.abs(kneeSymmetry.diff)*1.8) : null;
   const lldSide  = kneeSymmetry ? (kneeSymmetry.diff > 0 ? "Left" : "Right") : null;
 
-  // ── SCAPULAR METRICS ───────────────────────────────────────────────────────
+  // -- SCAPULAR METRICS -------------------------------------------------------
   const scapularAsymm    = Vboth(11,12) ? r1(Math.abs((g(11).y||0)-(g(12).y||0))*100) : null;
   const scapularAbduction= shoulderWidth && hipWidth ? r1((shoulderWidth-hipWidth)*100) : null;
 
-  // ── FOOT PROGRESSION ANGLES ────────────────────────────────────────────────
+  // -- FOOT PROGRESSION ANGLES ------------------------------------------------
   // Angle of foot vector (ankle to toe) from vertical — normal: 0–15° toe-out
   const leftFootAngle  = Vboth(31,27) ? r1(Math.atan2(g(31).y-g(27).y, g(31).x-g(27).x)*180/Math.PI) : null;
   const rightFootAngle = Vboth(32,28) ? r1(Math.atan2(g(32).y-g(28).y, g(32).x-g(28).x)*180/Math.PI) : null;
 
-  // ── SCOLIOSIS SCREEN (posterior view only) ────────────────────────────────
+  // -- SCOLIOSIS SCREEN (posterior view only) --------------------------------
   // Cobb estimate from shoulder-pelvis angle discrepancy.
   // IMPORTANT: This is a SCREEN only. True Cobb requires standing AP X-ray.
   // Only report when both shoulder and pelvis angles are available and reliable.
@@ -1704,14 +1704,14 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     ? r1(Math.abs(shoulderAngle - pelvisAngle)) : null;
   const c7PlumbDev   = V(0) && hipMid ? r1((g(0).x - hipMid.x)*100) : null;
 
-  // ── CENTRE OF GRAVITY ─────────────────────────────────────────────────────
+  // -- CENTRE OF GRAVITY -----------------------------------------------------
   // Weighted average of key body segment centres (head, shoulder, hip, foot)
   // Normal: within ±4% of frame centre (0.5)
   const cogParts    = [V(0)?g(0):null, shMid, hipMid, footMid].filter(Boolean);
   const cogX        = cogParts.length >= 2 ? cogParts.reduce((s,p)=>s+(p.x||0),0)/cogParts.length : null;
   const cogDeviation= cogX !== null ? r1((cogX - 0.5)*100) : null;
 
-  // ── POSTURAL LOAD INDEX (PLI) ─────────────────────────────────────────────
+  // -- POSTURAL LOAD INDEX (PLI) ---------------------------------------------
   // Composite measure of multi-system postural burden.
   // Each component is normalised to its clinical threshold (1.0 = at threshold).
   // Weights reflect relative contribution to clinical load (Reinecke & Hazard adapted).
@@ -1738,7 +1738,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   const posturalLoadIndex = pliMaxPossible > 0
     ? r1(clamp((pliSum / pliMaxPossible) * 100, 0, 100)) : null;
 
-  // ── UCS / LCS SYNDROME INDICES (Janda) ────────────────────────────────────
+  // -- UCS / LCS SYNDROME INDICES (Janda) ------------------------------------
   const ucsIndex = r1(
     (Math.abs(headLateralOffset||0)/5)*0.3 +
     (Math.abs(shoulderAngle||0)/5)*0.2 +
@@ -1772,7 +1772,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   };
 }
 
-// ─── RELIABILITY ENGINE ───────────────────────────────────────────────────────
+// --- RELIABILITY ENGINE -------------------------------------------------------
 // Assesses MediaPipe landmark confidence and returns:
 //   score: 0–100 overall confidence
 //   status: Excellent / Good / Fair / Poor / Insufficient
@@ -1850,7 +1850,7 @@ function ReliabilityEngine(lm) {
   return { score:Math.round(mean*100), status, blocked, warnings, confidence, icc };
 }
 
-// ─── CLINICAL FINDINGS ENGINE ─────────────────────────────────────────────────
+// --- CLINICAL FINDINGS ENGINE -------------------------------------------------
 // Thresholds: Kendall (2005), Magee (2014), Levangie & Norkin (2011),
 // Sahrmann (2002), Comerford & Mottram (2012), Hansraj (2014)
 function ClinicalFindingsEngine(lm, view, measurements) {
@@ -1871,7 +1871,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
   const add = (region, text, severity, correction, icd="M99.0", icon="●", detail="", norm="", value=null) =>
     findings.push({ region, text, severity, correction, icd, icon, detail, norm, value });
 
-  // ── ANTERIOR VIEW ─────────────────────────────────────────────────────────
+  // -- ANTERIOR VIEW ---------------------------------------------------------
   if (view === "anterior") {
 
     // Eye level tilt
@@ -2013,7 +2013,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     }
   }
 
-  // ── POSTERIOR VIEW ────────────────────────────────────────────────────────
+  // -- POSTERIOR VIEW --------------------------------------------------------
   if (view === "posterior") {
 
     if (shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
@@ -2063,7 +2063,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     }
   }
 
-  // ── LATERAL VIEW ─────────────────────────────────────────────────────────
+  // -- LATERAL VIEW ---------------------------------------------------------
   if (view === "left" || view === "right") {
 
     // CVA — primary lateral finding
@@ -2113,7 +2113,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         "M53.3", "↕", "", "", abs);
     }
 
-    // ── LUMBAR LORDOSIS — independent finding ─────────────────────────────────
+    // -- LUMBAR LORDOSIS — independent finding ---------------------------------
     if (lordosisAngle !== null) {
       if (lordosisAngle > 60) {
         const excess = lordosisAngle - 60;
@@ -2135,7 +2135,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       }
     }
 
-    // ── SWAY-BACK POSTURE ─────────────────────────────────────────────────────
+    // -- SWAY-BACK POSTURE -----------------------------------------------------
     // Pattern: hips posterior to plumb + thoracic posterior + FHP
     // hipExtensionProxy < -4 = hips behind plumb; thoracicAngle < 38 = less kyphosis
     const hipBehindPlumb = hipExtensionProxy !== null && hipExtensionProxy < -4;
@@ -2150,7 +2150,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         "Ideal: hip over plumb", null);
     }
 
-    // ── MILITARY / FLAT POSTURE ───────────────────────────────────────────────
+    // -- MILITARY / FLAT POSTURE -----------------------------------------------
     // Reduced thoracic kyphosis + reduced lordosis + upright head (no FHP)
     const isMilitaryPosture = thoracicAngle !== null && thoracicAngle < 30
       && (lumbarProxy === null || Math.abs(lumbarProxy) < 3)
@@ -2165,7 +2165,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         "Normal: T kyphosis 20–45°, L lordosis 40–60°", null);
     }
 
-    // ── UPPER CROSSED SYNDROME (UCS) — sagittal flag ─────────────────────────
+    // -- UPPER CROSSED SYNDROME (UCS) — sagittal flag -------------------------
     // FHP + thoracic kyphosis + rounded shoulders (shoulder anterior to plumb)
     const shAnteriorToPlumb = hipExtensionProxy !== null && shPt && shPt.x !== undefined;
     const hasUCS_sagittal = cvaAngle !== null && cvaAngle < 52
@@ -2180,7 +2180,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         "Ideal: CVA >55°, kyphosis 20–45°", cvaAngle);
     }
 
-    // ── LOWER CROSSED SYNDROME (LCS) — sagittal flag ─────────────────────────
+    // -- LOWER CROSSED SYNDROME (LCS) — sagittal flag -------------------------
     // Anterior pelvic tilt + hyperlordosis + hip anterior to plumb
     const hasLCS_sagittal = pelvicTiltSagittal !== null && pelvicTiltSagittal > 5
       && thoracicAngle !== null && thoracicAngle > 42;
@@ -2194,7 +2194,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         "Ideal: APT <7° female / <5° male", pelvicTiltSagittal);
     }
 
-    // ── POSTURAL PATTERN LABEL — sagittal classification ─────────────────────
+    // -- POSTURAL PATTERN LABEL — sagittal classification ---------------------
     // Adds a clear top-level pattern label to findings (Kendall classification)
     {
       const hasFHP_f      = cvaAngle !== null && cvaAngle < 52;
@@ -2309,7 +2309,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     });
   }
 
-  // ── GLOBAL — all views ────────────────────────────────────────────────────
+  // -- GLOBAL — all views ----------------------------------------------------
   if (posturalLoadIndex !== null && posturalLoadIndex > 55) {
     // Plain-language contributor list — what is actually elevated and by how much
     const pliContributors = [];
@@ -2351,15 +2351,15 @@ function ClinicalFindingsEngine(lm, view, measurements) {
   return findings;
 }
 
-// ─── POSTURE SCORING ENGINE ───────────────────────────────────────────────────
+// --- POSTURE SCORING ENGINE ---------------------------------------------------
 // Score = 100 minus weighted penalties from clinical measurements + findings.
 // CLINICAL BANDS based on Kendall functional alignment classification.
 
-// ─── POSTURE ANALYSIS MODULE (PostureTab v6) ────────────────────────────────
+// --- POSTURE ANALYSIS MODULE (PostureTab v6) --------------------------------
 
-// ─── PostureTab v6: PC, mid, r1, clamp, calcAngleDeg, vec3Angle, dist2D, MIN_VIS already defined above ───
+// --- PostureTab v6: PC, mid, r1, clamp, calcAngleDeg, vec3Angle, dist2D, MIN_VIS already defined above ---
 
-// ─── Manual Landmark Definitions ─────────────────────────────────────────────
+// --- Manual Landmark Definitions ---------------------------------------------
 // Maps manual point index to MediaPipe landmark index (where applicable)
 const MANUAL_POINTS_FRONTAL = [
   { id:0,  label:"Head top",        mpIdx:0,  desc:"Top of head" },
@@ -2424,14 +2424,14 @@ function manualPointsToLandmarks(placed, pointDefs) {
   return lm;
 }
 
-// ─── Measurement Engine ───────────────────────────────────────────────────────
+// --- Measurement Engine -------------------------------------------------------
 function measureLandmarks(lm, calibration) {
   if(!lm||lm.length<33) return {};
   const g=i=>lm[i];
   const V=i=>(lm[i]?.visibility||0)>=MIN_VIS;
   const Vb=(...idx)=>idx.every(i=>V(i));
 
-  // ── Real-world calibration ────────────────────────────────────────────────
+  // -- Real-world calibration ------------------------------------------------
   // calibration = { pixPerCm: number } derived from patient height entry
   // If not available, all *Cm fields remain null (% values still shown)
   const pixPerCm = calibration?.pixPerCm || null;
@@ -2465,7 +2465,7 @@ function measureLandmarks(lm, calibration) {
 
   // ══════════════════════════════════════════════════════════════════════════
   // SAGITTAL ANALYSIS ENGINE v2 (Kendall / Janda / Sahrmann)
-  // ──────────────────────────────────────────────────────────────────────────
+  // --------------------------------------------------------------------------
   // Uses a true 5-point sagittal plumb line: ear→acromion→GT→knee→malleolus.
   // For lateral view: landmark 7 (L ear) or 8 (R ear) is visible — not the
   // bilateral midpoint. We use whichever ear is more visible.
@@ -2480,7 +2480,7 @@ function measureLandmarks(lm, calibration) {
   // with scaled thresholds. Confidence is penalised accordingly.
   // ══════════════════════════════════════════════════════════════════════════
 
-  // ── Sagittal-specific landmark selection ────────────────────────────────────
+  // -- Sagittal-specific landmark selection ------------------------------------
   // Use the more visible ear (left view = lm[7], right view = lm[8])
   const earL  = g(7), earR  = g(8);
   const earVis = (earL?.visibility||0) >= MIN_VIS || (earR?.visibility||0) >= MIN_VIS;
@@ -2513,12 +2513,12 @@ function measureLandmarks(lm, calibration) {
   const sagHeel = ((heelL?.visibility||0) >= (heelR?.visibility||0)) ? heelL : heelR;
   const sagHeelVis = (sagHeel?.visibility||0) >= MIN_VIS;
 
-  // ── Sagittal plumb reference: anchor at lateral malleolus ─────────────────
+  // -- Sagittal plumb reference: anchor at lateral malleolus -----------------
   // Clinical standard (Kendall): plumb line passes through the lateral malleolus
   // vertically. Positive deviation = anterior to plumb (forward).
   const plumbX = sagAnkleVis ? sagAnkle.x : (sagHeelVis ? sagHeel.x : 0.5);
 
-  // ── Convert normalised x-deviation to estimated cm ─────────────────────────
+  // -- Convert normalised x-deviation to estimated cm -------------------------
   // If pixPerCm is available from height calibration, use it.
   // Otherwise estimate from image height: typical standing person in frame ~170cm
   const estPxPerCm = pixPerCm ? pixPerCm : (imgH ? imgH / 170 : null);
@@ -2532,7 +2532,7 @@ function measureLandmarks(lm, calibration) {
     return r1((normX - plumbX) * 170); // 170 = typical standing height in cm
   };
 
-  // ── 5-point plumb line deviations ─────────────────────────────────────────
+  // -- 5-point plumb line deviations -----------------------------------------
   const plumb = {
     ear:     sagEarVis   ? devCm(sagEar.x)   : null, // + = anterior (FHP)
     shoulder:sagShVis    ? devCm(sagSh.x)    : null, // + = anterior (rounded sh)
@@ -2541,7 +2541,7 @@ function measureLandmarks(lm, calibration) {
     ankle:   0,                                       // reference = 0 by definition
   };
 
-  // ── Sagittal confidence score ─────────────────────────────────────────────
+  // -- Sagittal confidence score ---------------------------------------------
   // Based on how many of the 5 chain points are visible + image alignment
   const sagVisPoints = [sagEarVis, sagShVis, sagHipVis, sagKneeVis, sagAnkleVis].filter(Boolean).length;
   // Penalise if using bilateral midpoints (frontal, not lateral view)
@@ -2551,7 +2551,7 @@ function measureLandmarks(lm, calibration) {
   const sagConfidencePenalty = pixPerCm ? 0 : 10;
   const sagConfidence = clamp(sagConfidenceBase - sagConfidencePenalty, 0, 100);
 
-  // ── 1. CVA — Craniovertebral Angle ─────────────────────────────────────────
+  // -- 1. CVA — Craniovertebral Angle -----------------------------------------
   // Clinical: angle between horizontal and line from C7 (acromion proxy) to ear.
   // Normal: >52°. Mild FHP: 48–52°. Moderate: 44–48°. Severe: <44°.
   // (Neiva et al. 2009; Ruivo et al. 2017)
@@ -2565,7 +2565,7 @@ function measureLandmarks(lm, calibration) {
     }
   }
 
-  // ── 2. FHP metrics ─────────────────────────────────────────────────────────
+  // -- 2. FHP metrics ---------------------------------------------------------
   // fhpNorm: retained for backward compatibility (% image width)
   const shoulderWidthPx = shMid && Vb(11,12) ? dist2D(g(11),g(12)) : null;
   const fhpNorm = sagEarVis && sagShVis ? r1((sagEar.x - sagSh.x) * 100) : null;
@@ -2581,7 +2581,7 @@ function measureLandmarks(lm, calibration) {
     cervicalLoadKg = r1(clamp(4.5 + fhpDevCm * 1.08, 4.5, 32));
   }
 
-  // ── 3. Thoracic kyphosis proxy ─────────────────────────────────────────────
+  // -- 3. Thoracic kyphosis proxy ---------------------------------------------
   // Better method: shoulder→hip sagittal horizontal displacement vs vertical span.
   // Positive horizontal offset of shoulder ANTERIOR to hip = kyphotic tendency.
   // Note: in lateral view, shoulder visible = one-sided measurement is meaningful.
@@ -2597,12 +2597,12 @@ function measureLandmarks(lm, calibration) {
     }
   }
 
-  // ── 4. Trunk lean (global sagittal alignment) ──────────────────────────────
+  // -- 4. Trunk lean (global sagittal alignment) ------------------------------
   // Shoulder vs ankle horizontal: positive = shoulder anterior to ankle
   const trunkSagLean = sagShVis && sagAnkleVis
     ? r1((sagSh.x - sagAnkle.x) * 100) : null;
 
-  // ── 5. Pelvic position — sagittal ──────────────────────────────────────────
+  // -- 5. Pelvic position — sagittal ------------------------------------------
   // Hip (GT) vs plumb line: anterior = APT tendency, posterior = PPT tendency.
   // Lumbar proxy: retain original for backward compatibility
   let lumbarProxy = null;
@@ -2611,22 +2611,22 @@ function measureLandmarks(lm, calibration) {
   // sagPelvicShift: true plumb line pelvic deviation in cm (+ = anterior)
   const sagPelvicShift = plumb.hip; // already in cm from plumb
 
-  // ── 6. Hip position vs ankle plumb ─────────────────────────────────────────
+  // -- 6. Hip position vs ankle plumb -----------------------------------------
   const hipExtensionProxy = hipMid && ankleMid ? r1((hipMid.x - ankleMid.x) * 100) : null;
 
   // sagHipShift: hip in cm vs plumb (+ = anterior, - = posterior / sway-back pattern)
   const sagHipShift = plumb.hip;
 
-  // ── 7. Shoulder position vs plumb ──────────────────────────────────────────
+  // -- 7. Shoulder position vs plumb ------------------------------------------
   // Positive = shoulder anterior to ankle plumb = rounded shoulder tendency
   const sagShoulderShift = plumb.shoulder;
 
-  // ── 8. Knee sagittal position ───────────────────────────────────────────────
+  // -- 8. Knee sagittal position -----------------------------------------------
   // Knee anterior to plumb: genu flexum tendency
   // Knee posterior to plumb: genu recurvatum tendency (negative value)
   const sagKneeShift = plumb.knee;
 
-  // ── 9. Sagittal chain deviations summary (new structured format) ───────────
+  // -- 9. Sagittal chain deviations summary (new structured format) -----------
   // Each segment relative to plumb (cm). Positive = anterior.
   const sagChain = {
     earCm:      plumb.ear,
@@ -2637,7 +2637,7 @@ function measureLandmarks(lm, calibration) {
     isTrueLateral,
   };
 
-  // ── Backward-compatible vars ────────────────────────────────────────────────
+  // -- Backward-compatible vars ------------------------------------------------
   // These feed into the existing buildFindings thresholds
   // Re-express plumb deviations as % for backward compatibility where needed
   const fhpFromPlumb = fhpDevCm; // ear vs shoulder in cm (+ = FHP)
@@ -2660,7 +2660,7 @@ function measureLandmarks(lm, calibration) {
   const lcsIndex = (lumbarProxy!==null&&pelvisAngle!==null)
     ? r1(clamp(Math.abs(lumbarProxy)/20*0.5+Math.abs(pelvisAngle)/10*0.5,0,2)) : null;
 
-  // ── Additional measurements ported from standalone ─────────────────────────
+  // -- Additional measurements ported from standalone -------------------------
 
   // Bilateral symmetry objects
   const shoulderSymmetry = Vb(11,12)?{left:g(11).y,right:g(12).y,diff:r1((g(11).y-g(12).y)*100)}:null;
@@ -2693,7 +2693,7 @@ function measureLandmarks(lm, calibration) {
   const cogX     = cogParts.length>=2 ? cogParts.reduce((s,p)=>s+(p.x||0),0)/cogParts.length : null;
   const cogDeviation = cogX!==null ? r1((cogX-0.5)*100) : null;
 
-  // ── Postural Load Index (PLI) ──────────────────────────────────────────────
+  // -- Postural Load Index (PLI) ----------------------------------------------
   // Composite of 8 weighted, normalised-to-threshold components (0=perfect, 100=max)
   const PLI_comps = [
     [Math.abs(shoulderAngle||0),    3,  7,  1.0],
@@ -2712,7 +2712,7 @@ function measureLandmarks(lm, calibration) {
   const pliMax = PLI_comps.reduce((s,[,,,w])=>s+w,0);
   const posturalLoadIndex = pliMax>0 ? r1(clamp((pliSum/pliMax)*100,0,100)) : null;
 
-  // ── NEW: Frontal Plane Measurements (Feature 2) ───────────────────────────
+  // -- NEW: Frontal Plane Measurements (Feature 2) ---------------------------
 
   // Head tilt angle (ear-to-ear line vs horizontal) — normal <2 deg
   // (already computed above as headTiltAngle — alias for clarity)
@@ -2773,7 +2773,7 @@ function measureLandmarks(lm, calibration) {
   const shoulderHipRatio = (shoulderWidth&&hipWidth&&hipWidth>0)
     ? r1(shoulderWidth/hipWidth) : null;
 
-  // ── Real-world measurements (cm) — only populated when calibration available ─
+  // -- Real-world measurements (cm) — only populated when calibration available -
   // Forward head posture in cm (most clinically used number)
   const fhpCm = (fhpNorm!==null && shoulderWidthPx!==null && shoulderWidthPx>0.05 && pixPerCm && imgH)
     ? r1(Math.max(0,(fhpNorm/100) / shoulderWidthPx * 40)) : null;
@@ -2828,13 +2828,13 @@ function measureLandmarks(lm, calibration) {
     posturalLoadIndex,
     // aliases
     shoulderWidthNorm, hipWidthNorm,
-    // ── Real-world cm measurements ───────────────────────────────────────────
+    // -- Real-world cm measurements -------------------------------------------
     fhpCm, shoulderDiffCm, pelvisDiffCm, ankleLLDcm, trunkShiftCm, headOffsetCm,
     _calibrated: !!(pixPerCm && imgH),
   };
 }
 
-// ─── Reliability Engine ───────────────────────────────────────────────────────
+// --- Reliability Engine -------------------------------------------------------
 function calcReliability(lm) {
   if(!lm||lm.length<33) return {score:0,status:"No Pose",blocked:true,warnings:[{icon:"❌",text:"No pose detected",color:PC.red}],icc:null,confidence:{}};
   const KEY=[0,2,5,7,8,11,12,23,24,25,26,27,28,29,30,31,32];
@@ -2875,7 +2875,7 @@ function calcReliability(lm) {
   return {score,status,blocked,warnings,icc,confidence};
 }
 
-// ─── Manual Reliability ───────────────────────────────────────────────────────
+// --- Manual Reliability -------------------------------------------------------
 function calcManualReliability(placedCount, totalPoints) {
   const pct = placedCount / totalPoints;
   const score = Math.round(clamp(pct * 100, 0, 100));
@@ -2889,7 +2889,7 @@ function calcManualReliability(placedCount, totalPoints) {
   };
 }
 
-// ─── Findings Engine ──────────────────────────────────────────────────────────
+// --- Findings Engine ----------------------------------------------------------
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // POSTURE ANALYSIS ENGINE — v2 (Kendall / Janda / Sahrmann)
@@ -2898,7 +2898,7 @@ function calcManualReliability(placedCount, totalPoints) {
 //        functional correlations, prioritisation
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ── 1. THRESHOLD CONSTANTS ────────────────────────────────────────────────────
+// -- 1. THRESHOLD CONSTANTS ----------------------------------------------------
 // Only deviations exceeding these thresholds trigger findings.
 // Values based on clinical literature measurement error + meaningful change.
 const POSTURE_THRESHOLDS = {
@@ -2924,7 +2924,7 @@ const POSTURE_THRESHOLDS = {
   lcsIndex:            { mild:0.4,moderate:0.8,severe:1.3 }, // index
 };
 
-// ── 2. SEVERITY CLASSIFIER ────────────────────────────────────────────────────
+// -- 2. SEVERITY CLASSIFIER ----------------------------------------------------
 // Returns "mild" | "moderate" | "high" based on thresholds
 function classifySeverity(value, thresholds, lowerIsBad = false) {
   const { mild, moderate, severe } = thresholds;
@@ -2942,7 +2942,7 @@ function classifySeverity(value, thresholds, lowerIsBad = false) {
   }
 }
 
-// ── 3. CONFIDENCE SCORING ─────────────────────────────────────────────────────
+// -- 3. CONFIDENCE SCORING -----------------------------------------------------
 // Per-finding confidence based on landmark visibility at the relevant body segment
 function getLandmarkConfidence(lm, indices) {
   if (!lm || !indices.length) return 50;
@@ -2967,7 +2967,7 @@ const LANDMARK_GROUPS = {
   sagittal:  [0, 7, 8, 11, 12, 23, 24, 25, 26, 27, 28, 29, 30],
 };
 
-// ── 4. LANDMARK RELIABILITY CHECK ─────────────────────────────────────────────
+// -- 4. LANDMARK RELIABILITY CHECK ---------------------------------------------
 // Returns { reliable: bool, reason: string } for a specific measurement
 function checkLandmarkReliability(lm, indices, minVisibility = 0.45) {
   if (!lm) return { reliable: false, reason: "No landmarks" };
@@ -3009,7 +3009,7 @@ function checkAnatomicalOrder(lm, indices) {
   return true;
 }
 
-// ── 5. INTERPRETATION ENGINE ──────────────────────────────────────────────────
+// -- 5. INTERPRETATION ENGINE --------------------------------------------------
 // Conservative physiotherapy wording — never certain, always "may indicate"
 const INTERPRETATIONS = {
   shoulder: (side, deg) =>
@@ -3058,7 +3058,7 @@ const INTERPRETATIONS = {
     `Clinical assessment and muscle length testing recommended.`,
 };
 
-// ── 6. MUSCLE PATTERN SUGGESTIONS ────────────────────────────────────────────
+// -- 6. MUSCLE PATTERN SUGGESTIONS --------------------------------------------
 // Maps posture observations to POSSIBLE (not certain) muscle imbalance tendencies
 const MUSCLE_PATTERNS = {
   shoulder:    { tight:["Upper trapezius","Levator scapulae"],       weak:["Lower trapezius","Serratus anterior"] },
@@ -3074,7 +3074,7 @@ const MUSCLE_PATTERNS = {
   lcs:         { tight:["Iliopsoas","Rectus femoris","TFL"],         weak:["Gluteus maximus","Gluteus medius","Transverse abdominis"] },
 };
 
-// ── 7. FUNCTIONAL CORRELATIONS ────────────────────────────────────────────────
+// -- 7. FUNCTIONAL CORRELATIONS ------------------------------------------------
 // POSSIBLE loading/movement consequences of each posture observation
 const FUNCTIONAL_CORRELATIONS = {
   shoulder:    "May alter scapulohumeral rhythm and rotator cuff loading if present during overhead tasks.",
@@ -3090,7 +3090,7 @@ const FUNCTIONAL_CORRELATIONS = {
   lcs:         "May reduce lumbopelvic control and alter load transfer between lumbar spine and lower limbs.",
 };
 
-// ── 8. RECOMMENDED OBJECTIVE ASSESSMENT ──────────────────────────────────────
+// -- 8. RECOMMENDED OBJECTIVE ASSESSMENT --------------------------------------
 const OBJECTIVE_ASSESSMENTS = {
   shoulder:    ["Muscle length: upper trapezius passive stretch test","Muscle strength: lower trapezius (prone Y)","SIJ screen if pelvis also elevated"],
   pelvis:      ["True LLD: tape measure ASIS → medial malleolus","SIJ provocation cluster (Laslett)","Hip abductor strength (Trendelenburg test)"],
@@ -3105,7 +3105,7 @@ const OBJECTIVE_ASSESSMENTS = {
   lcs:         ["Thomas test bilateral","Gluteus maximus strength: prone hip extension","Transverse abdominis function: TrA activation test"],
 };
 
-// ── 9. FINDING BUILDER — creates structured finding object ────────────────────
+// -- 9. FINDING BUILDER — creates structured finding object --------------------
 function buildFinding({
   region, findingName, severity, confidenceScore, interpretation,
   musclePattern, functionalCorrelation, objectiveAssessments,
@@ -3138,7 +3138,7 @@ function buildFinding({
   };
 }
 
-// ── 10. PRIORITISATION ────────────────────────────────────────────────────────
+// -- 10. PRIORITISATION --------------------------------------------------------
 function prioritiseFindings(findings) {
   const sevRank = { high: 3, moderate: 2, mild: 1 };
   const sigRank = { high: 3, moderate: 2, low: 1 };
@@ -3153,7 +3153,7 @@ function prioritiseFindings(findings) {
   });
 }
 
-// ── MAX FINDINGS PER SESSION ─────────────────────────────────────────────────
+// -- MAX FINDINGS PER SESSION -------------------------------------------------
 // Clinical significance filter: limit output to top findings to reduce noise
 const MAX_FINDINGS_FRONTAL  = 7;
 const MAX_FINDINGS_SAGITTAL = 6;
@@ -3250,13 +3250,13 @@ function buildFindings(lm, view, m) {
   const out = [];
   const isLat = view === "left" || view === "right";
 
-  // ── Helper: add finding using new structured engine ────────────────────────
+  // -- Helper: add finding using new structured engine ------------------------
   const add = (params) => {
     const f = buildFinding(params);
     if (f) out.push(f);
   };
 
-  // ── Helper: legacy add (for pattern summaries — keep existing format) ──────
+  // -- Helper: legacy add (for pattern summaries — keep existing format) ------
   const addLegacy = (region, text, severity, correction, icd="M99.0", detail="", norm="") => {
     out.push({ region, text, plain: text, severity, correction, icd, detail, norm,
       confidenceScore: 70, clinicalSignificance: "moderate" });
@@ -3267,7 +3267,7 @@ function buildFindings(lm, view, m) {
   // ══════════════════════════════════════════════════════════════════════════
   if (!isLat) {
 
-    // ── Shoulder elevation ───────────────────────────────────────────────────
+    // -- Shoulder elevation ---------------------------------------------------
     if (m.shoulderAngle !== null) {
       const abs = Math.abs(m.shoulderAngle);
       const sev = classifySeverity(abs, POSTURE_THRESHOLDS.shoulderAngle);
@@ -3292,7 +3292,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── Pelvic obliquity ─────────────────────────────────────────────────────
+    // -- Pelvic obliquity -----------------------------------------------------
     if (m.pelvisAngle !== null) {
       const abs = Math.abs(m.pelvisAngle);
       const sev = classifySeverity(abs, POSTURE_THRESHOLDS.pelvisAngle);
@@ -3318,7 +3318,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── Head/cervical lateral tilt ───────────────────────────────────────────
+    // -- Head/cervical lateral tilt -------------------------------------------
     if (m.headTiltAngle !== null) {
       const abs = Math.abs(m.headTiltAngle);
       const sev = classifySeverity(abs, POSTURE_THRESHOLDS.headTilt);
@@ -3343,7 +3343,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── Trunk lateral shift ──────────────────────────────────────────────────
+    // -- Trunk lateral shift --------------------------------------------------
     if (m.trunkLateralShift !== null) {
       const abs = Math.abs(m.trunkLateralShift);
       const sev = classifySeverity(abs, POSTURE_THRESHOLDS.trunkLateralShift);
@@ -3368,7 +3368,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── Knee frontal plane (valgus/varus) ────────────────────────────────────
+    // -- Knee frontal plane (valgus/varus) ------------------------------------
     const kneeLandmarks = [23, 24, 25, 26, 27, 28];
     const kneeRel = checkLandmarkReliability(lm, kneeLandmarks);
     const kneeConf = getLandmarkConfidence(lm, kneeLandmarks);
@@ -3426,7 +3426,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── UCS index ────────────────────────────────────────────────────────────
+    // -- UCS index ------------------------------------------------------------
     if (m.ucsIndex !== null) {
       const sev = classifySeverity(m.ucsIndex, POSTURE_THRESHOLDS.ucsIndex);
       const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.upperBody);
@@ -3446,7 +3446,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── Functional LLD ───────────────────────────────────────────────────────
+    // -- Functional LLD -------------------------------------------------------
     if (m.lldProxy !== null) {
       const sev = classifySeverity(m.lldProxy, POSTURE_THRESHOLDS.lldProxy);
       const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.ankle]);
@@ -3466,7 +3466,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── Waist asymmetry / scoliosis screen ──────────────────────────────────
+    // -- Waist asymmetry / scoliosis screen ----------------------------------
     if (m.waistTriangleAsymmetry !== null) {
       const sev = classifySeverity(m.waistTriangleAsymmetry, POSTURE_THRESHOLDS.waistAsymmetry);
       const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
@@ -3486,7 +3486,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── Tibial varum ─────────────────────────────────────────────────────────
+    // -- Tibial varum ---------------------------------------------------------
     const tibL = m.tibialVarumL ?? 0, tibR = m.tibialVarumR ?? 0;
     if (tibL > 0 || tibR > 0) {
       const maxTib = Math.max(tibL, tibR);
@@ -3521,7 +3521,7 @@ function buildFindings(lm, view, m) {
       : checkLandmarkReliability(lm, LANDMARK_GROUPS.sagittal);
     const sagConf = getLandmarkConfidence(lm, LANDMARK_GROUPS.sagittal);
 
-    // ── SAGITTAL CHAIN ENGINE ─────────────────────────────────────────────────
+    // -- SAGITTAL CHAIN ENGINE -------------------------------------------------
     // Uses plumb-line deviations in cm (Kendall thresholds).
     // Falls back to angle/proxy measures when plumb data unavailable.
     // Confidence is taken from sagChain.confidence (0–100).
@@ -3530,7 +3530,7 @@ function buildFindings(lm, view, m) {
     const sagChainConf = m.sagChain?.confidence ?? 60;
     const sagLateral = m.sagChain?.isTrueLateral ?? false;
 
-    // ── 1. Forward Head Posture ───────────────────────────────────────────────
+    // -- 1. Forward Head Posture -----------------------------------------------
     // Primary: CVA < 52° (Neiva et al. 2009). Secondary: ear >2cm anterior to shoulder.
     // Thresholds: mild CVA 48–52°, moderate 44–48°, severe <44° (Ruivo 2017)
     if (m.cvaAngle !== null) {
@@ -3571,7 +3571,7 @@ function buildFindings(lm, view, m) {
           icd: "M43.1", norm: "CVA >52°",
         });
 
-        // ── Posture chain note: FHP → thoracic ──────────────────────────────
+        // -- Posture chain note: FHP → thoracic ------------------------------
         // Only add chain finding if thoracic finding won't fire separately
         const willFireKyphosis = m.thoracicAngle !== null && m.thoracicAngle > POSTURE_THRESHOLDS.thoracicAngle.mild;
         if (!willFireKyphosis && sev !== "mild" && m.thoracicAngle !== null && m.thoracicAngle > 40) {
@@ -3592,7 +3592,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── 2. Rounded Shoulder Tendency ─────────────────────────────────────────
+    // -- 2. Rounded Shoulder Tendency -----------------------------------------
     // Acromion anterior to plumb by >2cm = rounded shoulder tendency.
     // If CVA also reduced: correlate as UCS chain.
     if (m.sagShoulderShift !== null && m.sagShoulderShift > 2.0 && sagChainConf >= 28) {
@@ -3621,7 +3621,7 @@ function buildFindings(lm, view, m) {
       });
     }
 
-    // ── 3. Thoracic Kyphosis ─────────────────────────────────────────────────
+    // -- 3. Thoracic Kyphosis -------------------------------------------------
     if (m.thoracicAngle !== null) {
       const sev = classifySeverity(m.thoracicAngle, POSTURE_THRESHOLDS.thoracicAngle);
       const visShHip = [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip].filter(i=>(lm[i]?.visibility||0)>=MIN_VIS);
@@ -3647,7 +3647,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── 4. Pelvic Tilt (sagittal) ────────────────────────────────────────────
+    // -- 4. Pelvic Tilt (sagittal) --------------------------------------------
     // Primary: plumb-line hip deviation. Fallback: lumbarProxy.
     const pelvisCm = m.sagPelvicShift ?? null;
     const pelvisProxy = m.lumbarProxy ?? null;
@@ -3689,7 +3689,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── UCS sagittal — skip if UCS already in findings from dedicated block ────
+    // -- UCS sagittal — skip if UCS already in findings from dedicated block ----
     const hasUCS_sag = m.cvaAngle !== null && m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild && m.thoracicAngle !== null && m.thoracicAngle > (POSTURE_THRESHOLDS.thoracicAngle.mild - 2);
     const ucsAlreadyAdded = out.some(x => x.region === "Upper Crossed Syndrome" || x.region === "Upper Crossed Syndrome (UCS)");
     if (hasUCS_sag && sagRel.reliable && !ucsAlreadyAdded) {
@@ -3708,7 +3708,7 @@ function buildFindings(lm, view, m) {
       });
     }
 
-    // ── LCS sagittal — skip if LCS already in findings from dedicated block ────
+    // -- LCS sagittal — skip if LCS already in findings from dedicated block ----
     const hasLCS_sag = m.lumbarProxy !== null && m.lumbarProxy > POSTURE_THRESHOLDS.lumbarProxy.mild && m.thoracicAngle !== null && m.thoracicAngle > (POSTURE_THRESHOLDS.thoracicAngle.mild - 2);
     const lcsAlreadyAdded = out.some(x => x.region === "Lower Crossed Syndrome" || x.region === "Lower Crossed Syndrome (LCS)");
     if (hasLCS_sag && sagRel.reliable && !lcsAlreadyAdded) {
@@ -3727,7 +3727,7 @@ function buildFindings(lm, view, m) {
       });
     }
 
-    // ── Named sagittal pattern (Kendall classification) ───────────────────────
+    // -- Named sagittal pattern (Kendall classification) -----------------------
     const hasFHP   = m.cvaAngle !== null && m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild;
     const hasKyph  = m.thoracicAngle !== null && m.thoracicAngle > POSTURE_THRESHOLDS.thoracicAngle.mild;
     const hasLord  = m.lumbarProxy !== null && m.lumbarProxy > POSTURE_THRESHOLDS.lumbarProxy.moderate;
@@ -3785,7 +3785,7 @@ function buildFindings(lm, view, m) {
       );
     }
 
-    // ── Sway-back pattern ────────────────────────────────────────────────────
+    // -- Sway-back pattern ----------------------------------------------------
     if (hasSway && sagRel.reliable) {
       addLegacy("Posture Pattern — Sway-Back",
         "Sway-back posture: hips posterior to plumb, flat lumbar",
@@ -3801,7 +3801,7 @@ function buildFindings(lm, view, m) {
         "M40.4");
     }
 
-    // ── POSTURE CHAIN CLUSTERING ─────────────────────────────────────────────
+    // -- POSTURE CHAIN CLUSTERING ---------------------------------------------
     // After all individual sagittal findings are added to `out`,
     // apply cluster boost and add chain correlation note.
     {
@@ -3883,7 +3883,7 @@ function buildFindings(lm, view, m) {
       "Target: PLI <35/100");
   }
 
-  // ── CLINICAL SIGNIFICANCE FILTER + PRIORITISE ─────────────────────────────
+  // -- CLINICAL SIGNIFICANCE FILTER + PRIORITISE -----------------------------
   // 1. Remove low-confidence mild findings
   const filtered = out.filter(f => {
     if (f.severity === "mild" && (f.confidenceScore || 70) < 55) return false;
@@ -3911,7 +3911,7 @@ function buildFindings(lm, view, m) {
 }
 
 
-// ─── Score Engine ─────────────────────────────────────────────────────────────
+// --- Score Engine -------------------------------------------------------------
 function scorePosture(m, findings, reliability) {
   if(!m||!findings) return {score:0,band:"No Data",colour:PC.muted,subScores:null};
   let penalty=0;
@@ -3952,7 +3952,7 @@ function scorePosture(m, findings, reliability) {
   return {score,band,colour,subScores};
 }
 
-// ─── Multi-View Merge Engine ──────────────────────────────────────────────────
+// --- Multi-View Merge Engine --------------------------------------------------
 const VIEW_PLANE = { anterior:"frontal", posterior:"frontal", left:"sagittal", right:"sagittal" };
 
 function mergeViewResults(viewResults) {
@@ -4029,7 +4029,7 @@ function mergeViewResults(viewResults) {
   return { compositeScore, compositeBand, compositeColour, mergedFindings, coverage, subScores, sagittalPattern, frontalPattern, summary };
 }
 
-// ─── Canvas overlay renderer ──────────────────────────────────────────────────
+// --- Canvas overlay renderer --------------------------------------------------
 // Helper: draw angle badge (small pill label on canvas)
 function drawBadge(ctx, x, y, text, color) {
   const pad=4, fsize=11;
@@ -4082,7 +4082,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
 
   const isLat=view==="left"||view==="right";
 
-  // ── Plumb line ────────────────────────────────────────────────────────────
+  // -- Plumb line ------------------------------------------------------------
   if(!isLat){
     const hm=V(23)&&V(24)?{x:(g(23).x+g(24).x)/2,y:(g(23).y+g(24).y)/2}:null;
     const gx=hm?hm.x*W:W/2;
@@ -4090,7 +4090,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,0.95)"; ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
     ctx.restore(); ctx.setLineDash([]);
-  // ── Legend (top-right) — mirrors Image 2 ─────────────────────────────────
+  // -- Legend (top-right) — mirrors Image 2 ---------------------------------
   if(!isLat){
     const legendItems=[
       {col:"rgba(0,201,122,0.95)", label:"Normal"},
@@ -4115,7 +4115,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
   }
 
   } else {
-    // ── Clinical Sagittal Plumb Line (Kendall / Sahrmann standard) ────────
+    // -- Clinical Sagittal Plumb Line (Kendall / Sahrmann standard) --------
     const side = view==="right";
     const iEar=side?8:7, iSh=side?12:11, iHip=side?24:23, iKnee=side?26:25, iAnk=side?28:27, iHeel=side?30:29;
     let plumbX=W/2;
@@ -4151,7 +4151,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; ctx.font="bold 9px system-ui"; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+8:kp[0]-ktw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(kx,kp[1]+6,ktw+8,15,3); else ctx.rect(kx,kp[1]+6,ktw+8,15); ctx.fill(); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.fillText(kt,kx+4,kp[1]+17); }
   }
 
-  // ── Skeleton connections ──────────────────────────────────────────────────
+  // -- Skeleton connections --------------------------------------------------
   const CONNECTIONS=[
     [11,12],[11,23],[12,24],[23,24],
     [11,13],[13,15],[12,14],[14,16],
@@ -4166,7 +4166,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.beginPath(); ctx.moveTo(pa[0],pa[1]); ctx.lineTo(pb[0],pb[1]); ctx.stroke();
   });
 
-  // ── Joint dots ────────────────────────────────────────────────────────────
+  // -- Joint dots ------------------------------------------------------------
   const JOINTS=[0,7,8,11,12,13,14,23,24,25,26,27,28];
   JOINTS.forEach(i=>{
     if(!V(i)) return;
@@ -4176,7 +4176,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke();
   });
 
-  // ── FRONTAL-ONLY overlays ─────────────────────────────────────────────────
+  // -- FRONTAL-ONLY overlays -------------------------------------------------
   if(!isLat){
     // Head tilt line
     if(V(7)&&V(8)){
@@ -4299,7 +4299,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     });
   }
 
-  // ── Stress heatmap (all views) ────────────────────────────────────────────
+  // -- Stress heatmap (all views) --------------------------------------------
   const hotspots=[];
   const addHot=(idx,intensity)=>{ if(!V(idx)) return; const p=PX(idx); if(p) hotspots.push({x:p[0],y:p[1],r:45+intensity*20,intensity}); };
   if(Math.abs(m.shoulderAngle||0)>4) addHot(m.shoulderAngle>0?11:12, Math.min(1,Math.abs(m.shoulderAngle)/12));
@@ -4318,7 +4318,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
   });
 }
 
-// ─── renderPostureOverlay — alias for drawOverlay used throughout app ──────────
+// --- renderPostureOverlay — alias for drawOverlay used throughout app ----------
 // Maps the showHeatmap/showLabels/view params to drawOverlay signature
 function renderPostureOverlay({ ctx, W, H, lm, measurements, showGrid, showHeatmap, showLabels, view }) {
   // Map view names to drawOverlay's expected format
@@ -4334,7 +4334,7 @@ function renderPostureOverlay({ ctx, W, H, lm, measurements, showGrid, showHeatm
 }
 
 
-// ─── Manual overlay renderer ──────────────────────────────────────────────────
+// --- Manual overlay renderer --------------------------------------------------
 function drawManualOverlay({ctx, W, H, placed, pointDefs, connections, currentIdx}) {
   if (!ctx) return;
   const toCanvas = (p) => [p.x * W, p.y * H];
@@ -4369,7 +4369,7 @@ function drawManualOverlay({ctx, W, H, placed, pointDefs, connections, currentId
   }
 }
 
-// ─── Calibration helper ───────────────────────────────────────────────────────
+// --- Calibration helper -------------------------------------------------------
 // Computes pixPerCm from patient height and the head-to-heel landmark span.
 // Call once per image/frame with the detected landmarks and known patient height.
 function computeCalibration(lm, patientHeightCm, imgH) {
@@ -4388,7 +4388,7 @@ function computeCalibration(lm, patientHeightCm, imgH) {
   return { pixPerCm, imgH, spanPx, patientHeightCm };
 }
 
-// ─── MediaPipe loader ─────────────────────────────────────────────────────────
+// --- MediaPipe loader ---------------------------------------------------------
 function loadScript(src){
   return new Promise((res,rej)=>{
     if(document.querySelector(`script[src="${src}"]`)){res();return;}
@@ -4399,7 +4399,7 @@ function loadScript(src){
 }
 const MP_CDN="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404";
 
-// ─── View config ──────────────────────────────────────────────────────────────
+// --- View config --------------------------------------------------------------
 const VIEWS={
   anterior:{label:"Frontal",short:"Frontal",badge:"+ Frontal plumb",colour:PC.accent,icon:"⬆",
     helper:"Patient faces camera, feet hip-width, arms relaxed.",
@@ -4415,7 +4415,7 @@ const VIEWS={
     checks:["Ear–shoulder–hip–ankle aligned","Neutral gaze","Knees not locked","Arms visible","Full body in frame"]},
 };
 
-// ─── Sparkline ────────────────────────────────────────────────────────────────
+// --- Sparkline ----------------------------------------------------------------
 function PostureSparkline({sessions,colour=PC.accent}){
   const pts=sessions.filter(s=>s.score!==undefined).slice(-10);
   if(pts.length<2) return null;
@@ -4460,9 +4460,9 @@ function ScoreRingBand({score,band,colour,size=80}){
   );
 }
 
-// ─── Finding Card ─────────────────────────────────────────────────────────────
+// --- Finding Card -------------------------------------------------------------
 
-// ─── FindingsDisplay — Priority top 5 + show all toggle ──────────────────────
+// --- FindingsDisplay — Priority top 5 + show all toggle ----------------------
 function FindingsDisplay({ findings, PC }) {
   const [showAll, setShowAll] = useState(false);
 
@@ -4543,7 +4543,7 @@ function FindingsDisplay({ findings, PC }) {
   );
 }
 
-// ─── FindingCardV2 — Enhanced with confidence badge ──────────────────────────
+// --- FindingCardV2 — Enhanced with confidence badge --------------------------
 function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
   const [open, setOpen] = useState(false);
   return (
@@ -4647,7 +4647,7 @@ function FindingCard({f}){
   );
 }
 
-// ─── Metric Row ───────────────────────────────────────────────────────────────
+// --- Metric Row ---------------------------------------------------------------
 function MetricRow({label,value,unit,normal,abnormal}){
   if(value===null||value===undefined) return null;
   const abs=Math.abs(value);
@@ -4663,11 +4663,11 @@ function MetricRow({label,value,unit,normal,abnormal}){
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PHASE 1 ─── Clinical Reasoning Engines
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
+// PHASE 1 --- Clinical Reasoning Engines
+// -----------------------------------------------------------------------------
 
-// ── Muscle Imbalance Engine ───────────────────────────────────────────────────
+// -- Muscle Imbalance Engine ---------------------------------------------------
 // Maps each finding region key → { tight: [...], weak: [...] }
 const MUSCLE_MAP = {
   // Frontal
@@ -4734,7 +4734,7 @@ function buildMuscleImbalance(findings) {
   return { tight: sort(tightSet), weak: sort(weakSet) };
 }
 
-// ── Special Tests Engine ──────────────────────────────────────────────────────
+// -- Special Tests Engine ------------------------------------------------------
 const SPECIAL_TESTS_MAP = {
   "Shoulder Girdle":          [
     { name:"Apley Scratch Test",   purpose:"Shoulder ROM — reaching ability bilaterally" },
@@ -4863,7 +4863,7 @@ function buildSpecialTests(findings) {
   return [...testMap.entries()].map(([name,{purpose,regions}]) => ({ name, purpose, regions }));
 }
 
-// ── Exercise Plan Engine ──────────────────────────────────────────────────────
+// -- Exercise Plan Engine ------------------------------------------------------
 // Converts findings → deduplicated, phased, numbered exercise programme
 const EXERCISE_MAP = {
   "Shoulder Girdle":        [
@@ -4999,7 +4999,7 @@ function buildExercisePlan(findings) {
   return phases;
 }
 
-// ── Muscle Imbalance Card Component ──────────────────────────────────────────
+// -- Muscle Imbalance Card Component ------------------------------------------
 function MuscleImbalanceCard({ findings, isWide }) {
   const { tight, weak } = useMemo(() => buildMuscleImbalance(findings), [findings]);
   if (tight.length === 0 && weak.length === 0) return null;
@@ -5073,7 +5073,7 @@ function MuscleImbalanceCard({ findings, isWide }) {
   );
 }
 
-// ── Special Tests Card Component ─────────────────────────────────────────────
+// -- Special Tests Card Component ---------------------------------------------
 function SpecialTestsCard({ findings, isWide }) {
   const [openAll, setOpenAll] = useState(false);
   const tests = useMemo(() => buildSpecialTests(findings), [findings]);
@@ -5086,7 +5086,7 @@ function SpecialTestsCard({ findings, isWide }) {
       {/* Header */}
       <div style={{padding:"11px 14px",background:`rgba(124,58,237,0.06)`,borderBottom:`1px solid ${PC.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:"1rem"}}>⚕</span>
+          <span style={{fontSize:"1rem"}}>+</span>
           <div>
             <div style={{fontWeight:800,fontSize:"0.78rem",color:PC.text}}>Suggested Special Tests</div>
             <div style={{fontSize:"0.6rem",color:PC.muted}}>{tests.length} tests indicated by findings</div>
@@ -5127,7 +5127,7 @@ function SpecialTestsCard({ findings, isWide }) {
   );
 }
 
-// ── Exercise Plan Tab Component ───────────────────────────────────────────────
+// -- Exercise Plan Tab Component -----------------------------------------------
 const PHASE_META = {
   1: { label:"Phase 1 — Inhibit & Release",  icon:"□", colour:"#dc2626", desc:"SMR and stretching of overactive muscles. Do before activation.",    category:"inhibit" },
   2: { label:"Phase 2 — Activate & Strengthen", icon:"⚡", colour:"#2563eb", desc:"Re-educate and strengthen underactive muscles after inhibition.", category:"activate" },
@@ -5208,7 +5208,7 @@ function ExercisePlanTab({ findings, isWide }) {
 
       {/* Footer disclaimer */}
       <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.6rem",color:PC.muted,lineHeight:1.6}}>
-        ℹ️ This programme is generated from postural analysis findings. Always confirm with clinical examination before prescribing. Adjust load and range to individual tolerance. Reassess in 4–6 weeks.
+        i️ This programme is generated from postural analysis findings. Always confirm with clinical examination before prescribing. Adjust load and range to individual tolerance. Reassess in 4–6 weeks.
       </div>
     </div>
   );
@@ -5282,7 +5282,7 @@ function ExerciseItem({ ex, idx, isWide, isLast, isRightCol, expanded, onToggle,
   );
 }
 
-// ─── History hook (in-memory only) ───────────────────────────────────────────
+// --- History hook (in-memory only) -------------------------------------------
 function useHistory(){
   const [sessions,setSessions]=useState([]);
   const save=useCallback((s)=>setSessions(prev=>[...prev.slice(-19),s]),[]);
@@ -5290,7 +5290,7 @@ function useHistory(){
   return {sessions,save,clear};
 }
 
-// ─── Responsive hook ──────────────────────────────────────────────────────────
+// --- Responsive hook ----------------------------------------------------------
 function useBreakpoint() {
   const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 390);
   useEffect(() => {
@@ -5301,7 +5301,7 @@ function useBreakpoint() {
   return { isMobile: w < 900, isTablet: w >= 900 && w < 1100, isDesktop: w >= 1100, w };
 }
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+// --- MAIN COMPONENT -----------------------------------------------------------
 function PostureAnalysisModule(){
   const [mode,setMode]=useState("upload");
   const [view,setView]=useState("anterior");
@@ -5332,13 +5332,13 @@ function PostureAnalysisModule(){
   // Mobile panel toggle: "camera" = left panel, "results" = right panel
   const [mobilePanel,setMobilePanel]=useState("camera");
 
-  // ── Multi-view state ─────────────────────────────────────────────────────────
+  // -- Multi-view state ---------------------------------------------------------
   const [assessMode,setAssessMode] = useState("single");  // "single" | "multi"
   const [mvResults,setMvResults]   = useState({});         // { [viewKey]: {view,measurements,findings,scoreData,reliability,img} }
   const [mvComposite,setMvComposite] = useState(null);
   const [mvTab,setMvTab]           = useState("capture");  // "capture" | "report"
 
-  // ── Report generation state ──────────────────────────────────────────────────
+  // -- Report generation state --------------------------------------------------
   const [showReportModal,setShowReportModal]=useState(false);
   const [showReportViewer,setShowReportViewer]=useState(false);
   const [reportHtml,setReportHtml]=useState("");
@@ -5346,7 +5346,7 @@ function PostureAnalysisModule(){
   const [patientInfo,setPatientInfo]=useState({name:"",age:"",sex:"Female",occupation:""});
   const [clinicianInfo,setClinicianInfo]=useState({name:"",credentials:"",clinic:""});
 
-  // ── Manual landmark placement state ─────────────────────────────────────────
+  // -- Manual landmark placement state -----------------------------------------
   const [inputMode,setInputMode]=useState("ai");        // "ai" | "manual"
   const [manualPlaced,setManualPlaced]=useState({});    // {[pointId]: {x,y}}
   const [manualImgDims,setManualImgDims]=useState(null); // {w,h} of displayed image
@@ -5368,7 +5368,7 @@ function PostureAnalysisModule(){
 
   useEffect(()=>{viewRef.current=view;},[view]);
 
-  // ── Load MediaPipe ──────────────────────────────────────────────────────────
+  // -- Load MediaPipe ----------------------------------------------------------
   useEffect(()=>{
     let cancelled=false;
     (async()=>{
@@ -5387,7 +5387,7 @@ function PostureAnalysisModule(){
     return()=>{cancelled=true;};
   },[]);
 
-  // ── Process landmarks ───────────────────────────────────────────────────────
+  // -- Process landmarks -------------------------------------------------------
   const processLandmarks=useCallback((lm,v,imgH)=>{
     const calib = computeCalibration(lm, patientHeightCm, imgH||videoSizeRef.current?.h||480);
     const m=measureLandmarks(lm, calib);
@@ -5402,11 +5402,11 @@ function PostureAnalysisModule(){
     setMvComposite(null);
   },[]);
 
-  // ── Analyse uploaded image ──────────────────────────────────────────────────
+  // -- Analyse uploaded image --------------------------------------------------
   async function analysePhoto(url,v){
     if(!poseRef.current||mpStatus!=="ready") return null;
 
-    // ── STEP 1: Decode pixel data completely independently via fetch+createImageBitmap.
+    // -- STEP 1: Decode pixel data completely independently via fetch+createImageBitmap.
     // This is the ONLY reliable way to get clean canvas pixels on Android Chrome.
     // img.crossOrigin="anonymous" on blob URLs silently poisons drawImage → black canvas.
     // createImageBitmap(blob) bypasses the img element entirely for pixel decoding.
@@ -5428,7 +5428,7 @@ function PostureAnalysisModule(){
       srcCanvas=null;
     }
 
-    // ── STEP 2: Load img element separately for MediaPipe — NO crossOrigin attribute.
+    // -- STEP 2: Load img element separately for MediaPipe — NO crossOrigin attribute.
     // blob URLs from file input are always same-origin. crossOrigin is not needed
     // and actively causes Android Chrome to mark the canvas as tainted → black.
     return new Promise(resolve=>{
@@ -5478,7 +5478,7 @@ function PostureAnalysisModule(){
     });
   }
 
-  // ── Handle file upload ──────────────────────────────────────────────────────
+  // -- Handle file upload ------------------------------------------------------
   async function handleFile(e){
     const file=e.target.files?.[0]; if(!file) return;
     if(objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
@@ -5660,7 +5660,7 @@ function PostureAnalysisModule(){
     setTab("findings"); if(isMobile) setMobilePanel("results");
   }
 
-  // ── Manual mode derived values ───────────────────────────────────────────────
+  // -- Manual mode derived values -----------------------------------------------
   const isLat = view==="left"||view==="right";
   const manualPointDefs = isLat ? MANUAL_POINTS_SAGITTAL : MANUAL_POINTS_FRONTAL;
   const manualConnections = isLat ? MANUAL_CONNECTIONS_SAGITTAL : MANUAL_CONNECTIONS_FRONTAL;
@@ -5740,7 +5740,7 @@ function PostureAnalysisModule(){
   const otherFindings=findings.filter(f=>f.severity!=="high");
   const displayImg=isLive?capturedImg:uploadedImg;
 
-  // ── View switch handler ─────────────────────────────────────────────────────
+  // -- View switch handler -----------------------------------------------------
   async function handleViewSwitch(newView){
     setView(newView);
     if(inputMode==="manual"){
@@ -5757,14 +5757,14 @@ function PostureAnalysisModule(){
     }
   }
 
-  // ── Shared panel: findings/metrics/history content ──────────────────────────
+  // -- Shared panel: findings/metrics/history content --------------------------
   const tabContent = (
     <div style={{flex:1,overflowY:"auto",paddingBottom: isMobile ? 80 : 24}}>
 
       {/* Tab bar */}
       {(measurements||capturedImg)&&(
         <div style={{borderBottom:`1px solid ${PC.border}`,background:PC.surface,display:"flex",position: isWide?"sticky":"static",top:0,zIndex:5}}>
-          {[["findings",`⌕ Findings${findings.length?" ("+findings.length+")":""}`],["muscles","⚡ Muscles"],["plan","▶ Plan"],["tests","⚕ Tests"],["metrics","≡ Metrics"],["history","▤ History"]].map(([t,label])=>(
+          {[["findings",`⌕ Findings${findings.length?" ("+findings.length+")":""}`],["muscles","⚡ Muscles"],["plan","▶ Plan"],["tests","+ Tests"],["metrics","≡ Metrics"],["history","▤ History"]].map(([t,label])=>(
             <button key={t} onClick={()=>setTab(t)}
               style={{flex:1,padding: isWide?"12px 8px":"10px 8px",border:"none",borderBottom:`3px solid ${tab===t?PC.accent:"transparent"}`,background:"transparent",color:tab===t?PC.accent:PC.muted,fontWeight:700,fontSize: isWide?"0.78rem":"0.68rem",cursor:"pointer",whiteSpace:"nowrap"}}>
               {label}
@@ -5872,7 +5872,7 @@ function PostureAnalysisModule(){
               </div>
             </div>
           )}
-          {/* ── TOP 3 PRIORITY TREATMENT CARD ─────────────────────────────── */}
+          {/* -- TOP 3 PRIORITY TREATMENT CARD ------------------------------- */}
           {findings.length>0&&(()=>{
             // Pick top 3: confirmed high > high > confirmed moderate > moderate
             const ranked = [...findings].sort((a,b)=>{
@@ -5994,7 +5994,7 @@ function PostureAnalysisModule(){
             <>
               <MuscleImbalanceCard findings={findings} isWide={isWide}/>
               <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.6rem",color:PC.muted,lineHeight:1.6}}>
-                ℹ️ Muscles listed are predicted from postural findings using Janda's muscle imbalance model. Always confirm with manual muscle testing and length assessment before treating.
+                i️ Muscles listed are predicted from postural findings using Janda's muscle imbalance model. Always confirm with manual muscle testing and length assessment before treating.
               </div>
             </>
           ) : (
@@ -6017,7 +6017,7 @@ function PostureAnalysisModule(){
             <>
               <SpecialTestsCard findings={findings} isWide={isWide}/>
               <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.6rem",color:PC.muted,lineHeight:1.6}}>
-                ℹ️ Tests are suggested based on postural findings. Clinical judgement and contraindication screening required before performing any provocative test. Use in conjunction with patient history and subjective assessment.
+                i️ Tests are suggested based on postural findings. Clinical judgement and contraindication screening required before performing any provocative test. Use in conjunction with patient history and subjective assessment.
               </div>
             </>
           ) : (
@@ -6302,8 +6302,8 @@ function PostureAnalysisModule(){
     </div>
   );
 
-  // ── Left panel: controls + image ────────────────────────────────────────────
-  // ── Multi-view helpers ───────────────────────────────────────────────────────
+  // -- Left panel: controls + image --------------------------------------------
+  // -- Multi-view helpers -------------------------------------------------------
   const mvViewOrder = ["anterior","posterior","left","right"];
   const mvCapturedCount = Object.keys(mvResults).length;
   const mvCanGenerate = mvCapturedCount >= 2;
@@ -6524,7 +6524,7 @@ function PostureAnalysisModule(){
             </div>
           </div>
         )}
-        {/* ── FINDINGS — Priority top 5 with expand ── */}
+        {/* -- FINDINGS — Priority top 5 with expand -- */}
         <FindingsDisplay findings={mvComposite.mergedFindings} PC={PC}/>
       </div>
     </div>
@@ -6768,7 +6768,7 @@ function PostureAnalysisModule(){
     </div>
   );
 
-  // ── Report generator ─────────────────────────────────────────────────────────
+  // -- Report generator ---------------------------------------------------------
   function generateReport() {
     if(!findings.length||!scoreData) return;
     try {
@@ -6951,7 +6951,7 @@ function PostureAnalysisModule(){
                 <div style="font-size:0.6rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Body Region Check</div>
                 ${regions.map(trafficPill).join("")}
                 <div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:#f0f9ff;border:1px solid #bae6fd;font-size:0.6rem;color:#0369a1">
-                  ℹ Reliability: <strong>${m.reliability}%</strong> · Views: ${d.views.join(", ")}
+                  i Reliability: <strong>${m.reliability}%</strong> · Views: ${d.views.join(", ")}
                 </div>
               </div>
             </div>
@@ -7314,7 +7314,7 @@ function PostureAnalysisModule(){
       </div>`;
   }
 
-  // ── Report modal ─────────────────────────────────────────────────────────────
+  // -- Report modal -------------------------------------------------------------
   const reportModal = showReportModal && createPortal(
     <div onClick={()=>setShowReportModal(false)}
       style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:99998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
@@ -7403,7 +7403,7 @@ function PostureAnalysisModule(){
   return(
     <div style={{background:PC.bg,minHeight:"100vh",fontFamily:"system-ui,-apple-system,sans-serif",display:"flex",flexDirection:"column"}}>
 
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <div style={{padding:isWide?"14px 28px":"12px 16px",borderBottom:`1px solid ${PC.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",background:PC.surface,position:"sticky",top:0,zIndex:20,boxShadow:isWide?"0 1px 8px rgba(0,0,0,0.06)":"none"}}>
         <div style={{display:"flex",alignItems:"center",gap:isWide?14:8}}>
           <div style={{width:isWide?40:32,height:isWide?40:32,borderRadius:isWide?12:9,background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:isWide?"1.3rem":"1rem",flexShrink:0}}>∠</div>
@@ -7436,7 +7436,7 @@ function PostureAnalysisModule(){
         </div>
       </div>
 
-      {/* ── Body ── */}
+      {/* -- Body -- */}
       {isWide ? (
         <div style={{flex:1,display:"flex",flexDirection:"row",overflow:"hidden",minHeight:"calc(100vh - 60px)"}}>
           {leftPanel}
@@ -7445,7 +7445,7 @@ function PostureAnalysisModule(){
           </div>
         </div>
       ) : (
-        /* ── Mobile: toggled panels with sticky switcher ── */
+        /* -- Mobile: toggled panels with sticky switcher -- */
         <div style={{flex:1,display:"flex",flexDirection:"column",minHeight:0}}>
           {/* Panel toggle bar */}
           <div style={{display:"flex",borderBottom:`2px solid ${PC.border}`,background:PC.surface,position:"sticky",top:60,zIndex:15}}>
@@ -7481,10 +7481,10 @@ function PostureAnalysisModule(){
         </div>
       )}
 
-      {/* ── Report modal ── */}
+      {/* -- Report modal -- */}
       {reportModal}
 
-      {/* ── In-app Report Viewer ── */}
+      {/* -- In-app Report Viewer -- */}
       {showReportViewer&&createPortal(
         <div style={{position:"fixed",inset:0,zIndex:99999,background:"#1e293b",display:"flex",flexDirection:"column"}}>
           {/* Viewer toolbar — hidden on print */}
@@ -7532,7 +7532,7 @@ function PostureAnalysisModule(){
         document.body
       )}
 
-      {/* ── History modal ── */}
+      {/* -- History modal -- */}
       {showHistory&&(
         <div onClick={()=>setShowHistory(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:50,display:"flex",alignItems:isWide?"center":"flex-end",justifyContent:"center"}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:isWide?560:600,margin:isWide?"auto":"0 auto",background:PC.surface,borderRadius:isWide?"16px":"16px 16px 0 0",padding:"24px 20px",maxHeight:"70vh",overflowY:"auto"}}>
@@ -7679,7 +7679,7 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
   );
 }
 
-// ─── PhotoUploadAnalyzer — uses new advanced engine ──────────────────────────
+// --- PhotoUploadAnalyzer — uses new advanced engine --------------------------
 function PhotoUploadAnalyzer() {
   const [image, setImage]         = useState(null);
   const [analysisResult, setResult] = useState(null);
@@ -8035,7 +8035,7 @@ function PhotoUploadAnalyzer() {
 
 
 
-// ─── MAIN APP ────────────────────────────────────────────────────────────────
+// --- MAIN APP ----------------------------------------------------------------
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MULTI-PATIENT DATABASE
@@ -8190,14 +8190,14 @@ function saveTaskDB(tasks) {
 }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
-// ── Avatar initials helper ─────────────────────────────────────────────────────
+// -- Avatar initials helper -----------------------------------------------------
 function getInitials(name="") {
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
   return name.slice(0,2).toUpperCase() || "?";
 }
 
-// ── Avatar gradient by id ──────────────────────────────────────────────────────
+// -- Avatar gradient by id ------------------------------------------------------
 const AVATAR_GRADIENTS = [
   ["#00e5ff","#7f5af0"],["#f97316","#ff4d6d"],["#00c97a","#00e5ff"],
   ["#ffb300","#f97316"],["#a78bfa","#ec4899"],["#38bdf8","#00c97a"],
@@ -8207,7 +8207,7 @@ function avatarGrad(id="") {
   return `linear-gradient(135deg,${AVATAR_GRADIENTS[i][0]},${AVATAR_GRADIENTS[i][1]})`;
 }
 
-// ─── PATIENT PROFILE MODAL ─────────────────────────────────────────────────────
+// --- PATIENT PROFILE MODAL -----------------------------------------------------
 function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav }) {
   const { useState, useEffect, useMemo } = React;
   const [tab, setTab] = useState("overview");
@@ -8484,7 +8484,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         ::-webkit-scrollbar{display:none}
       `}</style>
 
-      {/* ── STATUS BAR ── */}
+      {/* -- STATUS BAR -- */}
       <div style={{height:44,background:C.white,display:"flex",alignItems:"center",
         justifyContent:"space-between",padding:"0 20px",flexShrink:0}}>
         <div style={{fontSize:14,fontWeight:700,color:C.text}}>9:41</div>
@@ -8495,7 +8495,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         </div>
       </div>
 
-      {/* ── TOP NAV BAR ── */}
+      {/* -- TOP NAV BAR -- */}
       <div style={{background:C.white,padding:"12px 20px",display:"flex",
         alignItems:"center",justifyContent:"space-between",
         borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
@@ -8511,7 +8511,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         </div>
       </div>
 
-      {/* ── PATIENT HEADER CARD ── */}
+      {/* -- PATIENT HEADER CARD -- */}
       <div style={{background:"#F5F3FF",padding:"20px 20px 18px",flexShrink:0}}>
         <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
           {/* Avatar */}
@@ -8558,7 +8558,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         </div>
       </div>
 
-      {/* ── TABS ── */}
+      {/* -- TABS -- */}
       <div style={{background:C.white,borderBottom:`1px solid ${C.border}`,flexShrink:0,
         display:"flex",overflowX:"auto",padding:"0 8px"}}>
         {TABS.map(t=>(
@@ -8575,7 +8575,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         ))}
       </div>
 
-      {/* ── TAB CONTENT ── */}
+      {/* -- TAB CONTENT -- */}
       <div style={{flex:1,overflowY:"auto",paddingBottom:100}}>
 
         {/* ════════════════════════════════════════
@@ -9329,7 +9329,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         )}
       </div>
 
-      {/* ── BOTTOM ACTION BAR ── */}
+      {/* -- BOTTOM ACTION BAR -- */}
       <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,
         background:"rgba(255,255,255,0.97)",backdropFilter:"blur(12px)",
         borderTop:`1px solid ${C.border}`,padding:"10px 16px",
@@ -9456,7 +9456,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
   );
 }
 
-// ─── PATIENT DATABASE PANEL ────────────────────────────────────────────────────
+// --- PATIENT DATABASE PANEL ----------------------------------------------------
 function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose, onImport }) {
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState("updated");
@@ -9656,7 +9656,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
 
 
 
-// ─── POSTURE DEFECTS DATA ─────────────────────────────────────────────────────
+// --- POSTURE DEFECTS DATA -----------------------------------------------------
 const POSTURE_DEFECTS = {
   forward_head: {
     id:"forward_head", icon:"🫀", label:"Forward Head Posture", region:"Cervical",
@@ -9786,11 +9786,11 @@ const POSTURE_DEFECTS = {
   },
 };
 
-// ─── SEVERITY COLOUR MAPS ────────────────────────────────────────────────────
+// --- SEVERITY COLOUR MAPS ----------------------------------------------------
 const SEVERITY_COLOR = { mild:"#ffb300", moderate:"#ff6b35", severe:"#ff4d6d" };
 const SEVERITY_BG    = { mild:"rgba(255,179,0,0.1)", moderate:"rgba(255,107,53,0.1)", severe:"rgba(255,77,109,0.1)" };
 
-// ─── POSTURE DEFECT DETAIL MODAL ─────────────────────────────────────────────
+// --- POSTURE DEFECT DETAIL MODAL ---------------------------------------------
 function PostureDefectDetail({ defectId, onClose }) {
   const d = POSTURE_DEFECTS[defectId];
   if (!d) return null;
@@ -9923,7 +9923,7 @@ function PostureDefectModule() {
 
   return (
     <div>
-      {/* ── STEP 1: View guidance ── */}
+      {/* -- STEP 1: View guidance -- */}
       <div style={{marginBottom:16}}>
         <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:9}}>📋 Assessment Views — Position patient accordingly</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
@@ -9951,7 +9951,7 @@ function PostureDefectModule() {
         </div>
       </div>
 
-      {/* ── STEP 2: Defect selector ── */}
+      {/* -- STEP 2: Defect selector -- */}
       <div style={{marginBottom:14}}>
         <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
           🔍 Select Observed Defects
@@ -9984,7 +9984,7 @@ function PostureDefectModule() {
         </div>
       </div>
 
-      {/* ── STEP 3: Selected findings with severity + tap-to-expand ── */}
+      {/* -- STEP 3: Selected findings with severity + tap-to-expand -- */}
       {selectedDefects.length > 0 && (
         <div style={{marginBottom:14}}>
           <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
@@ -10043,7 +10043,7 @@ function PostureDefectModule() {
         </div>
       )}
 
-      {/* ── STEP 4: PDF Export ── */}
+      {/* -- STEP 4: PDF Export -- */}
       {selectedDefects.length > 0 && (
         <div style={{marginBottom:12}}>
           {!showExport ? (
@@ -10211,7 +10211,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
 
   useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
 
-  // ── AUTO-GENERATE TASKS FROM CLINICAL DATA ─────────────────────────────────
+  // -- AUTO-GENERATE TASKS FROM CLINICAL DATA ---------------------------------
   useEffect(() => {
     if (!onAddTask || !data) return;
     const d   = data;
@@ -10285,7 +10285,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
     });
   }, [data, patients]);
 
-  // ── DERIVED DATA ──────────────────────────────────────────────────────────
+  // -- DERIVED DATA ----------------------------------------------------------
   const derived = useMemo(() => {
     const today = new Date().toDateString();
 
@@ -10372,7 +10372,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
     activeNRS, worstNRS, activeSess, soapPct, romPct, assessPct, safetyPct, trendData
   } = derived;
 
-  // ── COMPLETE TASK with animation ──────────────────────────────────────────
+  // -- COMPLETE TASK with animation ------------------------------------------
   const handleComplete = useCallback((taskId) => {
     setCompleting(taskId);
     setTimeout(() => {
@@ -10382,7 +10382,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
     }, 600);
   }, [onCompleteTask]);
 
-  // ── INLINE COMPONENTS ─────────────────────────────────────────────────────
+  // -- INLINE COMPONENTS -----------------------------------------------------
   const Donut = ({ pct, color, size=62, stroke=7, label }) => {
     const [val,setVal] = useState(0);
     useEffect(()=>{const t=setTimeout(()=>setVal(pct),500);return()=>clearTimeout(t);},[pct]);
@@ -10448,7 +10448,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
     );
   };
 
-  // ── PRIORITY CONFIG ───────────────────────────────────────────────────────
+  // -- PRIORITY CONFIG -------------------------------------------------------
   const PRI = {
     high:   { bg:"#FEF2F2", color:"#EF4444", border:"#FECACA", dot:"#EF4444", label:"High"   },
     medium: { bg:"#FFFBEB", color:"#D97706", border:"#FDE68A", dot:"#D97706", label:"Medium" },
@@ -10483,7 +10483,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
         .completing{animation:slideOut 0.55s cubic-bezier(.4,0,.2,1) forwards}
       `}</style>
 
-      {/* ── HEADER ── */}
+      {/* -- HEADER -- */}
       <div style={{background:"white",padding:"20px 16px 14px",borderBottom:"1px solid #F1F5F9",
         position:"sticky",top:0,zIndex:20,boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -10516,7 +10516,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
 
       <div style={{padding:"16px 14px",display:"flex",flexDirection:"column",gap:16}}>
 
-        {/* ── QUICK STATS ── */}
+        {/* -- QUICK STATS -- */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {STATS.map((st,i)=>(
             <div key={st.label} className="dc" style={{
@@ -10537,7 +10537,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           ))}
         </div>
 
-        {/* ── ACTIVE PATIENT ── */}
+        {/* -- ACTIVE PATIENT -- */}
         {activeName ? (
           <div className="dc" style={{
             background:"linear-gradient(135deg,#6D28D9 0%,#7C3AED 55%,#8B5CF6 100%)",
@@ -10621,7 +10621,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
             </div>
           </div>
 
-          {/* ── PENDING TASKS ── */}
+          {/* -- PENDING TASKS -- */}
           {activeTab === "pending" && (
             <div>
               {pendingTasks.length === 0 ? (
@@ -10754,7 +10754,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
             </div>
           )}
 
-          {/* ── COMPLETED HISTORY ── */}
+          {/* -- COMPLETED HISTORY -- */}
           {activeTab === "completed" && (
             <div>
               {completedTasks.length === 0 ? (
@@ -10800,7 +10800,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           )}
         </div>
 
-        {/* ── RECENT PATIENTS ── */}
+        {/* -- RECENT PATIENTS -- */}
         <div className="dc" style={{animationDelay:"0.2s"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
             <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
@@ -10870,7 +10870,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           )}
         </div>
 
-        {/* ── RECOVERY TREND ── */}
+        {/* -- RECOVERY TREND -- */}
         <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
           border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
           animationDelay:"0.25s"}}>
@@ -10891,7 +10891,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           <TrendChart data={trendData}/>
         </div>
 
-        {/* ── PATIENT OUTCOMES ── */}
+        {/* -- PATIENT OUTCOMES -- */}
         <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
           border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
           animationDelay:"0.3s"}}>
@@ -10912,7 +10912,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           )}
         </div>
 
-        {/* ── START ASSESSMENT CTA ── */}
+        {/* -- START ASSESSMENT CTA -- */}
         <div className="dc" style={{
           background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",
           borderRadius:20,padding:"20px",
@@ -11688,7 +11688,7 @@ function AppInner() {
   const [active, setActive] = useState("home");
   const [navContext, setNavContext] = useState({});
 
-  // ── Deferred mounting: heavy tabs only render after first visit ──────────
+  // -- Deferred mounting: heavy tabs only render after first visit ----------
   // This cuts initial render time dramatically
   // Once mounted, component stays mounted (data preserved)
   const [mountedTabs, setMountedTabs] = useState(new Set(["home", "subjective"]));
@@ -11712,7 +11712,7 @@ function AppInner() {
     );
   }, [mountedTabs, active]);
 
-  // ── Hypothetical demo patient: Sarah Mitchell, 34F, chronic LBP ──────────
+  // -- Hypothetical demo patient: Sarah Mitchell, 34F, chronic LBP ----------
   const DEMO_DATA = {
     dem_name:"Sarah Mitchell", dem_age:"34", dem_gender:"Female", dem_occupation:"Graphic designer (desk-based, 8–10h/day)",
     dem_hand:"Right", dem_contact:"0412 345 678", dem_referral:"GP",
@@ -11814,11 +11814,11 @@ function AppInner() {
   const [jsonMsg, setJsonMsg] = useState(null);
   const importRef = useRef(null);
 
-  // ── Multi-Patient Database ─────────────────────────────────────────────
+  // -- Multi-Patient Database ---------------------------------------------
   const [patients, setPatients] = useState(() => loadPatientDB());
   const [taskDB, setTaskDB] = useState(() => loadTaskDB());
 
-  // ── Task helpers ─────────────────────────────────────────────────────────
+  // -- Task helpers ---------------------------------------------------------
   const saveTasks = (tasks) => { setTaskDB(tasks); saveTaskDB(tasks); };
 
   const completeTask = (taskId) => {
@@ -11939,7 +11939,7 @@ function AppInner() {
 
   const activePatient = patients.find(p => p.id === activePatientId) || null;
 
-  // ── Optimised set function ──────────────────────────────────────────────
+  // -- Optimised set function ----------------------------------------------
   // set(obj) — SubjectiveModule style (passes whole data object)
   // set(id, val) — legacy field-by-field style
   const set = useCallback((idOrObj, val) => {
@@ -11955,7 +11955,7 @@ function AppInner() {
   const currentSection = ALL_TESTS[active];
   const completedCount = Object.keys(data).filter(k=>data[k]&&data[k]!=="").length;
 
-  // ── Red flag detection ─────────────────────────────────────────────────
+  // -- Red flag detection -------------------------------------------------
   const RED_FLAG_FIELDS = ["rf_malignancy","rf_cauda","rf_vascular","rf_inflammatory","rf_fracture","rf_neuro"];
   const SAFE_VALUES = ["No malignancy red flags","No cauda equina flags","No vascular red flags","No inflammatory red flags","No fracture red flags","No neurological red flags","No red flags — proceed with assessment"];
   const activeRedFlags = RED_FLAG_FIELDS.flatMap(fid => {
@@ -11971,7 +11971,7 @@ function AppInner() {
     f.includes("Bilateral leg weakness") || f.includes("cauda") || f.includes("Cauda")
   );
 
-  // ── JSON export ────────────────────────────────────────────────────────
+  // -- JSON export --------------------------------------------------------
   const exportJSON = () => {
     const payload = {
       version: "PostureApp_v4",
@@ -12085,7 +12085,7 @@ function AppInner() {
   const sysColors={NKT:C.blue,Cyriax:PC.yellow,FMS:PC.green,Posture:PC.purple,"Kinetic Chain":PC.accent,Fascia:"#f97316","Muscle Activation":PC.purple,Structural:PC.red};
 
   // shared sidebar list renderer used by both desktop sidebar and mobile drawer
-  // ── Collapsible sidebar state ──
+  // -- Collapsible sidebar state --
   const [sidebarOpen, setSidebarOpen] = React.useState({ assessment:true, advanced:false, treatment:false, documentation:false });
   const toggleSidebar = (key) => setSidebarOpen(p=>({...p,[key]:!p[key]}));
 
@@ -12281,7 +12281,7 @@ function AppInner() {
       {/* Mobile nav overlay */}
       {navOpen&&<div className="pm-nav-overlay" onClick={()=>setNavOpen(false)}/>}
 
-      {/* ── PATIENT DATABASE PANEL ── */}
+      {/* -- PATIENT DATABASE PANEL -- */}
       {showPatientDb && (
         <PatientDatabasePanel
           patients={patients}
@@ -12294,7 +12294,7 @@ function AppInner() {
         />
       )}
 
-      {/* ── PDF REPORTS MODAL ── */}
+      {/* -- PDF REPORTS MODAL -- */}
       {showPdfReports && (
         <PdfReportsModal
           data={data}
@@ -12303,7 +12303,7 @@ function AppInner() {
         />
       )}
 
-      {/* ── UNSAVED CHANGES DIALOG ── */}
+      {/* -- UNSAVED CHANGES DIALOG -- */}
       {showUnsaved && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{background:"#0e1118",border:"1px solid rgba(255,179,0,0.3)",borderRadius:14,padding:24,maxWidth:380,width:"100%"}}>
@@ -12327,7 +12327,7 @@ function AppInner() {
         </div>
       )}
 
-      {/* ── PERSISTENT RED FLAG ALERT BANNER ── */}
+      {/* -- PERSISTENT RED FLAG ALERT BANNER -- */}
       {hasRedFlags && (
         <div style={{position:"sticky",top:54,zIndex:98,background:urgentFlags.length>0?"rgba(255,77,109,0.97)":"rgba(255,179,0,0.95)",borderBottom:`2px solid ${urgentFlags.length>0?"#ff4d6d":"#ffb300"}`,padding:"8px 20px",display:"flex",gap:12,alignItems:"flex-start",flexWrap:"wrap"}}>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
@@ -12347,14 +12347,14 @@ function AppInner() {
         </div>
       )}
 
-      {/* ── TOAST MESSAGE ── */}
+      {/* -- TOAST MESSAGE -- */}
       {jsonMsg && (
         <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",zIndex:999,background:jsonMsg.type==="success"?"rgba(0,201,122,0.97)":"rgba(255,77,109,0.97)",color:"#000",fontWeight:700,fontSize:"0.8rem",padding:"10px 20px",borderRadius:12,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",whiteSpace:"nowrap"}}>
           {jsonMsg.text}
         </div>
       )}
 
-      {/* ── JSON EXPORT/IMPORT PANEL ── */}
+      {/* -- JSON EXPORT/IMPORT PANEL -- */}
       {showJsonPanel && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
           <div style={{background:PC.surface,border:`1px solid rgba(0,229,255,0.25)`,borderRadius:16,padding:22,maxWidth:500,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
@@ -12420,7 +12420,7 @@ function AppInner() {
           <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
             <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation">☰</button>
             {/* Logo mark */}
-            <div style={{width:36,height:36,background:`linear-gradient(135deg,${PC.accent}22,${PC.a2}22)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.1rem"}}>⚕</div>
+            <div style={{width:36,height:36,background:`linear-gradient(135deg,${PC.accent}22,${PC.a2}22)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.1rem"}}>+</div>
             <div style={{minWidth:0}}>
               <div style={{fontWeight:800,fontSize:"clamp(0.85rem,3vw,1.05rem)",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",lineHeight:1.2}}>PhysioMind</div>
               <div className="pm-logo-sub" style={{fontSize:"0.55rem",color:PC.muted,letterSpacing:"1px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textTransform:"uppercase",fontWeight:600,marginTop:1}}>Clinical Assessment Platform</div>
@@ -12459,7 +12459,7 @@ function AppInner() {
         </div>
       </div>
 
-      {/* ── ACTIVE PATIENT BAR ── */}
+      {/* -- ACTIVE PATIENT BAR -- */}
       {activePatient && (
         <div style={{background:PC.isDark?"rgba(129,140,248,0.05)":"rgba(79,70,229,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"8px 24px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -12660,12 +12660,12 @@ function AppInner() {
                             {t.label}
                             {hasVal&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:16,height:16,background:PC.a3+"22",borderRadius:"50%",marginLeft:7,fontSize:"0.55rem",color:PC.a3,fontWeight:800,verticalAlign:"middle"}}>✓</span>}
                           </label>
-                          {hasInfo&&<button type="button" onClick={()=>setInfoModal(t)} style={{padding:"3px 10px",background:PC.isDark?"rgba(129,140,248,0.1)":"rgba(79,70,229,0.06)",border:`1px solid ${PC.a2}30`,borderRadius:7,color:PC.a2,fontSize:"0.62rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,letterSpacing:"0.2px"}}>ℹ Info</button>}
+                          {hasInfo&&<button type="button" onClick={()=>setInfoModal(t)} style={{padding:"3px 10px",background:PC.isDark?"rgba(129,140,248,0.1)":"rgba(79,70,229,0.06)",border:`1px solid ${PC.a2}30`,borderRadius:7,color:PC.a2,fontSize:"0.62rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,letterSpacing:"0.2px"}}>i Info</button>}
                         </div>
                         <Field t={t}/>
                         {hasVal&&t.sig&&(
                           <div style={{marginTop:10,padding:"9px 12px",background:PC.accentSoft||"rgba(56,189,248,0.06)",border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:8,fontSize:"0.68rem",color:PC.text,lineHeight:1.6,opacity:0.9}}>
-                            <span style={{fontWeight:700,color:PC.accent,marginRight:5,fontSize:"0.65rem",letterSpacing:"0.3px"}}>⚕ CLINICAL</span>{t.sig}
+                            <span style={{fontWeight:700,color:PC.accent,marginRight:5,fontSize:"0.65rem",letterSpacing:"0.3px"}}>+ CLINICAL</span>{t.sig}
                           </div>
                         )}
                       </div>
@@ -12679,7 +12679,7 @@ function AppInner() {
         </div>
       </div>
 
-      {/* ── BOTTOM NAV DRAWER (mobile) ── */}
+      {/* -- BOTTOM NAV DRAWER (mobile) -- */}
       {/* Pull handle — always visible, toggles whole drawer */}
       <button
         className={`pm-bnav-handle${bnavHidden?" bnav-hidden":""}`}
@@ -12693,7 +12693,7 @@ function AppInner() {
 
       <nav className={`pm-bnav${bnavHidden?" bnav-hidden":""}`} aria-label="Section navigation">
 
-        {/* ── Expandable sub-panel ── */}
+        {/* -- Expandable sub-panel -- */}
         {(()=>{
           const assessKeys=["subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
           const advKeys=["cyriax_full","kinetic","nkt","fascia"];
@@ -12751,7 +12751,7 @@ function AppInner() {
           );
         })()}
 
-        {/* ── Tab strip ── */}
+        {/* -- Tab strip -- */}
         <div className="pm-bnav-tabs">
           {(()=>{
             const assessKeys=["subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
@@ -12783,7 +12783,7 @@ function AppInner() {
           })()}
         </div>
       </nav>
-      {/* ── Live SOAP Panel — always visible floating panel ── */}
+      {/* -- Live SOAP Panel — always visible floating panel -- */}
       <LiveSOAPPanel data={data} onNavigate={navTo}/>
     </div>
   );
