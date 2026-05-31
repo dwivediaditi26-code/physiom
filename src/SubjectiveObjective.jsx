@@ -2961,7 +2961,7 @@ const REGION_NAV = {
     { label:"NKT Assessment",     icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition → SCM/scalene dominance → FHP maintained. NKT identifies the exact inhibitor." },
     { label:"Kinetic Chain",      icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_cervical_thoracic_jct"] }, col:"#7c3aed", why:"Thoracic kyphosis is the primary driver of cervical loading. Address thoracic before cervical." },
     { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_a_rotl","cx_a_rotr","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Selective tissue tension — differentiate contractile vs non-contractile cervical pain source." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Cervical fascial lines — skin rolling and passive tension identify SBL and thoracolumbar restriction." },
+    { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Cervical fascial lines — skin rolling and passive tension identify SBL and thoracolumbar restriction." },
   ],
   "Lumbar / SI": [
     { label:"Lumbar ROM",           icon:"📐", nav:"rom",    ctx:{ romRegion:"Lumbar", romHighlights:["rom_lflex","rom_lext","rom_llfl","rom_llfr","rom_lrotl","rom_lrotr"] },                                     col:"#9333ea", why:"Lumbar flexion — establishes direction of pain provocation. McKenzie: flexion or extension preference?" },
@@ -2975,7 +2975,7 @@ const REGION_NAV = {
   ],
   "Shoulder (L)": [
     { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Lumbar Cyriax — disc vs facet differentiation via contractile/non-contractile tissue tension testing." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring","fa_tlf"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia is the primary fascial structure linking lumbar extensors to contralateral shoulder." },
+    { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring","fa_tlf"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia is the primary fascial structure linking lumbar extensors to contralateral shoulder." },
     { label:"Shoulder ROM",         icon:"📐", nav:"rom",    ctx:{ romRegion:"Shoulder", romHighlights:["rom_sabd","rom_ser","rom_sflex","rom_sir","rom_sext","rom_sadd"] }, col:"#9333ea", why:"Painful arc 60-120° = subacromial. Full loss = capsular. Immediate clinical differentiator." },
 
     { label:"Shoulder MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_supra","mmt_infra","mmt_serratus","mmt_trapL","mmt_subscap"] },                         col:"#7c3aed", why:"Supraspinatus — initiates abduction 0-30°. Most common RC tear location. Empty can position." },
@@ -2987,7 +2987,7 @@ const REGION_NAV = {
   ],
   "Shoulder (R)": [
     { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
+    { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
     { label:"Shoulder ROM",         icon:"📐", nav:"rom",    ctx:{ romRegion:"Shoulder", romHighlights:["rom_sabd","rom_ser","rom_sflex","rom_sir","rom_sext","rom_sadd"] }, col:"#9333ea", why:"Painful arc 60-120° = subacromial. Full loss = capsular. Primary ROM differentiator." },
 
     { label:"Shoulder MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_supra","mmt_infra","mmt_serratus","mmt_trapL","mmt_subscap"] },                         col:"#7c3aed", why:"Supraspinatus — most common RC tear site. Empty can test position." },
@@ -3000,7 +3000,7 @@ const REGION_NAV = {
   "Knee (L)": [
     { label:"Knee ROM",             icon:"📐", nav:"rom",    ctx:{ romRegion:"Knee", romHighlights:["rom_kflex","rom_kext"] },                          col:"#9333ea", why:"Knee flexion loss indicates joint effusion, posterior capsule tightness, or meniscal block. Measure first." },
     { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
+    { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
     { label:"Knee MMT",             icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Knee", mmtHighlights:["mmt_quad","mmt_gastroc","mmt_poplit"] },           col:"#7c3aed", why:"VMO inhibition is the primary driver of PFJ maltracking. Single most important knee MMT." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmed","mmt_gmax","mmt_tfl","mmt_adduc","mmt_gmin"] }, col:"#7c3aed", why:"Glute med weakness drives dynamic knee valgus — assess proximal before isolating the knee." },
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Best ACL test at 20-30° flexion. Run before pivot shift." },
@@ -3010,7 +3010,7 @@ const REGION_NAV = {
   ],
   "Knee (R)": [
     { label:"Knee ROM",             icon:"📐", nav:"rom",    ctx:{ romRegion:"Knee", romHighlights:["rom_kflex","rom_kext"] },                          col:"#9333ea", why:"Flexion loss indicates effusion, capsule tightness, or meniscal block." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL posterior chain — hamstring and IT band fascial restriction drives patellofemoral and knee pain patterns." },
+    { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL posterior chain — hamstring and IT band fascial restriction drives patellofemoral and knee pain patterns." },
     { label:"Knee MMT",             icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Knee", mmtHighlights:["mmt_quad","mmt_gastroc","mmt_poplit"] },           col:"#7c3aed", why:"VMO inhibition drives PFJ maltracking. Primary knee MMT." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmed","mmt_gmax","mmt_tfl","mmt_adduc","mmt_gmin"] }, col:"#7c3aed", why:"Proximal hip abductor weakness drives dynamic valgus — always assess before knee." },
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Gold standard test at 20-30° flexion." },
@@ -3020,7 +3020,7 @@ const REGION_NAV = {
   ],
   "Hip / Groin": [
     { label:"Hip ROM",              icon:"📐", nav:"rom",    ctx:{ romRegion:"Hip", romHighlights:["rom_hir","rom_her","rom_hflex","rom_hext","rom_habd","rom_hadd"] },                                          col:"#9333ea", why:"IR most restricted in hip OA (capsular pattern: IR > ER > abduction). FADIR reproduces impingement." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL posterior chain — hamstring and IT band fascial restriction drives patellofemoral and knee pain patterns." },
+    { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL posterior chain — hamstring and IT band fascial restriction drives patellofemoral and knee pain patterns." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmax","mmt_gmed","mmt_tfl","mmt_adduc","mmt_psoas"] },                                col:"#7c3aed", why:"Glute max — primary hip stabiliser and load transfer muscle. Prone hip extension with knee bent." },
     { label:"FADIR Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_fadir_test" },                              col:"#0891b2", why:"FADIR — hip impingement (FAI) provocation. Flexion + adduction + IR reproduces anterior groin pain." },
     { label:"FABER Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" },                              col:"#0891b2", why:"FABER — hip, SIJ, and adductor provocation. Figure-4 position stresses all three simultaneously." },
@@ -3029,7 +3029,7 @@ const REGION_NAV = {
   ],
   "Ankle / Foot": [
     { label:"Ankle ROM",            icon:"📐", nav:"rom",    ctx:{ romRegion:"Ankle", romHighlights:["rom_adf","rom_apf","rom_ainv","rom_aev"] },                                        col:"#9333ea", why:"Dorsiflexion — <35° weight-bearing is clinically significant. Primary kinetic chain driver." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring"] }, col:"#059669", why:"Hip and lumbar fascial lines — TLF and SBL restriction commonly present with hip flexor and posterior chain tightness." },
+    { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring"] }, col:"#059669", why:"Hip and lumbar fascial lines — TLF and SBL restriction commonly present with hip flexor and posterior chain tightness." },
     { label:"Ankle MMT",            icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Ankle & Foot", mmtHighlights:["mmt_tp","mmt_ta","mmt_soleus","mmt_peronls","mmt_ehl"] },                                  col:"#7c3aed", why:"Tibialis posterior — medial arch controller. Weakness = pronation, tibial IR, knee valgus cascade." },
     { label:"Anterior Drawer",     icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_ant_drawer_ankle" },                 col:"#0891b2", why:"Anterior drawer — ATFL integrity. Most commonly injured ankle ligament. 73% sensitivity." },
     { label:"Thompson Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_thompson_test" },                    col:"#0891b2", why:"Thompson test — Achilles tendon rupture screen. 96% sensitivity. Squeeze calf = plantarflexion response." },
@@ -3039,7 +3039,7 @@ const REGION_NAV = {
   ],
   "Elbow/Wrist/Hand": [
     { label:"Elbow / Wrist ROM",   icon:"📐", nav:"rom",    ctx:{ romRegion:"Elbow", romHighlights:["rom_eflex","rom_eext","rom_esup","rom_epro","rom_wflex","rom_wext"] },                                      col:"#9333ea", why:"Elbow flexion/extension, forearm sup/pro — establish mobility baseline and end-feel quality." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL and plantar fascia — posterior chain restriction from hamstring to plantar fascia drives ankle/foot pain." },
+    { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL and plantar fascia — posterior chain restriction from hamstring to plantar fascia drives ankle/foot pain." },
     { label:"Elbow / Wrist MMT",   icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Wrist & Hand", mmtHighlights:["mmt_ecrb","mmt_fcr","mmt_bicep","mmt_tricep","mmt_brachio"] },                                col:"#7c3aed", why:"ECRB — primary lateral epicondylalgia culprit. Test in elbow extension for maximum provocation." },
     { label:"Cozen's Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_cozens" },                          col:"#0891b2", why:"Cozen's — lateral epicondylalgia provocation. Resisted wrist extension with pronation. High specificity." },
     { label:"Phalen's Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_phalen" },                          col:"#0891b2", why:"Phalen's — carpal tunnel screen. 68% sensitivity. Wrist flexion 60s reproduces median nerve symptoms." },
@@ -3055,7 +3055,7 @@ const REGION_NAV = {
     { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_scapulohumeral_rhythm"] }, col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
     { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_pec_minor","nkt_upper_trap","nkt_lower_trap","nkt_serratus","nkt_mid_trap"] }, col:"#d97706", why:"Pec major/minor overactive → lower trap/serratus inhibited → kyphosis maintained. Treat motor pattern." },
     { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fmaTests:["overhead","rotary_stability","pushup_plus"], fmaHighlights:["overhead","rotary_stability","pushup_plus"] }, col:"#059669", why:"Overhead reach (thoracic extension demand), rotary stability (anti-rotation), push-up plus (scapular chain)." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_densification","fa_sbl_hamstring"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia links lumbar extensors to contralateral shoulder girdle." },
+    { label:"Fascia Screen",        icon:"🕸", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_densification","fa_sbl_hamstring"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia links lumbar extensors to contralateral shoulder girdle." },
   ],
 };
 function runEngineV6(data, selectedRegions) {
