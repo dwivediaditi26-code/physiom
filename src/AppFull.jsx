@@ -923,7 +923,7 @@ function PostureCameraModule({ activePatient, set }) {
             border:"1px solid rgba(0,229,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.3rem" }}>🎥</div>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:800, fontSize:"0.93rem", color:"#00e5ff" }}>Posture Assessment Camera</div>
-            <div style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>Live Capture -> MediaPipe Pose Analysis · Physiotherapy Grade</div>
+            <div style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>Live Capture {"->"}  MediaPipe Pose Analysis · Physiotherapy Grade</div>
           </div>
           {isLive && videoSize && (
             <div style={{ fontSize:"0.58rem", padding:"2px 8px", borderRadius:7,
@@ -7015,7 +7015,7 @@ function PostureAnalysisModule(){
               ${d.goals.map(g=>`<div style="padding:12px;border-radius:8px;background:${C.surface};border:1px solid ${C.border};text-align:center">
                 <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;margin-bottom:4px">${g.metric}</div>
                 <div style="font-size:0.78rem;font-weight:900;color:${C.red};font-family:Fraunces">${g.current}</div>
-                <div style="font-size:0.62rem;color:${C.muted};margin:2px 0">-></div>
+                <div style="font-size:0.62rem;color:${C.muted};margin:2px 0">{"->"} </div>
                 <div style="font-size:0.78rem;font-weight:900;color:${C.green};font-family:Fraunces">${g.target}</div>
                 <div style="font-size:0.56rem;color:${C.muted};margin-top:2px">by ${g.timeframe}</div>
               </div>`).join("")}
@@ -8817,7 +8817,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     <span style={{fontSize:15}}>📐</span>
                     <span style={{fontSize:13,fontWeight:700,color:C.text}}>Cervical ROM</span>
                   </div>
-                  <span onClick={()=>onNav&&onNav("rom")} style={{fontSize:11.5,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Details -></span>
+                  <span onClick={()=>onNav&&onNav("rom")} style={{fontSize:11.5,fontWeight:600,color:C.primary,cursor:"pointer"}}>View Details {"->"} </span>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
                   {[
@@ -8875,7 +8875,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       <div style={{fontSize:11,color:row.subColor||C.muted,marginTop:1}}>{row.sub}</div>
                     </div>
                   </div>
-                  <span style={{fontSize:11.5,fontWeight:600,color:C.primary}}>View Details -></span>
+                  <span style={{fontSize:11.5,fontWeight:600,color:C.primary}}>View Details {"->"} </span>
                 </div>
               ))}
             </div>
@@ -10006,7 +10006,7 @@ function PostureDefectModule() {
                       <div style={{fontSize:"0.6rem",color:"#7e6a9a",marginTop:1}}>{d.region}</div>
                     </div>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
-                      <span style={{fontSize:"0.62rem",color:"#00e5ff",fontWeight:700}}>📋 Detail -></span>
+                      <span style={{fontSize:"0.62rem",color:"#00e5ff",fontWeight:700}}>📋 Detail {"->"} </span>
                       <button onClick={e=>{e.stopPropagation();setSelectedDefects(p=>p.filter(s=>s!==id));}} style={{background:"none",border:"1px solid #d8cce8",borderRadius:5,color:"#7e6a9a",cursor:"pointer",fontSize:"0.6rem",padding:"1px 6px",lineHeight:1.4}}>x</button>
                     </div>
                   </div>
@@ -10033,7 +10033,7 @@ function PostureDefectModule() {
                     </div>
                     <div style={{flex:"1 1 120px"}}>
                       <div style={{fontSize:"0.55rem",fontWeight:700,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🔗 Chain</div>
-                      <div style={{fontSize:"0.62rem",color:"#1a1025",lineHeight:1.4,fontStyle:"italic"}}>{d.kinetic_chain.split("->")[0].trim()} ->...</div>
+                      <div style={{fontSize:"0.62rem",color:"#1a1025",lineHeight:1.4,fontStyle:"italic"}}>{d.kinetic_chain.split("->")[0].trim()} {"->"} ...</div>
                     </div>
                   </div>
                 </div>
@@ -10172,7 +10172,7 @@ function HomeModule({ onNav }) {
                 <div style={{fontSize:"0.85rem",fontWeight:700,color:"#1a1025",lineHeight:1.2}}>{f.title}</div>
               </div>
               <div style={{fontSize:"0.75rem",color:"#7e6a9a",lineHeight:1.55}}>{f.desc}</div>
-              <div style={{marginTop:10,fontSize:"0.68rem",fontWeight:700,color:f.color}}>Open -></div>
+              <div style={{marginTop:10,fontSize:"0.68rem",fontWeight:700,color:f.color}}>Open {"->"} </div>
             </button>
           ))}
         </div>
@@ -10733,7 +10733,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                               flex:1,padding:"6px",borderRadius:8,
                               background:"#F8FAFC",border:"1px solid #E5E7EB",
                               cursor:"pointer",fontSize:11,fontWeight:600,color:"#6B7280",
-                            }}>Open -></button>
+                            }}>Open {"->"} </button>
                             <button onClick={()=>handleComplete(task.id)} style={{
                               flex:2,padding:"6px",borderRadius:8,
                               background:"#ECFDF5",border:"1px solid #BBF7D0",
@@ -10807,7 +10807,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
               Recent Patients <span style={{fontSize:11,fontWeight:500,color:"#9CA3AF",marginLeft:5}}>({patients.length})</span>
             </div>
             <span style={{fontSize:11,fontWeight:600,color:"#6D28D9",cursor:"pointer"}}
-              onClick={()=>onNav("subjective")}>See all -></span>
+              onClick={()=>onNav("subjective")}>See all {"->"} </span>
           </div>
           <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:2}}>
             {[["All","all"],["Active","in-progress"],["Done","completed"]].map(([l,v])=>(
@@ -10928,7 +10928,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
             </div>
           </div>
           <div style={{width:44,height:44,borderRadius:13,background:"rgba(255,255,255,0.2)",
-            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>-></div>
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>{"->"} </div>
         </div>
 
       </div>
@@ -11642,7 +11642,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
                     <button onClick={()=>generatePdf(report.id)} disabled={generating!==null} style={{width:"100%",padding:"12px 16px",background:generating===report.id?"#94a3b8":report.gradient,border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:generating?"not-allowed":"pointer",opacity:generating&&generating!==report.id?0.5:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
                       {generating===report.id?"⏳ Generating...":"📥 Generate PDF"}
                     </button>
-                    <div style={{fontSize:"0.65rem",color:"#94a3b8",textAlign:"center",lineHeight:1.4}}>Opens in new tab<br/>Print -> Save as PDF</div>
+                    <div style={{fontSize:"0.65rem",color:"#94a3b8",textAlign:"center",lineHeight:1.4}}>Opens in new tab<br/>Print {"->"}  Save as PDF</div>
                   </div>
                 </div>
               </div>
@@ -11658,7 +11658,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
             <div style={{fontSize:"0.7rem",fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>💡 Tips for best results</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 16px"}}>
               {["Complete patient demographics before generating","Add exercises in the Exercise Prescription module","Record ROM measurements for detailed tables","Run AI Diagnosis first for diagnostic content","Use Chrome or Edge for best PDF quality","Enable Print: Background Graphics for full colour"].map(tip=>(
-                <div key={tip} style={{fontSize:"0.72rem",color:"#94a3b8",display:"flex",gap:6,alignItems:"flex-start",padding:"2px 0"}}><span style={{color:"#7c3aed",fontWeight:700,flexShrink:0}}>-></span>{tip}</div>
+                <div key={tip} style={{fontSize:"0.72rem",color:"#94a3b8",display:"flex",gap:6,alignItems:"flex-start",padding:"2px 0"}}><span style={{color:"#7c3aed",fontWeight:700,flexShrink:0}}>{"->"}</span>{tip}</div>
               ))}
             </div>
           </div>
@@ -12343,7 +12343,7 @@ function AppInner() {
             ))}
             {activeRedFlags.length>4&&<span style={{background:"rgba(0,0,0,0.18)",borderRadius:6,padding:"2px 8px",fontSize:"0.62rem",fontWeight:700,color:"#000"}}>+{activeRedFlags.length-4} more</span>}
           </div>
-          <button onClick={()=>navTo("subjective")} style={{background:"rgba(0,0,0,0.2)",border:"1px solid rgba(0,0,0,0.3)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.65rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>View -></button>
+          <button onClick={()=>navTo("subjective")} style={{background:"rgba(0,0,0,0.2)",border:"1px solid rgba(0,0,0,0.3)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.65rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>View {"->"} </button>
         </div>
       )}
 
@@ -12539,7 +12539,7 @@ function AppInner() {
                           <div style={{padding:"0 13px 13px 16px"}}>
                             <div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Evidence</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{d.evidence.map((e,j)=><span key={j} style={{fontSize:"0.68rem",padding:"2px 7px",borderRadius:7,background:PC.s3,color:PC.text,border:`1px solid ${PC.border}`}}>v {e}</span>)}</div></div>
                             {d.mechanism&&<div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Mechanism</div><div style={{background:PC.s3,borderRadius:8,padding:10,fontSize:"0.76rem",color:PC.text,lineHeight:1.6}}>{d.mechanism}</div></div>}
-                            {d.treatment&&d.treatment.length>0&&<div><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Treatment Plan</div>{d.treatment.map((t,j)=><div key={j} style={{display:"flex",gap:8,padding:"5px 9px",background:PC.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}><span style={{color:PC.a3,fontWeight:700,flexShrink:0}}>-></span><span style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.5}}>{t}</span></div>)}</div>}
+                            {d.treatment&&d.treatment.length>0&&<div><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Treatment Plan</div>{d.treatment.map((t,j)=><div key={j} style={{display:"flex",gap:8,padding:"5px 9px",background:PC.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}><span style={{color:PC.a3,fontWeight:700,flexShrink:0}}>{"->"}</span><span style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.5}}>{t}</span></div>)}</div>}
                             {d.interpretation&&<div style={{marginTop:10,padding:"8px 11px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.68rem",color:PC.yellow,lineHeight:1.5}}>⚠ {d.interpretation}</div>}
                           </div>
                         )}
