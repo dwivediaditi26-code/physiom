@@ -915,7 +915,7 @@ function PostureCameraModule({ activePatient, set }) {
         @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
       `}</style>
 
-      {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
+      {/* == HEADER ========================================================== */}
       <div style={{ background:"linear-gradient(135deg,rgba(0,229,255,0.07),rgba(127,90,240,0.07))",
         border:"1px solid rgba(0,229,255,0.18)", borderRadius:14, padding:"13px 16px", marginBottom:12 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -938,12 +938,12 @@ function PostureCameraModule({ activePatient, set }) {
             background: isLive ? "#00c97a" : isLoad ? "#ffb300" : isError ? "#ff4d6d" : "#3d3d5c",
             boxShadow: isLive ? "0 0 8px #00c97a88" : "none" }}/>
           <span style={{ fontSize:"0.68rem", fontWeight:700, color: isLive ? "#00c97a" : isError ? "#ff4d6d" : "#7e6a9a" }}>
-            {isLoad ? "Starting camera…" : isLive ? (quality.ready ? "✓ Full body detected — ready to capture" : "Waiting for full body…") : isError ? camError : "Camera off"}
+            {isLoad ? "Starting camera…" : isLive ? (quality.ready ? "v Full body detected — ready to capture" : "Waiting for full body…") : isError ? camError : "Camera off"}
           </span>
         </div>
       </div>
 
-      {/* ══ VIEW SELECTOR ═══════════════════════════════════════════════════ */}
+      {/* == VIEW SELECTOR =================================================== */}
       <div style={{ marginBottom:12 }}>
         <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
           📐 Select Posture View
@@ -970,7 +970,7 @@ function PostureCameraModule({ activePatient, set }) {
         </div>
       </div>
 
-      {/* ══ UPLOAD PHOTO BUTTON ══════════════════════════════════════════════ */}
+      {/* == UPLOAD PHOTO BUTTON ============================================== */}
       <input ref={uploadRef} type="file" accept="image/*" style={{ display:"none" }}
         onChange={e => { const f = e.target.files?.[0]; if(f) handleUploadFile(f); e.target.value=""; }}/>
       <button onClick={() => uploadRef.current?.click()} style={{
@@ -983,7 +983,7 @@ function PostureCameraModule({ activePatient, set }) {
         <span style={{ fontSize:"0.62rem", opacity:0.7, fontWeight:600 }}>JPG / PNG</span>
       </button>
 
-      {/* ══ CAMERA PANEL ════════════════════════════════════════════════════ */}
+      {/* == CAMERA PANEL ==================================================== */}
       {/* Pre-camera setup guide */}
       {isIdle && (
         <div style={{ background:"rgba(0,229,255,0.04)", border:"1px solid rgba(0,229,255,0.16)", borderRadius:12, padding:14, marginBottom:12 }}>
@@ -1168,7 +1168,7 @@ function PostureCameraModule({ activePatient, set }) {
         )}
       </div>
 
-      {/* ══ CAPTURED PHOTO + ANALYSIS ════════════════════════════════════════ */}
+      {/* == CAPTURED PHOTO + ANALYSIS ======================================== */}
       {capturedImg && (
         <div style={{ background:"#0d0d1a", border:"1px solid rgba(0,229,255,0.25)",
           borderRadius:14, overflow:"hidden", marginBottom:12, animation:"fadeIn 0.3s ease" }}>
@@ -1178,7 +1178,7 @@ function PostureCameraModule({ activePatient, set }) {
             background:"rgba(0,229,255,0.04)" }}>
             <div style={{ fontSize:"0.65rem", fontWeight:800, color:"#00e5ff" }}>
               📸 Captured — {capturedView?.charAt(0).toUpperCase()+capturedView?.slice(1)} View
-              {analysing ? " — Analysing…" : capturedLm ? " — Pose Grid Applied ✓" : analyseError ? " — Detection Failed" : ""}
+              {analysing ? " — Analysing…" : capturedLm ? " — Pose Grid Applied v" : analyseError ? " — Detection Failed" : ""}
             </div>
             <div style={{ display:"flex", gap:6 }}>
               {!analysing && (
@@ -1295,7 +1295,7 @@ function PostureCameraModule({ activePatient, set }) {
         </div>
       )}
 
-      {/* ══ UPLOADED PHOTO + ANALYSIS ════════════════════════════════════════ */}
+      {/* == UPLOADED PHOTO + ANALYSIS ======================================== */}
       {uploadImg && (
         <div style={{ background:"#1a1a2e", border:"1px solid rgba(127,90,240,0.3)",
           borderRadius:14, overflow:"hidden", marginBottom:12, animation:"fadeIn 0.3s ease" }}>
@@ -1304,7 +1304,7 @@ function PostureCameraModule({ activePatient, set }) {
             background:"rgba(127,90,240,0.04)" }}>
             <div style={{ fontSize:"0.65rem", fontWeight:800, color:"#7f5af0" }}>
               📷 Uploaded Photo — {uploadView?.charAt(0).toUpperCase()+uploadView?.slice(1)} View
-              {uploadBusy ? " — Analysing…" : uploadLm ? " — Pose Grid Applied ✓" : uploadError ? " — Detection Failed" : ""}
+              {uploadBusy ? " — Analysing…" : uploadLm ? " — Pose Grid Applied v" : uploadError ? " — Detection Failed" : ""}
             </div>
             <div style={{ display:"flex", gap:6 }}>
               {/* View switch for upload */}
@@ -1396,7 +1396,7 @@ function PostureCameraModule({ activePatient, set }) {
         </div>
       )}
 
-      {/* ══ MULTI-VIEW BANK ═══════════════════════════════════════════════════ */}
+      {/* == MULTI-VIEW BANK =================================================== */}
       {Object.values(viewBank).some(v => v !== null) && (
         <div style={{ background:"#0a0a14", border:"1px solid rgba(0,229,255,0.18)",
           borderRadius:12, overflow:"hidden", marginBottom:12 }}>
@@ -1461,9 +1461,9 @@ function PostureCameraModule({ activePatient, set }) {
 }
 
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 // NEW ADVANCED POSTURE ANALYSIS ENGINE — integrated from PostureAnalysisModule
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 
 //  • Spinal curvature estimation (cervical/thoracic/lumbar)
 //  • Scoliosis Cobb angle estimation from posterior view
@@ -1471,7 +1471,7 @@ function PostureCameraModule({ activePatient, set }) {
 //  • Burst capture + before/after comparison
 //  • Export: annotated image + PDF-ready JSON report
 //  • Offline capable — no API cost, runs entirely in browser
-// ════════════════════════════════════════════════════════════════════════════
+// ============================================================================
 
 // --- Colours -----------------------------------------------------------------
 const PC = {
@@ -2463,7 +2463,7 @@ function measureLandmarks(lm, calibration) {
   const spinalDeviation    = V(0)&&hipMid?r1((g(0).x-hipMid.x)*100):null;
   const waistAsymmetry     = Vb(11,13)&&Vb(12,14)?r1(Math.abs(Math.abs(g(13).x-g(11).x)-Math.abs(g(14).x-g(12).x))*100):null;
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ==========================================================================
   // SAGITTAL ANALYSIS ENGINE v2 (Kendall / Janda / Sahrmann)
   // --------------------------------------------------------------------------
   // Uses a true 5-point sagittal plumb line: ear→acromion→GT→knee→malleolus.
@@ -2478,7 +2478,7 @@ function measureLandmarks(lm, calibration) {
   //
   // When pixPerCm is unavailable, normalised image-fraction units are used
   // with scaled thresholds. Confidence is penalised accordingly.
-  // ══════════════════════════════════════════════════════════════════════════
+  // ==========================================================================
 
   // -- Sagittal-specific landmark selection ------------------------------------
   // Use the more visible ear (left view = lm[7], right view = lm[8])
@@ -2891,12 +2891,12 @@ function calcManualReliability(placedCount, totalPoints) {
 
 // --- Findings Engine ----------------------------------------------------------
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===============================================================================
 // POSTURE ANALYSIS ENGINE — v2 (Kendall / Janda / Sahrmann)
 // Items: thresholds, severity, confidence, landmark reliability,
 //        clinical significance filter, interpretation, muscle patterns,
 //        functional correlations, prioritisation
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===============================================================================
 
 // -- 1. THRESHOLD CONSTANTS ----------------------------------------------------
 // Only deviations exceeding these thresholds trigger findings.
@@ -3160,7 +3160,7 @@ const MAX_FINDINGS_SAGITTAL = 6;
 const MAX_FINDINGS_TOTAL    = 10;
 
 
-// ══════════════════════════════════════════════════════════════════════════════
+// ==============================================================================
 // SAGITTAL POSTURE CHAIN CLUSTERING ENGINE
 // Implements requirements 2, 3, 4, 7, 10 from the spec.
 //
@@ -3170,7 +3170,7 @@ const MAX_FINDINGS_TOTAL    = 10;
 // 3. Apply cluster confidence boost: 2 related mild findings → boost to moderate significance.
 // 4. Apply weighted cluster score to decide overall pattern label.
 // 5. Replace suppressed mild findings with cluster-level summary if 2+ related patterns found.
-// ══════════════════════════════════════════════════════════════════════════════
+// ==============================================================================
 
 // Posture chain membership: which regions belong to which chain segment
 const POSTURE_CHAIN = {
@@ -3262,9 +3262,9 @@ function buildFindings(lm, view, m) {
       confidenceScore: 70, clinicalSignificance: "moderate" });
   };
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ==========================================================================
   // FRONTAL VIEW FINDINGS
-  // ══════════════════════════════════════════════════════════════════════════
+  // ==========================================================================
   if (!isLat) {
 
     // -- Shoulder elevation ---------------------------------------------------
@@ -3510,9 +3510,9 @@ function buildFindings(lm, view, m) {
 
   } // end if(!isLat) — frontal findings
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ==========================================================================
   // SAGITTAL VIEW FINDINGS
-  // ══════════════════════════════════════════════════════════════════════════
+  // ==========================================================================
   if (isLat) {
     // In lateral view, far-side landmarks are naturally low-visibility — use visible side only
     const visibleSagLandmarks = LANDMARK_GROUPS.sagittal.filter(i => (lm[i]?.visibility || 0) >= MIN_VIS);
@@ -3865,9 +3865,9 @@ function buildFindings(lm, view, m) {
 
   } // end isLat — sagittal findings
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ==========================================================================
   // GLOBAL — all views
-  // ══════════════════════════════════════════════════════════════════════════
+  // ==========================================================================
   if (m.posturalLoadIndex !== null && m.posturalLoadIndex > 55) {
     const pliLabel = m.posturalLoadIndex > 80
       ? "Very High — multiple areas need attention"
@@ -4144,7 +4144,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     // Lat malleolus anchor
     if(V(iAnk)){ const p=PX(iAnk); ctx.beginPath(); ctx.arc(p[0],p[1],6,0,Math.PI*2); ctx.fillStyle="rgba(0,229,255,1)"; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke(); ctx.font="bold 9px system-ui"; ctx.fillStyle="rgba(0,229,255,1)"; ctx.textAlign="left"; ctx.fillText("Lat. Malleolus",p[0]+8,p[1]+4); }
     // CVA angle
-    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"✓":"⚠"}`; ctx.font="bold 10px system-ui"; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+8,17,4); else ctx.rect(cx,cy,ctw+8,17); ctx.fill(); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.fillText(ct,cx+4,cy+12); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; ctx.font="bold 9px system-ui"; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(fx-4,ep[1]-21,ftw+8,15,3); else ctx.rect(fx-4,ep[1]-21,ftw+8,15); ctx.fill(); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.fillText(fl,fx,ep[1]-10); } }
+    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"v":"⚠"}`; ctx.font="bold 10px system-ui"; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+8,17,4); else ctx.rect(cx,cy,ctw+8,17); ctx.fill(); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.fillText(ct,cx+4,cy+12); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; ctx.font="bold 9px system-ui"; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(fx-4,ep[1]-21,ftw+8,15,3); else ctx.rect(fx-4,ep[1]-21,ftw+8,15); ctx.fill(); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.fillText(fl,fx,ep[1]-10); } }
     // Trunk inclination
     if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}°`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; ctx.font="bold 9px system-ui"; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+8:mx-tw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(tx,my-8,tw+8,15,3); else ctx.rect(tx,my-8,tw+8,15); ctx.fill(); ctx.fillStyle=tc; ctx.textAlign="left"; ctx.fillText(tt,tx+4,my+3); }
     // Knee sagittal angle
@@ -4497,7 +4497,7 @@ function FindingsDisplay({ findings, PC }) {
           {confirmed.length > 0 && (
             <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
               background: PC.green+"15", color: PC.green, border:`1px solid ${PC.green}33` }}>
-              ✓ {confirmed.length} confirmed
+              v {confirmed.length} confirmed
             </span>
           )}
           {singleView.length > 0 && (
@@ -4536,7 +4536,7 @@ function FindingsDisplay({ findings, PC }) {
       <div style={{ marginTop:10, padding:"8px 12px", borderRadius:8,
         background: PC.accent+"08", border:`1px solid ${PC.border}`,
         fontSize:"0.62rem", color:PC.muted, lineHeight:1.5 }}>
-        ✓ Confirmed = seen in ≥2 views · ○ Single-view = verify clinically ·
+        v Confirmed = seen in ≥2 views · ○ Single-view = verify clinically ·
         ⚡ Low confidence = verify with goniometer
       </div>
     </div>
@@ -4572,7 +4572,7 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
           {isConfirmed && (
             <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
               background: PC.green+"20", color: PC.green, border:`1px solid ${PC.green}44` }}>
-              ✓ CONFIRMED
+              v CONFIRMED
             </span>
           )}
           {isLowConf && (
@@ -5791,7 +5791,7 @@ function PostureAnalysisModule(){
                   {findings.length} finding{findings.length!==1?"s":""} · {highFindings.length} high priority
                 </div>
                 <div style={{fontSize: isWide?"0.65rem":"0.6rem",color:PC.muted,marginTop:2}}>
-                  Reliability: {reliability?.score}% ({reliability?.isManual?"Manual ✓ ":""}{reliability?.status})
+                  Reliability: {reliability?.score}% ({reliability?.isManual?"Manual v ":""}{reliability?.status})
                   {reliability?.icc!=null&&` · ICC ${reliability.icc}`}
                 </div>
                 {measurements?.cervicalLoadKg!=null&&(
@@ -5813,7 +5813,7 @@ function PostureAnalysisModule(){
                         background:measurements.cvaAngle<49?"rgba(220,38,38,0.1)":measurements.cvaAngle<55?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
                         color:measurements.cvaAngle<49?PC.red:measurements.cvaAngle<55?PC.yellow:PC.green,
                         border:`1px solid ${measurements.cvaAngle<49?PC.red:measurements.cvaAngle<55?PC.yellow:PC.green}40`}}>
-                        CVA {measurements.cvaAngle.toFixed(1)}° {measurements.cvaAngle>=55?"✓":`(normal >55°)`}
+                        CVA {measurements.cvaAngle.toFixed(1)}° {measurements.cvaAngle>=55?"v":`(normal >55°)`}
                       </span>
                     )}
                     {measurements.fhpCm!=null&&(
@@ -5912,7 +5912,7 @@ function PostureAnalysisModule(){
                           <span style={{fontSize:"0.6rem",fontWeight:700,color:col,
                             padding:"1px 6px",borderRadius:4,background:`${col}15`,
                             border:`1px solid ${col}25`,flexShrink:0}}>
-                            {f.severity?.toUpperCase()}{f.confirmed?" ✓":""}
+                            {f.severity?.toUpperCase()}{f.confirmed?" v":""}
                           </span>
                           <span style={{fontSize:"0.65rem",fontWeight:700,color:PC.text,
                             whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
@@ -6226,7 +6226,7 @@ function PostureAnalysisModule(){
             </div>
             {measurements?._calibrated?(
               <div>
-                <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.green,marginBottom:6}}>✓ Calibrated — showing real measurements</div>
+                <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.green,marginBottom:6}}>v Calibrated — showing real measurements</div>
                 {[
                   ["Forward Head Posture", measurements.fhpCm, "cm", 2, 3.5, "Normal: <1.5cm"],
                   ["Shoulder Height Diff", measurements.shoulderDiffCm, "cm", 0.8, 1.8, "Normal: <0.5cm"],
@@ -6364,7 +6364,7 @@ function PostureAnalysisModule(){
           <div key={label} style={{flex:1,padding:"5px 8px",borderRadius:7,
             background:has?`${PC.green}10`:`${PC.border}40`,border:`1px solid ${has?PC.green:PC.border}`,
             display:"flex",alignItems:"center",gap:5}}>
-            <span style={{fontSize:"0.65rem"}}>{has?"✓":"○"}</span>
+            <span style={{fontSize:"0.65rem"}}>{has?"v":"○"}</span>
             <div>
               <div style={{fontSize:"0.6rem",fontWeight:700,color:has?PC.green:PC.muted}}>{label}</div>
               <div style={{fontSize:"0.52rem",color:PC.muted}}>{tip}</div>
@@ -6426,7 +6426,7 @@ function PostureAnalysisModule(){
         <div>
           <div style={{fontWeight:900,fontSize:isWide?"1rem":"0.9rem",color:PC.text}}>Multi-View Composite Report</div>
           <div style={{fontSize:"0.62rem",color:PC.muted,marginTop:2}}>
-            {mvComposite.coverage.viewCount} views · {mvComposite.coverage.frontal?"✓ Frontal":"○ Frontal"} · {mvComposite.coverage.sagittal?"✓ Sagittal":"○ Sagittal"}
+            {mvComposite.coverage.viewCount} views · {mvComposite.coverage.frontal?"v Frontal":"○ Frontal"} · {mvComposite.coverage.sagittal?"v Sagittal":"○ Sagittal"}
           </div>
         </div>
         <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.68rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}>← Back</button>
@@ -6578,7 +6578,7 @@ function PostureAnalysisModule(){
           <div>{viewMeta.helper}</div>
           {viewMeta.checks&&(
             <div style={{display:"flex",flexWrap:"wrap",gap:"3px 10px",marginTop:5}}>
-              {viewMeta.checks.map((c,i)=><span key={i} style={{color:PC.a3,fontSize:"0.62rem"}}>✓ {c}</span>)}
+              {viewMeta.checks.map((c,i)=><span key={i} style={{color:PC.a3,fontSize:"0.62rem"}}>v {c}</span>)}
             </div>
           )}
         </div>
@@ -6721,7 +6721,7 @@ function PostureAnalysisModule(){
                     const isNext=def.id===manualPointDefs[nextManualIdx]?.id;
                     return(
                       <div key={def.id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:done?`${PC.green}10`:isNext?`${PC.accent}10`:"transparent",border:`1px solid ${done?PC.green:isNext?PC.accent:PC.border}`}}>
-                        <div style={{width:14,height:14,borderRadius:"50%",background:done?PC.green:isNext?PC.accent:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.55rem",fontWeight:900,color:"#fff",flexShrink:0}}>{done?"✓":def.id+1}</div>
+                        <div style={{width:14,height:14,borderRadius:"50%",background:done?PC.green:isNext?PC.accent:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.55rem",fontWeight:900,color:"#fff",flexShrink:0}}>{done?"v":def.id+1}</div>
                         <div style={{fontSize:"0.6rem",color:done?PC.green:isNext?PC.accent:PC.muted,fontWeight:done||isNext?700:400,lineHeight:1.2}}>{def.label}</div>
                       </div>
                     );
@@ -6912,7 +6912,7 @@ function PostureAnalysisModule(){
       const trafficPill = r => {
         const col = r.bad?C.red:r.warn?C.yellow:C.green;
         const bg = r.bad?"#fef2f2":r.warn?"#fffbeb":"#f0fdf4";
-        const txt = r.bad?"✕ Needs Attention":r.warn?"⚠ Moderate":"✓ Normal";
+        const txt = r.bad?"✕ Needs Attention":r.warn?"⚠ Moderate":"v Normal";
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:6px;background:${bg};margin-bottom:4px;border:1px solid ${col}30"><span style="font-size:0.72rem;font-weight:600;color:${C.primary}">${r.label}</span><span style="font-size:0.65rem;font-weight:700;color:${col}">${txt}</span></div>`;
       };
       return `
@@ -7161,7 +7161,7 @@ function PostureAnalysisModule(){
             <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${C.red}">Red Flag Screener</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:#f0fdf4;border:1px solid ${C.green}30">
-            <div style="font-size:0.72rem;font-weight:700;color:${C.green}">✓ No Red Flags Identified</div>
+            <div style="font-size:0.72rem;font-weight:700;color:${C.green}">v No Red Flags Identified</div>
             <div style="font-size:0.6rem;color:${C.muted};margin-top:4px;line-height:1.5">Screened for: trauma history · neurological symptoms · unexplained weight loss · night pain · bilateral symptoms · bowel/bladder dysfunction</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;margin:14px 0 10px">
@@ -8037,9 +8037,9 @@ function PhotoUploadAnalyzer() {
 
 // --- MAIN APP ----------------------------------------------------------------
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // MULTI-PATIENT DATABASE
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 const DB_KEY = "physio_patient_db_v1";
 
 const DEMO_PATIENTS = [
@@ -8578,9 +8578,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
       {/* -- TAB CONTENT -- */}
       <div style={{flex:1,overflowY:"auto",paddingBottom:100}}>
 
-        {/* ════════════════════════════════════════
+        {/* ========================================
             OVERVIEW TAB
-        ════════════════════════════════════════ */}
+        ======================================== */}
         {tab==="overview" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
 
@@ -8742,9 +8742,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
           </div>
         )}
 
-        {/* ════════════════════════════════════════
+        {/* ========================================
             ASSESSMENT TAB
-        ════════════════════════════════════════ */}
+        ======================================== */}
         {tab==="assessment" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
             {/* Latest / History toggle */}
@@ -8936,9 +8936,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
           </div>
         )}
 
-        {/* ════════════════════════════════════════
+        {/* ========================================
             TREATMENT TAB
-        ════════════════════════════════════════ */}
+        ======================================== */}
         {tab==="treatment" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
             {/* Current Treatment Plan */}
@@ -9026,7 +9026,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                           border:`2px solid ${exDone[ex.id]?C.green:C.border2}`,
                           display:"flex",alignItems:"center",justifyContent:"center",
                           transition:"all 0.25s",}}>
-                          {exDone[ex.id]&&<span style={{color:"white",fontSize:14,fontWeight:800}}>✓</span>}
+                          {exDone[ex.id]&&<span style={{color:"white",fontSize:14,fontWeight:800}}>v</span>}
                         </div>
                       </div>
                     </div>
@@ -9112,7 +9112,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   "Pain management education"].map((item,i)=>(
                   <div key={i} style={{display:"flex",gap:8,padding:"7px 0",
                     borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
-                    <span style={{color:C.green,fontWeight:700}}>✓</span>
+                    <span style={{color:C.green,fontWeight:700}}>v</span>
                     <span style={{fontSize:12,color:C.text}}>{item}</span>
                   </div>
                 ))}
@@ -9121,9 +9121,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
           </div>
         )}
 
-        {/* ════════════════════════════════════════
+        {/* ========================================
             PROGRESS TAB
-        ════════════════════════════════════════ */}
+        ======================================== */}
         {tab==="progress" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
             {/* Progress rings row */}
@@ -9218,9 +9218,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
           </div>
         )}
 
-        {/* ════════════════════════════════════════
+        {/* ========================================
             DOCUMENTS TAB
-        ════════════════════════════════════════ */}
+        ======================================== */}
         {tab==="documents" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
 
@@ -9977,7 +9977,7 @@ function PostureDefectModule() {
                 style={{padding:"8px 10px",borderRadius:9,fontSize:"0.68rem",fontWeight:sel?700:500,border:`1px solid ${sel?"rgba(255,77,109,0.45)":"#1a2d45"}`,background:sel?"rgba(255,77,109,0.1)":"rgba(19,28,40,0.7)",color:sel?"#ff4d6d":"#94a3b8",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"flex-start",gap:6}}>
                 <span style={{fontSize:"1rem",flexShrink:0}}>{d.icon}</span>
                 <span style={{flex:1,lineHeight:1.3}}>{d.label}</span>
-                {sel && <span style={{color:"#ff4d6d",fontSize:"0.6rem",flexShrink:0}}>✓</span>}
+                {sel && <span style={{color:"#ff4d6d",fontSize:"0.6rem",flexShrink:0}}>v</span>}
               </button>
             );
           })}
@@ -10086,9 +10086,9 @@ function PostureDefectModule() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // HOME MODULE — App Introduction & Feature Overview
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 function HomeModule({ onNav }) {
   const PC = getC();
   const features = [
@@ -10198,9 +10198,9 @@ function HomeModule({ onNav }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // THERAPIST DASHBOARD MODULE
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask, onProfile }) {
   const { useState, useEffect, useMemo, useCallback } = React;
   const [activeTab,   setActiveTab]   = useState("pending");
@@ -10468,7 +10468,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
   const STATS = [
     {label:"Today",   value:String(todayCount),             sub:"patients", icon:"👥",color:"#6D28D9",bg:"#EDE9FE",nav:"subjective"},
     {label:"Pending", value:String(pendingTasks.length),    sub:"tasks",    icon:"⏳",color:pendingTasks.some(t=>t.priority==="high")?"#EF4444":"#D97706",bg:pendingTasks.some(t=>t.priority==="high")?"#FEF2F2":"#FEF3C7",nav:"dashboard"},
-    {label:"Done",    value:String(todayCompleted),         sub:"today",    icon:"✓", color:"#059669",bg:"#ECFDF5",nav:"dashboard"},
+    {label:"Done",    value:String(todayCompleted),         sub:"today",    icon:"v", color:"#059669",bg:"#ECFDF5",nav:"dashboard"},
     {label:"Overdue", value:String(overdueTasks),           sub:"alerts",   icon:"⚠",color:"#EF4444",bg:"#FEF2F2",nav:"dashboard"},
   ];
 
@@ -10595,9 +10595,9 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════════════════════
+        {/* ==============================================================
             TASK MANAGEMENT SYSTEM
-        ══════════════════════════════════════════════════════════════ */}
+        ============================================================== */}
         <div className="dc" style={{animationDelay:"0.15s"}}>
 
           {/* Tab bar */}
@@ -10720,7 +10720,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                                 display:"flex",alignItems:"center",justifyContent:"center",gap:6,
                                 boxShadow:"0 2px 8px rgba(5,150,105,0.3)",
                               }}>
-                                {isCompleting ? "✓ Completing…" : "✓ Mark Complete"}
+                                {isCompleting ? "v Completing…" : "v Mark Complete"}
                               </button>
                             </div>
                           </div>
@@ -10741,8 +10741,8 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                               display:"flex",alignItems:"center",justifyContent:"center",gap:4,
                             }}>
                               {isCompleting
-                                ? <span style={{animation:"checkPop 0.3s ease"}}>✓ Done!</span>
-                                : "✓ Complete"}
+                                ? <span style={{animation:"checkPop 0.3s ease"}}>v Done!</span>
+                                : "v Complete"}
                             </button>
                           </div>
                         )}
@@ -11638,7 +11638,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
                     <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{report.tags.map(tag=><span key={tag} style={{fontSize:"0.65rem",padding:"2px 8px",borderRadius:5,background:report.color+"12",border:`1px solid ${report.color}25`,color:report.color,fontWeight:600}}>{tag}</span>)}</div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"18px 20px",borderLeft:"1px solid #e2e8f0",minWidth:130,gap:10}}>
-                    {done[report.id] && <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"rgba(5,150,105,0.1)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:8}}><span style={{color:"#059669",fontSize:"0.65rem",fontWeight:700}}>✓ Generated</span></div>}
+                    {done[report.id] && <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"rgba(5,150,105,0.1)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:8}}><span style={{color:"#059669",fontSize:"0.65rem",fontWeight:700}}>v Generated</span></div>}
                     <button onClick={()=>generatePdf(report.id)} disabled={generating!==null} style={{width:"100%",padding:"12px 16px",background:generating===report.id?"#94a3b8":report.gradient,border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:generating?"not-allowed":"pointer",opacity:generating&&generating!==report.id?0.5:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
                       {generating===report.id?"⏳ Generating...":"📥 Generate PDF"}
                     </button>
@@ -12135,7 +12135,7 @@ function AppInner() {
               </div>
             )}
           </div>
-          {pct===100&&<span style={{fontSize:"0.55rem",color:PC.green,flexShrink:0,fontWeight:800}}>✓</span>}
+          {pct===100&&<span style={{fontSize:"0.55rem",color:PC.green,flexShrink:0,fontWeight:800}}>v</span>}
           {pct>0&&pct<100&&<span style={{fontSize:"0.55rem",color:PC.muted,flexShrink:0,fontWeight:600,background:PC.s2,padding:"1px 4px",borderRadius:4}}>{pct}%</span>}
         </div>
       </div>
@@ -12518,7 +12518,7 @@ function AppInner() {
               ):(
                 <>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-                    {dx.dx.map(d=><span key={d.name+d.system} style={{padding:"2px 9px",borderRadius:20,fontSize:"0.66rem",fontWeight:700,background:`${sysColors[d.system]||PC.accent}15`,color:sysColors[d.system]||PC.accent,border:`1px solid ${sysColors[d.system]||PC.accent}30`}}>✓ {d.system}</span>)}
+                    {dx.dx.map(d=><span key={d.name+d.system} style={{padding:"2px 9px",borderRadius:20,fontSize:"0.66rem",fontWeight:700,background:`${sysColors[d.system]||PC.accent}15`,color:sysColors[d.system]||PC.accent,border:`1px solid ${sysColors[d.system]||PC.accent}30`}}>v {d.system}</span>)}
                   </div>
                   {dx.dx.map((d,i)=>{
                     const col=sysColors[d.system]||PC.accent;
@@ -12537,7 +12537,7 @@ function AppInner() {
                         </div>
                         {exp&&(
                           <div style={{padding:"0 13px 13px 16px"}}>
-                            <div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Evidence</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{d.evidence.map((e,j)=><span key={j} style={{fontSize:"0.68rem",padding:"2px 7px",borderRadius:7,background:PC.s3,color:PC.text,border:`1px solid ${PC.border}`}}>✓ {e}</span>)}</div></div>
+                            <div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Evidence</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{d.evidence.map((e,j)=><span key={j} style={{fontSize:"0.68rem",padding:"2px 7px",borderRadius:7,background:PC.s3,color:PC.text,border:`1px solid ${PC.border}`}}>v {e}</span>)}</div></div>
                             {d.mechanism&&<div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Mechanism</div><div style={{background:PC.s3,borderRadius:8,padding:10,fontSize:"0.76rem",color:PC.text,lineHeight:1.6}}>{d.mechanism}</div></div>}
                             {d.treatment&&d.treatment.length>0&&<div><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Treatment Plan</div>{d.treatment.map((t,j)=><div key={j} style={{display:"flex",gap:8,padding:"5px 9px",background:PC.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}><span style={{color:PC.a3,fontWeight:700,flexShrink:0}}>→</span><span style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.5}}>{t}</span></div>)}</div>}
                             {d.interpretation&&<div style={{marginTop:10,padding:"8px 11px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.68rem",color:PC.yellow,lineHeight:1.5}}>⚠ {d.interpretation}</div>}
@@ -12658,7 +12658,7 @@ function AppInner() {
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10,gap:8}}>
                           <label style={{fontSize:"0.82rem",fontWeight:600,color:hasVal?PC.text:PC.muted,lineHeight:1.4,flex:1,letterSpacing:"-0.1px"}}>
                             {t.label}
-                            {hasVal&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:16,height:16,background:PC.a3+"22",borderRadius:"50%",marginLeft:7,fontSize:"0.55rem",color:PC.a3,fontWeight:800,verticalAlign:"middle"}}>✓</span>}
+                            {hasVal&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:16,height:16,background:PC.a3+"22",borderRadius:"50%",marginLeft:7,fontSize:"0.55rem",color:PC.a3,fontWeight:800,verticalAlign:"middle"}}>v</span>}
                           </label>
                           {hasInfo&&<button type="button" onClick={()=>setInfoModal(t)} style={{padding:"3px 10px",background:PC.isDark?"rgba(129,140,248,0.1)":"rgba(79,70,229,0.06)",border:`1px solid ${PC.a2}30`,borderRadius:7,color:PC.a2,fontSize:"0.62rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,letterSpacing:"0.2px"}}>i Info</button>}
                         </div>
@@ -12708,7 +12708,7 @@ function AppInner() {
                 onClick={()=>{ navTo(navKey); setBnavTab(null); }}>
                 <span className="pm-bnav-item-icon">{icon}</span>
                 <span className="pm-bnav-item-label">{label}</span>
-                {pct===100 && <span className="pm-bnav-item-done">✓</span>}
+                {pct===100 && <span className="pm-bnav-item-done">v</span>}
                 {pct>0&&pct<100 && <span className="pm-bnav-item-pct">{pct}%</span>}
               </button>
             );
