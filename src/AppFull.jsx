@@ -1541,6 +1541,25 @@ const CERVICAL_LOAD_KG = (fhpCm) => fhpCm !== null && fhpCm > 0 ? r1(4.5 + fhpCm
 // minimum confidence threshold. This prevents false findings from poor images.
 // MIN_VIS = 0.45 (defined at top of file)
 
+// ─── ASIS correction helper ─────────────────────────────────────────────────
+// MediaPipe lm[23]/lm[24] = hip joint (femoral head). ASIS is superior.
+// Returns corrected {x, y} normalised coords for left (idx=23) and right (idx=24) ASIS.
+function getASISNorm(lm, idx) {
+  if (!lm || !lm[idx] || (lm[idx].visibility||0) < 0.3) return null;
+  const hip = lm[idx];
+  const shIdx = idx === 23 ? 11 : 12; // ipsilateral shoulder
+  const sh = lm[shIdx];
+  const torsoH = (sh && (sh.visibility||0) >= 0.3) ? Math.abs(hip.y - sh.y) : 0.28;
+  // Move upward (subtract from y since y increases downward)
+  const asisY = hip.y - torsoH * 0.18;
+  // ASIS is slightly lateral to hip joint
+  // idx 23 = left hip → ASIS is to patient's left → appears more to the RIGHT in frontal image
+  // idx 24 = right hip → ASIS is to patient's right → appears more to the LEFT in frontal image
+  const lateralOffset = torsoH * 0.03;
+  const asisX = hip.x + (idx === 23 ? lateralOffset : -lateralOffset);
+  return { x: asisX, y: asisY, visibility: hip.visibility };
+}
+
 function AdvancedMeasurementEngine(lm, calibration=null) {
   // calibration: { pixPerCm, frameHeightPx, patientHeightCm }
   if (!lm || lm.length < 33) return {};
@@ -1575,8 +1594,15 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   // ── FRONTAL PLANE MEASUREMENTS ────────────────────────────────────────────
   // Shoulder tilt: angle of line connecting L shoulder to R shoulder from horizontal
   const shoulderAngle = Vboth(11,12) ? calcAngleDeg(g(12), g(11)) : null;
-  // Pelvic obliquity: same method for ASIS landmarks
-  const pelvisAngle   = Vboth(23,24) ? calcAngleDeg(g(24), g(23)) : null;
+  // Pelvic obliquity: use anatomically corrected ASIS positions (18% above hip joint)
+  const pelvisAngle = (() => {
+    if (!Vboth(23,24)) return null;
+    const torsoHL23 = Vboth(11,23) ? Math.abs(g(23).y - g(11).y) : 0.28;
+    const torsoHR24 = Vboth(12,24) ? Math.abs(g(24).y - g(12).y) : 0.28;
+    const asisL = { x: g(23).x + torsoHL23 * 0.03, y: g(23).y - torsoHL23 * 0.18 };
+    const asisR = { x: g(24).x - torsoHR24 * 0.03, y: g(24).y - torsoHR24 * 0.18 };
+    return calcAngleDeg(asisR, asisL);
+  })();
   const kneeAngle     = Vboth(25,26) ? calcAngleDeg(g(26), g(25)) : null;
   const ankleAngle    = Vboth(27,28) ? calcAngleDeg(g(28), g(27)) : null;
   const eyeLevelAngle = Vboth(2,5)   ? calcAngleDeg(g(5),  g(2))  : null;
@@ -1631,9 +1657,13 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     // Do not report if confidence below clinical threshold
     if (confidence < 0.55) return { suppressed: true, reason: "Insufficient landmark confidence for pelvic assessment", confidence: r1(confidence * 100) };
 
-    // Y difference — negative when left ASIS is higher (lower Y value)
-    const lY = g(23).y;
-    const rY = g(24).y;
+    // Y difference using anatomically corrected ASIS position (18% above hip joint)
+    const shLy = Vboth(11,23) ? g(11).y : null;
+    const shRy = Vboth(12,24) ? g(12).y : null;
+    const torsoHL = shLy !== null ? Math.abs(g(23).y - shLy) : 0.28;
+    const torsoHR = shRy !== null ? Math.abs(g(24).y - shRy) : 0.28;
+    const lY = g(23).y - torsoHL * 0.18;
+    const rY = g(24).y - torsoHR * 0.18;
     const rawDiff = (rY - lY) * 100; // % frame height; +ve = right ASIS higher (lower Y), left lower
 
     // In image space: lower Y = anatomically higher.
@@ -4838,12 +4868,13 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.strokeStyle="rgba(200,100,255,0.7)"; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
       ctx.beginPath(); ctx.arc(pt[0],pt[1],14,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
       // Filled dot at corrected ASIS centre
-      ctx.beginPath(); ctx.arc(pt[0],pt[1],4,0,Math.PI*2);
-      ctx.fillStyle="rgba(200,100,255,0.9)"; ctx.fill();
+      ctx.beginPath(); ctx.arc(pt[0],pt[1],6,0,Math.PI*2);
+      ctx.fillStyle="#FFD700"; ctx.fill();  // Gold/yellow = matches ASIS marker convention
+      ctx.strokeStyle="rgba(0,0,0,0.5)"; ctx.lineWidth=1; ctx.stroke();
       const tw=ctx.measureText(lbl).width;
       ctx.fillStyle="rgba(0,0,0,0.78)"; ctx.font="bold 8px system-ui"; ctx.textAlign="center";
       if(ctx.roundRect) ctx.roundRect(pt[0]-tw/2-4,pt[1]+16,tw+8,13,3); else ctx.rect(pt[0]-tw/2-4,pt[1]+16,tw+8,13);
-      ctx.fill(); ctx.fillStyle="rgba(200,100,255,0.9)"; ctx.fillText(lbl,pt[0],pt[1]+27);
+      ctx.fill(); ctx.fillStyle="#FFD700"; ctx.fillText(lbl,pt[0],pt[1]+27);
     });
     // Waist triangles
     if(V(11)&&V(13)&&V(23)&&V(12)&&V(14)&&V(24)){
