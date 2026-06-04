@@ -3995,6 +3995,7 @@ function buildFindings(lm, view, m) {
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
             correction: "Glute med: clamshells ×15, lateral band walks ×20m. VMO: terminal knee extensions ×15. Single-leg squat with mirror correction. Foot tripod activation.",
             icd: "M21.0", norm: "<6° knee frontal deviation",
+            _derivedFrom: ["Hip (lm23/24)", "Knee (lm25/26)", "Ankle (lm27/28)"],
           });
         } else if (lSev) {
           const pattern = lv < 0 ? "medial" : "lateral";
@@ -4008,6 +4009,7 @@ function buildFindings(lm, view, m) {
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
             correction: lv < 0 ? "Glute med + VMO activation. Foot tripod." : "Hip ER strengthening. ITB/TFL SMR.",
             icd: "M21.0", norm: "<6° knee frontal deviation",
+            _derivedFrom: ["Hip (lm23/24)", "Knee (lm25/26)", "Ankle (lm27/28)"],
           });
         } else if (rSev) {
           const pattern = rv < 0 ? "medial" : "lateral";
@@ -4021,6 +4023,7 @@ function buildFindings(lm, view, m) {
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
             correction: rv < 0 ? "Glute med + VMO activation. Foot tripod." : "Hip ER strengthening. ITB/TFL SMR.",
             icd: "M21.0", norm: "<6° knee frontal deviation",
+            _derivedFrom: ["Hip (lm23/24)", "Knee (lm25/26)", "Ankle (lm27/28)"],
           });
         }
       }
@@ -4087,7 +4090,7 @@ function buildFindings(lm, view, m) {
       }
     }
 
-    // ── Tibial varum ─────────────────────────────────────────────────────────
+    // ── Frontal Plane Tibial Alignment Deviation (estimated — dedicated landmarks required) ─────
     const tibL = m.tibialVarumL ?? 0, tibR = m.tibialVarumR ?? 0;
     if (tibL > 0 || tibR > 0) {
       const maxTib = Math.max(tibL, tibR);
@@ -4096,15 +4099,17 @@ function buildFindings(lm, view, m) {
       if (sev) {
         const worse = tibL > tibR ? "Left" : "Right";
         add({
-          region: "Tibial Varum",
-          findingName: `OBSERVATION: Tibial alignment asymmetry — ${worse} worse (L:${tibL.toFixed(1)}° R:${tibR.toFixed(1)}°, normal <5°). Clinical confirmation required.`,
-          severity: sev, confidenceScore: Math.min(conf, 55), clinicalSignificance: "low",
-          interpretation: `OBSERVATION ONLY. Tibial segment angle asymmetry observed. This measurement is highly sensitive to patient rotation and camera angle — cannot diagnose tibial bowing from a photograph. Clinical confirmation with weight-bearing assessment is essential before any clinical conclusions.`,
+          region: "Frontal Plane Tibial Alignment",
+          findingName: `Frontal Plane Tibial Alignment Deviation (Estimated — dedicated tibial landmarks required for confirmation): ${worse} worse (L:${tibL.toFixed(1)}° R:${tibR.toFixed(1)}°). Clinical confirmation required.`,
+          severity: sev, confidenceScore: Math.min(conf, 45), clinicalSignificance: "low",
+          interpretation: `OBSERVATION ONLY. Tibial segment angle asymmetry estimated from knee-to-ankle vector. This measurement is highly sensitive to patient rotation and camera angle — cannot diagnose tibial bowing or Tibial Alignment Observation: Varum Tendency (Estimated) from a photograph. Dedicated tibial landmarks (Tibial Tuberosity, Mid-Shaft, Malleoli) required for clinical confirmation. Weight-bearing lower-limb X-ray is the definitive assessment.`,
           musclePattern: null,
-          functionalCorrelation: "May be associated with altered foot pronation patterns and medial knee loading.",
-          objectiveAssessments: ["Subtalar neutral assessment", "Foot posture index", "Weight-bearing lower limb alignment X-ray if severe"],
+          functionalCorrelation: "May be associated with altered foot pronation patterns and medial knee loading if confirmed clinically.",
+          objectiveAssessments: ["Subtalar neutral assessment", "Foot posture index", "Weight-bearing lower limb alignment X-ray if structural deviation suspected", "Tibial torsion clinical assessment"],
           correction: "Assess subtalar neutral. Foot orthotic with lateral wedge if pronation-driven. Tibialis posterior strengthening.",
-          icd: "M21.1", norm: "<5° tibial varum",
+          icd: "M21.1", norm: "<5° tibial segment angle (estimated; confirm clinically)",
+          _derivedFrom: ["Knee (lm25/26)", "Ankle (lm27/28)"],
+          _requiresVerification: true,
         });
       }
     }
@@ -4508,7 +4513,17 @@ function buildFindings(lm, view, m) {
   const patternFindings = prioritised.filter(isPattern);
   const regularFindings = prioritised.filter(f => !isPattern(f));
 
-  return [...regularFindings.slice(0, maxFindings), ...patternFindings];
+  // Fix C: Deduplicate — remove tibial findings if knee finding already reported from same geometry
+  const hasKneeVarus = prioritised.some(f => (f.findingName||f.text||'').toLowerCase().includes('varus'));
+  const hasKneeValgus = prioritised.some(f => (f.findingName||f.text||'').toLowerCase().includes('valgus'));
+  const deduplicatedRegular = regularFindings.filter(f => {
+    const name = (f.findingName || f.text || '').toLowerCase();
+    if (hasKneeVarus && (name.includes('tibial') || name.includes('bowing')) && name.includes('var')) return false;
+    if (hasKneeValgus && (name.includes('tibial') || name.includes('bowing')) && name.includes('val')) return false;
+    return true;
+  });
+
+  return [...deduplicatedRegular.slice(0, maxFindings), ...patternFindings];
 }
 
 
@@ -5369,7 +5384,7 @@ const MUSCLE_MAP = {
   "Upper Crossed Syndrome (UCS)": { tight:["Upper Trapezius","Levator Scapulae","SCM","Pec Minor","Scalenes"], weak:["Deep Cervical Flexors","Lower Trapezius","Serratus Anterior","Mid Thoracic Extensors"] },
   "Posture Pattern — Sway-Back": { tight:["Hamstrings","Abdominals","Hip Extensors"],          weak:["Hip Flexors (Iliopsoas)","Lumbar Extensors"] },
   "Posture Pattern — Military / Flat Back": { tight:["Abdominals","Hamstrings"],               weak:["Thoracic Extensors","Lumbar Extensors","Hip Flexors"] },
-  "Tibial Varum":             { tight:["Peroneals","Gastrocnemius/Soleus"],                     weak:["Tibialis Posterior","Tibialis Anterior"] },
+  "Frontal Plane Tibial Alignment": { tight:["Peroneals","Gastrocnemius/Soleus"],               weak:["Tibialis Posterior","Tibialis Anterior"] },
   "Ankle":                    { tight:["Gastrocnemius","Soleus"],                               weak:["Tibialis Anterior","Peroneals"] },
   "Knee (Sagittal)":           { tight:["TFL / ITB","Rectus Femoris"],                           weak:["Glute Med","VMO","Hamstrings"] },
 };
@@ -5506,7 +5521,7 @@ const SPECIAL_TESTS_MAP = {
     { name:"Adam's Forward Bend Test", purpose:"Structural scoliosis screen — rib hump" },
     { name:"C7 Plumb Line",        purpose:"Coronal balance — spinous process alignment" },
   ],
-  "Tibial Varum":             [
+  "Frontal Plane Tibial Alignment":             [
     { name:"Subtalar Neutral Assessment", purpose:"Forefoot varus / calcaneal eversion compensation" },
     { name:"Weight-Bearing Foot Posture", purpose:"Pronation / supination index" },
   ],
@@ -5638,7 +5653,7 @@ const EXERCISE_MAP = {
     { phase:2, name:"Standing Hip Flexor Activation", sets:"3×15/side",  cue:"Standing high knee drive. Activate psoas consciously.", category:"activate" },
     { phase:3, name:"Hip Shift Alignment Drill",   sets:"3×60s",         cue:"Mirror: shift hips forward over ankles. Feel weight move to ball of foot.", category:"correct" },
   ],
-  "Tibial Varum":            [
+  "Frontal Plane Tibial Alignment":            [
     { phase:1, name:"Calf / Gastrosoleus SMR",     sets:"90s/side",      cue:"Foam roller medial calf. Work from Achilles to knee.", category:"inhibit" },
     { phase:2, name:"Tibialis Posterior Strengthening", sets:"3×15/side",cue:"Single-leg heel raise with slight inward roll. Controlled lowering.", category:"activate" },
   ],
@@ -6470,6 +6485,7 @@ function PostureAnalysisModule(){
               setActiveLandmark={setActiveLandmark}
               onClear={clearVerified}
             />
+            <FindingTracePanel findings={findings} />
           </div>
         </div>
       )}
@@ -6589,7 +6605,7 @@ function PostureAnalysisModule(){
               return score(b)-score(a);
             });
             // Exclude low-confidence metrics from Top 3 treatment priorities
-            const LOW_CONF = ["neck lateral inclination","carrying angle","tibial bowing","ankle height","tibial varum"];
+            const LOW_CONF = ["neck lateral inclination","carrying angle","frontal plane tibial","ankle height"];
             const isVerify = (f) => LOW_CONF.some(m => (f.text||"").toLowerCase().includes(m));
             const top3 = ranked.filter(f => !isVerify(f)).slice(0,3);
             return(
@@ -6768,8 +6784,8 @@ function PostureAnalysisModule(){
                 <MetricRow label="Neck Lateral Angle" value={measurements.neckLateralAngle} unit="°" normal={4} abnormal={8}/>
                 <MetricRow label="Waist Triangle Asymm." value={measurements.waistTriangleAsymmetry} unit="%" normal={3} abnormal={6}/>
                 <MetricRow label="Ankle LLD" value={measurements.ankleLLDmm} unit="mm" normal={5} abnormal={10}/>
-                <MetricRow label="Tibial Varum L" value={measurements.tibialVarumL} unit="°" normal={5} abnormal={10}/>
-                <MetricRow label="Tibial Varum R" value={measurements.tibialVarumR} unit="°" normal={5} abnormal={10}/>
+                <MetricRow label="Tibial Alignment L (Est.)" value={measurements.tibialVarumL} unit="°" normal={5} abnormal={10}/>
+                <MetricRow label="Tibial Alignment R (Est.)" value={measurements.tibialVarumR} unit="°" normal={5} abnormal={10}/>
                 <MetricRow label="Carrying Angle L" value={measurements.carryingAngleL} unit="°" normal={15} abnormal={20}/>
                 <MetricRow label="Carrying Angle R" value={measurements.carryingAngleR} unit="°" normal={15} abnormal={20}/>
               </div>
@@ -6878,8 +6894,8 @@ function PostureAnalysisModule(){
               <MetricRow label="Neck Lateral Angle" value={measurements.neckLateralAngle} unit="°" normal={4} abnormal={8}/>
               <MetricRow label="Waist Triangle Asymm." value={measurements.waistTriangleAsymmetry} unit="%" normal={3} abnormal={6}/>
               <MetricRow label="Ankle LLD" value={measurements.ankleLLDmm} unit="mm" normal={5} abnormal={10}/>
-              <MetricRow label="Tibial Varum L" value={measurements.tibialVarumL} unit="°" normal={5} abnormal={10}/>
-              <MetricRow label="Tibial Varum R" value={measurements.tibialVarumR} unit="°" normal={5} abnormal={10}/>
+              <MetricRow label="Tibial Alignment L (Est.)" value={measurements.tibialVarumL} unit="°" normal={5} abnormal={10}/>
+              <MetricRow label="Tibial Alignment R (Est.)" value={measurements.tibialVarumR} unit="°" normal={5} abnormal={10}/>
               <MetricRow label="Carrying Angle L" value={measurements.carryingAngleL} unit="°" normal={15} abnormal={20}/>
               <MetricRow label="Carrying Angle R" value={measurements.carryingAngleR} unit="°" normal={15} abnormal={20}/>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Bilateral Symmetry &amp; Global</div>
@@ -8588,6 +8604,41 @@ function useVerifiedLandmarks() {
   }, [verified]);
 
   return { verified, setVerified, clearVerified, mergeWithMediaPipe, boostFindingConfidence };
+}
+
+// ─── FindingTracePanel ───────────────────────────────────────────────────────
+function FindingTracePanel({ findings }) {
+  const [open, setOpen] = useState(false);
+  const traceable = (findings || []).filter(f => f._derivedFrom);
+  if (!traceable.length) return null;
+  const C = { accent:"#7c3aed", border:"#d8cce8", surface:"#fff", text:"#1a1025", muted:"#7e6a9a", s2:"#f5f0fb" };
+  return (
+    <div style={{marginTop:10,borderRadius:10,border:`1px solid ${C.border}`,overflow:"hidden"}}>
+      <div onClick={()=>setOpen(o=>!o)} style={{padding:"8px 13px",background:C.s2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <span style={{fontSize:"0.72rem",fontWeight:700,color:C.accent}}>🔍 Finding Derivation Trace ({traceable.length})</span>
+        <span style={{fontSize:"0.65rem",color:C.muted}}>{open?"▲ Hide":"▼ Show"} clinical audit trail</span>
+      </div>
+      {open && (
+        <div style={{padding:"10px 13px",background:C.surface}}>
+          {traceable.map((f,i) => (
+            <div key={i} style={{marginBottom:8,padding:"7px 10px",borderRadius:8,background:C.s2,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:"0.68rem",fontWeight:700,color:C.text,marginBottom:3}}>
+                Finding: {(f.findingName||f.text||'').replace(/^OBSERVATION:\s*/i,'')}
+              </div>
+              <div style={{fontSize:"0.6rem",color:C.muted}}>
+                Derived from: {f._derivedFrom.join(' → ')}
+              </div>
+              {f._requiresVerification && (
+                <div style={{fontSize:"0.58rem",color:"#b45309",fontWeight:600,marginTop:2}}>
+                  ⚠ Dedicated tibial landmarks (Tibial Tuberosity, Mid-Shaft, Malleoli) required for clinical confirmation
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── LandmarkVerificationPanel ────────────────────────────────────────────────
@@ -11303,8 +11354,10 @@ const POSTURE_DEFECTS = {
     exercises:["Side-lying hip abduction","Clamshells","Standing hip abduction","QL stretch"]
   },
   genu_valgum: {
-    id:"genu_valgum", icon:"🦵", label:"Knee Medial Tendency (Observation — clinical assessment required)", region:"Knee",
+    id:"genu_valgum", icon:"🦵", label:"Knee Valgus Tendency (Observation — clinical assessment required)", region:"Knee",
     view:["anterior","posterior"],
+    requiresDedicatedLandmarks: true,
+    estimatedOnly: true,
     description:"OBSERVATION: Static medial knee alignment tendency observed. Cannot confirm Genu Valgum from photograph alone — single-leg squat and clinical assessment required. May be associated with medial compartment and patellofemoral loading if confirmed.",
     tight_muscles:["TFL","IT band","Hip adductors","Medial hamstrings"],
     weak_muscles:["Gluteus medius","Gluteus maximus","VMO","Hip external rotators"],
@@ -11312,8 +11365,10 @@ const POSTURE_DEFECTS = {
     exercises:["Clamshells","Monster walks","Single-leg squat with knee tracking","VMO terminal extensions"]
   },
   genu_varum: {
-    id:"genu_varum", icon:"🦴", label:"Knee Lateral Tendency (Observation — clinical assessment required)", region:"Knee",
+    id:"genu_varum", icon:"🦴", label:"Knee Varus Tendency (Observation — clinical assessment required)", region:"Knee",
     view:["anterior","posterior"],
+    requiresDedicatedLandmarks: true,
+    estimatedOnly: true,
     description:"OBSERVATION: Static lateral knee alignment tendency observed. Cannot confirm Genu Varum from photograph alone — clinical weight-bearing assessment required. May be associated with lateral compartment loading if confirmed.",
     tight_muscles:["IT band","Biceps femoris","Hip ER","Lateral gastrocnemius"],
     weak_muscles:["Hip adductors","VMO","Medial gastrocnemius"],
