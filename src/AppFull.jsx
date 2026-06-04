@@ -4832,7 +4832,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
         const shPt=PX(shIdx);
         const torsoH=hipPt[1]-shPt[1]; // px; positive = hip is lower than shoulder
         asY=hipPt[1]-torsoH*0.18;      // move 18% of torso height upward
-        asX=hipPt[0]+(hipIdx===23?-1:1)*torsoH*0.04; // slight lateral offset
+        asX=hipPt[0]+(hipIdx===23?1:-1)*torsoH*0.04; // slight lateral offset (23=left hip→patient's left→image right)
       }
       const pt=[asX,asY];
       ctx.strokeStyle="rgba(200,100,255,0.7)"; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
