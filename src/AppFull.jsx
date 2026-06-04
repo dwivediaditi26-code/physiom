@@ -3640,12 +3640,18 @@ function prioritiseFindings(findings) {
   const sevRank = { high: 3, moderate: 2, mild: 1 };
   const sigRank = { high: 3, moderate: 2, low: 1 };
   return [...findings].sort((a, b) => {
+    // Heavily penalise estimated/unverified findings so they never outrank
+    // directly observable high-confidence findings
+    const aEstPenalty = (a._requiresVerification || (a.confidenceScore||70) < 50) ? -4 : 0;
+    const bEstPenalty = (b._requiresVerification || (b.confidenceScore||70) < 50) ? -4 : 0;
     const aScore = (sevRank[a.severity] || 0) * 3
       + ((a.confidenceScore || 50) / 100) * 2
-      + (sigRank[a.clinicalSignificance] || 1);
+      + (sigRank[a.clinicalSignificance] || 1)
+      + aEstPenalty;
     const bScore = (sevRank[b.severity] || 0) * 3
       + ((b.confidenceScore || 50) / 100) * 2
-      + (sigRank[b.clinicalSignificance] || 1);
+      + (sigRank[b.clinicalSignificance] || 1)
+      + bEstPenalty;
     return bScore - aScore;
   });
 }
@@ -4101,7 +4107,7 @@ function buildFindings(lm, view, m) {
         add({
           region: "Frontal Plane Tibial Alignment",
           findingName: `Frontal Plane Tibial Alignment Deviation (Estimated — dedicated tibial landmarks required for confirmation): ${worse} worse (L:${tibL.toFixed(1)}° R:${tibR.toFixed(1)}°). Clinical confirmation required.`,
-          severity: sev, confidenceScore: Math.min(conf, 45), clinicalSignificance: "low",
+          severity: "mild", confidenceScore: Math.min(conf, 45), clinicalSignificance: "low",
           interpretation: `OBSERVATION ONLY. Tibial segment angle asymmetry estimated from knee-to-ankle vector. This measurement is highly sensitive to patient rotation and camera angle — cannot diagnose tibial bowing or Tibial Alignment Observation: Varum Tendency (Estimated) from a photograph. Dedicated tibial landmarks (Tibial Tuberosity, Mid-Shaft, Malleoli) required for clinical confirmation. Weight-bearing lower-limb X-ray is the definitive assessment.`,
           musclePattern: null,
           functionalCorrelation: "May be associated with altered foot pronation patterns and medial knee loading if confirmed clinically.",
@@ -6605,9 +6611,9 @@ function PostureAnalysisModule(){
               return score(b)-score(a);
             });
             // Exclude low-confidence metrics from Top 3 treatment priorities
-            const LOW_CONF = ["neck lateral inclination","carrying angle","frontal plane tibial","ankle height"];
+            const LOW_CONF = ["neck lateral inclination","carrying angle","frontal plane tibial","ankle height","tibial alignment"];
             const isVerify = (f) => LOW_CONF.some(m => (f.text||"").toLowerCase().includes(m));
-            const top3 = ranked.filter(f => !isVerify(f)).slice(0,3);
+            const top3 = ranked.filter(f => !isVerify(f) && !f._requiresVerification).slice(0,3);
             return(
               <div style={{marginBottom:14,padding:isWide?"16px 18px":"12px 14px",borderRadius:14,
                 background:"linear-gradient(135deg,rgba(124,58,237,0.06),rgba(147,51,234,0.04))",
@@ -7280,17 +7286,7 @@ function PostureAnalysisModule(){
         ))}
       </div>
 
-      {/* AI/Manual toggle */}
-      {!isLive&&(
-        <div style={{padding: isWide?"8px 20px":"8px 16px",background:PC.s3,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:6}}>
-          {[["ai","⚙ AI Auto (~70-80%)"],["manual","✋ Manual Points (~90-95%)"]].map(([m,label])=>(
-            <button key={m} onClick={()=>handleModeSwitch(m)}
-              style={{flex:1,padding:"7px 6px",borderRadius:9,border:`1px solid ${inputMode===m?PC.accent:PC.border}`,background:inputMode===m?`${PC.accent}18`:"transparent",color:inputMode===m?PC.accent:PC.muted,fontWeight:700,fontSize: isWide?"0.75rem":"0.68rem",cursor:"pointer",textAlign:"center"}}>
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       {/* View selector */}
       <div style={{padding: isWide?"12px 20px":"10px 16px",background:PC.s2,borderBottom:`1px solid ${PC.border}`}}>
