@@ -6483,16 +6483,7 @@ function PostureAnalysisModule(){
           <div style={{textAlign:"center",color:PC.muted,fontSize:"0.78rem",paddingTop:20,paddingBottom:12}}>
             Analyse a photo to generate findings.
           </div>
-          {/* Landmark verification available even before analysis */}
-          <div style={{marginTop:8}}>
-            <LandmarkVerificationPanel
-              verified={verified}
-              activeLandmark={activeLandmark}
-              setActiveLandmark={setActiveLandmark}
-              onClear={clearVerified}
-            />
-            <FindingTracePanel findings={findings} />
-          </div>
+
         </div>
       )}
 
