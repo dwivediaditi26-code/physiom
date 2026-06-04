@@ -8383,7 +8383,16 @@ function FindingCardNew({ f, defaultOpen = false }) {
             {observationText}
           </div>
           <div style={{ fontSize: "0.58rem", color: "#7e6a9a", marginTop: 2 }}>
-            {f.region} · Confidence: <span style={{ color: confColor, fontWeight: 700 }}>{conf}% ({confLabel})</span>
+            {f.region} · Confidence:{" "}
+            {f._boosted && f._origConf ? (
+              <span>
+                <span style={{ color: "#7e6a9a", textDecoration: "line-through", marginRight: 3 }}>{f._origConf}%</span>
+                <span style={{ color: confColor, fontWeight: 700 }}>{conf}% ✓</span>
+                <span style={{ color: "#059669", fontWeight: 600, marginLeft: 3, fontSize: "0.56rem" }}>+{conf - f._origConf}% verified</span>
+              </span>
+            ) : (
+              <span style={{ color: confColor, fontWeight: 700 }}>{conf}% ({confLabel})</span>
+            )}
           </div>
           {needsConfirmation && (
             <div style={{ fontSize: "0.58rem", color: "#ffb300", fontWeight: 600, marginTop: 2 }}>
@@ -8445,6 +8454,136 @@ function FindingCardNew({ f, defaultOpen = false }) {
   );
 }
 
+
+// ─── VERIFIED LANDMARK MAP ────────────────────────────────────────────────────
+const VERIFIED_LANDMARK_MAP = {
+  'l_asis':     { mpIdx: 23, label: 'Left ASIS',              priority: 1, affects: ['pelvisAngle', 'asisHeightDiff'] },
+  'r_asis':     { mpIdx: 24, label: 'Right ASIS',             priority: 1, affects: ['pelvisAngle', 'asisHeightDiff'] },
+  'c7':         { mpIdx: null, label: 'C7',                   priority: 1, affects: ['cervicalAngle'] },
+  's1':         { mpIdx: null, label: 'S1',                   priority: 1, affects: ['lumbarLordosis'] },
+  'l_iliac':    { mpIdx: null, label: 'L Iliac Crest',        priority: 2, affects: ['pelvisAngle'] },
+  'r_iliac':    { mpIdx: null, label: 'R Iliac Crest',        priority: 2, affects: ['pelvisAngle'] },
+  'l_acromion': { mpIdx: 11,   label: 'L Acromion',           priority: 2, affects: ['shoulderAngle'] },
+  'r_acromion': { mpIdx: 12,   label: 'R Acromion',           priority: 2, affects: ['shoulderAngle'] },
+  'l_gt':       { mpIdx: 23,   label: 'L Greater Trochanter', priority: 3, affects: ['hipAlignment'] },
+  'r_gt':       { mpIdx: 24,   label: 'R Greater Trochanter', priority: 3, affects: ['hipAlignment'] },
+  'l_psis':     { mpIdx: null, label: 'L PSIS',               priority: 3, affects: ['sacralBase'] },
+  'r_psis':     { mpIdx: null, label: 'R PSIS',               priority: 3, affects: ['sacralBase'] },
+};
+
+// Confidence boost by priority level
+const LANDMARK_CONF_BOOST = { 1: 20, 2: 12, 3: 8 };
+
+// ─── useVerifiedLandmarks hook ────────────────────────────────────────────────
+function useVerifiedLandmarks() {
+  const [verified, setVerifiedState] = useState({});
+
+  const setVerified = useCallback((key, x, y) => {
+    setVerifiedState(prev => ({ ...prev, [key]: { x, y, confidence: 1.0 } }));
+  }, []);
+
+  const clearVerified = useCallback((key) => {
+    setVerifiedState(prev => { const n={...prev}; delete n[key]; return n; });
+  }, []);
+
+  const mergeWithMediaPipe = useCallback((mpLandmarks) => {
+    if (!mpLandmarks) return mpLandmarks;
+    const merged = mpLandmarks.map(l => ({...l}));
+    Object.entries(verified).forEach(([key, coords]) => {
+      const def = VERIFIED_LANDMARK_MAP[key];
+      if (def && def.mpIdx !== null && merged[def.mpIdx]) {
+        merged[def.mpIdx] = { ...merged[def.mpIdx], x: coords.x, y: coords.y, visibility: 1.0, _verified: true };
+      }
+    });
+    return merged;
+  }, [verified]);
+
+  const boostFindingConfidence = useCallback((findings) => {
+    if (!findings || Object.keys(verified).length === 0) return findings;
+    return findings.map(f => {
+      let boost = 0;
+      Object.entries(verified).forEach(([key]) => {
+        const def = VERIFIED_LANDMARK_MAP[key];
+        if (!def) return;
+        const metric = f.metric || f.key || "";
+        const findingText = (f.text || f.findingName || "").toLowerCase();
+        const affects = def.affects || [];
+        const relevant = affects.some(a =>
+          metric.includes(a) ||
+          findingText.includes(a.replace(/([A-Z])/g, ' $1').toLowerCase().trim())
+        );
+        if (relevant) boost = Math.max(boost, LANDMARK_CONF_BOOST[def.priority] || 0);
+      });
+      if (boost === 0) return f;
+      const origConf = f.confidenceScore || f.confidence || 70;
+      const newConf = Math.min(98, origConf + boost);
+      return { ...f, confidenceScore: newConf, confidence: newConf, _origConf: origConf, _boosted: true };
+    });
+  }, [verified]);
+
+  return { verified, setVerified, clearVerified, mergeWithMediaPipe, boostFindingConfidence };
+}
+
+// ─── LandmarkVerificationPanel ────────────────────────────────────────────────
+function LandmarkVerificationPanel({ verified, activeLandmark, setActiveLandmark, onClear }) {
+  const C = { accent:"#7c3aed", a2:"#9333ea", border:"#d8cce8", s2:"#f5f0fb", muted:"#7e6a9a", text:"#1a1025", green:"#059669", yellow:"#b45309" };
+  const verifiedCount = Object.keys(verified).length;
+
+  const PRIORITIES = [
+    { level: 1, label: "Priority 1 — Spinal & Pelvic Core", color: "#dc2626", keys: ["l_asis","r_asis","c7","s1"] },
+    { level: 2, label: "Priority 2 — Iliac Crest & Shoulder", color: "#b45309", keys: ["l_iliac","r_iliac","l_acromion","r_acromion"] },
+    { level: 3, label: "Priority 3 — Trochanter & PSIS", color: "#059669", keys: ["l_gt","r_gt","l_psis","r_psis"] },
+  ];
+
+  return (
+    <div style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginTop:12}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+        <div>
+          <div style={{fontWeight:800,fontSize:"0.82rem",color:C.accent}}>📍 Clinical Landmark Verification</div>
+          <div style={{fontSize:"0.62rem",color:C.muted,marginTop:2}}>Tap a landmark → click on the image to place it. Verified points override AI estimates.</div>
+        </div>
+        {verifiedCount > 0 && (
+          <span style={{padding:"2px 9px",borderRadius:8,background:"rgba(5,150,105,0.12)",border:"1px solid rgba(5,150,105,0.35)",color:C.green,fontSize:"0.62rem",fontWeight:700}}>{verifiedCount} verified</span>
+        )}
+      </div>
+      {PRIORITIES.map(({ level, label, color, keys }) => (
+        <div key={level} style={{marginBottom:10}}>
+          <div style={{fontSize:"0.58rem",fontWeight:700,color:color,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:5}}>{label}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:5}}>
+            {keys.map(key => {
+              const def = VERIFIED_LANDMARK_MAP[key];
+              const isVerified = !!verified[key];
+              const isActive = activeLandmark === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveLandmark(isActive ? null : key)}
+                  style={{
+                    padding:"7px 9px",borderRadius:8,textAlign:"left",cursor:"pointer",
+                    border:`1px solid ${isActive ? "#7c3aed" : isVerified ? "#059669" : C.border}`,
+                    background:isActive ? "rgba(124,58,237,0.1)" : isVerified ? "rgba(5,150,105,0.08)" : "white",
+                    display:"flex",alignItems:"center",gap:7
+                  }}>
+                  <span style={{fontSize:"0.75rem"}}>{isVerified ? "✅" : isActive ? "🎯" : "☐"}</span>
+                  <span style={{fontSize:"0.65rem",fontWeight:isActive||isVerified?700:500,color:isActive?"#7c3aed":isVerified?"#059669":C.text,flex:1,lineHeight:1.3}}>{def.label}</span>
+                  {isVerified && (
+                    <span onClick={e=>{e.stopPropagation();onClear(key);}} style={{fontSize:"0.58rem",color:C.muted,cursor:"pointer",padding:"1px 4px",borderRadius:4,background:"rgba(0,0,0,0.05)"}} title="Remove">✕</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      {activeLandmark && (
+        <div style={{marginTop:6,padding:"7px 11px",background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.25)",borderRadius:8,fontSize:"0.68rem",color:"#7c3aed",fontWeight:700,textAlign:"center"}}>
+          🎯 Click anywhere on the image to place <strong>{VERIFIED_LANDMARK_MAP[activeLandmark]?.label}</strong>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── PhotoUploadAnalyzer — uses new advanced engine ──────────────────────────
 function PhotoUploadAnalyzer() {
   const [image, setImage]         = useState(null);
@@ -8456,6 +8595,8 @@ function PhotoUploadAnalyzer() {
   const [tab, setTab]             = useState("upload");
   const [showHeatmap, setHeatmap] = useState(true);
   const [showLabels, setLabels]   = useState(true);
+  const [activeLandmark, setActiveLandmark] = useState(null);
+  const { verified, setVerified, clearVerified, mergeWithMediaPipe, boostFindingConfidence } = useVerifiedLandmarks();
   const canvasRef  = useRef(null);
   const imgRef     = useRef(null);
   const poseRef    = useRef(null);
@@ -8536,9 +8677,32 @@ function PhotoUploadAnalyzer() {
     img.src=url;
   };
 
+  // Handle click on image for landmark placement
+  const handleImageClick = (e) => {
+    if (!activeLandmark || !imgRef.current) return;
+    const rect = imgRef.current.getBoundingClientRect();
+    const xPct = (e.clientX - rect.left) / rect.width;
+    const yPct = (e.clientY - rect.top)  / rect.height;
+    setVerified(activeLandmark, xPct, yPct);
+    setActiveLandmark(null);
+    // Re-run analysis with merged landmarks
+    if (analysisResult?.lm) {
+      const mergedLm = mergeWithMediaPipe(analysisResult.lm);
+      const m2 = AdvancedMeasurementEngine(mergedLm);
+      const f2 = ClinicalFindingsEngine(mergedLm, analysisResult.view, m2);
+      const r2 = ReliabilityEngine(mergedLm);
+      const s2 = PostureScoreEngine(m2, f2, r2);
+      setResult(prev => ({ ...prev, lm: mergedLm, measurements: m2, findings: f2, reliability: r2, scoreData: s2 }));
+    }
+  };
+
   const C2={surface:"#ffffff",s2:"#f5f0fb",border:"#d8cce8",accent:"#7c3aed",a2:"#9333ea",a3:"#059669",text:"#1a1025",muted:"#7e6a9a",red:"#dc2626",yellow:"#b45309",green:"#059669"};
   const vm=PHOTO_VIEW_META_NEW[selectedView]||PHOTO_VIEW_META_NEW.anterior;
-  const { measurements, findings, reliability, scoreData } = analysisResult||{};
+  const { measurements, reliability, scoreData } = analysisResult||{};
+  const verifiedCount = Object.keys(verified).length;
+  const isClinicianVerified = verifiedCount > 0;
+  const rawFindings = analysisResult?.findings || [];
+  const findings = boostFindingConfidence(rawFindings);
   const highF=(findings||[]).filter(f=>f.severity==="high");
   const otherF=(findings||[]).filter(f=>f.severity!=="high");
 
@@ -8596,11 +8760,17 @@ function PhotoUploadAnalyzer() {
             </div>
           ):(
             <div>
-              <div style={{position:"relative",borderRadius:12,overflow:"hidden",background:"#f5f0fb",marginBottom:9}}>
+              <div style={{position:"relative",borderRadius:12,overflow:"hidden",background:"#f5f0fb",marginBottom:9,cursor:activeLandmark?"crosshair":"default"}} onClick={handleImageClick}>
                 <img ref={imgRef} src={image} alt="Upload" style={{width:"100%",display:"block",maxHeight:360,objectFit:"contain"}}/>
                 <canvas ref={canvasRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
                 {loading&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{color:C2.accent,fontSize:"1.1rem",fontWeight:700}}>⏳ Analysing…</div><div style={{fontSize:"0.7rem",color:C2.muted}}>Running AI pose detection</div></div>}
                 {scoreData&&!loading&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingNew score={scoreData?.score} band={scoreData?.band} colour={scoreData?.colour} size={72}/></div>}
+                {activeLandmark&&!loading&&<div style={{position:"absolute",inset:0,border:"3px solid #7c3aed",borderRadius:12,pointerEvents:"none",animation:"pulse 1s infinite"}}/>}
+                {Object.entries(verified).map(([key,coords])=>(
+                  <div key={key} style={{position:"absolute",left:`calc(${coords.x*100}% - 8px)`,top:`calc(${coords.y*100}% - 8px)`,width:16,height:16,borderRadius:"50%",background:"#059669",border:"2px solid white",boxShadow:"0 0 4px rgba(0,0,0,0.5)",pointerEvents:"none",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <div style={{width:4,height:4,borderRadius:"50%",background:"white"}}/>
+                  </div>
+                ))}
               </div>
               {/* Overlay controls */}
               <div style={{display:"flex",gap:7,marginBottom:9,flexWrap:"wrap"}}>
@@ -8643,6 +8813,15 @@ function PhotoUploadAnalyzer() {
               )}
             </div>
           )}
+          {/* Landmark Verification Panel — always visible when image loaded */}
+          {image && (
+            <LandmarkVerificationPanel
+              verified={verified}
+              activeLandmark={activeLandmark}
+              setActiveLandmark={setActiveLandmark}
+              onClear={clearVerified}
+            />
+          )}
         </div>
       )}
 
@@ -8669,6 +8848,21 @@ function PhotoUploadAnalyzer() {
             </div>
           </div>
 
+          {/* Mode badge */}
+          <div style={{marginBottom:10}}>
+            {isClinicianVerified ? (
+              <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,background:"rgba(5,150,105,0.12)",border:"1px solid rgba(5,150,105,0.35)",color:"#059669",fontSize:"0.68rem",fontWeight:800}}>
+                ✅ Clinician Verified Analysis
+                <span style={{fontWeight:400,color:"#059669",opacity:0.8}}>({verifiedCount} landmark{verifiedCount!==1?"s":""} verified)</span>
+              </div>
+            ) : (
+              <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,background:"rgba(120,120,120,0.08)",border:"1px solid rgba(120,120,120,0.2)",color:C2.muted,fontSize:"0.68rem",fontWeight:800}}>
+                🤖 AI Estimated Analysis
+                <span style={{fontWeight:400,opacity:0.7}}>— verify landmarks below to boost confidence</span>
+              </div>
+            )}
+          </div>
+
           {/* Findings */}
           {findings?.length===0?(
             <div style={{padding:"14px",textAlign:"center",background:"rgba(0,201,122,0.07)",border:`1px solid ${C2.green}30`,borderRadius:10,marginBottom:10}}>
@@ -8689,6 +8883,19 @@ function PhotoUploadAnalyzer() {
                   {otherF.map((f,i)=><FindingCardNew key={i} f={f}/>)}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Clinical Landmark Verification Panel — always visible below findings */}
+          <LandmarkVerificationPanel
+            verified={verified}
+            activeLandmark={activeLandmark}
+            setActiveLandmark={setActiveLandmark}
+            onClear={clearVerified}
+          />
+          {activeLandmark && (
+            <div style={{marginTop:8,padding:"8px 12px",background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.3)",borderRadius:9,fontSize:"0.7rem",color:"#7c3aed",fontWeight:700,textAlign:"center"}}>
+              Switch to the Upload tab and click the image to place {VERIFIED_LANDMARK_MAP[activeLandmark]?.label}
             </div>
           )}
 
