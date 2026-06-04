@@ -4767,7 +4767,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     const LEVELS=[
       {idxL:7,  idxR:8,  label:"Eye Level\nEars / C-spine", color:"rgba(0,229,255,0.8)"},
       {idxL:11, idxR:12, label:"Shoulders",      color:"rgba(147,51,234,0.9)"},
-      {idxL:23, idxR:24, label:"ASIS / Pelvis",  color:"rgba(249,115,22,0.9)"},
+      {idxL:23, idxR:24, label:"Hip Joint Ref",  color:"rgba(249,115,22,0.5)"},
       {idxL:25, idxR:26, label:"Knees",          color:"rgba(16,185,129,0.9)"},
       {idxL:27, idxR:28, label:"Ankles",         color:"rgba(99,102,241,0.9)"},
       {idxL:29, idxR:30, label:"Heels",          color:"rgba(99,102,241,0.7)"},
@@ -4799,12 +4799,47 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.fill(); ctx.fillStyle=angleCol; ctx.textAlign="right";
       ctx.fillText(angText,W-6,my+4);
     });
-    // ASIS dashed rings
-    [[23,"L.ASIS"],[24,"R.ASIS"]].forEach(([idx,lbl])=>{
-      if(!V(idx)) return;
-      const pt=PX(idx); if(!pt) return;
+    // Corrected ASIS-to-ASIS level line (connects both corrected ASIS points)
+    if(V(23)&&V(24)){
+      const hipL=PX(23), hipR=PX(24);
+      const shL=V(11)?PX(11):null, shR=V(12)?PX(12):null;
+      const torsoHL=shL?hipL[1]-shL[1]:H*0.3, torsoHR=shR?hipR[1]-shR[1]:H*0.3;
+      const asLx=hipL[0]+(-1)*torsoHL*0.04, asLy=hipL[1]-torsoHL*0.18;
+      const asRx=hipR[0]+(1)*torsoHR*0.04, asRy=hipR[1]-torsoHR*0.18;
+      // Draw line between corrected ASIS points
+      ctx.save(); ctx.strokeStyle="rgba(200,100,255,0.85)"; ctx.lineWidth=2; ctx.setLineDash([6,3]);
+      ctx.beginPath(); ctx.moveTo(asLx,asLy); ctx.lineTo(asRx,asRy); ctx.stroke();
+      ctx.restore(); ctx.setLineDash([]);
+      // Angle badge
+      const asisAngle=Math.atan2(asRy-asLy,Math.abs(asRx-asLx))*180/Math.PI;
+      const aasisAbs=Math.abs(asisAngle);
+      const ac=aasisAbs<1?"rgba(0,201,122,0.95)":aasisAbs<3?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
+      const angText=(asisAngle>=0?"+":"")+asisAngle.toFixed(1)+"°";
+      ctx.font="bold 9px system-ui"; const atw=ctx.measureText(angText).width;
+      ctx.fillStyle="rgba(0,0,0,0.82)";
+      if(ctx.roundRect) ctx.roundRect(W-atw-14,(asLy+asRy)/2-9,atw+10,16,3); else ctx.rect(W-atw-14,(asLy+asRy)/2-9,atw+10,16);
+      ctx.fill(); ctx.fillStyle=ac; ctx.textAlign="right";
+      ctx.fillText(angText,W-6,(asLy+asRy)/2+4);
+    }
+    // ASIS dashed rings — anatomically corrected position
+    // MediaPipe landmarks 23/24 = hip joints (femoral head level).
+    // ASIS is superior: offset upward by ~18% of shoulder-to-hip torso height.
+    [[23,"L.ASIS",11],[24,"R.ASIS",12]].forEach(([hipIdx,lbl,shIdx])=>{
+      if(!V(hipIdx)) return;
+      const hipPt=PX(hipIdx); if(!hipPt) return;
+      let asX=hipPt[0], asY=hipPt[1];
+      if(V(shIdx)){
+        const shPt=PX(shIdx);
+        const torsoH=hipPt[1]-shPt[1]; // px; positive = hip is lower than shoulder
+        asY=hipPt[1]-torsoH*0.18;      // move 18% of torso height upward
+        asX=hipPt[0]+(hipIdx===23?-1:1)*torsoH*0.04; // slight lateral offset
+      }
+      const pt=[asX,asY];
       ctx.strokeStyle="rgba(200,100,255,0.7)"; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
       ctx.beginPath(); ctx.arc(pt[0],pt[1],14,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+      // Filled dot at corrected ASIS centre
+      ctx.beginPath(); ctx.arc(pt[0],pt[1],4,0,Math.PI*2);
+      ctx.fillStyle="rgba(200,100,255,0.9)"; ctx.fill();
       const tw=ctx.measureText(lbl).width;
       ctx.fillStyle="rgba(0,0,0,0.78)"; ctx.font="bold 8px system-ui"; ctx.textAlign="center";
       if(ctx.roundRect) ctx.roundRect(pt[0]-tw/2-4,pt[1]+16,tw+8,13,3); else ctx.rect(pt[0]-tw/2-4,pt[1]+16,tw+8,13);
