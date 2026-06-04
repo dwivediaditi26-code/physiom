@@ -7472,29 +7472,12 @@ function PostureAnalysisModule(){
 
             {/* AI mode image — always show original photo; overlay annotated result on top */}
             {inputMode==="ai"&&(rawUploadedImg||uploadedImg)&&(
-              <div style={{borderRadius:14,overflow:"hidden",border:`1px solid ${activeLandmark?'#7c3aed':PC.border}`,boxShadow:isWide?"0 4px 20px rgba(0,0,0,0.08)":"none",background:PC.s2,position:"relative",transition:"border-color 0.2s"}}>
+              <div style={{borderRadius:14,overflow:"hidden",border:`1px solid ${PC.border}`,boxShadow:isWide?"0 4px 20px rgba(0,0,0,0.08)":"none",background:PC.s2,position:"relative",transition:"border-color 0.2s"}}>
                 {/* Layer 1: original photo — always visible, never a blank/black canvas */}
                 <img
                   src={rawUploadedImg||uploadedImg}
                   alt="Uploaded"
-                  style={{width:"100%",display:"block",opacity:analysing?0.55:1,transition:"opacity 0.3s",cursor:activeLandmark?'crosshair':'default'}}
-                  onClick={(e)=>{
-                    if(!activeLandmark) return;
-                    const rect=e.currentTarget.getBoundingClientRect();
-                    const xPct=(e.clientX-rect.left)/rect.width;
-                    const yPct=(e.clientY-rect.top)/rect.height;
-                    setVerified(activeLandmark,xPct,yPct);
-                    setActiveLandmark(null);
-                    if(landmarks){
-                      const mergedLm=mergeWithMediaPipe(landmarks);
-                      const calib=computeCalibration(mergedLm,patientHeightCm,800);
-                      const m=measureLandmarks(mergedLm,calib);
-                      const f=buildFindings(mergedLm,view,m);
-                      const r={status:"verified",blocked:false};
-                      const s=scorePosture(m,f,r);
-                      setMeasurements(m); setFindings(boostFindingConfidence(f,verified)); setScoreData(s);
-                    }
-                  }}
+                  style={{width:"100%",display:"block",opacity:analysing?0.55:1,transition:"opacity 0.3s"}}
                 />
                 {/* Layer 2: annotated overlay — shown once analysis produces a result */}
                 {uploadedImg&&uploadedImg!==rawUploadedImg&&!analysing&&(
@@ -7505,14 +7488,7 @@ function PostureAnalysisModule(){
                     onError={e=>{ e.target.style.display="none"; }} // hide silently if canvas was tainted/black
                   />
                 )}
-                {/* Active landmark placement border */}
-                {activeLandmark&&<div style={{position:'absolute',inset:0,border:'3px solid #7c3aed',borderRadius:8,pointerEvents:'none',zIndex:10}}/>}
-                {/* Verified landmark dots */}
-                {Object.entries(verified).map(([key,pt])=>(
-                  <div key={key} style={{position:'absolute',left:`${pt.x*100}%`,top:`${pt.y*100}%`,transform:'translate(-50%,-50%)',width:12,height:12,borderRadius:'50%',background:'#FFD700',border:'2px solid #000',zIndex:11,pointerEvents:'none'}}>
-                    <div style={{position:'absolute',top:14,left:'50%',transform:'translateX(-50%)',whiteSpace:'nowrap',fontSize:9,background:'rgba(0,0,0,0.75)',color:'#FFD700',padding:'1px 4px',borderRadius:3}}>{VERIFIED_LANDMARK_MAP[key]?.label}</div>
-                  </div>
-                ))}
+
                 {/* Analysing spinner */}
                 {analysing&&(
                   <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.35)"}}>
