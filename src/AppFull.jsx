@@ -1852,10 +1852,25 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     };
   })();
 
-  // Hip-knee-ankle frontal alignment (Q-angle proxy for valgus/varus)
-  // Only valid when all three landmarks are above confidence threshold
-  const leftKneeFrontal  = Vboth(23,25,27) ? r1(calcAngleDeg(g(23),g(25))-calcAngleDeg(g(25),g(27))) : null;
-  const rightKneeFrontal = Vboth(24,26,28) ? r1(calcAngleDeg(g(24),g(26))-calcAngleDeg(g(26),g(28))) : null;
+  // Hip-knee-ankle frontal alignment — perpendicular knee deviation from hip-ankle line
+  // Reference: Norkin & White (2009), Magee Orthopedic Physical Assessment 6th ed.
+  // Method: project knee onto the hip-ankle line; measure perpendicular lateral deviation.
+  // Sign: POSITIVE = medial/valgus tendency; NEGATIVE = lateral/varus tendency.
+  // For LEFT leg (patient's left = image right): medial = knee.x < lineX → (lineX - knee.x)
+  // For RIGHT leg (patient's right = image left): medial = knee.x > lineX → (knee.x - lineX)
+  const _kneeFrontalDev = (hip, knee, ankle, isLeft) => {
+    if (!hip || !knee || !ankle) return null;
+    if (Math.abs(ankle.y - hip.y) < 0.01) return null; // degenerate
+    const t = (knee.y - hip.y) / (ankle.y - hip.y);
+    const lineX = hip.x + t * (ankle.x - hip.x);
+    const devX = isLeft ? (lineX - knee.x) : (knee.x - lineX);
+    // Convert to degrees using leg length as reference
+    const legLen = Math.sqrt(Math.pow(ankle.x - hip.x, 2) + Math.pow(ankle.y - hip.y, 2)) || 0.01;
+    const angleDeg = Math.atan2(Math.abs(devX), legLen) * 180 / Math.PI;
+    return r1(devX >= 0 ? angleDeg : -angleDeg);
+  };
+  const leftKneeFrontal  = Vboth(23,25,27) ? _kneeFrontalDev(g(23),g(25),g(27),true)  : null;
+  const rightKneeFrontal = Vboth(24,26,28) ? _kneeFrontalDev(g(24),g(26),g(28),false) : null;
 
   // ── CVA: Craniovertebral Angle (Yip et al. 2008) ─────────────────────────
   // Gold standard: lateral photo, line from tragus to C7 spinous process vs horizontal.
@@ -2240,9 +2255,17 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         if (bilateral) {
           const worseAbs = Math.max(lAbs, rAbs);
           const worseSide = lAbs >= rAbs ? "L" : "R";
-          text = `OBSERVATION: Bilateral knee medial tendency — ${worseSide} worse (L: ${lAbs.toFixed(1)}° R: ${rAbs.toFixed(1)}°). Clinical confirmation required.`;
+          // Determine direction: lv>0 = medial/valgus, lv<0 = lateral/varus
+          const lDir = lv !== null ? (lv >= 0 ? "medial" : "lateral") : "medial";
+          const rDir = rv !== null ? (rv >= 0 ? "medial" : "lateral") : "medial";
+          const bothMedial = lDir === "medial" && rDir === "medial";
+          const bothLateral = lDir === "lateral" && rDir === "lateral";
+          const dirLabel = bothMedial ? "medial tendency (valgus)" : bothLateral ? "lateral tendency (varus)" : "asymmetric alignment";
+          text = `OBSERVATION: Bilateral knee ${dirLabel} — ${worseSide} worse (L:${lAbs.toFixed(1)}° R:${rAbs.toFixed(1)}°). Clinical confirmation required.`;
           severity = worseAbs > 10 ? "moderate" : "low";
-          correction = `Possible contributors: hip abductor capacity, foot pronation, femoral anteversion, or dynamic loading pattern. Recommended confirmation: single-leg squat assessment (dynamic valgus), hip abductor strength test (side-lying), foot posture index, Trendelenburg test.`;
+          correction = bothMedial
+            ? `Possible contributors: hip abductor capacity, foot pronation, femoral anteversion, or dynamic loading pattern. Recommended confirmation: single-leg squat assessment (dynamic valgus), hip abductor strength test (side-lying), foot posture index, Trendelenburg test.`
+            : `Possible contributors: hip external rotator dominance, ITB/TFL tightness, tibial torsion, foot supination. Recommended confirmation: Ober test (ITB length), hip ER strength, subtalar neutral assessment.`;
         } else if (lSig) {
           text = lv < 0
             ? `OBSERVATION: Left knee medial tendency — hip-knee-ankle alignment (${lAbs.toFixed(1)}°). Clinical confirmation required.`
@@ -2965,8 +2988,16 @@ function measureLandmarks(lm, calibration) {
   const rightKneeAngle = Vb(24,26,28)?vec3Angle(g(24),g(26),g(28)):null;
   const leftKneeDev    = leftKneeAngle!==null?r1(leftKneeAngle-180):null;
   const rightKneeDev   = rightKneeAngle!==null?r1(rightKneeAngle-180):null;
-  const leftKneeFrontal  = Vb(23,25,27)?r1(calcAngleDeg(g(23),g(25))-calcAngleDeg(g(25),g(27))):null;
-  const rightKneeFrontal = Vb(24,26,28)?r1(calcAngleDeg(g(24),g(26))-calcAngleDeg(g(26),g(28))):null;
+  const _kfd2=(hip,knee,ankle,isLeft)=>{
+    if(!hip||!knee||!ankle||Math.abs(ankle.y-hip.y)<0.01) return null;
+    const t=(knee.y-hip.y)/(ankle.y-hip.y), lineX=hip.x+t*(ankle.x-hip.x);
+    const devX=isLeft?(lineX-knee.x):(knee.x-lineX);
+    const legLen=Math.sqrt(Math.pow(ankle.x-hip.x,2)+Math.pow(ankle.y-hip.y,2))||0.01;
+    const a=Math.atan2(Math.abs(devX),legLen)*180/Math.PI;
+    return r1(devX>=0?a:-a);
+  };
+  const leftKneeFrontal  = Vb(23,25,27)?_kfd2(g(23),g(25),g(27),true):null;
+  const rightKneeFrontal = Vb(24,26,28)?_kfd2(g(24),g(26),g(28),false):null;
 
   const kneeSymmetry = Vb(25,26)?{left:g(25).y,right:g(26).y,diff:r1((g(25).y-g(26).y)*100)}:null;
   const lldProxy = kneeSymmetry?r1(Math.abs(kneeSymmetry.diff)*1.8):null;
@@ -3987,7 +4018,9 @@ function buildFindings(lm, view, m) {
         if (bilateral) {
           const worseAbs = Math.max(Math.abs(lv), Math.abs(rv));
           const worseSide = Math.abs(lv) >= Math.abs(rv) ? "L" : "R";
-          const pattern = lv < 0 ? "medial" : "lateral";
+          const lDir = lv >= 0 ? "medial" : "lateral";
+          const rDir = rv >= 0 ? "medial" : "lateral";
+          const pattern = (lDir === rDir) ? lDir : "asymmetric";
           const worstSev = (lSev === "high" || rSev === "high") ? "moderate" : "low";
           add({
             region: "Knee Alignment Tendency",
