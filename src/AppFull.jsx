@@ -2381,10 +2381,11 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         "M62.89", "⊖", `Low-confidence screen only. Repeat with improved image quality.`, "Normal: <2°", abs);
     }
 
-    if (scapularAsymm !== null && scapularAsymm > 2.5) {
-      add("Scapula", `Scapular height asymmetry — posterior view (${scapularAsymm.toFixed(1)}° differential)`, scapularAsymm > 5 ? "high" : "moderate",
+    // Only fire scapular/shoulder height if shoulderAngle hasn't already captured the same asymmetry
+    if (scapularAsymm !== null && scapularAsymm > 2.5 && (shoulderAngle === null || Math.abs(shoulderAngle) < 2.5)) {
+      add("Shoulder Girdle", `Shoulder/acromion height asymmetry — posterior view (${scapularAsymm.toFixed(1)}% differential). Note: true scapular winging/asymmetry requires clinical assessment — MediaPipe provides no dedicated scapular landmarks.`, scapularAsymm > 5 ? "high" : "moderate",
         `NKT screen: serratus anterior vs pec minor. Lower trap Y-T-W ×15. Wall push-up plus (serratus). Thoracic extension mobility. If winging visible: test serratus (wall push-up — medial border lifting = Type II dyskinesis).`,
-        "M89.8", "⇑", `Kibler types: I=inferior angle, II=medial border (serratus weakness), III=superior elevation (upper trap dominant).`, "Normal: <2.5°", scapularAsymm);
+        "M89.8", "⇑", `Acromion/shoulder height asymmetry from posterior view. True scapular assessment (Kibler types I-III) requires manual examination — inferior angle, medial border, superior elevation cannot be reliably identified from this photo. Recommend clinical scapular assessment.`, "Normal: <2.5°", scapularAsymm);
     }
 
     if (trunkRotationProxy !== null && Math.abs(trunkRotationProxy) > 8) {
@@ -4835,7 +4836,8 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     });
     // "ANTERIOR VIEW" bottom-left label
     ctx.font="bold 9px system-ui"; ctx.textAlign="left"; ctx.fillStyle="rgba(255,255,255,0.55)";
-    ctx.fillText("ANTERIOR VIEW — Kendall plumb: ankle midpoint",6,H-8);
+    const _vl=(view==="posterior"||view==="back")?"POSTERIOR VIEW — Kendall plumb: ankle midpoint":"ANTERIOR VIEW — Kendall plumb: ankle midpoint";
+    ctx.fillText(_vl,6,H-8);
   }
 
   } else {
@@ -4964,8 +4966,24 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.fill(); ctx.fillStyle=angleCol; ctx.textAlign="right";
       ctx.fillText(angText,W-6,my+4);
     });
-    // Corrected ASIS-to-ASIS level line (connects both corrected ASIS points)
+    // Corrected ASIS-to-ASIS level line — ANTERIOR only (Magee: ASIS not visible posteriorly)
+    // For posterior view: show simple hip level line labeled as PSIS proxy
     if(V(23)&&V(24)){
+      const isPost=(view==="posterior"||view==="back");
+      if(isPost){
+        // PSIS proxy: simple horizontal midline at hip level with appropriate label
+        const hipMidY=(PX(23)[1]+PX(24)[1])/2;
+        ctx.save(); ctx.strokeStyle="rgba(200,100,255,0.6)"; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.moveTo(0,hipMidY); ctx.lineTo(W,hipMidY); ctx.stroke();
+        ctx.restore(); ctx.setLineDash([]);
+        const hipAngle=Math.atan2(PX(24)[1]-PX(23)[1],Math.abs(PX(24)[0]-PX(23)[0]))*180/Math.PI;
+        const ha=Math.abs(hipAngle),hac=ha<1?"rgba(0,201,122,0.95)":ha<3?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
+        ctx.font="bold 8px system-ui"; ctx.textAlign="left"; ctx.fillStyle="rgba(0,0,0,0.78)";
+        if(ctx.roundRect) ctx.roundRect(2,hipMidY-9,90,14,3); else ctx.rect(2,hipMidY-9,90,14);
+        ctx.fill(); ctx.fillStyle="rgba(200,100,255,0.85)"; ctx.fillText("Hip Level (PSIS~)",6,hipMidY+2);
+      }
+    }
+    if(V(23)&&V(24)&&!(view==="posterior"||view==="back")){
       const hipL=PX(23), hipR=PX(24);
       const shL=V(11)?PX(11):null, shR=V(12)?PX(12):null;
       const torsoHL=shL?hipL[1]-shL[1]:H*0.3, torsoHR=shR?hipR[1]-shR[1]:H*0.3;
@@ -4986,9 +5004,10 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.fill(); ctx.fillStyle=ac; ctx.textAlign="right";
       ctx.fillText(angText,W-6,(asLy+asRy)/2+4);
     }
-    // ASIS dashed rings — anatomically corrected position
+    // ASIS dashed rings — anterior view only (ASIS not visible from posterior)
     // MediaPipe landmarks 23/24 = hip joints (femoral head level).
     // ASIS is superior: offset upward by ~18% of shoulder-to-hip torso height.
+    if(!(view==="posterior"||view==="back"))
     [[23,"L.ASIS",11],[24,"R.ASIS",12]].forEach(([hipIdx,lbl,shIdx])=>{
       if(!V(hipIdx)) return;
       const hipPt=PX(hipIdx); if(!hipPt) return;
@@ -5060,7 +5079,12 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       }
     }
     // Foot progression angle badges
-    [[31,27,"L.Foot",0],[32,28,"R.Foot",1]].forEach(([fi,ai2,lbl,side])=>{
+    // Posterior: use heel(29/30)→ankle(27/28) axis — toe tips face away from camera
+    // Anterior: use toe(31/32)→ankle(27/28) axis (Magee p.863: normal 7-10° external)
+    const _footPairs=(view==="posterior"||view==="back")
+      ?[[29,27,"L.Heel",0],[30,28,"R.Heel",1]]
+      :[[31,27,"L.Foot",0],[32,28,"R.Foot",1]];
+    _footPairs.forEach(([fi,ai2,lbl,side])=>{
       if(!V(fi)||!V(ai2)) return;
       const fa=Math.abs(Math.atan2(g(fi).y-g(ai2).y, g(fi).x-g(ai2).x)*180/Math.PI);
       // Magee p.863: normal 7-10° external (range 0-20°); >20° = excess ER; <5° = in-toeing
@@ -6949,7 +6973,7 @@ function PostureAnalysisModule(){
                 <MetricRow label="L Knee Deviation" value={measurements.leftKneeDev} unit="°" normal={5} abnormal={12}/>
                 <MetricRow label="R Knee Deviation" value={measurements.rightKneeDev} unit="°" normal={5} abnormal={12}/>
                 <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Global & Symmetry</div>
-                <MetricRow label="Scapular Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
+                <MetricRow label="Shoulder/Acromion Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
                 <MetricRow label="C7 Plumb Deviation" value={measurements.c7PlumbDev} unit="%" normal={3} abnormal={6}/>
                 <MetricRow label="COG Deviation" value={measurements.cogDeviation} unit="%" normal={4} abnormal={8}/>
                 <MetricRow label="Hip-Knee Lateral Offset" value={measurements.pelvicObliquity} unit="%" normal={3} abnormal={6}/>
@@ -7021,7 +7045,7 @@ function PostureAnalysisModule(){
               <MetricRow label="Carrying Angle L" value={measurements.carryingAngleL} unit="°" normal={15} abnormal={20}/>
               <MetricRow label="Carrying Angle R" value={measurements.carryingAngleR} unit="°" normal={15} abnormal={20}/>
               <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Bilateral Symmetry &amp; Global</div>
-              <MetricRow label="Scapular Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
+              <MetricRow label="Shoulder/Acromion Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
               <MetricRow label="C7 Plumb Deviation" value={measurements.c7PlumbDev} unit="%" normal={3} abnormal={6}/>
               <MetricRow label="COG Deviation" value={measurements.cogDeviation} unit="%" normal={4} abnormal={8}/>
               <MetricRow label="Hip-Knee Lateral Offset" value={measurements.pelvicObliquity} unit="%" normal={3} abnormal={6}/>
