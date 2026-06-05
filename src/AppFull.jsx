@@ -6429,25 +6429,29 @@ function PostureAnalysisModule(){
         let resolved=false;
         const handler=results=>{
           if(resolved) return; resolved=true;
-          if(results.poseLandmarks?.length>0){
-            // For standard (non-selfie) camera photos, flip x-axis so patient's
-            // left = image left, matching MediaPipe's selfie-mode convention.
-            // This ensures all L/R labels are anatomically correct.
-            const rawLm=results.poseLandmarks;
-            const lm=photoOrientation==="standard"
-              ? rawLm.map(p=>({...p, x:1-p.x}))
-              : rawLm;
-            const calib=computeCalibration(lm,patientHeightCm,H);
-            processLandmarks(lm,v,H);
-            const mLocal=measureLandmarks(lm,calib);
-            octx.fillStyle="#ffffff"; octx.fillRect(0,0,W,H);
-            octx.drawImage(srcCanvas,0,0,W,H); // always from clean srcCanvas
-            // Wrap drawOverlay in try/catch — if it throws the promise still resolves
-            try { drawOverlay({ctx:octx,W,H,lm,view:v,showGrid:true,measurements:mLocal}); }
-            catch(overlayErr) { console.warn("drawOverlay error (non-fatal):", overlayErr); }
-            const annotated=oc.toDataURL("image/jpeg",0.92);
-            resolve({lm,annotated});
-          } else { resolve(null); }
+          try {
+            if(results.poseLandmarks?.length>0){
+              // For standard (non-selfie) camera photos, flip x-axis so patient's
+              // left = image left, matching MediaPipe's selfie-mode convention.
+              // This ensures all L/R labels are anatomically correct.
+              const rawLm=results.poseLandmarks;
+              const lm=photoOrientation==="standard"
+                ? rawLm.map(p=>({...p, x:1-p.x}))
+                : rawLm;
+              const calib=computeCalibration(lm,patientHeightCm,H);
+              processLandmarks(lm,v,H);
+              const mLocal=measureLandmarks(lm,calib);
+              octx.fillStyle="#ffffff"; octx.fillRect(0,0,W,H);
+              octx.drawImage(srcCanvas,0,0,W,H); // always from clean srcCanvas
+              try { drawOverlay({ctx:octx,W,H,lm,view:v,showGrid:true,measurements:mLocal}); }
+              catch(overlayErr) { console.warn("drawOverlay error (non-fatal):", overlayErr); }
+              const annotated=oc.toDataURL("image/jpeg",0.92);
+              resolve({lm,annotated});
+            } else { resolve(null); }
+          } catch(handlerErr) {
+            console.warn("analysePhoto handler error (non-fatal):", handlerErr);
+            resolve(null);
+          }
           if(liveHandlerRef.current) poseRef.current.onResults(liveHandlerRef.current);
         };
         poseRef.current.onResults(handler);
@@ -6474,7 +6478,9 @@ function PostureAnalysisModule(){
       return;
     }
     setAnalysing(true);
-    const result=await analysePhoto(url,view);
+    let result=null;
+    try { result=await analysePhoto(url,view); }
+    catch(e){ console.warn("analysePhoto threw unexpectedly:", e); }
     setAnalysing(false);
     if(result){
       // Show annotated overlay — analysePhoto uses createImageBitmap (clean, no taint)
@@ -6610,7 +6616,9 @@ function PostureAnalysisModule(){
     setAnalysing(true);
     const blobUrl=await new Promise(res=>{ fc.toBlob(b=>res(b?URL.createObjectURL(b):null),"image/jpeg",0.92); });
     if(blobUrl&&poseRef.current&&mpStatus==="ready"){
-      const result=await analysePhoto(blobUrl,currentView);
+      let result=null;
+      try { result=await analysePhoto(blobUrl,currentView); }
+      catch(captureErr){ console.warn("analysePhoto (camera) threw:", captureErr); }
       URL.revokeObjectURL(blobUrl);
       setAnalysing(false);
       if(result){
