@@ -6256,6 +6256,14 @@ function useHistory(){
   return {sessions,save,clear};
 }
 
+// ─── usePostureHistory — alias used by PostureLiveAnalysis / PhotoUploadAnalyzer ─
+function usePostureHistory(){
+  const [sessions,setSessions]=useState([]);
+  const saveSession=useCallback((s)=>setSessions(prev=>[...prev.slice(-19),s]),[]);
+  const clearHistory=useCallback(()=>setSessions([]),[]);
+  return {sessions,saveSession,clearHistory};
+}
+
 // ─── Responsive hook ──────────────────────────────────────────────────────────
 function useBreakpoint() {
   const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 390);
