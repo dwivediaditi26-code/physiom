@@ -1533,7 +1533,7 @@ const CLINICAL_NORMS = {
   rightKneeDev:      { normal:[-5,5],    mild:[-12,-5],  severe:[-30,-12],unit:"°", label:"Knee Hyperextension (Genu Recurvatum)", ref:">5° increases posterior capsule & ACL load. >10° — Beighton hypermobility score." },
 };
 
-// Cervical compressive load (Hansraj 2014 model: 4.5kg neutral + ~2.7kg/2.5cm FHP)
+// Cervical compressive load (estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula) model: 4.5kg neutral + ~2.7kg/2.5cm FHP)
 const CERVICAL_LOAD_KG = (fhpCm) => fhpCm !== null && fhpCm > 0 ? r1(4.5 + fhpCm * 1.08) : null;
 
 // ── LANDMARK CONFIDENCE GUARD ─────────────────────────────────────────────────
@@ -1902,7 +1902,7 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     ? toCm(Math.abs(fhpNorm / 100)) : null;
   // Primary measurement: real mm if available, normalised % if not
   const forwardHeadMm = forwardHeadCm !== null ? r1(forwardHeadCm * 10) : fhpNorm;
-  // Cervical compressive load (Hansraj model, only if real cm measurement available)
+  // Cervical compressive load (estimated cervical load proxy model, only if real cm measurement available)
   const cervicalLoadKg = CERVICAL_LOAD_KG(forwardHeadCm);
 
   // ── THORACIC KYPHOSIS (lateral view only) ─────────────────────────────────
@@ -2138,7 +2138,7 @@ function ReliabilityEngine(lm) {
 
 // ─── CLINICAL FINDINGS ENGINE ─────────────────────────────────────────────────
 // Thresholds: Kendall (2005), Magee (2014), Levangie & Norkin (2011),
-// Sahrmann (2002), Comerford & Mottram (2012), Hansraj (2014)
+// Sahrmann (2002), Comerford & Mottram (2012), estimated cervical load proxy (2014)
 function ClinicalFindingsEngine(lm, view, measurements) {
   if (!lm || !measurements) return [];
   const findings = [];
@@ -2404,7 +2404,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const loadStr = cervicalLoadKg !== null ? ` Est. cervical load: ${cervicalLoadKg}kg (neutral=4.5kg).` : "";
       add("Cervical — Forward Head", `Forward head posture — CVA ${cvaAngle.toFixed(0)}° (normal >55°)${forwardHeadCm !== null ? ` / ${forwardHeadCm.toFixed(1)}cm anterior` : ""}`, sev,
         `IMMEDIATE: supine chin nod (NOT chin tuck) ×10 ×3 sets, 10s hold. Thoracic extension foam roller T4–T8 ×2min daily. Suboccipital release 90s. Ergonomic: raise monitor 5–10cm, keyboard at elbow height. NKT: SCM+scalenes overactive → inhibit → activate DNF within 30s. Home cue: tongue to roof of mouth.`,
-        "M43.6", "⇒", `CVA ${cvaAngle.toFixed(0)}° (Yip 2008).${loadStr} Each 2.5cm FHP adds ~5kg to cervical extensors (Hansraj 2014).`, "Normal: >55°", cvaAngle);
+        "M43.6", "⇒", `CVA ${cvaAngle.toFixed(0)}° (Yip 2008).${loadStr} Each 2.5cm FHP adds ~2.7kg to estimated cervical extensor load (proxy model) (estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula)).`, "Normal: >55°", cvaAngle);
     } else if (cvaAngle === null && forwardHeadMm !== null && Math.abs(forwardHeadMm) > 3) {
       const abs = Math.abs(forwardHeadMm);
       add("Cervical — Forward Head", `Forward head posture — ear anterior to acromion (${abs.toFixed(1)}% offset)`, abs > 7 ? "high" : "moderate",
@@ -2415,7 +2415,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     // Thoracic kyphosis
     if (thoracicAngle !== null && thoracicAngle - 45 > 8) {
       const excess = thoracicAngle - 45;
-      add("Thoracic Kyphosis", `Increased thoracic kyphosis (~${thoracicAngle.toFixed(0)}°, normal 20–45°)`, excess > 18 ? "high" : "moderate",
+      add("Thoracic Kyphosis (Trunk Lean Est.)", `Increased thoracic kyphosis (~${thoracicAngle.toFixed(0)}°, normal 20–45°)`, excess > 18 ? "high" : "moderate",
         `Thoracic extension HVLA T4–T8 (PA + rotation). Foam roller extension apex ×2min daily. Wall angels ×15. Pec minor stretch 60s ×3. Lower trap: prone Y-T-W. Rib expansion breathing. Seated posture: lumbar roll support.`,
         "M40.2", "⌒", `Normal Cobb T1–T12 = 20–45°. Hyperkyphosis >50°. If structural: Scheuermann's (>5° wedging ≥3 vertebrae on X-ray).`, "Normal: 20–45°", thoracicAngle);
     }
@@ -2850,6 +2850,12 @@ function measureLandmarks(lm, calibration) {
   // vertically. Positive deviation = anterior to plumb (forward).
   const plumbX = sagAnkleVis ? sagAnkle.x : (sagHeelVis ? sagHeel.x : 0.5);
 
+  // viewSign: corrects for right lateral view where anterior = image-left = negative x.
+  // Left lateral (patient faces left): anterior = image-right = +x → viewSign = +1
+  // Right lateral (patient faces right): anterior = image-left = -x → viewSign = -1
+  // Without this correction, APT/PPT, FHP and all A/P labels are inverted for right lateral.
+  const viewSign = (view === "right") ? -1 : 1;
+
   // ── Convert normalised x-deviation to estimated cm ─────────────────────────
   // If pixPerCm is available from height calibration, use it.
   // Otherwise estimate from image height: typical standing person in frame ~170cm
@@ -2859,9 +2865,9 @@ function measureLandmarks(lm, calibration) {
   // Normalised x coords: deviation in image-fraction units × imgH / estPxPerCm
   const devCm = (normX) => {
     if (normX === null || normX === undefined) return null;
-    if (estPxPerCm && imgH) return r1((normX - plumbX) * imgH / estPxPerCm);
-    // Fallback: normalised fraction — scale with typical body height
-    return r1((normX - plumbX) * 170); // 170 = typical standing height in cm
+    // Apply viewSign: positive = anterior regardless of which side patient faces
+    if (estPxPerCm && imgH) return r1((normX - plumbX) * imgH / estPxPerCm * viewSign);
+    return r1((normX - plumbX) * 170 * viewSign);
   };
 
   // ── 5-point plumb line deviations ─────────────────────────────────────────
@@ -2885,7 +2891,7 @@ function measureLandmarks(lm, calibration) {
 
   // ── 1. CVA — Craniovertebral Angle ─────────────────────────────────────────
   // Clinical: angle between horizontal and line from C7 (acromion proxy) to ear.
-  // Normal: >52°. Mild FHP: 48–52°. Moderate: 44–48°. Severe: <44°.
+  // Normal: >55° (Yip et al. 2008). Mild FHP: 48–52°. Moderate: 44–48°. Severe: <44°.
   // (Neiva et al. 2009; Ruivo et al. 2017)
   let cvaAngle = null;
   if (sagEarVis && sagShVis) {
@@ -2909,14 +2915,15 @@ function measureLandmarks(lm, calibration) {
   // ── 2. FHP metrics ─────────────────────────────────────────────────────────
   // fhpNorm: retained for backward compatibility (% image width)
   const shoulderWidthPx = shMid && Vb(11,12) ? dist2D(g(11),g(12)) : null;
-  const fhpNorm = sagEarVis && sagShVis ? r1((sagEar.x - sagSh.x) * 100) : null;
+  const fhpNorm = sagEarVis && sagShVis ? r1((sagEar.x - sagSh.x) * 100 * viewSign) : null;
 
   // fhpCm: ear deviation from shoulder in cm (clinical plumb line method)
   // Positive = ear anterior to acromion
   const fhpDevCm = plumb.ear !== null && plumb.shoulder !== null
     ? r1(plumb.ear - plumb.shoulder) : null;
 
-  // Cervical load (Hansraj 2014) — only if FHP confirmed by CVA
+  // Cervical load estimate (proxy model — NOT estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula) formula; estimated cervical load proxy uses neck flexion angle)
+  // Formula: baseline 4.5kg + 1.08kg per cm FHP. Each 2.5cm FHP ≈ +2.7kg.
   let cervicalLoadKg = null;
   if (fhpDevCm !== null && fhpDevCm > 0 && cvaAngle !== null && cvaAngle < 55) {
     cervicalLoadKg = r1(clamp(4.5 + fhpDevCm * 1.08, 4.5, 32));
@@ -2947,13 +2954,13 @@ function measureLandmarks(lm, calibration) {
   // Hip (GT) vs plumb line: anterior = APT tendency, posterior = PPT tendency.
   // Lumbar proxy: retain original for backward compatibility
   let lumbarProxy = null;
-  if (hipMid && kneeMid && heelMid) lumbarProxy = r1((hipMid.x - (kneeMid.x + heelMid.x) / 2) * 100);
+  if (hipMid && kneeMid && heelMid) lumbarProxy = r1((hipMid.x - (kneeMid.x + heelMid.x) / 2) * 100 * viewSign);
 
   // sagPelvicShift: true plumb line pelvic deviation in cm (+ = anterior)
   const sagPelvicShift = plumb.hip; // already in cm from plumb
 
   // ── 6. Hip position vs ankle plumb ─────────────────────────────────────────
-  const hipExtensionProxy = hipMid && ankleMid ? r1((hipMid.x - ankleMid.x) * 100) : null;
+  const hipExtensionProxy = hipMid && ankleMid ? r1((hipMid.x - ankleMid.x) * 100 * viewSign) : null;
 
   // sagHipShift: hip in cm vs plumb (+ = anterior, - = posterior / sway-back pattern)
   const sagHipShift = plumb.hip;
@@ -3433,7 +3440,7 @@ const POSTURE_THRESHOLDS = {
   // Frontal
   shoulderAngle:       { mild:3,  moderate:6,  severe:10  }, // degrees
   pelvisAngle:         { mild:3,  moderate:6,  severe:10  }, // degrees
-  headTilt:            { mild:3,  moderate:6,  severe:9   }, // degrees
+  headTilt:            { mild:4,  moderate:6,  severe:9   }, // degrees
   trunkLateralShift:   { mild:4,  moderate:7,  severe:11  }, // %
   spinalDeviation:     { mild:4,  moderate:8,  severe:13  }, // %
   waistAsymmetry:      { mild:4,  moderate:7,  severe:11  }, // %
@@ -3444,7 +3451,7 @@ const POSTURE_THRESHOLDS = {
   tibialVarum:         { mild:5,  moderate:10, severe:15  }, // degrees
   ankleLLD:            { mild:6,  moderate:12, severe:18  }, // mm
   // Sagittal — recalibrated to clinical norms (Kendall 2005; Neiva 2009; Ruivo 2017)
-  cvaAngle:            { mild:54, moderate:50, severe:45  }, // degrees (lower = worse); normal >54
+  cvaAngle:            { mild:55, moderate:50, severe:45  }, // degrees (lower = worse); normal >54
   thoracicAngle:       { mild:44, moderate:50, severe:58  }, // degrees; normal 20-45; mild fires at 44+
   lumbarProxy:         { mild:4,  moderate:8,  severe:13  }, // % — mild threshold lowered to catch mild APT
   hipDisplacement:     { mild:4,  moderate:8,  severe:13  }, // %
@@ -3569,7 +3576,7 @@ const INTERPRETATIONS = {
     `Reduced CVA (${cva.toFixed(1)}°) may indicate a forward head tendency. ` +
     `This pattern may be associated with suboccipital and cervical extensor overactivity ` +
     `and reduced deep cervical flexor contribution.` +
-    (load ? ` Estimated cervical load increase: ~${load.toFixed(1)}kg (Hansraj 2014 model — proxy only).` : ""),
+    (load ? ` Estimated cervical load increase: ~${load.toFixed(1)}kg (estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula) model — proxy only).` : ""),
   kyphosis: (deg) =>
     `Increased thoracic curvature (${deg.toFixed(1)}°) may be consistent with a kyphotic tendency. ` +
     `Possible overactivity: pectoralis major/minor, upper trapezius. ` +
@@ -3710,7 +3717,7 @@ const MAX_FINDINGS_TOTAL    = 10;
 const POSTURE_CHAIN = {
   cervical:  ["Cervical / CVA", "Head / Cervical"],
   shoulder:  ["Shoulder / Rounded Tendency", "Upper Crossed Syndrome (UCS)", "Upper Crossed Syndrome"],
-  thoracic:  ["Thoracic Kyphosis"],
+  thoracic:  ["Thoracic Kyphosis (Trunk Lean Est.)"],
   pelvis:    ["Pelvis / Lumbar", "Lower Crossed Syndrome (LCS)", "Lower Crossed Syndrome"],
   knee:      ["Knee", "Knee Alignment"],
 };
@@ -4191,13 +4198,13 @@ function buildFindings(lm, view, m) {
       if (m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild && cvaConf >= 28) {
         const sev = m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.severe ? "high"
           : m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.moderate ? "moderate" : "mild";
-        const loadStr = m.cervicalLoadKg ? ` Estimated cervical load increase: ~${m.cervicalLoadKg.toFixed(1)}kg (proxy, Hansraj 2014).` : "";
+        const loadStr = m.cervicalLoadKg ? ` Estimated cervical load increase: ~${m.cervicalLoadKg.toFixed(1)}kg (proxy, estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula)).` : "";
         const fhpCmStr = fhpCm !== null && fhpCm > 0 ? ` Ear ~${fhpCm.toFixed(1)}cm anterior to acromion.` : "";
 
         add({
           clusterBoost: 15, // sagittal provisional — refined by clustering step
           region: "Cervical / CVA",
-          findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >52°)`,
+          findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55° (Yip et al. 2008))`,
           severity: sev, confidenceScore: cvaConf,
           clinicalSignificance: sev,
           interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this.${loadStr}`,
@@ -4276,7 +4283,7 @@ function buildFindings(lm, view, m) {
           ? ` (shoulder ~${m.sagShoulderShift.toFixed(1)}cm anterior to plumb)` : "";
         add({
           clusterBoost: 15, // sagittal provisional — refined by clustering step
-          region: "Thoracic Kyphosis",
+          region: "Thoracic Kyphosis (Trunk Lean Est.)",
           findingName: `Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,
           severity: sev, confidenceScore: conf, clinicalSignificance: sev,
           interpretation: `Increased thoracic curvature (${m.thoracicAngle.toFixed(1)}°)${shiftStr} may be consistent with a kyphotic tendency. This may be associated with possible pectoralis major/minor overactivity and reduced middle/lower trapezius and thoracic extensor contribution. ` +
@@ -4446,6 +4453,35 @@ function buildFindings(lm, view, m) {
         "M40.4");
     }
 
+    // ── Genu Recurvatum (knee hyperextension) ───────────────────────────────
+    // Uses best-visibility side: hip→knee→ankle vectors.
+    // Reference: Magee 6th ed.: >5° hyperextension in standing = clinically significant.
+    {
+      const iHip = view==="right"?24:23, iKnee = view==="right"?26:25, iAnk = view==="right"?28:27;
+      const sideName = view==="right"?"Right":"Left";
+      if (Vb(iHip,iKnee,iAnk)) {
+        const hp=g(iHip), kp=g(iKnee), ap=g(iAnk);
+        const v1x=hp.x-kp.x, v1y=hp.y-kp.y, v2x=ap.x-kp.x, v2y=ap.y-kp.y;
+        const dot=v1x*v2x+v1y*v2y;
+        const mag=Math.sqrt(v1x**2+v1y**2)*Math.sqrt(v2x**2+v2y**2);
+        const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180;
+        const kDev=180-ka; // negative = hyperextension
+        if (kDev < -5) {
+          const abs=Math.abs(kDev), sev=abs>12?"moderate":"low";
+          add({
+            region:"Knee — Sagittal",
+            findingName:`OBSERVATION: ${sideName} knee hyperextension tendency (${abs.toFixed(1)}°) — genu recurvatum screen positive. Clinical confirmation required.`,
+            severity:sev, confidenceScore:Math.min(sagConf,75), clinicalSignificance:sev,
+            interpretation:"OBSERVATION ONLY. Static knee hyperextension tendency. Cannot confirm structural genu recurvatum from photograph alone. >5° increases posterior capsule and ACL load; >10° — assess Beighton hypermobility score.",
+            objectiveAssessments:["Weight-bearing knee alignment assessment","Posterior capsule laxity test","Beighton hypermobility score (if >10°)","Single-leg stance observation"],
+            correction:"Possible contributors: posterior capsule laxity, quadriceps inhibition, habitual weight-shift. Recommended: terminal knee extension (TKE) strengthening, VMO activation, gait re-education.",
+            icd:"M21.9", norm:"<5° knee hyperextension in standing",
+            _derivedFrom:[`Hip (lm${iHip})`,`Knee (lm${iKnee})`,`Ankle (lm${iAnk})`],
+          });
+        }
+      }
+    }
+
     // ── POSTURE CHAIN CLUSTERING ─────────────────────────────────────────────
     // After all individual sagittal findings are added to `out`,
     // apply cluster boost and add chain correlation note.
@@ -4490,7 +4526,7 @@ function buildFindings(lm, view, m) {
 
       // If no sagittal findings at all — add clinically realistic nil-finding message
       const hasSagittalFindings = out.some(f => {
-        const sagRegions = ["Cervical / CVA","Shoulder / Rounded","Thoracic Kyphosis",
+        const sagRegions = ["Cervical / CVA","Shoulder / Rounded","Thoracic Kyphosis (Trunk Lean Est.)",
           "Pelvis / Lumbar","Lower Crossed","Upper Crossed","Knee","◈ Sagittal","Sagittal Chain"];
         return sagRegions.some(r => f.region.includes(r));
       });
@@ -5415,7 +5451,7 @@ const MUSCLE_MAP = {
   "Neck / Cervical":          { tight:["Scalenes","SCM","Upper Trapezius"],                     weak:["Deep Cervical Flexors","Lower Trap"] },
   // Sagittal
   "Cervical / CVA":           { tight:["Suboccipitals","Cervical Extensors","Pec Minor"],       weak:["Deep Cervical Flexors (DNF)","Lower Trapezius","Serratus Anterior"] },
-  "Thoracic Kyphosis":        { tight:["Pectorals Major/Minor","Upper Trapezius","SCM"],        weak:["Lower Trapezius","Rhomboids","Mid Thoracic Extensors"] },
+  "Thoracic Kyphosis (Trunk Lean Est.)":        { tight:["Pectorals Major/Minor","Upper Trapezius","SCM"],        weak:["Lower Trapezius","Rhomboids","Mid Thoracic Extensors"] },
   "Pelvis / Lumbar":          { tight:["Iliopsoas","Rectus Femoris","TFL","QL"],                weak:["Glute Max","Transverse Abdominis","Hamstrings"] },
   "Hip / Global":             { tight:["Hip Flexors","Lumbar Extensors"],                       weak:["Glute Max","Abdominals"] },
   "Lower Crossed Syndrome":   { tight:["Iliopsoas","Rectus Femoris","TFL","Thoracolumbar Fascia"], weak:["Glute Max","Glute Med","Transverse Abdominis"] },
@@ -5504,7 +5540,7 @@ const SPECIAL_TESTS_MAP = {
     { name:"Hip Extension Prone",  purpose:"Glute max firing pattern — timing vs hamstrings" },
     { name:"Trendelenburg Test",   purpose:"Glute medius weakness" },
   ],
-  "Thoracic Kyphosis":        [
+  "Thoracic Kyphosis (Trunk Lean Est.)":        [
     { name:"Pec Minor Length Test", purpose:"Assess pec minor shortening — supine shoulder drop" },
     { name:"Wall Angel Test",      purpose:"Thoracic mobility and scapular upward rotation" },
     { name:"Thoracic Extension ROM", purpose:"Foam roller passive extension range (T4–T8)" },
@@ -5617,7 +5653,7 @@ const EXERCISE_MAP = {
     { phase:2, name:"Chin Nod (DNF)",              sets:"3×10 holds 10s",cue:"Supine. Small nod, NOT a crunch. Maintain length. Build to 10-second holds.", category:"activate" },
     { phase:3, name:"Thoracic Extension (T4–T8)",  sets:"2min",          cue:"Foam roller across mid-back, arms crossed on chest, head supported. Let gravity extend.", category:"correct" },
   ],
-  "Thoracic Kyphosis":      [
+  "Thoracic Kyphosis (Trunk Lean Est.)":      [
     { phase:1, name:"Thoracic Extension Foam Roller",sets:"2×2min T4–T8",cue:"Roller across mid-back. Arms crossed. Support head. Let gravity do the work.", category:"correct" },
     { phase:1, name:"Pec Stretch (Bilateral)",     sets:"3×30s",         cue:"Doorframe, forearm at 90°. Lean forward gently.", category:"inhibit" },
     { phase:2, name:"Prone Y–T–W",                 sets:"3×10 each",     cue:"Prone, lift arms in Y, T, then W shape. Light — this is activation, not load.", category:"activate" },
@@ -6832,16 +6868,16 @@ function PostureAnalysisModule(){
                       {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
                     </span>
                   </div>
-                  <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2}}>Normal &gt;55° · &lt;49° = High load · Hansraj cervical load model</div>
+                  <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2}}>Normal &gt;55° · &lt;49° = High load · estimated cervical load proxy cervical load model</div>
                 </div>
                 {measurements.cervicalLoadKg!=null&&(
                   <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
-                    <div style={{flex:1,fontSize:"0.68rem",color:PC.muted}}>Cervical Load <span style={{fontSize:"0.56rem"}}>(Hansraj)</span></div>
+                    <div style={{flex:1,fontSize:"0.68rem",color:PC.muted}}>Cervical Load <span style={{fontSize:"0.56rem"}}>(estimated cervical load proxy)</span></div>
                     <div style={{fontSize:"0.75rem",fontWeight:800,color:measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green}}>{measurements.cervicalLoadKg.toFixed(1)}kg</div>
                   </div>
                 )}
                 <MetricRow label="Forward Head" value={measurements.fhpNorm} unit="%" normal={3} abnormal={7}/>
-                <MetricRow label="Thoracic Kyphosis" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
+                <MetricRow label="Thoracic Kyphosis (Est.)" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
                 {/* Lumbar lordosis: paired with kyphosis — show together */}
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
                   <div style={{flex:1}}>
@@ -6860,7 +6896,7 @@ function PostureAnalysisModule(){
                 <MetricRow label="Scapular Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
                 <MetricRow label="C7 Plumb Deviation" value={measurements.c7PlumbDev} unit="%" normal={3} abnormal={6}/>
                 <MetricRow label="COG Deviation" value={measurements.cogDeviation} unit="%" normal={4} abnormal={8}/>
-                <MetricRow label="Pelvic Obliquity" value={measurements.pelvicObliquity} unit="%" normal={3} abnormal={6}/>
+                <MetricRow label="Hip-Knee Lateral Offset" value={measurements.pelvicObliquity} unit="%" normal={3} abnormal={6}/>
                 <MetricRow label="L Foot Angle" value={measurements.leftFootAngle} unit="°" normal={10} abnormal={20}/>
                 <MetricRow label="R Foot Angle" value={measurements.rightFootAngle} unit="°" normal={10} abnormal={20}/>
                 <MetricRow label="L Ankle Dorsiflexion" value={measurements.leftAnkleAngle} unit="°" normal={100} abnormal={85}/>
@@ -6900,12 +6936,12 @@ function PostureAnalysisModule(){
               </div>
               {measurements.cervicalLoadKg!=null&&(
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
-                  <div style={{flex:1,fontSize:"0.68rem",color:PC.muted}}>Cervical Load Est. <span style={{fontSize:"0.56rem"}}>(Hansraj 2014)</span></div>
+                  <div style={{flex:1,fontSize:"0.68rem",color:PC.muted}}>Cervical Load Est. <span style={{fontSize:"0.56rem"}}>(estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula))</span></div>
                   <div style={{fontSize:"0.75rem",fontWeight:800,color:measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green,minWidth:60,textAlign:"right"}}>{measurements.cervicalLoadKg.toFixed(1)}kg</div>
                 </div>
               )}
               <MetricRow label="Forward Head" value={measurements.fhpNorm} unit="%" normal={3} abnormal={7}/>
-              <MetricRow label="Thoracic Kyphosis" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
+              <MetricRow label="Thoracic Kyphosis (Est.)" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
               {/* Lumbar lordosis paired with kyphosis */}
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
                 <div style={{flex:1}}>
@@ -6932,7 +6968,7 @@ function PostureAnalysisModule(){
               <MetricRow label="Scapular Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
               <MetricRow label="C7 Plumb Deviation" value={measurements.c7PlumbDev} unit="%" normal={3} abnormal={6}/>
               <MetricRow label="COG Deviation" value={measurements.cogDeviation} unit="%" normal={4} abnormal={8}/>
-              <MetricRow label="Pelvic Obliquity" value={measurements.pelvicObliquity} unit="%" normal={3} abnormal={6}/>
+              <MetricRow label="Hip-Knee Lateral Offset" value={measurements.pelvicObliquity} unit="%" normal={3} abnormal={6}/>
               <MetricRow label="L Foot Angle" value={measurements.leftFootAngle} unit="°" normal={10} abnormal={20}/>
               <MetricRow label="R Foot Angle" value={measurements.rightFootAngle} unit="°" normal={10} abnormal={20}/>
               <MetricRow label="L Ankle Dorsiflexion" value={measurements.leftAnkleAngle} unit="°" normal={100} abnormal={85}/>
@@ -7569,7 +7605,7 @@ function PostureAnalysisModule(){
     // Goals from findings
     const goals = [];
     if(m.cvaAngle!=null) goals.push({metric:"CVA",current:m.cvaAngle.toFixed(1)+"°",target:">52°",timeframe:"6 weeks"});
-    if(m.thoracicAngle!=null) goals.push({metric:"Thoracic Kyphosis",current:m.thoracicAngle.toFixed(1)+"°",target:"<45°",timeframe:"8 weeks"});
+    if(m.thoracicAngle!=null) goals.push({metric:"Thoracic Kyphosis (Trunk Lean Est.)",current:m.thoracicAngle.toFixed(1)+"°",target:"<45°",timeframe:"8 weeks"});
     if(scoreData?.score!=null) goals.push({metric:"Posture Score",current:scoreData.score+"/100",target:">60/100",timeframe:"8 weeks"});
 
     const d = {
@@ -7866,7 +7902,7 @@ function PostureAnalysisModule(){
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
                 ${[
                   {label:"CVA (FHP ★)",val:m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",norm:">55°",bad:m.cvaAngle!=null&&m.cvaAngle<49,warn:m.cvaAngle!=null&&m.cvaAngle<55},
-                  {label:"Thoracic Kyphosis",val:m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—",norm:"20–45°",bad:m.thoracicAngle!=null&&m.thoracicAngle>55,warn:m.thoracicAngle!=null&&m.thoracicAngle>45},
+                  {label:"Thoracic Kyphosis (Trunk Lean Est.)",val:m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—",norm:"20–45°",bad:m.thoracicAngle!=null&&m.thoracicAngle>55,warn:m.thoracicAngle!=null&&m.thoracicAngle>45},
                   {label:"Cervical Load",val:m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"—",norm:"4.5kg",bad:m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,warn:m.cervicalLoadKg!=null&&m.cervicalLoadKg>12},
                   {label:"LCS Index",val:m.lcsIndex!=null?m.lcsIndex.toFixed(1):"—",norm:"<0.5",bad:m.lcsIndex!=null&&m.lcsIndex>1,warn:m.lcsIndex!=null&&m.lcsIndex>0.5},
                 ].map(r=>`<div style="padding:5px 8px;border-radius:6px;background:${r.bad?"#fef2f2":r.warn?"#fffbeb":"#f0fdf4"};border:1px solid ${r.bad?C.red:r.warn?C.yellow:C.green}25;display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.61rem;color:${C.muted}">${r.label}</span><div style="text-align:right"><div style="font-size:0.72rem;font-weight:800;color:${r.bad?C.red:r.warn?C.yellow:C.green}">${r.val}</div><div style="font-size:0.52rem;color:${C.muted}">nrm ${r.norm}</div></div></div>`).join("")}
@@ -7980,8 +8016,8 @@ function PostureAnalysisModule(){
             <div>
               <div style="font-size:0.59rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.muted};margin-bottom:7px">Sagittal Plane</div>
               ${metRow("CVA Angle ★",m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",">55°",m.cvaAngle!=null&&m.cvaAngle<49,m.cvaAngle!=null&&m.cvaAngle<55)}
-              ${metRow("Cervical Load (Hansraj)",m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"—","4.5kg",m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,m.cervicalLoadKg!=null&&m.cervicalLoadKg>12)}
-              ${metRow("Thoracic Kyphosis",m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—","20–45°",m.thoracicAngle!=null&&m.thoracicAngle>55,m.thoracicAngle!=null&&m.thoracicAngle>45)}
+              ${metRow("Cervical Load (estimated cervical load proxy)",m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"—","4.5kg",m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,m.cervicalLoadKg!=null&&m.cervicalLoadKg>12)}
+              ${metRow("Thoracic Kyphosis (Trunk Lean Est.)",m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—","20–45°",m.thoracicAngle!=null&&m.thoracicAngle>55,m.thoracicAngle!=null&&m.thoracicAngle>45)}
               ${metRow("Lumbar Lordosis (proxy)",m.lumbarProxy!=null?(m.lumbarProxy>0?"↑":"↓")+Math.abs(m.lumbarProxy).toFixed(1)+"%":"—","<5%",Math.abs(m.lumbarProxy||0)>10,Math.abs(m.lumbarProxy||0)>5)}
               ${metRow("LCS Index",m.lcsIndex!=null?m.lcsIndex.toFixed(1):"—","<0.5",m.lcsIndex!=null&&m.lcsIndex>1,m.lcsIndex!=null&&m.lcsIndex>0.5)}
             </div>
@@ -9069,8 +9105,8 @@ function PhotoUploadAnalyzer() {
                 // Sagittal — highest clinical priority
                 {label:"CVA (Forward Head)",    value:measurements.cvaAngle,        unit:"°",  t:[49,55], norm:">55° normal",  invert:true},
                 {label:"Cervical Load Est.",    value:measurements.cervicalLoadKg,   unit:"kg", t:[6,10],  norm:"Neutral: 4.5kg"},
-                {label:"Thoracic Kyphosis",     value:measurements.thoracicAngle,    unit:"°",  t:[45,55], norm:"20–45° normal"},
-                {label:"Lumbar Lordosis Est.",  value:measurements.lordosisAngle,    unit:"°",  t:[60,70], norm:"40–60° normal"},
+                {label:"Thoracic Kyphosis (Trunk Lean Est.)",     value:measurements.thoracicAngle,    unit:"°",  t:[45,55], norm:"20–45° normal"},
+                {label:"Lumbar Lordosis (Z-proxy — unreliable)",  value:measurements.lordosisAngle,    unit:"°",  t:[60,70], norm:"40–60° normal"},
                 {label:"Ant. Pelvic Tilt",      value:measurements.anteriorPelvicTiltDeg, unit:"°", t:[12,20], norm:"♀≤12° ♂≤7°"},
                 // Frontal
                 {label:"Shoulder Tilt",         value:measurements.shoulderAngle,    unit:"°",  t:[3,7],   norm:"<3° normal"},
@@ -11301,7 +11337,7 @@ const POSTURE_DEFECTS = {
   forward_head: {
     id:"forward_head", icon:"🫀", label:"Forward Head Posture", region:"Cervical",
     view:["anterior","lateral"],
-    description:"Ear positioned anterior to the acromion process. Each 2.5cm of forward translation adds ~10kg of effective cervical load.",
+    description:"Ear positioned anterior to the acromion process. Each 2.5cm of forward translation adds ~2.7kg per 2.5cm of estimated cervical extensor load (proxy model — confirm clinically).",
     tight_muscles:["Upper trapezius","SCM","Suboccipitals","Scalenes","Pec minor"],
     weak_muscles:["Deep neck flexors (DNF)","Lower trapezius","Serratus anterior","Rhomboids"],
     kinetic_chain:"Forward head → cervical lordosis → thoracic kyphosis → shoulder protraction → reduced lung capacity",
@@ -13060,7 +13096,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
       {label:"Craniovertebral Angle", value:cva,     normal:"&gt;50 deg", bad:parseFloat(cva)<50,                                          bc:"#dc2626"},
       {label:"Forward Head Dist",     value:fhp,     normal:"&lt;25mm",   bad:parseFloat(fhp)>25,                                          bc:"#dc2626"},
       {label:"Shoulder Angle",        value:shAngle, normal:"&lt;2 deg",  bad:parseFloat(shAngle)>2,                                       bc:"#d97706"},
-      {label:"Thoracic Kyphosis",     value:kyph,    normal:"20-40 deg",  bad:parseFloat(kyph)>40,                                         bc:"#d97706"},
+      {label:"Thoracic Kyphosis (Trunk Lean Est.)",     value:kyph,    normal:"20-40 deg",  bad:parseFloat(kyph)>40,                                         bc:"#d97706"},
       {label:"Lumbar Lordosis",       value:lord,    normal:"30-50 deg",  bad:parseFloat(lord)>50||parseFloat(lord)<30,                    bc:"#d97706"},
       {label:"Pelvic Tilt",           value:pelv,    normal:"0-5 deg",    bad:false,                                                       bc:"#6b7280"},
     ];
