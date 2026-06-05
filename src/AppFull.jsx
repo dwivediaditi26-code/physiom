@@ -4775,8 +4775,11 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
 
   // ── Plumb line ────────────────────────────────────────────────────────────
   if(!isLat){
-    const hm=V(23)&&V(24)?{x:(g(23).x+g(24).x)/2,y:(g(23).y+g(24).y)/2}:null;
-    const gx=hm?hm.x*W:W/2;
+    // Kendall: anterior/posterior plumb line falls midway between the heels (ankle midpoint)
+    // Fallback to hip midpoint if ankles not visible
+    const ankMid=V(27)&&V(28)?{x:(g(27).x+g(28).x)/2}:null;
+    const hipMidX=V(23)&&V(24)?(g(23).x+g(24).x)/2:null;
+    const gx=ankMid?ankMid.x*W:hipMidX?hipMidX*W:W/2;
     ctx.save(); ctx.shadowColor="rgba(0,229,255,0.6)"; ctx.shadowBlur=8;
     ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,0.95)"; ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
@@ -4784,11 +4787,11 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
   // ── Legend (top-right) — mirrors Image 2 ─────────────────────────────────
   if(!isLat){
     const legendItems=[
-      {col:"rgba(0,201,122,0.95)", label:"Normal"},
+      {col:"rgba(0,201,122,0.95)", label:"Within Kendall norm"},
       {col:"rgba(255,179,0,0.95)", label:"Mild deviation"},
-      {col:"rgba(255,77,109,0.95)", label:"Significant"},
-      {col:"rgba(200,100,255,0.9)", label:"ASIS/Pelvis"},
-      {col:"rgba(0,140,255,0.85)", label:"Spine segments"},
+      {col:"rgba(255,77,109,0.95)", label:"Significant deviation"},
+      {col:"rgba(200,100,255,0.9)", label:"ASIS/Pelvis level"},
+      {col:"rgba(0,229,255,0.95)",  label:"Plumb line (Kendall)"},
     ];
     const lx=W-140, ly=10, lw=132, lh=legendItems.length*16+10;
     ctx.fillStyle="rgba(0,0,0,0.72)";
@@ -4802,16 +4805,16 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     });
     // "ANTERIOR VIEW" bottom-left label
     ctx.font="bold 9px system-ui"; ctx.textAlign="left"; ctx.fillStyle="rgba(255,255,255,0.55)";
-    ctx.fillText("ANTERIOR VIEW",6,H-8);
+    ctx.fillText("ANTERIOR VIEW — Kendall plumb: ankle midpoint",6,H-8);
   }
 
   } else {
     // ── Clinical Sagittal Plumb Line (Kendall / Sahrmann standard) ────────
     const side = view==="right";
     const iEar=side?8:7, iSh=side?12:11, iHip=side?24:23, iKnee=side?26:25, iAnk=side?28:27, iHeel=side?30:29;
+    // Kendall (5th ed.): plumb line passes through the lateral malleolus
     let plumbX=W/2;
-    if(V(iAnk)&&V(iHeel)){ plumbX=lm[iAnk].x*W*0.6+lm[iHeel].x*W*0.4; }
-    else if(V(iAnk)){ plumbX=lm[iAnk].x*W; }
+    if(V(iAnk)){ plumbX=lm[iAnk].x*W; }       // lateral malleolus — Kendall primary
     else if(V(iHeel)){ plumbX=lm[iHeel].x*W; }
     const pixPerCm=m.pixPerCm||(H/170);
     // Plumb line
@@ -4819,14 +4822,26 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,1)"; ctx.lineWidth=3;
     ctx.beginPath(); ctx.moveTo(plumbX,0); ctx.lineTo(plumbX,H); ctx.stroke();
     ctx.shadowBlur=0; ctx.setLineDash([]); ctx.restore();
-    // Clinical reference points — cm deviation (Kendall 2005 norms)
-    [{idx:iEar,label:"EAM",normRange:2},{idx:iSh,label:"Acromion",normRange:2},{idx:iHip,label:"G. Trochanter",normRange:2},{idx:iKnee,label:"Knee",normRange:2}].filter(s=>V(s.idx)).forEach(({idx,label,normRange})=>{
+    // Kendall (5th ed.) sagittal plumb norms:
+    //  EAM:        0cm (on plumb) | Acromion:      0cm | GT:  0cm | Knee: 0–2cm A (normal) | Malleolus: anchor
+    // normRange = acceptable deviation in cm ANTERIOR (+) or POSTERIOR (−)
+    // For knee: Kendall states slight anterior position (0–2cm) is normal — adjust threshold accordingly
+    const sagRefPts=[
+      {idx:iEar, label:"EAM",         normMin:0, normMax:2,  note:"(at plumb)"},
+      {idx:iSh,  label:"Acromion",    normMin:0, normMax:2,  note:"(at plumb)"},
+      {idx:iHip, label:"G. Trochanter",normMin:0,normMax:2,  note:"(at plumb)"},
+      {idx:iKnee,label:"Knee",        normMin:-1,normMax:3,  note:"(0–2cm A normal)"},
+    ];
+    sagRefPts.filter(s=>V(s.idx)).forEach(({idx,label,normMin,normMax,note})=>{
       const pt=PX(idx); if(!pt) return;
-      const devPx=pt[0]-plumbX, devCm=devPx/pixPerCm, absD=Math.abs(devCm);
-      const col=absD<=normRange?"rgba(0,201,122,0.95)":absD<=normRange+2?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
+      const devPx=(pt[0]-plumbX)*viewSign, devCm=devPx/pixPerCm;
+      // Green if within Kendall normal range, yellow if mild deviation, red if significant
+      const inNorm=devCm>=normMin-0.5&&devCm<=normMax+0.5;
+      const mild=devCm>=normMin-2&&devCm<=normMax+2;
+      const col=inNorm?"rgba(0,201,122,0.95)":mild?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
       if(Math.abs(devPx)>6){ ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=1.8; ctx.setLineDash([5,3]); ctx.beginPath(); ctx.moveTo(plumbX,pt[1]); ctx.lineTo(pt[0],pt[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
       ctx.beginPath(); ctx.arc(pt[0],pt[1],5,0,Math.PI*2); ctx.fillStyle=col; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke();
-      const sign=devCm>0?"A ":"P ", badgeText=`${label}  ${sign}${Math.abs(devCm).toFixed(1)}cm`;
+      const dir=devCm>0?"A":"P", badgeText=`${label} ${dir} ${Math.abs(devCm).toFixed(1)}cm`;
       ctx.font="bold 10px system-ui"; const tw=ctx.measureText(badgeText).width;
       const onRight=pt[0]<W*0.6, bx=onRight?pt[0]+9:pt[0]-tw-17, by=pt[1]-9;
       ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(bx,by,tw+8,17,4); else ctx.rect(bx,by,tw+8,17);
@@ -4884,13 +4899,13 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       }
     }
     // Horizontal level lines — full width with right-edge angle readings (like Image 2)
+    // Kendall's 5 primary frontal reference levels (Kendall 5th ed. Ch.2 & Ch.5)
     const LEVELS=[
-      {idxL:7,  idxR:8,  label:"Eye Level\nEars / C-spine", color:"rgba(0,229,255,0.8)"},
-      {idxL:11, idxR:12, label:"Shoulders",      color:"rgba(147,51,234,0.9)"},
-      {idxL:23, idxR:24, label:"Hip Joint Ref",  color:"rgba(249,115,22,0.5)"},
-      {idxL:25, idxR:26, label:"Knees",          color:"rgba(16,185,129,0.9)"},
-      {idxL:27, idxR:28, label:"Ankles",         color:"rgba(99,102,241,0.9)"},
-      {idxL:29, idxR:30, label:"Heels",          color:"rgba(99,102,241,0.7)"},
+      {idxL:7,  idxR:8,  label:"Ear Level\n(C-spine ref)",   color:"rgba(0,229,255,0.85)"},
+      {idxL:11, idxR:12, label:"Shoulder Level\n(Acromion)", color:"rgba(147,51,234,0.9)"},
+      {idxL:23, idxR:24, label:"Hip Joint Ref\n(ASIS proxy)",color:"rgba(249,115,22,0.75)"},
+      {idxL:25, idxR:26, label:"Knee Level\n(Joint line)",   color:"rgba(16,185,129,0.9)"},
+      {idxL:27, idxR:28, label:"Ankle Level\n(Malleolus)",   color:"rgba(99,102,241,0.9)"},
     ];
     LEVELS.forEach(({idxL,idxR,label,color})=>{
       if(!V(idxL)||!V(idxR)) return;
