@@ -7032,15 +7032,7 @@ function PostureAnalysisModule(){
               </div>
             </div>
           )}
-          {/* Clinical Landmark Verification — always visible when findings tab is active */}
-          <div style={{marginTop:14}}>
-            <LandmarkVerificationPanel
-              verified={verified}
-              activeLandmark={activeLandmark}
-              setActiveLandmark={setActiveLandmark}
-              onClear={clearVerified}
-            />
-          </div>
+
         </div>
       )}
 
@@ -9333,18 +9325,7 @@ function PhotoUploadAnalyzer() {
             </div>
           )}
 
-          {/* Clinical Landmark Verification Panel — always visible below findings */}
-          <LandmarkVerificationPanel
-            verified={verified}
-            activeLandmark={activeLandmark}
-            setActiveLandmark={setActiveLandmark}
-            onClear={clearVerified}
-          />
-          {activeLandmark && (
-            <div style={{marginTop:8,padding:"8px 12px",background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.3)",borderRadius:9,fontSize:"0.7rem",color:"#7c3aed",fontWeight:700,textAlign:"center"}}>
-              Switch to the Upload tab and click the image to place {VERIFIED_LANDMARK_MAP[activeLandmark]?.label}
-            </div>
-          )}
+
 
           {/* Clinical Metrics Dashboard */}
           {measurements&&(
