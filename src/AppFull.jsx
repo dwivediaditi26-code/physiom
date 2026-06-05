@@ -6364,12 +6364,32 @@ function PostureAnalysisModule(){
 
   // ── Process landmarks ───────────────────────────────────────────────────────
   const processLandmarks=useCallback((lm,v,imgH)=>{
-    const calib = computeCalibration(lm, patientHeightCm, imgH||videoSizeRef.current?.h||480);
-    const m=measureLandmarks(lm, calib);
-    const r=calcReliability(lm);
-    const f=r.blocked?[]:buildFindings(lm,v||viewRef.current,m);
-    const s=scorePosture(m,f,r);
-    setLandmarks(lm); setMeasurements(m); setFindings(f); setReliability(r); setScoreData(s);
+    // Each step isolated — partial failure still populates what it can
+    let calib=null;
+    try { calib=computeCalibration(lm,patientHeightCm,imgH||videoSizeRef.current?.h||480); }
+    catch(e){ console.warn("computeCalibration error:",e); }
+
+    let m={};
+    try { m=measureLandmarks(lm,calib)||{}; }
+    catch(e){ console.warn("measureLandmarks error:",e); }
+
+    let r={score:0,status:"Error",blocked:false,warnings:[],icc:null,confidence:{}};
+    try { r=calcReliability(lm); }
+    catch(e){ console.warn("calcReliability error:",e); }
+
+    let f=[];
+    try { f=r.blocked?[]:buildFindings(lm,v||viewRef.current,m); }
+    catch(e){ console.warn("buildFindings error:",e); }
+
+    let s={score:0,band:"No Data",colour:PC.muted,subScores:null};
+    try { s=scorePosture(m,f,r); }
+    catch(e){ console.warn("scorePosture error:",e); }
+
+    setLandmarks(lm);
+    setMeasurements(Object.keys(m).length>0?m:null);
+    setFindings(f);
+    setReliability(r);
+    setScoreData(s);
   },[patientHeightCm]);
 
   const saveMvResult = useCallback((viewKey,m,f,s,r,img) => {
