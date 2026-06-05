@@ -4968,6 +4968,8 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
 
   } else {
     // ── Clinical Sagittal Plumb Line (Kendall / Sahrmann standard) ────────
+    // viewSign: +1 for left lateral (anterior = image-right), -1 for right lateral
+    const viewSign = (view==="right") ? -1 : 1;
     const side = view==="right";
     const iEar=side?8:7, iSh=side?12:11, iHip=side?24:23, iKnee=side?26:25, iAnk=side?28:27, iHeel=side?30:29;
     // Kendall (5th ed.): plumb line passes through the lateral malleolus
