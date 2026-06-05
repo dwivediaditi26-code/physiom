@@ -2722,6 +2722,45 @@ const MANUAL_POINTS_FRONTAL = [
   { id:18, label:"R Toe",           mpIdx:32, desc:"Right 2nd toe" },
 ];
 
+// ─── Posterior view manual landmarks ────────────────────────────────────────
+// Reference: Magee 6th ed. Ch.15 (postural assessment), Kendall 5th ed. Ch.5
+// Landmarks visible/assessable from posterior view only.
+// Note: C7, PSIS, Iliac Crest, Scapular angles are not in MediaPipe's 33-point model.
+// Use hip landmarks (lm23/24) as PSIS proxies for pelvic obliquity.
+const MANUAL_POINTS_POSTERIOR = [
+  { id:0,  label:"Head Top",             mpIdx:0,  desc:"Top of skull — vertical alignment reference" },
+  { id:1,  label:"L Ear",                mpIdx:7,  desc:"Left ear tragus — head tilt reference (Magee)" },
+  { id:2,  label:"R Ear",                mpIdx:8,  desc:"Right ear tragus — head tilt reference (Magee)" },
+  { id:3,  label:"L Acromion",           mpIdx:11, desc:"Left acromion tip — shoulder level (Magee p.597)" },
+  { id:4,  label:"R Acromion",           mpIdx:12, desc:"Right acromion tip — shoulder level (Magee p.597)" },
+  { id:5,  label:"L Elbow",              mpIdx:13, desc:"Left olecranon — arm carry angle" },
+  { id:6,  label:"R Elbow",              mpIdx:14, desc:"Right olecranon — arm carry angle" },
+  { id:7,  label:"L Iliac Crest / PSIS", mpIdx:23, desc:"Left posterior iliac crest / PSIS region — pelvic obliquity proxy (Magee p.598)" },
+  { id:8,  label:"R Iliac Crest / PSIS", mpIdx:24, desc:"Right posterior iliac crest / PSIS region — pelvic obliquity proxy (Magee p.598)" },
+  { id:9,  label:"L Popliteal Crease",   mpIdx:25, desc:"Left popliteal crease — knee level, LLD screen (Woerman 1984)" },
+  { id:10, label:"R Popliteal Crease",   mpIdx:26, desc:"Right popliteal crease — knee level, LLD screen (Woerman 1984)" },
+  { id:11, label:"L Medial Malleolus",   mpIdx:27, desc:"Left medial malleolus — ankle level, LLD assessment" },
+  { id:12, label:"R Medial Malleolus",   mpIdx:28, desc:"Right medial malleolus — ankle level, LLD assessment" },
+  { id:13, label:"L Heel Centre",        mpIdx:29, desc:"Left heel midpoint — calcaneal alignment, rearfoot valgus/varus (Magee Ch.13)" },
+  { id:14, label:"R Heel Centre",        mpIdx:30, desc:"Right heel midpoint — calcaneal alignment, rearfoot valgus/varus (Magee Ch.13)" },
+];
+
+// Posterior skeleton connections — clinically meaningful lines from back
+const MANUAL_CONNECTIONS_POSTERIOR = [
+  [1,2],   // ear level
+  [3,4],   // shoulder level
+  [5,6],   // elbow level
+  [7,8],   // pelvic / PSIS level
+  [9,10],  // popliteal crease level
+  [11,12], // ankle level
+  [13,14], // heel level
+  [3,5],[4,6],   // shoulder to elbow
+  [3,7],[4,8],   // shoulder to hip (trunk line)
+  [7,9],[8,10],  // hip to knee
+  [9,11],[10,12],// knee to ankle
+  [11,13],[12,14],// ankle to heel
+];
+
 const MANUAL_POINTS_SAGITTAL = [
   { id:0, label:"Nose / Head",    mpIdx:0,  desc:"Nose tip" },
   { id:1, label:"Ear",            mpIdx:7,  desc:"Ear tragus (near side)" },
@@ -6515,8 +6554,15 @@ function PostureAnalysisModule(){
 
   // ── Manual mode derived values ───────────────────────────────────────────────
   const isLat = view==="left"||view==="right";
-  const manualPointDefs = isLat ? MANUAL_POINTS_SAGITTAL : MANUAL_POINTS_FRONTAL;
-  const manualConnections = isLat ? MANUAL_CONNECTIONS_SAGITTAL : MANUAL_CONNECTIONS_FRONTAL;
+  const isPost = view==="posterior"||view==="back";
+  // Use view-specific landmark definitions:
+  // Sagittal (L/R lateral) | Posterior (back) | Frontal (anterior + posterior via frontal)
+  const manualPointDefs = isLat
+    ? MANUAL_POINTS_SAGITTAL
+    : isPost ? MANUAL_POINTS_POSTERIOR : MANUAL_POINTS_FRONTAL;
+  const manualConnections = isLat
+    ? MANUAL_CONNECTIONS_SAGITTAL
+    : isPost ? MANUAL_CONNECTIONS_POSTERIOR : MANUAL_CONNECTIONS_FRONTAL;
   const manualPlacedCount = Object.keys(manualPlaced).length;
   const manualTotal = manualPointDefs.length;
   const manualPct = manualPlacedCount / manualTotal;
