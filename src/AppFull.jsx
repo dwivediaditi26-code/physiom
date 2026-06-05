@@ -5017,7 +5017,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; ctx.font="bold 9px system-ui"; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+8:kp[0]-ktw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(kx,kp[1]+6,ktw+8,15,3); else ctx.rect(kx,kp[1]+6,ktw+8,15); ctx.fill(); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.fillText(kt,kx+4,kp[1]+17); }
   }
 
-  // ── Skeleton connections ──────────────────────────────────────────────────
+  // ── Skeleton connections — only draw when both landmarks have high confidence ─
   const CONNECTIONS=[
     [11,12],[11,23],[12,24],[23,24],
     [11,13],[13,15],[12,14],[14,16],
@@ -5025,17 +5025,20 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     [27,29],[28,30],[27,31],[28,32],
     [7,8],[0,7],[0,8],
   ];
+  // Higher threshold (0.65) prevents skeleton lines from connecting extrapolated/
+  // low-confidence landmarks (e.g. hips when upper body is cropped)
+  const VS=i=>(lm[i]?.visibility||0)>=0.65;
   ctx.strokeStyle="rgba(167,139,250,0.9)"; ctx.lineWidth=2.5; ctx.setLineDash([]);
   CONNECTIONS.forEach(([a,b])=>{
-    if(!V(a)||!V(b)) return;
+    if(!VS(a)||!VS(b)) return;
     const pa=PX(a), pb=PX(b); if(!pa||!pb) return;
     ctx.beginPath(); ctx.moveTo(pa[0],pa[1]); ctx.lineTo(pb[0],pb[1]); ctx.stroke();
   });
 
-  // ── Joint dots ────────────────────────────────────────────────────────────
+  // ── Joint dots — same high-confidence threshold ───────────────────────────
   const JOINTS=[0,7,8,11,12,13,14,23,24,25,26,27,28];
   JOINTS.forEach(i=>{
-    if(!V(i)) return;
+    if(!VS(i)) return;
     const p=PX(i); if(!p) return;
     ctx.beginPath(); ctx.arc(p[0],p[1],6,0,Math.PI*2);
     ctx.fillStyle="rgba(167,139,250,0.95)"; ctx.fill();
