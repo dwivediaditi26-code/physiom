@@ -2170,7 +2170,10 @@ function ClinicalFindingsEngine(lm, view, measurements) {
 
     // Shoulder elevation
     if (shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
-      const abs = Math.abs(shoulderAngle); const side = shoulderAngle > 0 ? "Left" : "Right";
+      const abs = Math.abs(shoulderAngle);
+      // Magee/Kendall: direct Y-comparison is definitive — lower Y = higher shoulder in image
+      // g(11)=L acromion, g(12)=R acromion; lower Y value = higher = elevated side
+      const side = (g(11)&&g(12)) ? (g(11).y < g(12).y ? "Left" : "Right") : (shoulderAngle > 0 ? "Left" : "Right");
       add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
         `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s × 3. Activate: lower trapezius Y-T-W × 15. NKT: check ipsilateral QL — QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
         "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis.`, "Normal: <2.5° / <1.5cm (Magee)", abs);
@@ -2336,7 +2339,10 @@ function ClinicalFindingsEngine(lm, view, measurements) {
   if (view === "posterior") {
 
     if (shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
-      const abs = Math.abs(shoulderAngle); const side = shoulderAngle > 0 ? "Left" : "Right";
+      const abs = Math.abs(shoulderAngle);
+      // Magee/Kendall: direct Y-comparison is definitive — lower Y = higher shoulder in image
+      // g(11)=L acromion, g(12)=R acromion; lower Y value = higher = elevated side
+      const side = (g(11)&&g(12)) ? (g(11).y < g(12).y ? "Left" : "Right") : (shoulderAngle > 0 ? "Left" : "Right");
       add("Shoulder Girdle", `${side} shoulder elevated — posterior view (${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
         `Upper trapezius and levator scapulae release ipsilateral. Lower trapezius facilitation. Confirm anterior view finding.`,
         "M54.2", "⇑", "", "Normal: <2.5° / <1.5cm (Magee)", abs);
@@ -3066,6 +3072,9 @@ function measureLandmarks(lm, calibration) {
     return s+n*w;
   },0);
   const pliMax = PLI_comps.reduce((s,[,,,w])=>s+w,0);
+  // PLI (Postural Load Index): composite screening score — 0-100.
+  // NOTE: cobbEstimate is an in-house proxy (not validated Cobb angle) and may inflate PLI.
+  // Use as a screening trend indicator only, not a standalone clinical score.
   const posturalLoadIndex = pliMax>0 ? r1(clamp((pliSum/pliMax)*100,0,100)) : null;
 
   // ── NEW: Frontal Plane Measurements (Feature 2) ───────────────────────────
@@ -3853,7 +3862,8 @@ function buildFindings(lm, view, m) {
           const rel = checkLandmarkReliability(lm, LANDMARK_GROUPS.shoulder);
           const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.shoulder);
           if (sev && rel.reliable) {
-            const side = m.shoulderAngle < 0 ? "Left" : "Right";
+            // Use direct Y-comparison for consistency (Magee/Kendall standard)
+            const side = (lm[11]&&lm[12]) ? (lm[11].y < lm[12].y ? "Left" : "Right") : (m.shoulderAngle < 0 ? "Left" : "Right");
             add({
               region: "Shoulder Girdle",
               findingName: `Possible ${side} shoulder elevation (${abs.toFixed(1)}°) — low confidence`,
@@ -4136,7 +4146,8 @@ function buildFindings(lm, view, m) {
     }
 
     // ── Waist asymmetry / scoliosis screen ──────────────────────────────────
-    if (m.waistTriangleAsymmetry !== null) {
+    // Waist triangle: Kendall standard — assessed from posterior view only
+    if ((view==="posterior"||view==="back") && m.waistTriangleAsymmetry !== null) {
       const sev = classifySeverity(m.waistTriangleAsymmetry, POSTURE_THRESHOLDS.waistAsymmetry);
       const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
       if (sev) {
@@ -5001,7 +5012,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.fill(); ctx.fillStyle="#FFD700"; ctx.fillText(lbl,pt[0],pt[1]+27);
     });
     // Waist triangles
-    if(V(11)&&V(13)&&V(23)&&V(12)&&V(14)&&V(24)){
+    if((view==="posterior"||view==="back")&&V(11)&&V(13)&&V(23)&&V(12)&&V(14)&&V(24)){
       const pSL=PX(11),pEL=PX(13),pHL=PX(23),pSR=PX(12),pER=PX(14),pHR=PX(24);
       const asymm=m.waistTriangleAsymmetry||0;
       const fill=asymm>6?"rgba(255,77,109,0.18)":asymm>3?"rgba(255,179,0,0.15)":"rgba(0,229,160,0.12)";
@@ -6156,6 +6167,10 @@ function PostureAnalysisModule(){
 
   // ── Manual landmark placement state ─────────────────────────────────────────
   const [inputMode,setInputMode]=useState("ai");        // "ai" | "manual"
+  // photoOrientation: "selfie" = mirrored (front camera, x-axis is flipped — MediaPipe default)
+  //                   "standard" = non-mirrored (separate camera, patient's left = image left)
+  // Impact: all frontal L/R labels swap between modes.
+  const [photoOrientation,setPhotoOrientation]=useState("selfie");
   const [manualPlaced,setManualPlaced]=useState({});    // {[pointId]: {x,y}}
   const [manualImgDims,setManualImgDims]=useState(null); // {w,h} of displayed image
   const [manualAnalysed,setManualAnalysed]=useState(false);
@@ -6263,7 +6278,13 @@ function PostureAnalysisModule(){
         const handler=results=>{
           if(resolved) return; resolved=true;
           if(results.poseLandmarks?.length>0){
-            const lm=results.poseLandmarks;
+            // For standard (non-selfie) camera photos, flip x-axis so patient's
+            // left = image left, matching MediaPipe's selfie-mode convention.
+            // This ensures all L/R labels are anatomically correct.
+            const rawLm=results.poseLandmarks;
+            const lm=photoOrientation==="standard"
+              ? rawLm.map(p=>({...p, x:1-p.x}))
+              : rawLm;
             const calib=computeCalibration(lm,patientHeightCm,H);
             processLandmarks(lm,v,H);
             const mLocal=measureLandmarks(lm,calib);
@@ -7392,6 +7413,20 @@ function PostureAnalysisModule(){
               {label}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Photo orientation toggle — only for upload mode */}
+      {!isLive&&inputMode==="ai"&&(
+        <div style={{padding:isWide?"6px 20px":"6px 16px",background:"rgba(124,58,237,0.04)",borderBottom:`1px solid ${PC.border}`,display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,flexShrink:0}}>📷 Camera type:</span>
+          {[["selfie","Selfie / Front camera"],["standard","Separate / Standard camera"]].map(([val,label])=>(
+            <button key={val} onClick={()=>setPhotoOrientation(val)}
+              style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${photoOrientation===val?PC.accent:PC.border}`,background:photoOrientation===val?`${PC.accent}15`:"transparent",color:photoOrientation===val?PC.accent:PC.muted,fontWeight:700,fontSize:"0.62rem",cursor:"pointer"}}>
+              {label}
+            </button>
+          ))}
+          <span style={{fontSize:"0.58rem",color:PC.muted,marginLeft:4}}>{photoOrientation==="standard"?"L/R corrected for standard camera":"Default — front-facing/selfie camera"}</span>
         </div>
       )}
 
