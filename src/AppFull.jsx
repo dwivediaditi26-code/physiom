@@ -7810,16 +7810,22 @@ function PostureAnalysisModule(){
       const m = measurements||{};
 
     // Build findings for report
+    const isClinicianVerified = Object.keys(verified||{}).length > 0;
     const rptFindings = findings.map(f=>({
       region: f.region||f.label||"Finding",
-      text: f.text||f.label||"",
+      text: (f.findingName||f.text||f.label||"").replace(/^OBSERVATION[^:]*:\s*/i,"").replace(/^OBSERVATION ONLY[^:]*:\s*/i,""),
       severity: (f.severity||"moderate").toLowerCase(),
-      plain: f.plain || f.description || f.text || "",
-      whatIfUntreated: f.whatIfUntreated || "May worsen without targeted intervention.",
+      // Patient-friendly plain text: use layer 2 contributors if available, else brief summary
+      plain: f.plain || (f.findingName||f.text||"").replace(/^OBSERVATION[^:]*:\s*/i,"").split(".")[0] || f.description || "",
+      whatIfUntreated: f.whatIfUntreated || "May worsen without targeted intervention. Confirm clinically.",
       correction: f.correction || (f.exercises||[]).join(". ") || "See exercise plan.",
       icd: f.icd || "—",
       norm: f.norm || "—",
       measured: f.measured || "—",
+      confidence: f.confidenceScore || 70,
+      derivedFrom: f._derivedFrom || [],
+      requiresVerification: f._requiresVerification || false,
+      isObservationOnly: true, // All findings are observation-only per clinical audit
     }));
 
     // Build exercise list
@@ -7834,11 +7840,12 @@ function PostureAnalysisModule(){
 
     // Goals from findings
     const goals = [];
-    if(m.cvaAngle!=null) goals.push({metric:"CVA",current:m.cvaAngle.toFixed(1)+"°",target:">52°",timeframe:"6 weeks"});
+    if(m.cvaAngle!=null) goals.push({metric:"CVA (Yip 2008)",current:m.cvaAngle.toFixed(1)+"°",target:">55°",timeframe:"6 weeks"});
     if(m.thoracicAngle!=null) goals.push({metric:"Thoracic Kyphosis (Trunk Lean Est.)",current:m.thoracicAngle.toFixed(1)+"°",target:"<45°",timeframe:"8 weeks"});
     if(scoreData?.score!=null) goals.push({metric:"Posture Score",current:scoreData.score+"/100",target:">60/100",timeframe:"8 weeks"});
 
     const d = {
+      analysisMode: isClinicianVerified ? "Clinician Verified" : "AI Estimated",
       patient: {
         name: patientInfo.name||"Patient",
         age: patientInfo.age||"—",
@@ -7879,7 +7886,7 @@ function PostureAnalysisModule(){
       soap: {
         subjective: `Patient presents with postural concerns. Height ${patientHeightCm}cm. Occupation: ${patientInfo.occupation||"not specified"}. No red flags identified during screening.`,
         objective: `Postural analysis (${views.join(", ")}): ${rptFindings.map(f=>f.text).join("; ")}. Reliability ${reliability?.score||0}%. Method: ${reliability?.isManual?"Manual landmark placement":"AI landmark detection"}.`,
-        assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. Score ${scoreData.score}/100 — ${scoreData.band}. ${rptFindings.map(f=>f.region).join(", ")}. No referral indicated at this stage pending clinical correlation.`,
+        assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. Score ${scoreData.score}/100 — ${scoreData.band}. ${rptFindings.map(f=>f.region).join(", ")}. Clinical decision regarding referral at clinician discretion — confirm all findings with physical examination before treatment.`,
         plan: `Janda Approach neuromuscular sequencing programme. Inhibit → Activate → Correct. Daily 10–15 min. Reassess in 4–6 weeks. Monitor for symptom development.`,
       },
       goals,
@@ -7922,7 +7929,7 @@ function PostureAnalysisModule(){
       </div>`;
     const footer = (page,total,type) => `
       <div style="position:absolute;bottom:0;left:0;right:0;border-top:1px solid ${C.border};padding:8px 32px;display:flex;justify-content:space-between;background:#f8fafc;">
-        <div style="font-size:0.55rem;color:${C.muted}">⚠ Screening tool only — not a substitute for clinical diagnosis. Confirm with clinical examination before prescribing.</div>
+        <div style="font-size:0.55rem;color:${C.muted}">⚠ All findings are OBSERVATIONS ONLY — not diagnoses. Confirm all measurements with clinical examination (Magee 6th ed. standards). Not a substitute for clinical assessment.</div>
         <div style="font-size:0.55rem;color:${C.muted};white-space:nowrap;margin-left:8px">${type} · ${d.clinician.date} · Page ${page}/${total}</div>
       </div>`;
     const hdr = (title,sub) => `
@@ -7956,6 +7963,7 @@ function PostureAnalysisModule(){
               <div>
                 <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Patient</div>
                 <div style="font-family:Fraunces;font-size:1.1rem;font-weight:700;color:${C.primary}">${d.patient.name}</div>
+              <div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:5px;font-size:0.55rem;font-weight:700;background:${d.analysisMode==="Clinician Verified"?"#d1fae5":"#f1f5f9"};color:${d.analysisMode==="Clinician Verified"?"#059669":"#64748b"};border:1px solid ${d.analysisMode==="Clinician Verified"?"#6ee7b7":"#e2e8f0"}">${d.analysisMode||"AI Estimated"} Analysis</div>
                 <div style="font-size:0.68rem;color:${C.muted};margin-top:3px">${d.patient.age} yrs · ${d.patient.sex} · ${d.patient.height}</div>
                 <div style="font-size:0.65rem;color:${C.muted}">Occupation: ${d.patient.occupation}</div>
               </div>
@@ -8163,9 +8171,13 @@ function PostureAnalysisModule(){
               <div style="padding:9px 14px;background:${sevBg(f.severity)};display:flex;justify-content:space-between;align-items:center">
                 <div style="display:flex;align-items:center;gap:8px">
                   <div style="width:20px;height:20px;border-radius:50%;background:${sevCol(f.severity)};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:900;color:#fff">${i+1}</div>
-                  <div style="font-family:Fraunces;font-size:0.82rem;font-weight:700;color:${C.primary}">${f.region}</div>
+                  <div>
+                    <div style="font-family:Fraunces;font-size:0.82rem;font-weight:700;color:${C.primary}">${f.region}</div>
+                    <div style="font-size:0.54rem;color:#64748b;font-style:italic">Observation only — clinical confirmation required</div>
+                  </div>
                 </div>
-                <div style="display:flex;gap:8px;align-items:center">
+                <div style="display:flex;gap:6px;align-items:center">
+                  <span style="font-size:0.55rem;font-weight:700;color:${(f.confidence||70)>=80?"#059669":(f.confidence||70)>=60?"#d97706":"#dc2626"};padding:2px 7px;border-radius:4px;border:1px solid ${(f.confidence||70)>=80?"#6ee7b7":(f.confidence||70)>=60?"#fde68a":"#fca5a5"};background:#fff">${f.confidence||70}% conf</span>
                   <span style="font-size:0.57rem;font-weight:700;color:${sevCol(f.severity)};padding:2px 8px;border-radius:4px;border:1px solid ${sevCol(f.severity)}40;background:#fff">${(f.severity||"").toUpperCase()}</span>
                   <span style="font-size:0.57rem;color:${C.muted}">${f.icd}</span>
                 </div>
@@ -13323,16 +13335,17 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
       }).join("");
 
     var measData = [
-      {label:"Craniovertebral Angle", value:cva,     normal:"&gt;50 deg", bad:parseFloat(cva)<50,                                          bc:"#dc2626"},
-      {label:"Forward Head Dist",     value:fhp,     normal:"&lt;25mm",   bad:parseFloat(fhp)>25,                                          bc:"#dc2626"},
-      {label:"Shoulder Angle",        value:shAngle, normal:"&lt;2 deg",  bad:parseFloat(shAngle)>2,                                       bc:"#d97706"},
-      {label:"Thoracic Kyphosis (Trunk Lean Est.)",     value:kyph,    normal:"20-40 deg",  bad:parseFloat(kyph)>40,                                         bc:"#d97706"},
-      {label:"Lumbar Lordosis",       value:lord,    normal:"30-50 deg",  bad:parseFloat(lord)>50||parseFloat(lord)<30,                    bc:"#d97706"},
-      {label:"Pelvic Tilt",           value:pelv,    normal:"0-5 deg",    bad:false,                                                       bc:"#6b7280"},
+      // Normal values per Yip 2008 (CVA), Magee 6th ed. (kyphosis, lordosis, shoulder), Lee & Nussbaum (head tilt)
+      {label:"CVA (Yip 2008 norm >55°)",value:cva,  normal:"&gt;55&deg;",bad:parseFloat(cva)<49,        warn:parseFloat(cva)<55,          bc:"#dc2626"},
+      {label:"Forward Head Posture",  value:fhp,     normal:"&lt;20mm",   bad:parseFloat(fhp)>30,        warn:parseFloat(fhp)>20,          bc:"#dc2626"},
+      {label:"Shoulder Asymmetry",    value:shAngle, normal:"&lt;2.5&deg;",bad:parseFloat(shAngle)>5,   warn:parseFloat(shAngle)>2.5,     bc:"#d97706"},
+      {label:"Thoracic Kyphosis Est.",value:kyph,    normal:"20–45&deg;", bad:parseFloat(kyph)>50,      warn:parseFloat(kyph)>45,         bc:"#d97706"},
+      {label:"Lumbar Lordosis Est.",  value:lord,    normal:"40–60&deg;", bad:parseFloat(lord)>65||parseFloat(lord)<30, warn:false,       bc:"#d97706"},
+      {label:"Pelvic Tilt (proxy)",   value:pelv,    normal:"0–5&deg;",   bad:false,                     warn:false,                       bc:"#6b7280"},
     ];
     var measCards = measData.map(function(m) {
-      var c = (m.bad && m.value !== "N/A") ? m.bc : (m.value === "N/A" ? "#94a3b8" : "#059669");
-      var status = m.value === "N/A" ? "N/A" : m.bad ? "Abnormal" : "Normal";
+      var c = (m.bad && m.value !== "N/A") ? m.bc : (m.warn && m.value !== "N/A") ? "#d97706" : (m.value === "N/A" ? "#94a3b8" : "#059669");
+      var status = m.value === "N/A" ? "N/A" : m.bad ? "Outside Normal" : m.warn ? "Borderline" : "Normal";
       return '<div style="background:' + c + '08;border:1px solid ' + c + '25;border-radius:8px;padding:9px 11px;border-left:3px solid ' + c + ';">'
            + '<div style="font-size:7.5px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px;">' + m.label + '</div>'
            + '<div style="font-size:18px;font-weight:800;color:' + c + ';line-height:1;">' + escHtml(String(m.value)) + '</div>'
