@@ -2173,7 +2173,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(shoulderAngle); const side = shoulderAngle > 0 ? "Left" : "Right";
       add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
         `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s × 3. Activate: lower trapezius Y-T-W × 15. NKT: check ipsilateral QL — QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
-        "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis.`, "Normal: <3°", abs);
+        "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis.`, "Normal: <2.5° / <1.5cm (Magee)", abs);
     }
 
     // Head lateral offset
@@ -2306,7 +2306,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         angle > 0
           ? `Check tibial external torsion, hip ER contracture, glute med/TFL balance. Gait retraining feet-parallel.`
           : `Check tibial internal torsion, hip IR dominance, in-toeing gait. Refer podiatry if structural torsion.`,
-        "M21.6", "↻", `Normal foot progression angle 5–12° external.`, "Normal: 5–12°", abs);
+        "M21.6", "↻", `Normal foot progression angle 7–10° external rotation (range 0–20°) per Magee p.863.`, "Normal: 7–10° external (Magee)", abs);
     });
 
     // COG deviation
@@ -2339,7 +2339,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const abs = Math.abs(shoulderAngle); const side = shoulderAngle > 0 ? "Left" : "Right";
       add("Shoulder Girdle", `${side} shoulder elevated — posterior view (${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
         `Upper trapezius and levator scapulae release ipsilateral. Lower trapezius facilitation. Confirm anterior view finding.`,
-        "M54.2", "⇑", "", "Normal: <3°", abs);
+        "M54.2", "⇑", "", "Normal: <2.5° / <1.5cm (Magee)", abs);
     }
 
     if (cobbEstimate !== null && cobbEstimate > 5) {
@@ -2417,7 +2417,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const excess = thoracicAngle - 45;
       add("Thoracic Kyphosis (Trunk Lean Est.)", `Increased thoracic kyphosis (~${thoracicAngle.toFixed(0)}°, normal 20–45°)`, excess > 18 ? "high" : "moderate",
         `Thoracic extension HVLA T4–T8 (PA + rotation). Foam roller extension apex ×2min daily. Wall angels ×15. Pec minor stretch 60s ×3. Lower trap: prone Y-T-W. Rib expansion breathing. Seated posture: lumbar roll support.`,
-        "M40.2", "⌒", `Normal Cobb T1–T12 = 20–45°. Hyperkyphosis >50°. If structural: Scheuermann's (>5° wedging ≥3 vertebrae on X-ray).`, "Normal: 20–45°", thoracicAngle);
+        "M40.2", "⌒", `Normal thoracic kyphosis 20–45° (Magee 6th ed. p.611). Hyperkyphosis >50°. This measurement is a trunk lean PROXY — not a true Cobb angle; X-ray required for confirmation. If structural: Scheuermann's (>5° wedging ≥3 vertebrae on X-ray).`, "Normal: 20–45°", thoracicAngle);
     }
 
     // Pelvic tilt sagittal
@@ -3436,27 +3436,46 @@ function calcManualReliability(placedCount, totalPoints) {
 // ── 1. THRESHOLD CONSTANTS ────────────────────────────────────────────────────
 // Only deviations exceeding these thresholds trigger findings.
 // Values based on clinical literature measurement error + meaningful change.
+// ── POSTURE_THRESHOLDS ───────────────────────────────────────────────────────
+// References:
+//   Frontal: Magee Orthopedic Physical Assessment 6th ed.
+//   Sagittal: Yip et al. 2008 (CVA), Magee 6th ed. (kyphosis, pelvic tilt)
+//   Kendall 5th ed. (plumb line deviations)
 const POSTURE_THRESHOLDS = {
-  // Frontal
-  shoulderAngle:       { mild:3,  moderate:6,  severe:10  }, // degrees
-  pelvisAngle:         { mild:3,  moderate:6,  severe:10  }, // degrees
-  headTilt:            { mild:4,  moderate:6,  severe:9   }, // degrees
-  trunkLateralShift:   { mild:4,  moderate:7,  severe:11  }, // %
-  spinalDeviation:     { mild:4,  moderate:8,  severe:13  }, // %
-  waistAsymmetry:      { mild:4,  moderate:7,  severe:11  }, // %
-  kneeFrontal:         { mild:6,  moderate:10, severe:15  }, // degrees
-  ucsIndex:            { mild:0.6,moderate:1.0,severe:1.5 }, // index
-  lldProxy:            { mild:5,  moderate:10, severe:15  }, // mm
-  neckLateralAngle:    { mild:5,  moderate:8,  severe:12  }, // degrees
-  tibialVarum:         { mild:5,  moderate:10, severe:15  }, // degrees
-  ankleLLD:            { mild:6,  moderate:12, severe:18  }, // mm
-  // Sagittal — recalibrated to clinical norms (Kendall 2005; Neiva 2009; Ruivo 2017)
-  cvaAngle:            { mild:55, moderate:50, severe:45  }, // degrees (lower = worse); normal >54
-  thoracicAngle:       { mild:44, moderate:50, severe:58  }, // degrees; normal 20-45; mild fires at 44+
-  lumbarProxy:         { mild:4,  moderate:8,  severe:13  }, // % — mild threshold lowered to catch mild APT
-  hipDisplacement:     { mild:4,  moderate:8,  severe:13  }, // %
-  kneeRecurvatum:      { mild:4,  moderate:8,  severe:13  }, // degrees — lowered to catch early recurvatum
-  lcsIndex:            { mild:0.4,moderate:0.8,severe:1.3 }, // index
+  // FRONTAL ─────────────────────────────────────────────────────────────────
+  // Shoulder: Magee p.597 — >1.5cm clinically significant.
+  // At 40cm shoulder width: 1.5cm ≈ 2.1°. Use 2.5° mild to include measurement noise.
+  shoulderAngle:       { mild:2.5, moderate:5,  severe:8   }, // degrees (Magee)
+  // Pelvis: Magee p.598 — >1cm asymmetry meaningful.
+  // At 25cm inter-ASIS width: 1cm ≈ 2.3°. Use 2° mild.
+  pelvisAngle:         { mild:2,   moderate:5,  severe:8   }, // degrees (Magee)
+  // Head tilt: Lee & Nussbaum 2013 — normal variation up to 4–5°.
+  headTilt:            { mild:4,   moderate:7,  severe:10  }, // degrees (Lee & Nussbaum 2013)
+  // Trunk shift: Magee — >4cm lateral shift associated with disc pathology
+  trunkLateralShift:   { mild:3,   moderate:6,  severe:10  }, // % frame width (Magee)
+  spinalDeviation:     { mild:4,   moderate:8,  severe:13  }, // %
+  waistAsymmetry:      { mild:4,   moderate:7,  severe:11  }, // %
+  // Knee frontal: Magee p.760 — HKA deviation >6° screened as valgus/varus tendency
+  kneeFrontal:         { mild:6,   moderate:10, severe:15  }, // degrees (Magee/Norkin & White)
+  ucsIndex:            { mild:0.6, moderate:1.0,severe:1.5 }, // index
+  // LLD: Magee p.695 — >5mm functional; >20mm requires clinical intervention
+  lldProxy:            { mild:5,   moderate:10, severe:20  }, // mm (Magee)
+  neckLateralAngle:    { mild:5,   moderate:8,  severe:12  }, // degrees
+  tibialVarum:         { mild:5,   moderate:10, severe:15  }, // degrees
+  ankleLLD:            { mild:6,   moderate:12, severe:18  }, // mm
+  // SAGITTAL ────────────────────────────────────────────────────────────────
+  // CVA: Yip et al. 2008 — normal >55°; FHP threshold <55°.
+  cvaAngle:            { mild:55,  moderate:49, severe:44  }, // degrees lower=worse (Yip 2008)
+  // Thoracic kyphosis: Magee p.611 — normal 20–45°; hyperkyphosis >50°.
+  // mild fires just above normal max (46°); moderate at clinical hyperkyphosis (50°)
+  thoracicAngle:       { mild:46,  moderate:50, severe:60  }, // degrees (Magee — Cobb T1-T12 equiv.)
+  // APT/PPT: Magee p.677 — female ≤12°, male ≤7° normal pelvic tilt.
+  // lumbarProxy is a % frame width proxy, not a true degree measure.
+  lumbarProxy:         { mild:4,   moderate:8,  severe:13  }, // % (proxy — see anteriorPelvicTiltDeg)
+  hipDisplacement:     { mild:4,   moderate:8,  severe:13  }, // %
+  // Genu recurvatum: Magee p.759 — >5° hyperextension in standing is clinically significant.
+  kneeRecurvatum:      { mild:5,   moderate:10, severe:15  }, // degrees (Magee)
+  lcsIndex:            { mild:0.4, moderate:0.8,severe:1.3 }, // index
 };
 
 // ── 2. SEVERITY CLASSIFIER ────────────────────────────────────────────────────
@@ -5033,7 +5052,8 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     [[31,27,"L.Foot",0],[32,28,"R.Foot",1]].forEach(([fi,ai2,lbl,side])=>{
       if(!V(fi)||!V(ai2)) return;
       const fa=Math.abs(Math.atan2(g(fi).y-g(ai2).y, g(fi).x-g(ai2).x)*180/Math.PI);
-      const col=fa<8?"rgba(0,201,122,0.9)":fa<20?"rgba(255,179,0,0.9)":"rgba(255,77,109,0.9)";
+      // Magee p.863: normal 7-10° external (range 0-20°); >20° = excess ER; <5° = in-toeing
+      const col=fa>=5&&fa<=20?"rgba(0,201,122,0.9)":fa>20&&fa<=30?"rgba(255,179,0,0.9)":"rgba(255,77,109,0.9)";
       const bx=side===0?6:W-72, by=H-30;
       ctx.fillStyle="rgba(6,9,15,0.85)";
       ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(bx,by,66,22,5); else ctx.rect(bx,by,66,22); ctx.fill();
