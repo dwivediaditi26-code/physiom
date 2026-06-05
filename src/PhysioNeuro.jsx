@@ -1699,6 +1699,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
   const [expandedTest, setExpandedTest] = useState(null);
   const [clinicianNotes, setClinicianNotes] = useState(data["neuro_clinician_notes"]||"");
   const [showAsiaGuide, setShowAsiaGuide] = useState(false);
+  const [dermImgModal, setDermImgModal] = useState(null);
 
   const inp = { width:"100%", background:C.s3, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit" };
 
