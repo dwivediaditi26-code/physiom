@@ -1650,6 +1650,7 @@ function CollapsibleHow({ title, children }) {
 function NeurologicalModule({ data, set, navContext={} }) {
   const [tab, setTab] = useState("dermatomes");
   const [expandedLevel, setExpandedLevel] = useState(null);
+  const [dermImgModal, setDermImgModal] = useState(null); // {src, title}
   const [expandedTest, setExpandedTest] = useState(null);
   const [clinicianNotes, setClinicianNotes] = useState(data["neuro_clinician_notes"]||"");
   const [showAsiaGuide, setShowAsiaGuide] = useState(false);
@@ -1864,7 +1865,21 @@ function NeurologicalModule({ data, set, navContext={} }) {
           </CollapsibleHow>
 
           {/* Cervical */}
-          <div style={{marginBottom:12}}><div style={{fontSize:"0.7rem",fontWeight:700,color:C.yellow,marginBottom:8}}>● CERVICAL LEVELS</div>
+          <div style={{marginBottom:12}}>
+            {/* Cervical dermatome reference image */}
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,padding:"8px 12px",background:"rgba(124,58,237,0.05)",borderRadius:8,border:"1px solid rgba(124,58,237,0.15)"}}>
+              <img
+                src="https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto,w_80/Firefly_Gemini_Flash_change_the_model_person_to_different_person_and_black_line_and_dot_should_be_red_664593_sxvcde"
+                alt="Cervical dermatome map"
+                onClick={()=>setDermImgModal({src:"https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/Firefly_Gemini_Flash_change_the_model_person_to_different_person_and_black_line_and_dot_should_be_red_664593_sxvcde",title:"Cervical Dermatome Map"})}
+                style={{width:64,height:64,objectFit:"cover",borderRadius:7,cursor:"pointer",border:"2px solid rgba(124,58,237,0.3)",flexShrink:0}}
+              />
+              <div>
+                <div style={{fontSize:"0.68rem",fontWeight:700,color:"#7c3aed"}}>Cervical Dermatome Map</div>
+                <div style={{fontSize:"0.6rem",color:"#7e6a9a",marginTop:2}}>Tap image to view full size</div>
+              </div>
+            </div>
+            <div style={{fontSize:"0.7rem",fontWeight:700,color:C.yellow,marginBottom:8}}>● CERVICAL LEVELS</div>
           {DERMATOMES.filter(d=>d.level.startsWith("C")).map(d=>{
             const lv=data[d.id+"_left"]||"", rv=data[d.id+"_right"]||"";
             const lCol=getSensoryColor(lv), rCol=getSensoryColor(rv);
@@ -2835,6 +2850,22 @@ function NeurologicalModule({ data, set, navContext={} }) {
               placeholder="Document clinical reasoning, pattern impressions, referral decisions, treatment plan rationale..."
               style={{...inp,resize:"vertical",minHeight:100,display:"block",lineHeight:1.6}}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Dermatome image modal */}
+      {dermImgModal&&(
+        <div onClick={()=>setDermImgModal(null)}
+          style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div onClick={e=>e.stopPropagation()} style={{maxWidth:"95vw",maxHeight:"92vh",position:"relative"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <span style={{color:"#fff",fontWeight:700,fontSize:"0.9rem"}}>{dermImgModal.title}</span>
+              <button onClick={()=>setDermImgModal(null)}
+                style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:6,color:"#fff",fontWeight:800,cursor:"pointer",padding:"4px 12px",fontSize:"0.75rem"}}>✕</button>
+            </div>
+            <img src={dermImgModal.src} alt={dermImgModal.title}
+              style={{maxWidth:"90vw",maxHeight:"82vh",objectFit:"contain",borderRadius:10,display:"block"}}/>
           </div>
         </div>
       )}
