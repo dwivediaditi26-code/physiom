@@ -4146,7 +4146,8 @@ function buildFindings(lm, view, m) {
 
     // ── UCS index — lateral/sagittal view only ──────────────────────────────
     // UCS requires CVA (sagittal landmark) — never diagnose from photo alone
-    if (isLat && m.ucsIndex !== null) {
+    // UCS in frontal view — handled via sagittal engine only
+    if (false && m.ucsIndex !== null) { // dead code removed
       const sev = classifySeverity(m.ucsIndex, POSTURE_THRESHOLDS.ucsIndex);
       const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.upperBody);
       if (sev) {
@@ -4748,35 +4749,120 @@ function mergeViewResults(viewResults) {
     return rank(b) - rank(a);
   });
 
-  // Composite score: average, capped at 80 if missing a plane
+  // ── Plane-specific scores ────────────────────────────────────────────────
+  const frontalViews  = viewResults.filter(r => VIEW_PLANE[r.view]==="frontal"  && r.scoreData?.score!=null);
+  const sagittalViews = viewResults.filter(r => VIEW_PLANE[r.view]==="sagittal" && r.scoreData?.score!=null);
+  const frontalScore  = frontalViews.length  ? Math.round(frontalViews.reduce((s,r)=>s+r.scoreData.score,0)/frontalViews.length)  : null;
+  const sagittalScore = sagittalViews.length ? Math.round(sagittalViews.reduce((s,r)=>s+r.scoreData.score,0)/sagittalViews.length) : null;
+
+  // Composite score: use the LOWER of the two plane scores as the floor (prevents good
+  // frontal score masking poor sagittal, and vice versa). Capped at 80 if single-plane.
+  // Clinical rationale: a patient's posture score should reflect their WORST assessed plane,
+  // not an average that obscures plane-specific dysfunction (Magee: multi-plane assessment).
   const validScores = viewResults.filter(r => r.scoreData?.score != null);
   const avgScore = validScores.length > 0
     ? Math.round(validScores.reduce((s,r) => s + r.scoreData.score, 0) / validScores.length) : 0;
+  // Floor = lowest plane score (if both planes assessed); ensures neither plane is hidden
+  const planeFloor = (frontalScore!==null && sagittalScore!==null)
+    ? Math.min(frontalScore, sagittalScore) : null;
+  // Composite = weighted blend: 60% average + 40% floor to show worst plane without overcorrecting
+  const blendedScore = planeFloor!==null ? Math.round(avgScore*0.6 + planeFloor*0.4) : avgScore;
   const coverageCap = (hasFrontal && hasSagittal) ? 100 : 80;
-  const compositeScore = Math.min(avgScore, coverageCap);
+  const compositeScore = Math.min(blendedScore, coverageCap);
   const compositeBand = compositeScore>=88?"Optimal":compositeScore>=74?"Good":compositeScore>=58?"Fair":compositeScore>=40?"Needs Attention":"Priority Review";
   const compositeColour = compositeScore>=74?PC.green:compositeScore>=58?PC.yellow:PC.red;
 
-  // Sub-scores averaged across views
+  // Sub-scores: only average values from views where that metric is clinically valid.
+  // Cervical/thoracic subs from sagittal views only; shoulder/pelvis from frontal.
+  // This prevents unassessed-plane sub-scores from inflating the composite.
   const subKeys = ["cervical","shoulder","thoracic","lumbar","knee","global"];
   const subScores = {};
   subKeys.forEach(k => {
-    const vals = viewResults.map(r => r.scoreData?.subScores?.[k]).filter(v => v != null);
+    // For plane-specific subs, prefer the relevant plane's values
+    const planeViews = (k==="cervical"||k==="thoracic")
+      ? sagittalViews : (k==="shoulder") ? frontalViews : validScores.map(r=>r);
+    const vals = (planeViews.length>0?planeViews:validScores.map(r=>r))
+      .map(r => r.scoreData?.subScores?.[k]).filter(v => v != null);
     subScores[k] = vals.length > 0 ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
   });
 
-  // Named patterns
-  const sagittalResult = viewResults.find(r => VIEW_PLANE[r.view] === "sagittal");
+  // ── Named patterns ──────────────────────────────────────────────────────────
+  // Use highest-confidence sagittal result for Kendall pattern
+  const sagittalResult = sagittalViews.length > 0
+    ? viewResults.filter(r=>VIEW_PLANE[r.view]==="sagittal").sort((a,b)=>(b.scoreData?.reliability||0)-(a.scoreData?.reliability||0))[0]
+    : viewResults.find(r => VIEW_PLANE[r.view] === "sagittal");
   const sagittalPattern = sagittalResult?.findings
     ?.find(f => f.region?.startsWith("◈ Sagittal Pattern"))?.text?.replace("Classification: ","") || null;
-  const hasScoliosis  = mergedFindings.some(f => f.region?.includes("Scoliosis") && f.confirmed);
+
+  // BUG FIX: hasScoliosis — actual region labels contain "Lateral Trunk" or "Lateral Spinal"
+  const hasScoliosis  = mergedFindings.some(f =>
+    (f.region?.includes("Lateral Trunk")||f.region?.includes("Lateral Spinal")||f.region?.includes("Scoliosis")) && f.confirmed);
   const hasLLD        = mergedFindings.some(f => f.region?.includes("Leg Length") && f.confirmed);
-  const hasUCS_front  = mergedFindings.some(f => f.region==="Upper Crossed Syndrome" && f.confirmed);
+  // BUG FIX: hasUCS_front — actual labels contain "Upper Crossed" (with suffix)
+  const hasUCS_front  = mergedFindings.some(f => f.region?.includes("Upper Crossed") && f.confirmed);
+  const hasUCS_sag    = mergedFindings.some(f => f.region?.includes("Upper Crossed") || f.text?.includes("Upper Crossed"));
   const hasShoulderEl = mergedFindings.some(f => f.region==="Shoulder Girdle" && f.confirmed);
-  const frontalPattern = hasScoliosis?"Scoliosis Pattern — refer for X-ray"
-    :(hasUCS_front&&hasShoulderEl)?"Upper Crossed + Shoulder Asymmetry"
+  const hasAPT        = mergedFindings.some(f => (f.region?.includes("Pelvis")||f.region?.includes("Lumbar")) && f.confirmed
+    && (f.findingName||f.text||"").toLowerCase().includes("anterior"));
+  const hasFrontalPelvis = mergedFindings.some(f => f.region==="Pelvis" && f.confirmed);
+  const hasCVA        = mergedFindings.some(f => f.region?.includes("Cervical") && f.confirmed);
+  const hasHeadTilt   = mergedFindings.some(f => f.region?.includes("Head") && f.confirmed);
+  const hasKneeValgus = mergedFindings.some(f => f.region?.includes("Knee Alignment") && f.confirmed);
+  const hasKneeRecurv = mergedFindings.some(f => f.region?.includes("Knee — Sagittal") && f.confirmed);
+
+  // Frontal pattern
+  const frontalPattern = hasScoliosis?"Lateral Spinal Deviation Screen — Adam's forward bend test recommended"
+    :(hasUCS_front&&hasShoulderEl)?"Upper Crossed Pattern + Shoulder Asymmetry confirmed"
     :hasLLD?"Limb Length Discrepancy Pattern"
     :hasShoulderEl?"Coronal Asymmetry":null;
+
+  // ── Cross-plane composite findings ─────────────────────────────────────────
+  // These findings only emerge when multiple planes are assessed together.
+  const crossPlaneFindings = [];
+  if (hasFrontal && hasSagittal) {
+    // Lumbopelvic dysfunction: APT (sagittal) + pelvic obliquity (frontal)
+    if (hasAPT && hasFrontalPelvis) {
+      crossPlaneFindings.push({
+        region:"◈ Cross-Plane — Lumbopelvic",
+        findingName:"Lumbopelvic dysfunction: anterior pelvic tilt (sagittal) with pelvic obliquity (frontal) — multidirectional pelvic instability pattern. Magee: co-occurrence indicates asymmetric lumbopelvic load distribution.",
+        severity:"moderate", confidenceScore:75, clinicalSignificance:"moderate", confirmed:true,
+        correction:"Asymmetric approach: side-specific hip flexor release + contralateral gluteal activation. Pilates or motor control programme targeting transversus abdominis and multifidus.",
+        _derivedFrom:["Pelvis/Lumbar (sagittal)","Pelvis (frontal)"],
+      });
+    }
+    // Cervical dysfunction: FHP + head tilt
+    if (hasCVA && hasHeadTilt) {
+      crossPlaneFindings.push({
+        region:"◈ Cross-Plane — Cervical",
+        findingName:"Cervical dysfunction: forward head posture (sagittal) + lateral head tilt (frontal) — combined sagittal + coronal cervical deviation. May indicate unilateral SCM/scalene dominance or upper cervical (C1–C2) dysfunction. Magee: screen for upper cervical instability.",
+        severity:"moderate", confidenceScore:72, clinicalSignificance:"moderate", confirmed:true,
+        correction:"Upper cervical assessment: C1–C2 rotation screen. Bilateral SCM/scalene length assessment. Cervical retraction + lateral flexion mobility. Refer if neurological signs present.",
+        _derivedFrom:["Cervical/CVA (sagittal)","Head/Cervical (frontal)"],
+      });
+    }
+    // Knee combined risk: frontal valgus + sagittal recurvatum
+    if (hasKneeValgus && hasKneeRecurv) {
+      crossPlaneFindings.push({
+        region:"◈ Cross-Plane — Knee Risk",
+        findingName:"Combined knee risk: valgus tendency (frontal) + hyperextension tendency (sagittal) — combined MCL + posterior capsule loading pattern. Magee p.759/760: significantly elevated PFPS and ACL injury risk.",
+        severity:"moderate", confidenceScore:78, clinicalSignificance:"high", confirmed:true,
+        correction:"Priority: VMO strengthening, hip abductor activation, gait re-education. Consider orthopaedic screen if pain or instability symptoms. Avoid deep squats until alignment improved.",
+        _derivedFrom:["Knee Alignment Tendency (frontal)","Knee — Sagittal (lateral)"],
+      });
+    }
+    // UCS cross-plane confirmation
+    if (hasUCS_sag && hasShoulderEl) {
+      crossPlaneFindings.push({
+        region:"◈ Cross-Plane — UCS Confirmed",
+        findingName:"Upper Crossed Syndrome confirmed across planes: sagittal FHP/rounded shoulder pattern + frontal shoulder elevation — Janda's UCS requires both sagittal (FHP, protraction) and coronal (asymmetry) components. Both planes positive.",
+        severity:"moderate", confidenceScore:80, clinicalSignificance:"moderate", confirmed:true,
+        correction:"Janda protocol: inhibit upper trapezius/levator scapulae (soft tissue) + activate deep neck flexors and lower trapezius/serratus anterior. Address ipsilateral scalene tightness if head tilt present.",
+        _derivedFrom:["Sagittal chain (lateral)","Shoulder Girdle (frontal)"],
+      });
+    }
+  }
+  // Add cross-plane findings to merged list (at top)
+  crossPlaneFindings.forEach(f => mergedFindings.unshift(f));
 
   const highCount      = mergedFindings.filter(f => f.severity==="high" && f.confirmed).length;
   const confirmedCount = mergedFindings.filter(f => f.confirmed).length;
@@ -4787,7 +4873,8 @@ function mergeViewResults(viewResults) {
     : " No findings confirmed across multiple views.";
   if (!hasFrontal||!hasSagittal) summary += ` Add ${!hasFrontal?"a frontal":"a lateral"} view to complete the assessment.`;
 
-  return { compositeScore, compositeBand, compositeColour, mergedFindings, coverage, subScores, sagittalPattern, frontalPattern, summary };
+  return { compositeScore, compositeBand, compositeColour, mergedFindings, coverage, subScores,
+    sagittalPattern, frontalPattern, summary, frontalScore, sagittalScore, crossPlaneCount: crossPlaneFindings.length };
 }
 
 // ─── Canvas overlay renderer ──────────────────────────────────────────────────
@@ -7389,6 +7476,9 @@ function PostureAnalysisModule(){
               </div>
               <div style={{fontSize:"0.72rem",color:PC.text,fontWeight:700,marginTop:2}}>
                 Posture Score: {mvComposite.compositeScore}/100
+                {mvComposite.frontalScore!=null&&<span style={{fontSize:"0.6rem",opacity:0.75}}> · Frontal: {mvComposite.frontalScore}</span>}
+                {mvComposite.sagittalScore!=null&&<span style={{fontSize:"0.6rem",opacity:0.75}}> · Sagittal: {mvComposite.sagittalScore}</span>}
+                {mvComposite.crossPlaneCount>0&&<span style={{fontSize:"0.6rem",color:PC.green}}> · {mvComposite.crossPlaneCount} cross-plane finding{mvComposite.crossPlaneCount>1?"s":""}</span>}
               </div>
               <div style={{fontSize:"0.62rem",color:PC.muted,marginTop:4,lineHeight:1.5}}>
                 {mvComposite.summary}
