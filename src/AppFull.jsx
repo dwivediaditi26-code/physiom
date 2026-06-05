@@ -6442,7 +6442,9 @@ function PostureAnalysisModule(){
             const mLocal=measureLandmarks(lm,calib);
             octx.fillStyle="#ffffff"; octx.fillRect(0,0,W,H);
             octx.drawImage(srcCanvas,0,0,W,H); // always from clean srcCanvas
-            drawOverlay({ctx:octx,W,H,lm,view:v,showGrid:true,measurements:mLocal});
+            // Wrap drawOverlay in try/catch — if it throws the promise still resolves
+            try { drawOverlay({ctx:octx,W,H,lm,view:v,showGrid:true,measurements:mLocal}); }
+            catch(overlayErr) { console.warn("drawOverlay error (non-fatal):", overlayErr); }
             const annotated=oc.toDataURL("image/jpeg",0.92);
             resolve({lm,annotated});
           } else { resolve(null); }
