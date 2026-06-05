@@ -32,6 +32,49 @@ const ALL_TESTS = {
 // ROM MODULE — Advanced Range of Motion Assessment
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ─── Cloudinary Clinical Image System ──────────────────────────────────────
+// Cloud name: dr15y1pwj
+// Upload images to Cloudinary with names matching clinical IDs (e.g. rom_cflex, n_c3)
+// If image doesn't exist → component renders nothing automatically
+const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
+
+function ImageModal({ src, title, onClose }) {
+  return (
+    <div onClick={onClose}
+      style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.9)",zIndex:99999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{maxWidth:"95vw",maxHeight:"93vh",position:"relative"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{color:"#fff",fontWeight:700,fontSize:"0.88rem"}}>{title}</span>
+          <button onClick={onClose}
+            style={{background:"rgba(255,255,255,0.18)",border:"none",borderRadius:6,color:"#fff",fontWeight:800,cursor:"pointer",padding:"4px 14px",fontSize:"0.75rem",marginLeft:12}}>✕ Close</button>
+        </div>
+        <img src={src} alt={title}
+          style={{maxWidth:"90vw",maxHeight:"84vh",objectFit:"contain",borderRadius:10,display:"block"}}/>
+      </div>
+    </div>
+  );
+}
+
+function ClinicalImage({ name, title, size=52 }) {
+  const [exists, setExists] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
+  if (!exists) return null;
+  const thumb = `${CLOUDINARY_BASE}/f_auto,q_auto,w_${size},h_${size},c_fill/${name}`;
+  const full  = `${CLOUDINARY_BASE}/f_auto,q_auto/${name}`;
+  return (
+    <>
+      <img src={thumb} alt={title||name}
+        onError={()=>setExists(false)}
+        onClick={()=>setOpen(true)}
+        title={`Tap to view: ${title||name}`}
+        style={{width:size,height:size,objectFit:"cover",borderRadius:7,cursor:"pointer",
+          border:"2px solid rgba(124,58,237,0.25)",flexShrink:0,display:"block"}}
+      />
+      {open && <ImageModal src={full} title={title||name} onClose={()=>setOpen(false)}/>}
+    </>
+  );
+}
+
 const ROM_DATA={
   "Cervical":[
     {id:"rom_cflex",mv:"Flexion",bilateral:false,normal:45,unit:"°",plane:"Sagittal",axis:"Frontal (coronal)",
@@ -738,9 +781,12 @@ function ROMModule({data,set,navContext={}}){
               {/* Card Header */}
               <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:"0.82rem",color:hasAnyVal?C.text:C.muted}}>{m.mv}</div>
-                    <div style={{fontSize:"0.6rem",color:C.muted,marginTop:1}}>{m.plane} · N={m.normal}{m.unit}</div>
+                  <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
+                    <ClinicalImage name={m.id} title={`${m.mv} — ${region}`} size={44}/>
+                    <div>
+                      <div style={{fontWeight:700,fontSize:"0.82rem",color:hasAnyVal?C.text:C.muted}}>{m.mv}</div>
+                      <div style={{fontSize:"0.6rem",color:C.muted,marginTop:1}}>{m.plane} · N={m.normal}{m.unit}</div>
+                    </div>
                   </div>
                   {/* Bilateral inputs */}
                   <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
@@ -1650,7 +1696,6 @@ function CollapsibleHow({ title, children }) {
 function NeurologicalModule({ data, set, navContext={} }) {
   const [tab, setTab] = useState("dermatomes");
   const [expandedLevel, setExpandedLevel] = useState(null);
-  const [dermImgModal, setDermImgModal] = useState(null); // {src, title}
   const [expandedTest, setExpandedTest] = useState(null);
   const [clinicianNotes, setClinicianNotes] = useState(data["neuro_clinician_notes"]||"");
   const [showAsiaGuide, setShowAsiaGuide] = useState(false);
@@ -1887,9 +1932,12 @@ function NeurologicalModule({ data, set, navContext={} }) {
             return(
               <div key={d.id} data-neuro-id={d.id} style={{background:C.surface,border:`1px solid ${abnormal?C.red+"50":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8,flexWrap:"wrap"}}>
-                  <div>
-                    <span style={{fontWeight:800,color:abnormal?C.red:C.accent,marginRight:8}}>{d.level}</span>
-                    <span style={{fontSize:"0.76rem",color:C.text}}>{d.region}</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <ClinicalImage name={d.id} title={`${d.level} — ${d.region}`} size={40}/>
+                    <div>
+                      <span style={{fontWeight:800,color:abnormal?C.red:C.accent,marginRight:8}}>{d.level}</span>
+                      <span style={{fontSize:"0.76rem",color:C.text}}>{d.region}</span>
+                    </div>
                   </div>
                   <button type="button" onClick={()=>setExpandedLevel(expandedLevel===d.id?null:d.id)}
                     style={{padding:"2px 9px",background:"rgba(127,90,240,0.12)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>
@@ -1921,7 +1969,15 @@ function NeurologicalModule({ data, set, navContext={} }) {
           </div>
 
           {/* Lumbar + Sacral */}
-          <div><div style={{fontSize:"0.7rem",fontWeight:700,color:C.a3,marginBottom:8}}>● LUMBAR & SACRAL LEVELS</div>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,padding:"8px 12px",background:"rgba(124,58,237,0.05)",borderRadius:8,border:"1px solid rgba(124,58,237,0.15)"}}>
+              <ClinicalImage name="lumbar-dermatome" title="Lumbar / Sacral Dermatome Map" size={64}/>
+              <div>
+                <div style={{fontSize:"0.68rem",fontWeight:700,color:"#7c3aed"}}>Lumbar / Sacral Dermatome Map</div>
+                <div style={{fontSize:"0.6rem",color:"#7e6a9a",marginTop:2}}>Tap to view full size</div>
+              </div>
+            </div>
+            <div style={{fontSize:"0.7rem",fontWeight:700,color:C.a3,marginBottom:8}}>● LUMBAR & SACRAL LEVELS</div>
           {DERMATOMES.filter(d=>d.level.startsWith("L")||d.level.startsWith("S")||d.level.startsWith("T")).map(d=>{
             const lv=data[d.id+"_left"]||"", rv=data[d.id+"_right"]||"";
             const lCol=getSensoryColor(lv), rCol=getSensoryColor(rv);
@@ -2155,7 +2211,8 @@ function NeurologicalModule({ data, set, navContext={} }) {
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,gap:8}}>
                         <div style={{flex:1}}>
                           <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:2}}>
-                            <span style={{fontWeight:700,color:urgent?groupMeta.color:abnormal?groupMeta.color:C.text,fontSize:"0.84rem"}}>{r.label}</span>
+                            <ClinicalImage name={r.id} title={r.label} size={36}/>
+                          <span style={{fontWeight:700,color:urgent?groupMeta.color:abnormal?groupMeta.color:C.text,fontSize:"0.84rem"}}>{r.label}</span>
                             {(r.umnSign)&&<span style={{padding:"1px 6px",borderRadius:8,background:"rgba(255,77,109,0.2)",color:C.red,fontSize:"0.58rem",fontWeight:700}}>UMN SIGN</span>}
                             {(grp==="Clonus")&&<span style={{padding:"1px 6px",borderRadius:8,background:"rgba(127,90,240,0.2)",color:C.purple,fontSize:"0.58rem",fontWeight:700}}>CLONUS</span>}
                             {(grp==="LMN")&&<span style={{padding:"1px 6px",borderRadius:8,background:"rgba(255,179,0,0.2)",color:C.yellow,fontSize:"0.58rem",fontWeight:700}}>LMN</span>}
