@@ -2803,7 +2803,7 @@ function manualPointsToLandmarks(placed, pointDefs) {
 }
 
 // ─── Measurement Engine ───────────────────────────────────────────────────────
-function measureLandmarks(lm, calibration) {
+function measureLandmarks(lm, calibration, view="anterior") {
   if(!lm||lm.length<33) return {};
   const g=i=>lm[i];
   const V=i=>(lm[i]?.visibility||0)>=MIN_VIS;
@@ -6370,7 +6370,7 @@ function PostureAnalysisModule(){
     catch(e){ console.warn("computeCalibration error:",e); }
 
     let m={};
-    try { m=measureLandmarks(lm,calib)||{}; }
+    try { m=measureLandmarks(lm,calib,v)||{}; }
     catch(e){ console.warn("measureLandmarks error:",e); }
 
     let r={score:0,status:"Error",blocked:false,warnings:[],icc:null,confidence:{}};
@@ -6468,7 +6468,7 @@ function PostureAnalysisModule(){
               let mLocal={};
               try {
                 const calib2=computeCalibration(lm,patientHeightCm,H);
-                mLocal=measureLandmarks(lm,calib2)||{};
+                mLocal=measureLandmarks(lm,calib2,v)||{};
               } catch(mErr) { console.warn("measureLandmarks error:", mErr); }
               octx.fillStyle="#ffffff"; octx.fillRect(0,0,W,H);
               octx.drawImage(srcCanvas,0,0,W,H); // always from clean srcCanvas
@@ -6515,7 +6515,7 @@ function PostureAnalysisModule(){
       // Show annotated overlay — analysePhoto uses createImageBitmap (clean, no taint)
       if(result.annotated) setUploadedImg(result.annotated);
       if(assessMode==="multi"){
-        const m=measureLandmarks(result.lm);
+        const m=measureLandmarks(result.lm,null,view);
         const r=calcReliability(result.lm);
         const f=r.blocked?[]:buildFindings(result.lm,view,m);
         const s=scorePosture(m,f,r);
@@ -6659,7 +6659,7 @@ function PostureAnalysisModule(){
         const calib=computeCalibration(result.lm,patientHeightCm,H);
         processLandmarks(result.lm,currentView,H);
         if(assessMode==="multi"){
-          const m=measureLandmarks(result.lm,calib);
+          const m=measureLandmarks(result.lm,calib,currentView);
           const r=calcReliability(result.lm);
           const f=r.blocked?[]:buildFindings(result.lm,currentView,m);
           const s=scorePosture(m,f,r);
