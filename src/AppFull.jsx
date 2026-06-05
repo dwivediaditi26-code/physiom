@@ -2939,21 +2939,19 @@ function measureLandmarks(lm, calibration, view="anterior") {
   // Clinical: angle between horizontal and line from C7 (acromion proxy) to ear.
   // Normal: >55° (Yip et al. 2008). Mild FHP: 48–52°. Moderate: 44–48°. Severe: <44°.
   // (Neiva et al. 2009; Ruivo et al. 2017)
+  // CVA is ONLY valid in lateral (sagittal) view.
+  // In frontal/posterior view the ear-shoulder horizontal distance is ambiguous
+  // and produces impossibly low values (e.g. 15°) that mislead clinicians.
   let cvaAngle = null;
-  if (sagEarVis && sagShVis) {
+  const isLateralView = view === "left" || view === "right";
+  if (isLateralView && sagEarVis && sagShVis) {
     const dx = Math.abs(sagEar.x - sagSh.x);
     const dy = Math.abs(sagEar.y - sagSh.y);
-    // CVA is only valid in lateral (sagittal) view.
-    // Guard: dx must be meaningful relative to dy, AND sagVisPoints >= 3.
-    // In frontal view: ear is directly above shoulder (dy >> dx → angle near 90°).
-    // In lateral view: ear is in front of + above shoulder (dx > 0, angle 30–70°).
-    // Clamp: if computed angle > 70° it is almost certainly a frontal artefact.
-    if (dy > 0.03 && sagVisPoints >= 3) {
+    if (dy > 0.03 && dx > 0.01) {
       const rawCva = Math.atan2(dy, dx) * 180 / Math.PI;
-      // Only accept if angle is in clinically plausible CVA range (20–70°)
-      // Angles near 90° = frontal artefact (ear directly above shoulder)
-      if (rawCva <= 70) {
-        cvaAngle = r1(clamp(rawCva, 15, 70));
+      // Accept only clinically plausible CVA range for lateral view (25–80°)
+      if (rawCva >= 25 && rawCva <= 80) {
+        cvaAngle = r1(clamp(rawCva, 25, 80));
       }
     }
   }
@@ -4700,7 +4698,7 @@ function scorePosture(m, findings, reliability) {
   const pli=m.posturalLoadIndex??0;
   const pliBand=pli>70?0:pli>50?20:pli>35?40:pli>20?60:100;
   const score=clamp(Math.min(rawScore, pliBand+30),0,100);
-  const band=score>=88?"Optimal":score>=74?"Good":score>=58?"Fair":score>=40?"Needs Attention":"Priority Review";
+  const band=score>=88?"Optimal":score>=74?"Good":score>=58?"Fair":score>=40?"Needs Attention":"Clinical Review";
   const colour=score>=74?PC.green:score>=58?PC.yellow:PC.red;
   // Regional sub-scores
   const subScores={
@@ -4769,7 +4767,7 @@ function mergeViewResults(viewResults) {
   const blendedScore = planeFloor!==null ? Math.round(avgScore*0.6 + planeFloor*0.4) : avgScore;
   const coverageCap = (hasFrontal && hasSagittal) ? 100 : 80;
   const compositeScore = Math.min(blendedScore, coverageCap);
-  const compositeBand = compositeScore>=88?"Optimal":compositeScore>=74?"Good":compositeScore>=58?"Fair":compositeScore>=40?"Needs Attention":"Priority Review";
+  const compositeBand = compositeScore>=88?"Optimal":compositeScore>=74?"Good":compositeScore>=58?"Fair":compositeScore>=40?"Needs Attention":"Clinical Review";
   const compositeColour = compositeScore>=74?PC.green:compositeScore>=58?PC.yellow:PC.red;
 
   // Sub-scores: only average values from views where that metric is clinically valid.
@@ -6832,7 +6830,7 @@ function PostureAnalysisModule(){
                 <div style={{fontSize: isWide?"0.72rem":"0.65rem",color:PC.muted,marginTop:2}}>
                   Score {scoreData.score}/100 &nbsp;·&nbsp;
                   <span style={{color:scoreData.colour,fontWeight:700}}>
-                    {scoreData.score>=88?"Excellent posture":scoreData.score>=74?"Minor deviations":scoreData.score>=58?"Moderate — intervention advised":scoreData.score>=40?"Significant — prioritise treatment":"Urgent — multiple areas affected"}
+                    {scoreData.score>=88?"Excellent posture":scoreData.score>=74?"Minor deviations":scoreData.score>=58?"Moderate — clinical review advised":scoreData.score>=40?"Significant — prioritise clinical assessment":highFindings.length>0?"Urgent — multiple high-priority findings":"Multiple areas of interest — clinical review recommended"}
                   </span>
                 </div>
                 <div style={{fontSize: isWide?"0.68rem":"0.62rem",color:PC.muted,marginTop:2}}>
