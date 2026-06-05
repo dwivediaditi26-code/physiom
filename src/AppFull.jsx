@@ -6438,9 +6438,18 @@ function PostureAnalysisModule(){
               const lm=photoOrientation==="standard"
                 ? rawLm.map(p=>({...p, x:1-p.x}))
                 : rawLm;
-              const calib=computeCalibration(lm,patientHeightCm,H);
-              processLandmarks(lm,v,H);
-              const mLocal=measureLandmarks(lm,calib);
+              // processLandmarks updates React state — isolated so any error doesn't
+              // prevent resolve({lm, annotated}) from being called
+              try {
+                const calib=computeCalibration(lm,patientHeightCm,H);
+                processLandmarks(lm,v,H);
+              } catch(procErr) { console.warn("processLandmarks error:", procErr); }
+              // measureLandmarks for overlay — also isolated
+              let mLocal={};
+              try {
+                const calib2=computeCalibration(lm,patientHeightCm,H);
+                mLocal=measureLandmarks(lm,calib2)||{};
+              } catch(mErr) { console.warn("measureLandmarks error:", mErr); }
               octx.fillStyle="#ffffff"; octx.fillRect(0,0,W,H);
               octx.drawImage(srcCanvas,0,0,W,H); // always from clean srcCanvas
               try { drawOverlay({ctx:octx,W,H,lm,view:v,showGrid:true,measurements:mLocal}); }
@@ -6449,7 +6458,7 @@ function PostureAnalysisModule(){
               resolve({lm,annotated});
             } else { resolve(null); }
           } catch(handlerErr) {
-            console.warn("analysePhoto handler error (non-fatal):", handlerErr);
+            console.warn("analysePhoto handler error:", handlerErr);
             resolve(null);
           }
           if(liveHandlerRef.current) poseRef.current.onResults(liveHandlerRef.current);
