@@ -2901,11 +2901,14 @@ function measureLandmarks(lm, calibration, view="anterior") {
   // vertically. Positive deviation = anterior to plumb (forward).
   const plumbX = sagAnkleVis ? sagAnkle.x : (sagHeelVis ? sagHeel.x : 0.5);
 
-  // viewSign: corrects for right lateral view where anterior = image-left = negative x.
-  // Left lateral (patient faces left): anterior = image-right = +x → viewSign = +1
-  // Right lateral (patient faces right): anterior = image-left = -x → viewSign = -1
-  // Without this correction, APT/PPT, FHP and all A/P labels are inverted for right lateral.
-  const viewSign = (view === "right") ? -1 : 1;
+  // viewSign: auto-detected from nose vs shoulder position.
+  // If nose is LEFT of shoulder → face points left → anterior = left = smaller x → viewSign = -1
+  // If nose is RIGHT of shoulder → face points right → anterior = right = larger x → viewSign = +1
+  // This handles both selfie/standard orientation and any camera flip automatically.
+  const noseX = (g(0)?.visibility||0) >= 0.3 ? g(0).x : null;
+  const viewSign = noseX !== null && sagShVis
+    ? (noseX < sagSh.x ? -1 : 1)
+    : (view === "right" ? -1 : 1); // fallback to manual if nose not detected
 
   // ── Convert normalised x-deviation to estimated cm ─────────────────────────
   // If pixPerCm is available from height calibration, use it.
@@ -5009,8 +5012,12 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
 
   } else {
     // ── Clinical Sagittal Plumb Line (Kendall / Sahrmann standard) ────────
-    // viewSign: +1 for left lateral (anterior = image-right), -1 for right lateral
-    const viewSign = (view==="right") ? -1 : 1;
+    // viewSign: auto-detected from nose position (robust to any camera orientation)
+    const noseXo = lm[0]?.x ?? null;
+    const sagShXo = lm[11]?.x ?? lm[12]?.x ?? null;
+    const viewSign = (noseXo !== null && sagShXo !== null)
+      ? (noseXo < sagShXo ? -1 : 1)
+      : (view==="right" ? -1 : 1);
     const side = view==="right";
     const iEar=side?8:7, iSh=side?12:11, iHip=side?24:23, iKnee=side?26:25, iAnk=side?28:27, iHeel=side?30:29;
     // Kendall (5th ed.): plumb line passes through the lateral malleolus
