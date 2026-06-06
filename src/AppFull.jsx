@@ -1910,10 +1910,15 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   // In a lateral view: sagittal trunk inclination reflects combined C/T/L curves.
   // The thoracic kyphosis estimate is only clinically interpretable in a lateral view.
   // Normal: 20–45° Cobb equivalent. This is a SCREEN, not a Cobb measurement.
+  // Thoracic kyphosis proxy from trunk inclination.
+  // In lateral view, bilateral midpoints are often null (far-side invisible) — fall back
+  // to the visible single-side shoulder + hip (sagSh/sagHip) so kyphosis is always detected.
+  const thoracicShRef = shMid || (isLateralView ? sagSh : null);
+  const thoracicHipRef = hipMid || (isLateralView ? sagHip : null);
   let thoracicAngle = null;
-  if (shMid && hipMid) {
-    const dx = shMid.x - hipMid.x; // +ve = shoulders anterior to hips
-    const dy = Math.abs(shMid.y - hipMid.y);
+  if (thoracicShRef && thoracicHipRef) {
+    const dx = thoracicShRef.x - thoracicHipRef.x; // +ve = shoulders anterior to hips
+    const dy = Math.abs(thoracicShRef.y - thoracicHipRef.y);
     if (dy > 0.06) {
       // Base angle from trunk inclination; offset to clinical kyphosis range
       const inclination = Math.atan2(Math.abs(dx), dy) * 180 / Math.PI;
