@@ -12,6 +12,7 @@ import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescription
   buildClinicalInterpretation, Sparkline } from "./ClinicalModules.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
+import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POSE_CONNECTIONS = [
@@ -694,6 +695,9 @@ function PostureCameraModule({ activePatient, set }) {
     else if (activePatient?.name && activePatient.name !== "New Patient") setReportPatient(activePatient.name);
   }, [activePatient?.id]);
 
+  // Pre-load ViTPose model on mount so lateral analysis is instant
+  useEffect(() => { warmupViTPose(); }, []);
+
   // ── Start Camera ──────────────────────────────────────────────────────────
   const startCamera = async (mode) => {
     const fm = mode || facingMode;
@@ -787,6 +791,17 @@ function PostureCameraModule({ activePatient, set }) {
 
   useEffect(() => { return () => stopCamera(); }, []);
 
+
+  // ── Choose pose engine based on view ──────────────────────────────────
+  // lateral (left / right) → ViTPose ONNX  |  frontal → MediaPipe
+  const runPoseForView = async (imgEl, view) => {
+    if (view === "left" || view === "right") {
+      const lm = await runViTPoseLateral(imgEl);
+      if (lm) return lm;
+      console.warn("ViTPose fallback → MediaPipe");
+    }
+    return runMediaPipe(imgEl);
+  };
   // ── Run MediaPipe on image (still frame or upload) ────────────────────────
   const runMediaPipe = async (imgEl) => {
     if (!window.Pose) {
@@ -840,7 +855,7 @@ function PostureCameraModule({ activePatient, set }) {
       const img = new Image();
       img.src = imgUrl;
       await new Promise(res => { img.onload = res; });
-      const lm = await runMediaPipe(img);
+      const lm = await runPoseForView(img, activeView);
       setCapturedLm(lm);
       if (lm) {
         const m = AdvancedMeasurementEngine(lm, null);
@@ -888,7 +903,7 @@ function PostureCameraModule({ activePatient, set }) {
       const img = new Image();
       img.src = url;
       await new Promise(res => { img.onload = res; });
-      const lm = await runMediaPipe(img);
+      const lm = await runPoseForView(img, uploadView);
       setUploadLm(lm);
       if (lm) {
         const m = AdvancedMeasurementEngine(lm, null);
