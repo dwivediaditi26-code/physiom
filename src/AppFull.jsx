@@ -6387,11 +6387,50 @@ function PostureAnalysisModule(){
     catch(e){ console.warn("calcReliability error:",e); }
 
     let f=[];
-    try {
-      f=r.blocked?[]:buildFindings(lm,v||viewRef.current,m);
-      console.warn("[DEBUG] buildFindings view=",v,"cvaAngle=",m.cvaAngle,"blocked=",r.blocked,"findings=",f.length, f.map(x=>x.region));
-    }
+    try { f=r.blocked?[]:buildFindings(lm,v||viewRef.current,m); }
     catch(e){ console.warn("buildFindings error:",e); }
+
+    // Fallback: if buildFindings returned nothing for a lateral view but measurements show
+    // clear deviations, generate findings directly from measurements so clinicians see results.
+    const viewForFallback = v||viewRef.current||"anterior";
+    const isLatFallback = viewForFallback==="left"||viewForFallback==="right";
+    const meaningfulFindings = f.filter(x => x.severity!=="mild" || x.region!=="Sagittal Assessment — Summary");
+    if (isLatFallback && meaningfulFindings.length === 0 && m && Object.keys(m).length > 0) {
+      const fb = [];
+      if (m.cvaAngle !== null && m.cvaAngle < 55) {
+        const sev = m.cvaAngle < 44 ? "high" : m.cvaAngle < 49 ? "moderate" : "mild";
+        fb.push({ region:"Cervical / CVA", text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,
+          plain:`CVA ${m.cvaAngle.toFixed(1)}° below normal range`, severity:sev, confidenceScore:72,
+          clinicalSignificance:sev, correction:"Chin tucks, deep cervical flexor strengthening, thoracic extension.", icd:"M43.6",
+          norm:"Normal CVA >55° (Yip et al. 2008)" });
+      }
+      if (m.fhpDevCm !== null && m.fhpDevCm > 2) {
+        fb.push({ region:"Forward Head Posture", text:`Ear ${m.fhpDevCm.toFixed(1)}cm anterior to acromion`,
+          plain:`FHP: ear ${m.fhpDevCm.toFixed(1)}cm forward`, severity:m.fhpDevCm>4?"high":"moderate",
+          confidenceScore:70, clinicalSignificance:"moderate", correction:"Postural correction, scapular retraction.", icd:"M43.6", norm:"<2cm" });
+      }
+      if (m.thoracicAngle !== null && m.thoracicAngle > 45) {
+        const sev = m.thoracicAngle > 55 ? "high" : "moderate";
+        fb.push({ region:"Thoracic Kyphosis", text:`Increased thoracic kyphosis tendency — ${m.thoracicAngle.toFixed(1)}° (normal 20–45°)`,
+          plain:`Thoracic curvature ${m.thoracicAngle.toFixed(1)}°`, severity:sev, confidenceScore:65,
+          clinicalSignificance:sev, correction:"Thoracic extension exercises, pec stretching, scapular setting.", icd:"M40.2",
+          norm:"Normal thoracic kyphosis 20–45° (Magee)" });
+      }
+      if (m.sagShoulderShift !== null && Math.abs(m.sagShoulderShift) > 2) {
+        fb.push({ region:"Shoulder / Rounded Tendency", text:`Shoulder ${m.sagShoulderShift>0?"anterior":"posterior"} displacement ~${Math.abs(m.sagShoulderShift).toFixed(1)}cm from plumb`,
+          plain:"Rounded shoulder tendency observed", severity:"moderate", confidenceScore:65,
+          clinicalSignificance:"moderate", correction:"Scapular retraction, pec minor stretching, serratus activation.", icd:"M62.9",
+          norm:"Acromion at plumb line (Kendall)" });
+      }
+      if (m.lumbarProxy !== null && Math.abs(m.lumbarProxy) > 4) {
+        fb.push({ region:"Pelvis / Lumbar", text:`Lumbar spine deviation proxy ${m.lumbarProxy.toFixed(1)}% (anterior pelvic tilt tendency)`,
+          plain:"Anterior pelvic tilt tendency", severity:Math.abs(m.lumbarProxy)>8?"moderate":"mild",
+          confidenceScore:62, clinicalSignificance:"moderate",
+          correction:"Hip flexor stretching, glute and deep abdominal activation.", icd:"M54.5",
+          norm:"Neutral lumbar alignment at plumb line" });
+      }
+      if (fb.length > 0) f = fb;
+    }
 
     let s={score:0,band:"No Data",colour:PC.muted,subScores:null};
     try { s=scorePosture(m,f,r); }
