@@ -6782,7 +6782,7 @@ function PostureAnalysisModule(){
     const lm = manualPointsToLandmarks(manualPlaced, manualPointDefs);
     const imgH = manualImgSize.current?.h || 800;
     const calib = computeCalibration(lm, patientHeightCm, imgH);
-    const m = measureLandmarks(lm, calib);
+    const m = measureLandmarks(lm, calib, view); // pass view so CVA/kyphosis work in lateral
     const r = calcManualReliability(manualPlacedCount, manualTotal);
     const f = r.blocked ? [] : buildFindings(lm, view, m);
     const s = scorePosture(m, f, r);
