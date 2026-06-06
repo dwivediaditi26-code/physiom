@@ -4594,8 +4594,8 @@ function buildFindings(lm, view, m) {
     // ── 3. Thoracic Kyphosis ─────────────────────────────────────────────────
     // Lateral view: lower effective threshold to 40° because trunk-lean proxy underestimates
     // kyphosis when sagittal landmarks are used instead of bilateral midpoints.
-    if (m.thoracicAngle !== null && m.thoracicAngle > 36) {
-      const sev = m.thoracicAngle > 52 ? "high" : m.thoracicAngle > 42 ? "moderate" : "mild";
+    if (m.thoracicAngle !== null && m.thoracicAngle > 45) {
+      const sev = m.thoracicAngle > 58 ? "high" : m.thoracicAngle > 50 ? "moderate" : "mild";
       const visShHip = [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip].filter(i=>(lm[i]?.visibility||0)>=MIN_VIS);
       const conf = Math.max(55, getLandmarkConfidence(lm, visShHip.length>=2?visShHip:[...LANDMARK_GROUPS.shoulder,...LANDMARK_GROUPS.hip]));
       if (true) {
@@ -6695,9 +6695,15 @@ function PostureAnalysisModule(){
       if (isLatFallback) {
         if (m.cvaAngle!=null&&m.cvaAngle<55) { const sev=m.cvaAngle<44?"high":m.cvaAngle<49?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:"Normal CVA >55°"}); }
         if (m.fhpDevCm!=null&&m.fhpDevCm>2&&m.cvaAngle===null) { fb.push({region:"Forward Head Posture",text:`Ear ${m.fhpDevCm.toFixed(1)}cm anterior to acromion`,plain:`FHP ${m.fhpDevCm.toFixed(1)}cm`,severity:m.fhpDevCm>4?"high":"moderate",confidenceScore:70,clinicalSignificance:"moderate",correction:"Postural correction, scapular retraction.",icd:"M43.6",norm:"<2cm"}); }
-        if (m.thoracicAngle!=null&&m.thoracicAngle>36) { const sev=m.thoracicAngle>52?"high":m.thoracicAngle>42?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency — ${m.thoracicAngle.toFixed(1)}° (normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.2",norm:"20–45°"}); }
+        if (m.thoracicAngle!=null&&m.thoracicAngle>45) { const sev=m.thoracicAngle>58?"high":m.thoracicAngle>50?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency — ${m.thoracicAngle.toFixed(1)}° (normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.2",norm:"20–45°"}); }
         if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) { const abs=Math.abs(m.sagShoulderShift); const dir=m.sagShoulderShift>0?"anterior":"posterior"; fb.push({region:"Shoulder / Rounded Tendency",text:`Shoulder ${dir} ~${abs.toFixed(1)}cm from plumb`,plain:"Rounded shoulder tendency",severity:"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Scapular retraction, pec stretch, serratus activation.",icd:"M62.9",norm:"Acromion at plumb"}); }
-        if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>3) { const abs=Math.abs(m.sagPelvicShift); const dir=m.sagPelvicShift>0?"Anterior":"Posterior"; const sev=abs>6?"high":abs>4?"moderate":"mild"; fb.push({region:"Pelvis / Lumbar",text:`${dir} pelvic tendency — hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`,plain:`${dir} pelvic tilt`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:m.sagPelvicShift>0?"Hip flexor stretch, glute bridges, abdominal hollowing.":"Hamstring stretch, lumbar extension.",icd:"M40.3",norm:"Hip within 2cm of plumb"}); }
+        if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>3) {
+        const abs=Math.abs(m.sagPelvicShift); const isAPT=m.sagPelvicShift>0;
+        const sev=abs>6?"high":abs>4?"moderate":"mild";
+        const label=isAPT?`Anterior pelvic tilt / Hyperlordosis — hip ~${abs.toFixed(1)}cm anterior to plumb`:`Posterior pelvic tilt (flat back tendency) — hip ~${abs.toFixed(1)}cm posterior to plumb`;
+        fb.push({region:"Pelvis / Lumbar",text:label,plain:isAPT?"Anterior pelvic tilt":"Posterior pelvic tilt",severity:sev,confidenceScore:68,clinicalSignificance:sev,
+        correction:isAPT?"Hip flexor stretch (Thomas test 30s×3), glute bridges ×20, transversus abdominis activation.":"Hamstring stretch, hip flexor activation, lumbar extension mobility.",
+        icd:isAPT?"M40.4":"M40.3",norm:"Hip within 2cm of plumb (Kendall)"}); }
       }
 
       // ── FRONTAL / POSTERIOR findings ─────────────────────────────────────────
@@ -7081,7 +7087,7 @@ function PostureAnalysisModule(){
       if (isLat && meaningful.length===0 && m && Object.keys(m).length>0) {
         const fb=[];
         if (m.cvaAngle!=null&&m.cvaAngle<55) { const sev=m.cvaAngle<44?"high":m.cvaAngle<49?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:"Normal CVA >55°"}); }
-        if (m.thoracicAngle!=null&&m.thoracicAngle>36) { const sev=m.thoracicAngle>52?"high":m.thoracicAngle>42?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.0",norm:"Normal 20–45°"}); }
+        if (m.thoracicAngle!=null&&m.thoracicAngle>45) { const sev=m.thoracicAngle>58?"high":m.thoracicAngle>50?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.0",norm:"Normal 20–45°"}); }
         if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>2) { const dir=m.sagPelvicShift>0?"Anterior":"Posterior"; const abs=Math.abs(m.sagPelvicShift); const sev=abs>5?"high":abs>3?"moderate":"mild"; fb.push({region:"Pelvis / Lumbar",text:`${dir} pelvic tendency — hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`,plain:`${dir} pelvic tilt ${abs.toFixed(1)}cm`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:dir==="Anterior"?"Hip flexor stretch, glute bridges, abdominal hollowing.":"Hamstring stretch, hip flexor activation, lumbar extension.",icd:"M40.3",norm:"Hip within 2cm of plumb"}); }
         if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) { fb.push({region:"Shoulder / Rounded Tendency",text:`Shoulder ${m.sagShoulderShift>0?"anterior":"posterior"} ~${Math.abs(m.sagShoulderShift).toFixed(1)}cm from plumb`,plain:"Rounded shoulder tendency",severity:"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Scapular retraction, pec stretch, serratus activation.",icd:"M62.9",norm:"Acromion at plumb"}); }
         if (fb.length>0) f=fb;
