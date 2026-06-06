@@ -6762,7 +6762,7 @@ function PostureAnalysisModule(){
       // Correct clinical pattern: FHP + shoulder ANTERIOR to plumb + possible APT.
       // Distinguishes from Image 2 (FHP only, shoulder near plumb, normal thoracic).
       // Reference: Kendall et al. "Muscles: Testing and Function" 5th Ed. p.80
-      const hasFHPfb = (m.cvaAngle!=null&&m.cvaAngle<52) || (m.fhpDevCm!=null&&m.fhpDevCm>2);
+      const hasFHPfb = m.cvaAngle!=null&&m.cvaAngle<52; // CVA must be clinically abnormal — fhpDevCm alone is insufficient
       const shAnteriorToPlumb = m.sagShoulderShift!=null && m.sagShoulderShift > 1.0; // shoulder forward
       const noKyphosisFinding = !fb.some(x=>x.region==="Thoracic Kyphosis"||x.region==="Thoracic Kyphosis (Trunk Lean Est.)");
       // Also check: large FHP (CVA <46°) with any shoulder anterior position suggests kyphosis-lordosis
@@ -6782,7 +6782,7 @@ function PostureAnalysisModule(){
         if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>3) {
         const abs=Math.abs(m.sagPelvicShift); const isAPT=m.sagPelvicShift>0;
         const sev=abs>6?"high":abs>4?"moderate":"mild";
-        const label=isAPT?`Anterior pelvic tilt / Hyperlordosis — hip ~${abs.toFixed(1)}cm anterior to plumb`:`Posterior pelvic tilt (flat back tendency) — hip ~${abs.toFixed(1)}cm posterior to plumb`;
+        const label=isAPT?`Hip anterior displacement — ~${abs.toFixed(1)}cm anterior to plumb (confirm pelvic tilt clinically)`:`Hip posterior displacement — ~${abs.toFixed(1)}cm posterior to plumb (flat-back tendency)`;
         fb.push({region:"Pelvis / Lumbar",text:label,plain:isAPT?"Anterior pelvic tilt":"Posterior pelvic tilt",severity:sev,confidenceScore:68,clinicalSignificance:sev,
         correction:isAPT?"Hip flexor stretch (Thomas test 30s×3), glute bridges ×20, transversus abdominis activation.":"Hamstring stretch, hip flexor activation, lumbar extension mobility.",
         icd:isAPT?"M40.4":"M40.3",norm:"Hip within 2cm of plumb (Kendall)"}); }
@@ -6803,6 +6803,15 @@ function PostureAnalysisModule(){
       }
 
       if (fb.length > 0) f = fb;
+      // Strip deprecated spinal diagnoses for lateral views — contour engine handles these
+      if (isLatFallback) {
+        f = f.filter(fi => {
+          const reg = fi.region || fi.category || "";
+          return !["Thoracic Kyphosis","Lumbar — Hyperlordosis","Lumbar — Flat Back",
+            "Posture Pattern —","Upper Crossed Pattern","Lower Crossed Pattern",
+            "Sagittal Pattern —"].some(dep => reg.includes(dep));
+        });
+      }
     }
 
     let s={score:0,band:"No Data",colour:PC.muted,subScores:null};
@@ -6957,6 +6966,24 @@ function PostureAnalysisModule(){
       } else {
         setTab("findings");
         if(isMobile) setMobilePanel("results");
+      }
+      // ── Async contour analysis for lateral views (augments processLandmarks findings) ──
+      if ((view==="left"||view==="right") && typeof analyzeSagittalContour==="function") {
+        const imgEl=new Image(); imgEl.src=url;
+        imgEl.onload=async()=>{
+          try {
+            const mLocal=measureLandmarks(result.lm,null,view)||{};
+            const cr=await analyzeSagittalContour(imgEl,result.lm,view).catch(()=>null);
+            if(!cr) return;
+            const sagF=buildSagittalFindings(result.lm,view,mLocal,cr,false);
+            setFindings(prev=>[...sagF,...prev.filter(fi=>{
+              const reg=fi.region||fi.category||"";
+              return !["Thoracic Kyphosis","Lumbar — Hyperlordosis","Lumbar — Flat Back",
+                "Posture Pattern —","Upper Crossed Pattern","Lower Crossed Pattern",
+                "Sagittal Pattern —","Pelvis / Lumbar","Lumbar / Pelvis"].some(dep=>reg.includes(dep));
+            })]);
+          } catch(e){ console.warn("Contour (handleFile):", e); }
+        };
       }
     } else {
       setError("Could not analyse photo — ensure full body is visible.");
