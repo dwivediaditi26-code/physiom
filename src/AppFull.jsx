@@ -6716,6 +6716,27 @@ function PostureAnalysisModule(){
       if (!fb.some(x=>x.region==="Shoulder / Rounded Tendency") && m.thoracicAngle!=null&&m.thoracicAngle>46) {
         fb.push({region:"Shoulder / Rounded Tendency",text:"Rounded shoulder tendency — associated with increased thoracic curvature",plain:"Rounded shoulders",severity:"moderate",confidenceScore:62,clinicalSignificance:"moderate",correction:"Pec minor stretch, scapular retraction ×15, lower trap Y-T-W.",icd:"M62.9",norm:"Neutral scapular position"});
       }
+      // ── Kyphosis pattern detection: FHP + shoulder at/behind plumb ───────────
+      // Classic kyphosis signature (Kendall): ear forward (FHP) + acromion pulled
+      // posterior by rounded upper thoracic spine. No thoracicAngle needed.
+      const hasFHPfb = (m.cvaAngle!=null&&m.cvaAngle<52) || (m.fhpDevCm!=null&&m.fhpDevCm>2);
+      const shBehindPlumb = m.sagShoulderShift!=null && m.sagShoulderShift < 0.5; // at or behind plumb
+      const noKyphosisFinding = !fb.some(x=>x.region==="Thoracic Kyphosis"||x.region==="Thoracic Kyphosis (Trunk Lean Est.)");
+      if (isLatFallback && hasFHPfb && shBehindPlumb && noKyphosisFinding) {
+        const kyphConf = 68;
+        // Estimate severity from how far the shoulder is behind plumb
+        const shDev = Math.abs(m.sagShoulderShift??0);
+        const kSev = shDev > 4 ? "high" : shDev > 2 ? "moderate" : "mild";
+        fb.push({
+          region:"Thoracic Kyphosis",
+          text:`Thoracic kyphosis pattern — forward head with shoulder at/behind plumb line (${(m.sagShoulderShift??0).toFixed(1)}cm). Consistent with rounded upper back.`,
+          plain:"Thoracic kyphosis pattern detected",
+          severity:kSev, confidenceScore:kyphConf, clinicalSignificance:kSev,
+          interpretation:"Forward head posture combined with acromion at or behind the Kendall plumb line is a reliable clinical indicator of thoracic hyperkyphosis. The rounded upper thoracic spine displaces the acromion posteriorly while the head compensates anteriorly.",
+          correction:"Thoracic extension over foam roller (T4–T8 ×2min). Pec minor stretch ×30s. Lower trap Y-T-W ×15. Postural awareness cue: lift sternum, not chin.",
+          icd:"M40.0", norm:"Acromion within 2cm anterior to plumb (Kendall)"
+        });
+      }
         if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>3) {
         const abs=Math.abs(m.sagPelvicShift); const isAPT=m.sagPelvicShift>0;
         const sev=abs>6?"high":abs>4?"moderate":"mild";
