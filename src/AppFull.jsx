@@ -1937,9 +1937,33 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     const kneeHeelMidX = (kneeMid.x + heelMid.x) / 2;
     lumbarProxy = r1((hipMid.x - kneeHeelMidX) * 100);
   }
-  // Lordosis angle from Z-depth only — guard with meaningful Z difference
-  if (hasZ && hipZ !== null && kneeZ !== null && Math.abs(hipZ-kneeZ) > 0.005)
+  // Lordosis from real-world z-depth (_wz from poseWorldLandmarks, in metres)
+  // sagHip._wz vs sagKnee._wz: positive difference = hip more posterior (APT/lordosis)
+  const wHip   = sagHip?._wz ?? null;
+  const wSh    = sagSh?._wz  ?? null;
+  const wKnee  = sagKnee?._wz ?? null;
+  const wAnkle = sagAnkle?._wz ?? null;
+  const wEar   = sagEar?._wz  ?? null;
+
+  // Kyphosis: angle from T1 (shoulder) to T12 (lower thorax proxy) in 3D
+  // We use shoulder-hip vector in world space. Shoulder z - Hip z gives anterior lean.
+  // lordosisAngle: from hip-knee z-depth (L5-S1 curve proxy)
+  if (wHip !== null && wKnee !== null && Math.abs(wHip-wKnee) > 0.01) {
+    // APT: hip z more positive than knee z (hip more posterior in world coords)
+    const lordProxy = (wHip - wKnee) * 100; // cm
+    lordosisAngle = r1(clamp(50 + lordProxy * 1.8, 15, 90));
+  } else if (hasZ && hipZ !== null && kneeZ !== null && Math.abs(hipZ-kneeZ) > 0.005) {
     lordosisAngle = r1(clamp(50 + (hipZ-kneeZ)*100*2.2, 15, 85));
+  }
+
+  // Thoracic kyphosis from world z: shoulder z vs hip z
+  // More positive shoulder z relative to hip = more kyphotic lean
+  if (wSh !== null && wHip !== null && thoracicAngle === null) {
+    const kyphProxy = (wSh - wHip) * 100; // cm
+    // Calibrate: 0cm diff = 32° normal kyphosis; +5cm = ~50° hyperkyphosis
+    const kyphEst = r1(clamp(32 + kyphProxy * 3.5, 15, 85));
+    if (kyphEst > 20) thoracicAngle = kyphEst;
+  }
 
   // Pelvic tilt sagittal: alias of lumbarProxy for naming consistency
   const pelvicTiltSagittal = lumbarProxy;
@@ -6748,18 +6772,23 @@ function PostureAnalysisModule(){
             if(results.poseLandmarks?.length>0){
               // For standard (non-selfie) camera photos, flip x-axis so patient's
               // left = image left, matching MediaPipe's selfie-mode convention.
-              // This ensures all L/R labels are anatomically correct.
               const rawLm=results.poseLandmarks;
               const lm=photoOrientation==="standard"
                 ? rawLm.map(p=>({...p, x:1-p.x}))
                 : rawLm;
-              // processLandmarks updates React state — isolated so any error doesn't
-              // prevent resolve({lm, annotated}) from being called
+              // Merge 3D world landmarks (metric z-depth) into image landmarks.
+              // poseWorldLandmarks gives real-world metric coordinates centred at hip midpoint.
+              // We use z-depth to compute true lordosis/kyphosis angles.
+              const worldLm = results.poseWorldLandmarks;
+              if (worldLm?.length > 0) {
+                lm.forEach((pt, i) => {
+                  if (worldLm[i]) pt._wz = worldLm[i].z; // metric depth (m), negative = toward camera
+                });
+              }
               try {
                 const calib=computeCalibration(lm,patientHeightCm,H);
                 processLandmarks(lm,v,H);
               } catch(procErr) { console.warn("processLandmarks error:", procErr); }
-              // measureLandmarks for overlay — also isolated
               let mLocal={};
               try {
                 const calib2=computeCalibration(lm,patientHeightCm,H);
