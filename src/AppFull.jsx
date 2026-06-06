@@ -6716,25 +6716,25 @@ function PostureAnalysisModule(){
       if (!fb.some(x=>x.region==="Shoulder / Rounded Tendency") && m.thoracicAngle!=null&&m.thoracicAngle>46) {
         fb.push({region:"Shoulder / Rounded Tendency",text:"Rounded shoulder tendency — associated with increased thoracic curvature",plain:"Rounded shoulders",severity:"moderate",confidenceScore:62,clinicalSignificance:"moderate",correction:"Pec minor stretch, scapular retraction ×15, lower trap Y-T-W.",icd:"M62.9",norm:"Neutral scapular position"});
       }
-      // ── Kyphosis pattern detection: FHP + shoulder at/behind plumb ───────────
-      // Classic kyphosis signature (Kendall): ear forward (FHP) + acromion pulled
-      // posterior by rounded upper thoracic spine. No thoracicAngle needed.
+      // ── Kyphosis-Lordosis pattern detection (Kendall) ───────────────────────
+      // Correct clinical pattern: FHP + shoulder ANTERIOR to plumb + possible APT.
+      // Distinguishes from Image 2 (FHP only, shoulder near plumb, normal thoracic).
+      // Reference: Kendall et al. "Muscles: Testing and Function" 5th Ed. p.80
       const hasFHPfb = (m.cvaAngle!=null&&m.cvaAngle<52) || (m.fhpDevCm!=null&&m.fhpDevCm>2);
-      const shBehindPlumb = m.sagShoulderShift!=null && m.sagShoulderShift < 0.5; // at or behind plumb
+      const shAnteriorToPlumb = m.sagShoulderShift!=null && m.sagShoulderShift > 1.0; // shoulder forward
       const noKyphosisFinding = !fb.some(x=>x.region==="Thoracic Kyphosis"||x.region==="Thoracic Kyphosis (Trunk Lean Est.)");
-      if (isLatFallback && hasFHPfb && shBehindPlumb && noKyphosisFinding) {
-        const kyphConf = 68;
-        // Estimate severity from how far the shoulder is behind plumb
-        const shDev = Math.abs(m.sagShoulderShift??0);
-        const kSev = shDev > 4 ? "high" : shDev > 2 ? "moderate" : "mild";
+      // Also check: large FHP (CVA <46°) with any shoulder anterior position suggests kyphosis-lordosis
+      const severeFHP = m.cvaAngle!=null && m.cvaAngle < 46;
+      if (isLatFallback && hasFHPfb && (shAnteriorToPlumb || severeFHP) && noKyphosisFinding) {
+        const kSev = (m.cvaAngle!=null&&m.cvaAngle<44) ? "high" : "moderate";
         fb.push({
           region:"Thoracic Kyphosis",
-          text:`Thoracic kyphosis pattern — forward head with shoulder at/behind plumb line (${(m.sagShoulderShift??0).toFixed(1)}cm). Consistent with rounded upper back.`,
-          plain:"Thoracic kyphosis pattern detected",
-          severity:kSev, confidenceScore:kyphConf, clinicalSignificance:kSev,
-          interpretation:"Forward head posture combined with acromion at or behind the Kendall plumb line is a reliable clinical indicator of thoracic hyperkyphosis. The rounded upper thoracic spine displaces the acromion posteriorly while the head compensates anteriorly.",
-          correction:"Thoracic extension over foam roller (T4–T8 ×2min). Pec minor stretch ×30s. Lower trap Y-T-W ×15. Postural awareness cue: lift sternum, not chin.",
-          icd:"M40.0", norm:"Acromion within 2cm anterior to plumb (Kendall)"
+          text:`Thoracic kyphosis tendency — forward head + anterior shoulder position consistent with kyphosis-lordosis pattern (Kendall)`,
+          plain:"Kyphosis-lordosis pattern",
+          severity:kSev, confidenceScore:65, clinicalSignificance:kSev,
+          interpretation:"Forward head posture with anterior shoulder position indicates upper thoracic kyphosis tendency. The rounded upper back causes pec minor shortening (scapular protraction) and suboccipital overactivation to maintain horizontal gaze. Confirm with thoracic extension mobility assessment.",
+          correction:"Thoracic extension foam roller T4–T8 ×2min. Pec minor stretch ×30s bilateral. Lower trap Y-T-W ×15. Chin tuck + thoracic extension combined.",
+          icd:"M40.0", norm:"Acromion at plumb, CVA >55° (Kendall/Yip 2008)"
         });
       }
         if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>3) {
