@@ -6633,6 +6633,7 @@ function PostureAnalysisModule(){
   const [capturedImg,setCapturedImg]=useState(null);
   const [analysing,setAnalysing]=useState(false);
   const [error,setError]=useState(null);
+  const [plumbAdjCm,setPlumbAdjCm]=useState(0); // manual plumb line offset in cm
   const [countdown,setCountdown]=useState(null);
   const [showHeatmap]=useState(true);
   const [showGrid,setShowGrid]=useState(true);
@@ -6692,6 +6693,13 @@ function PostureAnalysisModule(){
 
   useEffect(()=>{viewRef.current=view;},[view]);
 
+  // Re-run analysis when plumb line is manually adjusted
+  useEffect(()=>{
+    if (!landmarks || (view!=="left"&&view!=="right")) return;
+    if (Math.abs(plumbAdjCm)<0.05) return;
+    processLandmarks(landmarks, view, null, plumbAdjCm);
+  },[plumbAdjCm]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Load MediaPipe ──────────────────────────────────────────────────────────
   useEffect(()=>{
     let cancelled=false;
@@ -6712,7 +6720,7 @@ function PostureAnalysisModule(){
   },[]);
 
   // ── Process landmarks ───────────────────────────────────────────────────────
-  const processLandmarks=useCallback((lm,v,imgH)=>{
+  const processLandmarks=useCallback((lm,v,imgH,_plumbAdj=0)=>{
     // Each step isolated — partial failure still populates what it can
     let calib=null;
     try { calib=computeCalibration(lm,patientHeightCm,imgH||videoSizeRef.current?.h||480); }
@@ -6721,6 +6729,16 @@ function PostureAnalysisModule(){
     let m={};
     try { m=measureLandmarks(lm,calib,v)||{}; }
     catch(e){ console.warn("measureLandmarks error:",e); }
+    // Apply manual plumb line offset — shifts all plumb-relative measurements
+    if (_plumbAdj && Math.abs(_plumbAdj) > 0.05 && m) {
+      const sh = _plumbAdj;
+      m = { ...m,
+        sagShoulderShift: m.sagShoulderShift != null ? +(m.sagShoulderShift + sh).toFixed(2) : null,
+        sagPelvicShift:   m.sagPelvicShift   != null ? +(m.sagPelvicShift   + sh).toFixed(2) : null,
+        sagHipShift:      m.sagHipShift       != null ? +(m.sagHipShift       + sh).toFixed(2) : null,
+        sagKneeShift:     m.sagKneeShift      != null ? +(m.sagKneeShift      + sh).toFixed(2) : null,
+      };
+    }
 
     let r={score:0,status:"Error",blocked:false,warnings:[],icc:null,confidence:{}};
     try { r=calcReliability(lm); }
@@ -8379,6 +8397,43 @@ function PostureAnalysisModule(){
                     <div style={{padding:"10px 18px",borderRadius:10,background:"rgba(0,0,0,0.75)",color:"#fff",fontSize:"0.78rem",fontWeight:700}}>⏳ Analysing…</div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── Plumb Line Manual Adjustment ── shows for lateral views when analysis done */}
+            {inputMode==="ai" && (view==="left"||view==="right") && landmarks && !analysing && (
+              <div style={{marginTop:8,padding:"10px 14px",background:"rgba(0,229,255,0.06)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:12}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                  <span style={{fontSize:"0.7rem",fontWeight:800,color:"#00e5ff",textTransform:"uppercase",letterSpacing:"0.5px"}}>
+                    ⊕ Plumb Line
+                  </span>
+                  <span style={{fontSize:"0.65rem",color:"#7e6a9a"}}>
+                    {(!landmarks[27]||landmarks[27].visibility<0.3)&&(!landmarks[28]||landmarks[28].visibility<0.3)
+                      ? "⚠️ Ankle not detected — adjust manually"
+                      : "Drag to reposition if ankle is cropped"}
+                  </span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:"0.65rem",color:"#7e6a9a",minWidth:16}}>←</span>
+                  <input
+                    type="range" min={-15} max={15} step={0.5} value={plumbAdjCm}
+                    onChange={e=>setPlumbAdjCm(Number(e.target.value))}
+                    style={{flex:1,accentColor:"#00e5ff",cursor:"pointer"}}
+                  />
+                  <span style={{fontSize:"0.65rem",color:"#7e6a9a",minWidth:16}}>→</span>
+                  <span style={{fontSize:"0.72rem",fontWeight:800,color:"#00e5ff",minWidth:44,textAlign:"right"}}>
+                    {plumbAdjCm>0?"+":""}{plumbAdjCm.toFixed(1)} cm
+                  </span>
+                  {plumbAdjCm!==0&&(
+                    <button
+                      onClick={()=>setPlumbAdjCm(0)}
+                      style={{padding:"3px 10px",borderRadius:7,border:"1px solid rgba(255,77,109,0.4)",background:"rgba(255,77,109,0.1)",color:"#ff4d6d",fontSize:"0.65rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}
+                    >↺ Reset</button>
+                  )}
+                </div>
+                <div style={{fontSize:"0.6rem",color:"#7e6a9a",marginTop:4,fontStyle:"italic"}}>
+                  Positive = shift anterior · Negative = shift posterior · Recalculates all measurements
+                </div>
               </div>
             )}
           </div>
