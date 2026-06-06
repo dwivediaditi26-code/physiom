@@ -6387,7 +6387,10 @@ function PostureAnalysisModule(){
     catch(e){ console.warn("calcReliability error:",e); }
 
     let f=[];
-    try { f=r.blocked?[]:buildFindings(lm,v||viewRef.current,m); }
+    try {
+      f=r.blocked?[]:buildFindings(lm,v||viewRef.current,m);
+      console.warn("[DEBUG] buildFindings view=",v,"cvaAngle=",m.cvaAngle,"blocked=",r.blocked,"findings=",f.length, f.map(x=>x.region));
+    }
     catch(e){ console.warn("buildFindings error:",e); }
 
     let s={score:0,band:"No Data",colour:PC.muted,subScores:null};
