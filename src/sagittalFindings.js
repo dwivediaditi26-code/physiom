@@ -1,363 +1,391 @@
-// sagittalFindings.js — Clinical Findings Layer for Lateral Posture Analysis
+// sagittalFindings.js — Clinical Findings Layer for Lateral Posture Analysis v2
 //
-// CRITICAL DESIGN RULE
-// This module does NOT diagnose thoracic kyphosis or lumbar lordosis from MediaPipe
-// landmarks alone. MediaPipe provides joint positions (shoulder, hip, ear) — not
-// vertebral positions. These are OBSERVABLE ALIGNMENT FINDINGS only.
+// ARCHITECTURE
+// ─────────────────────────────────────────────────────────────────────────────
+// Layer 1 — Observable alignment (MediaPipe landmarks)
+//   CVA, FHP distance, shoulder/hip/knee offset from plumb line, trunk lean
+//   These are INDEPENDENT findings. FHP does NOT imply kyphosis.
 //
-// Architecture (Kendall framework):
-//   Layer 1 — MediaPipe alignment measurements (CVA, FHP, shoulder/hip translation)
-//   Layer 2 — Body contour appearance indices (TCAI, LCAI from contourEngine.js)
-//   Merged  — Combined sagittal findings with confidence-gated reporting
+// Layer 2 — Spinal contour appearance (body silhouette from contourEngine.js)
+//   Thoracic Curve Appearance Index (TCAI) — from actual posterior contour shape
+//   Lumbar Curve Appearance Index (LCAI)   — from actual posterior contour shape
+//   Inflection point location              — distinguishes flat-back from kyphotic-lordotic
+//   Overall curve pattern                  — Kendall classification from contour SHAPE
 //
-// Terminology follows Kendall FP et al., Muscles: Testing and Function, 5th ed.
-// "Thoracic Contour Appearance" replaces "Thoracic Kyphosis X°"
-// "Lumbar Contour Appearance"   replaces "Lumbar Lordosis X°"
+// RULE: Never combine Layer 1 measurements to diagnose spinal curvature.
+//   FHP + rounded shoulder ≠ kyphosis
+//   Kyphosis classification requires Layer 2 contour data.
+//
+// FILTER: The legacy ClinicalFindingsEngine uses `region` field (not `id`).
+//   isDeprecatedLateralFinding() matches on region text — fixes the broken filter.
 
-// ─── CVA severity classification ─────────────────────────────────────────────
-// Craniovertebral Angle (ear–C7 horizontal): lower = more FHP
-// Literature reference: Yip et al. 2008 — normal ≥ 50°; symptomatic < 49°
-function classifyCVA(angleDeg) {
-  if (angleDeg === null || angleDeg === undefined) return null;
-  if (angleDeg >= 50) return { severity: "Normal",   label: "Normal craniovertebral angle" };
-  if (angleDeg >= 44) return { severity: "Mild",     label: "Mild forward head posture" };
-  if (angleDeg >= 38) return { severity: "Moderate", label: "Moderate forward head posture" };
-  return               { severity: "Severe",  label: "Marked forward head posture" };
+// ─── LEGACY FILTER ────────────────────────────────────────────────────────────
+// The legacy ClinicalFindingsEngine's add() function creates:
+//   { region, text, severity, correction, icd, icon, detail, norm, value }
+// There is NO `id` field. Previous filter using fi?.id was always undefined → useless.
+// This function matches the region strings the legacy engine actually produces.
+const DEPRECATED_REGIONS = [
+  "Thoracic Kyphosis",          // "Thoracic Kyphosis (Trunk Lean Est.)"
+  "Lumbar — Hyperlordosis",     // independent lordosis finding
+  "Lumbar — Flat Back",         // "Lumbar — Flat Back / Reduced Lordosis"
+  "Posture Pattern —",          // "Posture Pattern — Sway-Back", "— Military / Flat Back"
+  "Upper Crossed Pattern",      // UCS sagittal flag
+  "Lower Crossed Pattern",      // LCS sagittal flag
+  "Sagittal Pattern —",         // Kendall pattern label block
+  "Lumbar / Pelvis",            // pelvic tilt sagittal → lumbar/pelvis finding
+];
+
+export function isDeprecatedLateralFinding(fi) {
+  if (!fi) return false;
+  const region = fi.region || fi.category || "";
+  return DEPRECATED_REGIONS.some(dep => region.includes(dep));
 }
 
-// ─── Shoulder translation relative to plumb line ──────────────────────────────
-// Shoulder anterior to plumb (lateral malleolus) = rounded/protracted
-// Reported as observable translation, NOT as evidence of thoracic kyphosis.
-function classifyShoulderTranslation(offsetPct, viewSign) {
+// ─── CVA classification ───────────────────────────────────────────────────────
+// Yip et al. 2008: normal CVA ≥ 50°. Below 50° = clinically significant FHP.
+function classifyCVA(cva) {
+  if (cva === null || cva === undefined) return null;
+  if (cva >= 55) return { severity:"Normal",   label:`Normal craniovertebral angle (${Math.round(cva)}°)` };
+  if (cva >= 50) return { severity:"Borderline",label:`Borderline forward head tendency — CVA ${Math.round(cva)}°` };
+  if (cva >= 44) return { severity:"Mild",      label:`Mild forward head posture — CVA ${Math.round(cva)}°` };
+  if (cva >= 38) return { severity:"Moderate",  label:`Moderate forward head posture — CVA ${Math.round(cva)}°` };
+  return               { severity:"Marked",    label:`Marked forward head posture — CVA ${Math.round(cva)}°` };
+}
+
+// ─── Plumb line offset classification ─────────────────────────────────────────
+// Interprets offset (% frame width) as anterior/posterior displacement.
+// viewSign tells us which direction "anterior" is.
+function interpretOffset(offsetPct, viewSign, segment) {
   if (offsetPct === null) return null;
-  // For right-facing person: anterior = positive x offset relative to ankle
-  // For left-facing person: anterior = negative x offset
-  // viewSign adjusts direction
-  const anteriorDev = viewSign >= 0 ? offsetPct : -offsetPct;
+  // For viewSign≥0 (faces right): anterior = positive x relative to ankle
+  // For viewSign<0 (faces left):  anterior = negative x relative to ankle
+  // offsetPct is already (landmark_x - ankle_x)/W * 100
+  // For a person facing right: positive offset = anterior, negative = posterior
+  // For a person facing left:  positive offset = posterior (because x increases leftward for posterior)
+  const anteriorPct = viewSign >= 0 ? offsetPct : -offsetPct;
+  const absAnt = Math.abs(anteriorPct);
+  const dir = anteriorPct > 0 ? "anterior" : "posterior";
 
-  if (Math.abs(anteriorDev) < 2)  return { severity: "Normal",   label: "Shoulder within normal plumb alignment" };
-  if (anteriorDev > 6)            return { severity: "Marked",   label: "Marked shoulder anterior translation" };
-  if (anteriorDev > 3)            return { severity: "Moderate", label: "Shoulder anterior translation" };
-  if (anteriorDev > 2)            return { severity: "Mild",     label: "Mild shoulder anterior translation" };
-  if (anteriorDev < -2)           return { severity: "Mild",     label: "Shoulder posterior translation" };
-  return null;
-}
+  // Kendall ideal positions:
+  // Ear: over lateral malleolus (0%)
+  // Acromion: over lateral malleolus (0%)
+  // Greater trochanter: over lateral malleolus (0%)
+  const thresholds = {
+    ear:      { normal:2.5, mild:4, moderate:6 },
+    shoulder: { normal:2,   mild:3.5, moderate:6 },
+    hip:      { normal:2,   mild:4, moderate:7 },
+    knee:     { normal:2.5, mild:4, moderate:7 },
+  };
+  const t = thresholds[segment] || thresholds.shoulder;
 
-// ─── Hip translation relative to plumb line ──────────────────────────────────
-function classifyHipTranslation(offsetPct, viewSign) {
-  if (offsetPct === null) return null;
-  const anteriorDev = viewSign >= 0 ? offsetPct : -offsetPct;
-
-  if (Math.abs(anteriorDev) < 2)  return null; // within normal
-  if (anteriorDev > 4)            return { severity: "Marked",   label: "Marked hip anterior translation (sway-back pattern)" };
-  if (anteriorDev > 2)            return { severity: "Moderate", label: "Hip anterior translation" };
-  if (anteriorDev < -3)           return { severity: "Moderate", label: "Hip posterior displacement" };
-  return null;
-}
-
-// ─── Trunk lean ───────────────────────────────────────────────────────────────
-// Shoulder midpoint relative to hip midpoint — indicates trunk sway/lean
-function classifyTrunkLean(measurements) {
-  const trunkLean = measurements?.trunkLateralShift;
-  if (trunkLean === null || trunkLean === undefined) return null;
-  const abs = Math.abs(trunkLean);
-  if (abs < 1.5) return null;
-  if (abs < 3)   return { severity: "Mild",     label: `Mild trunk ${trunkLean < 0 ? "posterior" : "anterior"} lean (${Math.abs(trunkLean).toFixed(1)}% frame width)` };
-  if (abs < 6)   return { severity: "Moderate", label: `Trunk ${trunkLean < 0 ? "posterior" : "anterior"} lean` };
-  return           { severity: "Marked",   label: `Marked trunk ${trunkLean < 0 ? "posterior" : "anterior"} lean` };
-}
-
-// ─── Knee position ───────────────────────────────────────────────────────────
-function classifyKneePosition(offsetPct, viewSign) {
-  if (offsetPct === null) return null;
-  const anteriorDev = viewSign >= 0 ? offsetPct : -offsetPct;
-  if (anteriorDev > 3) return { severity: "Mild", label: "Knee anterior to plumb line" };
-  if (anteriorDev < -3) return { severity: "Mild", label: "Knee posterior to plumb line (possible hyperextension)" };
-  return null;
-}
-
-// ─── Plumb line sagittal balance summary ─────────────────────────────────────
-// Interprets the overall sagittal chain relative to plumb line.
-// Reference: Kendall ideal = ear / acromion / trochanter / just anterior to knee / lateral malleolus
-function buildSagittalBalanceSummary(plumbOffsets, viewSign) {
-  if (!plumbOffsets) return null;
-  const { earOffset, shoulderOffset, hipOffset } = plumbOffsets;
-
-  const dir = viewSign >= 0 ? 1 : -1;
-  const earAnt  = earOffset  !== null ? earOffset  * dir : null;
-  const shAnt   = shoulderOffset !== null ? shoulderOffset * dir : null;
-  const hipAnt  = hipOffset  !== null ? hipOffset  * dir : null;
-
-  const parts = [];
-  if (earAnt  !== null) parts.push(`Ear: ${earAnt  > 0 ? "+" : ""}${earAnt.toFixed(1)}% anterior`);
-  if (shAnt   !== null) parts.push(`Acromion: ${shAnt > 0 ? "+" : ""}${shAnt.toFixed(1)}% anterior`);
-  if (hipAnt  !== null) parts.push(`Hip: ${hipAnt > 0 ? "+" : ""}${hipAnt.toFixed(1)}% anterior`);
-
-  // Classify overall pattern
-  let pattern = null;
-  if (earAnt !== null && shAnt !== null && hipAnt !== null) {
-    const allForward = earAnt > 2 && shAnt > 2 && hipAnt < 2;
-    const swayBack   = earAnt > 2 && shAnt < 0 && hipAnt > 3;
-    const flatBack   = earAnt > 1 && shAnt > 1 && hipAnt < -1;
-
-    if (swayBack)   pattern = "Sway-back sagittal pattern (head and upper trunk forward, hips anterior, reduced lumbar)";
-    else if (flatBack)  pattern = "Flat-back sagittal pattern (head and trunk forward, reduced lumbar concavity)";
-    else if (allForward) pattern = "Forward sagittal shift (head and upper trunk anterior to plumb)";
-  }
-
-  return { summary: parts.join(" · "), pattern, earAnt, shAnt, hipAnt };
+  if (absAnt <= t.normal) return null; // within normal — don't report
+  const severity = absAnt > t.moderate ? "Marked" : absAnt > t.mild ? "Moderate" : "Mild";
+  return { severity, anteriorPct, dir, absAnt };
 }
 
 // ─── Thoracic contour finding ─────────────────────────────────────────────────
-function buildThoracicFinding(tcai, confidence) {
-  if (!tcai || tcai.label === "Insufficient data") return null;
-
+function buildThoracicFinding(cp, confidence) {
+  if (!cp) return null;
   const lowConf = confidence?.score < 55;
-  const label   = lowConf ? `${tcai.label} (low confidence — clinical confirmation required)` : tcai.label;
-
+  const apexNote = cp.thorApexRegion && cp.thorApexRegion !== "unknown"
+    ? ` (apex: ${cp.thorApexRegion.replace("-"," ")})`
+    : "";
+  const label = lowConf
+    ? `${cp.thorLabel}${apexNote} — low confidence: clinical confirmation required`
+    : `${cp.thorLabel}${apexNote}`;
   return {
-    category:    "Thoracic Contour Appearance",
+    id: "thoracic_contour",
+    category: "Thoracic Contour Appearance",
     label,
-    grade:       tcai.grade,
-    severity:    ["Normal", "Mild", "Moderate", "Marked"][tcai.grade] || "Normal",
-    // CRITICAL: this is an APPEARANCE INDEX, not a Cobb angle
-    disclaimer:  "This is a visual contour appearance index, not a radiographic measurement. Does not imply Cobb angle.",
-    confidence:  confidence?.tier || "Low",
+    grade: cp.thorGrade,
+    severity: ["Normal","Mild","Moderate","Marked"][cp.thorGrade] ?? "Normal",
+    source: "Body contour analysis",
+    disclaimer: "Visual contour appearance index — not a Cobb angle. Does not confirm structural kyphosis.",
+    confidence: confidence?.tier ?? "Low",
+    _devNorm: cp.thorMaxDevNorm,
   };
 }
 
 // ─── Lumbar contour finding ───────────────────────────────────────────────────
-function buildLumbarFinding(lcai, confidence) {
-  if (!lcai || lcai.label === "Insufficient data") return null;
-
+function buildLumbarFinding(cp, confidence) {
+  if (!cp) return null;
   const lowConf = confidence?.score < 55;
-  const label   = lowConf ? `${lcai.label} (low confidence — clinical confirmation required)` : lcai.label;
-
+  const label = lowConf
+    ? `${cp.lumLabel} — low confidence: clinical confirmation required`
+    : cp.lumLabel;
   return {
-    category:    "Lumbar Contour Appearance",
+    id: "lumbar_contour",
+    category: "Lumbar Contour Appearance",
     label,
-    grade:       lcai.grade,
-    severity:    ["Normal", "Mild", "Moderate", "Marked"][lcai.grade] || "Normal",
-    disclaimer:  "This is a visual contour appearance index, not a radiographic measurement.",
-    confidence:  confidence?.tier || "Low",
+    grade: cp.lumGrade,
+    severity: cp.lumFlat ? "Moderate" : (["Normal","Mild","Moderate","Marked"][cp.lumGrade] ?? "Normal"),
+    source: "Body contour analysis",
+    disclaimer: "Visual contour appearance index — not a radiographic lordosis measurement.",
+    confidence: confidence?.tier ?? "Low",
+    _devNorm: cp.lumMaxDevNorm,
   };
 }
 
-// ─── Kendall postural type (contour-gated) ────────────────────────────────────
-// Only classifies if BOTH contour and alignment data support the pattern.
-// Without contour data, classification is withheld (not reported).
-function classifyKendallType(tcai, lcai, plumbSummary, measurements, confidence) {
-  // Require at least moderate confidence for classification
-  if (!confidence || confidence.score < 55) return null;
-  // Require contour data
-  if (!tcai || !lcai) return null;
+// ─── Sagittal balance from plumb offsets ──────────────────────────────────────
+function buildSagittalBalance(plumb, viewSign) {
+  if (!plumb) return null;
+  const ant = off => viewSign >= 0 ? off : (off !== null ? -off : null);
+  const earAnt  = ant(plumb.earOffset);
+  const shAnt   = ant(plumb.shoulderOffset);
+  const hipAnt  = ant(plumb.hipOffset);
+  const knAnt   = ant(plumb.kneeOffset);
 
-  const th = tcai.grade;   // thoracic: 0=normal, 1=mild, 2=mod, 3=marked
-  const lu = lcai.grade;   // lumbar:   0=normal, 1=mild, 2=mod, 3=marked
-  const earAnt = plumbSummary?.earAnt ?? 0;
-  const hipAnt = plumbSummary?.hipAnt ?? 0;
-  const shAnt  = plumbSummary?.shAnt  ?? 0;
+  const fmt = (label, val) => val !== null ? `${label}: ${val>0?"+":""}${val.toFixed(1)}% ${val>0?"ant":"post"}` : null;
+  const parts = [fmt("Ear",shAnt!==null?earAnt:null), fmt("Acromion",shAnt), fmt("Hip",hipAnt), fmt("Knee",knAnt)].filter(Boolean);
 
-  // Kyphotic-Lordotic: increased thoracic + increased lumbar + FHP + APT
-  if (th >= 2 && lu >= 2 && earAnt > 3) {
-    return { type: "Kyphotic-Lordotic Pattern", confidence: confidence.tier,
-      description: "Increased thoracic and lumbar contour with forward head and anterior pelvic position — consistent with Kendall kyphotic-lordotic posture. Radiographic confirmation advised for clinical documentation." };
-  }
-  // Flat-back: reduced/normal lumbar + mild thoracic increase + FHP
-  if (th >= 1 && lu === 0 && lcai.label?.includes("Reduced") && earAnt > 2) {
-    return { type: "Flat-back Pattern", confidence: confidence.tier,
-      description: "Reduced lumbar contour with forward head posture — consistent with Kendall flat-back posture. Hips appear extended." };
-  }
-  // Sway-back: lower thoracic increase + reduced lumbar + hips anterior + FHP
-  if (th >= 1 && hipAnt > 3 && earAnt > 2 && shAnt < hipAnt) {
-    return { type: "Sway-back Pattern", confidence: confidence.tier,
-      description: "Hips anterior to plumb with forward head and thoracic contour change — consistent with Kendall sway-back posture." };
-  }
-  // Ideal / near-normal
-  if (th === 0 && lu === 0 && Math.abs(earAnt) < 3) {
-    return { type: "Near-Ideal Alignment", confidence: confidence.tier,
-      description: "Sagittal contour and plumb line alignment within normal range." };
-  }
+  return { summary: parts.join(" · "), earAnt, shAnt, hipAnt, knAnt };
+}
 
-  return null; // insufficient evidence for classification
+// ─── Kendall classification — CONTOUR DRIVEN ─────────────────────────────────
+// Only fires when the body CONTOUR confirms the pattern.
+// CVA gate: if CVA is normal (≥50°), "forward head" component is absent.
+// Contour gate: uses curve shape, inflection point, apex location.
+function buildKendallClassification(curveProfile, plumbBalance, measurements, confidence, clinicianVerified) {
+  if (!curveProfile) return null;
+  if (!confidence || confidence.score < 50) return null; // insufficient confidence
+
+  const { curvePattern, thorGrade, lumGrade, lumFlat, hasInflection,
+          inflectionYNorm, thorApexRegion } = curveProfile;
+
+  const cva    = measurements?.cvaAngle ?? null;
+  const hasFHP = cva !== null ? cva < 50 : null; // null = unknown
+
+  const bal   = plumbBalance ?? {};
+  const hipAnt = bal.hipAnt ?? 0;
+  const shAnt  = bal.shAnt  ?? 0;
+
+  const confTier  = clinicianVerified ? "Clinician Verified" : confidence.tier;
+  const disclaimer = clinicianVerified
+    ? "Clinician Verified Analysis"
+    : "Screening classification — confirm clinically";
+
+  switch (curvePattern) {
+    case "kyphotic-lordotic":
+      return {
+        id: "kendall_type",
+        category: "Postural Pattern (Kendall)",
+        label: "Kyphotic-Lordotic Pattern",
+        severity: "Moderate",
+        description: `Contour shows increased thoracic convexity and lumbar concavity with a clear inflection point at ${inflectionYNorm ? Math.round(inflectionYNorm*100)+"% trunk height" : "mid-trunk"}. Consistent with Kendall kyphotic-lordotic posture.${hasFHP===true ? " Forward head posture present." : hasFHP===false ? " Note: craniovertebral angle within normal range." : ""}`,
+        source: `Body contour analysis (${confTier})`,
+        disclaimer,
+      };
+
+    case "flat-back":
+      return {
+        id: "kendall_type",
+        category: "Postural Pattern (Kendall)",
+        label: "Flat-back Pattern",
+        severity: "Moderate",
+        description: `Contour shows reduced or absent lumbar concavity — posterior profile is relatively straight from shoulder to hip. Consistent with Kendall flat-back posture. Lumbar anterior shear risk. Assess hamstring and abdominal dominance.`,
+        source: `Body contour analysis (${confTier})`,
+        disclaimer,
+      };
+
+    case "sway-back":
+      return {
+        id: "kendall_type",
+        category: "Postural Pattern (Kendall)",
+        label: "Sway-back Pattern",
+        severity: "Moderate",
+        description: `Contour apex in lower thoracic region with flattened lumbar curve. Hip ${hipAnt > 0 ? `${hipAnt.toFixed(1)}% anterior to plumb` : "near plumb line"}. Consistent with Kendall sway-back posture. Assess hamstring and abdominal overactivity.`,
+        source: `Body contour analysis (${confTier})`,
+        disclaimer,
+      };
+
+    case "kyphotic":
+      return {
+        id: "kendall_type",
+        category: "Postural Pattern (Kendall)",
+        label: "Thoracic Kyphotic Pattern",
+        severity: "Moderate",
+        description: `Contour shows increased thoracic convexity (${thorApexRegion?.replace("-"," ")} apex) with normal lumbar concavity. Isolated thoracic pattern — Scheuermann's or habitual sedentary posture. Radiographic confirmation required for clinical classification.`,
+        source: `Body contour analysis (${confTier})`,
+        disclaimer,
+      };
+
+    case "lordotic":
+      return {
+        id: "kendall_type",
+        category: "Postural Pattern (Kendall)",
+        label: "Lordotic Pattern",
+        severity: "Moderate",
+        description: `Contour shows increased lumbar concavity with normal thoracic convexity. Anterior pelvic tilt pattern. Assess hip flexor contracture (Thomas test) and gluteal activation.`,
+        source: `Body contour analysis (${confTier})`,
+        disclaimer,
+      };
+
+    case "ideal":
+      if (thorGrade === 0 && lumGrade === 0) {
+        return {
+          id: "kendall_type",
+          category: "Postural Pattern (Kendall)",
+          label: "Near-Ideal Sagittal Alignment",
+          severity: "Normal",
+          description: "Thoracic and lumbar contour curves within normal appearance range. Plumb line alignment satisfactory.",
+          source: `Body contour analysis (${confTier})`,
+          disclaimer,
+        };
+      }
+      return null;
+
+    default:
+      return null;
+  }
 }
 
 // ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
-// Generates all lateral sagittal findings from MediaPipe measurements + contour result.
-//
-// Parameters:
-//   lm          — MediaPipe poseLandmarks
-//   view        — "left" | "right"
-//   measurements — output of AdvancedMeasurementEngine (Layer 1)
-//   contourResult — output of analyzeSagittalContour (contourEngine.js), may be null
-//   clinicianVerified — boolean: clinician has manually verified landmarks (raises confidence)
-//
-// Returns: findings[] array — each item is a clinical finding card for the UI
 export function buildSagittalFindings(lm, view, measurements, contourResult, clinicianVerified = false) {
   const findings = [];
-  const viewSign = contourResult?.viewSign ?? (view === "right" ? 1 : -1);
-  const confidence = contourResult?.confidence ?? null;
-  const plumb = contourResult?.plumbOffsets ?? null;
+  const viewSign  = contourResult?.viewSign ?? (view === "right" ? 1 : -1);
+  const cp        = contourResult?.curveProfile  ?? null;
+  const plumb     = contourResult?.plumbOffsets  ?? null;
+  const confidence= contourResult?.confidence    ?? null;
+  const bal       = buildSagittalBalance(plumb, viewSign);
 
-  // Boost confidence if clinician verified
-  const effectiveConf = clinicianVerified && confidence
-    ? { ...confidence, score: Math.min(100, confidence.score + 20), tier: confidence.score + 20 >= 80 ? "High" : confidence.tier, _clinicianBoosted: true }
+  const effConf = clinicianVerified && confidence
+    ? { ...confidence, score: Math.min(100, confidence.score+20),
+        tier: confidence.score+20 >= 80 ? "High" : confidence.tier }
     : confidence;
 
-  // ── LAYER 1: Observable Alignment Findings (MediaPipe) ────────────────────
+  // ── CONFIDENCE BANNER ────────────────────────────────────────────────────
+  if (effConf?.recommendation) {
+    findings.push({
+      id: "confidence_banner", _isBanner: true,
+      category: "Analysis Confidence",
+      label: effConf.recommendation,
+      severity: effConf.tier === "Low" ? "Warning" : "Info",
+      source: `Confidence: ${effConf.score}%`,
+      flags: effConf.flags,
+    });
+  }
 
-  // 1a. Forward Head Posture (CVA)
-  const cva = measurements?.cva ?? null;
-  const cvaClass = classifyCVA(cva);
-  if (cvaClass) {
+  // ── LAYER 1: Observable Alignment (MediaPipe landmarks) ───────────────────
+
+  // CVA / Forward Head Posture
+  const cvaClass = classifyCVA(measurements?.cvaAngle);
+  if (cvaClass && cvaClass.severity !== "Normal") {
     findings.push({
       id: "fhp_cva",
       category: "Forward Head Posture",
       label: cvaClass.label,
-      value: cva !== null ? `CVA: ${Math.round(cva)}°` : null,
+      value: measurements?.cvaAngle !== null ? `CVA ${Math.round(measurements.cvaAngle)}°` : null,
       severity: cvaClass.severity,
-      source: "MediaPipe alignment",
-      note: cvaClass.severity !== "Normal"
-        ? "Forward head posture is an observable alignment finding. It does not independently confirm spinal curvature."
-        : null,
+      source: "MediaPipe landmark measurement",
+      note: "Forward head posture is an independent observable alignment finding. It does not confirm thoracic kyphosis — all four Kendall postural types can present with FHP.",
     });
   }
 
-  // 1b. Shoulder translation (plumb line)
-  const shOffset = plumb?.shoulderOffset ?? null;
-  const shClass  = classifyShoulderTranslation(shOffset, viewSign);
-  if (shClass && shClass.severity !== "Normal") {
-    findings.push({
+  // Shoulder translation from plumb line
+  if (plumb?.shoulderOffset !== null) {
+    const r = interpretOffset(plumb.shoulderOffset, viewSign, "shoulder");
+    if (r) findings.push({
       id: "shoulder_translation",
       category: "Shoulder Position",
-      label: shClass.label,
-      value: shOffset !== null ? `${Math.abs(shOffset).toFixed(1)}% frame width from plumb` : null,
-      severity: shClass.severity,
+      label: `${r.severity} shoulder ${r.dir} translation — ${r.absAnt.toFixed(1)}% anterior to plumb`,
+      severity: r.severity,
       source: "Plumb line offset",
-      note: "Shoulder translation is an independent observable finding. Forward shoulder position does not confirm thoracic kyphosis.",
+      note: "Shoulder position is independent from spinal curvature — do not use alone to infer kyphosis.",
     });
   }
 
-  // 1c. Hip translation
-  const hipOffset = plumb?.hipOffset ?? null;
-  const hipClass  = classifyHipTranslation(hipOffset, viewSign);
-  if (hipClass) {
-    findings.push({
-      id: "hip_translation",
-      category: "Hip/Pelvis Position",
-      label: hipClass.label,
-      value: hipOffset !== null ? `${Math.abs(hipOffset).toFixed(1)}% frame width from plumb` : null,
-      severity: hipClass.severity,
+  // Hip / Greater trochanter from plumb
+  if (plumb?.hipOffset !== null) {
+    const r = interpretOffset(plumb.hipOffset, viewSign, "hip");
+    if (r) findings.push({
+      id: "hip_plumb",
+      category: "Hip / Greater Trochanter Position",
+      label: `${r.severity} hip ${r.dir} displacement — ${r.absAnt.toFixed(1)}% from plumb`,
+      severity: r.severity,
       source: "Plumb line offset",
     });
   }
 
-  // 1d. Trunk lean
-  const trunkClass = classifyTrunkLean(measurements);
-  if (trunkClass) {
+  // Knee from plumb
+  if (plumb?.kneeOffset !== null) {
+    const r = interpretOffset(plumb.kneeOffset, viewSign, "knee");
+    if (r) findings.push({
+      id: "knee_plumb",
+      category: "Knee Position",
+      label: r.dir === "posterior"
+        ? `Knee posterior to plumb — possible genu recurvatum`
+        : `Knee anterior to plumb — flexion in stance`,
+      severity: r.severity,
+      source: "Plumb line offset",
+    });
+  }
+
+  // Trunk lean (shoulder midpoint vs hip midpoint)
+  const tls = measurements?.trunkLateralShift;
+  if (tls !== null && tls !== undefined && Math.abs(tls) > 2) {
     findings.push({
       id: "trunk_lean",
-      category: "Trunk Alignment",
-      label: trunkClass.label,
-      severity: trunkClass.severity,
+      category: "Trunk Lean",
+      label: `${Math.abs(tls) > 5 ? "Marked" : Math.abs(tls) > 3 ? "Moderate" : "Mild"} trunk ${tls > 0 ? "anterior" : "posterior"} lean`,
+      severity: Math.abs(tls) > 5 ? "Marked" : "Mild",
       source: "MediaPipe alignment",
     });
   }
 
-  // 1e. Knee position
-  const kneeOffset = plumb?.kneeOffset ?? null;
-  const kneeClass  = classifyKneePosition(kneeOffset, viewSign);
-  if (kneeClass) {
+  // Sagittal balance summary
+  if (bal?.summary) {
     findings.push({
-      id: "knee_position",
-      category: "Knee Position",
-      label: kneeClass.label,
-      severity: kneeClass.severity,
-      source: "Plumb line offset",
+      id: "sagittal_balance",
+      category: "Sagittal Balance (Plumb Line)",
+      label: bal.summary,
+      severity: "Info",
+      source: "Plumb line — lateral malleolus reference (Kendall)",
     });
   }
 
-  // ── LAYER 2: Contour Appearance Findings ──────────────────────────────────
+  // ── LAYER 2: Contour Appearance (body silhouette analysis) ────────────────
+  if (cp) {
+    const thorFinding = buildThoracicFinding(cp, effConf);
+    if (thorFinding) findings.push({ ...thorFinding, source:"Body contour analysis" });
 
-  if (contourResult && !contourResult.error) {
-    // 2a. Thoracic contour appearance
-    const thorFinding = buildThoracicFinding(contourResult.thoracic, effectiveConf);
-    if (thorFinding) findings.push({ id: "thoracic_contour", ...thorFinding, source: "Body contour analysis" });
+    const lumFinding = buildLumbarFinding(cp, effConf);
+    if (lumFinding) findings.push({ ...lumFinding, source:"Body contour analysis" });
 
-    // 2b. Lumbar contour appearance
-    const lumFinding = buildLumbarFinding(contourResult.lumbar, effectiveConf);
-    if (lumFinding) findings.push({ id: "lumbar_contour", ...lumFinding, source: "Body contour analysis" });
-
-    // 2c. Sagittal balance summary
-    const plumbSummary = buildSagittalBalanceSummary(plumb, viewSign);
-    if (plumbSummary?.summary) {
+    // Inflection point note — clinically meaningful
+    if (cp.hasInflection) {
       findings.push({
-        id: "sagittal_balance",
-        category: "Sagittal Balance",
-        label: plumbSummary.summary,
-        severity: plumbSummary.pattern ? "Moderate" : "Normal",
-        source: "Plumb line analysis",
-        subLabel: plumbSummary.pattern,
+        id: "inflection_point",
+        category: "Spinal Curve Transition",
+        label: `Thoracic-lumbar inflection identified at ~${Math.round((cp.inflectionYNorm??0.55)*100)}% trunk height`,
+        severity: "Info",
+        source: "Contour analysis",
+        note: "Inflection point present = both thoracic and lumbar curves are distinguishable. Absence of inflection suggests flat-back or single-curve pattern.",
+      });
+    } else {
+      findings.push({
+        id: "inflection_absent",
+        category: "Spinal Curve Transition",
+        label: "No clear thoracic-lumbar inflection detected — posterior contour relatively straight",
+        severity: "Info",
+        source: "Contour analysis",
+        note: "Absent inflection is consistent with flat-back posture or reduced lumbar lordosis.",
       });
     }
 
-    // 2d. Kendall postural type (only if contour supports it)
-    const plumbSumm2 = buildSagittalBalanceSummary(plumb, viewSign);
-    const kendall = classifyKendallType(
-      contourResult.thoracic, contourResult.lumbar,
-      plumbSumm2, measurements, effectiveConf
-    );
-    if (kendall) {
-      findings.push({
-        id: "kendall_type",
-        category: "Postural Classification",
-        label: kendall.type,
-        severity: kendall.type.includes("Ideal") ? "Normal" : "Moderate",
-        source: `Contour + alignment (${kendall.confidence} confidence)`,
-        subLabel: kendall.description,
-        disclaimer: clinicianVerified
-          ? "Clinician Verified Analysis"
-          : "Screening classification — confirm clinically",
-      });
-    }
-  } else if (!contourResult) {
-    // Contour engine not run — add a note in findings
+    // Kendall pattern — from contour shape only
+    const kendall = buildKendallClassification(cp, bal, measurements, effConf, clinicianVerified);
+    if (kendall) findings.push(kendall);
+
+  } else {
     findings.push({
       id: "contour_unavailable",
       category: "Spinal Contour",
-      label: "Spinal contour analysis not available for this image",
+      label: "Body contour analysis unavailable for this image",
       severity: "Info",
       source: "System",
-      note: "Thoracic and lumbar contour appearance require sufficient image quality and full-body segmentation. Upload a clear lateral photo with form-fitting clothing for contour analysis.",
-    });
-  }
-
-  // ── Confidence banner ─────────────────────────────────────────────────────
-  if (effectiveConf?.recommendation) {
-    findings.unshift({
-      id: "confidence_banner",
-      category: "Analysis Confidence",
-      label: effectiveConf.recommendation,
-      severity: effectiveConf.tier === "Low" ? "Warning" : "Info",
-      source: `Confidence score: ${effectiveConf.score}%`,
-      flags: effectiveConf.flags,
-      _isBanner: true,
+      note: "Upload a clear lateral photo (full body, form-fitting clothing, plain background) for contour-based spinal appearance analysis.",
     });
   }
 
   return findings;
 }
-
-// ─── Findings that must be REMOVED from the existing ClinicalFindingsEngine ───
-// These are the finding IDs currently produced by the lateral analysis that
-// commit the cardinal sin of diagnosing spinal curvature from shoulder/ear position.
-// Patch AppFull.jsx to suppress these for lateral views:
-export const DEPRECATED_LATERAL_FINDING_IDS = [
-  "kyphosis",          // was: "Thoracic Kyphosis: 48°"
-  "hyperkyphosis",     // was: "Hyperkyphosis detected"
-  "lordosis",          // was: "Lumbar Lordosis: 52°"
-  "hyperlordosis",     // was: "Hyperlordosis detected"
-  "kendall_kyphotic",  // was: generated from shoulder+ear alone
-  "thoracic_angle",    // was: thoracicAngle proxy measurement shown as clinical finding
-  "lumbar_angle",      // was: lumbar angle proxy shown as clinical finding
-];

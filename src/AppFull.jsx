@@ -14,7 +14,7 @@ import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
 import { analyzeSagittalContour, renderContourDebugOverlay, warmupContourEngine } from "./contourEngine";
-import { buildSagittalFindings, DEPRECATED_LATERAL_FINDING_IDS } from "./sagittalFindings";
+import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POSE_CONNECTIONS = [
@@ -870,7 +870,7 @@ function PostureCameraModule({ activePatient, set }) {
           setContourResult(cr);
           const sagittal = buildSagittalFindings(lm, activeView, m, cr, clinicianVerified);
           const legacy   = ClinicalFindingsEngine(lm, activeView, m) || [];
-          const filtered = legacy.filter(fi => !DEPRECATED_LATERAL_FINDING_IDS.includes(fi?.id));
+          const filtered = legacy.filter(fi => !isDeprecatedLateralFinding(fi));
           f = [...sagittal, ...filtered];
         } else {
           f = ClinicalFindingsEngine(lm, activeView, m);
@@ -929,7 +929,7 @@ function PostureCameraModule({ activePatient, set }) {
           setContourResult(cr);
           const sagittal = buildSagittalFindings(lm, uploadView, m, cr, clinicianVerified);
           const legacy   = ClinicalFindingsEngine(lm, uploadView, m) || [];
-          const filtered = legacy.filter(fi => !DEPRECATED_LATERAL_FINDING_IDS.includes(fi?.id));
+          const filtered = legacy.filter(fi => !isDeprecatedLateralFinding(fi));
           f = [...sagittal, ...filtered];
         } else {
           f = ClinicalFindingsEngine(lm, uploadView, m);
