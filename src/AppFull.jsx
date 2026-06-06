@@ -3636,8 +3636,33 @@ function classifyKendallPostureType(m) {
   const hipExt    = m.hipExtensionProxy;
   const kneeRec   = m.leftKneeDev ?? m.rightKneeDev; // negative = recurvatum
 
-  // Need at least thoracic + pelvic data
-  if (thoracic === null && pelvicCm === null) return null;
+  // For frontal views: classify based on frontal asymmetry patterns
+  const shAngle = m.shoulderAngle ?? null;
+  const pelAngle = m.pelvisAngle ?? null;
+  const trunkShift = m.trunkLateralShift ?? null;
+  const isFrontal = (shAngle !== null || pelAngle !== null);
+
+  if (thoracic === null && pelvicCm === null) {
+    // Frontal view classification
+    if (!isFrontal) return null;
+    const shAbs = Math.abs(shAngle ?? 0);
+    const pelAbs = Math.abs(pelAngle ?? 0);
+    const trunkAbs = Math.abs(trunkShift ?? 0);
+
+    if (shAbs > 4 && pelAbs > 3 && m.lldProxy > 5) {
+      return { type:"Pelvic Obliquity Pattern", description:"Shoulder and pelvic height asymmetry with possible leg length discrepancy. May be structural or functional — confirm with standing AP X-ray.", confidence:70, keyFindings:["Shoulder asymmetry","Pelvic obliquity","Possible LLD"], tight:["QL (elevated side)","Hip Abductors"], weak:["Hip Abductors (low side)","QL (depressed side)"], icd:"M99.0", colour:"#F97316" };
+    }
+    if (shAbs > 4 && pelAbs > 3) {
+      return { type:"Lateral Asymmetry Pattern", description:"Bilateral shoulder and pelvic height asymmetry. Screen for scoliosis with Adam's forward bend test and rib hump observation.", confidence:72, keyFindings:["Shoulder elevation","Pelvic obliquity"], tight:["QL","Lateral Trunk Muscles (high side)"], weak:["Hip Abductors","QL (low side)"], icd:"M41.9", colour:"#EF4444" };
+    }
+    if (trunkAbs > 4) {
+      return { type:"Lateral Trunk Shift", description:"Significant lateral trunk displacement. May indicate disc herniation, scoliosis, or functional avoidance pattern. Needs clinical correlation.", confidence:68, keyFindings:["Trunk lateral shift"], tight:["QL","Lateral Abdominals"], weak:["Contralateral Hip Abductors"], icd:"M99.0", colour:"#F97316" };
+    }
+    if (shAbs < 2.5 && pelAbs < 2 && trunkAbs < 3) {
+      return { type:"Frontal Alignment — Within Normal Limits", description:"Frontal plane alignment within Kendall normal ranges. Bilateral symmetry maintained.", confidence:75, keyFindings:[], tight:[], weak:[], icd:"Z00.0", colour:"#10B981" };
+    }
+    return null;
+  }
 
   const th = thoracic ?? 32;
   const pc = pelvicCm ?? 0;
@@ -6654,45 +6679,39 @@ function PostureAnalysisModule(){
     try { f=r.blocked?[]:buildFindings(lm,v||viewRef.current,m); }
     catch(e){ console.warn("buildFindings error:",e); }
 
-    // Fallback: if buildFindings returned nothing for a lateral view but measurements show
-    // clear deviations, generate findings directly from measurements so clinicians see results.
+    // ── Universal fallback findings generator — all 4 views ─────────────────────
+    // Fires when buildFindings returns nothing but measurements show clear deviations.
     const viewForFallback = v||viewRef.current||"anterior";
-    const isLatFallback = viewForFallback==="left"||viewForFallback==="right";
+    const isLatFallback   = viewForFallback==="left"||viewForFallback==="right";
+    const isFrontFallback = viewForFallback==="anterior"||viewForFallback==="posterior"||viewForFallback==="back";
     const meaningfulFindings = f.filter(x => x.severity!=="mild" || x.region!=="Sagittal Assessment — Summary");
-    if (isLatFallback && meaningfulFindings.length === 0 && m && Object.keys(m).length > 0) {
+
+    if (meaningfulFindings.length === 0 && m && Object.keys(m).length > 0) {
       const fb = [];
-      if (m.cvaAngle !== null && m.cvaAngle < 55) {
-        const sev = m.cvaAngle < 44 ? "high" : m.cvaAngle < 49 ? "moderate" : "mild";
-        fb.push({ region:"Cervical / CVA", text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,
-          plain:`CVA ${m.cvaAngle.toFixed(1)}° below normal range`, severity:sev, confidenceScore:72,
-          clinicalSignificance:sev, correction:"Chin tucks, deep cervical flexor strengthening, thoracic extension.", icd:"M43.6",
-          norm:"Normal CVA >55° (Yip et al. 2008)" });
+
+      // ── SAGITTAL findings (lateral views) ──────────────────────────────────
+      if (isLatFallback) {
+        if (m.cvaAngle!=null&&m.cvaAngle<55) { const sev=m.cvaAngle<44?"high":m.cvaAngle<49?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:"Normal CVA >55°"}); }
+        if (m.fhpDevCm!=null&&m.fhpDevCm>2) { fb.push({region:"Forward Head Posture",text:`Ear ${m.fhpDevCm.toFixed(1)}cm anterior to acromion`,plain:`FHP ${m.fhpDevCm.toFixed(1)}cm`,severity:m.fhpDevCm>4?"high":"moderate",confidenceScore:70,clinicalSignificance:"moderate",correction:"Postural correction, scapular retraction.",icd:"M43.6",norm:"<2cm"}); }
+        if (m.thoracicAngle!=null&&m.thoracicAngle>38) { const sev=m.thoracicAngle>55?"high":m.thoracicAngle>46?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency — ${m.thoracicAngle.toFixed(1)}° (normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.2",norm:"20–45°"}); }
+        if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) { const abs=Math.abs(m.sagShoulderShift); const dir=m.sagShoulderShift>0?"anterior":"posterior"; fb.push({region:"Shoulder / Rounded Tendency",text:`Shoulder ${dir} ~${abs.toFixed(1)}cm from plumb`,plain:"Rounded shoulder tendency",severity:"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Scapular retraction, pec stretch, serratus activation.",icd:"M62.9",norm:"Acromion at plumb"}); }
+        if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>2) { const abs=Math.abs(m.sagPelvicShift); const dir=m.sagPelvicShift>0?"Anterior":"Posterior"; const sev=abs>5?"high":abs>3?"moderate":"mild"; fb.push({region:"Pelvis / Lumbar",text:`${dir} pelvic tendency — hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`,plain:`${dir} pelvic tilt`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:m.sagPelvicShift>0?"Hip flexor stretch, glute bridges, abdominal hollowing.":"Hamstring stretch, lumbar extension.",icd:"M40.3",norm:"Hip within 2cm of plumb"}); }
       }
-      if (m.fhpDevCm !== null && m.fhpDevCm > 2) {
-        fb.push({ region:"Forward Head Posture", text:`Ear ${m.fhpDevCm.toFixed(1)}cm anterior to acromion`,
-          plain:`FHP: ear ${m.fhpDevCm.toFixed(1)}cm forward`, severity:m.fhpDevCm>4?"high":"moderate",
-          confidenceScore:70, clinicalSignificance:"moderate", correction:"Postural correction, scapular retraction.", icd:"M43.6", norm:"<2cm" });
+
+      // ── FRONTAL / POSTERIOR findings ─────────────────────────────────────────
+      if (isFrontFallback) {
+        if (m.shoulderAngle!=null&&Math.abs(m.shoulderAngle)>2.5) { const abs=Math.abs(m.shoulderAngle); const side=m.shoulderAngle>0?"Right":"Left"; const sev=abs>6?"high":abs>4?"moderate":"mild"; fb.push({region:"Shoulder Level",text:`${side} shoulder elevated — ${abs.toFixed(1)}° asymmetry (normal <2.5°)`,plain:`${side} shoulder higher ${abs.toFixed(1)}°`,severity:sev,confidenceScore:78,clinicalSignificance:sev,correction:"Check for cervical muscle tightness, scapular stabilisation, check LLD.",icd:"M99.0",norm:"<2.5° shoulder height difference (Magee)"}); }
+        if (m.pelvisAngle!=null&&Math.abs(m.pelvisAngle)>2) { const abs=Math.abs(m.pelvisAngle); const side=m.pelvisAngle>0?"Right":"Left"; const sev=abs>5?"high":abs>3?"moderate":"mild"; fb.push({region:"Pelvic Obliquity",text:`${side} iliac crest elevated — ${abs.toFixed(1)}° obliquity (normal <2°)`,plain:`Pelvic obliquity ${abs.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Check hip abductor strength, LLD, QL tightness. Thomas test bilaterally.",icd:"M99.0",norm:"<2° pelvic obliquity (Magee)"}); }
+        if (m.headLateralOffset!=null&&Math.abs(m.headLateralOffset)>2.5) { const abs=Math.abs(m.headLateralOffset); const side=m.headLateralOffset>0?"Right":"Left"; fb.push({region:"Head Lateral Tilt",text:`Head tilted ${abs.toFixed(1)}% toward ${side} (normal <2.5%)`,plain:`Head lateral tilt ${abs.toFixed(1)}%`,severity:abs>5?"moderate":"mild",confidenceScore:70,clinicalSignificance:"moderate",correction:"Cervical lateral flexion stretch, SCM/scalene release, check atlanto-axial rotation.",icd:"M99.0",norm:"Head centred within 2.5% of midline"}); }
+        if (m.trunkLateralShift!=null&&Math.abs(m.trunkLateralShift)>3.5) { const abs=Math.abs(m.trunkLateralShift); const dir=m.trunkLateralShift>0?"Right":"Left"; const sev=abs>6?"high":abs>4?"moderate":"mild"; fb.push({region:"Trunk Lateral Shift",text:`Trunk shifted ${dir} — ${abs.toFixed(1)}% of frame width (normal <3.5%)`,plain:`Trunk shift ${dir} ${abs.toFixed(1)}%`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"QL stretch, lateral trunk stabilisation, check for disc pathology if >4cm.",icd:"M99.0",norm:"<3.5% lateral trunk shift (Magee)"}); }
+        if (m.lldProxy!=null&&m.lldProxy>5) { const sev=m.lldProxy>20?"high":m.lldProxy>10?"moderate":"mild"; fb.push({region:"Leg Length Discrepancy",text:`Possible LLD — knee height difference ~${m.lldProxy.toFixed(0)}mm (screen only)`,plain:`LLD screen ${m.lldProxy.toFixed(0)}mm`,severity:sev,confidenceScore:60,clinicalSignificance:sev,correction:"Confirm with X-ray or standing heel raise test. Orthotic if structural LLD confirmed.",icd:"M21.7",norm:"<5mm functional LLD (Magee)"}); }
+        if (m.leftKneeFrontal!=null&&m.rightKneeFrontal!=null) {
+          const lk=Math.abs(m.leftKneeFrontal), rk=Math.abs(m.rightKneeFrontal);
+          if(lk>6||rk>6){ const side=lk>rk?"Left":"Right"; const val=Math.max(lk,rk); const pattern=m.leftKneeFrontal<0||m.rightKneeFrontal<0?"Valgus tendency":"Varus tendency"; fb.push({region:"Knee Alignment",text:`${side} knee ${pattern} — ${val.toFixed(1)}° from mechanical axis (normal <6°)`,plain:`Knee ${pattern} ${val.toFixed(1)}°`,severity:val>10?"high":"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Hip abductor/external rotator strengthening, foot orthotic evaluation, patellar taping.",icd:"M21.0",norm:"<6° HKA deviation (Magee)"}); }
+        }
+        if (m.spinalDeviation!=null&&Math.abs(m.spinalDeviation)>4) { const abs=Math.abs(m.spinalDeviation); fb.push({region:"Spinal Deviation Screen",text:`Spinal deviation screen positive — head/trunk offset ${abs.toFixed(1)}% (Adam's forward bend test recommended)`,plain:`Spinal deviation ${abs.toFixed(1)}%`,severity:abs>8?"moderate":"mild",confidenceScore:55,clinicalSignificance:"moderate",correction:"Adam's forward bend test. Refer for X-ray Cobb angle if rib hump present.",icd:"M41.9",norm:"Head centred over pelvis"}); }
       }
-      if (m.thoracicAngle !== null && m.thoracicAngle > 38) {
-        const sev = m.thoracicAngle > 55 ? "high" : m.thoracicAngle > 46 ? "moderate" : "mild";
-        fb.push({ region:"Thoracic Kyphosis", text:`Increased thoracic kyphosis tendency — ${m.thoracicAngle.toFixed(1)}° (normal 20–45°)`,
-          plain:`Thoracic curvature ${m.thoracicAngle.toFixed(1)}°`, severity:sev, confidenceScore:65,
-          clinicalSignificance:sev, correction:"Thoracic extension exercises, pec stretching, scapular setting.", icd:"M40.2",
-          norm:"Normal thoracic kyphosis 20–45° (Magee)" });
-      }
-      if (m.sagShoulderShift !== null && Math.abs(m.sagShoulderShift) > 2) {
-        fb.push({ region:"Shoulder / Rounded Tendency", text:`Shoulder ${m.sagShoulderShift>0?"anterior":"posterior"} displacement ~${Math.abs(m.sagShoulderShift).toFixed(1)}cm from plumb`,
-          plain:"Rounded shoulder tendency observed", severity:"moderate", confidenceScore:65,
-          clinicalSignificance:"moderate", correction:"Scapular retraction, pec minor stretching, serratus activation.", icd:"M62.9",
-          norm:"Acromion at plumb line (Kendall)" });
-      }
-      if (m.lumbarProxy !== null && Math.abs(m.lumbarProxy) > 4) {
-        fb.push({ region:"Pelvis / Lumbar", text:`Lumbar spine deviation proxy ${m.lumbarProxy.toFixed(1)}% (anterior pelvic tilt tendency)`,
-          plain:"Anterior pelvic tilt tendency", severity:Math.abs(m.lumbarProxy)>8?"moderate":"mild",
-          confidenceScore:62, clinicalSignificance:"moderate",
-          correction:"Hip flexor stretching, glute and deep abdominal activation.", icd:"M54.5",
-          norm:"Neutral lumbar alignment at plumb line" });
-      }
+
       if (fb.length > 0) f = fb;
     }
 
