@@ -1957,12 +1957,19 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   }
 
   // Thoracic kyphosis from world z: shoulder z vs hip z
-  // More positive shoulder z relative to hip = more kyphotic lean
-  if (wSh !== null && wHip !== null && thoracicAngle === null) {
-    const kyphProxy = (wSh - wHip) * 100; // cm
-    // Calibrate: 0cm diff = 32° normal kyphosis; +5cm = ~50° hyperkyphosis
-    const kyphEst = r1(clamp(32 + kyphProxy * 3.5, 15, 85));
-    if (kyphEst > 20) thoracicAngle = kyphEst;
+  // In MediaPipe world coords, z is depth from camera. For lateral photo:
+  // More negative wSh than wHip = shoulder closer to camera = more anterior = kyphosis.
+  if (wSh !== null && wHip !== null) {
+    // z: negative = toward camera (anterior). kyphProxy > 0 = shoulder more anterior than hip.
+    const kyphProxy = (wHip - wSh) * 100; // positive when shoulder is more anterior
+    const kyphEst = r1(clamp(32 + kyphProxy * 3.0, 15, 85));
+    if (thoracicAngle === null) {
+      // No 2D estimate — use z directly
+      if (kyphEst > 20) thoracicAngle = kyphEst;
+    } else if (kyphEst > thoracicAngle + 5) {
+      // Z-depth shows significantly more kyphosis than 2D proxy — blend them
+      thoracicAngle = r1((thoracicAngle * 0.4 + kyphEst * 0.6));
+    }
   }
 
   // Pelvic tilt sagittal: alias of lumbarProxy for naming consistency
@@ -6696,7 +6703,19 @@ function PostureAnalysisModule(){
         if (m.cvaAngle!=null&&m.cvaAngle<55) { const sev=m.cvaAngle<44?"high":m.cvaAngle<49?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:"Normal CVA >55°"}); }
         if (m.fhpDevCm!=null&&m.fhpDevCm>2&&m.cvaAngle===null) { fb.push({region:"Forward Head Posture",text:`Ear ${m.fhpDevCm.toFixed(1)}cm anterior to acromion`,plain:`FHP ${m.fhpDevCm.toFixed(1)}cm`,severity:m.fhpDevCm>4?"high":"moderate",confidenceScore:70,clinicalSignificance:"moderate",correction:"Postural correction, scapular retraction.",icd:"M43.6",norm:"<2cm"}); }
         if (m.thoracicAngle!=null&&m.thoracicAngle>45) { const sev=m.thoracicAngle>58?"high":m.thoracicAngle>50?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency — ${m.thoracicAngle.toFixed(1)}° (normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.2",norm:"20–45°"}); }
-        if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) { const abs=Math.abs(m.sagShoulderShift); const dir=m.sagShoulderShift>0?"anterior":"posterior"; fb.push({region:"Shoulder / Rounded Tendency",text:`Shoulder ${dir} ~${abs.toFixed(1)}cm from plumb`,plain:"Rounded shoulder tendency",severity:"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Scapular retraction, pec stretch, serratus activation.",icd:"M62.9",norm:"Acromion at plumb"}); }
+        if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) {
+        const abs=Math.abs(m.sagShoulderShift); const dir=m.sagShoulderShift>0?"anterior":"posterior";
+        // Rounded shoulder = scapular protraction → detected as shoulder anterior to plumb.
+        // If posterior, may be compensatory retraction or genuine posterior lean.
+        const label = m.sagShoulderShift>0
+          ? `Rounded shoulder tendency — acromion ~${abs.toFixed(1)}cm anterior to plumb`
+          : `Shoulder posterior displacement ~${abs.toFixed(1)}cm from plumb`;
+        fb.push({region:"Shoulder / Rounded Tendency",text:label,plain:"Rounded shoulder tendency",severity:abs>4?"high":"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Scapular retraction, pec minor stretch, serratus anterior activation. Thoracic foam roll.",icd:"M62.9",norm:"Acromion within 2cm of plumb (Kendall)"});
+      }
+      // Rounded shoulder secondary indicator: thoracic kyphosis implies rounded shoulders
+      if (!fb.some(x=>x.region==="Shoulder / Rounded Tendency") && m.thoracicAngle!=null&&m.thoracicAngle>46) {
+        fb.push({region:"Shoulder / Rounded Tendency",text:"Rounded shoulder tendency — associated with increased thoracic curvature",plain:"Rounded shoulders",severity:"moderate",confidenceScore:62,clinicalSignificance:"moderate",correction:"Pec minor stretch, scapular retraction ×15, lower trap Y-T-W.",icd:"M62.9",norm:"Neutral scapular position"});
+      }
         if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>3) {
         const abs=Math.abs(m.sagPelvicShift); const isAPT=m.sagPelvicShift>0;
         const sev=abs>6?"high":abs>4?"moderate":"mild";
