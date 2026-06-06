@@ -6815,14 +6815,32 @@ function PostureAnalysisModule(){
   }
 
   function analyseManualPoints() {
-    const lm = manualPointsToLandmarks(manualPlaced, manualPointDefs);
-    const imgH = manualImgSize.current?.h || 800;
-    const calib = computeCalibration(lm, patientHeightCm, imgH);
-    const m = measureLandmarks(lm, calib, view); // pass view so CVA/kyphosis work in lateral
-    const r = calcManualReliability(manualPlacedCount, manualTotal);
-    const f = r.blocked ? [] : buildFindings(lm, view, m);
-    const s = scorePosture(m, f, r);
-    setLandmarks(lm); setMeasurements(m); setFindings(f); setReliability(r); setScoreData(s);
+    let lm, m={}, r, f=[], s;
+    try {
+      lm = manualPointsToLandmarks(manualPlaced, manualPointDefs);
+      const imgH = manualImgSize.current?.h || 800;
+      const calib = computeCalibration(lm, patientHeightCm, imgH);
+      try { m = measureLandmarks(lm, calib, view) || {}; } catch(e){ console.warn("manual measureLandmarks:", e); }
+      r = calcManualReliability(manualPlacedCount, manualTotal);
+      try { f = r.blocked ? [] : buildFindings(lm, view, m); } catch(e){ console.warn("manual buildFindings:", e); }
+
+      // Fallback: generate findings from measurements for lateral view
+      const isLat = view==="left"||view==="right";
+      const meaningful = f.filter(x=>x.severity!=="mild"||x.region!=="Sagittal Assessment — Summary");
+      if (isLat && meaningful.length===0 && m && Object.keys(m).length>0) {
+        const fb=[];
+        if (m.cvaAngle!=null&&m.cvaAngle<55) { const sev=m.cvaAngle<44?"high":m.cvaAngle<49?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:"Normal CVA >55°"}); }
+        if (m.thoracicAngle!=null&&m.thoracicAngle>40) { const sev=m.thoracicAngle>55?"high":m.thoracicAngle>46?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.0",norm:"Normal 20–45°"}); }
+        if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>2) { const dir=m.sagPelvicShift>0?"Anterior":"Posterior"; const abs=Math.abs(m.sagPelvicShift); const sev=abs>5?"high":abs>3?"moderate":"mild"; fb.push({region:"Pelvis / Lumbar",text:`${dir} pelvic tendency — hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`,plain:`${dir} pelvic tilt ${abs.toFixed(1)}cm`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:dir==="Anterior"?"Hip flexor stretch, glute bridges, abdominal hollowing.":"Hamstring stretch, hip flexor activation, lumbar extension.",icd:"M40.3",norm:"Hip within 2cm of plumb"}); }
+        if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) { fb.push({region:"Shoulder / Rounded Tendency",text:`Shoulder ${m.sagShoulderShift>0?"anterior":"posterior"} ~${Math.abs(m.sagShoulderShift).toFixed(1)}cm from plumb`,plain:"Rounded shoulder tendency",severity:"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Scapular retraction, pec stretch, serratus activation.",icd:"M62.9",norm:"Acromion at plumb"}); }
+        if (fb.length>0) f=fb;
+      }
+
+      try { s = scorePosture(m, f, r); } catch(e){ console.warn("manual scorePosture:", e); }
+    } catch(outerErr) { console.warn("analyseManualPoints error:", outerErr); }
+
+    setLandmarks(lm||null); setMeasurements(Object.keys(m||{}).length>0?m:null);
+    setFindings(f||[]); setReliability(r||null); setScoreData(s||null);
     setManualAnalysed(true);
     // Bake manual markers onto the annotated image
     if (objectUrlRef.current) {
