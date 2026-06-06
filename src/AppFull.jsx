@@ -6768,7 +6768,7 @@ function PostureAnalysisModule(){
       const earAntToPlumb = (m.cvaAngle != null && m.cvaAngle < 55) || (m.fhpDevCm != null && m.fhpDevCm > 2);
       if (isLatFallback && shPostToPlumb && (hipAntToPlumb || earAntToPlumb)) {
         fb.push({
-          region: "Posture Pattern — Sway-Back",
+          region: "Sway-Back Posture Pattern",
           text: `Sway-back sagittal pattern — shoulder posterior to plumb${m.sagShoulderShift!=null?` (~${Math.abs(m.sagShoulderShift).toFixed(1)}cm posterior)`:""}, hip${hipAntToPlumb&&m.sagPelvicShift!=null?` ~${m.sagPelvicShift.toFixed(1)}cm anterior`:""} to plumb`,
           plain: "Sway-back pattern",
           severity: "moderate",
@@ -6828,10 +6828,17 @@ function PostureAnalysisModule(){
       // Strip deprecated spinal diagnoses for lateral views — contour engine handles these
       if (isLatFallback) {
         f = f.filter(fi => {
-          const reg = fi.region || fi.category || "";
-          return !["Thoracic Kyphosis","Lumbar — Hyperlordosis","Lumbar — Flat Back",
+          const reg  = fi.region || fi.category || "";
+          const text = fi.text || fi.findingName || fi.label || "";
+          // Remove legacy kyphosis/lordosis/pattern findings (replaced by contour engine)
+          if (["Thoracic Kyphosis","Lumbar — Hyperlordosis","Lumbar — Flat Back",
             "Posture Pattern —","Upper Crossed Pattern","Lower Crossed Pattern",
-            "Sagittal Pattern —"].some(dep => reg.includes(dep));
+            "Sagittal Pattern —"].some(dep => reg.includes(dep))) return false;
+          // Remove "Shoulder / Rounded Tendency" when it's describing POSTERIOR displacement
+          // (sway-back case — shoulder behind plumb ≠ rounded shoulder)
+          if (reg.includes("Shoulder") && reg.includes("Rounded") &&
+              text.toLowerCase().includes("posterior")) return false;
+          return true;
         });
       }
     }
@@ -7220,7 +7227,13 @@ function PostureAnalysisModule(){
         if (m.cvaAngle!=null&&m.cvaAngle<55) { const sev=m.cvaAngle<44?"high":m.cvaAngle<49?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:"Normal CVA >55°"}); }
         if (m.thoracicAngle!=null&&m.thoracicAngle>45) { const sev=m.thoracicAngle>58?"high":m.thoracicAngle>50?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.0",norm:"Normal 20–45°"}); }
         if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>2) { const dir=m.sagPelvicShift>0?"Anterior":"Posterior"; const abs=Math.abs(m.sagPelvicShift); const sev=abs>5?"high":abs>3?"moderate":"mild"; fb.push({region:"Pelvis / Lumbar",text:`${dir} pelvic tendency — hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`,plain:`${dir} pelvic tilt ${abs.toFixed(1)}cm`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:dir==="Anterior"?"Hip flexor stretch, glute bridges, abdominal hollowing.":"Hamstring stretch, hip flexor activation, lumbar extension.",icd:"M40.3",norm:"Hip within 2cm of plumb"}); }
-        if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) { fb.push({region:"Shoulder / Rounded Tendency",text:`Shoulder ${m.sagShoulderShift>0?"anterior":"posterior"} ~${Math.abs(m.sagShoulderShift).toFixed(1)}cm from plumb`,plain:"Rounded shoulder tendency",severity:"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Scapular retraction, pec stretch, serratus activation.",icd:"M62.9",norm:"Acromion at plumb"}); }
+        if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) {
+          const shDir = m.sagShoulderShift > 0 ? "anterior" : "posterior";
+          const shReg = shDir === "posterior" ? "Shoulder Posterior Displacement" : "Shoulder / Rounded Tendency";
+          const shTx  = shDir === "posterior"
+            ? "Hip flexors facilitation. Shift trunk forward. Sway-back postural re-education. Avoid over-bracing abdominals."
+            : "Scapular retraction, pec stretch, serratus activation.";
+          fb.push({region:shReg, text:`Shoulder ${shDir} ~${Math.abs(m.sagShoulderShift).toFixed(1)}cm from plumb`, plain:shDir==="posterior"?"Shoulder posterior displacement":"Rounded shoulder tendency", severity:"moderate", confidenceScore:65, clinicalSignificance:"moderate", correction:shTx, icd:"M62.9", norm:"Acromion at plumb"}); }
         if (fb.length>0) f=fb;
       }
 
