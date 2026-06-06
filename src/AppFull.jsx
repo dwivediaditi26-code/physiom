@@ -9976,6 +9976,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     } catch { return []; }
   });
   const [uploading, setUploading] = useState(false);
+  const [assessSub, setAssessSub] = useState("subjective");
   const fileInputRef = React.useRef(null);
 
   const saveDocs = (docs) => {
@@ -10596,7 +10597,6 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
             {/* ── SUB-TABS: Subjective | Objective | Assessment & Plan | Notes ── */}
             {(()=>{
-              const [assessSub, setAssessSub] = React.useState("subjective");
               const subTabs = [
                 {k:"subjective", label:"Subjective"},
                 {k:"objective",  label:"Objective"},
