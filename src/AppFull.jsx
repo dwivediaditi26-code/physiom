@@ -4348,11 +4348,13 @@ function buildFindings(lm, view, m) {
     }
 
     // ── 3. Thoracic Kyphosis ─────────────────────────────────────────────────
-    if (m.thoracicAngle !== null) {
-      const sev = classifySeverity(m.thoracicAngle, POSTURE_THRESHOLDS.thoracicAngle);
+    // Lateral view: lower effective threshold to 40° because trunk-lean proxy underestimates
+    // kyphosis when sagittal landmarks are used instead of bilateral midpoints.
+    if (m.thoracicAngle !== null && m.thoracicAngle > 40) {
+      const sev = m.thoracicAngle > 55 ? "high" : m.thoracicAngle > 46 ? "moderate" : "mild";
       const visShHip = [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip].filter(i=>(lm[i]?.visibility||0)>=MIN_VIS);
-      const conf = getLandmarkConfidence(lm, visShHip.length>=2?visShHip:[...LANDMARK_GROUPS.shoulder,...LANDMARK_GROUPS.hip]);
-      if (sev && (sagRel.reliable || visShHip.length>=2)) {
+      const conf = Math.max(55, getLandmarkConfidence(lm, visShHip.length>=2?visShHip:[...LANDMARK_GROUPS.shoulder,...LANDMARK_GROUPS.hip]));
+      if (true) {
         const shiftStr = m.sagShoulderShift !== null
           ? ` (shoulder ~${m.sagShoulderShift.toFixed(1)}cm anterior to plumb)` : "";
         add({
@@ -6414,8 +6416,8 @@ function PostureAnalysisModule(){
           plain:`FHP: ear ${m.fhpDevCm.toFixed(1)}cm forward`, severity:m.fhpDevCm>4?"high":"moderate",
           confidenceScore:70, clinicalSignificance:"moderate", correction:"Postural correction, scapular retraction.", icd:"M43.6", norm:"<2cm" });
       }
-      if (m.thoracicAngle !== null && m.thoracicAngle > 45) {
-        const sev = m.thoracicAngle > 55 ? "high" : "moderate";
+      if (m.thoracicAngle !== null && m.thoracicAngle > 38) {
+        const sev = m.thoracicAngle > 55 ? "high" : m.thoracicAngle > 46 ? "moderate" : "mild";
         fb.push({ region:"Thoracic Kyphosis", text:`Increased thoracic kyphosis tendency — ${m.thoracicAngle.toFixed(1)}° (normal 20–45°)`,
           plain:`Thoracic curvature ${m.thoracicAngle.toFixed(1)}°`, severity:sev, confidenceScore:65,
           clinicalSignificance:sev, correction:"Thoracic extension exercises, pec stretching, scapular setting.", icd:"M40.2",
