@@ -4389,9 +4389,11 @@ function buildFindings(lm, view, m) {
       const sev = pelvisIsCm
         ? (abs > 5 ? "high" : abs > 3 ? "moderate" : "mild")
         : classifySeverity(abs, POSTURE_THRESHOLDS.lumbarProxy) ?? "mild";
+      // In lateral view, at least one hip+knee should be visible — use relaxed gate
       const visHipKnee = [...LANDMARK_GROUPS.hip,...LANDMARK_GROUPS.knee].filter(i=>(lm[i]?.visibility||0)>=MIN_VIS);
-      const conf = getLandmarkConfidence(lm, visHipKnee.length>=2?visHipKnee:[...LANDMARK_GROUPS.hip,...LANDMARK_GROUPS.knee]);
-      if (sev && (sagRel.reliable || visHipKnee.length>=2)) {
+      const visHipKneeRelaxed = [...LANDMARK_GROUPS.hip,...LANDMARK_GROUPS.knee].filter(i=>(lm[i]?.visibility||0)>=0.25);
+      const conf = Math.max(55, getLandmarkConfidence(lm, visHipKnee.length>=1?visHipKnee:[...LANDMARK_GROUPS.hip,...LANDMARK_GROUPS.knee]));
+      if (sev && (sagRel.reliable || visHipKnee.length>=1 || visHipKneeRelaxed.length>=2)) {
         const dir = pelvisValue > 0 ? "Anterior" : "Posterior";
         const measureStr = pelvisIsCm
           ? `hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`
@@ -4413,6 +4415,40 @@ function buildFindings(lm, view, m) {
             ? "Hip flexor stretch (Thomas test position 30s×3). Glute activation: bridges ×20. Abdominal hollowing."
             : "Hamstring stretch 30s×3. Hip flexor activation. Lumbar extension mobility.",
           icd: "M40.3", norm: pelvisIsCm ? "Hip within 2cm of plumb" : "<5% pelvic tilt proxy",
+        });
+      }
+    }
+
+    // ── Flat back / Hyperlordosis specific labels ────────────────────────────────
+    // Flat back = posterior pelvic tendency + reduced kyphosis
+    // Hyperlordosis = anterior pelvic tendency + possible lumbar curve
+    if (pelvisValue !== null) {
+      const isFlatBack = pelvisValue < -2.0 && m.thoracicAngle !== null && m.thoracicAngle < 42;
+      const isHyperlordosis = pelvisValue > 3.0;
+      if (isFlatBack) {
+        add({
+          region:"Flat Back Posture",
+          findingName:`Flat back tendency — posterior pelvic tilt with reduced spinal curves`,
+          severity:"moderate", confidenceScore:60, clinicalSignificance:"moderate",
+          interpretation:"Posterior pelvic position with reduced lumbar lordosis and thoracic kyphosis. May be associated with hamstring dominance, inhibited hip flexors and lumbar erectors. Cannot confirm structural flat back from photograph — clinical assessment required.",
+          possibleMusclePatterns:{ tight:["Hamstrings","Gluteus Maximus","Abdominals"], weak:["Hip Flexors","Lumbar Extensors","Thoracic Extensors"] },
+          functionalCorrelation:"May reduce shock absorption during gait and increase lumbar disc stress in flexion.",
+          objectiveAssessments:["Straight leg raise test","Hip flexor length (Thomas test)","Lumbar mobility assessment"],
+          correction:"Hip flexor activation, lumbar extension mobility, posterior chain stretching (hamstring), thoracic extension.",
+          icd:"M40.4", norm:"Neutral lumbar lordosis 40–60° with balanced pelvic tilt"
+        });
+      }
+      if (isHyperlordosis) {
+        add({
+          region:"Hyperlordosis Tendency",
+          findingName:`Increased lumbar lordosis tendency — hip anterior to plumb ~${Math.abs(pelvisValue).toFixed(1)}cm`,
+          severity: pelvisValue > 5 ? "high" : "moderate", confidenceScore:62, clinicalSignificance:"moderate",
+          interpretation:"Anterior pelvic position suggests increased lumbar lordosis tendency. May be associated with hip flexor tightness and inhibited deep abdominals (transversus abdominis). Requires clinical palpation and standing X-ray to confirm Cobb L1-S1 angle.",
+          possibleMusclePatterns:{ tight:["Hip Flexors (Iliopsoas)","Lumbar Extensors","TFL"], weak:["Gluteus Maximus","Deep Abdominals (TrA)","Hamstrings"] },
+          functionalCorrelation:"Increased lumbar compressive load; reduced hip extension mobility; may predispose to lumbar facet irritation.",
+          objectiveAssessments:["Thomas test — hip flexor length","Modified Thomas (TFL)","Prone hip extension assessment"],
+          correction:"Hip flexor stretch ×30s bilateral. Glute bridges ×20. Abdominal hollowing. Posterior pelvic tilt exercise.",
+          icd:"M40.4", norm:"Hip within 2cm of plumb (Kendall)"
         });
       }
     }
