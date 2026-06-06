@@ -6754,9 +6754,31 @@ function PostureAnalysisModule(){
           : `Shoulder posterior displacement ~${abs.toFixed(1)}cm from plumb`;
         fb.push({region:"Shoulder / Rounded Tendency",text:label,plain:"Rounded shoulder tendency",severity:abs>4?"high":"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Scapular retraction, pec minor stretch, serratus anterior activation. Thoracic foam roll.",icd:"M62.9",norm:"Acromion within 2cm of plumb (Kendall)"});
       }
-      // Rounded shoulder secondary indicator: thoracic kyphosis implies rounded shoulders
-      if (!fb.some(x=>x.region==="Shoulder / Rounded Tendency") && m.thoracicAngle!=null&&m.thoracicAngle>46) {
+      // Rounded shoulder secondary indicator: ONLY fire when shoulder is actually ANTERIOR
+      // Do NOT fire when shoulder is posterior (sway-back pattern)
+      const shIsAnterior = m.sagShoulderShift != null && m.sagShoulderShift > 1.0;
+      if (!fb.some(x=>x.region==="Shoulder / Rounded Tendency") && m.thoracicAngle!=null&&m.thoracicAngle>46 && shIsAnterior) {
         fb.push({region:"Shoulder / Rounded Tendency",text:"Rounded shoulder tendency — associated with increased thoracic curvature",plain:"Rounded shoulders",severity:"moderate",confidenceScore:62,clinicalSignificance:"moderate",correction:"Pec minor stretch, scapular retraction ×15, lower trap Y-T-W.",icd:"M62.9",norm:"Neutral scapular position"});
+      }
+      // ── SWAY-BACK PATTERN detection (Kendall D) ────────────────────────────────
+      // Pattern: shoulder POSTERIOR to plumb + ear AND/OR hip ANTERIOR to plumb
+      // This is the most commonly missed pattern — mistaken for rounded shoulder
+      const shPostToPlumb = m.sagShoulderShift != null && m.sagShoulderShift < -1.0;
+      const hipAntToPlumb = m.sagPelvicShift != null && m.sagPelvicShift > 1.5;
+      const earAntToPlumb = (m.cvaAngle != null && m.cvaAngle < 55) || (m.fhpDevCm != null && m.fhpDevCm > 2);
+      if (isLatFallback && shPostToPlumb && (hipAntToPlumb || earAntToPlumb)) {
+        fb.push({
+          region: "Posture Pattern — Sway-Back",
+          text: `Sway-back sagittal pattern — shoulder posterior to plumb${m.sagShoulderShift!=null?` (~${Math.abs(m.sagShoulderShift).toFixed(1)}cm posterior)`:""}, hip${hipAntToPlumb&&m.sagPelvicShift!=null?` ~${m.sagPelvicShift.toFixed(1)}cm anterior`:""} to plumb`,
+          plain: "Sway-back pattern",
+          severity: "moderate",
+          confidenceScore: 65,
+          clinicalSignificance: "moderate",
+          correction: "Activate hip flexors (standing hip flexion ×15). Shift hips forward over ankles. Lumbar extension mobilisation. Reduce hamstring/abdominal over-bracing. McKenzie lumbar extension.",
+          interpretation: "Sway-back: upper trunk leans posterior, hips thrust anterior, lumbar lordosis reduced. Kendall D pattern. Hamstring and abdominal overactivity common. Assess hip flexor inhibition.",
+          icd: "M40.3",
+          norm: "Shoulder at plumb, hip within 2cm of plumb (Kendall)"
+        });
       }
       // ── Kyphosis-Lordosis pattern detection (Kendall) ───────────────────────
       // Correct clinical pattern: FHP + shoulder ANTERIOR to plumb + possible APT.

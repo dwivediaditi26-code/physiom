@@ -253,6 +253,18 @@ export function buildSagittalFindings(lm, view, measurements, contourResult, cli
         tier: confidence.score+20 >= 80 ? "High" : confidence.tier }
     : confidence;
 
+  // ── SWAY-BACK PRE-CHECK from plumb chain (before contour) ─────────────────
+  // Detects Kendall D from plumb offsets alone:
+  // shoulder POSTERIOR + (ear anterior OR hip anterior) = sway-back
+  // Reports this as an OBSERVABLE ALIGNMENT finding, not a contour diagnosis
+  const shPlumbOffset = plumb?.shoulderOffset ?? null;
+  const hipPlumbOffset = plumb?.hipOffset ?? null;
+  const earPlumbOffset = plumb?.earOffset ?? null;
+  const shActuallyPosterior = shPlumbOffset !== null && (viewSign >= 0 ? shPlumbOffset < -1.5 : shPlumbOffset > 1.5);
+  const hipActuallyAnterior  = hipPlumbOffset !== null && (viewSign >= 0 ? hipPlumbOffset > 1.5 : hipPlumbOffset < -1.5);
+  const earActuallyAnterior  = earPlumbOffset !== null && (viewSign >= 0 ? earPlumbOffset > 1.5 : earPlumbOffset < -1.5);
+  const swaybackPlumbPattern = shActuallyPosterior && (hipActuallyAnterior || earActuallyAnterior);
+
   // ── CONFIDENCE BANNER ────────────────────────────────────────────────────
   if (effConf?.recommendation) {
     findings.push({
@@ -284,13 +296,30 @@ export function buildSagittalFindings(lm, view, measurements, contourResult, cli
   // Shoulder translation from plumb line
   if (plumb?.shoulderOffset !== null) {
     const r = interpretOffset(plumb.shoulderOffset, viewSign, "shoulder");
-    if (r) findings.push({
-      id: "shoulder_translation",
-      category: "Shoulder Position",
-      label: `${r.severity} shoulder ${r.dir} translation — ${r.absAnt.toFixed(1)}% anterior to plumb`,
-      severity: r.severity,
-      source: "Plumb line offset",
-      note: "Shoulder position is independent from spinal curvature — do not use alone to infer kyphosis.",
+    if (r) {
+      const swayNote = swaybackPlumbPattern && r.dir === "posterior"
+        ? "Shoulder posterior to plumb with anterior ear/hip — consistent with sway-back pattern (Kendall D). Confirm with contour analysis."
+        : "Shoulder position is an independent observable finding — do not use alone to infer kyphosis.";
+      findings.push({
+        id: "shoulder_translation",
+        category: r.dir === "posterior" ? "Shoulder Posterior Position" : "Shoulder Anterior Position",
+        label: `${r.severity} shoulder ${r.dir} displacement — ${r.absAnt.toFixed(1)}% from plumb`,
+        severity: r.severity,
+        source: "Plumb line offset",
+        note: swayNote,
+      });
+    }
+  }
+
+  // Sway-back plumb pattern alert (when contour not yet run)
+  if (swaybackPlumbPattern && (!cp || cp.curvePattern === "ideal")) {
+    findings.push({
+      id: "swayback_plumb_alert",
+      category: "Postural Pattern Alert",
+      label: "Sway-back sagittal pattern suggested by plumb line — shoulder posterior, ear/hip anterior",
+      severity: "Moderate",
+      source: "Plumb line chain analysis",
+      note: "Upload a clear lateral photo to confirm with body contour analysis. Pattern consistent with Kendall D (sway-back).",
     });
   }
 
