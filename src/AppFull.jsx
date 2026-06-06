@@ -13,6 +13,8 @@ import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescription
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
+import { analyzeSagittalContour, renderContourDebugOverlay, warmupContourEngine } from "./contourEngine";
+import { buildSagittalFindings, DEPRECATED_LATERAL_FINDING_IDS } from "./sagittalFindings";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POSE_CONNECTIONS = [
@@ -684,6 +686,9 @@ function PostureCameraModule({ activePatient, set }) {
   const [uploadBusy,  setUploadBusy]  = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const [uploadAnal,  setUploadAnal]  = useState(null);
+  const [validationMode,    setValidationMode]    = useState(false);
+  const [contourResult,     setContourResult]     = useState(null);
+  const [clinicianVerified, setClinicianVerified] = useState(false);
 
   // ── multi-view bank ───────────────────────────────────────────────────────
   const [viewBank, setViewBank] = useState({ anterior:null, posterior:null, left:null, right:null });
@@ -696,7 +701,7 @@ function PostureCameraModule({ activePatient, set }) {
   }, [activePatient?.id]);
 
   // Pre-load ViTPose model on mount so lateral analysis is instant
-  useEffect(() => { warmupViTPose(); }, []);
+  useEffect(() => { warmupViTPose(); warmupContourEngine(); }, []);
 
   // ── Start Camera ──────────────────────────────────────────────────────────
   const startCamera = async (mode) => {
@@ -859,7 +864,18 @@ function PostureCameraModule({ activePatient, set }) {
       setCapturedLm(lm);
       if (lm) {
         const m = AdvancedMeasurementEngine(lm, null);
-        const f = ClinicalFindingsEngine(lm, activeView, m);
+        let f, cr = null;
+        if (activeView === "left" || activeView === "right") {
+          cr = await analyzeSagittalContour(img, lm, activeView).catch(() => null);
+          setContourResult(cr);
+          const sagittal = buildSagittalFindings(lm, activeView, m, cr, clinicianVerified);
+          const legacy   = ClinicalFindingsEngine(lm, activeView, m) || [];
+          const filtered = legacy.filter(fi => !DEPRECATED_LATERAL_FINDING_IDS.includes(fi?.id));
+          f = [...sagittal, ...filtered];
+        } else {
+          f = ClinicalFindingsEngine(lm, activeView, m);
+          setContourResult(null);
+        }
         const rel = ReliabilityEngine(lm);
         const s = PostureScoreEngine(m, f, rel);
         setAnalysis({ measurements:m, findings:f, scoreData:s });
@@ -907,7 +923,18 @@ function PostureCameraModule({ activePatient, set }) {
       setUploadLm(lm);
       if (lm) {
         const m = AdvancedMeasurementEngine(lm, null);
-        const f = ClinicalFindingsEngine(lm, uploadView, m);
+        let f, cr = null;
+        if (uploadView === "left" || uploadView === "right") {
+          cr = await analyzeSagittalContour(img, lm, uploadView).catch(() => null);
+          setContourResult(cr);
+          const sagittal = buildSagittalFindings(lm, uploadView, m, cr, clinicianVerified);
+          const legacy   = ClinicalFindingsEngine(lm, uploadView, m) || [];
+          const filtered = legacy.filter(fi => !DEPRECATED_LATERAL_FINDING_IDS.includes(fi?.id));
+          f = [...sagittal, ...filtered];
+        } else {
+          f = ClinicalFindingsEngine(lm, uploadView, m);
+          setContourResult(null);
+        }
         const rel = ReliabilityEngine(lm);
         const s = PostureScoreEngine(m, f, rel);
         setUploadAnal({ measurements:m, findings:f, scoreData:s });
@@ -1536,8 +1563,8 @@ const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
 // ─────────────────────────────────────────────────────────────────────────────
 const CLINICAL_NORMS = {
   cvaAngle:          { normal:[55,90],   mild:[49,55],   severe:[0,49],   unit:"°", label:"CVA (Craniovertebral Angle)", ref:"Yip et al. (2008): >55° normal. 49–55° mild FHP. <49° pathological — cervicogenic headache risk." },
-  thoracicAngle:     { normal:[20,45],   mild:[45,55],   severe:[55,90],  unit:"°", label:"Thoracic Kyphosis (T1–T12)", ref:"Normal Cobb equivalent 20–45°. >50° hyperkyphosis. Assessed lateral view only." },
-  lordosisAngle:     { normal:[40,60],   mild:[60,70],   severe:[70,90],  unit:"°", label:"Lumbar Lordosis (L1–S1)",   ref:"Normal 40–60°. >70° hyperlordosis. <30° flat-back. Assessed lateral view only." },
+  thoracicAngle:     { normal:[20,45],   mild:[45,55],   severe:[55,90],  unit:"°", label:"Thoracic Posture Proxy", ref:"Surface landmark estimate only — NOT a Cobb angle. Requires radiographic confirmation.", _hideFromReport:true },
+  lordosisAngle:     { normal:[40,60],   mild:[60,70],   severe:[70,90],  unit:"°", label:"Lumbar Posture Proxy",       ref:"Surface landmark estimate only — NOT a radiographic lordosis measurement.", _hideFromReport:true },
   shoulderAngle:     { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"°", label:"Shoulder Height Asymmetry (bilateral)", ref:"<3° within normal variation. 3–7° mild asymmetry. >7° refer for lateral curvature screen and clinical assessment." },
   pelvisAngle:       { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"°", label:"Pelvic Obliquity (observation only)",          ref:"<3° normal variation. >7° — clinical assessment recommended. Possible contributors: pelvic asymmetry, habitual loading, hip asymmetry. Clinical examination required to determine cause." },
   kneeValgus:        { normal:[0,5],     mild:[5,10],    severe:[10,30],  unit:"°", label:"Knee Valgus/Varus",         ref:"<5° normal Q-angle variation. >10° — glute med inhibition, foot pronation driver." },
