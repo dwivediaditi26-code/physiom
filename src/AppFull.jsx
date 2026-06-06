@@ -3533,6 +3533,196 @@ const POSTURE_THRESHOLDS = {
   lcsIndex:            { mild:0.4, moderate:0.8,severe:1.3 }, // index
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SPINE INTERPOLATION ENGINE
+// Estimates T1-T12, L1-L5 positions from available MediaPipe landmarks
+// Uses anatomical ratios (Kapandji / White & Panjabi)
+// ═══════════════════════════════════════════════════════════════════════════
+function interpolateSpineLandmarks(lm) {
+  if (!lm || lm.length < 33) return null;
+  const g = i => lm[i];
+  const V = i => (lm[i]?.visibility || 0) >= 0.4;
+
+  // Use the most visible side for sagittal
+  const earL = g(7), earR = g(8);
+  const sagEar = ((earL?.visibility||0) >= (earR?.visibility||0)) ? earL : earR;
+  const shL = g(11), shR = g(12);
+  const sagSh = ((shL?.visibility||0) >= (shR?.visibility||0)) ? shL : shR;
+  const hipL = g(23), hipR = g(24);
+  const sagHip = ((hipL?.visibility||0) >= (hipR?.visibility||0)) ? hipL : hipR;
+
+  if (!sagSh || !sagHip) return null;
+
+  const shX = sagSh.x, shY = sagSh.y;
+  const hipX = sagHip.x, hipY = sagHip.y;
+
+  // Anatomical ratios along the spine (shoulder=T1, hip=S1)
+  // T1(0%) T4(25%) T7(45%) T10(65%) T12(78%) L1(82%) L3(90%) L5(97%) S1(100%)
+  const ratios = {
+    T1:  { r: 0.00, label: "T1"  },
+    T4:  { r: 0.25, label: "T4"  },
+    T7:  { r: 0.45, label: "T7"  },
+    T10: { r: 0.65, label: "T10" },
+    T12: { r: 0.78, label: "T12" },
+    L1:  { r: 0.82, label: "L1"  },
+    L3:  { r: 0.90, label: "L3"  },
+    L5:  { r: 0.97, label: "L5"  },
+  };
+
+  const spine = {};
+  Object.entries(ratios).forEach(([key, { r, label }]) => {
+    spine[key] = {
+      x: shX + r * (hipX - shX),
+      y: shY + r * (hipY - shY),
+      label,
+      visibility: Math.min(sagSh.visibility || 0.5, sagHip.visibility || 0.5),
+    };
+  });
+
+  // Estimate cervical curve: C4 is midpoint between ear and T1 offset
+  if (sagEar) {
+    spine.C4 = {
+      x: sagEar.x * 0.3 + shX * 0.7,
+      y: sagEar.y * 0.3 + shY * 0.7,
+      label: "C4",
+      visibility: sagEar.visibility || 0.5,
+    };
+    spine.C7 = {
+      x: sagEar.x * 0.05 + shX * 0.95,
+      y: sagEar.y * 0.05 + shY * 0.95,
+      label: "C7",
+      visibility: Math.min(sagEar.visibility || 0.5, sagSh.visibility || 0.5),
+    };
+  }
+
+  return spine;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// KENDALL POSTURAL TYPE CLASSIFIER
+// Based on Kendall et al. "Muscles: Testing and Function" 5th Ed.
+// Types: Ideal, Kyphosis-Lordosis, Flat-back, Sway-back, Military
+// ═══════════════════════════════════════════════════════════════════════════
+function classifyKendallPostureType(m) {
+  if (!m) return null;
+
+  const cva       = m.cvaAngle;
+  const thoracic  = m.thoracicAngle;
+  const pelvicCm  = m.sagPelvicShift;
+  const hipExt    = m.hipExtensionProxy;
+  const kneeRec   = m.leftKneeDev ?? m.rightKneeDev; // negative = recurvatum
+
+  // Need at least thoracic + pelvic data
+  if (thoracic === null && pelvicCm === null) return null;
+
+  const th = thoracic ?? 32;
+  const pc = pelvicCm ?? 0;
+  const fhp = cva !== null ? cva < 52 : false;
+
+  // ── Sway-back ──────────────────────────────────────────────────────────────
+  // Hips thrust forward (posterior to plumb), thoracic kyphosis, cervical extension
+  if (pc < -3 && th > 44 && fhp) {
+    return {
+      type: "Sway-back Posture",
+      description: "Hips displaced anterior to plumb, increased thoracic kyphosis, compensatory forward head. Pelvis in posterior tilt.",
+      confidence: 75,
+      keyFindings: ["Anterior hip displacement","Thoracic hyperkyphosis","Forward head"],
+      tight:  ["Hamstrings","Upper Abdominals","Cervical Extensors"],
+      weak:   ["Hip Flexors","Lower Thoracic Extensors","Deep Neck Flexors"],
+      icd: "M40.3",
+      colour: "#F97316"
+    };
+  }
+
+  // ── Flat-back ──────────────────────────────────────────────────────────────
+  // Posterior pelvic tilt, reduced lumbar lordosis, reduced thoracic kyphosis
+  if (pc < -2 && th < 42) {
+    return {
+      type: "Flat-back Posture",
+      description: "Posterior pelvic tilt with reduced lumbar lordosis and flattened thoracic curve. Reduced spinal shock absorption.",
+      confidence: 72,
+      keyFindings: ["Posterior pelvic tilt","Reduced kyphosis","Reduced lordosis"],
+      tight:  ["Hamstrings","Abdominals"],
+      weak:   ["Hip Flexors (Iliopsoas)","Lumbar Extensors","Thoracic Extensors"],
+      icd: "M40.4",
+      colour: "#3B82F6"
+    };
+  }
+
+  // ── Kyphosis-Lordosis ──────────────────────────────────────────────────────
+  // Increased thoracic kyphosis + anterior pelvic tilt + FHP (Janda UCS+LCS)
+  if (th > 46 && pc > 2 && fhp) {
+    return {
+      type: "Kyphosis-Lordosis Posture",
+      description: "Combined increased thoracic kyphosis and lumbar lordosis with anterior pelvic tilt and forward head. Classic Janda combined UCS+LCS pattern.",
+      confidence: 80,
+      keyFindings: ["Thoracic hyperkyphosis","Anterior pelvic tilt","Forward head posture"],
+      tight:  ["Hip Flexors","Lumbar Extensors","Pec Minor","SCM","Suboccipitals"],
+      weak:   ["Deep Neck Flexors","Lower Trapezius","Glutes","Deep Abdominals (TrA)"],
+      icd: "M40.0",
+      colour: "#EF4444"
+    };
+  }
+
+  // ── Upper Kyphosis only ────────────────────────────────────────────────────
+  if (th > 46 && fhp && Math.abs(pc) <= 2) {
+    return {
+      type: "Thoracic Kyphosis Posture",
+      description: "Increased thoracic kyphosis with forward head. Possible occupational/sedentary pattern (Scheuermann's or habitual).",
+      confidence: 73,
+      keyFindings: ["Thoracic hyperkyphosis","Forward head posture"],
+      tight:  ["Pec Minor","Upper Trapezius","Suboccipitals"],
+      weak:   ["Lower Trapezius","Serratus Anterior","Deep Neck Flexors"],
+      icd: "M40.2",
+      colour: "#EF4444"
+    };
+  }
+
+  // ── Military / Flat ────────────────────────────────────────────────────────
+  if (th < 30 && !fhp && Math.abs(pc) < 2) {
+    return {
+      type: "Military Posture",
+      description: "Reduced thoracic kyphosis, neck retracted, posterior shoulder position. Common in military personnel and dance.",
+      confidence: 68,
+      keyFindings: ["Reduced thoracic kyphosis","Neck retraction tendency"],
+      tight:  ["Thoracic Extensors","Neck Retractors"],
+      weak:   ["Thoracic Flexors","SCM"],
+      icd: "M40.4",
+      colour: "#8B5CF6"
+    };
+  }
+
+  // ── APT only (hyperlordosis without kyphosis) ─────────────────────────────
+  if (pc > 3 && th <= 46) {
+    return {
+      type: "Anterior Pelvic Tilt / Hyperlordosis",
+      description: "Anterior pelvic tilt with increased lumbar lordosis tendency. Hip flexor dominance pattern.",
+      confidence: 70,
+      keyFindings: ["Anterior pelvic tilt","Lumbar hyperlordosis tendency"],
+      tight:  ["Hip Flexors (Iliopsoas)","TFL","Lumbar Extensors"],
+      weak:   ["Gluteus Maximus","Hamstrings","Deep Abdominals (TrA)"],
+      icd: "M40.4",
+      colour: "#F97316"
+    };
+  }
+
+  // ── Ideal ──────────────────────────────────────────────────────────────────
+  if (!fhp && th >= 20 && th <= 46 && Math.abs(pc) <= 2) {
+    return {
+      type: "Ideal / Within Normal Limits",
+      description: "Alignment within Kendall normal ranges. Continued functional training recommended to maintain.",
+      confidence: 78,
+      keyFindings: [],
+      tight:  [],
+      weak:   [],
+      icd: "Z00.0",
+      colour: "#10B981"
+    };
+  }
+
+  return null;
+}
+
 // ── 2. SEVERITY CLASSIFIER ────────────────────────────────────────────────────
 // Returns "mild" | "moderate" | "high" based on thresholds
 function classifySeverity(value, thresholds, lowerIsBad = false) {
@@ -6411,7 +6601,7 @@ function PostureAnalysisModule(){
         await loadScript(`${MP_CDN}/pose_solution_simd_wasm_bin.js`);
         if(cancelled) return;
         const pose=new window.Pose({locateFile:f=>`${MP_CDN}/${f}`});
-        pose.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+        pose.setOptions({modelComplexity:2,smoothLandmarks:true,smoothSegmentation:false,enableSegmentation:false,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
         await pose.initialize();
         if(!cancelled){poseRef.current=pose; setMpStatus("ready");}
       }catch(e){
@@ -6486,8 +6676,12 @@ function PostureAnalysisModule(){
     try { s=scorePosture(m,f,r); }
     catch(e){ console.warn("scorePosture error:",e); }
 
+    // Kendall postural type classification
+    let kendallType = null;
+    try { kendallType = classifyKendallPostureType(m); } catch(e){}
+
     setLandmarks(lm);
-    setMeasurements(Object.keys(m).length>0?m:null);
+    setMeasurements(Object.keys(m).length>0?{...m, _kendall:kendallType}:null);
     setFindings(f);
     setReliability(r);
     setScoreData(s);
@@ -6846,7 +7040,9 @@ function PostureAnalysisModule(){
       try { s = scorePosture(m, f, r); } catch(e){ console.warn("manual scorePosture:", e); }
     } catch(outerErr) { console.warn("analyseManualPoints error:", outerErr); }
 
-    setLandmarks(lm||null); setMeasurements(Object.keys(m||{}).length>0?m:null);
+    let kendallType2 = null;
+    try { kendallType2 = classifyKendallPostureType(m); } catch(e){}
+    setLandmarks(lm||null); setMeasurements(Object.keys(m||{}).length>0?{...m,_kendall:kendallType2}:null);
     setFindings(f||[]); setReliability(r||null); setScoreData(s||null);
     setManualAnalysed(true);
     // Bake manual markers onto the annotated image
@@ -6940,6 +7136,44 @@ function PostureAnalysisModule(){
             fontSize:'0.6rem',fontWeight:700,marginBottom:8}}>
             {isClinicianVerified?'✅ Clinician Verified Analysis':'🤖 AI Estimated Analysis'}
           </div>
+
+          {/* Kendall Postural Type */}
+          {measurements?._kendall&&(
+            <div style={{marginBottom:14,padding:"12px 14px",borderRadius:12,
+              background:`${measurements._kendall.colour}12`,
+              border:`1.5px solid ${measurements._kendall.colour}40`}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                <span style={{fontSize:"1.1rem"}}>🔬</span>
+                <div>
+                  <div style={{fontWeight:800,fontSize:"0.8rem",color:measurements._kendall.colour}}>
+                    {measurements._kendall.type}
+                  </div>
+                  <div style={{fontSize:"0.6rem",color:PC.muted,fontWeight:600}}>
+                    Kendall Postural Classification · {measurements._kendall.confidence}% confidence
+                  </div>
+                </div>
+              </div>
+              <div style={{fontSize:"0.68rem",color:PC.text,lineHeight:1.5,marginBottom:8}}>
+                {measurements._kendall.description}
+              </div>
+              {measurements._kendall.tight.length>0&&(
+                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                  {measurements._kendall.tight.map((m,i)=>(
+                    <span key={i} style={{padding:"2px 8px",borderRadius:10,fontSize:"0.6rem",fontWeight:700,
+                      background:"rgba(220,38,38,0.08)",color:PC.red,border:"1px solid rgba(220,38,38,0.2)"}}>
+                      ▲ {m}
+                    </span>
+                  ))}
+                  {measurements._kendall.weak.map((m,i)=>(
+                    <span key={i} style={{padding:"2px 8px",borderRadius:10,fontSize:"0.6rem",fontWeight:700,
+                      background:"rgba(59,130,246,0.08)",color:"#3B82F6",border:"1px solid rgba(59,130,246,0.2)"}}>
+                      ▼ {m}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {scoreData&&(
             <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16,padding: isWide?"18px":"14px",background:PC.surface,borderRadius:14,border:`1px solid ${scoreData.colour}30`,boxShadow:isWide?"0 2px 12px rgba(0,0,0,0.06)":"none"}}>
               <ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isWide?96:80}/>
