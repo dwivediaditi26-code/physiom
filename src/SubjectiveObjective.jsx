@@ -947,6 +947,80 @@ if (typeof document !== "undefined" && !document.getElementById("physio-hl-style
   document.head.appendChild(_st);
 }
 
+
+// ─── Cloudinary Clinical Image System ─────────────────────────────────────────
+const CLOUDINARY_BASE_SO = "https://res.cloudinary.com/dr15y1pwj/image/upload";
+
+function ImageModal_SO({ src, title, onClose }) {
+  return (
+    <div onClick={onClose}
+      style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:99999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{maxWidth:"95vw",maxHeight:"93vh",position:"relative"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{color:"#fff",fontWeight:700,fontSize:"0.88rem"}}>{title}</span>
+          <button onClick={onClose}
+            style={{background:"rgba(255,255,255,0.18)",border:"none",borderRadius:6,color:"#fff",fontWeight:800,cursor:"pointer",padding:"4px 14px",fontSize:"0.75rem",marginLeft:12}}>✕ Close</button>
+        </div>
+        <img src={src} alt={title}
+          style={{maxWidth:"90vw",maxHeight:"84vh",objectFit:"contain",borderRadius:10,display:"block"}}/>
+      </div>
+    </div>
+  );
+}
+
+// ClinicalImageCard — shows Cloudinary image with tap-to-expand, hides silently if not uploaded yet
+function ClinicalImageCard({ id, title, fallbackSvg, C, color }) {
+  const [exists, setExists] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
+  const thumb = `${CLOUDINARY_BASE_SO}/f_auto,q_auto,w_110,h_90,c_fill/${id}`;
+  const full  = `${CLOUDINARY_BASE_SO}/f_auto,q_auto/${id}`;
+  return (
+    <div style={{background:C.s2,borderRadius:8,padding:8,border:`1px solid ${C.border}`,width:124,flexShrink:0,textAlign:"center"}}>
+      {exists ? (
+        <>
+          <img src={thumb} alt={title}
+            onError={()=>setExists(false)}
+            onClick={()=>setOpen(true)}
+            style={{width:108,height:84,objectFit:"cover",borderRadius:6,cursor:"pointer",display:"block",border:"1px solid rgba(124,58,237,0.2)"}}
+          />
+          {open && <ImageModal_SO src={full} title={title} onClose={()=>setOpen(false)}/>}
+          <div style={{fontSize:"0.58rem",color:C.muted,marginTop:3}}>📸 Tap to enlarge</div>
+        </>
+      ) : (
+        <>
+          {fallbackSvg || (
+            <svg viewBox="0 0 120 100" width="108" height="84">
+              <text x="50%" y="40%" textAnchor="middle" fontSize="22" fill={color||"#7c3aed"}>⚕</text>
+              <text x="50%" y="65%" textAnchor="middle" fontSize="9" fill={C?.muted||"#7e6a9a"}>{(title||"").split(" ")[0]}</text>
+            </svg>
+          )}
+          <div style={{fontSize:"0.58rem",color:C.muted,marginTop:3}}>Illustration</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// SmallClinicalImg — compact inline thumbnail (for tables / rows)
+function SmallClinicalImg({ id, title }) {
+  const [exists, setExists] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
+  if (!exists) return null;
+  const thumb = `${CLOUDINARY_BASE_SO}/f_auto,q_auto,w_48,h_48,c_fill/${id}`;
+  const full  = `${CLOUDINARY_BASE_SO}/f_auto,q_auto/${id}`;
+  return (
+    <>
+      <img src={thumb} alt={title||id}
+        onError={()=>setExists(false)}
+        onClick={e=>{e.stopPropagation();setOpen(true);}}
+        title={`Tap to view: ${title||id}`}
+        style={{width:44,height:44,objectFit:"cover",borderRadius:7,cursor:"pointer",border:"2px solid rgba(124,58,237,0.25)",flexShrink:0,display:"block"}}
+      />
+      {open && <ImageModal_SO src={full} title={title||id} onClose={()=>setOpen(false)}/>}
+    </>
+  );
+}
+
 function SpecialTestsSection({ data, set, navContext={} }) {
   const VALID_ST_REGIONS = Object.keys(SPECIAL_TESTS_DATA);
   const [region, setRegion] = useState(()=>{
@@ -1079,16 +1153,14 @@ function SpecialTestsSection({ data, set, navContext={} }) {
               {isOpen && (
                 <div style={{ padding:"0 14px 14px" }}>
                   <div style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:14, marginBottom:12 }}>
-                    {/* SVG illustration */}
-                    <div style={{ background:C.s2, borderRadius:8, padding:8, border:`1px solid ${C.border}`, width:120, flexShrink:0 }}>
-                      {svgEl || (
-                        <svg viewBox="0 0 120 100" width="120" height="90">
-                          <text x="50%" y="40%" textAnchor="middle" fontSize="22" fill={color}>⚕</text>
-                          <text x="50%" y="65%" textAnchor="middle" fontSize="9" fill={C.muted}>{t.label.split(" ")[0]}</text>
-                        </svg>
-                      )}
-                      <div style={{ fontSize:"0.6rem", color:C.muted, textAlign:"center", marginTop:2 }}>Illustration</div>
-                    </div>
+                    {/* Clinical image — Cloudinary (falls back to SVG if not uploaded) */}
+                    <ClinicalImageCard
+                      id={t.id}
+                      title={t.label}
+                      fallbackSvg={svgEl}
+                      C={C}
+                      color={color}
+                    />
 
                     {/* How to + sensitivity */}
                     <div>
@@ -1751,8 +1823,9 @@ function CyriaxModule({ data, set, navContext={} }) {
             {reg.activeROM.map(t => (
               <div key={t.id} data-cy-id={t.id} style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:9, padding:12, marginBottom:9 }}>
                 <div style={{ fontWeight:700, color:C.text, marginBottom:6, fontSize:"0.82rem" }}>{t.label} <span style={{ color:C.muted, fontWeight:400, fontSize:"0.72rem" }}>Normal: {t.normal}</span></div>
-                <div style={{ background:C.s3, borderRadius:7, padding:9, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6 }}>
-                  <strong style={{ color:C.yellow }}>How: </strong>{t.how}
+                <div style={{ background:C.s3, borderRadius:7, padding:9, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6, display:"flex", gap:10, alignItems:"flex-start" }}>
+                  <SmallClinicalImg id={t.id} title={t.label} />
+                  <div style={{flex:1}}><strong style={{ color:C.yellow }}>How: </strong>{t.how}</div>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:7 }}>
                   <div>
@@ -8664,7 +8737,10 @@ function NKTSection({ data, set, navContext={} }) {
                 {/* How to */}
                 <div style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, padding:12, marginBottom:12 }}>
                   <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
-                  <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{t.how}</div>
+                  <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                    <SmallClinicalImg id={t.id} title={t.label} />
+                    <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7, flex:1 }}>{t.how}</div>
+                  </div>
                 </div>
 
                 {/* Options */}
@@ -8708,7 +8784,10 @@ function NKTSection({ data, set, navContext={} }) {
             </div>
             <div style={{ marginBottom:14 }}>
               <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>👐 Step-by-Step Procedure</div>
-              <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8 }}>{modalTest.how}</div>
+              <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+                <SmallClinicalImg id={modalTest.id} title={modalTest.label} />
+                <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8, flex:1 }}>{modalTest.how}</div>
+              </div>
             </div>
             <div style={{ marginBottom:14 }}>
               <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>⚠️ What Each Result Means</div>
