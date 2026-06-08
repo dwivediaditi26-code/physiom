@@ -2839,6 +2839,14 @@ const MANUAL_CONNECTIONS_POSTERIOR = [
   [11,13],[12,14],// ankle to heel
 ];
 
+const AI_SAG_5_POINTS = [
+  { id:"ear",      label:"Ear",      mpIdx:7,  desc:"Ear tragus",          color:"#00e5ff" },
+  { id:"shoulder", label:"Shoulder", mpIdx:11, desc:"Acromion",            color:"#a78bfa" },
+  { id:"hip",      label:"Hip",      mpIdx:23, desc:"Greater trochanter",  color:"#f59e0b" },
+  { id:"knee",     label:"Knee",     mpIdx:25, desc:"Lateral knee joint",  color:"#34d399" },
+  { id:"ankle",    label:"Ankle",    mpIdx:27, desc:"Lateral malleolus",   color:"#f87171" },
+];
+
 const MANUAL_POINTS_SAGITTAL = [
   { id:0, label:"Nose / Head",    mpIdx:0,  desc:"Nose tip" },
   { id:1, label:"Ear",            mpIdx:7,  desc:"Ear tragus (near side)" },
@@ -6633,7 +6641,6 @@ function PostureAnalysisModule(){
   const [capturedImg,setCapturedImg]=useState(null);
   const [analysing,setAnalysing]=useState(false);
   const [error,setError]=useState(null);
-  const [plumbAdjCm,setPlumbAdjCm]=useState(0); // manual plumb line offset in cm
   const [countdown,setCountdown]=useState(null);
   const [showHeatmap]=useState(true);
   const [showGrid,setShowGrid]=useState(true);
@@ -6676,6 +6683,10 @@ function PostureAnalysisModule(){
   const [manualPlaced,setManualPlaced]=useState({});    // {[pointId]: {x,y}}
   const [manualImgDims,setManualImgDims]=useState(null); // {w,h} of displayed image
   const [manualAnalysed,setManualAnalysed]=useState(false);
+  // 5-point sagittal refine (AI mode, lateral views)
+  const [aiSagPlaced,setAiSagPlaced]=useState({});  // {ear,shoulder,hip,knee,ankle} → {x,y} normalised
+  const [aiSagActive,setAiSagActive]=useState(false); // tap-to-place mode on/off
+  const aiSagImgRef=useRef(null);
   const manualImgRef=useRef(null);
   const manualContainerRef=useRef(null);
 
@@ -6692,13 +6703,6 @@ function PostureAnalysisModule(){
   const manualImgSize=useRef({w:800,h:1000});
 
   useEffect(()=>{viewRef.current=view;},[view]);
-
-  // Re-run analysis when plumb line is manually adjusted
-  useEffect(()=>{
-    if (!landmarks || (view!=="left"&&view!=="right")) return;
-    if (Math.abs(plumbAdjCm)<0.05) return;
-    processLandmarks(landmarks, view, null, plumbAdjCm);
-  },[plumbAdjCm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load MediaPipe ──────────────────────────────────────────────────────────
   useEffect(()=>{
@@ -6720,7 +6724,7 @@ function PostureAnalysisModule(){
   },[]);
 
   // ── Process landmarks ───────────────────────────────────────────────────────
-  const processLandmarks=useCallback((lm,v,imgH,_plumbAdj=0)=>{
+  const processLandmarks=useCallback((lm,v,imgH)=>{
     // Each step isolated — partial failure still populates what it can
     let calib=null;
     try { calib=computeCalibration(lm,patientHeightCm,imgH||videoSizeRef.current?.h||480); }
@@ -6729,17 +6733,6 @@ function PostureAnalysisModule(){
     let m={};
     try { m=measureLandmarks(lm,calib,v)||{}; }
     catch(e){ console.warn("measureLandmarks error:",e); }
-    // Apply manual plumb line offset — shifts all plumb-relative measurements
-    if (_plumbAdj && Math.abs(_plumbAdj) > 0.05 && m) {
-      const sh = _plumbAdj;
-      m = { ...m,
-        sagShoulderShift: m.sagShoulderShift != null ? +(m.sagShoulderShift + sh).toFixed(2) : null,
-        sagPelvicShift:   m.sagPelvicShift   != null ? +(m.sagPelvicShift   + sh).toFixed(2) : null,
-        sagHipShift:      m.sagHipShift       != null ? +(m.sagHipShift       + sh).toFixed(2) : null,
-        sagKneeShift:     m.sagKneeShift      != null ? +(m.sagKneeShift      + sh).toFixed(2) : null,
-      };
-    }
-
     let r={score:0,status:"Error",blocked:false,warnings:[],icc:null,confidence:{}};
     try { r=calcReliability(lm); }
     catch(e){ console.warn("calcReliability error:",e); }
@@ -8374,7 +8367,38 @@ function PostureAnalysisModule(){
 
             {/* AI mode image — always show original photo; overlay annotated result on top */}
             {inputMode==="ai"&&(rawUploadedImg||uploadedImg)&&(
-              <div style={{borderRadius:14,overflow:"hidden",border:`1px solid ${PC.border}`,boxShadow:isWide?"0 4px 20px rgba(0,0,0,0.08)":"none",background:PC.s2,position:"relative",transition:"border-color 0.2s"}}>
+              <div ref={aiSagImgRef}
+                onClick={e=>{
+                  if (!aiSagActive) return;
+                  const placed = AI_SAG_5_POINTS.filter(p=>!aiSagPlaced[p.id]);
+                  if (placed.length===0) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = (e.clientX - rect.left) / rect.width;
+                  const y = (e.clientY - rect.top)  / rect.height;
+                  const next = placed[0];
+                  setAiSagPlaced(prev=>{
+                    const updated = {...prev, [next.id]:{x,y}};
+                    // Auto-analyse when all 5 placed
+                    if (Object.keys(updated).length===5 && landmarks) {
+                      setTimeout(()=>{
+                        const merged = landmarks.map((lm,i)=>({...lm}));
+                        AI_SAG_5_POINTS.forEach(pt=>{
+                          const p = updated[pt.id];
+                          if (p) {
+                            merged[pt.mpIdx] = {x:p.x, y:p.y, z:0, visibility:1.0};
+                            // mirror to opposite side for measurement engine
+                            const mirror = pt.mpIdx+1;
+                            if (mirror<33) merged[mirror]={x:p.x, y:p.y, z:0, visibility:1.0};
+                          }
+                        });
+                        processLandmarks(merged, view, null);
+                        setAiSagActive(false);
+                      },50);
+                    }
+                    return updated;
+                  });
+                }}
+                style={{borderRadius:14,overflow:"hidden",border:`1px solid ${aiSagActive?"#a78bfa":PC.border}`,boxShadow:isWide?"0 4px 20px rgba(0,0,0,0.08)":"none",background:PC.s2,position:"relative",transition:"border-color 0.2s",cursor:aiSagActive?"crosshair":"default"}}>
                 {/* Layer 1: original photo — always visible, never a blank/black canvas */}
                 <img
                   src={rawUploadedImg||uploadedImg}
@@ -8397,43 +8421,86 @@ function PostureAnalysisModule(){
                     <div style={{padding:"10px 18px",borderRadius:10,background:"rgba(0,0,0,0.75)",color:"#fff",fontSize:"0.78rem",fontWeight:700}}>⏳ Analysing…</div>
                   </div>
                 )}
+
+                {/* 5-point dot overlay */}
+                {aiSagActive&&AI_SAG_5_POINTS.map(pt=>{
+                  const p=aiSagPlaced[pt.id]; if(!p) return null;
+                  return(
+                    <div key={pt.id} style={{position:"absolute",left:`${p.x*100}%`,top:`${p.y*100}%`,transform:"translate(-50%,-50%)",pointerEvents:"none",zIndex:20}}>
+                      <div style={{width:14,height:14,borderRadius:"50%",background:pt.color,border:"2px solid white",boxShadow:`0 0 6px ${pt.color}`}}/>
+                      <span style={{position:"absolute",left:16,top:-4,fontSize:"0.58rem",fontWeight:800,color:pt.color,whiteSpace:"nowrap",textShadow:"0 1px 3px rgba(0,0,0,0.9)"}}>{pt.label}</span>
+                    </div>
+                  );
+                })}
+                {/* Tap target hint */}
+                {aiSagActive&&(()=>{
+                  const remaining=AI_SAG_5_POINTS.filter(p=>!aiSagPlaced[p.id]);
+                  if (!remaining.length) return null;
+                  const next=remaining[0];
+                  return(
+                    <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.75)",color:next.color,padding:"5px 12px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:20}}>
+                      👆 Tap: {next.label} — {next.desc}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
-            {/* ── Plumb Line Manual Adjustment ── shows for lateral views when analysis done */}
-            {inputMode==="ai" && (view==="left"||view==="right") && landmarks && !analysing && (
-              <div style={{marginTop:8,padding:"10px 14px",background:"rgba(0,229,255,0.06)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:12}}>
+            {/* ── 5-Point Manual Landmark Selector (AI mode, lateral views) ── */}
+            {inputMode==="ai" && (view==="left"||view==="right") && (uploadedImg||rawUploadedImg) && !analysing && (
+              <div style={{marginTop:8,padding:"10px 14px",background:"rgba(167,139,250,0.06)",border:`1px solid ${aiSagActive?"rgba(167,139,250,0.5)":"rgba(167,139,250,0.2)"}`,borderRadius:12,transition:"border-color 0.2s"}}>
+                {/* Header row */}
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-                  <span style={{fontSize:"0.7rem",fontWeight:800,color:"#00e5ff",textTransform:"uppercase",letterSpacing:"0.5px"}}>
-                    ⊕ Plumb Line
+                  <span style={{fontSize:"0.7rem",fontWeight:800,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.5px"}}>
+                    📍 Landmark Refine
                   </span>
-                  <span style={{fontSize:"0.65rem",color:"#7e6a9a"}}>
-                    {(!landmarks[27]||landmarks[27].visibility<0.3)&&(!landmarks[28]||landmarks[28].visibility<0.3)
-                      ? "⚠️ Ankle not detected — adjust manually"
-                      : "Drag to reposition if ankle is cropped"}
-                  </span>
+                  <div style={{display:"flex",gap:5}}>
+                    {Object.keys(aiSagPlaced).length>0&&(
+                      <button onClick={()=>{
+                        const keys=Object.keys(aiSagPlaced);
+                        const last=AI_SAG_5_POINTS.slice().reverse().find(p=>aiSagPlaced[p.id]);
+                        if(last){setAiSagPlaced(prev=>{const n={...prev};delete n[last.id];return n;});}
+                      }} style={{padding:"3px 9px",borderRadius:7,border:"1px solid rgba(248,174,113,0.4)",background:"rgba(248,174,113,0.1)",color:"#f8ae71",fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>↩ Undo</button>
+                    )}
+                    {Object.keys(aiSagPlaced).length>0&&(
+                      <button onClick={()=>{setAiSagPlaced({});setAiSagActive(false);}} style={{padding:"3px 9px",borderRadius:7,border:"1px solid rgba(255,77,109,0.4)",background:"rgba(255,77,109,0.08)",color:"#ff4d6d",fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>✕ Clear</button>
+                    )}
+                    <button onClick={()=>setAiSagActive(v=>!v)} style={{padding:"3px 12px",borderRadius:7,border:`1px solid ${aiSagActive?"#a78bfa":"rgba(167,139,250,0.4)"}`,background:aiSagActive?"rgba(167,139,250,0.2)":"transparent",color:"#a78bfa",fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>
+                      {aiSagActive?"✓ Placing…":"✋ Place Points"}
+                    </button>
+                  </div>
                 </div>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:"0.65rem",color:"#7e6a9a",minWidth:16}}>←</span>
-                  <input
-                    type="range" min={-15} max={15} step={0.5} value={plumbAdjCm}
-                    onChange={e=>setPlumbAdjCm(Number(e.target.value))}
-                    style={{flex:1,accentColor:"#00e5ff",cursor:"pointer"}}
-                  />
-                  <span style={{fontSize:"0.65rem",color:"#7e6a9a",minWidth:16}}>→</span>
-                  <span style={{fontSize:"0.72rem",fontWeight:800,color:"#00e5ff",minWidth:44,textAlign:"right"}}>
-                    {plumbAdjCm>0?"+":""}{plumbAdjCm.toFixed(1)} cm
-                  </span>
-                  {plumbAdjCm!==0&&(
-                    <button
-                      onClick={()=>setPlumbAdjCm(0)}
-                      style={{padding:"3px 10px",borderRadius:7,border:"1px solid rgba(255,77,109,0.4)",background:"rgba(255,77,109,0.1)",color:"#ff4d6d",fontSize:"0.65rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}
-                    >↺ Reset</button>
-                  )}
+
+                {/* 5-point progress chips */}
+                <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:aiSagActive?8:0}}>
+                  {AI_SAG_5_POINTS.map((pt,i)=>{
+                    const done=!!aiSagPlaced[pt.id];
+                    const isNext=aiSagActive&&!done&&AI_SAG_5_POINTS.slice(0,i).every(p=>aiSagPlaced[p.id]);
+                    return(
+                      <div key={pt.id} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:20,border:`1px solid ${done?pt.color:isNext?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.1)"}`,background:done?`${pt.color}20`:isNext?"rgba(255,255,255,0.05)":"transparent",transition:"all 0.2s"}}>
+                        <div style={{width:7,height:7,borderRadius:"50%",background:done?pt.color:"rgba(255,255,255,0.2)",boxShadow:done?`0 0 4px ${pt.color}`:"none"}}/>
+                        <span style={{fontSize:"0.6rem",fontWeight:700,color:done?pt.color:isNext?"rgba(255,255,255,0.7)":"rgba(255,255,255,0.3)"}}>{pt.label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div style={{fontSize:"0.6rem",color:"#7e6a9a",marginTop:4,fontStyle:"italic"}}>
-                  Positive = shift anterior · Negative = shift posterior · Recalculates all measurements
-                </div>
+
+                {/* Instruction when active */}
+                {aiSagActive&&(()=>{
+                  const n=AI_SAG_5_POINTS.find(p=>!aiSagPlaced[p.id]);
+                  return n?(
+                    <div style={{fontSize:"0.62rem",color:"#a78bfa",fontStyle:"italic"}}>
+                      👆 Tap on the photo to mark: <strong style={{color:n.color}}>{n.label}</strong> ({n.desc})
+                    </div>
+                  ):(
+                    <div style={{fontSize:"0.62rem",color:"#34d399",fontWeight:700}}>✓ All 5 placed — re-analysing…</div>
+                  );
+                })()}
+                {!aiSagActive&&Object.keys(aiSagPlaced).length===0&&(
+                  <div style={{fontSize:"0.6rem",color:"#7e6a9a",fontStyle:"italic"}}>
+                    If AI missed a landmark, use this to correct ear · shoulder · hip · knee · ankle and re-run sagittal analysis.
+                  </div>
+                )}
               </div>
             )}
           </div>
