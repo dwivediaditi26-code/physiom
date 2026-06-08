@@ -10622,7 +10622,7 @@ function BodyChartWidget({ data, set, compact = false }) {
           <div key={m.id}
             onMouseEnter={() => setHovered(m.id)} onMouseLeave={() => setHovered(null)}
             onClick={interactive ? (e) => { e.stopPropagation(); set("body_chart", markers.filter(x => x.id !== m.id)); } : undefined}
-            style={{ position:"absolute", left:cx, top:cy, transform:"translate(-50%,-50%)",
+            style={{ position:"absolute", left:cx, top:cy,
               width: compact ? 9 : 18, height: compact ? 9 : 18, borderRadius:"50%",
               background:pt.color, border:`${compact?1.5:2}px solid white`,
               boxShadow:`0 0 ${compact?4:8}px ${pt.color}90`,
@@ -12356,7 +12356,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
               fontSize:"0.8rem",color:"#3a5070"}}>🔍</span>
             <input value={search} onChange={e=>setSearch(e.target.value)}
               placeholder="Search name, diagnosis, occupation…"
-              style={{width:"100%",background:"rgba(255,255,255,0.03)",
+              style={{width:"100%",
                 border:"1px solid #E5E7EB",borderRadius:9,color:"#111827",background:"#F9FAFB",
                 outline:"none",padding:"8px 12px 8px 30px",fontSize:"0.76rem",boxSizing:"border-box"}}/>
           </div>
