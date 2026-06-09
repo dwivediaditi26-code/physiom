@@ -606,6 +606,43 @@ export default function HybridKendall({
         )}
       </div>
 
+      {!advancedMode&&(
+        <button onClick={()=>setAdvancedMode(true)} style={{width:"100%",padding:"11px 14px",borderRadius:10,border:"2px dashed rgba(52,211,153,0.4)",background:"rgba(52,211,153,0.04)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:"1.3rem"}}>🔬</span>
+          <div>
+            <div style={{fontSize:"0.72rem",fontWeight:800,color:"#34d399",marginBottom:2}}>Enable Advanced Mode</div>
+            <div style={{fontSize:"0.6rem",color:"#64748b",lineHeight:1.5}}>Place C7 · T12 · S2 for TCI/LCI · ASIS + PSIS for Pelvic Tilt · Enables full Kendall Pattern Classification</div>
+          </div>
+          <span style={{marginLeft:"auto",fontSize:"0.65rem",fontWeight:800,color:"#34d399",whiteSpace:"nowrap",flexShrink:0}}>Tap →</span>
+        </button>
+      )}
+
+      {/* ── Advanced landmarks ── */}
+      {advancedMode && (
+        <div style={{background:C.s2,borderRadius:10,border:`1px solid ${C.green}30`,padding:"10px 12px"}}>
+          <div style={{fontSize:"0.6rem",fontWeight:800,color:C.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>
+            Advanced Landmarks — unlocks TCI · LCI · Pelvic Tilt
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5}}>
+            {ADVANCED_LANDMARKS.map(def=>{
+              const placed = !!lm[def.id];
+              const isActive = activePlace === def.id;
+              return (
+                <button key={def.id}
+                  onClick={()=>setActivePlace(isActive ? null : def.id)}
+                  style={{padding:"6px 4px",borderRadius:7,border:`1.5px solid ${isActive?def.color:placed?def.color+"60":C.border}`,background:isActive?`${def.color}20`:placed?`${def.color}10`:"transparent",color:isActive?def.color:placed?def.color:C.muted,fontSize:"0.55rem",fontWeight:700,cursor:"pointer",textAlign:"center"}}>
+                  <div>{placed?"✅":"📍"}</div>
+                  <div style={{fontWeight:800,fontSize:"0.57rem"}}>{def.label}</div>
+                  {placed && <div style={{fontSize:"0.48rem",opacity:0.7}}>{def.desc.split(" ")[0]}</div>}
+                  {placed && <button onClick={e=>{e.stopPropagation();setLm(p=>{const n={...p};delete n[def.id];return n;});}} style={{marginTop:2,width:"100%",border:"none",background:"rgba(255,77,109,0.15)",color:"#ff4d6d",borderRadius:4,fontSize:"0.48rem",fontWeight:700,cursor:"pointer"}}>✕</button>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
       {/* ── Photo + SVG overlay ── */}
       {imgSrc && (
         <div style={{position:"relative",borderRadius:12,overflow:"hidden",border:`2px solid ${confirmed?C.green:activePlace?C.yellow:C.accent}`,background:C.s2}}>
@@ -734,42 +771,6 @@ export default function HybridKendall({
               </div>
             );
           })()}
-        </div>
-      )}
-
-      {!advancedMode&&(
-        <button onClick={()=>setAdvancedMode(true)} style={{width:"100%",padding:"11px 14px",borderRadius:10,border:"2px dashed rgba(52,211,153,0.4)",background:"rgba(52,211,153,0.04)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:"1.3rem"}}>🔬</span>
-          <div>
-            <div style={{fontSize:"0.72rem",fontWeight:800,color:"#34d399",marginBottom:2}}>Enable Advanced Mode</div>
-            <div style={{fontSize:"0.6rem",color:"#64748b",lineHeight:1.5}}>Place C7 · T12 · S2 for TCI/LCI · ASIS + PSIS for Pelvic Tilt · Enables full Kendall Pattern Classification</div>
-          </div>
-          <span style={{marginLeft:"auto",fontSize:"0.65rem",fontWeight:800,color:"#34d399",whiteSpace:"nowrap",flexShrink:0}}>Tap →</span>
-        </button>
-      )}
-
-      {/* ── Advanced landmarks ── */}
-      {advancedMode && (
-        <div style={{background:C.s2,borderRadius:10,border:`1px solid ${C.green}30`,padding:"10px 12px"}}>
-          <div style={{fontSize:"0.6rem",fontWeight:800,color:C.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>
-            Advanced Landmarks — unlocks TCI · LCI · Pelvic Tilt
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5}}>
-            {ADVANCED_LANDMARKS.map(def=>{
-              const placed = !!lm[def.id];
-              const isActive = activePlace === def.id;
-              return (
-                <button key={def.id}
-                  onClick={()=>setActivePlace(isActive ? null : def.id)}
-                  style={{padding:"6px 4px",borderRadius:7,border:`1.5px solid ${isActive?def.color:placed?def.color+"60":C.border}`,background:isActive?`${def.color}20`:placed?`${def.color}10`:"transparent",color:isActive?def.color:placed?def.color:C.muted,fontSize:"0.55rem",fontWeight:700,cursor:"pointer",textAlign:"center"}}>
-                  <div>{placed?"✅":"📍"}</div>
-                  <div style={{fontWeight:800,fontSize:"0.57rem"}}>{def.label}</div>
-                  {placed && <div style={{fontSize:"0.48rem",opacity:0.7}}>{def.desc.split(" ")[0]}</div>}
-                  {placed && <button onClick={e=>{e.stopPropagation();setLm(p=>{const n={...p};delete n[def.id];return n;});}} style={{marginTop:2,width:"100%",border:"none",background:"rgba(255,77,109,0.15)",color:"#ff4d6d",borderRadius:4,fontSize:"0.48rem",fontWeight:700,cursor:"pointer"}}>✕</button>}
-                </button>
-              );
-            })}
-          </div>
         </div>
       )}
 
