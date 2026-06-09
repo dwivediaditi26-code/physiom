@@ -868,7 +868,7 @@ function PostureCameraModule({ activePatient, set }) {
         if (activeView === "left" || activeView === "right") {
           cr = await analyzeSagittalContour(img, lm, activeView).catch(() => null);
           setContourResult(cr);
-          const sagittal = buildSagittalFindings(lm, activeView, m, cr, clinicianVerified);
+          const sagittal = buildSagittalFindings(lm, activeView, m, cr, clinicianVerified, sagManualLandmarks);
           const legacy   = ClinicalFindingsEngine(lm, activeView, m) || [];
           const filtered = legacy.filter(fi => !isDeprecatedLateralFinding(fi));
           f = [...sagittal, ...filtered];
@@ -927,7 +927,7 @@ function PostureCameraModule({ activePatient, set }) {
         if (uploadView === "left" || uploadView === "right") {
           cr = await analyzeSagittalContour(img, lm, uploadView).catch(() => null);
           setContourResult(cr);
-          const sagittal = buildSagittalFindings(lm, uploadView, m, cr, clinicianVerified);
+          const sagittal = buildSagittalFindings(lm, uploadView, m, cr, clinicianVerified, sagManualLandmarks);
           const legacy   = ClinicalFindingsEngine(lm, uploadView, m) || [];
           const filtered = legacy.filter(fi => !isDeprecatedLateralFinding(fi));
           f = [...sagittal, ...filtered];
@@ -1947,77 +1947,36 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   // Cervical compressive load (estimated cervical load proxy model, only if real cm measurement available)
   const cervicalLoadKg = CERVICAL_LOAD_KG(forwardHeadCm);
 
-  // ── THORACIC KYPHOSIS (lateral view only) ─────────────────────────────────
-  // Estimated from shoulder-to-hip vector deviation from vertical (proxy method).
-  // In a lateral view: sagittal trunk inclination reflects combined C/T/L curves.
-  // The thoracic kyphosis estimate is only clinically interpretable in a lateral view.
-  // Normal: 20–45° Cobb equivalent. This is a SCREEN, not a Cobb measurement.
-  // Thoracic kyphosis proxy from trunk inclination.
-  // In lateral view, bilateral midpoints are often null (far-side invisible) — fall back
-  // to the visible single-side shoulder + hip (sagSh/sagHip) so kyphosis is always detected.
-  const thoracicShRef = shMid || (isLateralView ? sagSh : null);
-  const thoracicHipRef = hipMid || (isLateralView ? sagHip : null);
-  let thoracicAngle = null;
-  if (thoracicShRef && thoracicHipRef) {
-    const dx = thoracicShRef.x - thoracicHipRef.x; // +ve = shoulders anterior to hips
-    const dy = Math.abs(thoracicShRef.y - thoracicHipRef.y);
-    if (dy > 0.06) {
-      // Base angle from trunk inclination; offset to clinical kyphosis range
-      const inclination = Math.atan2(Math.abs(dx), dy) * 180 / Math.PI;
-      // Inclination 0° = perfectly vertical trunk → normal kyphosis ~32°
-      // Inclination 5° → ~40°, 10° → ~50°, 15° → ~60°
-      thoracicAngle = r1(clamp(32 + inclination * 1.8, 20, 80));
-    }
-  }
+  // ── THORACIC KYPHOSIS — REMOVED invalid trunk-lean proxy ─────────────────
+  // thoracicAngle = 32 + rawAngle × 1.8 DELETED.
+  // Shoulder-Hip inclination ≠ thoracic curvature. Replaced by TCI in sagittalFindings.js.
+  const thoracicAngle = null; // intentionally null — use TCI from contour instead
 
-  // ── LUMBAR / PELVIC TILT (lateral view) ───────────────────────────────────
-  // Lumbar proxy: horizontal offset of hip midpoint from midpoint of knee+heel
-  // +ve = hips anterior to knees → anterior pelvic tilt / hyperlordosis
-  // -ve = hips posterior → posterior tilt / flat back
-  let lumbarProxy = null, lordosisAngle = null;
-  if (hipMid && kneeMid && heelMid) {
-    const kneeHeelMidX = (kneeMid.x + heelMid.x) / 2;
-    lumbarProxy = r1((hipMid.x - kneeHeelMidX) * 100);
-  }
-  // Lordosis from real-world z-depth (_wz from poseWorldLandmarks, in metres)
-  // sagHip._wz vs sagKnee._wz: positive difference = hip more posterior (APT/lordosis)
+  // ── LUMBAR / LORDOSIS — REMOVED invalid hip-knee proxy ───────────────────
+  // lordosisAngle = 50 + (wHip−wKnee)×1.8 DELETED.
+  // Hip-knee z-depth ≠ lumbar lordosis. Replaced by LCI in sagittalFindings.js.
+  const lordosisAngle = null; // intentionally null — use LCI from contour instead
+
+  // World Z retained for plumb chain but NOT used for angle synthesis
   const wHip   = sagHip?._wz ?? null;
   const wSh    = sagSh?._wz  ?? null;
   const wKnee  = sagKnee?._wz ?? null;
   const wAnkle = sagAnkle?._wz ?? null;
   const wEar   = sagEar?._wz  ?? null;
 
-  // Kyphosis: angle from T1 (shoulder) to T12 (lower thorax proxy) in 3D
-  // We use shoulder-hip vector in world space. Shoulder z - Hip z gives anterior lean.
-  // lordosisAngle: from hip-knee z-depth (L5-S1 curve proxy)
-  if (wHip !== null && wKnee !== null && Math.abs(wHip-wKnee) > 0.01) {
-    // APT: hip z more positive than knee z (hip more posterior in world coords)
-    const lordProxy = (wHip - wKnee) * 100; // cm
-    lordosisAngle = r1(clamp(50 + lordProxy * 1.8, 15, 90));
-  } else if (hasZ && hipZ !== null && kneeZ !== null && Math.abs(hipZ-kneeZ) > 0.005) {
-    lordosisAngle = r1(clamp(50 + (hipZ-kneeZ)*100*2.2, 15, 85));
+  // Lumbar proxy: retained for sway-back pattern detection (plumb-based, not angle)
+  let lumbarProxy = null;
+  if (hipMid && kneeMid && heelMid) {
+    const kneeHeelMidX = (kneeMid.x + heelMid.x) / 2;
+    lumbarProxy = r1((hipMid.x - kneeHeelMidX) * 100);
   }
 
-  // Thoracic kyphosis from world z: shoulder z vs hip z
-  // In MediaPipe world coords, z is depth from camera. For lateral photo:
-  // More negative wSh than wHip = shoulder closer to camera = more anterior = kyphosis.
-  if (wSh !== null && wHip !== null) {
-    // z: negative = toward camera (anterior). kyphProxy > 0 = shoulder more anterior than hip.
-    const kyphProxy = (wHip - wSh) * 100; // positive when shoulder is more anterior
-    const kyphEst = r1(clamp(32 + kyphProxy * 3.0, 15, 85));
-    if (thoracicAngle === null) {
-      // No 2D estimate — use z directly
-      if (kyphEst > 20) thoracicAngle = kyphEst;
-    } else if (kyphEst > thoracicAngle + 5) {
-      // Z-depth shows significantly more kyphosis than 2D proxy — blend them
-      thoracicAngle = r1((thoracicAngle * 0.4 + kyphEst * 0.6));
-    }
-  }
-
-  // Pelvic tilt sagittal: alias of lumbarProxy for naming consistency
-  const pelvicTiltSagittal = lumbarProxy;
-  const anteriorPelvicTiltDeg = lumbarProxy !== null && calibration?.frameHeightPx
-    ? r1(clamp(Math.abs(lumbarProxy) * 0.75, 0, 38)) : null;
+  // ── PELVIC TILT — requires ASIS + PSIS; not available from MediaPipe ──────
+  // pelvicTiltSagittal REMOVED. ASIS and PSIS are not detected by MediaPipe.
+  // Hip-knee-heel proxy ≠ pelvic tilt angle.
+  // Set to null — downstream gates must check for ASIS/PSIS from manual placement.
+  const pelvicTiltSagittal    = null; // requires manual ASIS/PSIS landmarks
+  const anteriorPelvicTiltDeg = null; // requires manual ASIS/PSIS landmarks
 
   // Hip plumb line deviation (lateral view)
   const hipExtensionProxy = hipMid && ankleMid ? r1((hipMid.x - ankleMid.x)*100) : null;
@@ -2497,187 +2456,36 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         "M43.6", "⇒", "Obtain lateral photo for CVA measurement — more accurate than frontal view proxy.", "Normal: ear over acromion", abs);
     }
 
-    // Thoracic kyphosis
-    if (thoracicAngle !== null && thoracicAngle - 45 > 8) {
-      const excess = thoracicAngle - 45;
-      add("Thoracic Kyphosis (Trunk Lean Est.)", `Increased thoracic kyphosis (~${thoracicAngle.toFixed(0)}°, normal 20–45°)`, excess > 18 ? "high" : "moderate",
-        `Thoracic extension HVLA T4–T8 (PA + rotation). Foam roller extension apex ×2min daily. Wall angels ×15. Pec minor stretch 60s ×3. Lower trap: prone Y-T-W. Rib expansion breathing. Seated posture: lumbar roll support.`,
-        "M40.2", "⌒", `Normal thoracic kyphosis 20–45° (Magee 6th ed. p.611). Hyperkyphosis >50°. This measurement is a trunk lean PROXY — not a true Cobb angle; X-ray required for confirmation. If structural: Scheuermann's (>5° wedging ≥3 vertebrae on X-ray).`, "Normal: 20–45°", thoracicAngle);
-    }
+    // ── THORACIC KYPHOSIS FINDING — removed (trunk-lean proxy deleted) ─────────
+    // Replaced by TCI (ThoracicCurvatureIndex) in sagittalFindings.js via contour.
 
-    // Pelvic tilt sagittal
-    if (pelvicTiltSagittal !== null && Math.abs(pelvicTiltSagittal) > 4) {
-      const abs = Math.abs(pelvicTiltSagittal); const ant = pelvicTiltSagittal > 0;
-      const angleNote = anteriorPelvicTiltDeg !== null ? ` (~${anteriorPelvicTiltDeg.toFixed(0)}° tilt, female norm ~12°, male norm ~7°)` : "";
-      const lordNote  = lordosisAngle !== null ? ` Est. lordosis: ${lordosisAngle.toFixed(0)}° (normal 40–60°).` : "";
-      add("Lumbar / Pelvis",
-        ant ? `Anterior pelvic tilt${angleNote} — increased lumbar lordosis` : `Posterior pelvic tilt${angleNote} — flat back`,
-        abs > 9 ? "high" : "moderate",
-        ant
-          ? `INHIBIT (SMR ×90s): psoas, RF, TFL. STRETCH: couch stretch 90s/side, 90-90 hip flexor. ACTIVATE: glute max (bridges ×15), TA (dead bug ×10). CORRECT: pelvic posterior tilt awareness. Thomas test to confirm hip flexor contracture. 90/90 hamstring length check.`
-          : `Lumbar extension mobilisation PA L1–L5 grade III–IV. McKenzie extension: prone → press-up. Hip flexor facilitation. Assess erector spinae/multifidus tone. Sahrmann lumbar flexion syndrome screen.`,
-        "M53.3", "↕",
-        ant
-          ? `ASIS drops below PSIS — hip flexor/erector overactivity. LCS pattern. Increases lumbar disc posterior load.${lordNote}`
-          : `PSIS inferior to ASIS — hamstring/abdominal overactivity or gluteal inhibition.${lordNote}`,
-        ant ? "Normal APT: female ≤12°, male ≤7°" : "Normal lordosis: 40–60°", abs);
-    } else if ((pelvicTiltSagittal === null) && lumbarProxy !== null && Math.abs(lumbarProxy) > 4) {
-      const abs = Math.abs(lumbarProxy); const ant = lumbarProxy > 0;
-      add("Lumbar / Pelvis", `${ant ? "Anterior" : "Posterior"} pelvic tilt pattern`, abs > 8 ? "high" : "moderate",
-        ant
-          ? `Hip flexor stretch ×60s. Glute activation — bridges ×15. TVA bracing. Pelvic tilt awareness drills.`
-          : `Lumbar extension mobilisation. Hip flexor facilitation. Multifidus activation. McKenzie extension.`,
-        "M53.3", "↕", "", "", abs);
-    }
+    // ── PELVIC TILT FINDING — removed (hip-knee proxy deleted) ───────────────
+    // Pelvic tilt requires ASIS + PSIS landmarks (not available from MediaPipe).
+    // Gate enforced in sagittalFindings.js: fires ONLY when manualPelvis is placed.
+    // When ASIS/PSIS absent: displays "Pelvic Tilt Not Directly Measured".
 
-    // ── LUMBAR LORDOSIS — independent finding ─────────────────────────────────
-    if (lordosisAngle !== null) {
-      if (lordosisAngle > 60) {
-        const excess = lordosisAngle - 60;
-        add("Lumbar — Hyperlordosis",
-          `Increased lumbar lordosis (~${lordosisAngle.toFixed(0)}°, normal 40–60°)`,
-          excess > 20 ? "high" : "moderate",
-          `INHIBIT: iliopsoas (couch stretch 90s×2), rectus femoris (prone heel-to-glute). ACTIVATE: glute max (bridges ×15 with posterior pelvic tilt), TA (dead bug). Pelvic clock: anterior → neutral → posterior tilt awareness. Assess hip flexor contracture (Thomas test).`,
-          "M40.5", "↕",
-          `Hyperlordosis: ASIS drops below PSIS. Increases L4–L5 disc posterior compression and facet loading. Associated with hip flexor tightness and gluteal inhibition.`,
-          "Normal: 40–60°", lordosisAngle);
-      } else if (lordosisAngle < 30) {
-        add("Lumbar — Flat Back / Reduced Lordosis",
-          `Reduced lumbar lordosis (~${lordosisAngle.toFixed(0)}°, normal 40–60°)`,
-          lordosisAngle < 20 ? "high" : "moderate",
-          `McKenzie extension progression: prone → prone on elbows → press-up. Lumbar PA mobilisation Grade III–IV L1–L5. Hip flexor facilitation. Erector spinae activation. Sahrmann lumbar flexion syndrome screen. Lumbar roll support for sitting.`,
-          "M40.4", "↕",
-          `Flat back: PSIS at same level or below ASIS. Increases anterior disc shear force and hamstring/abdominal overactivity. Reduced shock absorption capacity.`,
-          "Normal: 40–60°", lordosisAngle);
-      }
-    }
+    // ── LUMBAR LORDOSIS FINDING — removed (z-depth proxy deleted) ────────────
+    // Replaced by LCI (LumbarCurvatureIndex) in sagittalFindings.js via contour.
 
-    // ── SWAY-BACK POSTURE ─────────────────────────────────────────────────────
-    // Pattern: hips posterior to plumb + thoracic posterior + FHP
-    // hipExtensionProxy < -4 = hips behind plumb; thoracicAngle < 38 = less kyphosis
-    const hipBehindPlumb = hipExtensionProxy !== null && hipExtensionProxy < -4;
+    // ── SWAY-BACK ─────────────────────────────────────────────────────────────
+    // Retained as plumb-chain pattern (hip plumb + shoulder plumb), NOT angle-based.
+    const hipBehindPlumb    = hipExtensionProxy !== null && hipExtensionProxy < -4;
     const hasReducedLordosis = lumbarProxy !== null && lumbarProxy < -3;
     if (hipBehindPlumb && hasReducedLordosis) {
-      add("Posture Pattern — Sway-Back",
-        `Sway-back posture: hips posterior to plumb, flat lumbar, thoracic lean`,
+      add("Plumb Chain Pattern — Sway-Back Tendency",
+        `Plumb chain: hips posterior to ankle plumb, reduced hip-knee-heel alignment`,
         "moderate",
-        `INHIBIT: hamstrings (slump stretch, seated), abdominals (reduce over-bracing). ACTIVATE: hip flexors (psoas activation — standing hip flexion ×15), lumbar extensors (prone hip extension). Postural cue: shift hips forward over ankles. Lumbar roll support in sitting.`,
+        `Plumb chain observation only. Activate hip flexors. Shift hips forward over ankle. Confirm with contour analysis.`,
         "M40.3", "⟲",
-        `Sway-back: pelvis shifts anterior, hips posterior to plumb. Hamstring + abdominal overactivity. Hip ligament loading increases. Associated with inactive standing posture and hypermobility.`,
-        "Ideal: hip over plumb", null);
+        `Hips behind plumb + lumbar chain reduced. This is a PLUMB LINE OBSERVATION — not an angle measurement. Sway-back classification requires TCI + LCI + pelvic tilt confirmation.`,
+        "Ideal: hip over ankle plumb", null);
     }
 
-    // ── MILITARY / FLAT POSTURE ───────────────────────────────────────────────
-    // Reduced thoracic kyphosis + reduced lordosis + upright head (no FHP)
-    const isMilitaryPosture = thoracicAngle !== null && thoracicAngle < 30
-      && (lumbarProxy === null || Math.abs(lumbarProxy) < 3)
-      && (cvaAngle === null || cvaAngle > 58);
-    if (isMilitaryPosture) {
-      add("Posture Pattern — Military / Flat Back",
-        `Military/flat-back posture: reduced thoracic kyphosis and lumbar lordosis`,
-        "moderate",
-        `Thoracic mobility: foam roller extension at T4–T8 ×2min daily. Rib expansion breathing ×10. Restore natural curve: McKenzie press-ups (lumbar). Cervical retraction (NOT chin tuck). Reassure: flat-back is not always symptomatic — assess function.`,
-        "M40.4", "⊥",
-        `Flat/military: all spinal curves reduced. Poor sagittal shock absorption. Often asymptomatic but predisposes to disc overload in end-range activities. Screen for Scheuermann's.`,
-        "Normal: T kyphosis 20–45°, L lordosis 40–60°", null);
-    }
-
-    // ── UPPER CROSSED SYNDROME (UCS) — sagittal flag ─────────────────────────
-    // FHP + thoracic kyphosis + rounded shoulders (shoulder anterior to plumb)
-    const shAnteriorToPlumb = hipExtensionProxy !== null && shPt && shPt.x !== undefined;
-    const hasUCS_sagittal = cvaAngle !== null && cvaAngle < 52
-      && thoracicAngle !== null && thoracicAngle > 45;
-    if (hasUCS_sagittal) {
-      add("Upper Crossed Pattern Tendency",
-        `OBSERVATION: Forward head tendency + thoracic curvature combination — may be consistent with upper crossed pattern characteristics. Clinical confirmation required.`,
-        cvaAngle < 45 ? "moderate" : "low",
-        `Possible contributors: habitual loading patterns, respiratory dysfunction, occupational postures, pectoralis minor adaptations. Recommended confirmation tests: deep neck flexor endurance test (chin nod hold >38s), lower trap strength (prone Y), pec minor length test (supine shoulder drop), wall angel test. Clinical muscle testing required before treatment targeting these muscles.`,
-        "M62.8", "○",
-        `OBSERVATION ONLY. Forward head tendency (CVA ${cvaAngle?.toFixed(0)}°) combined with increased thoracic curvature may be associated with upper crossed pattern characteristics (Janda). Cannot be confirmed from a photograph alone. Manual muscle testing and length assessment required to identify specific muscle contributions.`,
-        "Ideal: CVA >55°, kyphosis 20–45° (observation only)", cvaAngle);
-    }
-
-    // ── LOWER CROSSED SYNDROME (LCS) — sagittal flag ─────────────────────────
-    // Anterior pelvic tilt + hyperlordosis + hip anterior to plumb
-    const hasLCS_sagittal = pelvicTiltSagittal !== null && pelvicTiltSagittal > 5
-      && thoracicAngle !== null && thoracicAngle > 42;
-    if (hasLCS_sagittal) {
-      add("Lower Crossed Pattern Tendency",
-        `OBSERVATION: Anterior pelvic tendency + thoracic curvature combination — may be consistent with lower crossed pattern characteristics. Clinical confirmation required.`,
-        pelvicTiltSagittal > 10 ? "moderate" : "low",
-        `Possible contributors: habitual anterior pelvic loading, hip flexor adaptations, prolonged sitting postures, reduced gluteal contribution. Recommended confirmation tests: Thomas test (hip flexor length), Ely's test (rectus femoris length), Trendelenburg test (glute med), prone hip extension firing pattern. Clinical assessment required before treatment.`,
-        "M62.8", "○",
-        `OBSERVATION ONLY. Anterior pelvic tendency (${pelvicTiltSagittal?.toFixed(1)}% deviation) combined with thoracic curvature may be associated with lower crossed pattern characteristics (Janda). Cannot be confirmed from a photograph alone. Manual muscle testing and Thomas test required to confirm hip flexor and gluteal contributions.`,
-        "Ideal: APT <7° female / <5° male (observation only)", pelvicTiltSagittal);
-    }
-
-    // ── POSTURAL PATTERN LABEL — sagittal classification ─────────────────────
-    // Adds a clear top-level pattern label to findings (Kendall classification)
-    {
-      const hasFHP_f      = cvaAngle !== null && cvaAngle < 52;
-      const hasKyph_f     = thoracicAngle !== null && thoracicAngle > 48;
-      const hasLord_f     = lordosisAngle !== null && lordosisAngle > 60;
-      const hasFlat_f     = lordosisAngle !== null && lordosisAngle < 30;
-      const hasSway_f     = hipBehindPlumb && hasReducedLordosis;
-      const hasMilitary_f = isMilitaryPosture;
-
-      let patternName = "Ideal Alignment";
-      let patternTx   = "Maintain with: global stability training, thoracic mobility, hip flexibility.";
-      let patternNote = "Plumb line passes through ear, acromion, greater trochanter, lateral knee and lateral malleolus. No significant sagittal deviations.";
-      let patternSev  = null; // null = don't add if ideal
-
-      if (hasSway_f) {
-        patternName = "Sway-Back Posture";
-        patternTx   = "Activate hip flexors. Shift hips forward. Lumbar extension mobility.";
-        patternNote = "Hips posterior to plumb, flat lumbar, forward trunk lean. Hamstring/abdominal dominance.";
-        patternSev  = "moderate";
-      } else if (hasMilitary_f) {
-        patternName = "Military / Flat-Back Posture";
-        patternTx   = "Restore thoracic curve: foam roller extension. Restore lordosis: McKenzie.";
-        patternNote = "Reduced thoracic kyphosis and lumbar lordosis. All curves diminished.";
-        patternSev  = "moderate";
-      } else if (hasFHP_f && hasKyph_f && hasLord_f) {
-        patternName = "Lordotic-Kyphotic (UCS + LCS)";
-        patternTx   = "Full postural correction programme. Address UCS and LCS simultaneously.";
-        patternNote = "FHP + hyperkyphosis + hyperlordosis. Classic combined Upper and Lower Crossed Syndrome.";
-        patternSev  = "high";
-      } else if (hasKyph_f && hasLord_f) {
-        patternName = "Lordotic-Kyphotic Posture";
-        patternTx   = "Thoracic extension + hip flexor stretch + glute activation.";
-        patternNote = "Thoracic kyphosis increased + lumbar lordosis increased. S-curve amplification.";
-        patternSev  = "moderate";
-      } else if (hasKyph_f && !hasLord_f) {
-        patternName = "Kyphotic Posture (Thoracic)";
-        patternTx   = "Thoracic extension foam roller + lower trapezius + pec minor stretch.";
-        patternNote = "Increased thoracic kyphosis as primary finding. Scheuermann's or sedentary posture.";
-        patternSev  = "moderate";
-      } else if (hasLord_f && !hasKyph_f) {
-        patternName = "Lordotic Posture";
-        patternTx   = "Hip flexor inhibition + glute max activation + pelvic tilt awareness.";
-        patternNote = "Hyperlordosis + anterior pelvic tilt. LCS pattern without significant thoracic component.";
-        patternSev  = "moderate";
-      } else if (hasFlat_f) {
-        patternName = "Flat-Back Posture";
-        patternTx   = "McKenzie extension + lumbar roll support + erector facilitation.";
-        patternNote = "Reduced lumbar lordosis. Disc anterior shear risk. Assess hamstring and abdominal dominance.";
-        patternSev  = "moderate";
-      } else if (hasFHP_f && !hasKyph_f) {
-        patternName = "Forward Head Posture (Isolated)";
-        patternTx   = "DNF activation. Thoracic extension. Ergonomic review.";
-        patternNote = "FHP without significant thoracic kyphosis. Cervical extensor overactivation. Screen and desk posture.";
-        patternSev  = "moderate";
-      }
-
-      if (patternSev !== null) {
-        add(`Sagittal Pattern — ${patternName}`,
-          `Classification: ${patternName}`,
-          patternSev,
-          patternTx,
-          "Z96.89", "◈",
-          patternNote,
-          "Ideal: Lordotic-Kyphotic-Lordotic balanced alignment", null);
-      }
-    }
+    // ── PATTERN CLASSIFICATION — gate: all segments must be available ─────────
+    // Pattern label only fires when TCI + LCI + pelvic + shoulder are all resolved.
+    // These come from sagittalFindings.js (contour + manual). Here we fire a
+    // placeholder if contour is not yet available.
+    // Full pattern classification is in sagittalFindings.js buildKendallClassification.
 
     // Knee genu recurvatum
     // In lateral views (left/right), only the camera-facing knee is reliably visible.
@@ -3064,21 +2872,11 @@ function measureLandmarks(lm, calibration, view="anterior") {
     cervicalLoadKg = r1(clamp(4.5 + fhpDevCm * 1.08, 4.5, 32));
   }
 
-  // ── 3. Thoracic kyphosis proxy ─────────────────────────────────────────────
-  // Better method: shoulder→hip sagittal horizontal displacement vs vertical span.
-  // Positive horizontal offset of shoulder ANTERIOR to hip = kyphotic tendency.
-  // Note: in lateral view, shoulder visible = one-sided measurement is meaningful.
-  let thoracicAngle = null;
-  if (sagShVis && sagHipVis) {
-    const dx = sagSh.x - sagHip.x;   // positive = shoulder anterior to hip
-    const dy = Math.abs(sagSh.y - sagHip.y);
-    if (dy > 0.06) {
-      // Angle from vertical: higher angle = more trunk lean / kyphosis tendency
-      const rawAngle = Math.atan2(Math.abs(dx), dy) * 180 / Math.PI;
-      // Calibrate to clinical kyphosis scale (32° normal baseline)
-      thoracicAngle = r1(clamp(32 + rawAngle * 1.8, 20, 80));
-    }
-  }
+  // ── 3. Thoracic kyphosis proxy — REMOVED ────────────────────────────────────
+  // Trunk-lean proxy (32 + rawAngle × 1.8) deleted. TCI replaces it.
+  const thoracicAngle = null;
+  // thoracicAngle proxy deleted — trunk lean ≠ thoracic curvature
+  // TCI is computed in sagittalFindings.js from body contour instead
 
   // ── 4. Trunk lean (global sagittal alignment) ──────────────────────────────
   // Shoulder vs ankle horizontal: positive = shoulder anterior to ankle
@@ -6686,6 +6484,20 @@ function PostureAnalysisModule(){
   // 5-point sagittal refine (AI mode, lateral views)
   const [aiSagPlaced,setAiSagPlaced]=useState({});  // {ear,shoulder,hip,knee,ankle} → {x,y} normalised
   const [aiSagActive,setAiSagActive]=useState(false); // tap-to-place mode on/off
+  // Manual spinal landmarks for TCI/LCI/pelvic tilt
+  // {c7Y, t12Y, s2Y}: normalised trunk-height fractions (0=shoulder, 1=hip)
+  // {asis, psis}: {x,y} normalised image coordinates
+  // {patientSex}: "Male" | "Female"
+  const [manualSpinal,setManualSpinal]=useState({}); // {c7Y, t12Y, s2Y, asis, psis}
+  // Build sagManualLandmarks object passed to buildSagittalFindings
+  const sagManualLandmarks = {
+    c7Y:       manualSpinal.c7Y   ?? undefined,
+    t12Y:      manualSpinal.t12Y  ?? undefined,
+    s2Y:       manualSpinal.s2Y   ?? undefined,
+    asis:      manualSpinal.asis  ?? null,
+    psis:      manualSpinal.psis  ?? null,
+    patientSex: patientInfo?.sex ?? "Female",
+  };
   const aiSagImgRef=useRef(null);
   const manualImgRef=useRef(null);
   const manualContainerRef=useRef(null);
@@ -7015,7 +6827,7 @@ function PostureAnalysisModule(){
             const mLocal=measureLandmarks(result.lm,null,view)||{};
             const cr=await analyzeSagittalContour(imgEl,result.lm,view).catch(()=>null);
             if(!cr) return;
-            const sagF=buildSagittalFindings(result.lm,view,mLocal,cr,false);
+            const sagF=buildSagittalFindings(result.lm,view,mLocal,cr,false,sagManualLandmarks);
             setFindings(prev=>[...sagF,...prev.filter(fi=>{
               const reg=fi.region||fi.category||"";
               return !["Thoracic Kyphosis","Lumbar — Hyperlordosis","Lumbar — Flat Back",
