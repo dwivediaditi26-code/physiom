@@ -571,6 +571,41 @@ export default function HybridKendall({
         </div>
       </div>
 
+
+      {/* ── Landmark buttons ABOVE photo ── */}
+      <div style={{background:C.s2,borderRadius:10,border:`1px solid ${C.border}`,padding:"10px 12px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:7}}>
+          <div style={{fontSize:"0.62rem",fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>
+            {confirmed?<span style={{color:C.green}}>✓ Landmarks Confirmed</span>:"Place Landmarks"}
+          </div>
+          {!confirmed&&<span style={{fontSize:"0.55rem",color:C.muted}}>Tap button → tap photo below</span>}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:5,marginBottom:8}}>
+          {PRIMARY_LANDMARKS.map(def=>{
+            const placed=!!lm[def.id],isActive=activePlace===def.id;
+            const isNext=!isActive&&!placed&&PRIMARY_LANDMARKS.filter(p=>!lm[p.id])[0]?.id===def.id;
+            return(<button key={def.id} onClick={()=>setActivePlace(isActive?null:def.id)}
+              style={{padding:"7px 4px",borderRadius:9,border:`1.5px solid ${isActive?def.color:placed?def.color+"70":isNext?"rgba(255,255,255,0.3)":C.border}`,background:isActive?`${def.color}25`:placed?`${def.color}12`:isNext?"rgba(255,255,255,0.04)":"transparent",color:isActive?def.color:placed?def.color:isNext?"rgba(255,255,255,0.85)":C.muted,fontSize:"0.6rem",fontWeight:700,cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
+              <div style={{fontSize:"0.85rem",marginBottom:2}}>{placed?"✅":isNext?"👆":"📍"}</div>
+              <div style={{fontWeight:800,fontSize:"0.6rem"}}>{def.label}</div>
+              <div style={{fontSize:"0.5rem",marginTop:1,opacity:0.75}}>{isActive?"tap photo ↓":placed?"✓ placed":isNext?"← next":def.desc.split(" ")[0]}</div>
+            </button>);
+          })}
+        </div>
+        {allPrimary&&!confirmed&&(
+          <button onClick={()=>{setConfirmed(true);const{findings:f,segmentStatus:s}=buildKendallFindings(measurements,patientSex);onFindingsChange?.(f,measurements,s);}}
+            style={{width:"100%",padding:"11px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.accent},#7c3aed)`,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",marginBottom:4}}>
+            ✅ CONFIRM LANDMARKS → ANALYSE
+          </button>
+        )}
+        {confirmed&&(
+          <button onClick={()=>setConfirmed(false)}
+            style={{width:"100%",padding:"7px",borderRadius:8,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>
+            ↩ Re-adjust landmarks
+          </button>
+        )}
+      </div>
+
       {/* ── Photo + SVG overlay ── */}
       {imgSrc && (
         <div style={{position:"relative",borderRadius:12,overflow:"hidden",border:`2px solid ${confirmed?C.green:activePlace?C.yellow:C.accent}`,background:C.s2}}>

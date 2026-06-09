@@ -8284,8 +8284,9 @@ function PostureAnalysisModule(){
               </div>
             )}
 
-            {/* AI mode image — always show original photo; overlay annotated result on top */}
-            {inputMode==="ai"&&(rawUploadedImg||uploadedImg)&&(
+            {/* AI mode image — hidden for lateral views (HybridKendall shows its own photo) */}
+            {inputMode==="ai"&&(rawUploadedImg||uploadedImg)&&
+              !(view==="left"||view==="right")&&(
               <div ref={aiSagImgRef}
                 onClick={e=>{
                   const rect = e.currentTarget.getBoundingClientRect();
