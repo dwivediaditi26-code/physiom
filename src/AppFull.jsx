@@ -934,8 +934,11 @@ function PostureCameraModule({ activePatient, set }) {
           const sagittal = buildSagittalFindings(lm, uploadView, m, cr, clinicianVerified, sagManualLandmarks);
           // Seed HybridKendall with ViTPose landmarks (lateral views)
           if (uploadView === "left" || uploadView === "right") {
-            // Store raw ViTPose landmarks for HybridKendall auto-placement
             setHybridSeedLandmarks(lm);
+            // Clear kendall findings so user starts fresh with new photo
+            setKendallFindings(null);
+            setKendallMeasurements(null);
+            setKendallSegmentStatus(null);
           }
           const legacy   = ClinicalFindingsEngine(lm, uploadView, m) || [];
           const filtered = legacy.filter(fi => !isDeprecatedLateralFinding(fi));
@@ -8334,13 +8337,14 @@ function PostureAnalysisModule(){
                   alt="Uploaded"
                   style={{width:"100%",display:"block",opacity:analysing?0.55:1,transition:"opacity 0.3s"}}
                 />
-                {/* Layer 2: annotated overlay — shown once analysis produces a result */}
-                {uploadedImg&&uploadedImg!==rawUploadedImg&&!analysing&&(
+                {/* Layer 2: annotated overlay — hidden in lateral views once Kendall is active */}
+                {uploadedImg&&uploadedImg!==rawUploadedImg&&!analysing&&
+                  !(kendallFindings && (view==="left"||view==="right"))&&(
                   <img
                     src={uploadedImg}
                     alt="Analysed overlay"
                     style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"fill",display:"block",pointerEvents:"none"}}
-                    onError={e=>{ e.target.style.display="none"; }} // hide silently if canvas was tainted/black
+                    onError={e=>{ e.target.style.display="none"; }}
                   />
                 )}
 

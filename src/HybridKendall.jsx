@@ -592,7 +592,7 @@ export default function HybridKendall({
                 const y = (lm.ear?.y ?? 0) + i*cmFrac;
                 if (y > 1.05) break;
                 const isMajor = i % 5 === 0;
-                lines.push(<line key={`h${i}`} x1="0" y1={y} x2="1" y2={y} stroke={isMajor?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.06)"} strokeWidth={isMajor?"0.003":"0.001"}/>);
+                if (isMajor) lines.push(<line key={`h${i}`} x1="0" y1={y} x2="1" y2={y} stroke="rgba(255,255,255,0.10)" strokeWidth="0.002"/>);
               }
               return <g>{lines}</g>;
             })()}
@@ -614,15 +614,15 @@ export default function HybridKendall({
               { id:"knee",     pct:m.kneePlumb, color:"#34d399" },
             ].map(seg => {
               const p = lm[seg.id]; if (!p || seg.pct === null) return null;
-              const label = `${seg.pct > 0 ? "+" : ""}${seg.pct}% BH`;
+              const lbl = `${seg.pct > 0 ? "+" : ""}${seg.pct}%`;
+              // Place label on the side further from plumb (avoids centre clutter)
+              const labelX = p.x > plumbX ? p.x + 0.012 : plumbX + 0.012;
               return (
                 <g key={seg.id}>
                   <line x1={p.x} y1={p.y} x2={plumbX} y2={p.y}
-                    stroke={seg.color} strokeWidth="0.003" strokeDasharray="0.01,0.006" opacity="0.8"/>
-                  <rect x={Math.min(p.x,plumbX)+Math.abs(p.x-plumbX)*0.2-0.015} y={p.y-0.025}
-                    width="0.10" height="0.022" rx="0.003" fill="rgba(0,0,0,0.7)"/>
-                  <text x={Math.min(p.x,plumbX)+Math.abs(p.x-plumbX)*0.2-0.009} y={p.y-0.009}
-                    fontSize="0.018" fill={seg.color} fontWeight="bold" fontFamily="system-ui">{label}</text>
+                    stroke={seg.color} strokeWidth="0.002" strokeDasharray="0.008,0.005" opacity="0.75"/>
+                  <rect x={labelX-0.002} y={p.y-0.013} width="0.052" height="0.015" rx="0.002" fill="rgba(0,0,0,0.72)"/>
+                  <text x={labelX} y={p.y-0.003} fontSize="0.012" fill={seg.color} fontWeight="bold" fontFamily="system-ui">{lbl}</text>
                 </g>
               );
             })}
@@ -634,10 +634,10 @@ export default function HybridKendall({
                 <g>
                   <line x1={lm.ear.x} y1={lm.ear.y} x2={target.x} y2={target.y}
                     stroke="#00e5ff" strokeWidth="0.004" opacity="0.9"/>
-                  <rect x={lm.ear.x+(target.x-lm.ear.x)*0.45-0.02} y={lm.ear.y+(target.y-lm.ear.y)*0.45-0.03}
-                    width="0.1" height="0.022" rx="0.003" fill="rgba(0,0,0,0.75)"/>
-                  <text x={lm.ear.x+(target.x-lm.ear.x)*0.45-0.014} y={lm.ear.y+(target.y-lm.ear.y)*0.45-0.015}
-                    fontSize="0.020" fill="#00e5ff" fontWeight="bold" fontFamily="system-ui">CVA {m.cva}°</text>
+                  <rect x={lm.ear.x+(target.x-lm.ear.x)*0.4-0.018} y={lm.ear.y+(target.y-lm.ear.y)*0.4+0.004}
+                    width="0.072" height="0.015" rx="0.002" fill="rgba(0,0,0,0.78)"/>
+                  <text x={lm.ear.x+(target.x-lm.ear.x)*0.4-0.014} y={lm.ear.y+(target.y-lm.ear.y)*0.4+0.014}
+                    fontSize="0.012" fill="#00e5ff" fontWeight="bold" fontFamily="system-ui">CVA {m.cva}°</text>
                 </g>
               );
             })()}
@@ -660,17 +660,19 @@ export default function HybridKendall({
             {LM_ALL.map(def => {
               const p = lm[def.id];
               if (!p) return null;
-              const r = def.group === "pelvis" ? 0.024 : 0.020;
+              const r = def.group === "pelvis" ? 0.016 : 0.013;
               return (
                 <g key={def.id} style={{cursor:"grab"}}
                   onMouseDown={e=>{e.stopPropagation();setDragging(def.id);setConfirmed(false);}}
                   onTouchStart={e=>{e.stopPropagation();setDragging(def.id);setConfirmed(false);}}>
-                  <circle cx={p.x} cy={p.y} r={r+0.006} fill="rgba(0,0,0,0.5)"/>
-                  <circle cx={p.x} cy={p.y} r={r} fill={def.color} stroke="white" strokeWidth="0.005"
-                    opacity={confirmed?1:0.85}/>
-                  {/* Label */}
-                  <rect x={p.x+r+0.004} y={p.y-0.016} width="0.08" height="0.020" rx="0.003" fill="rgba(0,0,0,0.7)"/>
-                  <text x={p.x+r+0.007} y={p.y-0.002} fontSize="0.015" fill={def.color} fontWeight="bold" fontFamily="system-ui">{def.label}</text>
+                  {/* Hit area (invisible, larger for easy touch) */}
+                  <circle cx={p.x} cy={p.y} r={r+0.012} fill="transparent"/>
+                  <circle cx={p.x} cy={p.y} r={r+0.003} fill="rgba(0,0,0,0.5)"/>
+                  <circle cx={p.x} cy={p.y} r={r} fill={def.color} stroke="white" strokeWidth="0.004"
+                    opacity={confirmed?1:0.9}/>
+                  {/* Label — right of dot, small */}
+                  <rect x={p.x+r+0.003} y={p.y-0.013} width="0.068" height="0.016" rx="0.002" fill="rgba(0,0,0,0.72)"/>
+                  <text x={p.x+r+0.005} y={p.y-0.001} fontSize="0.012" fill={def.color} fontWeight="bold" fontFamily="system-ui">{def.label}</text>
                 </g>
               );
             })}
