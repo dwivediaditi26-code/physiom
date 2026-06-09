@@ -15,6 +15,7 @@ import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
 import { analyzeSagittalContour, renderContourDebugOverlay, warmupContourEngine } from "./contourEngine";
 import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
+import HybridKendall from "./HybridKendall";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POSE_CONNECTIONS = [
@@ -869,6 +870,9 @@ function PostureCameraModule({ activePatient, set }) {
           cr = await analyzeSagittalContour(img, lm, activeView).catch(() => null);
           setContourResult(cr);
           const sagittal = buildSagittalFindings(lm, activeView, m, cr, clinicianVerified, sagManualLandmarks);
+          if (activeView === "left" || activeView === "right") {
+            setHybridSeedLandmarks(lm);
+          }
           const legacy   = ClinicalFindingsEngine(lm, activeView, m) || [];
           const filtered = legacy.filter(fi => !isDeprecatedLateralFinding(fi));
           f = [...sagittal, ...filtered];
@@ -928,6 +932,11 @@ function PostureCameraModule({ activePatient, set }) {
           cr = await analyzeSagittalContour(img, lm, uploadView).catch(() => null);
           setContourResult(cr);
           const sagittal = buildSagittalFindings(lm, uploadView, m, cr, clinicianVerified, sagManualLandmarks);
+          // Seed HybridKendall with ViTPose landmarks (lateral views)
+          if (uploadView === "left" || uploadView === "right") {
+            // Store raw ViTPose landmarks for HybridKendall auto-placement
+            setHybridSeedLandmarks(lm);
+          }
           const legacy   = ClinicalFindingsEngine(lm, uploadView, m) || [];
           const filtered = legacy.filter(fi => !isDeprecatedLateralFinding(fi));
           f = [...sagittal, ...filtered];
@@ -6474,6 +6483,30 @@ function PostureAnalysisModule(){
 
   // ── Manual landmark placement state ─────────────────────────────────────────
   const [inputMode,setInputMode]=useState("ai");        // "ai" | "manual"
+  // Hybrid Kendall mode — receives findings when user confirms landmarks
+  const [kendallFindings,setKendallFindings]=useState(null);
+  const [kendallMeasurements,setKendallMeasurements]=useState(null);
+  const [kendallSegmentStatus,setKendallSegmentStatus]=useState(null);
+  const handleKendallFindings = (findings, measurements, segmentStatus) => {
+    setKendallFindings(findings);
+    setKendallMeasurements(measurements);
+    setKendallSegmentStatus(segmentStatus);
+    // Convert to the app's finding format for display in the results panel
+    const converted = findings.filter(f=>f.severity&&f.severity!=="Info"&&f.severity!=="Normal").map(f=>({
+      region: f.category,
+      text: f.label,
+      severity: (f.severity||"moderate").toLowerCase(),
+      plain: f.label,
+      correction: "",
+      icd: "",
+      norm: "",
+      _debug: f._debug,
+      _kendall: true,
+    }));
+    if (converted.length > 0 || findings.some(f=>f.id==="kendall_pattern")) {
+      setFindings(findings.map(f=>({...f, region:f.category, text:f.label})));
+    }
+  };
   // photoOrientation: "selfie" = mirrored (front camera, x-axis is flipped — MediaPipe default)
   //                   "standard" = non-mirrored (separate camera, patient's left = image left)
   // Impact: all frontal L/R labels swap between modes.
@@ -6489,6 +6522,7 @@ function PostureAnalysisModule(){
   // {asis, psis}: {x,y} normalised image coordinates
   // {patientSex}: "Male" | "Female"
   const [manualSpinal,setManualSpinal]=useState({}); // {c7Y, t12Y, s2Y, asis, psis}
+  const [hybridSeedLandmarks,setHybridSeedLandmarks]=useState(null); // raw ViTPose lm for HybridKendall
   // spinalLevelMode: which vertebral level is being tapped next
   const [spinalLevelMode,setSpinalLevelMode]=useState(null); // null | 'c7' | 't12'
   // Helper: get shoulder and hip Y (normalised 0-1) from current landmarks or manual placement
@@ -8367,6 +8401,18 @@ function PostureAnalysisModule(){
                   </div>
                 )}
               </div>
+            )}
+
+            {/* ── Hybrid Kendall Mode — lateral views ── */}
+            {(view==="left"||view==="right") && (uploadedImg||rawUploadedImg) && (
+              <HybridKendall
+                imgSrc={rawUploadedImg||uploadedImg}
+                vitposeLandmarks={hybridSeedLandmarks}
+                view={view}
+                patientSex={patientInfo?.sex||"Female"}
+                onFindingsChange={handleKendallFindings}
+                isWide={isWide}
+              />
             )}
 
             {/* ── 5-Point Manual Landmark Selector (AI mode, lateral views) ── */}
