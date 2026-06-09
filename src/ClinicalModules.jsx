@@ -471,7 +471,7 @@ function GaitModule({ data, set }) {
     {key:"plan",     label:"Plan & Goals",   icon:"📋"},
   ];
   const tb = k=>({padding:"7px 11px",borderRadius:20,cursor:"pointer",fontSize:"0.72rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
-  const inp = {width:"100%",background:C.s3,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
+  const inp = {width:"100%",background:C.s3,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem",WebkitAppearance:"none",appearance:"none"};
   const row = (label, id, type="text", opts=null, note=null)=>{
     const val=data[id]||"";
     return(
@@ -3501,7 +3501,7 @@ function SOAPNoteModule({ data, set }) {
                       {label:"Positive Special Tests", val: Object.keys(data).filter(k=>k.startsWith("st_")&&data[k]==="Positive").slice(0,3).map(k=>{const NAMES={st_spurling:"Spurling's",st_lachmans:"Lachman's",st_slump_test:"Slump",st_hawkins:"Hawkins-Kennedy",st_neer:"Neer's",st_mcmurray_test:"McMurray's",st_faber_test:"FABER",st_slr_test:"SLR"};return NAMES[k]||k.replace(/^st_/,"").replace(/_/g," ");}).join(", ")||""},
                       {label:"MMT Findings", val: Object.keys(data).filter(k=>k.startsWith("mmt_")&&data[k]).slice(0,3).map(k=>k.replace("mmt_","").replace(/_/g," ")+" "+data[k]).join(", ")||""},
                       {label:"Posture", val: Object.keys(data).filter(k=>k.startsWith("posture_defect_")&&data[k]).slice(0,3).map(k=>k.replace("posture_defect_","").replace(/_/g," ")).join(", ")||""},
-                      {label:"Palpation", val: data.palp_findings||data.palpation_notes||""},
+                      {label:"Palpation", val: (()=>{ try{ const pins=JSON.parse(data.palp_pins||"[]"); if(pins.length>0){ const pts=pins.slice(0,4).map(p=>p.label+(p.tenderness?` (${p.tenderness}+)`:"")); return pts.join(", ")+(pins.length>4?` +${pins.length-4} more`:""); } } catch(e){} return data.palp_findings||data.palpation_notes||""; })()},
                     ],
                     A:[
                       {label:"Working Diagnosis", val: data.soap_a_diagnosis||data.soap_assessment||""},
@@ -5994,13 +5994,13 @@ function PalpationModule({ data, set }) {
   // Serialize pins to shared data whenever they change
   useEffect(() => {
     if (!set) return;
-    set(prev => ({ ...prev, palp_pins: JSON.stringify(pins) }));
+    set("palp_pins", JSON.stringify(pins));
   }, [pins]);
 
   const inp = {
     width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8,
     color:C.text, padding:"8px 10px", fontSize:"0.75rem", fontFamily:"inherit",
-    outline:"none", resize:"vertical",
+    outline:"none", resize:"vertical", WebkitAppearance:"none", appearance:"none",
   };
 
   return (
@@ -6496,7 +6496,7 @@ function TreatmentTechniquesModule({ data, set }) {
   const TAPING_TYPES = ["McConnell — Patellar medial glide","McConnell — Patellar tilt correction","McConnell — Patellar rotation","McConnell — Shoulder posture","Kinesio — Pain inhibition","Kinesio — Muscle facilitation","Kinesio — Muscle inhibition","Kinesio — Fascia correction","Kinesio — Lymphatic drainage","Rigid sports tape — ankle","Rigid sports tape — wrist","Rigid sports tape — AC joint","Zinc oxide — blister prevention","Leukotape — posture correction","Dynamic tape — load transfer"];
   const ELECTRO_TYPES = ["TENS — conventional (80–150Hz)","TENS — acupuncture-like (2–4Hz)","TENS — burst","IFT — 80–150Hz (pain)","IFT — 1–10Hz (muscle stim)","NMES — quadriceps","NMES — glutes","Russian stim","LASER — class 3B","LASER — class 4","Shockwave — radial","Shockwave — focused","Biofeedback EMG"];
 
-  const inp = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.75rem" };
+  const inp = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.75rem", WebkitAppearance:"none", appearance:"none" };
   const sel = { ...inp };
   const ta  = { ...inp, resize:"vertical", minHeight:60 };
   const lbl = { fontSize:"0.6rem", fontWeight:700, color:PC.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:"0.8px" };
@@ -6792,7 +6792,7 @@ function TreatmentSessionLogModule({ data, set }) {
   const save = (next) => { setSessions(next); if(set) set("tx_sessions", next); };
   const fset = (k,v) => setForm(p=>({...p,[k]:v}));
 
-  const inp = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.75rem" };
+  const inp = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.75rem", WebkitAppearance:"none", appearance:"none" };
   const ta  = { ...inp, resize:"vertical", minHeight:70 };
   const lbl = { fontSize:"0.6rem", fontWeight:700, color:PC.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:"0.8px" };
 

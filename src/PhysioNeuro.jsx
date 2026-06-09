@@ -1701,7 +1701,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
   const [showAsiaGuide, setShowAsiaGuide] = useState(false);
   const [dermImgModal, setDermImgModal] = useState(null);
 
-  const inp = { width:"100%", background:C.s3, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit" };
+  const inp = { width:"100%", background:C.s3, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit", WebkitAppearance:"none", appearance:"none" };
 
   // Deep-link highlight: scroll to specific dermatome or neural test card
   React.useEffect(()=>{

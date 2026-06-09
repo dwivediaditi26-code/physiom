@@ -979,6 +979,10 @@ function PostureCameraModule({ activePatient, set }) {
         @keyframes tapFocus{0%{transform:scale(1);opacity:1}100%{transform:scale(2.5);opacity:0}}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+        select,option{background:#f5f0fb!important;color:#1a1025!important;-webkit-appearance:none;appearance:none;}
+        select:focus{outline:none;border-color:#7c3aed!important;}
+        input[type=number],input[type=text],input[type=email],textarea{background:#f5f0fb!important;color:#1a1025!important;}
+        input[type=number]::-webkit-inner-spin-button{opacity:1;}
       `}</style>
 
       {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
@@ -10426,33 +10430,76 @@ export function BodyChartInteractive({ data, set, compact = false }) {
       {/* Chart container */}
       <div ref={containerRef} onClick={handleClick}
         style={{ position:"relative", width:"100%", cursor:"crosshair",
-          borderRadius:12, overflow:"hidden", background:"#000",
-          border:"1.5px solid #E5E7EB", userSelect:"none" }}>
+          borderRadius:12, overflow:"hidden", background:"#f5f0fb",
+          border:"1.5px solid #d8cce8", userSelect:"none" }}>
 
-        <img src={BODY_CHART_IMG} alt="Body Chart"
-          style={{ width:"100%", display:"block", opacity: imgLoaded ? 1 : 0, transition:"opacity 0.3s" }}
-          onLoad={() => setImgLoaded(true)}
-          onError={e => { e.target.style.opacity="0.2"; setImgLoaded(true); }} />
+        {/* Inline SVG body silhouette — front / left / right / back views */}
+        <svg viewBox="0 0 400 220" width="100%" style={{display:"block",background:"#f5f0fb"}}>
+          {/* ANTERIOR */}
+          <g transform="translate(0,0)">
+            <text x="50" y="12" textAnchor="middle" fontSize="6" fontWeight="700" fill="#9c7bd0" letterSpacing="0.5">ANTERIOR</text>
+            {/* Head */}<ellipse cx="50" cy="30" rx="11" ry="13" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
+            {/* Neck */}<rect x="46" y="43" width="8" height="8" rx="2" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Torso */}<rect x="35" y="51" width="30" height="42" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
+            {/* L Arm */}<rect x="20" y="53" width="13" height="30" rx="6" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Arm */}<rect x="67" y="53" width="13" height="30" rx="6" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Forearm */}<rect x="17" y="85" width="12" height="26" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Forearm */}<rect x="71" y="85" width="12" height="26" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Thigh */}<rect x="36" y="94" width="13" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Thigh */}<rect x="51" y="94" width="13" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Shin */}<rect x="37" y="130" width="11" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Shin */}<rect x="52" y="130" width="11" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Foot */}<ellipse cx="42" cy="163" rx="7" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Foot */}<ellipse cx="57" cy="163" rx="7" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+          </g>
+          {/* LEFT LATERAL */}
+          <g transform="translate(100,0)">
+            <text x="50" y="12" textAnchor="middle" fontSize="6" fontWeight="700" fill="#9c7bd0" letterSpacing="0.5">LEFT LAT</text>
+            <ellipse cx="50" cy="30" rx="11" ry="13" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
+            <rect x="46" y="43" width="8" height="8" rx="2" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="38" y="51" width="22" height="42" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
+            <rect x="58" y="53" width="11" height="28" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="59" y="83" width="10" height="24" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="40" y="94" width="16" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="41" y="130" width="14" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <ellipse cx="48" cy="163" rx="9" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+          </g>
+          {/* RIGHT LATERAL */}
+          <g transform="translate(200,0)">
+            <text x="50" y="12" textAnchor="middle" fontSize="6" fontWeight="700" fill="#9c7bd0" letterSpacing="0.5">RIGHT LAT</text>
+            <ellipse cx="50" cy="30" rx="11" ry="13" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
+            <rect x="46" y="43" width="8" height="8" rx="2" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="40" y="51" width="22" height="42" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
+            <rect x="31" y="53" width="11" height="28" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="31" y="83" width="10" height="24" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="44" y="94" width="16" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="45" y="130" width="14" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <ellipse cx="52" cy="163" rx="9" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+          </g>
+          {/* POSTERIOR */}
+          <g transform="translate(300,0)">
+            <text x="50" y="12" textAnchor="middle" fontSize="6" fontWeight="700" fill="#9c7bd0" letterSpacing="0.5">POSTERIOR</text>
+            <ellipse cx="50" cy="30" rx="11" ry="13" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
+            <rect x="46" y="43" width="8" height="8" rx="2" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="35" y="51" width="30" height="42" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
+            <rect x="20" y="53" width="13" height="30" rx="6" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="67" y="53" width="13" height="30" rx="6" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="17" y="85" width="12" height="26" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="71" y="85" width="12" height="26" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="36" y="94" width="13" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="51" y="94" width="13" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="37" y="130" width="11" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <rect x="52" y="130" width="11" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <ellipse cx="42" cy="163" rx="7" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            <ellipse cx="57" cy="163" rx="7" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+          </g>
+        </svg>
 
-        {!imgLoaded && (
-          <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center",
-            justifyContent:"center", color:"#9CA3AF", fontSize:"0.75rem" }}>
-            Loading body chart…
-          </div>
-        )}
 
-        {/* View labels */}
-        {[["Anterior","3%"],["Left Lat","28%"],["Right Lat","53%"],["Posterior","78%"]].map(([lbl,left]) => (
-          <div key={lbl} style={{ position:"absolute", top:4, left, fontSize:"0.55rem",
-            fontWeight:700, color:"rgba(255,255,255,0.6)", letterSpacing:"0.5px",
-            textTransform:"uppercase", pointerEvents:"none" }}>
-            {lbl}
-          </div>
-        ))}
 
         {/* Markers SVG overlay */}
         <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }}
-          viewBox="0 0 100 100" preserveAspectRatio="none">
+          viewBox="0 0 400 220" preserveAspectRatio="none">
           {markers.map(m => {
             const t = SYMPTOM_TYPES.find(x => x.id === m.type) || SYMPTOM_TYPES[0];
             return (
@@ -13361,7 +13408,6 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
               {[
                 {l:"Pain NRS",v:activeNRS>0?`${activeNRS}/10`:"—",s:worstNRS>activeNRS?`↓ from ${worstNRS}`:"not recorded"},
                 {l:"Sessions",v:String(activeSess.length),s:"completed"},
-                {l:"Recovery",v:`${recoveryPct}%`,s:recoveryPct>50?"on track":"early stage"},
               ].map(m=>(
                 <div key={m.l} style={{flex:1,background:"rgba(255,255,255,0.14)",borderRadius:11,padding:"8px 9px"}}>
                   <div style={{fontSize:14,fontWeight:800,color:"white",lineHeight:1}}>{m.v}</div>
@@ -13370,16 +13416,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                 </div>
               ))}
             </div>
-            <div>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                <span style={{fontSize:10,color:"rgba(255,255,255,0.65)",fontWeight:600}}>Recovery Progress</span>
-                <span style={{fontSize:10,color:"white",fontWeight:800}}>{recoveryPct}%</span>
-              </div>
-              <div style={{height:5,background:"rgba(255,255,255,0.18)",borderRadius:99,overflow:"hidden"}}>
-                <div style={{height:"100%",width:mounted?`${recoveryPct}%`:"0%",background:"white",
-                  borderRadius:99,transition:"width 1.3s cubic-bezier(.4,0,.2,1) 0.2s"}}/>
-              </div>
-            </div>
+
           </div>
         ) : (
           <div className="dc" style={{background:"white",borderRadius:20,padding:"20px",
@@ -13666,26 +13703,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           )}
         </div>
 
-        {/* ── RECOVERY TREND ── */}
-        <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
-          border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
-          animationDelay:"0.25s"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-            <div>
-              <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>Recovery Trend</div>
-              <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>
-                {activeSess.length>0?`${activeSess.length} sessions · NRS improvement`:"All patients · monthly"}
-              </div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#6D28D9",letterSpacing:"-1px"}}>{recoveryPct}%</div>
-              <div style={{fontSize:10,color:recoveryPct>50?"#059669":"#9CA3AF",fontWeight:600}}>
-                {recoveryPct>50?"↑ improving":"↗ in progress"}
-              </div>
-            </div>
-          </div>
-          <TrendChart data={trendData}/>
-        </div>
+
 
         {/* ── PATIENT OUTCOMES ── */}
         <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
