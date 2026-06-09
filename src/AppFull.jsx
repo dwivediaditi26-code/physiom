@@ -10433,73 +10433,224 @@ export function BodyChartInteractive({ data, set, compact = false }) {
           borderRadius:12, overflow:"hidden", background:"#f5f0fb",
           border:"1.5px solid #d8cce8", userSelect:"none" }}>
 
-        {/* Inline SVG body silhouette — front / left / right / back views */}
+        {/* Inline SVG body silhouette — proportioned to match click detection bands */}
         <svg viewBox="0 0 400 220" width="100%" style={{display:"block",background:"#f5f0fb"}}>
           {/* ANTERIOR */}
           <g transform="translate(0,0)">
-            <text x="50" y="12" textAnchor="middle" fontSize="6" fontWeight="700" fill="#9c7bd0" letterSpacing="0.5">ANTERIOR</text>
-            {/* Head */}<ellipse cx="50" cy="30" rx="11" ry="13" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
-            {/* Neck */}<rect x="46" y="43" width="8" height="8" rx="2" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* Torso */}<rect x="35" y="51" width="30" height="42" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
-            {/* L Arm */}<rect x="20" y="53" width="13" height="30" rx="6" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* R Arm */}<rect x="67" y="53" width="13" height="30" rx="6" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* L Forearm */}<rect x="17" y="85" width="12" height="26" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* R Forearm */}<rect x="71" y="85" width="12" height="26" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* L Thigh */}<rect x="36" y="94" width="13" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* R Thigh */}<rect x="51" y="94" width="13" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* L Shin */}<rect x="37" y="130" width="11" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* R Shin */}<rect x="52" y="130" width="11" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* L Foot */}<ellipse cx="42" cy="163" rx="7" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            {/* R Foot */}<ellipse cx="57" cy="163" rx="7" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Head fills y 0-17.6 */}
+            <ellipse cx="50" cy="8.5" rx="10" ry="8.5" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1.2"/>
+            {/* Ears */}
+            <ellipse cx="39.5" cy="8" rx="1.8" ry="3" fill="rgba(124,58,237,0.1)" stroke="#7c3aed" strokeWidth="0.8"/>
+            <ellipse cx="60.5" cy="8" rx="1.8" ry="3" fill="rgba(124,58,237,0.1)" stroke="#7c3aed" strokeWidth="0.8"/>
+            {/* Face detail */}
+            <line x1="44" y1="7" x2="46" y2="7" stroke="#9c7bd0" strokeWidth="0.7"/>
+            <line x1="54" y1="7" x2="56" y2="7" stroke="#9c7bd0" strokeWidth="0.7"/>
+            <path d="M46 11 Q50 13 54 11" fill="none" stroke="#9c7bd0" strokeWidth="0.7"/>
+            {/* Neck fills y 17.6-30.8 */}
+            <rect x="46" y="17" width="8" height="14" rx="3" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Clavicles at y 30.8 */}
+            <path d="M37 31 Q44 28 50 30 Q56 28 63 31" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Torso y 30.8-136.4 */}
+            <path d="M37 31 Q30 37 29 53 L29 100 Q29 118 33 127 L33 136 L67 136 L67 127 Q71 118 71 100 L71 53 Q70 37 63 31 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1.2"/>
+            {/* Sternum */}
+            <line x1="50" y1="31" x2="50" y2="95" stroke="#9c7bd0" strokeWidth="0.6" strokeDasharray="2,2"/>
+            {/* Navel */}
+            <circle cx="50" cy="100" r="1.5" fill="#9c7bd0" opacity="0.5"/>
+            {/* L Upper Arm y 30.8-74.8 */}
+            <path d="M29 36 Q22 40 20 53 L19 75 Q20 78 24 79 L27 75 L28 53 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Upper Arm */}
+            <path d="M71 36 Q78 40 80 53 L81 75 Q80 78 76 79 L73 75 L72 53 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Forearm y 74.8-96.8 */}
+            <path d="M19 75 Q16 80 15 88 L15 97 Q16 99 19 99 L24 99 Q27 99 28 97 L28 75 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Forearm */}
+            <path d="M81 75 Q84 80 85 88 L85 97 Q84 99 81 99 L76 99 Q73 99 72 97 L72 75 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Hand y 96.8-118.8 */}
+            <ellipse cx="21" cy="108" rx="6" ry="10" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Fingers L */}
+            <line x1="16" y1="110" x2="14" y2="118" stroke="#7c3aed" strokeWidth="0.8"/>
+            <line x1="18" y1="116" x2="17" y2="119" stroke="#7c3aed" strokeWidth="0.8"/>
+            <line x1="21" y1="118" x2="21" y2="119" stroke="#7c3aed" strokeWidth="0.8"/>
+            <line x1="24" y1="116" x2="25" y2="119" stroke="#7c3aed" strokeWidth="0.8"/>
+            {/* R Hand */}
+            <ellipse cx="79" cy="108" rx="6" ry="10" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Fingers R */}
+            <line x1="84" y1="110" x2="86" y2="118" stroke="#7c3aed" strokeWidth="0.8"/>
+            <line x1="82" y1="116" x2="83" y2="119" stroke="#7c3aed" strokeWidth="0.8"/>
+            <line x1="79" y1="118" x2="79" y2="119" stroke="#7c3aed" strokeWidth="0.8"/>
+            <line x1="76" y1="116" x2="75" y2="119" stroke="#7c3aed" strokeWidth="0.8"/>
+            {/* Pelvis / Groin y 118.8-149.6 */}
+            <path d="M33 136 Q33 149 41 150 L59 150 Q67 149 67 136 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Thigh y 149.6-171.6 */}
+            <path d="M35 150 Q32 155 32 162 L33 172 Q34 174 39 174 L43 174 Q46 173 47 171 L47 150 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Thigh */}
+            <path d="M65 150 Q68 155 68 162 L67 172 Q66 174 61 174 L57 174 Q54 173 53 171 L53 150 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Knee y 171.6-187 */}
+            <ellipse cx="40" cy="179" rx="7" ry="7" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Knee */}
+            <ellipse cx="60" cy="179" rx="7" ry="7" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Calf y 187-204.6 */}
+            <path d="M34 186 Q32 192 33 200 L33 205 Q34 207 39 207 L44 207 Q47 207 47 205 L47 186 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Calf */}
+            <path d="M66 186 Q68 192 67 200 L67 205 Q66 207 61 207 L56 207 Q53 207 53 205 L53 186 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Foot y 204.6-220 */}
+            <path d="M33 206 L33 212 Q33 219 42 219 L48 219 L47 207 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Foot */}
+            <path d="M67 206 L67 212 Q67 219 58 219 L52 219 L53 207 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            <text x="50" y="219" textAnchor="middle" fontSize="5.5" fontWeight="700" fill="#9c7bd0" letterSpacing="0.8">ANTERIOR</text>
           </g>
           {/* LEFT LATERAL */}
           <g transform="translate(100,0)">
-            <text x="50" y="12" textAnchor="middle" fontSize="6" fontWeight="700" fill="#9c7bd0" letterSpacing="0.5">LEFT LAT</text>
-            <ellipse cx="50" cy="30" rx="11" ry="13" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
-            <rect x="46" y="43" width="8" height="8" rx="2" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="38" y="51" width="22" height="42" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
-            <rect x="58" y="53" width="11" height="28" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="59" y="83" width="10" height="24" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="40" y="94" width="16" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="41" y="130" width="14" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <ellipse cx="48" cy="163" rx="9" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Head */}
+            <ellipse cx="50" cy="8.5" rx="10" ry="8.5" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1.2"/>
+            <ellipse cx="60" cy="8" rx="1.8" ry="3" fill="rgba(124,58,237,0.1)" stroke="#7c3aed" strokeWidth="0.8"/>
+            {/* Nose */}<path d="M60 6 Q62 8 60 10" fill="none" stroke="#9c7bd0" strokeWidth="0.7"/>
+            {/* Neck */}
+            <rect x="46" y="17" width="8" height="14" rx="3" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Torso lateral */}
+            <path d="M44 30 Q35 35 34 55 L34 90 Q34 115 38 127 L38 136 Q40 142 45 143 L58 143 Q63 140 64 136 L64 126 Q68 115 67 90 L67 55 Q66 36 58 31 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1.2"/>
+            {/* Arm (visible side, posterior) y 30.8-99 */}
+            <path d="M64 33 Q71 38 72 53 L72 75 Q71 79 68 79 L66 75 L66 36 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            <path d="M68 75 Q71 80 72 88 L72 97 Q71 99 68 99 L66 97 L66 75 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            <ellipse cx="69" cy="108" rx="5" ry="10" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Buttock */}
+            <path d="M36 136 Q29 143 31 155 Q33 162 38 161 L45 160 L45 136 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Thigh */}
+            <path d="M44 149 Q40 155 40 165 L41 172 Q43 174 48 174 L53 174 Q56 172 57 170 L57 149 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Knee */}
+            <ellipse cx="49" cy="179" rx="8" ry="7" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Calf */}
+            <path d="M42 186 Q40 195 41 202 L42 205 Q44 207 49 207 L54 207 Q56 207 56 205 L55 186 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Foot */}
+            <path d="M42 206 L41 212 Q40 218 50 219 L57 219 Q60 219 58 215 L56 207 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            <text x="50" y="219" textAnchor="middle" fontSize="5.5" fontWeight="700" fill="#9c7bd0" letterSpacing="0.8">LEFT LAT</text>
           </g>
           {/* RIGHT LATERAL */}
           <g transform="translate(200,0)">
-            <text x="50" y="12" textAnchor="middle" fontSize="6" fontWeight="700" fill="#9c7bd0" letterSpacing="0.5">RIGHT LAT</text>
-            <ellipse cx="50" cy="30" rx="11" ry="13" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
-            <rect x="46" y="43" width="8" height="8" rx="2" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="40" y="51" width="22" height="42" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
-            <rect x="31" y="53" width="11" height="28" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="31" y="83" width="10" height="24" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="44" y="94" width="16" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="45" y="130" width="14" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <ellipse cx="52" cy="163" rx="9" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Head */}
+            <ellipse cx="50" cy="8.5" rx="10" ry="8.5" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1.2"/>
+            <ellipse cx="40" cy="8" rx="1.8" ry="3" fill="rgba(124,58,237,0.1)" stroke="#7c3aed" strokeWidth="0.8"/>
+            {/* Nose */}<path d="M40 6 Q38 8 40 10" fill="none" stroke="#9c7bd0" strokeWidth="0.7"/>
+            {/* Neck */}
+            <rect x="46" y="17" width="8" height="14" rx="3" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Torso lateral */}
+            <path d="M56 30 Q65 35 66 55 L66 90 Q66 115 62 127 L62 136 Q60 142 55 143 L42 143 Q37 140 36 136 L36 126 Q32 115 33 90 L33 55 Q34 36 42 31 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1.2"/>
+            {/* Arm */}
+            <path d="M36 33 Q29 38 28 53 L28 75 Q29 79 32 79 L34 75 L34 36 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            <path d="M32 75 Q29 80 28 88 L28 97 Q29 99 32 99 L34 97 L34 75 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            <ellipse cx="31" cy="108" rx="5" ry="10" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Buttock */}
+            <path d="M64 136 Q71 143 69 155 Q67 162 62 161 L55 160 L55 136 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Thigh */}
+            <path d="M56 149 Q60 155 60 165 L59 172 Q57 174 52 174 L47 174 Q44 172 43 170 L43 149 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Knee */}
+            <ellipse cx="51" cy="179" rx="8" ry="7" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Calf */}
+            <path d="M58 186 Q60 195 59 202 L58 205 Q56 207 51 207 L46 207 Q44 207 44 205 L45 186 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Foot */}
+            <path d="M58 206 L59 212 Q60 218 50 219 L43 219 Q40 219 42 215 L44 207 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            <text x="50" y="219" textAnchor="middle" fontSize="5.5" fontWeight="700" fill="#9c7bd0" letterSpacing="0.8">RIGHT LAT</text>
           </g>
           {/* POSTERIOR */}
           <g transform="translate(300,0)">
-            <text x="50" y="12" textAnchor="middle" fontSize="6" fontWeight="700" fill="#9c7bd0" letterSpacing="0.5">POSTERIOR</text>
-            <ellipse cx="50" cy="30" rx="11" ry="13" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
-            <rect x="46" y="43" width="8" height="8" rx="2" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="35" y="51" width="30" height="42" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1.2"/>
-            <rect x="20" y="53" width="13" height="30" rx="6" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="67" y="53" width="13" height="30" rx="6" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="17" y="85" width="12" height="26" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="71" y="85" width="12" height="26" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="36" y="94" width="13" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="51" y="94" width="13" height="34" rx="5" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="37" y="130" width="11" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <rect x="52" y="130" width="11" height="30" rx="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <ellipse cx="42" cy="163" rx="7" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
-            <ellipse cx="57" cy="163" rx="7" ry="4" fill="none" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Head */}
+            <ellipse cx="50" cy="8.5" rx="10" ry="8.5" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1.2"/>
+            <ellipse cx="39.5" cy="8" rx="1.8" ry="3" fill="rgba(124,58,237,0.1)" stroke="#7c3aed" strokeWidth="0.8"/>
+            <ellipse cx="60.5" cy="8" rx="1.8" ry="3" fill="rgba(124,58,237,0.1)" stroke="#7c3aed" strokeWidth="0.8"/>
+            {/* Neck */}
+            <rect x="46" y="17" width="8" height="14" rx="3" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Trapezius */}
+            <path d="M37 31 Q30 28 25 34 Q23 38 29 38 L37 36 Z" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="0.8"/>
+            <path d="M63 31 Q70 28 75 34 Q77 38 71 38 L63 36 Z" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="0.8"/>
+            {/* Torso back */}
+            <path d="M37 31 Q30 37 29 53 L29 100 Q29 118 33 127 L33 136 L67 136 L67 127 Q71 118 71 100 L71 53 Q70 37 63 31 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1.2"/>
+            {/* Spine */}
+            <line x1="50" y1="32" x2="50" y2="134" stroke="#9c7bd0" strokeWidth="0.8" strokeDasharray="2.5,2"/>
+            {/* Scapulae */}
+            <path d="M33 38 Q30 48 33 55 Q37 58 40 55 Q43 50 41 40 Z" fill="rgba(124,58,237,0.08)" stroke="#7c3aed" strokeWidth="0.8"/>
+            <path d="M67 38 Q70 48 67 55 Q63 58 60 55 Q57 50 59 40 Z" fill="rgba(124,58,237,0.08)" stroke="#7c3aed" strokeWidth="0.8"/>
+            {/* L Upper Arm */}
+            <path d="M29 36 Q22 40 20 53 L19 75 Q20 78 24 79 L27 75 L28 53 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Upper Arm */}
+            <path d="M71 36 Q78 40 80 53 L81 75 Q80 78 76 79 L73 75 L72 53 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Forearm */}
+            <path d="M19 75 Q16 80 15 88 L15 97 Q16 99 19 99 L24 99 Q27 99 28 97 L28 75 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Forearm */}
+            <path d="M81 75 Q84 80 85 88 L85 97 Q84 99 81 99 L76 99 Q73 99 72 97 L72 75 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Hand */}
+            <ellipse cx="21" cy="108" rx="6" ry="10" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Hand */}
+            <ellipse cx="79" cy="108" rx="6" ry="10" fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Gluteals */}
+            <path d="M33 127 Q29 136 31 148 Q34 158 41 157 L50 155 L59 157 Q66 158 69 148 Q71 136 67 127 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* Gluteal cleft */}
+            <line x1="50" y1="134" x2="50" y2="155" stroke="#9c7bd0" strokeWidth="0.7"/>
+            {/* L Thigh */}
+            <path d="M35 155 Q32 160 32 168 L33 172 Q34 174 39 174 L43 174 Q46 173 47 171 L47 155 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Thigh */}
+            <path d="M65 155 Q68 160 68 168 L67 172 Q66 174 61 174 L57 174 Q54 173 53 171 L53 155 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Knee */}
+            <ellipse cx="40" cy="179" rx="7" ry="7" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Knee */}
+            <ellipse cx="60" cy="179" rx="7" ry="7" fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Calf */}
+            <path d="M34 186 Q32 192 33 200 L33 205 Q34 207 39 207 L44 207 Q47 207 47 205 L47 186 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Calf */}
+            <path d="M66 186 Q68 192 67 200 L67 205 Q66 207 61 207 L56 207 Q53 207 53 205 L53 186 Z"
+              fill="rgba(124,58,237,0.04)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* L Foot */}
+            <path d="M33 206 L33 212 Q33 219 42 219 L48 219 L47 207 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            {/* R Foot */}
+            <path d="M67 206 L67 212 Q67 219 58 219 L52 219 L53 207 Z"
+              fill="rgba(124,58,237,0.06)" stroke="#7c3aed" strokeWidth="1"/>
+            <text x="50" y="219" textAnchor="middle" fontSize="5.5" fontWeight="700" fill="#9c7bd0" letterSpacing="0.8">POSTERIOR</text>
           </g>
+          {/* Dividers between views */}
+          <line x1="100" y1="0" x2="100" y2="218" stroke="#d8cce8" strokeWidth="0.5"/>
+          <line x1="200" y1="0" x2="200" y2="218" stroke="#d8cce8" strokeWidth="0.5"/>
+          <line x1="300" y1="0" x2="300" y2="218" stroke="#d8cce8" strokeWidth="0.5"/>
         </svg>
 
 
 
         {/* Markers SVG overlay */}
         <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }}
-          viewBox="0 0 400 220" preserveAspectRatio="none">
+          viewBox="0 0 100 100" preserveAspectRatio="none">
           {markers.map(m => {
             const t = SYMPTOM_TYPES.find(x => x.id === m.type) || SYMPTOM_TYPES[0];
             return (

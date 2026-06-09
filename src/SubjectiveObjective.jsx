@@ -1754,9 +1754,9 @@ function CyriaxModule({ data, set, navContext={} }) {
   const v = (id) => data[prefix + id] || "";
   const sv = (id, val) => set(prefix + id, val);
 
-  const selectStyle = { width:"100%", background:"#192435", border:`1px solid #1a2d45`, borderRadius:8, color:"#1a1025", padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit" };
+  const selectStyle = { width:"100%", background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:8, color:"#1a1025", padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit", WebkitAppearance:"none", appearance:"none" };
   const labelStyle = { fontSize:"0.72rem", fontWeight:700, color:"#7e6a9a", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.5px" };
-  const boxStyle = { background:"#ffffff", border:`1px solid #1a2d45`, borderRadius:10, padding:13, marginBottom:10 };
+  const boxStyle = { background:"#ffffff", border:"1px solid #d8cce8", borderRadius:10, padding:13, marginBottom:10 };
   const RESULT_OPTIONS = ["","Strong & Painless","Strong & Painful","Weak & Painless","Weak & Painful"];
   const PAIN_OPTIONS = ["","No pain","Pain on initiation","Pain at mid-range","Pain at end range","Painful arc","Pain throughout range","Referred pain with movement"];
   const LIMITED_OPTIONS = ["","Full range","Mildly limited","Moderately limited","Severely limited","Cannot perform"];
