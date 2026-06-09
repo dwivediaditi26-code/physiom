@@ -532,9 +532,11 @@ export default function HybridKendall({
     const rect = svgRef.current.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top)  / rect.height));
-    setLm(prev => ({ ...prev, [activePlace]: { x, y } }));
-    setActivePlace(null);
-    setConfirmed(false);
+    const updated={...lm,[activePlace]:{x,y}};
+    setLm(updated);setConfirmed(false);
+    const allDefs=[...PRIMARY_LANDMARKS,...(advancedMode?ADVANCED_LANDMARKS:[])];
+    const nxt=allDefs.find(d=>d.id!==activePlace&&!updated[d.id]);
+    setActivePlace(nxt?nxt.id:null);
   }, [dragging, activePlace]);
 
   // ── Render helpers ──────────────────────────────────────────────────────────
@@ -563,7 +565,9 @@ export default function HybridKendall({
         <div style={{display:"flex",gap:6}}>
           <button onClick={()=>setShowGrid(v=>!v)} style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${showGrid?C.accent:C.border}`,background:showGrid?`${C.accent}20`:"transparent",color:showGrid?C.accent:C.muted,fontSize:"0.6rem",fontWeight:700,cursor:"pointer"}}>Grid</button>
           <button onClick={()=>setDebugMode(v=>!v)} style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${debugMode?"#f59e0b":C.border}`,background:debugMode?"rgba(245,158,11,0.1)":"transparent",color:debugMode?"#f59e0b":C.muted,fontSize:"0.6rem",fontWeight:700,cursor:"pointer"}}>Debug</button>
-          <button onClick={()=>setAdvancedMode(v=>!v)} style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${advancedMode?C.green:C.border}`,background:advancedMode?`${C.green}15`:"transparent",color:advancedMode?C.green:C.muted,fontSize:"0.6rem",fontWeight:700,cursor:"pointer"}}>Advanced</button>
+          <button onClick={()=>setAdvancedMode(v=>!v)} style={{padding:"5px 12px",borderRadius:8,border:`2px solid ${advancedMode?"#34d399":"rgba(52,211,153,0.5)"}`,background:advancedMode?"rgba(52,211,153,0.15)":"rgba(52,211,153,0.06)",color:advancedMode?"#34d399":"rgba(52,211,153,0.9)",fontSize:"0.65rem",fontWeight:800,cursor:"pointer"}}>
+            🔬 {advancedMode?"Advanced ON":"Advanced Mode"}
+          </button>
         </div>
       </div>
 
@@ -698,41 +702,16 @@ export default function HybridKendall({
         </div>
       )}
 
-      {/* ── Landmark placement buttons ── */}
-      <div style={{background:C.s2,borderRadius:10,border:`1px solid ${C.border}`,padding:"10px 12px"}}>
-        <div style={{fontSize:"0.6rem",fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>
-          Primary Landmarks {confirmed && <span style={{color:C.green,marginLeft:6}}>✓ Confirmed</span>}
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:5,marginBottom:8}}>
-          {PRIMARY_LANDMARKS.map(def=>{
-            const placed = !!lm[def.id];
-            const isActive = activePlace === def.id;
-            return (
-              <button key={def.id}
-                onClick={()=>setActivePlace(isActive ? null : def.id)}
-                style={{padding:"6px 4px",borderRadius:8,border:`1.5px solid ${isActive?def.color:placed?def.color+"60":C.border}`,background:isActive?`${def.color}25`:placed?`${def.color}10`:"transparent",color:isActive?def.color:placed?def.color:C.muted,fontSize:"0.58rem",fontWeight:700,cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
-                <div style={{fontSize:"0.8rem",marginBottom:1}}>{placed?"✅":"📍"}</div>
-                <div style={{fontWeight:800,fontSize:"0.6rem"}}>{def.label}</div>
-                {isActive && <div style={{fontSize:"0.5rem",marginTop:1}}>👆 Tap</div>}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Confirm button */}
-        {allPrimary && !confirmed && (
-          <button onClick={()=>{setConfirmed(true); const {findings,segmentStatus}=buildKendallFindings(measurements,patientSex); onFindingsChange?.(findings,measurements,segmentStatus);}}
-            style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.accent},#7c3aed)`,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",marginBottom:4}}>
-            ✅ CONFIRM LANDMARKS → ANALYSE
-          </button>
-        )}
-        {confirmed && (
-          <button onClick={()=>setConfirmed(false)}
-            style={{width:"100%",padding:"8px",borderRadius:8,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>
-            ↩ Re-adjust landmarks
-          </button>
-        )}
-      </div>
+      {!advancedMode&&(
+        <button onClick={()=>setAdvancedMode(true)} style={{width:"100%",padding:"11px 14px",borderRadius:10,border:"2px dashed rgba(52,211,153,0.4)",background:"rgba(52,211,153,0.04)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:"1.3rem"}}>🔬</span>
+          <div>
+            <div style={{fontSize:"0.72rem",fontWeight:800,color:"#34d399",marginBottom:2}}>Enable Advanced Mode</div>
+            <div style={{fontSize:"0.6rem",color:"#64748b",lineHeight:1.5}}>Place C7 · T12 · S2 for TCI/LCI · ASIS + PSIS for Pelvic Tilt · Enables full Kendall Pattern Classification</div>
+          </div>
+          <span style={{marginLeft:"auto",fontSize:"0.65rem",fontWeight:800,color:"#34d399",whiteSpace:"nowrap",flexShrink:0}}>Tap →</span>
+        </button>
+      )}
 
       {/* ── Advanced landmarks ── */}
       {advancedMode && (

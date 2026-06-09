@@ -461,14 +461,7 @@ function buildKendallClassification(tciResult, lciResult, pelvicResult, shoulder
       desc  = `Lumbar concavity increased (LCI grade ${lciGrade}). Thoracic normal. ${segSummary}.`;
       break;
     case "ideal":
-      if (tciGrade === 0 && lciGrade === 0) {
-        label = "Near-Ideal Sagittal Alignment";
-        desc  = `Both thoracic and lumbar curves within normal range. ${segSummary}.`;
-      } else {
-        return null;
-      }
-      break;
-    default:
+      return null; // Suppressed — never claim ideal from contour alone
       return null;
   }
 
