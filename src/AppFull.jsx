@@ -8043,8 +8043,8 @@ function PostureAnalysisModule(){
 
 
 
-      {/* AI/Manual toggle */}
-      {!isLive&&(
+      {/* Mode toggle — frontal/posterior only; lateral uses HybridKendall */}
+      {!isLive&&(view==="anterior"||view==="posterior"||view==="back")&&(
         <div style={{padding: isWide?"8px 20px":"8px 16px",background:PC.s3,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:6}}>
           {[["ai","⚙ AI Auto (~70-80%)"],["manual","✋ Manual Points (~90-95%)"]].map(([m,label])=>(
             <button key={m} onClick={()=>handleModeSwitch(m)}
@@ -8169,13 +8169,15 @@ function PostureAnalysisModule(){
               style={{width:"100%",padding: isWide?"20px":"16px",borderRadius:14,border:`2px dashed ${viewMeta.colour}`,background:`${viewMeta.colour}08`,color:viewMeta.colour,fontWeight:700,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer",textAlign:"center",marginBottom:14}}>
               {analysing?"⏳ Analysing…":"▤ Tap to upload photo"}
               <div style={{fontSize: isWide?"0.72rem":"0.65rem",fontWeight:400,marginTop:5,color:PC.muted}}>
-                {inputMode==="manual"?"Upload photo — then tap each anatomical point":"JPG, PNG — full body, clear background"}
+                {(view==="left"||view==="right")
+                ? "Upload lateral photo — Hybrid Kendall analysis"
+                : inputMode==="manual"?"Upload photo — then tap each anatomical point":"JPG, PNG — full body, clear background"}
               </div>
             </button>
             <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleFile}/>
 
             {/* Manual mode */}
-            {inputMode==="manual"&&uploadedImg&&(
+            {inputMode==="manual"&&uploadedImg&&(view==="anterior"||view==="posterior"||view==="back")&&(
               <div>
                 <div style={{marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
