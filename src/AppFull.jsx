@@ -6489,6 +6489,27 @@ function PostureAnalysisModule(){
   // {asis, psis}: {x,y} normalised image coordinates
   // {patientSex}: "Male" | "Female"
   const [manualSpinal,setManualSpinal]=useState({}); // {c7Y, t12Y, s2Y, asis, psis}
+  // spinalLevelMode: which vertebral level is being tapped next
+  const [spinalLevelMode,setSpinalLevelMode]=useState(null); // null | 'c7' | 't12'
+  // Helper: get shoulder and hip Y (normalised 0-1) from current landmarks or manual placement
+  const getSpinalRefY = () => {
+    // AI mode: use MediaPipe landmarks
+    if (landmarks) {
+      const shY  = landmarks[11]?.visibility>0.3 ? landmarks[11].y : landmarks[12]?.visibility>0.3 ? landmarks[12].y : null;
+      const hipY = landmarks[23]?.visibility>0.3 ? landmarks[23].y : landmarks[24]?.visibility>0.3 ? landmarks[24].y : null;
+      return { shY, hipY };
+    }
+    // Manual mode: use manualPlaced point ids 2=shoulder, 3=hip
+    const shY  = manualPlaced[2]?.y ?? null;
+    const hipY = manualPlaced[3]?.y ?? null;
+    return { shY, hipY };
+  };
+  // Convert image-normalised tapY → trunk-normalised Y (0=shoulder, 1=hip)
+  const tapYToTrunkNorm = (tapY) => {
+    const { shY, hipY } = getSpinalRefY();
+    if (!shY || !hipY || hipY <= shY) return null;
+    return (tapY - shY) / (hipY - shY);
+  };
   // Build sagManualLandmarks object passed to buildSagittalFindings
   const sagManualLandmarks = {
     c7Y:       manualSpinal.c7Y   ?? undefined,
@@ -7010,10 +7031,22 @@ function PostureAnalysisModule(){
   const nextManualIdx = manualPointDefs.findIndex(def => !manualPlaced[def.id]);
 
   function handleManualImageClick(e) {
-    if (inputMode !== "manual" || !uploadedImg || nextManualIdx < 0) return;
+    if (inputMode !== "manual" || !uploadedImg) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
+
+    // Spinal level placement takes priority
+    if (spinalLevelMode) {
+      const trunkNorm = tapYToTrunkNorm(y);
+      if (trunkNorm !== null) {
+        setManualSpinal(prev => ({...prev, [spinalLevelMode+'Y']: Math.max(-0.2, Math.min(1.3, trunkNorm))}));
+      }
+      setSpinalLevelMode(null);
+      return;
+    }
+
+    if (nextManualIdx < 0) return;
     const def = manualPointDefs[nextManualIdx];
     setManualPlaced(prev => ({ ...prev, [def.id]: { x, y } }));
     setManualAnalysed(false);
@@ -8135,7 +8168,7 @@ function PostureAnalysisModule(){
                   </div>
                 )}
                 <div ref={manualContainerRef} onClick={handleManualImageClick}
-                  style={{position:"relative",borderRadius:12,overflow:"hidden",border:`2px solid ${PC.accent}`,cursor:nextManualIdx>=0?"crosshair":"default",marginBottom:10}}>
+                  style={{position:"relative",borderRadius:12,overflow:"hidden",border:`2px solid ${spinalLevelMode?PC.yellow:PC.accent}`,cursor:(nextManualIdx>=0||spinalLevelMode)?"crosshair":"default",marginBottom:10}}>
                   <img src={objectUrlRef.current||uploadedImg} alt="Tap to place points"
                     onLoad={e=>{ manualImgSize.current={w:e.target.naturalWidth,h:e.target.naturalHeight}; }}
                     style={{width:"100%",display:"block",userSelect:"none",pointerEvents:"none"}}/>
@@ -8174,6 +8207,43 @@ function PostureAnalysisModule(){
                     ✋ Analyse Now — {manualPlacedCount}/{manualTotal} points
                   </button>
                 )}
+
+                {/* ── C7 / T12 Spinal Levels (Manual mode) ── */}
+                {isLat && uploadedImg && (
+                  <div style={{marginTop:10,padding:"10px 12px",background:"rgba(251,191,36,0.05)",border:`1px solid ${spinalLevelMode?"rgba(251,191,36,0.5)":"rgba(251,191,36,0.2)"}`,borderRadius:10}}>
+                    <div style={{fontSize:"0.65rem",fontWeight:800,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:7}}>🦴 Spinal Levels — C7 · T12</div>
+                    <div style={{display:"flex",gap:7}}>
+                      {[
+                        { key:'c7',  label:'C7',  sublabel:'Base of neck',          color:'#fbbf24' },
+                        { key:'t12', label:'T12', sublabel:'Thoracolumbar junction', color:'#f87171' },
+                      ].map(lv=>{
+                        const placed = manualSpinal[lv.key+'Y'] !== undefined;
+                        const isActive = spinalLevelMode === lv.key;
+                        return (
+                          <div key={lv.key} style={{flex:1}}>
+                            <button
+                              onClick={()=>setSpinalLevelMode(isActive?null:lv.key)}
+                              style={{width:"100%",padding:"7px 4px",borderRadius:8,border:`1.5px solid ${isActive?lv.color:placed?lv.color+"60":"rgba(255,255,255,0.12)"}`,background:isActive?`${lv.color}20`:placed?`${lv.color}10`:"transparent",color:isActive?lv.color:placed?lv.color:"#7e6a9a",fontWeight:700,fontSize:"0.62rem",cursor:"pointer",textAlign:"center"}}>
+                              {placed?"✅ ":""}{lv.label}
+                              <div style={{fontSize:"0.53rem",fontWeight:400}}>{isActive?"👆 Tap photo":placed?"Placed":"Tap to mark"}</div>
+                            </button>
+                            {placed&&(
+                              <button onClick={()=>setManualSpinal(prev=>{const n={...prev};delete n[lv.key+'Y'];return n;})}
+                                style={{width:"100%",marginTop:2,padding:"2px",borderRadius:4,border:"none",background:"rgba(255,77,109,0.1)",color:"#ff4d6d",fontSize:"0.53rem",fontWeight:700,cursor:"pointer"}}>
+                                ✕ Clear
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {spinalLevelMode&&(
+                      <div style={{marginTop:6,fontSize:"0.6rem",color:spinalLevelMode==='c7'?"#fbbf24":"#f87171",fontWeight:700}}>
+                        👆 Tap on the photo above to mark {spinalLevelMode==='c7'?"C7 (base of neck, spinous process)":"T12 (thoracolumbar junction)"}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -8181,12 +8251,26 @@ function PostureAnalysisModule(){
             {inputMode==="ai"&&(rawUploadedImg||uploadedImg)&&(
               <div ref={aiSagImgRef}
                 onClick={e=>{
-                  if (!aiSagActive) return;
-                  const placed = AI_SAG_5_POINTS.filter(p=>!aiSagPlaced[p.id]);
-                  if (placed.length===0) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   const x = (e.clientX - rect.left) / rect.width;
                   const y = (e.clientY - rect.top)  / rect.height;
+
+                  // ── Spinal level tap (C7 / T12) ──
+                  if (spinalLevelMode) {
+                    const trunkNorm = tapYToTrunkNorm(y);
+                    if (trunkNorm !== null) {
+                      setManualSpinal(prev => ({...prev, [spinalLevelMode+'Y']: Math.max(-0.2, Math.min(1.3, trunkNorm))}));
+                    }
+                    setSpinalLevelMode(null);
+                    // Re-run analysis with updated spinal levels
+                    if (landmarks) setTimeout(()=>processLandmarks(landmarks, view, null), 50);
+                    return;
+                  }
+
+                  // ── AI 5-point landmark tap ──
+                  if (!aiSagActive) return;
+                  const placed = AI_SAG_5_POINTS.filter(p=>!aiSagPlaced[p.id]);
+                  if (placed.length===0) return;
                   const next = placed[0];
                   setAiSagPlaced(prev=>{
                     const updated = {...prev, [next.id]:{x,y}};
@@ -8198,7 +8282,6 @@ function PostureAnalysisModule(){
                           const p = updated[pt.id];
                           if (p) {
                             merged[pt.mpIdx] = {x:p.x, y:p.y, z:0, visibility:1.0};
-                            // mirror to opposite side for measurement engine
                             const mirror = pt.mpIdx+1;
                             if (mirror<33) merged[mirror]={x:p.x, y:p.y, z:0, visibility:1.0};
                           }
@@ -8255,6 +8338,34 @@ function PostureAnalysisModule(){
                     </div>
                   );
                 })()}
+
+                {/* ── C7 / T12 spinal level dots ── */}
+                {(()=>{
+                  const { shY, hipY } = getSpinalRefY();
+                  if (!shY || !hipY) return null;
+                  const toImgY = trunkNorm => shY + trunkNorm*(hipY-shY);
+                  const levels = [
+                    { key:'c7',  label:'C7',  color:'#fbbf24', y: manualSpinal.c7Y  },
+                    { key:'t12', label:'T12', color:'#f87171', y: manualSpinal.t12Y },
+                  ];
+                  return levels.map(lv => {
+                    if (lv.y === undefined || lv.y === null) return null;
+                    const imgY = toImgY(lv.y);
+                    return (
+                      <div key={lv.key} style={{position:"absolute",left:0,right:0,top:`${imgY*100}%`,pointerEvents:"none",zIndex:25,display:"flex",alignItems:"center",gap:4}}>
+                        <div style={{width:"100%",height:1.5,background:`${lv.color}80`,borderTop:`1.5px dashed ${lv.color}`}}/>
+                        <div style={{position:"absolute",left:6,background:"rgba(0,0,0,0.75)",color:lv.color,padding:"1px 6px",borderRadius:4,fontSize:"0.6rem",fontWeight:800,whiteSpace:"nowrap"}}>{lv.label}</div>
+                      </div>
+                    );
+                  });
+                })()}
+
+                {/* Spinal tap mode hint */}
+                {spinalLevelMode&&(
+                  <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.85)",color:spinalLevelMode==='c7'?"#fbbf24":"#f87171",padding:"5px 14px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:30}}>
+                    👆 Tap to mark {spinalLevelMode==='c7'?"C7 — base of neck":"T12 — thoracolumbar junction"}
+                  </div>
+                )}
               </div>
             )}
 
@@ -8311,6 +8422,50 @@ function PostureAnalysisModule(){
                 {!aiSagActive&&Object.keys(aiSagPlaced).length===0&&(
                   <div style={{fontSize:"0.6rem",color:"#7e6a9a",fontStyle:"italic"}}>
                     If AI missed a landmark, use this to correct ear · shoulder · hip · knee · ankle and re-run sagittal analysis.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Spinal Levels (C7 / T12) — AI mode, lateral views ── */}
+            {inputMode==="ai" && (view==="left"||view==="right") && (uploadedImg||rawUploadedImg) && !analysing && (
+              <div style={{marginTop:8,padding:"10px 14px",background:"rgba(251,191,36,0.05)",border:`1px solid ${spinalLevelMode?"rgba(251,191,36,0.5)":"rgba(251,191,36,0.2)"}`,borderRadius:12,transition:"border-color 0.2s"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:7}}>
+                  <span style={{fontSize:"0.7rem",fontWeight:800,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.5px"}}>
+                    🦴 Spinal Levels
+                  </span>
+                  <span style={{fontSize:"0.58rem",color:"#7e6a9a"}}>For TCI · required if ankle not visible</span>
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  {[
+                    { key:'c7',  label:'C7',  sublabel:'Base of neck',          color:'#fbbf24' },
+                    { key:'t12', label:'T12', sublabel:'Thoracolumbar junction', color:'#f87171' },
+                  ].map(lv=>{
+                    const placed = manualSpinal[lv.key+'Y'] !== undefined;
+                    const isActive = spinalLevelMode === lv.key;
+                    return (
+                      <div key={lv.key} style={{flex:1}}>
+                        <button
+                          onClick={()=>setSpinalLevelMode(isActive ? null : lv.key)}
+                          style={{width:"100%",padding:"7px 6px",borderRadius:9,border:`1.5px solid ${isActive?lv.color:placed?lv.color+"60":"rgba(255,255,255,0.12)"}`,background:isActive?`${lv.color}20`:placed?`${lv.color}10`:"transparent",color:isActive?lv.color:placed?lv.color:"#7e6a9a",fontWeight:700,fontSize:"0.65rem",cursor:"pointer",transition:"all .15s",textAlign:"center"}}>
+                          <div style={{fontSize:"0.9rem",marginBottom:2}}>{placed?"✅":"📍"}</div>
+                          <div style={{fontWeight:800}}>{lv.label}</div>
+                          <div style={{fontSize:"0.55rem",fontWeight:400,opacity:0.8}}>{placed ? "Re-tap to move" : lv.sublabel}</div>
+                          {isActive && <div style={{fontSize:"0.55rem",fontWeight:800,marginTop:2}}>👆 Tap photo now</div>}
+                        </button>
+                        {placed&&(
+                          <button onClick={()=>setManualSpinal(prev=>{const n={...prev};delete n[lv.key+'Y'];return n;})}
+                            style={{width:"100%",marginTop:3,padding:"2px",borderRadius:5,border:"none",background:"rgba(255,77,109,0.1)",color:"#ff4d6d",fontSize:"0.55rem",fontWeight:700,cursor:"pointer"}}>
+                            ✕ Clear
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {!manualSpinal.c7Y && !manualSpinal.t12Y && (
+                  <div style={{fontSize:"0.58rem",color:"#7e6a9a",marginTop:6,fontStyle:"italic"}}>
+                    Optional — tap a button then tap the photo at that vertebral level. Improves TCI accuracy.
                   </div>
                 )}
               </div>
