@@ -13,6 +13,7 @@ import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescription
 import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
+import LandingPage from "./LandingPage.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
@@ -15708,7 +15709,20 @@ function AppInner({ currentUser, onSignOut }) {
   );
 }
 
-export default function App() {
+export default function LandingAndAuth({ onAuth }) {
+  const [showAuth, setShowAuth] = React.useState(false);
+  if (showAuth) {
+    return <AuthScreen onAuth={onAuth} />;
+  }
+  return (
+    <LandingPage
+      onGetStarted={() => setShowAuth(true)}
+      onSignIn={() => setShowAuth(true)}
+    />
+  );
+}
+
+function App() {
   const [user, setUser] = React.useState(undefined); // undefined=loading, null=logged out, obj=logged in
 
   React.useEffect(() => {
@@ -15736,9 +15750,9 @@ export default function App() {
     );
   }
 
-  // Not logged in — show auth screen
+  // Not logged in — show landing page first, then auth
   if (!user) {
-    return <AuthScreen onAuth={(u) => setUser(u)} />;
+    return <LandingAndAuth onAuth={(u) => setUser(u)} />;
   }
 
   // Logged in — show full app
