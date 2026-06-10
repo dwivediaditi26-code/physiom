@@ -204,11 +204,43 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
   const [answers,setAnswers]=useState({});
   const [lang,setLang]=useState("en");
   const [activity,setActivity]=useState({act1:"",act2:"",act3:""});
+  // Timer state for TUG / 10MWT
+  const [timerMs,setTimerMs]=useState(0);
+  const [timerRunning,setTimerRunning]=useState(false);
+  const timerRef=useRef(null);
+  const timerStartRef=useRef(0);
+
   const fields=sc.fields;
   const total=fields.length;
   const f=fields[qIdx];
   const answered=answers[f.id]!==undefined;
   const PC=getC();
+
+  // Reset timer when question changes
+  useEffect(()=>{
+    clearInterval(timerRef.current);
+    setTimerRunning(false);
+    setTimerMs(0);
+  },[qIdx]);
+
+  const startTimer=()=>{
+    if(timerRunning) return;
+    timerStartRef.current=Date.now()-timerMs;
+    setTimerRunning(true);
+    timerRef.current=setInterval(()=>setTimerMs(Date.now()-timerStartRef.current),50);
+  };
+  const stopTimer=()=>{
+    clearInterval(timerRef.current);
+    setTimerRunning(false);
+    const secs=(timerMs/1000).toFixed(1);
+    setAnswers(p=>({...p,[f.id]:secs}));
+  };
+  const resetTimer=()=>{
+    clearInterval(timerRef.current);
+    setTimerRunning(false);
+    setTimerMs(0);
+    setAnswers(p=>{const n={...p};delete n[f.id];return n;});
+  };
 
   const hiData=HI[f.id];
 
@@ -292,6 +324,44 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
               background:"#fff",fontSize:"0.9rem",fontFamily:"inherit",outline:"none",width:"100%",boxSizing:"border-box"}}/>
         )}
 
+        {/* Stopwatch for TUG / 10MWT */}
+        {f.type==="timer"&&(
+          <div style={{background:patientMode?"#161625":"#fff",borderRadius:14,padding:"20px",
+            border:`1px solid ${patientMode?"#1e2a3a":BD}`,textAlign:"center"}}>
+            <div style={{fontSize:"3rem",fontWeight:800,
+              color:timerRunning?A:answered?"#16a34a":(patientMode?"#e2e8f0":TX),
+              fontVariantNumeric:"tabular-nums",letterSpacing:"-1px",marginBottom:16}}>
+              {Math.floor(timerMs/60000).toString().padStart(2,"0")}:{(Math.floor(timerMs/1000)%60).toString().padStart(2,"0")}.{Math.floor((timerMs%1000)/100)}
+            </div>
+            {answered&&!timerRunning&&(
+              <div style={{fontSize:"1rem",color:"#16a34a",fontWeight:700,marginBottom:12}}>
+                ✓ {answers[f.id]}s recorded
+              </div>
+            )}
+            <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:12}}>
+              <button onClick={timerRunning?stopTimer:startTimer}
+                style={{padding:"12px 28px",borderRadius:10,border:"none",
+                  background:timerRunning?"#dc2626":`linear-gradient(135deg,${A},#9333ea)`,
+                  color:"#fff",fontSize:"1rem",fontWeight:700,cursor:"pointer",minWidth:100}}>
+                {timerRunning?"⏹ Stop":"▶ Start"}
+              </button>
+              <button onClick={resetTimer}
+                style={{padding:"12px 20px",borderRadius:10,border:`1px solid ${BD}`,
+                  background:"transparent",color:MU,fontSize:"0.9rem",cursor:"pointer"}}>
+                ↺ Reset
+              </button>
+            </div>
+            <div style={{fontSize:"0.7rem",color:MU}}>
+              Or enter manually:&nbsp;
+              <input type="number" placeholder="sec" min="0" step="0.1"
+                value={answers[f.id]||""} onChange={e=>setAnswers(p=>({...p,[f.id]:e.target.value}))}
+                style={{width:70,padding:"4px 8px",borderRadius:6,border:`1px solid ${BD}`,
+                  fontFamily:"inherit",fontSize:"0.8rem",textAlign:"center"}}/>
+              <span style={{marginLeft:4}}>seconds</span>
+            </div>
+          </div>
+        )}
+
         {/* Slider for VAS */}
         {f.type==="slider"?(
           <div style={{background:patientMode?"#161625":"#fff",borderRadius:14,padding:"18px",border:`1px solid ${patientMode?"#1e2a3a":BD}`}}>
@@ -305,7 +375,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
               {answers.vas_score??5}/10
             </div>
           </div>
-        ):(
+        ):(f.type!=="timer"&&f.options&&f.options.length>0&&(
           /* Answer options */
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {f.options.map((opt,i)=>{
@@ -325,7 +395,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
               );
             })}
           </div>
-        )}
+        ))}
 
         {/* Navigation */}
         <div style={{display:"flex",gap:10,marginTop:8}}>
@@ -334,7 +404,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
               background:"transparent",color:MU,fontSize:"0.82rem",cursor:"pointer",fontFamily:"inherit"}}>
             ← Back
           </button>}
-          {f.type==="slider"&&<button type="button" onClick={()=>{if(qIdx<total-1)setQIdx(q=>q+1);}}
+          {(f.type==="slider"||f.type==="timer")&&<button type="button" onClick={()=>{if(qIdx<total-1)setQIdx(q=>q+1);}}
             style={{flex:2,padding:"12px",borderRadius:10,border:"none",
               background:`linear-gradient(135deg,${A},#9333ea)`,color:"#fff",
               fontSize:"0.88rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
@@ -422,6 +492,221 @@ function ResultScreen({result, history, onClose, onRetake, patientName}){
   );
 }
 
+// ─── ASIA BILATERAL GRID ──────────────────────────────────────────────────────
+const ASIA_MOTOR_LEVELS=[
+  {level:"C5",label:"Elbow Flexors",r:"asia_m_c5_r",l:"asia_m_c5_l"},
+  {level:"C6",label:"Wrist Extensors",r:"asia_m_c6_r",l:"asia_m_c6_l"},
+  {level:"C7",label:"Elbow Extensors",r:"asia_m_c7_r",l:"asia_m_c7_l"},
+  {level:"C8",label:"Finger Flexors",r:"asia_m_c8_r",l:"asia_m_c8_l"},
+  {level:"T1",label:"Finger Abductors",r:"asia_m_t1_r",l:"asia_m_t1_l"},
+  {level:"L2",label:"Hip Flexors",r:"asia_m_l2_r",l:"asia_m_l2_l"},
+  {level:"L3",label:"Knee Extensors",r:"asia_m_l3_r",l:"asia_m_l3_l"},
+  {level:"L4",label:"Ankle Dorsiflexors",r:"asia_m_l4_r",l:"asia_m_l4_l"},
+  {level:"L5",label:"Long Toe Extensors",r:"asia_m_l5_r",l:"asia_m_l5_l"},
+  {level:"S1",label:"Ankle Plantar Flexors",r:"asia_m_s1_r",l:"asia_m_s1_l"},
+];
+const MOTOR_OPTS=["0","1","2","3","4","5"];
+const MOTOR_DESC=["None","Trace","Grav-","Grav+","Some R","Normal"];
+const GRADE_OPTS=["A","B","C","D","E"];
+const GRADE_DESC={A:"Complete",B:"Sensory only",C:"Motor <50%<3",D:"Motor ≥50%≥3",E:"Normal"};
+const NLI_OPTS=["C1","C2","C3","C4","C5","C6","C7","C8","T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12","L1","L2","L3","L4","L5","S1","S2","S3","S4-5"];
+
+function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
+  const [answers,setAnswers]=useState({});
+  const bg=patientMode?"#0d0d1a":"#faf8fc";
+  const card=patientMode?"#161625":"#fff";
+  const border=patientMode?"#1e2a3a":BD;
+  const txt=patientMode?"#e2e8f0":TX;
+
+  const set=(k,v)=>setAnswers(p=>({...p,[k]:v}));
+
+  const motorTotal=(side)=>ASIA_MOTOR_LEVELS.reduce((sum,row)=>{
+    const v=answers[row[side]];return sum+(v!=null?+v:0);
+  },0);
+  const ueTotal=(side)=>["C5","C6","C7","C8","T1"].reduce((sum,lv)=>{
+    const row=ASIA_MOTOR_LEVELS.find(r=>r.level===lv);
+    const v=answers[row[side]];return sum+(v!=null?+v:0);
+  },0);
+  const leTotal=(side)=>["L2","L3","L4","L5","S1"].reduce((sum,lv)=>{
+    const row=ASIA_MOTOR_LEVELS.find(r=>r.level===lv);
+    const v=answers[row[side]];return sum+(v!=null?+v:0);
+  },0);
+
+  const allMotorFilled=ASIA_MOTOR_LEVELS.every(r=>answers[r.r]!=null&&answers[r.l]!=null);
+
+  const finish=()=>{
+    const score=motorTotal("r")+motorTotal("l");
+    onComplete({scaleId:"asia",answers,score,date:new Date().toISOString()});
+  };
+
+  return(
+    <div style={{minHeight:"100vh",background:bg,fontFamily:"system-ui,sans-serif",color:txt}}>
+      {/* Header */}
+      <div style={{background:patientMode?"#111":"#fff",padding:"12px 16px",
+        borderBottom:`1px solid ${border}`,display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:10}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:patientMode?"#9ca3af":MU,fontSize:"1.1rem",cursor:"pointer",padding:"4px 8px"}}>←</button>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,fontSize:"0.82rem",color:txt}}>🦾 ASIA Impairment Scale</div>
+          <div style={{fontSize:"0.65rem",color:MU}}>{patientName} · SCI Motor & Sensory Classification</div>
+        </div>
+      </div>
+
+      <div style={{padding:"14px 12px",maxWidth:600,margin:"0 auto"}}>
+        {/* AIS Grade */}
+        <div style={{background:card,borderRadius:12,border:`1px solid ${border}`,padding:"14px",marginBottom:12}}>
+          <div style={{fontWeight:700,fontSize:"0.82rem",color:A,marginBottom:10}}>AIS Grade</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {GRADE_OPTS.map(g=>(
+              <button key={g} onClick={()=>set("asia_grade",g)}
+                style={{flex:"1 1 auto",padding:"10px 6px",borderRadius:8,border:`2px solid ${answers.asia_grade===g?A:border}`,
+                  background:answers.asia_grade===g?`rgba(124,58,237,0.12)`:card,
+                  color:answers.asia_grade===g?A:txt,cursor:"pointer",fontFamily:"inherit",fontWeight:700}}>
+                <div style={{fontSize:"1.2rem"}}>{g}</div>
+                <div style={{fontSize:"0.6rem",color:MU,marginTop:2}}>{GRADE_DESC[g]}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* NLI */}
+        <div style={{background:card,borderRadius:12,border:`1px solid ${border}`,padding:"14px",marginBottom:12}}>
+          <div style={{fontWeight:700,fontSize:"0.82rem",color:A,marginBottom:8}}>Neurological Level of Injury (NLI)</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+            {NLI_OPTS.map(n=>(
+              <button key={n} onClick={()=>set("asia_nli",n)}
+                style={{padding:"6px 10px",borderRadius:6,border:`1.5px solid ${answers.asia_nli===n?A:border}`,
+                  background:answers.asia_nli===n?`rgba(124,58,237,0.12)`:card,
+                  color:answers.asia_nli===n?A:txt,cursor:"pointer",fontSize:"0.75rem",fontWeight:answers.asia_nli===n?700:400,fontFamily:"inherit"}}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Motor Grid */}
+        <div style={{background:card,borderRadius:12,border:`1px solid ${border}`,padding:"14px",marginBottom:12}}>
+          <div style={{fontWeight:700,fontSize:"0.82rem",color:A,marginBottom:10}}>Motor Scores (0–5 per side)</div>
+          {/* Column headers */}
+          <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr",gap:6,marginBottom:8}}>
+            <div/>
+            <div style={{textAlign:"center",fontSize:"0.7rem",fontWeight:700,color:MU}}>RIGHT</div>
+            <div style={{textAlign:"center",fontSize:"0.7rem",fontWeight:700,color:MU}}>LEFT</div>
+          </div>
+          {/* UE header */}
+          <div style={{fontSize:"0.65rem",color:A,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,paddingLeft:4}}>
+            Upper Extremity
+          </div>
+          {ASIA_MOTOR_LEVELS.filter(r=>["C5","C6","C7","C8","T1"].includes(r.level)).map(row=>(
+            <div key={row.level} style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr",gap:6,marginBottom:8,alignItems:"center"}}>
+              <div style={{fontSize:"0.72rem",fontWeight:700,color:txt}}>
+                <span style={{color:A}}>{row.level}</span>
+                <div style={{fontSize:"0.6rem",color:MU,fontWeight:400,marginTop:1}}>{row.label}</div>
+              </div>
+              {["r","l"].map(side=>(
+                <div key={side} style={{display:"flex",gap:3}}>
+                  {MOTOR_OPTS.map((v,i)=>(
+                    <button key={v} onClick={()=>set(row[side],v)}
+                      style={{flex:1,padding:"6px 2px",borderRadius:6,border:`1.5px solid ${answers[row[side]]===v?A:border}`,
+                        background:answers[row[side]]===v?`rgba(124,58,237,0.15)`:card,
+                        color:answers[row[side]]===v?A:MU,cursor:"pointer",fontSize:"0.7rem",fontWeight:700,fontFamily:"inherit",lineHeight:1.2}}>
+                      {v}
+                      <div style={{fontSize:"0.45rem",color:answers[row[side]]===v?A:MU,display:"none"}}>{MOTOR_DESC[i]}</div>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+          {/* UE totals */}
+          <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr",gap:6,marginBottom:12,
+            background:S2,borderRadius:8,padding:"6px 4px"}}>
+            <div style={{fontSize:"0.65rem",color:MU,fontWeight:700}}>UE Total<br/>(max 25)</div>
+            {["r","l"].map(side=>(
+              <div key={side} style={{textAlign:"center",fontSize:"1.1rem",fontWeight:800,color:A}}>{ueTotal(side)}/25</div>
+            ))}
+          </div>
+          {/* LE header */}
+          <div style={{fontSize:"0.65rem",color:A,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,paddingLeft:4}}>
+            Lower Extremity
+          </div>
+          {ASIA_MOTOR_LEVELS.filter(r=>["L2","L3","L4","L5","S1"].includes(r.level)).map(row=>(
+            <div key={row.level} style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr",gap:6,marginBottom:8,alignItems:"center"}}>
+              <div style={{fontSize:"0.72rem",fontWeight:700,color:txt}}>
+                <span style={{color:A}}>{row.level}</span>
+                <div style={{fontSize:"0.6rem",color:MU,fontWeight:400,marginTop:1}}>{row.label}</div>
+              </div>
+              {["r","l"].map(side=>(
+                <div key={side} style={{display:"flex",gap:3}}>
+                  {MOTOR_OPTS.map((v,i)=>(
+                    <button key={v} onClick={()=>set(row[side],v)}
+                      style={{flex:1,padding:"6px 2px",borderRadius:6,border:`1.5px solid ${answers[row[side]]===v?A:border}`,
+                        background:answers[row[side]]===v?`rgba(124,58,237,0.15)`:card,
+                        color:answers[row[side]]===v?A:MU,cursor:"pointer",fontSize:"0.7rem",fontWeight:700,fontFamily:"inherit",lineHeight:1.2}}>
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+          {/* LE + Total */}
+          <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr",gap:6,marginBottom:6,
+            background:S2,borderRadius:8,padding:"6px 4px"}}>
+            <div style={{fontSize:"0.65rem",color:MU,fontWeight:700}}>LE Total<br/>(max 25)</div>
+            {["r","l"].map(side=>(
+              <div key={side} style={{textAlign:"center",fontSize:"1.1rem",fontWeight:800,color:A}}>{leTotal(side)}/25</div>
+            ))}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr",gap:6,
+            background:`rgba(124,58,237,0.08)`,borderRadius:8,padding:"8px 4px",border:`1px solid ${A}`}}>
+            <div style={{fontSize:"0.65rem",color:A,fontWeight:700}}>TOTAL<br/>(max 50)</div>
+            {["r","l"].map(side=>(
+              <div key={side} style={{textAlign:"center",fontSize:"1.3rem",fontWeight:900,color:A}}>{motorTotal(side)}/50</div>
+            ))}
+          </div>
+          <div style={{marginTop:8,textAlign:"center",fontSize:"0.75rem",color:MU}}>
+            Combined Motor Score: <strong style={{color:A,fontSize:"1rem"}}>{motorTotal("r")+motorTotal("l")}/100</strong>
+          </div>
+        </div>
+
+        {/* Sacral Sparing */}
+        <div style={{background:card,borderRadius:12,border:`1px solid ${border}`,padding:"14px",marginBottom:16}}>
+          <div style={{fontWeight:700,fontSize:"0.82rem",color:A,marginBottom:10}}>Sacral Sparing</div>
+          {[
+            {id:"asia_vac",label:"VAC — Voluntary Anal Contraction",opts:["Present","Absent"]},
+            {id:"asia_dap",label:"DAP — Deep Anal Pressure",opts:["Present","Absent"]},
+          ].map(item=>(
+            <div key={item.id} style={{marginBottom:10}}>
+              <div style={{fontSize:"0.75rem",color:txt,marginBottom:6}}>{item.label}</div>
+              <div style={{display:"flex",gap:8}}>
+                {item.opts.map(o=>(
+                  <button key={o} onClick={()=>set(item.id,o)}
+                    style={{flex:1,padding:"10px",borderRadius:8,border:`1.5px solid ${answers[item.id]===o?A:border}`,
+                      background:answers[item.id]===o?`rgba(124,58,237,0.12)`:card,
+                      color:answers[item.id]===o?A:txt,cursor:"pointer",fontFamily:"inherit",fontWeight:answers[item.id]===o?700:400,fontSize:"0.82rem"}}>
+                    {o}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Complete button */}
+        <button onClick={finish} disabled={!allMotorFilled||!answers.asia_grade||!answers.asia_nli}
+          style={{width:"100%",padding:"14px",borderRadius:12,border:"none",
+            background:allMotorFilled&&answers.asia_grade&&answers.asia_nli
+              ?"linear-gradient(135deg,#16a34a,#15803d)":`#e5e7eb`,
+            color:allMotorFilled&&answers.asia_grade&&answers.asia_nli?"#fff":"#9ca3af",
+            fontSize:"0.95rem",fontWeight:700,cursor:allMotorFilled&&answers.asia_grade&&answers.asia_nli?"pointer":"default",
+            fontFamily:"inherit",marginBottom:24}}>
+          ✓ Complete ASIA Assessment
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN MODULE ──────────────────────────────────────────────────────────────
 export default function OutcomeMeasuresPro({ data, set }) {
   const PC=getC();
@@ -450,6 +735,10 @@ export default function OutcomeMeasuresPro({ data, set }) {
     setView("result");
   };
 
+  if((view==="live"||view==="patient")&&activeScale==="asia"){
+    return <AsiaGridMode patientName={data?.name||"Patient"}
+      onComplete={handleComplete} onBack={()=>setView("list")} patientMode={view==="patient"}/>;
+  }
   if(view==="live"||view==="patient"){
     return <LiveMode scaleId={activeScale} patientName={data?.name||"Patient"}
       onComplete={handleComplete} onBack={()=>setView("list")} patientMode={view==="patient"}/>;
@@ -524,3 +813,133 @@ export default function OutcomeMeasuresPro({ data, set }) {
     </div>
   );
 }
+// ── SCALE ADDITIONS ───────────────────────────────────────────────────────────
+// Appended: ASIA + Gait scales (BBS, TUG, 10MWT, DGI, FAC)
+
+Object.assign(SCALES, {
+
+  // ── BERG BALANCE SCALE ──────────────────────────────────────────────────────
+  bbs:{id:"bbs",label:"BBS",full:"Berg Balance Scale",icon:"⚖️",category:"Balance / Gait",
+    maxScore:56,unit:"/56",mcid:4,
+    interpret:(s)=>s>=45?{label:"Low fall risk",color:"#16a34a"}:s>=36?{label:"Medium fall risk",color:"#d97706"}:{label:"High fall risk",color:"#dc2626"},
+    score:(v)=>{
+      const ids=Array.from({length:14},(_,i)=>`bbs_${i+1}`);
+      const s=ids.map(id=>v[id]!==undefined?+v[id]:null).filter(x=>x!==null);
+      return s.length===14?s.reduce((a,b)=>a+b,0):null;
+    },
+    fields:[
+      {id:"bbs_1",label:"1. Sitting to standing — without using hands",options:["4 — Able to stand without using hands, stable independently","3 — Able to stand independently using hands","2 — Able to stand using hands after several tries","1 — Needs minimal aid to stand or stabilise","0 — Needs moderate or maximum assistance to stand"]},
+      {id:"bbs_2",label:"2. Standing unsupported — 2 minutes",options:["4 — Able to stand safely for 2 minutes","3 — Able to stand for 2 minutes with supervision","2 — Able to stand for 30 seconds unsupported","1 — Needs several tries to stand 30 seconds","0 — Unable to stand 30 seconds unassisted"]},
+      {id:"bbs_3",label:"3. Sitting unsupported — feet on floor, 2 min",options:["4 — Able to sit safely and securely for 2 minutes","3 — Able to sit for 2 minutes with supervision","2 — Able to sit for 30 seconds","1 — Able to sit for 10 seconds","0 — Unable to sit without support for 10 seconds"]},
+      {id:"bbs_4",label:"4. Standing to sitting",options:["4 — Sits safely with minimal use of hands","3 — Controls descent using hands","2 — Uses back of legs against chair to control","1 — Sits independently but has uncontrolled descent","0 — Needs assistance to sit"]},
+      {id:"bbs_5",label:"5. Transfers",options:["4 — Able to transfer safely with minor use of hands","3 — Able to transfer safely, needs hands","2 — Able to transfer with verbal cuing and/or supervision","1 — Needs one person to assist","0 — Needs two people to assist or supervise"]},
+      {id:"bbs_6",label:"6. Standing unsupported with eyes closed — 10 sec",options:["4 — Able to stand for 10 seconds safely","3 — Able to stand for 10 seconds with supervision","2 — Able to stand for 3 seconds","1 — Unable to keep eyes closed 3 seconds but stays safely","0 — Needs help to keep from falling"]},
+      {id:"bbs_7",label:"7. Standing with feet together — unsupported 1 min",options:["4 — Independently places feet together and stands 1 minute","3 — Independently places feet together and stands 1 minute with supervision","2 — Independently places feet together and stands 30 seconds","1 — Needs help to attain position but stands 15 seconds","0 — Needs help to attain position and unable to stand 15 seconds"]},
+      {id:"bbs_8",label:"8. Reaching forward with outstretched arm",options:["4 — Can reach forward >25 cm (10 inches) confidently","3 — Can reach forward >12.5 cm (5 inches) safely","2 — Can reach forward >5 cm (2 inches) safely","1 — Reaches forward but needs supervision","0 — Loses balance while trying / needs external support"]},
+      {id:"bbs_9",label:"9. Retrieve object from floor (standing)",options:["4 — Able to pick up object safely and easily","3 — Able to pick up object but needs supervision","2 — Unable to pick up object — reaches 2–5 cm, maintains balance","1 — Unable to pick up object, needs supervision while trying","0 — Unable to try / needs assistance to keep from losing balance"]},
+      {id:"bbs_10",label:"10. Turning to look behind — both sides",options:["4 — Looks behind from both sides and weight shifts well","3 — Looks behind one side only; less weight shift","2 — Turns to side only but maintains balance","1 — Needs supervision when turning","0 — Needs assistance to keep from losing balance"]},
+      {id:"bbs_11",label:"11. Turn 360 degrees",options:["4 — Able to turn 360 safely in ≤4 seconds each side","3 — Able to turn 360 safely to one side only in ≤4 seconds","2 — Able to turn 360 safely but slowly","1 — Needs close supervision or verbal cuing","0 — Needs assistance while turning"]},
+      {id:"bbs_12",label:"12. Alternating foot taps — 8 total on step",options:["4 — Able to stand independently and complete 8 steps in ≤20 seconds","3 — Able to stand independently and complete 8 steps in >20 seconds","2 — Able to complete 4 steps without aid with supervision","1 — Able to complete >2 steps, needs minimal assist","0 — Needs assistance to keep from falling / unable to try"]},
+      {id:"bbs_13",label:"13. Standing with one foot in front (tandem) — 30 sec",options:["4 — Able to place foot tandem independently and hold 30 seconds","3 — Able to place foot ahead of other independently and hold 30 seconds","2 — Able to take small step independently and hold 30 seconds","1 — Needs help to step but can hold 15 seconds","0 — Loses balance while stepping or standing"]},
+      {id:"bbs_14",label:"14. Standing on one leg — unsupported",options:["4 — Able to lift leg independently and hold >10 seconds","3 — Able to lift leg independently and hold 5–10 seconds","2 — Able to lift leg independently and hold ≥3 seconds","1 — Tries to lift leg, unable to hold 3 seconds, remains standing","0 — Unable to try or needs assistance to prevent fall"]},
+    ]
+  },
+
+  // ── TUG ────────────────────────────────────────────────────────────────────
+  tug:{id:"tug",label:"TUG",full:"Timed Up and Go Test",icon:"⏱",category:"Balance / Gait",
+    maxScore:30,unit:"sec",mcid:3.5,
+    interpret:(s)=>s<=10?{label:"Freely mobile",color:"#16a34a"}:s<=13.5?{label:"Mostly independent",color:"#0891b2"}:s<=20?{label:"Variable mobility",color:"#d97706"}:{label:"High fall risk",color:"#dc2626"},
+    score:(v)=>v.tug_time?+v.tug_time:null,
+    fields:[
+      {id:"tug_time",label:"Time (seconds) — Rise from chair, walk 3m, turn, return, sit",options:[],type:"timer"},
+      {id:"tug_aid",label:"Walking aid used",options:["None — independent","Stick / cane","Crutches","Frame / walker","Wheelchair"]},
+    ]
+  },
+
+  // ── 10MWT ─────────────────────────────────────────────────────────────────
+  mwt10:{id:"mwt10",label:"10MWT",full:"10 Metre Walk Test",icon:"🚶",category:"Balance / Gait",
+    maxScore:2.5,unit:"m/s",mcid:0.1,
+    interpret:(s)=>s>=1.2?{label:"Community ambulator",color:"#16a34a"}:s>=0.8?{label:"Limited community",color:"#0891b2"}:s>=0.4?{label:"Household ambulat.",color:"#d97706"}:{label:"Non-functional",color:"#dc2626"},
+    score:(v)=>v.mwt_time&&+v.mwt_time>0?+((10/+v.mwt_time).toFixed(2)):null,
+    fields:[
+      {id:"mwt_time",label:"Time to walk 10 metres (seconds) — middle 10m of 14m course",options:[],type:"timer"},
+      {id:"mwt_trials",label:"Number of trials averaged",options:["1 trial","Average of 2 trials","Average of 3 trials"]},
+    ]
+  },
+
+  // ── DGI ────────────────────────────────────────────────────────────────────
+  dgi:{id:"dgi",label:"DGI",full:"Dynamic Gait Index",icon:"🏃",category:"Balance / Gait",
+    maxScore:24,unit:"/24",mcid:3,
+    interpret:(s)=>s>=22?{label:"Community ambulation",color:"#16a34a"}:s>=19?{label:"Some fall risk",color:"#d97706"}:{label:"High fall risk",color:"#dc2626"},
+    score:(v)=>{const ids=Array.from({length:8},(_,i)=>`dgi_${i+1}`);const s=ids.map(id=>v[id]!==undefined?+v[id]:null).filter(x=>x!==null);return s.length===8?s.reduce((a,b)=>a+b,0):null;},
+    fields:[
+      {id:"dgi_1",label:"1. Gait on level surface — 6 metres",options:["3 — Normal, no assistive device, good pace, no imbalance","2 — Mild — uses device, slower speed, mild gait deviations","1 — Moderate — slow speed, abnormal gait, evidence of imbalance","0 — Severe — cannot walk without assistance, severe imbalance"]},
+      {id:"dgi_2",label:"2. Gait with speed changes (normal → fast → slow)",options:["3 — Performs smoothly, no difficulty, no gait deviation","2 — Mild — unable to change speed smoothly, minor deviations","1 — Moderate — unable to change speed, significant deviations","0 — Severe — cannot change speed, loses balance"]},
+      {id:"dgi_3",label:"3. Gait with horizontal head turns (look left/right)",options:["3 — Performs smoothly, no change in gait","2 — Mild — gait speed changes, smooth head movement","1 — Moderate — gait problems with head turns, slows down","0 — Severe — stops or loses balance"]},
+      {id:"dgi_4",label:"4. Gait with vertical head turns (look up/down)",options:["3 — Performs smoothly, no change in gait","2 — Mild — gait speed changes, smooth head movement","1 — Moderate — gait problems with head turns","0 — Severe — stops or loses balance"]},
+      {id:"dgi_5",label:"5. Gait with pivot turn",options:["3 — Pivots safely in ≤3 steps, no loss of balance","2 — Pivots safely in >4 steps, no loss of balance","1 — Pivots slowly, requires verbal cuing, steps to prevent fall","0 — Cannot pivot safely, requires assistance"]},
+      {id:"dgi_6",label:"6. Step over obstacle (shoebox on floor)",options:["3 — Able to step over, no change in gait","2 — Steps over but slows down","1 — Steps over but significantly slows or requires supervision","0 — Cannot step over, trips"]},
+      {id:"dgi_7",label:"7. Step around two obstacles (cones)",options:["3 — Able to walk around, no change in gait","2 — Moves around both cones, slows down slightly","1 — Significant slowing, requires supervision","0 — Cannot walk around obstacles without assistance"]},
+      {id:"dgi_8",label:"8. Steps — up and down stairs",options:["3 — Alternating feet, no rail","2 — Alternating feet, must use rail","1 — Two feet per step, must use rail","0 — Cannot do safely"]},
+    ]
+  },
+
+  // ── FAC ────────────────────────────────────────────────────────────────────
+  fac:{id:"fac",label:"FAC",full:"Functional Ambulation Classification",icon:"🦽",category:"Balance / Gait",
+    maxScore:5,unit:"/5",mcid:1,
+    interpret:(s)=>s>=5?{label:"Independent all terrain",color:"#16a34a"}:s>=3?{label:"Supervised / limited",color:"#0891b2"}:s>=1?{label:"Dependent — assist needed",color:"#d97706"}:{label:"Non-ambulatory",color:"#dc2626"},
+    score:(v)=>v.fac_score!==undefined?+v.fac_score:null,
+    fields:[
+      {id:"fac_score",label:"Functional Ambulation Level",options:["0 — Non-functional: unable to ambulate, uses wheelchair","1 — Dependent level 2: requires physical assist — continuous","2 — Dependent level 1: requires physical assist — intermittent","3 — Supervised: requires supervision but no physical contact","4 — Independent level 1: on level surfaces only","5 — Independent level 2: any surface, stairs, slopes, uneven"]}
+    ]
+  },
+
+  // ── ASIA SCALE ─────────────────────────────────────────────────────────────
+  asia:{id:"asia",label:"ASIA",full:"ASIA Impairment Scale (SCI Classification)",icon:"🦾",category:"Neurological / SCI",
+    maxScore:100,unit:" motor pts",mcid:4,
+    interpret:(s)=>s>=80?{label:"AIS D/E — Incomplete",color:"#16a34a"}:s>=50?{label:"AIS C/D — Incomplete",color:"#0891b2"}:s>=20?{label:"AIS B/C — Incomplete",color:"#d97706"}:{label:"AIS A/B — Severe",color:"#dc2626"},
+    score:(v)=>{
+      const levels=["c5","c6","c7","c8","t1","l2","l3","l4","l5","s1"];
+      const s=levels.flatMap(l=>[`asia_m_${l}_l`,`asia_m_${l}_r`]).map(id=>v[id]?+v[id]:null).filter(x=>x!==null);
+      return s.length===20?s.reduce((a,b)=>a+b,0):null;
+    },
+    fields:[
+      // Grade first
+      {id:"asia_grade",label:"ASIA Impairment Scale Grade",options:["A — Complete: no motor/sensory function below injury level","B — Incomplete: sensory only below injury level","C — Incomplete: motor preserved, >50% key muscles below NLI grade <3","D — Incomplete: motor preserved, ≥50% key muscles below NLI grade ≥3","E — Normal: motor and sensory function normal"]},
+      {id:"asia_nli",label:"Neurological Level of Injury (NLI)",options:["C1","C2","C3","C4","C5","C6","C7","C8","T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12","L1","L2","L3","L4","L5","S1","S2","S3","S4-5"]},
+      // Upper extremity motor (bilateral, 0-5 each)
+      {id:"asia_m_c5_r",label:"Motor: C5 — Elbow Flexors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_c5_l",label:"Motor: C5 — Elbow Flexors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_c6_r",label:"Motor: C6 — Wrist Extensors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_c6_l",label:"Motor: C6 — Wrist Extensors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_c7_r",label:"Motor: C7 — Elbow Extensors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_c7_l",label:"Motor: C7 — Elbow Extensors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_c8_r",label:"Motor: C8 — Finger Flexors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_c8_l",label:"Motor: C8 — Finger Flexors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_t1_r",label:"Motor: T1 — Finger Abductors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_t1_l",label:"Motor: T1 — Finger Abductors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      // Lower extremity motor (bilateral)
+      {id:"asia_m_l2_r",label:"Motor: L2 — Hip Flexors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_l2_l",label:"Motor: L2 — Hip Flexors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_l3_r",label:"Motor: L3 — Knee Extensors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_l3_l",label:"Motor: L3 — Knee Extensors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_l4_r",label:"Motor: L4 — Ankle Dorsiflexors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_l4_l",label:"Motor: L4 — Ankle Dorsiflexors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_l5_r",label:"Motor: L5 — Long Toe Extensors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_l5_l",label:"Motor: L5 — Long Toe Extensors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_s1_r",label:"Motor: S1 — Ankle Plantar Flexors (Right)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      {id:"asia_m_s1_l",label:"Motor: S1 — Ankle Plantar Flexors (Left)",options:["0 — Total paralysis","1 — Palpable/visible contraction","2 — Active movement, gravity eliminated","3 — Active movement against gravity","4 — Active movement against some resistance","5 — Normal"]},
+      // Sacral sparing
+      {id:"asia_vac",label:"VAC — Voluntary Anal Contraction",options:["Present — voluntary contraction felt (motor incomplete)","Absent — no voluntary contraction"]},
+      {id:"asia_dap",label:"DAP — Deep Anal Pressure",options:["Present — any anal sensation","Absent"]},
+    ]
+  },
+});
+
+// ── HINDI FOR GAIT/BALANCE ───────────────────────────────────────────────────
+Object.assign(HI, {
+  bbs_1:["1. बैठने से खड़े होना","4 — बिना हाथ के स्वतंत्र रूप से खड़े हो सकते हैं","3 — हाथ से स्वतंत्र रूप से खड़े हो सकते हैं","2 — कई प्रयासों के बाद खड़े हो सकते हैं","1 — न्यूनतम सहायता चाहिए","0 — मध्यम या अधिक सहायता चाहिए"],
+  bbs_2:["2. बिना सहारे खड़े रहना (2 मिनट)","4 — 2 मिनट सुरक्षित रूप से खड़े","3 — देखरेख में 2 मिनट","2 — 30 सेकंड","1 — कई प्रयासों से 30 सेकंड","0 — 30 सेकंड बिना सहायता नहीं"],
+  dgi_1:["1. सपाट सतह पर चलना","3 — सामान्य, कोई उपकरण नहीं","2 — हल्का — उपकरण या धीमी गति","1 — मध्यम — धीमी, असामान्य चाल","0 — गंभीर — बिना सहायता नहीं चल सकते"],
+  fac_score:["अम्बुलेशन स्तर","0 — गैर-कार्यात्मक: व्हीलचेयर","1 — आश्रित स्तर 2: निरंतर शारीरिक सहायता","2 — आश्रित स्तर 1: कभी-कभी शारीरिक सहायता","3 — निगरानी: देखरेख, कोई संपर्क नहीं","4 — स्वतंत्र स्तर 1: केवल सपाट सतह","5 — स्वतंत्र स्तर 2: किसी भी सतह, सीढ़ियाँ"],
+});
