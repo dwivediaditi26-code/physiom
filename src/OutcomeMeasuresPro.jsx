@@ -605,6 +605,7 @@ const NLI_OPTS=["C1","C2","C3","C4","C5","C6","C7","C8","T1","T2","T3","T4","T5"
 
 function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
   const [answers,setAnswers]=useState({});
+  const [stage,setStage]=useState("grid"); // grid | review
   const bg=patientMode?"#0d0d1a":"#faf8fc";
   const card=patientMode?"#161625":"#fff";
   const border=patientMode?"#1e2a3a":BD;
@@ -631,7 +632,7 @@ function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
     onComplete({scaleId:"asia",answers,score,date:new Date().toISOString()});
   };
 
-  return(
+  const gridUI=(
     <div style={{minHeight:"100vh",background:bg,fontFamily:"system-ui,sans-serif",color:txt}}>
       {/* Header */}
       <div style={{background:patientMode?"#111":"#fff",padding:"12px 16px",
@@ -784,19 +785,154 @@ function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
           ))}
         </div>
 
-        {/* Complete button */}
-        <button onClick={finish} disabled={!allMotorFilled||!answers.asia_grade||!answers.asia_nli}
+        {/* Review button */}
+        <button onClick={()=>setStage("review")} disabled={!allMotorFilled||!answers.asia_grade||!answers.asia_nli}
           style={{width:"100%",padding:"14px",borderRadius:12,border:"none",
             background:allMotorFilled&&answers.asia_grade&&answers.asia_nli
               ?"linear-gradient(135deg,#16a34a,#15803d)":`#e5e7eb`,
             color:allMotorFilled&&answers.asia_grade&&answers.asia_nli?"#fff":"#9ca3af",
             fontSize:"0.95rem",fontWeight:700,cursor:allMotorFilled&&answers.asia_grade&&answers.asia_nli?"pointer":"default",
             fontFamily:"inherit",marginBottom:24}}>
-          ✓ Complete ASIA Assessment
+          ✓ Review & Score →
         </button>
       </div>
     </div>
   );
+
+  // ── ASIA REVIEW SCREEN ────────────────────────────────────────────────────
+  if(stage==="review"){
+    const totalScore=motorTotal("r")+motorTotal("l");
+    const interp=SCALES.asia.interpret(totalScore);
+    return(
+      <div style={{minHeight:"100vh",background:bg,fontFamily:"system-ui,sans-serif",color:txt}}>
+        {/* Header */}
+        <div style={{background:patientMode?"#111":"#fff",padding:"12px 16px",
+          borderBottom:`1px solid ${border}`,display:"flex",alignItems:"center",gap:10,
+          position:"sticky",top:0,zIndex:10}}>
+          <button onClick={()=>setStage("grid")}
+            style={{background:"none",border:"none",color:MU,fontSize:"1.1rem",cursor:"pointer",padding:"4px 8px"}}>←</button>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:"0.82rem",color:txt}}>📋 ASIA Review</div>
+            <div style={{fontSize:"0.65rem",color:MU}}>{patientName} · Verify all scores before saving</div>
+          </div>
+        </div>
+
+        <div style={{padding:"14px 12px",maxWidth:560,margin:"0 auto"}}>
+          {/* Score summary card */}
+          <div style={{background:card,borderRadius:12,border:`2px solid ${interp.color}`,
+            padding:"14px 16px",marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:10}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"2rem",fontWeight:900,color:interp.color,lineHeight:1}}>{totalScore}</div>
+                <div style={{fontSize:"0.62rem",color:MU,marginTop:2}}>/ 100 motor pts</div>
+              </div>
+              <div>
+                <div style={{fontWeight:700,fontSize:"0.9rem",color:interp.color}}>{interp.label}</div>
+                <div style={{fontSize:"0.7rem",color:MU,marginTop:2}}>
+                  AIS Grade: <strong style={{color:A}}>{answers.asia_grade||"—"}</strong>
+                  &nbsp;·&nbsp; NLI: <strong style={{color:A}}>{answers.asia_nli||"—"}</strong>
+                </div>
+              </div>
+            </div>
+            {/* UE/LE breakdown */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,
+              background:S2,borderRadius:8,padding:"8px"}}>
+              {[
+                {label:"UE Right",val:ueTotal("r"),max:25},
+                {label:"UE Left",val:ueTotal("l"),max:25},
+                {label:"LE Right",val:leTotal("r"),max:25},
+                {label:"LE Left",val:leTotal("l"),max:25},
+              ].map(item=>(
+                <div key={item.label} style={{textAlign:"center"}}>
+                  <div style={{fontSize:"1rem",fontWeight:800,color:A}}>{item.val}</div>
+                  <div style={{fontSize:"0.55rem",color:MU}}>{item.label}<br/>/{item.max}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Motor scores table */}
+          <div style={{background:card,borderRadius:12,border:`1px solid ${border}`,
+            padding:"12px",marginBottom:12}}>
+            <div style={{fontWeight:700,fontSize:"0.78rem",color:A,marginBottom:8}}>Motor Scores</div>
+            {/* Header */}
+            <div style={{display:"grid",gridTemplateColumns:"90px 1fr 1fr",gap:4,
+              marginBottom:6,fontSize:"0.65rem",fontWeight:700,color:MU}}>
+              <div>Level / Muscle</div>
+              <div style={{textAlign:"center"}}>RIGHT</div>
+              <div style={{textAlign:"center"}}>LEFT</div>
+            </div>
+            {ASIA_MOTOR_LEVELS.map((row,i)=>{
+              const isLE=["L2","L3","L4","L5","S1"].includes(row.level);
+              return(
+                <React.Fragment key={row.level}>
+                  {i===5&&<div style={{fontSize:"0.6rem",color:A,fontWeight:700,
+                    textTransform:"uppercase",margin:"8px 0 4px",paddingLeft:2}}>Lower Extremity</div>}
+                  {i===0&&<div style={{fontSize:"0.6rem",color:A,fontWeight:700,
+                    textTransform:"uppercase",margin:"0 0 4px",paddingLeft:2}}>Upper Extremity</div>}
+                  <div style={{display:"grid",gridTemplateColumns:"90px 1fr 1fr",gap:4,
+                    padding:"5px 6px",borderRadius:6,marginBottom:2,
+                    background:i%2===0?S2:card}}>
+                    <div>
+                      <span style={{fontWeight:700,fontSize:"0.72rem",color:A}}>{row.level}</span>
+                      <span style={{fontSize:"0.6rem",color:MU,marginLeft:4}}>{row.label}</span>
+                    </div>
+                    {["r","l"].map(side=>{
+                      const v=answers[row[side]];
+                      const gradeLabel=["None","Trace","Grav−","Grav+","Some R","Normal"][+v]||"—";
+                      return(
+                        <div key={side} style={{textAlign:"center"}}>
+                          <span style={{fontWeight:800,fontSize:"0.88rem",
+                            color:v==="5"?"#16a34a":v==="0"?"#dc2626":A}}>{v??<span style={{color:"#f59e0b"}}>?</span>}</span>
+                          <span style={{fontSize:"0.55rem",color:MU,marginLeft:3}}>{v!=null?gradeLabel:""}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* Sacral sparing */}
+          <div style={{background:card,borderRadius:12,border:`1px solid ${border}`,
+            padding:"12px",marginBottom:16}}>
+            <div style={{fontWeight:700,fontSize:"0.78rem",color:A,marginBottom:8}}>Sacral Sparing</div>
+            {[
+              {id:"asia_vac",label:"VAC — Voluntary Anal Contraction"},
+              {id:"asia_dap",label:"DAP — Deep Anal Pressure"},
+            ].map(item=>(
+              <div key={item.id} style={{display:"flex",justifyContent:"space-between",
+                alignItems:"center",padding:"5px 0",borderBottom:`1px solid ${border}`}}>
+                <span style={{fontSize:"0.75rem",color:txt}}>{item.label}</span>
+                <span style={{fontWeight:700,fontSize:"0.78rem",
+                  color:answers[item.id]==="Present"?"#16a34a":answers[item.id]==="Absent"?"#dc2626":MU}}>
+                  {answers[item.id]||"—"}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div style={{display:"flex",gap:10,marginBottom:24}}>
+            <button onClick={()=>setStage("grid")}
+              style={{flex:1,padding:"12px",borderRadius:10,border:`1px solid ${border}`,
+                background:"transparent",color:MU,fontSize:"0.82rem",cursor:"pointer",fontFamily:"inherit"}}>
+              ← Edit
+            </button>
+            <button onClick={finish}
+              style={{flex:2,padding:"12px",borderRadius:10,border:"none",
+                background:"linear-gradient(135deg,#16a34a,#15803d)",color:"#fff",
+                fontSize:"0.88rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              💾 Save & View Score
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return gridUI;
 }
 
 // ─── MAIN MODULE ──────────────────────────────────────────────────────────────
