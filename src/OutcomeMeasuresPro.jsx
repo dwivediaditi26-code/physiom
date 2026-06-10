@@ -606,6 +606,7 @@ const NLI_OPTS=["C1","C2","C3","C4","C5","C6","C7","C8","T1","T2","T3","T4","T5"
 function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
   const [answers,setAnswers]=useState({});
   const [stage,setStage]=useState("grid"); // grid | review
+  const [showGuide,setShowGuide]=useState(false);
   const bg=patientMode?"#0d0d1a":"#faf8fc";
   const card=patientMode?"#161625":"#fff";
   const border=patientMode?"#1e2a3a":BD;
@@ -642,7 +643,87 @@ function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
           <div style={{fontWeight:700,fontSize:"0.82rem",color:txt}}>🦾 ASIA Impairment Scale</div>
           <div style={{fontSize:"0.65rem",color:MU}}>{patientName} · SCI Motor & Sensory Classification</div>
         </div>
+        <button onClick={()=>setShowGuide(g=>!g)}
+          style={{padding:"5px 12px",borderRadius:20,border:`1.5px solid ${A}`,
+            background:showGuide?"rgba(124,58,237,0.15)":"transparent",
+            color:"#c4b5fd",fontSize:"0.65rem",fontWeight:700,cursor:"pointer",flexShrink:0}}>
+          {showGuide?"▲ Hide Guide":"📋 How to Perform"}
+        </button>
       </div>
+
+      {/* Clinical Guide */}
+      {showGuide&&(
+        <div style={{background:"#111827",borderTop:"1px solid #374151",padding:"14px 16px",fontSize:"0.68rem",color:"#d1d5db",lineHeight:1.7}}>
+          <div style={{fontWeight:800,color:"#c4b5fd",marginBottom:8,fontSize:"0.75rem"}}>
+            🦾 ASIA / ISNCSCI — How to Perform
+          </div>
+
+          <div style={{marginBottom:10}}>
+            <div style={{fontWeight:700,color:"#a78bfa",marginBottom:3}}>What is it?</div>
+            The ASIA Impairment Scale (AIS) is the international gold standard for classifying spinal cord injury (SCI) severity. Always perform this in a quiet, private setting. Patient must be conscious and cooperative. Takes 30–45 minutes for a full assessment.
+          </div>
+
+          <div style={{marginBottom:10}}>
+            <div style={{fontWeight:700,color:"#a78bfa",marginBottom:3}}>Motor Testing (0–5 scale)</div>
+            Test 10 key muscle groups bilaterally. Position: supine for UE, supine for LE.
+            <div style={{marginTop:4,paddingLeft:8,borderLeft:"2px solid #4c1d95"}}>
+              <div><strong style={{color:"#c4b5fd"}}>0</strong> — Total paralysis</div>
+              <div><strong style={{color:"#c4b5fd"}}>1</strong> — Palpable or visible contraction only</div>
+              <div><strong style={{color:"#c4b5fd"}}>2</strong> — Active movement, gravity eliminated</div>
+              <div><strong style={{color:"#c4b5fd"}}>3</strong> — Active movement against gravity</div>
+              <div><strong style={{color:"#c4b5fd"}}>4</strong> — Active movement against some resistance</div>
+              <div><strong style={{color:"#c4b5fd"}}>5</strong> — Normal — active movement against full resistance</div>
+              <div style={{marginTop:4,color:"#9ca3af",fontSize:"0.62rem"}}>NT = Not testable (cast, pain, contracture). Score as NT, not 0.</div>
+            </div>
+          </div>
+
+          <div style={{marginBottom:10}}>
+            <div style={{fontWeight:700,color:"#a78bfa",marginBottom:3}}>UE Key Muscles (C5–T1)</div>
+            <div style={{paddingLeft:8,borderLeft:"2px solid #4c1d95"}}>
+              <div>C5 — Elbow flexors (biceps, brachialis)</div>
+              <div>C6 — Wrist extensors (ECRL, ECRB)</div>
+              <div>C7 — Elbow extensors (triceps)</div>
+              <div>C8 — Finger flexors (FDP to middle finger)</div>
+              <div>T1 — Finger abductors (abductor digiti minimi)</div>
+            </div>
+          </div>
+
+          <div style={{marginBottom:10}}>
+            <div style={{fontWeight:700,color:"#a78bfa",marginBottom:3}}>LE Key Muscles (L2–S1)</div>
+            <div style={{paddingLeft:8,borderLeft:"2px solid #4c1d95"}}>
+              <div>L2 — Hip flexors (iliopsoas)</div>
+              <div>L3 — Knee extensors (quadriceps)</div>
+              <div>L4 — Ankle dorsiflexors (tibialis anterior)</div>
+              <div>L5 — Long toe extensors (EHL)</div>
+              <div>S1 — Ankle plantar flexors (gastrocnemius, soleus)</div>
+            </div>
+          </div>
+
+          <div style={{marginBottom:10}}>
+            <div style={{fontWeight:700,color:"#a78bfa",marginBottom:3}}>Sacral Sparing (critical for AIS A vs B)</div>
+            <div style={{paddingLeft:8,borderLeft:"2px solid #dc2626"}}>
+              <div><strong style={{color:"#fca5a5"}}>VAC</strong> — Voluntary Anal Contraction: insert gloved finger, ask patient to squeeze. Any voluntary contraction = motor incomplete (not AIS A).</div>
+              <div style={{marginTop:4}}><strong style={{color:"#fca5a5"}}>DAP</strong> — Deep Anal Pressure: apply pressure to anorectal wall. Any sensation = sensory sacral sparing → not AIS A.</div>
+            </div>
+          </div>
+
+          <div style={{marginBottom:6}}>
+            <div style={{fontWeight:700,color:"#a78bfa",marginBottom:3}}>AIS Grade Rules</div>
+            <div style={{paddingLeft:8,borderLeft:"2px solid #4c1d95"}}>
+              <div><strong style={{color:"#c4b5fd"}}>A — Complete:</strong> No motor/sensory in S4–S5. No VAC. No DAP.</div>
+              <div><strong style={{color:"#c4b5fd"}}>B — Incomplete:</strong> Sensory but NO motor below NLI. Includes S4–S5.</div>
+              <div><strong style={{color:"#c4b5fd"}}>C — Incomplete:</strong> Motor preserved below NLI. More than half key muscles grade &lt;3.</div>
+              <div><strong style={{color:"#c4b5fd"}}>D — Incomplete:</strong> Motor preserved below NLI. At least half key muscles grade ≥3.</div>
+              <div><strong style={{color:"#c4b5fd"}}>E — Normal:</strong> Motor and sensory normal. Only use if prior deficit documented.</div>
+            </div>
+          </div>
+
+          <div style={{marginTop:8,padding:"6px 10px",background:"rgba(220,38,38,0.15)",borderRadius:6,
+            fontSize:"0.6rem",color:"#fca5a5",borderLeft:"2px solid #dc2626"}}>
+            ⚠ Always use official ISNCSCI worksheet for formal documentation. This tool is for clinical recording only.
+          </div>
+        </div>
+      )}
 
       <div style={{padding:"14px 12px",maxWidth:600,margin:"0 auto"}}>
         {/* AIS Grade */}
@@ -963,13 +1044,13 @@ export default function OutcomeMeasuresPro({ data, set }) {
     setView("result");
   };
 
-  if((view==="live"||view==="patient")&&activeScale==="asia"){
+  if(view==="live"&&activeScale==="asia"){
     return <AsiaGridMode patientName={data?.name||"Patient"}
-      onComplete={handleComplete} onBack={()=>setView("list")} patientMode={view==="patient"}/>;
+      onComplete={handleComplete} onBack={()=>setView("list")} patientMode={false}/>;
   }
-  if(view==="live"||view==="patient"){
+  if(view==="live"){
     return <LiveMode scaleId={activeScale} patientName={data?.name||"Patient"}
-      onComplete={handleComplete} onBack={()=>setView("list")} patientMode={view==="patient"}/>;
+      onComplete={handleComplete} onBack={()=>setView("list")} patientMode={false}/>;
   }
   if(view==="result"&&lastResult){
     return <ResultScreen result={lastResult} history={lastResult.history}
@@ -1018,11 +1099,10 @@ export default function OutcomeMeasuresPro({ data, set }) {
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0,borderTop:`1px solid ${BD}`}}>
                 {[
                   {label:"📄 Blank PDF",color:MU,action:()=>generateBlankPDF(sc.id,data?.name||"")},
-                  {label:"▶ Therapist",color:A,action:()=>{setActiveScale(sc.id);setView("live");}},
-                  {label:"👤 Patient",color:"#059669",action:()=>{setActiveScale(sc.id);setView("patient");}},
+                  {label:"▶ Start Assessment",color:A,action:()=>{setActiveScale(sc.id);setView("live");}},
                 ].map((btn,i)=>(
                   <button key={i} onClick={btn.action}
-                    style={{padding:"9px 4px",border:"none",borderRight:i<2?`1px solid ${BD}`:"none",
+                    style={{padding:"9px 4px",border:"none",borderRight:i<1?`1px solid ${BD}`:"none",
                       background:"transparent",color:btn.color,fontSize:"0.68rem",fontWeight:700,
                       cursor:"pointer",fontFamily:"inherit"}}>
                     {btn.label}
@@ -1035,8 +1115,7 @@ export default function OutcomeMeasuresPro({ data, set }) {
       </div>
       <div style={{marginTop:12,padding:"10px 12px",borderRadius:8,background:S2,
         border:`1px solid ${BD}`,fontSize:"0.65rem",color:MU,lineHeight:1.6}}>
-        <strong style={{color:A}}>👤 Patient mode</strong> — hands the tablet to the patient for self-completion. Questions appear large with Hindi toggle. &nbsp;
-        <strong style={{color:A}}>▶ Therapist mode</strong> — clinician reads and taps answers.
+        <strong style={{color:A}}>▶ Start Assessment</strong> — guided question-by-question flow. Therapist reads and taps answers. Hindi toggle available for NDI/ODI. Review all answers before saving.
       </div>
     </div>
   );
