@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import { supabase } from "./supabase.js";
+import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
 
 const A="#7c3aed",BG="#faf8fc",SUR="#ffffff",BD="#d8cce8",TX="#1a1025",MU="#7e6a9a",S2="#f5f0fb",RE="#dc2626",GR="#059669";
 const inp={width:"100%",padding:"11px 14px",borderRadius:10,border:`1.5px solid ${BD}`,background:S2,color:TX,fontSize:"0.88rem",fontFamily:"inherit",outline:"none",boxSizing:"border-box",transition:"border-color 0.15s"};
@@ -116,6 +117,7 @@ function Forgot({onSwitch}){
 }
 
 export default function AuthScreen({onAuth}){
+  const [legal,setLegal]=React.useState(null); // "privacy" | "terms" | null
   const [view,setView]=useState("login");
   const T={login:{h:"Welcome back",sub:"Sign in to your PhysioMind account"},register:{h:"Start free",sub:"Create your clinical workspace"},forgot:{h:"Reset password",sub:"We'll send a reset link to your email"}};
   const {h,sub}=T[view];
@@ -142,7 +144,15 @@ export default function AuthScreen({onAuth}){
             <span key={t} style={{fontSize:"0.65rem",color:MU,background:SUR,padding:"4px 10px",borderRadius:20,border:`1px solid ${BD}`,fontWeight:600}}>{t}</span>
           ))}
         </div>
+        <p style={{textAlign:"center",marginTop:14,fontSize:"0.65rem",color:MU}}>
+          By signing in you agree to our{" "}
+          <button type="button" onClick={()=>setLegal("terms")} style={{background:"none",border:"none",color:A,fontWeight:600,cursor:"pointer",fontSize:"0.65rem",padding:0}}>Terms</button>
+          {" "}&amp;{" "}
+          <button type="button" onClick={()=>setLegal("privacy")} style={{background:"none",border:"none",color:A,fontWeight:600,cursor:"pointer",fontSize:"0.65rem",padding:0}}>Privacy Policy</button>
+        </p>
       </div>
+      {legal==="privacy" && <PrivacyPolicy onClose={()=>setLegal(null)}/>}
+      {legal==="terms"   && <TermsOfService onClose={()=>setLegal(null)}/>}
     </div>
   );
 }
