@@ -13,6 +13,7 @@ import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescription
 import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
+import PatientProfile from "./PatientProfile.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
@@ -6441,7 +6442,7 @@ function useBreakpoint() {
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-function PostureAnalysisModule(){
+function PostureAnalysisModule({ activePatient, set: setPatientField }){
   const [mode,setMode]=useState("upload");
   const [view,setView]=useState("anterior");
   const [mpStatus,setMpStatus]=useState("loading");
@@ -7041,7 +7042,9 @@ function PostureAnalysisModule(){
           const f=r.blocked?[]:buildFindings(result.lm,currentView,m);
           const s=scorePosture(m,f,r);
           saveMvResult(currentView,m,f,s,r,annotated);
-          saveSession({view:currentView,time:new Date().toISOString(),score:s?.score,band:s?.band,findings:f.length,img:annotated});
+          const _pe1={view:currentView,time:new Date().toISOString(),score:s?.score,band:s?.band,findings:f.length,img:annotated};
+          saveSession(_pe1);
+          if(set&&activePatient){try{const _ex=JSON.parse(activePatient?.data?.posture_sessions||"[]");set("posture_sessions",JSON.stringify([..._ex,_pe1]));}catch(e){}}
         } else {
           saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:annotated});
         }
@@ -9667,7 +9670,15 @@ function PhotoUploadAnalyzer() {
             const s=PostureScoreEngine(m,f,r);
             const report={lm,measurements:m,findings:f,reliability:r,scoreData:s,view:viewRef.current,capturedAt:new Date().toISOString()};
             setResult(report);
-            saveSession({view:viewRef.current,score:s.score,band:s.band,findingsCount:f.length,highCount:f.filter(x=>x.severity==="high").length,capturedAt:new Date().toISOString()});
+            const postureEntry={view:viewRef.current,score:s.score,band:s.band,findingsCount:f.length,highCount:f.filter(x=>x.severity==="high").length,capturedAt:new Date().toISOString()};
+            saveSession(postureEntry);
+            // Auto-save to patient data so PatientProfile shows it
+            if(setPatientField){
+              try{
+                const existing=JSON.parse(activePatient?.data?.posture_sessions||"[]");
+                setPatientField("posture_sessions",JSON.stringify([...existing,postureEntry]));
+              }catch(e){}
+            }
             // Draw overlay
             const canvas=canvasRef.current,img=imgRef.current;
             if(canvas&&img){
@@ -12313,15 +12324,16 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
 
   return (
     <>
-    {/* Profile modal */}
+    {/* Patient Profile — new unified timeline view */}
     {profilePatient && (
-      <PatientProfileModal
-        patient={profilePatient}
-        onClose={()=>setProfilePatient(null)}
-        onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); }}
-        onSaveField={handleSaveField}
-        onNav={(key)=>{ setProfilePatient(null); onSelect(profilePatient); navTo(key); }}
-      />
+      <div style={{position:"fixed",inset:0,zIndex:500,background:"#f5f0fb",overflowY:"auto"}}>
+        <PatientProfile
+          patient={profilePatient}
+          onSaveField={handleSaveField}
+          onClose={()=>setProfilePatient(null)}
+          onNav={(key)=>{ setProfilePatient(null); onSelect(profilePatient); navTo&&navTo(key); }}
+        />
+      </div>
     )}
 
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300,
