@@ -444,7 +444,6 @@ export default function HybridKendall({
   const [confirmed, setConfirmed] = useState(false);
   const [advancedMode, setAdvancedMode] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
-  const [debugMode, setDebugMode] = useState(false);
   const [activePlace, setActivePlace] = useState(null); // id of landmark being placed by tap
   const [dragging, setDragging] = useState(null);
   const [imgSize, setImgSize] = useState({ w:1, h:1 });
@@ -564,7 +563,6 @@ export default function HybridKendall({
         </div>
         <div style={{display:"flex",gap:6}}>
           <button onClick={()=>setShowGrid(v=>!v)} style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${showGrid?C.accent:C.border}`,background:showGrid?`${C.accent}20`:"transparent",color:showGrid?C.accent:C.muted,fontSize:"0.6rem",fontWeight:700,cursor:"pointer"}}>Grid</button>
-          <button onClick={()=>setDebugMode(v=>!v)} style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${debugMode?"#f59e0b":C.border}`,background:debugMode?"rgba(245,158,11,0.1)":"transparent",color:debugMode?"#f59e0b":C.muted,fontSize:"0.6rem",fontWeight:700,cursor:"pointer"}}>Debug</button>
           <button onClick={()=>setAdvancedMode(v=>!v)} style={{padding:"5px 12px",borderRadius:8,border:`2px solid ${advancedMode?"#34d399":"rgba(52,211,153,0.5)"}`,background:advancedMode?"rgba(52,211,153,0.15)":"rgba(52,211,153,0.06)",color:advancedMode?"#34d399":"rgba(52,211,153,0.9)",fontSize:"0.65rem",fontWeight:800,cursor:"pointer"}}>
             🔬 {advancedMode?"Advanced ON":"Advanced Mode"}
           </button>
@@ -800,37 +798,7 @@ export default function HybridKendall({
         </div>
       )}
 
-      {/* ── Debug panel ── */}
-      {debugMode && (
-        <div style={{background:"#0d1117",borderRadius:10,border:"1px solid #f59e0b40",padding:"10px 12px",fontFamily:"monospace",fontSize:"0.6rem",color:"#94a3b8"}}>
-          <div style={{color:"#f59e0b",fontWeight:800,marginBottom:8}}>DEBUG — Hybrid Kendall</div>
-          <div style={{color:"#34d399",marginBottom:4}}>LANDMARKS (normalised):</div>
-          {Object.entries(lm).map(([k,v])=>(
-            <div key={k}>{k.padEnd(10)}: x={v.x.toFixed(4)} y={v.y.toFixed(4)}</div>
-          ))}
-          <div style={{color:"#34d399",marginTop:8,marginBottom:4}}>MEASUREMENTS:</div>
-          <div>bodyHeightNorm : {m.bodyHeightNorm?.toFixed(4) ?? "null"}</div>
-          <div>viewSign       : {m.viewSign}</div>
-          <div>CVA            : {m.cva ?? "null"} ({m.cvaSource ?? "N/A"})</div>
-          <div>earPlumb       : {m.earPlumb ?? "null"} %BH</div>
-          <div>acrPlumb       : {m.acrPlumb ?? "null"} %BH</div>
-          <div>hipPlumb       : {m.hipPlumb ?? "null"} %BH</div>
-          <div>kneePlumb      : {m.kneePlumb ?? "null"} %BH</div>
-          <div>earAcromion    : {m.earAcr ?? "null"} %BH</div>
-          <div>kneeAngle      : {m.knee ?? "null"} °</div>
-          <div>shoulder.comp  : {m.shoulder?.composite ?? "null"}</div>
-          <div>TCI            : {m.tci?.tci ?? "null"} %</div>
-          <div>LCI            : {m.lci?.lci ?? "null"} %</div>
-          <div>pelvicTilt     : {m.pelvis?.angle ?? "null"} ° ({m.pelvis?.direction ?? "N/A"})</div>
-          <div style={{color:"#34d399",marginTop:8,marginBottom:4}}>FORMULAS:</div>
-          <div>CVA = atan2(|ear.y-ref.y|, |ear.x-ref.x|) × 180/π  [Yip 2008]</div>
-          <div>Plumb% = (landmark.x - ankle.x) × viewSign / BH × 100</div>
-          <div>TCI = perpDist(apexT, C7→T12 chord) / chordLen × 100</div>
-          <div>LCI = perpDist(apexL, T12→S2 chord) / chordLen × 100</div>
-          <div>Pelvis = atan2(|ASIS_Y−PSIS_Y|, |ASIS_X−PSIS_X|)</div>
-          <div>Knee = acos(dot(hip-knee, ankle-knee) / |mag|) [vec3]</div>
-        </div>
-      )}
+
     </div>
   );
 }

@@ -3618,19 +3618,11 @@ function classifyKendallPostureType(m) {
     };
   }
 
-  // ── APT only (hyperlordosis without kyphosis) ─────────────────────────────
-  if (pc > 3 && th <= 46) {
-    return {
-      type: "Anterior Pelvic Tilt / Hyperlordosis",
-      description: "Anterior pelvic tilt with increased lumbar lordosis tendency. Hip flexor dominance pattern.",
-      confidence: 70,
-      keyFindings: ["Anterior pelvic tilt","Lumbar hyperlordosis tendency"],
-      tight:  ["Hip Flexors (Iliopsoas)","TFL","Lumbar Extensors"],
-      weak:   ["Gluteus Maximus","Hamstrings","Deep Abdominals (TrA)"],
-      icd: "M40.4",
-      colour: "#F97316"
-    };
-  }
+  // ── APT only — requires ASIS/PSIS confirmation, not shown from proxy alone ──
+  // NOTE: sagPelvicShift is a hip-position proxy, NOT a true pelvic tilt measure.
+  // APT classification from this proxy is unreliable and clinically misleading.
+  // APT is only shown in HybridKendall when ASIS + PSIS are manually placed.
+  // if (pc > 3 && th <= 46) → removed to prevent false positive APT from proxy
 
   // ── Ideal ──────────────────────────────────────────────────────────────────
   if (!fhp && th >= 20 && th <= 46 && Math.abs(pc) <= 2) {
