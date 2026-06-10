@@ -1,7 +1,7 @@
 // PatientProfile.jsx — Unified patient profile: sticky banner + auto-built session timeline
 // Reads from patient.data — no manual "profile updates" needed ever.
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 
 const A="#7c3aed", S2="#f5f0fb", BD="#d8cce8", TX="#1a1025", MU="#7e6a9a",
       GR="#16a34a", RD="#dc2626", AM="#d97706";
@@ -506,6 +506,25 @@ export default function PatientProfile({ patient, onSaveField, onNav, onClose })
             )}
           </div>
         )}
+
+        {/* ── SECTION: Documents ─────────────────────────────────────────────── */}
+        <div style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${BD}`, overflow: "hidden" }}>
+          <div onClick={() => toggle("docs")} style={{ padding: "10px 14px",
+            display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <span style={{ fontSize: "1rem" }}>📁</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 800, fontSize: "0.78rem" }}>Documents</div>
+              <div style={{ fontSize: "0.6rem", color: MU }}>MRI · X-ray · Reports · Referral letters</div>
+            </div>
+            <span style={{ fontSize: "0.7rem", color: MU,
+              transform: expandedSection.docs ? "rotate(90deg)" : "none", transition: "0.2s" }}>▶</span>
+          </div>
+          {expandedSection.docs && (
+            <div style={{ padding: "0 12px 12px", borderTop: `1px solid ${BD}`, paddingTop: 10 }}>
+              <DocumentsSection patientId={patient?.id} />
+            </div>
+          )}
+        </div>
 
         {/* ── SECTION: Demographics (last, collapsed) ──────────────────────── */}
         <div style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${BD}`, overflow: "hidden" }}>
