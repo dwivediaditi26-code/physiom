@@ -10,6 +10,7 @@ import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection,
 import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule, LiveSOAPPanel,
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
   buildClinicalInterpretation, Sparkline } from "./ClinicalModules.jsx";
+import BodyChartPro from "./BodyChartPro.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
@@ -15505,7 +15506,7 @@ function AppInner() {
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
                   <SubjectiveModule data={data} set={set} onNav={navTo}/>
-                  <BodyChartInteractive data={data} set={set}/>
+                  <BodyChartPro data={data} set={set}/>
                 </div>
               ):tests==="PALPATION_MODULE"?(
                 <PalpationModule data={data} set={set}/>
