@@ -15709,7 +15709,7 @@ function AppInner({ currentUser, onSignOut }) {
   );
 }
 
-export default function LandingAndAuth({ onAuth }) {
+function LandingAndAuth({ onAuth }) {
   const [showAuth, setShowAuth] = React.useState(false);
   if (showAuth) {
     return <AuthScreen onAuth={onAuth} />;
@@ -15722,7 +15722,7 @@ export default function LandingAndAuth({ onAuth }) {
   );
 }
 
-function App() {
+export default function App() {
   // ── AUTH DISABLED FOR TESTING — to re-enable, restore the full auth flow ──
   const devUser = { id: "dev", email: "dev@physiomind.app", user_metadata: { full_name: "Dr. Demo" } };
   return <ErrorBoundary><AppInner currentUser={devUser} onSignOut={()=>{}}/></ErrorBoundary>;
