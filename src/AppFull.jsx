@@ -13,7 +13,6 @@ import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescription
 import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
-import PatientProfile from "./PatientProfile.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
@@ -12324,16 +12323,15 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
 
   return (
     <>
-    {/* Patient Profile — new unified timeline view */}
+    {/* Profile modal */}
     {profilePatient && (
-      <div style={{position:"fixed",inset:0,zIndex:500,background:"#f5f0fb",overflowY:"auto"}}>
-        <PatientProfile
-          patient={profilePatient}
-          onSaveField={handleSaveField}
-          onClose={()=>setProfilePatient(null)}
-          onNav={(key)=>{ setProfilePatient(null); onSelect(profilePatient); navTo&&navTo(key); }}
-        />
-      </div>
+      <PatientProfileModal
+        patient={profilePatient}
+        onClose={()=>setProfilePatient(null)}
+        onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); }}
+        onSaveField={handleSaveField}
+        onNav={(key)=>{ setProfilePatient(null); onSelect(profilePatient); navTo(key); }}
+      />
     )}
 
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300,
