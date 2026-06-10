@@ -10206,8 +10206,11 @@ function loadPatientDB() {
 }
 async function syncPatientsToSupabase(patients) {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return; // not logged in — don't sync
     const rows = patients.map(p => ({
       id: p.id,
+      user_id: user.id,
       name: p.name || "Unknown",
       data: p.data || {},
       created_at: p.createdAt || new Date().toISOString(),
@@ -14667,7 +14670,9 @@ function AppInner({ currentUser, onSignOut }) {
 
   // ── Supabase: load patients on mount and merge with localStorage ──────────
   useEffect(() => {
-    supabase.from("patients").select("*").order("updated_at", { ascending: false })
+    supabase.from("patients").select("*")
+      .eq("user_id", (await supabase.auth.getUser()).data.user?.id || "")
+      .order("updated_at", { ascending: false })
       .then(({ data: rows, error }) => {
         if (error || !rows || rows.length === 0) return;
         const remote = rows.map(r => ({
