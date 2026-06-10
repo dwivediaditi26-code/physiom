@@ -14671,7 +14671,7 @@ function AppInner({ currentUser, onSignOut }) {
   // ── Supabase: load patients on mount and merge with localStorage ──────────
   useEffect(() => {
     supabase.from("patients").select("*")
-      .eq("user_id", (await supabase.auth.getUser()).data.user?.id || "")
+      .eq("user_id", currentUser?.id || "")
       .order("updated_at", { ascending: false })
       .then(({ data: rows, error }) => {
         if (error || !rows || rows.length === 0) return;
