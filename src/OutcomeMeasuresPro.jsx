@@ -209,6 +209,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
   const [timerRunning,setTimerRunning]=useState(false);
   const timerRef=useRef(null);
   const timerStartRef=useRef(0);
+  const [stage,setStage]=useState("questions"); // questions | review
 
   const fields=sc.fields;
   const total=fields.length;
@@ -270,7 +271,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
   const allAnswered=fields.every(f=>answers[f.id]!==undefined);
   const pct=Math.round((Object.keys(answers).length/total)*100);
 
-  return(
+  const questionsUI=(
     <div style={{minHeight:"100vh",background:patientMode?"#0d0d1a":"#faf8fc",
       display:"flex",flexDirection:"column",fontFamily:"system-ui,sans-serif"}}>
       {/* Header */}
@@ -411,17 +412,108 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
             Next →
           </button>}
           {qIdx===total-1&&allAnswered&&(
-            <button type="button" onClick={finish}
+            <button type="button" onClick={()=>setStage("review")}
               style={{flex:2,padding:"12px",borderRadius:10,border:"none",
                 background:"linear-gradient(135deg,#16a34a,#15803d)",color:"#fff",
                 fontSize:"0.88rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-              ✓ Complete & Score
+              ✓ Review Answers →
             </button>
           )}
         </div>
       </div>
     </div>
   );
+
+  // ── REVIEW SCREEN ──────────────────────────────────────────────────────────
+  if(stage==="review"){
+    const previewAnswers={...answers};
+    if(scaleId==="psfs"){
+      previewAnswers.psfs_activity1=activity.act1;
+      previewAnswers.psfs_activity2=activity.act2;
+      previewAnswers.psfs_activity3=activity.act3;
+    }
+    const previewScore=sc.score(previewAnswers);
+    const interp=previewScore!=null?sc.interpret(previewScore):null;
+
+    return(
+      <div style={{minHeight:"100vh",background:patientMode?"#0d0d1a":"#faf8fc",
+        fontFamily:"system-ui,sans-serif",color:patientMode?"#e2e8f0":TX}}>
+        {/* Header */}
+        <div style={{background:patientMode?"#111":"#fff",padding:"12px 16px",
+          borderBottom:`1px solid ${BD}`,display:"flex",alignItems:"center",gap:10,
+          position:"sticky",top:0,zIndex:10}}>
+          <button onClick={()=>setStage("questions")}
+            style={{background:"none",border:"none",color:MU,fontSize:"1.1rem",cursor:"pointer",padding:"4px 8px"}}>←</button>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:"0.82rem",color:patientMode?"#e2e8f0":TX}}>📋 Answer Review — {sc.label}</div>
+            <div style={{fontSize:"0.65rem",color:MU}}>{patientName} · Check all answers before saving</div>
+          </div>
+        </div>
+
+        <div style={{padding:"14px 12px",maxWidth:560,margin:"0 auto"}}>
+          {/* Score preview */}
+          {previewScore!=null&&(
+            <div style={{background:patientMode?"#161625":"#fff",borderRadius:12,
+              border:`2px solid ${interp?.color||A}`,padding:"14px 16px",marginBottom:14,
+              display:"flex",alignItems:"center",gap:14}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"2rem",fontWeight:900,color:interp?.color||A,lineHeight:1}}>{previewScore}</div>
+                <div style={{fontSize:"0.65rem",color:MU,marginTop:2}}>{sc.unit}</div>
+              </div>
+              <div>
+                <div style={{fontWeight:700,fontSize:"0.9rem",color:interp?.color||A}}>{interp?.label}</div>
+                <div style={{fontSize:"0.7rem",color:MU,marginTop:2}}>{sc.full} · MCID {sc.mcid}{sc.unit}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Q&A list */}
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+            {fields.map((field,i)=>{
+              const ans=answers[field.id];
+              if(ans==null) return null;
+              return(
+                <div key={field.id} style={{background:patientMode?"#161625":"#fff",
+                  borderRadius:10,border:`1px solid ${BD}`,overflow:"hidden"}}>
+                  {/* Question label */}
+                  <div style={{padding:"8px 12px",borderBottom:`1px solid ${BD}`,
+                    fontSize:"0.72rem",fontWeight:700,color:patientMode?"#9ca3af":MU,
+                    display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{background:A,color:"#fff",borderRadius:"50%",
+                      width:18,height:18,display:"inline-flex",alignItems:"center",justifyContent:"center",
+                      fontSize:"0.6rem",fontWeight:800,flexShrink:0}}>{i+1}</span>
+                    {field.label}
+                  </div>
+                  {/* Selected answer */}
+                  <div style={{padding:"10px 12px",display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{color:"#16a34a",fontSize:"1rem",flexShrink:0}}>✓</span>
+                    <div style={{fontSize:"0.82rem",fontWeight:600,color:patientMode?"#e2e8f0":TX}}>{ans}</div>
+                    {/* Edit button */}
+                    <button onClick={()=>{setQIdx(i);setStage("questions");}}
+                      style={{marginLeft:"auto",padding:"3px 10px",borderRadius:6,
+                        border:`1px solid ${BD}`,background:"transparent",
+                        color:A,fontSize:"0.65rem",cursor:"pointer",fontWeight:600,flexShrink:0}}>
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Save button */}
+          <button onClick={finish}
+            style={{width:"100%",padding:"14px",borderRadius:12,border:"none",
+              background:"linear-gradient(135deg,#16a34a,#15803d)",color:"#fff",
+              fontSize:"0.95rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:24}}>
+            💾 Save & View Score
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return questionsUI;
 }
 
 // ─── RESULT SCREEN ────────────────────────────────────────────────────────────
