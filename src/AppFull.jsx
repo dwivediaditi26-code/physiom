@@ -11,6 +11,7 @@ import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescription
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
   buildClinicalInterpretation, Sparkline } from "./ClinicalModules.jsx";
 import BodyChartPro from "./BodyChartPro.jsx";
+import AuthScreen from "./AuthScreen.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
@@ -13291,7 +13292,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           <div>
             <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500,marginBottom:2}}>{dateStr}</div>
             <div style={{fontSize:16,fontWeight:800,color:"#111827",letterSpacing:"-0.4px"}}>
-              {greeting}, Dr. Priya 👋
+              {greeting}, {currentUser?.user_metadata?.full_name?.split(" ")[0] || "Doctor"} 👋
             </div>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -13306,6 +13307,12 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                   animation:"pulseDot 1.2s infinite"}}/>
               </div>
             )}
+            <button onClick={onSignOut}
+              style={{padding:"6px 12px",borderRadius:9,border:"1px solid #d8cce8",
+                background:"transparent",color:"#7e6a9a",fontSize:"0.7rem",
+                fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
+              Sign out
+            </button>
             <div style={{width:38,height:38,borderRadius:11,
               background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",
               display:"flex",alignItems:"center",justifyContent:"center",
@@ -14498,7 +14505,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
 
 
 
-function AppInner() {
+function AppInner({ currentUser, onSignOut }) {
   const { theme, toggle: toggleTheme, C: TC } = useTheme();
 
   // Apply theme to document root for CSS var support
@@ -15686,5 +15693,38 @@ function AppInner() {
 }
 
 export default function App() {
-  return <ErrorBoundary><AppInner /></ErrorBoundary>;
+  const [user, setUser] = React.useState(undefined); // undefined=loading, null=logged out, obj=logged in
+
+  React.useEffect(() => {
+    // Check existing session
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+    });
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Loading splash
+  if (user === undefined) {
+    return (
+      <div style={{ minHeight:"100vh", background:"#faf8fc", display:"flex",
+        alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12 }}>
+        <div style={{ width:48, height:48, borderRadius:14,
+          background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+          display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.4rem" }}>🫁</div>
+        <div style={{ fontSize:"0.8rem", color:"#7e6a9a", fontWeight:600 }}>Loading PhysioMind…</div>
+      </div>
+    );
+  }
+
+  // Not logged in — show auth screen
+  if (!user) {
+    return <AuthScreen onAuth={(u) => setUser(u)} />;
+  }
+
+  // Logged in — show full app
+  return <ErrorBoundary><AppInner currentUser={user} onSignOut={async()=>{ await supabase.auth.signOut(); setUser(null); }}/></ErrorBoundary>;
 }
