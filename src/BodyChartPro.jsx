@@ -611,13 +611,23 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
         />
 
         {!imgLoaded && (
-          <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center",
-            justifyContent:"center", color:"#9ca3af", fontSize:"0.8rem" }}>
-            Loading body chart image…
-            <br/>
-            <small style={{ display:"block", marginTop:4, fontSize:"0.65rem" }}>
-              Upload to Cloudinary as "body-chart-4view"
-            </small>
+          <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column",
+            alignItems:"center", justifyContent:"center", padding:24,
+            background:"#111827", color:"#9ca3af" }}>
+            <div style={{ fontSize:"2.5rem", marginBottom:12 }}>🖼️</div>
+            <div style={{ fontWeight:800, fontSize:"0.9rem", color:"#f9fafb", marginBottom:8 }}>
+              Body Chart Image Not Uploaded
+            </div>
+            <div style={{ fontSize:"0.75rem", textAlign:"center", lineHeight:1.7, maxWidth:320, color:"#9ca3af" }}>
+              Upload the anatomical body chart image to Cloudinary with public ID:
+              <code style={{ display:"block", margin:"8px 0", padding:"6px 12px",
+                background:"rgba(255,255,255,0.08)", borderRadius:6,
+                color:"#a78bfa", fontSize:"0.82rem", fontWeight:700 }}>
+                body-chart-4view
+              </code>
+              Use the <strong style={{color:"#f9fafb"}}>Cloudinary Uploader</strong> tool
+              → filter by <strong style={{color:"#f43f5e"}}>⭐ Assets</strong> → drag the image
+            </div>
           </div>
         )}
 
