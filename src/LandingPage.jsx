@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 
-const A = "#8b5cf6", S2 = "#f8f5ff", TX = "#1a1025", MU = "#8b7db5";
+const A = "#a78bfa", S2 = "#faf8ff", TX = "#1a1025", MU = "#a094c7";
 
 const FEATURES = [
   {
@@ -10,7 +10,7 @@ const FEATURES = [
     title: "AI Posture Analysis",
     desc: "Upload a photo — AI detects 30+ postural defects, measures CVA, FHP, shoulder alignment, and generates a professional PDF report to hand to patients or referring doctors.",
     tag: "Most popular",
-    tagColor: "#8b5cf6",
+    tagColor: "#a78bfa",
   },
   {
     icon: "📋",
@@ -140,7 +140,7 @@ export default function LandingPage({ onGetStarted, onSignIn }) {
   const btn = (label, onClick, primary = true) => (
     <button onClick={onClick} style={{
       padding: "13px 28px", borderRadius: 12, border: primary ? "none" : `2px solid ${A}`,
-      background: primary ? `linear-gradient(135deg, ${A}, #a855f7)` : "transparent",
+      background: primary ? `linear-gradient(135deg, ${A}, #c084fc)` : "transparent",
       color: primary ? "#fff" : A, fontSize: "0.9rem", fontWeight: 800,
       cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s",
       boxShadow: primary ? "0 4px 20px rgba(124,58,237,0.35)" : "none",
@@ -161,7 +161,7 @@ export default function LandingPage({ onGetStarted, onSignIn }) {
       }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8,
-            background: `linear-gradient(135deg, ${A}, #a855f7)`,
+            background: `linear-gradient(135deg, ${A}, #c084fc)`,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "1rem" }}>🧠</div>
           <span style={{ fontWeight: 900, fontSize: "1.1rem", color: TX }}>PhysioMind</span>
@@ -175,7 +175,7 @@ export default function LandingPage({ onGetStarted, onSignIn }) {
             fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Sign In</button>
           <button onClick={onGetStarted} style={{
             padding: "8px 18px", borderRadius: 8, border: "none",
-            background: `linear-gradient(135deg, ${A}, #a855f7)`,
+            background: `linear-gradient(135deg, ${A}, #c084fc)`,
             color: "#fff", fontSize: "0.8rem", fontWeight: 800,
             cursor: "pointer", fontFamily: "inherit" }}>Try Free</button>
         </div>
@@ -186,10 +186,10 @@ export default function LandingPage({ onGetStarted, onSignIn }) {
         minHeight: "100vh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center", textAlign: "center",
         padding: "100px 20px 60px",
-        background: "linear-gradient(180deg, #f8f5ff 0%, #fff 100%)",
+        background: "linear-gradient(180deg, #faf8ff 0%, #fff 100%)",
       }}>
         <div style={{ fontSize: "0.72rem", fontWeight: 700, color: A,
-          background: "#f0ebff", padding: "6px 16px", borderRadius: 20,
+          background: "#f5f0ff", padding: "6px 16px", borderRadius: 20,
           marginBottom: 20, display: "inline-block" }}>
           🇮🇳 Made for Indian Physiotherapists · Free to start
         </div>
@@ -278,7 +278,7 @@ export default function LandingPage({ onGetStarted, onSignIn }) {
               }}>
                 {plan.highlight && (
                   <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
-                    background: `linear-gradient(135deg, ${A}, #a855f7)`, color: "#fff",
+                    background: `linear-gradient(135deg, ${A}, #c084fc)`, color: "#fff",
                     fontSize: "0.65rem", fontWeight: 800, padding: "4px 16px", borderRadius: 20 }}>
                     MOST POPULAR
                   </div>
@@ -299,7 +299,7 @@ export default function LandingPage({ onGetStarted, onSignIn }) {
                 </div>
                 <button onClick={onGetStarted} style={{
                   width: "100%", padding: "11px", borderRadius: 10, border: "none",
-                  background: plan.highlight ? `linear-gradient(135deg, ${A}, #a855f7)` : S2,
+                  background: plan.highlight ? `linear-gradient(135deg, ${A}, #c084fc)` : S2,
                   color: plan.highlight ? "#fff" : TX,
                   fontSize: "0.85rem", fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                   {plan.cta}
@@ -345,7 +345,7 @@ export default function LandingPage({ onGetStarted, onSignIn }) {
         </p>
         <button onClick={onGetStarted} style={{
           padding: "16px 40px", borderRadius: 14, border: "none",
-          background: `linear-gradient(135deg, ${A}, #a855f7)`,
+          background: `linear-gradient(135deg, ${A}, #c084fc)`,
           color: "#fff", fontSize: "1rem", fontWeight: 900,
           cursor: "pointer", fontFamily: "inherit",
           boxShadow: "0 4px 30px rgba(124,58,237,0.5)" }}>
@@ -360,7 +360,7 @@ export default function LandingPage({ onGetStarted, onSignIn }) {
       <div style={{ padding: "24px 20px", background: TX, textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
           <div style={{ width: 24, height: 24, borderRadius: 6,
-            background: `linear-gradient(135deg, ${A}, #a855f7)`,
+            background: `linear-gradient(135deg, ${A}, #c084fc)`,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "0.75rem" }}>🧠</div>
           <span style={{ fontWeight: 900, color: "#fff", fontSize: "0.9rem" }}>PhysioMind</span>
