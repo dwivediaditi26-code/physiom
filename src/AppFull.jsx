@@ -15750,11 +15750,11 @@ function App() {
     );
   }
 
-  // Not logged in — show landing page first, then auth
-  if (!user) {
-    return <LandingAndAuth onAuth={(u) => setUser(u)} />;
-  }
+  // AUTH TEMPORARILY DISABLED — uncomment below to re-enable login
+  // if (!user) {
+  //   return <LandingAndAuth onAuth={(u) => setUser(u)} />;
+  // }
 
-  // Logged in — show full app
-  return <ErrorBoundary><AppInner currentUser={user} onSignOut={async()=>{ await supabase.auth.signOut(); setUser(null); }}/></ErrorBoundary>;
+  const devUser = user || { id: "dev", email: "dev@physiomind.app", user_metadata: { full_name: "Dr. Demo" } };
+  return <ErrorBoundary><AppInner currentUser={devUser} onSignOut={async()=>{ setUser(null); }}/></ErrorBoundary>;
 }
