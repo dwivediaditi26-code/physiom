@@ -11,6 +11,7 @@ import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescription
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
   buildClinicalInterpretation, Sparkline } from "./ClinicalModules.jsx";
 import BodyChartPro from "./BodyChartPro.jsx";
+import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
   DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
@@ -15547,7 +15548,7 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="ROM_MODULE"?(
                 <ROMModule data={data} set={set} navContext={active==="rom"?navContext:{}}/>
               ):tests==="OUTCOME_MODULE"?(
-                <OutcomeMeasuresModule/>
+                <OutcomeMeasuresPro data={data} set={set}/>
               ):tests==="EXERCISE_MODULE"?(
                 <ExercisePrescriptionModule data={data} set={set}/>
               ):tests==="TX_TECHNIQUES_MODULE"?(
