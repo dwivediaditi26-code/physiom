@@ -15723,38 +15723,7 @@ export default function LandingAndAuth({ onAuth }) {
 }
 
 function App() {
-  const [user, setUser] = React.useState(undefined); // undefined=loading, null=logged out, obj=logged in
-
-  React.useEffect(() => {
-    // Check existing session
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user || null);
-    });
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Loading splash
-  if (user === undefined) {
-    return (
-      <div style={{ minHeight:"100vh", background:"#faf8fc", display:"flex",
-        alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12 }}>
-        <div style={{ width:48, height:48, borderRadius:14,
-          background:"linear-gradient(135deg,#7c3aed,#9333ea)",
-          display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.4rem" }}>🫁</div>
-        <div style={{ fontSize:"0.8rem", color:"#7e6a9a", fontWeight:600 }}>Loading PhysioMind…</div>
-      </div>
-    );
-  }
-
-  // AUTH TEMPORARILY DISABLED — uncomment below to re-enable login
-  // if (!user) {
-  //   return <LandingAndAuth onAuth={(u) => setUser(u)} />;
-  // }
-
-  const devUser = user || { id: "dev", email: "dev@physiomind.app", user_metadata: { full_name: "Dr. Demo" } };
-  return <ErrorBoundary><AppInner currentUser={devUser} onSignOut={async()=>{ setUser(null); }}/></ErrorBoundary>;
+  // ── AUTH DISABLED FOR TESTING — to re-enable, restore the full auth flow ──
+  const devUser = { id: "dev", email: "dev@physiomind.app", user_metadata: { full_name: "Dr. Demo" } };
+  return <ErrorBoundary><AppInner currentUser={devUser} onSignOut={()=>{}}/></ErrorBoundary>;
 }
