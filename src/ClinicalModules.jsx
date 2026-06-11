@@ -459,6 +459,7 @@ function GaitModule({ data, set }) {
   const [tab, setTab] = useState("profile");
   const [openSec, setOpenSec] = useState({oga_ant:true,oga_lat:true,oga_post:true});
 
+  const [showFull, setShowFull] = useState(false);
   const tabs = [
     {key:"profile",  label:"Profile",        icon:"👤"},
     {key:"oga",      label:"Observation",    icon:"👁️"},
@@ -510,8 +511,43 @@ function GaitModule({ data, set }) {
   // Phase deviations
   const phaseDeviations = GAIT_PHASES.filter(p=>data[p.id+"_dev"]&&data[p.id+"_dev"]!=="None");
 
+  const quickFields = [
+    {id:"ag_antalgic",    label:"Antalgic gait", type:"select", opts:["None","Left antalgic","Right antalgic","Bilateral"]},
+    {id:"g_oga_step_sym", label:"Step symmetry",  type:"select", opts:["Symmetrical","Left shorter","Right shorter","Markedly asymmetric"]},
+    {id:"ag_cadence",     label:"Cadence",         type:"select", opts:["Normal","Slow","Fast","Irregular"]},
+    {id:"gait_pattern",   label:"Gait pattern",    type:"select", opts:["Normal","Trendelenburg","Steppage","Scissor","Hemiplegic","Parkinsonian","Other"]},
+    {id:"g_timed_tug",    label:"TUG (seconds)",   type:"number"},
+    {id:"g_timed_10mwt",  label:"10m Walk (s)",    type:"number"},
+  ];
   return (
     <div>
+      {/* ── Quick Gait Form ── */}
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"12px 14px",marginBottom:14}}>
+        <div style={{fontWeight:800,fontSize:"0.78rem",color:C.text,marginBottom:10}}>🚶 Quick Gait Summary</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+          {quickFields.map(f=>{
+            const val=data[f.id]||"";
+            const base={width:"100%",background:C.s3,border:`1px solid ${val?C.accent+"40":C.border}`,borderRadius:8,color:C.text,fontFamily:"inherit",outline:"none",padding:"7px 9px",fontSize:"0.75rem",WebkitAppearance:"none",appearance:"none"};
+            return(
+              <div key={f.id}>
+                <div style={{fontSize:"0.58rem",fontWeight:700,color:val?C.green:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.5px"}}>{f.label}</div>
+                {f.type==="select"?(
+                  <select style={base} value={val} onChange={e=>set(f.id,e.target.value)}>
+                    <option value="">—</option>
+                    {f.opts.map(o=><option key={o}>{o}</option>)}
+                  </select>
+                ):(
+                  <input type="number" style={base} placeholder="e.g. 12.4" value={val} onChange={e=>set(f.id,e.target.value)}/>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <button onClick={()=>setShowFull(v=>!v)} style={{fontSize:"0.68rem",fontWeight:600,color:C.muted,background:"transparent",border:"none",cursor:"pointer",padding:0}}>
+          {showFull?"▲ Hide full analysis":"▼ Detailed analysis (phases, scales, muscle/joint)"}
+        </button>
+      </div>
+      {showFull&&<div>}
       {/* Summary banner */}
       {(fallRisk||activeGaits.length>0)&&(
         <div style={{background:fallRisk==="High"?"rgba(255,77,109,0.1)":"rgba(255,179,0,0.08)",border:`1px solid ${fallCol}40`,borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
@@ -3085,7 +3121,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SOAP NOTE MODULE — Upgraded with Real-Time SOAP + Suggested Interpretation
 // ═══════════════════════════════════════════════════════════════════════════════
-function SOAPNoteModule({ data, set }) {
+function SOAPNoteModule({ data, set, onNav }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#1a1025",
@@ -3868,9 +3904,28 @@ function SOAPNoteModule({ data, set }) {
                 ⚠️ Enter your clinician name (Session Details section above) before signing.
               </div>
             )}
-            <div style={{fontSize:"0.68rem",color:PC.muted,marginBottom:16}}>
+            <div style={{fontSize:"0.68rem",color:PC.muted,marginBottom:12}}>
               <strong>Clinician:</strong> {clinician||"—"} &nbsp;|&nbsp; <strong>Session:</strong> {session} &nbsp;|&nbsp; <strong>Date:</strong> {new Date().toLocaleDateString("en-AU",{day:"2-digit",month:"long",year:"numeric"})}
             </div>
+            {/* Session quick fields — saves to tx_sessions on sign */}
+            {(()=>{
+              const [sVas,setSVas]=React.useState(data.cc_vas_now||"");
+              const [sTx,setSTx]=React.useState(data.tx_techniques||"");
+              const [sResp,setSResp]=React.useState("");
+              const si={width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"7px 9px",fontSize:"0.75rem",marginBottom:8};
+              const lb={fontSize:"0.58rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.5px"};
+              React.__signSession={vasEnd:sVas,treatment:sTx,response:sResp};
+              return(
+                <div style={{background:PC.s2,borderRadius:10,padding:"10px 12px",marginBottom:14}}>
+                  <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.accent,marginBottom:8}}>📋 Log this session (optional)</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    <div><label style={lb}>Pain at end (0–10)</label><input style={{...si,marginBottom:0}} type="number" min="0" max="10" placeholder="0–10" value={sVas} onChange={e=>setSVas(e.target.value)}/></div>
+                    <div><label style={lb}>Treatment given</label><select style={{...si,marginBottom:0,WebkitAppearance:"none"}} value={sTx} onChange={e=>setSTx(e.target.value)}><option value="">—</option>{["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Other"].map(t=><option key={t}>{t}</option>)}</select></div>
+                  </div>
+                  <div style={{marginTop:6}}><label style={lb}>Patient response</label><input style={{...si,marginBottom:0}} placeholder="e.g. Good improvement, less stiffness" value={sResp} onChange={e=>setSResp(e.target.value)}/></div>
+                </div>
+              );
+            })()}
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>setLockConfirm(false)} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.78rem"}}>Cancel</button>
               <button
@@ -3887,6 +3942,13 @@ function SOAPNoteModule({ data, set }) {
                     S: getSOAPText("S"), O: getSOAPText("O"), A: getSOAPText("A"), P: getSOAPText("P"),
                     icd10: data.soap_icd10||"",
                   };
+                  // Also save as tx_session entry
+                  const signSession = React.__signSession||{};
+                  if(signSession.vasEnd||signSession.treatment||signSession.response){
+                    const existSess=Array.isArray(data.tx_sessions)?data.tx_sessions:[];
+                    const sessEntry={id:(Date.now()+1).toString(36),date:now.toLocaleDateString("en-GB"),sessionNo:existSess.length+1,type:session||"Follow-up",vasEnd:signSession.vasEnd||"",treatmentGiven:signSession.treatment||"",response:signSession.response||"",savedAt:now.toISOString()};
+                    if(typeof set==="function") set("tx_sessions",[sessEntry,...existSess]);
+                  }
                   const updated = [...lockedNotes, entry];
                   if (typeof set === "function") {
                     // Save signed notes array
@@ -3919,8 +3981,34 @@ function SOAPNoteModule({ data, set }) {
 
       {/* ── LOCK SUCCESS TOAST ───────────────────────────────────────────── */}
       {lockSuccess && (
-        <div style={{position:"fixed",bottom:24,right:24,zIndex:9998,background:"#059669",color:"#fff",borderRadius:14,padding:"12px 20px",fontWeight:700,fontSize:"0.8rem",boxShadow:"0 8px 30px rgba(5,150,105,0.4)"}}>
-          ✅ SOAP note signed and locked successfully
+        <div style={{position:"fixed",inset:0,zIndex:9998,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{width:"100%",maxWidth:380,background:"#fff",borderRadius:16,padding:"22px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:"2.2rem",marginBottom:8}}>✅</div>
+              <div style={{fontWeight:800,fontSize:"0.95rem",color:"#059669",marginBottom:4}}>SOAP note signed and saved</div>
+              <div style={{fontSize:"0.72rem",color:"#7e6a9a"}}>{data.dem_name||"Patient"} · {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</div>
+            </div>
+            <div style={{fontSize:"0.68rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:8}}>What do you want to do next?</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+              {[
+                {icon:"🧍",label:"Run posture analysis",nav:"posture",col:"#7c3aed"},
+                {icon:"📊",label:"Record outcome measures",nav:"outcome",col:"#0891b2"},
+                {icon:"💪",label:"Add exercises (HEP)",nav:"exercise",col:"#059669"},
+                {icon:"📅",label:"Log today's treatment session",nav:"tx_sessions",col:"#d97706"},
+              ].map(item=>(
+                <button key={item.nav} onClick={()=>{setLockSuccess(false);if(typeof onNav==="function")onNav(item.nav);}}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
+                    background:`${item.col}10`,border:`1px solid ${item.col}30`,
+                    borderRadius:10,cursor:"pointer",width:"100%",textAlign:"left",
+                    fontFamily:"inherit",color:item.col,fontWeight:700,fontSize:"0.78rem"}}>
+                  <span style={{fontSize:"1rem"}}>{item.icon}</span>{item.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>setLockSuccess(false)} style={{width:"100%",padding:"10px",borderRadius:10,border:"1px solid #d8cce8",background:"transparent",color:"#7e6a9a",fontWeight:600,cursor:"pointer",fontSize:"0.78rem"}}>
+              Done for now
+            </button>
+          </div>
         </div>
       )}
 

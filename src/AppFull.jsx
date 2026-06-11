@@ -7860,6 +7860,42 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               </div>
             </div>
           )}
+
+          {/* ── Save to Patient Record — shown right after score ── */}
+          {scoreData&&(
+            <div style={{marginBottom:12,padding:"10px 14px",background:activePatient?"rgba(5,150,105,0.07)":"rgba(180,83,9,0.07)",borderRadius:12,border:`1px solid ${activePatient?"rgba(5,150,105,0.25)":"rgba(180,83,9,0.25)"}`}}>
+              {activePatient?(
+                <button onClick={()=>{
+                  const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
+                  const vLabel=VLABELS[view]||view;
+                  try{
+                    const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
+                    const sameView=existing.filter(s=>s.view===view).length+1;
+                    const entry={
+                      view, viewLabel:vLabel, sessionNo:sameView,
+                      sessionLabel:`${vLabel} Session ${sameView}`,
+                      img:capturedImg||uploadedImg||rawUploadedImg||null,
+                      score:scoreData.score, band:scoreData.band||"",
+                      findings:findings||[], kineticChain:"",
+                      source:isLive?"camera":"upload",
+                      capturedAt:new Date().toISOString()
+                    };
+                    setPatientField&&setPatientField("posture_sessions",JSON.stringify([...existing,entry]));
+                    alert(`✅ Saved as "${entry.sessionLabel}" to ${activePatient.name}`);
+                  }catch(e){alert("Save failed: "+e.message);}
+                }} style={{width:"100%",padding:"11px",borderRadius:10,border:"none",cursor:"pointer",
+                  background:"linear-gradient(135deg,#059669,#047857)",
+                  color:"#fff",fontWeight:800,fontSize:"0.82rem",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  💾 Save to {activePatient.name} — {{anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"}[view]||view} View
+                </button>
+              ):(
+                <div style={{fontSize:"0.72rem",color:"#92400E",fontWeight:600,textAlign:"center"}}>
+                  ⚠ Load a patient first to save this analysis
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── TOP 3 PRIORITY TREATMENT CARD ─────────────────────────────── */}
           {findings.length>0&&(()=>{
             // Pick top 3: confirmed high > high > confirmed moderate > moderate
@@ -7973,48 +8009,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             </div>
           )}
 
-
-          {/* ── Save to Patient Record ─────────────────────────────── */}
-          {scoreData&&(
-            <div style={{marginTop:16,padding:"12px 14px",background:activePatient?"rgba(5,150,105,0.06)":"rgba(180,83,9,0.06)",borderRadius:12,border:`1px solid ${activePatient?"rgba(5,150,105,0.25)":"rgba(180,83,9,0.25)"}`}}>
-              {activePatient?(
-                <>
-                  <div style={{fontSize:"0.68rem",color:PC.green,fontWeight:700,marginBottom:8}}>
-                    💾 Save this analysis to <strong>{activePatient.name}</strong>
-                  </div>
-                  <button onClick={()=>{
-                    const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
-                    const vLabel=VLABELS[view]||view;
-                    try{
-                      const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
-                      const sameView=existing.filter(s=>s.view===view).length+1;
-                      const imgSrc=capturedImg||uploadedImg||rawUploadedImg||null;
-                      const entry={
-                        view, viewLabel:vLabel, sessionNo:sameView,
-                        sessionLabel:`${vLabel} Session ${sameView}`,
-                        img:imgSrc, score:scoreData.score,
-                        band:scoreData.band||"",
-                        findings:findings||[],
-                        kineticChain:measurements?.kinetic_chain||"",
-                        source:isLive?"camera":"upload",
-                        capturedAt:new Date().toISOString()
-                      };
-                      setPatientField&&setPatientField("posture_sessions",JSON.stringify([...existing,entry]));
-                      alert(`✅ Saved as "${entry.sessionLabel}" to ${activePatient.name}`);
-                    }catch(e){alert("Save failed: "+e.message);}
-                  }} style={{width:"100%",padding:"11px",borderRadius:10,border:"none",cursor:"pointer",
-                    background:"linear-gradient(135deg,#059669,#047857)",
-                    color:"#fff",fontWeight:800,fontSize:"0.82rem"}}>
-                    💾 Save to {activePatient.name} — {view.charAt(0).toUpperCase()+view.slice(1)} View
-                  </button>
-                </>
-              ):(
-                <div style={{fontSize:"0.72rem",color:PC.yellow,fontWeight:600,textAlign:"center"}}>
-                  ⚠ No patient loaded — open a patient record first to save this analysis
-                </div>
-              )}
-            </div>
-          )}
 
         </div>
       )}
@@ -13050,6 +13044,8 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
   const [profilePatient, setProfilePatient] = useState(null);
+  const [showIntake, setShowIntake] = useState(false);
+  const [intakeData, setIntakeData] = useState({});
   const [localPatients, setLocalPatients] = useState(patients);
   const fileRef = useRef(null);
 
@@ -15566,14 +15562,21 @@ function AppInner({ currentUser, onSignOut }) {
   }, [data, activePatientId]);
 
   const createNewPatient = () => {
-    const newP = { id: genId(), name: "New Patient", data: {}, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: "" };
+    setIntakeData({});
+    setShowIntake(true);
+    setShowPatientDb(false);
+  };
+  const finaliseNewPatient = (intake) => {
+    const name = intake.dem_name || "New Patient";
+    const newP = { id: genId(), name, data: intake, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: intake.cc_main||"" };
     const updated = [newP, ...patients];
     setPatients(updated);
     savePatientDB(updated);
-    setData({});
+    setData(intake);
     setActivePatientId(newP.id);
-    setShowPatientDb(false);
-    setJsonMsg({ type:"success", text:"✅ New patient created" });
+    setShowIntake(false);
+    navTo("subjective");
+    setJsonMsg({ type:"success", text:`✅ Patient created: ${name}` });
     setTimeout(() => setJsonMsg(null), 2500);
   };
 
@@ -15999,6 +16002,60 @@ function AppInner({ currentUser, onSignOut }) {
         />
       )}
 
+      {/* ── NEW PATIENT INTAKE MODAL ── */}
+      {showIntake && (
+        <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{width:"100%",maxWidth:420,background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New patient</div>
+            <div style={{fontSize:"0.72rem",color:PC.muted,marginBottom:20}}>Fill the basics — you can add more detail later</div>
+            {(()=>{
+              const [fd,setFd] = React.useState(intakeData);
+              const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.82rem",marginBottom:12};
+              const lbl = {fontSize:"0.62rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
+              return(
+                <div>
+                  <label style={lbl}>Full name *</label>
+                  <input style={inp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>setFd(p=>({...p,dem_name:e.target.value}))} autoFocus/>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                    <div>
+                      <label style={lbl}>Age</label>
+                      <input style={{...inp,marginBottom:0}} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>setFd(p=>({...p,dem_age:e.target.value}))}/>
+                    </div>
+                    <div>
+                      <label style={lbl}>Sex</label>
+                      <select style={{...inp,marginBottom:0}} value={fd.dem_sex||""} onChange={e=>setFd(p=>({...p,dem_sex:e.target.value}))}>
+                        <option value="">—</option>
+                        <option>Female</option><option>Male</option><option>Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{marginTop:12}}>
+                    <label style={lbl}>Chief complaint / diagnosis</label>
+                    <input style={inp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>setFd(p=>({...p,cc_main:e.target.value}))}/>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                    <div>
+                      <label style={lbl}>Pain now (0–10)</label>
+                      <input style={{...inp,marginBottom:0}} type="number" min="0" max="10" placeholder="0–10" value={fd.cc_vas_now||""} onChange={e=>setFd(p=>({...p,cc_vas_now:e.target.value}))}/>
+                    </div>
+                    <div>
+                      <label style={lbl}>Occupation</label>
+                      <input style={{...inp,marginBottom:0}} placeholder="e.g. Teacher" value={fd.dem_occupation||""} onChange={e=>setFd(p=>({...p,dem_occupation:e.target.value}))}/>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:10,marginTop:20}}>
+                    <button onClick={()=>setShowIntake(false)} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.78rem"}}>Cancel</button>
+                    <button disabled={!fd.dem_name?.trim()} onClick={()=>finaliseNewPatient(fd)} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:fd.dem_name?.trim()?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:fd.dem_name?.trim()?"pointer":"not-allowed",fontSize:"0.82rem"}}>
+                      Start Assessment →
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* ── PDF REPORTS MODAL ── */}
       {showPdfReports && (
         <PdfReportsModal
@@ -16343,6 +16400,14 @@ function AppInner({ currentUser, onSignOut }) {
                 <CyriaxModule data={data} set={set} navContext={active==="cyriax"?navContext:{}}/>
               ):tests==="SPECIAL_TESTS_MODULE"?(
                 <SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
+                {/* ── Done → Continue SOAP bar ── */}
+                <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                  <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
+                  <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+                    Continue SOAP →
+                  </button>
+                </div>
+
               ):tests==="NKT_REGION"?(
                 <NKTSection data={data} set={set} navContext={active==="nkt"?navContext:{}}/>
               ):tests==="FMA_REGION"?(
@@ -16355,12 +16420,67 @@ function AppInner({ currentUser, onSignOut }) {
                 <CyriaxRegionTests data={data} set={set}/>
               ):tests==="NEURO_MODULE"?(
                 <NeurologicalModule data={data} set={set} navContext={active==="neuro"?navContext:{}}/>
+                {/* ── Done → Continue SOAP bar ── */}
+                <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                  <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
+                  <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+                    Continue SOAP →
+                  </button>
+                </div>
+
               ):tests==="GAIT_MODULE"?(
                 <GaitModule data={data} set={set}/>
               ):tests==="MMT_MODULE"?(
                 <MMTModule data={data} set={set} navContext={active==="mmt"?navContext:{}}/>
+                {/* ── Done → Continue SOAP bar ── */}
+                <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                  <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
+                  <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+                    Continue SOAP →
+                  </button>
+                </div>
+
               ):tests==="ROM_MODULE"?(
+
+                {/* ── S→O→A→P workflow breadcrumb ── */}
+                {(()=>{
+                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
+                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
+                  const getSCount=()=>!!(data.cc_main||data.dem_name);
+                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
+                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
+                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
+                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
+                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  return(
+                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
+                      {steps.map((s,i)=>{
+                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
+                        const isDone=done[s.k];
+                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
+                        return(
+                          <React.Fragment key={s.k}>
+                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
+                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
+                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                            </div>
+                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 <ROMModule data={data} set={set} navContext={active==="rom"?navContext:{}}/>
+                {/* ── Done → Continue SOAP bar ── */}
+                <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                  <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
+                  <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+                    Continue SOAP →
+                  </button>
+                </div>
+
               ):tests==="OUTCOME_MODULE"?(
                 <OutcomeMeasuresPro data={data} set={set}/>
               ):tests==="EXERCISE_MODULE"?(
@@ -16368,9 +16488,46 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="TX_TECHNIQUES_MODULE"?(
                 <TreatmentTechniquesModule data={data} set={set}/>
               ):tests==="TX_SESSION_MODULE"?(
-                <TreatmentSessionLogModule data={data} set={set}/>
+                <div>
+                  {/* ── Quick Visit Banner ── */}
+                  <div style={{background:`linear-gradient(135deg,${PC.accent}12,${PC.a2}08)`,border:`1.5px solid ${PC.accent}30`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
+                    <div style={{fontWeight:800,fontSize:"0.88rem",color:PC.accent,marginBottom:4}}>⚡ Quick Visit</div>
+                    <div style={{fontSize:"0.7rem",color:PC.muted,marginBottom:12}}>For follow-ups — fill these 4 fields and sign. Takes 60 seconds.</div>
+                    {(()=>{
+                      const [qv,setQv]=React.useState({pain_today:data.cc_vas_now||"",treatment:"",response:"",next_plan:""});
+                      const txOptions=["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Postural correction","Manual therapy","Other"];
+                      const inp={width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
+                      const lbl={fontSize:"0.6rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
+                      const [saved,setSaved]=React.useState(false);
+                      const saveQuick=()=>{
+                        set("cc_vas_now",qv.pain_today);
+                        set("soap_extra_p",qv.next_plan);
+                        const sessions=Array.isArray(data.tx_sessions)?data.tx_sessions:[];
+                        const entry={id:(Date.now()).toString(36),date:new Date().toLocaleDateString("en-GB"),sessionNo:sessions.length+1,type:"Follow-up Treatment",vasStart:qv.pain_today,vasEnd:qv.pain_today,treatmentGiven:qv.treatment,response:qv.response,nextPlan:qv.next_plan,savedAt:new Date().toISOString()};
+                        set("tx_sessions",[entry,...sessions]);
+                        setSaved(true);setTimeout(()=>setSaved(false),3000);
+                        navTo("soap");
+                      };
+                      return(
+                        <div>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                            <div><label style={lbl}>Pain today (0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 4" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
+                            <div><label style={lbl}>Treatment given</label><select style={inp} value={qv.treatment} onChange={e=>setQv(p=>({...p,treatment:e.target.value}))}><option value="">— select —</option>{txOptions.map(t=><option key={t}>{t}</option>)}</select></div>
+                          </div>
+                          <div style={{marginBottom:10}}><label style={lbl}>Patient response</label><input style={inp} placeholder="e.g. Good improvement, less pain on movement" value={qv.response} onChange={e=>setQv(p=>({...p,response:e.target.value}))}/></div>
+                          <div style={{marginBottom:12}}><label style={lbl}>Plan for next session</label><input style={inp} placeholder="e.g. Progress to single-leg squat, continue cervical mobilisation" value={qv.next_plan} onChange={e=>setQv(p=>({...p,next_plan:e.target.value}))}/></div>
+                          <button onClick={saveQuick} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>
+                            {saved?"✅ Saved — opening SOAP to sign…":"Save & Go to SOAP →"}
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  {/* Full Session Log below */}
+                  <TreatmentSessionLogModule data={data} set={set}/>
+                </div>
               ):tests==="SOAP_MODULE"?(
-                <SOAPNoteModule data={data} set={set}/>
+                <SOAPNoteModule data={data} set={set} onNav={navTo}/>
               ):(
                 <div style={{display:"grid",gap:8}}>
                   {tests.map(t=>{
