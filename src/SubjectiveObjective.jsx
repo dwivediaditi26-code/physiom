@@ -4130,10 +4130,14 @@ function SubjectiveModule({ data, set, onNav }) {
   };
 
   const [activeSection, setActiveSection] = useState("demographics");
-  const [selectedRegions, setSelectedRegions] = useState([]);
-  const [insight, setInsight] = useState(null);
+  const [selectedRegions, setSelectedRegions] = useState(()=>{
+    try{ return JSON.parse(data.cx_selected_regions||"[]"); }catch{ return []; }
+  });
+  const [insight, setInsight] = useState(()=>{
+    try{ return data.cx_insight?JSON.parse(data.cx_insight):null; }catch{ return null; }
+  });
   const [showInsight, setShowInsight] = useState(true);
-  const [activeTab, setActiveTab] = useState("form");
+  const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
 
   // ── Field update helpers ────────────────────────────────────────────
@@ -4147,12 +4151,15 @@ function SubjectiveModule({ data, set, onNav }) {
   // Toggle region selection (max 3)
   const toggleRegion = useCallback((r) => {
     setSelectedRegions(prev => {
-      if (prev.includes(r)) return prev.filter(x => x !== r);
-      if (prev.length >= 3) return prev;
-      return [...prev, r];
+      const next = prev.includes(r)
+        ? prev.filter(x => x !== r)
+        : prev.length >= 3 ? prev : [...prev, r];
+      // Persist to patient data so navigation doesn't lose selection
+      set({ ...data, cx_selected_regions: JSON.stringify(next), cx_insight: null });
+      return next;
     });
     setInsight(null);
-  }, []);
+  }, [data, set]);
 
   // ── Build active sections ───────────────────────────────────────────
   const sections = useMemo(() => {
@@ -4230,6 +4237,8 @@ function SubjectiveModule({ data, set, onNav }) {
     setInsight(result);
     setActiveTab("results");
     setShowInsight(true);
+    // Persist insight so it survives navigation to ROM/MMT and back
+    try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
   };
 
   // ── Inline field renderer (app UI style) ───────────────────────────

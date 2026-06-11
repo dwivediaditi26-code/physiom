@@ -11975,13 +11975,49 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 </div>
               ))}
             </div>
-            {/* SOAP subjective note */}
-            {(d.soap_subjective||d.subjective)&&(
-              <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:8}}>S — SOAP Note (Subjective)</div>
-                <div style={{fontSize:12,color:C.text,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{d.soap_subjective||d.subjective}</div>
+            {/* SOAP Subjective (from signed note or live extra) */}
+            {(d.soap_s||d.soap_subjective||d.subjective||d.soap_extra_s)&&(
+              <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <span style={{fontSize:12,fontWeight:800,color:C.text}}>S — Subjective (SOAP)</span>
+                  <span onClick={()=>onNav&&onNav("soap")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
+                </div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.6,whiteSpace:"pre-wrap"}}>
+                  {(d.soap_s||d.soap_subjective||d.subjective||d.soap_extra_s).slice(0,400)}
+                  {(d.soap_s||d.soap_subjective||d.subjective||d.soap_extra_s).length>400?"…":""}
+                </div>
               </div>
             )}
+            {/* Saved clinical interpretation from subjective module */}
+            {d.cx_insight&&(()=>{
+              try{
+                const insight=JSON.parse(d.cx_insight);
+                if(!insight) return null;
+                return(
+                  <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                      <span style={{fontSize:12,fontWeight:800,color:C.text}}>🧠 Clinical Interpretation</span>
+                      <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Review →</span>
+                    </div>
+                    {insight.primaryDx&&(
+                      <div style={{padding:"8px 10px",background:C.primaryBg,borderLeft:`3px solid ${C.primary}`,borderRadius:8,marginBottom:6}}>
+                        <div style={{fontSize:9,color:C.primary,fontWeight:800,marginBottom:2}}>PRIMARY DIAGNOSIS</div>
+                        <div style={{fontSize:12,fontWeight:700,color:C.text}}>{insight.primaryDx?.label||insight.primaryDx}</div>
+                        {insight.primaryDx?.icd10&&<div style={{fontSize:10,color:C.muted}}>{insight.primaryDx.icd10}</div>}
+                      </div>
+                    )}
+                    {insight.nextSteps&&insight.nextSteps.length>0&&(
+                      <div style={{padding:"8px 10px",background:"#F0FDF4",borderLeft:"3px solid #059669",borderRadius:8}}>
+                        <div style={{fontSize:9,color:"#059669",fontWeight:800,marginBottom:4}}>SUGGESTED NEXT STEPS</div>
+                        {insight.nextSteps.slice(0,3).map((s,i)=>(
+                          <div key={i} style={{fontSize:11,color:C.text,marginBottom:2}}>• {s?.label||s}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }catch{return null;}
+            })()}
           </div>
         )}
         {tab==="assessment" && (
@@ -12223,27 +12259,43 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     </Sec>
                   )}
 
-                  {/* ── SOAP Assessment & Plan ── */}
-                  {(d.soap_assessment||d.soap_plan||d.assessment||d.plan)&&(
-                    <div onClick={()=>onNav&&onNav("soap")} style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",cursor:"pointer",border:`1px solid ${C.border}`}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                        <span style={{fontSize:12,fontWeight:800,color:C.text}}>📋 SOAP Assessment & Plan</span>
-                        <span style={{fontSize:11,color:C.primary,fontWeight:700}}>Open →</span>
+                  {/* ── SOAP Assessment & Plan (from signed SOAP or live extra notes) ── */}
+                  {(()=>{
+                    const sA=d.soap_a||d.soap_extra_a||d.soap_assessment||d.assessment||"";
+                    const sP=d.soap_p||d.soap_extra_p||d.soap_plan||d.plan||"";
+                    const sS=d.soap_s||d.soap_extra_s||"";
+                    const sO=d.soap_o||d.soap_extra_o||"";
+                    const lastSigned=d.soap_last_signed?new Date(d.soap_last_signed).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}):"";
+                    const clinician=d.soap_last_clinician||"";
+                    if(!sA&&!sP&&!sS&&!sO) return null;
+                    return(
+                      <div onClick={()=>onNav&&onNav("soap")}
+                        style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,
+                          boxShadow:"0 1px 6px rgba(0,0,0,0.05)",cursor:"pointer",border:`1px solid ${C.border}`}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                          <span style={{fontSize:12,fontWeight:800,color:C.text}}>📋 SOAP Note</span>
+                          <div style={{textAlign:"right"}}>
+                            {lastSigned&&<div style={{fontSize:9,color:C.muted}}>Signed {lastSigned}{clinician?` · ${clinician}`:""}</div>}
+                            <span style={{fontSize:11,color:C.primary,fontWeight:700}}>Open →</span>
+                          </div>
+                        </div>
+                        {[
+                          {key:"S",text:sS,bg:"#F0F9FF",border:"#0EA5E9",label:"S — Subjective"},
+                          {key:"O",text:sO,bg:"#F0FDF4",border:"#059669",label:"O — Objective"},
+                          {key:"A",text:sA,bg:C.primaryBg,border:C.primary,label:"A — Assessment"},
+                          {key:"P",text:sP,bg:"#FFFBEB",border:"#D97706",label:"P — Plan"},
+                        ].filter(s=>s.text).map(s=>(
+                          <div key={s.key} style={{padding:"8px 10px",background:s.bg,
+                            borderLeft:`3px solid ${s.border}`,borderRadius:8,marginBottom:6}}>
+                            <div style={{fontSize:9,color:s.border,fontWeight:800,marginBottom:3}}>{s.label}</div>
+                            <div style={{fontSize:11.5,color:C.text,lineHeight:1.55,whiteSpace:"pre-wrap"}}>
+                              {s.text.length>300?s.text.slice(0,300)+"…":s.text}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      {(d.soap_assessment||d.assessment)&&(
-                        <div style={{padding:"8px 10px",background:C.primaryBg,borderLeft:`3px solid ${C.primary}`,borderRadius:8,marginBottom:6}}>
-                          <div style={{fontSize:9,color:C.primary,fontWeight:800,marginBottom:2}}>A</div>
-                          <div style={{fontSize:11.5,color:C.text,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{(d.soap_assessment||d.assessment).slice(0,200)}{(d.soap_assessment||d.assessment).length>200?"…":""}</div>
-                        </div>
-                      )}
-                      {(d.soap_plan||d.plan)&&(
-                        <div style={{padding:"8px 10px",background:"#ECFDF5",borderLeft:"3px solid #059669",borderRadius:8}}>
-                          <div style={{fontSize:9,color:"#059669",fontWeight:800,marginBottom:2}}>P</div>
-                          <div style={{fontSize:11.5,color:C.text,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{(d.soap_plan||d.plan).slice(0,200)}{(d.soap_plan||d.plan).length>200?"…":""}</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* empty state */}
                   {romKeys.length===0&&mmtKeys.length===0&&stKeys.length===0&&neuroKeys.length===0&&omKeys.length===0&&kcKeys.length===0&&!d.soap_assessment&&(

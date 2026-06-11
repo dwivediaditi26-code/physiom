@@ -3888,7 +3888,22 @@ function SOAPNoteModule({ data, set }) {
                     icd10: data.soap_icd10||"",
                   };
                   const updated = [...lockedNotes, entry];
-                  if (typeof set === "function") set("soap_signed_notes", updated);
+                  if (typeof set === "function") {
+                    // Save signed notes array
+                    set("soap_signed_notes", updated);
+                    // Also save flat keys so Patient Profile Assessment tab can read them
+                    // (these are the generated SOAP texts including all module data)
+                    setTimeout(()=>{
+                      if (typeof set === "function") {
+                        set("soap_s", entry.S);
+                        set("soap_o", entry.O);
+                        set("soap_a", entry.A);
+                        set("soap_p", entry.P);
+                        set("soap_last_signed", entry.lockedAt);
+                        set("soap_last_clinician", entry.clinician);
+                      }
+                    }, 50);
+                  }
                   setLockConfirm(false);
                   setLockSuccess(true);
                   setTimeout(()=>setLockSuccess(false), 4000);
