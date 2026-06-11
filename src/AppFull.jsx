@@ -7727,8 +7727,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             {isClinicianVerified?'✅ Clinician Verified Analysis':'🤖 AI Estimated Analysis'}
           </div>
 
-          {/* Kendall Postural Type */}
-          {measurements?._kendall&&(
+          {/* Kendall Postural Type — only show for lateral (sagittal) views */}
+          {measurements?._kendall&&(view==="left"||view==="right")&&(
             <div style={{marginBottom:14,padding:"12px 14px",borderRadius:12,
               background:`${measurements._kendall.colour}12`,
               border:`1.5px solid ${measurements._kendall.colour}40`}}>
