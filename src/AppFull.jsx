@@ -15926,7 +15926,7 @@ function AppInner({ currentUser, onSignOut }) {
 
       {/* 6. Documentation (collapsible) */}
       <SidebarGroup groupKey="documentation" icon="📋" label="Documentation" accentColor="#b45309">
-        <SidebarItem navKey="tx_sessions"  icon="📅" label="Session Log"/>
+        <SidebarItem navKey="tx_sessions"  icon="⚡" label="Quick Visit"/>
         <SidebarItem navKey="soap"         icon="🤖" label="SOAP + AI"/>
       </SidebarGroup>
 
@@ -16546,7 +16546,7 @@ function AppInner({ currentUser, onSignOut }) {
                 <BnavItem navKey="tx_techniques" icon="🤲" label="Tx Techniques"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="documentation"?" open":""}`}>
-                <BnavItem navKey="tx_sessions" icon="📅" label="Session Log"/>
+                <BnavItem navKey="tx_sessions" icon="⚡" label="Quick Visit"/>
                 <BnavItem navKey="soap"        icon="🤖" label="SOAP + AI"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="top"?" open":""}`}>
