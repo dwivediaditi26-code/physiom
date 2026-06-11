@@ -10157,15 +10157,9 @@ function PhotoUploadAnalyzer() {
             const s=PostureScoreEngine(m,f,r);
             const report={lm,measurements:m,findings:f,reliability:r,scoreData:s,view:viewRef.current,capturedAt:new Date().toISOString()};
             setResult(report);
-            const postureEntry={view:viewRef.current,score:s.score,band:s.band,findingsCount:f.length,highCount:f.filter(x=>x.severity==="high").length,capturedAt:new Date().toISOString()};
+            const postureEntry={view:viewRef.current,score:s.score,band:s.band,findingsCount:f.length,highCount:f.filter(x=>x.severity==="high").length,capturedAt:new Date().toISOString(),img:urlRef?.current||null,findings:f||[]};
             saveSession(postureEntry);
-            // Auto-save to patient data so PatientProfile shows it
-            if(setPatientField){
-              try{
-                const existing=JSON.parse(activePatient?.data?.posture_sessions||"[]");
-                setPatientField("posture_sessions",JSON.stringify([...existing,postureEntry]));
-              }catch(e){}
-            }
+            // NOTE: No auto-save — user taps Save to Patient Record manually
             // Draw overlay
             const canvas=canvasRef.current,img=imgRef.current;
             if(canvas&&img){
@@ -10514,7 +10508,39 @@ function PhotoUploadAnalyzer() {
               })}
             </div>
           )}
-          <div style={{fontSize:"0.62rem",color:C2.muted,padding:"7px 10px",background:C2.s2,borderRadius:7,lineHeight:1.6}}>⚠ Observational AI analysis — not a clinical diagnosis. All findings require clinical correlation and manual assessment.</div>
+          <div style={{fontSize:"0.62rem",color:C2.muted,padding:"7px 10px",background:C2.s2,borderRadius:7,lineHeight:1.6,marginBottom:10}}>⚠ Observational AI analysis — not a clinical diagnosis. All findings require clinical correlation and manual assessment.</div>
+
+          {/* ── Manual Save to Patient Record ── */}
+          {activePatient&&(
+            <button onClick={()=>{
+              const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
+              const vLabel=VLABELS[analysisResult.view]||analysisResult.view;
+              try{
+                const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
+                const sameView=existing.filter(s=>s.view===analysisResult.view).length+1;
+                const entry={
+                  view:analysisResult.view, viewLabel:vLabel, sessionNo:sameView,
+                  sessionLabel:`${vLabel} Session ${sameView}`,
+                  img:urlRef?.current||null,
+                  score:scoreData?.score, band:scoreData?.band||"",
+                  findings:findings||[],
+                  kineticChain:measurements?.kineticChain||"",
+                  source:"upload", capturedAt:analysisResult.capturedAt||new Date().toISOString()
+                };
+                setPatientField&&setPatientField("posture_sessions",JSON.stringify([...existing,entry]));
+                alert(`✅ Saved as "${entry.sessionLabel}" to ${activePatient.name}`);
+              }catch(e){alert("Save failed: "+e.message);}
+            }} style={{width:"100%",padding:"11px",borderRadius:10,border:"none",cursor:"pointer",
+              background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+              color:"#fff",fontWeight:800,fontSize:"0.82rem"}}>
+              💾 Save to Patient Record — {activePatient.name}
+            </button>
+          )}
+          {!activePatient&&(
+            <div style={{padding:"9px 12px",background:"#FFF7ED",borderRadius:9,border:"1px solid #FDE68A",fontSize:"0.72rem",color:"#92400E",textAlign:"center"}}>
+              Load a patient first to save this analysis to their record
+            </div>
+          )}
 
         </div>
       )}
@@ -12889,7 +12915,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
 }
 
 // ─── PATIENT DATABASE PANEL ────────────────────────────────────────────────────
-function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose, onImport, onNav }) {
+function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose, onImport, onNav, liveData={} }) {
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
@@ -12947,7 +12973,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
     {/* Profile modal */}
     {profilePatient && (
       <PatientProfileModal
-        patient={profilePatient}
+        patient={profilePatient.id===activeId ? {...profilePatient, data:{...liveData,...profilePatient.data}} : profilePatient}
         onClose={()=>setProfilePatient(null)}
         onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); }}
         onSaveField={handleSaveField}
@@ -15389,6 +15415,7 @@ function AppInner({ currentUser, onSignOut }) {
   const [showUnsaved, setShowUnsaved] = useState(false);
   const [pendingPatient, setPendingPatient] = useState(null);
   const [showPdfReports, setShowPdfReports] = useState(false);
+  const [profilePatient, setProfilePatient] = useState(null);
 
   // Auto-save current data to active patient whenever data changes
   useEffect(() => {
@@ -15825,6 +15852,20 @@ function AppInner({ currentUser, onSignOut }) {
           onClose={()=>setShowPatientDb(false)}
           onImport={importPatientFromJSON}
           onNav={(key)=>{ setShowPatientDb(false); navTo(key); }}
+          liveData={data}
+        />
+      )}
+
+      {/* ── PATIENT PROFILE MODAL (from bar or dashboard) ── */}
+      {profilePatient && !showPatientDb && (
+        <PatientProfileModal
+          patient={profilePatient}
+          onClose={()=>setProfilePatient(null)}
+          onLoadAssessment={(p)=>{ selectPatient(p); setProfilePatient(null); }}
+          onSaveField={(id,newData)=>{
+            setPatients(prev=>prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p));
+          }}
+          onNav={(key)=>{ setProfilePatient(null); navTo(key); }}
         />
       )}
 
@@ -16022,21 +16063,27 @@ function AppInner({ currentUser, onSignOut }) {
       {/* ── ACTIVE PATIENT BAR ── */}
       {activePatient && (
         <div style={{background:PC.isDark?"rgba(129,140,248,0.05)":"rgba(79,70,229,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"8px 24px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <div style={{width:7,height:7,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 6px ${PC.a3}`}}/>
-            <span style={{fontSize:"0.75rem",color:PC.a2,fontWeight:700,letterSpacing:"-0.1px"}}>
+          {/* Clickable patient info → opens profile */}
+          <div onClick={()=>setProfilePatient({...activePatient,data:{...data}})}
+            style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",flex:1,minWidth:0,padding:"2px 6px",borderRadius:8,
+              transition:"background 0.15s"}}
+            onMouseEnter={e=>e.currentTarget.style.background="rgba(124,58,237,0.06)"}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <div style={{width:7,height:7,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 6px ${PC.a3}`,flexShrink:0}}/>
+            <span style={{fontSize:"0.75rem",color:PC.a2,fontWeight:700,letterSpacing:"-0.1px",whiteSpace:"nowrap"}}>
               {activePatient.name}
             </span>
+            {activePatient.data?.dem_age && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500}}>Age {activePatient.data.dem_age}</span>}
+            {activePatient.data?.dem_gender && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500}}>{activePatient.data.dem_gender}</span>}
+            {activePatient.data?.dem_occupation && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:400,maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{activePatient.data.dem_occupation}</span>}
+            <span style={{fontSize:"0.6rem",color:PC.accent,fontWeight:600,flexShrink:0}}>👤 Profile →</span>
           </div>
-          {activePatient.data?.dem_age && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500}}>Age {activePatient.data.dem_age}</span>}
-          {activePatient.data?.dem_gender && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500}}>{activePatient.data.dem_gender}</span>}
-          {activePatient.data?.dem_occupation && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:400,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{activePatient.data.dem_occupation}</span>}
-          <span style={{marginLeft:"auto",fontSize:"0.6rem",color:PC.muted,fontWeight:500,display:"flex",alignItems:"center",gap:4}}>
+          <span style={{fontSize:"0.6rem",color:PC.muted,fontWeight:500,display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
             <span style={{width:5,height:5,borderRadius:"50%",background:PC.a3,display:"inline-block"}}/>
             Saved {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}
           </span>
-          <button onClick={createNewPatient} style={{padding:"4px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.text,fontSize:"0.65rem",fontWeight:600,cursor:"pointer"}}>＋ New</button>
-          <button onClick={()=>setShowPatientDb(true)} style={{padding:"4px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.a2,fontSize:"0.65rem",fontWeight:600,cursor:"pointer"}}>Switch Patient</button>
+          <button onClick={createNewPatient} style={{padding:"4px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.text,fontSize:"0.65rem",fontWeight:600,cursor:"pointer",flexShrink:0}}>＋ New</button>
+          <button onClick={()=>setShowPatientDb(true)} style={{padding:"4px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.a2,fontSize:"0.65rem",fontWeight:600,cursor:"pointer",flexShrink:0}}>Switch Patient</button>
         </div>
       )}
       {!activePatient && (
