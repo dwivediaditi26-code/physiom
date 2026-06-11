@@ -12353,176 +12353,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         )}
         {tab==="posture" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
-            {(()=>{
-              let postureSessions=[];
-              try{postureSessions=JSON.parse(d.posture_sessions||"[]");}catch{}
-              const defects=Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]);
-              const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
-              const viewCount={};
-              const sessions=[...postureSessions].reverse().map(ps=>{
-                const v=ps.view||"anterior";
-                if(!viewCount[v]) viewCount[v]=0; viewCount[v]++;
-                const total=postureSessions.filter(s=>(s.view||"anterior")===v).length;
-                const sessionNo=total-viewCount[v]+1;
-                return{...ps,_label:ps.sessionLabel||`${VLABELS[v]||v} Session ${sessionNo}`};
-              });
-
-              // Lightbox state — track which image is open
-              const [lightboxImg, setLightboxImg] = React.useState(null);
-
-              return(
-                <div>
-                  {/* Lightbox */}
-                  {lightboxImg&&(
-                    <div onClick={()=>setLightboxImg(null)}
-                      style={{position:"fixed",inset:0,zIndex:999,background:"rgba(0,0,0,0.92)",
-                        display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
-                      <img src={lightboxImg} alt="posture full"
-                        style={{maxWidth:"95vw",maxHeight:"90vh",objectFit:"contain",borderRadius:8}}/>
-                      <div style={{position:"absolute",top:16,right:16,color:"#fff",fontSize:24,cursor:"pointer"}}>✕</div>
-                    </div>
-                  )}
-
-                  <button onClick={()=>onNav&&onNav("posture")}
-                    style={{width:"100%",padding:"10px",marginBottom:12,borderRadius:10,
-                      background:C.primaryBg,border:`1.5px solid ${C.primary}30`,
-                      color:C.primary,fontWeight:800,fontSize:12,cursor:"pointer"}}>
-                    📷 New Posture Analysis
-                  </button>
-
-                  {sessions.length>0?(
-                    <div>
-                      <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>
-                        Saved captures ({sessions.length})
-                      </div>
-                      {sessions.map((ps,i)=>{
-                        const col=(ps.score||0)>=78?C.green:(ps.score||0)>=62?C.orange:"#dc2626";
-                        const dt=new Date(ps.capturedAt||ps.time||"");
-                        const dateStr=isNaN(dt.getTime())?"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
-                        const timeStr=isNaN(dt.getTime())?"":dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
-                        // Build plain-text finding summaries (no muscles, just what's wrong)
-                        const findingSummary=(ps.findings||[])
-                          .sort((a,b)=>a.severity==="high"?-1:1)
-                          .slice(0,6)
-                          .map(f=>f.plain||f.region||f.title||f.label||"")
-                          .filter(Boolean);
-                        const highCount=(ps.findings||[]).filter(f=>f.severity==="high").length;
-                        const modCount=(ps.findings||[]).filter(f=>f.severity==="moderate"||f.severity==="medium").length;
-                        const lowCount=(ps.findings||[]).length-highCount-modCount;
-                        return(
-                          <div key={i} style={{background:C.white,borderRadius:12,
-                            marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.06)",
-                            border:`1px solid ${C.border}`,overflow:"hidden"}}>
-
-                            {/* Top row: thumbnail + score + label */}
-                            <div style={{display:"flex",gap:0}}>
-                              {/* Tappable thumbnail */}
-                              <div onClick={()=>ps.img&&setLightboxImg(ps.img)}
-                                style={{width:80,flexShrink:0,cursor:ps.img?"zoom-in":"default",
-                                  position:"relative",background:"#F3F4F6"}}>
-                                {ps.img?(
-                                  <>
-                                    <img src={ps.img} alt="posture"
-                                      style={{width:80,height:80,objectFit:"cover",display:"block"}}/>
-                                    <div style={{position:"absolute",inset:0,display:"flex",
-                                      alignItems:"center",justifyContent:"center",
-                                      background:"rgba(0,0,0,0)",transition:"background 0.2s"}}
-                                      onMouseEnter={e=>e.currentTarget.style.background="rgba(0,0,0,0.25)"}
-                                      onMouseLeave={e=>e.currentTarget.style.background="rgba(0,0,0,0)"}>
-                                      <span style={{fontSize:18,opacity:0}}>🔍</span>
-                                    </div>
-                                  </>
-                                ):(
-                                  <div style={{width:80,height:80,display:"flex",
-                                    alignItems:"center",justifyContent:"center",fontSize:24}}>🧍</div>
-                                )}
-                              </div>
-
-                              {/* Info */}
-                              <div style={{flex:1,padding:"9px 12px"}}>
-                                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                                  <div style={{fontSize:12,fontWeight:800,color:C.text}}>{ps._label}</div>
-                                  {ps.score!=null&&(
-                                    <div style={{fontSize:18,fontWeight:900,color:col,lineHeight:1,flexShrink:0,marginLeft:6}}>
-                                      {ps.score}<span style={{fontSize:8,color:C.muted,fontWeight:400}}>/100</span>
-                                    </div>
-                                  )}
-                                </div>
-                                <div style={{fontSize:10,color:C.muted,marginTop:2,marginBottom:5}}>
-                                  {dateStr}{timeStr?` · ${timeStr}`:""}{ps.source?" · "+(ps.source==="upload"?"Upload":"Camera"):""}
-                                </div>
-                                {/* Severity counts */}
-                                <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                                  {highCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#FEF2F2",color:"#dc2626"}}>🔴 {highCount} high</span>}
-                                  {modCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#FFF7ED",color:C.orange}}>🟡 {modCount} moderate</span>}
-                                  {lowCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#F3F4F6",color:C.muted}}>⚪ {lowCount} mild</span>}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Finding summaries — plain text, what's wrong */}
-                            {findingSummary.length>0&&(
-                              <div style={{padding:"8px 12px",borderTop:`1px solid ${C.border}`,
-                                background:"#FAFAFA"}}>
-                                <div style={{fontSize:9,fontWeight:700,color:C.muted,
-                                  textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:5}}>
-                                  Findings
-                                </div>
-                                <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                                  {findingSummary.map((f,fi)=>{
-                                    const orig=(ps.findings||[])[fi];
-                                    const isH=orig?.severity==="high";
-                                    const isM=orig?.severity==="moderate"||orig?.severity==="medium";
-                                    return(
-                                      <div key={fi} style={{display:"flex",alignItems:"center",gap:5,
-                                        fontSize:11,color:isH?"#dc2626":isM?C.orange:C.muted}}>
-                                        <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,
-                                          background:isH?"#dc2626":isM?C.orange:"#D1D5DB"}}/>
-                                        {f}
-                                      </div>
-                                    );
-                                  })}
-                                  {(ps.findings||[]).length>6&&(
-                                    <div style={{fontSize:10,color:C.muted,marginLeft:11}}>
-                                      +{(ps.findings||[]).length-6} more findings
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ):(
-                    <div style={{textAlign:"center",padding:"32px 20px",background:C.white,
-                      borderRadius:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                      <div style={{fontSize:36,marginBottom:10}}>🧍</div>
-                      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>No posture captures saved yet</div>
-                      <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>Go to Posture Analysis, analyse a photo, then tap <strong>Save to Patient Record</strong>.</div>
-                    </div>
-                  )}
-
-                  {defects.length>0&&(
-                    <div style={{background:C.white,borderRadius:14,padding:14,marginTop:10,
-                      boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                        <span style={{fontSize:12,fontWeight:800,color:C.text}}>Manual Defects ({defects.length})</span>
-                        <span onClick={()=>onNav&&onNav("posture")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
-                      </div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                        {defects.map(k=>(
-                          <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,
-                            background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>
-                            {k.replace("posture_defect_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+            <PostureSessionsView d={d} C={C} onNav={onNav}/>
           </div>
         )}
         {tab==="treatment" && (
@@ -15295,6 +15126,174 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
 
 
 
+
+
+
+function PostureSessionsView({ d, C, onNav }) {
+  const [lightboxImg, setLightboxImg] = useState(null);
+  let postureSessions = [];
+  try { postureSessions = JSON.parse(d.posture_sessions||"[]"); } catch {}
+  const defects = Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]);
+  const VLABELS = {anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
+  const viewCount = {};
+  const sessions = [...postureSessions].reverse().map(ps=>{
+    const v = ps.view||"anterior";
+    if(!viewCount[v]) viewCount[v]=0; viewCount[v]++;
+    const total = postureSessions.filter(s=>(s.view||"anterior")===v).length;
+    const sessionNo = total-viewCount[v]+1;
+    return{...ps,_label:ps.sessionLabel||`${VLABELS[v]||v} Session ${sessionNo}`};
+  });
+  return(
+    <div>
+      {lightboxImg&&(
+        <div onClick={()=>setLightboxImg(null)}
+          style={{position:"fixed",inset:0,zIndex:999,background:"rgba(0,0,0,0.92)",
+            display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
+          <img src={lightboxImg} alt="posture full"
+            style={{maxWidth:"95vw",maxHeight:"90vh",objectFit:"contain",borderRadius:8}}/>
+          <div style={{position:"absolute",top:16,right:16,color:"#fff",fontSize:24,cursor:"pointer"}}>✕</div>
+        </div>
+      )}
+      <button onClick={()=>onNav&&onNav("posture")}
+        style={{width:"100%",padding:"10px",marginBottom:12,borderRadius:10,
+          background:C.primaryBg,border:`1.5px solid ${C.primary}30`,
+          color:C.primary,fontWeight:800,fontSize:12,cursor:"pointer"}}>
+        📷 New Posture Analysis
+      </button>
+      {sessions.length>0?(
+        <div>
+          <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>Saved captures ({sessions.length})</div>
+          {sessions.map((ps,i)=>{
+            const col=(ps.score||0)>=78?C.green:(ps.score||0)>=62?C.orange:"#dc2626";
+            const dt=new Date(ps.capturedAt||ps.time||"");
+            const dateStr=isNaN(dt.getTime())?"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+            const timeStr=isNaN(dt.getTime())?"":dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+            const findingSummary=(ps.findings||[]).sort((a,b)=>a.severity==="high"?-1:1).slice(0,6).map(f=>f.plain||f.region||f.title||f.label||"").filter(Boolean);
+            const highCount=(ps.findings||[]).filter(f=>f.severity==="high").length;
+            const modCount=(ps.findings||[]).filter(f=>f.severity==="moderate"||f.severity==="medium").length;
+            const lowCount=(ps.findings||[]).length-highCount-modCount;
+            return(
+              <div key={i} style={{background:C.white,borderRadius:12,marginBottom:10,
+                boxShadow:"0 1px 6px rgba(0,0,0,0.06)",border:`1px solid ${C.border}`,overflow:"hidden"}}>
+                <div style={{display:"flex",gap:0}}>
+                  <div onClick={()=>ps.img&&setLightboxImg(ps.img)}
+                    style={{width:80,flexShrink:0,cursor:ps.img?"zoom-in":"default",background:"#F3F4F6"}}>
+                    {ps.img?(<img src={ps.img} alt="posture" style={{width:80,height:80,objectFit:"cover",display:"block"}}/>):
+                    (<div style={{width:80,height:80,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧍</div>)}
+                  </div>
+                  <div style={{flex:1,padding:"9px 12px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                      <div style={{fontSize:12,fontWeight:800,color:C.text}}>{ps._label}</div>
+                      {ps.score!=null&&<div style={{fontSize:18,fontWeight:900,color:col,lineHeight:1,flexShrink:0,marginLeft:6}}>{ps.score}<span style={{fontSize:8,color:C.muted,fontWeight:400}}>/100</span></div>}
+                    </div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:2,marginBottom:5}}>{dateStr}{timeStr?` · ${timeStr}`:""}{ps.source?" · "+(ps.source==="upload"?"Upload":"Camera"):""}</div>
+                    <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                      {highCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#FEF2F2",color:"#dc2626"}}>🔴 {highCount} high</span>}
+                      {modCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#FFF7ED",color:C.orange}}>🟡 {modCount} moderate</span>}
+                      {lowCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#F3F4F6",color:C.muted}}>⚪ {lowCount} mild</span>}
+                    </div>
+                  </div>
+                </div>
+                {findingSummary.length>0&&(
+                  <div style={{padding:"8px 12px",borderTop:`1px solid ${C.border}`,background:"#FAFAFA"}}>
+                    <div style={{fontSize:9,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:5}}>Findings</div>
+                    {findingSummary.map((f,fi)=>{
+                      const orig=(ps.findings||[])[fi];
+                      const isH=orig?.severity==="high"; const isM=orig?.severity==="moderate"||orig?.severity==="medium";
+                      return(<div key={fi} style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:isH?"#dc2626":isM?C.orange:C.muted}}>
+                        <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:isH?"#dc2626":isM?C.orange:"#D1D5DB"}}/>
+                        {f}
+                      </div>);
+                    })}
+                    {(ps.findings||[]).length>6&&<div style={{fontSize:10,color:C.muted,marginLeft:11}}>+{(ps.findings||[]).length-6} more</div>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ):(
+        <div style={{textAlign:"center",padding:"32px 20px",background:C.white,borderRadius:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+          <div style={{fontSize:36,marginBottom:10}}>🧍</div>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>No posture captures saved yet</div>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>Go to Posture Analysis, analyse a photo, then tap <strong>Save to Patient Record</strong>.</div>
+        </div>
+      )}
+      {defects.length>0&&(
+        <div style={{background:C.white,borderRadius:14,padding:14,marginTop:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <span style={{fontSize:12,fontWeight:800,color:C.text}}>Manual Defects ({defects.length})</span>
+            <span onClick={()=>onNav&&onNav("posture")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+            {defects.map(k=>(<span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>{k.replace("posture_defect_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}</span>))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuickVisitForm({ PC, data, set, navTo }) {
+  const [qv, setQv] = useState({pain_today:data.cc_vas_now||"",treatment:"",response:"",next_plan:""});
+  const [saved, setSaved] = useState(false);
+  const txOptions = ["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Postural correction","Manual therapy","Other"];
+  const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
+  const lbl = {fontSize:"0.6rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
+  const saveQuick = () => {
+    set("cc_vas_now",qv.pain_today);
+    set("soap_extra_p",qv.next_plan);
+    const sessions = Array.isArray(data.tx_sessions)?data.tx_sessions:[];
+    const entry = {id:(Date.now()).toString(36),date:new Date().toLocaleDateString("en-GB"),sessionNo:sessions.length+1,type:"Follow-up Treatment",vasStart:qv.pain_today,vasEnd:qv.pain_today,treatmentGiven:qv.treatment,response:qv.response,nextPlan:qv.next_plan,savedAt:new Date().toISOString()};
+    set("tx_sessions",[entry,...sessions]);
+    setSaved(true); setTimeout(()=>setSaved(false),3000);
+    navTo("soap");
+  };
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+        <div><label style={lbl}>Pain today (0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 4" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
+        <div><label style={lbl}>Treatment given</label><select style={inp} value={qv.treatment} onChange={e=>setQv(p=>({...p,treatment:e.target.value}))}><option value="">— select —</option>{txOptions.map(t=><option key={t}>{t}</option>)}</select></div>
+      </div>
+      <div style={{marginBottom:10}}><label style={lbl}>Patient response</label><input style={inp} placeholder="e.g. Good improvement, less pain on movement" value={qv.response} onChange={e=>setQv(p=>({...p,response:e.target.value}))}/></div>
+      <div style={{marginBottom:12}}><label style={lbl}>Plan for next session</label><input style={inp} placeholder="e.g. Progress to single-leg squat" value={qv.next_plan} onChange={e=>setQv(p=>({...p,next_plan:e.target.value}))}/></div>
+      <button onClick={saveQuick} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>
+        {saved?"✅ Saved — opening SOAP to sign…":"Save & Go to SOAP →"}
+      </button>
+    </div>
+  );
+}
+
+function IntakeForm({ PC, onCancel, onSubmit }) {
+  const [fd, setFd] = useState({});
+  const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.82rem",marginBottom:12};
+  const lbl = {fontSize:"0.62rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
+  return(
+    <div>
+      <label style={lbl}>Full name *</label>
+      <input style={inp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>setFd(p=>({...p,dem_name:e.target.value}))} autoFocus/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <div><label style={lbl}>Age</label><input style={{...inp,marginBottom:0}} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>setFd(p=>({...p,dem_age:e.target.value}))}/></div>
+        <div><label style={lbl}>Sex</label><select style={{...inp,marginBottom:0}} value={fd.dem_sex||""} onChange={e=>setFd(p=>({...p,dem_sex:e.target.value}))}><option value="">—</option><option>Female</option><option>Male</option><option>Other</option></select></div>
+      </div>
+      <div style={{marginTop:12}}>
+        <label style={lbl}>Chief complaint / diagnosis</label>
+        <input style={inp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>setFd(p=>({...p,cc_main:e.target.value}))}/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <div><label style={lbl}>Pain now (0–10)</label><input style={{...inp,marginBottom:0}} type="number" min="0" max="10" placeholder="0–10" value={fd.cc_vas_now||""} onChange={e=>setFd(p=>({...p,cc_vas_now:e.target.value}))}/></div>
+        <div><label style={lbl}>Occupation</label><input style={{...inp,marginBottom:0}} placeholder="e.g. Teacher" value={fd.dem_occupation||""} onChange={e=>setFd(p=>({...p,dem_occupation:e.target.value}))}/></div>
+      </div>
+      <div style={{display:"flex",gap:10,marginTop:20}}>
+        <button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.78rem"}}>Cancel</button>
+        <button disabled={!fd.dem_name?.trim()} onClick={()=>onSubmit(fd)} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:fd.dem_name?.trim()?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:fd.dem_name?.trim()?"pointer":"not-allowed",fontSize:"0.82rem"}}>
+          Start Assessment →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AppInner({ currentUser, onSignOut }) {
   const { theme, toggle: toggleTheme, C: TC } = useTheme();
 
@@ -16008,50 +16007,7 @@ function AppInner({ currentUser, onSignOut }) {
           <div style={{width:"100%",maxWidth:420,background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
             <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New patient</div>
             <div style={{fontSize:"0.72rem",color:PC.muted,marginBottom:20}}>Fill the basics — you can add more detail later</div>
-            {(()=>{
-              const [fd,setFd] = React.useState(intakeData);
-              const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.82rem",marginBottom:12};
-              const lbl = {fontSize:"0.62rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
-              return(
-                <div>
-                  <label style={lbl}>Full name *</label>
-                  <input style={inp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>setFd(p=>({...p,dem_name:e.target.value}))} autoFocus/>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                    <div>
-                      <label style={lbl}>Age</label>
-                      <input style={{...inp,marginBottom:0}} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>setFd(p=>({...p,dem_age:e.target.value}))}/>
-                    </div>
-                    <div>
-                      <label style={lbl}>Sex</label>
-                      <select style={{...inp,marginBottom:0}} value={fd.dem_sex||""} onChange={e=>setFd(p=>({...p,dem_sex:e.target.value}))}>
-                        <option value="">—</option>
-                        <option>Female</option><option>Male</option><option>Other</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div style={{marginTop:12}}>
-                    <label style={lbl}>Chief complaint / diagnosis</label>
-                    <input style={inp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>setFd(p=>({...p,cc_main:e.target.value}))}/>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                    <div>
-                      <label style={lbl}>Pain now (0–10)</label>
-                      <input style={{...inp,marginBottom:0}} type="number" min="0" max="10" placeholder="0–10" value={fd.cc_vas_now||""} onChange={e=>setFd(p=>({...p,cc_vas_now:e.target.value}))}/>
-                    </div>
-                    <div>
-                      <label style={lbl}>Occupation</label>
-                      <input style={{...inp,marginBottom:0}} placeholder="e.g. Teacher" value={fd.dem_occupation||""} onChange={e=>setFd(p=>({...p,dem_occupation:e.target.value}))}/>
-                    </div>
-                  </div>
-                  <div style={{display:"flex",gap:10,marginTop:20}}>
-                    <button onClick={()=>setShowIntake(false)} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.78rem"}}>Cancel</button>
-                    <button disabled={!fd.dem_name?.trim()} onClick={()=>finaliseNewPatient(fd)} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:fd.dem_name?.trim()?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:fd.dem_name?.trim()?"pointer":"not-allowed",fontSize:"0.82rem"}}>
-                      Start Assessment →
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
+            <IntakeForm PC={PC} onCancel={()=>setShowIntake(false)} onSubmit={finaliseNewPatient}/>
           </div>
         </div>
       )}
@@ -16492,35 +16448,7 @@ function AppInner({ currentUser, onSignOut }) {
                   <div style={{background:`linear-gradient(135deg,${PC.accent}12,${PC.a2}08)`,border:`1.5px solid ${PC.accent}30`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
                     <div style={{fontWeight:800,fontSize:"0.88rem",color:PC.accent,marginBottom:4}}>⚡ Quick Visit</div>
                     <div style={{fontSize:"0.7rem",color:PC.muted,marginBottom:12}}>For follow-ups — fill these 4 fields and sign. Takes 60 seconds.</div>
-                    {(()=>{
-                      const [qv,setQv]=React.useState({pain_today:data.cc_vas_now||"",treatment:"",response:"",next_plan:""});
-                      const txOptions=["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Postural correction","Manual therapy","Other"];
-                      const inp={width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
-                      const lbl={fontSize:"0.6rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
-                      const [saved,setSaved]=React.useState(false);
-                      const saveQuick=()=>{
-                        set("cc_vas_now",qv.pain_today);
-                        set("soap_extra_p",qv.next_plan);
-                        const sessions=Array.isArray(data.tx_sessions)?data.tx_sessions:[];
-                        const entry={id:(Date.now()).toString(36),date:new Date().toLocaleDateString("en-GB"),sessionNo:sessions.length+1,type:"Follow-up Treatment",vasStart:qv.pain_today,vasEnd:qv.pain_today,treatmentGiven:qv.treatment,response:qv.response,nextPlan:qv.next_plan,savedAt:new Date().toISOString()};
-                        set("tx_sessions",[entry,...sessions]);
-                        setSaved(true);setTimeout(()=>setSaved(false),3000);
-                        navTo("soap");
-                      };
-                      return(
-                        <div>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-                            <div><label style={lbl}>Pain today (0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 4" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
-                            <div><label style={lbl}>Treatment given</label><select style={inp} value={qv.treatment} onChange={e=>setQv(p=>({...p,treatment:e.target.value}))}><option value="">— select —</option>{txOptions.map(t=><option key={t}>{t}</option>)}</select></div>
-                          </div>
-                          <div style={{marginBottom:10}}><label style={lbl}>Patient response</label><input style={inp} placeholder="e.g. Good improvement, less pain on movement" value={qv.response} onChange={e=>setQv(p=>({...p,response:e.target.value}))}/></div>
-                          <div style={{marginBottom:12}}><label style={lbl}>Plan for next session</label><input style={inp} placeholder="e.g. Progress to single-leg squat, continue cervical mobilisation" value={qv.next_plan} onChange={e=>setQv(p=>({...p,next_plan:e.target.value}))}/></div>
-                          <button onClick={saveQuick} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>
-                            {saved?"✅ Saved — opening SOAP to sign…":"Save & Go to SOAP →"}
-                          </button>
-                        </div>
-                      );
-                    })()}
+                    <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo}/>
                   </div>
                   {/* Full Session Log below */}
                   <TreatmentSessionLogModule data={data} set={set}/>

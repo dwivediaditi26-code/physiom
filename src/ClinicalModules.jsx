@@ -3122,6 +3122,27 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SOAP NOTE MODULE — Upgraded with Real-Time SOAP + Suggested Interpretation
 // ═══════════════════════════════════════════════════════════════════════════════
+
+function SignSessionFields({ PC, data }) {
+  const [sVas, setSVas] = useState(data.cc_vas_now||"");
+  const [sTx, setSTx]   = useState(data.tx_techniques||"");
+  const [sResp, setSResp] = useState("");
+  const si = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"7px 9px",fontSize:"0.75rem",marginBottom:8};
+  const lb = {fontSize:"0.58rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.5px"};
+  // Store in window so parent sign action can read it
+  window.__signSession = {vasEnd:sVas, treatment:sTx, response:sResp};
+  return(
+    <div style={{background:PC.s2,borderRadius:10,padding:"10px 12px",marginBottom:14}}>
+      <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.accent,marginBottom:8}}>📋 Log this session (optional)</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+        <div><label style={lb}>Pain at end (0–10)</label><input style={{...si,marginBottom:0}} type="number" min="0" max="10" placeholder="0–10" value={sVas} onChange={e=>setSVas(e.target.value)}/></div>
+        <div><label style={lb}>Treatment given</label><select style={{...si,marginBottom:0,WebkitAppearance:"none"}} value={sTx} onChange={e=>setSTx(e.target.value)}><option value="">—</option>{["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Other"].map(t=><option key={t}>{t}</option>)}</select></div>
+      </div>
+      <div style={{marginTop:6}}><label style={lb}>Patient response</label><input style={{...si,marginBottom:0}} placeholder="e.g. Good improvement, less stiffness" value={sResp} onChange={e=>setSResp(e.target.value)}/></div>
+    </div>
+  );
+}
+
 function SOAPNoteModule({ data, set, onNav }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
@@ -3909,24 +3930,7 @@ function SOAPNoteModule({ data, set, onNav }) {
               <strong>Clinician:</strong> {clinician||"—"} &nbsp;|&nbsp; <strong>Session:</strong> {session} &nbsp;|&nbsp; <strong>Date:</strong> {new Date().toLocaleDateString("en-AU",{day:"2-digit",month:"long",year:"numeric"})}
             </div>
             {/* Session quick fields — saves to tx_sessions on sign */}
-            {(()=>{
-              const [sVas,setSVas]=React.useState(data.cc_vas_now||"");
-              const [sTx,setSTx]=React.useState(data.tx_techniques||"");
-              const [sResp,setSResp]=React.useState("");
-              const si={width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"7px 9px",fontSize:"0.75rem",marginBottom:8};
-              const lb={fontSize:"0.58rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.5px"};
-              React.__signSession={vasEnd:sVas,treatment:sTx,response:sResp};
-              return(
-                <div style={{background:PC.s2,borderRadius:10,padding:"10px 12px",marginBottom:14}}>
-                  <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.accent,marginBottom:8}}>📋 Log this session (optional)</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                    <div><label style={lb}>Pain at end (0–10)</label><input style={{...si,marginBottom:0}} type="number" min="0" max="10" placeholder="0–10" value={sVas} onChange={e=>setSVas(e.target.value)}/></div>
-                    <div><label style={lb}>Treatment given</label><select style={{...si,marginBottom:0,WebkitAppearance:"none"}} value={sTx} onChange={e=>setSTx(e.target.value)}><option value="">—</option>{["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Other"].map(t=><option key={t}>{t}</option>)}</select></div>
-                  </div>
-                  <div style={{marginTop:6}}><label style={lb}>Patient response</label><input style={{...si,marginBottom:0}} placeholder="e.g. Good improvement, less stiffness" value={sResp} onChange={e=>setSResp(e.target.value)}/></div>
-                </div>
-              );
-            })()}
+            <SignSessionFields PC={PC} data={data}/>
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>setLockConfirm(false)} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.78rem"}}>Cancel</button>
               <button
@@ -3944,7 +3948,7 @@ function SOAPNoteModule({ data, set, onNav }) {
                     icd10: data.soap_icd10||"",
                   };
                   // Also save as tx_session entry
-                  const signSession = React.__signSession||{};
+                  const signSession = window.__signSession||{};
                   if(signSession.vasEnd||signSession.treatment||signSession.response){
                     const existSess=Array.isArray(data.tx_sessions)?data.tx_sessions:[];
                     const sessEntry={id:(Date.now()+1).toString(36),date:now.toLocaleDateString("en-GB"),sessionNo:existSess.length+1,type:session||"Follow-up",vasEnd:signSession.vasEnd||"",treatmentGiven:signSession.treatment||"",response:signSession.response||"",savedAt:now.toISOString()};
