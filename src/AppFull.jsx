@@ -11374,6 +11374,37 @@ function QuickNotesWidget({ d, patient, onSaveField, C }) {
 }
 
 // ─── PATIENT PROFILE MODAL ─────────────────────────────────────────────────────
+
+// ROM key → human readable label
+const ROM_LABEL_MAP = {
+  "rom_cflex":"Cervical Flexion","rom_cext":"Cervical Extension","rom_clatl":"Cervical Lat Flex L","rom_clatr":"Cervical Lat Flex R","rom_crotl":"Cervical Rotation L","rom_crotr":"Cervical Rotation R",
+  "rom_thflex":"Thoracic Flexion","rom_thext":"Thoracic Extension","rom_throtl":"Thoracic Rotation L","rom_throtr":"Thoracic Rotation R",
+  "rom_lflex":"Lumbar Flexion","rom_lext":"Lumbar Extension","rom_llfl":"Lumbar Lat Flex L","rom_llfr":"Lumbar Lat Flex R","rom_lrotl":"Lumbar Rotation L","rom_lrotr":"Lumbar Rotation R",
+  "rom_sflex":"Shoulder Flexion","rom_sext":"Shoulder Extension","rom_sabd":"Shoulder Abduction","rom_sadd":"Shoulder Adduction","rom_ser":"Shoulder ER","rom_sir":"Shoulder IR","rom_shabd":"Shoulder H.Abd","rom_shadd":"Shoulder H.Add",
+  "rom_eflex":"Elbow Flexion","rom_eext":"Elbow Extension","rom_esup":"Supination","rom_epro":"Pronation",
+  "rom_wflex":"Wrist Flexion","rom_wext":"Wrist Extension","rom_wrad":"Radial Dev","rom_wuln":"Ulnar Dev",
+  "rom_hflex":"Hip Flexion","rom_hext":"Hip Extension","rom_habd":"Hip Abduction","rom_hadd":"Hip Adduction","rom_her":"Hip ER","rom_hir":"Hip IR",
+  "rom_kflex":"Knee Flexion","rom_kext":"Knee Extension",
+  "rom_adf":"Dorsiflexion","rom_apf":"Plantarflexion","rom_ainv":"Inversion","rom_aev":"Eversion",
+  "rom_topen":"Mouth Opening","rom_tlatl":"TMJ Lat Dev L","rom_tlatr":"TMJ Lat Dev R","rom_tpro":"Protrusion",
+};
+// MMT key → muscle name
+const MMT_LABEL_MAP = {
+  "mmt_scm":"SCM","mmt_dnf":"Deep Neck Flexors","mmt_trap_u":"Upper Trapezius","mmt_trap_m":"Mid Trapezius","mmt_trap_l":"Lower Trapezius",
+  "mmt_levsc":"Levator Scapulae","mmt_scalenes":"Scalenes","mmt_rhomb":"Rhomboids",
+  "mmt_deltA":"Ant Deltoid","mmt_deltM":"Mid Deltoid","mmt_deltP":"Post Deltoid",
+  "mmt_supra":"Supraspinatus","mmt_infra":"Infraspinatus","mmt_subscap":"Subscapularis","mmt_tmin":"Teres Minor","mmt_tmaj":"Teres Major",
+  "mmt_lat":"Lat Dorsi","mmt_pec_maj_c":"Pec Major (clav)","mmt_pec_maj_s":"Pec Major (stern)","mmt_pec_min":"Pec Minor","mmt_serrant":"Serratus Anterior",
+  "mmt_bicep":"Biceps","mmt_tricep":"Triceps","mmt_brach":"Brachialis","mmt_brachio":"Brachioradialis",
+  "mmt_corbrach":"Coracobrachialis","mmt_supinator":"Supinator","mmt_pt":"Pronator Teres",
+  "mmt_glmax":"Glute Max","mmt_glmed":"Glute Med","mmt_glmin":"Glute Min","mmt_tfl":"TFL",
+  "mmt_iliop":"Iliopsoas","mmt_rectfem":"Rectus Femoris","mmt_hams":"Hamstrings",
+  "mmt_quads":"Quadriceps","mmt_adduct":"Adductors","mmt_ta":"Tibialis Anterior",
+  "mmt_gastroc":"Gastrocnemius","mmt_soleus":"Soleus","mmt_pero":"Peroneals",
+  "mmt_multif":"Multifidus","mmt_erect":"Erector Spinae","mmt_transab":"Transversus Abdominis",
+  "mmt_rectab":"Rectus Abdominis","mmt_obliq":"Obliques",
+};
+
 function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav }) {
   const { useState, useEffect, useMemo } = React;
   const [tab, setTab] = useState("overview");
@@ -12125,14 +12156,18 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {/* ── ROM ── */}
                   <Sec icon="📐" title="Range of Motion" navKey="rom" hasData={romKeys.length>0}>
                     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))",gap:8}}>
-                      {romKeys.slice(0,8).map(k=>{
+                      {romKeys.filter(k=>!k.endsWith("_pain")&&!k.endsWith("_ef")).slice(0,8).map(k=>{
                         const val=parseFloat(d[k])||0;
-                        const label=k.replace(/^rom_/,"").replace(/_active|_passive/,"").replace(/_/g," ").toUpperCase();
-                        const col=val>0?"#7c3aed":"#D1D5DB";
+                        // Build readable label: lookup base key, add side if bilateral
+                        const baseKey=k.replace(/_left|_right/,"").replace(/_active|_passive/,"");
+                        const side=k.includes("_left")?" (L)":k.includes("_right")?" (R)":"";
+                        const mode=k.includes("_passive")?" passive":"";
+                        const label=(ROM_LABEL_MAP[baseKey]||baseKey.replace(/^rom_/,"").replace(/_/g," "))+side+mode;
+                        const col=val>=0?"#7c3aed":"#D1D5DB";
                         return(
                           <div key={k} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
-                            <div style={{fontSize:8.5,color:C.muted,marginBottom:3,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{label}</div>
-                            <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>{d[k]}°</div>
+                            <div style={{fontSize:8.5,color:C.muted,marginBottom:3,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2}}>{label}</div>
+                            <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>{d[k]}<span style={{fontSize:9,color:C.muted}}>°</span></div>
                           </div>
                         );
                       })}
@@ -12146,7 +12181,10 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       {mmtKeys.slice(0,8).map(k=>{
                         const grade=parseFloat(d[k])||0;
                         const col=grade>=5?C.green:grade>=4?C.orange:grade>=3?"#f59e0b":"#dc2626";
-                        const label=k.replace("mmt_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase());
+                        // Lookup full muscle name, strip side suffix
+                        const baseKey=k.replace(/_left|_right/,"");
+                        const side=k.includes("_left")?" L":k.includes("_right")?" R":"";
+                        const label=(MMT_LABEL_MAP[baseKey]||baseKey.replace("mmt_","").replace(/_/g," "))+side;
                         return(
                           <div key={k} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 10px",border:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                             <span style={{fontSize:10,color:C.muted,fontWeight:600,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginRight:6}}>{label}</span>
