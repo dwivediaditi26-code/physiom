@@ -11422,6 +11422,7 @@ const MMT_LABEL_MAP = {
 function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav }) {
   const { useState, useEffect, useMemo } = React;
   const [tab, setTab] = useState("overview");
+  const [lightboxImg, setLightboxImg] = useState(null);
   const [assessView, setAssessView]     = useState("latest");
   const [treatCat, setTreatCat]         = useState("exercises");
   const [expanded, setExpanded]         = useState(null);
@@ -12139,8 +12140,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     border:`1px solid ${C.border}`,transition:"box-shadow 0.15s"}}
                   onMouseEnter={e=>e.currentTarget.style.boxShadow="0 3px 12px rgba(124,58,237,0.12)"}
                   onMouseLeave={e=>e.currentTarget.style.boxShadow="0 1px 6px rgba(0,0,0,0.05)"}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasData?10:0}}>
-                    <span style={{fontSize:12,fontWeight:800,color:C.text}}>{icon} {title}</span>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasData?12:0}}>
+                    <span style={{fontSize:13,fontWeight:800,color:C.text,letterSpacing:"-0.2px"}}>{icon} {title}</span>
                     <span style={{fontSize:11,color:C.primary,fontWeight:700}}>
                       {hasData?"Open →":"Add →"}
                     </span>
@@ -12156,7 +12157,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               const romKeys = Object.keys(d).filter(k=>k.startsWith("rom_")&&k!=="rom_snapshots"&&d[k]);
               const mmtKeys = Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]&&!k.endsWith("_pain")&&!k.endsWith("_ef"));
               const stKeys  = Object.keys(d).filter(k=>k.startsWith("st_")&&d[k]);
-              const neuroKeys = Object.keys(d).filter(k=>(k.startsWith("n_ref_")||k.startsWith("n_der_")||k.startsWith("n_myot_"))&&d[k]);
+              const neuroKeys = Object.keys(d).filter(k=>(k.startsWith("n_ref_")||k.startsWith("n_der_")||k.startsWith("n_myot_")||k.startsWith("n_c")||k.startsWith("n_l")||k.startsWith("n_s")||k.startsWith("n_t")||k.startsWith("myo_"))&&d[k]&&d[k]!=""&&d[k]!="Not assessed");
               const kcKeys  = Object.keys(d).filter(k=>k.startsWith("kc_")&&d[k]);
               const faKeys  = Object.keys(d).filter(k=>k.startsWith("fa_")&&d[k]);
               const cyKeys  = Object.keys(d).filter(k=>k.startsWith("cy_")&&d[k]);
@@ -12179,10 +12180,10 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         const normalVal=ROM_NORMAL_MAP[baseKey]||null;
                         const col=val>0?"#7c3aed":"#D1D5DB";
                         return(
-                          <div key={k} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
-                            <div style={{fontSize:8,color:C.muted,marginBottom:2,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2}}>{label}</div>
-                            <div style={{fontSize:18,fontWeight:900,color:col,lineHeight:1}}>{d[k]}<span style={{fontSize:8,color:C.muted}}>°</span></div>
-                            {normalVal&&<div style={{fontSize:8,color:"#9CA3AF",marginTop:1}}>/{normalVal}°</div>}
+                          <div key={k} style={{background:"#FAFAFA",borderRadius:12,padding:"10px 8px",textAlign:"center",border:`1.5px solid ${col}20`,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+                            <div style={{fontSize:8.5,color:"#6B7280",marginBottom:4,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2,letterSpacing:"0.2px"}}>{label}</div>
+                            <div style={{fontSize:22,fontWeight:900,color:col,lineHeight:1,letterSpacing:"-0.5px"}}>{d[k]}<span style={{fontSize:9,color:C.muted,fontWeight:600}}>°</span></div>
+                            {normalVal&&<div style={{fontSize:8,color:"#9CA3AF",marginTop:2,fontWeight:600}}>norm {normalVal}°</div>}
                           </div>
                         );
                       })}
@@ -12193,36 +12194,55 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {/* ── MMT ── */}
                   <Sec icon="💪" title="Manual Muscle Testing" navKey="mmt" hasData={mmtKeys.length>0}>
                     {(()=>{
-                      // Keys are mmt_ta_L / mmt_ta_R (uppercase side suffix)
-                      // Group by base muscle and show paired R/L grades
-                      const gradeCol=(g)=>{const n=parseFloat(g)||0;return n>=5?C.green:n>=4?C.orange:n>=3?"#f59e0b":"#dc2626";};
+                      // Keys: mmt_ta_L / mmt_ta_R (uppercase) OR mmt_ta (no side)
+                      const gradeCol=(g)=>{const n=parseFloat(g)||0;return n>=5?"#059669":n>=4?"#0891b2":n>=3?"#D97706":"#DC2626";};
+                      const gradeLabel=(g)=>{const n=parseFloat(g)||0;return n>=5?"Normal":n>=4?"Good":n>=3?"Fair":"Weak";};
                       const paired={};
                       mmtKeys.forEach(k=>{
-                        const suf=k.endsWith("_R")?"R":k.endsWith("_L")?"L":null;
-                        const base=suf?k.slice(0,-2):k;
+                        // Handle _L/_R uppercase (primary format) and _left/_right fallback
+                        const suf=k.endsWith("_R")?"R":k.endsWith("_L")?"L":k.endsWith("_right")?"R":k.endsWith("_left")?"L":null;
+                        const base=suf?(k.endsWith("_R")||k.endsWith("_L")?k.slice(0,-2):k.replace(/_right$|_left$/,"")):k;
                         if(!paired[base]) paired[base]={};
                         if(suf) paired[base][suf]=d[k];
                         else paired[base].single=d[k];
                       });
                       const entries=Object.entries(paired).slice(0,8);
                       return(
-                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                        <div style={{display:"flex",flexDirection:"column",gap:7}}>
                           {entries.map(([base,sides])=>{
-                            const muscleName=MMT_LABEL_MAP[base]||base.replace("mmt_","").replace(/_/g," ");
+                            // Robust lookup: try base key, then with mmt_ prefix variations
+                            const muscleName=MMT_LABEL_MAP[base]||MMT_LABEL_MAP["mmt_"+base.replace(/^mmt_/,"")]||base.replace(/^mmt_/,"").replace(/_/g," ").replace(/\w/g,c=>c.toUpperCase());
                             const hasR=sides.R!=null,hasL=sides.L!=null,hasSingle=sides.single!=null;
+                            const dominantGrade=sides.R||sides.L||sides.single||"";
+                            const col=gradeCol(dominantGrade);
                             return(
-                              <div key={base} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 12px",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
-                                <span style={{fontSize:11,fontWeight:700,color:C.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{muscleName}</span>
-                                <div style={{display:"flex",gap:6,flexShrink:0}}>
-                                  {hasSingle&&<span style={{fontSize:16,fontWeight:900,color:gradeCol(sides.single)}}>{sides.single}<span style={{fontSize:8,color:C.muted}}>/5</span></span>}
-                                  {hasR&&<span style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                                    <span style={{fontSize:7,color:C.muted,fontWeight:700}}>R</span>
-                                    <span style={{fontSize:16,fontWeight:900,color:gradeCol(sides.R)}}>{sides.R}<span style={{fontSize:8,color:C.muted}}>/5</span></span>
-                                  </span>}
-                                  {hasL&&<span style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                                    <span style={{fontSize:7,color:C.muted,fontWeight:700}}>L</span>
-                                    <span style={{fontSize:16,fontWeight:900,color:gradeCol(sides.L)}}>{sides.L}<span style={{fontSize:8,color:C.muted}}>/5</span></span>
-                                  </span>}
+                              <div key={base} style={{background:"#FAFAFA",borderRadius:12,padding:"10px 14px",border:`1.5px solid ${col}25`,display:"flex",alignItems:"center",gap:10}}>
+                                <div style={{width:3,height:36,borderRadius:2,background:col,flexShrink:0}}/>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <div style={{fontSize:12,fontWeight:800,color:C.text,letterSpacing:"-0.2px"}}>{muscleName}</div>
+                                  <div style={{fontSize:9.5,color:col,fontWeight:700,marginTop:1}}>{gradeLabel(dominantGrade)}</div>
+                                </div>
+                                <div style={{display:"flex",gap:8,flexShrink:0,alignItems:"center"}}>
+                                  {hasSingle&&(
+                                    <div style={{textAlign:"center"}}>
+                                      <div style={{fontSize:22,fontWeight:900,color:col,lineHeight:1}}>{sides.single}</div>
+                                      <div style={{fontSize:8,color:C.muted,fontWeight:600}}>/5</div>
+                                    </div>
+                                  )}
+                                  {hasR&&(
+                                    <div style={{textAlign:"center",background:`${col}12`,borderRadius:8,padding:"4px 8px",minWidth:36}}>
+                                      <div style={{fontSize:8,color:col,fontWeight:800,marginBottom:1}}>R</div>
+                                      <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>{sides.R}</div>
+                                      <div style={{fontSize:7,color:C.muted,fontWeight:600}}>/5</div>
+                                    </div>
+                                  )}
+                                  {hasL&&(
+                                    <div style={{textAlign:"center",background:`${gradeCol(sides.L)}12`,borderRadius:8,padding:"4px 8px",minWidth:36}}>
+                                      <div style={{fontSize:8,color:gradeCol(sides.L),fontWeight:800,marginBottom:1}}>L</div>
+                                      <div style={{fontSize:20,fontWeight:900,color:gradeCol(sides.L),lineHeight:1}}>{sides.L}</div>
+                                      <div style={{fontSize:7,color:C.muted,fontWeight:600}}>/5</div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -12230,7 +12250,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         </div>
                       );
                     })()}
-                    {mmtKeys.length>8&&<div style={{marginTop:6,fontSize:11,color:C.muted,textAlign:"center"}}>+{mmtKeys.length-8} more muscles — tap to view all</div>}
+                    {Object.keys((()=>{const p={};mmtKeys.forEach(k=>{const s=k.endsWith("_R")?"R":k.endsWith("_L")?"L":k.endsWith("_right")?"R":k.endsWith("_left")?"L":null;const b=s?(k.endsWith("_R")||k.endsWith("_L")?k.slice(0,-2):k.replace(/_right$|_left$/,"")):k;if(!p[b])p[b]={};}).length===0;return p;})()).length>8&&<div style={{marginTop:8,fontSize:11,color:C.muted,textAlign:"center",fontWeight:600}}>+{mmtKeys.length-8} more muscles — tap to view all</div>}
                   </Sec>
 
                   {/* ── Special Tests ── */}
@@ -12288,24 +12308,54 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {/* ── Neurological ── */}
                   <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes}>
                     {(()=>{
-                      const positives=neuroKeys.filter(k=>d[k]&&(d[k].includes("Positive")||d[k].includes("Absent")||d[k].includes("Reduced")));
-                      const abnormal=neuroKeys.filter(k=>d[k]&&!d[k].includes("Normal")&&!d[k].includes("Intact"));
-                      const display=positives.length>0?positives:abnormal.length>0?abnormal:neuroKeys;
+                      const neuroName=(k)=>{
+                        const NEURO_NAMES={
+                          n_c3:"C3 Sensory",n_c4:"C4 Sensory",n_c5:"C5 Sensory",n_c6:"C6 Sensory",
+                          n_c7:"C7 Sensory",n_c8:"C8 Sensory",n_t1:"T1 Sensory",
+                          n_l1:"L1 Sensory",n_l2:"L2 Sensory",n_l3:"L3 Sensory",n_l4:"L4 Sensory",
+                          n_l5:"L5 Sensory",n_s1:"S1 Sensory",n_s2:"S2 Sensory",n_s3:"S3 Sensory",n_s4s5:"S4/S5",
+                          n_ref_bicep:"Biceps Reflex",n_ref_brad:"Brachioradialis Reflex",n_ref_tricep:"Triceps Reflex",
+                          n_ref_patella:"Patella Reflex",n_ref_achilles:"Achilles Reflex",
+                          n_ref_babinski:"Babinski Sign",n_ref_hoffmann:"Hoffmann's Sign",
+                          n_ref_clonus_ankle:"Ankle Clonus",n_ref_jaw:"Jaw Jerk",
+                          myo_c5:"C5 Strength",myo_c6:"C6 Strength",myo_c7:"C7 Strength",
+                          myo_c8:"C8 Strength",myo_t1:"T1 Strength",
+                          myo_l3:"L3 Strength",myo_l4:"L4 Strength",myo_l5:"L5 Strength",
+                          myo_s1:"S1 Strength",myo_s2:"S2 Strength",
+                        };
+                        const side=k.endsWith("_left")?" L":k.endsWith("_right")?" R":"";
+                        const base=k.replace(/_left$|_right$/,"");
+                        return (NEURO_NAMES[base]||base.replace(/^(n_ref_|n_der_|n_myot_|myo_|n_)/,"").replace(/_/g," ").replace(/\w/g,c=>c.toUpperCase()))+side;
+                      };
+                      const neuroAbn=(k,v)=>v&&(v.includes("Positive")||v.includes("Absent")||v.includes("Reduced")||v.includes("Brisk")||v.includes("Clonus")||v.includes("Hyperaestheti"));
+                      const neuroNorm=(k,v)=>v&&(v.includes("Normal")||v.includes("Intact")||v.startsWith("5"));
+                      const positives=neuroKeys.filter(k=>neuroAbn(k,d[k]));
+                      const display=positives.length>0?positives:neuroKeys.filter(k=>!neuroNorm(k,d[k])&&d[k]).concat(neuroKeys.filter(k=>neuroNorm(k,d[k])&&d[k]));
+                      const shown=display.slice(0,10);
                       return(
                         <div>
                           <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:d.neuro_clinician_notes?8:0}}>
-                            {display.slice(0,8).map(k=>{
-                              const val=d[k],isAbn=val&&(val.includes("Positive")||val.includes("Absent")||val.includes("Reduced"));
-                              return <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,
-                                background:isAbn?"#FEF2F2":"#ECFDF5",color:isAbn?"#dc2626":C.green,
-                                border:`1px solid ${isAbn?"#FCA5A5":"#BBF7D0"}`}}>
-                                {k.replace(/^(n_ref_|n_der_|n_myot_)/,"").replace(/_/g," ")}: {val}
-                              </span>;
+                            {shown.map(k=>{
+                              const val=d[k];
+                              const isAbn=neuroAbn(k,val);
+                              const isNorm=neuroNorm(k,val);
+                              return(
+                                <span key={k} style={{padding:"5px 11px",borderRadius:20,fontSize:11,fontWeight:700,lineHeight:1.3,
+                                  background:isAbn?"#FEF2F2":isNorm?"#ECFDF5":"#F0F9FF",
+                                  color:isAbn?"#DC2626":isNorm?"#059669":"#0891b2",
+                                  border:`1px solid ${isAbn?"#FCA5A5":isNorm?"#BBF7D0":"#BAE6FD"}`}}>
+                                  {neuroName(k)}
+                                  <span style={{fontSize:9.5,fontWeight:800,marginLeft:5,opacity:0.85}}>
+                                    {isAbn?"⚠":isNorm?"✓":""} {val?.length>15?val.slice(0,12)+"…":val}
+                                  </span>
+                                </span>
+                              );
                             })}
+                            {display.length>10&&<span style={{padding:"5px 10px",borderRadius:20,fontSize:11,color:C.muted,background:"#F3F4F6",border:`1px solid ${C.border}`,fontWeight:600}}>+{display.length-10} more</span>}
                           </div>
                           {d.neuro_clinician_notes&&(
-                            <div style={{fontSize:11,color:C.text,lineHeight:1.5,padding:"7px 10px",background:"#F9FAFB",borderRadius:8}}>
-                              {d.neuro_clinician_notes.slice(0,120)}{d.neuro_clinician_notes.length>120?"…":""}
+                            <div style={{fontSize:11.5,color:C.text,lineHeight:1.6,padding:"9px 12px",background:"#F8F9FF",borderRadius:10,borderLeft:"3px solid #6D28D9",marginTop:2}}>
+                              {d.neuro_clinician_notes.slice(0,150)}{d.neuro_clinician_notes.length>150?"…":""}
                             </div>
                           )}
                         </div>
@@ -12464,7 +12514,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         )}
         {tab==="posture" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
-            <PostureSessionsView d={d} C={C} onNav={onNav}/>
+            <PostureSessionsView d={d} C={C} onNav={onNav} setLightbox={setLightboxImg}/>
           </div>
         )}
         {tab==="treatment" && (
@@ -15231,6 +15281,19 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
           </div>
         </div>
       </div>
+      {/* ── Full-screen posture lightbox — absolute inside modal, covers header+tabs ── */}
+      {lightboxImg&&(
+        <div onClick={()=>setLightboxImg(null)}
+          style={{position:"absolute",inset:0,zIndex:500,background:"rgba(0,0,0,0.93)",
+            display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
+          <img src={lightboxImg} alt="posture full"
+            style={{maxWidth:"95vw",maxHeight:"92vh",objectFit:"contain",borderRadius:10,boxShadow:"0 8px 40px rgba(0,0,0,0.6)"}}/>
+          <div onClick={()=>setLightboxImg(null)}
+            style={{position:"absolute",top:14,right:16,color:"#fff",fontSize:26,cursor:"pointer",
+              background:"rgba(255,255,255,0.15)",borderRadius:"50%",width:38,height:38,
+              display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</div>
+        </div>
+      )}
     </div>
   );
 }
@@ -15240,8 +15303,9 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
 
 
 
-function PostureSessionsView({ d, C, onNav }) {
-  const [lightboxImg, setLightboxImg] = useState(null);
+function PostureSessionsView({ d, C, onNav, setLightbox }) {
+  // lightbox lifted to PatientProfileModal
+  const setLightboxImg = setLightbox || (()=>{});
   let postureSessions = [];
   try { postureSessions = JSON.parse(d.posture_sessions||"[]"); } catch {}
   const defects = Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]);
@@ -15256,15 +15320,7 @@ function PostureSessionsView({ d, C, onNav }) {
   });
   return(
     <div>
-      {lightboxImg&&(
-        <div onClick={()=>setLightboxImg(null)}
-          style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.92)",
-            display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
-          <img src={lightboxImg} alt="posture full"
-            style={{maxWidth:"95vw",maxHeight:"90vh",objectFit:"contain",borderRadius:8}}/>
-          <div style={{position:"absolute",top:16,right:16,color:"#fff",fontSize:24,cursor:"pointer"}}>✕</div>
-        </div>
-      )}
+      {/* lightbox now rendered in PatientProfileModal */}
       <button onClick={()=>onNav&&onNav("posture")}
         style={{width:"100%",padding:"10px",marginBottom:12,borderRadius:10,
           background:C.primaryBg,border:`1.5px solid ${C.primary}30`,
