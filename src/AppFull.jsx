@@ -2457,6 +2457,71 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         `Quantify with scales. Mirror biofeedback. Treat driver: pain, LLD, or proprioceptive deficit.`,
         "M62.9", "⊖", "", "Normal: <4%", abs);
     }
+
+    // ── HEAD LATERAL TILT ─────────────────────────────────────────────────
+    // Formula: atan2(ear_R_Y - ear_L_Y, ear_R_X - ear_L_X) — Kendall 5th ed. Ch.5
+    // Normal: <2° lateral tilt. >3° = C-spine lateral flexion pattern
+    if (m.headTiltAngle !== null && m.headTiltAngle !== undefined && Math.abs(m.headTiltAngle) > 3) {
+      const absH = Math.abs(m.headTiltAngle);
+      const tilSide = m.headTiltAngle > 0 ? "Left" : "Right";
+      add("Head / Cervical", `Head lateral tilt — ${tilSide} (${absH.toFixed(1)}°, normal <2°)`,
+        absH > 6 ? "high" : "moderate",
+        `Contralateral SCM stretch. Ipsilateral scalene and upper trap release. Assess C1/C2 lateral flexion restriction. Screen for torticollis (infantile/acquired) if persistent.`,
+        "M43.6", "↗",
+        `Head tilt: atan2(R_ear_Y − L_ear_Y, R_ear_X − L_ear_X) = ${absH.toFixed(1)}°. Reference: Kendall et al. 5th ed. Ch.5. >3° considered clinically significant lateral flexion.`,
+        "Normal: <2° lateral tilt (Kendall)", absH);
+    }
+
+    // ── LLD PROXY from popliteal crease / knee height difference ─────────
+    // Formula: (L_knee_Y − R_knee_Y) / BH × 100 (%) — Woerman 1984, Magee Ch.13
+    // Normal: <0.5% BH difference. >0.8% = clinical LLD screen positive
+    if (lm && lm[25] && lm[26] && (lm[25].visibility||0) >= 0.45 && (lm[26].visibility||0) >= 0.45) {
+      const imgH = 1; // normalised
+      const kneeHeightDiff = Math.abs(lm[25].y - lm[26].y);
+      const lldPct = kneeHeightDiff * 100; // as % of image height (proxy for BH)
+      if (lldPct > 1.5) {
+        const higherSide = lm[25].y > lm[26].y ? "Right" : "Left";
+        const sev = lldPct > 4 ? "moderate" : "low";
+        add("Leg Length Discrepancy", `Popliteal crease height asymmetry — ${higherSide} knee higher (${lldPct.toFixed(1)}% image height, screen positive)`,
+          sev,
+          `Confirm with supine tape measure (ASIS to medial malleolus — Woerman 1984). Standing block test for functional vs structural LLD. True LLD >5mm: consider heel lift. >2cm: orthopaedic referral.`,
+          "M21.0", "⇕",
+          `Popliteal crease differential: |L_knee_Y − R_knee_Y| × 100 = ${lldPct.toFixed(1)}% image height. Proxy for LLD — requires clinical confirmation. Woerman 1984 reference: ASIS-to-MM tape measure (supine), standing block test. Note: knee flexion or pelvic tilt can cause false positive — confirm clinically.`,
+          "Normal: <1.5% image height differential (proxy — confirm clinically)", lldPct);
+      }
+    }
+
+    // ── KNEE VALGUS / VARUS — frontal plane ──────────────────────────────
+    // Formula: perpendicular deviation of knee from hip-ankle line
+    // Genu valgum: knee medial to line (knock-knee). Genu varum: knee lateral (bow-leg)
+    // Magee Ch.13, Norkin & White: normal Q-angle <18° female, <13° male
+    const lkDev = m.leftKneeFrontal; const rkDev = m.rightKneeFrontal;
+    if (lkDev !== null && lkDev !== undefined && Math.abs(lkDev) > 3) {
+      const sev = Math.abs(lkDev) > 7 ? "high" : "moderate";
+      const type = lkDev < 0 ? "Valgum (knock-knee)" : "Varum (bow-leg)";
+      add("Knee — Left", `Left genu ${type} — ${Math.abs(lkDev).toFixed(1)}% BH deviation from hip-ankle line (normal <3%)`,
+        sev,
+        `Hip abductor strengthening (genu valgum). IT band release + hip abductor stretch (genu varum). Foot orthotic assessment (overpronation contributes to valgum). Patellofemoral assessment.`,
+        "M21.0", "↙",
+        `Left knee perpendicular deviation from hip(L)-ankle(L) line: ${lkDev.toFixed(1)}% BH. Negative = medial (valgum), positive = lateral (varum). Magee Orthopedic Physical Assessment Ch.13. Normal Q-angle <18° female / <13° male.`,
+        "Normal: knee within 3% BH of hip-ankle line (Magee Ch.13)", Math.abs(lkDev));
+    }
+    if (rkDev !== null && rkDev !== undefined && Math.abs(rkDev) > 3) {
+      const sev = Math.abs(rkDev) > 7 ? "high" : "moderate";
+      const type = rkDev < 0 ? "Valgum (knock-knee)" : "Varum (bow-leg)";
+      add("Knee — Right", `Right genu ${type} — ${Math.abs(rkDev).toFixed(1)}% BH deviation from hip-ankle line (normal <3%)`,
+        sev,
+        `Hip abductor strengthening (genu valgum). IT band release + hip abductor stretch (genu varum). Foot orthotic assessment. Patellofemoral assessment.`,
+        "M21.0", "↘",
+        `Right knee perpendicular deviation from hip(R)-ankle(R) line: ${rkDev.toFixed(1)}% BH. Negative = medial (valgum), positive = lateral (varum). Magee Ch.13.`,
+        "Normal: knee within 3% BH of hip-ankle line (Magee Ch.13)", Math.abs(rkDev));
+    }
+
+    // ── SCAPULAR HEIGHT / WINGING SCREEN ─────────────────────────────────
+    // Already handled above via scapularAsymm and shoulderAngle.
+    // If both are within normal (<2.5°), add informational note about what
+    // cannot be assessed from photo (Kibler types require hands-on exam).
+
   }
 
   // ── LATERAL VIEW ─────────────────────────────────────────────────────────
@@ -5173,7 +5238,11 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; ctx.font="bold 9px system-ui"; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+8:kp[0]-ktw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(kx,kp[1]+6,ktw+8,15,3); else ctx.rect(kx,kp[1]+6,ktw+8,15); ctx.fill(); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.fillText(kt,kx+4,kp[1]+17); }
   }
 
-  // ── Skeleton connections — only draw when both landmarks have high confidence ─
+  // ── Skeleton connections ──────────────────────────────────────────────────
+  // Posterior/frontal views: legs (25-32) get lower threshold (0.45) because
+  // MediaPipe gives reduced confidence to leg landmarks from behind.
+  // Lateral views keep strict 0.65 to avoid extrapolated connections.
+  const LEG_IDXS = new Set([25,26,27,28,29,30,31,32]);
   const CONNECTIONS=[
     [11,12],[11,23],[12,24],[23,24],
     [11,13],[13,15],[12,14],[14,16],
@@ -5181,9 +5250,9 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     [27,29],[28,30],[27,31],[28,32],
     [7,8],[0,7],[0,8],
   ];
-  // Higher threshold (0.65) prevents skeleton lines from connecting extrapolated/
-  // low-confidence landmarks (e.g. hips when upper body is cropped)
-  const VS=i=>(lm[i]?.visibility||0)>=0.65;
+  const VS=i=>(lm[i]?.visibility||0)>=(
+    !isLat && LEG_IDXS.has(i) ? 0.45 : 0.65
+  );
   ctx.strokeStyle="rgba(167,139,250,0.9)"; ctx.lineWidth=2.5; ctx.setLineDash([]);
   CONNECTIONS.forEach(([a,b])=>{
     if(!VS(a)||!VS(b)) return;
@@ -5191,7 +5260,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.beginPath(); ctx.moveTo(pa[0],pa[1]); ctx.lineTo(pb[0],pb[1]); ctx.stroke();
   });
 
-  // ── Joint dots — same high-confidence threshold ───────────────────────────
+  // ── Joint dots ────────────────────────────────────────────────────────────
   const JOINTS=[0,7,8,11,12,13,14,23,24,25,26,27,28];
   JOINTS.forEach(i=>{
     if(!VS(i)) return;
@@ -7116,7 +7185,120 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
       // Fallback: generate findings from measurements for lateral view
       const isLat = view==="left"||view==="right";
+      const isPost = view==="posterior"||view==="back";
       const meaningful = f.filter(x=>x.severity!=="mild"||x.region!=="Sagittal Assessment — Summary");
+
+      // ── Posterior manual fallback — always show a summary card + any findings ──
+      // Even when all measurements are within normal, show an overview so
+      // the therapist knows the analysis ran and what was assessed.
+      if (isPost && m && Object.keys(m).length>0) {
+        const pb=[];
+        const shAng = m.shoulderAngle; const pelAng = m.pelvisAngle; const cobb = m.cobbEstimate;
+        const trunkShift = m.trunkLateralShift; const lld = m.lldProxy;
+
+        // Shoulder level (Kendall 5th ed. Ch.5 — normal <2.5°)
+        if (shAng !== null && shAng !== undefined) {
+          const absS = Math.abs(shAng);
+          const sev = absS > 7 ? "high" : absS > 3 ? "moderate" : "low";
+          const side = shAng > 0 ? "Left" : "Right";
+          pb.push({
+            region: "Shoulder Level",
+            text: absS <= 2.5
+              ? `Shoulder height — within normal limits (${absS.toFixed(1)}° asymmetry, normal <2.5°)`
+              : `${side} shoulder elevated — ${absS.toFixed(1)}° (normal <2.5° — Kendall 5th ed. Ch.5)`,
+            plain: absS <= 2.5 ? "Shoulders level ✓" : `${side} shoulder elevated ${absS.toFixed(1)}°`,
+            severity: sev,
+            confidenceScore: 72,
+            clinicalSignificance: sev,
+            correction: absS <= 2.5 ? "Maintain symmetry — no intervention required." : "Upper trap/levator scapulae release ipsilateral. Lower trap activation. Confirm with anterior view.",
+            icd: absS <= 2.5 ? "Z00.0" : "M54.2",
+            norm: "Normal: <2.5° (Kendall) / <1.5cm height difference (Magee p.597)"
+          });
+        }
+
+        // Pelvic obliquity (Magee p.598 — normal <2°)
+        if (pelAng !== null && pelAng !== undefined) {
+          const absP = Math.abs(pelAng);
+          const sev = absP > 7 ? "high" : absP > 3 ? "moderate" : "low";
+          const side = pelAng > 0 ? "Left" : "Right";
+          pb.push({
+            region: "Pelvic Level",
+            text: absP <= 2
+              ? `Pelvic level — within normal limits (${absP.toFixed(1)}° obliquity, normal <2°)`
+              : `${side} pelvis elevated — ${absP.toFixed(1)}° obliquity (Magee p.598, normal <2°)`,
+            plain: absP <= 2 ? "Pelvis level ✓" : `${side} pelvic elevation ${absP.toFixed(1)}°`,
+            severity: sev,
+            confidenceScore: 68,
+            clinicalSignificance: sev,
+            correction: absP <= 2 ? "No intervention required." : "QL release elevated side. Hip abductor assessment. Screen for LLD with heel lifts.",
+            icd: absP <= 2 ? "Z00.0" : "M62.89",
+            norm: "Normal: <2° pelvic obliquity (Magee Orthopedic Physical Assessment p.598)"
+          });
+        }
+
+        // Lateral curvature screen / Cobb estimate (Kendall — normal <5°)
+        if (cobb !== null && cobb !== undefined) {
+          const sev = cobb > 10 ? "moderate" : cobb > 5 ? "low" : "low";
+          pb.push({
+            region: "Lateral Curvature Screen",
+            text: cobb <= 5
+              ? `Shoulder-pelvis differential — within normal limits (${cobb.toFixed(0)}°, normal <5°)`
+              : `Shoulder-pelvis differential ${cobb.toFixed(0)}° — screen for lateral spinal curvature (normal <5°). Adam's forward bend test recommended.`,
+            plain: cobb <= 5 ? "Spinal alignment screen ✓" : `Lateral curvature screen positive ${cobb.toFixed(0)}°`,
+            severity: sev,
+            confidenceScore: 60,
+            clinicalSignificance: sev,
+            correction: cobb <= 5 ? "No action required." : "Adam's forward bend test (rib hump screen). Standing AP X-ray if clinically indicated. This observation does not diagnose scoliosis.",
+            icd: cobb <= 5 ? "Z00.0" : "M99.0",
+            norm: "Normal: <5° shoulder-pelvis differential (observation only — Cobb requires X-ray)"
+          });
+        }
+
+        // Trunk lateral shift (normal <1% body height)
+        if (trunkShift !== null && trunkShift !== undefined) {
+          const absT = Math.abs(trunkShift);
+          const sev = absT > 4 ? "moderate" : "low";
+          const side = trunkShift > 0 ? "right" : "left";
+          if (absT > 1) {
+            pb.push({
+              region: "Trunk Lateral Shift",
+              text: absT <= 2
+                ? `Trunk alignment — within normal limits (${absT.toFixed(1)}% BH shift, normal <2%)`
+                : `Trunk shifted ${side} — ${absT.toFixed(1)}% body height (normal <2% — Kendall)`,
+              plain: absT <= 2 ? "Trunk centred ✓" : `Trunk ${side} shift ${absT.toFixed(1)}% BH`,
+              severity: sev,
+              confidenceScore: 65,
+              clinicalSignificance: sev,
+              correction: "Pain-avoidance correction. Lateral shift correction exercise. Screen for disc herniation if acute.",
+              icd: "M99.0",
+              norm: "Normal: shoulder midpoint within 2% BH of hip midpoint (Kendall 5th ed.)"
+            });
+          }
+        }
+
+        // LLD proxy from popliteal crease height difference
+        if (m.leftKneeFrontal !== null && m.leftKneeFrontal !== undefined &&
+            m.rightKneeFrontal !== null && m.rightKneeFrontal !== undefined) {
+          pb.push({
+            region: "Leg Length Screen",
+            text: "Knee level assessed from posterior — for accurate LLD measurement use supine tape measure (ASIS to medial malleolus) or standing block test.",
+            plain: "LLD: manual palpation required",
+            severity: "low",
+            confidenceScore: 55,
+            clinicalSignificance: "low",
+            correction: "True LLD: supine ASIS-to-medial malleolus measurement (Woerman 1984). Heel-rise test for functional vs structural LLD.",
+            icd: "M21.0",
+            norm: "Clinical reference: <5mm functional, >1cm — consider heel lift"
+          });
+        }
+
+        if (pb.length > 0) {
+          // Merge with any existing threshold-based findings — don't duplicate
+          const existingRegions = new Set(f.map(x => x.region));
+          pb.forEach(p => { if (!existingRegions.has(p.region)) f.push(p); });
+        }
+      }
+
       if (isLat && meaningful.length===0 && m && Object.keys(m).length>0) {
         const fb=[];
         if (m.cvaAngle!=null&&m.cvaAngle<55) { const sev=m.cvaAngle<44?"high":m.cvaAngle<49?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:"Normal CVA >55°"}); }
