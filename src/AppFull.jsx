@@ -16399,7 +16399,7 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="CYRIAX_MODULE"?(
                 <CyriaxModule data={data} set={set} navContext={active==="cyriax"?navContext:{}}/>
               ):tests==="SPECIAL_TESTS_MODULE"?(
-                <SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
+                <><SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
                   <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
@@ -16407,7 +16407,7 @@ function AppInner({ currentUser, onSignOut }) {
                     Continue SOAP →
                   </button>
                 </div>
-
+</>
               ):tests==="NKT_REGION"?(
                 <NKTSection data={data} set={set} navContext={active==="nkt"?navContext:{}}/>
               ):tests==="FMA_REGION"?(
@@ -16419,7 +16419,7 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="CYRIAX_REGION"?(
                 <CyriaxRegionTests data={data} set={set}/>
               ):tests==="NEURO_MODULE"?(
-                <NeurologicalModule data={data} set={set} navContext={active==="neuro"?navContext:{}}/>
+                <><NeurologicalModule data={data} set={set} navContext={active==="neuro"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
                   <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
@@ -16427,11 +16427,11 @@ function AppInner({ currentUser, onSignOut }) {
                     Continue SOAP →
                   </button>
                 </div>
-
+</>
               ):tests==="GAIT_MODULE"?(
                 <GaitModule data={data} set={set}/>
               ):tests==="MMT_MODULE"?(
-                <MMTModule data={data} set={set} navContext={active==="mmt"?navContext:{}}/>
+                <><MMTModule data={data} set={set} navContext={active==="mmt"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
                   <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
@@ -16439,10 +16439,9 @@ function AppInner({ currentUser, onSignOut }) {
                     Continue SOAP →
                   </button>
                 </div>
-
+</>
               ):tests==="ROM_MODULE"?(
-
-                {/* ── S→O→A→P workflow breadcrumb ── */}
+                <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
                   const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
@@ -16480,7 +16479,7 @@ function AppInner({ currentUser, onSignOut }) {
                     Continue SOAP →
                   </button>
                 </div>
-
+</>
               ):tests==="OUTCOME_MODULE"?(
                 <OutcomeMeasuresPro data={data} set={set}/>
               ):tests==="EXERCISE_MODULE"?(

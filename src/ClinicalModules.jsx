@@ -547,7 +547,7 @@ function GaitModule({ data, set }) {
           {showFull?"▲ Hide full analysis":"▼ Detailed analysis (phases, scales, muscle/joint)"}
         </button>
       </div>
-      {showFull&&<div>}
+      {showFull&&(<>
       {/* Summary banner */}
       {(fallRisk||activeGaits.length>0)&&(
         <div style={{background:fallRisk==="High"?"rgba(255,77,109,0.1)":"rgba(255,179,0,0.08)",border:`1px solid ${fallCol}40`,borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
@@ -820,6 +820,7 @@ function GaitModule({ data, set }) {
         {row("Home Program","g_home_prog","select",["Yes — provided","Yes — pending","No"])}
         {row("Clinical Interpretation & Summary","g_summary","textarea",null,"Primary deviation, underlying cause, functional impact, prognosis...")}
       </div>}
+      </>)}
     </div>
   );
 }
