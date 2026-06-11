@@ -11404,41 +11404,85 @@ const ROM_NORMAL_MAP = {
 };
 // MMT key → muscle name
 const MMT_LABEL_MAP = {
-  // Neck
-  "mmt_scm":"SCM","mmt_dnf":"Deep Neck Flexors",
-  // Shoulder girdle
-  "mmt_trap_u":"Upper Trapezius","mmt_trap_m":"Mid Trapezius","mmt_trap_l":"Lower Trapezius",
-  "mmt_levsc":"Levator Scapulae","mmt_scalenes":"Scalenes","mmt_rhomb":"Rhomboids",
+  // ── auto-generated from PhysioNeuro.jsx MMT_DATA ──
+  "mmt_scm":"SCM",
+  "mmt_dnf":"Deep Neck Flexors",
+  "mmt_trap_u":"Upper Trapezius",
+  "mmt_levsc":"Levator Scapulae",
+  "mmt_scalenes":"Scalenes",
+  "mmt_deltA":"Deltoid — Anterior",
+  "mmt_deltM":"Deltoid — Middle",
+  "mmt_deltP":"Deltoid — Posterior",
+  "mmt_supra":"Supraspinatus",
+  "mmt_infra":"Infraspinatus",
+  "mmt_subscap":"Subscapularis",
+  "mmt_tmin":"Teres Minor",
+  "mmt_tmaj":"Teres Major",
+  "mmt_lat":"Lat Dorsi",
+  "mmt_pec_maj_c":"Pec Major (Clav)",
+  "mmt_pec_maj_s":"Pec Major (Stern)",
+  "mmt_pec_min":"Pec Minor",
   "mmt_serrant":"Serratus Anterior",
-  // Shoulder
-  "mmt_deltA":"Ant Deltoid","mmt_deltM":"Mid Deltoid","mmt_deltP":"Post Deltoid",
-  "mmt_supra":"Supraspinatus","mmt_infra":"Infraspinatus","mmt_subscap":"Subscapularis",
-  "mmt_tmin":"Teres Minor","mmt_tmaj":"Teres Major",
-  "mmt_lat":"Lat Dorsi","mmt_pec_maj_c":"Pec Major (Clav)","mmt_pec_maj_s":"Pec Major (Stern)",
-  "mmt_pec_min":"Pec Minor","mmt_corbrach":"Coracobrachialis",
-  // Elbow
-  "mmt_bicep":"Biceps","mmt_brach":"Brachialis","mmt_brachio":"Brachioradialis",
-  "mmt_tricep":"Triceps","mmt_supinator":"Supinator","mmt_pt":"Pronator Teres","mmt_pq":"Pronator Quad",
-  // Wrist & Hand
-  "mmt_ecrb":"Wrist Ext (Radial)","mmt_ecul":"Ext Carpi Ulnaris","mmt_fcr":"Flex Carpi Radialis",
-  "mmt_fcu":"Flex Carpi Ulnaris","mmt_fdp":"FDP","mmt_fds":"FDS","mmt_edc":"EDC",
-  "mmt_lumb":"Lumbricals","mmt_interos":"Interossei",
-  "mmt_apbrev":"Abd Poll Brevis","mmt_adpoll":"Add Pollicis","mmt_fpoll":"FPL","mmt_epi":"EPL + EPB",
-  // Trunk
-  "mmt_rflex":"Rectus Abdominis","mmt_oblique":"Obliques","mmt_ta":"Transversus Abdominis",
-  "mmt_multif":"Multifidus","mmt_es":"Erector Spinae","mmt_ql":"Quadratus Lumborum",
-  // Hip
-  "mmt_iliop":"Iliopsoas","mmt_gmax":"Glute Max","mmt_gmed":"Glute Med","mmt_gmin":"Glute Min",
-  "mmt_tfl":"TFL","mmt_adduc":"Adductors","mmt_hamstr":"Hamstrings",
-  "mmt_pirif":"Piriformis","mmt_rectfem":"Rectus Femoris","mmt_quad":"Quadriceps",
-  // Knee/Ankle/Foot
-  "mmt_gastroc":"Gastrocnemius","mmt_poplit":"Popliteus",
-  // Legacy keys (old naming — keep for backward compat)
-  "mmt_glmax":"Glute Max","mmt_glmed":"Glute Med","mmt_glmin":"Glute Min",
-  "mmt_adduct":"Adductors","mmt_quads":"Quadriceps","mmt_hams":"Hamstrings",
+  "mmt_trap_m":"Middle Trapezius",
+  "mmt_trap_l":"Lower Trapezius",
+  "mmt_rhomb":"Rhomboids (Maj + Min)",
+  "mmt_corbrach":"Coracobrachialis",
+  "mmt_bicep":"Biceps Brachii",
+  "mmt_brach":"Brachialis",
+  "mmt_brachio":"Brachioradialis",
+  "mmt_tricep":"Triceps Brachii",
+  "mmt_supinator":"Supinator",
+  "mmt_pt":"Pronator Teres",
+  "mmt_pq":"Pronator Quadratus",
+  "mmt_ecrb":"ECRL + ECRB",
+  "mmt_ecul":"Extensor Carpi Ulnaris",
+  "mmt_fcr":"Flexor Carpi Radialis",
+  "mmt_fcu":"Flexor Carpi Ulnaris",
+  "mmt_fdp":"FDP",
+  "mmt_fds":"FDS",
+  "mmt_edc":"EDC",
+  "mmt_lumb":"Lumbricals",
+  "mmt_interos":"Interossei",
+  "mmt_apbrev":"Abd Pollicis Brevis",
+  "mmt_adpoll":"Add Pollicis",
+  "mmt_fpoll":"FPL (FPL)",
+  "mmt_epi":"EPL + EPB",
+  "mmt_rflex":"Rectus Abdominis",
+  "mmt_oblique":"Obliques",
+  "mmt_ta":"Tibialis Anterior",
+  "mmt_multif":"Multifidus",
+  "mmt_es":"Erector Spinae",
+  "mmt_ql":"Quadratus Lumborum",
+  "mmt_iliop":"Iliopsoas",
+  "mmt_gmax":"Gluteus Maximus",
+  "mmt_gmed":"Gluteus Medius",
+  "mmt_gmin":"Gluteus Minimus",
+  "mmt_tfl":"TFL",
+  "mmt_adduc":"Hip Adductors",
+  "mmt_hamstr":"Hamstrings",
+  "mmt_pirif":"Piriformis",
+  "mmt_rectfem":"Rectus Femoris",
+  "mmt_quad":"Quadriceps",
+  "mmt_gastroc":"Gastrocnemius",
+  "mmt_poplit":"Popliteus",
+  "mmt_soleus":"Soleus",
+  "mmt_tp":"Tibialis Posterior",
+  "mmt_peronls":"Peroneals (Longus + Brevis)",
+  "mmt_ehl":"EHL",
+  "mmt_edl":"EDL + Pero Tertius",
+  "mmt_fdl":"FDL + FHL (toe flexors)",
+  "mmt_abdhal":"Abductor Hallucis",
+  "mmt_masseter":"Masseter",
+  "mmt_temporalis":"Temporalis",
+  "mmt_lat_pter":"Lateral Pterygoid",
+  "mmt_diaphragm":"Diaphragm",
+  "mmt_intercost":"Intercostals (External + Inter",
+  // Legacy / alternate keys
+  "mmt_glmax":"Gluteus Maximus","mmt_glmed":"Gluteus Medius","mmt_glmin":"Gluteus Minimus",
+  "mmt_adduct":"Hip Adductors","mmt_quads":"Quadriceps","mmt_hams":"Hamstrings",
   "mmt_erect":"Erector Spinae","mmt_transab":"Transversus Abdominis",
   "mmt_rectab":"Rectus Abdominis","mmt_obliq":"Obliques","mmt_pero":"Peroneals",
-  "mmt_soleus":"Soleus",
+  "mmt_soleus":"Soleus","mmt_dnf_l":"Deep Neck Flexors",
 };
 
 function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav }) {
@@ -12232,7 +12276,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         <div style={{display:"flex",flexDirection:"column",gap:7}}>
                           {entries.map(([base,sides])=>{
                             // Robust lookup: try base key, then with mmt_ prefix variations
-                            const muscleName=MMT_LABEL_MAP[base]||MMT_LABEL_MAP["mmt_"+base.replace(/^mmt_/,"")]||base.replace(/^mmt_/,"").replace(/_/g," ").replace(/\w/g,c=>c.toUpperCase());
+                            const muscleName=MMT_LABEL_MAP[base]||MMT_LABEL_MAP["mmt_"+base.replace(/^mmt_/,"")]||base.replace(/^mmt_/,"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
                             const hasR=sides.R!=null,hasL=sides.L!=null,hasSingle=sides.single!=null;
                             const dominantGrade=sides.R||sides.L||sides.single||"";
                             const col=gradeCol(dominantGrade);
