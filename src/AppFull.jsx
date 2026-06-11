@@ -11388,6 +11388,20 @@ const ROM_LABEL_MAP = {
   "rom_adf":"Dorsiflexion","rom_apf":"Plantarflexion","rom_ainv":"Inversion","rom_aev":"Eversion",
   "rom_topen":"Mouth Opening","rom_tlatl":"TMJ Lat Dev L","rom_tlatr":"TMJ Lat Dev R","rom_tpro":"Protrusion",
 };
+
+// ROM key → normal value (°)
+const ROM_NORMAL_MAP = {
+  "rom_cflex":45,"rom_cext":45,"rom_clatl":45,"rom_clatr":45,"rom_crotl":60,"rom_crotr":60,
+  "rom_thflex":50,"rom_thext":25,"rom_throtl":35,"rom_throtr":35,
+  "rom_lflex":60,"rom_lext":25,"rom_llfl":25,"rom_llfr":25,"rom_lrotl":5,"rom_lrotr":5,
+  "rom_sflex":180,"rom_sext":60,"rom_sabd":180,"rom_sadd":30,"rom_ser":90,"rom_sir":70,"rom_shabd":45,"rom_shadd":135,
+  "rom_eflex":145,"rom_eext":0,"rom_esup":90,"rom_epro":90,
+  "rom_wflex":80,"rom_wext":70,"rom_wrad":20,"rom_wuln":30,
+  "rom_hflex":120,"rom_hext":20,"rom_habd":45,"rom_hadd":30,"rom_her":45,"rom_hir":45,
+  "rom_kflex":140,"rom_kext":0,
+  "rom_adf":20,"rom_apf":50,"rom_ainv":35,"rom_aev":15,
+  "rom_topen":45,"rom_tlatl":10,"rom_tlatr":10,"rom_tpro":8,
+};
 // MMT key → muscle name
 const MMT_LABEL_MAP = {
   "mmt_scm":"SCM","mmt_dnf":"Deep Neck Flexors","mmt_trap_u":"Upper Trapezius","mmt_trap_m":"Mid Trapezius","mmt_trap_l":"Lower Trapezius",
@@ -12158,16 +12172,17 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))",gap:8}}>
                       {romKeys.filter(k=>!k.endsWith("_pain")&&!k.endsWith("_ef")).slice(0,8).map(k=>{
                         const val=parseFloat(d[k])||0;
-                        // Build readable label: lookup base key, add side if bilateral
-                        const baseKey=k.replace(/_left|_right/,"").replace(/_active|_passive/,"");
-                        const side=k.includes("_left")?" (L)":k.includes("_right")?" (R)":"";
-                        const mode=k.includes("_passive")?" passive":"";
-                        const label=(ROM_LABEL_MAP[baseKey]||baseKey.replace(/^rom_/,"").replace(/_/g," "))+side+mode;
-                        const col=val>=0?"#7c3aed":"#D1D5DB";
+                        // Strip _arom/_prom/_[LR] suffixes to get base key
+                        const baseKey=k.replace(/_[LR](?:_arom|_prom)?$/,"").replace(/_(arom|prom|active|passive)$/,"").replace(/_[LR]$/,"");
+                        const side=/_[Rr](?:_|$)/.test(k)||k.endsWith("_R")?" (R)":/_[Ll](?:_|$)/.test(k)||k.endsWith("_L")?" (L)":"";
+                        const label=(ROM_LABEL_MAP[baseKey]||baseKey.replace(/^rom_/,"").replace(/_/g," "))+side;
+                        const normalVal=ROM_NORMAL_MAP[baseKey]||null;
+                        const col=val>0?"#7c3aed":"#D1D5DB";
                         return(
                           <div key={k} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
-                            <div style={{fontSize:8.5,color:C.muted,marginBottom:3,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2}}>{label}</div>
-                            <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>{d[k]}<span style={{fontSize:9,color:C.muted}}>°</span></div>
+                            <div style={{fontSize:8,color:C.muted,marginBottom:2,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2}}>{label}</div>
+                            <div style={{fontSize:18,fontWeight:900,color:col,lineHeight:1}}>{d[k]}<span style={{fontSize:8,color:C.muted}}>°</span></div>
+                            {normalVal&&<div style={{fontSize:8,color:"#9CA3AF",marginTop:1}}>/{normalVal}°</div>}
                           </div>
                         );
                       })}
@@ -12177,39 +12192,97 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
                   {/* ── MMT ── */}
                   <Sec icon="💪" title="Manual Muscle Testing" navKey="mmt" hasData={mmtKeys.length>0}>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                      {mmtKeys.slice(0,8).map(k=>{
-                        const grade=parseFloat(d[k])||0;
-                        const col=grade>=5?C.green:grade>=4?C.orange:grade>=3?"#f59e0b":"#dc2626";
-                        // Lookup full muscle name, strip side suffix
-                        const baseKey=k.replace(/_left|_right/,"");
-                        const side=k.includes("_left")?" L":k.includes("_right")?" R":"";
-                        const label=(MMT_LABEL_MAP[baseKey]||baseKey.replace("mmt_","").replace(/_/g," "))+side;
-                        return(
-                          <div key={k} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 10px",border:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                            <span style={{fontSize:10,color:C.muted,fontWeight:600,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginRight:6}}>{label}</span>
-                            <span style={{fontSize:18,fontWeight:900,color:col,flexShrink:0}}>{d[k]}<span style={{fontSize:9,color:C.muted}}>/5</span></span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {mmtKeys.length>8&&<div style={{marginTop:6,fontSize:11,color:C.muted,textAlign:"center"}}>{mmtKeys.length-8} more muscles — tap to view all</div>}
+                    {(()=>{
+                      // Keys are mmt_ta_L / mmt_ta_R (uppercase side suffix)
+                      // Group by base muscle and show paired R/L grades
+                      const gradeCol=(g)=>{const n=parseFloat(g)||0;return n>=5?C.green:n>=4?C.orange:n>=3?"#f59e0b":"#dc2626";};
+                      const paired={};
+                      mmtKeys.forEach(k=>{
+                        const suf=k.endsWith("_R")?"R":k.endsWith("_L")?"L":null;
+                        const base=suf?k.slice(0,-2):k;
+                        if(!paired[base]) paired[base]={};
+                        if(suf) paired[base][suf]=d[k];
+                        else paired[base].single=d[k];
+                      });
+                      const entries=Object.entries(paired).slice(0,8);
+                      return(
+                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                          {entries.map(([base,sides])=>{
+                            const muscleName=MMT_LABEL_MAP[base]||base.replace("mmt_","").replace(/_/g," ");
+                            const hasR=sides.R!=null,hasL=sides.L!=null,hasSingle=sides.single!=null;
+                            return(
+                              <div key={base} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 12px",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+                                <span style={{fontSize:11,fontWeight:700,color:C.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{muscleName}</span>
+                                <div style={{display:"flex",gap:6,flexShrink:0}}>
+                                  {hasSingle&&<span style={{fontSize:16,fontWeight:900,color:gradeCol(sides.single)}}>{sides.single}<span style={{fontSize:8,color:C.muted}}>/5</span></span>}
+                                  {hasR&&<span style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+                                    <span style={{fontSize:7,color:C.muted,fontWeight:700}}>R</span>
+                                    <span style={{fontSize:16,fontWeight:900,color:gradeCol(sides.R)}}>{sides.R}<span style={{fontSize:8,color:C.muted}}>/5</span></span>
+                                  </span>}
+                                  {hasL&&<span style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+                                    <span style={{fontSize:7,color:C.muted,fontWeight:700}}>L</span>
+                                    <span style={{fontSize:16,fontWeight:900,color:gradeCol(sides.L)}}>{sides.L}<span style={{fontSize:8,color:C.muted}}>/5</span></span>
+                                  </span>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                    {mmtKeys.length>8&&<div style={{marginTop:6,fontSize:11,color:C.muted,textAlign:"center"}}>+{mmtKeys.length-8} more muscles — tap to view all</div>}
                   </Sec>
 
                   {/* ── Special Tests ── */}
                   <Sec icon="🔬" title="Special Tests" navKey="special" hasData={stKeys.length>0}>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                      {stKeys.slice(0,10).map(k=>{
-                        const val=d[k],isPos=val==="Positive"||val==="Positive (Symptomatic)";
-                        return <span key={k} style={{padding:"4px 10px",borderRadius:20,fontSize:10.5,fontWeight:700,
-                          background:isPos?"#FEF2F2":val==="Negative"||val==="Negative (Asymptomatic)"?"#ECFDF5":"#F3F4F6",
-                          color:isPos?"#dc2626":val==="Negative"||val==="Negative (Asymptomatic)"?C.green:C.muted,
-                          border:`1px solid ${isPos?"#FCA5A5":val==="Negative"||val==="Negative (Asymptomatic)"?"#BBF7D0":C.border}`}}>
-                          {k.replace("st_","").replace(/_/g," ")}: {val}
-                        </span>;
-                      })}
-                      {stKeys.length>10&&<span style={{padding:"4px 10px",borderRadius:20,fontSize:10.5,color:C.muted}}>+{stKeys.length-10} more</span>}
-                    </div>
+                    {(()=>{
+                      const ST_NAMES={
+                        st_spurling:"Spurling's",st_jacksons:"Jackson's",st_distraction:"Distraction",
+                        st_slump_test:"Slump",st_slr_test:"SLR",st_faber_test:"FABER",st_fadir_test:"FADIR",
+                        st_lachmans:"Lachman's",st_anterior_drawer:"Ant Drawer",st_posterior_drawer:"Post Drawer",
+                        st_mcmurray_test:"McMurray's",st_thessaly:"Thessaly",st_apley:"Apley's",
+                        st_hawkins:"Hawkins-Kennedy",st_neer:"Neer's",st_empty_can:"Empty Can",st_full_can:"Full Can",
+                        st_obrien:"O'Brien's",st_speeds:"Speed's",st_yergason:"Yergason's",
+                        st_apprehension:"Apprehension",st_relocation:"Relocation",st_sulcus:"Sulcus Sign",
+                        st_ober_test:"Ober's",st_thomas_test:"Thomas",st_trendelenburg:"Trendelenburg",
+                        st_clarkes:"Clarke's",st_patellar_grind:"Patellar Grind",st_noble:"Noble's",
+                        st_valgus_stress:"Valgus Stress",st_varus_stress:"Varus Stress",
+                        st_talar_tilt:"Talar Tilt",st_anterior_drawer_ankle:"Ant Drawer (Ankle)",
+                        st_phalen:"Phalen's",st_tinel_wrist:"Tinel's (Wrist)",st_tinel_ankle:"Tinel's (Ankle)",
+                        st_finkelstein:"Finkelstein's",st_grind_test:"Grind",
+                        st_thompsons:"Thompson's",st_ottawa_ankle:"Ottawa Ankle",st_ottawa_knee:"Ottawa Knee",
+                        st_vbi_test:"VBI Test",st_sharp_purser:"Sharp-Purser",
+                        st_shoulder_abduction:"Sh Abd Relief",st_cervical_rotation:"Cx Rot",
+                        st_cross_arm:"Cross-Arm",st_empty_can_left:"Empty Can (L)",st_empty_can_right:"Empty Can (R)",
+                        st_lift_off:"Lift-Off",st_bear_hug:"Bear Hug",st_belly_press:"Belly Press",
+                        st_effusion:"Effusion",st_patellar_tap:"Patellar Tap",
+                      };
+                      const stName=(k)=>{
+                        // strip side suffix for lookup
+                        const base=k.replace(/_left$|_right$/,"");
+                        const side=k.endsWith("_left")?" L":k.endsWith("_right")?" R":"";
+                        return (ST_NAMES[base]||ST_NAMES[k]||k.replace("st_","").replace(/_/g," ").replace(/\w/g,c=>c.toUpperCase()))+side;
+                      };
+                      return(
+                        <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                          {stKeys.slice(0,12).map(k=>{
+                            const val=d[k];
+                            const isPos=val==="Positive"||val==="Positive (Symptomatic)";
+                            const isNeg=val==="Negative"||val==="Negative (Asymptomatic)";
+                            return(
+                              <span key={k} style={{padding:"5px 11px",borderRadius:20,fontSize:11,fontWeight:700,lineHeight:1.3,
+                                background:isPos?"#FEF2F2":isNeg?"#ECFDF5":"#F3F4F6",
+                                color:isPos?"#dc2626":isNeg?C.green:C.muted,
+                                border:`1px solid ${isPos?"#FCA5A5":isNeg?"#BBF7D0":C.border}`}}>
+                                {stName(k)}
+                                <span style={{fontSize:10,fontWeight:800,marginLeft:4}}>{isPos?"＋":isNeg?"－":val?.slice?.(0,3)||""}</span>
+                              </span>
+                            );
+                          })}
+                          {stKeys.length>12&&<span style={{padding:"5px 10px",borderRadius:20,fontSize:11,color:C.muted,background:"#F3F4F6",border:`1px solid ${C.border}`}}>+{stKeys.length-12} more</span>}
+                        </div>
+                      );
+                    })()}
                   </Sec>
 
                   {/* ── Neurological ── */}
@@ -15185,7 +15258,7 @@ function PostureSessionsView({ d, C, onNav }) {
     <div>
       {lightboxImg&&(
         <div onClick={()=>setLightboxImg(null)}
-          style={{position:"fixed",inset:0,zIndex:999,background:"rgba(0,0,0,0.92)",
+          style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.92)",
             display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
           <img src={lightboxImg} alt="posture full"
             style={{maxWidth:"95vw",maxHeight:"90vh",objectFit:"contain",borderRadius:8}}/>
