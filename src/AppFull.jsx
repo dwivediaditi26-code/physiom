@@ -11404,25 +11404,46 @@ const ROM_NORMAL_MAP = {
 };
 // MMT key → muscle name
 const MMT_LABEL_MAP = {
-  "mmt_scm":"SCM","mmt_dnf":"Deep Neck Flexors","mmt_trap_u":"Upper Trapezius","mmt_trap_m":"Mid Trapezius","mmt_trap_l":"Lower Trapezius",
+  // Neck
+  "mmt_scm":"SCM","mmt_dnf":"Deep Neck Flexors",
+  // Shoulder girdle
+  "mmt_trap_u":"Upper Trapezius","mmt_trap_m":"Mid Trapezius","mmt_trap_l":"Lower Trapezius",
   "mmt_levsc":"Levator Scapulae","mmt_scalenes":"Scalenes","mmt_rhomb":"Rhomboids",
+  "mmt_serrant":"Serratus Anterior",
+  // Shoulder
   "mmt_deltA":"Ant Deltoid","mmt_deltM":"Mid Deltoid","mmt_deltP":"Post Deltoid",
-  "mmt_supra":"Supraspinatus","mmt_infra":"Infraspinatus","mmt_subscap":"Subscapularis","mmt_tmin":"Teres Minor","mmt_tmaj":"Teres Major",
-  "mmt_lat":"Lat Dorsi","mmt_pec_maj_c":"Pec Major (clav)","mmt_pec_maj_s":"Pec Major (stern)","mmt_pec_min":"Pec Minor","mmt_serrant":"Serratus Anterior",
-  "mmt_bicep":"Biceps","mmt_tricep":"Triceps","mmt_brach":"Brachialis","mmt_brachio":"Brachioradialis",
-  "mmt_corbrach":"Coracobrachialis","mmt_supinator":"Supinator","mmt_pt":"Pronator Teres",
-  "mmt_glmax":"Glute Max","mmt_glmed":"Glute Med","mmt_glmin":"Glute Min","mmt_tfl":"TFL",
-  "mmt_iliop":"Iliopsoas","mmt_rectfem":"Rectus Femoris","mmt_hams":"Hamstrings",
-  "mmt_quads":"Quadriceps","mmt_adduct":"Adductors","mmt_ta":"Tibialis Anterior",
-  "mmt_gastroc":"Gastrocnemius","mmt_soleus":"Soleus","mmt_pero":"Peroneals",
-  "mmt_multif":"Multifidus","mmt_erect":"Erector Spinae","mmt_transab":"Transversus Abdominis",
-  "mmt_rectab":"Rectus Abdominis","mmt_obliq":"Obliques",
+  "mmt_supra":"Supraspinatus","mmt_infra":"Infraspinatus","mmt_subscap":"Subscapularis",
+  "mmt_tmin":"Teres Minor","mmt_tmaj":"Teres Major",
+  "mmt_lat":"Lat Dorsi","mmt_pec_maj_c":"Pec Major (Clav)","mmt_pec_maj_s":"Pec Major (Stern)",
+  "mmt_pec_min":"Pec Minor","mmt_corbrach":"Coracobrachialis",
+  // Elbow
+  "mmt_bicep":"Biceps","mmt_brach":"Brachialis","mmt_brachio":"Brachioradialis",
+  "mmt_tricep":"Triceps","mmt_supinator":"Supinator","mmt_pt":"Pronator Teres","mmt_pq":"Pronator Quad",
+  // Wrist & Hand
+  "mmt_ecrb":"Wrist Ext (Radial)","mmt_ecul":"Ext Carpi Ulnaris","mmt_fcr":"Flex Carpi Radialis",
+  "mmt_fcu":"Flex Carpi Ulnaris","mmt_fdp":"FDP","mmt_fds":"FDS","mmt_edc":"EDC",
+  "mmt_lumb":"Lumbricals","mmt_interos":"Interossei",
+  "mmt_apbrev":"Abd Poll Brevis","mmt_adpoll":"Add Pollicis","mmt_fpoll":"FPL","mmt_epi":"EPL + EPB",
+  // Trunk
+  "mmt_rflex":"Rectus Abdominis","mmt_oblique":"Obliques","mmt_ta":"Transversus Abdominis",
+  "mmt_multif":"Multifidus","mmt_es":"Erector Spinae","mmt_ql":"Quadratus Lumborum",
+  // Hip
+  "mmt_iliop":"Iliopsoas","mmt_gmax":"Glute Max","mmt_gmed":"Glute Med","mmt_gmin":"Glute Min",
+  "mmt_tfl":"TFL","mmt_adduc":"Adductors","mmt_hamstr":"Hamstrings",
+  "mmt_pirif":"Piriformis","mmt_rectfem":"Rectus Femoris","mmt_quad":"Quadriceps",
+  // Knee/Ankle/Foot
+  "mmt_gastroc":"Gastrocnemius","mmt_poplit":"Popliteus",
+  // Legacy keys (old naming — keep for backward compat)
+  "mmt_glmax":"Glute Max","mmt_glmed":"Glute Med","mmt_glmin":"Glute Min",
+  "mmt_adduct":"Adductors","mmt_quads":"Quadriceps","mmt_hams":"Hamstrings",
+  "mmt_erect":"Erector Spinae","mmt_transab":"Transversus Abdominis",
+  "mmt_rectab":"Rectus Abdominis","mmt_obliq":"Obliques","mmt_pero":"Peroneals",
+  "mmt_soleus":"Soleus",
 };
 
 function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav }) {
   const { useState, useEffect, useMemo } = React;
   const [tab, setTab] = useState("overview");
-  const [lightboxImg, setLightboxImg] = useState(null);
   const [assessView, setAssessView]     = useState("latest");
   const [treatCat, setTreatCat]         = useState("exercises");
   const [expanded, setExpanded]         = useState(null);
@@ -12514,7 +12535,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         )}
         {tab==="posture" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
-            <PostureSessionsView d={d} C={C} onNav={onNav} setLightbox={setLightboxImg}/>
+            <PostureSessionsView d={d} C={C} onNav={onNav}/>
           </div>
         )}
         {tab==="treatment" && (
@@ -15281,20 +15302,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
           </div>
         </div>
       </div>
-      {/* ── Full-screen posture lightbox — portal to body ── */}
-      {lightboxImg&&createPortal(
-        <div onClick={()=>setLightboxImg(null)}
-          style={{position:"fixed",inset:0,zIndex:99999,background:"rgba(0,0,0,0.95)",
-            display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
-          <img src={lightboxImg} alt="posture full"
-            style={{maxWidth:"96vw",maxHeight:"93vh",objectFit:"contain",borderRadius:10,boxShadow:"0 8px 40px rgba(0,0,0,0.6)"}}/>
-          <div onClick={()=>setLightboxImg(null)}
-            style={{position:"absolute",top:16,right:18,color:"#fff",fontSize:28,cursor:"pointer",
-              background:"rgba(255,255,255,0.18)",borderRadius:"50%",width:42,height:42,
-              display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</div>
-        </div>,
-        document.body
-      )}
+
     </div>
   );
 }
@@ -15304,9 +15312,27 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
 
 
 
-function PostureSessionsView({ d, C, onNav, setLightbox }) {
-  // lightbox lifted to PatientProfileModal
-  const setLightboxImg = setLightbox || (()=>{});
+function PostureSessionsView({ d, C, onNav }) {
+  // Vanilla JS lightbox — bypasses all React stacking contexts
+  const openLightbox = (src) => {
+    if (!src) return;
+    const existing = document.getElementById("__physio_lb");
+    if (existing) existing.remove();
+    const el = document.createElement("div");
+    el.id = "__physio_lb";
+    el.style.cssText = "position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;cursor:zoom-out;font-family:sans-serif;";
+    const img = document.createElement("img");
+    img.src = src;
+    img.style.cssText = "max-width:96vw;max-height:93vh;object-fit:contain;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,0.6);";
+    const btn = document.createElement("div");
+    btn.innerHTML = "✕";
+    btn.style.cssText = "position:absolute;top:16px;right:18px;color:#fff;font-size:26px;cursor:pointer;background:rgba(255,255,255,0.18);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-weight:700;";
+    btn.onclick = (e) => { e.stopPropagation(); el.remove(); };
+    el.appendChild(img);
+    el.appendChild(btn);
+    el.addEventListener("click", () => el.remove());
+    document.body.appendChild(el);
+  };
   let postureSessions = [];
   try { postureSessions = JSON.parse(d.posture_sessions||"[]"); } catch {}
   const defects = Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]);
@@ -15344,7 +15370,7 @@ function PostureSessionsView({ d, C, onNav, setLightbox }) {
               <div key={i} style={{background:C.white,borderRadius:12,marginBottom:10,
                 boxShadow:"0 1px 6px rgba(0,0,0,0.06)",border:`1px solid ${C.border}`,overflow:"hidden"}}>
                 <div style={{display:"flex",gap:0}}>
-                  <div onClick={()=>ps.img&&setLightboxImg(ps.img)}
+                  <div onClick={()=>openLightbox(ps.img)}
                     style={{width:80,flexShrink:0,cursor:ps.img?"zoom-in":"default",background:"#F3F4F6"}}>
                     {ps.img?(<img src={ps.img} alt="posture" style={{width:80,height:80,objectFit:"cover",display:"block"}}/>):
                     (<div style={{width:80,height:80,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧍</div>)}
