@@ -15281,18 +15281,19 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
           </div>
         </div>
       </div>
-      {/* ── Full-screen posture lightbox — absolute inside modal, covers header+tabs ── */}
-      {lightboxImg&&(
+      {/* ── Full-screen posture lightbox — portal to body ── */}
+      {lightboxImg&&createPortal(
         <div onClick={()=>setLightboxImg(null)}
-          style={{position:"absolute",inset:0,zIndex:500,background:"rgba(0,0,0,0.93)",
+          style={{position:"fixed",inset:0,zIndex:99999,background:"rgba(0,0,0,0.95)",
             display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
           <img src={lightboxImg} alt="posture full"
-            style={{maxWidth:"95vw",maxHeight:"92vh",objectFit:"contain",borderRadius:10,boxShadow:"0 8px 40px rgba(0,0,0,0.6)"}}/>
+            style={{maxWidth:"96vw",maxHeight:"93vh",objectFit:"contain",borderRadius:10,boxShadow:"0 8px 40px rgba(0,0,0,0.6)"}}/>
           <div onClick={()=>setLightboxImg(null)}
-            style={{position:"absolute",top:14,right:16,color:"#fff",fontSize:26,cursor:"pointer",
-              background:"rgba(255,255,255,0.15)",borderRadius:"50%",width:38,height:38,
+            style={{position:"absolute",top:16,right:18,color:"#fff",fontSize:28,cursor:"pointer",
+              background:"rgba(255,255,255,0.18)",borderRadius:"50%",width:42,height:42,
               display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
