@@ -12250,7 +12250,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         </div>
                       );
                     })()}
-                    {Object.keys((()=>{const p={};mmtKeys.forEach(k=>{const s=k.endsWith("_R")?"R":k.endsWith("_L")?"L":k.endsWith("_right")?"R":k.endsWith("_left")?"L":null;const b=s?(k.endsWith("_R")||k.endsWith("_L")?k.slice(0,-2):k.replace(/_right$|_left$/,"")):k;if(!p[b])p[b]={};}).length===0;return p;})()).length>8&&<div style={{marginTop:8,fontSize:11,color:C.muted,textAlign:"center",fontWeight:600}}>+{mmtKeys.length-8} more muscles — tap to view all</div>}
+                    {mmtKeys.length>8&&<div style={{marginTop:8,fontSize:11,color:C.muted,textAlign:"center",fontWeight:600}}>+{mmtKeys.length-8} more muscles — tap to view all</div>}
                   </Sec>
 
                   {/* ── Special Tests ── */}
