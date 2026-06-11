@@ -12364,94 +12364,136 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               try{postureSessions=JSON.parse(d.posture_sessions||"[]");}catch{}
               const defects=Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]);
               const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
-              // Group by view for "Frontal Session 1" naming
               const viewCount={};
               const sessions=[...postureSessions].reverse().map(ps=>{
                 const v=ps.view||"anterior";
-                if(!viewCount[v]) viewCount[v]=0;
-                viewCount[v]++;
+                if(!viewCount[v]) viewCount[v]=0; viewCount[v]++;
                 const total=postureSessions.filter(s=>(s.view||"anterior")===v).length;
                 const sessionNo=total-viewCount[v]+1;
-                return{...ps,_label:ps.sessionLabel||`${VLABELS[v]||v} Session ${sessionNo}`,_sessionNo:sessionNo};
+                return{...ps,_label:ps.sessionLabel||`${VLABELS[v]||v} Session ${sessionNo}`};
               });
+
+              // Lightbox state — track which image is open
+              const [lightboxImg, setLightboxImg] = React.useState(null);
+
               return(
                 <div>
-                  {/* Open posture module button */}
+                  {/* Lightbox */}
+                  {lightboxImg&&(
+                    <div onClick={()=>setLightboxImg(null)}
+                      style={{position:"fixed",inset:0,zIndex:999,background:"rgba(0,0,0,0.92)",
+                        display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
+                      <img src={lightboxImg} alt="posture full"
+                        style={{maxWidth:"95vw",maxHeight:"90vh",objectFit:"contain",borderRadius:8}}/>
+                      <div style={{position:"absolute",top:16,right:16,color:"#fff",fontSize:24,cursor:"pointer"}}>✕</div>
+                    </div>
+                  )}
+
                   <button onClick={()=>onNav&&onNav("posture")}
                     style={{width:"100%",padding:"10px",marginBottom:12,borderRadius:10,
                       background:C.primaryBg,border:`1.5px solid ${C.primary}30`,
                       color:C.primary,fontWeight:800,fontSize:12,cursor:"pointer"}}>
-                    📷 Open Posture Analysis — capture or upload
+                    📷 New Posture Analysis
                   </button>
 
                   {sessions.length>0?(
                     <div>
                       <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>
-                        📸 Saved captures ({sessions.length})
+                        Saved captures ({sessions.length})
                       </div>
                       {sessions.map((ps,i)=>{
                         const col=(ps.score||0)>=78?C.green:(ps.score||0)>=62?C.orange:"#dc2626";
                         const dt=new Date(ps.capturedAt||ps.time||"");
-                        const dateStr=isNaN(dt)?ps.capturedAt?.slice(0,10)||"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
-                        const timeStr=isNaN(dt)?"":dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+                        const dateStr=isNaN(dt.getTime())?"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+                        const timeStr=isNaN(dt.getTime())?"":dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+                        // Build plain-text finding summaries (no muscles, just what's wrong)
+                        const findingSummary=(ps.findings||[])
+                          .sort((a,b)=>a.severity==="high"?-1:1)
+                          .slice(0,6)
+                          .map(f=>f.plain||f.region||f.title||f.label||"")
+                          .filter(Boolean);
                         const highCount=(ps.findings||[]).filter(f=>f.severity==="high").length;
-                        const modCount=(ps.findings||[]).filter(f=>f.severity!=="high").length;
+                        const modCount=(ps.findings||[]).filter(f=>f.severity==="moderate"||f.severity==="medium").length;
+                        const lowCount=(ps.findings||[]).length-highCount-modCount;
                         return(
-                          <div key={i} style={{background:C.white,borderRadius:12,overflow:"hidden",
+                          <div key={i} style={{background:C.white,borderRadius:12,
                             marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.06)",
-                            border:`1px solid ${C.border}`}}>
+                            border:`1px solid ${C.border}`,overflow:"hidden"}}>
+
+                            {/* Top row: thumbnail + score + label */}
                             <div style={{display:"flex",gap:0}}>
-                              {/* Thumbnail */}
-                              <div style={{width:90,flexShrink:0}}>
+                              {/* Tappable thumbnail */}
+                              <div onClick={()=>ps.img&&setLightboxImg(ps.img)}
+                                style={{width:80,flexShrink:0,cursor:ps.img?"zoom-in":"default",
+                                  position:"relative",background:"#F3F4F6"}}>
                                 {ps.img?(
-                                  <img src={ps.img} alt="posture"
-                                    style={{width:90,height:90,objectFit:"cover",display:"block"}}/>
+                                  <>
+                                    <img src={ps.img} alt="posture"
+                                      style={{width:80,height:80,objectFit:"cover",display:"block"}}/>
+                                    <div style={{position:"absolute",inset:0,display:"flex",
+                                      alignItems:"center",justifyContent:"center",
+                                      background:"rgba(0,0,0,0)",transition:"background 0.2s"}}
+                                      onMouseEnter={e=>e.currentTarget.style.background="rgba(0,0,0,0.25)"}
+                                      onMouseLeave={e=>e.currentTarget.style.background="rgba(0,0,0,0)"}>
+                                      <span style={{fontSize:18,opacity:0}}>🔍</span>
+                                    </div>
+                                  </>
                                 ):(
-                                  <div style={{width:90,height:90,background:"#F3F4F6",
-                                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧍</div>
+                                  <div style={{width:80,height:80,display:"flex",
+                                    alignItems:"center",justifyContent:"center",fontSize:24}}>🧍</div>
                                 )}
                               </div>
+
                               {/* Info */}
-                              <div style={{flex:1,padding:"10px 12px"}}>
-                                <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:2}}>
-                                  {ps._label}
-                                </div>
-                                <div style={{fontSize:10,color:C.muted,marginBottom:6}}>
-                                  {dateStr}{timeStr?` · ${timeStr}`:""} · {ps.source==="upload"?"Uploaded":"Camera"}
-                                </div>
-                                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{flex:1,padding:"9px 12px"}}>
+                                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                                  <div style={{fontSize:12,fontWeight:800,color:C.text}}>{ps._label}</div>
                                   {ps.score!=null&&(
-                                    <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>
-                                      {ps.score}<span style={{fontSize:9,color:C.muted}}>/100</span>
+                                    <div style={{fontSize:18,fontWeight:900,color:col,lineHeight:1,flexShrink:0,marginLeft:6}}>
+                                      {ps.score}<span style={{fontSize:8,color:C.muted,fontWeight:400}}>/100</span>
                                     </div>
                                   )}
-                                  {ps.band&&<span style={{fontSize:10,fontWeight:700,color:col,
-                                    background:`${col}15`,padding:"2px 7px",borderRadius:20}}>{ps.band}</span>}
                                 </div>
-                                {(highCount>0||modCount>0)&&(
-                                  <div style={{marginTop:5,display:"flex",gap:5}}>
-                                    {highCount>0&&<span style={{fontSize:10,fontWeight:700,
-                                      background:"#FEF2F2",color:"#dc2626",padding:"2px 7px",borderRadius:20}}>
-                                      🔴 {highCount} high</span>}
-                                    {modCount>0&&<span style={{fontSize:10,fontWeight:700,
-                                      background:"#FFF7ED",color:C.orange,padding:"2px 7px",borderRadius:20}}>
-                                      🟡 {modCount} moderate</span>}
-                                  </div>
-                                )}
+                                <div style={{fontSize:10,color:C.muted,marginTop:2,marginBottom:5}}>
+                                  {dateStr}{timeStr?` · ${timeStr}`:""}{ps.source?" · "+(ps.source==="upload"?"Upload":"Camera"):""}
+                                </div>
+                                {/* Severity counts */}
+                                <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                                  {highCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#FEF2F2",color:"#dc2626"}}>🔴 {highCount} high</span>}
+                                  {modCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#FFF7ED",color:C.orange}}>🟡 {modCount} moderate</span>}
+                                  {lowCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#F3F4F6",color:C.muted}}>⚪ {lowCount} mild</span>}
+                                </div>
                               </div>
                             </div>
-                            {/* Findings summary */}
-                            {ps.findings&&ps.findings.length>0&&(
+
+                            {/* Finding summaries — plain text, what's wrong */}
+                            {findingSummary.length>0&&(
                               <div style={{padding:"8px 12px",borderTop:`1px solid ${C.border}`,
-                                display:"flex",flexWrap:"wrap",gap:4}}>
-                                {ps.findings.slice(0,4).map((f,fi)=>(
-                                  <span key={fi} style={{fontSize:9.5,padding:"2px 7px",borderRadius:20,fontWeight:600,
-                                    background:f.severity==="high"?"#FEF2F2":"#FFF7ED",
-                                    color:f.severity==="high"?"#dc2626":C.orange}}>
-                                    {f.title||f.label}
-                                  </span>
-                                ))}
-                                {ps.findings.length>4&&<span style={{fontSize:9.5,color:C.muted}}>+{ps.findings.length-4} more</span>}
+                                background:"#FAFAFA"}}>
+                                <div style={{fontSize:9,fontWeight:700,color:C.muted,
+                                  textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:5}}>
+                                  Findings
+                                </div>
+                                <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                                  {findingSummary.map((f,fi)=>{
+                                    const orig=(ps.findings||[])[fi];
+                                    const isH=orig?.severity==="high";
+                                    const isM=orig?.severity==="moderate"||orig?.severity==="medium";
+                                    return(
+                                      <div key={fi} style={{display:"flex",alignItems:"center",gap:5,
+                                        fontSize:11,color:isH?"#dc2626":isM?C.orange:C.muted}}>
+                                        <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,
+                                          background:isH?"#dc2626":isM?C.orange:"#D1D5DB"}}/>
+                                        {f}
+                                      </div>
+                                    );
+                                  })}
+                                  {(ps.findings||[]).length>6&&(
+                                    <div style={{fontSize:10,color:C.muted,marginLeft:11}}>
+                                      +{(ps.findings||[]).length-6} more findings
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -12463,32 +12505,25 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       borderRadius:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
                       <div style={{fontSize:36,marginBottom:10}}>🧍</div>
                       <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>No posture captures saved yet</div>
-                      <div style={{fontSize:11,color:C.muted}}>Analyse a photo and tap "Save to Patient Record" — it will appear here with the view name, session number, date and time.</div>
+                      <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>Go to Posture Analysis, analyse a photo, then tap <strong>Save to Patient Record</strong>.</div>
                     </div>
                   )}
-                  {/* Postural defects from manual analysis */}
+
                   {defects.length>0&&(
                     <div style={{background:C.white,borderRadius:14,padding:14,marginTop:10,
                       boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                        <span style={{fontSize:12,fontWeight:800,color:C.text}}>🔍 Manual Postural Defects ({defects.length})</span>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:12,fontWeight:800,color:C.text}}>Manual Defects ({defects.length})</span>
                         <span onClick={()=>onNav&&onNav("posture")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
                       </div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                         {defects.map(k=>(
-                          <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:700,
+                          <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,
                             background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>
                             {k.replace("posture_defect_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}
                           </span>
                         ))}
                       </div>
-                      {d.kinetic_chain&&(
-                        <div style={{marginTop:10,padding:"9px 11px",background:"#F0FDF4",
-                          borderRadius:8,borderLeft:"3px solid #059669"}}>
-                          <div style={{fontSize:10,color:"#059669",fontWeight:800,marginBottom:3}}>KINETIC CHAIN</div>
-                          <div style={{fontSize:11,color:C.text,lineHeight:1.5,fontStyle:"italic"}}>{d.kinetic_chain}</div>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
