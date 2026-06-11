@@ -13044,8 +13044,6 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
   const [profilePatient, setProfilePatient] = useState(null);
-  const [showIntake, setShowIntake] = useState(false);
-  const [intakeData, setIntakeData] = useState({});
   const [localPatients, setLocalPatients] = useState(patients);
   const fileRef = useRef(null);
 
@@ -15542,6 +15540,8 @@ function AppInner({ currentUser, onSignOut }) {
   const [pendingPatient, setPendingPatient] = useState(null);
   const [showPdfReports, setShowPdfReports] = useState(false);
   const [profilePatient, setProfilePatient] = useState(null);
+  const [showIntake, setShowIntake] = useState(false);
+  const [intakeData, setIntakeData] = useState({});
 
   // Auto-save current data to active patient whenever data changes
   useEffect(() => {
