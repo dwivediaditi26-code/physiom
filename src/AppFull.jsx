@@ -11476,11 +11476,11 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   };
 
   const TABS = [
-    { k:"overview",   icon:"⊞",  label:"Overview"   },
-    { k:"assessment", icon:"📋", label:"Assessment"  },
-    { k:"treatment",  icon:"💊", label:"Treatment"   },
-    { k:"progress",   icon:"📈", label:"Progress"    },
-    { k:"documents",  icon:"📄", label:"Documents"   },
+    { k:"overview",    icon:"⊞",  label:"Overview"         },
+    { k:"subjective",  icon:"📝", label:"Subjective"        },
+    { k:"assessment",  icon:"📋", label:"Assessment"        },
+    { k:"posture",     icon:"🧍", label:"Posture Analysis"  },
+    { k:"documents",   icon:"📄", label:"Documentation"     },
   ];
 
   // Donut component
@@ -11877,318 +11877,339 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         {/* ════════════════════════════════════════
             ASSESSMENT TAB
         ════════════════════════════════════════ */}
+        {tab==="subjective" && (
+          <div className="tab-content" style={{padding:"16px 16px"}}>
+            {/* Body chart */}
+            {Array.isArray(d.body_chart)&&d.body_chart.length>0&&(
+              <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>🗺️ Pain Location</div>
+                <BodyChartInteractive data={d} set={()=>{}} compact={true}/>
+              </div>
+            )}
+            {/* Subjective history */}
+            <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{fontSize:12,fontWeight:800,color:C.text}}>Subjective History</span>
+                <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
+              </div>
+              {[
+                {label:"Chief Complaint", val:chiefComplaint||"Not recorded", highlight:!chiefComplaint},
+                {label:"Pain Now / Worst", val:`${nrsNow||"—"} / ${d.cc_vas_worst||d.pa_vas_worst||"—"} out of 10`},
+                {label:"Mechanism / Onset", val:onset||"Not recorded"},
+                {label:"Aggravating", val:agg||"Not recorded"},
+                {label:"Easing", val:(d.cc_rel||(Array.isArray(d.cx_rel_mov)?d.cx_rel_mov.slice(0,2).join(", "):"")||d.rel_factors||"Not recorded")},
+                {label:"24hr Behaviour", val:(Array.isArray(d.cc_behaviour)?d.cc_behaviour.slice(0,2).join(", "):(d.cc_behaviour||d.sb_morning||"Not recorded"))},
+                {label:"Patient Goals", val:[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||"Not recorded"},
+                {label:"Medications", val:d.meds_current||d.medications||"None recorded"},
+                {label:"Past History", val:d.phx_conditions||d.sub_past_history||"Not recorded"},
+              ].map((row,i,arr)=>(
+                <div key={i} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none"}}>
+                  <div style={{fontSize:10.5,color:C.muted,fontWeight:600,minWidth:90,flexShrink:0,paddingTop:1}}>{row.label}</div>
+                  <div style={{fontSize:12,color:row.highlight?"#9CA3AF":C.text,fontWeight:row.highlight?400:600,lineHeight:1.4,flex:1}}>{row.val}</div>
+                </div>
+              ))}
+            </div>
+            {/* SOAP subjective note */}
+            {(d.soap_subjective||d.subjective)&&(
+              <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:8}}>S — SOAP Note (Subjective)</div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{d.soap_subjective||d.subjective}</div>
+              </div>
+            )}
+          </div>
+        )}
         {tab==="assessment" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
 
-            {/* ── ASSESSMENT COMPLETENESS STRIP ── */}
+            {/* Completeness strip */}
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14,padding:"10px 12px",background:"#F8F7FF",borderRadius:12,border:`1px solid ${C.border}`}}>
               {[
-                {label:"Subjective", done:!!(chiefComplaint||d.cc_main), nav:"subjective"},
-                {label:"Body Chart", done:Array.isArray(d.body_chart)&&d.body_chart.length>0, nav:"subjective"},
-                {label:"ROM",        done:!!activeROMRegion, nav:"rom"},
-                {label:"MMT",        done:Object.keys(d).some(k=>k.startsWith("mmt_")&&d[k]), nav:"mmt"},
-                {label:"Special Tests",done:Object.keys(d).some(k=>k.startsWith("st_")&&d[k]==="Positive"), nav:"special"},
-                {label:"Posture",    done:Object.keys(d).some(k=>k.startsWith("posture_defect_")&&d[k]), nav:"posture"},
-                {label:"SOAP Signed",done:Array.isArray(d.soap_signed_notes)&&d.soap_signed_notes.length>0, nav:"soap"},
+                {label:"ROM",         done:!!activeROMRegion},
+                {label:"MMT",         done:Object.keys(d).some(k=>k.startsWith("mmt_")&&d[k])},
+                {label:"Special Tests",done:Object.keys(d).some(k=>k.startsWith("st_")&&d[k])},
+                {label:"Neuro",       done:Object.keys(d).some(k=>(k.startsWith("neuro_")||k.startsWith("nt_"))&&d[k])},
+                {label:"Outcome Measures",done:!!(d.om_odi_score||d.om_ndi_score||d.om_dash_score||d.om_lefs_score)},
+                {label:"SOAP Signed", done:Array.isArray(d.soap_signed_notes)&&d.soap_signed_notes.length>0},
               ].map((item,i)=>(
-                <div key={i} onClick={()=>onNav&&onNav(item.nav)}
-                  style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,cursor:"pointer",
-                    background:item.done?`${C.green}15`:"#F3F4F6",
-                    border:`1px solid ${item.done?C.green+"40":C.border2}`}}>
+                <div key={i} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,
+                  background:item.done?`${C.green}15`:"#F3F4F6",border:`1px solid ${item.done?C.green+"40":C.border2}`}}>
                   <div style={{width:14,height:14,borderRadius:"50%",background:item.done?C.green:"#D1D5DB",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     <span style={{fontSize:8,color:"white",fontWeight:900,lineHeight:1}}>{item.done?"✓":"·"}</span>
                   </div>
                   <span style={{fontSize:10.5,fontWeight:700,color:item.done?C.green:C.muted}}>{item.label}</span>
                 </div>
               ))}
-              <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+              <div style={{marginLeft:"auto"}}>
                 <button onClick={()=>onNav&&onNav("soap")} style={{padding:"4px 12px",background:C.primary,border:"none",borderRadius:20,color:"white",fontSize:10.5,fontWeight:800,cursor:"pointer"}}>📝 Open SOAP</button>
               </div>
             </div>
 
-            {/* ── SUB-TABS: Subjective | Objective | Assessment & Plan | Notes ── */}
-            {(()=>{
-              const subTabs = [
-                {k:"subjective", label:"Subjective"},
-                {k:"objective",  label:"Objective"},
-                {k:"plan",       label:"Assessment & Plan"},
-                {k:"notes",      label:`Notes (${(Array.isArray(d.soap_signed_notes)?d.soap_signed_notes:[]).length})`},
-              ];
-              return (
-                <div>
-                  {/* Sub-tab bar */}
-                  <div style={{display:"flex",gap:0,marginBottom:14,background:C.white,borderRadius:12,padding:4,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                    {subTabs.map(t=>(
-                      <button key={t.k} onClick={()=>setAssessSub(t.k)} style={{
-                        flex:1,padding:"8px 4px",border:"none",borderRadius:9,cursor:"pointer",
-                        background:assessSub===t.k?C.primary:"transparent",
-                        color:assessSub===t.k?"white":C.muted,
-                        fontSize:11,fontWeight:assessSub===t.k?800:500,
-                        transition:"all 0.15s",whiteSpace:"nowrap",
-                      }}>{t.label}</button>
+            {/* ── ROM ── */}
+            <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{fontSize:12,fontWeight:800,color:C.text}}>📐 {activeROMRegion?activeROMRegion.name+" — Range of Motion":"Range of Motion"}</span>
+                <span onClick={()=>onNav&&onNav("rom")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>{hasROM?"Details →":"Record →"}</span>
+              </div>
+              {hasROM ? (
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))",gap:8}}>
+                  {activeROMRegion.fields.filter(f=>d[f.key]).map(f=>{
+                    const val=parseFloat(d[f.key]);
+                    const norm=f.normal||180;
+                    const pct=Math.min(100,Math.round((val/norm)*100));
+                    const col=pct>=85?C.green:pct>=60?C.orange:"#dc2626";
+                    return(
+                      <div key={f.key} style={{background:"#F9FAFB",borderRadius:10,padding:"10px 8px",textAlign:"center",border:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:9.5,color:C.muted,marginBottom:4,fontWeight:600}}>{f.label}</div>
+                        <div style={{fontSize:22,fontWeight:900,color:col,letterSpacing:"-0.5px",lineHeight:1}}>{d[f.key]}°</div>
+                        <div style={{marginTop:5,height:3,background:"#E5E7EB",borderRadius:2,overflow:"hidden"}}>
+                          <div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:2,transition:"width 0.8s"}}/>
+                        </div>
+                        <div style={{fontSize:8,color:C.muted,marginTop:2}}>{pct}% normal</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{textAlign:"center",padding:"12px 0",color:C.muted,fontSize:11}}>
+                  No ROM recorded yet
+                  <br/><button onClick={()=>onNav&&onNav("rom")} style={{marginTop:8,padding:"5px 14px",background:C.primaryBg,border:`1px solid ${C.primary}30`,borderRadius:20,color:C.primary,fontSize:11,fontWeight:700,cursor:"pointer"}}>Record ROM →</button>
+                </div>
+              )}
+            </div>
+
+            {/* ── MMT ── */}
+            <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{fontSize:12,fontWeight:800,color:C.text}}>💪 Manual Muscle Testing</span>
+                <span onClick={()=>onNav&&onNav("mmt")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Record →</span>
+              </div>
+              {Object.keys(d).some(k=>k.startsWith("mmt_")&&d[k]) ? (
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                  {Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]).slice(0,8).map(k=>{
+                    const grade=parseFloat(d[k])||0;
+                    const col=grade>=5?C.green:grade>=4?C.orange:grade>=3?"#f59e0b":"#dc2626";
+                    const pct=Math.round((grade/5)*100);
+                    return(
+                      <div key={k} style={{background:"#F9FAFB",borderRadius:10,padding:"9px 11px",border:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:10,color:C.muted,fontWeight:600,marginBottom:3}}>{k.replace("mmt_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}</div>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>{d[k]}<span style={{fontSize:10,color:C.muted}}>/5</span></div>
+                          <div style={{flex:1,height:4,background:"#E5E7EB",borderRadius:2,overflow:"hidden"}}>
+                            <div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:2}}/>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{textAlign:"center",padding:"10px 0",color:C.muted,fontSize:11}}>No MMT recorded yet</div>
+              )}
+            </div>
+
+            {/* ── Special Tests ── */}
+            {Object.keys(d).some(k=>k.startsWith("st_")&&d[k])&&(
+              <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <span style={{fontSize:12,fontWeight:800,color:C.text}}>🔬 Special Tests</span>
+                  <span onClick={()=>onNav&&onNav("special")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>View all →</span>
+                </div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                  {Object.keys(d).filter(k=>k.startsWith("st_")&&d[k]).slice(0,10).map(k=>{
+                    const val=d[k],isPos=val==="Positive";
+                    return <span key={k} style={{padding:"4px 10px",borderRadius:20,fontSize:10.5,fontWeight:700,background:isPos?"#FEF2F2":val==="Negative"?"#ECFDF5":"#F3F4F6",color:isPos?"#dc2626":val==="Negative"?C.green:C.muted,border:`1px solid ${isPos?"#FCA5A5":val==="Negative"?"#BBF7D0":C.border}`}}>{stName(k)}: {val}</span>;
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Neurological ── */}
+            <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{fontSize:12,fontWeight:800,color:C.text}}>⚡ Neurological</span>
+                <span onClick={()=>onNav&&onNav("neuro")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Details →</span>
+              </div>
+              {(()=>{
+                const neuroTests=[["st_ultt1","ULNT 1"],["st_ultt2","ULNT 2"],["st_slump_test","Slump"],["st_slr_test","SLR"],["st_femoral_nerve","Femoral N."]];
+                const hasNeuro=neuroTests.some(([k])=>d[k])||Object.keys(d).some(k=>(k.startsWith("neuro_")||k.startsWith("nt_"))&&d[k]);
+                if(!hasNeuro) return <div style={{textAlign:"center",padding:"8px 0",color:C.muted,fontSize:11}}>No neurological findings recorded</div>;
+                return(
+                  <div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8}}>
+                      {neuroTests.filter(([k])=>d[k]).map(([k,label])=>(
+                        <span key={k} style={{padding:"4px 10px",borderRadius:20,fontSize:10.5,fontWeight:700,background:d[k]==="Positive"?"#FEF2F2":"#ECFDF5",color:d[k]==="Positive"?"#dc2626":C.green,border:`1px solid ${d[k]==="Positive"?"#FCA5A5":"#BBF7D0"}`}}>{label}: {d[k]}</span>
+                      ))}
+                    </div>
+                    {Object.keys(d).filter(k=>(k.startsWith("neuro_")||k.startsWith("nt_"))&&d[k]).slice(0,4).map(k=>(
+                      <div key={k} style={{display:"flex",gap:8,padding:"5px 0",borderTop:`1px solid ${C.border}`,fontSize:11}}>
+                        <span style={{color:C.muted,minWidth:80,flexShrink:0}}>{k.replace(/^(neuro_|nt_)/,"").replace(/_/g," ")}</span>
+                        <span style={{fontWeight:600,color:C.text}}>{d[k]}</span>
+                      </div>
                     ))}
                   </div>
+                );
+              })()}
+            </div>
 
-                  {/* ── SUBJECTIVE ── */}
-                  {assessSub==="subjective"&&(
-                    <div>
-                      {/* Body chart */}
-                      {Array.isArray(d.body_chart)&&d.body_chart.length>0&&(
-                        <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                          <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>🗺️ Pain Location</div>
-                          <BodyChartInteractive data={d} set={()=>{}} compact={true}/>
-                        </div>
-                      )}
-                      {/* Key subjective fields */}
-                      <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                          <span style={{fontSize:12,fontWeight:800,color:C.text}}>Subjective History</span>
-                          <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
-                        </div>
-                        {[
-                          {label:"Chief Complaint", val:chiefComplaint||"Not recorded", highlight:!chiefComplaint},
-                          {label:"Pain Now / Worst", val:`${nrsNow||"—"} / ${nrsNow > 0 || d.cc_vas_worst ? (d.cc_vas_worst||d.pa_vas_worst||"—") : "—"} out of 10`},
-                          {label:"Mechanism / Onset", val:onset||"Not recorded"},
-                          {label:"Aggravating", val:agg||"Not recorded"},
-                          {label:"Easing", val:(d.cc_rel||(Array.isArray(d.cx_rel_mov)?d.cx_rel_mov.slice(0,2).join(", "):"")||d.rel_factors||"Not recorded")},
-                          {label:"24hr Behaviour", val:(Array.isArray(d.cc_behaviour)?d.cc_behaviour.slice(0,2).join(", "):(d.cc_behaviour||d.sb_morning||"Not recorded"))},
-                          {label:"Patient Goals", val:[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||"Not recorded"},
-                          {label:"Medications", val:d.meds_current||d.medications||"None recorded"},
-                          {label:"Past History", val:d.phx_conditions||d.sub_past_history||"Not recorded"},
-                        ].map((row,i,arr)=>(
-                          <div key={i} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none"}}>
-                            <div style={{fontSize:10.5,color:C.muted,fontWeight:600,minWidth:90,flexShrink:0,paddingTop:1}}>{row.label}</div>
-                            <div style={{fontSize:12,color:row.highlight?"#9CA3AF":C.text,fontWeight:row.highlight?400:600,lineHeight:1.4,flex:1}}>{row.val}</div>
+            {/* ── Outcome Measures ── */}
+            <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{fontSize:12,fontWeight:800,color:C.text}}>📊 Outcome Measures</span>
+                <span onClick={()=>onNav&&onNav("outcome")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>View all →</span>
+              </div>
+              {(()=>{
+                const scales=[
+                  {label:"ODI",  val:d.om_odi_score,  unit:"%",  histKey:"odi",  interp:v=>v<=20?"Minimal":v<=40?"Moderate":"Severe"},
+                  {label:"NDI",  val:d.om_ndi_score,  unit:"%",  histKey:"ndi",  interp:v=>v<=8?"No disability":v<=28?"Mild":"Moderate+"},
+                  {label:"DASH", val:d.om_dash_score, unit:"",   histKey:"dash", interp:v=>v<=20?"Mild":v<=40?"Moderate":"Severe"},
+                  {label:"LEFS", val:d.om_lefs_score, unit:"/80",histKey:"lefs", interp:v=>v>=60?"Minimal":v>=40?"Moderate":"Severe"},
+                  {label:"PSFS", val:d.om_psfs1_now,  unit:"/10",histKey:"psfs", interp:v=>v>=7?"Good":v>=4?"Moderate":"Poor"},
+                  {label:"VAS",  val:d.om_vas_score||d.cc_vas_now, unit:"/10",histKey:"vas", interp:v=>v<=3?"Mild":v<=6?"Moderate":"Severe"},
+                ].filter(r=>r.val);
+                if(scales.length===0) return(
+                  <div style={{textAlign:"center",padding:"12px 0",color:C.muted,fontSize:11}}>
+                    No outcome measures recorded
+                    <br/><button onClick={()=>onNav&&onNav("outcome")} style={{marginTop:8,padding:"5px 14px",background:C.primaryBg,border:`1px solid ${C.primary}30`,borderRadius:20,color:C.primary,fontSize:11,fontWeight:700,cursor:"pointer"}}>Run Outcome Measure →</button>
+                  </div>
+                );
+                return(
+                  <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                    {scales.map(r=>{
+                      let hist=[];try{hist=JSON.parse(d[`om_history_${r.histKey}`]||"[]");}catch{}
+                      const prev=hist.length>=2?parseFloat(hist[hist.length-2]?.score):null;
+                      const curr=parseFloat(r.val);
+                      const diff=prev!=null?curr-prev:null;
+                      const isBetter=r.label==="LEFS"||r.label==="PSFS"?diff>0:diff<0;
+                      const interp=r.interp(curr);
+                      const col=interp==="Minimal"||interp==="No disability"||interp==="Good"||interp==="Mild"?C.green:interp==="Moderate"||interp==="Moderate+"?C.orange:"#dc2626";
+                      return(
+                        <div key={r.label} style={{display:"flex",alignItems:"center",padding:"9px 11px",background:"#F9FAFB",borderRadius:10,gap:10,border:`1px solid ${C.border}`}}>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:11,fontWeight:800,color:C.text}}>{r.label}</div>
+                            <div style={{fontSize:10,color:col,fontWeight:600}}>{interp}</div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── OBJECTIVE ── */}
-                  {assessSub==="objective"&&(
-                    <div>
-                      {/* ROM */}
-                      <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                          <span style={{fontSize:12,fontWeight:800,color:C.text}}>📐 {activeROMRegion?activeROMRegion.name+" ROM":"Range of Motion"}</span>
-                          <span onClick={()=>onNav&&onNav("rom")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>{hasROM?"Details →":"Record →"}</span>
+                          <div style={{fontSize:20,fontWeight:900,color:col,minWidth:50,textAlign:"right"}}>{r.val}{r.unit}</div>
+                          {diff!=null&&<div style={{fontSize:10,fontWeight:700,color:isBetter?C.green:"#dc2626",minWidth:40,textAlign:"right"}}>{isBetter?"↓":"↑"} {Math.abs(Math.round(diff*10)/10)}</div>}
                         </div>
-                        {hasROM ? (
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                            {activeROMRegion.fields.filter(f=>d[f.key]).map(f=>(
-                              <div key={f.key} style={{background:"#F9FAFB",borderRadius:8,padding:"8px 10px",textAlign:"center"}}>
-                                <div style={{fontSize:9.5,color:C.muted,marginBottom:3}}>{f.label}</div>
-                                <div style={{fontSize:20,fontWeight:900,color:C.primary,letterSpacing:"-0.5px"}}>{d[f.key]}°</div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* ── Kinetic Chain & Functional ── */}
+            {(d.kinetic_chain||Object.keys(d).some(k=>k.startsWith("posture_defect_")&&d[k])||d.ag_antalgic||d.gait_pattern)&&(
+              <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <span style={{fontSize:12,fontWeight:800,color:C.text}}>⛓️ Kinetic Chain & Functional</span>
+                  <span onClick={()=>onNav&&onNav("kinetic")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Details →</span>
+                </div>
+                {d.kinetic_chain&&(
+                  <div style={{padding:"9px 11px",background:"#F0FDF4",borderRadius:8,borderLeft:"3px solid #059669",marginBottom:8}}>
+                    <div style={{fontSize:10,color:"#059669",fontWeight:800,marginBottom:4}}>KINETIC CHAIN PATTERN</div>
+                    <div style={{fontSize:11.5,color:C.text,lineHeight:1.6,fontStyle:"italic"}}>{d.kinetic_chain}</div>
+                  </div>
+                )}
+                {(d.ag_antalgic||d.gait_pattern)&&(
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
+                    {d.ag_antalgic&&<span style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#FFF7ED",color:C.orange,border:"1px solid #FDE68A"}}>Antalgic gait</span>}
+                    {d.gait_pattern&&<span style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#F3F4F6",color:C.muted}}>{d.gait_pattern}</span>}
+                  </div>
+                )}
+                {Object.keys(d).some(k=>k.startsWith("posture_defect_")&&d[k])&&(
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                    {Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]).slice(0,5).map(k=>(
+                      <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>{k.replace("posture_defect_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── SOAP Assessment & Plan ── */}
+            {(d.soap_assessment||d.soap_plan||d.assessment||d.plan)&&(
+              <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>📋 SOAP Assessment & Plan</div>
+                {(d.soap_assessment||d.assessment)&&(
+                  <div style={{padding:"9px 11px",background:C.primaryBg,borderLeft:`3px solid ${C.primary}`,borderRadius:8,marginBottom:6}}>
+                    <div style={{fontSize:10,color:C.primary,fontWeight:800,marginBottom:3}}>A — ASSESSMENT</div>
+                    <div style={{fontSize:12,color:C.text,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{d.soap_assessment||d.assessment}</div>
+                  </div>
+                )}
+                {(d.soap_plan||d.plan)&&(
+                  <div style={{padding:"9px 11px",background:"#ECFDF5",borderLeft:"3px solid #059669",borderRadius:8}}>
+                    <div style={{fontSize:10,color:"#059669",fontWeight:800,marginBottom:3}}>P — PLAN</div>
+                    <div style={{fontSize:12,color:C.text,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{d.soap_plan||d.plan}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+          </div>
+        )}
+        {tab==="posture" && (
+          <div className="tab-content" style={{padding:"16px 16px"}}>
+            {(()=>{
+              let postureSessions=[];
+              try{postureSessions=JSON.parse(d.posture_sessions||"[]");}catch{}
+              const defects=Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]);
+              return(
+                <div>
+                  {/* Captured photos */}
+                  {postureSessions.length>0?(
+                    <div style={{marginBottom:14}}>
+                      <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>📸 Posture Captures ({postureSessions.length})</div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                        {[...postureSessions].reverse().slice(0,6).map((ps,i)=>{
+                          const col=(ps.score||0)>=78?C.green:(ps.score||0)>=62?C.orange:"#dc2626";
+                          return(
+                            <div key={i} style={{background:C.white,borderRadius:12,overflow:"hidden",boxShadow:"0 1px 6px rgba(0,0,0,0.06)",border:`1px solid ${C.border}`}}>
+                              {ps.img?(
+                                <img src={ps.img} alt="posture" style={{width:"100%",height:110,objectFit:"cover"}}/>
+                              ):(
+                                <div style={{width:"100%",height:110,background:"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🧍</div>
+                              )}
+                              <div style={{padding:"8px 10px"}}>
+                                {ps.score&&<div style={{fontSize:16,fontWeight:900,color:col,lineHeight:1}}>{ps.score}<span style={{fontSize:9,color:C.muted}}>/100</span></div>}
+                                <div style={{fontSize:10,color:C.muted,marginTop:2}}>{ps.view||"Anterior"} · {(ps.capturedAt||ps.time||"").slice(0,10)}</div>
+                                {ps.findings&&ps.findings.length>0&&(
+                                  <div style={{marginTop:4,fontSize:9,color:C.primary,fontWeight:600}}>
+                                    {ps.findings.filter(f=>f.severity==="high").length} high · {ps.findings.filter(f=>f.severity!=="high").length} moderate
+                                  </div>
+                                )}
                               </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div style={{textAlign:"center",padding:"12px 0",color:C.muted,fontSize:11}}>No ROM recorded</div>
-                        )}
-                      </div>
-
-                      {/* Special Tests */}
-                      {Object.keys(d).some(k=>k.startsWith("st_")&&d[k])&&(
-                        <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                            <span style={{fontSize:12,fontWeight:800,color:C.text}}>🔬 Special Tests</span>
-                            <span onClick={()=>onNav&&onNav("special")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>View all →</span>
-                          </div>
-                          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                            {Object.keys(d).filter(k=>k.startsWith("st_")&&d[k]).slice(0,8).map(k=>{
-                              const val = d[k];
-                              const isPos = val==="Positive";
-                              return <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:isPos?"#FEF2F2":val==="Negative"?"#ECFDF5":"#F3F4F6",color:isPos?"#dc2626":val==="Negative"?C.green:C.muted,border:`1px solid ${isPos?"#FCA5A5":val==="Negative"?"#BBF7D0":C.border}`}}>{stName(k)}: {val}</span>;
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* MMT */}
-                      {Object.keys(d).some(k=>k.startsWith("mmt_")&&d[k])&&(
-                        <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                            <span style={{fontSize:12,fontWeight:800,color:C.text}}>💪 Muscle Strength (MMT)</span>
-                            <span onClick={()=>onNav&&onNav("mmt")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>View all →</span>
-                          </div>
-                          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                            {Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]&&parseFloat(d[k])<5).slice(0,6).map(k=>(
-                              <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#FFF7ED",color:C.orange,border:"1px solid #FDE68A"}}>
-                                {k.replace("mmt_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}: {d[k]}/5
-                              </span>
-                            ))}
-                            {Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]&&parseFloat(d[k])<5).length===0&&(
-                              <span style={{fontSize:11,color:C.muted}}>All tested muscles within normal limits (5/5)</span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Posture */}
-                      {Object.keys(d).some(k=>k.startsWith("posture_defect_")&&d[k])&&(
-                        <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                            <span style={{fontSize:12,fontWeight:800,color:C.text}}>🧍 Postural Findings</span>
-                            <span onClick={()=>onNav&&onNav("posture")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>View →</span>
-                          </div>
-                          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                            {Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]).slice(0,6).map(k=>(
-                              <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>
-                                {k.replace("posture_defect_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Palpation */}
-                      {(d.palp_findings||d.palpation_notes||Object.keys(d).some(k=>k.startsWith("palp_")&&d[k]))&&(
-                        <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                            <span style={{fontSize:12,fontWeight:800,color:C.text}}>🖐️ Palpation</span>
-                            <span onClick={()=>onNav&&onNav("palpation")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Details →</span>
-                          </div>
-                          <div style={{fontSize:11.5,color:C.text,lineHeight:1.55}}>{d.palp_findings||d.palpation_notes||"See palpation module"}</div>
-                        </div>
-                      )}
-
-                      {/* Neurological */}
-                      {Object.keys(d).some(k=>(k.startsWith("neuro_")||k.startsWith("nt_"))&&d[k])&&(
-                        <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                            <span style={{fontSize:12,fontWeight:800,color:C.text}}>⚡ Neurological</span>
-                            <span onClick={()=>onNav&&onNav("neuro")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Details →</span>
-                          </div>
-                          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                            {[["st_ultt1","ULNT1"],["st_ultt2","ULNT2"],["st_slump_test","Slump"],["st_slr_test","SLR"]].filter(([k])=>d[k]).map(([k,label])=>(
-                              <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:d[k]==="Positive"?"#FEF2F2":"#ECFDF5",color:d[k]==="Positive"?"#dc2626":C.green,border:`1px solid ${d[k]==="Positive"?"#FCA5A5":"#BBF7D0"}`}}>{label}: {d[k]}</span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Outcome Measures */}
-                      {(d.om_odi_score||d.om_dash_score||d.om_ndi_score||d.om_lefs_score||d.om_psfs1)&&(
-                        <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                            <span style={{fontSize:12,fontWeight:800,color:C.text}}>📊 Outcome Measures</span>
-                            <span onClick={()=>onNav&&onNav("outcome")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>View all →</span>
-                          </div>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                            {[
-                              {label:"ODI",val:d.om_odi_score,unit:"%"},
-                              {label:"NDI",val:d.om_ndi_score,unit:"%"},
-                              {label:"DASH",val:d.om_dash_score,unit:""},
-                              {label:"LEFS",val:d.om_lefs_score,unit:"/80"},
-                              {label:"PSFS",val:d.om_psfs1_now,unit:"/10"},
-                            ].filter(r=>r.val).map(r=>(
-                              <div key={r.label} style={{background:"#F9FAFB",borderRadius:8,padding:"8px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                                <span style={{fontSize:11,color:C.muted,fontWeight:600}}>{r.label}</span>
-                                <span style={{fontSize:15,fontWeight:800,color:C.text}}>{r.val}{r.unit}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {!Object.keys(d).some(k=>k.startsWith("mmt_")||k.startsWith("st_")||k.startsWith("posture_")||k.startsWith("neuro_"))&&!hasROM&&(
-                        <div style={{textAlign:"center",padding:"30px 0",color:C.muted,fontSize:12}}>
-                          No objective findings recorded yet.
-                          <div style={{marginTop:10,display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
-                            {[["ROM","rom"],["MMT","mmt"],["Special Tests","special"],["Posture","posture"]].map(([l,n])=>(
-                              <button key={n} onClick={()=>onNav&&onNav(n)} style={{padding:"6px 14px",background:C.primaryBg,border:`1px solid ${C.primary}30`,borderRadius:20,color:C.primary,fontSize:11,fontWeight:700,cursor:"pointer"}}>{l}</button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ── ASSESSMENT & PLAN ── */}
-                  {assessSub==="plan"&&(
-                    <div>
-                      {/* Clinical Reasoning */}
-                      <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                          <span style={{fontSize:12,fontWeight:800,color:C.text}}>🧠 Assessment (SOAP-A)</span>
-                          <span onClick={()=>onNav&&onNav("soap")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit in SOAP →</span>
-                        </div>
-                        <div style={{background:"#F5F3FF",borderRadius:10,padding:"10px 12px",borderLeft:`3px solid ${C.primary}`,marginBottom:10}}>
-                          <div style={{fontSize:11,color:C.muted,marginBottom:4,fontWeight:700}}>Clinical Reasoning</div>
-                          <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>
-                            {(()=>{
-                              const latestNote = Array.isArray(d.soap_signed_notes)&&d.soap_signed_notes.length>0 ? [...d.soap_signed_notes].reverse()[0] : null;
-                              if(latestNote?.A) return latestNote.A.slice(0,300)+(latestNote.A.length>300?"…":"");
-                              return d.soap_assessment||d.soap_a_edit||(dx?"Consistent with "+dx:d.cc_main?"Assessment pending for: "+d.cc_main.slice(0,60):"Not yet documented");
-                            })()}
-                          </div>
-                        </div>
-                        {[
-                          {label:"Probable Diagnosis", val:dx||"Pending"},
-                          {label:"ICD-10 Code", val:d.soap_icd10||"Not coded"},
-                          {label:"Goals", val:[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||"Not documented"},
-                          {label:"Red Flag Status", val:patient?.hasRedFlags?"⚠️ Documented":"✅ None identified"},
-                        ].map((item,i)=>(
-                          <div key={i} style={{padding:"6px 0",borderBottom:i<3?`1px solid ${C.border}`:"none"}}>
-                            <div style={{fontSize:10,color:C.muted,fontWeight:600}}>{item.label}</div>
-                            <div style={{fontSize:12.5,fontWeight:600,color:C.text,marginTop:2}}>{item.val}</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Plan */}
-                      <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                        <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>📌 Treatment Plan (SOAP-P)</div>
-                        {[
-                          {label:"Treatment Goal", val:[d.ar_goal_function,d.ar_goal_pain].filter(Boolean).join("; ")||d.sub_goals||"Not documented"},
-                          {label:"Session Frequency", val:d.tx_frequency||d.plan_frequency||"Not scheduled"},
-                          {label:"Planned Interventions", val:Array.isArray(d.tx_techniques)&&d.tx_techniques.length>0?d.tx_techniques.slice(0,2).map(t=>t.technique||t.type).filter(Boolean).join(", "):"See treatment tab"},
-                          {label:"HEP", val:Array.isArray(d.hep_programme)&&d.hep_programme.length>0?d.hep_programme.slice(0,3).map(e=>e.name).join(", "):"Not prescribed"},
-                          {label:"Precautions", val:d.plan_precautions||d.tx_precautions||"None documented"},
-                        ].map((item,i)=>(
-                          <div key={i} style={{padding:"6px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
-                            <div style={{fontSize:10,color:C.muted,fontWeight:600}}>{item.label}</div>
-                            <div style={{fontSize:12,fontWeight:600,color:C.text,marginTop:2}}>{item.val}</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div style={{display:"flex",gap:8}}>
-                        <button onClick={()=>onNav&&onNav("soap")} style={{flex:1,padding:"11px",borderRadius:10,border:`1px solid ${C.primary}`,background:"white",color:C.primary,fontSize:12,fontWeight:700,cursor:"pointer"}}>✏️ Open SOAP Editor</button>
-                        {Array.isArray(d.soap_signed_notes)&&d.soap_signed_notes.length>0&&(
-                          <button onClick={()=>setAssessSub("notes")} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:C.primary,color:"white",fontSize:12,fontWeight:700,cursor:"pointer"}}>🔒 {d.soap_signed_notes.length} Signed Note{d.soap_signed_notes.length!==1?"s":""}</button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── SIGNED NOTES ── */}
-                  {assessSub==="notes"&&(
-                    <div>
-                      {(Array.isArray(d.soap_signed_notes)&&d.soap_signed_notes.length>0) ? (
-                        [...d.soap_signed_notes].reverse().map((n,i)=>(
-                          <div key={n.id||i} style={{background:C.white,borderRadius:14,padding:16,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",border:"1px solid #FEE2E2"}}>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                              <div>
-                                <div style={{fontSize:13,fontWeight:800,color:C.text}}>{n.session}</div>
-                                <div style={{fontSize:11,color:C.muted,marginTop:1}}>{n.lockedAtDisplay} · {n.clinician}{n.clinic?" · "+n.clinic:""}</div>
-                                {n.icd10&&<div style={{fontSize:10,color:C.muted,marginTop:1}}>ICD-10: {n.icd10}</div>}
-                              </div>
-                              <span style={{padding:"3px 10px",background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:20,fontSize:10,fontWeight:800,color:"#dc2626"}}>SIGNED</span>
                             </div>
-                            {[{k:"S",label:"Subjective"},{k:"O",label:"Objective"},{k:"A",label:"Assessment"},{k:"P",label:"Plan"}].map(s=>(
-                              n[s.k]&&<div key={s.k} style={{marginBottom:6}}>
-                                <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:2}}>{s.k} — {s.label}</div>
-                                <div style={{fontSize:11.5,color:C.text,lineHeight:1.55,background:"#F9FAFB",borderRadius:7,padding:"6px 10px"}}>{n[s.k].slice(0,200)}{n[s.k].length>200?"…":""}</div>
-                              </div>
-                            ))}
-                          </div>
-                        ))
-                      ) : (
-                        <div style={{textAlign:"center",padding:"40px 0",color:C.muted,fontSize:12}}>
-                          No signed notes yet.
-                          <div style={{marginTop:12}}><button onClick={()=>onNav&&onNav("soap")} style={{padding:"8px 18px",background:C.primary,color:"white",border:"none",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer"}}>Open SOAP + AI →</button></div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ):(
+                    <div style={{textAlign:"center",padding:"24px 16px",background:C.white,borderRadius:14,marginBottom:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                      <div style={{fontSize:32,marginBottom:8}}>🧍</div>
+                      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>No posture captures yet</div>
+                      <div style={{fontSize:11,color:C.muted,marginBottom:12}}>Capture photos in the Posture Analysis module to see them here</div>
+                      <button onClick={()=>onNav&&onNav("posture")} style={{padding:"8px 20px",background:C.primary,border:"none",borderRadius:20,color:"white",fontSize:12,fontWeight:700,cursor:"pointer"}}>Open Posture Analysis →</button>
+                    </div>
+                  )}
+                  {/* Postural defects from manual assessment */}
+                  {defects.length>0&&(
+                    <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                        <span style={{fontSize:12,fontWeight:800,color:C.text}}>🔍 Postural Defects ({defects.length})</span>
+                        <span onClick={()=>onNav&&onNav("posture")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>View full analysis →</span>
+                      </div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                        {defects.map(k=>(
+                          <span key={k} style={{padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:700,background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>
+                            {k.replace("posture_defect_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}
+                          </span>
+                        ))}
+                      </div>
+                      {d.kinetic_chain&&(
+                        <div style={{marginTop:10,padding:"9px 11px",background:"#F0FDF4",borderRadius:8,borderLeft:"3px solid #059669"}}>
+                          <div style={{fontSize:10,color:"#059669",fontWeight:800,marginBottom:3}}>KINETIC CHAIN</div>
+                          <div style={{fontSize:11,color:C.text,lineHeight:1.5,fontStyle:"italic"}}>{d.kinetic_chain}</div>
                         </div>
                       )}
                     </div>
@@ -12198,10 +12219,6 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
             })()}
           </div>
         )}
-
-        {/* ════════════════════════════════════════
-            TREATMENT TAB
-        ════════════════════════════════════════ */}
         {tab==="treatment" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
             {/* Current Treatment Plan */}
@@ -12596,7 +12613,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         background:"rgba(255,255,255,0.97)",backdropFilter:"blur(12px)",
         borderTop:`1px solid ${C.border}`,padding:"10px 16px",
         paddingBottom:"calc(10px + env(safe-area-inset-bottom))"}}>
-        {tab==="assessment" && (
+        {(tab==="assessment"||tab==="subjective") && (
           <button onClick={()=>{ onLoadAssessment && onLoadAssessment(patient); onClose(); }}
             style={{width:"100%",padding:"14px",borderRadius:12,border:"none",
             background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
@@ -12620,7 +12637,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
             </button>
           </div>
         )}
-        {(tab==="overview"||tab==="progress") && (
+        {(tab==="overview"||tab==="posture") && (
           <div style={{display:"flex",gap:8}}>
             <button onClick={()=>setTab("assessment")} style={{flex:2,padding:"13px",borderRadius:12,
               border:"none",background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
