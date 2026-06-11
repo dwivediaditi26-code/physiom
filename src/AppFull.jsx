@@ -1460,9 +1460,22 @@ function PostureCameraModule({ activePatient, set }) {
               {/* Save to record */}
               {activePatient && (
                 <button onClick={() => {
-                  const rec = { view:capturedView, img:capturedImg, findings:analysis.findings,
-                    score:analysis.scoreData?.score, date:new Date().toISOString() };
-                  set?.(prev => ({...prev, postureCaptures:[...(prev.postureCaptures||[]),rec]}));
+                  const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
+                  const vLabel=VLABELS[capturedView]||capturedView;
+                  try {
+                    const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
+                    const sameView=existing.filter(s=>s.view===capturedView).length+1;
+                    const entry={
+                      view:capturedView, viewLabel:vLabel, sessionNo:sameView,
+                      sessionLabel:`${vLabel} Session ${sameView}`,
+                      img:capturedImg, score:analysis.scoreData?.score,
+                      band:analysis.scoreData?.category||"",
+                      findings:analysis.findings||[],
+                      kineticChain:analysis.measurements?.kineticChain||"",
+                      source:"camera", capturedAt:new Date().toISOString()
+                    };
+                    set?.("posture_sessions",JSON.stringify([...existing,entry]));
+                  } catch(e){}
                 }} style={{
                   width:"100%", marginTop:10, padding:"10px", borderRadius:10, cursor:"pointer",
                   background:"linear-gradient(135deg,#00c97a,#059669)",
@@ -1572,6 +1585,33 @@ function PostureCameraModule({ activePatient, set }) {
                   }}>{v.charAt(0).toUpperCase()+v.slice(1)}</button>
                 ))}
               </div>
+              {/* Save upload to patient record */}
+              {activePatient && (
+                <button onClick={() => {
+                  const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
+                  const vLabel=VLABELS[uploadView]||uploadView;
+                  try {
+                    const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
+                    const sameView=existing.filter(s=>s.view===uploadView).length+1;
+                    const entry={
+                      view:uploadView, viewLabel:vLabel, sessionNo:sameView,
+                      sessionLabel:`${vLabel} Session ${sameView}`,
+                      img:uploadImg, score:uploadAnal.scoreData?.score,
+                      band:uploadAnal.scoreData?.category||"",
+                      findings:uploadAnal.findings||[],
+                      kineticChain:"", source:"upload",
+                      capturedAt:new Date().toISOString()
+                    };
+                    set?.("posture_sessions",JSON.stringify([...existing,entry]));
+                  } catch(e){}
+                }} style={{
+                  width:"100%", marginTop:10, padding:"10px", borderRadius:10, cursor:"pointer",
+                  background:"linear-gradient(135deg,#7f5af0,#9333ea)",
+                  border:"none", color:"#fff", fontWeight:800, fontSize:"0.78rem"
+                }}>
+                  💾 Save Upload to Patient Record
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -12202,60 +12242,128 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               let postureSessions=[];
               try{postureSessions=JSON.parse(d.posture_sessions||"[]");}catch{}
               const defects=Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]);
+              const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
+              // Group by view for "Frontal Session 1" naming
+              const viewCount={};
+              const sessions=[...postureSessions].reverse().map(ps=>{
+                const v=ps.view||"anterior";
+                if(!viewCount[v]) viewCount[v]=0;
+                viewCount[v]++;
+                const total=postureSessions.filter(s=>(s.view||"anterior")===v).length;
+                const sessionNo=total-viewCount[v]+1;
+                return{...ps,_label:ps.sessionLabel||`${VLABELS[v]||v} Session ${sessionNo}`,_sessionNo:sessionNo};
+              });
               return(
                 <div>
-                  {/* Captured photos */}
-                  {postureSessions.length>0?(
-                    <div style={{marginBottom:14}}>
-                      <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>📸 Posture Captures ({postureSessions.length})</div>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                        {[...postureSessions].reverse().slice(0,6).map((ps,i)=>{
-                          const col=(ps.score||0)>=78?C.green:(ps.score||0)>=62?C.orange:"#dc2626";
-                          return(
-                            <div key={i} style={{background:C.white,borderRadius:12,overflow:"hidden",boxShadow:"0 1px 6px rgba(0,0,0,0.06)",border:`1px solid ${C.border}`}}>
-                              {ps.img?(
-                                <img src={ps.img} alt="posture" style={{width:"100%",height:110,objectFit:"cover"}}/>
-                              ):(
-                                <div style={{width:"100%",height:110,background:"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🧍</div>
-                              )}
-                              <div style={{padding:"8px 10px"}}>
-                                {ps.score&&<div style={{fontSize:16,fontWeight:900,color:col,lineHeight:1}}>{ps.score}<span style={{fontSize:9,color:C.muted}}>/100</span></div>}
-                                <div style={{fontSize:10,color:C.muted,marginTop:2}}>{ps.view||"Anterior"} · {(ps.capturedAt||ps.time||"").slice(0,10)}</div>
-                                {ps.findings&&ps.findings.length>0&&(
-                                  <div style={{marginTop:4,fontSize:9,color:C.primary,fontWeight:600}}>
-                                    {ps.findings.filter(f=>f.severity==="high").length} high · {ps.findings.filter(f=>f.severity!=="high").length} moderate
+                  {/* Open posture module button */}
+                  <button onClick={()=>onNav&&onNav("posture")}
+                    style={{width:"100%",padding:"10px",marginBottom:12,borderRadius:10,
+                      background:C.primaryBg,border:`1.5px solid ${C.primary}30`,
+                      color:C.primary,fontWeight:800,fontSize:12,cursor:"pointer"}}>
+                    📷 Open Posture Analysis — capture or upload
+                  </button>
+
+                  {sessions.length>0?(
+                    <div>
+                      <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>
+                        📸 Saved captures ({sessions.length})
+                      </div>
+                      {sessions.map((ps,i)=>{
+                        const col=(ps.score||0)>=78?C.green:(ps.score||0)>=62?C.orange:"#dc2626";
+                        const dt=new Date(ps.capturedAt||ps.time||"");
+                        const dateStr=isNaN(dt)?ps.capturedAt?.slice(0,10)||"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+                        const timeStr=isNaN(dt)?"":dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+                        const highCount=(ps.findings||[]).filter(f=>f.severity==="high").length;
+                        const modCount=(ps.findings||[]).filter(f=>f.severity!=="high").length;
+                        return(
+                          <div key={i} style={{background:C.white,borderRadius:12,overflow:"hidden",
+                            marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.06)",
+                            border:`1px solid ${C.border}`}}>
+                            <div style={{display:"flex",gap:0}}>
+                              {/* Thumbnail */}
+                              <div style={{width:90,flexShrink:0}}>
+                                {ps.img?(
+                                  <img src={ps.img} alt="posture"
+                                    style={{width:90,height:90,objectFit:"cover",display:"block"}}/>
+                                ):(
+                                  <div style={{width:90,height:90,background:"#F3F4F6",
+                                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧍</div>
+                                )}
+                              </div>
+                              {/* Info */}
+                              <div style={{flex:1,padding:"10px 12px"}}>
+                                <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:2}}>
+                                  {ps._label}
+                                </div>
+                                <div style={{fontSize:10,color:C.muted,marginBottom:6}}>
+                                  {dateStr}{timeStr?` · ${timeStr}`:""} · {ps.source==="upload"?"Uploaded":"Camera"}
+                                </div>
+                                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                  {ps.score!=null&&(
+                                    <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>
+                                      {ps.score}<span style={{fontSize:9,color:C.muted}}>/100</span>
+                                    </div>
+                                  )}
+                                  {ps.band&&<span style={{fontSize:10,fontWeight:700,color:col,
+                                    background:`${col}15`,padding:"2px 7px",borderRadius:20}}>{ps.band}</span>}
+                                </div>
+                                {(highCount>0||modCount>0)&&(
+                                  <div style={{marginTop:5,display:"flex",gap:5}}>
+                                    {highCount>0&&<span style={{fontSize:10,fontWeight:700,
+                                      background:"#FEF2F2",color:"#dc2626",padding:"2px 7px",borderRadius:20}}>
+                                      🔴 {highCount} high</span>}
+                                    {modCount>0&&<span style={{fontSize:10,fontWeight:700,
+                                      background:"#FFF7ED",color:C.orange,padding:"2px 7px",borderRadius:20}}>
+                                      🟡 {modCount} moderate</span>}
                                   </div>
                                 )}
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
+                            {/* Findings summary */}
+                            {ps.findings&&ps.findings.length>0&&(
+                              <div style={{padding:"8px 12px",borderTop:`1px solid ${C.border}`,
+                                display:"flex",flexWrap:"wrap",gap:4}}>
+                                {ps.findings.slice(0,4).map((f,fi)=>(
+                                  <span key={fi} style={{fontSize:9.5,padding:"2px 7px",borderRadius:20,fontWeight:600,
+                                    background:f.severity==="high"?"#FEF2F2":"#FFF7ED",
+                                    color:f.severity==="high"?"#dc2626":C.orange}}>
+                                    {f.title||f.label}
+                                  </span>
+                                ))}
+                                {ps.findings.length>4&&<span style={{fontSize:9.5,color:C.muted}}>+{ps.findings.length-4} more</span>}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ):(
-                    <div style={{textAlign:"center",padding:"24px 16px",background:C.white,borderRadius:14,marginBottom:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                      <div style={{fontSize:32,marginBottom:8}}>🧍</div>
-                      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>No posture captures yet</div>
-                      <div style={{fontSize:11,color:C.muted,marginBottom:12}}>Capture photos in the Posture Analysis module to see them here</div>
-                      <button onClick={()=>onNav&&onNav("posture")} style={{padding:"8px 20px",background:C.primary,border:"none",borderRadius:20,color:"white",fontSize:12,fontWeight:700,cursor:"pointer"}}>Open Posture Analysis →</button>
+                    <div style={{textAlign:"center",padding:"32px 20px",background:C.white,
+                      borderRadius:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                      <div style={{fontSize:36,marginBottom:10}}>🧍</div>
+                      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>No posture captures saved yet</div>
+                      <div style={{fontSize:11,color:C.muted}}>Analyse a photo and tap "Save to Patient Record" — it will appear here with the view name, session number, date and time.</div>
                     </div>
                   )}
-                  {/* Postural defects from manual assessment */}
+                  {/* Postural defects from manual analysis */}
                   {defects.length>0&&(
-                    <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                    <div style={{background:C.white,borderRadius:14,padding:14,marginTop:10,
+                      boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                        <span style={{fontSize:12,fontWeight:800,color:C.text}}>🔍 Postural Defects ({defects.length})</span>
-                        <span onClick={()=>onNav&&onNav("posture")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>View full analysis →</span>
+                        <span style={{fontSize:12,fontWeight:800,color:C.text}}>🔍 Manual Postural Defects ({defects.length})</span>
+                        <span onClick={()=>onNav&&onNav("posture")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
                       </div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                         {defects.map(k=>(
-                          <span key={k} style={{padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:700,background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>
+                          <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:700,
+                            background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>
                             {k.replace("posture_defect_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}
                           </span>
                         ))}
                       </div>
                       {d.kinetic_chain&&(
-                        <div style={{marginTop:10,padding:"9px 11px",background:"#F0FDF4",borderRadius:8,borderLeft:"3px solid #059669"}}>
+                        <div style={{marginTop:10,padding:"9px 11px",background:"#F0FDF4",
+                          borderRadius:8,borderLeft:"3px solid #059669"}}>
                           <div style={{fontSize:10,color:"#059669",fontWeight:800,marginBottom:3}}>KINETIC CHAIN</div>
                           <div style={{fontSize:11,color:C.text,lineHeight:1.5,fontStyle:"italic"}}>{d.kinetic_chain}</div>
                         </div>
@@ -12781,7 +12889,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
 }
 
 // ─── PATIENT DATABASE PANEL ────────────────────────────────────────────────────
-function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose, onImport }) {
+function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose, onImport, onNav }) {
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
@@ -12843,7 +12951,12 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
         onClose={()=>setProfilePatient(null)}
         onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); }}
         onSaveField={handleSaveField}
-        onNav={(key)=>{ setProfilePatient(null); onSelect(profilePatient); navTo(key); }}
+        onNav={(key)=>{
+          setProfilePatient(null);
+          if(profilePatient.id !== activeId) onSelect(profilePatient);
+          onClose();
+          setTimeout(()=>onNav&&onNav(key), 80);
+        }}
       />
     )}
 
@@ -15711,6 +15824,7 @@ function AppInner({ currentUser, onSignOut }) {
           onDelete={deletePatient}
           onClose={()=>setShowPatientDb(false)}
           onImport={importPatientFromJSON}
+          onNav={(key)=>{ setShowPatientDb(false); navTo(key); }}
         />
       )}
 
