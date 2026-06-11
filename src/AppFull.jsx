@@ -5592,6 +5592,140 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     });
   }
 
+  // ── [v17 features] Landmark text labels on dots ──────────────────────────
+  // Labels directly on each landmark so therapist/patient knows what each dot is
+  if (!isLat) {
+    const LANDMARK_LABELS = [
+      [0,  "Head"],
+      [2,  "L.Eye"], [5,  "R.Eye"],
+      [7,  "L.Ear"], [8,  "R.Ear"],
+      [11, "L.Sh"],  [12, "R.Sh"],
+      [13, "L.Elbow"],[14,"R.Elbow"],
+      [23, "L.Hip"], [24, "R.Hip"],
+      [25, "L.Knee"],[26, "R.Knee"],
+      [27, "L.Ank"], [28, "R.Ank"],
+      [29, "L.Heel"],[30, "R.Heel"],
+      [31, "L.Ft"],  [32, "R.Ft"],
+    ];
+    ctx.font = "bold 8px system-ui";
+    LANDMARK_LABELS.forEach(([idx, lbl]) => {
+      if (!V(idx)) return;
+      const p = PX(idx); if (!p) return;
+      const tw = ctx.measureText(lbl).width;
+      const bx = p[0] + 9, by = p[1] - 6;
+      ctx.fillStyle = "rgba(0,0,0,0.72)";
+      if (ctx.roundRect) ctx.roundRect(bx-2, by-9, tw+6, 12, 3);
+      else ctx.rect(bx-2, by-9, tw+6, 12);
+      ctx.fill();
+      ctx.fillStyle = "rgba(200,220,255,0.95)";
+      ctx.textAlign = "left";
+      ctx.fillText(lbl, bx+1, by);
+    });
+    // ASIS labels specifically (estimated position)
+    if (V(23) && V(11)) {
+      const hp=PX(23), sh=PX(11);
+      const torsoH = hp[1]-sh[1];
+      const asLx = hp[0]+torsoH*0.04, asLy = hp[1]-torsoH*0.18;
+      const asRx = V(24)&&V(12) ? PX(24)[0]-torsoH*0.04 : null;
+      const asRy = V(24)&&V(12) ? PX(24)[1]-torsoH*0.18 : null;
+      ctx.font = "bold 7.5px system-ui";
+      [[asLx,asLy,"L.ASIS"],[asRx,asRy,"R.ASIS"]].forEach(([x,y,lbl]) => {
+        if (!x||!y) return;
+        const tw = ctx.measureText(lbl).width;
+        ctx.fillStyle="rgba(0,0,0,0.78)";
+        if(ctx.roundRect) ctx.roundRect(x-tw/2-3,y+16,tw+6,11,3); else ctx.rect(x-tw/2-3,y+16,tw+6,11);
+        ctx.fill(); ctx.fillStyle="#FFD700"; ctx.textAlign="center"; ctx.fillText(lbl,x,y+25);
+      });
+    }
+  }
+
+  // ── [v17] Knee angles directly on image ──────────────────────────────────
+  if (!isLat) {
+    [[23,25,27,"L.Knee"],[24,26,28,"R.Knee"]].forEach(([hi,ki,ai2,lbl]) => {
+      if (!V(hi)||!V(ki)||!V(ai2)) return;
+      const angle = (() => {
+        const a=g(hi),b=g(ki),c=g(ai2);
+        const ab={x:a.x-b.x,y:a.y-b.y}, cb={x:c.x-b.x,y:c.y-b.y};
+        const dot=ab.x*cb.x+ab.y*cb.y;
+        const mag=Math.sqrt((ab.x**2+ab.y**2)*(cb.x**2+cb.y**2));
+        if(mag===0) return null;
+        return Math.round(Math.acos(Math.min(1,Math.max(-1,dot/mag)))*1800/Math.PI)/10;
+      })();
+      if (angle===null) return;
+      const p = PX(ki); if (!p) return;
+      const txt = `${lbl} ${angle}°`;
+      const col = angle > 185 ? "rgba(99,102,241,0.95)" : angle < 170 ? "rgba(249,115,22,0.95)" : "rgba(0,201,122,0.95)";
+      ctx.font = "bold 9px system-ui";
+      const tw = ctx.measureText(txt).width;
+      const bx = ki===25 ? p[0]-tw-18 : p[0]+10;
+      ctx.fillStyle = "rgba(0,0,0,0.8)";
+      if(ctx.roundRect) ctx.roundRect(bx-2,p[1]-9,tw+10,16,4); else ctx.rect(bx-2,p[1]-9,tw+10,16);
+      ctx.fill(); ctx.fillStyle=col; ctx.textAlign="left"; ctx.fillText(txt,bx+3,p[1]+4);
+    });
+  }
+
+  // ── [v17] Legend box top-right ────────────────────────────────────────────
+  if (!isLat) {
+    const items = [
+      { col:"rgba(0,201,122,0.9)",  lbl:"Normal" },
+      { col:"rgba(255,179,0,0.9)",  lbl:"Mild deviation" },
+      { col:"rgba(255,77,109,0.9)", lbl:"Significant" },
+      { col:"rgba(200,100,255,0.9)",lbl:"ASIS / Pelvis" },
+      { col:"rgba(147,51,234,0.9)", lbl:"Spine segments" },
+    ];
+    const lw=110, lh=items.length*16+10, lx=W-lw-6, ly=6;
+    ctx.fillStyle="rgba(0,0,0,0.75)";
+    if(ctx.roundRect) ctx.roundRect(lx,ly,lw,lh,6); else ctx.rect(lx,ly,lw,lh);
+    ctx.fill();
+    items.forEach(({col,lbl},i) => {
+      const iy = ly+10+i*16;
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(lx+10,iy-3,4,0,Math.PI*2); ctx.fill();
+      ctx.font="9px system-ui"; ctx.fillStyle="rgba(220,220,220,0.9)"; ctx.textAlign="left";
+      ctx.fillText(lbl,lx+18,iy);
+    });
+  }
+
+  // ── [v17] View label at bottom centre ─────────────────────────────────────
+  {
+    const viewLabel = view==="anterior"?"ANTERIOR VIEW":view==="posterior"||view==="back"?"POSTERIOR VIEW":view==="left"?"LEFT LATERAL":view==="right"?"RIGHT LATERAL":"";
+    if (viewLabel) {
+      ctx.font = "bold 10px system-ui";
+      const tw = ctx.measureText(viewLabel).width;
+      ctx.fillStyle="rgba(0,0,0,0.72)";
+      if(ctx.roundRect) ctx.roundRect(W/2-tw/2-8,H-22,tw+16,16,4); else ctx.rect(W/2-tw/2-8,H-22,tw+16,16);
+      ctx.fill(); ctx.fillStyle="rgba(0,229,255,0.9)"; ctx.textAlign="center";
+      ctx.fillText(viewLabel,W/2,H-9);
+    }
+  }
+
+  // ── [v17] Summary title at top of image ───────────────────────────────────
+  // Derives the main finding from measurements and writes it on the photo
+  if (!isLat && (m.shoulderAngle||m.trunkLateralShift||m.headTiltAngle)) {
+    const parts=[];
+    if (m.shoulderAngle!==null && Math.abs(m.shoulderAngle||0)>3) {
+      const side=m.shoulderAngle>0?"Right":"Left";
+      parts.push(`${side} Shoulder Elevated`);
+    }
+    if (m.trunkLateralShift!==null && Math.abs(m.trunkLateralShift||0)>3) {
+      const side=m.trunkLateralShift>0?"Right":"Left";
+      parts.push(`${side} Trunk Shift`);
+    }
+    if (m.headTiltAngle!==null && Math.abs(m.headTiltAngle||0)>3) {
+      const side=m.headTiltAngle>0?"Right":"Left";
+      parts.push(`Head Tilt ${side}`);
+    }
+    if (parts.length>0) {
+      const title=`Observation: ${parts.join(" + ")}`;
+      ctx.font="bold 10px system-ui";
+      const tw=ctx.measureText(title).width;
+      const bw=Math.min(tw+20,W-10);
+      ctx.fillStyle="rgba(0,0,0,0.78)";
+      if(ctx.roundRect) ctx.roundRect(W/2-bw/2,4,bw,18,5); else ctx.rect(W/2-bw/2,4,bw,18);
+      ctx.fill(); ctx.fillStyle="rgba(255,220,100,0.95)"; ctx.textAlign="center";
+      ctx.fillText(title,W/2,16);
+    }
+  }
+
   // ── Stress heatmap (all views) ────────────────────────────────────────────
   const hotspots=[];
   const addHot=(idx,intensity)=>{ if(!V(idx)) return; const p=PX(idx); if(p) hotspots.push({x:p[0],y:p[1],r:45+intensity*20,intensity}); };
