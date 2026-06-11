@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo, Component, Suspense, lazy } from "react";
 import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
-import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
+import { r1, r2, mid, vis, px, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection,
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
   ErgoModule, CyriaxModule, CyriaxRegionTests, generateDiagnosis,
@@ -659,6 +659,12 @@ function PostureCameraModule({ activePatient, set }) {
   const [landmarks,  setLandmarks]  = useState(null);
   const [quality,    setQuality]    = useState({ score:0, warnings:[], ready:false });
   const [activeView, setActiveView] = useState("anterior");
+  // ── Stability detection (camera only) ─────────────────────────────────────
+  const [stabilityCount, setStabilityCount] = useState(0);  // frames stable
+  const [isStable,       setIsStable]       = useState(false);
+  const [lightingWarn,   setLightingWarn]   = useState(null); // null | "dark" | "bright"
+  const [rotationWarn,   setRotationWarn]   = useState(false); // patient rotated
+  const prevLmRef = useRef(null);
   const [zoom,       setZoom]       = useState(1);
   const [cdSecs,     setCdSecs]     = useState(3);
   const [cdCount,    setCdCount]    = useState(null);   // null = not running
@@ -765,14 +771,37 @@ function PostureCameraModule({ activePatient, set }) {
     setLandmarks(sm);
     if (!sm) {
       if (!lostTimer.current) lostTimer.current = setTimeout(() => {
-        setLandmarks(null);
-        lostTimer.current = null;
+        setLandmarks(null); lostTimer.current = null;
       }, 1000);
+      setStabilityCount(0); setIsStable(false); prevLmRef.current = null;
       return;
     }
     if (lostTimer.current) { clearTimeout(lostTimer.current); lostTimer.current = null; }
     setQuality(computeQuality(sm));
-  }, []);
+
+    // ── Stability check: measure landmark drift from previous frame ──────────
+    // If nose (0) + shoulder midpoint barely moved → patient is stable
+    if (prevLmRef.current && sm[0] && prevLmRef.current[0]) {
+      const drift = Math.abs((sm[0].x||0) - (prevLmRef.current[0].x||0)) * 200
+                  + Math.abs((sm[0].y||0) - (prevLmRef.current[0].y||0)) * 200;
+      setStabilityCount(c => {
+        const next = drift < 1.5 ? Math.min(c + 1, 20) : 0;
+        setIsStable(next >= 12);
+        return next;
+      });
+    }
+    prevLmRef.current = sm;
+
+    // ── Rotation detection: frontal views only ────────────────────────────────
+    // If shoulders have significant Z difference → patient rotated → measurements unreliable
+    const isLateral = activeView === "left" || activeView === "right";
+    if (!isLateral && sm[11] && sm[12]) {
+      const zDiff = Math.abs((sm[11].z||0) - (sm[12].z||0));
+      setRotationWarn(zDiff > 0.08);
+    } else {
+      setRotationWarn(false);
+    }
+  }, [activeView]);
 
   // ── Tap-to-focus ──────────────────────────────────────────────────────────
   const handleTapFocus = useCallback((x, y) => {
@@ -801,6 +830,26 @@ function PostureCameraModule({ activePatient, set }) {
 
   useEffect(() => { return () => stopCamera(); }, []);
 
+  // ── Lighting check for live camera ───────────────────────────────────────
+  // Samples a 32×32 thumbnail of the video every 3s to detect poor lighting.
+  // Too dark (lum < 55) → MediaPipe misplaces landmarks.
+  // Overexposed (lum > 225) → landmark visibility scores inflated / unreliable.
+  useEffect(() => {
+    if (camState !== "live") { setLightingWarn(null); return; }
+    const check = () => {
+      const v = videoRef.current; if (!v || v.readyState < 2) return;
+      const c = document.createElement("canvas"); c.width = 32; c.height = 32;
+      const ctx = c.getContext("2d"); ctx.drawImage(v, 0, 0, 32, 32);
+      const d = ctx.getImageData(0, 0, 32, 32).data;
+      let lum = 0;
+      for (let i = 0; i < d.length; i += 4) lum += 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      lum /= d.length / 4;
+      setLightingWarn(lum < 55 ? "dark" : lum > 225 ? "bright" : null);
+    };
+    check();
+    const t = setInterval(check, 3000);
+    return () => clearInterval(t);
+  }, [camState]);
 
   // ── Choose pose engine based on view ──────────────────────────────────
   // lateral (left / right) → ViTPose ONNX  |  frontal → MediaPipe
@@ -927,8 +976,41 @@ function PostureCameraModule({ activePatient, set }) {
       const img = new Image();
       img.src = url;
       await new Promise(res => { img.onload = res; });
+
+      // ── Brightness check for uploaded photo ─────────────────────────────
+      // Sample 32×32 thumbnail to detect unusable lighting before running MediaPipe.
+      const brightnessOK = await (async () => {
+        try {
+          const bc = document.createElement("canvas"); bc.width = 32; bc.height = 32;
+          const bctx = bc.getContext("2d"); bctx.drawImage(img, 0, 0, 32, 32);
+          const bd = bctx.getImageData(0, 0, 32, 32).data;
+          let lum = 0;
+          for (let i = 0; i < bd.length; i += 4) lum += 0.299*bd[i] + 0.587*bd[i+1] + 0.114*bd[i+2];
+          lum /= bd.length / 4;
+          if (lum < 55) { setUploadError("⚠ Photo too dark — retake in better lighting. MediaPipe landmark accuracy is severely reduced in low light."); return false; }
+          if (lum > 230) { setUploadError("⚠ Photo overexposed — retake away from direct light source. Bright backgrounds inflate confidence scores."); return false; }
+          return true;
+        } catch { return true; } // don't block on check failure
+      })();
+      if (!brightnessOK) { setUploadBusy(false); return; }
+
       const lm = await runPoseForView(img, uploadView);
       setUploadLm(lm);
+
+      // ── Rotation detection for frontal uploads ───────────────────────────
+      // If patient is rotated, frontal measurements are systematically wrong.
+      // Gate: if shoulder Z difference > 0.08, warn and block clinical findings.
+      const isFrontalView = uploadView === "anterior" || uploadView === "posterior";
+      if (lm && isFrontalView && lm[11] && lm[12]) {
+        const zDiff = Math.abs((lm[11].z||0) - (lm[12].z||0));
+        if (zDiff > 0.08) {
+          setRotationWarn(true);
+          setUploadError("⚠ Patient appears rotated in this photo — shoulder depth asymmetry detected. Frontal measurements will be inaccurate. Retake with patient facing camera squarely, feet parallel.");
+          setUploadBusy(false); return;
+        } else {
+          setRotationWarn(false);
+        }
+      }
       if (lm) {
         const m = AdvancedMeasurementEngine(lm, null);
         let f, cr = null;
@@ -1009,10 +1091,19 @@ function PostureCameraModule({ activePatient, set }) {
         {/* Status bar */}
         <div style={{ marginTop:8, display:"flex", alignItems:"center", gap:7 }}>
           <div style={{ width:8, height:8, borderRadius:"50%",
-            background: isLive ? "#00c97a" : isLoad ? "#ffb300" : isError ? "#ff4d6d" : "#3d3d5c",
-            boxShadow: isLive ? "0 0 8px #00c97a88" : "none" }}/>
-          <span style={{ fontSize:"0.68rem", fontWeight:700, color: isLive ? "#00c97a" : isError ? "#ff4d6d" : "#7e6a9a" }}>
-            {isLoad ? "Starting camera…" : isLive ? (quality.ready ? "✓ Full body detected — ready to capture" : "Waiting for full body…") : isError ? camError : "Camera off"}
+            background: isLive ? (isStable && !lightingWarn && !rotationWarn ? "#00c97a" : "#ffb300") : isLoad ? "#ffb300" : isError ? "#ff4d6d" : "#3d3d5c",
+            boxShadow: isLive && isStable ? "0 0 8px #00c97a88" : "none" }}/>
+          <span style={{ fontSize:"0.68rem", fontWeight:700, color: isLive ? (isStable && !lightingWarn && !rotationWarn ? "#00c97a" : "#ffb300") : isError ? "#ff4d6d" : "#7e6a9a" }}>
+            {isLoad ? "Starting camera…"
+              : isLive ? (
+                  !quality.ready ? "Waiting for full body in frame…"
+                  : lightingWarn === "dark" ? "⚠ Too dark — improve lighting before capture"
+                  : lightingWarn === "bright" ? "⚠ Overexposed — move away from direct light"
+                  : rotationWarn ? "⚠ Patient rotated — face camera squarely"
+                  : !isStable ? `Stabilising… (${stabilityCount}/12 frames)`
+                  : "✓ Stable — ready to capture"
+              )
+              : isError ? camError : "Camera off"}
           </span>
         </div>
       </div>
@@ -1148,28 +1239,44 @@ function PostureCameraModule({ activePatient, set }) {
           {/* Capture button */}
           <div style={{ position:"absolute", bottom:16, left:0, right:0, display:"flex",
             justifyContent:"center", alignItems:"center", gap:14, zIndex:22 }}>
-            {/* Instant capture */}
-            <button onClick={() => triggerCapture(0)} disabled={cdCount!==null}
-              style={{ width:56, height:56, borderRadius:"50%",
-                background:"rgba(255,255,255,0.18)", border:"2px solid rgba(255,255,255,0.4)",
-                cursor:cdCount!==null?"not-allowed":"pointer",
-                fontSize:"0.6rem", fontWeight:800, color:"#fff", display:"flex",
-                flexDirection:"column", alignItems:"center", justifyContent:"center", gap:1 }}>
-              ⚡<span>Now</span>
-            </button>
+            {/* Instant capture — only enabled when stable and no quality warnings */}
+            {(() => {
+              const blocked = !isStable || !!lightingWarn || rotationWarn || !quality.ready;
+              return (
+                <button onClick={() => !blocked && triggerCapture(0)} disabled={cdCount!==null||blocked}
+                  title={blocked ? (!quality.ready?"Body not detected":lightingWarn?"Fix lighting":rotationWarn?"Patient rotated":!isStable?"Wait for stability":""):"Capture now"}
+                  style={{ width:56, height:56, borderRadius:"50%",
+                    background: blocked ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.18)",
+                    border:`2px solid ${blocked?"rgba(255,100,100,0.4)":"rgba(255,255,255,0.4)"}`,
+                    cursor:blocked||cdCount!==null?"not-allowed":"pointer",
+                    fontSize:"0.6rem", fontWeight:800, color: blocked?"rgba(255,100,100,0.7)":"#fff",
+                    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:1 }}>
+                  {blocked ? "🔒" : "⚡"}<span>{blocked?"Wait":"Now"}</span>
+                </button>
+              );
+            })()}
 
-            {/* Main capture button */}
-            <button onClick={() => triggerCapture(cdSecs)} disabled={cdCount!==null}
-              style={{ width:72, height:72, borderRadius:"50%",
-                background: cdCount!==null ? "rgba(0,229,255,0.3)" : "linear-gradient(135deg,#00e5ff,#7f5af0)",
-                border:"4px solid rgba(255,255,255,0.3)",
-                cursor:cdCount!==null?"not-allowed":"pointer",
-                fontSize:"1.6rem", display:"flex", alignItems:"center", justifyContent:"center",
-                boxShadow:"0 4px 22px rgba(0,229,255,0.45)", zIndex:22 }}>
-              {cdCount !== null ? (
-                <span style={{ fontSize:"2rem", fontWeight:900, color:"#000" }}>{cdCount}</span>
-              ) : "📸"}
-            </button>
+            {/* Main capture button — gated the same way */}
+            {(() => {
+              const blocked = !isStable || !!lightingWarn || rotationWarn || !quality.ready;
+              const readyColor = "linear-gradient(135deg,#00e5ff,#7f5af0)";
+              const blockedColor = "rgba(100,100,120,0.5)";
+              return (
+                <button onClick={() => !blocked && triggerCapture(cdSecs)} disabled={cdCount!==null||blocked}
+                  title={blocked ? (!quality.ready?"Body not detected":lightingWarn?"Fix lighting first":rotationWarn?"Patient rotated — face camera squarely":!isStable?"Hold still…":""):"Capture with countdown"}
+                  style={{ width:72, height:72, borderRadius:"50%",
+                    background: cdCount!==null ? "rgba(0,229,255,0.3)" : blocked ? blockedColor : readyColor,
+                    border:`4px solid ${blocked?"rgba(255,100,100,0.3)":"rgba(255,255,255,0.3)"}`,
+                    cursor:cdCount!==null||blocked?"not-allowed":"pointer",
+                    fontSize:"1.6rem", display:"flex", alignItems:"center", justifyContent:"center",
+                    boxShadow: blocked?"none":"0 4px 22px rgba(0,229,255,0.45)", zIndex:22,
+                    transition:"all 0.3s" }}>
+                  {cdCount !== null ? (
+                    <span style={{ fontSize:"2rem", fontWeight:900, color:"#000" }}>{cdCount}</span>
+                  ) : blocked ? "🔒" : "📸"}
+                </button>
+              );
+            })()}
 
             {/* Flip camera */}
             <button onClick={flipCamera}
@@ -2211,6 +2318,28 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     lldProxy, lldSide, ucsIndex, lcsIndex, posturalLoadIndex, lumbarProxy,
   } = measurements;
 
+  // ── TWO-TIER CONFIDENCE GATE ──────────────────────────────────────────────
+  // CLINICAL_MIN_VIS = 0.65: only generate a clinical finding when ALL key
+  // landmarks for that finding meet this threshold.
+  // MIN_VIS = 0.45 is still used for overlay drawing (show the dot on screen)
+  // but at 0.46–0.64 we do NOT generate clinical text — too unreliable.
+  const VC = i => (lm[i]?.visibility||0) >= CLINICAL_MIN_VIS;
+  const VCboth = (...idxs) => idxs.every(i => VC(i));
+
+  // ── PLAUSIBILITY CAPS ─────────────────────────────────────────────────────
+  // Any frontal finding beyond these limits is almost certainly a detection
+  // error — no real clinical asymmetry is this large without being obvious.
+  // Cap to prevent hallucinated extreme findings.
+  const PLAUS = {
+    shoulderAngle: 12,   // >12° is implausible from photo alone — stop camera artifact
+    pelvisAngle:   10,   // >10° would be clinically obvious
+    cobb:          20,   // >20° requires X-ray, not a photo screening tool
+    trunk:         8,    // >8% body height trunk shift — almost always error
+  };
+
+  // Helper: returns null if the value is above plausibility cap
+  const plaus = (val, cap) => val !== null && Math.abs(val) < cap ? val : null;
+
   const add = (region, text, severity, correction, icd="M99.0", icon="●", detail="", norm="", value=null) =>
     findings.push({ region, text, severity, correction, icd, icon, detail, norm, value });
 
@@ -2226,14 +2355,21 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     }
 
     // Shoulder elevation
-    if (shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
-      const abs = Math.abs(shoulderAngle);
-      // Magee/Kendall: direct Y-comparison is definitive — lower Y = higher shoulder in image
-      // g(11)=L acromion, g(12)=R acromion; lower Y value = higher = elevated side
-      const side = (g(11)&&g(12)) ? (g(11).y < g(12).y ? "Left" : "Right") : (shoulderAngle > 0 ? "Left" : "Right");
-      add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
-        `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s × 3. Activate: lower trapezius Y-T-W × 15. NKT: check ipsilateral QL — QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
-        "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis.`, "Normal: <2.5° / <1.5cm (Magee)", abs);
+    // Shoulder — requires CLINICAL_MIN_VIS on both acromions + plausibility cap
+    if (VCboth(11,12) && shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
+      const safeAngle = plaus(shoulderAngle, PLAUS.shoulderAngle);
+      if (safeAngle !== null) {
+        const abs = Math.abs(safeAngle);
+        const side = (g(11)&&g(12)) ? (g(11).y < g(12).y ? "Left" : "Right") : (safeAngle > 0 ? "Left" : "Right");
+        add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
+          `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s × 3. Activate: lower trapezius Y-T-W × 15. NKT: check ipsilateral QL — QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
+          "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis. Confirmed at clinical confidence (both acromions ≥0.65 visibility).`, "Normal: <2.5° / <1.5cm (Magee)", abs);
+      }
+    } else if (!VCboth(11,12) && shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
+      // Landmark confidence too low — show as low-confidence observation only
+      add("Shoulder Girdle", `Possible shoulder asymmetry (${Math.abs(shoulderAngle).toFixed(1)}°) — LOW CONFIDENCE. Retake with better lighting / form-fitting clothing.`, "low",
+        `Landmark visibility below clinical threshold (0.65). Repeat assessment with improved image quality before acting on this finding.`,
+        "M54.2", "⇑", `Landmark visibility insufficient for reliable measurement. Do not treat based on this alone.`, "Normal: <2.5°", Math.abs(shoulderAngle));
     }
 
     // Head lateral offset
@@ -2275,12 +2411,15 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       );
     }
 
-    // Trunk lateral shift
-    if (trunkLateralShift !== null && Math.abs(trunkLateralShift) > 3.5) {
-      const abs = Math.abs(trunkLateralShift); const side = trunkLateralShift > 0 ? "right" : "left";
-      add("Thoracic", `Trunk laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 7 ? "high" : "moderate",
-        `Assess antalgic lean (disc/radiculopathy — trunk shifts AWAY from herniation in paracentral disc, TOWARD in lateral disc). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.`,
-        "M54.5", "⇒", `Lateral trunk shift highly associated with L4/L5 disc herniation.`, "Normal: <3.5%", abs);
+    // Trunk lateral shift — requires shoulders + hips both at clinical confidence
+    if (VCboth(11,12,23,24) && trunkLateralShift !== null) {
+      const safeTrunk = plaus(trunkLateralShift, PLAUS.trunk);
+      if (safeTrunk !== null && Math.abs(safeTrunk) > 3.5) {
+        const abs = Math.abs(safeTrunk); const side = safeTrunk > 0 ? "right" : "left";
+        add("Thoracic", `Trunk laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 7 ? "high" : "moderate",
+          `Assess antalgic lean (disc/radiculopathy — trunk shifts AWAY from herniation in paracentral disc, TOWARD in lateral disc). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.`,
+          "M54.5", "⇒", `Lateral trunk shift highly associated with L4/L5 disc herniation. All 4 landmarks confirmed ≥0.65 visibility.`, "Normal: <3.5%", abs);
+      }
     }
 
     // Scoliosis / spinal deviation

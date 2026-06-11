@@ -8,7 +8,8 @@ const vis = (lm, i, thresh=0.4) => (lm[i]?.visibility||0) > thresh;
 const px  = (lm, i, W, H) => lm[i] ? [lm[i].x*W, lm[i].y*H] : null;
 const r1  = v => v !== null && v !== undefined && !isNaN(v) ? Math.round(v*10)/10 : null;
 const r2  = v => v !== null && v !== undefined && !isNaN(v) ? Math.round(v*100)/100 : null;
-const MIN_VIS = 0.45;
+const MIN_VIS = 0.45;          // overlay drawing threshold — shows dot even if uncertain
+const CLINICAL_MIN_VIS = 0.65; // clinical findings threshold — only fire when confident
 
 function calcAngleDeg(a, b) {
   if (!a || !b) return null;
@@ -435,4 +436,4 @@ const C = getC();
 
 export { TabLoader, LazyBoundary, LazyTab, ErrorBoundary, MobileStyleInjector, MOBILE_CSS };
 export { THEMES, getC, setTheme, useTheme, C };
-export { mid, vis, px, r1, r2, MIN_VIS, calcAngleDeg };
+export { mid, vis, px, r1, r2, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg };
