@@ -7973,6 +7973,49 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             </div>
           )}
 
+
+          {/* ── Save to Patient Record ─────────────────────────────── */}
+          {scoreData&&(
+            <div style={{marginTop:16,padding:"12px 14px",background:activePatient?"rgba(5,150,105,0.06)":"rgba(180,83,9,0.06)",borderRadius:12,border:`1px solid ${activePatient?"rgba(5,150,105,0.25)":"rgba(180,83,9,0.25)"}`}}>
+              {activePatient?(
+                <>
+                  <div style={{fontSize:"0.68rem",color:PC.green,fontWeight:700,marginBottom:8}}>
+                    💾 Save this analysis to <strong>{activePatient.name}</strong>
+                  </div>
+                  <button onClick={()=>{
+                    const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
+                    const vLabel=VLABELS[view]||view;
+                    try{
+                      const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
+                      const sameView=existing.filter(s=>s.view===view).length+1;
+                      const imgSrc=capturedImg||uploadedImg||rawUploadedImg||null;
+                      const entry={
+                        view, viewLabel:vLabel, sessionNo:sameView,
+                        sessionLabel:`${vLabel} Session ${sameView}`,
+                        img:imgSrc, score:scoreData.score,
+                        band:scoreData.band||"",
+                        findings:findings||[],
+                        kineticChain:measurements?.kinetic_chain||"",
+                        source:isLive?"camera":"upload",
+                        capturedAt:new Date().toISOString()
+                      };
+                      setPatientField&&setPatientField("posture_sessions",JSON.stringify([...existing,entry]));
+                      alert(`✅ Saved as "${entry.sessionLabel}" to ${activePatient.name}`);
+                    }catch(e){alert("Save failed: "+e.message);}
+                  }} style={{width:"100%",padding:"11px",borderRadius:10,border:"none",cursor:"pointer",
+                    background:"linear-gradient(135deg,#059669,#047857)",
+                    color:"#fff",fontWeight:800,fontSize:"0.82rem"}}>
+                    💾 Save to {activePatient.name} — {view.charAt(0).toUpperCase()+view.slice(1)} View
+                  </button>
+                </>
+              ):(
+                <div style={{fontSize:"0.72rem",color:PC.yellow,fontWeight:600,textAlign:"center"}}>
+                  ⚠ No patient loaded — open a patient record first to save this analysis
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       )}
 
