@@ -4242,10 +4242,11 @@ function buildFindings(lm, view, m) {
         add({
           region: "Shoulder Girdle",
           findingName: f4.finding,
+          plain: f4.finding,
           severity: sevMap[f4.severityCode] || "mild",
           confidenceScore: f4.confidence,
           clinicalSignificance: f4.severityCode >= 3 ? "high" : "moderate",
-          interpretation: `${f4.clinicalCorrelation} ${f4.functionalRelevance||""} Reliability: ${f4.reliabilityLabel}.`,
+          interpretation: `${f4.finding} ${f4.functionalRelevance||""} Reliability: ${f4.reliabilityLabel}.`,
           musclePattern: MUSCLE_PATTERNS.shoulder,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.shoulder,
           objectiveAssessments: f4.suggestedNext,
@@ -4290,6 +4291,7 @@ function buildFindings(lm, view, m) {
         add({
           region: "Pelvis",
           findingName: f10.finding,
+          plain: f10.finding,
           severity: sevMap[f10.severityCode] || "low",
           confidenceScore: f10.confidence,
           clinicalSignificance: f10.severityCode >= 3 ? "high" : "moderate",
@@ -4322,6 +4324,7 @@ function buildFindings(lm, view, m) {
         add({
           region: "Pelvis",
           findingName: f11.finding,
+          plain: f11.finding,
           severity: sevMap[f11.severityCode] || "low",
           confidenceScore: f11.confidence,
           clinicalSignificance: f11.severityCode >= 3 ? "high" : "moderate",
@@ -4405,10 +4408,11 @@ function buildFindings(lm, view, m) {
         add({
           region: "Thoracic",
           findingName: f7.finding,
+          plain: f7.finding,
           severity: sevMap[f7.severityCode] || "mild",
           confidenceScore: f7.confidence,
           clinicalSignificance: f7.severityCode >= 3 ? "high" : "moderate",
-          interpretation: `${f7.clinicalCorrelation} ${f7.functionalRelevance||""} Reliability: ${f7.reliabilityLabel}.`,
+          interpretation: `${f7.finding} ${f7.functionalRelevance||""} Reliability: ${f7.reliabilityLabel}.`,
           musclePattern: MUSCLE_PATTERNS.trunkShift,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.trunkShift,
           objectiveAssessments: f7.suggestedNext,
@@ -15406,7 +15410,14 @@ function PostureSessionsView({ d, C, onNav }) {
             const dt=new Date(ps.capturedAt||ps.time||"");
             const dateStr=isNaN(dt.getTime())?"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
             const timeStr=isNaN(dt.getTime())?"":dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
-            const findingSummary=(ps.findings||[]).sort((a,b)=>a.severity==="high"?-1:1).slice(0,6).map(f=>f.plain||f.region||f.title||f.label||"").filter(Boolean);
+            const findingSummary=(ps.findings||[]).sort((a,b)=>{
+              const rank={high:3,moderate:2,mild:1};
+              return (rank[b.severity]||0)-(rank[a.severity]||0);
+            }).slice(0,6).map(f=>{
+              // Prefer specific finding text (has direction/measurement) over vague plain text
+              const raw=f.text||f.findingName||f.plain||f.region||f.label||"";
+              return raw.replace(/^OBSERVATION[^:]*:\s*/i,"").split(".")[0].trim();
+            }).filter(Boolean);
             const highCount=(ps.findings||[]).filter(f=>f.severity==="high").length;
             const modCount=(ps.findings||[]).filter(f=>f.severity==="moderate"||f.severity==="medium").length;
             const lowCount=(ps.findings||[]).length-highCount-modCount;
