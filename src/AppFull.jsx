@@ -15458,14 +15458,15 @@ function PostureSessionsView({ d, C, onNav }) {
   });
   return(
     <div>
-      {lightboxImg&&(
+      {lightboxImg&&createPortal(
         <div onClick={()=>setLightboxImg(null)}
-          style={{position:"fixed",inset:0,zIndex:999,background:"rgba(0,0,0,0.92)",
+          style={{position:"fixed",inset:0,zIndex:99999,background:"rgba(0,0,0,0.92)",
             display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
           <img src={lightboxImg} alt="posture full"
-            style={{maxWidth:"95vw",maxHeight:"90vh",objectFit:"contain",borderRadius:8}}/>
+            style={{maxWidth:"95vw",maxHeight:"90vh",width:"auto",height:"auto",objectFit:"contain",borderRadius:8}}/>
           <div style={{position:"absolute",top:16,right:16,color:"#fff",fontSize:24,cursor:"pointer"}}>✕</div>
-        </div>
+        </div>,
+        document.body
       )}
       <button onClick={()=>onNav&&onNav("posture")}
         style={{width:"100%",padding:"10px",marginBottom:12,borderRadius:10,
