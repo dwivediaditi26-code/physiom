@@ -4242,11 +4242,10 @@ function buildFindings(lm, view, m) {
         add({
           region: "Shoulder Girdle",
           findingName: f4.finding,
-          plain: f4.finding,
           severity: sevMap[f4.severityCode] || "mild",
           confidenceScore: f4.confidence,
           clinicalSignificance: f4.severityCode >= 3 ? "high" : "moderate",
-          interpretation: `${f4.finding} ${f4.functionalRelevance||""} Reliability: ${f4.reliabilityLabel}.`,
+          interpretation: `${f4.clinicalCorrelation} ${f4.functionalRelevance||""} Reliability: ${f4.reliabilityLabel}.`,
           musclePattern: MUSCLE_PATTERNS.shoulder,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.shoulder,
           objectiveAssessments: f4.suggestedNext,
@@ -4291,7 +4290,6 @@ function buildFindings(lm, view, m) {
         add({
           region: "Pelvis",
           findingName: f10.finding,
-          plain: f10.finding,
           severity: sevMap[f10.severityCode] || "low",
           confidenceScore: f10.confidence,
           clinicalSignificance: f10.severityCode >= 3 ? "high" : "moderate",
@@ -4324,7 +4322,6 @@ function buildFindings(lm, view, m) {
         add({
           region: "Pelvis",
           findingName: f11.finding,
-          plain: f11.finding,
           severity: sevMap[f11.severityCode] || "low",
           confidenceScore: f11.confidence,
           clinicalSignificance: f11.severityCode >= 3 ? "high" : "moderate",
@@ -4408,11 +4405,10 @@ function buildFindings(lm, view, m) {
         add({
           region: "Thoracic",
           findingName: f7.finding,
-          plain: f7.finding,
           severity: sevMap[f7.severityCode] || "mild",
           confidenceScore: f7.confidence,
           clinicalSignificance: f7.severityCode >= 3 ? "high" : "moderate",
-          interpretation: `${f7.finding} ${f7.functionalRelevance||""} Reliability: ${f7.reliabilityLabel}.`,
+          interpretation: `${f7.clinicalCorrelation} ${f7.functionalRelevance||""} Reliability: ${f7.reliabilityLabel}.`,
           musclePattern: MUSCLE_PATTERNS.trunkShift,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.trunkShift,
           objectiveAssessments: f7.suggestedNext,
@@ -7731,8 +7727,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             {isClinicianVerified?'✅ Clinician Verified Analysis':'🤖 AI Estimated Analysis'}
           </div>
 
-          {/* Kendall Postural Type — only show for lateral (sagittal) views */}
-          {measurements?._kendall&&(view==="left"||view==="right")&&(
+          {/* Kendall Postural Type */}
+          {measurements?._kendall&&(
             <div style={{marginBottom:14,padding:"12px 14px",borderRadius:12,
               background:`${measurements._kendall.colour}12`,
               border:`1.5px solid ${measurements._kendall.colour}40`}}>
@@ -11379,114 +11375,46 @@ function QuickNotesWidget({ d, patient, onSaveField, C }) {
 
 // ─── PATIENT PROFILE MODAL ─────────────────────────────────────────────────────
 
-// ROM key → human readable label
+// ROM key → {label, normal}
 const ROM_LABEL_MAP = {
-  "rom_cflex":"Cervical Flexion","rom_cext":"Cervical Extension","rom_clatl":"Cervical Lat Flex L","rom_clatr":"Cervical Lat Flex R","rom_crotl":"Cervical Rotation L","rom_crotr":"Cervical Rotation R",
-  "rom_thflex":"Thoracic Flexion","rom_thext":"Thoracic Extension","rom_throtl":"Thoracic Rotation L","rom_throtr":"Thoracic Rotation R",
-  "rom_lflex":"Lumbar Flexion","rom_lext":"Lumbar Extension","rom_llfl":"Lumbar Lat Flex L","rom_llfr":"Lumbar Lat Flex R","rom_lrotl":"Lumbar Rotation L","rom_lrotr":"Lumbar Rotation R",
-  "rom_sflex":"Shoulder Flexion","rom_sext":"Shoulder Extension","rom_sabd":"Shoulder Abduction","rom_sadd":"Shoulder Adduction","rom_ser":"Shoulder ER","rom_sir":"Shoulder IR","rom_shabd":"Shoulder H.Abd","rom_shadd":"Shoulder H.Add",
-  "rom_eflex":"Elbow Flexion","rom_eext":"Elbow Extension","rom_esup":"Supination","rom_epro":"Pronation",
-  "rom_wflex":"Wrist Flexion","rom_wext":"Wrist Extension","rom_wrad":"Radial Dev","rom_wuln":"Ulnar Dev",
-  "rom_hflex":"Hip Flexion","rom_hext":"Hip Extension","rom_habd":"Hip Abduction","rom_hadd":"Hip Adduction","rom_her":"Hip ER","rom_hir":"Hip IR",
-  "rom_kflex":"Knee Flexion","rom_kext":"Knee Extension",
-  "rom_adf":"Dorsiflexion","rom_apf":"Plantarflexion","rom_ainv":"Inversion","rom_aev":"Eversion",
-  "rom_topen":"Mouth Opening","rom_tlatl":"TMJ Lat Dev L","rom_tlatr":"TMJ Lat Dev R","rom_tpro":"Protrusion",
-};
-
-// ROM key → normal value (°)
-const ROM_NORMAL_MAP = {
-  "rom_cflex":45,"rom_cext":45,"rom_clatl":45,"rom_clatr":45,"rom_crotl":60,"rom_crotr":60,
-  "rom_thflex":50,"rom_thext":25,"rom_throtl":35,"rom_throtr":35,
-  "rom_lflex":60,"rom_lext":25,"rom_llfl":25,"rom_llfr":25,"rom_lrotl":5,"rom_lrotr":5,
-  "rom_sflex":180,"rom_sext":60,"rom_sabd":180,"rom_sadd":30,"rom_ser":90,"rom_sir":70,"rom_shabd":45,"rom_shadd":135,
-  "rom_eflex":145,"rom_eext":0,"rom_esup":90,"rom_epro":90,
-  "rom_wflex":80,"rom_wext":70,"rom_wrad":20,"rom_wuln":30,
-  "rom_hflex":120,"rom_hext":20,"rom_habd":45,"rom_hadd":30,"rom_her":45,"rom_hir":45,
-  "rom_kflex":140,"rom_kext":0,
-  "rom_adf":20,"rom_apf":50,"rom_ainv":35,"rom_aev":15,
-  "rom_topen":45,"rom_tlatl":10,"rom_tlatr":10,"rom_tpro":8,
+  "rom_cflex":{l:"Cervical Flexion",n:45},"rom_cext":{l:"Cervical Extension",n:45},
+  "rom_clatl":{l:"Cervical Lat Flex L",n:45},"rom_clatr":{l:"Cervical Lat Flex R",n:45},
+  "rom_crotl":{l:"Cervical Rotation L",n:60},"rom_crotr":{l:"Cervical Rotation R",n:60},
+  "rom_thflex":{l:"Thoracic Flexion",n:50},"rom_thext":{l:"Thoracic Extension",n:25},
+  "rom_throtl":{l:"Thoracic Rotation L",n:35},"rom_throtr":{l:"Thoracic Rotation R",n:35},
+  "rom_lflex":{l:"Lumbar Flexion",n:60},"rom_lext":{l:"Lumbar Extension",n:25},
+  "rom_llfl":{l:"Lumbar Lat Flex L",n:25},"rom_llfr":{l:"Lumbar Lat Flex R",n:25},
+  "rom_lrotl":{l:"Lumbar Rotation L",n:5},"rom_lrotr":{l:"Lumbar Rotation R",n:5},
+  "rom_sflex":{l:"Shoulder Flexion",n:180},"rom_sext":{l:"Shoulder Extension",n:60},
+  "rom_sabd":{l:"Shoulder Abduction",n:180},"rom_sadd":{l:"Shoulder Adduction",n:30},
+  "rom_ser":{l:"Shoulder ER",n:90},"rom_sir":{l:"Shoulder IR",n:70},
+  "rom_eflex":{l:"Elbow Flexion",n:145},"rom_eext":{l:"Elbow Extension",n:0},
+  "rom_esup":{l:"Supination",n:90},"rom_epro":{l:"Pronation",n:90},
+  "rom_wflex":{l:"Wrist Flexion",n:80},"rom_wext":{l:"Wrist Extension",n:70},
+  "rom_wrad":{l:"Radial Deviation",n:20},"rom_wuln":{l:"Ulnar Deviation",n:30},
+  "rom_hflex":{l:"Hip Flexion",n:120},"rom_hext":{l:"Hip Extension",n:20},
+  "rom_habd":{l:"Hip Abduction",n:45},"rom_hadd":{l:"Hip Adduction",n:30},
+  "rom_her":{l:"Hip ER",n:45},"rom_hir":{l:"Hip IR",n:45},
+  "rom_kflex":{l:"Knee Flexion",n:140},"rom_kext":{l:"Knee Extension",n:0},
+  "rom_adf":{l:"Dorsiflexion",n:20},"rom_apf":{l:"Plantarflexion",n:50},
+  "rom_ainv":{l:"Inversion",n:35},"rom_aev":{l:"Eversion",n:15},
+  "rom_topen":{l:"Mouth Opening",n:45},
 };
 // MMT key → muscle name
 const MMT_LABEL_MAP = {
-  // ── auto-generated from PhysioNeuro.jsx MMT_DATA ──
-  "mmt_scm":"SCM",
-  "mmt_dnf":"Deep Neck Flexors",
-  "mmt_trap_u":"Upper Trapezius",
-  "mmt_levsc":"Levator Scapulae",
-  "mmt_scalenes":"Scalenes",
-  "mmt_deltA":"Deltoid — Anterior",
-  "mmt_deltM":"Deltoid — Middle",
-  "mmt_deltP":"Deltoid — Posterior",
-  "mmt_supra":"Supraspinatus",
-  "mmt_infra":"Infraspinatus",
-  "mmt_subscap":"Subscapularis",
-  "mmt_tmin":"Teres Minor",
-  "mmt_tmaj":"Teres Major",
-  "mmt_lat":"Lat Dorsi",
-  "mmt_pec_maj_c":"Pec Major (Clav)",
-  "mmt_pec_maj_s":"Pec Major (Stern)",
-  "mmt_pec_min":"Pec Minor",
-  "mmt_serrant":"Serratus Anterior",
-  "mmt_trap_m":"Middle Trapezius",
-  "mmt_trap_l":"Lower Trapezius",
-  "mmt_rhomb":"Rhomboids (Maj + Min)",
-  "mmt_corbrach":"Coracobrachialis",
-  "mmt_bicep":"Biceps Brachii",
-  "mmt_brach":"Brachialis",
-  "mmt_brachio":"Brachioradialis",
-  "mmt_tricep":"Triceps Brachii",
-  "mmt_supinator":"Supinator",
-  "mmt_pt":"Pronator Teres",
-  "mmt_pq":"Pronator Quadratus",
-  "mmt_ecrb":"ECRL + ECRB",
-  "mmt_ecul":"Extensor Carpi Ulnaris",
-  "mmt_fcr":"Flexor Carpi Radialis",
-  "mmt_fcu":"Flexor Carpi Ulnaris",
-  "mmt_fdp":"FDP",
-  "mmt_fds":"FDS",
-  "mmt_edc":"EDC",
-  "mmt_lumb":"Lumbricals",
-  "mmt_interos":"Interossei",
-  "mmt_apbrev":"Abd Pollicis Brevis",
-  "mmt_adpoll":"Add Pollicis",
-  "mmt_fpoll":"FPL (FPL)",
-  "mmt_epi":"EPL + EPB",
-  "mmt_rflex":"Rectus Abdominis",
-  "mmt_oblique":"Obliques",
-  "mmt_ta":"Tibialis Anterior",
-  "mmt_multif":"Multifidus",
-  "mmt_es":"Erector Spinae",
-  "mmt_ql":"Quadratus Lumborum",
-  "mmt_iliop":"Iliopsoas",
-  "mmt_gmax":"Gluteus Maximus",
-  "mmt_gmed":"Gluteus Medius",
-  "mmt_gmin":"Gluteus Minimus",
-  "mmt_tfl":"TFL",
-  "mmt_adduc":"Hip Adductors",
-  "mmt_hamstr":"Hamstrings",
-  "mmt_pirif":"Piriformis",
-  "mmt_rectfem":"Rectus Femoris",
-  "mmt_quad":"Quadriceps",
-  "mmt_gastroc":"Gastrocnemius",
-  "mmt_poplit":"Popliteus",
-  "mmt_soleus":"Soleus",
-  "mmt_tp":"Tibialis Posterior",
-  "mmt_peronls":"Peroneals (Longus + Brevis)",
-  "mmt_ehl":"EHL",
-  "mmt_edl":"EDL + Pero Tertius",
-  "mmt_fdl":"FDL + FHL (toe flexors)",
-  "mmt_abdhal":"Abductor Hallucis",
-  "mmt_masseter":"Masseter",
-  "mmt_temporalis":"Temporalis",
-  "mmt_lat_pter":"Lateral Pterygoid",
-  "mmt_diaphragm":"Diaphragm",
-  "mmt_intercost":"Intercostals (External + Inter",
-  // Legacy / alternate keys
-  "mmt_glmax":"Gluteus Maximus","mmt_glmed":"Gluteus Medius","mmt_glmin":"Gluteus Minimus",
-  "mmt_adduct":"Hip Adductors","mmt_quads":"Quadriceps","mmt_hams":"Hamstrings",
-  "mmt_erect":"Erector Spinae","mmt_transab":"Transversus Abdominis",
-  "mmt_rectab":"Rectus Abdominis","mmt_obliq":"Obliques","mmt_pero":"Peroneals",
-  "mmt_soleus":"Soleus","mmt_dnf_l":"Deep Neck Flexors",
+  "mmt_scm":"SCM","mmt_dnf":"Deep Neck Flexors","mmt_trap_u":"Upper Trapezius","mmt_trap_m":"Mid Trapezius","mmt_trap_l":"Lower Trapezius",
+  "mmt_levsc":"Levator Scapulae","mmt_scalenes":"Scalenes","mmt_rhomb":"Rhomboids",
+  "mmt_deltA":"Ant Deltoid","mmt_deltM":"Mid Deltoid","mmt_deltP":"Post Deltoid",
+  "mmt_supra":"Supraspinatus","mmt_infra":"Infraspinatus","mmt_subscap":"Subscapularis","mmt_tmin":"Teres Minor","mmt_tmaj":"Teres Major",
+  "mmt_lat":"Lat Dorsi","mmt_pec_maj_c":"Pec Major (clav)","mmt_pec_maj_s":"Pec Major (stern)","mmt_pec_min":"Pec Minor","mmt_serrant":"Serratus Anterior",
+  "mmt_bicep":"Biceps","mmt_tricep":"Triceps","mmt_brach":"Brachialis","mmt_brachio":"Brachioradialis",
+  "mmt_corbrach":"Coracobrachialis","mmt_supinator":"Supinator","mmt_pt":"Pronator Teres",
+  "mmt_glmax":"Glute Max","mmt_glmed":"Glute Med","mmt_glmin":"Glute Min","mmt_tfl":"TFL",
+  "mmt_iliop":"Iliopsoas","mmt_rectfem":"Rectus Femoris","mmt_hams":"Hamstrings",
+  "mmt_quads":"Quadriceps","mmt_adduct":"Adductors","mmt_ta":"Tibialis Anterior",
+  "mmt_gastroc":"Gastrocnemius","mmt_soleus":"Soleus","mmt_pero":"Peroneals",
+  "mmt_multif":"Multifidus","mmt_erect":"Erector Spinae","mmt_transab":"Transversus Abdominis",
+  "mmt_rectab":"Rectus Abdominis","mmt_obliq":"Obliques",
 };
 
 function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav }) {
@@ -12209,8 +12137,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     border:`1px solid ${C.border}`,transition:"box-shadow 0.15s"}}
                   onMouseEnter={e=>e.currentTarget.style.boxShadow="0 3px 12px rgba(124,58,237,0.12)"}
                   onMouseLeave={e=>e.currentTarget.style.boxShadow="0 1px 6px rgba(0,0,0,0.05)"}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasData?12:0}}>
-                    <span style={{fontSize:13,fontWeight:800,color:C.text,letterSpacing:"-0.2px"}}>{icon} {title}</span>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasData?10:0}}>
+                    <span style={{fontSize:12,fontWeight:800,color:C.text}}>{icon} {title}</span>
                     <span style={{fontSize:11,color:C.primary,fontWeight:700}}>
                       {hasData?"Open →":"Add →"}
                     </span>
@@ -12226,7 +12154,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               const romKeys = Object.keys(d).filter(k=>k.startsWith("rom_")&&k!=="rom_snapshots"&&d[k]);
               const mmtKeys = Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]&&!k.endsWith("_pain")&&!k.endsWith("_ef"));
               const stKeys  = Object.keys(d).filter(k=>k.startsWith("st_")&&d[k]);
-              const neuroKeys = Object.keys(d).filter(k=>(k.startsWith("n_ref_")||k.startsWith("n_der_")||k.startsWith("n_myot_")||k.startsWith("n_c")||k.startsWith("n_l")||k.startsWith("n_s")||k.startsWith("n_t")||k.startsWith("myo_"))&&d[k]&&d[k]!=""&&d[k]!="Not assessed");
+              const neuroKeys = Object.keys(d).filter(k=>(k.startsWith("n_ref_")||k.startsWith("n_der_")||k.startsWith("n_myot_"))&&d[k]);
               const kcKeys  = Object.keys(d).filter(k=>k.startsWith("kc_")&&d[k]);
               const faKeys  = Object.keys(d).filter(k=>k.startsWith("fa_")&&d[k]);
               const cyKeys  = Object.keys(d).filter(k=>k.startsWith("cy_")&&d[k]);
@@ -12242,17 +12170,18 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))",gap:8}}>
                       {romKeys.filter(k=>!k.endsWith("_pain")&&!k.endsWith("_ef")).slice(0,8).map(k=>{
                         const val=parseFloat(d[k])||0;
-                        // Strip _arom/_prom/_[LR] suffixes to get base key
-                        const baseKey=k.replace(/_[LR](?:_arom|_prom)?$/,"").replace(/_(arom|prom|active|passive)$/,"").replace(/_[LR]$/,"");
-                        const side=/_[Rr](?:_|$)/.test(k)||k.endsWith("_R")?" (R)":/_[Ll](?:_|$)/.test(k)||k.endsWith("_L")?" (L)":"";
-                        const label=(ROM_LABEL_MAP[baseKey]||baseKey.replace(/^rom_/,"").replace(/_/g," "))+side;
-                        const normalVal=ROM_NORMAL_MAP[baseKey]||null;
-                        const col=val>0?"#7c3aed":"#D1D5DB";
+                        // Build readable label: lookup base key, add side if bilateral
+                        const baseKey=k.replace(/_left|_right/,"").replace(/_active|_passive/,"");
+                        const side=k.includes("_left")?" (L)":k.includes("_right")?" (R)":"";
+                        const mode=k.includes("_passive")?" passive":"";
+                        const entry=ROM_LABEL_MAP[baseKey];
+                        const labelText=(entry?entry.l:baseKey.replace(/^rom_/,"").replace(/_/g," "))+side+mode;
+                        const normalVal=entry?entry.n:null;
+                        const col=val>=0?"#7c3aed":"#D1D5DB";
                         return(
-                          <div key={k} style={{background:"#FAFAFA",borderRadius:12,padding:"10px 8px",textAlign:"center",border:`1.5px solid ${col}20`,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
-                            <div style={{fontSize:8.5,color:"#6B7280",marginBottom:4,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2,letterSpacing:"0.2px"}}>{label}</div>
-                            <div style={{fontSize:22,fontWeight:900,color:col,lineHeight:1,letterSpacing:"-0.5px"}}>{d[k]}<span style={{fontSize:9,color:C.muted,fontWeight:600}}>°</span></div>
-                            {normalVal&&<div style={{fontSize:8,color:"#9CA3AF",marginTop:2,fontWeight:600}}>norm {normalVal}°</div>}
+                          <div key={k} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
+                            <div style={{fontSize:8.5,color:C.muted,marginBottom:3,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2}}>{labelText}</div>
+                            <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>{d[k]}<span style={{fontSize:9,color:C.muted}}>°{normalVal&&<span style={{fontSize:8,color:C.muted}}>/{normalVal}</span>}</span></div>
                           </div>
                         );
                       })}
@@ -12263,168 +12192,84 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {/* ── MMT ── */}
                   <Sec icon="💪" title="Manual Muscle Testing" navKey="mmt" hasData={mmtKeys.length>0}>
                     {(()=>{
-                      // Keys: mmt_ta_L / mmt_ta_R (uppercase) OR mmt_ta (no side)
-                      const gradeCol=(g)=>{const n=parseFloat(g)||0;return n>=5?"#059669":n>=4?"#0891b2":n>=3?"#D97706":"#DC2626";};
-                      const gradeLabel=(g)=>{const n=parseFloat(g)||0;return n>=5?"Normal":n>=4?"Good":n>=3?"Fair":"Weak";};
-                      const paired={};
+                      // Pair L and R for each muscle
+                      const seen=new Set(), rows=[];
                       mmtKeys.forEach(k=>{
-                        // Handle _L/_R uppercase (primary format) and _left/_right fallback
-                        const suf=k.endsWith("_R")?"R":k.endsWith("_L")?"L":k.endsWith("_right")?"R":k.endsWith("_left")?"L":null;
-                        const base=suf?(k.endsWith("_R")||k.endsWith("_L")?k.slice(0,-2):k.replace(/_right$|_left$/,"")):k;
-                        if(!paired[base]) paired[base]={};
-                        if(suf) paired[base][suf]=d[k];
-                        else paired[base].single=d[k];
+                        const base=k.replace(/_left|_right/,"");
+                        if(seen.has(base)) return; seen.add(base);
+                        const lKey=base+"_left", rKey=base+"_right";
+                        const lGrade=d[lKey]||d[base]; const rGrade=d[rKey];
+                        const muscle=MMT_LABEL_MAP[base]||base.replace("mmt_","").replace(/_/g," ");
+                        rows.push({base,muscle,lGrade,rGrade});
                       });
-                      const entries=Object.entries(paired).slice(0,8);
+                      const gradeCol=g=>{const n=parseFloat(g)||0;return n>=5?C.green:n>=4?C.orange:n>=3?"#f59e0b":"#dc2626";};
                       return(
-                        <div style={{display:"flex",flexDirection:"column",gap:7}}>
-                          {entries.map(([base,sides])=>{
-                            // Robust lookup: try base key, then with mmt_ prefix variations
-                            const muscleName=MMT_LABEL_MAP[base]||MMT_LABEL_MAP["mmt_"+base.replace(/^mmt_/,"")]||base.replace(/^mmt_/,"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
-                            const hasR=sides.R!=null,hasL=sides.L!=null,hasSingle=sides.single!=null;
-                            const dominantGrade=sides.R||sides.L||sides.single||"";
-                            const col=gradeCol(dominantGrade);
-                            return(
-                              <div key={base} style={{background:"#FAFAFA",borderRadius:12,padding:"10px 14px",border:`1.5px solid ${col}25`,display:"flex",alignItems:"center",gap:10}}>
-                                <div style={{width:3,height:36,borderRadius:2,background:col,flexShrink:0}}/>
-                                <div style={{flex:1,minWidth:0}}>
-                                  <div style={{fontSize:12,fontWeight:800,color:C.text,letterSpacing:"-0.2px"}}>{muscleName}</div>
-                                  <div style={{fontSize:9.5,color:col,fontWeight:700,marginTop:1}}>{gradeLabel(dominantGrade)}</div>
-                                </div>
-                                <div style={{display:"flex",gap:8,flexShrink:0,alignItems:"center"}}>
-                                  {hasSingle&&(
-                                    <div style={{textAlign:"center"}}>
-                                      <div style={{fontSize:22,fontWeight:900,color:col,lineHeight:1}}>{sides.single}</div>
-                                      <div style={{fontSize:8,color:C.muted,fontWeight:600}}>/5</div>
-                                    </div>
-                                  )}
-                                  {hasR&&(
-                                    <div style={{textAlign:"center",background:`${col}12`,borderRadius:8,padding:"4px 8px",minWidth:36}}>
-                                      <div style={{fontSize:8,color:col,fontWeight:800,marginBottom:1}}>R</div>
-                                      <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>{sides.R}</div>
-                                      <div style={{fontSize:7,color:C.muted,fontWeight:600}}>/5</div>
-                                    </div>
-                                  )}
-                                  {hasL&&(
-                                    <div style={{textAlign:"center",background:`${gradeCol(sides.L)}12`,borderRadius:8,padding:"4px 8px",minWidth:36}}>
-                                      <div style={{fontSize:8,color:gradeCol(sides.L),fontWeight:800,marginBottom:1}}>L</div>
-                                      <div style={{fontSize:20,fontWeight:900,color:gradeCol(sides.L),lineHeight:1}}>{sides.L}</div>
-                                      <div style={{fontSize:7,color:C.muted,fontWeight:600}}>/5</div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
+                        <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 70px 70px",gap:4,padding:"4px 8px",marginBottom:2}}>
+                            <div style={{fontSize:10,color:C.muted,fontWeight:600}}>Muscle</div>
+                            <div style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center"}}>Left</div>
+                            <div style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center"}}>Right</div>
+                          </div>
+                          {rows.slice(0,8).map((r,i)=>(
+                            <div key={r.base} style={{display:"grid",gridTemplateColumns:"1fr 70px 70px",gap:4,padding:"6px 8px",background:i%2===0?"#F9FAFB":"#fff",borderRadius:6}}>
+                              <div style={{fontSize:11,fontWeight:600,color:C.text,alignSelf:"center"}}>{r.muscle}</div>
+                              <div style={{textAlign:"center"}}>{r.lGrade&&<span style={{fontSize:14,fontWeight:800,color:gradeCol(r.lGrade)}}>{r.lGrade}<span style={{fontSize:9,color:C.muted}}>/5</span></span>}</div>
+                              <div style={{textAlign:"center"}}>{r.rGrade&&<span style={{fontSize:14,fontWeight:800,color:gradeCol(r.rGrade)}}>{r.rGrade}<span style={{fontSize:9,color:C.muted}}>/5</span></span>}</div>
+                            </div>
+                          ))}
+                          {rows.length>8&&<div style={{fontSize:10,color:C.muted,padding:"4px 8px"}}>+{rows.length-8} more muscles</div>}
                         </div>
                       );
                     })()}
-                    {mmtKeys.length>8&&<div style={{marginTop:8,fontSize:11,color:C.muted,textAlign:"center",fontWeight:600}}>+{mmtKeys.length-8} more muscles — tap to view all</div>}
                   </Sec>
 
                   {/* ── Special Tests ── */}
                   <Sec icon="🔬" title="Special Tests" navKey="special" hasData={stKeys.length>0}>
-                    {(()=>{
-                      const ST_NAMES={
-                        st_spurling:"Spurling's",st_jacksons:"Jackson's",st_distraction:"Distraction",
-                        st_slump_test:"Slump",st_slr_test:"SLR",st_faber_test:"FABER",st_fadir_test:"FADIR",
-                        st_lachmans:"Lachman's",st_anterior_drawer:"Ant Drawer",st_posterior_drawer:"Post Drawer",
-                        st_mcmurray_test:"McMurray's",st_thessaly:"Thessaly",st_apley:"Apley's",
-                        st_hawkins:"Hawkins-Kennedy",st_neer:"Neer's",st_empty_can:"Empty Can",st_full_can:"Full Can",
-                        st_obrien:"O'Brien's",st_speeds:"Speed's",st_yergason:"Yergason's",
-                        st_apprehension:"Apprehension",st_relocation:"Relocation",st_sulcus:"Sulcus Sign",
-                        st_ober_test:"Ober's",st_thomas_test:"Thomas",st_trendelenburg:"Trendelenburg",
-                        st_clarkes:"Clarke's",st_patellar_grind:"Patellar Grind",st_noble:"Noble's",
-                        st_valgus_stress:"Valgus Stress",st_varus_stress:"Varus Stress",
-                        st_talar_tilt:"Talar Tilt",st_anterior_drawer_ankle:"Ant Drawer (Ankle)",
-                        st_phalen:"Phalen's",st_tinel_wrist:"Tinel's (Wrist)",st_tinel_ankle:"Tinel's (Ankle)",
-                        st_finkelstein:"Finkelstein's",st_grind_test:"Grind",
-                        st_thompsons:"Thompson's",st_ottawa_ankle:"Ottawa Ankle",st_ottawa_knee:"Ottawa Knee",
-                        st_vbi_test:"VBI Test",st_sharp_purser:"Sharp-Purser",
-                        st_shoulder_abduction:"Sh Abd Relief",st_cervical_rotation:"Cx Rot",
-                        st_cross_arm:"Cross-Arm",st_empty_can_left:"Empty Can (L)",st_empty_can_right:"Empty Can (R)",
-                        st_lift_off:"Lift-Off",st_bear_hug:"Bear Hug",st_belly_press:"Belly Press",
-                        st_effusion:"Effusion",st_patellar_tap:"Patellar Tap",
-                      };
-                      const stName=(k)=>{
-                        // strip side suffix for lookup
-                        const base=k.replace(/_left$|_right$/,"");
-                        const side=k.endsWith("_left")?" L":k.endsWith("_right")?" R":"";
-                        return (ST_NAMES[base]||ST_NAMES[k]||k.replace("st_","").replace(/_/g," ").replace(/\w/g,c=>c.toUpperCase()))+side;
-                      };
-                      return(
-                        <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                          {stKeys.slice(0,12).map(k=>{
-                            const val=d[k];
-                            const isPos=val==="Positive"||val==="Positive (Symptomatic)";
-                            const isNeg=val==="Negative"||val==="Negative (Asymptomatic)";
-                            return(
-                              <span key={k} style={{padding:"5px 11px",borderRadius:20,fontSize:11,fontWeight:700,lineHeight:1.3,
-                                background:isPos?"#FEF2F2":isNeg?"#ECFDF5":"#F3F4F6",
-                                color:isPos?"#dc2626":isNeg?C.green:C.muted,
-                                border:`1px solid ${isPos?"#FCA5A5":isNeg?"#BBF7D0":C.border}`}}>
-                                {stName(k)}
-                                <span style={{fontSize:10,fontWeight:800,marginLeft:4}}>{isPos?"＋":isNeg?"－":val?.slice?.(0,3)||""}</span>
-                              </span>
-                            );
-                          })}
-                          {stKeys.length>12&&<span style={{padding:"5px 10px",borderRadius:20,fontSize:11,color:C.muted,background:"#F3F4F6",border:`1px solid ${C.border}`}}>+{stKeys.length-12} more</span>}
-                        </div>
-                      );
-                    })()}
+                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                      {stKeys.slice(0,10).map(k=>{
+                        const raw=d[k]||"";
+                        const isPos=raw.includes("Positive"); const isNeg=raw.includes("Negative");
+                        // Clean key: st_neer_left → "Neer's Test (L)"
+                        const side=k.includes("_left")?" (L)":k.includes("_right")?" (R)":"";
+                        const testName=k.replace(/^st_/,"").replace(/_left|_right/,"").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())+side;
+                        // Extract result text (before the " — " detail)
+                        const resultText=raw.split(" — ")[0].split(" (")[0];
+                        const detail=raw.includes(" — ")?raw.split(" — ")[1]:"";
+                        return(
+                          <div key={k} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 8px",borderRadius:8,background:isPos?"#FEF2F2":isNeg?"#ECFDF5":"#F9FAFB"}}>
+                            <div style={{flex:1}}>
+                              <span style={{fontSize:11.5,fontWeight:700,color:C.text}}>{testName}</span>
+                              {detail&&<span style={{fontSize:10,color:C.muted,marginLeft:4}}>— {detail.slice(0,60)}{detail.length>60?"…":""}</span>}
+                            </div>
+                            <span style={{fontSize:11,fontWeight:800,color:isPos?"#dc2626":isNeg?C.green:C.muted,flexShrink:0,padding:"2px 8px",borderRadius:10,background:isPos?"rgba(220,38,38,0.1)":isNeg?"rgba(5,150,105,0.1)":"transparent"}}>{resultText}</span>
+                          </div>
+                        );
+                      })}
+                      {stKeys.length>10&&<div style={{fontSize:10,color:C.muted,padding:"2px 8px"}}>+{stKeys.length-10} more tests</div>}
+                    </div>
                   </Sec>
 
                   {/* ── Neurological ── */}
                   <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes}>
                     {(()=>{
-                      const neuroName=(k)=>{
-                        const NEURO_NAMES={
-                          n_c3:"C3 Sensory",n_c4:"C4 Sensory",n_c5:"C5 Sensory",n_c6:"C6 Sensory",
-                          n_c7:"C7 Sensory",n_c8:"C8 Sensory",n_t1:"T1 Sensory",
-                          n_l1:"L1 Sensory",n_l2:"L2 Sensory",n_l3:"L3 Sensory",n_l4:"L4 Sensory",
-                          n_l5:"L5 Sensory",n_s1:"S1 Sensory",n_s2:"S2 Sensory",n_s3:"S3 Sensory",n_s4s5:"S4/S5",
-                          n_ref_bicep:"Biceps Reflex",n_ref_brad:"Brachioradialis Reflex",n_ref_tricep:"Triceps Reflex",
-                          n_ref_patella:"Patella Reflex",n_ref_achilles:"Achilles Reflex",
-                          n_ref_babinski:"Babinski Sign",n_ref_hoffmann:"Hoffmann's Sign",
-                          n_ref_clonus_ankle:"Ankle Clonus",n_ref_jaw:"Jaw Jerk",
-                          myo_c5:"C5 Strength",myo_c6:"C6 Strength",myo_c7:"C7 Strength",
-                          myo_c8:"C8 Strength",myo_t1:"T1 Strength",
-                          myo_l3:"L3 Strength",myo_l4:"L4 Strength",myo_l5:"L5 Strength",
-                          myo_s1:"S1 Strength",myo_s2:"S2 Strength",
-                        };
-                        const side=k.endsWith("_left")?" L":k.endsWith("_right")?" R":"";
-                        const base=k.replace(/_left$|_right$/,"");
-                        return (NEURO_NAMES[base]||base.replace(/^(n_ref_|n_der_|n_myot_|myo_|n_)/,"").replace(/_/g," ").replace(/\w/g,c=>c.toUpperCase()))+side;
-                      };
-                      const neuroAbn=(k,v)=>v&&(v.includes("Positive")||v.includes("Absent")||v.includes("Reduced")||v.includes("Brisk")||v.includes("Clonus")||v.includes("Hyperaestheti"));
-                      const neuroNorm=(k,v)=>v&&(v.includes("Normal")||v.includes("Intact")||v.startsWith("5"));
-                      const positives=neuroKeys.filter(k=>neuroAbn(k,d[k]));
-                      const display=positives.length>0?positives:neuroKeys.filter(k=>!neuroNorm(k,d[k])&&d[k]).concat(neuroKeys.filter(k=>neuroNorm(k,d[k])&&d[k]));
-                      const shown=display.slice(0,10);
+                      const positives=neuroKeys.filter(k=>d[k]&&(d[k].includes("Positive")||d[k].includes("Absent")||d[k].includes("Reduced")));
+                      const abnormal=neuroKeys.filter(k=>d[k]&&!d[k].includes("Normal")&&!d[k].includes("Intact"));
+                      const display=positives.length>0?positives:abnormal.length>0?abnormal:neuroKeys;
                       return(
                         <div>
                           <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:d.neuro_clinician_notes?8:0}}>
-                            {shown.map(k=>{
-                              const val=d[k];
-                              const isAbn=neuroAbn(k,val);
-                              const isNorm=neuroNorm(k,val);
-                              return(
-                                <span key={k} style={{padding:"5px 11px",borderRadius:20,fontSize:11,fontWeight:700,lineHeight:1.3,
-                                  background:isAbn?"#FEF2F2":isNorm?"#ECFDF5":"#F0F9FF",
-                                  color:isAbn?"#DC2626":isNorm?"#059669":"#0891b2",
-                                  border:`1px solid ${isAbn?"#FCA5A5":isNorm?"#BBF7D0":"#BAE6FD"}`}}>
-                                  {neuroName(k)}
-                                  <span style={{fontSize:9.5,fontWeight:800,marginLeft:5,opacity:0.85}}>
-                                    {isAbn?"⚠":isNorm?"✓":""} {val?.length>15?val.slice(0,12)+"…":val}
-                                  </span>
-                                </span>
-                              );
+                            {display.slice(0,8).map(k=>{
+                              const val=d[k],isAbn=val&&(val.includes("Positive")||val.includes("Absent")||val.includes("Reduced"));
+                              return <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,
+                                background:isAbn?"#FEF2F2":"#ECFDF5",color:isAbn?"#dc2626":C.green,
+                                border:`1px solid ${isAbn?"#FCA5A5":"#BBF7D0"}`}}>
+                                {k.replace(/^(n_ref_|n_der_|n_myot_)/,"").replace(/_/g," ")}: {val}
+                              </span>;
                             })}
-                            {display.length>10&&<span style={{padding:"5px 10px",borderRadius:20,fontSize:11,color:C.muted,background:"#F3F4F6",border:`1px solid ${C.border}`,fontWeight:600}}>+{display.length-10} more</span>}
                           </div>
                           {d.neuro_clinician_notes&&(
-                            <div style={{fontSize:11.5,color:C.text,lineHeight:1.6,padding:"9px 12px",background:"#F8F9FF",borderRadius:10,borderLeft:"3px solid #6D28D9",marginTop:2}}>
-                              {d.neuro_clinician_notes.slice(0,150)}{d.neuro_clinician_notes.length>150?"…":""}
+                            <div style={{fontSize:11,color:C.text,lineHeight:1.5,padding:"7px 10px",background:"#F9FAFB",borderRadius:8}}>
+                              {d.neuro_clinician_notes.slice(0,120)}{d.neuro_clinician_notes.length>120?"…":""}
                             </div>
                           )}
                         </div>
@@ -15350,7 +15195,6 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
           </div>
         </div>
       </div>
-
     </div>
   );
 }
@@ -15361,26 +15205,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
 
 
 function PostureSessionsView({ d, C, onNav }) {
-  // Vanilla JS lightbox — bypasses all React stacking contexts
-  const openLightbox = (src) => {
-    if (!src) return;
-    const existing = document.getElementById("__physio_lb");
-    if (existing) existing.remove();
-    const el = document.createElement("div");
-    el.id = "__physio_lb";
-    el.style.cssText = "position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;cursor:zoom-out;font-family:sans-serif;";
-    const img = document.createElement("img");
-    img.src = src;
-    img.style.cssText = "max-width:96vw;max-height:93vh;object-fit:contain;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,0.6);";
-    const btn = document.createElement("div");
-    btn.innerHTML = "✕";
-    btn.style.cssText = "position:absolute;top:16px;right:18px;color:#fff;font-size:26px;cursor:pointer;background:rgba(255,255,255,0.18);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-weight:700;";
-    btn.onclick = (e) => { e.stopPropagation(); el.remove(); };
-    el.appendChild(img);
-    el.appendChild(btn);
-    el.addEventListener("click", () => el.remove());
-    document.body.appendChild(el);
-  };
+  const [lightboxImg, setLightboxImg] = useState(null);
   let postureSessions = [];
   try { postureSessions = JSON.parse(d.posture_sessions||"[]"); } catch {}
   const defects = Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]);
@@ -15395,7 +15220,15 @@ function PostureSessionsView({ d, C, onNav }) {
   });
   return(
     <div>
-      {/* lightbox now rendered in PatientProfileModal */}
+      {lightboxImg&&(
+        <div onClick={()=>setLightboxImg(null)}
+          style={{position:"fixed",inset:0,zIndex:999,background:"rgba(0,0,0,0.92)",
+            display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
+          <img src={lightboxImg} alt="posture full"
+            style={{maxWidth:"95vw",maxHeight:"90vh",objectFit:"contain",borderRadius:8}}/>
+          <div style={{position:"absolute",top:16,right:16,color:"#fff",fontSize:24,cursor:"pointer"}}>✕</div>
+        </div>
+      )}
       <button onClick={()=>onNav&&onNav("posture")}
         style={{width:"100%",padding:"10px",marginBottom:12,borderRadius:10,
           background:C.primaryBg,border:`1.5px solid ${C.primary}30`,
@@ -15410,14 +15243,7 @@ function PostureSessionsView({ d, C, onNav }) {
             const dt=new Date(ps.capturedAt||ps.time||"");
             const dateStr=isNaN(dt.getTime())?"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
             const timeStr=isNaN(dt.getTime())?"":dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
-            const findingSummary=(ps.findings||[]).sort((a,b)=>{
-              const rank={high:3,moderate:2,mild:1};
-              return (rank[b.severity]||0)-(rank[a.severity]||0);
-            }).slice(0,6).map(f=>{
-              // Prefer specific finding text (has direction/measurement) over vague plain text
-              const raw=f.text||f.findingName||f.plain||f.region||f.label||"";
-              return raw.replace(/^OBSERVATION[^:]*:\s*/i,"").split(".")[0].trim();
-            }).filter(Boolean);
+            const findingSummary=(ps.findings||[]).sort((a,b)=>a.severity==="high"?-1:1).slice(0,6).map(f=>f.plain||f.region||f.title||f.label||"").filter(Boolean);
             const highCount=(ps.findings||[]).filter(f=>f.severity==="high").length;
             const modCount=(ps.findings||[]).filter(f=>f.severity==="moderate"||f.severity==="medium").length;
             const lowCount=(ps.findings||[]).length-highCount-modCount;
@@ -15425,7 +15251,7 @@ function PostureSessionsView({ d, C, onNav }) {
               <div key={i} style={{background:C.white,borderRadius:12,marginBottom:10,
                 boxShadow:"0 1px 6px rgba(0,0,0,0.06)",border:`1px solid ${C.border}`,overflow:"hidden"}}>
                 <div style={{display:"flex",gap:0}}>
-                  <div onClick={()=>openLightbox(ps.img)}
+                  <div onClick={()=>ps.img&&setLightboxImg(ps.img)}
                     style={{width:80,flexShrink:0,cursor:ps.img?"zoom-in":"default",background:"#F3F4F6"}}>
                     {ps.img?(<img src={ps.img} alt="posture" style={{width:80,height:80,objectFit:"cover",display:"block"}}/>):
                     (<div style={{width:80,height:80,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧍</div>)}
