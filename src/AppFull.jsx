@@ -13893,7 +13893,7 @@ function HomeModule({ onNav }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // THERAPIST DASHBOARD MODULE
 // ═══════════════════════════════════════════════════════════════════════════
-function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask, onProfile }) {
+function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask, onProfile, currentUser }) {
   const { useState, useEffect, useMemo, useCallback } = React;
   const [activeTab,   setActiveTab]   = useState("pending");
   const [scheduleTab, setScheduleTab] = useState("all");
@@ -16624,7 +16624,7 @@ function AppInner({ currentUser, onSignOut }) {
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo}/>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} currentUser={currentUser}/>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
                   <SubjectiveModule data={data} set={set} onNav={navTo}/>
