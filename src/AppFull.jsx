@@ -7884,7 +7884,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           </div>
 
           {/* Kendall Postural Type */}
-          {measurements?._kendall&&(
+          {measurements?._kendall&&(view==="left"||view==="right")&&(
             <div style={{marginBottom:14,padding:"12px 14px",borderRadius:12,
               background:`${measurements._kendall.colour}12`,
               border:`1.5px solid ${measurements._kendall.colour}40`}}>
