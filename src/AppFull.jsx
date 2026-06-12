@@ -583,14 +583,13 @@ function UploadedPhotoOverlay({ photoUrl, landmarks, view }) {
 // ─── CanvasOverlayOnImage — draws analysis overlay directly on top of img ─────
 // Fallback approach: instead of baking into canvas (fails on mobile with large images),
 // overlay a transparent canvas positioned absolutely on top of the photo
-function CanvasOverlayOnImage({ photoUrl, landmarks, view, measurements: propMeasurements, manualPlaced, manualPointDefs, manualConnections }) {
+function CanvasOverlayOnImage({ photoUrl, landmarks, view, measurements: propMeasurements, manualPlaced, manualPointDefs, manualConnections, imgId }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     if (!landmarks || !landmarks.length) return;
     const canvas = canvasRef.current;
-    // Find the host image by id OR fall back to first img in parent
-    const imgEl = document.getElementById("posture-upload-img");
+    const imgEl = document.getElementById(imgId || "posture-upload-img");
     if (!canvas || !imgEl) return;
 
     const drawWhenReady = () => {
@@ -7863,6 +7862,26 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       {/* Findings tab */}
       {tab==="findings"&&measurements&&(
         <div style={{padding: isWide?"20px 24px":"14px 16px"}}>
+          {/* Analysed photo preview — manual mode only, shown at top of findings */}
+          {inputMode==="manual"&&manualAnalysed&&(objectUrlRef.current||uploadedImg)&&(
+            <div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:14,border:`1px solid ${PC.border}`}}>
+              <img src={objectUrlRef.current||uploadedImg} alt="Analysed posture"
+                id="findings-posture-img"
+                style={{width:"100%",display:"block"}}/>
+              {landmarks&&(
+                <CanvasOverlayOnImage
+                  photoUrl={objectUrlRef.current||uploadedImg}
+                  landmarks={landmarks}
+                  view={view}
+                  measurements={measurements||undefined}
+                  manualPlaced={manualPlaced}
+                  manualPointDefs={manualPointDefs}
+                  manualConnections={manualConnections}
+                  imgId="findings-posture-img"
+                />
+              )}
+            </div>
+          )}
           {/* Analysis mode badge */}
           <div style={{display:'inline-flex',alignItems:'center',gap:5,padding:'3px 10px',borderRadius:8,
             background:isClinicianVerified?'rgba(5,150,105,0.12)':'rgba(100,100,100,0.1)',
@@ -8887,7 +8906,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 )}
                 <div ref={manualContainerRef} onClick={handleManualImageClick}
                   style={{position:"relative",borderRadius:12,overflow:"hidden",border:`2px solid ${spinalLevelMode?PC.yellow:PC.accent}`,cursor:(nextManualIdx>=0||spinalLevelMode)?"crosshair":"default",marginBottom:10}}>
-                  <img src={objectUrlRef.current||uploadedImg} alt="Tap to place points"
+                  <img id="manual-posture-img" src={objectUrlRef.current||uploadedImg} alt="Tap to place points"
                     onLoad={e=>{ manualImgSize.current={w:e.target.naturalWidth,h:e.target.naturalHeight}; }}
                     style={{width:"100%",display:"block",userSelect:"none",pointerEvents:"none"}}/>
                   <svg style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none"}} viewBox="0 0 1 1" preserveAspectRatio="none">
@@ -8906,6 +8925,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                       );
                     })}
                   </svg>
+                  {/* Analysis overlay — shown after Analyse Now is tapped */}
+                  {manualAnalysed&&landmarks&&(
+                    <CanvasOverlayOnImage
+                      photoUrl={objectUrlRef.current||uploadedImg}
+                      landmarks={landmarks}
+                      view={view}
+                      measurements={measurements||undefined}
+                      manualPlaced={manualPlaced}
+                      manualPointDefs={manualPointDefs}
+                      manualConnections={manualConnections}
+                      imgId="manual-posture-img"
+                    />
+                  )}
                 </div>
                 <div style={{display:"grid",gridTemplateColumns: isWide?"repeat(3,1fr)":"repeat(2,1fr)",gap:4,marginBottom:10}}>
                   {manualPointDefs.map(def=>{
@@ -9028,19 +9060,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                     alt="Analysed overlay"
                     style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"fill",display:"block",pointerEvents:"none"}}
                     onError={e=>{ e.target.style.display="none"; }}
-                  />
-                )}
-
-                {/* Layer 3: manual mode — live canvas overlay with full analysis */}
-                {inputMode==="manual"&&manualAnalysed&&landmarks&&!analysing&&(
-                  <CanvasOverlayOnImage
-                    photoUrl={rawUploadedImg||uploadedImg}
-                    landmarks={landmarks}
-                    view={view}
-                    measurements={measurements||undefined}
-                    manualPlaced={manualPlaced}
-                    manualPointDefs={manualPointDefs}
-                    manualConnections={manualConnections}
                   />
                 )}
 
