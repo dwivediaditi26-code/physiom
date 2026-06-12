@@ -5275,62 +5275,52 @@ function mergeViewResults(viewResults) {
 
 // ─── Canvas overlay renderer ──────────────────────────────────────────────────
 // Helper: draw angle badge (small pill label on canvas)
+// Scale factor: keeps labels readable at any image resolution
+function _sc(ctx){ return Math.max(1, Math.min(ctx.canvas.width,ctx.canvas.height)/600); }
+
 function drawBadge(ctx, x, y, text, color) {
-  const pad=5, fsize=11;
+  const sc=_sc(ctx), pad=5*sc, fsize=Math.round(11*sc);
   ctx.font=`bold ${fsize}px system-ui`;
   const tw=ctx.measureText(text).width;
-  const bw=tw+pad*2+2, bh=fsize+pad*2;
-  ctx.beginPath();
-  if(ctx.roundRect) ctx.roundRect(x-bw/2,y-bh/2,bw,bh,5);
-  else ctx.rect(x-bw/2,y-bh/2,bw,bh);
+  const bw=tw+pad*2, bh=fsize+pad*2;
   ctx.fillStyle="rgba(255,255,255,0.95)";
-  ctx.fill();
+  ctx.fillRect(x-bw/2, y-bh/2, bw, bh);
   ctx.fillStyle=color||"#111827";
   ctx.textAlign="center"; ctx.textBaseline="middle";
-  ctx.fillText(text,x,y);
+  ctx.fillText(text, x, y);
   ctx.textBaseline="alphabetic";
 }
 
-// Left-side label: white card + colored left accent bar
 function drawCleanLabel(ctx, y, lines, color) {
-  const fsize=10, lhPx=14, pad=5;
+  const sc=_sc(ctx), fsize=Math.round(11*sc), lhPx=Math.round(15*sc), pad=Math.round(5*sc);
   ctx.font=`bold ${fsize}px system-ui`;
   const maxW=lines.reduce((m,l)=>Math.max(m,ctx.measureText(l).width),0);
-  const bw=maxW+pad*2+10, bh=lines.length*lhPx+pad*2;
-  const bx=4, by=y-bh/2;
-  // White background
-  ctx.beginPath();
-  if(ctx.roundRect) ctx.roundRect(bx,by,bw,bh,4); else ctx.rect(bx,by,bw,bh);
+  const bw=maxW+pad*2+Math.round(10*sc), bh=lines.length*lhPx+pad*2;
+  const bx=Math.round(4*sc), by=y-bh/2;
   ctx.fillStyle="rgba(255,255,255,0.95)";
-  ctx.fill();
-  // Colored left accent bar
-  ctx.beginPath();
-  ctx.rect(bx,by,4,bh);
+  ctx.fillRect(bx, by, bw, bh);
   ctx.fillStyle=color;
-  ctx.fill();
-  // Text
-  ctx.textBaseline="middle";
+  ctx.fillRect(bx, by, Math.round(4*sc), bh);
+  ctx.textBaseline="middle"; ctx.textAlign="left";
   lines.forEach((ln,i)=>{
-    ctx.beginPath();
-    ctx.font=i===0?`bold ${fsize}px system-ui`:`${fsize-1}px system-ui`;
-    ctx.fillStyle=i===0?"#111827":"#4b5563";
-    ctx.textAlign="left";
-    ctx.fillText(ln,bx+10,by+pad+(i+0.5)*lhPx);
+    ctx.font=i===0?`bold ${fsize}px system-ui`:`${Math.round(10*sc)}px system-ui`;
+    ctx.fillStyle=i===0?"#111827":"#555555";
+    ctx.fillText(ln, bx+Math.round(10*sc), by+pad+(i+0.5)*lhPx);
   });
   ctx.textBaseline="alphabetic";
 }
 
-// Right-side angle badge: white pill, colored value
 function drawAngleBadge(ctx, W, y, angleDeg, color) {
+  const sc=_sc(ctx);
   const txt=(angleDeg>=0?"+":"")+angleDeg.toFixed(1)+"°";
-  ctx.font="bold 12px system-ui";
+  const fsize=Math.round(12*sc);
+  ctx.font=`bold ${fsize}px system-ui`;
   const tw=ctx.measureText(txt).width;
-  ctx.beginPath();
-  if(ctx.roundRect) ctx.roundRect(W-tw-20,y-11,tw+14,20,4); else ctx.rect(W-tw-20,y-11,tw+14,20);
+  const bh=Math.round(20*sc), pad=Math.round(8*sc);
   ctx.fillStyle="rgba(255,255,255,0.95)";
-  ctx.fill();
+  ctx.fillRect(W-tw-pad*2, y-bh/2, tw+pad*2, bh);
   ctx.fillStyle=color; ctx.textAlign="right"; ctx.textBaseline="middle";
-  ctx.fillText(txt,W-9,y);
+  ctx.fillText(txt, W-Math.round(8*sc), y);
   ctx.textBaseline="alphabetic";
 }
 
@@ -5384,8 +5374,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       {col:"rgba(0,229,255,0.95)",  label:"Plumb line (Kendall)"},
     ];
     const lx=W-140, ly=10, lw=132, lh=legendItems.length*16+10;
-    ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(lx,ly,lw,lh,7); else ctx.rect(lx,ly,lw,lh);
-    ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(lx,ly,lw,lh);
     legendItems.forEach(({col,label},i)=>{
       const iy=ly+10+i*16;
       ctx.beginPath(); ctx.arc(lx+10,iy,5,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
@@ -5438,20 +5427,19 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       if(Math.abs(devPx)>6){ ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=1.8; ctx.setLineDash([5,3]); ctx.beginPath(); ctx.moveTo(plumbX,pt[1]); ctx.lineTo(pt[0],pt[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
       ctx.beginPath(); ctx.arc(pt[0],pt[1],5,0,Math.PI*2); ctx.fillStyle=col; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke();
       const dir=devCm>0?"A":"P", badgeText=`${label} ${dir} ${Math.abs(devCm).toFixed(1)}cm`;
-      ctx.font="bold 10px system-ui"; const tw=ctx.measureText(badgeText).width;
+      const _bd_sc=_sc(ctx); ctx.font=`bold ${Math.round(10*_bd_sc)}px system-ui`; const tw=ctx.measureText(badgeText).width;
       const onRight=pt[0]<W*0.6, bx=onRight?pt[0]+9:pt[0]-tw-17, by=pt[1]-9;
-      ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(bx,by,tw+10,17,4); else ctx.rect(bx,by,tw+10,17);
-      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
-      ctx.fillStyle=col; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(badgeText,bx+5,by+8); ctx.textBaseline="alphabetic";
+      const _sp_sc=_sc(ctx),_sp_h=Math.round(18*_sp_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(bx,by,tw+Math.round(12*_sp_sc),_sp_h);
+      ctx.fillStyle=col; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(badgeText,bx+Math.round(5*_sp_sc),by+_sp_h/2); ctx.textBaseline="alphabetic";
     });
     // Lat malleolus anchor
-    if(V(iAnk)){ const p=PX(iAnk); ctx.beginPath(); ctx.arc(p[0],p[1],6,0,Math.PI*2); ctx.fillStyle="rgba(0,229,255,1)"; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke(); ctx.font="bold 9px system-ui"; ctx.fillStyle="rgba(0,229,255,1)"; ctx.textAlign="left"; ctx.fillText("Lat. Malleolus",p[0]+8,p[1]+4); }
+    if(V(iAnk)){ const p=PX(iAnk),_lm_sc=_sc(ctx); ctx.beginPath(); ctx.arc(p[0],p[1],Math.round(6*_lm_sc),0,Math.PI*2); ctx.fillStyle="rgba(0,229,255,1)"; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=Math.round(1.5*_lm_sc); ctx.stroke(); ctx.font=`bold ${Math.round(9*_lm_sc)}px system-ui`; ctx.fillStyle="rgba(0,229,255,1)"; ctx.textAlign="left"; ctx.fillText("Lat. Malleolus",p[0]+Math.round(8*_lm_sc),p[1]+Math.round(4*_lm_sc)); }
     // CVA angle
-    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"✓":"⚠"}`; ctx.font="bold 10px system-ui"; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+12,17,4); else ctx.rect(cx,cy,ctw+12,17); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill(); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(ct,cx+6,cy+8); ctx.textBaseline="alphabetic"; const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; ctx.font="bold 9px system-ui"; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(fx-4,ep[1]-21,ftw+10,15,3); else ctx.rect(fx-4,ep[1]-21,ftw+10,15); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill(); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(fl,fx+1,ep[1]-14); ctx.textBaseline="alphabetic"; } }
+    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"✓":"⚠"}`; const _cv_sc2=_sc(ctx); ctx.font=`bold ${Math.round(10*_cv_sc2)}px system-ui`; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; const _cva_sc=_sc(ctx),_cva_h=Math.round(18*_cva_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(cx,cy,ctw+Math.round(14*_cva_sc),_cva_h); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(ct,cx+Math.round(6*_cva_sc),cy+_cva_h/2); ctx.textBaseline="alphabetic"; const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; const _fh_sc2=_sc(ctx); ctx.font=`bold ${Math.round(9*_fh_sc2)}px system-ui`; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; const _fhp_sc=_sc(ctx),_fhp_h=Math.round(16*_fhp_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(fx-Math.round(4*_fhp_sc),ep[1]-Math.round(22*_fhp_sc),ftw+Math.round(12*_fhp_sc),_fhp_h); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(fl,fx+Math.round(2*_fhp_sc),ep[1]-Math.round(22*_fhp_sc)+_fhp_h/2); ctx.textBaseline="alphabetic"; } }
     // Trunk inclination
-    if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}°`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; ctx.font="bold 9px system-ui"; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+8:mx-tw-16; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(tx,my-8,tw+10,15,3); else ctx.rect(tx,my-8,tw+10,15); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill(); ctx.fillStyle=tc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(tt,tx+5,my); ctx.textBaseline="alphabetic"; }
+    if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}°`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; const _trsc=_sc(ctx); ctx.font=`bold ${Math.round(9*_trsc)}px system-ui`; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+Math.round(8*_trsc):mx-tw-Math.round(16*_trsc); const _tr_sc=_sc(ctx),_tr_h=Math.round(16*_tr_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(tx,my-_tr_h/2,tw+Math.round(12*_tr_sc),_tr_h); ctx.fillStyle=tc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(tt,tx+Math.round(5*_tr_sc),my); ctx.textBaseline="alphabetic"; }
     // Knee sagittal angle
-    if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; ctx.font="bold 9px system-ui"; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+8:kp[0]-ktw-16; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(kx,kp[1]+6,ktw+10,15,3); else ctx.rect(kx,kp[1]+6,ktw+10,15); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill(); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(kt,kx+5,kp[1]+13); ctx.textBaseline="alphabetic"; }
+    if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; const _knsc=_sc(ctx); ctx.font=`bold ${Math.round(9*_knsc)}px system-ui`; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+Math.round(8*_knsc):kp[0]-ktw-Math.round(16*_knsc); const _kn_sc=_sc(ctx),_kn_h=Math.round(16*_kn_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(kx,kp[1]+Math.round(6*_kn_sc),ktw+Math.round(12*_kn_sc),_kn_h); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(kt,kx+Math.round(5*_kn_sc),kp[1]+Math.round(6*_kn_sc)+_kn_h/2); ctx.textBaseline="alphabetic"; }
   }
 
   // ── Sagittal-specific legend + title ──────────────────────────────────────
@@ -5465,8 +5453,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       {col:"rgba(147,51,234,0.9)", lbl:"CVA / Spine line"},
     ];
     const slw=138, slh=sagItems.length*17+12, slx=W-slw-6, sly=6;
-    ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(slx,sly,slw,slh,7); else ctx.rect(slx,sly,slw,slh);
-    ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(slx,sly,slw,slh);
     sagItems.forEach(({col,lbl},i)=>{
       const iy=sly+12+i*17;
       ctx.fillStyle=col; ctx.beginPath(); ctx.arc(slx+11,iy-3,5,0,Math.PI*2); ctx.fill();
@@ -5488,8 +5475,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.font="bold 10px system-ui";
       const stw=ctx.measureText(sagTitle).width;
       const sbw=Math.min(stw+24,W-10);
-      ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(W/2-sbw/2,4,sbw,20,6); else ctx.rect(W/2-sbw/2,4,sbw,20);
-      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(W/2-sbw/2,4,sbw,20);
       ctx.fillStyle="rgba(124,58,237,0.85)";
       if(ctx.roundRect) ctx.roundRect(W/2-sbw/2,4,sbw,3,2); else ctx.rect(W/2-sbw/2,4,sbw,3);
       ctx.fill();
@@ -5559,11 +5545,9 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.lineWidth=1; ctx.stroke();
       // Label
       ctx.font="bold 9px system-ui"; const tw2=ctx.measureText(lbl).width;
-      ctx.beginPath();
-      if(ctx.roundRect) ctx.roundRect(psX-tw2/2-4,psY+13,tw2+8,14,3); else ctx.rect(psX-tw2/2-4,psY+13,tw2+8,14);
-      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+      const _ps_sc=_sc(ctx),_ps_h=Math.round(14*_ps_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(psX-tw2/2-Math.round(4*_ps_sc),psY+Math.round(12*_ps_sc),tw2+Math.round(8*_ps_sc),_ps_h);
       ctx.fillStyle="#7e22ce"; ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillText(lbl,psX,psY+20); ctx.textBaseline="alphabetic";
+      ctx.fillText(lbl,psX,psY+Math.round(12*_ps_sc)+_ps_h/2); ctx.textBaseline="alphabetic";
     });
     // Calcaneal alignment (heel tilt from vertical)
     [[29,27,"L.Heel"],[30,28,"R.Heel"]].forEach(([hIdx,aIdx,lbl2])=>{
@@ -5591,8 +5575,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       {col:"rgba(200,100,255,0.9)",lbl:"PSIS markers"},
     ];
     const plw=138, plh=postItems.length*17+12, plx=W-plw-6, ply=6;
-    ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(plx,ply,plw,plh,7); else ctx.rect(plx,ply,plw,plh);
-    ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(plx,ply,plw,plh);
     postItems.forEach(({col,lbl},i)=>{
       const iy=ply+12+i*17;
       ctx.fillStyle=col; ctx.beginPath(); ctx.arc(plx+11,iy-3,5,0,Math.PI*2); ctx.fill();
@@ -5729,12 +5712,10 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.beginPath(); ctx.arc(pt[0],pt[1],6,0,Math.PI*2);
       ctx.fillStyle="#FFD700"; ctx.fill();  // Gold/yellow = matches ASIS marker convention
       ctx.strokeStyle="rgba(0,0,0,0.5)"; ctx.lineWidth=1; ctx.stroke();
-      ctx.font="bold 9px system-ui"; const tw=ctx.measureText(lbl).width;
-      ctx.beginPath();
-      if(ctx.roundRect) ctx.roundRect(pt[0]-tw/2-4,pt[1]+13,tw+8,14,3); else ctx.rect(pt[0]-tw/2-4,pt[1]+13,tw+8,14);
-      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+      const _as_sc=_sc(ctx),_as_fs=Math.round(9*_as_sc),_as_h=Math.round(14*_as_sc); ctx.font=`bold ${_as_fs}px system-ui`; const tw=ctx.measureText(lbl).width;
+      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(pt[0]-tw/2-Math.round(4*_as_sc),pt[1]+Math.round(12*_as_sc),tw+Math.round(8*_as_sc),_as_h);
       ctx.fillStyle="#92400e"; ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillText(lbl,pt[0],pt[1]+20); ctx.textBaseline="alphabetic";
+      ctx.fillText(lbl,pt[0],pt[1]+Math.round(12*_as_sc)+_as_h/2); ctx.textBaseline="alphabetic";
     });
     // Waist triangles
     if((view==="posterior"||view==="back")&&V(11)&&V(13)&&V(23)&&V(12)&&V(14)&&V(24)){
@@ -5824,12 +5805,9 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       const p = PX(idx); if (!p) return;
       const tw = ctx.measureText(lbl).width;
       const bx = p[0] + 9, by = p[1] - 6;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(bx-2, by-9, tw+8, 12, 3);
-      else ctx.rect(bx-2, by-9, tw+8, 12);
-      ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fill();
-      ctx.fillStyle = "#111827"; ctx.textAlign = "left"; ctx.textBaseline="middle";
-      ctx.fillText(lbl, bx+2, by-3); ctx.textBaseline="alphabetic";
+      const _ll_sc=_sc(ctx),_ll_h=Math.round(13*_ll_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(bx-Math.round(2*_ll_sc),by-_ll_h,tw+Math.round(8*_ll_sc),_ll_h);
+      ctx.fillStyle="#111827"; ctx.textAlign="left"; ctx.textBaseline="middle";
+      ctx.fillText(lbl,bx+Math.round(2*_ll_sc),by-_ll_h/2); ctx.textBaseline="alphabetic";
     });
     // ASIS labels specifically (estimated position)
     if (V(23) && V(11)) {
@@ -5842,11 +5820,9 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       [[asLx,asLy,"L.ASIS"],[asRx,asRy,"R.ASIS"]].forEach(([x,y,lbl]) => {
         if (!x||!y) return;
         const tw = ctx.measureText(lbl).width;
-        ctx.beginPath();
-        if(ctx.roundRect) ctx.roundRect(x-tw/2-4,y+14,tw+8,14,3); else ctx.rect(x-tw/2-4,y+14,tw+8,14);
-        ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+        const _a2_sc=_sc(ctx),_a2_h=Math.round(14*_a2_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(x-tw/2-Math.round(4*_a2_sc),y+Math.round(13*_a2_sc),tw+Math.round(8*_a2_sc),_a2_h);
         ctx.fillStyle="#92400e"; ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText(lbl,x,y+21); ctx.textBaseline="alphabetic";
+        ctx.fillText(lbl,x,y+Math.round(13*_a2_sc)+_a2_h/2); ctx.textBaseline="alphabetic";
       });
     }
   }
@@ -5870,11 +5846,9 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.font = "bold 10px system-ui";
       const tw = ctx.measureText(txt).width;
       const bx = ki===25 ? p[0]-tw-18 : p[0]+10;
-      ctx.beginPath();
-      if(ctx.roundRect) ctx.roundRect(bx-3,p[1]-10,tw+12,18,4); else ctx.rect(bx-3,p[1]-10,tw+12,18);
-      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+      const _kf_sc=_sc(ctx),_kf_h=Math.round(18*_kf_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(bx-Math.round(3*_kf_sc),p[1]-_kf_h/2,tw+Math.round(14*_kf_sc),_kf_h);
       ctx.fillStyle=col; ctx.textAlign="left"; ctx.textBaseline="middle";
-      ctx.fillText(txt,bx+3,p[1]-1); ctx.textBaseline="alphabetic";
+      ctx.fillText(txt,bx+Math.round(3*_kf_sc),p[1]); ctx.textBaseline="alphabetic";
     });
   }
 
@@ -5888,8 +5862,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       { col:"rgba(147,51,234,0.9)", lbl:"Spine segments" },
     ];
     const lw=122, lh=items.length*17+12, lx=W-lw-6, ly=6;
-    ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(lx,ly,lw,lh,7); else ctx.rect(lx,ly,lw,lh);
-    ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(lx,ly,lw,lh);
     items.forEach(({col,lbl},i) => {
       const iy = ly+12+i*17;
       ctx.fillStyle=col; ctx.beginPath(); ctx.arc(lx+11,iy-3,5,0,Math.PI*2); ctx.fill();
@@ -5904,8 +5877,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     if (viewLabel) {
       ctx.font = "bold 10px system-ui";
       const tw = ctx.measureText(viewLabel).width;
-      ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(W/2-tw/2-10,H-24,tw+20,18,5); else ctx.rect(W/2-tw/2-10,H-24,tw+20,18);
-      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(W/2-tw/2-10,H-24,tw+20,18);
       ctx.fillStyle="#0891b2"; ctx.textAlign="center";
       ctx.fillText(viewLabel,W/2,H-9);
     }
@@ -5932,8 +5904,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.font="bold 10px system-ui";
       const tw=ctx.measureText(title).width;
       const bw=Math.min(tw+24,W-10);
-      ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(W/2-bw/2,4,bw,20,6); else ctx.rect(W/2-bw/2,4,bw,20);
-      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(W/2-bw/2,4,bw,20);
       // Colored top accent line
       ctx.fillStyle="rgba(239,68,68,0.85)";
       if(ctx.roundRect) ctx.roundRect(W/2-bw/2,4,bw,3,2); else ctx.rect(W/2-bw/2,4,bw,3);
