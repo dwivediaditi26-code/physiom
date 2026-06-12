@@ -583,13 +583,13 @@ function UploadedPhotoOverlay({ photoUrl, landmarks, view }) {
 // ─── CanvasOverlayOnImage — draws analysis overlay directly on top of img ─────
 // Fallback approach: instead of baking into canvas (fails on mobile with large images),
 // overlay a transparent canvas positioned absolutely on top of the photo
-function CanvasOverlayOnImage({ photoUrl, landmarks, view }) {
+function CanvasOverlayOnImage({ photoUrl, landmarks, view, measurements: propMeasurements, manualPlaced, manualPointDefs, manualConnections }) {
   const canvasRef = useRef(null);
-  const imgRef = useRef(null);
 
   useEffect(() => {
     if (!landmarks || !landmarks.length) return;
     const canvas = canvasRef.current;
+    // Find the host image by id OR fall back to first img in parent
     const imgEl = document.getElementById("posture-upload-img");
     if (!canvas || !imgEl) return;
 
@@ -597,35 +597,43 @@ function CanvasOverlayOnImage({ photoUrl, landmarks, view }) {
       const rect = imgEl.getBoundingClientRect();
       const W = imgEl.naturalWidth || rect.width;
       const H = imgEl.naturalHeight || rect.height;
-      const displayW = rect.width;
-      const displayH = rect.height;
+      if (!W || !H) return;
 
       canvas.width = W;
       canvas.height = H;
-      canvas.style.width = displayW + "px";
-      canvas.style.height = displayH + "px";
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
 
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, W, H);
 
-      // Map view name
       const viewMap = {
         anterior:"anterior", posterior:"posterior",
         left:"left", right:"right", frontal:"anterior", sagittal:"left",
       };
       const mappedView = viewMap[String(view || "anterior").toLowerCase()] || "anterior";
 
+      // Use provided measurements, or compute fresh from landmarks (same as AI mode)
+      const m = propMeasurements
+        || (() => { try { return AdvancedMeasurementEngine(landmarks, null); } catch { return {}; } })();
+
       try {
-        drawOverlay({ ctx, W, H, lm: landmarks, view: mappedView, showGrid: true, measurements: {}, clearFirst: true });
+        drawOverlay({ ctx, W, H, lm: landmarks, view: mappedView, showGrid: true, measurements: m, clearFirst: true });
       } catch(e) {
         console.warn("CanvasOverlayOnImage drawOverlay failed:", e);
       }
+
+      // Draw manual landmark dots on top if provided
+      if (manualPlaced && manualPointDefs) {
+        try {
+          drawManualOverlay({ ctx, W, H, placed: manualPlaced, pointDefs: manualPointDefs, connections: manualConnections || [] });
+        } catch(e) {}
+      }
     };
 
-    // Small delay to ensure img has rendered
-    const timer = setTimeout(drawWhenReady, 100);
+    const timer = setTimeout(drawWhenReady, 80);
     return () => clearTimeout(timer);
-  }, [landmarks, view, photoUrl]);
+  }, [landmarks, view, photoUrl, propMeasurements, manualPlaced]);
 
   return (
     <canvas
@@ -634,7 +642,6 @@ function CanvasOverlayOnImage({ photoUrl, landmarks, view }) {
         position: "absolute",
         top: 0, left: 0,
         pointerEvents: "none",
-        imageRendering: "pixelated",
       }}
     />
   );
@@ -7790,12 +7797,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         const W = img.naturalWidth, H = img.naturalHeight;
         const oc = document.createElement("canvas"); oc.width=W; oc.height=H;
         const ctx = oc.getContext("2d"); ctx.drawImage(img, 0, 0, W, H);
-        // Draw full analysis overlay first (plumb, level lines, measurements)
-        try { drawOverlay({ ctx, W, H, lm, view, showGrid: true, measurements: m || {}, clearFirst: false }); }
-        catch(oe){ console.warn("manual drawOverlay:", oe); }
-        // Draw manual landmark dots on top so they stay visible
+        // Only bake manual dots — full analysis overlay is handled by live CanvasOverlayOnImage
         drawManualOverlay({ ctx, W, H, placed:manualPlaced, pointDefs:manualPointDefs, connections:manualConnections });
-        setUploadedImg(oc.toDataURL("image/jpeg", 0.92));
+        try { setUploadedImg(oc.toDataURL("image/jpeg", 0.92)); } catch(te){ setUploadedImg(objectUrlRef.current); }
       };
       img.src = objectUrlRef.current;
     }
@@ -9022,6 +9026,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 style={{borderRadius:14,overflow:"hidden",border:`1px solid ${aiSagActive?"#a78bfa":PC.border}`,boxShadow:isWide?"0 4px 20px rgba(0,0,0,0.08)":"none",background:PC.s2,position:"relative",transition:"border-color 0.2s",cursor:aiSagActive?"crosshair":"default"}}>
                 {/* Layer 1: original photo — always visible, never a blank/black canvas */}
                 <img
+                  id="posture-upload-img"
                   src={rawUploadedImg||uploadedImg}
                   alt="Uploaded"
                   style={{width:"100%",display:"block",opacity:analysing?0.55:1,transition:"opacity 0.3s"}}
@@ -9034,6 +9039,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                     alt="Analysed overlay"
                     style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"fill",display:"block",pointerEvents:"none"}}
                     onError={e=>{ e.target.style.display="none"; }}
+                  />
+                )}
+
+                {/* Layer 3: manual mode — live canvas overlay with full analysis */}
+                {inputMode==="manual"&&manualAnalysed&&landmarks&&!analysing&&(
+                  <CanvasOverlayOnImage
+                    photoUrl={rawUploadedImg||uploadedImg}
+                    landmarks={landmarks}
+                    view={view}
+                    measurements={measurements||undefined}
+                    manualPlaced={manualPlaced}
+                    manualPointDefs={manualPointDefs}
+                    manualConnections={manualConnections}
                   />
                 )}
 
