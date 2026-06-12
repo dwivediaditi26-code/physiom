@@ -12602,30 +12602,47 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
                   {/* ── Outcome Measures ── */}
                   <Sec icon="📊" title="Outcome Measures" navKey="outcome" hasData={omKeys.length>0}>
-                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                      {omKeys.map(k=>{
-                        const scaleId=k.replace("om_history_","");
-                        let hist=[];try{hist=JSON.parse(d[k]||"[]");}catch{}
-                        if(hist.length===0) return null;
-                        const curr=parseFloat(hist[hist.length-1]?.score);
-                        const prev=hist.length>=2?parseFloat(hist[hist.length-2]?.score):null;
-                        const diff=prev!=null?curr-prev:null;
-                        const label=scaleId.toUpperCase();
-                        const lowIsBetter=["odi","ndi","dash","vas","tsk"].includes(scaleId);
-                        const isBetter=diff!=null?(lowIsBetter?diff<0:diff>0):null;
-                        return(
-                          <div key={k} style={{display:"flex",alignItems:"center",padding:"8px 10px",background:"#F9FAFB",borderRadius:10,gap:8,border:`1px solid ${C.border}`}}>
-                            <span style={{fontSize:11,fontWeight:800,color:C.text,minWidth:40}}>{label}</span>
-                            <div style={{flex:1,height:3,background:"#E5E7EB",borderRadius:2,position:"relative",overflow:"hidden"}}>
-                              <div style={{position:"absolute",left:0,top:0,height:"100%",background:C.primary,width:`${Math.min(100,(curr||0))}%`,borderRadius:2,transition:"width 0.8s"}}/>
-                            </div>
-                            <span style={{fontSize:18,fontWeight:900,color:C.primary,minWidth:36,textAlign:"right"}}>{isNaN(curr)?"—":curr}</span>
-                            {diff!=null&&!isNaN(diff)&&<span style={{fontSize:10,fontWeight:700,color:isBetter?C.green:"#dc2626",minWidth:32,textAlign:"right"}}>{isBetter?"↓":"↑"}{Math.abs(Math.round(diff*10)/10)}</span>}
-                            <span style={{fontSize:9,color:C.muted,minWidth:20}}>{hist.length}×</span>
-                          </div>
-                        );
-                      }).filter(Boolean)}
-                    </div>
+                    {(()=>{
+                      const OM_MAX={odi:100,ndi:100,dash:100,quickdash:100,lefs:80,vas:10,nprs:10,psfs1:10,psfs2:10,psfs3:10,psfs:10,tsk:68,fabq:96,pcs:52,womac:96,koos:100,spadi:100,hoos:100,dgi:24,tug:60,bbs:56,abc:100,sf36:100,eq5d:100,pdi:70,rmdq:24};
+                      const OM_NAMES={odi:"ODI — Oswestry Disability",ndi:"NDI — Neck Disability",dash:"DASH — Arm/Shoulder/Hand",quickdash:"QuickDASH",lefs:"LEFS — Lower Extremity",vas:"VAS — Pain",nprs:"NPRS — Pain Rating",psfs:"PSFS — Patient-Specific",tsk:"TSK — Kinesiophobia",fabq:"FABQ — Fear Avoidance",pcs:"PCS — Catastrophising",womac:"WOMAC",koos:"KOOS",spadi:"SPADI — Shoulder Pain",hoos:"HOOS",dgi:"DGI — Dynamic Gait",tug:"TUG — Timed Up & Go",bbs:"BBS — Berg Balance",abc:"ABC — Balance Confidence",rmdq:"Roland-Morris"};
+                      return(
+                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                          {omKeys.map(k=>{
+                            const scaleId=k.replace("om_history_","");
+                            let hist=[];try{hist=JSON.parse(d[k]||"[]");}catch{}
+                            if(hist.length===0) return null;
+                            const curr=parseFloat(hist[hist.length-1]?.score);
+                            const prev=hist.length>=2?parseFloat(hist[hist.length-2]?.score):null;
+                            const diff=prev!=null?curr-prev:null;
+                            const label=OM_NAMES[scaleId]||scaleId.toUpperCase();
+                            const max=OM_MAX[scaleId]||100;
+                            const pct=isNaN(curr)?0:Math.min(100,Math.max(0,(curr/max)*100));
+                            const lowIsBetter=["odi","ndi","dash","quickdash","vas","nprs","tsk","fabq","pcs","womac","spadi","pdi","rmdq","tug"].includes(scaleId);
+                            const isBetter=diff!=null?(lowIsBetter?diff<0:diff>0):null;
+                            const sevCol=lowIsBetter?(pct>=60?"#dc2626":pct>=30?"#d97706":C.green):(pct>=70?C.green:pct>=40?"#d97706":"#dc2626");
+                            return(
+                              <div key={k} style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`}}>
+                                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
+                                  <span style={{flex:1,fontSize:12,fontWeight:800,color:C.text}}>{label}</span>
+                                  <span style={{fontSize:17,fontWeight:900,color:sevCol}}>{isNaN(curr)?"—":curr}<span style={{fontSize:9.5,color:C.muted,fontWeight:600}}>/{max}</span></span>
+                                  {diff!=null&&!isNaN(diff)&&(
+                                    <span style={{flexShrink:0,padding:"2px 8px",borderRadius:99,fontSize:10,fontWeight:800,background:isBetter?"#ECFDF5":"#FEF2F2",color:isBetter?C.green:"#dc2626"}}>
+                                      {diff>0?"▲":"▼"} {Math.abs(Math.round(diff*10)/10)}
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                  <div style={{flex:1,height:4,background:"#E5E7EB",borderRadius:3,position:"relative",overflow:"hidden"}}>
+                                    <div style={{position:"absolute",left:0,top:0,height:"100%",background:sevCol,width:`${pct}%`,borderRadius:3,transition:"width 0.8s"}}/>
+                                  </div>
+                                  <span style={{fontSize:9,color:C.muted,flexShrink:0}}>{hist.length} session{hist.length>1?"s":""}</span>
+                                </div>
+                              </div>
+                            );
+                          }).filter(Boolean)}
+                        </div>
+                      );
+                    })()}
                   </Sec>
 
                   {/* ── Kinetic Chain ── */}
@@ -12663,43 +12680,71 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {/* ── Fascia ── */}
                   {faKeys.length>0&&(
                     <Sec icon="🕸️" title="Fascia Integration" navKey="fascia" hasData={true}>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                        {faKeys.slice(0,6).map(k=>{
-                          const val=d[k],isAbn=val&&val!=="Normal"&&!val.includes("negative");
-                          return <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,
-                            background:isAbn?"#FFFBEB":"#F3F4F6",color:isAbn?"#92400E":C.muted,
-                            border:`1px solid ${isAbn?"#FDE68A":C.border}`}}>
-                            {k.replace("fa_","").replace(/_/g," ")}: {val}
-                          </span>;
-                        })}
-                      </div>
+                      {(()=>{
+                        const FA_LBL={fa_sbl:"Superficial Back Line",fa_sfl:"Superficial Front Line",fa_ll:"Lateral Line",fa_spl:"Spiral Line",fa_dfl:"Deep Front Line",fa_abl:"Arm Back Line",fa_afl:"Arm Front Line",fa_fl:"Functional Line"};
+                        const rows=faKeys.map(k=>({k,label:FA_LBL[k]||k.replace("fa_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()),val:d[k]}));
+                        const isAbn=v=>{const t=String(v||"").toLowerCase();return !(t.includes("normal")||t.includes("negative"));};
+                        rows.sort((a,b)=>(isAbn(b.val)?1:0)-(isAbn(a.val)?1:0));
+                        return(
+                          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:5}}>
+                            {rows.slice(0,8).map(r=>{
+                              const abn=isAbn(r.val);
+                              return(
+                                <div key={r.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
+                                  <span style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.2}}>{r.label}</span>
+                                  <span style={{flexShrink:0,padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:abn?"#FEF3C7":"#ECFDF5",color:abn?"#92400E":C.green}}>{String(r.val).split(" — ")[0].slice(0,16)}</span>
+                                </div>
+                              );
+                            })}
+                            {rows.length>8&&<div style={{fontSize:10.5,color:C.muted,padding:"4px 8px"}}>+{rows.length-8} more</div>}
+                          </div>
+                        );
+                      })()}
                     </Sec>
                   )}
 
                   {/* ── Cyriax ── */}
                   {cyKeys.length>0&&(
                     <Sec icon="🦴" title="Cyriax / Orthopaedic" navKey="cyriax_full" hasData={true}>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                        {cyKeys.slice(0,6).map(k=>{
-                          const val=d[k],isAbn=val&&val!=="Normal"&&val!=="Full"&&val!=="Negative";
-                          return <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,
-                            background:isAbn?"#FEF2F2":"#F3F4F6",color:isAbn?"#dc2626":C.muted,
-                            border:`1px solid ${isAbn?"#FCA5A5":C.border}`}}>
-                            {k.replace("cy_","").replace(/_/g," ")}: {val}
-                          </span>;
-                        })}
-                      </div>
+                      {(()=>{
+                        const rows=cyKeys.map(k=>({k,label:k.replace("cy_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()),val:d[k]}));
+                        const isAbn=v=>{const t=String(v||"").toLowerCase();return !(t.includes("normal")||t.includes("full")||t.includes("negative"));};
+                        rows.sort((a,b)=>(isAbn(b.val)?1:0)-(isAbn(a.val)?1:0));
+                        return(
+                          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:5}}>
+                            {rows.slice(0,8).map(r=>{
+                              const abn=isAbn(r.val);
+                              return(
+                                <div key={r.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
+                                  <span style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.2}}>{r.label}</span>
+                                  <span style={{flexShrink:0,padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:abn?"#FEF2F2":"#ECFDF5",color:abn?"#dc2626":C.green}}>{String(r.val).split(" — ")[0].slice(0,16)}</span>
+                                </div>
+                              );
+                            })}
+                            {rows.length>8&&<div style={{fontSize:10.5,color:C.muted,padding:"4px 8px"}}>+{rows.length-8} more</div>}
+                          </div>
+                        );
+                      })()}
                     </Sec>
                   )}
 
                   {/* ── Gait & Functional ── */}
                   {(hasGait||hasErgo)&&(
                     <Sec icon="🚶" title="Gait & Functional" navKey="gait" hasData={true}>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                        {d.ag_antalgic&&<span style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#FFF7ED",color:C.orange,border:"1px solid #FDE68A"}}>Antalgic gait</span>}
-                        {d.gait_pattern&&<span style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#F3F4F6",color:C.muted,border:`1px solid ${C.border}`}}>{d.gait_pattern}</span>}
-                        {d.ergo_cervical_risk&&<span style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#FEF2F2",color:"#dc2626",border:"1px solid #FCA5A5"}}>Cervical risk: {d.ergo_cervical_risk}</span>}
-                        {d.ergo_lumbar_risk&&<span style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#FEF2F2",color:"#dc2626",border:"1px solid #FCA5A5"}}>Lumbar risk: {d.ergo_lumbar_risk}</span>}
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:5}}>
+                        {[
+                          d.ag_antalgic&&{label:"Gait",val:"Antalgic pattern",abn:true},
+                          d.gait_pattern&&{label:"Pattern",val:d.gait_pattern,abn:String(d.gait_pattern).toLowerCase()!=="normal"},
+                          d.g_rom_findings&&{label:"Gait ROM",val:d.g_rom_findings,abn:true},
+                          d.ergo_cervical_risk&&{label:"Cervical ergonomic risk",val:d.ergo_cervical_risk,abn:/high|mod/i.test(d.ergo_cervical_risk)},
+                          d.ergo_lumbar_risk&&{label:"Lumbar ergonomic risk",val:d.ergo_lumbar_risk,abn:/high|mod/i.test(d.ergo_lumbar_risk)},
+                          d.ergo_total_score&&{label:"Ergonomic score",val:d.ergo_total_score,abn:false},
+                        ].filter(Boolean).map((r,i2)=>(
+                          <div key={i2} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
+                            <span style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.2}}>{r.label}</span>
+                            <span style={{flexShrink:0,maxWidth:130,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:r.abn?"#FEF3C7":"#ECFDF5",color:r.abn?"#92400E":C.green}}>{String(r.val).slice(0,24)}</span>
+                          </div>
+                        ))}
                       </div>
                     </Sec>
                   )}
