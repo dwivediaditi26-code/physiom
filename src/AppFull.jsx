@@ -7116,7 +7116,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         const pose=new window.Pose({locateFile:f=>`${MP_CDN}/${f}`});
         pose.setOptions({modelComplexity:2,smoothLandmarks:true,smoothSegmentation:false,enableSegmentation:false,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
         await pose.initialize();
-        if(!cancelled){poseRef.current=pose; setMpStatus("ready");}
+        if(!cancelled){
+          poseRef.current=pose;
+          setMpStatus("ready");
+          // If camera was started before AI loaded, connect the handler now
+          if(liveHandlerRef.current){
+            try{ pose.onResults(liveHandlerRef.current); }catch(_){}
+          }
+        }
       }catch(e){
         if(!cancelled) setMpStatus("error");
       }
@@ -7490,7 +7497,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         }
       };
       liveHandlerRef.current=handler;
-      poseRef.current.onResults(handler);
+      // Only connect if MediaPipe is already loaded; if not, it connects on load
+      if(poseRef.current){ try{ poseRef.current.onResults(handler); }catch(_){} }
 
       // Throttled loop — mobile cannot sustain 60fps ML inference
       let lastSend=0;
@@ -7500,7 +7508,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         const now=performance.now();
         if(videoRef.current?.readyState>=2 && now-lastSend>=INTERVAL){
           lastSend=now;
-          try{ await poseRef.current.send({image:videoRef.current}); }catch(_){}
+          try{ if(poseRef.current) await poseRef.current.send({image:videoRef.current}); }catch(_){}
         }
         rafRef.current=requestAnimationFrame(loop);
       };
@@ -14050,7 +14058,8 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
     return { pendingTasks, completedTasks, todayCompleted, overdueTasks,
              schedule, todayCount, recoveryPct, activeName, activeCC,
              activeNRS, worstNRS, activeSess, soapPct, romPct, assessPct, safetyPct, trendData };
-  }, [patients, data, taskDB]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patients, data]); // taskDB intentionally excluded — adding it creates infinite loop
 
   const {
     pendingTasks, completedTasks, todayCompleted, overdueTasks,
