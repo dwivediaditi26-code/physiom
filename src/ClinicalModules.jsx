@@ -3143,7 +3143,7 @@ function SignSessionFields({ PC, data }) {
   );
 }
 
-function SOAPNoteModule({ data, set, onNav }) {
+function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#1a1025",
@@ -3184,7 +3184,7 @@ function SOAPNoteModule({ data, set, onNav }) {
   const [lockConfirm, setLockConfirm] = useState(false);
   const [lockSuccess, setLockSuccess] = useState(false);
   const lockedNotes = Array.isArray(data.soap_signed_notes) ? data.soap_signed_notes : [];
-  const [activeTab, setActiveTab] = useState("soap");
+  const [activeTab, setActiveTab] = useState(initialTab||"soap");
   // Editable SOAP text per section (null = use auto-generated)
   const [editMode, setEditMode] = useState({S:false,O:false,A:false,P:false});
   const [editText, setEditText] = useState({S:"",O:"",A:"",P:""});

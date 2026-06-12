@@ -8,7 +8,8 @@ const ALL_TESTS = {
   dashboard:{ label:"Dashboard", icon:"📊", desc:"Therapist Overview", groups:{ "Therapist Dashboard":"DASHBOARD_MODULE" }},
   subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
   palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
-  posture:{ label:"Posture", icon:"🧍", desc:"Postural Analysis", groups:{
+  posture:{ label:"Posture Analysis", icon:"🧍", desc:"AI Postural Analysis", groups:{}},
+  observation:{ label:"Observation", icon:"👁️", desc:"Posture Defect Observation", groups:{
     "Posture Defect Assessment":"POSTURE_DEFECT_MODULE",
   }},
   rom:{ label:"ROM", icon:"📐", desc:"Range of Motion", groups:{ "Full ROM Assessment":"ROM_MODULE" }},
@@ -25,7 +26,8 @@ const ALL_TESTS = {
   exercise:{ label:"Treatment Prescription", icon:"💊", desc:"Exercise & Treatment Plan", groups:{ "Exercise Prescription":"EXERCISE_MODULE" }},
   tx_techniques:{ label:"Tx Techniques", icon:"🤲", groups:{ "Treatment Techniques":"TX_TECHNIQUES_MODULE" }},
   tx_sessions:{ label:"Session Log", icon:"📋", groups:{ "Treatment Session Log":"TX_SESSION_MODULE" }},
-  soap:{ label:"SOAP + AI", icon:"🤖", desc:"AI-Powered SOAP Notes", groups:{ "SOAP Note Generator":"SOAP_MODULE" }},
+  soap:{ label:"SOAP Notes", icon:"📋", desc:"SOAP Documentation", groups:{ "SOAP Note Generator":"SOAP_MODULE" }},
+  ai_assistant:{ label:"AI Assistant", icon:"🤖", desc:"AI Clinical Assistant", groups:{ "AI Clinical Assistant":"AI_MODULE" }},
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════

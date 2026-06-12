@@ -16366,7 +16366,8 @@ function AppInner({ currentUser, onSignOut }) {
       {/* 3. Assessment (collapsible) */}
       <SidebarGroup groupKey="assessment" icon="🩺" label="Assessment" accentColor="#7c3aed">
         <SidebarItem navKey="subjective"    icon="📝" label="Subjective Assessment"/>
-        <SidebarItem navKey="posture"       icon="🧍" label="Observation & Posture"/>
+        <SidebarItem navKey="posture"       icon="🧍" label="Posture Analysis"/>
+        <SidebarItem navKey="observation"   icon="👁️" label="Observation"/>
         <SidebarItem navKey="palpation"     icon="🖐️" label="Palpation"/>
         <SidebarItem navKey="rom"           icon="📐" label="Range of Motion"/>
         <SidebarItem navKey="mmt"           icon="💪" label="MMT"/>
@@ -16394,7 +16395,8 @@ function AppInner({ currentUser, onSignOut }) {
       {/* 6. Documentation (collapsible) */}
       <SidebarGroup groupKey="documentation" icon="📋" label="Documentation" accentColor="#b45309">
         <SidebarItem navKey="tx_sessions"  icon="⚡" label="Quick Visit"/>
-        <SidebarItem navKey="soap"         icon="🤖" label="SOAP + AI"/>
+        <SidebarItem navKey="soap"         icon="📋" label="SOAP Notes"/>
+        <SidebarItem navKey="ai_assistant" icon="🤖" label="AI Assistant"/>
       </SidebarGroup>
 
       {/* 7. PDF Reports */}
@@ -16412,12 +16414,6 @@ function AppInner({ currentUser, onSignOut }) {
         </div>
       </div>
 
-      {/* Run Diagnosis */}
-      <div style={{margin:"12px 8px 8px",paddingTop:12,borderTop:`1px solid ${PC.border}`}}>
-        <button onClick={runDx} style={{width:"100%",padding:"12px",background:`linear-gradient(135deg,#7c3aed,#9333ea)`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.76rem",cursor:"pointer",letterSpacing:"0.3px",boxShadow:"0 2px 12px rgba(124,58,237,0.25)"}}>
-          ▶ Run Diagnosis
-        </button>
-      </div>
     </>
   );
 
@@ -16660,9 +16656,6 @@ function AppInner({ currentUser, onSignOut }) {
             </button>
 
 
-            <button onClick={()=>setShowPdfReports(true)} title="Generate PDF Reports" style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",background:"linear-gradient(135deg,rgba(220,38,38,0.12),rgba(185,28,28,0.08))",border:"1px solid rgba(220,38,38,0.3)",borderRadius:9,color:"#dc2626",fontWeight:800,fontSize:"0.72rem",cursor:"pointer",whiteSpace:"nowrap"}}>
-              <span>📄</span><span>Reports</span>
-            </button>
             <button onClick={runDx} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 16px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#000",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",letterSpacing:"0.3px"}}>
               <span>▶</span><span>Diagnose</span>
             </button>
@@ -16922,6 +16915,8 @@ function AppInner({ currentUser, onSignOut }) {
                 </div>
               ):tests==="SOAP_MODULE"?(
                 <SOAPNoteModule data={data} set={set} onNav={navTo}/>
+              ):tests==="AI_MODULE"?(
+                <SOAPNoteModule data={data} set={set} onNav={navTo} initialTab="ai"/>
               ):(
                 <div style={{display:"grid",gap:8}}>
                   {tests.map(t=>{
@@ -16992,7 +16987,8 @@ function AppInner({ currentUser, onSignOut }) {
             <>
               <div className={`pm-bnav-panel${bnavTab==="assessment"?" open":""}`}>
                 <BnavItem navKey="subjective"  icon="📝" label="Subjective Assessment"/>
-                <BnavItem navKey="posture"     icon="🧍" label="Observation & Posture"/>
+                <BnavItem navKey="posture"     icon="🧍" label="Posture Analysis"/>
+                <BnavItem navKey="observation" icon="👁️" label="Observation"/>
                 <BnavItem navKey="palpation"   icon="🖐️" label="Palpation"/>
                 <BnavItem navKey="rom"         icon="📐" label="Range of Motion"/>
                 <BnavItem navKey="mmt"         icon="💪" label="MMT"/>
@@ -17014,7 +17010,8 @@ function AppInner({ currentUser, onSignOut }) {
               </div>
               <div className={`pm-bnav-panel${bnavTab==="documentation"?" open":""}`}>
                 <BnavItem navKey="tx_sessions" icon="⚡" label="Quick Visit"/>
-                <BnavItem navKey="soap"        icon="🤖" label="SOAP + AI"/>
+                <BnavItem navKey="soap"        icon="📋" label="SOAP Notes"/>
+                <BnavItem navKey="ai_assistant" icon="🤖" label="AI Assistant"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="top"?" open":""}`}>
                 <BnavItem navKey="home"      icon="🏠" label="Home"/>

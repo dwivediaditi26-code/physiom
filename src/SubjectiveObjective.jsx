@@ -895,46 +895,6 @@ const SPECIAL_TESTS_DATA = {
     ]
   },
 
-  outcome_tools:{
-    label:"Validated Outcome Tools", color:"#ffd700", icon:"📊",
-    tests:[
-      { id:"st_ndi_tool", label:"Neck Disability Index (NDI)", structure:"Cervical disability",
-        sensitivity:"N/A", specificity:"N/A",
-        positive:"Score 0–4: none. 5–14: mild. 15–24: moderate. 25–34: severe. >34: complete",
-        negative:"N/A — score all 10 items",
-        how:"10 items (pain intensity, personal care, lifting, reading, headache, concentration, work, driving, sleeping, recreation). Each scored 0–5. Maximum 50. Calculate percentage (score/50 × 100). MCID (minimum clinically important difference) = 7 points.",
-        options:["No disability (0–4)","Mild disability (5–14)","Moderate disability (15–24)","Severe disability (25–34)","Complete disability (35–50)"],
-      },
-      { id:"st_odi_tool", label:"Oswestry Disability Index (ODI)", structure:"Lumbar disability",
-        sensitivity:"N/A", specificity:"N/A",
-        positive:"< 20%: minimal. 20–40%: moderate. 40–60%: severe. >60%: crippled",
-        negative:"N/A",
-        how:"10 sections (pain intensity, personal care, lifting, walking, sitting, standing, sleeping, sex life, social life, travelling). Each scored 0–5. Score/50 × 100 = %. MCID = 10 points (10%). Important for medico-legal and surgical decision-making.",
-        options:["Minimal disability (< 20%)","Moderate disability (20–40%)","Severe disability (40–60%)","Crippling disability (60–80%)","Bed-bound (> 80%)"],
-      },
-      { id:"st_koos_tool", label:"KOOS (Knee injury and OA Outcome Score)", structure:"Knee function",
-        sensitivity:"N/A", specificity:"N/A",
-        positive:"Lower score = worse function",
-        negative:"100 = no symptoms",
-        how:"5 subscales: Symptoms, Pain, ADL, Sport/Recreation, Quality of Life. Each subscale 0–100 (100 = no problems). Calculate each subscale separately. KOOS4 = average of Pain, Symptoms, ADL, Sport. MCID = 8–10 points per subscale.",
-        options:["Score each subscale 0–100","Document all 5 subscale scores","Calculate KOOS4 average","Compare at each reassessment"],
-      },
-      { id:"st_dash_tool", label:"DASH / QuickDASH Score", structure:"Upper limb disability",
-        sensitivity:"N/A", specificity:"N/A",
-        positive:"Higher = more disability. 0 = no disability, 100 = most severe",
-        negative:"Score < 10 = minimal disability",
-        how:"DASH: 30 items about ability to perform activities. QuickDASH: 11 items (faster to administer). Score formula: (sum/n - 1) × 25 = score. Work module (4 items) and Sport/Music module (4 items) optional. MCID = 10–15 points.",
-        options:["Minimal (0–10)","Mild disability (11–30)","Moderate disability (31–50)","Severe disability (51–70)","Extreme disability (> 70)"],
-      },
-      { id:"st_psfs_tool", label:"Patient Specific Functional Scale (PSFS)", structure:"Patient-specific activities",
-        sensitivity:"High responsiveness", specificity:"N/A",
-        positive:"Lower score = worse function",
-        negative:"10/10 = normal function",
-        how:"Patient identifies 3–5 activities they cannot perform due to their problem. Rate each 0–10 (0 = unable to perform, 10 = normal). Average the scores. Reassess at each session. MCID = 2 points for individual activities, 3 points for average score. Excellent for capturing what MATTERS to the patient.",
-        options:["Record 3 activities and scores","Baseline average score","Reassess score at each visit","MCID achieved = 2+ points improvement"],
-      },
-    ]
-  },
 };
 
 // ─── SPECIAL TESTS COMPONENT ──────────────────────────────────────────────────
