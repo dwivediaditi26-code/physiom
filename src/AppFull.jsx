@@ -5283,53 +5283,54 @@ function mergeViewResults(viewResults) {
 // ─── Canvas overlay renderer ──────────────────────────────────────────────────
 // Helper: draw angle badge (small pill label on canvas)
 // Scale factor: keeps labels readable at any image resolution
-function _sc(ctx){ return Math.max(1, Math.min(ctx.canvas.width,ctx.canvas.height)/600); }
+// Scale factor: keeps labels readable at any image resolution
+function _sc(ctx){
+  const cw=ctx.canvas.width||600, ch=ctx.canvas.height||800;
+  return Math.max(1, Math.min(cw,ch)/600);
+}
+
+// Draw outlined text — visible on any background without needing fillRect
+function _drawOutlineText(ctx, txt, x, y, fsize, fillCol, sc) {
+  ctx.save();
+  ctx.font=`bold ${fsize}px sans-serif`;
+  ctx.textBaseline="middle";
+  ctx.lineWidth=Math.max(2, Math.round(sc*2.5));
+  ctx.strokeStyle="rgba(0,0,0,0.85)";
+  ctx.strokeText(txt, x, y);
+  ctx.fillStyle=fillCol||"#ffffff";
+  ctx.fillText(txt, x, y);
+  ctx.restore();
+}
 
 function drawBadge(ctx, x, y, text, color) {
-  const sc=_sc(ctx), pad=5*sc, fsize=Math.round(11*sc);
-  ctx.font=`bold ${fsize}px system-ui`;
-  const tw=ctx.measureText(text).width;
-  const bw=tw+pad*2, bh=fsize+pad*2;
-  ctx.fillStyle="rgba(255,255,255,0.95)";
-  ctx.fillRect(x-bw/2, y-bh/2, bw, bh);
-  ctx.fillStyle=color||"#111827";
-  ctx.textAlign="center"; ctx.textBaseline="middle";
-  ctx.fillText(text, x, y);
-  ctx.textBaseline="alphabetic";
+  const sc=_sc(ctx), fsize=Math.round(12*sc);
+  ctx.save();
+  ctx.textAlign="center";
+  _drawOutlineText(ctx, text, x, y, fsize, color||"#ffffff", sc);
+  ctx.restore();
 }
 
 function drawCleanLabel(ctx, y, lines, color) {
-  const sc=_sc(ctx), fsize=Math.round(11*sc), lhPx=Math.round(15*sc), pad=Math.round(5*sc);
-  ctx.font=`bold ${fsize}px system-ui`;
-  const maxW=lines.reduce((m,l)=>Math.max(m,ctx.measureText(l).width),0);
-  const bw=maxW+pad*2+Math.round(10*sc), bh=lines.length*lhPx+pad*2;
-  const bx=Math.round(4*sc), by=y-bh/2;
-  ctx.fillStyle="rgba(255,255,255,0.95)";
-  ctx.fillRect(bx, by, bw, bh);
-  ctx.fillStyle=color;
-  ctx.fillRect(bx, by, Math.round(4*sc), bh);
-  ctx.textBaseline="middle"; ctx.textAlign="left";
+  const sc=_sc(ctx), fsize=Math.round(12*sc), lhPx=Math.round(18*sc);
+  const bx=Math.round(6*sc);
+  ctx.save();
+  ctx.textAlign="left";
   lines.forEach((ln,i)=>{
-    ctx.font=i===0?`bold ${fsize}px system-ui`:`${Math.round(10*sc)}px system-ui`;
-    ctx.fillStyle=i===0?"#111827":"#555555";
-    ctx.fillText(ln, bx+Math.round(10*sc), by+pad+(i+0.5)*lhPx);
+    const fy=y+(i-(lines.length-1)/2)*lhPx;
+    _drawOutlineText(ctx, ln, bx, fy, i===0?fsize:Math.round(10*sc), color, sc);
   });
-  ctx.textBaseline="alphabetic";
+  ctx.restore();
 }
 
 function drawAngleBadge(ctx, W, y, angleDeg, color) {
-  const sc=_sc(ctx);
+  const sc=_sc(ctx), fsize=Math.round(13*sc);
   const txt=(angleDeg>=0?"+":"")+angleDeg.toFixed(1)+"°";
-  const fsize=Math.round(12*sc);
-  ctx.font=`bold ${fsize}px system-ui`;
-  const tw=ctx.measureText(txt).width;
-  const bh=Math.round(20*sc), pad=Math.round(8*sc);
-  ctx.fillStyle="rgba(255,255,255,0.95)";
-  ctx.fillRect(W-tw-pad*2, y-bh/2, tw+pad*2, bh);
-  ctx.fillStyle=color; ctx.textAlign="right"; ctx.textBaseline="middle";
-  ctx.fillText(txt, W-Math.round(8*sc), y);
-  ctx.textBaseline="alphabetic";
+  ctx.save();
+  ctx.textAlign="right";
+  _drawOutlineText(ctx, txt, W-Math.round(8*sc), y, fsize, color, sc);
+  ctx.restore();
 }
+
 
 // Helper: draw a horizontal level line between two points with label
 function drawLevelLine(ctx, x1, y1, x2, y2, color, label) {
@@ -5436,17 +5437,16 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       const dir=devCm>0?"A":"P", badgeText=`${label} ${dir} ${Math.abs(devCm).toFixed(1)}cm`;
       const _bd_sc=_sc(ctx); ctx.font=`bold ${Math.round(10*_bd_sc)}px system-ui`; const tw=ctx.measureText(badgeText).width;
       const onRight=pt[0]<W*0.6, bx=onRight?pt[0]+9:pt[0]-tw-17, by=pt[1]-9;
-      const _sp_sc=_sc(ctx),_sp_h=Math.round(18*_sp_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(bx,by,tw+Math.round(12*_sp_sc),_sp_h);
-      ctx.fillStyle=col; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(badgeText,bx+Math.round(5*_sp_sc),by+_sp_h/2); ctx.textBaseline="alphabetic";
+      const _sp_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,badgeText,bx,by+Math.round(9*_sp_sc),Math.round(10*_sp_sc),col,_sp_sc);
     });
     // Lat malleolus anchor
     if(V(iAnk)){ const p=PX(iAnk),_lm_sc=_sc(ctx); ctx.beginPath(); ctx.arc(p[0],p[1],Math.round(6*_lm_sc),0,Math.PI*2); ctx.fillStyle="rgba(0,229,255,1)"; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=Math.round(1.5*_lm_sc); ctx.stroke(); ctx.font=`bold ${Math.round(9*_lm_sc)}px system-ui`; ctx.fillStyle="rgba(0,229,255,1)"; ctx.textAlign="left"; ctx.fillText("Lat. Malleolus",p[0]+Math.round(8*_lm_sc),p[1]+Math.round(4*_lm_sc)); }
     // CVA angle
-    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"✓":"⚠"}`; const _cv_sc2=_sc(ctx); ctx.font=`bold ${Math.round(10*_cv_sc2)}px system-ui`; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; const _cva_sc=_sc(ctx),_cva_h=Math.round(18*_cva_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(cx,cy,ctw+Math.round(14*_cva_sc),_cva_h); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(ct,cx+Math.round(6*_cva_sc),cy+_cva_h/2); ctx.textBaseline="alphabetic"; const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; const _fh_sc2=_sc(ctx); ctx.font=`bold ${Math.round(9*_fh_sc2)}px system-ui`; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; const _fhp_sc=_sc(ctx),_fhp_h=Math.round(16*_fhp_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(fx-Math.round(4*_fhp_sc),ep[1]-Math.round(22*_fhp_sc),ftw+Math.round(12*_fhp_sc),_fhp_h); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(fl,fx+Math.round(2*_fhp_sc),ep[1]-Math.round(22*_fhp_sc)+_fhp_h/2); ctx.textBaseline="alphabetic"; } }
+    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"✓":"⚠"}`; const _cv_sc2=_sc(ctx); ctx.font=`bold ${Math.round(10*_cv_sc2)}px system-ui`; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; const _cva_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,ct,cx+Math.round(4*_cva_sc),cy+Math.round(9*_cva_sc),Math.round(10*_cva_sc),cc,_cva_sc); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; const _fh_sc2=_sc(ctx); ctx.font=`bold ${Math.round(9*_fh_sc2)}px system-ui`; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; const _fhp_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,fl,fx,ep[1]-Math.round(16*_fhp_sc),Math.round(9*_fhp_sc),fc,_fhp_sc); } }
     // Trunk inclination
-    if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}°`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; const _trsc=_sc(ctx); ctx.font=`bold ${Math.round(9*_trsc)}px system-ui`; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+Math.round(8*_trsc):mx-tw-Math.round(16*_trsc); const _tr_sc=_sc(ctx),_tr_h=Math.round(16*_tr_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(tx,my-_tr_h/2,tw+Math.round(12*_tr_sc),_tr_h); ctx.fillStyle=tc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(tt,tx+Math.round(5*_tr_sc),my); ctx.textBaseline="alphabetic"; }
+    if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}°`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; const _trsc=_sc(ctx); ctx.font=`bold ${Math.round(9*_trsc)}px system-ui`; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+Math.round(8*_trsc):mx-tw-Math.round(16*_trsc); const _tr_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,tt,tx,my,Math.round(10*_tr_sc),tc,_tr_sc); }
     // Knee sagittal angle
-    if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; const _knsc=_sc(ctx); ctx.font=`bold ${Math.round(9*_knsc)}px system-ui`; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+Math.round(8*_knsc):kp[0]-ktw-Math.round(16*_knsc); const _kn_sc=_sc(ctx),_kn_h=Math.round(16*_kn_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(kx,kp[1]+Math.round(6*_kn_sc),ktw+Math.round(12*_kn_sc),_kn_h); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(kt,kx+Math.round(5*_kn_sc),kp[1]+Math.round(6*_kn_sc)+_kn_h/2); ctx.textBaseline="alphabetic"; }
+    if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; const _knsc=_sc(ctx); ctx.font=`bold ${Math.round(9*_knsc)}px system-ui`; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+Math.round(8*_knsc):kp[0]-ktw-Math.round(16*_knsc); const _kn_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,kt,kx,kp[1]+Math.round(14*_kn_sc),Math.round(10*_kn_sc),kc,_kn_sc); }
   }
 
   // ── Sagittal-specific legend + title ──────────────────────────────────────
@@ -5552,9 +5552,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.lineWidth=1; ctx.stroke();
       // Label
       ctx.font="bold 9px system-ui"; const tw2=ctx.measureText(lbl).width;
-      const _ps_sc=_sc(ctx),_ps_h=Math.round(14*_ps_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(psX-tw2/2-Math.round(4*_ps_sc),psY+Math.round(12*_ps_sc),tw2+Math.round(8*_ps_sc),_ps_h);
-      ctx.fillStyle="#7e22ce"; ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillText(lbl,psX,psY+Math.round(12*_ps_sc)+_ps_h/2); ctx.textBaseline="alphabetic";
+      const _ps_sc=_sc(ctx); ctx.textAlign="center"; _drawOutlineText(ctx,lbl,psX,psY+Math.round(22*_ps_sc),Math.round(9*_ps_sc),"#c084fc",_ps_sc);
     });
     // Calcaneal alignment (heel tilt from vertical)
     [[29,27,"L.Heel"],[30,28,"R.Heel"]].forEach(([hIdx,aIdx,lbl2])=>{
@@ -5719,10 +5717,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.beginPath(); ctx.arc(pt[0],pt[1],6,0,Math.PI*2);
       ctx.fillStyle="#FFD700"; ctx.fill();  // Gold/yellow = matches ASIS marker convention
       ctx.strokeStyle="rgba(0,0,0,0.5)"; ctx.lineWidth=1; ctx.stroke();
-      const _as_sc=_sc(ctx),_as_fs=Math.round(9*_as_sc),_as_h=Math.round(14*_as_sc); ctx.font=`bold ${_as_fs}px system-ui`; const tw=ctx.measureText(lbl).width;
-      ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(pt[0]-tw/2-Math.round(4*_as_sc),pt[1]+Math.round(12*_as_sc),tw+Math.round(8*_as_sc),_as_h);
-      ctx.fillStyle="#92400e"; ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillText(lbl,pt[0],pt[1]+Math.round(12*_as_sc)+_as_h/2); ctx.textBaseline="alphabetic";
+      const _as_sc=_sc(ctx); ctx.textAlign="center"; _drawOutlineText(ctx,lbl,pt[0],pt[1]+Math.round(22*_as_sc),Math.round(9*_as_sc),"#FFD700",_as_sc);
     });
     // Waist triangles
     if((view==="posterior"||view==="back")&&V(11)&&V(13)&&V(23)&&V(12)&&V(14)&&V(24)){
@@ -5812,9 +5807,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       const p = PX(idx); if (!p) return;
       const tw = ctx.measureText(lbl).width;
       const bx = p[0] + 9, by = p[1] - 6;
-      const _ll_sc=_sc(ctx),_ll_h=Math.round(13*_ll_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(bx-Math.round(2*_ll_sc),by-_ll_h,tw+Math.round(8*_ll_sc),_ll_h);
-      ctx.fillStyle="#111827"; ctx.textAlign="left"; ctx.textBaseline="middle";
-      ctx.fillText(lbl,bx+Math.round(2*_ll_sc),by-_ll_h/2); ctx.textBaseline="alphabetic";
+      const _ll_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,lbl,bx,by-Math.round(6*_ll_sc),Math.round(9*_ll_sc),"#cce0ff",_ll_sc);
     });
     // ASIS labels specifically (estimated position)
     if (V(23) && V(11)) {
@@ -5827,9 +5820,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       [[asLx,asLy,"L.ASIS"],[asRx,asRy,"R.ASIS"]].forEach(([x,y,lbl]) => {
         if (!x||!y) return;
         const tw = ctx.measureText(lbl).width;
-        const _a2_sc=_sc(ctx),_a2_h=Math.round(14*_a2_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(x-tw/2-Math.round(4*_a2_sc),y+Math.round(13*_a2_sc),tw+Math.round(8*_a2_sc),_a2_h);
-        ctx.fillStyle="#92400e"; ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText(lbl,x,y+Math.round(13*_a2_sc)+_a2_h/2); ctx.textBaseline="alphabetic";
+        const _a2_sc=_sc(ctx); ctx.textAlign="center"; _drawOutlineText(ctx,lbl,x,y+Math.round(22*_a2_sc),Math.round(9*_a2_sc),"#FFD700",_a2_sc);
       });
     }
   }
@@ -5853,9 +5844,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.font = "bold 10px system-ui";
       const tw = ctx.measureText(txt).width;
       const bx = ki===25 ? p[0]-tw-18 : p[0]+10;
-      const _kf_sc=_sc(ctx),_kf_h=Math.round(18*_kf_sc); ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.fillRect(bx-Math.round(3*_kf_sc),p[1]-_kf_h/2,tw+Math.round(14*_kf_sc),_kf_h);
-      ctx.fillStyle=col; ctx.textAlign="left"; ctx.textBaseline="middle";
-      ctx.fillText(txt,bx+Math.round(3*_kf_sc),p[1]); ctx.textBaseline="alphabetic";
+      const _kf_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,txt,bx,p[1],Math.round(10*_kf_sc),col,_kf_sc);
     });
   }
 
