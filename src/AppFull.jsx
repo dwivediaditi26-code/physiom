@@ -15,7 +15,7 @@ import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import LandingPage from "./LandingPage.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
-  DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
+  MMT_DATA, DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
 import { analyzeSagittalContour, renderContourDebugOverlay, warmupContourEngine } from "./contourEngine";
 import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
@@ -11653,6 +11653,9 @@ const MMT_LABEL_MAP = {
   "mmt_multif":"Multifidus","mmt_erect":"Erector Spinae","mmt_transab":"Transversus Abdominis",
   "mmt_rectab":"Rectus Abdominis","mmt_obliq":"Obliques",
 };
+// Authoritative MMT id → {name, root} built from the MMT module's own database
+const MMT_INFO={};
+try{ Object.values(MMT_DATA).forEach(arr=>arr.forEach(m=>{ if(m&&m.id) MMT_INFO[m.id]={name:String(m.muscle||"").replace(/\s*\(.*\)\s*$/,""),root:m.root||""}; })); }catch(e){}
 
 function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav }) {
   const { useState, useEffect, useMemo } = React;
@@ -12428,32 +12431,49 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {/* ── MMT ── */}
                   <Sec icon="💪" title="Manual Muscle Testing" navKey="mmt" hasData={mmtKeys.length>0}>
                     {(()=>{
-                      // Pair L and R for each muscle
+                      // Pair L and R for each muscle. Keys are stored as mmt_<id>_L / mmt_<id>_R
+                      // (capital, from MMTModule) — legacy _left/_right also supported.
                       const seen=new Set(), rows=[];
                       mmtKeys.forEach(k=>{
-                        const base=k.replace(/_left|_right/,"");
+                        const sideMatch=k.match(/_(L|R|left|right)$/);
+                        const base=sideMatch?k.slice(0,k.length-sideMatch[0].length):k;
                         if(seen.has(base)) return; seen.add(base);
-                        const lKey=base+"_left", rKey=base+"_right";
-                        const lGrade=d[lKey]||d[base]; const rGrade=d[rKey];
-                        const muscle=MMT_LABEL_MAP[base]||(base.replace("mmt_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()));
-                        rows.push({base,muscle,lGrade,rGrade});
+                        const lGrade=d[base+"_L"]||d[base+"_left"]||(sideMatch?null:d[base]);
+                        const rGrade=d[base+"_R"]||d[base+"_right"]||null;
+                        const info=MMT_INFO[base];
+                        const muscle=(info&&info.name)||MMT_LABEL_MAP[base]||(base.replace("mmt_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()));
+                        rows.push({base,muscle,root:(info&&info.root)||"",lGrade,rGrade});
                       });
-                      const gradeCol=g=>{const n=parseFloat(g)||0;return n>=5?C.green:n>=4?C.orange:n>=3?"#f59e0b":"#dc2626";};
+                      const gradeCol=g=>{const n=parseFloat(g)||0;return n>=5?C.green:n>=4?"#d97706":"#dc2626";};
+                      const gradeBg =g=>{const n=parseFloat(g)||0;return n>=5?"#ECFDF5":n>=4?"#FEF3C7":"#FEF2F2";};
+                      const Pill=({g})=>g
+                        ?(<span style={{display:"inline-block",minWidth:46,padding:"3px 8px",borderRadius:99,background:gradeBg(g),fontSize:14,fontWeight:800,color:gradeCol(g)}}>{g}<span style={{fontSize:9.5,fontWeight:600,opacity:0.65}}>/5</span></span>)
+                        :(<span style={{fontSize:13,color:"#D1D5DB"}}>—</span>);
                       return(
                         <div style={{display:"flex",flexDirection:"column",gap:0}}>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 70px 70px",gap:4,padding:"4px 8px 6px",marginBottom:2,borderBottom:`1px solid ${C.border}`}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 72px 72px",gap:4,padding:"4px 8px 6px",marginBottom:2,borderBottom:`1px solid ${C.border}`}}>
                             <div style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px"}}>Muscle</div>
                             <div style={{fontSize:11,color:C.muted,fontWeight:700,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>Left</div>
                             <div style={{fontSize:11,color:C.muted,fontWeight:700,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>Right</div>
                           </div>
                           {rows.slice(0,10).map((r,i)=>(
-                            <div key={r.base} style={{display:"grid",gridTemplateColumns:"1fr 70px 70px",gap:4,padding:"8px",background:i%2===0?"#F9FAFB":"#fff",borderRadius:6}}>
-                              <div style={{fontSize:13,fontWeight:600,color:C.text,alignSelf:"center"}}>{r.muscle}</div>
-                              <div style={{textAlign:"center"}}>{r.lGrade&&<span style={{fontSize:16,fontWeight:800,color:gradeCol(r.lGrade)}}>{r.lGrade}<span style={{fontSize:10,color:C.muted}}>/5</span></span>}</div>
-                              <div style={{textAlign:"center"}}>{r.rGrade&&<span style={{fontSize:16,fontWeight:800,color:gradeCol(r.rGrade)}}>{r.rGrade}<span style={{fontSize:10,color:C.muted}}>/5</span></span>}</div>
+                            <div key={r.base} style={{display:"grid",gridTemplateColumns:"1fr 72px 72px",gap:4,padding:"8px",background:i%2===0?"#F9FAFB":"#fff",borderRadius:6,alignItems:"center"}}>
+                              <div>
+                                <div style={{fontSize:13,fontWeight:700,color:C.text,lineHeight:1.25}}>{r.muscle}</div>
+                                {r.root&&<div style={{fontSize:10,color:C.muted,marginTop:1}}>{r.root}</div>}
+                              </div>
+                              <div style={{textAlign:"center"}}><Pill g={r.lGrade}/></div>
+                              <div style={{textAlign:"center"}}><Pill g={r.rGrade}/></div>
                             </div>
                           ))}
                           {rows.length>10&&<div style={{fontSize:11,color:C.muted,padding:"4px 8px"}}>+{rows.length-10} more muscles</div>}
+                          <div style={{display:"flex",gap:14,padding:"8px 8px 0",borderTop:`1px solid ${C.border}`,marginTop:6}}>
+                            {[["#10B981","5 Normal"],["#d97706","4 Good"],["#dc2626","≤3 Weak"]].map(([c2,t2])=>(
+                              <span key={t2} style={{fontSize:10.5,color:C.muted,display:"flex",alignItems:"center",gap:4}}>
+                                <span style={{width:8,height:8,borderRadius:"50%",background:c2,display:"inline-block"}}/>{t2}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       );
                     })()}
