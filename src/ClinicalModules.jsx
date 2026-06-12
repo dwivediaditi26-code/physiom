@@ -3144,6 +3144,7 @@ function SignSessionFields({ PC, data }) {
 }
 
 function SOAPNoteModule({ data, set, onNav, initialTab }) {
+  const aiOnly = initialTab === "ai";
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#1a1025",
@@ -3375,7 +3376,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
     <div>
 
       {/* ── LIVE STATUS BAR ────────────────────────────────────────────────── */}
-      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
+      {!aiOnly&&<div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
         background:`${PC.accent}0a`,border:`1px solid ${PC.accent}25`,
         borderRadius:12,marginBottom:12,flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"center",gap:7}}>
@@ -3402,10 +3403,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             </div>
           )}
         </div>
-      </div>
+      </div>}
 
       {/* ── URGENT FLAGS — always visible at top ───────────────────────────── */}
-      {urgentRules.map((r,i) => (
+      {!aiOnly&&urgentRules.map((r,i) => (
         <div key={i} style={{background:"rgba(220,38,38,0.07)",
           border:"1.5px solid rgba(220,38,38,0.6)",borderRadius:12,
           padding:"12px 16px",marginBottom:10,display:"flex",gap:10}}>
@@ -3418,7 +3419,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       ))}
 
       {/* ── SESSION DETAILS ─────────────────────────────────────────────────── */}
-      <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
+      {!aiOnly&&<div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
         <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>📋 Session Details</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
           <div><label style={lbl}>Clinician Name</label><input value={clinician} onChange={e=>{setClinician(e.target.value);set("soap_clinician",e.target.value);}} placeholder="Your name" style={inp}/></div>
@@ -3429,16 +3430,16 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             {["Initial Assessment","Follow-up Session","Discharge Assessment","Telehealth Consultation","Home Visit","Post-surgical Review","Group Session","Sports Field Assessment"].map(s=><option key={s}>{s}</option>)}
           </select>
         </div>
-      </div>
+      </div>}
 
       {/* ── MAIN TAB BAR ──────────────────────────────────────────────────────── */}
-      <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+      {!aiOnly&&<div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
         {tabBtn("soap","📄 SOAP Note")}
         {tabBtn("interp","🧠 Suggested Interpretation", totalRules)}
         {tabBtn("both","⊞ Split View")}
         {tabBtn("extra","✏️ Add Notes")}
         {tabBtn("ai","🤖 AI Assistant")}
-      </div>
+      </div>}
 
       {/* ══════════════════════════════════════════════════════════════
           SOAP TAB — Real-time auto-filled note

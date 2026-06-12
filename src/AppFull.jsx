@@ -8797,19 +8797,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         </div>
       )}
 
-      {/* Photo orientation toggle — only for upload mode */}
-      {!isLive&&inputMode==="ai"&&(
-        <div style={{padding:isWide?"6px 20px":"6px 16px",background:"rgba(124,58,237,0.04)",borderBottom:`1px solid ${PC.border}`,display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,flexShrink:0}}>📷 Camera type:</span>
-          {[["selfie","Selfie / Front camera"],["standard","Separate / Standard camera"]].map(([val,label])=>(
-            <button key={val} onClick={()=>setPhotoOrientation(val)}
-              style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${photoOrientation===val?PC.accent:PC.border}`,background:photoOrientation===val?`${PC.accent}15`:"transparent",color:photoOrientation===val?PC.accent:PC.muted,fontWeight:700,fontSize:"0.62rem",cursor:"pointer"}}>
-              {label}
-            </button>
-          ))}
-          <span style={{fontSize:"0.58rem",color:PC.muted,marginLeft:4}}>{photoOrientation==="standard"?"L/R corrected for standard camera":"Default — front-facing/selfie camera"}</span>
-        </div>
-      )}
 
       {/* View selector */}
       <div style={{padding: isWide?"12px 20px":"10px 16px",background:PC.s2,borderBottom:`1px solid ${PC.border}`}}>
@@ -9858,7 +9845,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               border:"none",borderRadius:9,color:"#fff",
               fontSize:isWide?"0.72rem":"0.62rem",fontWeight:700,cursor:"pointer",
               opacity:findings.length&&scoreData?1:0.5}}>
-            📄 Report
+            📄 PDF Report
           </button>
           <button onClick={()=>setShowHistory(h=>!h)}
             style={{padding:isWide?"6px 14px":"4px 9px",background:`${PC.a2}15`,border:`1px solid ${PC.a2}30`,borderRadius:9,color:PC.a2,fontSize:isWide?"0.72rem":"0.65rem",fontWeight:700,cursor:"pointer"}}>
@@ -16380,9 +16367,9 @@ function AppInner({ currentUser, onSignOut }) {
 
       {/* 4. Advanced Clinical Assessment (collapsible) */}
       <SidebarGroup groupKey="advanced" icon="🔭" label="Advanced Assessment" accentColor="#9333ea">
-        <SidebarItem navKey="cyriax_full"  icon="🦴" label="Cyriax"/>
+        <SidebarItem navKey="cyriax_full"  icon="🦴" label="STTT — Selective Tissue Tension"/>
         <SidebarItem navKey="kinetic"      icon="⛓️" label="Kinetic Chain"/>
-        <SidebarItem navKey="nkt"          icon="🧠" label="NKT"/>
+        <SidebarItem navKey="nkt"          icon="🧠" label="CPA — Compensation Pattern Analysis"/>
         <SidebarItem navKey="fascia"       icon="🕸️" label="Fascia Integration"/>
       </SidebarGroup>
 
@@ -16999,9 +16986,9 @@ function AppInner({ currentUser, onSignOut }) {
                 <BnavItem navKey="outcome"     icon="📈" label="Outcome Measures"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="advanced"?" open":""}`}>
-                <BnavItem navKey="cyriax_full" icon="🦴" label="Cyriax"/>
+                <BnavItem navKey="cyriax_full" icon="🦴" label="STTT"/>
                 <BnavItem navKey="kinetic"     icon="⛓️" label="Kinetic Chain"/>
-                <BnavItem navKey="nkt"         icon="🧠" label="NKT"/>
+                <BnavItem navKey="nkt"         icon="🧠" label="CPA"/>
                 <BnavItem navKey="fascia"      icon="🕸️" label="Fascia Integration"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="treatment"?" open":""}`}>
