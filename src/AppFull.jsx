@@ -15,7 +15,7 @@ import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import LandingPage from "./LandingPage.jsx";
 import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
-  MMT_DATA, DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
+  MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
 import { runViTPoseLateral, warmupViTPose, vitposeStatus } from "./vitposeEngine";
 import { analyzeSagittalContour, renderContourDebugOverlay, warmupContourEngine } from "./contourEngine";
 import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
@@ -11653,6 +11653,8 @@ const MMT_LABEL_MAP = {
   "mmt_multif":"Multifidus","mmt_erect":"Erector Spinae","mmt_transab":"Transversus Abdominis",
   "mmt_rectab":"Rectus Abdominis","mmt_obliq":"Obliques",
 };
+// Kinetic chain test id → label (mirrors KC_IDS in ClinicalModules)
+const KC_LABELS={kc_ankle_df:"Ankle DF Lunge Test",kc_subtalar:"Subtalar Mobility",kc_great_toe:"1st MTP Extension",kc_knee_stability:"Knee Valgus Stress",kc_patellar_mobility:"Patellar Mobility",kc_tibiofemoral_rot:"Tibial Rotation",kc_hip_ir_mob:"Hip IR Mobility",kc_hip_ext_mob:"Hip Ext — Thomas Test",kc_hip_er_mob:"Hip ER Mobility",kc_hip_abd_mob:"Hip Abd Mobility",kc_lumbar_stability:"Lumbar Stability",kc_lumbar_flexion_ctrl:"Lumbar Flex Control",kc_lumbar_rotation_ctrl:"Lumbar Rot Control",kc_thoracic_rotation:"Thoracic Rotation",kc_thoracic_extension:"Thoracic Extension",kc_rib_mobility:"Rib Cage Mobility",kc_scapulohumeral_rhythm:"Scapulohumeral Rhythm",kc_gh_ir_mob:"GH IR — GIRD",kc_cervical_thoracic_jct:"CT Junction",kc_cervical_rot_mob:"Cervical Rotation",kc_cervical_flex_ext:"Cervical Flex/Ext"};
 // Authoritative MMT id → {name, root} built from the MMT module's own database
 const MMT_INFO={};
 try{ Object.values(MMT_DATA).forEach(arr=>arr.forEach(m=>{ if(m&&m.id) MMT_INFO[m.id]={name:String(m.muscle||"").replace(/\s*\(.*\)\s*$/,""),root:m.root||""}; })); }catch(e){}
@@ -12393,7 +12395,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               const romKeys = Object.keys(d).filter(k=>k.startsWith("rom_")&&k!=="rom_snapshots"&&d[k]);
               const mmtKeys = Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]&&!k.endsWith("_pain")&&!k.endsWith("_ef"));
               const stKeys  = Object.keys(d).filter(k=>k.startsWith("st_")&&d[k]);
-              const neuroKeys = Object.keys(d).filter(k=>(k.startsWith("n_ref_")||k.startsWith("n_der_")||k.startsWith("n_myot_"))&&d[k]);
+              const neuroKeys = Object.keys(d).filter(k=>d[k]&&(/^n_ref_/.test(k)||/^myo_/.test(k)||/^n_(c\d|t\d|l\d|s\d|s4s5)(_|$)/.test(k)||k.startsWith("n_der_")||k.startsWith("n_myot_")));
               const kcKeys  = Object.keys(d).filter(k=>k.startsWith("kc_")&&d[k]);
               const faKeys  = Object.keys(d).filter(k=>k.startsWith("fa_")&&d[k]);
               const cyKeys  = Object.keys(d).filter(k=>k.startsWith("cy_")&&d[k]);
@@ -12481,50 +12483,115 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
                   {/* ── Special Tests ── */}
                   <Sec icon="🔬" title="Special Tests" navKey="special" hasData={stKeys.length>0}>
-                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                      {stKeys.slice(0,10).map(k=>{
-                        const raw=d[k]||"";
-                        const isPos=raw.includes("Positive"); const isNeg=raw.includes("Negative");
-                        // Clean key: st_neer_left → "Neer's Test (L)"
-                        const side=k.includes("_left")?" (L)":k.includes("_right")?" (R)":"";
-                        const testName=k.replace(/^st_/,"").replace(/_left|_right/,"").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())+side;
-                        // Extract result text (before the " — " detail)
-                        const resultText=raw.split(" — ")[0].split(" (")[0];
-                        const detail=raw.includes(" — ")?raw.split(" — ")[1]:"";
-                        return(
-                          <div key={k} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 8px",borderRadius:8,background:isPos?"#FEF2F2":isNeg?"#ECFDF5":"#F9FAFB"}}>
-                            <div style={{flex:1}}>
-                              <span style={{fontSize:11.5,fontWeight:700,color:C.text}}>{testName}</span>
-                              {detail&&<span style={{fontSize:10,color:C.muted,marginLeft:4}}>— {detail.slice(0,60)}{detail.length>60?"…":""}</span>}
-                            </div>
-                            <span style={{fontSize:11,fontWeight:800,color:isPos?"#dc2626":isNeg?C.green:C.muted,flexShrink:0,padding:"2px 8px",borderRadius:10,background:isPos?"rgba(220,38,38,0.1)":isNeg?"rgba(5,150,105,0.1)":"transparent"}}>{resultText}</span>
+                    {(()=>{
+                      const seen=new Set(), rows=[];
+                      stKeys.forEach(k=>{
+                        const sideMatch=k.match(/_(left|right)$/);
+                        const base=sideMatch?k.slice(0,k.length-sideMatch[0].length):k;
+                        if(seen.has(base)) return; seen.add(base);
+                        const lRaw=d[base+"_left"]||null, rRaw=d[base+"_right"]||null, cRaw=sideMatch?null:d[base];
+                        const name=SPECIAL_TEST_NAMES[base]||base.replace(/^st_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+                        rows.push({base,name,lRaw,rRaw,cRaw});
+                      });
+                      const isP=v=>!!v&&v.includes("Positive");
+                      rows.sort((a,b)=>([a.lRaw,a.rRaw,a.cRaw].some(isP)?0:1)-([b.lRaw,b.rRaw,b.cRaw].some(isP)?0:1));
+                      const STPill=({v,wide})=>{
+                        if(!v) return <span style={{fontSize:12,color:"#D1D5DB"}}>—</span>;
+                        const pos=v.includes("Positive"), neg=v.includes("Negative");
+                        const txt=wide?(v.split(" — ")[0].split(" (")[0]):(pos?"+ve":neg?"−ve":v.split(" — ")[0].slice(0,10));
+                        return <span style={{display:"inline-block",padding:"2px 10px",borderRadius:99,fontSize:11,fontWeight:800,
+                          background:pos?"#FEF2F2":neg?"#ECFDF5":"#F3F4F6",color:pos?"#dc2626":neg?C.green:C.muted}}>{txt}</span>;
+                      };
+                      return(
+                        <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 72px 72px",gap:4,padding:"4px 8px 6px",marginBottom:2,borderBottom:`1px solid ${C.border}`}}>
+                            <div style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px"}}>Test</div>
+                            <div style={{fontSize:11,color:C.muted,fontWeight:700,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>Left</div>
+                            <div style={{fontSize:11,color:C.muted,fontWeight:700,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>Right</div>
                           </div>
-                        );
-                      })}
-                      {stKeys.length>10&&<div style={{fontSize:10,color:C.muted,padding:"2px 8px"}}>+{stKeys.length-10} more tests</div>}
-                    </div>
+                          {rows.slice(0,10).map((r,i2)=>(
+                            <div key={r.base} style={{display:"grid",gridTemplateColumns:r.cRaw?"1fr 148px":"1fr 72px 72px",gap:4,padding:"8px",background:i2%2===0?"#F9FAFB":"#fff",borderRadius:6,alignItems:"center"}}>
+                              <div style={{fontSize:13,fontWeight:700,color:C.text,lineHeight:1.25}}>{r.name}</div>
+                              {r.cRaw
+                                ?<div style={{textAlign:"center"}}><STPill v={r.cRaw} wide/></div>
+                                :<><div style={{textAlign:"center"}}><STPill v={r.lRaw}/></div>
+                                  <div style={{textAlign:"center"}}><STPill v={r.rRaw}/></div></>}
+                            </div>
+                          ))}
+                          {rows.length>10&&<div style={{fontSize:11,color:C.muted,padding:"4px 8px"}}>+{rows.length-10} more tests</div>}
+                        </div>
+                      );
+                    })()}
                   </Sec>
 
                   {/* ── Neurological ── */}
                   <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes}>
                     {(()=>{
-                      const positives=neuroKeys.filter(k=>d[k]&&(d[k].includes("Positive")||d[k].includes("Absent")||d[k].includes("Reduced")));
-                      const abnormal=neuroKeys.filter(k=>d[k]&&!d[k].includes("Normal")&&!d[k].includes("Intact"));
-                      const display=positives.length>0?positives:abnormal.length>0?abnormal:neuroKeys;
+                      // Group into Reflexes / Dermatomes / Myotomes with L/R pairing
+                      const seen=new Set(); const groups={Reflexes:[],Dermatomes:[],Myotomes:[]};
+                      neuroKeys.forEach(k=>{
+                        const sideMatch=k.match(/_(left|right)$/);
+                        const base=sideMatch?k.slice(0,k.length-sideMatch[0].length):k;
+                        if(seen.has(base)) return; seen.add(base);
+                        const lVal=d[base+"_left"]||null, rVal=d[base+"_right"]||null, cVal=sideMatch?null:d[base];
+                        let group,label,sub="";
+                        if(base.startsWith("n_ref_")){
+                          group="Reflexes";
+                          const rf=REFLEXES.find(r=>r.id===base);
+                          label=rf?rf.label:base.replace(/^n_ref_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+                          sub=rf?rf.level:"";
+                        } else if(base.startsWith("myo_")){
+                          group="Myotomes";
+                          const my=MYOTOMES.find(m=>("myo_"+m.level.replace(/[^a-zA-Z0-9]/g,"_").toLowerCase())===base);
+                          label=my?`${my.level} — ${my.action}`:base.replace(/^myo_/,"").replace(/_/g,"–").toUpperCase();
+                          sub=my?my.test:"";
+                        } else {
+                          group="Dermatomes";
+                          const de=DERMATOMES.find(dd=>dd.id===base);
+                          label=de?`${de.level} — ${de.region}`:base.replace(/^n_/,"").replace(/_/g," ").toUpperCase();
+                          sub=de&&de.disc&&de.disc!=="—"?`Disc ${de.disc}`:"";
+                        }
+                        groups[group].push({base,label,sub,lVal,rVal,cVal});
+                      });
+                      const sev=v=>!v?0:/Absent|Positive|UMN|Spastic|Flaccid/i.test(v)?3:/Reduced|Diminished|Brisk|Hyper/i.test(v)?2:/Normal|Intact|Negative/i.test(v)?1:2;
+                      Object.values(groups).forEach(arr=>arr.sort((a,b)=>Math.max(sev(b.lVal),sev(b.rVal),sev(b.cVal))-Math.max(sev(a.lVal),sev(a.rVal),sev(a.cVal))));
+                      const NPill=({v})=>{
+                        if(!v) return <span style={{fontSize:12,color:"#D1D5DB"}}>—</span>;
+                        const sv=sev(v);
+                        const c2=sv===3?"#dc2626":sv===2?"#d97706":C.green;
+                        const bg=sv===3?"#FEF2F2":sv===2?"#FEF3C7":"#ECFDF5";
+                        return <span style={{display:"inline-block",padding:"2px 8px",borderRadius:99,fontSize:10.5,fontWeight:800,background:bg,color:c2}}>{v.split(" — ")[0].split(" (")[0].slice(0,14)}</span>;
+                      };
+                      const hasRows=Object.values(groups).some(a=>a.length>0);
                       return(
                         <div>
-                          <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:d.neuro_clinician_notes?8:0}}>
-                            {display.slice(0,8).map(k=>{
-                              const val=d[k],isAbn=val&&(val.includes("Positive")||val.includes("Absent")||val.includes("Reduced"));
-                              return <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,
-                                background:isAbn?"#FEF2F2":"#ECFDF5",color:isAbn?"#dc2626":C.green,
-                                border:`1px solid ${isAbn?"#FCA5A5":"#BBF7D0"}`}}>
-                                {k.replace(/^(n_ref_|n_der_|n_myot_)/,"").replace(/_/g," ")}: {val}
-                              </span>;
-                            })}
-                          </div>
+                          {hasRows&&(
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 84px 84px",gap:4,padding:"4px 8px 6px",marginBottom:2,borderBottom:`1px solid ${C.border}`}}>
+                              <div style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px"}}>Test</div>
+                              <div style={{fontSize:11,color:C.muted,fontWeight:700,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>Left</div>
+                              <div style={{fontSize:11,color:C.muted,fontWeight:700,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>Right</div>
+                            </div>
+                          )}
+                          {Object.entries(groups).map(([gName,arr])=>arr.length===0?null:(
+                            <div key={gName}>
+                              <div style={{fontSize:10.5,color:C.primary,fontWeight:800,padding:"7px 8px 2px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{gName}</div>
+                              {arr.slice(0,5).map((r,i2)=>(
+                                <div key={r.base} style={{display:"grid",gridTemplateColumns:r.cVal?"1fr 172px":"1fr 84px 84px",gap:4,padding:"7px 8px",background:i2%2===0?"#F9FAFB":"#fff",borderRadius:6,alignItems:"center"}}>
+                                  <div>
+                                    <div style={{fontSize:12.5,fontWeight:700,color:C.text,lineHeight:1.25}}>{r.label}</div>
+                                    {r.sub&&<div style={{fontSize:9.5,color:C.muted,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.sub}</div>}
+                                  </div>
+                                  {r.cVal
+                                    ?<div style={{textAlign:"center"}}><NPill v={r.cVal}/></div>
+                                    :<><div style={{textAlign:"center"}}><NPill v={r.lVal}/></div>
+                                      <div style={{textAlign:"center"}}><NPill v={r.rVal}/></div></>}
+                                </div>
+                              ))}
+                              {arr.length>5&&<div style={{fontSize:10.5,color:C.muted,padding:"2px 8px"}}>+{arr.length-5} more</div>}
+                            </div>
+                          ))}
                           {d.neuro_clinician_notes&&(
-                            <div style={{fontSize:11,color:C.text,lineHeight:1.5,padding:"7px 10px",background:"#F9FAFB",borderRadius:8}}>
+                            <div style={{fontSize:11,color:C.text,lineHeight:1.5,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,marginTop:8}}>
                               {d.neuro_clinician_notes.slice(0,120)}{d.neuro_clinician_notes.length>120?"…":""}
                             </div>
                           )}
@@ -12569,18 +12636,28 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         <div style={{fontSize:11,color:C.text,lineHeight:1.5,fontStyle:"italic"}}>{d.kinetic_chain}</div>
                       </div>
                     )}
-                    {kcKeys.length>0&&(
-                      <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                        {kcKeys.slice(0,8).map(k=>{
-                          const val=d[k],isAbn=val&&val!=="Normal"&&val!=="Within normal limits";
-                          return <span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,
-                            background:isAbn?"#FEF3C7":"#F3F4F6",color:isAbn?"#92400E":C.muted,
-                            border:`1px solid ${isAbn?"#FDE68A":C.border}`}}>
-                            {k.replace("kc_","").replace(/_/g," ")}: {val}
-                          </span>;
-                        })}
-                      </div>
-                    )}
+                    {kcKeys.length>0&&(()=>{
+                      const isAbn=v=>{const t=String(v||"").toLowerCase();return t.includes("restricted")||t.includes("fail")||t.includes("limited")||t.includes("dysfunc")||t.includes("unstable")||t.includes("abnormal")||t.includes("positive");};
+                      const isOk=v=>{const t=String(v||"").toLowerCase();return t.includes("normal")||t.includes("full")||t.includes("pass")||t.includes("negative")||t.includes("stable");};
+                      const rows=kcKeys.map(k=>({k,label:KC_LABELS[k]||k.replace("kc_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()),val:d[k]}));
+                      rows.sort((a,b)=>(isAbn(b.val)?1:0)-(isAbn(a.val)?1:0));
+                      return(
+                        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:5}}>
+                          {rows.slice(0,12).map(r=>{
+                            const abn=isAbn(r.val), ok=isOk(r.val);
+                            const c2=abn?"#92400E":ok?C.green:C.muted;
+                            const bg=abn?"#FEF3C7":ok?"#ECFDF5":"#F3F4F6";
+                            return(
+                              <div key={r.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
+                                <span style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.2}}>{r.label}</span>
+                                <span style={{flexShrink:0,padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:bg,color:c2}}>{String(r.val).split(" — ")[0].slice(0,16)}</span>
+                              </div>
+                            );
+                          })}
+                          {rows.length>12&&<div style={{fontSize:10.5,color:C.muted,padding:"4px 8px"}}>+{rows.length-12} more</div>}
+                        </div>
+                      );
+                    })()}
                   </Sec>
 
                   {/* ── Fascia ── */}
