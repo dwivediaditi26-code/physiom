@@ -85,7 +85,7 @@ const SCALES = {
       {id:"dash_q21",label:"Pain — usual activities",options:["1 — None","2 — Mild","3 — Moderate","4 — Severe","5 — Extreme"]},
       {id:"dash_q22",label:"Arm/shoulder/hand pain during activity",options:["1 — None","2 — Mild","3 — Moderate","4 — Severe","5 — Extreme"]},
     ],
-    score:(v)=>{const ids=Object.keys(v).filter(k=>k.startsWith("dash_q"));const s=ids.map(id=>+v[id]).filter(x=>x>0);return s.length>=10?Math.round(((s.reduce((a,b)=>a+b,0)/s.length)-1)/4*100):null;}
+    score:(v)=>{const ids=Object.keys(v).filter(k=>k.startsWith("dash_q"));const s=ids.map(id=>parseFloat(v[id])).filter(x=>x>0);return s.length>=10?Math.round(((s.reduce((a,b)=>a+b,0)/s.length)-1)/4*100):null;}
   },
   psfs:{id:"psfs",label:"PSFS",full:"Patient Specific Functional Scale",icon:"🎯",category:"Function",
     maxScore:10,unit:"/10",mcid:2,
