@@ -1,4 +1,4 @@
-// SubjectiveObjective.jsx — Special Tests, Subjective, NKT, KineticChain, FMS, Fascia, Ergo
+// SubjectiveObjective.jsx — Special Tests, Subjective, CPA, KineticChain, FMS, Fascia, Ergo
 import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC } from "./utils.jsx";
 
@@ -1735,7 +1735,7 @@ function CyriaxModule({ data, set, navContext={} }) {
     <div>
       {/* Region selector */}
       <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:12, padding:14, marginBottom:14 }}>
-        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ Cyriax STTT — Region-Specific Assessment</div>
+        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ STTT STTT — Region-Specific Assessment</div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
           {Object.entries(CYRIAX_REGIONS_DATA).map(([key, r]) => {
             const hasData = Object.keys(data).some(k => k.startsWith(`cyriax_${key}_`) && data[k]);
@@ -1814,7 +1814,7 @@ function CyriaxModule({ data, set, navContext={} }) {
 
             {/* Active vs Passive comparison */}
             <div style={{ marginTop:10 }}>
-              <div style={labelStyle}>Active vs Passive Comparison (Cyriax Key Rule)</div>
+              <div style={labelStyle}>Active vs Passive Comparison (STTT Key Rule)</div>
               <select value={v("act_pass_comparison")} onChange={e=>sv("act_pass_comparison",e.target.value)} style={selectStyle}>
                 <option value="">— select —</option>
                 {["Passive ROM greater than active — inert or contractile lesion (both possible)","Passive ROM same as active — capsular/inert lesion (contractile not involved)","Passive ROM less than active — muscular/contractile over-activity","Active more restricted than passive — contractile inhibition or pain avoidance","Both equally restricted — capsular pattern"].map(o=><option key={o} value={o}>{o}</option>)}
@@ -1892,7 +1892,7 @@ function CyriaxModule({ data, set, navContext={} }) {
 
             {/* Active vs Passive summary */}
             <div style={{ background:"rgba(0,229,255,0.06)", border:`1px solid ${C.accent}25`, borderRadius:9, padding:12 }}>
-              <div style={labelStyle}>Cyriax A vs P Summary</div>
+              <div style={labelStyle}>STTT A vs P Summary</div>
               <div style={{ fontSize:"0.74rem", color:C.muted, marginBottom:6 }}>Key rule: if passive ROM is GREATER than active, the contractile unit is restricting (not the joint). If passive = active, joint/inert structure.</div>
               <textarea value={v("passive_summary")} onChange={e=>sv("passive_summary",e.target.value)}
                 placeholder="Summarise passive findings and active vs passive comparison..."
@@ -1987,7 +1987,7 @@ function CyriaxModule({ data, set, navContext={} }) {
             {/* Palpation section */}
             <div style={{ ...boxStyle, borderColor:`${reg.color}30` }}>
               <div style={{ fontWeight:700, color:reg.color, marginBottom:8, fontSize:"0.82rem" }}>Palpation — Exact Lesion Localisation</div>
-              <div style={{ fontSize:"0.74rem", color:C.muted, marginBottom:8, lineHeight:1.6 }}>After STTT identifies the tissue type, palpate to find the EXACT site of lesion. This is where DTFM is applied. Cyriax rule: all treatment must reach the lesion.</div>
+              <div style={{ fontSize:"0.74rem", color:C.muted, marginBottom:8, lineHeight:1.6 }}>After STTT identifies the tissue type, palpate to find the EXACT site of lesion. This is where DTFM is applied. STTT rule: all treatment must reach the lesion.</div>
               <div style={{ marginBottom:7 }}>
                 <div style={labelStyle}>Lesion Site (palpation)</div>
                 <input type="text" value={v("palpation_site")} onChange={e=>sv("palpation_site",e.target.value)} placeholder="e.g. Infraspinatus tendon, 2cm proximal to insertion at greater tuberosity" style={selectStyle}/>
@@ -2016,7 +2016,7 @@ function CyriaxModule({ data, set, navContext={} }) {
         <div>
           <button type="button" onClick={runReasoning}
             style={{ width:"100%", padding:"12px", background:`linear-gradient(135deg,${C.accent},${C.a2})`, border:"none", borderRadius:10, color:"#000", fontWeight:800, fontSize:"0.88rem", cursor:"pointer", marginBottom:16 }}>
-            🧠 Generate Cyriax Clinical Reasoning
+            🧠 Generate STTT Clinical Reasoning
           </button>
 
           {reasoning ? (
@@ -2096,7 +2096,7 @@ function CyriaxModule({ data, set, navContext={} }) {
             <div style={{ textAlign:"center", padding:30, color:C.muted, background:C.s2, borderRadius:12, border:`1px solid ${C.border}` }}>
               <div style={{ fontSize:"2rem", marginBottom:8 }}>⚕</div>
               <div style={{ fontWeight:700, color:C.text, marginBottom:4 }}>Complete Active, Passive, and Resisted tabs</div>
-              <div style={{ fontSize:"0.8rem" }}>Then click Generate to receive Cyriax clinical reasoning, tissue diagnosis, and treatment direction.</div>
+              <div style={{ fontSize:"0.8rem" }}>Then click Generate to receive STTT clinical reasoning, tissue diagnosis, and treatment direction.</div>
             </div>
           )}
         </div>
@@ -2991,9 +2991,9 @@ const REGION_NAV = {
     { label:"Slump / ULTT",       icon:"🔬", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },                            col:"#0891b2", why:"Slump test — neural tension screen. ULTT 1-4 differentiates median, radial, ulnar nerve involvement." },
     { label:"Neurological Screen",icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"] }, col:"#dc2626", why:"C5-T1 dermatomes, myotomes, biceps/brachio/triceps reflexes. Localise nerve root level." },
     { label:"Posture Analysis",   icon:"🧍", nav:"posture", ctx:{ region:"Cervical" },                                                                col:"#059669", why:"CVA, forward head, thoracic kyphosis — all increase cervical loading. Assess before treating." },
-    { label:"NKT Assessment",     icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition → SCM/scalene dominance → FHP maintained. NKT identifies the exact inhibitor." },
+    { label:"CPA Assessment",     icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition → SCM/scalene dominance → FHP maintained. CPA identifies the exact inhibitor." },
     { label:"Kinetic Chain",      icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_cervical_thoracic_jct"] }, col:"#7c3aed", why:"Thoracic kyphosis is the primary driver of cervical loading. Address thoracic before cervical." },
-    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_a_rotl","cx_a_rotr","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Selective tissue tension — differentiate contractile vs non-contractile cervical pain source." },
+    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_a_rotl","cx_a_rotr","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Selective tissue tension — differentiate contractile vs non-contractile cervical pain source." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Cervical fascial lines — skin rolling and passive tension identify SBL and thoracolumbar restriction." },
   ],
   "Lumbar / SI": [
@@ -3007,7 +3007,7 @@ const REGION_NAV = {
     { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fmaTests:["squat","bend","single_leg"], fmaHighlights:["squat","bend","single_leg"] }, col:"#059669", why:"Forward bend — observe hip hinge vs lumbar flexion. Squat — global lower chain. Single-leg — SIJ control." },
   ],
   "Shoulder (L)": [
-    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Lumbar Cyriax — disc vs facet differentiation via contractile/non-contractile tissue tension testing." },
+    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Lumbar STTT — disc vs facet differentiation via contractile/non-contractile tissue tension testing." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring","fa_tlf"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia is the primary fascial structure linking lumbar extensors to contralateral shoulder." },
     { label:"Shoulder ROM",         icon:"📐", nav:"rom",    ctx:{ romRegion:"Shoulder", romHighlights:["rom_sabd","rom_ser","rom_sflex","rom_sir","rom_sext","rom_sadd"] }, col:"#9333ea", why:"Painful arc 60-120° = subacromial. Full loss = capsular. Immediate clinical differentiator." },
 
@@ -3015,11 +3015,11 @@ const REGION_NAV = {
 
     { label:"Hawkins-Kennedy",     icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_hawkins" },                            col:"#0891b2", why:"79% sensitivity for subacromial impingement. Most sensitive impingement test. Run first for overhead pain." },
     { label:"Empty Can Test",      icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_empty_can" },                          col:"#0891b2", why:"Supraspinatus integrity — 69% sensitivity. Combine with full can for RC tear screening." },
-    { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Upper trap/pec minor overactive → lower trap/serratus inhibited. Primary impingement motor pattern." },
+    { label:"CPA Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Upper trap/pec minor overactive → lower trap/serratus inhibited. Primary impingement motor pattern." },
     { label:"Push-Up Plus FMA",    icon:"🏃", nav:"fma",     ctx:{ fmaTests:["pushup_plus","overhead","upper_reach"], fmaHighlights:["pushup_plus","overhead","upper_reach"] }, col:"#059669", why:"Push-up plus — best functional screen for serratus anterior. Scapular winging visible immediately." },
   ],
   "Shoulder (R)": [
-    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
+    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
     { label:"Shoulder ROM",         icon:"📐", nav:"rom",    ctx:{ romRegion:"Shoulder", romHighlights:["rom_sabd","rom_ser","rom_sflex","rom_sir","rom_sext","rom_sadd"] }, col:"#9333ea", why:"Painful arc 60-120° = subacromial. Full loss = capsular. Primary ROM differentiator." },
 
@@ -3027,12 +3027,12 @@ const REGION_NAV = {
     { label:"Serratus Anterior",   icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlight:"mmt_serratus" },                      col:"#7c3aed", why:"Serratus anterior — scapular winging indicates inhibition. Run wall push-up plus." },
     { label:"Hawkins-Kennedy",     icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_hawkins" },                            col:"#0891b2", why:"79% sensitivity for subacromial impingement. Most useful first impingement test." },
     { label:"Empty Can Test",      icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_empty_can" },                          col:"#0891b2", why:"Supraspinatus integrity test. Combine with full can for RC tear probability." },
-    { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Identify pec minor / upper trap inhibiting lower trap / serratus — the impingement motor pattern." },
+    { label:"CPA Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Identify pec minor / upper trap inhibiting lower trap / serratus — the impingement motor pattern." },
     { label:"Push-Up Plus FMA",    icon:"🏃", nav:"fma",     ctx:{ fmaTests:["pushup_plus","overhead","upper_reach"], fmaHighlights:["pushup_plus","overhead","upper_reach"] }, col:"#059669", why:"Push-up plus screens serratus anterior function dynamically." },
   ],
   "Knee (L)": [
     { label:"Knee ROM",             icon:"📐", nav:"rom",    ctx:{ romRegion:"Knee", romHighlights:["rom_kflex","rom_kext"] },                          col:"#9333ea", why:"Knee flexion loss indicates joint effusion, posterior capsule tightness, or meniscal block. Measure first." },
-    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
+    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
     { label:"Knee MMT",             icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Knee", mmtHighlights:["mmt_quad","mmt_gastroc","mmt_poplit"] },           col:"#7c3aed", why:"VMO inhibition is the primary driver of PFJ maltracking. Single most important knee MMT." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmed","mmt_gmax","mmt_tfl","mmt_adduc","mmt_gmin"] }, col:"#7c3aed", why:"Glute med weakness drives dynamic knee valgus — assess proximal before isolating the knee." },
@@ -3082,11 +3082,11 @@ const REGION_NAV = {
   ],
   "Thoracic spine": [
     { label:"Thoracic ROM",          icon:"📐", nav:"rom",   ctx:{ romRegion:"Thoracic", romHighlights:["rom_throtl","rom_throtr","rom_thflex","rom_thext"] },                                  col:"#9333ea", why:"Thoracic rotation — most clinically significant thoracic ROM. <30° bilateral = significant restriction." },
-    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["el_a_flex","el_a_ext","el_r_wext","el_r_wflex","el_r_grip","wr_r_ext","wr_r_flex"] }, col:"#f59e0b", why:"Elbow/wrist Cyriax — resisted wrist extension = lateral epicondylalgia; resisted grip differentiates tendon pathology." },
+    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["el_a_flex","el_a_ext","el_r_wext","el_r_wflex","el_r_grip","wr_r_ext","wr_r_flex"] }, col:"#f59e0b", why:"Elbow/wrist STTT — resisted wrist extension = lateral epicondylalgia; resisted grip differentiates tendon pathology." },
     { label:"Thoracic MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_trapL","mmt_trapM","mmt_serratus","mmt_trapU","mmt_rhomb"] },                         col:"#7c3aed", why:"Lower trapezius — scapular depression and posterior tilt. Weakness = shoulder and thoracic impingement driver." },
     { label:"Posture Analysis",    icon:"🧍", nav:"posture", ctx:{ region:"Thoracic" },                                                               col:"#059669", why:"Kyphosis angle, scoliotic curve, rib symmetry, scapular position — thoracic posture drives all chains above and below." },
     { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_scapulohumeral_rhythm"] }, col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
-    { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_pec_minor","nkt_upper_trap","nkt_lower_trap","nkt_serratus","nkt_mid_trap"] }, col:"#d97706", why:"Pec major/minor overactive → lower trap/serratus inhibited → kyphosis maintained. Treat motor pattern." },
+    { label:"CPA Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_pec_minor","nkt_upper_trap","nkt_lower_trap","nkt_serratus","nkt_mid_trap"] }, col:"#d97706", why:"Pec major/minor overactive → lower trap/serratus inhibited → kyphosis maintained. Treat motor pattern." },
     { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fmaTests:["overhead","rotary_stability","pushup_plus"], fmaHighlights:["overhead","rotary_stability","pushup_plus"] }, col:"#059669", why:"Overhead reach (thoracic extension demand), rotary stability (anti-rotation), push-up plus (scapular chain)." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_densification","fa_sbl_hamstring"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia links lumbar extensors to contralateral shoulder girdle." },
   ],
@@ -4568,10 +4568,10 @@ function SubjectiveModule({ data, set, onNav }) {
             const romPriority = {
               "Cervical spine":    [{mv:"Rotation L + R",imp:"High",why:"Most clinically relevant — C1/C2 restriction (FRT); 90° norm; <60° = significant"},{mv:"Flexion",imp:"High",why:"Discogenic aggravator — centralisation testing; chin to chest norm"},{mv:"Extension + rotation quadrant",imp:"High",why:"Facet loading — reproduces facet / radicular pain"},{mv:"Side flexion L + R",imp:"Moderate",why:"Lateral canal narrowing — radiculopathy screen"}],
               "Thoracic spine":    [{mv:"Rotation (seated)",imp:"High",why:"Most restricted in thoracic dysfunction; norm 35-45 degrees; compare bilaterally"},{mv:"Flexion — forward bend",imp:"High",why:"Thoracic kyphosis angle + rib hump screen (scoliosis); segmental stiffness"},{mv:"Extension",imp:"High",why:"Facet / costovertebral provocation — restricted in hyperkyphosis"},{mv:"Rib cage expansion",imp:"Moderate",why:"Costochondritis / rib fracture — compare inhalation expansion bilaterally (norm >5cm)"}],
-              "Shoulder (L)":      [{mv:"Abduction",imp:"High",why:"Painful arc 60-120 degrees = subacromial; full loss = capsular (Cyriax)"},{mv:"External Rotation",imp:"High",why:"First to restrict in capsular pattern — compare bilaterally"},{mv:"Hand-behind-back (IR)",imp:"High",why:"Functional IR — reaching / dressing limitation"},{mv:"Horizontal adduction",imp:"Moderate",why:"AC joint reproduction test; posterior capsule tightness (GIRD)"}],
+              "Shoulder (L)":      [{mv:"Abduction",imp:"High",why:"Painful arc 60-120 degrees = subacromial; full loss = capsular (STTT)"},{mv:"External Rotation",imp:"High",why:"First to restrict in capsular pattern — compare bilaterally"},{mv:"Hand-behind-back (IR)",imp:"High",why:"Functional IR — reaching / dressing limitation"},{mv:"Horizontal adduction",imp:"Moderate",why:"AC joint reproduction test; posterior capsule tightness (GIRD)"}],
               "Shoulder (R)":      [{mv:"Abduction",imp:"High",why:"Painful arc = subacromial pattern; full loss = capsular"},{mv:"External Rotation",imp:"High",why:"Capsular pattern — first movement restricted; compare bilaterally"},{mv:"Hand-behind-back",imp:"High",why:"Functional IR — ADL impact"},{mv:"Horizontal adduction",imp:"Moderate",why:"AC joint / posterior capsule tightness"}],
               "Lumbar / SI":       [{mv:"Flexion (fingertip to floor)",imp:"High",why:"Discogenic aggravator — centralisation? Repeated movements (McKenzie); lateral shift?"},{mv:"Extension",imp:"High",why:"Facet / stenosis pattern — reproduces symptoms + centralisation testing"},{mv:"Side flexion L + R",imp:"High",why:"Lateral shift screen — disc protrusion pattern; asymmetry = relevant level"},{mv:"Rotation (sitting)",imp:"Moderate",why:"Combined movements — facet quadrant loading"}],
-              "Hip / Groin":       [{mv:"Internal rotation (prone 90 degrees flexion)",imp:"High",why:"MOST restricted in OA capsular pattern (Cyriax); <35 degrees = LBP risk driver"},{mv:"FADIR combined",imp:"High",why:"FAI / labral provocation — most sensitive combination test"},{mv:"Flexion (hip-lumbar rhythm)",imp:"High",why:"Observe pelvic compensation at end range — hip-lumbar rhythm disruption"},{mv:"Abduction",imp:"Moderate",why:"Gluteus medius / abductor tendinopathy — compare bilaterally"}],
+              "Hip / Groin":       [{mv:"Internal rotation (prone 90 degrees flexion)",imp:"High",why:"MOST restricted in OA capsular pattern (STTT); <35 degrees = LBP risk driver"},{mv:"FADIR combined",imp:"High",why:"FAI / labral provocation — most sensitive combination test"},{mv:"Flexion (hip-lumbar rhythm)",imp:"High",why:"Observe pelvic compensation at end range — hip-lumbar rhythm disruption"},{mv:"Abduction",imp:"Moderate",why:"Gluteus medius / abductor tendinopathy — compare bilaterally"}],
               "Knee (L)":          [{mv:"Flexion (passive + active)",imp:"High",why:"Capsular restriction (OA: flexion > extension loss); spring end-feel = meniscal block"},{mv:"Extension — full hyperextension check",imp:"High",why:"Inability = effusion inhibition or mechanical block; hyperextension = PCL / posterior capsule"},{mv:"Tibial rotation at 90 degrees",imp:"Moderate",why:"Restricted IR = LCL / IT band; restricted ER = MCL / medial capsule"}],
               "Knee (R)":          [{mv:"Flexion (passive + active)",imp:"High",why:"Capsular restriction or meniscal block — note end-feel"},{mv:"Extension — full check",imp:"High",why:"Effusion or mechanical block — compare to other side"},{mv:"Tibial rotation at 90 degrees",imp:"Moderate",why:"Ligament restriction — IR vs ER asymmetry"}],
               "Ankle / Foot":      [{mv:"Dorsiflexion — weight-bearing lunge test",imp:"High",why:"<10cm from wall = restricted DF — primary kinetic chain driver; compare bilaterally"},{mv:"Inversion / eversion",imp:"High",why:"Ligament integrity (inversion) + tibialis posterior (eversion)"},{mv:"Plantarflexion",imp:"Moderate",why:"Achilles / posterior impingement — passive overpressure"},{mv:"Subtalar neutral + midfoot mobility",imp:"Moderate",why:"Pronation / supination pattern — functional foot alignment"}],
@@ -4636,7 +4636,7 @@ function SubjectiveModule({ data, set, onNav }) {
             if (r.region === "Elbow/Wrist/Hand") txDir.push({phase:"Kinetic Chain",detail:"Upper limb kinetic chain: thoracic rotation → shoulder ER / scapular control → elbow → wrist → hand. In throwing / racquet sport, proximal strength deficit drives distal overload (Kibler). Assess cervical and shoulder before isolating elbow/wrist"});
             if (r.region === "Cervical spine") txDir.push({phase:"Motor Control",detail:"Deep cervical flexor (DNF) training using craniocervical flexion test protocol (Jull 2008). Progress: CCFT biofeedback (22-26 mmHg) → functional positions → sustained posture endurance → cervical loading. Address thoracic kyphosis concurrently"});
 
-            // ── NKT / Motor Control ──
+            // ── CPA / Motor Control ──
             const nktMap = {
               "Cervical spine":   {over:["Upper trapezius","Sternocleidomastoid","Suboccipital muscles","Scalenes (accessory breathing)"],under:["Deep cervical flexors (DNF)","Lower trapezius","Serratus anterior","Cervical multifidus (segmental)"]},
               "Thoracic spine":   {over:["Superficial thoracic erectors","Upper trapezius","Scalenes","Pectoralis major / minor"],under:["Thoracic multifidus","Lower trapezius","Serratus anterior","Rhomboids","Diaphragm (stabiliser role)"]},
@@ -4901,12 +4901,12 @@ function SubjectiveModule({ data, set, onNav }) {
                     </div>
                   </div>
 
-                  {/* ── PHASE 6: NKT / MOTOR CONTROL ── */}
+                  {/* ── PHASE 6: CPA / MOTOR CONTROL ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
-                        letterSpacing:1, color: PC.muted }}>Phase 6 — Motor Control / NKT Assessment</span>
-                      {onNav && <button onClick={()=>onNav("nkt")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a4+"22", border:`1px solid ${PC.a4}44`, borderRadius:20, color:PC.a4, cursor:"pointer" }}>Open NKT →</button>}
+                        letterSpacing:1, color: PC.muted }}>Phase 6 — Motor Control / CPA Assessment</span>
+                      {onNav && <button onClick={()=>onNav("nkt")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a4+"22", border:`1px solid ${PC.a4}44`, borderRadius:20, color:PC.a4, cursor:"pointer" }}>Open CPA →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
                       <div>
@@ -4935,7 +4935,7 @@ function SubjectiveModule({ data, set, onNav }) {
                       </div>
                     </div>
                     <div style={{ padding:"0 13px 10px", fontSize:"0.6rem", color: PC.muted, fontStyle:"italic" }}>
-                      Verify with NKT therapy localisation before treating. Overactive → release first, then activate underactive.
+                      Verify with CPA therapy localisation before treating. Overactive → release first, then activate underactive.
                     </div>
                   </div>
 
@@ -5031,18 +5031,18 @@ function SubjectiveModule({ data, set, onNav }) {
 
 
 
-// ─── NKT REGION DATABASE ─────────────────────────────────────────────────────
+// ─── CPA REGION DATABASE ─────────────────────────────────────────────────────
 const NKT_REGIONS = {
   cervical:{
     label:"Cervical / Head & Neck", color:"#00e5ff",
-    intro:"The cervical NKT assessment identifies which muscles the Motor Control Centre (MCC) has inhibited in the neck and head region, and which synergists are compensating. Common compensation: DNF inhibited → SCM/scalenes overactive → forward head posture, headache, TMJ.",
+    intro:"The cervical CPA assessment identifies which muscles the Motor Control Centre (MCC) has inhibited in the neck and head region, and which synergists are compensating. Common compensation: DNF inhibited → SCM/scalenes overactive → forward head posture, headache, TMJ.",
     tests:[
       {
         id:"nkt_dnf", label:"Deep Neck Flexors (DNF)", muscle:"Longus colli / Longus capitis",
         compensator:"SCM, scalenes, suboccipitals",
         how:"Patient supine. Place pressure biofeedback cuff at neck (inflate to 20mmHg baseline). Ask patient to gently nod chin (craniocervical flexion — NOT a chin tuck). Gradually increase target pressure from 22 → 24 → 26 → 28 → 30mmHg holding each 10 seconds. Confirm by touching SCM during test — if SCM fires early or dominates, DNF is inhibited.",
         options:[
-          { val:"Facilitated", color:"#00c97a", meaning:"DNF activates before SCM. Patient can reach 28–30mmHg without SCM firing. Normal motor control. No NKT treatment needed for DNF." },
+          { val:"Facilitated", color:"#00c97a", meaning:"DNF activates before SCM. Patient can reach 28–30mmHg without SCM firing. Normal motor control. No CPA treatment needed for DNF." },
           { val:"Inhibited", color:"#ff4d6d", meaning:"DNF cannot maintain pressure targets. SCM fires early and dominates. MCC has turned off DNF — forward head is maintained by SCM/scalenes. TREAT: release SCM/scalenes → activate DNF immediately." },
           { val:"Overactive", color:"#ffb300", meaning:"Rare. DNF may be overworking due to inhibition elsewhere (e.g. longus colli compensating for atlas instability). Presents as anterior neck pain with no relief from flexion." },
         ],
@@ -5130,7 +5130,7 @@ const NKT_REGIONS = {
 
   shoulder:{
     label:"Shoulder & Scapula", color:"#7f5af0",
-    intro:"Shoulder NKT identifies which rotator cuff and scapular muscles are inhibited, and which are compensating. Classic patterns: lower trap inhibited → upper trap overactive | serratus inhibited → pec minor overactive | RC inhibited → biceps/pec major overactive.",
+    intro:"Shoulder CPA identifies which rotator cuff and scapular muscles are inhibited, and which are compensating. Classic patterns: lower trap inhibited → upper trap overactive | serratus inhibited → pec minor overactive | RC inhibited → biceps/pec major overactive.",
     tests:[
       {
         id:"nkt_lower_trap", label:"Lower Trapezius", muscle:"Lower trapezius",
@@ -5152,7 +5152,7 @@ const NKT_REGIONS = {
           { val:"Facilitated — normal", color:"#00c97a", meaning:"Serratus activates to protract and upwardly rotate scapula. No winging on push-up plus. Scapula hugs thorax throughout arm elevation. Normal scapulohumeral rhythm." },
           { val:"Inhibited — functional winging", color:"#ffb300", meaning:"Serratus inhibited under load but not at rest. Winging appears only with push-up or arm elevation. Pec minor is tight and overactive. Patient has anterior shoulder pain with overhead activities." },
           { val:"Inhibited — resting winging", color:"#ff4d6d", meaning:"Scapular winging visible at rest (medial border away from thorax). Serratus severely inhibited. Pec minor chronically overactive. Long thoracic nerve palsy must be ruled out. TREAT: release pec minor → activate serratus." },
-          { val:"Long thoracic nerve palsy", color:"#7f5af0", meaning:"Complete serratus inhibition with severe winging. No voluntary activation possible. Neurological cause — C5/6/7 long thoracic nerve affected. Refer for nerve conduction study. NKT technique may still help partial cases." },
+          { val:"Long thoracic nerve palsy", color:"#7f5af0", meaning:"Complete serratus inhibition with severe winging. No voluntary activation possible. Neurological cause — C5/6/7 long thoracic nerve affected. Refer for nerve conduction study. CPA technique may still help partial cases." },
         ],
         treatment:"Release: pec minor (supine, firm pressure at coracoid process to 3rd–5th ribs, 90 sec). Activate: serratus punches (supine, arm at 90°, push fist toward ceiling adding protraction), push-up plus. Home: wall protraction holds × 10 reps, serratus activation in quadruped.",
       },
@@ -5162,7 +5162,7 @@ const NKT_REGIONS = {
         how:"Patient seated or sidelying. Elbow at 90°, arm at side. Apply gentle resistance to external rotation. POSITIVE INHIBITION = cannot resist external rotation with adequate force, or posterior deltoid/biceps dominates. Therapy localization: touch posterior deltoid or biceps → re-test IR. If ER suddenly stronger = deltoid/biceps compensating for RC.",
         options:[
           { val:"Facilitated — strong", color:"#00c97a", meaning:"Infraspinatus/teres minor generate adequate ER force at 0° and 90°. No compensation from posterior deltoid. Normal rotator cuff function." },
-          { val:"Inhibited — pain inhibition", color:"#ffb300", meaning:"Inhibited due to pain (strong & painful = minor lesion per Cyriax). Pain prevents full activation. Address pain first (DTFM, dry needling) then NKT re-test." },
+          { val:"Inhibited — pain inhibition", color:"#ffb300", meaning:"Inhibited due to pain (strong & painful = minor lesion per STTT). Pain prevents full activation. Address pain first (DTFM, dry needling) then CPA re-test." },
           { val:"Inhibited — motor control", color:"#ff4d6d", meaning:"ER weak and painless. MCC has inhibited infraspinatus — posterior deltoid compensates for humeral head depression. Patient has shoulder impingement pattern. TREAT: release pec minor/posterior deltoid → activate IR." },
           { val:"Complete inhibition — possible tear", color:"#7f5af0", meaning:"No ER activation possible. Consider structural tear — refer for imaging (MRI/ultrasound). External rotation lag sign likely positive." },
         ],
@@ -5175,7 +5175,7 @@ const NKT_REGIONS = {
         options:[
           { val:"Facilitated — normal", color:"#00c97a", meaning:"Strong IR at 0° and 45°. Can perform lift-off and belly press without compensation. Normal anterior GH stability." },
           { val:"Inhibited — instability pattern", color:"#ffb300", meaning:"IR weak, pec major compensates. Patient has anterior shoulder instability, pain with IR. Apprehension test may be positive. TREAT: release pec major → activate subscapularis." },
-          { val:"Inhibited — post-surgical", color:"#ff4d6d", meaning:"Subscapularis inhibited after shoulder surgery (Bankart, SLAP repair, total shoulder). MCC 'switched off' subscapularis due to surgical trauma. Therapy localization confirms. Progressive NKT activation essential for return to function." },
+          { val:"Inhibited — post-surgical", color:"#ff4d6d", meaning:"Subscapularis inhibited after shoulder surgery (Bankart, SLAP repair, total shoulder). MCC 'switched off' subscapularis due to surgical trauma. Therapy localization confirms. Progressive CPA activation essential for return to function." },
           { val:"Complete inhibition", color:"#7f5af0", meaning:"Cannot perform any IR. Lift-off completely failed. Possible subscapularis tear — refer for imaging. Belly press = wrist flexion to compensate." },
         ],
         treatment:"Release: pec major SMR + anterior deltoid massage. Activate: sidelying IR with theraband, belly press holds, lift-off progression. Home: theraband IR × 20 reps, progress to 90/90 IR.",
@@ -5235,7 +5235,7 @@ const NKT_REGIONS = {
 
   core:{
     label:"Core & Lumbar", color:"#00c97a",
-    intro:"Core NKT identifies which deep stabilisers the MCC has inhibited following injury, poor posture, or prolonged sitting. Classic patterns: TA inhibited → erector spinae overactive | multifidus inhibited → superficial back muscles compensate | diaphragm inhibited → accessory breathers (scalenes, SCM) overactive.",
+    intro:"Core CPA identifies which deep stabilisers the MCC has inhibited following injury, poor posture, or prolonged sitting. Classic patterns: TA inhibited → erector spinae overactive | multifidus inhibited → superficial back muscles compensate | diaphragm inhibited → accessory breathers (scalenes, SCM) overactive.",
     tests:[
       {
         id:"nkt_ta", label:"Transversus Abdominis (TA)", muscle:"Transversus abdominis",
@@ -5257,7 +5257,7 @@ const NKT_REGIONS = {
           { val:"Facilitated — normal", color:"#00c97a", meaning:"Multifidus produces gentle local swelling at palpated level. Segmental stabilisation present. Normal spinal control during limb movements. Rapid re-activation after acute episode." },
           { val:"Inhibited — unilateral", color:"#ffb300", meaning:"Asymmetric multifidus activation. One side inhibited (often side of prior disc herniation or LBP episode). Compensatory erector spinae and QL overactivity on that side. Patient has asymmetric LBP and trunk rotation weakness." },
           { val:"Inhibited — bilateral", color:"#ff4d6d", meaning:"Both sides inhibited. Spinal extensors completely compensating. Patient has chronic, diffuse LBP with poor spinal segmental control. Core exercises targeting global muscles (crunches, deadlifts) worsen the pattern." },
-          { val:"Atrophied (post-injury)", color:"#7f5af0", meaning:"Multifidus atrophied after disc herniation or surgery. Atrophy may be visible on MRI. Slow to recover — requires specific activation. NKT therapy localization confirms which superficial muscles are compensating." },
+          { val:"Atrophied (post-injury)", color:"#7f5af0", meaning:"Multifidus atrophied after disc herniation or surgery. Atrophy may be visible on MRI. Slow to recover — requires specific activation. CPA therapy localization confirms which superficial muscles are compensating." },
         ],
         treatment:"Release: thoracolumbar erector spinae SMR + QL pressure release. Activate: prone multifidus swelling × 10 sec holds × 10 reps, progress to quadruped arm/leg (bird-dog), then standing. Home: seated multifidus activation throughout day.",
       },
@@ -5293,7 +5293,7 @@ const NKT_REGIONS = {
           { val:"Normal length and activation", color:"#00c97a", meaning:"Hip flexes without lumbar extension. Thomas test negative. No groin pain. Psoas activates proportionally and does not pull spine forward. Appropriate hip flexion strength for activity level." },
           { val:"Overactive — anterior pelvic tilt", color:"#ff4d6d", meaning:"Psoas pulls lumbar into extension during hip flexion. Thomas test positive (hip remains elevated). Lumbar lordosis increased. Patient has LBP worsened by sitting and hip flexion. TREAT: release psoas → activate TA + glute max." },
           { val:"Overactive — glute inhibition", color:"#ffb300", meaning:"Psoas overactive because glute max is inhibited — psoas must do both flexion and extension stabilisation. Hip snapping (coxa saltans) may be present. Groin pain and anterior hip impingement symptoms." },
-          { val:"Inhibited (rare)", color:"#7f5af0", meaning:"Psoas truly inhibited — weak hip flexion in fully shortened range. Rare. May indicate L2/3 nerve root involvement or hip flexor avulsion injury. Confirm with Cyriax resisted test." },
+          { val:"Inhibited (rare)", color:"#7f5af0", meaning:"Psoas truly inhibited — weak hip flexion in fully shortened range. Rare. May indicate L2/3 nerve root involvement or hip flexor avulsion injury. Confirm with STTT resisted test." },
         ],
         treatment:"Release: psoas stretch (kneeling lunge, posterior pelvic tilt), SMR quads/hip flexors. Activate: TA drawing-in, glute bridges with focus on not allowing anterior tilt. Never aggressive psoas stretching without core activation.",
       },
@@ -5333,7 +5333,7 @@ const NKT_REGIONS = {
 
   hip:{
     label:"Hip & Pelvis", color:"#f97316",
-    intro:"Hip NKT identifies gluteal inhibition and compensation patterns. The most common global pattern: gluteus maximus inhibited → hamstrings and QL overactive → chronic LBP and hamstring strains. Gluteus medius inhibited → TFL and piriformis overactive → IT band, lateral hip pain, and Trendelenburg gait.",
+    intro:"Hip CPA identifies gluteal inhibition and compensation patterns. The most common global pattern: gluteus maximus inhibited → hamstrings and QL overactive → chronic LBP and hamstring strains. Gluteus medius inhibited → TFL and piriformis overactive → IT band, lateral hip pain, and Trendelenburg gait.",
     tests:[
       {
         id:"nkt_gmax", label:"Gluteus Maximus", muscle:"Gluteus maximus",
@@ -5343,7 +5343,7 @@ const NKT_REGIONS = {
           { val:"Facilitated — fires first", color:"#00c97a", meaning:"Gluteus maximus activates before hamstrings in prone hip extension. Full activation in bridge. No QL firing. Normal hip extension power and lumbar stability. Glute drives force through hip joint appropriately." },
           { val:"Inhibited — hamstring dominant", color:"#ffb300", meaning:"Hamstring fires first or simultaneously with glute. Glute activates late and weakly. Patient often has recurrent hamstring strains and chronic LBP. Hip extension generated by knee flexion (hamstring) not hip joint extension (glute). TREAT: release hamstrings → activate glute max immediately." },
           { val:"Inhibited — QL dominant", color:"#ff4d6d", meaning:"QL fires instead of glute max for hip extension. Patient extends spine (lateral tilt) to create apparent hip extension. Classic LBP pattern. Lateral lumbar pain and poor deadlift/hinge mechanics. TREAT: release QL → activate glute max." },
-          { val:"Inhibited — bilateral, severe", color:"#7f5af0", meaning:"Both glutes inhibited. Patient cannot activate glutes in any position. Hamstrings, QL, and erector spinae all compensating. Patient has bilateral LBP, poor single-leg stability, and hip flexion-dominant movement pattern. Multiple-session NKT approach needed." },
+          { val:"Inhibited — bilateral, severe", color:"#7f5af0", meaning:"Both glutes inhibited. Patient cannot activate glutes in any position. Hamstrings, QL, and erector spinae all compensating. Patient has bilateral LBP, poor single-leg stability, and hip flexion-dominant movement pattern. Multiple-session CPA approach needed." },
         ],
         treatment:"Release: hamstrings SMR (foam roll posterior thigh 90 sec) + QL release (tennis ball lateral lumbar). Activate IMMEDIATELY within 30 seconds: glute bridges × 5 slow reps (focus on feeling glute, not hamstring), clamshells. Home: glute squeeze at top of every step throughout day.",
       },
@@ -5388,7 +5388,7 @@ const NKT_REGIONS = {
 
   knee:{
     label:"Knee & Thigh", color:"#00c97a",
-    intro:"Knee NKT focuses on the VMO vs VL relationship, hamstring-glute co-activation balance, and popliteus as a forgotten stabiliser. Common patterns: VMO inhibited → VL overactive → PFPS | hamstrings overactive (compensating for glute max) → posterior knee pain.",
+    intro:"Knee CPA focuses on the VMO vs VL relationship, hamstring-glute co-activation balance, and popliteus as a forgotten stabiliser. Common patterns: VMO inhibited → VL overactive → PFPS | hamstrings overactive (compensating for glute max) → posterior knee pain.",
     tests:[
       {
         id:"nkt_vmo", label:"Vastus Medialis Oblique (VMO)", muscle:"VMO",
@@ -5397,7 +5397,7 @@ const NKT_REGIONS = {
         options:[
           { val:"VMO facilitated — fires with VL", color:"#00c97a", meaning:"VMO activates with equal or slightly greater force than VL at terminal extension. Patella tracks medially within trochlear groove. No PFPS symptoms with squatting or stairs." },
           { val:"VMO inhibited — VL dominant", color:"#ffb300", meaning:"VL fires before and more strongly than VMO. Patella tracks laterally. Patient has anterior knee pain on stairs, squatting, sitting. IT band and lateral retinaculum tight. TREAT: release VL + IT band → activate VMO (terminal knee extension)." },
-          { val:"VMO inhibited — post knee injury/surgery", color:"#ff4d6d", meaning:"VMO inhibited following ACL reconstruction, meniscectomy, or knee trauma. MCC switched off VMO as protective response. Patient has persistent quad weakness post-operatively despite exercise. NKT approach: release VL → activate VMO before quad sets." },
+          { val:"VMO inhibited — post knee injury/surgery", color:"#ff4d6d", meaning:"VMO inhibited following ACL reconstruction, meniscectomy, or knee trauma. MCC switched off VMO as protective response. Patient has persistent quad weakness post-operatively despite exercise. CPA approach: release VL → activate VMO before quad sets." },
           { val:"VMO inhibited — hip weakness contributor", color:"#7f5af0", meaning:"VMO inhibited as part of valgus chain — glute med inhibited → knee valgus → VMO inhibited. Address glute med first, then VMO. Terminal knee extension + glute med activation simultaneously." },
         ],
         treatment:"Release: VL SMR (foam roll lateral thigh 90 sec) + IT band (roller lateral knee). Activate: terminal knee extension (TKE) with theraband, step-ups focusing on medial knee control. Home: TKE × 20 reps hourly, VMO squeeze at full extension.",
@@ -5408,11 +5408,11 @@ const NKT_REGIONS = {
         how:"Patient prone. Test knee flexion resistance at 90°. Palpate hamstring belly. Overactive hamstrings: fire during activities they shouldn't (hip extension, standing). Test: prone hip extension — if hamstring fires before glute max = overactive compensator. Hamstring cramp during bridge = overactive (normal = glute does the work). Biceps femoris vs medial hamstring: test ER vs IR during knee flexion resistance.",
         options:[
           { val:"Normal — glute max dominant in extension", color:"#00c97a", meaning:"Hamstrings contribute to knee flexion appropriately. Do not dominate hip extension. Do not cramp during bridges. Glute max does the majority of hip extension work. No recurrent hamstring strains." },
-          { val:"Overactive — glute max inhibition", color:"#ff4d6d", meaning:"Hamstrings overactive as hip extensors. Patient has recurrent hamstring strains (the compensator always gets injured, not the root cause). LBP. Hamstring 'tightness' that doesn't resolve with stretching (NKT rule: overactive muscles feel tight but aren't short). TREAT: release hamstrings → activate glute max." },
+          { val:"Overactive — glute max inhibition", color:"#ff4d6d", meaning:"Hamstrings overactive as hip extensors. Patient has recurrent hamstring strains (the compensator always gets injured, not the root cause). LBP. Hamstring 'tightness' that doesn't resolve with stretching (CPA rule: overactive muscles feel tight but aren't short). TREAT: release hamstrings → activate glute max." },
           { val:"Biceps femoris overactive — lateral chain", color:"#ffb300", meaning:"Biceps femoris specifically overactive. Lateral hamstring tightness. External rotation of tibia at knee. IT band and lateral knee pain. Often compensating for weak glute med. TREAT: release biceps femoris → activate glute med." },
           { val:"Medial hamstrings overactive — medial chain", color:"#7f5af0", meaning:"Medial hamstrings overactive. Internal tibial rotation. Compensating for inhibited adductors or popliteus. Medial knee pain. TREAT: release medial hamstrings → activate adductors or glute max." },
         ],
-        treatment:"Release: foam roll hamstrings (posterior thigh, 90 sec). Stretch only AFTER NKT release (stretching alone won't fix overactive hamstrings). Activate: glute max exercises immediately. Home: glute-dominant bridge practice — feel the glute, not the hamstring.",
+        treatment:"Release: foam roll hamstrings (posterior thigh, 90 sec). Stretch only AFTER CPA release (stretching alone won't fix overactive hamstrings). Activate: glute max exercises immediately. Home: glute-dominant bridge practice — feel the glute, not the hamstring.",
       },
       { id:"nkt_adductors", label:"Hip Adductors", muscle:"Adductor magnus / Longus / Brevis / Gracilis",
         compensator:"When overactive: compensating for inhibited glute max or medial hamstrings",
@@ -5459,7 +5459,7 @@ const NKT_REGIONS = {
 
   ankle:{
     label:"Ankle & Foot", color:"#ffb300",
-    intro:"Ankle NKT identifies compensation between tibialis anterior/posterior and the peroneals, and the effect of limited dorsiflexion on the kinetic chain. Classic pattern: tibialis anterior inhibited → peroneals overactive → ankle instability. Tibialis posterior inhibited → peroneals + gastroc overactive → progressive flatfoot.",
+    intro:"Ankle CPA identifies compensation between tibialis anterior/posterior and the peroneals, and the effect of limited dorsiflexion on the kinetic chain. Classic pattern: tibialis anterior inhibited → peroneals overactive → ankle instability. Tibialis posterior inhibited → peroneals + gastroc overactive → progressive flatfoot.",
     tests:[
       {
         id:"nkt_tib_ant", label:"Tibialis Anterior", muscle:"Tibialis anterior",
@@ -5480,7 +5480,7 @@ const NKT_REGIONS = {
         options:[
           { val:"Normal — arch maintained", color:"#00c97a", meaning:"Tibialis posterior supports medial arch. Navicular drop <6mm. Strong plantar inversion resistance. No progressive flatfoot. Arch maintained in single-leg stance." },
           { val:"Inhibited — medial arch collapse", color:"#ffb300", meaning:"Tib post weakened. Medial arch collapses. Navicular drop 6–10mm. Early stage adult-acquired flatfoot. Pronation chain activates: tibial IR, knee valgus, anterior pelvic tilt. TREAT: release peroneals → activate tib post (heel raises in inversion)." },
-          { val:"Inhibited — progressive flatfoot", color:"#ff4d6d", meaning:"Tib post significantly inhibited or partially ruptured. Navicular drop >10mm. 'Too many toes' sign (>2 toes visible behind heel from behind). Pain medial ankle. Refer for ultrasound/MRI. NKT: release peroneals → activate tib post + intrinsics." },
+          { val:"Inhibited — progressive flatfoot", color:"#ff4d6d", meaning:"Tib post significantly inhibited or partially ruptured. Navicular drop >10mm. 'Too many toes' sign (>2 toes visible behind heel from behind). Pain medial ankle. Refer for ultrasound/MRI. CPA: release peroneals → activate tib post + intrinsics." },
           { val:"Severely inhibited — tib post dysfunction", color:"#7f5af0", meaning:"Posterior tibial tendon dysfunction. Cannot perform single-leg heel raise. Progressive collapse of medial arch. Refer to orthopaedic/podiatry. Conservative: orthotics + aggressive tib post strengthening + peroneal release." },
         ],
         treatment:"Release: peroneal SMR + gastroc-soleus stretch. Activate: heel raises in slight inversion (on slightly inverted surface), towel scrunches, short foot exercise. Orthotics if severe. Home: short foot exercise × 20 reps, single-leg balance on slight inversion.",
@@ -5493,7 +5493,7 @@ const NKT_REGIONS = {
           { val:"Normal length and tone", color:"#00c97a", meaning:"Ankle DF normal (20°+). Lunge test: knee reaches wall at 10cm. No calf cramping during activity. Kinetic chain not restricted at ankle. Gastroc-soleus contribute to plantar flexion without restricting dorsiflexion." },
           { val:"Overactive — DF restriction", color:"#ffb300", meaning:"Gastroc overactive and shortened. Restricts ankle DF (<15°). Causes compensatory knee valgus, foot pronation, anterior pelvic tilt during squats. TREAT: gastroc SMR → ankle DF mobilisation → squat correction." },
           { val:"Overactive — glute compensation", color:"#ff4d6d", meaning:"Gastroc overactive as kinetic chain compensator for inhibited glutes. Patient pushes through calf during walking/running (calf dominance) rather than glute-driven propulsion. Calf strains common. TREAT: release gastroc → activate glute max." },
-          { val:"Overactive — Achilles tendinopathy pattern", color:"#7f5af0", meaning:"Gastroc-soleus chronically overloaded. Tendon cannot tolerate load. Achilles tendinopathy developing or established. NKT: release peroneals + glute max activation (reduce calf load). Eccentric Achilles loading as adjunct." },
+          { val:"Overactive — Achilles tendinopathy pattern", color:"#7f5af0", meaning:"Gastroc-soleus chronically overloaded. Tendon cannot tolerate load. Achilles tendinopathy developing or established. CPA: release peroneals + glute max activation (reduce calf load). Eccentric Achilles loading as adjunct." },
         ],
         treatment:"Release: gastroc SMR (foam roll calf from Achilles to popliteal crease, 90 sec). Stretch: straight-leg calf stretch 30 sec × 2. Activate: tib ant + tib post to balance. Home: wall lunge DF stretch × 3 daily, strengthening glutes to reduce calf overload.",
       },
@@ -5532,7 +5532,7 @@ const NKT_REGIONS = {
 
   upper_limb:{
     label:"Elbow, Wrist & Hand", color:"#e879f9",
-    intro:"Upper limb NKT identifies motor control dysfunction from elbow to hand. Common patterns: wrist extensor inhibition → wrist flexors overactive (lateral epicondylalgia), biceps overactive compensating for RC inhibition, grip weakness from cervical radiculopathy or motor control inhibition. Per NKT: the elbow and wrist are frequently affected by DISTANT inhibition (cervical, shoulder).",
+    intro:"Upper limb CPA identifies motor control dysfunction from elbow to hand. Common patterns: wrist extensor inhibition → wrist flexors overactive (lateral epicondylalgia), biceps overactive compensating for RC inhibition, grip weakness from cervical radiculopathy or motor control inhibition. Per CPA: the elbow and wrist are frequently affected by DISTANT inhibition (cervical, shoulder).",
     tests:[
       { id:"nkt_biceps", label:"Biceps Brachii", muscle:"Biceps brachii (long + short head)",
         compensator:"When overactive: compensating for inhibited RC (supraspinatus/subscapularis)",
@@ -5570,7 +5570,7 @@ const NKT_REGIONS = {
         options:[
           { val:"Normal tone", color:"#00c97a", meaning:"Wrist flexors activate for grip and wrist flexion tasks. Not dominant in wrist extension tasks. No medial epicondyle pain at rest." },
           { val:"Overactive — medial epicondylalgia", color:"#ff4d6d", meaning:"Wrist flexors overactive and tender at medial epicondyle. Medial epicondylalgia. TREAT: release wrist flexors (SMR medial forearm) → activate wrist extensors." },
-          { val:"Inhibited — grip weakness", color:"#ffb300", meaning:"Wrist flexors inhibited — grip significantly weak. Rule out C8/T1 radiculopathy, cubital tunnel, or carpal tunnel. NKT: release wrist extensors → activate wrist flexors." },
+          { val:"Inhibited — grip weakness", color:"#ffb300", meaning:"Wrist flexors inhibited — grip significantly weak. Rule out C8/T1 radiculopathy, cubital tunnel, or carpal tunnel. CPA: release wrist extensors → activate wrist flexors." },
         ],
         treatment:"Release: forearm flexor SMR (medial forearm rolling, 60 sec). DTFM to medial epicondyle if golfer's elbow. Activate: eccentric wrist flexion. Home: forearm stretching + grip strengthening progression.",
       },
@@ -5624,10 +5624,10 @@ const KC_REGIONS = {
         options:[
           { val:"Normal — inversion 20° / eversion 10°", color:"#00c97a", meaning:"Subtalar joint mobile and stable. Normal shock absorption. Navicular drop <6mm. Arch height maintained in single-leg stance. No excessive pronation or supination during gait." },
           { val:"Hypomobile — rigid foot", color:"#ffb300", meaning:"Subtalar restricted in both planes. Rigid foot cannot absorb shock — loads transfer to Achilles, plantar fascia, and shin. Patient may have OA, tarsal coalition, or post-fracture stiffness. Poor shock absorption = stress injuries. Mobilise subtalar joint with inversion-eversion glides." },
-          { val:"Hypermobile — excessive pronation", color:"#ff4d6d", meaning:"Subtalar excessively mobile — navicular drop >10mm. Medial arch collapses. Tibialis posterior failing to control pronation (inhibited per NKT). Pronation cascade drives tibial IR → knee valgus → hip IR. Strengthen tib posterior + arch intrinsics. Orthotics if severe." },
+          { val:"Hypermobile — excessive pronation", color:"#ff4d6d", meaning:"Subtalar excessively mobile — navicular drop >10mm. Medial arch collapses. Tibialis posterior failing to control pronation (inhibited per CPA). Pronation cascade drives tibial IR → knee valgus → hip IR. Strengthen tib posterior + arch intrinsics. Orthotics if severe." },
           { val:"Asymmetric — significant L vs R difference", color:"#7f5af0", meaning:"Side-to-side difference >5° = significant asymmetry in kinetic chain input. The more restricted side will drive ipsilateral compensations. The hypermobile side will drive contralateral trunk compensations. Address the restricted side first." },
         ],
-        treatment:"Hypomobile: subtalar mobilisation (inversion-eversion glides, Grade III). Hypermobile: tibialis posterior + FHL + intrinsic foot muscle strengthening, short foot exercise. Orthotics: semi-rigid if navicular drop >10mm. Reassess tib post NKT — almost always inhibited in hypermobile foot.",
+        treatment:"Hypomobile: subtalar mobilisation (inversion-eversion glides, Grade III). Hypermobile: tibialis posterior + FHL + intrinsic foot muscle strengthening, short foot exercise. Orthotics: semi-rigid if navicular drop >10mm. Reassess tib post CPA — almost always inhibited in hypermobile foot.",
         chainEffect:"Rigid foot → poor shock absorption → Achilles overload, shin splints, plantar fasciitis. Hypermobile foot → tibial IR → knee valgus → hip adduction → SI joint asymmetry.",
       },
       {
@@ -5658,9 +5658,9 @@ const KC_REGIONS = {
           { val:"Stable — no valgus in any task", color:"#00c97a", meaning:"Knee maintains alignment through all functional tasks. Kinetic chain above (hip stability) and below (ankle DF, foot position) providing adequate support. No medial knee stress. MCL intact." },
           { val:"Dynamic valgus — functional tasks only", color:"#ffb300", meaning:"Knee collapses inward during squat or single-leg tasks but MCL is structurally intact. Kinetic chain failure: ankle DF limited + glute med inhibited driving valgus. This is the most common pattern in female ACL injuries. TREAT: ankle DF + glute med activation — do NOT focus on knee." },
           { val:"Valgus with hip drop — Trendelenburg pattern", color:"#ff6b35", meaning:"Knee valgus accompanied by contralateral pelvis drop (glute med weakness). Classic kinetic chain valgus from proximal instability. Patient cannot control single-leg stance. Medial compartment overloaded. Strengthen glute med → knee valgus will reduce." },
-          { val:"Structural valgus — MCL laxity", color:"#ff4d6d", meaning:"Valgus present at rest and with valgus stress at 0° + 30°. MCL structurally lax. Medial compartment loaded asymmetrically. Refer if significant. NKT: assess VMO activation as it dynamically supports medial knee." },
+          { val:"Structural valgus — MCL laxity", color:"#ff4d6d", meaning:"Valgus present at rest and with valgus stress at 0° + 30°. MCL structurally lax. Medial compartment loaded asymmetrically. Refer if significant. CPA: assess VMO activation as it dynamically supports medial knee." },
         ],
-        treatment:"Dynamic valgus: ankle DF mobilisation + glute med NKT programme + VMO activation. Jump landing retraining (soft knee, hip back). Structural MCL: bracing, progressive loading, VMO/hamstring strengthening. Kinetic chain correction: address ankle → hip → then knee-specific work.",
+        treatment:"Dynamic valgus: ankle DF mobilisation + glute med CPA programme + VMO activation. Jump landing retraining (soft knee, hip back). Structural MCL: bracing, progressive loading, VMO/hamstring strengthening. Kinetic chain correction: address ankle → hip → then knee-specific work.",
         chainEffect:"Restricted ankle DF (below) + inhibited glute med (above) = KNEE is squeezed into valgus by forces from both directions. Treating only the knee will fail.",
       },
       {
@@ -5669,12 +5669,12 @@ const KC_REGIONS = {
         how:"Patient supine, knee fully extended and relaxed. Grasp patella with thumb and index finger. Glide medially and laterally — normal: 1–2cm in each direction (approximately 1/4 patella width). Also tilt: lift medial edge of patella — lateral retinaculum tight if cannot lift ≥0°. Crepitus during passive patellar glide = PFPS or chondromalacia.",
         options:[
           { val:"Normal — symmetric glide, no crepitus", color:"#00c97a", meaning:"Patellar tracking within trochlear groove. Lateral retinaculum not restricting. No crepitus. Q-angle normal. VL/VMO balance adequate. No PFPS symptoms." },
-          { val:"Laterally biased — tight lateral retinaculum", color:"#ffb300", meaning:"Patella glides less than 1cm medially. Lateral tilt test: cannot lift medial edge. Lateral retinaculum tight — often due to VL overactivity (NKT: VMO inhibited → VL overactive). Patient has PFPS with lateral knee ache, crepitus. TREAT: VL SMR + lateral retinaculum stretching + VMO activation." },
+          { val:"Laterally biased — tight lateral retinaculum", color:"#ffb300", meaning:"Patella glides less than 1cm medially. Lateral tilt test: cannot lift medial edge. Lateral retinaculum tight — often due to VL overactivity (CPA: VMO inhibited → VL overactive). Patient has PFPS with lateral knee ache, crepitus. TREAT: VL SMR + lateral retinaculum stretching + VMO activation." },
           { val:"Hypermobile — excessive lateral glide", color:"#ff4d6d", meaning:"Patella glides >2cm laterally with minimal resistance. Medial stabilisers (MPFL, VMO) insufficient. Risk of patellar subluxation or dislocation. Quad strengthening in safe range (0–30° for patellar stability), VMO focus, patellar taping." },
           { val:"Crepitus with glide", color:"#7f5af0", meaning:"Grinding/crepitus during patellar glide = cartilage change or chondromalacia patella. May be asymptomatic or painful. If painful and progressive — refer for imaging. Conservative: load management, VMO strengthening, step avoidance in acute phase." },
         ],
         treatment:"Lateral bias: VL foam roll + IT band SMR, lateral retinaculum stretch (McConnell tape medially), VMO terminal knee extension. Hypermobile: VMO strengthening (0–30°), MPFL-protecting brace. Kinetic chain: always address ankle DF and glute med before patellar taping.",
-        chainEffect:"VMO inhibited (NKT) → VL overactive → patella laterally displaced → PFPS. ALSO: foot pronation → tibial IR → patella internally rotated → increased lateral patellar stress.",
+        chainEffect:"VMO inhibited (CPA) → VL overactive → patella laterally displaced → PFPS. ALSO: foot pronation → tibial IR → patella internally rotated → increased lateral patellar stress.",
       },
       {
         id:"kc_tibiofemoral_rot", label:"Tibial Rotation Assessment — Screw-Home Mechanism",
@@ -5684,7 +5684,7 @@ const KC_REGIONS = {
           { val:"Normal — screw-home intact, symmetric rotation", color:"#00c97a", meaning:"Tibia normally externally rotates at terminal knee extension (screw-home mechanism). Popliteus and LCL functioning. Symmetric passive tibial rotation bilaterally. Knee locks appropriately in full extension for standing." },
           { val:"Restricted tibial IR — lateral chain tightness", color:"#ffb300", meaning:"Cannot internally rotate tibia adequately. Biceps femoris and IT band restricting IR. Patient toe-out during walking (externally rotated) to avoid tibial IR loading. Lateral knee pain. Release biceps femoris + IT band → improve tibial IR." },
           { val:"Excessive tibial IR — medial chain laxity", color:"#ff6b35", meaning:"Tibia falls into internal rotation easily. Medial structures (MCL, medial capsule) lax. Foot pronation driving tibial IR from below. Glute med weakness allowing hip IR from above. Medial knee overloaded. Strengthen: tib post, VMO, glute med." },
-          { val:"Absent screw-home — popliteus dysfunction", color:"#ff4d6d", meaning:"Tibia does not externally rotate at terminal extension. Knee cannot fully lock in extension. Popliteus inhibited or over-lengthened. Patient stands with slight flexion (can't straighten fully). Unlock test positive. Treat popliteus: soft tissue + NKT activation." },
+          { val:"Absent screw-home — popliteus dysfunction", color:"#ff4d6d", meaning:"Tibia does not externally rotate at terminal extension. Knee cannot fully lock in extension. Popliteus inhibited or over-lengthened. Patient stands with slight flexion (can't straighten fully). Unlock test positive. Treat popliteus: soft tissue + CPA activation." },
         ],
         treatment:"Restricted IR: biceps femoris + IT band SMR, tibial IR mobility drill. Absent screw-home: popliteus activation (resisted tibial IR at 30°), terminal knee extension focus. Always address kinetic chain: foot pronation → tibial IR → biceps femoris reactivity.",
         chainEffect:"Excessive tibial IR (from foot pronation) → medial knee overload → MCL stress → medial compartment OA risk. Restricted tibial ER → knee cannot lock → quadriceps must work harder → PFPS.",
@@ -5706,7 +5706,7 @@ const KC_REGIONS = {
           { val:"Moderately restricted — 20–29°", color:"#ff6b35", meaning:"Moderate hip IR restriction. Lumbar spine rotates excessively to compensate — LBP developing or established. Ipsilateral foot may toe-out during gait (compensatory ER to avoid IR demand). Hip impingement (FAI) or posterior capsule contracture. FADIR test likely positive." },
           { val:"Severely restricted — <20° or significant asymmetry", color:"#ff4d6d", meaning:"Severe hip IR restriction. Classic FAI or hip OA finding. Lumbar spine under enormous rotational stress. Patient cannot squat, run, or rotate without pain. FADIR and hip scour likely positive. Refer for X-ray/MRI. Aggressive hip mobility program + consider orthopaedic referral." },
         ],
-        treatment:"Posterior capsule: 90-90 stretch, pigeon pose, hip IR in prone with passive pressure. Joint mobilisation: posterior hip glide (patient supine, therapist mobilises femoral head posteriorly). Soft tissue: piriformis + gemellus SMR + dry needling. NKT: piriformis release → glute med activation (piriformis often overactive when glute med inhibited).",
+        treatment:"Posterior capsule: 90-90 stretch, pigeon pose, hip IR in prone with passive pressure. Joint mobilisation: posterior hip glide (patient supine, therapist mobilises femoral head posteriorly). Soft tissue: piriformis + gemellus SMR + dry needling. CPA: piriformis release → glute med activation (piriformis often overactive when glute med inhibited).",
         chainEffect:"Restricted hip IR → lumbar spine rotates to compensate → asymmetric disc loading → LBP. Also: restricted hip IR → foot toes out during gait → medial knee stress.",
       },
       {
@@ -5729,10 +5729,10 @@ const KC_REGIONS = {
         options:[
           { val:"Normal — 40–45° bilateral symmetric", color:"#00c97a", meaning:"Adequate hip ER for normal gait, sports, and hip dissociation. Deep gluteal muscles (piriformis, obturators, gemellus) at normal length. No lateral hip impingement. Figure-4 test: knee drops to table or near. SI joint not being stressed by ER restriction." },
           { val:"Restricted — tight external rotators", color:"#ffb300", meaning:"Hip ER < 35°. Deep external rotators tight — piriformis, obturators, quadratus femoris. Patient may have FABER test limitation. May restrict stride length during running. Prone figure-4 position limited. Stretch: lying figure-4, seated hip ER stretch." },
-          { val:"Restricted + deep buttock pain (piriformis syndrome)", color:"#ff4d6d", meaning:"ER restricted with reproduction of deep gluteal pain or sciatic symptoms during ER test. Piriformis compressing sciatic nerve. FAIR test likely positive. NKT: piriformis overactive (compensating for inhibited glute med). TREAT: careful piriformis release → glute med activation." },
+          { val:"Restricted + deep buttock pain (piriformis syndrome)", color:"#ff4d6d", meaning:"ER restricted with reproduction of deep gluteal pain or sciatic symptoms during ER test. Piriformis compressing sciatic nerve. FAIR test likely positive. CPA: piriformis overactive (compensating for inhibited glute med). TREAT: careful piriformis release → glute med activation." },
           { val:"Asymmetric — >15° side difference", color:"#7f5af0", meaning:"Significant asymmetry. The restricted side = more capsular loading on ipsilateral SI joint. Running creates rotational asymmetry. Asymmetric ER restriction often from single-side injury history or sport dominance (kicking leg, golf). Address restricted side first." },
         ],
-        treatment:"Soft tissue: piriformis SMR, deep gluteal foam rolling, figure-4 stretch. Joint mobilisation: posterior hip capsule glide if capsular. NKT: piriformis release → glute med activation (inhibited glute med is usually driving piriformis overactivity). Hip ER stretching: seated, lying, pigeon pose.",
+        treatment:"Soft tissue: piriformis SMR, deep gluteal foam rolling, figure-4 stretch. Joint mobilisation: posterior hip capsule glide if capsular. CPA: piriformis release → glute med activation (inhibited glute med is usually driving piriformis overactivity). Hip ER stretching: seated, lying, pigeon pose.",
         chainEffect:"Restricted hip ER → compensatory lumbar rotation → asymmetric SI joint loading. During gait: hip cannot adequately ER → foot toes in → medial ankle stress.",
       },
       {
@@ -5741,11 +5741,11 @@ const KC_REGIONS = {
         how:"MOBILITY: Patient sidelying, affected side up. Passively abduct hip — normal 45°. Also: Ober's test for IT band/TFL restriction (see TFL). STABILITY: Single-leg stance — Trendelenburg test. Patient stands on one leg 30 seconds. Positive = contralateral pelvis drops. Also: lateral step-down from 20cm box — observe hip drop and trunk lean. Functional: observe running gait for hip drop.",
         options:[
           { val:"Normal mobility and stability", color:"#00c97a", meaning:"Hip abducts to 45°. Trendelenburg negative. Single-leg squat: pelvis level, no hip drop. Running: symmetrical pelvis. Glute med functioning appropriately as primary lateral pelvic stabiliser." },
-          { val:"Restricted mobility — TFL/IT band", color:"#ffb300", meaning:"Ober's test positive — hip cannot adduct past 10° = IT band/TFL restricting abduction. Patient has lateral hip/knee pain. TFL overactive (NKT: compensating for inhibited glute med). TREAT: TFL SMR → glute med activation." },
-          { val:"Stability deficit — Trendelenburg positive", color:"#ff4d6d", meaning:"Pelvis drops contralaterally during single-leg stance. Glute med cannot support pelvis. Patient leans trunk over stance leg to reduce moment arm (gluteus medius lurch/Trendelenburg lurch). All single-leg activities overload medial structures below and lumbar above. NKT: confirm glute med inhibited → TFL/QL compensating." },
+          { val:"Restricted mobility — TFL/IT band", color:"#ffb300", meaning:"Ober's test positive — hip cannot adduct past 10° = IT band/TFL restricting abduction. Patient has lateral hip/knee pain. TFL overactive (CPA: compensating for inhibited glute med). TREAT: TFL SMR → glute med activation." },
+          { val:"Stability deficit — Trendelenburg positive", color:"#ff4d6d", meaning:"Pelvis drops contralaterally during single-leg stance. Glute med cannot support pelvis. Patient leans trunk over stance leg to reduce moment arm (gluteus medius lurch/Trendelenburg lurch). All single-leg activities overload medial structures below and lumbar above. CPA: confirm glute med inhibited → TFL/QL compensating." },
           { val:"Both mobility restricted AND stability deficit", color:"#7f5af0", meaning:"IT band tight + Trendelenburg positive. Classic kinetic chain hip failure. TFL and piriformis are both overactive, glute med severely inhibited. Lateral knee pain, hip pain, and lumbar dysfunction. Multi-session approach: release TFL + piriformis → activate glute med → functional hip loading." },
         ],
-        treatment:"Restricted: TFL SMR + lateral hip stretch + IT band roller. Stability: NKT glute med protocol (release TFL → activate glute med: clamshells → lateral band walks → single-leg holds). Progress: step-ups, lateral lunges, single-leg squat with pelvis level focus. Running: cue hip level during gait.",
+        treatment:"Restricted: TFL SMR + lateral hip stretch + IT band roller. Stability: CPA glute med protocol (release TFL → activate glute med: clamshells → lateral band walks → single-leg holds). Progress: step-ups, lateral lunges, single-leg squat with pelvis level focus. Running: cue hip level during gait.",
         chainEffect:"Glute med failure → pelvis drops → lumbar side-flexes → SI joint asymmetric load → LBP. Below: hip drop → tibial valgus stress → medial knee pain.",
       },
     ]
@@ -5789,7 +5789,7 @@ const KC_REGIONS = {
           { val:"Normal — thoracic dominant rotation", color:"#00c97a", meaning:"Thoracic spine contributes majority of rotation (>45° each side). Lumbar minimally rotates (<5° per side). Ribs and thoracic facets mobile. Thoracic rotation does not increase lumbar disc shear forces. Normal rotational mechanics for golf, tennis, running." },
           { val:"Thoracic stiff — lumbar compensating rotation", color:"#ffb300", meaning:"Thoracic rotation <30° and lumbar overrotates to compensate. Disc at L4/5 or L5/S1 subjected to rotational shear forces. LBP with rotation (golf swing, getting in/out of car). Thoracic mobilisation priority: rotational manipulation, foam roller rotation drill." },
           { val:"Bilateral thoracic stiffness — both sides", color:"#ff6b35", meaning:"Symmetric thoracic restriction — total rotation <60°. Often from prolonged desk posture, rib cage stiffness, or thoracic kyphosis. Lumbar maximally compensating bilaterally. Bilateral risk for disc pathology. Foam roller thoracic extension + rotation essential." },
-          { val:"Asymmetric restriction — one side significantly less", color:"#ff4d6d", meaning:"More restricted on one side. Creates rotational asymmetry — lumbar rotation asymmetrically loaded. Common in golfers, throwers, racquet sport athletes. Address: unilateral thoracic rotation mobility (side-lying open book, seated rotation with dowel). NKT: check contralateral glute med and ipsilateral obliques." },
+          { val:"Asymmetric restriction — one side significantly less", color:"#ff4d6d", meaning:"More restricted on one side. Creates rotational asymmetry — lumbar rotation asymmetrically loaded. Common in golfers, throwers, racquet sport athletes. Address: unilateral thoracic rotation mobility (side-lying open book, seated rotation with dowel). CPA: check contralateral glute med and ipsilateral obliques." },
         ],
         treatment:"Thoracic: foam roller extension + rotation (30 reps daily), side-lying open book stretch, seated thoracic rotation with dowel. Manual therapy: thoracic rotation manipulation (high velocity). Lumbar control: seated rotation awareness training, quadruped anti-rotation.",
         chainEffect:"Stiff thoracic (above) forces lumbar to rotate → disc shear forces → LBP. Below: hip IR restriction also forces lumbar to compensate rotationally.",
@@ -5835,9 +5835,9 @@ const KC_REGIONS = {
           { val:"Normal — symmetric expansion, no rib tenderness", color:"#00c97a", meaning:"Bilateral symmetric rib cage expansion during breathing. No hypomobile ribs on palpation. Costotransverse joints mobile. Thoracic rotation and extension will be full. Breathing pattern diaphragmatic — ribs expanding laterally and posteriorly." },
           { val:"Asymmetric expansion — one side restricted", color:"#ffb300", meaning:"One side of rib cage expands less than other. Often ipsilateral to thoracic rotation restriction. Breathing may be thoracic (accessory muscle dominant). Ipsilateral rib articulations hypomobile. Rib mobilisation (unilateral anterior-posterior rib pressure or manipulation) at restricted level." },
           { val:"Hypomobile ribs — specific levels tender", color:"#ff6b35", meaning:"Specific rib angles tender and stiff on PA pressure. Hypomobile costovertebral/costotransverse joints. Restricts thoracic rotation at that spinal level. Often follows respiratory illness, thoracic trauma, or prolonged poor posture. Manipulate/mobilise specific ribs at stiff levels." },
-          { val:"Upper chest breathing — diaphragm inhibited", color:"#ff4d6d", meaning:"Rib cage rises vertically (upper chest breathing) rather than expanding laterally — diaphragm inhibited (see NKT diaphragm). Scalenes and SCM overactive as primary breathers. Lower ribs do not expand. Retrain: 360° diaphragmatic breathing, crocodile breathing, lateral rib expansion. Treat NKT: scalene release → diaphragm activation." },
+          { val:"Upper chest breathing — diaphragm inhibited", color:"#ff4d6d", meaning:"Rib cage rises vertically (upper chest breathing) rather than expanding laterally — diaphragm inhibited (see CPA diaphragm). Scalenes and SCM overactive as primary breathers. Lower ribs do not expand. Retrain: 360° diaphragmatic breathing, crocodile breathing, lateral rib expansion. Treat CPA: scalene release → diaphragm activation." },
         ],
-        treatment:"Rib mobilisation: Grade III–IV PA pressure on hypomobile rib angles. HVLA: rib manipulation in prone. Breathing: lateral rib expansion training (patient places hands on lower ribs, breathe into hands). Soft tissue: intercostal release. NKT: scalene + SCM release → diaphragm activation if breathing pattern disordered.",
+        treatment:"Rib mobilisation: Grade III–IV PA pressure on hypomobile rib angles. HVLA: rib manipulation in prone. Breathing: lateral rib expansion training (patient places hands on lower ribs, breathe into hands). Soft tissue: intercostal release. CPA: scalene + SCM release → diaphragm activation if breathing pattern disordered.",
         chainEffect:"Hypomobile ribs → restrict thoracic rotation → lumbar overrotation → LBP. Also: restricted breathing pattern → reduced core stability (diaphragm is a core stabiliser) → LBP.",
       },
     ]
@@ -5853,8 +5853,8 @@ const KC_REGIONS = {
         how:"Patient seated or standing. Observe arm elevation in scapular plane (between flexion and abduction). Normal ratio: for every 2° of GH elevation, 1° of scapular upward rotation = 2:1 ratio (total: 120° GH + 60° scapular = 180° total). Observe: (1) Early scapular elevation (shrugging) = upper trap dominant. (2) Winging at any point = serratus inhibited. (3) Painful arc (60–120°) = impingement. (4) Does scapula upwardly rotate or just elevate? Mark inferior angle and medial border with marker for precision.",
         options:[
           { val:"Normal — 2:1 ratio, no shrug, no winging", color:"#00c97a", meaning:"Scapula upwardly rotates smoothly in 2:1 ratio with GH elevation. No early shrugging. No winging. Painful arc absent. Lower trap, serratus, and upper trap balanced. Normal force couple functioning. Overhead activity pain-free." },
-          { val:"Upper trap dominant — early shoulder elevation", color:"#ffb300", meaning:"Shoulder elevates immediately with arm raising (upper trap fires first — NKT: lower trap inhibited). Ratio disrupted — too much scapular elevation, not enough upward rotation. Patient feels tightness across top of shoulder. Impingement risk. TREAT: upper trap release → lower trap activation → retrain arm elevation pattern." },
-          { val:"Serratus deficit — medial winging", color:"#ff6b35", meaning:"Medial border of scapula wings away from thorax during arm elevation. Serratus anterior inhibited (cannot protract/upwardly rotate scapula — NKT: pec minor overactive). Subacromial space decreases → impingement. Full overhead elevation impossible without winging. TREAT: pec minor release → serratus activation." },
+          { val:"Upper trap dominant — early shoulder elevation", color:"#ffb300", meaning:"Shoulder elevates immediately with arm raising (upper trap fires first — CPA: lower trap inhibited). Ratio disrupted — too much scapular elevation, not enough upward rotation. Patient feels tightness across top of shoulder. Impingement risk. TREAT: upper trap release → lower trap activation → retrain arm elevation pattern." },
+          { val:"Serratus deficit — medial winging", color:"#ff6b35", meaning:"Medial border of scapula wings away from thorax during arm elevation. Serratus anterior inhibited (cannot protract/upwardly rotate scapula — CPA: pec minor overactive). Subacromial space decreases → impingement. Full overhead elevation impossible without winging. TREAT: pec minor release → serratus activation." },
           { val:"Combined pattern — both elevation and winging", color:"#ff4d6d", meaning:"Upper trap dominance + serratus inhibition simultaneously. Severe scapular dyskinesis. Multiple muscles dysfunctional. Patient has established shoulder impingement and possible rotator cuff pathology. Multi-system treatment: release upper trap + pec minor → activate lower trap + serratus → retrain arm elevation." },
         ],
         treatment:"Scapular muscle rebalancing: lower trap (prone Y) + serratus (push-up plus, serratus punch). Release: upper trap SMR + pec minor soft tissue. Movement retraining: wall slide with scapular depression cue, elevation drills with resistance band. Avoid overhead loading until rhythm normalised.",
@@ -5870,7 +5870,7 @@ const KC_REGIONS = {
           { val:"Bilateral restriction — posterior capsule tightness", color:"#ff6b35", meaning:"Both shoulders show restricted IR. Non-throwing athlete — indicates global posterior capsule contracture or UCS-related tightness. Pec minor tightness also limiting IR (anterior chain restrictors). Posterior capsule stretching bilaterally + pec minor release." },
           { val:"Severely restricted — frozen shoulder pattern", color:"#ff4d6d", meaning:"IR severely restricted (<30°). All planes restricted (capsular pattern: ER > Abd > IR). Adhesive capsulitis likely. Pain at end-range passive motion. Refer for corticosteroid injection assessment. Grade III–IV GH mobilisation (inferior glide, posterior glide). Night pain = inflammatory phase — not mobilised aggressively." },
         ],
-        treatment:"GIRD: sleeper stretch × 3 × 30 sec daily, posterior capsule joint mobilisation (posterior glide). Frozen shoulder: Maitland Grade I–II in pain → Grade III–IV in stiff phase. End-range stretching program. Joint distension injection if severe. NKT: RC activation after each mobilisation session.",
+        treatment:"GIRD: sleeper stretch × 3 × 30 sec daily, posterior capsule joint mobilisation (posterior glide). Frozen shoulder: Maitland Grade I–II in pain → Grade III–IV in stiff phase. End-range stretching program. Joint distension injection if severe. CPA: RC activation after each mobilisation session.",
         chainEffect:"GH IR restriction → shoulder impingement (posterior capsule pushes humeral head anterosuperiorly → compresses supraspinatus). Also: GH IR loss → thoracic rotation compensates → lumbar overloads.",
       },
       {
@@ -5880,7 +5880,7 @@ const KC_REGIONS = {
         options:[
           { val:"Normal — mobile CT junction", color:"#00c97a", meaning:"CT junction mobile on PA spring test. No significant stiffness at T1–T3. Cervical rotation flows smoothly through CT junction. Brachial plexus exits freely. No referred arm symptoms provoked by CT junction loading." },
           { val:"Hypomobile CT junction — restricted rotation", color:"#ffb300", meaning:"CT junction stiff — PA spring test feels wooden at T1–T3. Reduced cervical rotation, particularly at lower levels. Patient has stiffness at base of neck. Often from forward head posture (chin poke — the CT junction extends to compensate for FHP). Mobilise: PA and rotation mobilisations at C7–T3." },
-          { val:"CT junction hypomobility with arm symptoms", color:"#ff4d6d", meaning:"CT junction restricted AND provokes arm tingling/heaviness with loading. Brachial plexus or first rib elevated at CT junction. First rib elevation test: compare first rib height bilaterally (should be level). Thoracic outlet symptoms. Mobilise CT junction + first rib mobilisation. Scalene release (NKT: scalenes often overactive due to diaphragm inhibition — elevating first rib)." },
+          { val:"CT junction hypomobility with arm symptoms", color:"#ff4d6d", meaning:"CT junction restricted AND provokes arm tingling/heaviness with loading. Brachial plexus or first rib elevated at CT junction. First rib elevation test: compare first rib height bilaterally (should be level). Thoracic outlet symptoms. Mobilise CT junction + first rib mobilisation. Scalene release (CPA: scalenes often overactive due to diaphragm inhibition — elevating first rib)." },
           { val:"Cervicothoracic instability — excessive motion", color:"#7f5af0", meaning:"Hypermobile CT junction — too much motion (often post-whiplash). PA spring has no resistance at C7/T1. May be causing positional headaches and neurological symptoms. Stabilise: deep cervical flexor activation, cervicothoracic stabilisation exercises. Avoid aggressive mobilisation or manipulation at this level." },
         ],
         treatment:"Hypomobile: PA mobilisation at T1–T3 (Maitland Grade III–IV), rotation mobilisation in sitting. First rib: inferior-posterior first rib mobilisation. Soft tissue: levator scapulae + upper trap at CT junction. Postural correction: CT junction extension exercises.",
@@ -5904,7 +5904,7 @@ const KC_REGIONS = {
           { val:"Severely restricted bilateral — consider serious pathology", color:"#ff4d6d", meaning:"Both rotations severely restricted (especially if recent onset, no mechanism, or in older patient). Consider: RA (atlantoaxial instability — Sharp-Purser test FIRST), cervical myelopathy (Babinski/reflexes), infection, tumour. Urgent imaging if no mechanism. Do NOT manipulate until serious pathology ruled out." },
         ],
         treatment:"C1/C2: specific C1/C2 rotation manipulation or HVT (cervicogenic headache protocol). Suboccipital release + DNF activation. Lower cervical: segmental mobilisation at restricted level. Thoracic: always treat thoracic rotation restriction first as it directly improves cervical rotation. Home: cervical rotation active ROM × 10 reps each side daily.",
-        chainEffect:"Restricted cervical rotation → patient rotates thoracic more → thoracic overload. Restricted cervical → SCM overworks → cervicogenic headache. DNF inhibition (NKT) is root cause in most cases.",
+        chainEffect:"Restricted cervical rotation → patient rotates thoracic more → thoracic overload. Restricted cervical → SCM overworks → cervicogenic headache. DNF inhibition (CPA) is root cause in most cases.",
       },
       {
         id:"kc_cervical_flex_ext", label:"Cervical Flexion / Extension Mobility",
@@ -6146,9 +6146,9 @@ const RULES = {
       tight:["IT Band","TFL (Tensor Fascia Latae)","Adductors","Gastrocnemius"],
       deficit:"Stability deficit — hip abductor weakness + ankle mobility",
       kinetic:"Ankle DF restriction → tibial IR → knee collapse. Glute med inhibited → TFL overactive → valgus.",
-      root:"Glute Med inhibition (NKT) + Ankle DF restriction (kinetic chain). Treat ankle first, then activate glute med.",
+      root:"Glute Med inhibition (CPA) + Ankle DF restriction (kinetic chain). Treat ankle first, then activate glute med.",
       risk:["Medial knee ligaments (MCL)","ACL (lateral ground reaction force)","Medial meniscus","Patellofemoral joint"],
-      assess:["Ankle DF lunge test","NKT Glute Med","Trendelenburg test","Ober's test (TFL)","VMO timing during terminal extension"],
+      assess:["Ankle DF lunge test","CPA Glute Med","Trendelenburg test","Ober's test (TFL)","VMO timing during terminal extension"],
       exercises:["Ankle DF mobility: wall lunge drill × 3 min daily","Clamshells (glute med isolation)","Lateral band walks","Terminal knee extension (VMO)","Single-leg squat progression"],
       progression:["Week 1–2: Ankle mobility + clamshells","Week 3–4: Goblet squat with cue","Week 5–6: Single-leg squat","Week 7+: Loaded squat with knee alignment feedback"],
     },
@@ -6179,9 +6179,9 @@ const RULES = {
       tight:["Iliopsoas","Rectus Femoris","Lumbar Extensors"],
       deficit:"Both: hip flexor tightness (mobility) + glute/core weakness (stability)",
       kinetic:"Hip flexors pull ASIS forward → pelvis tilts → lumbar extends → facet loading. Classic LCS pattern.",
-      root:"Lower Crossed Syndrome. Psoas overactive (NKT) + Glute max inhibited. Thomas test will confirm.",
+      root:"Lower Crossed Syndrome. Psoas overactive (CPA) + Glute max inhibited. Thomas test will confirm.",
       risk:["Lumbar facet joints","L4/L5 disc","Anterior hip labrum"],
-      assess:["Thomas test","NKT Gluteus Maximus","LCS postural assessment","Prone instability test"],
+      assess:["Thomas test","CPA Gluteus Maximus","LCS postural assessment","Prone instability test"],
       exercises:["Couch stretch (hip flexors)","TA drawing-in manoeuvre","Glute bridges (glute activation priority)","Dead bug","Hip hinge retraining (waiter's bow)"],
       progression:["Week 1–2: Hip flexor release + glute activation","Week 3–4: Bridge progression","Week 5–6: Hinge pattern (RDL)","Week 7+: Squat with pelvic neutral cue"],
     },
@@ -6201,9 +6201,9 @@ const RULES = {
       tight:["Gastrocnemius","Achilles tendon","Peroneus Brevis"],
       deficit:"Stability deficit (foot) + mobility deficit (ankle) driving compensatory pronation",
       kinetic:"Foot pronates → tibial IR → knee valgus → hip IR → anterior pelvic tilt. Chain from foot to pelvis.",
-      root:"Tibialis posterior inhibited (NKT) + ankle DF restriction → foot collapses medially to gain pseudo-dorsiflexion.",
+      root:"Tibialis posterior inhibited (CPA) + ankle DF restriction → foot collapses medially to gain pseudo-dorsiflexion.",
       risk:["Tibialis posterior tendon","Plantar fascia","Medial ankle ligaments","Medial knee (MCL, medial meniscus)"],
-      assess:["Navicular drop test","NKT Tibialis Posterior","Ankle DF lunge test","Subtalar mobility"],
+      assess:["Navicular drop test","CPA Tibialis Posterior","Ankle DF lunge test","Subtalar mobility"],
       exercises:["Short foot exercise × 20 reps","Heel raise with inversion (tib post)","Ankle DF mobility","Intrinsic foot strengthening"],
       progression:["Week 1: Short foot + tib post","Week 2: Squat with arch awareness","Week 3: Single-leg stance on arch","Week 4+: Functional squat"],
     },
@@ -6238,9 +6238,9 @@ const RULES = {
       tight:["Contralateral QL","Ipsilateral adductors"],
       deficit:"Stability deficit — lateral pelvic stabilisers insufficient for single-leg stance",
       kinetic:"Glute med inhibited → QL elevates pelvis on swing side → lateral trunk lean → medial knee overload on stance side.",
-      root:"Glute Med inhibition (NKT primary finding). Trendelenburg sign positive. TFL overactive as compensator.",
+      root:"Glute Med inhibition (CPA primary finding). Trendelenburg sign positive. TFL overactive as compensator.",
       risk:["Medial knee (stance side)","SIJ (asymmetric loading)","Lumbar discs (lateral shear)","IT band (swing side)"],
-      assess:["Trendelenburg test","NKT Glute Med","Hip abduction firing order","Single-leg stance test"],
+      assess:["Trendelenburg test","CPA Glute Med","Hip abduction firing order","Single-leg stance test"],
       exercises:["Clamshells (glute med — must be in slight extension, not flexion)","Side-lying hip abduction","Lateral band walks","Single-leg stance with level pelvis cue","Step-ups with pelvic level focus"],
       progression:["Week 1: Clamshells + TFL release","Week 2: Side-lying abduction","Week 3: Single-leg stance 30 sec","Week 4: Step-ups","Week 5+: Running with pelvic level cue"],
     },
@@ -6249,9 +6249,9 @@ const RULES = {
       tight:["Gastrocnemius/Soleus","Peroneals (overactive)"],
       deficit:"Stability deficit (foot) — medial arch fails during push-off",
       kinetic:"Foot pronates at push-off → tibia internally rotates → knee valgus → hip adduction → LBP. Per step repetition makes this highly injurious.",
-      root:"Tibialis posterior inhibited (NKT). Overactive peroneals compensating. Gastrocnemius restriction reducing DF → compensatory pronation.",
+      root:"Tibialis posterior inhibited (CPA). Overactive peroneals compensating. Gastrocnemius restriction reducing DF → compensatory pronation.",
       risk:["Tibialis posterior tendon (progressive rupture)","Plantar fascia","Medial knee","Shin splints (tib ant reactive)"],
-      assess:["NKT Tibialis Posterior","Navicular drop","Ankle DF lunge test","Subtalar mobility"],
+      assess:["CPA Tibialis Posterior","Navicular drop","Ankle DF lunge test","Subtalar mobility"],
       exercises:["Short foot exercise integrated into walking","Heel raises with inversion","Ankle DF mobility (reduce compensatory pronation)"],
       progression:["Short foot walking practice","Barefoot training on varied surfaces","Orthotic if navicular drop >10mm","Reduce pronation before increasing gait speed/load"],
     },
@@ -6262,7 +6262,7 @@ const RULES = {
       kinetic:"Glute med weak → patient reduces load on hip abductor by leaning trunk over stance leg (reduces moment arm). Classic gluteus medius lurch.",
       root:"Glute Med weakness/inhibition. Patient self-protecting by reducing mechanical demand on weak muscle. This is a STRATEGY, not a structural problem.",
       risk:["Lumbar spine (repeated lateral bending)","Contralateral SI joint","Ipsilateral IT band"],
-      assess:["Trendelenburg test","NKT Glute Med","Single-leg stance","Hip abduction strength MMT"],
+      assess:["Trendelenburg test","CPA Glute Med","Single-leg stance","Hip abduction strength MMT"],
       exercises:["Glute med activation (clamshells, sidelying abduction)","Single-leg stance with upright trunk constraint (standing near wall)","Lateral step-ups with level pelvis"],
       progression:["Week 1–2: Glute med isolation","Week 3: Single-leg with upright cue","Week 4+: Walking retraining with pelvis level"],
     },
@@ -6299,7 +6299,7 @@ const RULES = {
       kinetic:"Ankle proprioception + glute med + core ALL required for single-leg stability. Failure in any one creates instability.",
       root:"Identify the PRIMARY level of instability: ankle (foot wobbles), knee (knee shakes), hip (pelvis drops), or trunk (trunk sways). Treat the lowest level first.",
       risk:["Ankle (repeated micro-sprains)","Knee (meniscus/ACL stress)","SIJ","Lumbar"],
-      assess:["Single-leg stance with eyes open/closed (Romberg variation)","Star Excursion Balance Test (SEBT)","NKT Glute Med + Tibialis Ant","Ankle anterior drawer"],
+      assess:["Single-leg stance with eyes open/closed (Romberg variation)","Star Excursion Balance Test (SEBT)","CPA Glute Med + Tibialis Ant","Ankle anterior drawer"],
       exercises:["Ankle: single-leg balance on foam pad","Glute med: clamshells → sidelying abduction → SLS","Core: TA activation during SLS","Progress: eyes open → eyes closed → unstable surface"],
       progression:["Week 1: SLS eyes open on floor 30 sec","Week 2: Eyes closed","Week 3: Foam pad","Week 4: Added perturbation","Week 5+: Sport-specific"],
     },
@@ -6308,9 +6308,9 @@ const RULES = {
       tight:["Contralateral QL — compensating for glute med weakness"],
       deficit:"Stability deficit — pure glute med failure",
       kinetic:"Glute med cannot hold pelvis level → contralateral pelvis drops → lateral trunk shift → knee valgus loading. Trendelenburg equivalent.",
-      root:"Glute Med inhibited (NKT). Confirm with palpation during SLS — glute med fires late or minimally. TFL and QL compensating.",
+      root:"Glute Med inhibited (CPA). Confirm with palpation during SLS — glute med fires late or minimally. TFL and QL compensating.",
       risk:["Medial knee","SIJ","Lumbar lateral shear","IT band"],
-      assess:["Trendelenburg test","NKT Glute Med","Hip abduction firing order","MMT Glute Med"],
+      assess:["Trendelenburg test","CPA Glute Med","Hip abduction firing order","MMT Glute Med"],
       exercises:["Clamshells (slight hip extension position)","Lateral band walks","SLS with pelvis level cue","Step-downs with pelvic control focus"],
       progression:["Isolation → functional → sport-specific over 6 weeks"],
     },
@@ -6321,7 +6321,7 @@ const RULES = {
       kinetic:"Same as squat valgus but at higher load (full body weight single leg). ACL injury risk position.",
       root:"Glute Med + VMO both insufficient for single-leg demand. Ankle DF restriction often contributing. Highest injury risk position.",
       risk:["ACL","MCL","Medial meniscus","Patellofemoral joint (high stress)"],
-      assess:["NKT Glute Med","VMO timing","Ankle DF lunge test","Patellofemoral assessment"],
+      assess:["CPA Glute Med","VMO timing","Ankle DF lunge test","Patellofemoral assessment"],
       exercises:["Progress glute med and VMO BEFORE single-leg loading","SLS with band at knee (resist valgus)","Step-down with alignment mirror feedback"],
       progression:["Do NOT load until glute med ≥4/5 and VMO firing correctly"],
     },
@@ -6336,7 +6336,7 @@ const RULES = {
       kinetic:"Lunge places high demand on frontal plane stability. Glute med must eccentrically control pelvic drop AND knee alignment simultaneously.",
       root:"Glute med + VMO insufficient. Check if worse with front or back leg — identifies which side is primary weakness.",
       risk:["Medial knee structures","Patellofemoral joint","ACL risk in sport context"],
-      assess:["Trendelenburg test","NKT Glute Med","VMO assessment","Ankle DF (if heel rises in lunge)"],
+      assess:["Trendelenburg test","CPA Glute Med","VMO assessment","Ankle DF (if heel rises in lunge)"],
       exercises:["Reverse lunge (lower demand than forward lunge)","Split squat with support","Glute med focus before progressing to lunge"],
       progression:["Split squat → reverse lunge → forward lunge → walking lunge → loaded lunge"],
     },
@@ -6347,7 +6347,7 @@ const RULES = {
       kinetic:"Back hip flexor tight → pelvis tips anterior → trunk leans forward → lumbar extends. Front hip must extend from compromised position.",
       root:"Back leg hip flexor (iliopsoas) tight. Thomas test on that side positive. Release hip flexor → lunge trunk position improves.",
       risk:["Back leg: anterior hip capsule","Lumbar facets","Front leg: patellar tendon"],
-      assess:["Thomas test","Hip extension ROM","NKT Psoas","FMS In-Line Lunge"],
+      assess:["Thomas test","Hip extension ROM","CPA Psoas","FMS In-Line Lunge"],
       exercises:["Couch stretch (back leg hip flexor)","Half-kneeling hip flexor stretch","Then lunge with upright trunk cue"],
       progression:["Mobility before lunge loading","Half-kneeling → static lunge → walking lunge"],
     },
@@ -6369,7 +6369,7 @@ const RULES = {
       kinetic:"Back leg hip flexor pulls ASIS forward in lunge → lumbar extends → facet compression. Core must resist this but is insufficient.",
       root:"LCS pattern + core instability. Psoas tight + TA weak. Release psoas → activate TA → lunge position improves.",
       risk:["Lumbar facet joints (extension + compression)","L4/L5 disc"],
-      assess:["Thomas test","Prone instability test","TA activation assessment","NKT Psoas"],
+      assess:["Thomas test","Prone instability test","TA activation assessment","CPA Psoas"],
       exercises:["TA activation before lunge","Hip flexor stretching (back leg)","Half-kneeling lunge with posterior pelvic tilt cue"],
       progression:["Half-kneeling with pelvic neutral → static lunge → dynamic lunge"],
     },
@@ -6393,9 +6393,9 @@ const RULES = {
       tight:["Upper Trapezius","Levator Scapulae"],
       deficit:"Stability deficit — upper trap dominant, lower trap inhibited (UCS pattern)",
       kinetic:"Upper trap fires first → shoulder rises → scapula cannot upwardly rotate properly → impingement zone narrows → pain with overhead.",
-      root:"UCS pattern. NKT: lower trap inhibited → upper trap overactive. Scapulohumeral rhythm disrupted — shoulder rises before arm reaches 90°.",
+      root:"UCS pattern. CPA: lower trap inhibited → upper trap overactive. Scapulohumeral rhythm disrupted — shoulder rises before arm reaches 90°.",
       risk:["Supraspinatus","Biceps long head","AC joint","Subacromial bursa"],
-      assess:["Scapulohumeral rhythm assessment","NKT Lower Trapezius","NKT Serratus Anterior","Scapular dyskinesis classification"],
+      assess:["Scapulohumeral rhythm assessment","CPA Lower Trapezius","CPA Serratus Anterior","Scapular dyskinesis classification"],
       exercises:["Upper trap SMR first","Prone Y-exercise (lower trap)","Serratus punch","Arm elevation pattern retraining (no shrug cue)"],
       progression:["Release → activate → retrain elevation pattern over 4–6 weeks"],
     },
@@ -6404,9 +6404,9 @@ const RULES = {
       tight:["Pectoralis Minor"],
       deficit:"Stability deficit — serratus anterior inhibited (UCS component)",
       kinetic:"Serratus inhibited → scapula cannot protract/upwardly rotate → medial border wings → GH abduction limited → overhead impingement.",
-      root:"Pec minor overactive (NKT) → inhibits serratus anterior. Long thoracic nerve palsy must be excluded (if severe winging at rest).",
+      root:"Pec minor overactive (CPA) → inhibits serratus anterior. Long thoracic nerve palsy must be excluded (if severe winging at rest).",
       risk:["Rotator cuff (impingement due to poor scapular position)","Anterior labrum","Long thoracic nerve"],
-      assess:["Wall push-up plus (serratus test)","NKT Serratus Anterior","NKT Pec Minor","Scapular winging classification"],
+      assess:["Wall push-up plus (serratus test)","CPA Serratus Anterior","CPA Pec Minor","Scapular winging classification"],
       exercises:["Pec minor release (coracoid pressure 90 sec)","Serratus punch","Push-up plus progression","Wall slides with protraction cue"],
       progression:["Isolation → closed chain → open chain overhead"],
     },
@@ -6415,9 +6415,9 @@ const RULES = {
       tight:["SCM","Scalenes","Suboccipitals","Upper Trapezius"],
       deficit:"Stability deficit — DNF inhibited, UCS pattern at cervical spine",
       kinetic:"During overhead reach, cervical spine extends if DNF insufficient → suboccipitals compress → headache. Also: forward head increases shoulder impingement (reduces subacromial space via thoracic link).",
-      root:"DNF inhibited (NKT). Address before overhead loading. Every 2.5cm of forward head = +4.5kg on cervical spine at full overhead load.",
+      root:"DNF inhibited (CPA). Address before overhead loading. Every 2.5cm of forward head = +4.5kg on cervical spine at full overhead load.",
       risk:["Suboccipitals (compression)","C4/C5 disc","Supraspinatus (shoulder link)"],
-      assess:["CCFT (deep neck flexor test)","NKT DNF","Cervical rotation ROM","UCS assessment"],
+      assess:["CCFT (deep neck flexor test)","CPA DNF","Cervical rotation ROM","UCS assessment"],
       exercises:["Chin tuck exercise × 20 reps daily","DNF strengthening before overhead loading","Thoracic extension to reduce forward head"],
       progression:["DNF activation → overhead with neutral neck → loaded overhead"],
     },
@@ -8342,7 +8342,7 @@ const FASCIA_REGIONS_DATA = {
         options:[
           { val:"Normal — symmetric glide, free rotation", color:"#00c97a", meaning:"TLF glides freely in all directions. Oblique tension symmetric. Passive trunk rotation creates symmetric gradual resistance. Skin rolling free. TLF hydrated and mobile. Normal force transmission through TLF." },
           { val:"Unilateral restriction", color:"#ffb300", meaning:"TLF restricted one side — unilateral prolonged loading, sport dominance, or old injury. Oblique tension restricted one diagonal. Ipsilateral hip extension restricted and contralateral shoulder restricted (functional line). TREAT: unilateral TLF release." },
-          { val:"Bilateral restriction — erector spinae dominant", color:"#ff6b35", meaning:"TLF restricted bilaterally. Erector spinae chronically overactive (NKT: TA inhibited). Common in chronic LBP. TREAT: bilateral TLF release + TA activation + glute max activation (both attach to TLF)." },
+          { val:"Bilateral restriction — erector spinae dominant", color:"#ff6b35", meaning:"TLF restricted bilaterally. Erector spinae chronically overactive (CPA: TA inhibited). Common in chronic LBP. TREAT: bilateral TLF release + TA activation + glute max activation (both attach to TLF)." },
           { val:"TLF fibrosis — post-injury / surgery", color:"#ff4d6d", meaning:"TLF fibrotic, thickened, rigid. Post-lumbar surgery, prolonged bed rest, or lumbar trauma. TREAT: IASTM along TLF, sustained MFR 3+ min, dry needling paraspinal at TLF level, progressive movement loading." },
         ],
         treatment:"Unilateral: targeted TLF release 90 sec + IASTM. Bilateral: foam roller thoracolumbar + oblique self-release. Activate: TA + glute max (key TLF tensioners). Movement: cat-cow, thoracolumbar rotation.",
@@ -8369,7 +8369,7 @@ const FASCIA_REGIONS_DATA = {
           { val:"Symmetric — LL balanced", color:"#00c97a", meaning:"Equal lateral bend. LL tension symmetric. Peroneal chain free. No scoliotic deviation. Normal lateral stability." },
           { val:"Restricted one side — lateral chain", color:"#ffb300", meaning:"Lateral bend restricted toward one side. LL on shorter side restricted. Peroneal inversion creates chain pull up through IT band and lateral trunk. TREAT: peroneus → IT band → QL → lateral intercostals → lateral neck." },
           { val:"Restricted with scoliosis", color:"#ff6b35", meaning:"Lateral bend restricted AND scoliotic curve visible. Treat the shortened (concave) side LL — the stretched convex side responds. Never aggressively release the stretched LL." },
-          { val:"LL restriction with hip elevation", color:"#ff4d6d", meaning:"LL restricted AND ipsilateral hip elevated. QL and LL both involved. Functional leg length discrepancy. TREAT: QL release + IT band SMR + lateral rib mobilisation + glute med activation (NKT)." },
+          { val:"LL restriction with hip elevation", color:"#ff4d6d", meaning:"LL restricted AND ipsilateral hip elevated. QL and LL both involved. Functional leg length discrepancy. TREAT: QL release + IT band SMR + lateral rib mobilisation + glute med activation (CPA)." },
         ],
         treatment:"Release: peroneus SMR → IT band foam roll → TFL SMR → QL release → lateral rib mobilisation → lateral neck SMR. Movement: LL dynamic stretch (side bend with arm overhead). Standing lateral swing for LL rehydration.",
       },
@@ -8393,7 +8393,7 @@ const FASCIA_REGIONS_DATA = {
         how:"Patient supine, knees bent. STEP 1 — Breathing: hand on chest + hand on abdomen. Normal: abdomen rises first. STEP 2 — Lateral expansion: hands bilaterally on lower ribs — normal 360° expansion including posterior. STEP 3 — Diaphragm palpation: fingers under lower rib cage margin, breathe in — feel clear descent. STEP 4 — DFL tension: one hand under thoracolumbar (psoas level) + other on anterior lower ribs — breathe — do these two structures move together through DFL? STEP 5 — Psoas connection: Thomas test positive? (psoas and diaphragm share fascial attachment through DFL).",
         options:[
           { val:"Normal — DFL hub free", color:"#00c97a", meaning:"Abdomen rises first. 360° rib expansion. Diaphragm clearly descends. Psoas and diaphragm move together. Thomas test negative. Core IAP managed correctly." },
-          { val:"Thoracic breathing — diaphragm inhibited", color:"#ffb300", meaning:"Chest rises first. Scalenes/SCM visible on normal breathing. Diaphragm barely descends. NKT: diaphragm inhibited → scalenes compensating. Core IAP generation impaired → LBP risk. TREAT: diaphragm activation (crocodile breathing) + scalene release." },
+          { val:"Thoracic breathing — diaphragm inhibited", color:"#ffb300", meaning:"Chest rises first. Scalenes/SCM visible on normal breathing. Diaphragm barely descends. CPA: diaphragm inhibited → scalenes compensating. Core IAP generation impaired → LBP risk. TREAT: diaphragm activation (crocodile breathing) + scalene release." },
           { val:"Diaphragm restricted — fascial adhesion", color:"#ff6b35", meaning:"Breathing partially restricted. DFL tension test: thoracolumbar and rib cage do NOT move together. Often post-abdominal surgery. Diaphragmatic fascial adhesion: manual release under lower rib margin + visceral mobilisation." },
           { val:"Paradoxical breathing — severe DFL disruption", color:"#ff4d6d", meaning:"Abdomen moves IN on inhalation. Diaphragm not descending. Severe DFL disruption. Consider phrenic nerve, chronic anxiety, or post-surgical adhesion. Refer for respiratory physiotherapy." },
         ],
@@ -8423,7 +8423,7 @@ const FASCIA_REGIONS_DATA = {
           { val:"Posterior force closure deficit", color:"#ff6b35", meaning:"Posterior SIJ compression helps. Glute max + biceps femoris + TLF insufficient posteriorly. Common postpartum. TREAT: glute max activation, TLF tensioning, SIJ belt short-term." },
           { val:"Bilateral deficit — severe", color:"#ff4d6d", meaning:"Both anterior and posterior compression help. Severe force closure failure. Multi-system treatment: pelvic physiotherapy + SIJ belt + graded loading program." },
         ],
-        treatment:"Anterior deficit: TA drawing-in + pelvic floor. Posterior deficit: glute max NKT + TLF activation (deadlift pattern). Bilateral: SIJ belt 6–8 weeks + specific stabilisation. TLF: MFR + immediate loading (bridge, deadlift).",
+        treatment:"Anterior deficit: TA drawing-in + pelvic floor. Posterior deficit: glute max CPA + TLF activation (deadlift pattern). Bilateral: SIJ belt 6–8 weeks + specific stabilisation. TLF: MFR + immediate loading (bridge, deadlift).",
       },
       { id:"fa_compensation_map", label:"Fascial Compensation Pattern Mapping", line:"All", type:"Multi-line integration",
         how:"SYSTEMATIC MAPPING: (1) Identify primary complaint: location, movement most affected. (2) Test ALL lines at painful area: which fascial line passes through? (3) Follow line AWAY from pain: does restricting/releasing remote area change local pain? (4) Test ANTAGONIST line: SBL restricted → test SFL. LL → opposite LL. (5) Test FUNCTIONAL CONNECTIONS: check contralateral extremity. (6) Classify: LOCAL (restriction only at pain site) vs CHAIN (one line, multiple areas) vs GLOBAL (multiple lines). (7) PRIMARY RESTRICTION: most densified or oldest point in chain — often matches old injury or surgery site.",
@@ -8636,7 +8636,7 @@ function FasciaSection({ data, set, navContext={} }) {
 }
 
 
-// ─── NKT REGION COMPONENT ────────────────────────────────────────────────────
+// ─── CPA REGION COMPONENT ────────────────────────────────────────────────────
 function NKTSection({ data, set, navContext={} }) {
     const [region, setRegion] = useState(navContext.nktRegion||"cervical");
   React.useEffect(()=>{ if(navContext.nktRegion) setRegion(navContext.nktRegion); },[navContext.nktRegion]);
@@ -9001,7 +9001,7 @@ function generateDiagnosis(data) {
   if(has("n_ref_jaw_left","Positive")||has("n_ref_jaw_right","Positive"))umnSigns.push("Jaw jerk brisk");
   if(umnSigns.length>0){dx.push({system:"Structural",name:"Upper Motor Neuron / Myelopathy Pattern",confidence:"High",evidence:umnSigns,mechanism:"Pathological reflexes indicate UMN lesion above the segmental level. Possible cervical myelopathy, cord compression, or intracranial pathology.",treatment:["URGENT: No cervical manipulation","MRI cervical + thoracic spine immediately","Neurosurgical / neurological referral","Monitor gait, hand function, and bladder symptoms"]});}
 
-  // NKT from all region tests
+  // CPA from all region tests
   const nktPairs=[];
   ["nkt_dnf","nkt_scm","nkt_suboccip","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_splenius","nkt_semispinalis","nkt_lower_trap","nkt_serratus","nkt_infraspinatus","nkt_subscapularis","nkt_mid_trap","nkt_pec_minor","nkt_ant_deltoid","nkt_post_deltoid","nkt_teres_major","nkt_ta","nkt_multifidus","nkt_diaphragm","nkt_ql","nkt_psoas","nkt_erector_spinae","nkt_obliques","nkt_pelvic_floor","nkt_gmax","nkt_gmed","nkt_piriformis","nkt_hip_flex_fo","nkt_adductors","nkt_tfl","nkt_rectus_fem","nkt_vmo","nkt_hamstrings","nkt_popliteus","nkt_tib_ant","nkt_tib_post","nkt_gastroc","nkt_peroneals","nkt_fhl","nkt_foot_intrinsics","nkt_biceps","nkt_triceps","nkt_wrist_ext","nkt_wrist_flex","nkt_pronator","nkt_grip"].forEach(id=>{
     const val=v(id);
@@ -9012,14 +9012,14 @@ function generateDiagnosis(data) {
     nktPairs.push(`${testLabel}: ${val}`);
   });
   if(nktPairs.length>0){
-    dx.push({system:"NKT",name:"Motor Control Dysfunction (NKT)",confidence:"High",
+    dx.push({system:"CPA",name:"Motor Control Dysfunction (CPA)",confidence:"High",
       evidence:nktPairs,
       mechanism:"The Motor Control Centre (MCC) has stored compensation patterns. Inhibited muscles are substituted by synergists, creating overactive muscles that perpetuate pain and dysfunction cycles.",
       treatment:["STEP 1 — INHIBIT: SMR/foam roll overactive muscles 90 sec (release compensation)","STEP 2 — ACTIVATE: Immediately activate inhibited muscles 3–5 reps within 30 seconds","STEP 3 — INTEGRATE: Functional movement reprogramming with correct motor patterns","STEP 4 — REPROGRAM: Daily home exercises to reinforce new MCC motor programs"]
     });
   }
 
-  // Cyriax
+  // STTT
   const cyriaxLesion=[];
   Object.keys(data).filter(k=>k.startsWith("cy_")&&data[k]).forEach(id=>{
     const val=data[id];
@@ -9030,9 +9030,9 @@ function generateDiagnosis(data) {
   const isCap=has("cy_capsular","Yes");
   if(cyriaxLesion.length>0||isCap){
     const serious=cyriaxLesion.filter(l=>l.type==="serious"),minor=cyriaxLesion.filter(l=>l.type==="minor"),neuro=cyriaxLesion.filter(l=>l.type==="neuro");
-    dx.push({system:"Cyriax",name:`Tissue Lesion: ${serious.length>0?"Serious Contractile":minor.length>0?"Minor Contractile":isCap?"Inert (Capsular)":"Neurological"} Pathology`,confidence:serious.length>0?"High":minor.length>0?"High":"Moderate",
+    dx.push({system:"STTT",name:`Tissue Lesion: ${serious.length>0?"Serious Contractile":minor.length>0?"Minor Contractile":isCap?"Inert (Capsular)":"Neurological"} Pathology`,confidence:serious.length>0?"High":minor.length>0?"High":"Moderate",
       evidence:[...minor.map(l=>l.finding),...serious.map(l=>"⚠️ "+l.finding),...neuro.map(l=>"⚡ "+l.finding),isCap?"Capsular pattern confirmed":null,has("cy_endfeel","Empty")?"Empty end-feel — serious pathology":null].filter(Boolean),
-      mechanism:"Cyriax STTT systematically differentiates inert vs contractile tissue to identify the exact structure at fault.",
+      mechanism:"STTT STTT systematically differentiates inert vs contractile tissue to identify the exact structure at fault.",
       treatment:minor.length>0?["Deep Transverse Friction Massage (DTFM) to exact lesion site","Eccentric loading program for tendinopathy","Relative rest — modify aggravating activities","Progressive loading when pain-free"]:serious.length>0?["Refer for MRI/ultrasound immediately","Protect structure — splinting/bracing","Surgical consultation if rupture confirmed"]:isCap?["Maitland Grade III–IV joint mobilisation","End-range stretching program","Heat before mobilisation, ice after","Corticosteroid injection referral if severe"]:[]
     });
   }
@@ -9190,7 +9190,7 @@ function generateDiagnosis(data) {
   const capsularPattern= erRestricted && abdRestricted && flexRestricted;
   if(capsularPattern){
     dx.push({system:"Structural",name:"Adhesive Capsulitis (Frozen Shoulder)",confidence:"High",
-      evidence:[erRestricted?`ER restricted (<40°): L ${isNaN(shER_l)?"NT":shER_l+"°"} / R ${isNaN(shER_r)?"NT":shER_r+"°"}`:null,abdRestricted?`Abduction restricted (<100°): L ${isNaN(shAbd_l)?"NT":shAbd_l+"°"} / R ${isNaN(shAbd_r)?"NT":shAbd_r+"°"}`:null,flexRestricted?"Flexion restricted (<120°)":null,"Cyriax capsular pattern: ER > Abd > IR loss — pathognomonic for GH capsular fibrosis (Magee; Cyriax)"].filter(Boolean),
+      evidence:[erRestricted?`ER restricted (<40°): L ${isNaN(shER_l)?"NT":shER_l+"°"} / R ${isNaN(shER_r)?"NT":shER_r+"°"}`:null,abdRestricted?`Abduction restricted (<100°): L ${isNaN(shAbd_l)?"NT":shAbd_l+"°"} / R ${isNaN(shAbd_r)?"NT":shAbd_r+"°"}`:null,flexRestricted?"Flexion restricted (<120°)":null,"STTT capsular pattern: ER > Abd > IR loss — pathognomonic for GH capsular fibrosis (Magee; STTT)"].filter(Boolean),
       mechanism:"Fibrosis and contracture of the GH joint capsule (especially the axillary pouch and rotator interval). Insidious onset; 3 phases: painful/freezing → frozen → thawing. Duration 1–3 years without treatment.",
       treatment:["Patient education: natural history (1–3 years), reassurance","Corticosteroid injection (most evidence in freezing phase) — reduces pain, may shorten duration","Capsular stretching: end-range ER, Abd, IR stretching with warmth first","GH inferior and posterior capsule mobilisation (Grade III–IV Maitland when pain allows)","MUA or hydrodilatation if failed conservative treatment >3–6 months","Treat underlying cause: diabetes, thyroid (strong associations)"]});
   }
@@ -9358,7 +9358,7 @@ function generateDiagnosis(data) {
     dx.push({system:"Structural",name:"Hip Flexor Contracture"+(thomasIliopsoas&&thomasRF?" (Iliopsoas + Rectus Femoris)":thomasIliopsoas?" (Iliopsoas)":"(Rectus Femoris)"),confidence:"High",
       evidence:[thomasIliopsoas?"Thomas test — thigh elevated (iliopsoas contracture)":null,thomasRF?"Thomas test — knee extends (rectus femoris contracture)":null,"Thomas test: highly reliable for iliopsoas and RF contracture when thigh cannot remain flat or knee extends >90° (Magee; Kendall, Muscles: Testing and Function)"].filter(Boolean),
       mechanism:thomasIliopsoas?"Iliopsoas (iliacus + psoas major) contracture tilts the pelvis anteriorly and increases lumbar lordosis — a key driver of LCS (Lower Crossed Syndrome)":"Rectus femoris biarticular tightness limits hip extension and increases anterior pelvic tilt and knee loading.",
-      treatment:[thomasIliopsoas?"Iliopsoas stretch: kneeling lunge with posterior pelvic tilt (neutralise lumbar extension compensation)":null,thomasRF?"Rectus femoris stretch: prone knee flexion with stable pelvis":null,"Address Lower Crossed Syndrome: activate glutes + deep abdominals","NKT: check for psoas inhibition of opposite gluteus maximus","Progress to dynamic hip flexor loading (eccentric) once flexibility improves"].filter(Boolean)});
+      treatment:[thomasIliopsoas?"Iliopsoas stretch: kneeling lunge with posterior pelvic tilt (neutralise lumbar extension compensation)":null,thomasRF?"Rectus femoris stretch: prone knee flexion with stable pelvis":null,"Address Lower Crossed Syndrome: activate glutes + deep abdominals","CPA: check for psoas inhibition of opposite gluteus maximus","Progress to dynamic hip flexor loading (eccentric) once flexibility improves"].filter(Boolean)});
   }
 
   // ── Piriformis Syndrome / Sciatic Nerve Compression — Magee ─────────────
@@ -9389,7 +9389,7 @@ function generateDiagnosis(data) {
     dx.push({system:"Structural",name:`Scapular Dyskinesis — ${type}`,confidence:"Moderate",
       evidence:[scapDysk?`Scapular dyskinesis observed: ${type}`:null,kibleSlide?"Kibler lateral slide test positive — scapular asymmetry":null,"Dyskinesis classification guides treatment targets: Type I = serratus; Type II = serratus + lower trap; Type III = upper trap inhibition (Kibler; Magee; Kendall, Muscles: Testing and Function)"].filter(Boolean),
       mechanism:"Altered scapulohumeral rhythm reduces subacromial space, increases rotator cuff and labral load. Upper trap overactivation, serratus anterior inhibition, and lower trap weakness create the classic Type III pattern.",
-      treatment:[has("st_scapular_dyskinesis","Type I")?"Serratus anterior activation: wall slide, push-up plus progression":has("st_scapular_dyskinesis","Type III")?"Upper trap inhibition: scapular depression exercises, lower trap rows":"Lower trap and serratus activation: Y/T/W exercises","Thoracic extension and rotation mobility (restricted thorax amplifies dyskinesis)","Cervicothoracic junction mobilisation (C7–T3)","Integrate scapular control into sport-specific loading","NKT: check serratus anterior inhibition pattern"]});
+      treatment:[has("st_scapular_dyskinesis","Type I")?"Serratus anterior activation: wall slide, push-up plus progression":has("st_scapular_dyskinesis","Type III")?"Upper trap inhibition: scapular depression exercises, lower trap rows":"Lower trap and serratus activation: Y/T/W exercises","Thoracic extension and rotation mobility (restricted thorax amplifies dyskinesis)","Cervicothoracic junction mobilisation (C7–T3)","Integrate scapular control into sport-specific loading","CPA: check serratus anterior inhibition pattern"]});
   }
   // Cervical radiculopathy — genuine Wainner cluster (Cleland, Netter's; Magee)
   const cervDermDeficit=["n_c5","n_c6","n_c7","n_c8"].some(id=>has(id+"_left","Reduced")||has(id+"_right","Reduced")||has(id+"_left","Absent")||has(id+"_right","Absent")||has(id,"Reduced")||has(id,"Absent"));

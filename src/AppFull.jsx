@@ -9,7 +9,7 @@ import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection,
   PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
 import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule, LiveSOAPPanel,
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
-  buildClinicalInterpretation, Sparkline, EXERCISE_DB, ALL_EXERCISES } from "./ClinicalModules.jsx";
+  buildClinicalInterpretation, Sparkline, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./ClinicalModules.jsx";
 import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
@@ -2412,7 +2412,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
         const abs = Math.abs(safeAngle);
         const side = (g(11)&&g(12)) ? (g(11).y < g(12).y ? "Left" : "Right") : (safeAngle > 0 ? "Left" : "Right");
         add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
-          `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s × 3. Activate: lower trapezius Y-T-W × 15. NKT: check ipsilateral QL — QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
+          `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s × 3. Activate: lower trapezius Y-T-W × 15. CPA: check ipsilateral QL — QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
           "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis. Confirmed at clinical confidence (both acromions ≥0.65 visibility).`, "Normal: <2.5° / <1.5cm (Magee)", abs);
       }
     } else if (!VCboth(11,12) && shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
@@ -2632,7 +2632,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     // Only fire scapular/shoulder height if shoulderAngle hasn't already captured the same asymmetry
     if (scapularAsymm !== null && scapularAsymm > 2.5 && (shoulderAngle === null || Math.abs(shoulderAngle) < 2.5)) {
       add("Shoulder Girdle", `Shoulder/acromion height asymmetry — posterior view (${scapularAsymm.toFixed(1)}% differential). Note: true scapular winging/asymmetry requires clinical assessment — MediaPipe provides no dedicated scapular landmarks.`, scapularAsymm > 5 ? "high" : "moderate",
-        `NKT screen: serratus anterior vs pec minor. Lower trap Y-T-W ×15. Wall push-up plus (serratus). Thoracic extension mobility. If winging visible: test serratus (wall push-up — medial border lifting = Type II dyskinesis).`,
+        `CPA screen: serratus anterior vs pec minor. Lower trap Y-T-W ×15. Wall push-up plus (serratus). Thoracic extension mobility. If winging visible: test serratus (wall push-up — medial border lifting = Type II dyskinesis).`,
         "M89.8", "⇑", `Acromion/shoulder height asymmetry from posterior view. True scapular assessment (Kibler types I-III) requires manual examination — inferior angle, medial border, superior elevation cannot be reliably identified from this photo. Recommend clinical scapular assessment.`, "Normal: <2.5°", scapularAsymm);
     }
 
@@ -2723,7 +2723,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const sev = cvaAngle < 42 ? "high" : "moderate";
       const loadStr = cervicalLoadKg !== null ? ` Est. cervical load: ${cervicalLoadKg}kg (neutral=4.5kg).` : "";
       add("Cervical — Forward Head", `Forward head posture — CVA ${cvaAngle.toFixed(0)}° (normal >55°)${forwardHeadCm !== null ? ` / ${forwardHeadCm.toFixed(1)}cm anterior` : ""}`, sev,
-        `IMMEDIATE: supine chin nod (NOT chin tuck) ×10 ×3 sets, 10s hold. Thoracic extension foam roller T4–T8 ×2min daily. Suboccipital release 90s. Ergonomic: raise monitor 5–10cm, keyboard at elbow height. NKT: SCM+scalenes overactive → inhibit → activate DNF within 30s. Home cue: tongue to roof of mouth.`,
+        `IMMEDIATE: supine chin nod (NOT chin tuck) ×10 ×3 sets, 10s hold. Thoracic extension foam roller T4–T8 ×2min daily. Suboccipital release 90s. Ergonomic: raise monitor 5–10cm, keyboard at elbow height. CPA: SCM+scalenes overactive → inhibit → activate DNF within 30s. Home cue: tongue to roof of mouth.`,
         "M43.6", "⇒", `CVA ${cvaAngle.toFixed(0)}° (Yip 2008).${loadStr} Each 2.5cm FHP adds ~2.7kg to estimated cervical extensor load (proxy model) (estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula)).`, "Normal: >55°", cvaAngle);
     } else if (cvaAngle === null && forwardHeadMm !== null && Math.abs(forwardHeadMm) > 3) {
       const abs = Math.abs(forwardHeadMm);
@@ -4678,7 +4678,7 @@ function buildFindings(lm, view, m) {
             possibleMusclePatterns: MUSCLE_PATTERNS.ucs,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
             recommendedObjectiveAssessment: OBJECTIVE_ASSESSMENTS.ucs,
-            correction: "NKT Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: DNF (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
+            correction: "CPA Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: DNF (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
             icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
           });
         }
@@ -4834,7 +4834,7 @@ function buildFindings(lm, view, m) {
         musclePattern: MUSCLE_PATTERNS.ucs,
         functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
         objectiveAssessments: OBJECTIVE_ASSESSMENTS.ucs,
-        correction: "NKT Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep cervical flexors (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
+        correction: "CPA Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep cervical flexors (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
         icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
       });
     }
@@ -4853,7 +4853,7 @@ function buildFindings(lm, view, m) {
         musclePattern: MUSCLE_PATTERNS.lcs,
         functionalCorrelation: FUNCTIONAL_CORRELATIONS.lcs,
         objectiveAssessments: OBJECTIVE_ASSESSMENTS.lcs,
-        correction: "NKT Protocol — INHIBIT: iliopsoas, rectus femoris, TFL. ACTIVATE: glute max (bridges), glute med (clamshells), TVA (dead bug). Thomas test to confirm hip flexor length.",
+        correction: "CPA Protocol — INHIBIT: iliopsoas, rectus femoris, TFL. ACTIVATE: glute max (bridges), glute med (clamshells), TVA (dead bug). Thomas test to confirm hip flexor length.",
         icd: "M62.8", norm: "Anterior pelvic tilt <5% + thoracic kyphosis <42°",
       });
     }
@@ -12691,9 +12691,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     </Sec>
                   )}
 
-                  {/* ── Cyriax ── */}
+                  {/* ── STTT ── */}
                   {cyKeys.length>0&&(
-                    <Sec icon="🦴" title="Cyriax / Orthopaedic" navKey="cyriax_full" hasData={true}>
+                    <Sec icon="🦴" title="STTT / Orthopaedic" navKey="cyriax_full" hasData={true}>
                       {(()=>{
                         const rows=cyKeys.map(k=>({k,label:k.replace("cy_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()),val:d[k]}));
                         const isAbn=v=>{const t=String(v||"").toLowerCase();return !(t.includes("normal")||t.includes("full")||t.includes("negative"));};
@@ -13909,7 +13909,7 @@ function HomeModule({ onNav }) {
     { icon:"🔬", title:"100+ Special Tests", desc:"Evidence-based special tests for cervical, shoulder, elbow, wrist, hip, knee, and ankle with sensitivity/specificity data.", nav:"special", color:"#9333ea" },
     { icon:"⚡", title:"Neurological Assessment", desc:"Dermatomes, myotomes, reflexes, neural tension tests, and red flag neurological screening.", nav:"neuro", color:"#7c3aed" },
     { icon:"🚶", title:"Gait Analysis", desc:"Observational gait analysis across stance, swing, and double support phases with clinical correlations.", nav:"gait", color:"#9333ea" },
-    { icon:"🧠", title:"NKT Assessment", desc:"Neurokinetic Therapy muscle testing with inhibitor-facilitator relationships across regions.", nav:"nkt", color:"#7c3aed" },
+    { icon:"🧠", title:"CPA Assessment", desc:"Neurokinetic Therapy muscle testing with inhibitor-facilitator relationships across regions.", nav:"nkt", color:"#7c3aed" },
     { icon:"⛓️", title:"Kinetic Chain", desc:"Joint-by-joint analysis of the kinetic chain from foot to cervical spine.", nav:"kinetic", color:"#9333ea" },
     { icon:"💊", title:"Treatment Prescription", desc:"Evidence-based exercise programming, HEP generation, treatment technique logging, and session records.", nav:"exercise", color:"#7c3aed" },
     { icon:"🤖", title:"SOAP Notes + AI", desc:"AI-powered SOAP note generation from your assessment data with Anthropic Claude integration.", nav:"soap", color:"#9333ea" },
@@ -15674,8 +15674,10 @@ function QuickVisitForm({ PC, data, set, navTo }) {
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState([]);          // protocol change descriptions this visit
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState("library");   // "library" | "templates"
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerRegion, setPickerRegion] = useState("all");
+  const [openTemplate, setOpenTemplate] = useState(null);
   const [editId, setEditId] = useState(null);
   const [editDose, setEditDose] = useState({sets:"",reps:"",hold:""});
   const [removeId, setRemoveId] = useState(null);
@@ -15705,6 +15707,15 @@ function QuickVisitForm({ PC, data, set, navTo }) {
     setEditId(null);
   };
 
+  const addTx = (t) => setQv(p=>({...p,treatment:p.treatment?(p.treatment.includes(t)?p.treatment:`${p.treatment}, ${t}`):t}));
+  const addTemplate = (key) => {
+    const t=PROGRAMME_TEMPLATES[key]; if(!t) return;
+    const exs=t.exercises.map(id=>ALL_EXERCISES.find(e=>e.id===id)).filter(Boolean).filter(e=>!prog.find(p=>p.id===e.id));
+    if(exs.length){
+      set("hep_programme",[...prog,...exs.map(ex=>({...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:"",addedSession:sessionNo,addedDate:new Date().toISOString()}))]);
+      setPending(p=>[...p,`＋ ${t.label} template (${exs.length} exercise${exs.length!==1?"s":""})`]);
+    }
+  };
   const pickerResults = (()=>{
     if(!pickerOpen) return [];
     let pool = pickerRegion==="all" ? ALL_EXERCISES : (Object.values(EXERCISE_DB[pickerRegion]?.categories||{}).flat());
@@ -15740,7 +15751,13 @@ function QuickVisitForm({ PC, data, set, navTo }) {
       <div style={{fontSize:"0.62rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6}}>1 · Today — Session {sessionNo}</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div><label style={lbl}>Pain today (0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 4" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
-        <div><label style={lbl}>Treatment given {lastSession?.treatmentGiven?<span style={{textTransform:"none",fontWeight:500}}>(copied from S{lastSession.sessionNo||sessionNo-1})</span>:null}</label><select style={inp} value={qv.treatment} onChange={e=>setQv(p=>({...p,treatment:e.target.value}))}><option value="">— select —</option>{txOptions.map(t=><option key={t}>{t}</option>)}</select></div>
+        <div><label style={lbl}>Treatment given {lastSession?.treatmentGiven?<span style={{textTransform:"none",fontWeight:500}}>(copied from S{lastSession.sessionNo||sessionNo-1})</span>:null}</label><input style={inp} placeholder="Tap chips below or type…" value={qv.treatment} onChange={e=>setQv(p=>({...p,treatment:e.target.value}))}/></div>
+      </div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>
+        {txOptions.map(t=>(
+          <button key={t} onClick={()=>setQv(p=>({...p,treatment:p.treatment?(p.treatment.includes(t)?p.treatment:`${p.treatment}, ${t}`):t}))}
+            style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(t)?PC.accent:PC.border}`,background:qv.treatment.includes(t)?`${PC.accent}14`:"transparent",color:qv.treatment.includes(t)?PC.accent:PC.muted,fontWeight:700,fontSize:"0.6rem",cursor:"pointer"}}>{t}</button>
+        ))}
       </div>
       <div style={{marginBottom:10}}><label style={lbl}>Patient response</label><input style={inp} placeholder="e.g. Good improvement, less pain on movement" value={qv.response} onChange={e=>setQv(p=>({...p,response:e.target.value}))}/></div>
       <div style={{marginBottom:12}}><label style={lbl}>Plan for next session</label><input style={inp} placeholder="e.g. Progress to single-leg squat" value={qv.next_plan} onChange={e=>setQv(p=>({...p,next_plan:e.target.value}))}/></div>
@@ -15789,15 +15806,62 @@ function QuickVisitForm({ PC, data, set, navTo }) {
       ):(
         <div style={{border:`1.5px solid ${PC.accent}35`,borderRadius:11,padding:"10px",marginBottom:10,background:`${PC.accent}06`}}>
           <div style={{display:"flex",gap:6,marginBottom:7}}>
+            {[["library","📚 Library"],["templates","📦 Templates"]].map(([m,l])=>(
+              <button key={m} onClick={()=>setPickerMode(m)} style={{flex:1,padding:"7px",borderRadius:8,border:`1px solid ${pickerMode===m?PC.accent:PC.border}`,background:pickerMode===m?`${PC.accent}15`:"transparent",color:pickerMode===m?PC.accent:PC.muted,fontWeight:800,fontSize:"0.68rem",cursor:"pointer"}}>{l}</button>
+            ))}
+            <button onClick={()=>setPickerOpen(false)} style={{padding:"0 10px",borderRadius:8,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,cursor:"pointer",fontWeight:700}}>✕</button>
+          </div>
+          {pickerMode==="templates"&&(
+            <div>
+              {Object.entries(PROGRAMME_TEMPLATES).map(([key,t])=>{
+                const tx=TEMPLATE_TX[key];
+                const isOpen=openTemplate===key;
+                return(
+                  <div key={key} style={{marginBottom:4}}>
+                    <div onClick={()=>setOpenTemplate(isOpen?null:key)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,cursor:"pointer",background:PC.surface,border:`1px solid ${isOpen?PC.accent+"45":PC.border}`}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.text}}>{t.label}</div>
+                        <div style={{fontSize:"0.58rem",color:PC.muted}}>{t.exercises.length} exercises{tx?` · ${(tx.manual||[]).length} manual · ${(tx.machine||[]).length} machine`:""}</div>
+                      </div>
+                      <span style={{fontSize:"0.65rem",color:PC.accent,fontWeight:800}}>{isOpen?"▲":"▼"}</span>
+                    </div>
+                    {isOpen&&(
+                      <div style={{padding:"8px 10px",border:`1px dashed ${PC.accent}35`,borderTop:"none",borderRadius:"0 0 8px 8px",background:`${PC.accent}05`}}>
+                        <button onClick={()=>{addTemplate(key);setOpenTemplate(null);}} style={{width:"100%",padding:"8px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.68rem",cursor:"pointer",marginBottom:7}}>＋ Add {t.exercises.length} exercises to protocol</button>
+                        {tx&&(tx.manual||[]).length>0&&(
+                          <div style={{marginBottom:5}}>
+                            <div style={{fontSize:"0.55rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>🤲 Manual — tap to add to treatment</div>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                              {tx.manual.map(m=><button key={m} onClick={()=>addTx(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(m)?PC.accent:PC.border}`,background:qv.treatment.includes(m)?`${PC.accent}14`:PC.surface,color:qv.treatment.includes(m)?PC.accent:PC.text,fontWeight:700,fontSize:"0.6rem",cursor:"pointer"}}>{qv.treatment.includes(m)?"✓ ":""}{m}</button>)}
+                            </div>
+                          </div>
+                        )}
+                        {tx&&(tx.machine||[]).length>0&&(
+                          <div>
+                            <div style={{fontSize:"0.55rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>⚡ Machine — tap to add to treatment</div>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                              {tx.machine.map(m=><button key={m} onClick={()=>addTx(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(m)?PC.a2:PC.border}`,background:qv.treatment.includes(m)?`${PC.a2}14`:PC.surface,color:qv.treatment.includes(m)?PC.a2:PC.text,fontWeight:700,fontSize:"0.6rem",cursor:"pointer"}}>{qv.treatment.includes(m)?"✓ ":""}{m}</button>)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {pickerMode==="library"&&(
+          <div style={{display:"flex",gap:6,marginBottom:7}}>
             <input autoFocus style={{...inp,flex:1}} placeholder="Search exercises… e.g. plank, chin tuck" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)}/>
             <select style={{...inp,width:120}} value={pickerRegion} onChange={e=>setPickerRegion(e.target.value)}>
               <option value="all">All regions</option>
               {Object.entries(EXERCISE_DB).map(([k,r])=><option key={k} value={k}>{r.label}</option>)}
             </select>
-            <button onClick={()=>setPickerOpen(false)} style={{padding:"0 10px",borderRadius:8,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,cursor:"pointer",fontWeight:700}}>✕</button>
           </div>
-          {pickerResults.length===0&&<div style={{fontSize:"0.66rem",color:PC.muted,padding:"4px 2px"}}>No matches — try another term or region.</div>}
-          {pickerResults.map(ex=>(
+          )}
+          {pickerMode==="library"&&pickerResults.length===0&&<div style={{fontSize:"0.66rem",color:PC.muted,padding:"4px 2px"}}>No matches — try another term or region.</div>}
+          {pickerMode==="library"&&pickerResults.map(ex=>(
             <div key={ex.id} onClick={()=>addExercise(ex)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 9px",borderRadius:8,cursor:"pointer",background:PC.surface,border:`1px solid ${PC.border}`,marginBottom:4}}>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.text}}>{ex.name}</div>
@@ -16336,7 +16400,7 @@ function AppInner({ currentUser, onSignOut }) {
     return(<input type={t.type||"text"} value={val} onChange={e=>set(t.id,e.target.value)} placeholder={t.placeholder||""} style={base}/>);
   },[data,set]);
 
-  const sysColors={NKT:C.blue,Cyriax:PC.yellow,FMS:PC.green,Posture:PC.purple,"Kinetic Chain":PC.accent,Fascia:"#f97316","Muscle Activation":PC.purple,Structural:PC.red};
+  const sysColors={CPA:C.blue,STTT:PC.yellow,FMS:PC.green,Posture:PC.purple,"Kinetic Chain":PC.accent,Fascia:"#f97316","Muscle Activation":PC.purple,Structural:PC.red};
 
   // shared sidebar list renderer used by both desktop sidebar and mobile drawer
   // ── Collapsible sidebar state ──
@@ -16440,6 +16504,15 @@ function AppInner({ currentUser, onSignOut }) {
 
   const SidebarItems = ({ onNav }) => (
     <>
+      {/* Greeting */}
+      <div style={{padding:"10px 12px 8px",display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:"1.05rem"}}>👋</span>
+        <div>
+          <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.text,lineHeight:1.2}}>Hello, Dr {currentUser?.user_metadata?.full_name?.split(" ")[0]||currentUser?.email?.split("@")[0]||"Doctor"}</div>
+          <div style={{fontSize:"0.58rem",color:PC.muted}}>{new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</div>
+        </div>
+      </div>
+
       {/* Patient controls */}
       <div style={{padding:"4px 8px 12px",borderBottom:`1px solid ${PC.border}`,marginBottom:8}}>
         <button onClick={()=>setShowPatientDb(true)} style={{width:"100%",padding:"9px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:"#9333ea",fontWeight:600,fontSize:"0.7rem",cursor:"pointer",marginBottom:5,display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
@@ -17002,8 +17075,6 @@ function AppInner({ currentUser, onSignOut }) {
                     <div style={{fontSize:"0.7rem",color:PC.muted,marginBottom:12}}>For follow-ups — fill these 4 fields and sign. Takes 60 seconds.</div>
                     <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo}/>
                   </div>
-                  {/* Full Session Log below */}
-                  <TreatmentSessionLogModule data={data} set={set}/>
                 </div>
               ):tests==="SOAP_MODULE"?(
                 <SOAPNoteModule data={data} set={set} onNav={navTo}/>

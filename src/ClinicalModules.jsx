@@ -2709,9 +2709,9 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     O_parts.push(`Special Tests:\n${stLines.join("\n")}.`);
   }
 
-  // ── NKT (Neurokinetic Therapy) ──────────────────────────────────────────
+  // ── CPA (Neurokinetic Therapy) ──────────────────────────────────────────
   {
-    // All 47 NKT test IDs in order
+    // All 47 CPA test IDs in order
     const NKT_IDS = [
       ["nkt_dnf","Deep Neck Flexors"],["nkt_scm","SCM"],["nkt_suboccip","Suboccipitals"],
       ["nkt_upper_trap","Upper Trap"],["nkt_scalenes","Scalenes"],["nkt_levator_scap","Levator Scapulae"],
@@ -2743,7 +2743,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (nktFac.length) nktLines.push(`  Facilitated/Overactive (compensating): ${nktFac.join(", ")}`);
     if (nktNorm.length && (nktInh.length || nktFac.length)) nktLines.push(`  Normal: ${nktNorm.slice(0,5).join(", ")}${nktNorm.length>5?` + ${nktNorm.length-5} more`:""}`);
     if (v("nkt_notes")) nktLines.push(`  Notes: ${v("nkt_notes")}`);
-    if (nktLines.length) O_parts.push(`Neuromuscular Assessment (NKT):\n${nktLines.join("\n")}.`);
+    if (nktLines.length) O_parts.push(`Neuromuscular Assessment (CPA):\n${nktLines.join("\n")}.`);
   }
 
   // ── FUNCTIONAL MOVEMENT ASSESSMENT ─────────────────────────────────────
@@ -2848,7 +2848,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (v("cy_non_contractile")) cyriaxLines.push(`  Non-contractile: ${v("cy_non_contractile")}`);
     if (v("cy_capsular_pattern")||v("cy_capsular")) cyriaxLines.push(`  Capsular pattern: ${v("cy_capsular_pattern")||v("cy_capsular")}`);
     if (v("cy_notes")) cyriaxLines.push(`  Notes: ${v("cy_notes")}`);
-    if (cyriaxLines.length) O_parts.push(`Cyriax / Selective Tissue Tension:\n${cyriaxLines.join("\n")}.`);
+    if (cyriaxLines.length) O_parts.push(`STTT / Selective Tissue Tension:\n${cyriaxLines.join("\n")}.`);
   }
 
   // ── FASCIAL ASSESSMENT ────────────────────────────────────────────────────
@@ -4491,6 +4491,38 @@ const EXERCISE_DB = {
     }
   },
 };
+// Suggested in-clinic treatment (manual + machine) per protocol template
+const TEMPLATE_TX = {
+  acute_lbp:      { manual:["Lumbar PA mobilisation gr I–II","Soft tissue — paraspinals"], machine:["TENS 20 min","Hot pack 15 min"] },
+  chronic_lbp:    { manual:["Maitland PA gr III–IV","Myofascial release QL/glutes"], machine:["IFT 15 min","Hot pack 15 min"] },
+  disc_ext:       { manual:["McKenzie extension mobilisation","Central PA glides"], machine:["TENS 20 min"] },
+  disc_flex:      { manual:["Flexion-based mobilisation","Neural mobilisation — SLR"], machine:["TENS 20 min"] },
+  hip_oa:         { manual:["Hip long-axis distraction","Posterior capsule glide"], machine:["Hot pack / SWD 15 min","US 1 MHz"] },
+  hip_bursitis:   { manual:["STR glute med / TFL","ITB soft tissue release"], machine:["US 3 MHz pulsed","Cryotherapy 10 min"] },
+  groin_strain:   { manual:["Adductor soft tissue release","Hip joint mobilisation"], machine:["US 3 MHz","Cryotherapy (acute)"] },
+  pfps:           { manual:["Patellar medial glides","STR lateral retinaculum / ITB"], machine:["EMS — VMO 15 min","Cryotherapy post-exercise"] },
+  patella_tend:   { manual:["Patellar tendon friction massage","Quadriceps STR"], machine:["Shockwave","Cryotherapy"] },
+  acl_early:      { manual:["Patellar mobilisation","Scar tissue massage"], machine:["EMS — quadriceps","Cryo-compression 15 min"] },
+  acl_late:       { manual:["Joint mobilisation as needed"], machine:["EMS — quads maintenance"] },
+  knee_oa:        { manual:["Tibiofemoral gr III mobilisation","Patellar glides"], machine:["Hot pack 15 min","TENS / IFT 20 min"] },
+  hamstring_str:  { manual:["Hamstring soft tissue release","Slump neural glides"], machine:["US 3 MHz","Cryotherapy (acute 72 h)"] },
+  ankle_sprain:   { manual:["Talocrural AP glides","Subtalar mobilisation"], machine:["Cryotherapy 15 min","US 3 MHz pulsed"] },
+  achilles:       { manual:["Tendon friction massage","Calf STR"], machine:["Shockwave","US 3 MHz"] },
+  plantar_fascia: { manual:["Plantar fascia release","Calcaneal mobilisation"], machine:["Shockwave","US 3 MHz"] },
+  shoulder_imp:   { manual:["GH posterior glides","STR pec minor / upper trap"], machine:["US 1 MHz","IFT 15 min"] },
+  frozen_shoulder:{ manual:["GH gr III–IV mobilisation — all planes","Capsular stretch"], machine:["SWD / Hot pack","TENS 20 min"] },
+  rct_tear:       { manual:["GH mobilisation gr I–II","Scapular soft tissue work"], machine:["US 1 MHz","EMS — rotator cuff"] },
+  tennis_elbow:   { manual:["Deep friction massage — ECRB","Mulligan MWM lateral glide"], machine:["Shockwave","US 3 MHz"] },
+  golfers_elbow:  { manual:["Friction massage — common flexors","MWM"], machine:["US 3 MHz","Cryotherapy"] },
+  cervicogenic_ha:{ manual:["Suboccipital release","C1–C2 SNAG"], machine:["Hot pack 10 min","TENS"] },
+  cervical_rad:   { manual:["Manual cervical traction","Neural mobilisation — ULNT"], machine:["Mechanical traction 10–15 min","TENS 20 min"] },
+  ucs:            { manual:["Pec minor release","T-spine mobilisation"], machine:["Hot pack","IFT"] },
+  lcs:            { manual:["Hip flexor release","Lumbar mobilisation"], machine:["Hot pack"] },
+  thoracic_mob:   { manual:["T-spine PA mobilisation","Rib mobilisation"], machine:["Hot pack 10 min"] },
+  stress_incont:  { manual:["Pelvic floor manual facilitation"], machine:["EMS / biofeedback"] },
+  pelvic_pain:    { manual:["Myofascial release — pelvic girdle"], machine:["TENS"] },
+  copd:           { manual:["Chest percussion / vibration"], machine:[] },
+};
 const PROGRAMME_TEMPLATES = {
   // Lumbar
   acute_lbp:      { label:"Acute LBP",                  exercises:["lb_tva","lb_prone_lying","lb_press_up","lb_cat_camel","lb_glute_bridge","lb_pelvic_tilt"] },
@@ -4647,7 +4679,7 @@ const KNEE_PROTOCOLS = [
       { name:"Patellar Taping — McConnell (medial glide)", desc:"Tape patella medially before all exercises. Reduces lateral PF pressure immediately. Retrains VMO by reducing pain inhibition.", evidence:"Strong — McConnell 1986, multiple RCTs" },
       { name:"Patellar Mobilisation (medial glide)", desc:"Grade III medial patellar glide. 3 × 30 sec. Stretches tight lateral retinaculum. Reduces lateral PF tracking.", evidence:"Moderate — combined with exercise: strong evidence" },
       { name:"Foot Orthoses (if overpronation present)", desc:"Semi-rigid off-the-shelf orthotics if navicular drop >6mm or rearfoot valgus. Reduces tibial IR and Q-angle indirectly.", evidence:"Moderate — Collins et al 2008 RCT: orthotics + exercise > exercise alone" },
-      { name:"Dry Needling — Vastus Lateralis", desc:"DN to lateral quad + TFL if overactive (NKT confirmed). Reduces lateral retinacular tension improving PF tracking.", evidence:"Moderate — VL inhibition improves medial tracking" },
+      { name:"Dry Needling — Vastus Lateralis", desc:"DN to lateral quad + TFL if overactive (CPA confirmed). Reduces lateral retinacular tension improving PF tracking.", evidence:"Moderate — VL inhibition improves medial tracking" },
       { name:"Soft Tissue — IT Band / TFL", desc:"Foam roll TFL × 90 sec. Cross-fibre massage lateral retinaculum. Reduces lateral pull on patella.", evidence:"Moderate — adjunct to exercise" },
     ]
   },
@@ -4688,7 +4720,7 @@ const KNEE_PROTOCOLS = [
     treatment:[
       { name:"Load Management (CRITICAL)", desc:"Avoid sustained hip flexion (sitting >20 min, stretching hamstrings). This compresses proximal tendon at ischial tuberosity. Sit on edge of chair or use cushion.", evidence:"Strong — tendon compression is primary driver of symptoms" },
       { name:"Shockwave Therapy (ESWT)", desc:"Radial ESWT × 2000 pulses × 3 sessions, 1 week apart. Applied directly to ischial tuberosity. Best for chronic (>3 months) proximal hamstring tendinopathy.", evidence:"Strong — Furia 2009, multiple RCTs" },
-      { name:"Gluteal Dry Needling", desc:"DN to glute max + piriformis if overactive NKT pattern. Reduces compression on proximal hamstring from tight external rotators.", evidence:"Moderate — adjunct for compressed tendinopathy" },
+      { name:"Gluteal Dry Needling", desc:"DN to glute max + piriformis if overactive CPA pattern. Reduces compression on proximal hamstring from tight external rotators.", evidence:"Moderate — adjunct for compressed tendinopathy" },
     ]
   },
   {
@@ -4923,7 +4955,7 @@ const ELBOW_PROTOCOLS = [
       ]},
     ],
     treatment:[
-      { name:"Deep Friction Massage (Cyriax)", desc:"Cross-friction massage directly to ECRB origin at lateral epicondyle. 5–10 min per session 3×/wk. Firm pressure perpendicular to tendon fibres.", evidence:"Moderate — Cyriax friction massage: short-term pain relief and tissue remodelling" },
+      { name:"Deep Friction Massage (STTT)", desc:"Cross-friction massage directly to ECRB origin at lateral epicondyle. 5–10 min per session 3×/wk. Firm pressure perpendicular to tendon fibres.", evidence:"Moderate — STTT friction massage: short-term pain relief and tissue remodelling" },
       { name:"Lateral Elbow MWM (Mulligan)", desc:"Lateral glide of elbow while patient performs pain-free gripping. Immediate pain reduction. 3 sets × 10 reps per session.", evidence:"Strong — Vicenzino 2001: MWM immediate pain-free grip improvement" },
       { name:"ESWT — Shockwave Therapy", desc:"Radial ESWT × 2000 pulses × 3 sessions. Best for chronic lateral epicondylalgia >3 months.", evidence:"Strong — Rompe 2007 RCT: ESWT superior to corticosteroid at 12 months" },
       { name:"Corticosteroid Injection (short-term only)", desc:"Short-term pain relief at 6 weeks. WARNING: superior to physio at 6 weeks but inferior at 12 months and 2 years.", evidence:"Strong — Coombes 2010 Lancet: injection worst long-term outcome. Use only for acute severe pain." },
@@ -7451,5 +7483,5 @@ ${soap.P}` : "";
 }
 
 export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP,
-  SOAPNoteModule, EXERCISE_DB, ALL_EXERCISES, ExercisePrescriptionModule, PalpationModule,
+  SOAPNoteModule, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX, ExercisePrescriptionModule, PalpationModule,
   TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel };
