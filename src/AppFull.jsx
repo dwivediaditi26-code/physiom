@@ -7834,6 +7834,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         const W = img.naturalWidth, H = img.naturalHeight;
         const oc = document.createElement("canvas"); oc.width=W; oc.height=H;
         const ctx = oc.getContext("2d"); ctx.drawImage(img, 0, 0, W, H);
+        // Draw full analysis overlay first (plumb, level lines, measurements)
+        try { drawOverlay({ ctx, W, H, lm, view, showGrid: true, measurements: m || {}, clearFirst: false }); }
+        catch(oe){ console.warn("manual drawOverlay:", oe); }
+        // Draw manual landmark dots on top so they stay visible
         drawManualOverlay({ ctx, W, H, placed:manualPlaced, pointDefs:manualPointDefs, connections:manualConnections });
         setUploadedImg(oc.toDataURL("image/jpeg", 0.92));
       };
