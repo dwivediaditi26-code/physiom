@@ -5512,8 +5512,10 @@ function ExercisePrescriptionModule({ data, set }) {
   // Sync every programme change back into shared patient data
   const syncProgramme = (next) => { setProgramme(next); if(set) set("hep_programme", next); };
 
-  const addEx = (ex) => { if(programme.find(p=>p.id===ex.id)) return; syncProgramme([...programme,{...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:""}]); };
-  const removeEx = (id) => syncProgramme(programme.filter(e=>e.id!==id));
+  const _hepSession = () => (Array.isArray(data?.tx_sessions)?data.tx_sessions.length:0)+1;
+  const _hepLog = (change) => { if(!set) return; const log=Array.isArray(data?.hep_log)?data.hep_log:[]; set("hep_log",[{session:_hepSession(),date:new Date().toLocaleDateString("en-GB"),changes:[change],version:parseInt(data?.hep_version)||1},...log]); };
+  const addEx = (ex) => { if(programme.find(p=>p.id===ex.id)) return; syncProgramme([...programme,{...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:"",addedSession:_hepSession(),addedDate:new Date().toISOString()}]); _hepLog(`＋ ${ex.name}`); };
+  const removeEx = (id) => { const ex=programme.find(e=>e.id===id); syncProgramme(programme.filter(e=>e.id!==id)); if(ex) _hepLog(`− ${ex.name}`); };
   const updateEx = (id,field,val) => syncProgramme(programme.map(e=>e.id===id?{...e,[field]:val}:e));
   const applyTemplate = (key) => { const t=PROGRAMME_TEMPLATES[key]; const exs=t.exercises.map(id=>ALL_EXERCISES.find(e=>e.id===id)).filter(Boolean); syncProgramme(exs.map(ex=>({...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:""}))); };
 
@@ -7449,5 +7451,5 @@ ${soap.P}` : "";
 }
 
 export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP,
-  SOAPNoteModule, EXERCISE_DB, ExercisePrescriptionModule, PalpationModule,
+  SOAPNoteModule, EXERCISE_DB, ALL_EXERCISES, ExercisePrescriptionModule, PalpationModule,
   TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel };
