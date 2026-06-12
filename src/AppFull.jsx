@@ -11826,25 +11826,24 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
   // Donut component
   const Donut = ({ pct, size=72, stroke=8, color, label, sub }) => {
-    const [v,setV] = useState(0);
-    useEffect(()=>{const t=setTimeout(()=>setV(pct),400);return()=>clearTimeout(t);},[pct]);
-    const r=(size-stroke)/2, circ=2*Math.PI*r, off=circ-(v/100)*circ;
+    // Use pct directly — avoid useState(0) which resets on re-render (nested component issue)
+    const safe = isNaN(pct) ? 0 : Math.min(100, Math.max(0, pct));
+    const r=(size-stroke)/2, circ=2*Math.PI*r, off=circ-(safe/100)*circ;
     return (
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
         <div style={{position:"relative",width:size,height:size}}>
           <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
             <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#F1F5F9" strokeWidth={stroke}/>
             <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
-              strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
-              style={{transition:"stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)"}}/>
+              strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"/>
           </svg>
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",
             alignItems:"center",justifyContent:"center"}}>
-            <div style={{fontSize:size>60?20:14,fontWeight:800,color:C.text,lineHeight:1}}>{v}</div>
-            {sub&&<div style={{fontSize:9,color:C.muted,marginTop:1}}>{sub}</div>}
+            <div style={{fontSize:size>60?18:13,fontWeight:800,color:C.text,lineHeight:1}}>{safe}</div>
+            {sub&&<div style={{fontSize:10,color:C.muted,marginTop:1,fontWeight:600}}>{sub}</div>}
           </div>
         </div>
-        {label&&<div style={{fontSize:10,color:C.muted,textAlign:"center",fontWeight:500}}>{label}</div>}
+        {label&&<div style={{fontSize:11,color:C.muted,textAlign:"center",fontWeight:600}}>{label}</div>}
       </div>
     );
   };
@@ -12375,7 +12374,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         const col=val>=0?"#7c3aed":"#D1D5DB";
                         return(
                           <div key={k} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
-                            <div style={{fontSize:8.5,color:C.muted,marginBottom:3,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2}}>{labelText}</div>
+                            <div style={{fontSize:9.5,color:C.muted,marginBottom:3,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2}}>{labelText}</div>
                             <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>{d[k]}<span style={{fontSize:9,color:C.muted}}>°{normalVal&&<span style={{fontSize:8,color:C.muted}}>/{normalVal}</span>}</span></div>
                           </div>
                         );
@@ -12394,25 +12393,25 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         if(seen.has(base)) return; seen.add(base);
                         const lKey=base+"_left", rKey=base+"_right";
                         const lGrade=d[lKey]||d[base]; const rGrade=d[rKey];
-                        const muscle=MMT_LABEL_MAP[base]||base.replace("mmt_","").replace(/_/g," ");
+                        const muscle=MMT_LABEL_MAP[base]||(base.replace("mmt_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()));
                         rows.push({base,muscle,lGrade,rGrade});
                       });
                       const gradeCol=g=>{const n=parseFloat(g)||0;return n>=5?C.green:n>=4?C.orange:n>=3?"#f59e0b":"#dc2626";};
                       return(
                         <div style={{display:"flex",flexDirection:"column",gap:0}}>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 70px 70px",gap:4,padding:"4px 8px",marginBottom:2}}>
-                            <div style={{fontSize:10,color:C.muted,fontWeight:600}}>Muscle</div>
-                            <div style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center"}}>Left</div>
-                            <div style={{fontSize:10,color:C.muted,fontWeight:600,textAlign:"center"}}>Right</div>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 70px 70px",gap:4,padding:"4px 8px 6px",marginBottom:2,borderBottom:`1px solid ${C.border}`}}>
+                            <div style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px"}}>Muscle</div>
+                            <div style={{fontSize:11,color:C.muted,fontWeight:700,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>Left</div>
+                            <div style={{fontSize:11,color:C.muted,fontWeight:700,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>Right</div>
                           </div>
-                          {rows.slice(0,8).map((r,i)=>(
-                            <div key={r.base} style={{display:"grid",gridTemplateColumns:"1fr 70px 70px",gap:4,padding:"6px 8px",background:i%2===0?"#F9FAFB":"#fff",borderRadius:6}}>
-                              <div style={{fontSize:11,fontWeight:600,color:C.text,alignSelf:"center"}}>{r.muscle}</div>
-                              <div style={{textAlign:"center"}}>{r.lGrade&&<span style={{fontSize:14,fontWeight:800,color:gradeCol(r.lGrade)}}>{r.lGrade}<span style={{fontSize:9,color:C.muted}}>/5</span></span>}</div>
-                              <div style={{textAlign:"center"}}>{r.rGrade&&<span style={{fontSize:14,fontWeight:800,color:gradeCol(r.rGrade)}}>{r.rGrade}<span style={{fontSize:9,color:C.muted}}>/5</span></span>}</div>
+                          {rows.slice(0,10).map((r,i)=>(
+                            <div key={r.base} style={{display:"grid",gridTemplateColumns:"1fr 70px 70px",gap:4,padding:"8px",background:i%2===0?"#F9FAFB":"#fff",borderRadius:6}}>
+                              <div style={{fontSize:13,fontWeight:600,color:C.text,alignSelf:"center"}}>{r.muscle}</div>
+                              <div style={{textAlign:"center"}}>{r.lGrade&&<span style={{fontSize:16,fontWeight:800,color:gradeCol(r.lGrade)}}>{r.lGrade}<span style={{fontSize:10,color:C.muted}}>/5</span></span>}</div>
+                              <div style={{textAlign:"center"}}>{r.rGrade&&<span style={{fontSize:16,fontWeight:800,color:gradeCol(r.rGrade)}}>{r.rGrade}<span style={{fontSize:10,color:C.muted}}>/5</span></span>}</div>
                             </div>
                           ))}
-                          {rows.length>8&&<div style={{fontSize:10,color:C.muted,padding:"4px 8px"}}>+{rows.length-8} more muscles</div>}
+                          {rows.length>10&&<div style={{fontSize:11,color:C.muted,padding:"4px 8px"}}>+{rows.length-10} more muscles</div>}
                         </div>
                       );
                     })()}
@@ -12847,10 +12846,10 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     </div>
                   </div>
                   <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:13,fontWeight:800,color:C.green}}>
-                      {row.up?"↑":"↓"} {row.pct}%
+                    <div style={{fontSize:15,fontWeight:800,color:row.pct>0?C.green:row.pct<0?"#dc2626":C.muted}}>
+                      {row.pct>0?"↑":row.pct<0?"↓":"→"} {Math.abs(row.pct)}%
                     </div>
-                    <div style={{fontSize:10,color:C.muted}}>improvement</div>
+                    <div style={{fontSize:10,color:C.muted}}>{row.pct>0?"improvement":row.pct<0?"worsened":"no change"}</div>
                   </div>
                 </div>
               ))}
