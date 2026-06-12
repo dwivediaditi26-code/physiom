@@ -11854,6 +11854,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     { k:"overview",    icon:"⊞",  label:"Overview"         },
     { k:"subjective",  icon:"📝", label:"Subjective"        },
     { k:"assessment",  icon:"📋", label:"Assessment"        },
+    { k:"treatment",   icon:"💊", label:"Treatment"         },
     { k:"posture",     icon:"🧍", label:"Posture Analysis"  },
     { k:"documents",   icon:"📄", label:"Documentation"     },
   ];
