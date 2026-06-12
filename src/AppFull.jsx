@@ -5276,25 +5276,62 @@ function mergeViewResults(viewResults) {
 // ─── Canvas overlay renderer ──────────────────────────────────────────────────
 // Helper: draw angle badge (small pill label on canvas)
 function drawBadge(ctx, x, y, text, color) {
-  const pad=4, fsize=11;
-  ctx.font=`bold ${fsize}px sans-serif`;
+  const pad=5, fsize=11;
+  ctx.font=`bold ${fsize}px system-ui`;
   const tw=ctx.measureText(text).width;
-  const bw=tw+pad*2, bh=fsize+pad*2;
-  ctx.fillStyle="rgba(0,0,0,0.72)";
+  const bw=tw+pad*2+2, bh=fsize+pad*2;
+  ctx.save();
+  ctx.shadowColor="rgba(0,0,0,0.22)"; ctx.shadowBlur=6; ctx.shadowOffsetY=2;
+  ctx.fillStyle="rgba(255,255,255,0.94)";
   ctx.beginPath();
-  if(ctx.roundRect){
-    ctx.roundRect(x-bw/2, y-bh/2, bw, bh, 4);
-  } else {
-    const rx=x-bw/2, ry=y-bh/2, r=4;
-    ctx.moveTo(rx+r,ry); ctx.lineTo(rx+bw-r,ry); ctx.arcTo(rx+bw,ry,rx+bw,ry+r,r);
-    ctx.lineTo(rx+bw,ry+bh-r); ctx.arcTo(rx+bw,ry+bh,rx+bw-r,ry+bh,r);
-    ctx.lineTo(rx+r,ry+bh); ctx.arcTo(rx,ry+bh,rx,ry+bh-r,r);
-    ctx.lineTo(rx,ry+r); ctx.arcTo(rx,ry,rx+r,ry,r); ctx.closePath();
-  }
+  if(ctx.roundRect) ctx.roundRect(x-bw/2,y-bh/2,bw,bh,5);
+  else ctx.rect(x-bw/2,y-bh/2,bw,bh);
   ctx.fill();
-  ctx.fillStyle=color||"#fff";
+  ctx.restore();
+  ctx.fillStyle=color||"#1e1e2e";
   ctx.textAlign="center"; ctx.textBaseline="middle";
-  ctx.fillText(text, x, y);
+  ctx.fillText(text,x,y);
+  ctx.textBaseline="alphabetic";
+}
+
+// Clean left-side label: white card + colored left accent bar
+function drawCleanLabel(ctx, y, lines, color) {
+  const fsize=9, lhPx=12, pad=5;
+  ctx.font=`bold ${fsize}px system-ui`;
+  const maxW=lines.reduce((m,l)=>Math.max(m,ctx.measureText(l).width),0);
+  const bw=maxW+pad*2+8, bh=lines.length*lhPx+pad*2;
+  const bx=4, by=y-bh/2;
+  ctx.save();
+  ctx.shadowColor="rgba(0,0,0,0.15)"; ctx.shadowBlur=5; ctx.shadowOffsetY=1;
+  ctx.fillStyle="rgba(255,255,255,0.93)";
+  if(ctx.roundRect) ctx.roundRect(bx,by,bw,bh,4); else ctx.rect(bx,by,bw,bh);
+  ctx.fill();
+  ctx.restore();
+  // Colored left bar
+  ctx.fillStyle=color;
+  if(ctx.roundRect) ctx.roundRect(bx,by,4,bh,2); else ctx.rect(bx,by,4,bh);
+  ctx.fill();
+  ctx.textAlign="left";
+  lines.forEach((ln,i)=>{
+    ctx.font=i===0?`bold ${fsize}px system-ui`:`${fsize}px system-ui`;
+    ctx.fillStyle=i===0?"#1a1a2e":"#64748b";
+    ctx.fillText(ln,bx+9,by+pad+(i+0.85)*lhPx);
+  });
+}
+
+// Clean right-side angle badge: white pill, colored value
+function drawAngleBadge(ctx, W, y, angleDeg, color) {
+  const txt=(angleDeg>=0?"+":"")+angleDeg.toFixed(1)+"°";
+  ctx.font="bold 11px system-ui";
+  const tw=ctx.measureText(txt).width;
+  ctx.save();
+  ctx.shadowColor="rgba(0,0,0,0.18)"; ctx.shadowBlur=5; ctx.shadowOffsetY=1;
+  ctx.fillStyle="rgba(255,255,255,0.94)";
+  if(ctx.roundRect) ctx.roundRect(W-tw-20,y-10,tw+14,18,4); else ctx.rect(W-tw-20,y-10,tw+14,18);
+  ctx.fill();
+  ctx.restore();
+  ctx.fillStyle=color; ctx.textAlign="right";
+  ctx.fillText(txt,W-9,y+4);
 }
 
 // Helper: draw a horizontal level line between two points with label
@@ -5347,13 +5384,13 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       {col:"rgba(0,229,255,0.95)",  label:"Plumb line (Kendall)"},
     ];
     const lx=W-140, ly=10, lw=132, lh=legendItems.length*16+10;
-    ctx.fillStyle="rgba(0,0,0,0.72)";
-    if(ctx.roundRect) ctx.roundRect(lx,ly,lw,lh,6); else ctx.rect(lx,ly,lw,lh);
-    ctx.fill();
+    ctx.save(); ctx.shadowColor="rgba(0,0,0,0.18)"; ctx.shadowBlur=7; ctx.fillStyle="rgba(255,255,255,0.93)";
+    if(ctx.roundRect) ctx.roundRect(lx,ly,lw,lh,7); else ctx.rect(lx,ly,lw,lh);
+    ctx.fill(); ctx.restore();
     legendItems.forEach(({col,label},i)=>{
       const iy=ly+10+i*16;
       ctx.beginPath(); ctx.arc(lx+10,iy,5,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
-      ctx.font="10px system-ui"; ctx.textAlign="left"; ctx.fillStyle="#fff";
+      ctx.font="bold 9px system-ui"; ctx.textAlign="left"; ctx.fillStyle="#1e1e2e";
       ctx.fillText(label,lx+20,iy+4);
     });
     // "ANTERIOR VIEW" bottom-left label
@@ -5404,17 +5441,173 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       const dir=devCm>0?"A":"P", badgeText=`${label} ${dir} ${Math.abs(devCm).toFixed(1)}cm`;
       ctx.font="bold 10px system-ui"; const tw=ctx.measureText(badgeText).width;
       const onRight=pt[0]<W*0.6, bx=onRight?pt[0]+9:pt[0]-tw-17, by=pt[1]-9;
-      ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(bx,by,tw+8,17,4); else ctx.rect(bx,by,tw+8,17);
-      ctx.fill(); ctx.fillStyle=col; ctx.textAlign="left"; ctx.fillText(badgeText,bx+4,by+12);
+      ctx.save(); ctx.shadowColor="rgba(0,0,0,0.18)"; ctx.shadowBlur=5;
+      ctx.fillStyle="rgba(255,255,255,0.93)"; if(ctx.roundRect) ctx.roundRect(bx,by,tw+10,17,4); else ctx.rect(bx,by,tw+10,17);
+      ctx.fill(); ctx.restore();
+      ctx.fillStyle=col; ctx.textAlign="left"; ctx.fillText(badgeText,bx+5,by+12);
     });
     // Lat malleolus anchor
     if(V(iAnk)){ const p=PX(iAnk); ctx.beginPath(); ctx.arc(p[0],p[1],6,0,Math.PI*2); ctx.fillStyle="rgba(0,229,255,1)"; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke(); ctx.font="bold 9px system-ui"; ctx.fillStyle="rgba(0,229,255,1)"; ctx.textAlign="left"; ctx.fillText("Lat. Malleolus",p[0]+8,p[1]+4); }
     // CVA angle
-    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"✓":"⚠"}`; ctx.font="bold 10px system-ui"; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+8,17,4); else ctx.rect(cx,cy,ctw+8,17); ctx.fill(); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.fillText(ct,cx+4,cy+12); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; ctx.font="bold 9px system-ui"; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(fx-4,ep[1]-21,ftw+8,15,3); else ctx.rect(fx-4,ep[1]-21,ftw+8,15); ctx.fill(); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.fillText(fl,fx,ep[1]-10); } }
+    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"✓":"⚠"}`; ctx.font="bold 10px system-ui"; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; ctx.save(); ctx.shadowColor="rgba(0,0,0,0.18)"; ctx.shadowBlur=5; ctx.fillStyle="rgba(255,255,255,0.93)"; if(ctx.roundRect) ctx.roundRect(cx,cy,ctw+12,17,4); else ctx.rect(cx,cy,ctw+12,17); ctx.fill(); ctx.restore(); ctx.fillStyle=cc; ctx.textAlign="left"; ctx.fillText(ct,cx+6,cy+12); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; ctx.font="bold 9px system-ui"; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; ctx.save(); ctx.shadowColor="rgba(0,0,0,0.15)"; ctx.shadowBlur=4; ctx.fillStyle="rgba(255,255,255,0.93)"; if(ctx.roundRect) ctx.roundRect(fx-4,ep[1]-21,ftw+10,15,3); else ctx.rect(fx-4,ep[1]-21,ftw+10,15); ctx.fill(); ctx.restore(); ctx.fillStyle=fc; ctx.textAlign="left"; ctx.fillText(fl,fx+1,ep[1]-10); } }
     // Trunk inclination
-    if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}°`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; ctx.font="bold 9px system-ui"; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+8:mx-tw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(tx,my-8,tw+8,15,3); else ctx.rect(tx,my-8,tw+8,15); ctx.fill(); ctx.fillStyle=tc; ctx.textAlign="left"; ctx.fillText(tt,tx+4,my+3); }
+    if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}°`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; ctx.font="bold 9px system-ui"; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+8:mx-tw-16; ctx.save(); ctx.shadowColor="rgba(0,0,0,0.15)"; ctx.shadowBlur=4; ctx.fillStyle="rgba(255,255,255,0.93)"; if(ctx.roundRect) ctx.roundRect(tx,my-8,tw+10,15,3); else ctx.rect(tx,my-8,tw+10,15); ctx.fill(); ctx.restore(); ctx.fillStyle=tc; ctx.textAlign="left"; ctx.fillText(tt,tx+5,my+3); }
     // Knee sagittal angle
-    if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; ctx.font="bold 9px system-ui"; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+8:kp[0]-ktw-16; ctx.fillStyle="rgba(10,10,20,0.88)"; if(ctx.roundRect) ctx.roundRect(kx,kp[1]+6,ktw+8,15,3); else ctx.rect(kx,kp[1]+6,ktw+8,15); ctx.fill(); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.fillText(kt,kx+4,kp[1]+17); }
+    if(V(iHip)&&V(iKnee)&&V(iAnk)){ const hp=PX(iHip),kp=PX(iKnee),ap=PX(iAnk); const v1x=hp[0]-kp[0],v1y=hp[1]-kp[1],v2x=ap[0]-kp[0],v2y=ap[1]-kp[1]; const dot=v1x*v2x+v1y*v2y,mag=Math.sqrt(v1x*v1x+v1y*v1y)*Math.sqrt(v2x*v2x+v2y*v2y); const ka=mag>0?Math.acos(Math.min(1,Math.max(-1,dot/mag)))*180/Math.PI:180,kf=180-ka; const kc=Math.abs(kf)<=5?"rgba(0,201,122,0.95)":kf<0?"rgba(255,77,109,0.95)":"rgba(255,179,0,0.95)"; const kl=kf<-2?"Recurvatum":kf>5?"Flexion":"Normal",kt=`Knee ${kf.toFixed(1)}° ${kl}`; ctx.font="bold 9px system-ui"; const ktw=ctx.measureText(kt).width,kx=kp[0]<W*0.5?kp[0]+8:kp[0]-ktw-16; ctx.save(); ctx.shadowColor="rgba(0,0,0,0.15)"; ctx.shadowBlur=4; ctx.fillStyle="rgba(255,255,255,0.93)"; if(ctx.roundRect) ctx.roundRect(kx,kp[1]+6,ktw+10,15,3); else ctx.rect(kx,kp[1]+6,ktw+10,15); ctx.fill(); ctx.restore(); ctx.fillStyle=kc; ctx.textAlign="left"; ctx.fillText(kt,kx+5,kp[1]+17); }
+  }
+
+  // ── Sagittal-specific legend + title ──────────────────────────────────────
+  if(isLat){
+    // Legend box
+    const sagItems=[
+      {col:"rgba(0,201,122,0.9)",  lbl:"Within normal range"},
+      {col:"rgba(255,179,0,0.9)",  lbl:"Mild deviation"},
+      {col:"rgba(255,77,109,0.9)", lbl:"Significant deviation"},
+      {col:"rgba(0,229,255,0.9)",  lbl:"Plumb line"},
+      {col:"rgba(147,51,234,0.9)", lbl:"CVA / Spine line"},
+    ];
+    const slw=138, slh=sagItems.length*17+12, slx=W-slw-6, sly=6;
+    ctx.save(); ctx.shadowColor="rgba(0,0,0,0.2)"; ctx.shadowBlur=8;
+    ctx.fillStyle="rgba(255,255,255,0.93)";
+    if(ctx.roundRect) ctx.roundRect(slx,sly,slw,slh,7); else ctx.rect(slx,sly,slw,slh);
+    ctx.fill(); ctx.restore();
+    sagItems.forEach(({col,lbl},i)=>{
+      const iy=sly+12+i*17;
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(slx+11,iy-3,5,0,Math.PI*2); ctx.fill();
+      ctx.font="bold 9px system-ui"; ctx.fillStyle="#1e1e2e"; ctx.textAlign="left";
+      ctx.fillText(lbl,slx+21,iy);
+    });
+    // Sagittal observation title (CVA + FHP summary)
+    const sagParts=[];
+    const iEar2=view==="right"?8:7, iSh2=view==="right"?12:11;
+    if(V(iEar2)&&V(iSh2)){
+      const ep2=PX(iEar2),sp2=PX(iSh2);
+      const cva2=Math.abs(Math.atan2(Math.abs(ep2[1]-sp2[1]),Math.abs(ep2[0]-sp2[0]))*180/Math.PI);
+      const fhp2=Math.abs(ep2[0]-sp2[0])/(m.pixPerCm||(H/170));
+      if(cva2<52) sagParts.push(`CVA ${cva2.toFixed(0)}°${cva2<45?" (significant)":""}`);
+      if(fhp2>2) sagParts.push(`FHP ${fhp2.toFixed(1)}cm`);
+    }
+    if(sagParts.length>0){
+      const sagTitle=`Observation: ${sagParts.join("  ·  ")}`;
+      ctx.font="bold 10px system-ui";
+      const stw=ctx.measureText(sagTitle).width;
+      const sbw=Math.min(stw+24,W-10);
+      ctx.save(); ctx.shadowColor="rgba(0,0,0,0.18)"; ctx.shadowBlur=6;
+      ctx.fillStyle="rgba(255,255,255,0.93)";
+      if(ctx.roundRect) ctx.roundRect(W/2-sbw/2,4,sbw,20,6); else ctx.rect(W/2-sbw/2,4,sbw,20);
+      ctx.fill(); ctx.restore();
+      ctx.fillStyle="rgba(124,58,237,0.85)";
+      if(ctx.roundRect) ctx.roundRect(W/2-sbw/2,4,sbw,3,2); else ctx.rect(W/2-sbw/2,4,sbw,3);
+      ctx.fill();
+      ctx.fillStyle="#1e1e2e"; ctx.textAlign="center"; ctx.fillText(sagTitle,W/2,18);
+    }
+    // Sagittal spine curve (ear → shoulder → hip → knee chain)
+    const iEarS=view==="right"?8:7, iShS=view==="right"?12:11;
+    const iHipS=view==="right"?24:23, iKnS=view==="right"?26:25, iAnkS=view==="right"?28:27;
+    const spineChain=[iEarS,iShS,iHipS,iKnS,iAnkS].filter(i=>V(i));
+    if(spineChain.length>=3){
+      ctx.save(); ctx.strokeStyle="rgba(147,51,234,0.45)"; ctx.lineWidth=2; ctx.setLineDash([4,4]);
+      ctx.beginPath();
+      const sP=PX(spineChain[0]); ctx.moveTo(sP[0],sP[1]);
+      spineChain.slice(1).forEach(i=>{ const p=PX(i); ctx.lineTo(p[0],p[1]); });
+      ctx.stroke(); ctx.restore(); ctx.setLineDash([]);
+    }
+  }
+
+  // ── Posterior-specific: spine line + PSIS markers + calcaneal alignment ──
+  if(view==="posterior"||view==="back"){
+    // Estimated spine line: head → shoulder midpoint → hip midpoint
+    const headPt=V(0)?PX(0):null;
+    const shMidX=V(11)&&V(12)?(PX(11)[0]+PX(12)[0])/2:null;
+    const shMidY=V(11)&&V(12)?(PX(11)[1]+PX(12)[1])/2:null;
+    const hipMidX2=V(23)&&V(24)?(PX(23)[0]+PX(24)[0])/2:null;
+    const hipMidY2=V(23)&&V(24)?(PX(23)[1]+PX(24)[1])/2:null;
+    if(headPt&&shMidX&&hipMidX2){
+      const pts=[[headPt[0],headPt[1]],[shMidX,shMidY],[hipMidX2,hipMidY2]];
+      // Draw spine curve
+      ctx.save(); ctx.strokeStyle="rgba(147,51,234,0.7)"; ctx.lineWidth=2.5; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+      // Smooth curve through points
+      for(let i=1;i<pts.length-1;i++){
+        const mx=(pts[i][0]+pts[i+1][0])/2, my=(pts[i][1]+pts[i+1][1])/2;
+        ctx.quadraticCurveTo(pts[i][0],pts[i][1],mx,my);
+      }
+      ctx.lineTo(pts[pts.length-1][0],pts[pts.length-1][1]);
+      ctx.stroke(); ctx.restore();
+      // Check lateral deviation from plumb
+      const spineAnkX=V(27)&&V(28)?(PX(27)[0]+PX(28)[0])/2:null;
+      if(spineAnkX){
+        const spineDevPx=shMidX-spineAnkX;
+        const pixPerCm2=m.pixPerCm||(H/170);
+        const devCm2=spineDevPx/pixPerCm2;
+        if(Math.abs(devCm2)>1.0){
+          const devCol=Math.abs(devCm2)>2.5?"rgba(255,77,109,0.9)":"rgba(255,179,0,0.9)";
+          const devDir=devCm2>0?"R":"L";
+          drawCleanLabel(ctx,(shMidY+hipMidY2)/2,[`Spine shift ${devDir}`,`${Math.abs(devCm2).toFixed(1)}cm`],"rgba(147,51,234,0.9)");
+        }
+      }
+    }
+    // PSIS markers (estimated: slightly medial+superior to hip joint, posterior view)
+    if(!(view==="anterior"||view==="front"))
+    [[23,"L.PSIS",11],[24,"R.PSIS",12]].forEach(([hipIdx,lbl,shIdx])=>{
+      if(!V(hipIdx)) return;
+      const hipPt2=PX(hipIdx); if(!hipPt2) return;
+      let psX=hipPt2[0], psY=hipPt2[1];
+      if(V(shIdx)){
+        const shPt2=PX(shIdx);
+        const torsoH2=hipPt2[1]-shPt2[1];
+        psY=hipPt2[1]-torsoH2*0.12;
+        psX=hipPt2[0]+(hipIdx===23?-1:1)*torsoH2*0.02;
+      }
+      ctx.strokeStyle="rgba(200,100,255,0.7)"; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.arc(psX,psY,12,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(psX,psY,5,0,Math.PI*2); ctx.fillStyle="#c084fc"; ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.lineWidth=1; ctx.stroke();
+      // Label
+      ctx.font="bold 8px system-ui"; const tw2=ctx.measureText(lbl).width;
+      ctx.save(); ctx.shadowColor="rgba(0,0,0,0.12)"; ctx.shadowBlur=3;
+      ctx.fillStyle="rgba(255,255,255,0.90)";
+      if(ctx.roundRect) ctx.roundRect(psX-tw2/2-4,psY+14,tw2+8,13,3); else ctx.rect(psX-tw2/2-4,psY+14,tw2+8,13);
+      ctx.fill(); ctx.restore();
+      ctx.fillStyle="#7e22ce"; ctx.textAlign="center"; ctx.fillText(lbl,psX,psY+24);
+    });
+    // Calcaneal alignment (heel tilt from vertical)
+    [[29,27,"L.Heel"],[30,28,"R.Heel"]].forEach(([hIdx,aIdx,lbl2])=>{
+      if(!V(hIdx)||!V(aIdx)) return;
+      const hPt=PX(hIdx), aPt=PX(aIdx);
+      const heelAngle=Math.atan2(hPt[0]-aPt[0], Math.abs(aPt[1]-hPt[1]))*180/Math.PI;
+      const absHA=Math.abs(heelAngle);
+      if(absHA<3) return; // ignore trivial
+      const heelCol=absHA>8?"rgba(255,77,109,0.9)":absHA>4?"rgba(255,179,0,0.9)":"rgba(0,201,122,0.9)";
+      const heelDir=heelAngle>0?"Valgus":"Varus";
+      ctx.save(); ctx.shadowColor="rgba(0,0,0,0.15)"; ctx.shadowBlur=4;
+      ctx.fillStyle="rgba(255,255,255,0.92)";
+      const htxt=`${lbl2} ${heelDir} ${absHA.toFixed(0)}°`;
+      ctx.font="bold 9px system-ui"; const htw=ctx.measureText(htxt).width;
+      const hbx=hIdx===29?4:W-htw-20, hby=H-48;
+      if(ctx.roundRect) ctx.roundRect(hbx,hby,htw+14,16,4); else ctx.rect(hbx,hby,htw+14,16);
+      ctx.fill(); ctx.restore();
+      ctx.fillStyle=heelCol; ctx.textAlign="left"; ctx.fillText(htxt,hbx+7,hby+12);
+    });
+    // Posterior legend
+    const postItems=[
+      {col:"rgba(0,201,122,0.9)",  lbl:"Within normal range"},
+      {col:"rgba(255,179,0,0.9)",  lbl:"Mild deviation"},
+      {col:"rgba(255,77,109,0.9)", lbl:"Significant deviation"},
+      {col:"rgba(147,51,234,0.9)", lbl:"Spine line"},
+      {col:"rgba(200,100,255,0.9)",lbl:"PSIS markers"},
+    ];
+    const plw=138, plh=postItems.length*17+12, plx=W-plw-6, ply=6;
+    ctx.save(); ctx.shadowColor="rgba(0,0,0,0.2)"; ctx.shadowBlur=8;
+    ctx.fillStyle="rgba(255,255,255,0.93)";
+    if(ctx.roundRect) ctx.roundRect(plx,ply,plw,plh,7); else ctx.rect(plx,ply,plw,plh);
+    ctx.fill(); ctx.restore();
+    postItems.forEach(({col,lbl},i)=>{
+      const iy=ply+12+i*17;
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(plx+11,iy-3,5,0,Math.PI*2); ctx.fill();
+      ctx.font="bold 9px system-ui"; ctx.fillStyle="#1e1e2e"; ctx.textAlign="left";
+      ctx.fillText(lbl,plx+21,iy);
+    });
   }
 
   // ── Skeleton connections ──────────────────────────────────────────────────
@@ -5487,19 +5680,10 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
       ctx.beginPath(); ctx.moveTo(0,my); ctx.lineTo(W,my); ctx.stroke();
       ctx.restore(); ctx.setLineDash([]);
-      // Left label
-      const lines=label.split("\n"); const lh=11, bh=lines.length*lh+6;
-      ctx.fillStyle="rgba(0,0,0,0.78)";
-      if(ctx.roundRect) ctx.roundRect(2,my-bh/2,80,bh,3); else ctx.rect(2,my-bh/2,80,bh);
-      ctx.fill(); ctx.font="bold 8px system-ui"; ctx.textAlign="left"; ctx.fillStyle=color;
-      lines.forEach((ln,i)=>ctx.fillText(ln,6,my-bh/2+lh*(i+0.85)));
-      // Right-edge angle badge
-      const angText=(angleDeg>=0?"+":"")+angleDeg.toFixed(1)+"°";
-      ctx.font="bold 9px system-ui"; const atw=ctx.measureText(angText).width;
-      ctx.fillStyle="rgba(0,0,0,0.82)";
-      if(ctx.roundRect) ctx.roundRect(W-atw-14,my-9,atw+10,16,3); else ctx.rect(W-atw-14,my-9,atw+10,16);
-      ctx.fill(); ctx.fillStyle=angleCol; ctx.textAlign="right";
-      ctx.fillText(angText,W-6,my+4);
+      // Left label — clean white card with colored accent bar
+      drawCleanLabel(ctx, my, label.split("\n"), color);
+      // Right angle badge — white pill
+      drawAngleBadge(ctx, W, my, angleDeg, angleCol);
     });
     // Corrected ASIS-to-ASIS level line — ANTERIOR only (Magee: ASIS not visible posteriorly)
     // For posterior view: show simple hip level line labeled as PSIS proxy
@@ -5513,9 +5697,8 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
         ctx.restore(); ctx.setLineDash([]);
         const hipAngle=Math.atan2(PX(24)[1]-PX(23)[1],Math.abs(PX(24)[0]-PX(23)[0]))*180/Math.PI;
         const ha=Math.abs(hipAngle),hac=ha<1?"rgba(0,201,122,0.95)":ha<3?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
-        ctx.font="bold 8px system-ui"; ctx.textAlign="left"; ctx.fillStyle="rgba(0,0,0,0.78)";
-        if(ctx.roundRect) ctx.roundRect(2,hipMidY-9,90,14,3); else ctx.rect(2,hipMidY-9,90,14);
-        ctx.fill(); ctx.fillStyle="rgba(200,100,255,0.85)"; ctx.fillText("Hip Level (PSIS~)",6,hipMidY+2);
+        drawCleanLabel(ctx, hipMidY, ["Hip Level","PSIS proxy"], "rgba(200,100,255,0.9)");
+        drawAngleBadge(ctx, W, hipMidY, hipAngle, hac);
       }
     }
     if(V(23)&&V(24)&&!(view==="posterior"||view==="back")){
@@ -5532,12 +5715,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       const asisAngle=Math.atan2(asRy-asLy,Math.abs(asRx-asLx))*180/Math.PI;
       const aasisAbs=Math.abs(asisAngle);
       const ac=aasisAbs<1?"rgba(0,201,122,0.95)":aasisAbs<3?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)";
-      const angText=(asisAngle>=0?"+":"")+asisAngle.toFixed(1)+"°";
-      ctx.font="bold 9px system-ui"; const atw=ctx.measureText(angText).width;
-      ctx.fillStyle="rgba(0,0,0,0.82)";
-      if(ctx.roundRect) ctx.roundRect(W-atw-14,(asLy+asRy)/2-9,atw+10,16,3); else ctx.rect(W-atw-14,(asLy+asRy)/2-9,atw+10,16);
-      ctx.fill(); ctx.fillStyle=ac; ctx.textAlign="right";
-      ctx.fillText(angText,W-6,(asLy+asRy)/2+4);
+      drawAngleBadge(ctx, W, (asLy+asRy)/2, asisAngle, ac);
     }
     // ASIS dashed rings — anterior view only (ASIS not visible from posterior)
     // MediaPipe landmarks 23/24 = hip joints (femoral head level).
@@ -5561,9 +5739,10 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ctx.fillStyle="#FFD700"; ctx.fill();  // Gold/yellow = matches ASIS marker convention
       ctx.strokeStyle="rgba(0,0,0,0.5)"; ctx.lineWidth=1; ctx.stroke();
       const tw=ctx.measureText(lbl).width;
-      ctx.fillStyle="rgba(0,0,0,0.78)"; ctx.font="bold 8px system-ui"; ctx.textAlign="center";
-      if(ctx.roundRect) ctx.roundRect(pt[0]-tw/2-4,pt[1]+16,tw+8,13,3); else ctx.rect(pt[0]-tw/2-4,pt[1]+16,tw+8,13);
-      ctx.fill(); ctx.fillStyle="#FFD700"; ctx.fillText(lbl,pt[0],pt[1]+27);
+      ctx.font="bold 8px system-ui";
+      ctx.save(); ctx.shadowColor="rgba(0,0,0,0.12)"; ctx.shadowBlur=3; ctx.fillStyle="rgba(255,255,255,0.92)";
+      if(ctx.roundRect) ctx.roundRect(pt[0]-tw/2-4,pt[1]+15,tw+8,13,3); else ctx.rect(pt[0]-tw/2-4,pt[1]+15,tw+8,13);
+      ctx.fill(); ctx.restore(); ctx.fillStyle="#b45309"; ctx.textAlign="center"; ctx.fillText(lbl,pt[0],pt[1]+25);
     });
     // Waist triangles
     if((view==="posterior"||view==="back")&&V(11)&&V(13)&&V(23)&&V(12)&&V(14)&&V(24)){
@@ -5653,13 +5832,15 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       const p = PX(idx); if (!p) return;
       const tw = ctx.measureText(lbl).width;
       const bx = p[0] + 9, by = p[1] - 6;
-      ctx.fillStyle = "rgba(0,0,0,0.72)";
-      if (ctx.roundRect) ctx.roundRect(bx-2, by-9, tw+6, 12, 3);
-      else ctx.rect(bx-2, by-9, tw+6, 12);
-      ctx.fill();
-      ctx.fillStyle = "rgba(200,220,255,0.95)";
+      ctx.save();
+      ctx.shadowColor="rgba(0,0,0,0.12)"; ctx.shadowBlur=3;
+      ctx.fillStyle = "rgba(255,255,255,0.88)";
+      if (ctx.roundRect) ctx.roundRect(bx-2, by-9, tw+8, 12, 3);
+      else ctx.rect(bx-2, by-9, tw+8, 12);
+      ctx.fill(); ctx.restore();
+      ctx.fillStyle = "#1e1e2e";
       ctx.textAlign = "left";
-      ctx.fillText(lbl, bx+1, by);
+      ctx.fillText(lbl, bx+2, by);
     });
     // ASIS labels specifically (estimated position)
     if (V(23) && V(11)) {
@@ -5672,9 +5853,9 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       [[asLx,asLy,"L.ASIS"],[asRx,asRy,"R.ASIS"]].forEach(([x,y,lbl]) => {
         if (!x||!y) return;
         const tw = ctx.measureText(lbl).width;
-        ctx.fillStyle="rgba(0,0,0,0.78)";
-        if(ctx.roundRect) ctx.roundRect(x-tw/2-3,y+16,tw+6,11,3); else ctx.rect(x-tw/2-3,y+16,tw+6,11);
-        ctx.fill(); ctx.fillStyle="#FFD700"; ctx.textAlign="center"; ctx.fillText(lbl,x,y+25);
+        ctx.save(); ctx.shadowColor="rgba(0,0,0,0.1)"; ctx.shadowBlur=3; ctx.fillStyle="rgba(255,255,255,0.92)";
+        if(ctx.roundRect) ctx.roundRect(x-tw/2-4,y+15,tw+8,13,3); else ctx.rect(x-tw/2-4,y+15,tw+8,13);
+        ctx.fill(); ctx.restore(); ctx.fillStyle="#b45309"; ctx.textAlign="center"; ctx.fillText(lbl,x,y+25);
       });
     }
   }
@@ -5695,12 +5876,14 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       const p = PX(ki); if (!p) return;
       const txt = `${lbl} ${angle}°`;
       const col = angle > 185 ? "rgba(99,102,241,0.95)" : angle < 170 ? "rgba(249,115,22,0.95)" : "rgba(0,201,122,0.95)";
-      ctx.font = "bold 9px system-ui";
+      ctx.font = "bold 10px system-ui";
       const tw = ctx.measureText(txt).width;
       const bx = ki===25 ? p[0]-tw-18 : p[0]+10;
-      ctx.fillStyle = "rgba(0,0,0,0.8)";
-      if(ctx.roundRect) ctx.roundRect(bx-2,p[1]-9,tw+10,16,4); else ctx.rect(bx-2,p[1]-9,tw+10,16);
-      ctx.fill(); ctx.fillStyle=col; ctx.textAlign="left"; ctx.fillText(txt,bx+3,p[1]+4);
+      ctx.save(); ctx.shadowColor="rgba(0,0,0,0.18)"; ctx.shadowBlur=4;
+      ctx.fillStyle="rgba(255,255,255,0.93)";
+      if(ctx.roundRect) ctx.roundRect(bx-3,p[1]-10,tw+12,18,4); else ctx.rect(bx-3,p[1]-10,tw+12,18);
+      ctx.fill(); ctx.restore();
+      ctx.fillStyle=col; ctx.textAlign="left"; ctx.fillText(txt,bx+3,p[1]+4);
     });
   }
 
@@ -5713,15 +5896,16 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       { col:"rgba(200,100,255,0.9)",lbl:"ASIS / Pelvis" },
       { col:"rgba(147,51,234,0.9)", lbl:"Spine segments" },
     ];
-    const lw=110, lh=items.length*16+10, lx=W-lw-6, ly=6;
-    ctx.fillStyle="rgba(0,0,0,0.75)";
-    if(ctx.roundRect) ctx.roundRect(lx,ly,lw,lh,6); else ctx.rect(lx,ly,lw,lh);
-    ctx.fill();
+    const lw=122, lh=items.length*17+12, lx=W-lw-6, ly=6;
+    ctx.save(); ctx.shadowColor="rgba(0,0,0,0.2)"; ctx.shadowBlur=8;
+    ctx.fillStyle="rgba(255,255,255,0.93)";
+    if(ctx.roundRect) ctx.roundRect(lx,ly,lw,lh,7); else ctx.rect(lx,ly,lw,lh);
+    ctx.fill(); ctx.restore();
     items.forEach(({col,lbl},i) => {
-      const iy = ly+10+i*16;
-      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(lx+10,iy-3,4,0,Math.PI*2); ctx.fill();
-      ctx.font="9px system-ui"; ctx.fillStyle="rgba(220,220,220,0.9)"; ctx.textAlign="left";
-      ctx.fillText(lbl,lx+18,iy);
+      const iy = ly+12+i*17;
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(lx+11,iy-3,5,0,Math.PI*2); ctx.fill();
+      ctx.font="bold 9px system-ui"; ctx.fillStyle="#1e1e2e"; ctx.textAlign="left";
+      ctx.fillText(lbl,lx+21,iy);
     });
   }
 
@@ -5731,9 +5915,11 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     if (viewLabel) {
       ctx.font = "bold 10px system-ui";
       const tw = ctx.measureText(viewLabel).width;
-      ctx.fillStyle="rgba(0,0,0,0.72)";
-      if(ctx.roundRect) ctx.roundRect(W/2-tw/2-8,H-22,tw+16,16,4); else ctx.rect(W/2-tw/2-8,H-22,tw+16,16);
-      ctx.fill(); ctx.fillStyle="rgba(0,229,255,0.9)"; ctx.textAlign="center";
+      ctx.save(); ctx.shadowColor="rgba(0,0,0,0.15)"; ctx.shadowBlur=5;
+      ctx.fillStyle="rgba(255,255,255,0.90)";
+      if(ctx.roundRect) ctx.roundRect(W/2-tw/2-10,H-24,tw+20,18,5); else ctx.rect(W/2-tw/2-10,H-24,tw+20,18);
+      ctx.fill(); ctx.restore();
+      ctx.fillStyle="#0891b2"; ctx.textAlign="center";
       ctx.fillText(viewLabel,W/2,H-9);
     }
   }
@@ -5758,11 +5944,17 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       const title=`Observation: ${parts.join(" + ")}`;
       ctx.font="bold 10px system-ui";
       const tw=ctx.measureText(title).width;
-      const bw=Math.min(tw+20,W-10);
-      ctx.fillStyle="rgba(0,0,0,0.78)";
-      if(ctx.roundRect) ctx.roundRect(W/2-bw/2,4,bw,18,5); else ctx.rect(W/2-bw/2,4,bw,18);
-      ctx.fill(); ctx.fillStyle="rgba(255,220,100,0.95)"; ctx.textAlign="center";
-      ctx.fillText(title,W/2,16);
+      const bw=Math.min(tw+24,W-10);
+      ctx.save(); ctx.shadowColor="rgba(0,0,0,0.2)"; ctx.shadowBlur=6;
+      ctx.fillStyle="rgba(255,255,255,0.93)";
+      if(ctx.roundRect) ctx.roundRect(W/2-bw/2,4,bw,20,6); else ctx.rect(W/2-bw/2,4,bw,20);
+      ctx.fill(); ctx.restore();
+      // Colored top accent line
+      ctx.fillStyle="rgba(239,68,68,0.85)";
+      if(ctx.roundRect) ctx.roundRect(W/2-bw/2,4,bw,3,2); else ctx.rect(W/2-bw/2,4,bw,3);
+      ctx.fill();
+      ctx.fillStyle="#1e1e2e"; ctx.textAlign="center";
+      ctx.fillText(title,W/2,18);
     }
   }
 
