@@ -1826,7 +1826,11 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
   // Expressed as % of frame width — more stable than absolute pixels
   const headLateralOffset = shMid && V(0) ? r1((g(0).x - shMid.x)*100) : null;
   // Trunk lateral shift: shoulder midpoint minus hip midpoint (% of frame width)
-  const trunkLateralShift = shMid && hipMid ? r1((shMid.x - hipMid.x)*100) : null;
+  // Trunk lateral shift: shoulders vs ankle midpoint (Kendall plumb line reference)
+  // ankMid is the plumb baseline — same as visual plumb line in overlay
+  const _ankMid = Vboth(27,28) ? mid(g(27),g(28)) : null;
+  const trunkLateralShift = shMid && (_ankMid || hipMid)
+    ? r1((shMid.x - (_ankMid || hipMid).x)*100) : null;
   const pelvicObliquity   = hipMid && kneeMid ? r1((hipMid.x - kneeMid.x)*100) : null;
   // Weight-bearing shift: hip midpoint vs foot midpoint (% of frame width)
   const weightBearingShift = hipMid && footMid ? r1((hipMid.x - footMid.x)*100) : null;
@@ -2461,8 +2465,10 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     if (VCboth(11,12,23,24) && trunkLateralShift !== null) {
       const safeTrunk = plaus(trunkLateralShift, PLAUS.trunk);
       if (safeTrunk !== null && Math.abs(safeTrunk) > 3.5) {
-        const abs = Math.abs(safeTrunk); const side = safeTrunk > 0 ? "right" : "left";
-        add("Thoracic", `Trunk laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 7 ? "high" : "moderate",
+        const abs = Math.abs(safeTrunk);
+        // Positive = shoulders right of ankles in image coords = trunk shifted RIGHT (image perspective)
+        const side = safeTrunk > 0 ? "right" : "left";
+        add("Thoracic", `Trunk laterally shifted to the ${side} (${abs.toFixed(1)}% from plumb line)`, abs > 7 ? "high" : "moderate",
           `Assess antalgic lean (disc/radiculopathy — trunk shifts AWAY from herniation in paracentral disc, TOWARD in lateral disc). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.`,
           "M54.5", "⇒", `Lateral trunk shift highly associated with L4/L5 disc herniation. All 4 landmarks confirmed ≥0.65 visibility.`, "Normal: <3.5%", abs);
       }
@@ -3000,7 +3006,7 @@ function measureLandmarks(lm, calibration, view="anterior") {
   const headTiltSide    = headTiltAngle!==null?(headTiltAngle>0?"Left":"Right"):null;
 
   const headLateralOffset  = shMid&&V(0)?r1((g(0).x-shMid.x)*100):null;
-  const trunkLateralShift  = shMid&&hipMid?r1((shMid.x-hipMid.x)*100):null;
+  const trunkLateralShift  = shMid&&(ankleMid||hipMid)?r1((shMid.x-(ankleMid||hipMid).x)*100):null;
   const weightBearingShift = hipMid&&footMid?r1((hipMid.x-footMid.x)*100):null;
   const spinalDeviation    = V(0)&&hipMid?r1((g(0).x-hipMid.x)*100):null;
   const waistAsymmetry     = Vb(11,13)&&Vb(12,14)?r1(Math.abs(Math.abs(g(13).x-g(11).x)-Math.abs(g(14).x-g(12).x))*100):null;
@@ -8038,7 +8044,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                     const entry={
                       view, viewLabel:vLabel, sessionNo:sameView,
                       sessionLabel:`${vLabel} Session ${sameView}`,
-                      img:capturedImg||uploadedImg||rawUploadedImg||null,
+                      img:capturedImg||(inputMode==="ai"?uploadedImg:null)||rawUploadedImg||null,
                       score:scoreData.score, band:scoreData.band||"",
                       findings:findings||[], kineticChain:"",
                       source:isLive?"camera":"upload",
@@ -15423,9 +15429,18 @@ function PostureSessionsView({ d, C, onNav }) {
           {sessions.map((ps,i)=>{
             const col=(ps.score||0)>=78?C.green:(ps.score||0)>=62?C.orange:"#dc2626";
             const dt=new Date(ps.capturedAt||ps.time||"");
-            const dateStr=isNaN(dt.getTime())?"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+            const dateStr=isNaN(dt.getTime())?"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
             const timeStr=isNaN(dt.getTime())?"":dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
-            const findingSummary=(ps.findings||[]).sort((a,b)=>a.severity==="high"?-1:1).slice(0,6).map(f=>f.plain||f.region||f.title||f.label||"").filter(Boolean);
+            // Build detailed summary: show specific measurement + direction + severity
+            const findingSummary=(ps.findings||[])
+              .sort((a,b)=>{ const s={high:0,moderate:1,low:2}; return (s[a.severity]||2)-(s[b.severity]||2); })
+              .slice(0,8)
+              .map(f=>{
+                const main = f.findingName || f.text || f.plain || f.region || f.label || "";
+                // Use full detailed text — no arbitrary truncation
+                return f.text && f.text.length > (f.plain||"").length ? f.text : (f.plain || main);
+              })
+              .filter(Boolean);
             const highCount=(ps.findings||[]).filter(f=>f.severity==="high").length;
             const modCount=(ps.findings||[]).filter(f=>f.severity==="moderate"||f.severity==="medium").length;
             const lowCount=(ps.findings||[]).length-highCount-modCount;
@@ -15440,10 +15455,12 @@ function PostureSessionsView({ d, C, onNav }) {
                   </div>
                   <div style={{flex:1,padding:"9px 12px"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                      <div style={{fontSize:12,fontWeight:800,color:C.text}}>{ps._label}</div>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:800,color:C.text}}>{ps._label}</div>
+                        <div style={{fontSize:10,color:C.muted,marginTop:1}}>{dateStr}{timeStr?` · ${timeStr}`:""}{ps.source?" · "+(ps.source==="upload"?"Upload":"Camera"):""}</div>
+                      </div>
                       {ps.score!=null&&<div style={{fontSize:18,fontWeight:900,color:col,lineHeight:1,flexShrink:0,marginLeft:6}}>{ps.score}<span style={{fontSize:8,color:C.muted,fontWeight:400}}>/100</span></div>}
                     </div>
-                    <div style={{fontSize:10,color:C.muted,marginTop:2,marginBottom:5}}>{dateStr}{timeStr?` · ${timeStr}`:""}{ps.source?" · "+(ps.source==="upload"?"Upload":"Camera"):""}</div>
                     <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
                       {highCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#FEF2F2",color:"#dc2626"}}>🔴 {highCount} high</span>}
                       {modCount>0&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:20,background:"#FFF7ED",color:C.orange}}>🟡 {modCount} moderate</span>}
@@ -15457,12 +15474,12 @@ function PostureSessionsView({ d, C, onNav }) {
                     {findingSummary.map((f,fi)=>{
                       const orig=(ps.findings||[])[fi];
                       const isH=orig?.severity==="high"; const isM=orig?.severity==="moderate"||orig?.severity==="medium";
-                      return(<div key={fi} style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:isH?"#dc2626":isM?C.orange:C.muted}}>
-                        <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:isH?"#dc2626":isM?C.orange:"#D1D5DB"}}/>
-                        {f}
+                      return(<div key={fi} style={{display:"flex",alignItems:"flex-start",gap:5,marginBottom:3,fontSize:10.5,color:isH?"#dc2626":isM?C.orange:"#374151",lineHeight:1.45}}>
+                        <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,marginTop:3,background:isH?"#dc2626":isM?C.orange:"#9CA3AF"}}/>
+                        <span>{f}</span>
                       </div>);
                     })}
-                    {(ps.findings||[]).length>6&&<div style={{fontSize:10,color:C.muted,marginLeft:11}}>+{(ps.findings||[]).length-6} more</div>}
+                    {(ps.findings||[]).length>8&&<div style={{fontSize:10,color:C.muted,marginLeft:11}}>+{(ps.findings||[]).length-8} more findings</div>}
                   </div>
                 )}
               </div>
