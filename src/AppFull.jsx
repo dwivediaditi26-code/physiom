@@ -12603,8 +12603,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {/* ── Outcome Measures ── */}
                   <Sec icon="📊" title="Outcome Measures" navKey="outcome" hasData={omKeys.length>0}>
                     {(()=>{
-                      const OM_MAX={odi:100,ndi:100,dash:100,quickdash:100,lefs:80,vas:10,nprs:10,psfs1:10,psfs2:10,psfs3:10,psfs:10,tsk:68,fabq:96,pcs:52,womac:96,koos:100,spadi:100,hoos:100,dgi:24,tug:60,bbs:56,abc:100,sf36:100,eq5d:100,pdi:70,rmdq:24};
-                      const OM_NAMES={odi:"ODI — Oswestry Disability",ndi:"NDI — Neck Disability",dash:"DASH — Arm/Shoulder/Hand",quickdash:"QuickDASH",lefs:"LEFS — Lower Extremity",vas:"VAS — Pain",nprs:"NPRS — Pain Rating",psfs:"PSFS — Patient-Specific",tsk:"TSK — Kinesiophobia",fabq:"FABQ — Fear Avoidance",pcs:"PCS — Catastrophising",womac:"WOMAC",koos:"KOOS",spadi:"SPADI — Shoulder Pain",hoos:"HOOS",dgi:"DGI — Dynamic Gait",tug:"TUG — Timed Up & Go",bbs:"BBS — Berg Balance",abc:"ABC — Balance Confidence",rmdq:"Roland-Morris"};
+                      const OM_MAX={odi:100,ndi:100,dash:100,quickdash:100,lefs:80,vas:10,nprs:10,psfs1:10,psfs2:10,psfs3:10,psfs:10,tsk:44,fabq:96,fabqpa:24,pcs:52,womac:96,koos:100,koosjr:28,spadi:100,hoos:100,hoosjr:24,faam:100,dgi:24,tug:60,bbs:56,abc:100,sf36:100,eq5d:100,pdi:70,rmdq:24,mwt10:3,fac:5,asia:100};
+                      const OM_NAMES={odi:"ODI — Oswestry Disability",ndi:"NDI — Neck Disability",dash:"DASH — Arm/Shoulder/Hand",quickdash:"QuickDASH",lefs:"LEFS — Lower Extremity",vas:"VAS — Pain",nprs:"NPRS — Pain Rating",psfs:"PSFS — Patient-Specific",tsk:"TSK-11 — Kinesiophobia",fabq:"FABQ — Fear Avoidance",fabqpa:"FABQ-PA — Fear Avoidance",pcs:"PCS — Catastrophising",womac:"WOMAC",koos:"KOOS",koosjr:"KOOS-JR — Knee",spadi:"SPADI — Shoulder Pain",hoos:"HOOS",hoosjr:"HOOS-JR — Hip",faam:"FAAM — Foot & Ankle",dgi:"DGI — Dynamic Gait",tug:"TUG — Timed Up & Go",bbs:"BBS — Berg Balance",abc:"ABC — Balance Confidence",rmdq:"RMDQ — Roland-Morris"};
                       return(
                         <div style={{display:"flex",flexDirection:"column",gap:6}}>
                           {omKeys.map(k=>{
@@ -12617,7 +12617,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                             const label=OM_NAMES[scaleId]||scaleId.toUpperCase();
                             const max=OM_MAX[scaleId]||100;
                             const pct=isNaN(curr)?0:Math.min(100,Math.max(0,(curr/max)*100));
-                            const lowIsBetter=["odi","ndi","dash","quickdash","vas","nprs","tsk","fabq","pcs","womac","spadi","pdi","rmdq","tug"].includes(scaleId);
+                            const lowIsBetter=["odi","ndi","dash","quickdash","vas","nprs","tsk","fabq","fabqpa","pcs","womac","spadi","pdi","rmdq","tug","koosjr","hoosjr"].includes(scaleId);
                             const isBetter=diff!=null?(lowIsBetter?diff<0:diff>0):null;
                             const sevCol=lowIsBetter?(pct>=60?"#dc2626":pct>=30?"#d97706":C.green):(pct>=70?C.green:pct>=40?"#d97706":"#dc2626");
                             return(
