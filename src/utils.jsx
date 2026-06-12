@@ -217,6 +217,11 @@ const MOBILE_CSS = `
     max-height: 80vh;
   }
   @media (max-width: 767px) { .pm-bnav { display: flex; } }
+  @media (max-width: 767px) {
+    .pm-live-chip { display: none !important; }
+    .pm-patients-btn { display: none !important; }
+    .pm-header { padding: 0 12px !important; }
+  }
   .pm-bnav.bnav-hidden { transform: translateY(100%); }
 
   /* Pull handle / toggle tab */

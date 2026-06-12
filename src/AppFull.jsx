@@ -12043,10 +12043,10 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         display:"flex",overflowX:"auto",padding:"0 8px"}}>
         {TABS.map(t=>(
           <button key={t.k} onClick={()=>setTab(t.k)} style={{
-            flex:1,padding:"14px 4px 12px",border:"none",background:"none",
+            flex:"1 0 auto",padding:"14px 12px 12px",border:"none",background:"none",
             cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,
             borderBottom:`2.5px solid ${tab===t.k?C.primary:"transparent"}`,
-            transition:"all 0.2s",whiteSpace:"nowrap",minWidth:62,
+            transition:"all 0.2s",whiteSpace:"nowrap",minWidth:76,
           }}>
             <span style={{fontSize:15,filter:tab===t.k?"none":"grayscale(1)",opacity:tab===t.k?1:0.5}}>{t.icon}</span>
             <span style={{fontSize:10,fontWeight:700,color:tab===t.k?C.primary:C.muted,
@@ -16621,7 +16621,7 @@ function AppInner({ currentUser, onSignOut }) {
             </div>
             {/* Live patient chip */}
             {activePatient&&(
-              <div style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",background:PC.isDark?"rgba(129,140,248,0.08)":"rgba(79,70,229,0.05)",border:`1px solid ${PC.isDark?"rgba(129,140,248,0.2)":"rgba(79,70,229,0.15)"}`,borderRadius:20,cursor:"pointer"}} onClick={()=>setShowPatientDb(true)}>
+              <div className="pm-live-chip" style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",background:PC.isDark?"rgba(129,140,248,0.08)":"rgba(79,70,229,0.05)",border:`1px solid ${PC.isDark?"rgba(129,140,248,0.2)":"rgba(79,70,229,0.15)"}`,borderRadius:20,cursor:"pointer"}} onClick={()=>setShowPatientDb(true)}>
                 <div style={{width:6,height:6,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 5px ${PC.a3}`}}/>
                 <span style={{fontSize:"0.72rem",fontWeight:700,color:PC.a2,whiteSpace:"nowrap"}}>{activePatient.name.length>16?activePatient.name.slice(0,16)+"…":activePatient.name}</span>
               </div>
@@ -16637,15 +16637,12 @@ function AppInner({ currentUser, onSignOut }) {
               </div>
             )}
             {/* Patient selector */}
-            <button onClick={()=>setShowPatientDb(true)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontWeight:600,fontSize:"0.72rem",cursor:"pointer",whiteSpace:"nowrap"}}>
+            <button className="pm-patients-btn" onClick={()=>setShowPatientDb(true)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontWeight:600,fontSize:"0.72rem",cursor:"pointer",whiteSpace:"nowrap"}}>
               <span style={{fontSize:"0.85rem"}}>👥</span>
               <span>{patients.length} Patients</span>
             </button>
 
 
-            <button onClick={runDx} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 16px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#000",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",letterSpacing:"0.3px"}}>
-              <span>▶</span><span>Diagnose</span>
-            </button>
           </div>
         </div>
       </div>

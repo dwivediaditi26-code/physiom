@@ -7167,22 +7167,34 @@ function LiveSOAPPanel({ data, onNavigate }) {
   };
 
   if (!open) {
-    const isMobilePill = typeof window !== "undefined" && window.innerWidth <= 480;
-    const mobilePillStyle = isMobilePill ? {
-      position:"fixed", bottom:0, left:0, right:0, zIndex:9999,
-      display:"flex", alignItems:"center", justifyContent:"center", gap:10,
-      background:"linear-gradient(135deg,#7c3aed,#9333ea)",
-      border:"none", borderTop:"2px solid rgba(255,255,255,0.15)",
-      borderRadius:"12px 12px 0 0",
-      padding:"12px 20px",
-      color:"#fff", cursor:"pointer",
-      boxShadow:"0 -4px 20px rgba(124,58,237,0.35)",
-      fontSize:"0.8rem", fontWeight:800, letterSpacing:"0.3px",
-    } : pillStyle;
-
+    const isMobilePill = typeof window !== "undefined" && window.innerWidth <= 767;
+    if (isMobilePill) {
+      // Round floating button — sits above the bottom navigation, never covers it
+      return (
+        <button onClick={()=>setOpen(true)} title="Open Live SOAP Panel" style={{
+          position:"fixed", bottom:"calc(96px + env(safe-area-inset-bottom))", right:14, zIndex:138,
+          width:56, height:56, borderRadius:"50%",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          background:"linear-gradient(135deg,#7c3aed,#9333ea)", border:"none",
+          color:"#fff", cursor:"pointer",
+          boxShadow:"0 4px 18px rgba(124,58,237,0.45)", fontSize:"1.35rem",
+        }}>
+          📋
+          {hasContent && (
+            <span style={{
+              position:"absolute", top:-4, right:-4,
+              minWidth:20, height:20, borderRadius:10, padding:"0 5px",
+              background:"#059669", border:"2px solid #fff",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:"0.6rem", fontWeight:800, color:"#fff",
+            }}>{totalFilled}</span>
+          )}
+        </button>
+      );
+    }
     return (
-      <button onClick={()=>setOpen(true)} style={mobilePillStyle} title="Open Live SOAP Panel">
-        <span style={{fontSize:isMobilePill?"1.1rem":"1rem"}}>📋</span>
+      <button onClick={()=>setOpen(true)} style={pillStyle} title="Open Live SOAP Panel">
+        <span style={{fontSize:"1rem"}}>📋</span>
         <span>Live SOAP</span>
         {hasContent && (
           <span style={{
