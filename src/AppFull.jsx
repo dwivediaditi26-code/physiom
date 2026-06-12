@@ -7456,21 +7456,23 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       if(!stream) throw new Error("NoStream");
 
       streamRef.current=stream; setCamFacing(facing);
-      const video=videoRef.current;
-      if(!video) throw new Error("NoVideo");
+      // The <video> element only mounts when camStatus==="active" — set status
+      // FIRST, then wait for the ref to appear before attaching the stream.
+      setCamStatus("active");
+      let video=videoRef.current;
+      for(let i=0;i<40&&!video;i++){ await new Promise(r=>setTimeout(r,50)); video=videoRef.current; }
+      if(!video){ try{stream.getTracks().forEach(t=>t.stop());}catch(_){ } streamRef.current=null; throw new Error("NoVideo"); }
       video.srcObject=stream;
       video.setAttribute("playsinline","");
       video.setAttribute("webkit-playsinline","");
       video.muted=true;
 
       await new Promise((res,rej)=>{
-        const go=()=>video.play().then(res).catch(rej);
+        const go=()=>video.play().then(res).catch(()=>res()); // muted+playsinline: play() rejection is non-fatal
         if(video.readyState>=1){ go(); }
         else { video.onloadedmetadata=go; }
         setTimeout(()=>rej(new Error("Timeout")), 8000);
       });
-
-      setCamStatus("active");
 
       const handler=results=>{
         if(results.poseLandmarks?.length>0){
@@ -7515,6 +7517,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       rafRef.current=requestAnimationFrame(loop);
 
     }catch(e){
+      try{ if(streamRef.current){streamRef.current.getTracks().forEach(t=>t.stop()); streamRef.current=null;} }catch(_){}
       setCamStatus("error");
       const n=e?.name||"";
       setError(
@@ -8043,16 +8046,43 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           {scoreData&&(
             <div style={{marginBottom:12,padding:"10px 14px",background:activePatient?"rgba(5,150,105,0.07)":"rgba(180,83,9,0.07)",borderRadius:12,border:`1px solid ${activePatient?"rgba(5,150,105,0.25)":"rgba(180,83,9,0.25)"}`}}>
               {activePatient?(
-                <button onClick={()=>{
+                <button onClick={async()=>{
                   const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
                   const vLabel=VLABELS[view]||view;
                   try{
+                    // Bake photo + analysis overlay into a persistent JPEG data URL.
+                    // blob: URLs die on reload and must never be stored in the record.
+                    const bakeImg=()=>new Promise(resolve=>{
+                      const src=isLive?capturedImg
+                        :inputMode==="ai"?(uploadedImg||rawUploadedImg)
+                        :(objectUrlRef.current||rawUploadedImg||uploadedImg);
+                      if(!src){resolve(null);return;}
+                      const im=new Image();
+                      const fallback=()=>resolve(typeof src==="string"&&src.startsWith("data:")?src:null);
+                      im.onload=()=>{try{
+                        const natW=im.naturalWidth||im.width,natH=im.naturalHeight||im.height;
+                        const sc=Math.min(1,900/Math.max(natW,natH));
+                        const W=Math.max(1,Math.round(natW*sc)),H=Math.max(1,Math.round(natH*sc));
+                        const oc=document.createElement("canvas");oc.width=W;oc.height=H;
+                        const octx=oc.getContext("2d");
+                        octx.drawImage(im,0,0,W,H);
+                        if(inputMode==="manual"&&landmarks&&landmarks.length){
+                          const vm={anterior:"anterior",posterior:"posterior",back:"posterior",left:"left",right:"right"};
+                          try{drawOverlay({ctx:octx,W,H,lm:landmarks,view:vm[view]||"anterior",showGrid:true,measurements:measurements||{},clearFirst:false});}catch(_){}
+                          try{drawManualOverlay({ctx:octx,W,H,placed:manualPlaced,pointDefs:manualPointDefs,connections:manualConnections});}catch(_){}
+                        }
+                        resolve(oc.toDataURL("image/jpeg",0.8));
+                      }catch(e){fallback();}};
+                      im.onerror=fallback;
+                      im.src=src;
+                    });
+                    const bakedImg=await bakeImg();
                     const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
                     const sameView=existing.filter(s=>s.view===view).length+1;
                     const entry={
                       view, viewLabel:vLabel, sessionNo:sameView,
                       sessionLabel:`${vLabel} Session ${sameView}`,
-                      img:capturedImg||(inputMode==="ai"?uploadedImg:null)||rawUploadedImg||null,
+                      img:bakedImg,
                       score:scoreData.score, band:scoreData.band||"",
                       findings:findings||[], kineticChain:"",
                       source:isLive?"camera":"upload",
@@ -10753,7 +10783,19 @@ function PhotoUploadAnalyzer() {
                 const entry={
                   view:analysisResult.view, viewLabel:vLabel, sessionNo:sameView,
                   sessionLabel:`${vLabel} Session ${sameView}`,
-                  img:urlRef?.current||null,
+                  img:(()=>{try{
+                    const ov=canvasRef.current, im=imgRef.current;
+                    const baseW=im?.naturalWidth||ov?.width||0, baseH=im?.naturalHeight||ov?.height||0;
+                    if(baseW>0){
+                      const sc=Math.min(1,900/Math.max(baseW,baseH));
+                      const W=Math.max(1,Math.round(baseW*sc)),H=Math.max(1,Math.round(baseH*sc));
+                      const oc=document.createElement("canvas");oc.width=W;oc.height=H;
+                      const c2=oc.getContext("2d");
+                      if(im) c2.drawImage(im,0,0,W,H);
+                      if(ov&&ov.width>0) c2.drawImage(ov,0,0,W,H);
+                      return oc.toDataURL("image/jpeg",0.8);
+                    }
+                  }catch(e){} return null;})(),
                   score:scoreData?.score, band:scoreData?.band||"",
                   findings:findings||[],
                   kineticChain:measurements?.kineticChain||"",
