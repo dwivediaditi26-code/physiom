@@ -7427,7 +7427,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   }
 
   async function startCamera(facing="environment"){
-    if(!poseRef.current||mpStatus!=="ready"){setError("AI not ready yet — wait for AI Ready status");return;}
+    // Allow camera to start — AI can finish loading in background
     setCamStatus("starting"); setError(null);
     try{
       // Progressive constraint fallback for mobile compatibility
@@ -8808,8 +8808,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 {error&&<div style={{padding:"10px 13px",background:"rgba(220,38,38,0.08)",border:`1px solid ${PC.red}30`,borderRadius:9,fontSize:"0.76rem",color:PC.red}}>{error}</div>}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   {[["environment","▣ Back Camera"],["user","⎇ Front Camera"]].map(([f,label])=>(
-                    <button key={f} onClick={()=>startCamera(f)} disabled={mpStatus!=="ready"}
-                      style={{padding: isWide?"16px":"13px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface,color:mpStatus==="ready"?PC.text:PC.muted,fontWeight:700,fontSize: isWide?"0.85rem":"0.78rem",cursor:mpStatus==="ready"?"pointer":"not-allowed"}}>
+                    <button key={f} onClick={()=>startCamera(f)}
+                      style={{padding: isWide?"16px":"13px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface,color:PC.text,fontWeight:700,fontSize: isWide?"0.85rem":"0.78rem",cursor:"pointer"}}>
                       {label}
                     </button>
                   ))}
@@ -8861,7 +8861,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           </div>
         ):(
           <div style={{padding: isWide?"20px":"16px"}}>
-            {error&&<div style={{padding:"10px 13px",background:"rgba(220,38,38,0.08)",border:`1px solid ${PC.red}30`,borderRadius:9,fontSize:"0.76rem",color:PC.red,marginBottom:12}}>{error}</div>}
+            {error&&<div style={{padding:"10px 13px",background:"rgba(220,38,38,0.08)",border:`1px solid ${PC.red}30`,borderRadius:9,fontSize:"0.76rem",color:PC.red,marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <span>{error}</span>
+        {error.includes("camera")||error.includes("Camera")?<button onClick={()=>{setError(null);setCamStatus("idle");}} style={{marginLeft:8,padding:"3px 10px",borderRadius:6,border:`1px solid ${PC.red}`,background:"transparent",color:PC.red,fontSize:"0.68rem",fontWeight:700,cursor:"pointer"}}>Retry</button>:null}
+      </div>}
             <button onClick={()=>fileInputRef.current?.click()}
               disabled={inputMode==="ai"?(mpStatus!=="ready"||analysing):false}
               style={{width:"100%",padding: isWide?"20px":"16px",borderRadius:14,border:`2px dashed ${viewMeta.colour}`,background:`${viewMeta.colour}08`,color:viewMeta.colour,fontWeight:700,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer",textAlign:"center",marginBottom:14}}>
@@ -9803,7 +9806,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             background:mpStatus==="ready"?"rgba(5,150,105,0.12)":mpStatus==="loading"?"rgba(180,83,9,0.12)":"rgba(220,38,38,0.12)",
             color:mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red,
             border:`1px solid ${mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red}40`}}>
-            {mpStatus==="ready"?"⚙ AI Ready":mpStatus==="loading"?"⏳ Loading…":"❌ AI Error"}
+            {mpStatus==="ready"?"⚙ AI Ready":mpStatus==="loading"?"⏳ AI Loading…":"❌ AI Error — tap to retry"}
           </div>
           <button onClick={()=>setShowReportModal(true)}
             style={{padding:isWide?"6px 14px":"4px 9px",
@@ -13890,7 +13893,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
   // ── AUTO-GENERATE TASKS FROM CLINICAL DATA ─────────────────────────────────
   useEffect(() => {
     if (!onAddTask || !data) return;
-    const d   = data;
+    const d   = data || {};
     const pt  = d["dem_name"] || "Current patient";
     const now = new Date().toISOString();
     const today = new Date().toLocaleDateString("en-GB");
@@ -13964,6 +13967,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
   // ── DERIVED DATA ──────────────────────────────────────────────────────────
   const derived = useMemo(() => {
     const today = new Date().toDateString();
+    const d = data || {}; // guard against null/undefined data
 
     // Merge auto-generated tasks with stored taskDB
     const pendingTasks = taskDB
@@ -14006,13 +14010,13 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
 
     // Stats
     const todayCount  = patients.filter(p => new Date(p.updatedAt).toDateString()===today).length;
-    const activeNRS   = parseFloat(data["cc_vas_now"]||"0");
-    const worstNRS    = parseFloat(data["cc_vas_worst"]||"0");
-    const activeSess  = Array.isArray(data.tx_sessions) ? data.tx_sessions : [];
+    const activeNRS   = parseFloat(d["cc_vas_now"]||"0");
+    const worstNRS    = parseFloat(d["cc_vas_worst"]||"0");
+    const activeSess  = Array.isArray(d.tx_sessions) ? d.tx_sessions : [];
     const nrsImprove  = worstNRS > 0 ? Math.round(((worstNRS-activeNRS)/worstNRS)*100) : 0;
     const recoveryPct = Math.min(Math.max(nrsImprove + Math.min(activeSess.length*5,30), 0), 100);
-    const activeName  = data["dem_name"] || "";
-    const activeCC    = (data["cc_main"]||"").slice(0,38);
+    const activeName  = d["dem_name"] || "";
+    const activeCC    = (d["cc_main"]||"").slice(0,38);
 
     // Outcomes
     const total = Math.max(patients.length,1);
