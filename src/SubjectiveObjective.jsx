@@ -1715,7 +1715,7 @@ function CyriaxModule({ data, set, navContext={} }) {
   const sv = (id, val) => set(prefix + id, val);
 
   const selectStyle = { width:"100%", background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:8, color:"#1a1025", padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit", WebkitAppearance:"none", appearance:"none" };
-  const labelStyle = { fontSize:"0.72rem", fontWeight:700, color:"#7e6a9a", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.5px" };
+  const labelStyle = { fontSize:"0.82rem", fontWeight:700, color:"#7e6a9a", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.5px" };
   const boxStyle = { background:"#ffffff", border:"1px solid #d8cce8", borderRadius:10, padding:13, marginBottom:10 };
   const RESULT_OPTIONS = ["","Strong & Painless","Strong & Painful","Weak & Painless","Weak & Painful"];
   const PAIN_OPTIONS = ["","No pain","Pain on initiation","Pain at mid-range","Pain at end range","Painful arc","Pain throughout range","Referred pain with movement"];
@@ -4226,11 +4226,12 @@ function SubjectiveModule({ data, set, onNav }) {
               <button key={opt} type="button"
                 onClick={() => toggleMulti(f.id, opt)}
                 style={{
-                  padding:"5px 10px", borderRadius:99, cursor:"pointer",
+                  padding:"8px 13px", borderRadius:99, cursor:"pointer",
                   border:`1px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
                   background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
                   color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
-                  fontSize:"0.72rem", fontWeight: on ? 700 : 500,
+                  fontSize:"0.85rem", fontWeight: on ? 700 : 500,
+                  lineHeight: 1.4, minHeight: 36,
                   transition:"all 110ms",
                 }}>
                 {opt}
@@ -4265,11 +4266,11 @@ function SubjectiveModule({ data, set, onNav }) {
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <input type="range" min="0" max="10" value={num}
             onChange={e => setField(f.id, e.target.value)}
-            style={{ flex:1, accentColor: col }} />
-          <span style={{ fontWeight:800, color: col, fontSize:"1.2rem", minWidth:30, textAlign:"center" }}>
+            style={{ flex:1, accentColor: col, height:28, cursor:"pointer" }} />
+          <span style={{ fontWeight:800, color: col, fontSize:"1.2rem", minWidth:36, textAlign:"center" }}>
             {num}
           </span>
-          <span style={{ fontSize:"0.65rem", color: PC.muted }}>/ 10</span>
+          <span style={{ fontSize:"0.72rem", color: PC.muted }}>/ 10</span>
         </div>
       );
     }

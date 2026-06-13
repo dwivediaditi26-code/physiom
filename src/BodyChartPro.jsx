@@ -724,41 +724,54 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
             const stroke = getRegionStroke(r.id);
             const hasData = !!entry && entry.symptoms.length > 0;
 
+            // centroid for hit-circle and dot placement
+            const cx = r.pts.reduce((s, p) => s + p[0], 0) / r.pts.length;
+            const cy = r.pts.reduce((s, p) => s + p[1], 0) / r.pts.length;
             return (
-              <polygon
-                key={r.id}
-                points={ptsToSVG(r.pts)}
-                fill={isHov ? "rgba(59,130,246,0.18)" : isSel ? "rgba(124,58,237,0.18)" : fill}
-                stroke={isHov ? "#3b82f6" : isSel ? "#7c3aed" : stroke}
-                strokeWidth={isHov || isSel || hasData ? "0.35" : "0"}
-                style={{ cursor:"pointer", transition:"fill 0.1s, stroke 0.1s" }}
-                onMouseEnter={(e) => {
-                  setHovered(r.id);
-                  const svg = svgRef.current;
-                  if (svg) {
-                    const rect = svg.getBoundingClientRect();
-                    setTooltip({
-                      label: r.label,
-                      view: r.view,
-                      x: ((e.clientX - rect.left) / rect.width) * 100,
-                      y: ((e.clientY - rect.top) / rect.height) * 100,
-                      entry,
-                    });
-                  }
-                }}
-                onMouseMove={(e) => {
-                  const svg = svgRef.current;
-                  if (svg) {
-                    const rect = svg.getBoundingClientRect();
-                    setTooltip(t => t ? { ...t,
-                      x: ((e.clientX - rect.left) / rect.width) * 100,
-                      y: ((e.clientY - rect.top) / rect.height) * 100,
-                    } : t);
-                  }
-                }}
-                onMouseLeave={() => { setHovered(null); setTooltip(null); }}
-                onClick={(e) => handleRegionClick(r.id, e)}
-              />
+              <g key={r.id}>
+                {/* Visible polygon */}
+                <polygon
+                  points={ptsToSVG(r.pts)}
+                  fill={isHov ? "rgba(59,130,246,0.18)" : isSel ? "rgba(124,58,237,0.18)" : fill}
+                  stroke={isHov ? "#3b82f6" : isSel ? "#7c3aed" : stroke}
+                  strokeWidth={isHov || isSel || hasData ? "0.35" : "0"}
+                  style={{ cursor:"pointer", transition:"fill 0.1s, stroke 0.1s", pointerEvents:"none" }}
+                />
+                {/* Invisible hit-area circle — guarantees ≥9 SVG-unit (≈33px) tap target on mobile */}
+                <circle
+                  cx={cx} cy={cy}
+                  r="4.5"
+                  fill="transparent"
+                  stroke="none"
+                  style={{ cursor:"pointer" }}
+                  onMouseEnter={(e) => {
+                    setHovered(r.id);
+                    const svg = svgRef.current;
+                    if (svg) {
+                      const rect = svg.getBoundingClientRect();
+                      setTooltip({
+                        label: r.label,
+                        view: r.view,
+                        x: ((e.clientX - rect.left) / rect.width) * 100,
+                        y: ((e.clientY - rect.top) / rect.height) * 100,
+                        entry,
+                      });
+                    }
+                  }}
+                  onMouseMove={(e) => {
+                    const svg = svgRef.current;
+                    if (svg) {
+                      const rect = svg.getBoundingClientRect();
+                      setTooltip(t => t ? { ...t,
+                        x: ((e.clientX - rect.left) / rect.width) * 100,
+                        y: ((e.clientY - rect.top) / rect.height) * 100,
+                      } : t);
+                    }
+                  }}
+                  onMouseLeave={() => { setHovered(null); setTooltip(null); }}
+                  onClick={(e) => handleRegionClick(r.id, e)}
+                />
+              </g>
             );
           })}
 

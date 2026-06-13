@@ -248,15 +248,15 @@ const MOBILE_CSS = `
   }
   .pm-bnav-tabs::-webkit-scrollbar { display: none; }
   .pm-bnav-tab {
-    flex: 1 0 auto; min-width: 54px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 2px;
-    padding: 8px 4px 7px; background: transparent; border: none;
+    flex: 1 0 auto; min-width: 60px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    padding: 10px 4px 9px; background: transparent; border: none;
     cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent;
     transition: background 0.15s, border-color 0.15s;
   }
   .pm-bnav-tab.active { background: rgba(124,58,237,0.07); border-bottom-color: #7c3aed; }
   .pm-bnav-tab-icon { font-size: 1.05rem; line-height: 1; }
-  .pm-bnav-tab-label { font-size: 0.46rem; font-weight: 700; letter-spacing: 0.3px; color: #7e6a9a; white-space: nowrap; text-transform: uppercase; }
+  .pm-bnav-tab-label { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.3px; color: #7e6a9a; white-space: nowrap; text-transform: uppercase; }
   .pm-bnav-tab.active .pm-bnav-tab-label { color: #7c3aed; }
 
   /* Expandable sub-nav panel */
@@ -269,15 +269,15 @@ const MOBILE_CSS = `
 
   /* Sub-nav items */
   .pm-bnav-item {
-    display: flex; align-items: center; gap: 8px;
-    padding: 9px 12px; border-radius: 9px; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border-radius: 9px; cursor: pointer;
     border: 1px solid transparent; transition: all 0.13s; font-family: inherit;
-    background: transparent; width: 100%; text-align: left;
+    background: transparent; width: 100%; text-align: left; min-height: 44px;
   }
   .pm-bnav-item.active { background: rgba(124,58,237,0.10); border-color: rgba(124,58,237,0.22); }
-  .pm-bnav-item-icon { font-size: 0.9rem; flex-shrink: 0; opacity: 0.75; }
+  .pm-bnav-item-icon { font-size: 1.1rem; flex-shrink: 0; opacity: 0.75; }
   .pm-bnav-item.active .pm-bnav-item-icon { opacity: 1; }
-  .pm-bnav-item-label { font-size: 0.78rem; font-weight: 600; color: #3b1f6b; flex: 1; }
+  .pm-bnav-item-label { font-size: 0.88rem; font-weight: 600; color: #3b1f6b; flex: 1; }
   .pm-bnav-item.active .pm-bnav-item-label { color: #7c3aed; font-weight: 700; }
   .pm-bnav-item-pct { font-size: 0.55rem; font-weight: 700; color: #9a82c0; background: #f0ebff; padding: 1px 5px; border-radius: 4px; }
   .pm-bnav-item-done { font-size: 0.55rem; color: #059669; font-weight: 800; }
