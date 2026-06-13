@@ -4348,8 +4348,71 @@ function SubjectiveModule({ data, set, onNav }) {
         </div>
       </div>
 
-      {/* ── Generate button — above tabs for instant access ── */}
-      <button type="button" onClick={runInterpretation}
+      {/* ── Summary modal ── */}
+      {showSummary && (()=>{
+        const sectionList = Object.entries(sections).map(([key, sec]) => {
+          const scoreable = sec.fields.filter(f=>f.type!=="textarea"&&!["_notes","_detail","_findings"].some(sx=>f.id.endsWith(sx)));
+          const filled = sec.fields.filter(f=>data[f.id]&&data[f.id]!=="").length;
+          const skipped = scoreable.length - scoreable.filter(f=>data[f.id]&&data[f.id]!=="").length;
+          return { key, label:sec.label, icon:sec.icon||"📋", filled, skipped, isRedFlag:key==="red_flags" };
+        });
+        const rfSec = sectionList.find(s2=>s2.isRedFlag);
+        const hasBlocker = rfSec && rfSec.skipped > 0;
+        return(
+          <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+            onClick={()=>setShowSummary(false)}>
+            <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,background:PC.surface,borderRadius:"16px 16px 0 0",padding:"20px 16px 32px",maxHeight:"80vh",overflowY:"auto"}}>
+              <div style={{width:40,height:4,borderRadius:99,background:PC.border,margin:"0 auto 16px"}}/>
+              <div style={{fontSize:15,fontWeight:800,color:PC.text,marginBottom:14}}>📋 Assessment summary</div>
+              <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:14}}>
+                {sectionList.map((sec2)=>{
+                  const isOk=sec2.filled>0&&sec2.skipped===0;
+                  const isPartial=sec2.filled>0&&sec2.skipped>0;
+                  const col=isOk?PC.green:isPartial?"#d97706":"#dc2626";
+                  const bg=isOk?"#ECFDF5":isPartial?"#FEF3C7":"#FEF2F2";
+                  return(
+                    <div key={sec2.key} onClick={()=>{setShowSummary(false);setActiveSection(sec2.key);}}
+                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                        padding:"9px 12px",background:PC.s2,borderRadius:9,cursor:"pointer",
+                        border:`1px solid ${sec2.isRedFlag&&sec2.skipped>0?"#FCA5A5":PC.border}`}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:13}}>{sec2.icon}</span>
+                        <span style={{fontSize:12.5,fontWeight:600,color:PC.text}}>{sec2.label}</span>
+                      </div>
+                      <span style={{padding:"2px 10px",borderRadius:99,fontSize:10.5,fontWeight:800,background:bg,color:col}}>
+                        {isOk?"✓ Done":isPartial?`⚠ ${sec2.skipped} skipped`:"○ Not started"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              {hasBlocker&&(
+                <div style={{padding:"10px 12px",background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:10,marginBottom:12}}>
+                  <div style={{fontSize:11.5,fontWeight:800,color:"#A32D2D",marginBottom:3}}>⚠ Complete red flag screen before analysis</div>
+                  <div style={{fontSize:10.5,color:"#991B1B"}}>{rfSec.skipped} question{rfSec.skipped>1?"s":""} unanswered — tap the row above to go there</div>
+                </div>
+              )}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <button onClick={()=>setShowSummary(false)}
+                  style={{padding:"11px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
+                  Edit answers
+                </button>
+                <button onClick={()=>{setShowSummary(false);runInterpretation();}}
+                  disabled={selectedRegions.length===0}
+                  style={{padding:"11px",borderRadius:10,border:"none",
+                    background:selectedRegions.length>0?`linear-gradient(135deg,${PC.accent},${PC.a2})`:PC.s3,
+                    color:selectedRegions.length>0?"#fff":PC.muted,fontWeight:800,fontSize:13,
+                    cursor:selectedRegions.length>0?"pointer":"not-allowed",fontFamily:"inherit"}}>
+                  🧠 Run analysis
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Generate button — opens summary first ── */}
+      <button type="button" onClick={()=>setShowSummary(true)}
         disabled={selectedRegions.length === 0}
         style={{
           width:"100%", padding:"11px 16px", borderRadius:10, border:"none",
@@ -4363,7 +4426,7 @@ function SubjectiveModule({ data, set, onNav }) {
           fontFamily:"inherit", display:"flex", alignItems:"center",
           justifyContent:"center", gap:8,
         }}>
-        🧠 Generate Clinical Interpretation
+        🧠 Review &amp; Run Analysis
         {selectedRegions.length > 0 && (
           <span style={{ fontSize:"0.65rem", background:"rgba(255,255,255,0.2)",
             padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
