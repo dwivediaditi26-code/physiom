@@ -3436,7 +3436,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       {!aiOnly&&<div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
         {tabBtn("soap","📄 SOAP Note")}
         {tabBtn("interp","🧠 Suggested Interpretation", totalRules)}
-        {tabBtn("both","⊞ Split View")}
+
         {tabBtn("extra","✏️ Add Notes")}
         {tabBtn("ai","🤖 AI Assistant")}
       </div>}
@@ -3444,10 +3444,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       {/* ══════════════════════════════════════════════════════════════
           SOAP TAB — Real-time auto-filled note
       ══════════════════════════════════════════════════════════════ */}
-      {(activeTab==="soap"||activeTab==="both") && (
-        <div style={activeTab==="both"?{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}:{}}>
-
-          <div style={activeTab==="both"?{}:{marginBottom:14}}>
+      {activeTab==="soap" && (
+        <div>
+          <div style={{marginBottom:14}}>
             {/* Previous Note Reference */}
             {lastNote&&(
               <div style={{marginBottom:12,background:`${PC.s2}`,border:`1px solid ${PC.border}`,borderRadius:12,overflow:"hidden"}}>
