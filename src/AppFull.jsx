@@ -12456,6 +12456,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               const kcKeys  = Object.keys(d).filter(k=>k.startsWith("kc_")&&d[k]);
               const faKeys  = Object.keys(d).filter(k=>k.startsWith("fa_")&&d[k]);
               const cyKeys  = Object.keys(d).filter(k=>k.startsWith("cy_")&&d[k]);
+              const nktKeys = Object.keys(d).filter(k=>k.startsWith("nkt_")&&d[k]);
+              const obsKeys = Object.keys(d).filter(k=>k.startsWith("obs_")&&k!=="obs_snapshots"&&d[k]);
               const omKeys  = Object.keys(d).filter(k=>k.startsWith("om_history_")&&d[k]);
               const hasGait = !!(d.ag_antalgic||d.gait_pattern||d.g_rom_findings);
               const hasErgo = !!(d.ergo_total_score||d.ergo_cervical_risk);
