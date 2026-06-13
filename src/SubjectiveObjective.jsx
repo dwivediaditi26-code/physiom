@@ -4349,54 +4349,105 @@ function SubjectiveModule({ data, set, onNav }) {
         </div>
       </div>
 
-      {/* ── Summary modal ── */}
+      {/* ── Summary modal — shows filled values as readable text ── */}
       {showSummary && (()=>{
-        const sectionList = Object.entries(sections).map(([key, sec]) => {
-          const scoreable = sec.fields.filter(f=>f.type!=="textarea"&&!["_notes","_detail","_findings"].some(sx=>f.id.endsWith(sx)));
-          const filled = sec.fields.filter(f=>data[f.id]&&data[f.id]!=="").length;
-          const skipped = scoreable.length - scoreable.filter(f=>data[f.id]&&data[f.id]!=="").length;
-          return { key, label:sec.label, icon:sec.icon||"📋", filled, skipped, isRedFlag:key==="red_flags" };
-        });
-        const rfSec = sectionList.find(s2=>s2.isRedFlag);
-        const hasBlocker = rfSec && rfSec.skipped > 0;
+        const SEP = "|";
+        const v = (k) => data[k]||"";
+        const arr = (k) => v(k)?v(k).split(SEP).filter(Boolean):[];
+        const hasAny = (keys) => keys.some(k=>v(k));
+
+        // Build readable summary rows from actual filled data
+        const rows = [];
+
+        // Demographics
+        const dem = [data.dem_name, data.dem_age&&`${data.dem_age}${data.dem_sex?` ${data.dem_sex}`:""}`, data.dem_occupation].filter(Boolean).join(" · ");
+        if(dem) rows.push({label:"Patient",val:dem,col:"#534AB7"});
+
+        // Chief complaint
+        if(v("cc_main")) rows.push({label:"Complaint",val:v("cc_main"),col:"#dc2626"});
+        const pain=[v("cc_vas_now")&&`Pain now ${v("cc_vas_now")}/10`,v("cc_vas_worst")&&`Worst ${v("cc_vas_worst")}/10`].filter(Boolean).join(" · ");
+        if(pain) rows.push({label:"Pain score",val:pain,col:"#dc2626"});
+
+        // Onset & duration
+        const onset=[v("cc_onset_date")||v("cx_onset_date"),v("cc_duration"),v("cc_mechanism")||v("cc_mech_type")].filter(Boolean).join(" · ");
+        if(onset) rows.push({label:"Onset",val:onset,col:"#d97706"});
+
+        // Location
+        const loc=Object.entries(data).filter(([k,val])=>k.endsWith("_loc")||k.endsWith("_location")).map(([,val])=>val).filter(Boolean).join("; ");
+        if(loc) rows.push({label:"Location",val:loc,col:"#7c3aed"});
+
+        // Aggravating — collect all *_agg* fields
+        const aggKeys=Object.keys(data).filter(k=>k.includes("_agg")&&data[k]);
+        const aggVals=[...new Set(aggKeys.flatMap(k=>arr(k)))].filter(v2=>v2&&v2.length>2).slice(0,6).join(", ");
+        if(aggVals) rows.push({label:"Aggravating",val:aggVals,col:"#dc2626"});
+
+        // Relieving
+        const relKeys=Object.keys(data).filter(k=>k.includes("_rel")&&data[k]);
+        const relVals=[...new Set(relKeys.flatMap(k=>arr(k)))].filter(v2=>v2&&v2.length>2).slice(0,5).join(", ");
+        if(relVals) rows.push({label:"Relieving",val:relVals,col:"#059669"});
+
+        // Symptom pattern / 24hr
+        const patKeys=["cc_24hr","cx_24hr","lx_24hr","kn_24hr","hp_24hr","sh_24hr","af_24hr"];
+        const pat=patKeys.map(k=>v(k)).filter(Boolean)[0];
+        if(pat) rows.push({label:"24-hr pattern",val:pat,col:"#7c3aed"});
+
+        const trajKeys=["cx_trajectory","lx_trajectory","kn_trajectory","hp_trajectory","sh_trajectory"];
+        const traj=trajKeys.map(k=>v(k)).filter(Boolean)[0];
+        if(traj) rows.push({label:"Trajectory",val:traj,col:"#7c3aed"});
+
+        // Radiation
+        const radKeys=Object.keys(data).filter(k=>k.includes("radiation")||k.includes("_rad")&&data[k]);
+        const radVals=[...new Set(radKeys.flatMap(k=>arr(k)))].filter(v2=>v2&&v2.length>2&&!v2.toLowerCase().includes("no rad")).slice(0,4).join(", ");
+        if(radVals) rows.push({label:"Radiation",val:radVals,col:"#f97316"});
+
+        // Red flags
+        const rfAction=v("grf_action");
+        if(rfAction) rows.push({label:"Red flags",val:rfAction,col:rfAction.includes("No red flags")?"#059669":"#dc2626"});
+
+        // Goals
+        const goals=[v("ar_goal_function"),v("ar_goal_pain"),v("ar_goal_return"),v("sub_goals")].filter(Boolean).slice(0,2).join("; ");
+        if(goals) rows.push({label:"Goals",val:goals,col:"#059669"});
+
+        // PMH
+        const pmh=arr("pmh_conditions").filter(v2=>!v2.includes("No significant")).slice(0,3).join(", ");
+        if(pmh) rows.push({label:"Past history",val:pmh,col:"#6b7280"});
+
+        // Medications
+        const meds=arr("med_current").filter(v2=>!v2.includes("None")).slice(0,3).join(", ");
+        if(meds) rows.push({label:"Medications",val:meds,col:"#6b7280"});
+
+        const rfSec=Object.entries(sections).find(([k])=>k==="red_flags");
+        const rfSkipped=rfSec?rfSec[1].fields.filter(f=>!data[f.id]||data[f.id]==="").length:0;
+        const hasBlocker=rfSkipped>0;
+
         return(
           <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
             onClick={()=>setShowSummary(false)}>
-            <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,background:PC.surface,borderRadius:"16px 16px 0 0",padding:"20px 16px 32px",maxHeight:"80vh",overflowY:"auto"}}>
+            <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,background:PC.surface,borderRadius:"16px 16px 0 0",padding:"20px 16px 28px",maxHeight:"82vh",overflowY:"auto"}}>
               <div style={{width:40,height:4,borderRadius:99,background:PC.border,margin:"0 auto 16px"}}/>
-              <div style={{fontSize:15,fontWeight:800,color:PC.text,marginBottom:14}}>📋 Assessment summary</div>
-              <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:14}}>
-                {sectionList.map((sec2)=>{
-                  const isOk=sec2.filled>0&&sec2.skipped===0;
-                  const isPartial=sec2.filled>0&&sec2.skipped>0;
-                  const col=isOk?PC.green:isPartial?"#d97706":"#dc2626";
-                  const bg=isOk?"#ECFDF5":isPartial?"#FEF3C7":"#FEF2F2";
-                  return(
-                    <div key={sec2.key} onClick={()=>{setShowSummary(false);setActiveSection(sec2.key);}}
-                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                        padding:"9px 12px",background:PC.s2,borderRadius:9,cursor:"pointer",
-                        border:`1px solid ${sec2.isRedFlag&&sec2.skipped>0?"#FCA5A5":PC.border}`}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <span style={{fontSize:13}}>{sec2.icon}</span>
-                        <span style={{fontSize:12.5,fontWeight:600,color:PC.text}}>{sec2.label}</span>
-                      </div>
-                      <span style={{padding:"2px 10px",borderRadius:99,fontSize:10.5,fontWeight:800,background:bg,color:col}}>
-                        {isOk?"✓ Done":isPartial?`⚠ ${sec2.skipped} skipped`:"○ Not started"}
-                      </span>
+              <div style={{fontSize:15,fontWeight:800,color:PC.text,marginBottom:14}}>What you've documented</div>
+              {rows.length===0?(
+                <div style={{textAlign:"center",padding:"24px 0",color:PC.muted,fontSize:13}}>Nothing filled yet — complete the assessment sections first.</div>
+              ):(
+                <div style={{display:"flex",flexDirection:"column",gap:0,marginBottom:14,borderRadius:12,overflow:"hidden",border:`1px solid ${PC.border}`}}>
+                  {rows.map((r,i)=>(
+                    <div key={i} style={{display:"flex",gap:10,padding:"10px 14px",background:i%2===0?PC.s2:PC.surface,borderBottom:i<rows.length-1?`1px solid ${PC.border}`:"none",alignItems:"flex-start"}}>
+                      <span style={{fontSize:11,fontWeight:700,color:r.col,minWidth:86,flexShrink:0,paddingTop:1,textTransform:"uppercase",letterSpacing:"0.4px"}}>{r.label}</span>
+                      <span style={{fontSize:12.5,color:PC.text,lineHeight:1.55,flex:1}}>{r.val}</span>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
               {hasBlocker&&(
                 <div style={{padding:"10px 12px",background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:10,marginBottom:12}}>
-                  <div style={{fontSize:11.5,fontWeight:800,color:"#A32D2D",marginBottom:3}}>⚠ Complete red flag screen before analysis</div>
-                  <div style={{fontSize:10.5,color:"#991B1B"}}>{rfSec.skipped} question{rfSec.skipped>1?"s":""} unanswered — tap the row above to go there</div>
+                  <div style={{fontSize:11.5,fontWeight:800,color:"#A32D2D",marginBottom:2}}>⚠ Red flag screen incomplete</div>
+                  <div style={{fontSize:10.5,color:"#991B1B"}}>Complete before running the clinical engine</div>
                 </div>
               )}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 <button onClick={()=>setShowSummary(false)}
                   style={{padding:"11px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
-                  Edit answers
+                  Continue editing
                 </button>
                 <button onClick={()=>{setShowSummary(false);runInterpretation();}}
                   disabled={selectedRegions.length===0}
