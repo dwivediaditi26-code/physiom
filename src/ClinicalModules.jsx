@@ -5301,7 +5301,7 @@ const REGION_TEMPLATE_MAP = {
 };
 
 // ─── QUICK TEMPLATES PANEL ────────────────────────────────────────────────────
-function QuickTemplatesPanel({ applyTemplate }) {
+function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx }) {
   const [openRegion,     setOpenRegion]     = useState(null);
   const [openKnee,       setOpenKnee]       = useState(null);
   const [openKneeTx,     setOpenKneeTx]     = useState(null);
@@ -5353,7 +5353,7 @@ function QuickTemplatesPanel({ applyTemplate }) {
                 </div>
                 <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                   {(REGION_TEMPLATE_MAP[openRegion] || []).map(key => (
-                    <button key={key} onClick={() => applyTemplate(key)}
+                    <button key={key} onClick={() => appendTemplate ? appendTemplate(key) : applyTemplate(key)}
                       style={{ padding:"6px 14px", borderRadius:8, fontSize:"0.65rem", fontWeight:700,
                         background:"rgba(0,229,255,0.08)", border:"1px solid rgba(0,229,255,0.25)",
                         color:"#00e5ff", cursor:"pointer" }}>
@@ -5547,6 +5547,22 @@ function ExercisePrescriptionModule({ data, set }) {
   const _hepSession = () => (Array.isArray(data?.tx_sessions)?data.tx_sessions.length:0)+1;
   const _hepLog = (change) => { if(!set) return; const log=Array.isArray(data?.hep_log)?data.hep_log:[]; set("hep_log",[{session:_hepSession(),date:new Date().toLocaleDateString("en-GB"),changes:[change],version:parseInt(data?.hep_version)||1},...log]); };
   const addEx = (ex) => { if(programme.find(p=>p.id===ex.id)) return; syncProgramme([...programme,{...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:"",addedSession:_hepSession(),addedDate:new Date().toISOString()}]); _hepLog(`＋ ${ex.name}`); };
+
+  // Append exercises from PROGRAMME_TEMPLATES (does not replace existing programme)
+  const appendFromTemplate = (key) => {
+    const t=PROGRAMME_TEMPLATES[key]; if(!t) return;
+    const exs=t.exercises.map(id=>ALL_EXERCISES.find(e=>e.id===id)).filter(Boolean).filter(e=>!programme.find(p=>p.id===e.id));
+    if(!exs.length) return;
+    syncProgramme([...programme,...exs.map(ex=>({...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:"",addedDate:new Date().toISOString()}))]);
+    _hepLog(`＋ ${t.label} template (${exs.length} ex${exs.length!==1?"s":""})`);
+  };
+
+  // Add treatment text (manual/machine) — stored in data.tx_quick for display
+  const addTxChip = (chip) => {
+    if(!set) return;
+    const cur=String(data?.tx_quick||"");
+    if(!cur.includes(chip)) set("tx_quick",cur?(cur+", "+chip):chip);
+  };
   const removeEx = (id) => { const ex=programme.find(e=>e.id===id); syncProgramme(programme.filter(e=>e.id!==id)); if(ex) _hepLog(`− ${ex.name}`); };
   const updateEx = (id,field,val) => syncProgramme(programme.map(e=>e.id===id?{...e,[field]:val}:e));
   const applyTemplate = (key) => { const t=PROGRAMME_TEMPLATES[key]; const exs=t.exercises.map(id=>ALL_EXERCISES.find(e=>e.id===id)).filter(Boolean); syncProgramme(exs.map(ex=>({...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:""}))); };
@@ -5577,7 +5593,67 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
   return(
     <div>
       {/* ── QUICK TEMPLATES + KNEE PROTOCOLS ── */}
-      <QuickTemplatesPanel applyTemplate={applyTemplate} />
+      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} />
+
+      {/* ── PROGRAMME_TEMPLATES — add by condition ── */}
+      {(()=>{
+        const [tOpen,setTOpen]=React.useState(false);
+        const [tSearch,setTSearch]=React.useState("");
+        const [openTpl,setOpenTpl]=React.useState(null);
+        const filtered=Object.entries(PROGRAMME_TEMPLATES).filter(([k,t])=>!tSearch||t.label.toLowerCase().includes(tSearch.toLowerCase()));
+        return(
+          <div style={{background:"#ffffff",border:"1px solid #d8cce8",borderRadius:12,marginBottom:10,overflow:"hidden"}}>
+            <div onClick={()=>setTOpen(o=>!o)} style={{padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontSize:"0.72rem",fontWeight:800,color:"#7c3aed"}}>📦 Add from Protocol Templates <span style={{fontSize:"0.58rem",fontWeight:500,color:"#7e6a9a"}}>({Object.keys(PROGRAMME_TEMPLATES).length} conditions)</span></div>
+              <span style={{color:"#7e6a9a",fontSize:"0.75rem"}}>{tOpen?"▲":"▼"}</span>
+            </div>
+            {tOpen&&(
+              <div style={{borderTop:"1px solid #d8cce8",padding:"10px 14px 14px"}}>
+                <input value={tSearch} onChange={e=>setTSearch(e.target.value)} placeholder="Search condition… hip OA, ACL, frozen shoulder" style={{width:"100%",padding:"7px 10px",borderRadius:8,border:"1px solid #d8cce8",marginBottom:10,fontSize:"0.72rem",fontFamily:"inherit",outline:"none",background:"#f5f0fb",color:"#1a1025"}}/>
+                {filtered.map(([key,t])=>{
+                  const tx=TEMPLATE_TX[key];
+                  const isOpen=openTpl===key;
+                  const added=t.exercises.filter(id=>programme.find(p=>p.id===id)).length;
+                  return(
+                    <div key={key} style={{marginBottom:4}}>
+                      <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 11px",borderRadius:9,cursor:"pointer",background:isOpen?"rgba(124,58,237,0.06)":"#f9f7ff",border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#d8cce8"}`}}>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:"0.72rem",fontWeight:700,color:"#1a1025"}}>{t.label}</div>
+                          <div style={{fontSize:"0.58rem",color:"#7e6a9a"}}>{t.exercises.length} exercises{added>0?` · ${added} already added`:""}{tx?` · ${(tx.manual||[]).length} manual · ${(tx.machine||[]).length} machine`:""}</div>
+                        </div>
+                        <span style={{fontSize:"0.65rem",color:"#7c3aed",fontWeight:800}}>{isOpen?"▲":"▼"}</span>
+                      </div>
+                      {isOpen&&(
+                        <div style={{padding:"9px 11px",border:"1px dashed rgba(124,58,237,0.3)",borderTop:"none",borderRadius:"0 0 9px 9px",background:"rgba(124,58,237,0.04)"}}>
+                          <button onClick={()=>{appendFromTemplate(key);setOpenTpl(null);}} style={{width:"100%",padding:"9px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7c3aed,#9333ea)",color:"#fff",fontWeight:800,fontSize:"0.7rem",cursor:"pointer",marginBottom:8}}>
+                            ＋ Add {t.exercises.filter(id=>!programme.find(p=>p.id===id)).length} new exercises to programme
+                          </button>
+                          {tx&&(tx.manual||[]).length>0&&(
+                            <div style={{marginBottom:6}}>
+                              <div style={{fontSize:"0.55rem",fontWeight:800,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🤲 Manual therapy — tap to note</div>
+                              <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                {tx.manual.map(m=><button key={m} onClick={()=>addTxChip(m)} style={{padding:"3px 9px",borderRadius:99,border:"1px solid rgba(124,58,237,0.3)",background:"transparent",color:"#7c3aed",fontWeight:700,fontSize:"0.6rem",cursor:"pointer"}}>{m}</button>)}
+                              </div>
+                            </div>
+                          )}
+                          {tx&&(tx.machine||[]).length>0&&(
+                            <div>
+                              <div style={{fontSize:"0.55rem",fontWeight:800,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>⚡ Machine / modality — tap to note</div>
+                              <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                {tx.machine.map(m=><button key={m} onClick={()=>addTxChip(m)} style={{padding:"3px 9px",borderRadius:99,border:"1px solid rgba(0,229,255,0.3)",background:"transparent",color:"#00c97a",fontWeight:700,fontSize:"0.6rem",cursor:"pointer"}}>{m}</button>)}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Region tabs */}
       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>

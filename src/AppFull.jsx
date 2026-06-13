@@ -16622,7 +16622,9 @@ function AppInner({ currentUser, onSignOut }) {
       {/* ── PATIENT PROFILE MODAL (from bar or dashboard) ── */}
       {profilePatient && !showPatientDb && (
         <PatientProfileModal
-          patient={profilePatient}
+          patient={profilePatient.id===activePatient?.id
+            ? {...profilePatient, data:{...profilePatient.data,...data}}
+            : profilePatient}
           onClose={()=>setProfilePatient(null)}
           onLoadAssessment={(p)=>{ selectPatient(p); setProfilePatient(null); }}
           onSaveField={(id,newData)=>{
