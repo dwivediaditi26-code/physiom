@@ -4100,6 +4100,7 @@ function SubjectiveModule({ data, set, onNav }) {
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
+  const [regionPickerOpen, setRegionPickerOpen] = useState(false);
 
   // ── Field update helpers ────────────────────────────────────────────
   const setField = useCallback((id, val) => set({ ...data, [id]: val }), [data, set]);
@@ -4300,54 +4301,73 @@ function SubjectiveModule({ data, set, onNav }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14, maxWidth:"100%" }}>
 
-      {/* ── Region selector ── */}
-      <div style={{ background: PC.surface, borderRadius:12, padding:"14px 16px", border:`1px solid ${PC.border}`, boxShadow:`0 1px 4px ${PC.border}` }}>
-        <div style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:PC.muted, marginBottom:10 }}>
-          Select Regions (max 3) — {selectedRegions.length} / 3
-        </div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-          {ALL_REGIONS_S.map(r => {
-            const on = selectedRegions.includes(r);
-            const col = RC_S[r] || PC.accent;
-            const disabled = !on && selectedRegions.length >= 3;
-            return (
-              <button key={r} type="button" onClick={() => !disabled && toggleRegion(r)}
-                style={{
-                  padding:"6px 11px", borderRadius:8, cursor: disabled ? "not-allowed" : "pointer",
-                  border:`1px solid ${on ? col : PC.border}`,
-                  background: on ? col+"15" : disabled ? PC.s2 : PC.s3,
-                  color: on ? col : disabled ? PC.border : PC.muted,
-                  fontSize:"0.68rem", fontWeight: on ? 700 : 500,
-                  opacity: disabled ? 0.45 : 1, transition:"all 120ms",
-                }}>
-                {on ? "✓ " : ""}{r}
+      {/* ── Region selector — collapsed summary row when regions selected ── */}
+      {selectedRegions.length === 0 || regionPickerOpen ? (
+        <div style={{ background: PC.surface, borderRadius:12, padding:"14px 16px", border:`1px solid ${PC.border}` }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+            <span style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:PC.muted }}>
+              Select Regions (max 3) — {selectedRegions.length} / 3
+            </span>
+            {regionPickerOpen && selectedRegions.length > 0 && (
+              <button onClick={() => setRegionPickerOpen(false)}
+                style={{ background:"transparent", border:"none", color:PC.accent, fontWeight:700, fontSize:"0.72rem", cursor:"pointer", fontFamily:"inherit" }}>
+                Done ✓
               </button>
-            );
-          })}
+            )}
+          </div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+            {ALL_REGIONS_S.map(r => {
+              const on = selectedRegions.includes(r);
+              const col = RC_S[r] || PC.accent;
+              const disabled = !on && selectedRegions.length >= 3;
+              return (
+                <button key={r} type="button"
+                  onClick={() => { if (!disabled) { toggleRegion(r); } }}
+                  style={{
+                    padding:"7px 12px", borderRadius:8, cursor: disabled ? "not-allowed" : "pointer",
+                    border:`1px solid ${on ? col : PC.border}`,
+                    background: on ? col+"15" : disabled ? PC.s2 : PC.s3,
+                    color: on ? col : disabled ? PC.border : PC.muted,
+                    fontSize:"0.72rem", fontWeight: on ? 700 : 500,
+                    opacity: disabled ? 0.45 : 1, transition:"all 120ms",
+                  }}>
+                  {on ? "✓ " : ""}{r}
+                </button>
+              );
+            })}
+          </div>
         </div>
-        {selectedRegions.length > 0 && (
-          <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
+      ) : (
+        /* Collapsed summary row */
+        <div style={{ background: PC.surface, borderRadius:10, padding:"8px 12px", border:`1px solid ${PC.border}`,
+          display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
             {selectedRegions.map(r => (
               <span key={r} style={{
-                fontSize:"0.65rem", fontWeight:700, padding:"3px 10px", borderRadius:99,
-                background:(RC_S[r]||PC.accent)+"15", color: RC_S[r]||PC.accent,
-                border:`1px solid ${(RC_S[r]||PC.accent)}33`,
+                fontSize:"0.72rem", fontWeight:700, padding:"4px 10px", borderRadius:99,
+                background:(RC_S[r]||PC.accent)+"18", color: RC_S[r]||PC.accent,
+                border:`1px solid ${(RC_S[r]||PC.accent)}44`,
               }}>📍 {r}</span>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* ── Progress bar ── */}
-      <div style={{ background: PC.surface, borderRadius:10, padding:"10px 14px", border:`1px solid ${PC.border}` }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-          <span style={{ fontSize:"0.68rem", color: PC.muted }}>{totalD} / {totalF} clinical fields</span>
-          <span style={{ fontSize:"0.85rem", fontWeight:800, color: PC.accent }}>{pct}%</span>
+          <button onClick={() => setRegionPickerOpen(true)}
+            style={{ background:"transparent", border:`1px solid ${PC.border}`, borderRadius:7,
+              color:PC.accent, fontWeight:700, fontSize:"0.68rem", cursor:"pointer",
+              padding:"4px 9px", fontFamily:"inherit", flexShrink:0, marginLeft:8 }}>
+            + edit
+          </button>
         </div>
-        <div style={{ height:5, background: PC.s3, borderRadius:99, overflow:"hidden" }}>
+      )}
+
+      {/* ── Progress bar — inline slim strip ── */}
+      <div style={{ display:"flex", alignItems:"center", gap:8, padding:"0 2px" }}>
+        <div style={{ flex:1, height:5, background: PC.s3, borderRadius:99, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", borderRadius:99, transition:"width 300ms",
             background:`linear-gradient(90deg, ${PC.accent}, ${PC.green})` }} />
         </div>
+        <span style={{ fontSize:"0.72rem", fontWeight:700, color: PC.accent, whiteSpace:"nowrap" }}>
+          {pct}% · {totalD}/{totalF}
+        </span>
       </div>
 
       {/* ── Summary modal — shows filled values as readable text ── */}
@@ -4464,30 +4484,6 @@ function SubjectiveModule({ data, set, onNav }) {
         );
       })()}
 
-      {/* ── Generate button — opens summary first ── */}
-      <button type="button" onClick={()=>setShowSummary(true)}
-        disabled={selectedRegions.length === 0}
-        style={{
-          width:"100%", padding:"11px 16px", borderRadius:10, border:"none",
-          background: selectedRegions.length > 0
-            ? `linear-gradient(135deg, ${PC.accent}, ${PC.a2})`
-            : PC.s3,
-          color: selectedRegions.length > 0 ? "#fff" : PC.muted,
-          fontWeight:800, fontSize:"0.85rem",
-          cursor: selectedRegions.length > 0 ? "pointer" : "not-allowed",
-          boxShadow: selectedRegions.length > 0 ? `0 4px 14px ${PC.accent}33` : "none",
-          fontFamily:"inherit", display:"flex", alignItems:"center",
-          justifyContent:"center", gap:8,
-        }}>
-        🧠 Review &amp; Run Analysis
-        {selectedRegions.length > 0 && (
-          <span style={{ fontSize:"0.65rem", background:"rgba(255,255,255,0.2)",
-            padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
-            {selectedRegions.length} region{selectedRegions.length>1?"s":""}
-          </span>
-        )}
-      </button>
-
       {/* ── Tabs ── */}
       <div style={{ display:"flex", borderBottom:`1px solid ${PC.border}`, gap:0 }}>
         {[["form","📝 Assessment"],["results","🧠 Interpretation"]].map(([t, label]) => (
@@ -4513,35 +4509,93 @@ function SubjectiveModule({ data, set, onNav }) {
       ════════════════════════════════════════════════════ */}
       {activeTab === "form" && (
         <>
-          {/* Section nav */}
-          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:4 }}>
-            {Object.entries(sections).map(([key, s]) => {
-              const filled = countFilled(key);
-              const isAct = key === activeSection;
-              const col = s.color || PC.accent;
-              return (
-                <button key={key} type="button" onClick={() => { setActiveSection(key); setSearchTerm(""); }}
-                  style={{
-                    padding:"6px 10px", borderRadius:8, whiteSpace:"nowrap", cursor:"pointer",
-                    border:`1px solid ${isAct ? col : PC.border}`,
-                    background: isAct ? col+"15" : PC.s2,
-                    color: isAct ? col : PC.muted,
-                    fontSize:"0.65rem", fontWeight: isAct ? 700 : 500,
-                    display:"flex", alignItems:"center", gap:5, flexShrink:0,
-                    transition:"all 120ms",
-                  }}>
-                  <span>{s.icon}</span>
-                  <span>{s.label}</span>
-                  {filled > 0 && (
-                    <span style={{ background: isAct ? col : PC.muted, color:"#fff",
-                      fontSize:"0.58rem", padding:"1px 5px", borderRadius:99, fontWeight:700 }}>
-                      {filled}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {/* Section nav — grouped by region */}
+          {(() => {
+            // Build groups: core universal keys, then one group per selected region, then trailing universal
+            const CORE_KEYS = ["demographics","complaint"];
+            const TRAILING_KEYS = ["goals","history","red_flags","pmh","lifestyle","paediatric","hypermobility"];
+            const SLEEP_KEYS = ["sleep","sleep_pattern","sleep_impact"];
+            const SPORT_KEYS = ["sport","sport_load","sport_return"];
+            const BPS_KEYS = ["bps","bps_social","bps_psycho"];
+
+            const allKeys = Object.keys(sections);
+
+            // Region keys per selected region
+            const regionGroups = selectedRegions.map(r => {
+              const mod = REG_MOD_S[r];
+              if (!mod) return { label: r, col: RC_S[r]||PC.accent, keys: [] };
+              return {
+                label: r,
+                col: RC_S[r] || PC.accent,
+                keys: Object.keys(mod.sections).filter(k => allKeys.includes(k)),
+              };
+            });
+
+            // Gather remaining keys that don't fit above buckets
+            const knownKeys = new Set([
+              ...CORE_KEYS,
+              ...regionGroups.flatMap(g => g.keys),
+              ...TRAILING_KEYS, ...SLEEP_KEYS, ...SPORT_KEYS, ...BPS_KEYS,
+            ]);
+            const trailingPresent = allKeys.filter(k => TRAILING_KEYS.includes(k));
+            const sleepPresent = allKeys.filter(k => SLEEP_KEYS.includes(k));
+            const sportPresent = allKeys.filter(k => SPORT_KEYS.includes(k));
+            const bpsPresent = allKeys.filter(k => BPS_KEYS.includes(k));
+            const extraPresent = allKeys.filter(k => !knownKeys.has(k));
+
+            const groups = [
+              { label:"Core", col: PC.accent, keys: CORE_KEYS.filter(k => allKeys.includes(k)) },
+              ...regionGroups,
+              ...(trailingPresent.length ? [{ label:"General", col:"#6b7280", keys: trailingPresent }] : []),
+              ...(sleepPresent.length ? [{ label:"Sleep", col:"#7c3aed", keys: sleepPresent }] : []),
+              ...(sportPresent.length ? [{ label:"Sport", col:"#16a34a", keys: sportPresent }] : []),
+              ...(bpsPresent.length ? [{ label:"Psychosocial", col:"#d97706", keys: bpsPresent }] : []),
+              ...(extraPresent.length ? [{ label:"Other", col: PC.muted, keys: extraPresent }] : []),
+            ].filter(g => g.keys.length > 0);
+
+            return (
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                {groups.map(group => (
+                  <div key={group.label}>
+                    <div style={{ fontSize:"0.6rem", fontWeight:700, textTransform:"uppercase",
+                      letterSpacing:"0.7px", color:group.col, marginBottom:4, paddingLeft:2 }}>
+                      {group.label}
+                    </div>
+                    <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                      {group.keys.map(key => {
+                        const s = sections[key]; if (!s) return null;
+                        const filled = countFilled(key);
+                        const isAct = key === activeSection;
+                        const col = group.col;
+                        return (
+                          <button key={key} type="button"
+                            onClick={() => { setActiveSection(key); setSearchTerm(""); }}
+                            style={{
+                              padding:"5px 10px", borderRadius:7, whiteSpace:"nowrap", cursor:"pointer",
+                              border:`1px solid ${isAct ? col : PC.border}`,
+                              background: isAct ? col+"18" : PC.s2,
+                              color: isAct ? col : PC.muted,
+                              fontSize:"0.68rem", fontWeight: isAct ? 700 : 500,
+                              display:"flex", alignItems:"center", gap:4, flexShrink:0,
+                              transition:"all 120ms",
+                            }}>
+                            <span>{s.icon}</span>
+                            <span>{s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}</span>
+                            {filled > 0 && (
+                              <span style={{ background: isAct ? col : PC.muted, color:"#fff",
+                                fontSize:"0.56rem", padding:"1px 5px", borderRadius:99, fontWeight:700 }}>
+                                {filled}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
 
           {/* No region selected prompt */}
           {selectedRegions.length === 0 && !["demographics","complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
@@ -4597,6 +4651,29 @@ function SubjectiveModule({ data, set, onNav }) {
             </div>
           )}
 
+          {/* ── Run Analysis — bottom of form ── */}
+          <button type="button" onClick={()=>setShowSummary(true)}
+            disabled={selectedRegions.length === 0}
+            style={{
+              width:"100%", padding:"12px 16px", borderRadius:10, border:"none",
+              background: selectedRegions.length > 0
+                ? `linear-gradient(135deg, ${PC.accent}, ${PC.a2})`
+                : PC.s3,
+              color: selectedRegions.length > 0 ? "#fff" : PC.muted,
+              fontWeight:800, fontSize:"0.85rem",
+              cursor: selectedRegions.length > 0 ? "pointer" : "not-allowed",
+              boxShadow: selectedRegions.length > 0 ? `0 4px 14px ${PC.accent}33` : "none",
+              fontFamily:"inherit", display:"flex", alignItems:"center",
+              justifyContent:"center", gap:8, marginTop:4,
+            }}>
+            🧠 Review &amp; Run Analysis
+            {selectedRegions.length > 0 && (
+              <span style={{ fontSize:"0.65rem", background:"rgba(255,255,255,0.2)",
+                padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
+                {selectedRegions.length} region{selectedRegions.length>1?"s":""}
+              </span>
+            )}
+          </button>
         </>
       )}
 
