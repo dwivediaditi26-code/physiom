@@ -4606,50 +4606,104 @@ function SubjectiveModule({ data, set, onNav }) {
           )}
 
           {/* Active section card */}
-          {sec && (
-            <div style={{ background: PC.surface, borderRadius:12, padding:"16px 18px",
-              border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44` }}>
+          {sec && (() => {
+            const sectionKeys = Object.keys(sections);
+            const curIdx = sectionKeys.indexOf(activeSection);
+            const prevKey = curIdx > 0 ? sectionKeys[curIdx - 1] : null;
+            const nextKey = curIdx < sectionKeys.length - 1 ? sectionKeys[curIdx + 1] : null;
+            const prevSec = prevKey ? sections[prevKey] : null;
+            const nextSec = nextKey ? sections[nextKey] : null;
+            const goTo = (key) => { setActiveSection(key); setSearchTerm(""); window.scrollTo&&window.scrollTo({top:0,behavior:"smooth"}); };
+            return (
+              <div style={{ background: PC.surface, borderRadius:12,
+                border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44`, overflow:"hidden" }}>
 
-              {/* Section header */}
-              <div style={{ marginBottom:12 }}>
-                <div style={{ fontSize:"0.95rem", fontWeight:800, color: secColor }}>
-                  {sec.icon} {sec.label}
-                </div>
-                {sec.description && (
-                  <div style={{ fontSize:"0.68rem", color: PC.muted, marginTop:3, fontStyle:"italic",
-                    borderLeft:`2px solid ${secColor}44`, paddingLeft:8 }}>
-                    {sec.description}
+                {/* Section header */}
+                <div style={{ padding:"14px 18px 10px", borderBottom:`1px solid ${PC.border}` }}>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <div style={{ fontSize:"0.95rem", fontWeight:800, color: secColor }}>
+                      {sec.icon} {sec.label}
+                    </div>
+                    <span style={{ fontSize:"0.6rem", color: PC.muted, fontWeight:500 }}>
+                      {curIdx + 1} / {sectionKeys.length}
+                    </span>
                   </div>
-                )}
-              </div>
-
-              {/* Search (multicheck sections only) */}
-              {sec.fields.some(f => f.type === "multicheck") && (
-                <input type="text" value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  placeholder="🔎 Filter options..."
-                  style={{ width:"100%", padding:"7px 11px", marginBottom:12,
-                    background: PC.s2, border:`1px solid ${PC.inputBorder}`,
-                    borderRadius:8, fontSize:"0.72rem", color: PC.text,
-                    outline:"none", boxSizing:"border-box" }} />
-              )}
-
-              {/* Fields */}
-              {sec.fields.map(field => (
-                <div key={field.id} style={{ marginBottom:14 }}>
-                  <label style={{ display:"block", fontSize:"0.72rem", fontWeight:600,
-                    color: PC.text, marginBottom:5, letterSpacing:0.2 }}>
-                    {field.label}
-                    {field.type === "textarea" && (
-                      <span style={{ fontSize:"0.6rem", color: PC.muted, fontWeight:400,
-                        marginLeft:6, fontStyle:"italic" }}>notes</span>
-                    )}
-                  </label>
-                  {renderField(field)}
+                  {sec.description && (
+                    <div style={{ fontSize:"0.68rem", color: PC.muted, marginTop:4, fontStyle:"italic",
+                      borderLeft:`2px solid ${secColor}44`, paddingLeft:8 }}>
+                      {sec.description}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
+
+                {/* Fields */}
+                <div style={{ padding:"14px 18px" }}>
+                  {/* Search (multicheck sections only) */}
+                  {sec.fields.some(f => f.type === "multicheck") && (
+                    <input type="text" value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      placeholder="🔎 Filter options..."
+                      style={{ width:"100%", padding:"7px 11px", marginBottom:12,
+                        background: PC.s2, border:`1px solid ${PC.inputBorder}`,
+                        borderRadius:8, fontSize:"0.72rem", color: PC.text,
+                        outline:"none", boxSizing:"border-box" }} />
+                  )}
+
+                  {sec.fields.map(field => (
+                    <div key={field.id} style={{ marginBottom:14 }}>
+                      <label style={{ display:"block", fontSize:"0.72rem", fontWeight:600,
+                        color: PC.text, marginBottom:5, letterSpacing:0.2 }}>
+                        {field.label}
+                        {field.type === "textarea" && (
+                          <span style={{ fontSize:"0.6rem", color: PC.muted, fontWeight:400,
+                            marginLeft:6, fontStyle:"italic" }}>notes</span>
+                        )}
+                      </label>
+                      {renderField(field)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Prev / Next row */}
+                <div style={{ display:"flex", borderTop:`1px solid ${PC.border}` }}>
+                  <button type="button"
+                    onClick={() => prevKey && goTo(prevKey)}
+                    disabled={!prevKey}
+                    style={{
+                      flex:1, padding:"11px 12px", background:"transparent", border:"none",
+                      borderRight:`1px solid ${PC.border}`,
+                      color: prevKey ? PC.muted : PC.border,
+                      fontSize:"0.72rem", fontWeight:500, cursor: prevKey ? "pointer" : "default",
+                      fontFamily:"inherit", textAlign:"left", display:"flex", alignItems:"center", gap:6,
+                    }}>
+                    {prevKey && <span style={{ fontSize:"0.85rem" }}>←</span>}
+                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {prevSec ? `${prevSec.icon} ${prevSec.label}` : ""}
+                    </span>
+                  </button>
+                  <button type="button"
+                    onClick={() => nextKey && goTo(nextKey)}
+                    disabled={!nextKey}
+                    style={{
+                      flex:1, padding:"11px 12px",
+                      background: nextKey ? secColor+"10" : "transparent",
+                      border:"none",
+                      color: nextKey ? secColor : PC.border,
+                      fontSize:"0.72rem", fontWeight: nextKey ? 700 : 500,
+                      cursor: nextKey ? "pointer" : "default",
+                      fontFamily:"inherit", textAlign:"right", display:"flex",
+                      alignItems:"center", justifyContent:"flex-end", gap:6,
+                    }}>
+                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {nextSec ? `${nextSec.icon} ${nextSec.label}` : "All done ✓"}
+                    </span>
+                    {nextKey && <span style={{ fontSize:"0.85rem" }}>→</span>}
+                  </button>
+                </div>
+
+              </div>
+            );
+          })()}
 
           {/* ── Run Analysis — bottom of form ── */}
           <button type="button" onClick={()=>setShowSummary(true)}
