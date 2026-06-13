@@ -12257,59 +12257,50 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
             {/* ── PAIN MAP — from BodyChartPro (body_chart_pro) ── */}
             {(()=>{
-              let entries=[];
-              try{ const cp=JSON.parse(d.body_chart_pro||"{}"); entries=Array.isArray(cp.entries)?cp.entries:[]; }catch{}
-              // also check legacy body_chart
+              let entries=[],arrows=[];
+              try{const cp=JSON.parse(d.body_chart_pro||"{}");entries=Array.isArray(cp.entries)?cp.entries:[];arrows=Array.isArray(cp.arrows)?cp.arrows:[];}catch{}
               const legacyMarkers=Array.isArray(d.body_chart)?d.body_chart:[];
               const SYM_COLOR={pain:"#ef4444",tingling:"#eab308",numbness:"#8b5cf6",burning:"#f97316",stiffness:"#3b82f6",weakness:"#22c55e",radiation:"#ec4899",swelling:"#06b6d4"};
               const SYM_BG={pain:"#FEF2F2",tingling:"#FEFCE8",numbness:"#F5F3FF",burning:"#FFF7ED",stiffness:"#EFF6FF",weakness:"#F0FDF4",radiation:"#FDF2F8",swelling:"#ECFEFF"};
               const SYM_TEXT={pain:"#991B1B",tingling:"#92400E",numbness:"#5B21B6",burning:"#9A3412",stiffness:"#1E40AF",weakness:"#166534",radiation:"#9D174D",swelling:"#164E63"};
               if(entries.length===0&&legacyMarkers.length===0) return null;
-              // Build pills from body_chart_pro entries
-              const pills=entries.flatMap(e=>{
-                const regionLabel=e.regionId?.replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()).replace(/^Ant |^Post |^Left Lat |^Right Lat /,"").trim();
-                return (e.symptoms||[]).map(sym=>({label:`${regionLabel} — ${sym}`,sym,intensity:e.intensity}));
-              });
-              // Legacy pills
-              const legPills=legacyMarkers.map(m=>({label:`${(m.region||"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase())} — ${m.type||"pain"}`,sym:m.type||"pain",intensity:null}));
-              const allPills=[...pills,...legPills].slice(0,6);
+              const pills=entries.flatMap(e=>{const rl=(e.regionId||"").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase()).replace(/^Ant |^Post |^Left Lat |^Right Lat /,"").trim();return(e.symptoms||[]).map(sym=>({label:`${rl} — ${sym}`,sym,intensity:e.intensity}));});
+              const legPills=legacyMarkers.map(m=>({label:`${(m.region||"").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())} — ${m.type||"pain"}`,sym:m.type||"pain",intensity:null}));
+              const allPills=[...pills,...legPills].slice(0,8);
+              const BODY_IMG="https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/body-chart-4view";
+              const getXY=(rid)=>{
+                let cx2=16,cy2=40;
+                if(rid.startsWith("left_lat")) cx2=40; else if(rid.startsWith("right_lat")) cx2=60; else if(rid.startsWith("posterior")) cx2=82; else cx2=16;
+                if(rid.includes("head")) cy2=5; else if(rid.includes("neck")) cy2=13; else if(rid.includes("shoulder")) cy2=20; else if(rid.includes("chest")||rid.includes("upper_back")) cy2=25; else if(rid.includes("arm")&&!rid.includes("forearm")) cy2=30; else if(rid.includes("mid_back")||rid.includes("lateral_thoracic")) cy2=30; else if(rid.includes("elbow")) cy2=36; else if(rid.includes("forearm")) cy2=42; else if(rid.includes("low_back")||rid.includes("abdomen")) cy2=40; else if(rid.includes("wrist")) cy2=48; else if(rid.includes("hand")) cy2=54; else if(rid.includes("hip")||rid.includes("gluteal")||rid.includes("groin")||rid.includes("si_joint")||rid.includes("sacrum")) cy2=50; else if(rid.includes("thigh")||rid.includes("hamstring")) cy2=60; else if(rid.includes("knee")) cy2=68; else if(rid.includes("lower_leg")||rid.includes("calf")) cy2=78; else if(rid.includes("ankle")) cy2=88; else if(rid.includes("foot")) cy2=95;
+                return {cx2,cy2};
+              };
               return(
                 <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px 10px"}}>
                     <span style={{fontSize:13,fontWeight:800,color:C.text}}>🗺️ Pain map</span>
                     <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11.5,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
                   </div>
-                  <div style={{display:"flex",gap:0,borderTop:`1px solid ${C.border}`}}>
-                    {/* Mini silhouette */}
-                    <div style={{width:80,flexShrink:0,background:"#F9F7FF",display:"flex",alignItems:"center",justifyContent:"center",padding:"10px 6px"}}>
-                      <svg width="44" height="76" viewBox="0 0 44 76" fill="none">
-                        <ellipse cx="22" cy="6" rx="7" ry="7" fill="#D3D1C7"/>
-                        <rect x="15" y="14" width="14" height="22" rx="4" fill="#D3D1C7"/>
-                        <rect x="3" y="15" width="10" height="20" rx="3" fill="#D3D1C7"/>
-                        <rect x="31" y="15" width="10" height="20" rx="3" fill="#D3D1C7"/>
-                        <rect x="15" y="37" width="6" height="22" rx="3" fill="#D3D1C7"/>
-                        <rect x="23" y="37" width="6" height="22" rx="3" fill="#D3D1C7"/>
-                        <rect x="14" y="60" width="7" height="14" rx="3" fill="#D3D1C7"/>
-                        <rect x="23" y="60" width="7" height="14" rx="3" fill="#D3D1C7"/>
-                        {entries.slice(0,5).map((e,idx)=>{
+                  <div style={{borderTop:`1px solid ${C.border}`}}>
+                    <div style={{position:"relative",width:"100%",background:"#000",cursor:"pointer"}}
+                      onClick={()=>onNav&&onNav("subjective")}>
+                      <img src={BODY_IMG} alt="Body chart" style={{width:"100%",display:"block",opacity:0.92}}
+                        onError={e=>e.target.style.display="none"}/>
+                      <svg viewBox="0 0 100 100" preserveAspectRatio="none"
+                        style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}>
+                        <defs><marker id="pf-arr" markerWidth="5" markerHeight="4" refX="3" refY="2" orient="auto"><path d="M0,0 L5,2 L0,4 Z" fill="#ec4899" opacity="0.8"/></marker></defs>
+                        {arrows.map((a,i2)=>(<line key={i2} x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} stroke="#ec4899" strokeWidth="0.5" strokeDasharray="1.5,1" opacity="0.8" markerEnd="url(#pf-arr)"/>))}
+                        {entries.map((e,i2)=>{
                           const col=SYM_COLOR[e.symptoms?.[0]]||"#ef4444";
-                          const cx2=10+idx*6, cy2=20+idx*10;
-                          return <circle key={idx} cx={cx2} cy={cy2} r="4.5" fill={col} opacity="0.85"/>;
+                          const {cx2,cy2}=getXY(e.regionId||"");
+                          return(<g key={i2}><circle cx={cx2} cy={cy2} r="1.8" fill={col} opacity="0.95"/><circle cx={cx2} cy={cy2} r="3.2" fill={col} opacity="0.2"/>{e.symptoms&&e.symptoms.length>1&&<text x={cx2+2.2} y={cy2-2} fontSize="1.5" fontWeight="bold" fill="#fff">+{e.symptoms.length-1}</text>}</g>);
                         })}
-                        {legacyMarkers.slice(0,5).map((m,idx)=>{
-                          const col=SYM_COLOR[m.type]||"#ef4444";
-                          return <circle key={"l"+idx} cx={12+idx*5} cy={22+idx*9} r="4" fill={col} opacity="0.8"/>;
-                        })}
+                        {legacyMarkers.map((m,i2)=>{const col=SYM_COLOR[m.type]||"#ef4444";const cx2=m.x!=null?m.x:16,cy2=m.y!=null?m.y:40;return <circle key={"l"+i2} cx={cx2} cy={cy2} r="1.8" fill={col} opacity="0.9"/>;})}
                       </svg>
+                      <div style={{position:"absolute",bottom:6,right:8,fontSize:9,color:"rgba(255,255,255,0.6)"}}>Tap to edit</div>
                     </div>
-                    <div style={{flex:1,padding:"10px 12px",borderLeft:`1px solid ${C.border}`}}>
+                    <div style={{padding:"10px 12px"}}>
                       <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8}}>
-                        {allPills.map((p,i2)=>(
-                          <span key={i2} style={{padding:"3px 10px",borderRadius:99,fontSize:11,fontWeight:700,
-                            background:SYM_BG[p.sym]||"#F9FAFB",color:SYM_TEXT[p.sym]||C.muted}}>
-                            {p.label}{p.intensity?` · ${p.intensity}/10`:""}
-                          </span>
-                        ))}
+                        {allPills.map((p2,i2)=>(<span key={i2} style={{padding:"3px 10px",borderRadius:99,fontSize:11,fontWeight:700,background:SYM_BG[p2.sym]||"#F9FAFB",color:SYM_TEXT[p2.sym]||C.muted}}>{p2.label}{p2.intensity?` · ${p2.intensity}/10`:""}</span>))}
                       </div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
                         <div style={{background:"#F9F7FF",borderRadius:9,padding:"7px 10px",textAlign:"center"}}>

@@ -274,7 +274,11 @@ function SymptomPanel({ region, entry, onSave, onClose }) {
       display:"flex", flexDirection:"column", zIndex:50,
       boxShadow:"-4px 0 20px rgba(0,0,0,0.12)", borderRadius:"0 12px 12px 0",
       fontFamily:"system-ui,sans-serif"
-    }}>
+    }}
+    onClick={e=>e.stopPropagation()}
+    onTouchStart={e=>e.stopPropagation()}
+    onTouchEnd={e=>e.stopPropagation()}
+    onTouchMove={e=>e.stopPropagation()}>
       {/* Header */}
       <div style={{padding:"14px 16px", borderBottom:"1px solid #f0f0f0",
         background:`linear-gradient(135deg,${primaryColor}15,${primaryColor}05)`}}>
@@ -298,7 +302,7 @@ function SymptomPanel({ region, entry, onSave, onClose }) {
             {SYMPTOM_TYPES.map(s => {
               const selected = symptoms.includes(s.id);
               return (
-                <button key={s.id} onClick={() => toggleSymptom(s.id)}
+                <button key={s.id} onClick={(e)=>{e.stopPropagation();toggleSymptom(s.id);}} onTouchEnd={(e)=>e.stopPropagation()}
                   style={{padding:"7px 8px", borderRadius:8, cursor:"pointer", textAlign:"left",
                     border:`1.5px solid ${selected ? s.color : "#e5e7eb"}`,
                     background: selected ? s.bg : "#fafafa",
