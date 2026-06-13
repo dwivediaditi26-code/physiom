@@ -12253,81 +12253,150 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
             ASSESSMENT TAB
         ════════════════════════════════════════ */}
         {tab==="subjective" && (
-          <div className="tab-content" style={{padding:"16px 16px"}}>
-            {/* Body chart */}
-            {Array.isArray(d.body_chart)&&d.body_chart.length>0&&(
-              <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>🗺️ Pain Location</div>
-                <BodyChartInteractive data={d} set={()=>{}} compact={true}/>
-              </div>
-            )}
-            {/* Subjective history */}
-            <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+          <div className="tab-content" style={{padding:"16px",display:"flex",flexDirection:"column",gap:10}}>
+
+            {/* ── PAIN MAP — from BodyChartPro (body_chart_pro) ── */}
+            {(()=>{
+              let entries=[];
+              try{ const cp=JSON.parse(d.body_chart_pro||"{}"); entries=Array.isArray(cp.entries)?cp.entries:[]; }catch{}
+              // also check legacy body_chart
+              const legacyMarkers=Array.isArray(d.body_chart)?d.body_chart:[];
+              const SYM_COLOR={pain:"#ef4444",tingling:"#eab308",numbness:"#8b5cf6",burning:"#f97316",stiffness:"#3b82f6",weakness:"#22c55e",radiation:"#ec4899",swelling:"#06b6d4"};
+              const SYM_BG={pain:"#FEF2F2",tingling:"#FEFCE8",numbness:"#F5F3FF",burning:"#FFF7ED",stiffness:"#EFF6FF",weakness:"#F0FDF4",radiation:"#FDF2F8",swelling:"#ECFEFF"};
+              const SYM_TEXT={pain:"#991B1B",tingling:"#92400E",numbness:"#5B21B6",burning:"#9A3412",stiffness:"#1E40AF",weakness:"#166534",radiation:"#9D174D",swelling:"#164E63"};
+              if(entries.length===0&&legacyMarkers.length===0) return null;
+              // Build pills from body_chart_pro entries
+              const pills=entries.flatMap(e=>{
+                const regionLabel=e.regionId?.replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()).replace(/^Ant |^Post |^Left Lat |^Right Lat /,"").trim();
+                return (e.symptoms||[]).map(sym=>({label:`${regionLabel} — ${sym}`,sym,intensity:e.intensity}));
+              });
+              // Legacy pills
+              const legPills=legacyMarkers.map(m=>({label:`${(m.region||"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase())} — ${m.type||"pain"}`,sym:m.type||"pain",intensity:null}));
+              const allPills=[...pills,...legPills].slice(0,6);
+              return(
+                <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px 10px"}}>
+                    <span style={{fontSize:13,fontWeight:800,color:C.text}}>🗺️ Pain map</span>
+                    <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11.5,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
+                  </div>
+                  <div style={{display:"flex",gap:0,borderTop:`1px solid ${C.border}`}}>
+                    {/* Mini silhouette */}
+                    <div style={{width:80,flexShrink:0,background:"#F9F7FF",display:"flex",alignItems:"center",justifyContent:"center",padding:"10px 6px"}}>
+                      <svg width="44" height="76" viewBox="0 0 44 76" fill="none">
+                        <ellipse cx="22" cy="6" rx="7" ry="7" fill="#D3D1C7"/>
+                        <rect x="15" y="14" width="14" height="22" rx="4" fill="#D3D1C7"/>
+                        <rect x="3" y="15" width="10" height="20" rx="3" fill="#D3D1C7"/>
+                        <rect x="31" y="15" width="10" height="20" rx="3" fill="#D3D1C7"/>
+                        <rect x="15" y="37" width="6" height="22" rx="3" fill="#D3D1C7"/>
+                        <rect x="23" y="37" width="6" height="22" rx="3" fill="#D3D1C7"/>
+                        <rect x="14" y="60" width="7" height="14" rx="3" fill="#D3D1C7"/>
+                        <rect x="23" y="60" width="7" height="14" rx="3" fill="#D3D1C7"/>
+                        {entries.slice(0,5).map((e,idx)=>{
+                          const col=SYM_COLOR[e.symptoms?.[0]]||"#ef4444";
+                          const cx2=10+idx*6, cy2=20+idx*10;
+                          return <circle key={idx} cx={cx2} cy={cy2} r="4.5" fill={col} opacity="0.85"/>;
+                        })}
+                        {legacyMarkers.slice(0,5).map((m,idx)=>{
+                          const col=SYM_COLOR[m.type]||"#ef4444";
+                          return <circle key={"l"+idx} cx={12+idx*5} cy={22+idx*9} r="4" fill={col} opacity="0.8"/>;
+                        })}
+                      </svg>
+                    </div>
+                    <div style={{flex:1,padding:"10px 12px",borderLeft:`1px solid ${C.border}`}}>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8}}>
+                        {allPills.map((p,i2)=>(
+                          <span key={i2} style={{padding:"3px 10px",borderRadius:99,fontSize:11,fontWeight:700,
+                            background:SYM_BG[p.sym]||"#F9FAFB",color:SYM_TEXT[p.sym]||C.muted}}>
+                            {p.label}{p.intensity?` · ${p.intensity}/10`:""}
+                          </span>
+                        ))}
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                        <div style={{background:"#F9F7FF",borderRadius:9,padding:"7px 10px",textAlign:"center"}}>
+                          <div style={{fontSize:9.5,color:C.muted,marginBottom:2}}>Pain now</div>
+                          <div style={{fontSize:20,fontWeight:900,lineHeight:1,color:parseFloat(d.cc_vas_now)>=7?"#dc2626":parseFloat(d.cc_vas_now)>=4?C.orange:C.green}}>{d.cc_vas_now||"—"}<span style={{fontSize:10,color:C.muted,fontWeight:400}}>/10</span></div>
+                        </div>
+                        <div style={{background:"#F9F7FF",borderRadius:9,padding:"7px 10px",textAlign:"center"}}>
+                          <div style={{fontSize:9.5,color:C.muted,marginBottom:2}}>Worst</div>
+                          <div style={{fontSize:20,fontWeight:900,lineHeight:1,color:"#dc2626"}}>{d.cc_vas_worst||d.pa_vas_worst||"—"}<span style={{fontSize:10,color:C.muted,fontWeight:400}}>/10</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── CLINICAL HISTORY ── */}
+            <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,padding:"12px 14px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <span style={{fontSize:12,fontWeight:800,color:C.text}}>Subjective History</span>
-                <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
+                <span style={{fontSize:13,fontWeight:800,color:C.text}}>📋 Clinical history</span>
+                <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11.5,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
               </div>
               {[
-                {label:"Chief Complaint", val:chiefComplaint||"Not recorded", highlight:!chiefComplaint},
-                {label:"Pain Now / Worst", val:`${nrsNow||"—"} / ${d.cc_vas_worst||d.pa_vas_worst||"—"} out of 10`},
-                {label:"Mechanism / Onset", val:onset||"Not recorded"},
-                {label:"Aggravating", val:agg||"Not recorded"},
-                {label:"Easing", val:(d.cc_rel||(Array.isArray(d.cx_rel_mov)?d.cx_rel_mov.slice(0,2).join(", "):"")||d.rel_factors||"Not recorded")},
-                {label:"24hr Behaviour", val:(Array.isArray(d.cc_behaviour)?d.cc_behaviour.slice(0,2).join(", "):(d.cc_behaviour||d.sb_morning||"Not recorded"))},
-                {label:"Patient Goals", val:[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||"Not recorded"},
-                {label:"Medications", val:d.meds_current||d.medications||"None recorded"},
-                {label:"Past History", val:d.phx_conditions||d.sub_past_history||"Not recorded"},
-              ].map((row,i,arr)=>(
-                <div key={i} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none"}}>
-                  <div style={{fontSize:10.5,color:C.muted,fontWeight:600,minWidth:90,flexShrink:0,paddingTop:1}}>{row.label}</div>
-                  <div style={{fontSize:12,color:row.highlight?"#9CA3AF":C.text,fontWeight:row.highlight?400:600,lineHeight:1.4,flex:1}}>{row.val}</div>
+                {l:"Chief complaint", v:d.cc_main||d.cc_dx||"", nav:true},
+                {l:"Onset", v:[d.cc_onset_date||d.cx_onset_date||(Array.isArray(d.cc_onset)?d.cc_onset[0]:d.cc_onset),d.cc_mechanism||d.cc_mech_type].filter(Boolean).join(" · ")},
+                {l:"Duration", v:d.cc_duration||""},
+                {l:"Aggravating", v:[d.cc_agg,(Array.isArray(d.cx_agg_mov)?d.cx_agg_mov.join(", "):d.cx_agg_mov)].filter(Boolean).join("; "), col:"#A32D2D", bg:"#FEF2F2"},
+                {l:"Easing", v:[d.cc_rel,(Array.isArray(d.cx_rel_mov)?d.cx_rel_mov.join(", "):d.cx_rel_mov)].filter(Boolean).join("; "), col:"#085041", bg:"#ECFDF5"},
+                {l:"24-hr pattern", v:d.cc_24hr||d.cc_behaviour||""},
+                {l:"Goals", v:[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||""},
+                {l:"Past history", v:d.phx_conditions||d.sub_past_history||d.hx_past||""},
+                {l:"Medications", v:d.med_current||d.sub_medications||""},
+                {l:"Red flags", v:d.cc_red_flags||d.cx_rf_review||"", col:"#A32D2D", bg:"#FEF2F2"},
+              ].filter(row=>row.v).map((row,i2)=>(
+                <div key={i2} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:i2<9?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
+                  <span style={{fontSize:11.5,color:C.muted,minWidth:100,flexShrink:0,paddingTop:1}}>{row.l}</span>
+                  <span style={{fontSize:12,fontWeight:500,color:row.col||C.text,background:row.bg,borderRadius:row.bg?99:0,padding:row.bg?"2px 8px":0,lineHeight:1.5}}>
+                    {row.v}
+                  </span>
                 </div>
               ))}
             </div>
-            {/* SOAP Subjective (from signed note or live extra) */}
-            {(d.soap_s||d.soap_subjective||d.subjective||d.soap_extra_s)&&(
-              <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",marginBottom:10}}>
+
+            {/* ── SOAP SUBJECTIVE ── */}
+            {(d.soap_s||d.soap_extra_s)&&(
+              <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,padding:"12px 14px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <span style={{fontSize:12,fontWeight:800,color:C.text}}>S — Subjective (SOAP)</span>
-                  <span onClick={()=>onNav&&onNav("soap")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
+                  <span style={{fontSize:13,fontWeight:800,color:C.text}}>📝 SOAP — Subjective</span>
+                  <span onClick={()=>onNav&&onNav("soap")} style={{fontSize:11.5,color:C.primary,fontWeight:700,cursor:"pointer"}}>Open →</span>
                 </div>
-                <div style={{fontSize:12,color:C.text,lineHeight:1.6,whiteSpace:"pre-wrap"}}>
-                  {(d.soap_s||d.soap_subjective||d.subjective||d.soap_extra_s).slice(0,400)}
-                  {(d.soap_s||d.soap_subjective||d.subjective||d.soap_extra_s).length>400?"…":""}
+                <div style={{fontSize:12,color:C.text,lineHeight:1.7,whiteSpace:"pre-wrap",borderLeft:`3px solid ${C.primary}`,paddingLeft:10}}>
+                  {(d.soap_s||d.soap_extra_s||"").slice(0,400)}{(d.soap_s||d.soap_extra_s||"").length>400?"…":""}
                 </div>
               </div>
             )}
-            {/* Saved clinical interpretation from subjective module */}
-            {d.cx_insight&&(()=>{
-              try{
-                const insight=JSON.parse(d.cx_insight);
-                if(!insight) return null;
-                return(
-                  <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                      <span style={{fontSize:12,fontWeight:800,color:C.text}}>🧠 Clinical Interpretation</span>
-                      <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Review →</span>
+
+            {/* ── OBSERVATION (from obs_ fields) ── */}
+            {Object.keys(d).some(k=>k.startsWith("obs_")&&k!=="obs_snapshots"&&d[k])&&(
+              <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,padding:"12px 14px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <span style={{fontSize:13,fontWeight:800,color:C.text}}>👁️ Observation</span>
+                  <span onClick={()=>onNav&&onNav("observation")} style={{fontSize:11.5,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
+                </div>
+                {d.obs_summary&&<div style={{fontSize:12,color:C.text,lineHeight:1.65,marginBottom:8,fontStyle:"italic",borderLeft:`3px solid ${C.secondary}`,paddingLeft:10}}>{d.obs_summary}</div>}
+                <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                  {[
+                    d.obs_swelling_present==="Present"&&{l:"Swelling",v:`${d.obs_swelling_severity||""} ${d.obs_swelling_type||""}${d.obs_swelling_location?" · "+d.obs_swelling_location:""}`.trim(),col:"#A32D2D",bg:"#FEF2F2",bdr:"#E24B4A"},
+                    d.obs_muscle_bulk&&d.obs_muscle_bulk!=="Symmetrical"&&{l:"Muscle bulk",v:`${d.obs_muscle_bulk}${d.obs_muscle_location?" · "+d.obs_muscle_location:""}`,col:"#92400E",bg:"#FEF3C7",bdr:"#EF9F27"},
+                    d.obs_deformity&&d.obs_deformity!=="None"&&{l:"Deformity",v:`${d.obs_deformity}${d.obs_deformity_location?" · "+d.obs_deformity_location:""}`,col:"#A32D2D",bg:"#FEF2F2",bdr:"#E24B4A"},
+                    d.obs_skin&&d.obs_skin!=="Normal"&&{l:"Skin",v:`${d.obs_skin}${d.obs_skin_location?" · "+d.obs_skin_location:""}`,col:"#085041",bg:"#ECFDF5",bdr:"#1D9E75"},
+                    d.obs_posture_head&&d.obs_posture_head!=="Neutral"&&{l:"Head/neck",v:d.obs_posture_head,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_posture_shoulders&&d.obs_posture_shoulders!=="Symmetrical"&&{l:"Shoulders",v:d.obs_posture_shoulders,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_posture_lumbar&&d.obs_posture_lumbar!=="Normal"&&{l:"Lumbar",v:d.obs_posture_lumbar,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_assistive&&d.obs_assistive!=="None"&&{l:"Assistive device",v:d.obs_assistive,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                  ].filter(Boolean).map((r2,i2)=>(
+                    <div key={i2} style={{padding:"7px 10px",background:r2.bg,borderLeft:`3px solid ${r2.bdr}`,borderRadius:"0 8px 8px 0"}}>
+                      <span style={{fontSize:10.5,fontWeight:700,color:r2.col,marginRight:6}}>{r2.l}</span>
+                      <span style={{fontSize:12,color:r2.col}}>{r2.v}</span>
                     </div>
-                    {insight.primaryDx&&(
-                      <div style={{padding:"8px 10px",background:C.primaryBg,borderLeft:`3px solid ${C.primary}`,borderRadius:8,marginBottom:6}}>
-                        <div style={{fontSize:9,color:C.primary,fontWeight:800,marginBottom:2}}>PRIMARY DIAGNOSIS</div>
-                        <div style={{fontSize:12,fontWeight:700,color:C.text}}>{insight.primaryDx?.label||insight.primaryDx}</div>
-                        {insight.primaryDx?.icd10&&<div style={{fontSize:10,color:C.muted}}>{insight.primaryDx.icd10}</div>}
-                      </div>
-                    )}
-                    {insight.nextSteps&&insight.nextSteps.length>0&&(
-                      <div style={{padding:"8px 10px",background:"#F0FDF4",borderLeft:"3px solid #059669",borderRadius:8}}>
-                        <div style={{fontSize:9,color:"#059669",fontWeight:800,marginBottom:4}}>SUGGESTED NEXT STEPS</div>
-                        {insight.nextSteps.slice(0,3).map((s,i)=>(
-                          <div key={i} style={{fontSize:11,color:C.text,marginBottom:2}}>• {s?.label||s}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              }catch{return null;}
-            })()}
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+        )}
+
         )}
         {tab==="assessment" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
