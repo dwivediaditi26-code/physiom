@@ -253,11 +253,12 @@ function ptsToSVG(pts) {
 }
 
 // ─── SYMPTOM PANEL ────────────────────────────────────────────────────────────
-function SymptomPanel({ region, entry, onSave, onClose }) {
+function SymptomPanel({ region, entry, onSave, onClose, regions, existingArrows }) {
   const [symptoms, setSymptoms] = useState(entry?.symptoms || []);
   const [intensity, setIntensity] = useState(entry?.intensity || 5);
   const [notes, setNotes] = useState(entry?.notes || "");
   const [radiation, setRadiation] = useState(entry?.radiation || false);
+  const [radiatesTo, setRadiatesTo] = useState(entry?.radiatesTo || "");
 
   const toggleSymptom = (id) => {
     setSymptoms(p => p.includes(id) ? p.filter(s => s !== id) : [...p, id]);
@@ -333,14 +334,39 @@ function SymptomPanel({ region, entry, onSave, onClose }) {
 
         {/* Radiation */}
         <div style={{marginBottom:14}}>
-          <label style={{display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
+          <label style={{display:"flex", alignItems:"center", gap:8, cursor:"pointer", marginBottom: radiation ? 8 : 0}}>
             <input type="checkbox" checked={radiation}
-              onChange={e => setRadiation(e.target.checked)}
-              style={{accentColor: primaryColor, width:15, height:15}}/>
-            <span style={{fontSize:"0.78rem", fontWeight:600, color:"#374151"}}>
+              onChange={e => { setRadiation(e.target.checked); if (!e.target.checked) setRadiatesTo(""); }}
+              style={{accentColor:"#ec4899", width:18, height:18, flexShrink:0}}/>
+            <span style={{fontSize:"0.82rem", fontWeight:600, color:"#374151"}}>
               ⚡ Radiation / Referred pain
             </span>
           </label>
+          {radiation && (
+            <div style={{marginTop:6}}>
+              <div style={{fontSize:"0.65rem", fontWeight:700, color:"#6b7280",
+                textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6}}>
+                Radiates to
+              </div>
+              <select value={radiatesTo} onChange={e => setRadiatesTo(e.target.value)}
+                style={{width:"100%", padding:"10px 12px", borderRadius:9,
+                  border:"1.5px solid #ec4899", background:"#fff9fc",
+                  color:"#374151", fontSize:"0.88rem", fontFamily:"inherit",
+                  outline:"none", cursor:"pointer", appearance:"none",
+                  WebkitAppearance:"none"}}>
+                <option value="">— pick destination region —</option>
+                {(regions || [])
+                  .filter(r => r.id !== region.id)
+                  .sort((a,b) => a.label.localeCompare(b.label))
+                  .map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.label} ({r.view.replace("_"," ")})
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Notes */}
@@ -358,7 +384,7 @@ function SymptomPanel({ region, entry, onSave, onClose }) {
       {/* Footer */}
       <div style={{padding:"12px 16px", borderTop:"1px solid #f0f0f0",
         display:"flex", gap:8}}>
-        <button onClick={() => onSave({ regionId:region.id, symptoms, intensity, radiation, notes })}
+        <button onClick={() => onSave({ regionId:region.id, symptoms, intensity, radiation, radiatesTo, notes })}
           style={{flex:1, padding:"9px", borderRadius:8, background:primaryColor,
             color:"#fff", border:"none", fontWeight:700, fontSize:"0.78rem",
             cursor:"pointer"}}>
@@ -538,24 +564,28 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
 
   const handleRegionClick = useCallback((regionId, e) => {
     if (adminMode) return;
-    if (radiationMode) {
-      const svg = svgRef.current;
-      if (!svg) return;
-      const rect = svg.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      if (!radiationDraw) {
-        setRadiationDraw({ x1:x, y1:y });
-      } else {
-        setArrows(p => [...p, { ...radiationDraw, x2:x, y2:y, from:regionId }]);
-        setRadiationDraw(null);
-      }
-      return;
-    }
+    // radiation mode removed — arrows created via panel dropdown
     setActivePanel(regionId);
   }, [adminMode, radiationMode, radiationDraw]);
 
   const handleSave = (saved) => {
+    // Auto-draw radiation arrow if destination region selected
+    if (saved.radiation && saved.radiatesTo) {
+      const fromR = effectiveRegions.find(r => r.id === saved.regionId);
+      const toR   = effectiveRegions.find(r => r.id === saved.radiatesTo);
+      if (fromR && toR) {
+        const x1 = fromR.pts.reduce((s,p)=>s+p[0],0)/fromR.pts.length;
+        const y1 = fromR.pts.reduce((s,p)=>s+p[1],0)/fromR.pts.length;
+        const x2 = toR.pts.reduce((s,p)=>s+p[0],0)/toR.pts.length;
+        const y2 = toR.pts.reduce((s,p)=>s+p[1],0)/toR.pts.length;
+        setArrows(prev => {
+          const filtered = prev.filter(a => a.fromId !== saved.regionId);
+          return [...filtered, { x1, y1, x2, y2, fromId:saved.regionId, toId:saved.radiatesTo }];
+        });
+      }
+    } else if (!saved.radiation) {
+      setArrows(prev => prev.filter(a => a.fromId !== saved.regionId));
+    }
     // Store centroid so patient profile can render dots at exact positions
     const region = effectiveRegions.find(r => r.id === saved.regionId);
     let cx = 50, cy = 50;
@@ -630,24 +660,12 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
           ))}
         </div>
 
-        <button onClick={() => setRadiationMode(p => !p)}
-          style={{ padding:"5px 11px", borderRadius:8, border:`1.5px solid ${radiationMode?"#ec4899":"#e5e7eb"}`,
-            background:radiationMode?"rgba(236,72,153,0.12)":"transparent",
-            color:radiationMode?"#ec4899":"#6b7280",
-            fontWeight:700, fontSize:"0.7rem", cursor:"pointer" }}>
-          {radiationMode ? "⚡ Drawing…" : "⚡ Radiation"}
-        </button>
-        {radiationDraw && (
-          <span style={{ fontSize:"0.7rem", color:"#ec4899", fontWeight:600 }}>
-            Click end point →
-          </span>
-        )}
         {arrows.length > 0 && (
           <button onClick={() => setArrows([])}
-            style={{ padding:"4px 9px", borderRadius:7, border:"1px solid #fca5a5",
-              background:"#fef2f2", color:"#ef4444", fontSize:"0.65rem",
+            style={{ padding:"5px 11px", borderRadius:8, border:"1px solid #fca5a5",
+              background:"#fef2f2", color:"#ef4444", fontSize:"0.72rem",
               fontWeight:700, cursor:"pointer" }}>
-            Clear arrows
+            ✕ Clear radiation
           </button>
         )}
         <button onClick={() => setAdminMode(p => !p)}
@@ -804,11 +822,7 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
           {/* Radiation arrows */}
           <RadiationArrows arrows={arrows} />
 
-          {/* Radiation in-progress */}
-          {radiationDraw && (
-            <circle cx={radiationDraw.x1} cy={radiationDraw.y1} r="1"
-              fill="#ec4899" opacity="0.8"/>
-          )}
+
 
           {/* Admin overlay */}
           {adminMode && (
@@ -864,6 +878,8 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
             region={getRegion(activePanel)}
             entry={getEntry(activePanel)}
             onSave={handleSave}
+              regions={effectiveRegions}
+              existingArrows={arrows}
             onClose={() => setActivePanel(null)}
           />
         )}
