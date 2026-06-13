@@ -4099,6 +4099,7 @@ function SubjectiveModule({ data, set, onNav }) {
   const [showInsight, setShowInsight] = useState(true);
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSummary, setShowSummary] = useState(false);
 
   // ── Field update helpers ────────────────────────────────────────────
   const setField = useCallback((id, val) => set({ ...data, [id]: val }), [data, set]);
