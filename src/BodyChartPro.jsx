@@ -391,26 +391,37 @@ function AdminOverlay({ regions, onUpdate, svgRef }) {
     ];
   }, []);
 
+  const draggingRef = React.useRef(null);
+  const editedRef = React.useRef({});
+
   const handleMouseMove = useCallback((e) => {
-    if (!dragging) return;
+    const d = draggingRef.current;
+    if (!d) return;
     const coords = getSVGCoords(e);
     if (!coords) return;
     setEditedRegions(prev => {
-      const next = { ...prev };
-      const pts = next[dragging.regionId].map((p, i) =>
-        i === dragging.ptIdx ? coords : p
-      );
-      next[dragging.regionId] = pts;
+      const pts = prev[d.regionId].map((p2, i) => i === d.ptIdx ? coords : p2);
+      const next = { ...prev, [d.regionId]: pts };
+      editedRef.current = next;
       return next;
     });
-  }, [dragging, getSVGCoords]);
+  }, [getSVGCoords]);
 
   const handleMouseUp = useCallback(() => {
-    if (dragging) {
-      onUpdate(dragging.regionId, editedRegions[dragging.regionId]);
+    const d = draggingRef.current;
+    if (d) {
+      const cur = editedRef.current;
+      onUpdate(d.regionId, cur[d.regionId] || []);
+      draggingRef.current = null;
       setDragging(null);
     }
-  }, [dragging, editedRegions, onUpdate]);
+  }, [onUpdate]);
+
+  useEffect(() => {
+    window._adminDragHandler = handleMouseMove;
+    window._adminUpHandler = handleMouseUp;
+    return () => { delete window._adminDragHandler; delete window._adminUpHandler; };
+  }, [handleMouseMove, handleMouseUp]);
 
   const addPoint = (regionId, afterIdx) => {
     setEditedRegions(prev => {
@@ -453,14 +464,16 @@ function AdminOverlay({ regions, onUpdate, svgRef }) {
             />
             {isSel && pts.map(([x, y], i) => (
               <g key={i}>
-                <circle cx={x} cy={y} r="0.8" fill="#7c3aed" stroke="#fff" strokeWidth="0.25"
+                <circle cx={x} cy={y} r="2" fill="#7c3aed" stroke="#fff" strokeWidth="0.4"
                   style={{cursor:"grab"}}
-                  onMouseDown={e => { e.stopPropagation(); setDragging({regionId:r.id, ptIdx:i}); }}
-                  onTouchStart={e => { e.stopPropagation(); setDragging({regionId:r.id, ptIdx:i}); }}
+                  onMouseDown={e => { e.preventDefault(); e.stopPropagation(); const d={regionId:r.id,ptIdx:i}; draggingRef.current=d; setDragging(d); }}
+                  onTouchStart={e => { e.preventDefault(); e.stopPropagation(); const d={regionId:r.id,ptIdx:i}; draggingRef.current=d; setDragging(d); }}
+                  onDoubleClick={e => { e.stopPropagation(); removePoint(r.id,i); }}
+                  onClick={e => { e.stopPropagation(); if(e.altKey) removePoint(r.id,i); }}
                 />
-                <circle cx={x} cy={y} r="1.5" fill="transparent"
-                  onDoubleClick={() => removePoint(r.id, i)}
-                  onClick={e => { e.stopPropagation(); if(e.altKey) removePoint(r.id, i); }}
+                <circle cx={x} cy={y} r="3" fill="transparent" style={{cursor:"grab"}}
+                  onMouseDown={e => { e.preventDefault(); e.stopPropagation(); const d={regionId:r.id,ptIdx:i}; draggingRef.current=d; setDragging(d); }}
+                  onTouchStart={e => { e.preventDefault(); e.stopPropagation(); const d={regionId:r.id,ptIdx:i}; draggingRef.current=d; setDragging(d); }}
                 />
               </g>
             ))}
@@ -685,6 +698,10 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
           preserveAspectRatio="none"
           style={{ position:"absolute", inset:0, width:"100%", height:"100%",
             cursor: radiationMode ? "crosshair" : "default" }}
+          onMouseMove={e=>window._adminDragHandler&&window._adminDragHandler(e)}
+          onMouseUp={()=>window._adminUpHandler&&window._adminUpHandler()}
+          onTouchMove={e=>window._adminDragHandler&&window._adminDragHandler(e)}
+          onTouchEnd={()=>window._adminUpHandler&&window._adminUpHandler()}
         >
           {/* Region polygons */}
           {effectiveRegions.map(r => {
