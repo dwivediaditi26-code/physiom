@@ -12692,6 +12692,28 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   )}
 
                   {/* ── STTT ── */}
+                  {nktKeys.length>0&&(()=>{
+                    const nktRows=nktKeys.map(k=>({k,label:k.replace("nkt_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase()),val:d[k]}));
+                    nktRows.sort((a,b)=>{const aw=a.val&&(a.val.includes("Inhibited")||a.val.includes("Weak"))?0:1;const bw=b.val&&(b.val.includes("Inhibited")||b.val.includes("Weak"))?0:1;return aw-bw;});
+                    const CpaPill=({v2})=>{if(!v2)return<span style={{fontSize:11,color:"#D1D5DB"}}>—</span>;const abn=v2.includes("Inhibited")||v2.includes("Weak");return<span style={{padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:abn?"#FEF3C7":"#ECFDF5",color:abn?"#92400E":C.green}}>{v2.split(" — ")[0].slice(0,16)}</span>;};
+                    return(
+                      <Sec icon="🧠" title="CPA — Compensation Pattern Analysis" navKey="nkt" hasData={true}>
+                        <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 130px",gap:4,padding:"4px 8px 6px",borderBottom:`1px solid ${C.border}`}}>
+                            <div style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px"}}>Muscle</div>
+                            <div style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px"}}>Status</div>
+                          </div>
+                          {nktRows.slice(0,8).map((r,i2)=>(
+                            <div key={r.k} style={{display:"grid",gridTemplateColumns:"1fr 130px",gap:4,padding:"7px 8px",background:i2%2===0?"#F9FAFB":"#fff",borderRadius:6,alignItems:"center"}}>
+                              <div style={{fontSize:12.5,fontWeight:700,color:C.text}}>{r.label}</div>
+                              <CpaPill v2={r.val}/>
+                            </div>
+                          ))}
+                          {nktRows.length>8&&<div style={{fontSize:10.5,color:C.muted,padding:"4px 8px"}}>+{nktRows.length-8} more</div>}
+                        </div>
+                      </Sec>
+                    );
+                  })()}
                   {cyKeys.length>0&&(
                     <Sec icon="🦴" title="STTT / Orthopaedic" navKey="cyriax_full" hasData={true}>
                       {(()=>{
