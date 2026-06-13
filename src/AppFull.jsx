@@ -9,7 +9,7 @@ import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection,
   PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
 import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule, LiveSOAPPanel,
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
-  buildClinicalInterpretation, Sparkline, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./ClinicalModules.jsx";
+  buildClinicalInterpretation, Sparkline, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX, ObservationModule } from "./ClinicalModules.jsx";
 import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
@@ -16979,6 +16979,8 @@ function AppInner({ currentUser, onSignOut }) {
                 <PalpationModule data={data} set={set}/>
               ):tests==="POSTURE_DEFECT_MODULE"?(
                 <PostureDefectModule/>
+              ):tests==="OBSERVATION_MODULE"?(
+                <ObservationModule data={data} set={set}/>
               ):tests==="CYRIAX_MODULE"?(
                 <CyriaxModule data={data} set={set} navContext={active==="cyriax"?navContext:{}}/>
               ):tests==="SPECIAL_TESTS_MODULE"?(

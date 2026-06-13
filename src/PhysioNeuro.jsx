@@ -9,8 +9,8 @@ const ALL_TESTS = {
   subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
   palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
   posture:{ label:"Posture Analysis", icon:"🧍", desc:"AI Postural Analysis", groups:{}},
-  observation:{ label:"Observation", icon:"👁️", desc:"Posture Defect Observation", groups:{
-    "Posture Defect Assessment":"POSTURE_DEFECT_MODULE",
+  observation:{ label:"Observation", icon:"👁️", desc:"Visual Inspection — Magee's", groups:{
+    "Clinical Observation":"OBSERVATION_MODULE",
   }},
   rom:{ label:"ROM", icon:"📐", desc:"Range of Motion", groups:{ "Full ROM Assessment":"ROM_MODULE" }},
   mmt:{ label:"Muscle MMT", icon:"💪", groups:{ "Full MMT Assessment":"MMT_MODULE" }},

@@ -7559,4 +7559,286 @@ ${soap.P}` : "";
 
 export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP,
   SOAPNoteModule, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX, ExercisePrescriptionModule, PalpationModule,
-  TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel };
+  TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel, ObservationModule };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OBSERVATION MODULE — Magee's Orthopedic Physical Assessment (Inspection Only)
+// ═══════════════════════════════════════════════════════════════════════════════
+const OBS_BODY_REGIONS = [
+  {id:"all",    label:"General"},
+  {id:"cx",     label:"Cervical"},
+  {id:"sh",     label:"Shoulder"},
+  {id:"el",     label:"Elbow"},
+  {id:"wh",     label:"Wrist/Hand"},
+  {id:"th",     label:"Thoracic"},
+  {id:"lx",     label:"Lumbar"},
+  {id:"hp",     label:"Hip"},
+  {id:"kn",     label:"Knee"},
+  {id:"af",     label:"Ankle/Foot"},
+];
+
+// Priority fields shown first per region
+const OBS_REGION_PRIORITY = {
+  cx:  ["posture_head","posture_shoulders"],
+  sh:  ["posture_shoulders","posture_scapula","muscle_bulk","deformity","skin"],
+  el:  ["deformity","skin","swelling"],
+  wh:  ["deformity","skin","swelling"],
+  th:  ["posture_thoracic","posture_scapula","deformity"],
+  lx:  ["posture_lumbar","posture_pelvis","deformity"],
+  hp:  ["posture_pelvis","muscle_bulk","deformity","gait"],
+  kn:  ["swelling","muscle_bulk","posture_lower","deformity","skin"],
+  af:  ["posture_feet","swelling","deformity","skin"],
+};
+
+function ObservationModule({ data, set }) {
+  const PC = typeof getC === "function" ? getC() : {
+    surface:"#fff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
+    accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#1a1025",
+    muted:"#7e6a9a", red:"#dc2626", yellow:"#b45309", green:"#059669",
+  };
+
+  const [region, setRegion] = React.useState("all");
+  const [open, setOpen] = React.useState({general:true});
+  const [showHistory, setShowHistory] = React.useState(false);
+
+  const toggle = (k) => setOpen(o => ({...o, [k]: !o[k]}));
+  const v = (k) => data[k] || "";
+  const sv = (k, val) => set && set(k, val);
+
+  // Multi-chip toggle: stored as comma-separated string
+  const chips = (k) => v(k) ? v(k).split(",").map(s=>s.trim()).filter(Boolean) : [];
+  const toggleChip = (k, chip) => {
+    const cur = chips(k);
+    sv(k, cur.includes(chip) ? cur.filter(c=>c!==chip).join(", ") : [...cur, chip].join(", "));
+  };
+
+  const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,
+    color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.78rem",
+    marginTop:4,resize:"vertical",minHeight:60};
+
+  const ChipRow = ({k, options, multi=true}) => (
+    <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:6}}>
+      {options.map(opt => {
+        const active = multi ? chips(k).includes(opt) : v(k)===opt;
+        return (
+          <button key={opt} onClick={()=> multi ? toggleChip(k,opt) : sv(k, v(k)===opt?"":opt)}
+            style={{padding:"5px 12px",borderRadius:99,border:`1px solid ${active?PC.accent:PC.border}`,
+              background:active?`${PC.accent}18`:PC.s2,color:active?PC.accent:PC.muted,
+              fontWeight:active?800:500,fontSize:"0.68rem",cursor:"pointer",transition:"all 0.15s"}}>
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const Section = ({id, icon, title, children, priority}) => {
+    const isPriority = region!=="all" && (OBS_REGION_PRIORITY[region]||[]).includes(id);
+    const isOpen = open[id];
+    return (
+      <div style={{background:PC.surface,border:`1px solid ${isPriority?PC.accent+"55":PC.border}`,
+        borderRadius:12,marginBottom:8,overflow:"hidden",
+        boxShadow:isPriority?"0 0 0 2px rgba(124,58,237,0.1)":"none"}}>
+        <div onClick={()=>toggle(id)} style={{display:"flex",alignItems:"center",gap:10,
+          padding:"12px 14px",cursor:"pointer",
+          background:isOpen?`${PC.accent}06`:"transparent"}}>
+          <span style={{fontSize:"1rem"}}>{icon}</span>
+          <span style={{flex:1,fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{title}</span>
+          {isPriority&&<span style={{fontSize:"0.55rem",fontWeight:800,color:PC.accent,
+            padding:"2px 7px",borderRadius:99,background:`${PC.accent}15`,textTransform:"uppercase"}}>Priority</span>}
+          <span style={{color:PC.muted,fontSize:"0.7rem"}}>{isOpen?"▲":"▼"}</span>
+        </div>
+        {isOpen&&<div style={{padding:"0 14px 14px"}}>{children}</div>}
+      </div>
+    );
+  };
+
+  const Field = ({label, children}) => (
+    <div style={{marginBottom:12}}>
+      <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",
+        letterSpacing:"0.6px",marginBottom:2}}>{label}</div>
+      {children}
+    </div>
+  );
+
+  // Save snapshot (date-wise entry)
+  const saveSnapshot = () => {
+    const snaps = JSON.parse(v("obs_snapshots")||"[]");
+    const snap = {date:new Date().toLocaleDateString("en-GB"),
+      time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}),
+      savedAt:new Date().toISOString(),
+      summary:v("obs_summary"),
+      region,
+      fields:Object.fromEntries(Object.keys(data).filter(k=>k.startsWith("obs_")&&k!=="obs_snapshots").map(k=>[k,data[k]]))
+    };
+    sv("obs_snapshots", JSON.stringify([snap,...snaps.slice(0,9)]));
+    alert(`✅ Observation snapshot saved — ${snap.date} ${snap.time}`);
+  };
+
+  const snaps = JSON.parse(v("obs_snapshots")||"[]");
+
+  return (
+    <div>
+      {/* Body region selector */}
+      <div style={{display:"flex",gap:5,overflowX:"auto",padding:"0 0 10px",scrollbarWidth:"none"}}>
+        {OBS_BODY_REGIONS.map(r=>(
+          <button key={r.id} onClick={()=>setRegion(r.id)}
+            style={{flexShrink:0,padding:"6px 14px",borderRadius:99,fontWeight:region===r.id?800:500,
+              fontSize:"0.68rem",border:`1px solid ${region===r.id?PC.accent:PC.border}`,
+              background:region===r.id?`${PC.accent}18`:PC.s2,
+              color:region===r.id?PC.accent:PC.muted,cursor:"pointer"}}>
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Date / save row */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+        <span style={{fontSize:"0.65rem",color:PC.muted,flex:1}}>📅 {new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</span>
+        <button onClick={saveSnapshot} style={{padding:"6px 14px",borderRadius:99,border:"none",
+          background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,
+          fontSize:"0.65rem",cursor:"pointer"}}>💾 Save snapshot</button>
+        {snaps.length>0&&<button onClick={()=>setShowHistory(h=>!h)} style={{padding:"6px 12px",
+          borderRadius:99,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.muted,
+          fontWeight:700,fontSize:"0.65rem",cursor:"pointer"}}>📂 {snaps.length} entries</button>}
+      </div>
+
+      {/* History panel */}
+      {showHistory&&snaps.length>0&&(
+        <div style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:12,padding:12,marginBottom:12}}>
+          <div style={{fontSize:"0.72rem",fontWeight:800,color:PC.accent,marginBottom:8}}>Previous entries</div>
+          {snaps.map((sn,i)=>(
+            <div key={i} style={{padding:"7px 10px",background:PC.surface,borderRadius:8,marginBottom:5,
+              border:`1px solid ${PC.border}`}}>
+              <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.text}}>{sn.date} · {sn.time}</div>
+              {sn.summary&&<div style={{fontSize:"0.65rem",color:PC.muted,marginTop:2,lineHeight:1.5}}>{sn.summary.slice(0,120)}{sn.summary.length>120?"…":""}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 1. General Observation */}
+      <Section id="general" icon="👁️" title="1 · General Observation">
+        <Field label="General Appearance">
+          <ChipRow k="obs_appearance" options={["Healthy","Unwell","Fatigued","Distressed","Anxious"]}/>
+        </Field>
+        <Field label="Level of Consciousness">
+          <ChipRow k="obs_consciousness" options={["Alert","Drowsy","Lethargic"]} multi={false}/>
+        </Field>
+        <Field label="Attitude / Cooperation">
+          <ChipRow k="obs_attitude" options={["Cooperative","Partially Cooperative","Uncooperative"]} multi={false}/>
+        </Field>
+        <Field label="Body Build">
+          <ChipRow k="obs_build" options={["Ectomorph","Mesomorph","Endomorph"]} multi={false}/>
+        </Field>
+        <Field label="Nutritional Status">
+          <ChipRow k="obs_nutrition" options={["Normal","Underweight","Overweight","Obese"]} multi={false}/>
+        </Field>
+        <Field label="Notes">
+          <textarea style={inp} value={v("obs_general_notes")} onChange={e=>sv("obs_general_notes",e.target.value)} placeholder="General observation notes…"/>
+        </Field>
+      </Section>
+
+      {/* 2. Posture */}
+      <Section id="posture_head" icon="🔡" title="2a · Head & Neck Posture">
+        <ChipRow k="obs_posture_head" options={["Neutral","Forward Head","Head Tilt Right","Head Tilt Left","Head Rotation Right","Head Rotation Left"]}/>
+      </Section>
+      <Section id="posture_shoulders" icon="🫱" title="2b · Shoulders">
+        <ChipRow k="obs_posture_shoulders" options={["Symmetrical","Right Elevated","Left Elevated","Rounded Shoulders","Protracted Shoulders"]}/>
+      </Section>
+      <Section id="posture_scapula" icon="🔹" title="2c · Scapula">
+        <ChipRow k="obs_posture_scapula" options={["Normal","Winging Right","Winging Left","Bilateral Winging","Protracted","Retracted"]}/>
+      </Section>
+      <Section id="posture_thoracic" icon="🦴" title="2d · Thoracic Spine">
+        <ChipRow k="obs_posture_thoracic" options={["Normal","Increased Kyphosis","Decreased Kyphosis"]}/>
+      </Section>
+      <Section id="posture_lumbar" icon="🦴" title="2e · Lumbar Spine">
+        <ChipRow k="obs_posture_lumbar" options={["Normal","Increased Lordosis","Decreased Lordosis","Flat Back"]}/>
+      </Section>
+      <Section id="posture_pelvis" icon="🔸" title="2f · Pelvis">
+        <ChipRow k="obs_posture_pelvis" options={["Neutral","Anterior Tilt","Posterior Tilt","Pelvic Obliquity"]}/>
+      </Section>
+      <Section id="posture_lower" icon="🦵" title="2g · Lower Limb Alignment">
+        <ChipRow k="obs_posture_lower" options={["Normal","Genu Valgum","Genu Varum","Genu Recurvatum"]}/>
+      </Section>
+      <Section id="posture_feet" icon="🦶" title="2h · Feet">
+        <ChipRow k="obs_posture_feet" options={["Neutral","Pes Planus","Pes Cavus","Pronation","Supination"]}/>
+      </Section>
+      <Section id="posture_notes" icon="📝" title="2 · Posture Notes">
+        <textarea style={inp} value={v("obs_posture_notes")} onChange={e=>sv("obs_posture_notes",e.target.value)} placeholder="Manual posture observation notes…"/>
+      </Section>
+
+      {/* 3. Swelling */}
+      <Section id="swelling" icon="💧" title="3 · Swelling / Edema">
+        <Field label="Present?">
+          <ChipRow k="obs_swelling_present" options={["Absent","Present"]} multi={false}/>
+        </Field>
+        {v("obs_swelling_present")==="Present"&&(
+          <>
+            <Field label="Severity"><ChipRow k="obs_swelling_severity" options={["Mild","Moderate","Severe"]} multi={false}/></Field>
+            <Field label="Type"><ChipRow k="obs_swelling_type" options={["Pitting","Non-Pitting"]} multi={false}/></Field>
+            <Field label="Location"><input style={{...inp,minHeight:0,resize:"none"}} value={v("obs_swelling_location")} onChange={e=>sv("obs_swelling_location",e.target.value)} placeholder="e.g. Medial knee, right ankle"/></Field>
+            <Field label="Notes"><textarea style={inp} value={v("obs_swelling_notes")} onChange={e=>sv("obs_swelling_notes",e.target.value)} placeholder="Swelling notes…"/></Field>
+          </>
+        )}
+      </Section>
+
+      {/* 4. Skin */}
+      <Section id="skin" icon="🩹" title="4 · Skin & Soft Tissue">
+        <Field label="Findings (select all that apply)">
+          <ChipRow k="obs_skin" options={["Normal","Redness","Bruising","Scar","Surgical Scar","Incision","Burn","Ulcer","Discoloration","Rash"]}/>
+        </Field>
+        {v("obs_skin")&&v("obs_skin")!=="Normal"&&(
+          <>
+            <Field label="Location"><input style={{...inp,minHeight:0,resize:"none"}} value={v("obs_skin_location")} onChange={e=>sv("obs_skin_location",e.target.value)} placeholder="e.g. Anterior knee, left forearm"/></Field>
+            <Field label="Notes"><textarea style={inp} value={v("obs_skin_notes")} onChange={e=>sv("obs_skin_notes",e.target.value)} placeholder="Skin/soft tissue notes…"/></Field>
+          </>
+        )}
+      </Section>
+
+      {/* 5. Muscle Bulk */}
+      <Section id="muscle_bulk" icon="💪" title="5 · Muscle Bulk">
+        <Field label="Observation">
+          <ChipRow k="obs_muscle_bulk" options={["Symmetrical","Atrophy","Hypertrophy"]}/>
+        </Field>
+        {(chips("obs_muscle_bulk").includes("Atrophy")||chips("obs_muscle_bulk").includes("Hypertrophy"))&&(
+          <>
+            <Field label="Common locations">
+              <ChipRow k="obs_muscle_location" options={["Quadriceps","Hamstrings","Calf","Deltoid","Biceps","Triceps","Glutes","Peroneals","Tibialis Anterior","Rotator Cuff"]}/>
+            </Field>
+            <Field label="Notes"><textarea style={inp} value={v("obs_muscle_notes")} onChange={e=>sv("obs_muscle_notes",e.target.value)} placeholder="e.g. Moderate right quadriceps wasting compared to left…"/></Field>
+          </>
+        )}
+      </Section>
+
+      {/* 6. Deformity */}
+      <Section id="deformity" icon="🔄" title="6 · Deformity">
+        <Field label="Findings">
+          <ChipRow k="obs_deformity" options={["None","Contracture","Joint Deformity","Post-Fracture Deformity","Scoliosis","Kyphosis","Hallux Valgus","Malalignment"]}/>
+        </Field>
+        {v("obs_deformity")&&v("obs_deformity")!=="None"&&(
+          <>
+            <Field label="Location"><input style={{...inp,minHeight:0,resize:"none"}} value={v("obs_deformity_location")} onChange={e=>sv("obs_deformity_location",e.target.value)} placeholder="e.g. Right hip, bilateral knees"/></Field>
+            <Field label="Notes"><textarea style={inp} value={v("obs_deformity_notes")} onChange={e=>sv("obs_deformity_notes",e.target.value)} placeholder="Deformity notes…"/></Field>
+          </>
+        )}
+      </Section>
+
+      {/* 7. Assistive Devices */}
+      <Section id="assistive" icon="🦽" title="7 · Assistive Devices">
+        <ChipRow k="obs_assistive" options={["None","Walking Stick","Cane","Crutch","Walker","Wheelchair","Orthosis","Prosthesis"]}/>
+        <Field label="Additional Notes">
+          <textarea style={{...inp,minHeight:44}} value={v("obs_assistive_notes")} onChange={e=>sv("obs_assistive_notes",e.target.value)} placeholder="e.g. KAFO on right, using axillary crutches for non-weight bearing"/>
+        </Field>
+      </Section>
+
+      {/* 8. Summary */}
+      <Section id="summary" icon="📋" title="8 · Observation Summary">
+        <textarea style={{...inp,minHeight:100}} value={v("obs_summary")} onChange={e=>sv("obs_summary",e.target.value)}
+          placeholder="Patient appears alert and cooperative. Mild right shoulder elevation noted with forward head posture. Moderate quadriceps wasting on the right side. Mild edema around right knee. Healed surgical scar present over anterior knee."/>
+        <div style={{fontSize:"0.6rem",color:PC.muted,marginTop:4}}>Summarise all visual inspection findings in clinical language. This populates the SOAP Objective section.</div>
+      </Section>
+    </div>
+  );
+}
+
