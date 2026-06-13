@@ -556,9 +556,17 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
   }, [adminMode, radiationMode, radiationDraw]);
 
   const handleSave = (saved) => {
+    // Store centroid so patient profile can render dots at exact positions
+    const region = effectiveRegions.find(r => r.id === saved.regionId);
+    let cx = 50, cy = 50;
+    if (region && region.pts && region.pts.length) {
+      cx = region.pts.reduce((s, p) => s + p[0], 0) / region.pts.length;
+      cy = region.pts.reduce((s, p) => s + p[1], 0) / region.pts.length;
+    }
+    const enriched = { ...saved, cx: Math.round(cx * 100) / 100, cy: Math.round(cy * 100) / 100 };
     setEntries(prev => {
-      const next = prev.filter(e => e.regionId !== saved.regionId);
-      if (saved.symptoms.length > 0) return [...next, saved];
+      const next = prev.filter(e => e.regionId !== enriched.regionId);
+      if (enriched.symptoms.length > 0) return [...next, enriched];
       return next;
     });
     setActivePanel(null);

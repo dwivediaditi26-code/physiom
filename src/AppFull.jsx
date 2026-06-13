@@ -12268,10 +12268,14 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               const legPills=legacyMarkers.map(m=>({label:`${(m.region||"").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())} — ${m.type||"pain"}`,sym:m.type||"pain",intensity:null}));
               const allPills=[...pills,...legPills].slice(0,8);
               const BODY_IMG="https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/body-chart-4view";
-              const getXY=(rid)=>{
+              // Use stored centroid if available (saved by BodyChartPro since latest version)
+              const getXY=(e2)=>{
+                if(e2.cx!=null&&e2.cy!=null) return {cx2:e2.cx,cy2:e2.cy};
+                // fallback keyword estimate for older entries
+                const rid=e2.regionId||"";
                 let cx2=16,cy2=40;
                 if(rid.startsWith("left_lat")) cx2=40; else if(rid.startsWith("right_lat")) cx2=60; else if(rid.startsWith("posterior")) cx2=82; else cx2=16;
-                if(rid.includes("head")) cy2=5; else if(rid.includes("neck")) cy2=13; else if(rid.includes("shoulder")) cy2=20; else if(rid.includes("chest")||rid.includes("upper_back")) cy2=25; else if(rid.includes("arm")&&!rid.includes("forearm")) cy2=30; else if(rid.includes("mid_back")||rid.includes("lateral_thoracic")) cy2=30; else if(rid.includes("elbow")) cy2=36; else if(rid.includes("forearm")) cy2=42; else if(rid.includes("low_back")||rid.includes("abdomen")) cy2=40; else if(rid.includes("wrist")) cy2=48; else if(rid.includes("hand")) cy2=54; else if(rid.includes("hip")||rid.includes("gluteal")||rid.includes("groin")||rid.includes("si_joint")||rid.includes("sacrum")) cy2=50; else if(rid.includes("thigh")||rid.includes("hamstring")) cy2=60; else if(rid.includes("knee")) cy2=68; else if(rid.includes("lower_leg")||rid.includes("calf")) cy2=78; else if(rid.includes("ankle")) cy2=88; else if(rid.includes("foot")) cy2=95;
+                if(rid.includes("head")) cy2=5; else if(rid.includes("face")) cy2=8; else if(rid.includes("neck")) cy2=13; else if(rid.includes("shoulder")) cy2=20; else if(rid.includes("chest")||rid.includes("upper_back")) cy2=25; else if(rid.includes("arm")&&!rid.includes("forearm")) cy2=30; else if(rid.includes("mid_back")||rid.includes("lateral_thoracic")) cy2=30; else if(rid.includes("elbow")) cy2=36; else if(rid.includes("forearm")) cy2=42; else if(rid.includes("low_back")||rid.includes("abdomen")) cy2=40; else if(rid.includes("wrist")) cy2=48; else if(rid.includes("hand")) cy2=54; else if(rid.includes("hip")||rid.includes("gluteal")||rid.includes("groin")||rid.includes("si_joint")||rid.includes("sacrum")) cy2=50; else if(rid.includes("thigh")||rid.includes("hamstring")) cy2=60; else if(rid.includes("knee")) cy2=68; else if(rid.includes("lower_leg")||rid.includes("calf")) cy2=78; else if(rid.includes("ankle")) cy2=88; else if(rid.includes("foot")) cy2=95;
                 return {cx2,cy2};
               };
               return(
@@ -12291,7 +12295,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         {arrows.map((a,i2)=>(<line key={i2} x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} stroke="#ec4899" strokeWidth="0.5" strokeDasharray="1.5,1" opacity="0.8" markerEnd="url(#pf-arr)"/>))}
                         {entries.map((e,i2)=>{
                           const col=SYM_COLOR[e.symptoms?.[0]]||"#ef4444";
-                          const {cx2,cy2}=getXY(e.regionId||"");
+                          const {cx2,cy2}=getXY(e);
                           return(<g key={i2}><circle cx={cx2} cy={cy2} r="1.8" fill={col} opacity="0.95"/><circle cx={cx2} cy={cy2} r="3.2" fill={col} opacity="0.2"/>{e.symptoms&&e.symptoms.length>1&&<text x={cx2+2.2} y={cy2-2} fontSize="1.5" fontWeight="bold" fill="#fff">+{e.symptoms.length-1}</text>}</g>);
                         })}
                         {legacyMarkers.map((m,i2)=>{const col=SYM_COLOR[m.type]||"#ef4444";const cx2=m.x!=null?m.x:16,cy2=m.y!=null?m.y:40;return <circle key={"l"+i2} cx={cx2} cy={cy2} r="1.8" fill={col} opacity="0.9"/>;})}
