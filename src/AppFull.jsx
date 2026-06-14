@@ -12860,26 +12860,40 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
                   {/* ── ROM ── */}
                   <Sec icon="📐" title="Range of Motion" navKey="rom" hasData={romKeys.length>0}>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))",gap:8}}>
-                      {romKeys.filter(k=>!k.endsWith("_pain")&&!k.endsWith("_ef")).slice(0,8).map(k=>{
-                        const val=parseFloat(d[k])||0;
-                        // Build readable label: lookup base key, add side if bilateral
-                        const baseKey=k.replace(/_left|_right/,"").replace(/_active|_passive|_arom|_prom/,"");
-                        const side=k.includes("_left")?" (L)":k.includes("_right")?" (R)":"";
-                        const mode=k.includes("_passive")?" passive":"";
-                        const entry=ROM_LABEL_MAP[baseKey];
-                        const labelText=(entry?entry.l:baseKey.replace(/^rom_/,"").replace(/_/g," "))+side+mode;
-                        const normalVal=entry?entry.n:null;
-                        const col=val>=0?"#7c3aed":"#D1D5DB";
-                        return(
-                          <div key={k} style={{background:"#F9FAFB",borderRadius:10,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
-                            <div style={{fontSize:9.5,color:C.muted,marginBottom:3,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.2}}>{labelText}</div>
-                            <div style={{fontSize:20,fontWeight:900,color:col,lineHeight:1}}>{d[k]}<span style={{fontSize:9,color:C.muted}}>°{normalVal&&<span style={{fontSize:8,color:C.muted}}>/{normalVal}</span>}</span></div>
-                          </div>
-                        );
-                      })}
-                      {romKeys.length>8&&<div style={{background:"#F9FAFB",borderRadius:10,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:11,color:C.muted}}>+{romKeys.length-8} more</span></div>}
-                    </div>
+                    {(()=>{
+                      const filtered=romKeys.filter(k=>!k.endsWith("_pain")&&!k.endsWith("_ef"));
+                      return(
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                          {filtered.slice(0,8).map(k=>{
+                            const val=parseFloat(d[k])||0;
+                            const baseKey=k.replace(/_left|_right/,"").replace(/_active|_passive|_arom|_prom/,"");
+                            const side=k.includes("_left")?" (L)":k.includes("_right")?" (R)":"";
+                            const mode=k.includes("_passive")?" passive":"";
+                            const entry=ROM_LABEL_MAP[baseKey];
+                            const labelText=(entry?entry.l:baseKey.replace(/^rom_/,"").replace(/_/g," "))+side+mode;
+                            const normalVal=entry?entry.n:null;
+                            const pct=normalVal?Math.min(100,(val/normalVal)*100):null;
+                            const numCol=pct===null?"#7c3aed":pct>=85?"#1D9E75":pct>=66?"#EF9F27":"#E24B4A";
+                            return(
+                              <div key={k} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"#F9FAFB",border:`1px solid ${C.border}`,borderRadius:8}}>
+                                <div style={{flex:1,minWidth:0,paddingRight:8}}>
+                                  <div style={{fontSize:12,fontWeight:500,color:C.text,lineHeight:1.3}}>{labelText}</div>
+                                  {normalVal&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>normal {normalVal}°</div>}
+                                </div>
+                                <div style={{flexShrink:0,textAlign:"right"}}>
+                                  <span style={{fontSize:18,fontWeight:500,color:numCol}}>{d[k]}</span><span style={{fontSize:10,color:C.muted}}>°</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {filtered.length>8&&(
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:10,background:"#F9FAFB",border:`1px solid ${C.border}`,borderRadius:8}}>
+                              <span style={{fontSize:11,color:C.muted}}>+{filtered.length-8} more</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </Sec>
 
                   {/* ── MMT ── */}
