@@ -17349,28 +17349,30 @@ function AppInner({ currentUser, onSignOut }) {
 
       {/* ── ACTIVE PATIENT BAR ── */}
       {activePatient && (
-        <div style={{background:PC.isDark?"rgba(129,140,248,0.05)":"rgba(79,70,229,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"8px 24px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-          {/* Clickable patient info → opens profile */}
-          <div onClick={()=>setProfilePatient({...activePatient,data:{...data}})}
-            style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",flex:1,minWidth:0,padding:"2px 6px",borderRadius:8,
-              transition:"background 0.15s"}}
-            onMouseEnter={e=>e.currentTarget.style.background="rgba(124,58,237,0.06)"}
-            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+        <div style={{background:PC.isDark?"rgba(129,140,248,0.05)":"rgba(79,70,229,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"6px 16px",display:"flex",flexDirection:"column",gap:4}}>
+          {/* Row 1: dot + name + age/gender */}
+          <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
             <div style={{width:7,height:7,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 6px ${PC.a3}`,flexShrink:0}}/>
-            <span style={{fontSize:"0.75rem",color:PC.a2,fontWeight:700,letterSpacing:"-0.1px",whiteSpace:"nowrap"}}>
-              {activePatient.name}
-            </span>
-            {activePatient.data?.dem_age && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500}}>Age {activePatient.data.dem_age}</span>}
-            {activePatient.data?.dem_gender && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500}}>{activePatient.data.dem_gender}</span>}
-            {activePatient.data?.dem_occupation && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:400,maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{activePatient.data.dem_occupation}</span>}
-            <span style={{fontSize:"0.6rem",color:PC.accent,fontWeight:600,flexShrink:0}}>👤 Profile →</span>
+            <div onClick={()=>setProfilePatient({...activePatient,data:{...data}})}
+              style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",minWidth:0,flex:1,overflow:"hidden"}}
+              onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
+              onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+              <span style={{fontSize:"0.78rem",color:PC.a2,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:160}}>
+                {activePatient.name}
+              </span>
+              {activePatient.data?.dem_age && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500,whiteSpace:"nowrap",flexShrink:0}}>· {activePatient.data.dem_age}y</span>}
+              {activePatient.data?.dem_gender && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500,whiteSpace:"nowrap",flexShrink:0}}>{activePatient.data.dem_gender}</span>}
+              <span style={{fontSize:"0.6rem",color:PC.accent,fontWeight:600,flexShrink:0,whiteSpace:"nowrap"}}>👤 Profile</span>
+            </div>
           </div>
-          <span style={{fontSize:"0.6rem",color:PC.muted,fontWeight:500,display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
-            <span style={{width:5,height:5,borderRadius:"50%",background:PC.a3,display:"inline-block"}}/>
-            Saved {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}
-          </span>
-          <button onClick={createNewPatient} style={{padding:"4px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.text,fontSize:"0.65rem",fontWeight:600,cursor:"pointer",flexShrink:0}}>＋ New</button>
-          <button onClick={()=>setShowPatientDb(true)} style={{padding:"4px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.a2,fontSize:"0.65rem",fontWeight:600,cursor:"pointer",flexShrink:0}}>Switch Patient</button>
+          {/* Row 2: saved time + buttons */}
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap"}}>
+            <span style={{fontSize:"0.58rem",color:PC.muted,fontWeight:500,flex:1,whiteSpace:"nowrap"}}>
+              ● Saved {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}
+            </span>
+            <button onClick={createNewPatient} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.62rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>＋ New</button>
+            <button onClick={()=>setShowPatientDb(true)} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.a2,fontSize:"0.62rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Switch Patient</button>
+          </div>
         </div>
       )}
       {!activePatient && (
