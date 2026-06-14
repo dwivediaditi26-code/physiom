@@ -11851,12 +11851,13 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   };
 
   const TABS = [
-    { k:"overview",    icon:"⊞",  label:"Overview"         },
-    { k:"subjective",  icon:"📝", label:"Subjective"        },
-    { k:"assessment",  icon:"📋", label:"Assessment"        },
-    { k:"treatment",   icon:"💊", label:"Treatment"         },
-    { k:"posture",     icon:"🧍", label:"Posture Analysis"  },
-    { k:"documents",   icon:"📄", label:"Documentation"     },
+    { k:"overview",    icon:"🏠",  label:"Overview"         },
+    { k:"subjective",  icon:"📝",  label:"Subjective"       },
+    { k:"assessment",  icon:"📋",  label:"Assessment"       },
+    { k:"impression",  icon:"🎯",  label:"Impression"       },
+    { k:"treatment",   icon:"💊",  label:"Treatment"        },
+    { k:"progress",    icon:"📈",  label:"Progress"         },
+    { k:"documents",   icon:"📄",  label:"Docs"             },
   ];
 
   // Donut component
@@ -12009,6 +12010,18 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   <span style={{fontSize:14,marginLeft:6}}>{sex==="Male"||sex==="M"?"♂":sex==="Female"||sex==="F"?"♀":"⚧"}</span>
                 </div>
                 <div style={{fontSize:11.5,color:C.muted,marginTop:3}}>PID: {pid}</div>
+                {(()=>{
+                  const ci = Array.isArray(d.clinical_impression)?d.clinical_impression:[];
+                  const primary = ci.find(x=>x.tag==="primary");
+                  if(!primary) return null;
+                  return (
+                    <div style={{marginTop:5,display:"inline-flex",alignItems:"center",gap:5,background:"#EDE9FE",border:"1px solid #C4B5FD",borderRadius:99,padding:"3px 10px"}}>
+                      <span style={{fontSize:9,fontWeight:800,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.5px"}}>Working Dx</span>
+                      <span style={{fontSize:11,fontWeight:700,color:"#4C1D95"}}>{primary.label}</span>
+                      {primary.icdCode&&<span style={{fontSize:9,color:"#7C3AED",fontWeight:600}}>{primary.icdCode}</span>}
+                    </div>
+                  );
+                })()}
               </div>
               <div style={{display:"flex",alignItems:"center",gap:5,
                 background:"#ECFDF5",border:"1px solid #BBF7D0",
@@ -12359,7 +12372,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       {l:"24-hr pattern", v:d.cc_24hr||d.cc_behaviour||""},
                       {l:"Goals", v:[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||""},
                       {l:"Past history", v:d.phx_conditions||d.sub_past_history||d.hx_past||""},
-                      {l:"Medications", v:(()=>{ const raw=d.med_current||d.sub_medications||""; return raw; })()},
+                      // medications shown below as pills
                     ].filter(row=>row.v).map((row,i2)=>(
                       <div key={i2} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:`1px solid ${C.border}`,alignItems:"flex-start"}}>
                         <span style={{fontSize:11.5,color:C.muted,minWidth:110,flexShrink:0,paddingTop:1}}>{row.l}</span>
@@ -12479,6 +12492,323 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         )}
 
         )}
+        {tab==="impression" && (
+          <div className="tab-content" style={{padding:"16px 16px"}}>
+            {(()=>{
+              // ── Curated physiotherapy diagnosis list by region ──
+              const PHYSIO_DX = {
+                "Cervical spine": [
+                  {label:"Cervical facet joint dysfunction",icd:"M47.812"},
+                  {label:"Cervical disc herniation (specify level)",icd:"M50.1"},
+                  {label:"Cervical radiculopathy (specify root)",icd:"M54.2"},
+                  {label:"Cervicogenic headache",icd:"G44.841"},
+                  {label:"Cervical myofascial pain syndrome",icd:"M79.1"},
+                  {label:"Whiplash-associated disorder (WAD II)",icd:"S13.4"},
+                  {label:"Cervical spondylosis",icd:"M47.812"},
+                  {label:"Upper cervical instability (suspected)",icd:"M53.2"},
+                  {label:"Thoracic outlet syndrome (suspected)",icd:"G54.0"},
+                  {label:"Cervical canal stenosis",icd:"M48.02"},
+                ],
+                "Lumbar / SI": [
+                  {label:"Lumbar facet joint dysfunction",icd:"M47.816"},
+                  {label:"Lumbar disc herniation (specify level)",icd:"M51.1"},
+                  {label:"Lumbar radiculopathy (specify root)",icd:"M54.4"},
+                  {label:"Sacroiliac joint dysfunction",icd:"M53.3"},
+                  {label:"Non-specific low back pain",icd:"M54.5"},
+                  {label:"Lumbar spondylosis",icd:"M47.816"},
+                  {label:"Lumbar spinal stenosis",icd:"M48.06"},
+                  {label:"Piriformis syndrome",icd:"G57.0"},
+                  {label:"Spondylolisthesis (Grade I/II)",icd:"M43.1"},
+                  {label:"Lumbar myofascial pain syndrome",icd:"M79.1"},
+                ],
+                "Hip / Groin": [
+                  {label:"Hip osteoarthritis",icd:"M16.9"},
+                  {label:"Femoroacetabular impingement (FAI)",icd:"M24.85"},
+                  {label:"Hip labral tear (suspected)",icd:"M24.05"},
+                  {label:"Greater trochanteric pain syndrome",icd:"M70.60"},
+                  {label:"Iliopsoas tendinopathy",icd:"M76.1"},
+                  {label:"Adductor-related groin pain",icd:"M76.0"},
+                  {label:"Snapping hip syndrome",icd:"M76.3"},
+                  {label:"Avascular necrosis (suspected — refer)",icd:"M87.05"},
+                  {label:"Hip bursitis (trochanteric)",icd:"M70.60"},
+                  {label:"Athletic pubalgia",icd:"M76.8"},
+                ],
+                "Knee (L)": [
+                  {label:"Patellofemoral pain syndrome",icd:"M22.2"},
+                  {label:"Knee osteoarthritis (medial compartment)",icd:"M17.11"},
+                  {label:"Patellar tendinopathy",icd:"M76.5"},
+                  {label:"ACL sprain / tear (suspected)",icd:"M23.61"},
+                  {label:"Meniscal injury (suspected)",icd:"M23.2"},
+                  {label:"Iliotibial band syndrome",icd:"M76.3"},
+                  {label:"Pes anserine bursitis",icd:"M70.5"},
+                  {label:"MCL sprain (Grade I/II)",icd:"M23.64"},
+                  {label:"Post-operative knee — rehabilitation",icd:"Z96.65"},
+                  {label:"Fat pad impingement",icd:"M79.4"},
+                ],
+                "Knee (R)": [
+                  {label:"Patellofemoral pain syndrome",icd:"M22.2"},
+                  {label:"Knee osteoarthritis (medial compartment)",icd:"M17.11"},
+                  {label:"Patellar tendinopathy",icd:"M76.5"},
+                  {label:"ACL sprain / tear (suspected)",icd:"M23.61"},
+                  {label:"Meniscal injury (suspected)",icd:"M23.2"},
+                  {label:"Iliotibial band syndrome",icd:"M76.3"},
+                  {label:"Pes anserine bursitis",icd:"M70.5"},
+                  {label:"MCL sprain (Grade I/II)",icd:"M23.64"},
+                  {label:"Post-operative knee — rehabilitation",icd:"Z96.65"},
+                  {label:"Fat pad impingement",icd:"M79.4"},
+                ],
+                "Shoulder (L)": [
+                  {label:"Rotator cuff tendinopathy",icd:"M75.1"},
+                  {label:"Subacromial impingement syndrome",icd:"M75.1"},
+                  {label:"Rotator cuff tear (partial / full)",icd:"M75.1"},
+                  {label:"Frozen shoulder (adhesive capsulitis)",icd:"M75.0"},
+                  {label:"AC joint sprain / OA",icd:"M19.11"},
+                  {label:"Glenohumeral instability (anterior)",icd:"M24.31"},
+                  {label:"Biceps tendinopathy / SLAP (suspected)",icd:"M75.2"},
+                  {label:"Shoulder OA (glenohumeral)",icd:"M19.11"},
+                  {label:"Post-op shoulder rehabilitation",icd:"Z96.61"},
+                  {label:"Cervical-referred shoulder pain (C4/C5)",icd:"M54.2"},
+                ],
+                "Shoulder (R)": [
+                  {label:"Rotator cuff tendinopathy",icd:"M75.1"},
+                  {label:"Subacromial impingement syndrome",icd:"M75.1"},
+                  {label:"Rotator cuff tear (partial / full)",icd:"M75.1"},
+                  {label:"Frozen shoulder (adhesive capsulitis)",icd:"M75.0"},
+                  {label:"AC joint sprain / OA",icd:"M19.11"},
+                  {label:"Glenohumeral instability (anterior)",icd:"M24.31"},
+                  {label:"Biceps tendinopathy / SLAP (suspected)",icd:"M75.2"},
+                  {label:"Shoulder OA (glenohumeral)",icd:"M19.11"},
+                  {label:"Post-op shoulder rehabilitation",icd:"Z96.61"},
+                  {label:"Cervical-referred shoulder pain (C4/C5)",icd:"M54.2"},
+                ],
+                "Ankle / Foot": [
+                  {label:"Lateral ankle sprain (Grade I/II/III)",icd:"S93.4"},
+                  {label:"Achilles tendinopathy (mid-portion)",icd:"M76.6"},
+                  {label:"Achilles tendinopathy (insertional)",icd:"M76.6"},
+                  {label:"Plantar fasciitis",icd:"M72.2"},
+                  {label:"Ankle OA",icd:"M19.071"},
+                  {label:"Peroneal tendinopathy",icd:"M76.7"},
+                  {label:"Posterior tibial tendon dysfunction",icd:"M76.82"},
+                  {label:"Sinus tarsi syndrome",icd:"M79.1"},
+                  {label:"Hallux valgus (conservative management)",icd:"M20.1"},
+                  {label:"Syndesmosis sprain",icd:"S93.4"},
+                ],
+                "Elbow/Wrist/Hand": [
+                  {label:"Lateral epicondylalgia (Tennis elbow)",icd:"M77.1"},
+                  {label:"Medial epicondylalgia (Golfer's elbow)",icd:"M77.0"},
+                  {label:"De Quervain's tenosynovitis",icd:"M65.4"},
+                  {label:"Carpal tunnel syndrome",icd:"G56.0"},
+                  {label:"Wrist tendinopathy",icd:"M65.3"},
+                  {label:"Triangular fibrocartilage complex (TFCC) injury",icd:"M25.331"},
+                  {label:"Cubital tunnel syndrome",icd:"G56.2"},
+                  {label:"Trigger finger",icd:"M65.3"},
+                  {label:"Dupuytren's contracture (conservative)",icd:"M72.0"},
+                  {label:"Elbow OA",icd:"M19.021"},
+                ],
+                "Thoracic spine": [
+                  {label:"Thoracic facet joint dysfunction",icd:"M47.814"},
+                  {label:"Thoracic myofascial pain",icd:"M79.1"},
+                  {label:"Costochondral / rib dysfunction",icd:"M94.0"},
+                  {label:"Thoracic disc herniation",icd:"M51.14"},
+                  {label:"Scheuermann's disease",icd:"M42.0"},
+                  {label:"Thoracic kyphosis (postural)",icd:"M40.04"},
+                  {label:"T4 syndrome",icd:"M54.6"},
+                  {label:"Intercostal neuralgia",icd:"G58.0"},
+                  {label:"Thoracic outlet syndrome (suspected)",icd:"G54.0"},
+                  {label:"Post-fracture thoracic rehabilitation",icd:"S22.9"},
+                ],
+                "General": [
+                  {label:"Fibromyalgia",icd:"M79.7"},
+                  {label:"Chronic widespread pain",icd:"M79.3"},
+                  {label:"Post-surgical rehabilitation (specify)",icd:"Z96.9"},
+                  {label:"Chronic pain syndrome (central sensitisation)",icd:"G89.4"},
+                  {label:"Post-COVID musculoskeletal symptoms",icd:"U09.9"},
+                  {label:"Hypermobility syndrome / hEDS",icd:"Q79.6"},
+                  {label:"Osteoporosis (fracture prevention)",icd:"M81.0"},
+                  {label:"Postural dysfunction",icd:"M40.3"},
+                  {label:"Deconditioning / functional decline",icd:"Z73.6"},
+                  {label:"Falls prevention programme",icd:"Z91.81"},
+                ],
+              };
+
+              const TAG_CONFIG = {
+                primary:      {label:"Primary working diagnosis", col:"#4C1D95", bg:"#EDE9FE", border:"#C4B5FD"},
+                differential: {label:"Differential — considering", col:"#92400E", bg:"#FEF3C7", border:"#FCD34D"},
+                ruledout:     {label:"Ruled out", col:"#374151", bg:"#F3F4F6", border:"#D1D5DB"},
+              };
+
+              const [ciItems, setCiItems] = React.useState(()=>Array.isArray(d.clinical_impression)?d.clinical_impression:[]);
+              const [showPicker, setShowPicker] = React.useState(false);
+              const [pickerRegion, setPickerRegion] = React.useState("General");
+              const [pickerSearch, setPickerSearch] = React.useState("");
+              const [pendingDx, setPendingDx] = React.useState(null); // {label,icd} being added
+              const [pendingTag, setPendingTag] = React.useState("primary");
+              const [pendingNote, setPendingNote] = React.useState("");
+              const [customDx, setCustomDx] = React.useState("");
+
+              const selRegions = (()=>{try{return JSON.parse(d.cx_selected_regions||"[]");}catch{return[];}})();
+              const pickerRegions = ["General",...selRegions.filter(r=>PHYSIO_DX[r])];
+
+              const saveCi = (newItems) => {
+                setCiItems(newItems);
+                onSaveField&&onSaveField("clinical_impression", newItems);
+              };
+
+              const confirmAdd = () => {
+                const lbl = pendingDx?.label || customDx.trim();
+                if(!lbl) return;
+                const newItem = {id:`ci_${Date.now()}`,label:lbl,icdCode:pendingDx?.icd||"",tag:pendingTag,notes:pendingNote,addedAt:new Date().toLocaleDateString("en-GB")};
+                // If primary, demote any existing primary to differential
+                const updated = pendingTag==="primary"
+                  ? ciItems.map(x=>x.tag==="primary"?{...x,tag:"differential"}:x)
+                  : [...ciItems];
+                saveCi([...updated, newItem]);
+                setPendingDx(null); setCustomDx(""); setPendingTag("primary"); setPendingNote(""); setShowPicker(false);
+              };
+
+              const removeItem = (id) => saveCi(ciItems.filter(x=>x.id!==id));
+              const changeTag = (id, newTag) => {
+                let updated = ciItems.map(x=>x.id===id?{...x,tag:newTag}:x);
+                if(newTag==="primary") updated=updated.map(x=>x.id!==id&&x.tag==="primary"?{...x,tag:"differential"}:x);
+                saveCi(updated);
+              };
+
+              const searchResults = (()=>{
+                const pool = pickerSearch.trim()
+                  ? Object.values(PHYSIO_DX).flat().filter(x=>x.label.toLowerCase().includes(pickerSearch.toLowerCase()))
+                  : (PHYSIO_DX[pickerRegion]||[]);
+                return pool.filter(x=>!ciItems.some(ci=>ci.label===x.label));
+              })();
+
+              return (
+                <div>
+                  {/* ── Disclaimer ── */}
+                  <div style={{background:"#FEF3C7",border:"1px solid #FCD34D",borderRadius:10,padding:"9px 12px",marginBottom:12,fontSize:11,color:"#92400E",lineHeight:1.5}}>
+                    <strong>Clinical Impression</strong> — These are physiotherapy working hypotheses based on your assessment, not confirmed medical diagnoses. Document your reasoning in notes. Refer if red flags present or diagnosis is uncertain.
+                  </div>
+
+                  {/* ── Existing items ── */}
+                  {ciItems.length===0&&!showPicker&&(
+                    <div style={{textAlign:"center",padding:"24px 0",color:C.muted,fontSize:12}}>
+                      No clinical impression recorded yet.<br/>
+                      <span style={{fontSize:11}}>Add one after completing your subjective and objective assessment.</span>
+                    </div>
+                  )}
+                  {ciItems.map((item,i)=>{
+                    const tc = TAG_CONFIG[item.tag]||TAG_CONFIG.differential;
+                    return (
+                      <div key={item.id} style={{background:tc.bg,border:`1.5px solid ${tc.border}`,borderRadius:12,padding:"11px 13px",marginBottom:9}}>
+                        <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:12,fontWeight:800,color:tc.col,lineHeight:1.3}}>{item.label}</div>
+                            <div style={{display:"flex",gap:6,marginTop:5,flexWrap:"wrap",alignItems:"center"}}>
+                              {["primary","differential","ruledout"].map(t=>(
+                                <button key={t} onClick={()=>changeTag(item.id,t)}
+                                  style={{padding:"2px 8px",borderRadius:99,border:`1px solid ${t===item.tag?tc.border:"#D1D5DB"}`,background:t===item.tag?tc.bg:"transparent",color:t===item.tag?tc.col:"#9CA3AF",fontSize:9.5,fontWeight:700,cursor:"pointer"}}>
+                                  {TAG_CONFIG[t].label}
+                                </button>
+                              ))}
+                              {item.icdCode&&<span style={{fontSize:9.5,color:C.muted,fontWeight:600}}>ICD: {item.icdCode}</span>}
+                            </div>
+                            {item.notes&&<div style={{fontSize:11,color:tc.col,marginTop:5,fontStyle:"italic",opacity:0.85}}>{item.notes}</div>}
+                          </div>
+                          <button onClick={()=>removeItem(item.id)} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#9CA3AF",padding:2,flexShrink:0}}>✕</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* ── Add button / picker ── */}
+                  {!showPicker&&(
+                    <button onClick={()=>setShowPicker(true)} style={{width:"100%",padding:"11px",border:`2px dashed ${C.primary}50`,borderRadius:12,background:"transparent",color:C.primary,fontWeight:700,fontSize:12,cursor:"pointer",marginTop:4}}>
+                      ＋ Add clinical impression
+                    </button>
+                  )}
+
+                  {showPicker&&!pendingDx&&(
+                    <div style={{background:"#F8F7FF",border:`1px solid ${C.border}`,borderRadius:14,padding:"13px 14px",marginTop:4}}>
+                      <div style={{fontWeight:800,fontSize:12,color:C.text,marginBottom:10}}>Select from list or type custom</div>
+
+                      {/* Region tabs */}
+                      <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+                        {pickerRegions.map(r=>(
+                          <button key={r} onClick={()=>{setPickerRegion(r);setPickerSearch("");}}
+                            style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${pickerRegion===r?C.primary:C.border}`,background:pickerRegion===r?`${C.primary}12`:"transparent",color:pickerRegion===r?C.primary:C.muted,fontSize:10.5,fontWeight:700,cursor:"pointer"}}>
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Search */}
+                      <input placeholder="Search all diagnoses…" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)}
+                        style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",border:`1px solid ${C.border}`,borderRadius:8,fontSize:11.5,marginBottom:8,fontFamily:"inherit",outline:"none"}}/>
+
+                      {/* Results */}
+                      <div style={{maxHeight:180,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
+                        {searchResults.map((dx,i)=>(
+                          <div key={i} onClick={()=>setPendingDx(dx)}
+                            style={{padding:"8px 10px",borderRadius:8,background:"white",border:`1px solid ${C.border}`,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <span style={{fontSize:11.5,color:C.text,fontWeight:500}}>{dx.label}</span>
+                            <span style={{fontSize:9.5,color:C.muted,flexShrink:0,marginLeft:8}}>{dx.icd}</span>
+                          </div>
+                        ))}
+                        {searchResults.length===0&&<div style={{fontSize:11,color:C.muted,padding:"6px 0"}}>No matches — use custom below</div>}
+                      </div>
+
+                      {/* Custom free-text */}
+                      <div style={{marginTop:8,display:"flex",gap:6}}>
+                        <input placeholder="Custom diagnosis (free text)…" value={customDx} onChange={e=>setCustomDx(e.target.value)}
+                          style={{flex:1,padding:"7px 10px",border:`1px solid ${C.border}`,borderRadius:8,fontSize:11.5,fontFamily:"inherit",outline:"none"}}/>
+                        {customDx.trim()&&<button onClick={()=>setPendingDx({label:customDx.trim(),icd:""})} style={{padding:"7px 12px",borderRadius:8,background:C.primary,border:"none",color:"white",fontSize:11,fontWeight:700,cursor:"pointer"}}>Use →</button>}
+                      </div>
+
+                      <button onClick={()=>setShowPicker(false)} style={{marginTop:8,fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer"}}>Cancel</button>
+                    </div>
+                  )}
+
+                  {/* ── Tag + notes step ── */}
+                  {pendingDx&&(
+                    <div style={{background:"#F8F7FF",border:`1px solid ${C.border}`,borderRadius:14,padding:"13px 14px",marginTop:4}}>
+                      <div style={{fontWeight:800,fontSize:12,color:C.text,marginBottom:4}}>{pendingDx.label}</div>
+                      {pendingDx.icd&&<div style={{fontSize:10,color:C.muted,marginBottom:10}}>ICD-10: {pendingDx.icd}</div>}
+
+                      <div style={{fontSize:10.5,fontWeight:700,color:C.muted,marginBottom:6}}>How certain are you?</div>
+                      <div style={{display:"flex",gap:6,marginBottom:10}}>
+                        {[
+                          {t:"primary",      emoji:"🎯", desc:"Primary — most likely"},
+                          {t:"differential", emoji:"🔍", desc:"Differential — considering"},
+                          {t:"ruledout",     emoji:"✗",  desc:"Ruled out"},
+                        ].map(({t,emoji,desc})=>(
+                          <button key={t} onClick={()=>setPendingTag(t)}
+                            style={{flex:1,padding:"8px 4px",borderRadius:10,border:`2px solid ${pendingTag===t?TAG_CONFIG[t].border:"#E5E7EB"}`,background:pendingTag===t?TAG_CONFIG[t].bg:"white",color:pendingTag===t?TAG_CONFIG[t].col:"#6B7280",fontSize:10,fontWeight:700,cursor:"pointer",lineHeight:1.4,textAlign:"center"}}>
+                            {emoji}<br/>{desc}
+                          </button>
+                        ))}
+                      </div>
+
+                      <textarea placeholder="Clinical reasoning notes (optional)…" value={pendingNote} onChange={e=>setPendingNote(e.target.value)} rows={2}
+                        style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",border:`1px solid ${C.border}`,borderRadius:8,fontSize:11.5,fontFamily:"inherit",resize:"vertical",marginBottom:8,outline:"none"}}/>
+
+                      <div style={{display:"flex",gap:8}}>
+                        <button onClick={confirmAdd} style={{flex:1,padding:"9px",background:C.primary,border:"none",borderRadius:9,color:"white",fontWeight:800,fontSize:12,cursor:"pointer"}}>Save impression</button>
+                        <button onClick={()=>{setPendingDx(null);setPendingNote("");}} style={{padding:"9px 14px",background:"transparent",border:`1px solid ${C.border}`,borderRadius:9,color:C.muted,fontSize:11,cursor:"pointer"}}>Back</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── SOAP integration hint ── */}
+                  {ciItems.some(x=>x.tag==="primary")&&(
+                    <div style={{marginTop:12,padding:"9px 12px",background:"#ECFDF5",border:"1px solid #BBF7D0",borderRadius:10,fontSize:11,color:"#065F46",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span>Working diagnosis will appear in your SOAP Assessment field.</span>
+                      <span onClick={()=>onNav&&onNav("soap")} style={{fontWeight:700,cursor:"pointer",color:"#059669"}}>Open SOAP →</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {tab==="assessment" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
 
@@ -15844,7 +16174,7 @@ function QuickVisitForm({ PC, data, set, navTo }) {
   const sessionsArr = Array.isArray(data.tx_sessions)?data.tx_sessions:[];
   const lastSession = sessionsArr[0];
   const sessionNo = sessionsArr.length+1;
-  const [qv, setQv] = useState({pain_today:data.cc_vas_now||"",treatment:lastSession?.treatmentGiven||"",response:"",next_plan:""});
+  const [qv, setQv] = useState({pain_today:data.cc_vas_now||"",pain_after:"",treatment:lastSession?.treatmentGiven||"",response:"",next_plan:""});
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState([]);          // protocol change descriptions this visit
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -15909,7 +16239,7 @@ function QuickVisitForm({ PC, data, set, navTo }) {
       hepNote=`HEP v${version}: ${pending.join(" · ")}`;
     }
     set("soap_extra_p",[qv.next_plan,hepNote].filter(Boolean).join(" | "));
-    const entry = {id:(Date.now()).toString(36),date:new Date().toLocaleDateString("en-GB"),sessionNo,type:"Follow-up Treatment",vasStart:qv.pain_today,vasEnd:qv.pain_today,treatmentGiven:qv.treatment,response:qv.response,nextPlan:qv.next_plan,hepChanges:pending,savedAt:new Date().toISOString()};
+    const entry = {id:(Date.now()).toString(36),date:new Date().toLocaleDateString("en-GB"),sessionNo,type:"Follow-up Treatment",vasStart:qv.pain_today,vasEnd:qv.pain_after||qv.pain_today,treatmentGiven:qv.treatment,response:qv.response,nextPlan:qv.next_plan,hepChanges:pending,savedAt:new Date().toISOString()};
     set("tx_sessions",[entry,...sessionsArr]);
     setPending([]);
     setSaved(true); setTimeout(()=>setSaved(false),3000);
@@ -15924,7 +16254,8 @@ function QuickVisitForm({ PC, data, set, navTo }) {
     <div>
       <div style={{fontSize:"0.62rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6}}>1 · Today — Session {sessionNo}</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-        <div><label style={lbl}>Pain today (0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 4" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
+        <div><label style={lbl}>Pain — start of session (NRS 0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 5" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
+        <div><label style={lbl}>Pain — end of session (NRS 0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 3" value={qv.pain_after} onChange={e=>setQv(p=>({...p,pain_after:e.target.value}))}/></div>
         <div><label style={lbl}>Treatment given {lastSession?.treatmentGiven?<span style={{textTransform:"none",fontWeight:500}}>(copied from S{lastSession.sessionNo||sessionNo-1})</span>:null}</label><input style={inp} placeholder="Tap chips below or type…" value={qv.treatment} onChange={e=>setQv(p=>({...p,treatment:e.target.value}))}/></div>
       </div>
       <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>
@@ -16351,9 +16682,21 @@ function AppInner({ currentUser, onSignOut }) {
         data,
         name: data["dem_name"] || p.name || "Unnamed Patient",
         updatedAt: new Date().toISOString(),
-        hasRedFlags: ["rf_malignancy","rf_cauda","rf_vascular","rf_inflammatory","rf_fracture","rf_neuro"]
-          .flatMap(fid => (data[fid]||"").split("|||"))
-          .filter(v => v && !["No malignancy red flags","No cauda equina flags","No vascular red flags","No inflammatory red flags","No fracture red flags","No neurological red flags","No red flags — proceed with assessment"].includes(v)).length > 0
+        hasRedFlags: (()=>{
+          // Check both old rf_* fields and new grf_* fields used in SubjectiveModule
+          const oldFields = ["rf_malignancy","rf_cauda","rf_vascular","rf_inflammatory","rf_fracture","rf_neuro"];
+          const oldSafe = ["No malignancy red flags","No cauda equina flags","No vascular red flags","No inflammatory red flags","No fracture red flags","No neurological red flags","No red flags — proceed with assessment"];
+          const oldHit = oldFields.flatMap(fid=>(data[fid]||"").split("|||")).filter(v=>v&&!oldSafe.includes(v)).length>0;
+          // grf_action: if not "No red flags — proceed with assessment", a flag is present
+          const grfAction = data.grf_action||"";
+          const grfHit = grfAction && grfAction !== "No red flags — proceed with assessment";
+          // Any region rf_action set to something other than safe
+          const regionRfHit = ["cx","lx","hp","shl","shr","knl","knr","af","ew","tx"].some(px=>{
+            const v = data[`${px}_rf_action`]||"";
+            return v && v !== "No red flags — proceed" && v !== "No red flags — proceed with assessment" && v !== "No concerns — proceed";
+          });
+          return oldHit || grfHit || regionRfHit;
+        })()
       } : p);
       savePatientDB(updated);
       return updated;

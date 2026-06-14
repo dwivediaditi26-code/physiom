@@ -2945,6 +2945,18 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   // ── A: ASSESSMENT ──────────────────────────────────────────────────────────
   const A_parts = [];
 
+  // ── Clinician's own Clinical Impression (always first, always authoritative) ──
+  const _ciItems = Array.isArray(data.clinical_impression) ? data.clinical_impression : [];
+  if (_ciItems.length > 0) {
+    const _ciPrimary = _ciItems.filter(x => x.tag === "primary");
+    const _ciDiff    = _ciItems.filter(x => x.tag === "differential");
+    const _ciRuled   = _ciItems.filter(x => x.tag === "ruledout");
+    if (_ciPrimary.length)   A_parts.push("Working diagnosis: " + _ciPrimary.map(x => x.label + (x.icdCode ? ` (${x.icdCode})` : "") + (x.notes ? ` — ${x.notes}` : "")).join("; "));
+    if (_ciDiff.length)      A_parts.push("Differentials considering: " + _ciDiff.map(x => x.label + (x.notes ? ` (${x.notes})` : "")).join("; "));
+    if (_ciRuled.length)     A_parts.push("Ruled out: " + _ciRuled.map(x => x.label).join("; "));
+    A_parts.push("");
+  }
+
   // ── Try v6 engine first (new regional subjective) ──────────────────────────
   const _v6Regions = _soap_regions.length > 0 ? _soap_regions : null;
   const _v6Result = (_v6Regions && typeof runEngineV6 === "function")
@@ -2955,7 +2967,9 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   let dx = null;
 
   if (_v6Result?.regionResults?.length) {
-    A_parts.push("CLINICAL IMPRESSION (Engine v6 — Ranked Differentials):");
+    A_parts.push(_ciItems.length > 0
+      ? "Clinical Decision Support (engine suggestions — review against your assessment):"
+      : "CLINICAL IMPRESSION (Engine v6 — Ranked Differentials):");
     _v6Result.regionResults.forEach((r, i) => {
       A_parts.push(`\n  Region ${i+1}: ${r.region}`);
       A_parts.push(`  Primary hypothesis: ${r.primaryPattern} [${r.confidence} CONFIDENCE]`);
