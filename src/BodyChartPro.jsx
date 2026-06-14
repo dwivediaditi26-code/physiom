@@ -564,6 +564,23 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
     }
   }, [activePanel]);
 
+  // Non-passive touch listeners so preventDefault actually stops page scroll during drawing
+  const drawModeRef = useRef(false);
+  useEffect(() => { drawModeRef.current = drawMode; }, [drawMode]);
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const blockScroll = (e) => {
+      if (drawModeRef.current) e.preventDefault();
+    };
+    svg.addEventListener("touchmove", blockScroll, { passive: false });
+    svg.addEventListener("touchstart", blockScroll, { passive: false });
+    return () => {
+      svg.removeEventListener("touchmove", blockScroll);
+      svg.removeEventListener("touchstart", blockScroll);
+    };
+  }, []);
+
   const getSVGXY = (e) => {
     const svg = svgRef.current;
     if (!svg) return null;
