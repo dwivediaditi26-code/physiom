@@ -15250,7 +15250,7 @@ function PdfReportsModal({ data, dx, onClose }) {
 
   const escHtml = (s) => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   const val = (k, fallback="--") => escHtml(d[k]||fallback);
-  const arr = (k) => { const v=d[k]||""; return Array.isArray(v)?v:v.split("|||").filter(Boolean); };
+  const arr = (k) => { const v=d[k]; return Array.isArray(v)?v:(typeof v==="string"?v:"").split("|||").filter(Boolean); };
 
   const pdfHeader = (title, subtitle, color) => {
     const clinicAddr = d.clinic_address || "Suite 100, PhysioMind HQ, 1 Digital Drive, Mumbai 400001";
@@ -16687,7 +16687,7 @@ function AppInner({ currentUser, onSignOut }) {
           // Check both old rf_* fields and new grf_* fields used in SubjectiveModule
           const oldFields = ["rf_malignancy","rf_cauda","rf_vascular","rf_inflammatory","rf_fracture","rf_neuro"];
           const oldSafe = ["No malignancy red flags","No cauda equina flags","No vascular red flags","No inflammatory red flags","No fracture red flags","No neurological red flags","No red flags — proceed with assessment"];
-          const oldHit = oldFields.flatMap(fid=>(data[fid]||"").split("|||")).filter(v=>v&&!oldSafe.includes(v)).length>0;
+          const oldHit = oldFields.flatMap(fid=>(typeof data[fid]==="string"?data[fid]:"").split("|||")).filter(v=>v&&!oldSafe.includes(v)).length>0;
           // grf_action: if not "No red flags — proceed with assessment", a flag is present
           const grfAction = data.grf_action||"";
           const grfHit = grfAction && grfAction !== "No red flags — proceed with assessment";
@@ -16797,7 +16797,7 @@ function AppInner({ currentUser, onSignOut }) {
   const activeRedFlags = RED_FLAG_FIELDS.flatMap(fid => {
     const val = data[fid] || "";
     if (!val) return [];
-    return val.split("|||").filter(v => v && !SAFE_VALUES.includes(v));
+    return (typeof val==="string"?val:"").split("|||").filter(v => v && !SAFE_VALUES.includes(v));
   });
   const hasRedFlags = activeRedFlags.length > 0;
 

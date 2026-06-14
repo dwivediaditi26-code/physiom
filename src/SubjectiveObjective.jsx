@@ -9777,8 +9777,8 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
     // Chief complaint
     if (data.cc_main)          sympEvidence.push(`Chief complaint: "${data.cc_main}"`);
     if (_region)               sympEvidence.push(`Primary region: ${_region}`);
-    if (rget("loc_primary"))   sympEvidence.push(`Location: ${rget("loc_primary").split("|||").join(", ")}`);
-    if (rget("loc_radiation")) sympEvidence.push(`Radiation: ${rget("loc_radiation").split("|||").join(", ")}`);
+    if (rget("loc_primary"))   sympEvidence.push(`Location: ${(typeof rget("loc_primary")==="string"?rget("loc_primary"):"").split("|||").join(", ")}`);
+    if (rget("loc_radiation")) sympEvidence.push(`Radiation: ${(typeof rget("loc_radiation")==="string"?rget("loc_radiation"):"").split("|||").join(", ")}`);
     if (data.cc_onset)         sympEvidence.push(`Onset: ${Array.isArray(data.cc_onset)?data.cc_onset.join(", "):data.cc_onset}`);
     if (data.cc_duration)      sympEvidence.push(`Duration: ${Array.isArray(data.cc_duration)?data.cc_duration.join(", "):data.cc_duration}`);
     // Pain
@@ -9787,13 +9787,13 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
     // Aggravating / easing (region-specific)
     const _aggCombined = [rget("agg_movements"),rget("agg_postures"),rget("agg_activities"),rget("agg_other")].filter(Boolean).join("|||");
     const _relCombined = [rget("rel_movements"),rget("rel_postures"),rget("rel_manual"),rget("rel_med")].filter(Boolean).join("|||");
-    if (_aggCombined) sympEvidence.push(`Aggravated by: ${_aggCombined.split("|||").filter(Boolean).join(", ")}`);
-    if (_relCombined) sympEvidence.push(`Eased by: ${_relCombined.split("|||").filter(Boolean).join(", ")}`);
+    if (_aggCombined && typeof _aggCombined==="string") sympEvidence.push(`Aggravated by: ${_aggCombined.split("|||").filter(Boolean).join(", ")}`);
+    if (_relCombined && typeof _relCombined==="string") sympEvidence.push(`Eased by: ${_relCombined.split("|||").filter(Boolean).join(", ")}`);
     // Symptom behaviour
-    if (rget("sb_morning"))    sympEvidence.push(`Morning: ${rget("sb_morning").split("|||").join(", ")}`);
-    if (rget("sb_night"))      sympEvidence.push(`Night: ${rget("sb_night").split("|||").join(", ")}`);
+    if (rget("sb_morning"))    sympEvidence.push(`Morning: ${(typeof rget("sb_morning")==="string"?rget("sb_morning"):"").split("|||").join(", ")}`);
+    if (rget("sb_night"))      sympEvidence.push(`Night: ${(typeof rget("sb_night")==="string"?rget("sb_night"):"").split("|||").join(", ")}`);
     // MOI
-    if (rget("moi_type"))      sympEvidence.push(`Mechanism: ${rget("moi_type").split("|||").join(", ")}`);
+    if (rget("moi_type"))      sympEvidence.push(`Mechanism: ${(typeof rget("moi_type")==="string"?rget("moi_type"):"").split("|||").join(", ")}`);
     // History
     if (data.pmh_relevant)     sympEvidence.push(`PMH: ${Array.isArray(data.pmh_relevant)?data.pmh_relevant.join(", "):data.pmh_relevant}`);
 
