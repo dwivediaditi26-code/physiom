@@ -8707,6 +8707,602 @@ function LumbarFunctionalScreen({ data, set }) {
   );
 }
 
+
+// ─── SHOULDER FUNCTIONAL SCREEN ───────────────────────────────────────────────
+
+const SHOULDER_TESTS = [
+  {
+    id:"sfs_flex", icon:"🙌", label:"Active Flexion (Overhead Reach)",
+    subtitle:"Scapulohumeral Rhythm + Subacromial Screen",
+    phase:"Glenohumeral + Scapular Upward Rotation",
+    setup:"Patient standing, arms at side. Slowly elevate both arms in sagittal plane to maximum. Observe from side and behind. Repeat 3×.",
+    normalDesc:"170–180°, scapular upward rotation begins ~60° GH, smooth rhythm 2:1 GH:scapular, no trunk lateral flex, no humeral head migration.",
+    svgNormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        {/* Body */}
+        <circle cx="55" cy="24" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="55" y1="31" x2="55" y2="65" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="55" y1="65" x2="48" y2="90" stroke="#059669" strokeWidth="2"/>
+        <line x1="55" y1="65" x2="62" y2="90" stroke="#059669" strokeWidth="2"/>
+        {/* Arms fully overhead */}
+        <line x1="55" y1="38" x2="48" y2="15" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="55" y1="38" x2="62" y2="15" stroke="#059669" strokeWidth="2.5"/>
+        {/* Scapula upward rotation mark */}
+        <path d="M44,36 Q38,40 40,48" stroke="#059669" strokeWidth="1.5" fill="none" strokeDasharray="3,2"/>
+        <text x="4" y="50" fontSize="5.5" fill="#059669">Scapula</text>
+        <text x="4" y="56" fontSize="5.5" fill="#059669">upward↑</text>
+        {/* Range arc */}
+        <path d="M55,31 Q72,20 68,12" stroke="#059669" strokeWidth="1" fill="none" strokeDasharray="2,2"/>
+        <text x="70" y="14" fontSize="5.5" fill="#059669">180°</text>
+        <text x="26" y="96" fontSize="6" fill="#059669">Full range, smooth rhythm</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">COMPENSATED</text>
+        {/* Body with trunk lateral flex */}
+        <circle cx="58" cy="24" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="58" y1="31" x2="55" y2="65" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="55" y1="65" x2="48" y2="90" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="55" y1="65" x2="62" y2="90" stroke="#dc2626" strokeWidth="2"/>
+        {/* Arm stopped short + shrug */}
+        <line x1="58" y1="37" x2="52" y2="22" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="58" y1="37" x2="72" y2="30" stroke="#dc2626" strokeWidth="2.5"/> {/* other arm lower */}
+        {/* Upper trap elevation arrow */}
+        <path d="M52,36 L50,28" stroke="#f97316" strokeWidth="2" fill="none"/>
+        <polygon points="48,28 52,24 54,30" fill="#f97316"/>
+        <text x="36" y="24" fontSize="5.5" fill="#f97316">Shrug</text>
+        {/* Trunk lean arrow */}
+        <path d="M64,50 L70,50" stroke="#dc2626" strokeWidth="1.5" fill="none"/>
+        <polygon points="70,48 74,50 70,52" fill="#dc2626"/>
+        <text x="75" y="53" fontSize="5" fill="#dc2626">Lean</text>
+        <text x="4" y="96" fontSize="6" fill="#dc2626">Shrug + trunk lateral flex</text>
+      </svg>
+    ),
+    observations:[
+      { id:"rom",    q:"Range of motion achieved?",
+        opts:["✓ 170–180° full elevation","⚠ 140–169° limited","✗ <140° significantly restricted","✗ Painful before 90°"],
+        clues:["","Possible capsular tightness or subacromial impingement — check arc","Significant restriction — screen capsular pattern (ER most > Abd > IR)","Subacromial/rotator cuff pathology — Hawkins-Kennedy, Neer test"] },
+      { id:"rhythm", q:"Scapulohumeral rhythm?",
+        opts:["✓ Smooth 2:1 (GH:scapular)","⚠ Early scapular elevation (upper trap dominance)","✗ Scapular winging on elevation","✗ Reverse rhythm (scapula before GH)"],
+        clues:["","Upper trap overactive — check lower trap and serratus anterior strength","Serratus anterior weakness — wall push-up plus test","Significant neuromuscular dysfunction — screen long thoracic nerve"] },
+      { id:"arc",    q:"Painful arc during flexion?",
+        opts:["✓ Pain-free throughout","⚠ Pain at 60–90° (early arc)","⚠ Pain at 90–130° (classic subacromial arc)","⚠ Pain at 150–180° (AC joint range)"],
+        clues:["","Likely subacromial pathology — bursa or cuff — do Hawkins + Neer","Classic subacromial impingement arc — do Hawkins-Kennedy, Neer, Empty Can","AC joint pathology — do horizontal adduction (cross-arm) test"] },
+      { id:"trunk",  q:"Trunk compensation?",
+        opts:["✓ Trunk upright throughout","⚠ Slight ipsilateral lean","✗ Clear lateral trunk flex to elevate arm","✗ Trunk extension (lumbar) to achieve height"],
+        clues:["","Minor — monitor bilaterally","Substitution for restricted GH flexion — true ROM less than apparent","Stiff thoracic / restricted GH — thoracic AROM assessment needed"] },
+      { id:"sym",    q:"Bilateral symmetry?",
+        opts:["✓ Symmetric","⚠ Minor difference <20°","✗ >20° side-to-side difference","✗ One side clearly pathological"],
+        clues:["","Monitoring point","Unilateral restriction — capsular pattern or rotator cuff pathology likely","Priority assessment side — proceed to specific shoulder tests"] },
+    ],
+    grades:["Normal — Full range, smooth rhythm, pain-free, symmetric","Compensated — Minor restriction or rhythm fault without pain","Abnormal — Painful arc, significant restriction, or winging"],
+  },
+  {
+    id:"sfs_abd", icon:"✈️", label:"Shoulder Abduction Arc",
+    subtitle:"Painful Arc / Subacromial vs AC Joint Screen",
+    phase:"Subacromial Space / AC Joint Loading",
+    setup:"Patient standing. Abduct arms in coronal plane slowly to 180°. Observe for painful arc zones. Note start and end of pain. Assess bilaterally.",
+    normalDesc:"Full 180° pain-free. Scapular upward rotation and thoracic lateral flex at end range. No painful arc zone.",
+    svgNormal:(
+      <svg viewBox="0 0 140 100" style={{width:"100%",maxWidth:140}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL + ARC ZONES</text>
+        {/* Standing figure */}
+        <circle cx="70" cy="28" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="70" y1="35" x2="70" y2="70" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="70" y1="70" x2="62" y2="92" stroke="#059669" strokeWidth="2"/>
+        <line x1="70" y1="70" x2="78" y2="92" stroke="#059669" strokeWidth="2"/>
+        {/* Full abduction arms */}
+        <line x1="70" y1="42" x2="26" y2="28" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="70" y1="42" x2="114" y2="28" stroke="#059669" strokeWidth="2.5"/>
+        {/* Arc zone labels */}
+        <path d="M40,55 Q28,42 36,30" stroke="#e5e7eb" strokeWidth="1" fill="none" strokeDasharray="2,2"/>
+        <text x="4" y="70" fontSize="5" fill="#6b7280">60–120°</text>
+        <text x="4" y="76" fontSize="5" fill="#f97316">Subacromial</text>
+        <text x="100" y="70" fontSize="5" fill="#6b7280">140–180°</text>
+        <text x="100" y="76" fontSize="5" fill="#dc2626">AC Joint</text>
+        {/* Green = normal */}
+        <text x="38" y="96" fontSize="5.5" fill="#059669">✓ Pain-free full range</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 140 100" style={{width:"100%",maxWidth:140}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">PAINFUL ARC ZONES</text>
+        <circle cx="70" cy="28" r="7" fill="none" stroke="#6b7280" strokeWidth="2"/>
+        <line x1="70" y1="35" x2="70" y2="70" stroke="#6b7280" strokeWidth="2.5"/>
+        <line x1="70" y1="70" x2="62" y2="92" stroke="#6b7280" strokeWidth="2"/>
+        <line x1="70" y1="70" x2="78" y2="92" stroke="#6b7280" strokeWidth="2"/>
+        {/* Arm at 90° */}
+        <line x1="70" y1="42" x2="36" y2="42" stroke="#6b7280" strokeWidth="2.5"/>
+        <line x1="70" y1="42" x2="104" y2="42" stroke="#6b7280" strokeWidth="2.5"/>
+        {/* Painful arc zone 1 — subacromial */}
+        <path d="M42,55 Q30,42 42,30" stroke="#f97316" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        <text x="4" y="62" fontSize="5.5" fill="#f97316" fontWeight="bold">60–120°</text>
+        <text x="4" y="69" fontSize="5" fill="#f97316">Subacromial</text>
+        <text x="4" y="75" fontSize="5" fill="#f97316">(bursa/cuff)</text>
+        {/* Painful arc zone 2 — AC */}
+        <path d="M100,38 Q110,28 104,18" stroke="#dc2626" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        <text x="106" y="40" fontSize="5.5" fill="#dc2626" fontWeight="bold">140–180°</text>
+        <text x="106" y="47" fontSize="5" fill="#dc2626">AC Joint</text>
+        {/* Pain symbol */}
+        <text x="22" y="44" fontSize="8" fill="#f97316">⚡</text>
+        <text x="100" y="24" fontSize="8" fill="#dc2626">⚡</text>
+      </svg>
+    ),
+    observations:[
+      { id:"arc60",  q:"Pain between 60–120° abduction?",
+        opts:["✓ No pain in this range","⚠ Mild discomfort","✗ Clear pain — arc present"],
+        clues:["","Minor subacromial irritation — monitor","Classic subacromial painful arc — suggests subacromial bursitis or supraspinatus pathology. Do Hawkins-Kennedy and Neer impingement tests"] },
+      { id:"arc140", q:"Pain between 140–180° abduction?",
+        opts:["✓ No pain in this range","⚠ Discomfort only","✗ Clear pain — AC arc present"],
+        clues:["","Mild AC joint irritation","AC joint pathology likely — do horizontal adduction test (cross-arm), AC joint palpation, and AC joint stress test"] },
+      { id:"rhythm", q:"Scapular rhythm during abduction?",
+        opts:["✓ 2:1 GH:scapular","⚠ Early scapular elevation (shrug at ~60°)","✗ Scapular winging from behind","✗ Scapular dyskinesis — irregular movement"],
+        clues:["","Upper trap overactive / lower trap weak — screen CPA (Janda)","Serratus anterior weakness — confirm wall push-up plus","Rotator cuff weakness or SICK scapula syndrome — full scapular screen"] },
+      { id:"drop",   q:"Can patient slowly lower from 90°?",
+        opts:["✓ Controlled throughout","⚠ Drop arm at ~90° eccentric","✗ Unable to control — drops arm"],
+        clues:["","Minor cuff fatigue","Drop arm sign — likely supraspinatus tear (if positive on active abd). Do empty can + external rotation lag sign","Full thickness rotator cuff tear likely — MRI referral"] },
+      { id:"sym",    q:"Range vs opposite side?",
+        opts:["✓ Symmetric","⚠ Minor difference <20°","✗ >20° difference","✗ Unable to abduct >60°"],
+        clues:["","Monitor","Unilateral restriction — capsular pattern vs impingement. Check passive range — if equal, muscular inhibition","Severe restriction — adhesive capsulitis if all passive ranges equally restricted"] },
+    ],
+    grades:["Normal — Full range, pain-free, smooth scapular rhythm","Compensated — Minor arc or rhythm fault","Abnormal — Painful arc or significant restriction"],
+  },
+  {
+    id:"sfs_ir",  icon:"🤝", label:"Apley Scratch Lower (IR)",
+    subtitle:"Internal Rotation + Extension Composite",
+    phase:"Posterior Capsule / IR Range",
+    setup:"Standing. Patient reaches hand behind back as high as possible — thumb tip level noted. Compare bilaterally. Note pain vs stiffness.",
+    normalDesc:"Thumb reaches T7–T8 (mid-thoracic). No pain. Restriction = posterior capsule tightness or posterior rotator cuff.",
+    svgNormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        {/* Side view figure */}
+        <circle cx="60" cy="22" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="60" y1="29" x2="60" y2="65" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="60" y1="65" x2="54" y2="88" stroke="#059669" strokeWidth="2"/>
+        <line x1="60" y1="65" x2="66" y2="88" stroke="#059669" strokeWidth="2"/>
+        {/* Arm behind back — reaching mid-thoracic */}
+        <line x1="60" y1="38" x2="52" y2="46" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="52" y1="46" x2="56" y2="52" stroke="#059669" strokeWidth="2.5"/>
+        {/* Hand position indicator */}
+        <circle cx="57" cy="52" r="3" fill="#059669" opacity="0.6"/>
+        <text x="62" y="54" fontSize="5.5" fill="#059669">T7–T8</text>
+        <line x1="62" y1="52" x2="60" y2="50" stroke="#059669" strokeWidth="1"/>
+        {/* Spine landmark */}
+        <line x1="60" y1="35" x2="60" y2="62" stroke="#6b7280" strokeWidth="1" strokeDasharray="2,2" opacity="0.5"/>
+        <text x="26" y="96" fontSize="6" fill="#059669">Reaches mid-thoracic</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">RESTRICTED</text>
+        <circle cx="60" cy="22" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="60" y1="29" x2="60" y2="65" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="60" y1="65" x2="54" y2="88" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="60" y1="65" x2="66" y2="88" stroke="#dc2626" strokeWidth="2"/>
+        {/* Arm stuck low — only reaches lumbar */}
+        <line x1="60" y1="38" x2="52" y2="50" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="52" y1="50" x2="55" y2="65" stroke="#dc2626" strokeWidth="2.5"/>
+        {/* Hand stuck at lumbar */}
+        <circle cx="55" cy="65" r="3" fill="#dc2626" opacity="0.6"/>
+        <text x="40" y="74" fontSize="5.5" fill="#dc2626">Lumbar only</text>
+        {/* Restricted symbol */}
+        <text x="30" y="55" fontSize="8" fill="#dc2626">✗</text>
+        <text x="4" y="96" fontSize="6" fill="#dc2626">Posterior capsule / IR restriction</text>
+      </svg>
+    ),
+    observations:[
+      { id:"level",  q:"Level reached?",
+        opts:["✓ T7–T8 or above (normal)","⚠ T10–T12 (mild restriction)","✗ L1–L5 (moderate restriction)","✗ Below buttock (severe restriction)"],
+        clues:["","Mild posterior capsule tightness or minor cuff restriction — monitor","Posterior capsule tightness — sleeper stretch, posterior joint mobilisation","Significant IR deficit — adhesive capsulitis pattern or massive posterior capsule tightness (GIRD)"] },
+      { id:"type",   q:"Is restriction pain or stiffness?",
+        opts:["✓ Neither","⚠ Stiffness — mechanical","✗ Pain posterior shoulder","✗ Pain anterior shoulder"],
+        clues:["","Posterior capsule restriction — respond to stretching / mobilisation","Posterior cuff or posterior capsule — likely mechanical. PAIVM L5–S1 equivalent (Maitland PA)","Biceps tendon or anterior capsule pain with IR — screen bicipital groove palpation, Speed's test"] },
+      { id:"sym",    q:"Bilateral comparison?",
+        opts:["✓ Symmetric","⚠ 1–2 vertebral levels difference","✗ >3 levels difference","✗ Dominant arm significantly restricted"],
+        clues:["","","GIRD (Glenohumeral Internal Rotation Deficit) likely — common in throwing athletes","GIRD — highest risk for SLAP lesions and posterior-superior impingement. Assess posterior capsule stretch response"] },
+      { id:"scap",   q:"Scapular compensation?",
+        opts:["✓ Scapula stays back","⚠ Mild scapular protraction","✗ Clear scapular protraction to gain range"],
+        clues:["","","Substituting scapular protraction for true GH IR. True GH IR deficit > apparent — clinically stabilise scapula and remeasure"] },
+      { id:"pain",   q:"Overall provocation?",
+        opts:["✓ No pain","⚠ Dull ache end range","✗ Sharp posterior pain","✗ Clicking / clunking"],
+        clues:["","Minor — monitor","Posterior capsule or posterior cuff pathology","Labral involvement possible — O'Brien's active compression test, bicipital groove tests"] },
+    ],
+    grades:["Normal — T7 or above, pain-free, symmetric","Compensated — Mild restriction or 1–2 levels asymmetry","Abnormal — <T12, significant pain, or GIRD pattern"],
+  },
+  {
+    id:"sfs_er",  icon:"🙆", label:"Apley Scratch Upper (ER)",
+    subtitle:"External Rotation + Abduction Composite",
+    phase:"Anterior Capsule / ER + Flexion Range",
+    setup:"Standing. Patient reaches hand behind head and down toward opposite scapula. Note how far hand reaches. Assess pain vs stiffness. Compare bilaterally.",
+    normalDesc:"Fingers reach or pass contralateral scapula (opposite T4–T5). No pain. Limitation = anterior capsule or subscapularis tightness.",
+    svgNormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        <circle cx="60" cy="22" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="60" y1="29" x2="60" y2="65" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="60" y1="65" x2="54" y2="88" stroke="#059669" strokeWidth="2"/>
+        <line x1="60" y1="65" x2="66" y2="88" stroke="#059669" strokeWidth="2"/>
+        {/* Arm behind head + reaching opposite shoulder */}
+        <line x1="60" y1="35" x2="70" y2="24" stroke="#059669" strokeWidth="2.5"/> {/* upper arm up */}
+        <line x1="70" y1="24" x2="60" y2="32" stroke="#059669" strokeWidth="2.5"/> {/* forearm behind head */}
+        <line x1="60" y1="32" x2="52" y2="38" stroke="#059669" strokeWidth="2.5"/> {/* reach contralateral */}
+        <circle cx="50" cy="40" r="3" fill="#059669" opacity="0.6"/>
+        <text x="28" y="40" fontSize="5.5" fill="#059669">Contra</text>
+        <text x="28" y="46" fontSize="5.5" fill="#059669">scapula</text>
+        <text x="22" y="96" fontSize="6" fill="#059669">Reaches opposite shoulder</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">RESTRICTED</text>
+        <circle cx="60" cy="22" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="60" y1="29" x2="60" y2="65" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="60" y1="65" x2="54" y2="88" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="60" y1="65" x2="66" y2="88" stroke="#dc2626" strokeWidth="2"/>
+        {/* Arm can't get behind head — elbow forward */}
+        <line x1="60" y1="35" x2="72" y2="28" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="72" y1="28" x2="66" y2="36" stroke="#dc2626" strokeWidth="2.5"/>
+        {/* Can't reach contralateral — stuck ipsilateral */}
+        <circle cx="68" cy="36" r="3" fill="#dc2626" opacity="0.6"/>
+        <text x="72" y="38" fontSize="5.5" fill="#dc2626">Ipsilateral</text>
+        <text x="72" y="44" fontSize="5.5" fill="#dc2626">only</text>
+        <text x="30" y="62" fontSize="8" fill="#dc2626">✗</text>
+        <text x="4" y="96" fontSize="6" fill="#dc2626">Anterior capsule / subscap tight</text>
+      </svg>
+    ),
+    observations:[
+      { id:"reach",  q:"How far does hand reach?",
+        opts:["✓ Passes contralateral scapula","⚠ Reaches contralateral shoulder tip","⚠ Touches top of head only (can't reach behind)","✗ Cannot get hand behind head"],
+        clues:["","Minor restriction — asymmetry monitor","Anterior capsule tightness or subscapularis restriction — compare passive ER in neutral and 90° abd","Significant ER restriction — screen for adhesive capsulitis (all ranges limited) or traumatic anterior instability"] },
+      { id:"type",   q:"Restriction character?",
+        opts:["✓ No restriction","⚠ Stiffness — no pain","✗ Anterior shoulder pain","✗ Posterior shoulder pain on end range"],
+        clues:["","Capsular restriction — anterior capsule + subscapularis. Respond to anterior capsule stretching and GH anterior glide mobilisation","Anterior capsule / biceps long head — Speeds test, anterior palpation","Posterior capsule stretch pain — combined restriction pattern"] },
+      { id:"sym",    q:"Side-to-side difference?",
+        opts:["✓ Symmetric","⚠ Minor difference (<5cm)","✗ Marked difference (>10cm)","✗ One side cannot complete movement"],
+        clues:["","","Unilateral capsular or subscapularis restriction — assess passive ER at 0° and 90°","Significant — screen for acute pathology (dislocation history, RTC tear) vs chronic capsular pattern"] },
+      { id:"impinge",q:"Clicking or impingement sensation?",
+        opts:["✓ None","⚠ Clicking — no pain","✗ Painful click","✗ Clunk — labral feel"],
+        clues:["","Minor — possibly bicipital tendon","Internal impingement — posterior-superior labral contact in ABER position. O'Brien's test, SLAP screen","Labral tear possible — Crank test, O'Brien's, Speed's test"] },
+      { id:"sub",    q:"Subscapularis substitution (shoulder rises)?",
+        opts:["✓ No compensation","⚠ Mild shoulder rise","✗ Clear shoulder elevation to gain range"],
+        clues:["","","True ER deficit is greater than apparent — stabilise shoulder girdle passively and remeasure ER in 90° abduction"] },
+    ],
+    grades:["Normal — Reaches contralateral scapula, pain-free, symmetric","Compensated — Minor restriction or near-symmetric","Abnormal — Cannot reach contralateral side, pain, or significant asymmetry"],
+  },
+  {
+    id:"sfs_scap", icon:"🧱", label:"Scapular Control (Wall Slide)",
+    subtitle:"Serratus Anterior + Lower Trap Function",
+    phase:"Scapular Stabilisation / Motor Control",
+    setup:"Patient faces wall, hands at shoulder height, elbows slightly bent. Perform push-up plus (protract and then retract scapulae) × 5. Observe scapular borders from behind.",
+    normalDesc:"Scapulae stay flat against ribcage throughout. No medial border or inferior angle lifting. Smooth, equal bilateral movement.",
+    svgNormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL (rear view)</text>
+        {/* Torso from back */}
+        <rect x="30" y="20" width="50" height="65" rx="8" fill="#ECFDF5" stroke="#059669" strokeWidth="1.5"/>
+        {/* Spine */}
+        <line x1="55" y1="20" x2="55" y2="85" stroke="#d1d5db" strokeWidth="1" strokeDasharray="2,2"/>
+        {/* Scapulae flat — no winging */}
+        <path d="M32,30 Q30,45 34,60" stroke="#059669" strokeWidth="2.5" fill="none"/>
+        <path d="M78,30 Q80,45 76,60" stroke="#059669" strokeWidth="2.5" fill="none"/>
+        {/* Flat indicator */}
+        <text x="8" y="48" fontSize="5.5" fill="#059669">Flat ✓</text>
+        <text x="84" y="48" fontSize="5.5" fill="#059669">✓ Flat</text>
+        {/* Arms to wall */}
+        <line x1="30" y1="38" x2="16" y2="38" stroke="#059669" strokeWidth="2"/>
+        <line x1="80" y1="38" x2="94" y2="38" stroke="#059669" strokeWidth="2"/>
+        <text x="22" y="96" fontSize="6" fill="#059669">Scapulae flat — no winging</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">WINGING (rear view)</text>
+        <rect x="30" y="20" width="50" height="65" rx="8" fill="#FEF2F2" stroke="#dc2626" strokeWidth="1.5"/>
+        <line x1="55" y1="20" x2="55" y2="85" stroke="#d1d5db" strokeWidth="1" strokeDasharray="2,2"/>
+        {/* Medial border winging */}
+        <path d="M32,30 Q22,45 28,60" stroke="#dc2626" strokeWidth="2.5" fill="none"/>
+        {/* Wing arrow */}
+        <path d="M26,45 L18,45" stroke="#dc2626" strokeWidth="2" fill="none"/>
+        <polygon points="18,43 14,45 18,47" fill="#dc2626"/>
+        <text x="2" y="42" fontSize="5" fill="#dc2626">Medial</text>
+        <text x="2" y="48" fontSize="5" fill="#dc2626">border</text>
+        <text x="2" y="54" fontSize="5" fill="#dc2626">lifts</text>
+        {/* Serratus label */}
+        <text x="2" y="64" fontSize="4.5" fill="#f97316">= SA weak</text>
+        {/* Inferior angle winging right side */}
+        <path d="M78,30 Q82,48 78,62" stroke="#f97316" strokeWidth="2.5" fill="none"/>
+        <path d="M78,60 L86,65" stroke="#f97316" strokeWidth="2" fill="none"/>
+        <polygon points="86,63 90,67 84,67" fill="#f97316"/>
+        <text x="88" y="60" fontSize="4.5" fill="#f97316">Inf</text>
+        <text x="88" y="66" fontSize="4.5" fill="#f97316">angle</text>
+        <text x="88" y="72" fontSize="4.5" fill="#f97316">=LT weak</text>
+        <text x="8" y="96" fontSize="5.5" fill="#dc2626">Medial=Serratus · Inferior=Lower Trap</text>
+      </svg>
+    ),
+    observations:[
+      { id:"wing",   q:"Scapular winging present?",
+        opts:["✓ No winging — scapulae flat","⚠ Mild medial border lift (serratus)","✗ Clear medial border winging","✗ Inferior angle lifts (lower trap)","✗ Both — global scapular instability"],
+        clues:["","Mild serratus anterior weakness — screen with wall push-up and SA MMT","Serratus anterior weakness — long thoracic nerve screen (check C5/C6 myotome), progress wall push-up for activation","Lower trapezius weakness — screen with prone Y exercise and lower trap MMT","Combined — full scapular muscle screen: SA, LT, MT, rhomboids"] },
+      { id:"timing", q:"When does winging appear?",
+        opts:["✓ No winging","⚠ Only at end range (fatigue)","✗ From start of movement","✗ Winging on return (eccentric)"],
+        clues:["","Endurance deficit — progressive loading needed","Significant motor control deficit — activation phase issue","Eccentric control weakness — priority in overhead athletes"] },
+      { id:"sym",    q:"Bilateral comparison?",
+        opts:["✓ Symmetric","⚠ Minor asymmetry","✗ Clear unilateral winging","✗ Dominant winging — check history"],
+        clues:["","","Unilateral — screen for long thoracic nerve palsy (sudden onset) vs gradual weakness","Long thoracic nerve palsy if acute onset + global serratus weakness"] },
+      { id:"elev",   q:"Resting scapular position?",
+        opts:["✓ Level and neutral","⚠ Elevated (upper trap dominant)","⚠ Internally rotated / tilted","✗ Clearly depressed on one side"],
+        clues:["","Upper trap overactive — screen pec minor + upper trap for tightness (Janda CPA)","SICK scapula pattern — pec minor tightness + CPA dysfunction","Depression may indicate accessory nerve or trapezius pathology"] },
+      { id:"pain",   q:"Pain during scapular movement?",
+        opts:["✓ No pain","⚠ Periscapular ache","✗ Sharp periscapular pain","✗ Referred pain / tingling"],
+        clues:["","Muscle fatigue or trigger points in periscapular muscles — assess rhomboids, mid trap","Active trigger points — screen rhomboids, levator scapulae, mid/lower trap","Neural component — thoracic outlet / long thoracic nerve — do neurological screen"] },
+    ],
+    grades:["Normal — No winging, flat scapulae, symmetric","Compensated — Mild fatigue winging or minor asymmetry","Abnormal — Clear winging, pain, or SICK scapula pattern"],
+  },
+];
+
+function ShoulderFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  useEffect(() => {
+    const saved = data["sfs_data"];
+    if (saved && typeof saved === "string") {
+      try {
+        const p = JSON.parse(saved);
+        if (p.findings) setFindings(p.findings);
+        if (p.grades)   setGrades(p.grades);
+        if (p.notes)    setNotes(p.notes);
+      } catch {}
+    }
+  }, []);
+
+  const save = (f, g, n) => set("sfs_data", JSON.stringify({ findings: f, grades: g, notes: n }));
+
+  const setObs = (testId, obsId, val) => {
+    const nf = { ...findings, [`${testId}_${obsId}`]: val };
+    setFindings(nf); save(nf, grades, notes);
+  };
+  const setGrade = (testId, val) => {
+    const ng = { ...grades, [testId]: val };
+    setGrades(ng); save(findings, ng, notes);
+  };
+  const setNote = (testId, val) => {
+    const nn = { ...notes, [testId]: val };
+    setNotes(nn); save(findings, grades, nn);
+  };
+
+  const completedCount = SHOULDER_TESTS.filter(t => grades[t.id] !== undefined).length;
+  const gradeColor = (g) => g === 0 ? "#059669" : g === 1 ? "#d97706" : g === 2 ? "#dc2626" : C.muted;
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,rgba(8,145,178,0.08),rgba(59,130,246,0.05))", border:"1px solid rgba(8,145,178,0.22)", borderRadius:14, padding:"14px 16px", marginBottom:14 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
+          <span style={{ fontSize:"1.4rem" }}>🦾</span>
+          <div>
+            <div style={{ fontWeight:800, fontSize:"0.95rem", color:C.text }}>Shoulder Functional Screen</div>
+            <div style={{ fontSize:"0.68rem", color:C.muted }}>5 tests · Scapulohumeral rhythm · Arc + Capsular pattern · Student guide</div>
+          </div>
+          <div style={{ marginLeft:"auto", textAlign:"right" }}>
+            <div style={{ fontSize:"1.2rem", fontWeight:900, color:"#0891b2" }}>{completedCount}/5</div>
+            <div style={{ fontSize:"0.58rem", color:C.muted }}>graded</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+          {SHOULDER_TESTS.map(t => {
+            const g = grades[t.id];
+            const done = g !== undefined;
+            return (
+              <div key={t.id} onClick={() => setActiveTest(activeTest === t.id ? null : t.id)}
+                style={{ padding:"4px 10px", borderRadius:20, cursor:"pointer", fontSize:"0.68rem", fontWeight:700,
+                  border:`1px solid ${activeTest===t.id?"#0891b2":done?gradeColor(g)+"60":C.border}`,
+                  background:activeTest===t.id?"rgba(8,145,178,0.1)":done?`${gradeColor(g)}10`:"transparent",
+                  color:activeTest===t.id?"#0891b2":done?gradeColor(g):C.muted }}>
+                {t.icon} {t.label.split(" ")[0]} {t.label.split(" ")[1]||""} {done?["✓","⚠","✗"][g]:""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Test cards */}
+      {SHOULDER_TESTS.map(t => {
+        const isOpen = activeTest === t.id;
+        const g = grades[t.id];
+        const graded = g !== undefined;
+        return (
+          <div key={t.id} style={{ marginBottom:10, background:C.surface, borderRadius:14,
+            border:`1.5px solid ${isOpen?"#0891b2":graded?gradeColor(g)+"50":C.border}`,
+            overflow:"hidden", boxShadow:isOpen?"0 4px 16px rgba(8,145,178,0.1)":"0 1px 4px rgba(0,0,0,0.04)" }}>
+
+            <div onClick={() => setActiveTest(isOpen ? null : t.id)}
+              style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", cursor:"pointer",
+                borderLeft:`4px solid ${graded?gradeColor(g):C.border}` }}>
+              <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
+                <div style={{ fontSize:"0.65rem", color:C.muted }}>{t.subtitle}</div>
+              </div>
+              {graded && (
+                <span style={{ padding:"3px 10px", borderRadius:20, fontSize:"0.65rem", fontWeight:800,
+                  background:`${gradeColor(g)}15`, color:gradeColor(g), flexShrink:0 }}>
+                  {["Normal","Compensated","Abnormal"][g]}
+                </span>
+              )}
+              <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
+            </div>
+
+            {isOpen && (
+              <div style={{ padding:"0 14px 14px" }}>
+
+                {/* Visuals */}
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                  <div style={{ fontSize:"0.68rem", fontWeight:700, color:"#0891b2", textTransform:"uppercase", letterSpacing:"0.5px" }}>📐 Visual Guide</div>
+                  <button onClick={() => setShowVisual(v=>!v)} style={{ fontSize:"0.6rem", padding:"2px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:"transparent", color:C.muted, cursor:"pointer" }}>
+                    {showVisual?"Hide":"Show"}
+                  </button>
+                </div>
+
+                {showVisual && (
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
+                    <div style={{ background:"#ECFDF5", borderRadius:10, padding:10, border:"1px solid #A7F3D0" }}>
+                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#059669", marginBottom:6, textTransform:"uppercase" }}>✓ Normal</div>
+                      {t.svgNormal}
+                      <div style={{ fontSize:"0.62rem", color:"#059669", marginTop:6, lineHeight:1.4 }}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{ background:"#FEF2F2", borderRadius:10, padding:10, border:"1px solid #FECACA" }}>
+                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#dc2626", marginBottom:6, textTransform:"uppercase" }}>⚠ Watch For</div>
+                      {t.svgAbnormal}
+                    </div>
+                  </div>
+                )}
+
+                {/* Setup */}
+                <div style={{ background:"#F0F9FF", borderRadius:9, padding:"9px 11px", marginBottom:12, border:"1px solid #BAE6FD" }}>
+                  <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#0891b2", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>🎯 Setup & Procedure</div>
+                  <div style={{ fontSize:"0.75rem", color:C.text, lineHeight:1.6 }}>{t.setup}</div>
+                  <div style={{ marginTop:6, padding:"4px 8px", background:"rgba(8,145,178,0.08)", borderRadius:6, border:"1px solid rgba(8,145,178,0.2)" }}>
+                    <div style={{ fontSize:"0.6rem", fontWeight:700, color:"#0891b2" }}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+
+                {/* Observation checklist */}
+                <div style={{ fontSize:"0.68rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>
+                  👁 What To Observe
+                </div>
+                {t.observations.map(obs => {
+                  const val = findings[`${t.id}_${obs.id}`];
+                  const clue = val !== undefined ? obs.clues[val] : null;
+                  return (
+                    <div key={obs.id} style={{ marginBottom:10 }}>
+                      <div style={{ fontSize:"0.72rem", fontWeight:700, color:C.text, marginBottom:5 }}>{obs.q}</div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                        {obs.opts.map((opt, idx) => {
+                          const sel = val === idx;
+                          const col = opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":opt.startsWith("✗")?"#dc2626":C.muted;
+                          return (
+                            <div key={idx} onClick={() => setObs(t.id, obs.id, sel ? undefined : idx)}
+                              style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"7px 10px", borderRadius:8, cursor:"pointer",
+                                border:`1.5px solid ${sel?col:C.border}`, background:sel?`${col}10`:C.s2, transition:"all 0.12s" }}>
+                              <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${sel?col:C.border}`,
+                                background:sel?col:"transparent", flexShrink:0, marginTop:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                                {sel && <span style={{ fontSize:8, color:"#fff", fontWeight:900 }}>✓</span>}
+                              </div>
+                              <span style={{ fontSize:"0.72rem", fontWeight:sel?700:400, color:sel?col:C.text, lineHeight:1.35 }}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && (
+                        <div style={{ marginTop:5, padding:"6px 10px", background:"rgba(8,145,178,0.06)", borderLeft:"3px solid #0891b2", borderRadius:"0 6px 6px 0", fontSize:"0.68rem", color:C.text, lineHeight:1.5 }}>
+                          <strong>Clinical note:</strong> {clue}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Grade */}
+                <div style={{ fontSize:"0.68rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, marginTop:4 }}>
+                  📊 Grade This Test
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:12 }}>
+                  {t.grades.map((gLabel, idx) => {
+                    const col = gradeColor(idx);
+                    const sel = g === idx;
+                    return (
+                      <div key={idx} onClick={() => setGrade(t.id, sel ? undefined : idx)}
+                        style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderRadius:9, cursor:"pointer",
+                          border:`1.5px solid ${sel?col:C.border}`, background:sel?`${col}12`:C.s2 }}>
+                        <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${sel?col:C.border}`,
+                          background:sel?col:"transparent", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                          {sel && <span style={{ fontSize:9, color:"#fff", fontWeight:900 }}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{ fontSize:"0.73rem", fontWeight:sel?700:400, color:sel?col:C.text }}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Notes */}
+                <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.muted, marginBottom:4 }}>Therapist notes</div>
+                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
+                  placeholder="Clinical observations, pattern findings, next assessment steps..."
+                  style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text,
+                    padding:"8px 10px", fontSize:"0.72rem", fontFamily:"inherit", resize:"vertical", minHeight:56, outline:"none" }}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Summary */}
+      {completedCount > 0 && (
+        <div style={{ background:"#F0F9FF", borderRadius:14, padding:14, border:"1px solid #BAE6FD", marginTop:4 }}>
+          <div style={{ fontWeight:800, color:C.text, marginBottom:10 }}>📋 Shoulder Screen Summary</div>
+          {SHOULDER_TESTS.filter(t => grades[t.id] !== undefined).map(t => {
+            const g = grades[t.id];
+            const col = gradeColor(g);
+            return (
+              <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
+                <span style={{ fontSize:"1rem" }}>{t.icon}</span>
+                <span style={{ flex:1, fontSize:"0.75rem", fontWeight:600, color:C.text }}>{t.label}</span>
+                <span style={{ padding:"2px 10px", borderRadius:20, fontSize:"0.65rem", fontWeight:800, background:`${col}15`, color:col }}>
+                  {["Normal","Compensated","Abnormal"][g]}
+                </span>
+              </div>
+            );
+          })}
+          {Object.values(grades).includes(2) && (
+            <div style={{ marginTop:10, padding:"8px 10px", background:"#FEF2F2", borderRadius:8, border:"1px solid #FECACA", fontSize:"0.7rem", color:"#dc2626", lineHeight:1.5 }}>
+              ⚠ <strong>Abnormal findings present.</strong> Consider: Hawkins-Kennedy, Neer impingement, Empty Can (supraspinatus), O'Brien's (SLAP), horizontal adduction (AC), posterior capsule stretch test, and CPA (Janda) for motor pattern.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── FUNCTIONAL SCREEN HUB ───────────────────────────────────────────────────
+
+function FunctionalScreenHub({ data, set }) {
+  const [region, setRegion] = useState("lumbar");
+  const regions = [
+    { id:"lumbar",   label:"Lumbar",   icon:"🦴", color:"#7c3aed" },
+    { id:"shoulder", label:"Shoulder", icon:"🦾", color:"#0891b2" },
+  ];
+  return (
+    <div>
+      {/* Region picker */}
+      <div style={{ display:"flex", gap:6, marginBottom:14 }}>
+        {regions.map(r => {
+          const sel = region === r.id;
+          return (
+            <button key={r.id} type="button" onClick={() => setRegion(r.id)}
+              style={{ flex:1, padding:"9px 4px", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:"0.78rem", fontFamily:"inherit",
+                border:`1.5px solid ${sel ? r.color : C.border}`,
+                background:sel ? `${r.color}12` : "transparent",
+                color:sel ? r.color : C.muted }}>
+              {r.icon} {r.label}
+            </button>
+          );
+        })}
+      </div>
+      {region === "lumbar"   && <LumbarFunctionalScreen   data={data} set={set}/>}
+      {region === "shoulder" && <ShoulderFunctionalScreen data={data} set={set}/>}
+    </div>
+  );
+}
+
 // ─── MAIN FMA SECTION ─────────────────────────────────────────────────────────
 const FMS_STORAGE_KEY2="fms_clinical_v1";
 function loadFMSReport(){try{return JSON.parse(localStorage.getItem(FMS_STORAGE_KEY2)||"{}");}catch{return{};}}
@@ -8810,7 +9406,7 @@ function FMASection({ navContext={}, data={}, set=()=>{} }){
 
       {/* Tab nav */}
       <div style={{display:"flex",gap:5,marginBottom:12}}>
-        {[["select","🗂 Select Tests"],["test","🔍 Assess"],["report","📋 Report"],["lumbar","🦴 Lumbar Screen"]].map(([k,l])=>(
+        {[["select","🗂 Select Tests"],["test","🔍 Assess"],["report","📋 Report"],["lumbar","🏃 Functional Screen"]].map(([k,l])=>(
           <button key={k} type="button" onClick={()=>setActiveSection(k)}
             style={{flex:1,padding:"8px 4px",borderRadius:9,border:`1px solid ${activeSection===k?C.accent:C.border}`,background:activeSection===k?"rgba(0,229,255,0.1)":"transparent",color:activeSection===k?C.accent:C.muted,fontSize:"0.75rem",fontWeight:activeSection===k?700:500,cursor:"pointer"}}>
             {l}
@@ -8818,9 +9414,9 @@ function FMASection({ navContext={}, data={}, set=()=>{} }){
         ))}
       </div>
 
-      {/* ── LUMBAR FUNCTIONAL SCREEN ── */}
+      {/* ── FUNCTIONAL SCREEN (region selector) ── */}
       {activeSection==="lumbar"&&(
-        <LumbarFunctionalScreen data={data} set={set}/>
+        <FunctionalScreenHub data={data} set={set}/>
       )}
 
       {/* ── SELECT TESTS VIEW ── */}
