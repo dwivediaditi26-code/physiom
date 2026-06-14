@@ -1295,6 +1295,7 @@ function Sparkline({ values, color, improved }) {
 function OutcomeMeasuresModule() {
   const categories = [...new Set(Object.values(OUTCOME_DB).map(m => m.category))];
   const [catFilter,   setCatFilter]   = useState("All");
+  const [omSearch,    setOmSearch]    = useState("");
   const [active,      setActive]      = useState(null);
   const [answers,     setAnswers]     = useState({});
   const [sessions,    setSessions]    = useState(() => {
@@ -1311,7 +1312,15 @@ function OutcomeMeasuresModule() {
 
   const setField = (qid, fid, val) => setAnswers(a => ({ ...a, [qid]: { ...a[qid], [fid]: val } }));
 
-  const filteredMeasures = Object.values(OUTCOME_DB).filter(m => catFilter === "All" || m.category === catFilter);
+  const filteredMeasures = Object.values(OUTCOME_DB).filter(m => {
+    const q = omSearch.toLowerCase();
+    const matchesSearch = !q ||
+      (m.label||"").toLowerCase().includes(q) ||
+      (m.category||"").toLowerCase().includes(q) ||
+      (m.id||"").toLowerCase().includes(q);
+    const matchesCat = catFilter === "All" || m.category === catFilter;
+    return matchesSearch && matchesCat;
+  });
 
   const getScore = (m) => {
     const v = answers[m.id] || {};
@@ -1495,6 +1504,11 @@ function OutcomeMeasuresModule() {
         )}
       </div>
 
+      {/* ── Search ── */}
+      <input type="text" value={omSearch} onChange={e=>{setOmSearch(e.target.value);setCatFilter("All");}}
+        placeholder="🔍 Search by measure name or condition..."
+        style={{ width:"100%", background:"#0d1e33", border:"1px solid #1a2d45", borderRadius:8, color:"#e2e8f0", padding:"9px 12px", fontSize:"0.82rem", fontFamily:"inherit", outline:"none", marginBottom:10 }} />
+
       {/* ── Category filter ── */}
       <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:12 }}>
         {["All", ...categories].map(c => (
@@ -1506,6 +1520,9 @@ function OutcomeMeasuresModule() {
       </div>
 
       {/* ── Measure cards ── */}
+      {filteredMeasures.length===0&&omSearch&&(
+        <div style={{textAlign:"center",padding:"24px",color:"#6b8399",fontSize:"0.78rem"}}>No outcome measures found for "{omSearch}"</div>
+      )}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(165px,1fr))", gap:8, marginBottom:14 }}>
         {filteredMeasures.map(m => {
           const score  = getScore(m);

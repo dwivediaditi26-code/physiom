@@ -12154,7 +12154,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     { k:"overview",    icon:"🏠",  label:"Overview"         },
     { k:"subjective",  icon:"📝",  label:"Subjective"       },
     { k:"assessment",  icon:"📋",  label:"Assessment"       },
-      { k:"treatment",   icon:"💊",  label:"Treatment"        },
+    { k:"posture",     icon:"🧍",  label:"Posture"          },
+    { k:"treatment",   icon:"💊",  label:"Treatment"        },
     { k:"progress",    icon:"📈",  label:"Progress"         },
     { k:"documents",   icon:"📄",  label:"Docs"             },
   ];
@@ -12800,7 +12801,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 {label:"ROM",          done:Object.keys(d).some(k=>k.startsWith("rom_")&&k!=="rom_snapshots"&&d[k]),  nav:"rom"},
                 {label:"MMT",          done:Object.keys(d).some(k=>k.startsWith("mmt_")&&d[k]),                         nav:"mmt"},
                 {label:"Special Tests",done:Object.keys(d).some(k=>k.startsWith("st_")&&d[k]),                          nav:"special"},
-                {label:"Neuro",        done:Object.keys(d).some(k=>(k.startsWith("n_ref_")||k.startsWith("n_der_")||k.startsWith("n_myot_"))&&d[k]), nav:"neuro"},
+                {label:"Neuro",        done:Object.keys(d).some(k=>(k.startsWith("n_ref_")||k.startsWith("n_der_")||k.startsWith("n_myot_")||k.startsWith("nt_")||/^myo_/.test(k)||/^n_(c|t|l|s)/.test(k))&&typeof d[k]==="string"&&d[k]), nav:"neuro"},
                 {label:"Kinetic Chain",done:Object.keys(d).some(k=>k.startsWith("kc_")&&d[k]),                          nav:"kinetic"},
                 {label:"Fascia",       done:Object.keys(d).some(k=>k.startsWith("fa_")&&d[k]),                          nav:"fascia"},
                 {label:"Outcomes",     done:Object.keys(d).some(k=>k.startsWith("om_history_")&&d[k]),                  nav:"outcome"},
@@ -12845,7 +12846,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               const romKeys = Object.keys(d).filter(k=>k.startsWith("rom_")&&k!=="rom_snapshots"&&d[k]);
               const mmtKeys = Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]&&!k.endsWith("_pain")&&!k.endsWith("_ef"));
               const stKeys  = Object.keys(d).filter(k=>k.startsWith("st_")&&d[k]);
-              const neuroKeys = Object.keys(d).filter(k=>d[k]&&(/^n_ref_/.test(k)||/^myo_/.test(k)||/^n_(c\d|t\d|l\d|s\d|s4s5)(_|$)/.test(k)||k.startsWith("n_der_")||k.startsWith("n_myot_")));
+              const neuroKeys = Object.keys(d).filter(k=>typeof d[k]==="string"&&d[k]&&(/^n_ref_/.test(k)||/^myo_/.test(k)||/^nt_/.test(k)||/^n_(c\d|t\d|l\d|s\d|s4s5)(_|$)/.test(k)||k.startsWith("n_der_")||k.startsWith("n_myot_")));
               const kcKeys  = Object.keys(d).filter(k=>k.startsWith("kc_")&&d[k]);
               const faKeys  = Object.keys(d).filter(k=>k.startsWith("fa_")&&d[k]);
               const cyKeys  = Object.keys(d).filter(k=>k.startsWith("cy_")&&d[k]);
@@ -12966,7 +12967,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       const isP=v=>!!v&&v.includes("Positive");
                       rows.sort((a,b)=>([a.lRaw,a.rRaw,a.cRaw].some(isP)?0:1)-([b.lRaw,b.rRaw,b.cRaw].some(isP)?0:1));
                       const STPill=({v,wide})=>{
-                        if(!v) return <span style={{fontSize:12,color:"#D1D5DB"}}>—</span>;
+                        if(!v||typeof v!=="string") return <span style={{fontSize:12,color:"#D1D5DB"}}>—</span>;
                         const pos=v.includes("Positive"), neg=v.includes("Negative");
                         const txt=wide?(v.split(" — ")[0].split(" (")[0]):(pos?"+ve":neg?"−ve":v.split(" — ")[0].slice(0,10));
                         return <span style={{display:"inline-block",padding:"2px 10px",borderRadius:99,fontSize:11,fontWeight:800,
@@ -13026,7 +13027,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       const sev=v=>!v?0:/Absent|Positive|UMN|Spastic|Flaccid/i.test(v)?3:/Reduced|Diminished|Brisk|Hyper/i.test(v)?2:/Normal|Intact|Negative/i.test(v)?1:2;
                       Object.values(groups).forEach(arr=>arr.sort((a,b)=>Math.max(sev(b.lVal),sev(b.rVal),sev(b.cVal))-Math.max(sev(a.lVal),sev(a.rVal),sev(a.cVal))));
                       const NPill=({v})=>{
-                        if(!v) return <span style={{fontSize:12,color:"#D1D5DB"}}>—</span>;
+                        if(!v||typeof v!=="string") return <span style={{fontSize:12,color:"#D1D5DB"}}>—</span>;
                         const sv=sev(v);
                         const c2=sv===3?"#dc2626":sv===2?"#d97706":C.green;
                         const bg=sv===3?"#FEF2F2":sv===2?"#FEF3C7":"#ECFDF5";

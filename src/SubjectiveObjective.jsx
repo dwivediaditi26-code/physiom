@@ -1029,9 +1029,15 @@ function SpecialTestsSection({ data, set, navContext={} }) {
   const isPositive = (val) => val && (val.includes("Positive") || val.includes("positive") || val.includes("+ve") || val.includes("Grade") || val.includes("deficit") || val.includes("REFER") || val.includes("rupture") || val.includes("tear") || val.includes("instability") || val.includes("Severe"));
 
   const filteredTests = searchTerm
-    ? Object.entries(SPECIAL_TESTS_DATA).flatMap(([rKey, r]) =>
-        r.tests.filter(t => t.label.toLowerCase().includes(searchTerm.toLowerCase()) || t.structure.toLowerCase().includes(searchTerm.toLowerCase())).map(t => ({ ...t, regionKey: rKey, regionLabel: r.label, regionColor: r.color }))
-      )
+    ? Object.entries(SPECIAL_TESTS_DATA).flatMap(([rKey, r]) => {
+        const q = searchTerm.toLowerCase();
+        return r.tests.filter(t =>
+          (t.label||"").toLowerCase().includes(q) ||
+          (t.structure||"").toLowerCase().includes(q) ||
+          (t.positive||"").toLowerCase().includes(q) ||
+          r.label.toLowerCase().includes(q)
+        ).map(t => ({ ...t, regionKey: rKey, regionLabel: r.label, regionColor: r.color }));
+      })
     : null;
 
   return (
@@ -1049,7 +1055,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
 
       {/* Search */}
       <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-        placeholder="🔍 Search tests by name or structure..."
+        placeholder="🔍 Search by test name, structure or condition..."
         style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"9px 12px", fontSize:"0.82rem", fontFamily:"inherit", outline:"none", marginBottom:12 }} />
 
       {/* Region tabs */}
