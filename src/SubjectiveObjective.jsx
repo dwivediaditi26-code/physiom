@@ -10075,6 +10075,319 @@ function KneeFunctionalScreen({ data, set }) {
   );
 }
 
+// ─── ANKLE / FOOT FUNCTIONAL SCREEN ──────────────────────────────────────────
+
+const ANKLE_TESTS = [
+  {
+    id:"afs_hr", icon:"👟", label:"Single Leg Heel Raise",
+    subtitle:"Calf Endurance + Tibialis Posterior + Achilles Load",
+    phase:"Plantarflexor Endurance / Posterior Chain",
+    setup:"Patient stands single leg, hands lightly touching wall for balance only. Rise onto toes fully, lower controlled. Count maximum reps with full range. Normal: 25 reps same height both sides. Observe: height achieved, range symmetry, heel inversion at top.",
+    normalDesc:"25+ reps per side, symmetric height, heel inverts at top of each raise (tibialis posterior function), controlled eccentric descent each rep, no lateral ankle wobble.",
+    observations:[
+      { id:"reps",   q:"Reps achieved before form breaks?",
+        opts:["✓ 25+ reps full height","⚠ 15–24 reps (mild deficit)","✗ <15 reps (significant deficit)","✗ Cannot perform — pain or too weak"],
+        clues:["","Minor calf endurance deficit — progressive loading. Monitor bilaterally","Significant soleus/gastroc endurance deficit — key rehab target. Achilles tendinopathy screen (VISA-A), calf raise programme","Severe weakness — screen for Achilles rupture (Thompson test), tibialis posterior rupture, or neurological deficit (S1 myotome)"] },
+      { id:"height", q:"Height of rise — heel above floor?",
+        opts:["✓ Full height, consistent","⚠ Reduces progressively (fatigue)","✗ Never achieves full height","✗ Asymmetric — one side lower"],
+        clues:["","Calf endurance deficit — eccentric loading programme (Alfredson for Achilles)","Structural restriction or severe weakness — assess passive plantarflexion range + Thompson test","Unilateral height deficit — calf atrophy post-injury, Achilles pathology, or tibialis posterior insufficiency on low side"] },
+      { id:"invert", q:"Heel inversion at top of raise?",
+        opts:["✓ Heel inverts at top (tibialis post. ✓)","⚠ Heel stays neutral — no inversion","✗ Heel everts at top — tibialis posterior failure"],
+        clues:["","Minor tibialis posterior fatigue — single leg heel raise with inversion cueing","Classic tibialis posterior dysfunction — too-many-toes sign, navicular drop test, PTTD screen. Medial arch support consideration"] },
+      { id:"wobble", q:"Lateral ankle stability during raises?",
+        opts:["✓ Stable throughout","⚠ Mild wobble at fatigue","✗ Wobbles from start (proprioceptive deficit)","✗ Gives way — instability"],
+        clues:["","Minor proprioceptive fatigue — balance board progression","Chronic ankle instability likely — do anterior drawer and talar tilt test. CAIT questionnaire","Functional instability — ATFL/CFL laxity. Lateral ligament stress testing + balance board rehab"] },
+      { id:"sym",    q:"Side-to-side symmetry?",
+        opts:["✓ Symmetric (within 3 reps)","⚠ 3–6 rep difference","✗ >6 reps asymmetry","✗ One side unable to attempt"],
+        clues:["","Monitor — may be post-activity asymmetry","Significant asymmetry — screen for unilateral Achilles tendinopathy, calf tear, or S1 radiculopathy","Priority assessment — exclude S1 myotome weakness, Achilles rupture (Thompson), tibialis posterior rupture"] },
+    ],
+    grades:["Normal — 25+ reps, full height, heel inverts, symmetric","Compensated — 15–24 reps or height reduces with fatigue","Abnormal — <15 reps, no inversion, instability, or significant asymmetry"],
+  },
+  {
+    id:"afs_df", icon:"📐", label:"Weight-Bearing Dorsiflexion (Knee-to-Wall)",
+    subtitle:"Ankle DF Restriction — Impingement + CAI Screen",
+    phase:"Talocrural Mobility / Posterior Capsule",
+    setup:"Patient in lunge position facing wall. Big toe 10cm from wall. Keep heel flat. Push knee toward wall over big toe. Measure finger-widths from wall to knee tip. Normal ≥10cm (or knee touches wall at 10cm). Compare bilaterally.",
+    normalDesc:"Knee touches wall at 10cm or beyond. Heel stays flat. No pinching at front of ankle. No pain. Side-to-side within 1cm.",
+    observations:[
+      { id:"reach",  q:"Knee-to-wall distance achieved with heel flat?",
+        opts:["✓ ≥10cm (normal dorsiflexion)","⚠ 7–9cm (mild restriction)","✗ <7cm (significant restriction)","✗ Heel rises before wall reached"],
+        clues:["","Minor ankle DF restriction — ankle joint mobilisation (Maitland AP talar glide), gastrocnemius stretching","Significant DF restriction — likely posterior talar capsule restriction or bony block. Do talus AP glide joint mobilisation. Assess squat, lunge, heel rise compensations","Gastrocnemius tightness forcing heel rise. Differentiate: if restriction improves with knee bent = gastrocnemius dominant. If unchanged = capsular/bony"] },
+      { id:"pinch",  q:"Anterior ankle pinching at end range?",
+        opts:["✓ No anterior pain","⚠ Mild anterior pinching","✗ Clear anterior impingement pain","✗ Clicking + pinching"],
+        clues:["","Monitor — minor anterior capsule irritation","Anterior ankle impingement — footballer's ankle (osteophyte). AP talar glide + distraction mobilisation. Imaging if chronic","Osteophyte likely — refer for X-ray. Manual distraction traction may give temporary relief"] },
+      { id:"heel",   q:"Heel contact maintained?",
+        opts:["✓ Heel flat throughout","⚠ Slight heel rise at end range","✗ Heel rises early — before wall"],
+        clues:["","Minor tightness — calf stretching + ankle mobilisation","Gastrocnemius dominant restriction — isolated gastroc stretch (knee straight). If still limited at 10cm with knee bent — talocrural joint restriction"] },
+      { id:"arch",   q:"Medial arch during DF test?",
+        opts:["✓ Arch maintained","⚠ Arch drops slightly","✗ Arch collapses — pronation compensation"],
+        clues:["","Minor midfoot hypermobility","Pronation compensation for DF restriction — foot pronates to gain tibial advancement. True DF deficit is greater than apparent. Orthotics + DF mobility treatment"] },
+      { id:"sym",    q:"Side-to-side difference?",
+        opts:["✓ Within 1cm","⚠ 1–2cm difference","✗ >2cm difference"],
+        clues:["","Monitor — minor asymmetry","Significant DF asymmetry — post-injury capsule restriction or growth plate history (adolescent). AP talar glide mobilisation priority on restricted side"] },
+    ],
+    grades:["Normal — ≥10cm, heel flat, no pinching, symmetric","Compensated — 7–9cm or arch drops without pain","Abnormal — <7cm, anterior impingement, heel rise, or >2cm asymmetry"],
+  },
+  {
+    id:"afs_bal", icon:"🧍", label:"Single Leg Balance",
+    subtitle:"Proprioception + Chronic Ankle Instability Screen",
+    phase:"Ankle Proprioception / Lateral Stability",
+    setup:"Eyes open: stand single leg 30 seconds. Eyes closed: stand single leg 10 seconds. Both legs. Observe: sway strategy, ankle wobble, hip/trunk compensation. SEBT (Star Excursion Balance Test) if available.",
+    normalDesc:"Eyes open: 30s stable, minimal sway. Eyes closed: 10s with only minor ankle strategy correction. No major hip or trunk compensation. Equal bilateral.",
+    observations:[
+      { id:"eo",     q:"Eyes open stability (30 seconds)?",
+        opts:["✓ Stable 30s — minimal sway","⚠ Sways but maintains — ankle strategy","✗ Hip strategy dominant — pelvis moves","✗ Cannot complete 30s"],
+        clues:["","Minor proprioceptive fatigue — balance progressions (unstable surfaces)","Hip strategy = proximal compensation for distal instability. Ankle proprioception deficit — ATFL/CFL involvement likely. CAIT score","Significant proprioceptive deficit — screen for previous ankle sprains, ATFL laxity, peroneal nerve involvement"] },
+      { id:"ec",     q:"Eyes closed stability (10 seconds)?",
+        opts:["✓ 10s with minor corrections","⚠ 5–9s with significant corrections","✗ <5 seconds — fails","✗ Cannot attempt eyes closed"],
+        clues:["","Minor vestibular or proprioceptive fatigue — single-leg eyes-closed balance progression","Significant proprioceptive deficit — likely chronic ankle instability or prior ligament injury. Wobble board + dynamic balance training","Significant deficit — screen for vestibular/cerebellar contribution if bilateral. ATFL grading + wobble board"] },
+      { id:"cai",    q:"History of ankle sprains + current wobble?",
+        opts:["✓ No prior sprains — stable","⚠ Prior sprains — still stable","✗ Prior sprains + instability pattern","✗ Frequent giving way on level ground"],
+        clues:["","Resolved sprain — monitor with progressive loading","Subclinical CAI — CAIT questionnaire. Peroneal activation timing training","Chronic ankle instability — ATFL/CFL grading. Conservative: peroneal strengthening + proprioception. Surgical if grade III laxity + failed conservative"] },
+      { id:"strat",  q:"Primary balance strategy used?",
+        opts:["✓ Ankle strategy (foot/ankle small corrections)","⚠ Knee strategy","✗ Hip strategy (trunk sways)","✗ Steps / hops to recover"],
+        clues:["","Normal","Early proprioceptive deficit — progress ankle instability rehab","Proximal compensation for distal instability — ankle proprioception is impaired. Check ATFL drawer test","Significant instability — consider bracing for sport, peroneal strength MMT, lateral ligament stress testing"] },
+      { id:"sym",    q:"Bilateral symmetry?",
+        opts:["✓ Symmetric both sides","⚠ Minor difference","✗ Clear asymmetry","✗ Unilateral failure"],
+        clues:["","","Unilateral deficit — chronic ankle instability or prior fracture/sprain on affected side","Significant unilateral deficit — ATFL anterior drawer, talar tilt, peroneal MMT, Ottawa ankle rules if acute"] },
+    ],
+    grades:["Normal — 30s eyes open stable, 10s eyes closed, ankle strategy","Compensated — Hip strategy or 5–9s eyes closed with prior sprains","Abnormal — <5s eyes closed, giving way, or significant asymmetry"],
+  },
+  {
+    id:"afs_hop", icon:"🦘", label:"Single Leg Hop Series",
+    subtitle:"Dynamic Ankle Stability + Achilles Load + Limb Symmetry",
+    phase:"Plyometric Load / Return to Sport Criteria",
+    setup:"Mark start line. Single leg hop forward (× 3 consecutive hops), side hop (× 5 lateral), and hop & stick (land and hold 3s). Measure distance on 3-hop. Compare LSI. Observe landing quality each hop.",
+    normalDesc:"3-hop LSI >90% of opposite leg. Quiet soft landings. Ankle stable — no excessive inversion. Controlled stick landing. No pain during or after.",
+    observations:[
+      { id:"lsi",    q:"3-hop distance LSI (% of opposite leg)?",
+        opts:["✓ >90% LSI (return-to-sport criterion)","⚠ 80–90% LSI","✗ <80% LSI (significant deficit)","✗ Unable to complete hops due to pain"],
+        clues:["","","LSI <90% = return-to-sport criterion not met. Continue loading programme — plyometric progression, calf power work","Pain-limited — Achilles tendinopathy VISA-A screen, plantar fascia palpation, stress fracture screen (hop pain)"] },
+      { id:"land",   q:"Landing quality on each hop?",
+        opts:["✓ Soft, controlled landings","⚠ Hard/loud landings","✗ Inverts on landing — ankle gives","✗ Cannot land single leg — hops to other leg"],
+        clues:["","Stiff landing — ankle and knee flexion on landing too small. Landing mechanics coaching — soft heel-toe pattern","Inversion on landing = peroneal reaction time deficit + ATFL laxity. Key rehab: peroneal activation, lateral band exercises, perturbation training","Significant instability — ATFL anterior drawer + talar tilt. Consider ankle bracing for plyometric progression"] },
+      { id:"pain",   q:"Pain provocation during hopping?",
+        opts:["✓ Pain-free throughout","⚠ Posterior heel pain (Achilles)","⚠ Plantar heel pain (fascia)","✗ Lateral ankle pain (ligament)","✗ Anterior ankle (impingement)"],
+        clues:["","Achilles reactive tendinopathy — reduce load, assess VISA-A, Royal London Hospital test, Simmond's palpation","Plantar fasciitis — windlass mechanism test, calcaneal palpation, first step pain pattern","ATFL/CFL loading — lateral ligament stress testing, peroneal assessment","Anterior impingement — AP talar glide deficit. Osteophyte screen if chronic"] },
+      { id:"side",   q:"Side hop stability (5 lateral hops)?",
+        opts:["✓ Controlled throughout","⚠ Progressive wobble on last 2–3","✗ Inversion wobble on each hop","✗ Cannot complete lateral hop"],
+        clues:["","Minor peroneal fatigue — lateral resistance band work","Peroneal reaction time deficit — key CAI indicator. Peroneal eccentric strengthening + perturbation training","Significant lateral instability — ATFL/CFL grading required. Bracing + peroneal programme before lateral sport return"] },
+      { id:"sym",    q:"Overall hop series symmetry?",
+        opts:["✓ Symmetric — feels equal","⚠ Minor avoidance on injured side","✗ Clear asymmetry in distance or control","✗ Significant avoidance — psychological barrier"],
+        clues:["","","Kinesiophobia component possible — TAMPA scale. Physical loading programme + graded exposure","Kinesiophobia likely contributing — combine physical rehab with graded return to confidence. ACL-equivalent psychological readiness criteria for ankle return-to-sport"] },
+    ],
+    grades:["Normal — LSI >90%, soft landings, pain-free, symmetric","Compensated — LSI 80–90% or landing stiffness without pain","Abnormal — LSI <80%, pain on hop, inversion, or significant avoidance"],
+  },
+  {
+    id:"afs_arch", icon:"👣", label:"Dynamic Arch / Navicular Drop",
+    subtitle:"Tibialis Posterior Function + Foot Pronation Screen",
+    phase:"Medial Arch Control / Tibialis Posterior Insufficiency",
+    setup:"Seated: mark navicular tuberosity height from floor. Stand bilateral. Mark again. Navicular drop = seated minus standing height. Normal <10mm. Then observe arch in single leg squat and heel raise. Assess too-many-toes sign from behind.",
+    normalDesc:"Navicular drop <10mm. Medial arch visible in bilateral stance. Arch maintains in single leg. Heel inverts in heel raise. 1–2 toes visible from behind (neutral rearfoot).",
+    observations:[
+      { id:"drop",   q:"Navicular drop measurement?",
+        opts:["✓ <10mm (normal)","⚠ 10–15mm (mild hyperpronation)","✗ >15mm (significant drop)","✗ Unable to palpate — severe flat foot"],
+        clues:["","Monitor — borderline. Assess tibialis posterior strength and footwear","Significant hyperpronation — tibialis posterior strengthening (heel raise with inversion), arch support assessment. Kinetic chain effect on knee and hip","Severe PTTD or flat foot — tibialis posterior MMT, too-many-toes sign, single leg heel raise inversion test. Orthotic referral"] },
+      { id:"tmt",    q:"Too-many-toes sign (from behind)?",
+        opts:["✓ 1–2 toes visible (normal)","⚠ 3 toes visible (mild abduction)","✗ 4–5 toes visible (forefoot abduction)","✗ Unable to assess"],
+        clues:["","","Mild tibialis posterior insufficiency — pes plano valgus. Heel raise inversion test priority","Classic too-many-toes sign — significant tibialis posterior dysfunction or rupture. Grade single leg heel raise — if cannot invert = PTTD grade 2+. Refer for ultrasound"] },
+      { id:"slsq",   q:"Arch in single leg squat?",
+        opts:["✓ Arch maintained","⚠ Arch drops but recovers","✗ Arch collapses under load","✗ Foot fully pronates — arch absent"],
+        clues:["","Minor dynamic hyperpronation — tibialis posterior + peroneus longus activation exercises","Dynamic pronation under load — increases medial knee stress (valgus), tibial torsion. Orthotic + tibialis posterior eccentric training","Severe dynamic flat foot — full kinetic chain assessment. Medial post orthotic, tibialis posterior strengthening"] },
+      { id:"rear",   q:"Rearfoot position in bilateral stance?",
+        opts:["✓ Neutral (slight valgus 0–4°)","⚠ Mild valgus (5–8°)","✗ Significant valgus (>8°)","✗ Varus — supinated foot type"],
+        clues:["","Normal or borderline — monitor under dynamic loading","Rearfoot valgus — pronated foot type. Arch support + tibialis posterior strengthening. Upstream effects on knee and hip","Rearfoot varus — supinated / cavus foot type. High arch, poor shock absorption, lateral ankle instability risk. Lateral wedge + peroneal strengthening"] },
+      { id:"pain",   q:"Medial arch or heel pain?",
+        opts:["✓ No pain","⚠ Medial arch ache under load","⚠ Medial heel / navicular pain","✗ First step plantar heel pain (morning)"],
+        clues:["","Tibialis posterior stress or plantar fascia tension — tibialis posterior strengthening + intrinsic foot exercises","Tibialis posterior tendinopathy / stress on navicular — Spring ligament screen, navicular palpation, ultrasound if persistent","Plantar fasciitis — windlass test, calcaneal tuberosity palpation, first step pain + morning stiffness pattern"] },
+    ],
+    grades:["Normal — Navicular drop <10mm, arch maintained, neutral rearfoot","Compensated — 10–15mm drop or arch drops under single-leg load","Abnormal — >15mm, too-many-toes sign, arch collapse, or pain"],
+  },
+];
+
+function AnkleFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  useEffect(() => {
+    const saved = data["afs_data"];
+    if (saved && typeof saved === "string") {
+      try {
+        const p = JSON.parse(saved);
+        if (p.findings) setFindings(p.findings);
+        if (p.grades)   setGrades(p.grades);
+        if (p.notes)    setNotes(p.notes);
+      } catch {}
+    }
+  }, []);
+
+  const save = (f,g,n) => set("afs_data", JSON.stringify({findings:f,grades:g,notes:n}));
+  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
+  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
+  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
+
+  const completedCount = ANKLE_TESTS.filter(t => grades[t.id] !== undefined).length;
+  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
+
+  return (
+    <div>
+      <div style={{background:"linear-gradient(135deg,rgba(20,184,166,0.08),rgba(6,182,212,0.05))",border:"1px solid rgba(20,184,166,0.25)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontSize:"1.4rem"}}>🦶</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Ankle / Foot Functional Screen</div>
+            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · Calf endurance · DF mobility · Proprioception · Arch · LSI</div>
+          </div>
+          <div style={{marginLeft:"auto",textAlign:"right"}}>
+            <div style={{fontSize:"1.2rem",fontWeight:900,color:"#0d9488"}}>{completedCount}/5</div>
+            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {ANKLE_TESTS.map(t=>{
+            const g=grades[t.id]; const done=g!==undefined;
+            return (
+              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                  border:`1px solid ${activeTest===t.id?"#0d9488":done?gradeColor(g)+"60":C.border}`,
+                  background:activeTest===t.id?"rgba(20,184,166,0.1)":done?`${gradeColor(g)}10`:"transparent",
+                  color:activeTest===t.id?"#0d9488":done?gradeColor(g):C.muted}}>
+                {t.icon} {t.label.split(" ").slice(0,2).join(" ")} {done?["✓","⚠","✗"][g]:""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {ANKLE_TESTS.map(t=>{
+        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
+        return (
+          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
+            border:`1.5px solid ${isOpen?"#0d9488":graded?gradeColor(g)+"50":C.border}`,
+            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(20,184,166,0.1)":"0 1px 4px rgba(0,0,0,0.04)"}}>
+
+            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
+                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+              </div>
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
+            </div>
+
+            {isOpen && (
+              <div style={{padding:"0 14px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontSize:"0.68rem",fontWeight:700,color:"#0d9488",textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                </div>
+
+                {showVisual && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{background:"#F0FDFA",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #99F6E4"}}>
+                  <div style={{fontSize:"0.6rem",fontWeight:800,color:"#0d9488",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
+                  <div style={{marginTop:6,padding:"4px 8px",background:"rgba(20,184,166,0.08)",borderRadius:6,border:"1px solid rgba(20,184,166,0.2)"}}>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:"#0d9488"}}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                {t.observations.map(obs=>{
+                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
+                  return (
+                    <div key={obs.id} style={{marginBottom:10}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        {obs.opts.map((opt,idx)=>{
+                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
+                          return (
+                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
+                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
+                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
+                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
+                              </div>
+                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:"rgba(20,184,166,0.06)",borderLeft:"3px solid #0d9488",borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                    </div>
+                  );
+                })}
+
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
+                  {t.grades.map((gLabel,idx)=>{
+                    const col=gradeColor(idx); const sel=g===idx;
+                    return (
+                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
+                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
+                  placeholder="Heel raise count, DF measurement, balance quality, arch findings..."
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {completedCount > 0 && (
+        <div style={{background:"#F0FDFA",borderRadius:14,padding:14,border:"1px solid #99F6E4",marginTop:4}}>
+          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Ankle / Foot Summary</div>
+          {ANKLE_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
+            const g=grades[t.id]; const col=gradeColor(g);
+            return (
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                <span style={{fontSize:"1rem"}}>{t.icon}</span>
+                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+              </div>
+            );
+          })}
+          {Object.values(grades).includes(2) && (
+            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.7rem",color:"#dc2626",lineHeight:1.5}}>
+              ⚠ <strong>Abnormal findings present.</strong> Consider: Thompson test (Achilles), anterior drawer + talar tilt (ATFL/CFL), Ottawa ankle rules, windlass test (plantar fascia), tibialis posterior MMT, CAIT questionnaire, and VISA-A (Achilles tendinopathy).
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FUNCTIONAL SCREEN HUB ───────────────────────────────────────────────────
 
 function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
@@ -10084,6 +10397,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
     { id:"shoulder", label:"Shoulder", icon:"🦾", color:"#0891b2" },
     { id:"hip",      label:"Hip",      icon:"🦷", color:"#d946ef" },
     { id:"knee",     label:"Knee",     icon:"🦿", color:"#d97706" },
+    { id:"ankle",    label:"Ankle",    icon:"🦶", color:"#0d9488" },
   ];
   return (
     <div>
@@ -10106,6 +10420,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
       {region === "shoulder" && <ShoulderFunctionalScreen data={data} set={set}/>}
       {region === "hip"      && <HipFunctionalScreen      data={data} set={set}/>}
       {region === "knee"     && <KneeFunctionalScreen     data={data} set={set}/>}
+      {region === "ankle"    && <AnkleFunctionalScreen    data={data} set={set}/>}
 
       {/* Quick navigation */}
       <div style={{ display:"flex", gap:8, marginTop:16 }}>
