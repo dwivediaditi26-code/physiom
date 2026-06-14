@@ -17500,11 +17500,72 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="POSTURE_DEFECT_MODULE"?(
                 <PostureDefectModule/>
               ):tests==="OBSERVATION_MODULE"?(
+                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                {(()=>{
+                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
+                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
+                  const getSCount=()=>!!(data.cc_main||data.dem_name);
+                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
+                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
+                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
+                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
+                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  return(
+                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
+                      {steps.map((s,i)=>{
+                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
+                        const isDone=done[s.k];
+                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
+                        return(
+                          <React.Fragment key={s.k}>
+                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
+                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
+                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                            </div>
+                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 <ObservationModule data={data} set={set}/>
+                </>
               ):tests==="CYRIAX_MODULE"?(
                 <CyriaxModule data={data} set={set} navContext={active==="cyriax"?navContext:{}}/>
               ):tests==="SPECIAL_TESTS_MODULE"?(
-                <><SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
+                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                {(()=>{
+                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
+                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
+                  const getSCount=()=>!!(data.cc_main||data.dem_name);
+                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
+                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
+                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
+                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
+                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  return(
+                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
+                      {steps.map((s,i)=>{
+                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
+                        const isDone=done[s.k];
+                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
+                        return(
+                          <React.Fragment key={s.k}>
+                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
+                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
+                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                            </div>
+                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+                <SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
                   <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
@@ -17524,7 +17585,37 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="CYRIAX_REGION"?(
                 <CyriaxRegionTests data={data} set={set}/>
               ):tests==="NEURO_MODULE"?(
-                <><NeurologicalModule data={data} set={set} navContext={active==="neuro"?navContext:{}}/>
+                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                {(()=>{
+                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
+                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
+                  const getSCount=()=>!!(data.cc_main||data.dem_name);
+                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
+                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
+                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
+                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
+                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  return(
+                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
+                      {steps.map((s,i)=>{
+                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
+                        const isDone=done[s.k];
+                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
+                        return(
+                          <React.Fragment key={s.k}>
+                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
+                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
+                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                            </div>
+                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+                <NeurologicalModule data={data} set={set} navContext={active==="neuro"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
                   <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
@@ -17534,9 +17625,70 @@ function AppInner({ currentUser, onSignOut }) {
                 </div>
 </>
               ):tests==="GAIT_MODULE"?(
+                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                {(()=>{
+                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
+                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
+                  const getSCount=()=>!!(data.cc_main||data.dem_name);
+                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
+                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
+                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
+                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
+                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  return(
+                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
+                      {steps.map((s,i)=>{
+                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
+                        const isDone=done[s.k];
+                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
+                        return(
+                          <React.Fragment key={s.k}>
+                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
+                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
+                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                            </div>
+                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 <GaitModule data={data} set={set}/>
+                </>
               ):tests==="MMT_MODULE"?(
-                <><MMTModule data={data} set={set} navContext={active==="mmt"?navContext:{}}/>
+                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                {(()=>{
+                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
+                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
+                  const getSCount=()=>!!(data.cc_main||data.dem_name);
+                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
+                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
+                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
+                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
+                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  return(
+                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
+                      {steps.map((s,i)=>{
+                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
+                        const isDone=done[s.k];
+                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
+                        return(
+                          <React.Fragment key={s.k}>
+                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
+                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
+                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                            </div>
+                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+                <MMTModule data={data} set={set} navContext={active==="mmt"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
                   <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
@@ -17586,7 +17738,38 @@ function AppInner({ currentUser, onSignOut }) {
                 </div>
 </>
               ):tests==="OUTCOME_MODULE"?(
+                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                {(()=>{
+                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
+                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
+                  const getSCount=()=>!!(data.cc_main||data.dem_name);
+                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
+                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
+                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
+                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
+                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  return(
+                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
+                      {steps.map((s,i)=>{
+                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
+                        const isDone=done[s.k];
+                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
+                        return(
+                          <React.Fragment key={s.k}>
+                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
+                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
+                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                            </div>
+                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 <OutcomeMeasuresPro data={data} set={set}/>
+                </>
               ):tests==="EXERCISE_MODULE"?(
                 <ExercisePrescriptionModule data={data} set={set}/>
               ):tests==="TX_TECHNIQUES_MODULE"?(
