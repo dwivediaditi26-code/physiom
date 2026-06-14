@@ -11984,8 +11984,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         }}>←</button>
         <div style={{fontSize:15,fontWeight:700,color:C.text}}>Patient Profile</div>
         <div style={{display:"flex",gap:8}}>
-          <button style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted}}>✏️</button>
-          <button style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted}}>⋮</button>
+          <button onClick={()=>setTab("subjective")} title="Edit subjective" style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted}}>✏️</button>
+          <button onClick={()=>setShowDetails(v=>!v)} title="Toggle details" style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:C.muted}}>⋮</button>
         </div>
       </div>
 
@@ -12322,32 +12322,118 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               );
             })()}
 
-            {/* ── CLINICAL HISTORY ── */}
-            <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,padding:"12px 14px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <span style={{fontSize:13,fontWeight:800,color:C.text}}>📋 Clinical history</span>
-                <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11.5,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
-              </div>
-              {[
-                {l:"Chief complaint", v:d.cc_main||d.cc_dx||"", nav:true},
-                {l:"Onset", v:[d.cc_onset_date||d.cx_onset_date||(Array.isArray(d.cc_onset)?d.cc_onset[0]:d.cc_onset),d.cc_mechanism||d.cc_mech_type].filter(Boolean).join(" · ")},
-                {l:"Duration", v:d.cc_duration||""},
-                {l:"Aggravating", v:[d.cc_agg,(Array.isArray(d.cx_agg_mov)?d.cx_agg_mov.join(", "):d.cx_agg_mov)].filter(Boolean).join("; "), col:"#A32D2D", bg:"#FEF2F2"},
-                {l:"Easing", v:[d.cc_rel,(Array.isArray(d.cx_rel_mov)?d.cx_rel_mov.join(", "):d.cx_rel_mov)].filter(Boolean).join("; "), col:"#085041", bg:"#ECFDF5"},
-                {l:"24-hr pattern", v:d.cc_24hr||d.cc_behaviour||""},
-                {l:"Goals", v:[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||""},
-                {l:"Past history", v:d.phx_conditions||d.sub_past_history||d.hx_past||""},
-                {l:"Medications", v:d.med_current||d.sub_medications||""},
-                {l:"Red flags", v:d.cc_red_flags||d.cx_rf_review||"", col:"#A32D2D", bg:"#FEF2F2"},
-              ].filter(row=>row.v).map((row,i2)=>(
-                <div key={i2} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:i2<9?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
-                  <span style={{fontSize:11.5,color:C.muted,minWidth:100,flexShrink:0,paddingTop:1}}>{row.l}</span>
-                  <span style={{fontSize:12,fontWeight:500,color:row.col||C.text,background:row.bg,borderRadius:row.bg?99:0,padding:row.bg?"2px 8px":0,lineHeight:1.5}}>
-                    {row.v}
-                  </span>
+            {/* ── CLINICAL HISTORY — region-specific cards ── */}
+            {(()=>{
+              const PREFIX_MAP = {"Cervical spine":"cx","Lumbar / SI":"lx","Shoulder (L)":"shl","Shoulder (R)":"shr","Knee (L)":"knl","Knee (R)":"knr","Hip / Groin":"hp","Ankle / Foot":"af","Elbow/Wrist/Hand":"ew","Thoracic spine":"tx"};
+              const RC_PROF   = {"Cervical spine":"#7c3aed","Lumbar / SI":"#dc2626","Shoulder (L)":"#0891b2","Shoulder (R)":"#06b6d4","Hip / Groin":"#d946ef","Knee (L)":"#f59e0b","Knee (R)":"#eab308","Ankle / Foot":"#16a34a","Elbow/Wrist/Hand":"#059669","Thoracic spine":"#d97706"};
+              const selRegions = (()=>{ try{ return JSON.parse(d.cx_selected_regions||"[]"); }catch{ return []; } })();
+              const multiVal = v => (typeof v==="string"?v.split("|").filter(Boolean):Array.isArray(v)?v:[]).join(", ");
+              const anyRF = selRegions.some(r=>{ const px=PREFIX_MAP[r]; return px&&(d[`${px}_rf_action`]||d[`${px}_rf_review`]); }) || d.cc_red_flags || d.grf_action;
+              return (
+                <div>
+                  {/* Red flag banner */}
+                  {anyRF&&(
+                    <div style={{background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",gap:10,alignItems:"center"}}>
+                      <span style={{fontSize:18}}>🚨</span>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:800,color:"#A32D2D"}}>Red Flag Documented</div>
+                        <div style={{fontSize:11,color:"#A32D2D",marginTop:2}}>
+                          {selRegions.filter(r=>{ const px=PREFIX_MAP[r]; return px&&(d[`${px}_rf_action`]||d[`${px}_rf_review`]); }).map(r=>{
+                            const px=PREFIX_MAP[r]; return `${r}: ${d[`${px}_rf_action`]||d[`${px}_rf_review`]||""}`;
+                          }).join(" · ") || d.cc_red_flags || d.grf_action || "Review required"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Core card */}
+                  <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,padding:"12px 14px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)",marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                      <span style={{fontSize:13,fontWeight:800,color:C.text}}>📋 Clinical history</span>
+                      <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11.5,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
+                    </div>
+                    {[
+                      {l:"Chief complaint", v:d.cc_main||d.cc_dx||""},
+                      {l:"Onset", v:[d.cc_onset_date||d.cx_onset_date||(Array.isArray(d.cc_onset)?d.cc_onset[0]:d.cc_onset),d.cc_mechanism||d.cc_mech_type].filter(Boolean).join(" · ")},
+                      {l:"Duration", v:d.cc_duration||""},
+                      {l:"24-hr pattern", v:d.cc_24hr||d.cc_behaviour||""},
+                      {l:"Goals", v:[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||""},
+                      {l:"Past history", v:d.phx_conditions||d.sub_past_history||d.hx_past||""},
+                      {l:"Medications", v:(()=>{ const raw=d.med_current||d.sub_medications||""; return raw; })()},
+                    ].filter(row=>row.v).map((row,i2)=>(
+                      <div key={i2} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:`1px solid ${C.border}`,alignItems:"flex-start"}}>
+                        <span style={{fontSize:11.5,color:C.muted,minWidth:110,flexShrink:0,paddingTop:1}}>{row.l}</span>
+                        <span style={{fontSize:12,fontWeight:500,color:C.text,lineHeight:1.5,flex:1}}>{row.v}</span>
+                      </div>
+                    ))}
+                    {/* Medications as pills */}
+                    {(d.med_current||d.sub_medications)&&(
+                      <div style={{paddingTop:6}}>
+                        <span style={{fontSize:11.5,color:C.muted}}>Medications</span>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:5}}>
+                          {(d.med_current||d.sub_medications||"").split("|").filter(Boolean).map((m,mi)=>(
+                            <span key={mi} style={{fontSize:11,padding:"3px 9px",background:"#EDE9FE",color:"#5B21B6",borderRadius:99,fontWeight:600}}>{m.trim()}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Per-region subjective cards */}
+                  {selRegions.length>0 ? selRegions.map((region,ri)=>{
+                    const px=PREFIX_MAP[region]; if(!px) return null;
+                    const col=RC_PROF[region]||C.primary;
+                    const aggMovs  = multiVal(d[`${px}_agg_mov`]||d[`${px}_agg`]);
+                    const aggPosts = multiVal(d[`${px}_agg_post`]);
+                    const aggActs  = multiVal(d[`${px}_agg_act`]);
+                    const relMovs  = multiVal(d[`${px}_rel_mov`]||d[`${px}_rel`]);
+                    const relPosts = multiVal(d[`${px}_rel_post`]);
+                    const pattern24= d[`${px}_24hr`]||d[`${px}_behaviour`]||"";
+                    const trajectory= d[`${px}_trajectory`]||"";
+                    const irritability= d[`${px}_irritability`]||d[`${px}_sin`]||"";
+                    const fnAdl    = multiVal(d[`${px}_fn_adl`]);
+                    const fnWork   = d[`${px}_fn_work`]||"";
+                    const rfAction = d[`${px}_rf_action`]||d[`${px}_rf_review`]||"";
+                    const rows = [
+                      aggMovs&&{l:"Aggravating movements",v:aggMovs,col:"#A32D2D",bg:"#FEF2F2"},
+                      aggPosts&&{l:"Aggravating postures",v:aggPosts,col:"#A32D2D",bg:"#FEF2F2"},
+                      aggActs&&{l:"Aggravating activities",v:aggActs,col:"#A32D2D",bg:"#FEF2F2"},
+                      relMovs&&{l:"Easing movements",v:relMovs,col:"#085041",bg:"#ECFDF5"},
+                      relPosts&&{l:"Easing postures",v:relPosts,col:"#085041",bg:"#ECFDF5"},
+                      pattern24&&{l:"24-hr pattern",v:pattern24},
+                      trajectory&&{l:"Trajectory",v:trajectory},
+                      irritability&&{l:"Irritability (Maitland)",v:irritability},
+                      fnAdl&&{l:"ADL limitations",v:fnAdl},
+                      fnWork&&{l:"Work impact",v:fnWork},
+                      rfAction&&{l:"⚠️ Red flag action",v:rfAction,col:"#A32D2D",bg:"#FEF2F2"},
+                    ].filter(Boolean);
+                    if(rows.length===0) return null;
+                    return (
+                      <div key={ri} style={{background:"#fff",borderRadius:14,border:`2px solid ${col}30`,padding:"12px 14px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)",marginBottom:10}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                          <div style={{width:10,height:10,borderRadius:"50%",background:col,flexShrink:0}}/>
+                          <span style={{fontSize:13,fontWeight:800,color:col}}>{region}</span>
+                          <span style={{fontSize:10,color:C.muted,marginLeft:"auto",fontWeight:600}}>Subjective assessment</span>
+                        </div>
+                        {rows.map((row,i2)=>(
+                          <div key={i2} style={{display:"flex",gap:10,padding:"6px 0",borderBottom:i2<rows.length-1?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
+                            <span style={{fontSize:11,color:C.muted,minWidth:130,flexShrink:0,paddingTop:1}}>{row.l}</span>
+                            <span style={{fontSize:11.5,fontWeight:500,color:row.col||C.text,background:row.bg,borderRadius:row.bg?99:0,padding:row.bg?"2px 8px":0,lineHeight:1.5,flex:1}}>
+                              {row.v}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }) : (
+                    <div style={{background:"#F9F7FF",borderRadius:12,padding:"12px 14px",border:`1px dashed ${C.border}`,textAlign:"center",marginBottom:10}}>
+                      <div style={{fontSize:11.5,color:C.muted}}>No regions selected in subjective assessment.</div>
+                      <span onClick={()=>onNav&&onNav("subjective")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Add →</span>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             {/* ── SOAP SUBJECTIVE ── */}
             {(d.soap_s||d.soap_extra_s)&&(
