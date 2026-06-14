@@ -10705,6 +10705,1200 @@ function CervicalFunctionalScreen({ data, set }) {
   );
 }
 
+// ─── THORACIC FUNCTIONAL SCREEN ──────────────────────────────────────────────
+
+const THORACIC_TESTS = [
+  {
+    id:"tfs_arom", icon:"🔄", label:"Thoracic AROM",
+    subtitle:"Rotation · Extension · Lateral Flexion",
+    phase:"Articular / Segmental Mobility Screen",
+    setup:"Patient seated cross-armed (hands on opposite shoulders). Assess: rotation L/R (normal 40–45° each), extension (normal 20–25°), lateral flexion L/R (normal 20–30°). Compare symmetry. Note: hinge points (restricted segments), pain arcs, compensatory lumbar movement.",
+    normalDesc:"Rotation 40–45° bilateral symmetric. Smooth extension without hinge. Lateral flexion 20–30° bilateral. No pain. No compensatory lumbar motion. Thoracic kyphosis mild and mobile.",
+    observations:[
+      { id:"rot",    q:"Thoracic rotation symmetry?",
+        opts:["✓ 40–45° bilateral, smooth","⚠ Mild asymmetry (<10° difference)","✗ Significant asymmetry (>10°)","✗ Painful arc during rotation"],
+        clues:["","Minor unilateral restriction — PA mobilisation at restricted segment (Maitland). Rotation SNAG","Significant unilateral restriction — rib head or costovertebral joint. Rib mobilisation + thoracic rotation mobilisation. Dry needling erector spinae if myofascial","Pain arc = segmental facet irritation — unilateral PA at pain level. Anti-inflammatory phase first if acute"] },
+      { id:"ext",    q:"Thoracic extension quality?",
+        opts:["✓ Smooth distributed extension","⚠ Stiff — reduced range uniformly","✗ Hinge point — one level only moves","✗ Pain on extension"],
+        clues:["","Global hypomobility — foam roller extension + thoracic manipulation (HVLA if indicated). Upper crossed postural pattern","Segmental restriction — specific PA mobilisation at hinge level. Rib palpation for costovertebral involvement","Extension pain — facet compression. Extension mobilisation with caution. Flexion bias if pain persists"] },
+      { id:"latflex",q:"Lateral flexion symmetry?",
+        opts:["✓ 20–30° bilateral, symmetric","⚠ Mild asymmetry","✗ Significant asymmetry","✗ Reproduces pain / refers"],
+        clues:["","Unilateral rib / intercostal restriction — rib spring test next. Lateral PA mobilisation","Significant lateral asymmetry — scoliosis screen (Adam's forward bend). Structural vs functional. Cobb angle if structural suspected","Referred pain on lateral flexion — intercostal neuralgia or T4 syndrome (T4 segment). T4 mobilisation + upper thoracic screen"] },
+      { id:"hinge",  q:"Segmental hinge point identified?",
+        opts:["✓ No hinge — even distribution","⚠ Mild preference one area","✗ Clear hinge — one segment dominates","✗ Multiple hinge points"],
+        clues:["","Monitor — targeted mobilisation at stiff area","Segmental hypomobility — PA mobilisation at that level. Confirm with passive intervertebral motion (PIVM) testing","Multiple restriction levels — thoracic manipulation + foam roller extension + seated rotation stretching"] },
+      { id:"comp",   q:"Compensatory lumbar movement?",
+        opts:["✓ Thoracic rotates independently","⚠ Mild lumbar co-rotation","✗ Lumbar rotates instead of thoracic","✗ Patient cannot isolate movement"],
+        clues:["","Minor — cueing and practice. Hands-on to assist isolation","Thoracic restriction compensated by lumbar — thoracic mobilisation priority. Over-rotation through lumbar segment increases L4/L5 disc stress","Motor control deficit — seated rotation against resistance, foam roller, thoracic rotation with lumbar lock"] },
+    ],
+    grades:["Normal — Full symmetric range, smooth quality, no pain","Compensated — Minor restriction or asymmetry without referred symptoms","Abnormal — Hinge point, significant asymmetry, pain, or compensatory lumbar movement"],
+  },
+  {
+    id:"tfs_rib", icon:"🫁", label:"Rib Mobility Screen",
+    subtitle:"Pump Handle · Bucket Handle · Rib Spring",
+    phase:"Costovertebral / Costotransverse Joint Assessment",
+    setup:"Patient prone. Palpate angle of ribs (posterior). Rib spring: apply PA pressure over each rib angle T2–T10. Normal = springy, painless bilateral. Pump handle (upper ribs 1–5): AP movement on respiration. Bucket handle (lower ribs 6–10): lateral movement. Assess during deep breath — restriction = asymmetric excursion.",
+    normalDesc:"Springy, pain-free PA pressure all rib angles. Symmetric rib excursion bilaterally on deep breath. Pump handle movement ribs 1–5, bucket handle 6–10. No reproduction of local or referred pain.",
+    observations:[
+      { id:"spring", q:"Rib spring test (prone PA)?",
+        opts:["✓ Springy, pain-free bilateral","⚠ Stiff one side — reduced spring","✗ Painful — local pain reproduction","✗ Painful — referred pain (chest/intercostal)"],
+        clues:["","Unilateral costovertebral restriction — rib mobilisation (prone PA + rib rotation). Dry needling if myofascial","Local pain = costovertebral joint irritation — gentle rib PA mobilisation, intercostal stretching. Distinguish from pleuritis (reproduce on deep breath)","Referred pain / intercostal = intercostal nerve irritation or T4 syndrome. Unilateral PA to costovertebral junction. Exclude visceral referral (cardiac, pleuritis)"] },
+      { id:"resp",   q:"Rib excursion on deep breath?",
+        opts:["✓ Symmetric bilateral expansion","⚠ Mild asymmetry on deep breath","✗ Clear asymmetric — restricted one side","✗ Paradoxical movement"],
+        clues:["","Minor costovertebral or myofascial restriction — rib mobilisation + lateral costal breathing training","Significant rib restriction — rib manipulation (HVLA if indicated) + diaphragmatic breathing + intercostal stretching","Paradoxical movement — possible flail chest history or intercostal muscle dysfunction. Medical referral if acute"] },
+      { id:"pump",   q:"Upper rib pump handle (ribs 1–5)?",
+        opts:["✓ Bilateral symmetric AP movement","⚠ Reduced one side","✗ Absent — fixed first rib","✗ Painful — first rib syndrome"],
+        clues:["","Upper thoracic / rib 1 restriction — thoracic outlet screen. First rib mobilisation","Fixed first rib — very common in thoracic outlet syndrome, cervical tension headache. First rib mobilisation (supine) mandatory before scalene stretching","First rib pain = first rib syndrome. Thoracic outlet screen (EAST test, Adson, Roos). Cervical rib rule-out on X-ray"] },
+      { id:"bucket", q:"Lower rib bucket handle (6–10)?",
+        opts:["✓ Bilateral symmetric lateral expansion","⚠ Reduced lateral expansion one side","✗ Absent expansion","✗ Pain on expansion"],
+        clues:["","Costovertebral restriction — rib mobilisation + lateral costal breathing exercise","Significant restriction — intercostal stretching + rib manipulation. Diaphragm assessment (may be contributing)","Pain on lateral expansion — intercostal irritation, costochondritis, or referred. Distinguish with palpation of costochondral junction"] },
+      { id:"tender", q:"Costochondral or sternal tenderness?",
+        opts:["✓ No tenderness","⚠ Mild costal margin tenderness","✗ Costochondritis (anterior)","✗ Costo-sternal tenderness (Tietze's)"],
+        clues:["","Minor costal margin tenderness — myofascial or postural. Avoid direct pressure. Thoracic extension + postural correction","Costochondritis — anti-inflammatory approach. Postural correction. Avoid direct mobilisation over inflamed cartilage","Tietze's syndrome — visible + palpable swelling. Differentiate from cardiac. Refer if doubt"] },
+    ],
+    grades:["Normal — Springy PA, symmetric rib excursion, pain-free","Compensated — Minor stiffness or asymmetry without referred symptoms","Abnormal — Pain on spring, asymmetric excursion, fixed first rib, or referred intercostal pain"],
+  },
+  {
+    id:"tfs_ext", icon:"📐", label:"Thoracic Extension Mobility",
+    subtitle:"Foam Roller / Chair Test — Segmental Extension",
+    phase:"Hypomobility / Postural Extension Assessment",
+    setup:"Method 1 (foam roller): Patient supine, foam roller under T4–T8. Arms crossed. Extend over roller 30 sec each level T3 to T9. Assess range, pain, crepitus. Method 2 (chair back): Seated, hands behind head, extend over chair back. Assess level where motion occurs vs where it is blocked.",
+    normalDesc:"Extension distributes evenly T1–T12. Comfortable range over foam roller. Chair extension — movement throughout upper-to-mid thoracic. No segmental block. No pain or clicking.",
+    observations:[
+      { id:"level",  q:"Level of restriction (foam roller)?",
+        opts:["✓ Even throughout T1–T12","⚠ Mild stiffness upper thoracic (T1–T4)","✗ Block mid-thoracic (T4–T8)","✗ Block lower thoracic (T8–T12)"],
+        clues:["","Upper thoracic restriction — very common with FHP. T1/T2/T3 PA mobilisation + chin tuck","Mid-thoracic restriction (T4–T8) — most common site. T4 syndrome suspect if combined with arm symptoms. PA mobilisation T4–T6 + foam roller extension","Lower thoracic — thoracolumbar junction. Screen L1/L2 for compensatory hypermobility. Thoracolumbar PA mobilisation"] },
+      { id:"pain",   q:"Pain on extension over roller?",
+        opts:["✓ Comfortable — mild pressure only","⚠ Mild ache at restriction site","✗ Sharp localised pain","✗ Referred pain (arm, anterior chest)"],
+        clues:["","Muscle guarding — mobilise at adjacent pain-free level first, progress toward restricted segment","Acute facet irritation — PA in neutral before extension loading. Anti-inflammatory positioning (flexion)","Referred anterior chest or arm = T4 syndrome. Unilateral PA at T4. Upper thoracic mobilisation. Exclude cardiac cause"] },
+      { id:"click",  q:"Audible/palpable clicking on extension?",
+        opts:["✓ No clicking","⚠ Clicking with relief (cavitation)","✗ Clicking with pain","✗ Grinding / crepitus"],
+        clues:["","Normal joint cavitation — no concern. Continue mobilisation","Facet irritation — mobilise below pain threshold first. May need traction technique","Crepitus = degenerative change. Reduce range, add muscle control before extension range work"] },
+      { id:"scap",   q:"Scapular movement during thoracic extension?",
+        opts:["✓ Scapulae retract symmetrically","⚠ One scapula lags / protracts","✗ Bilateral scapular protraction — cannot retract","✗ Scapular winging during extension"],
+        clues:["","Serratus anterior / lower trap asymmetry. Scapular setting exercise on that side","Bilateral protraction — Janda upper crossed pattern. Lower/mid trap activation before extension range work","Winging = serratus anterior inhibition. Long thoracic nerve screen. Serratus wall slide + protraction-retraction exercise"] },
+      { id:"breath", q:"Thoracic breathing on extension?",
+        opts:["✓ Ribcage expands on extension","⚠ Breath-holds on extension","✗ Paradoxical pattern — ribcage narrows","✗ Cannot extend and breathe simultaneously"],
+        clues:["","Minor breath-holding — cue to breathe out on extension. Monitor","Breath-hold compensation — diaphragm inhibited on extension. Breathing pattern retraining + thoracic extension mobility separately","Significant — respiratory physiotherapy or pain-avoidance behaviour. Address pain first"] },
+    ],
+    grades:["Normal — Even thoracic extension throughout T1–T12, pain-free","Compensated — Mild segmental restriction without referred symptoms","Abnormal — Segmental block, referred pain, or scapular dysfunction on extension"],
+  },
+  {
+    id:"tfs_t4", icon:"⚡", label:"T4 Syndrome Screen",
+    subtitle:"Upper Thoracic Referred Arm Symptoms",
+    phase:"T4 Syndrome / Sympathetic Nervous System Screen",
+    setup:"T4 syndrome = unilateral or bilateral vague arm symptoms (heaviness, tingling, numbness) with upper thoracic dysfunction. Screen: (1) Unilateral PA on T4 — reproduces arm symptoms? (2) Combined rotation + extension at T3/T4. (3) Upper limb elevation with T4 PA — changes symptoms? (4) Neurological screen C5–T1. T4 commonly co-presents with bilateral glove-like numbness.",
+    normalDesc:"PA on T3–T5 does not reproduce arm symptoms. Arm elevation with thoracic PA does not change symptoms. Neuro screen C5–T1 clear. No bilateral glove tingling. Upper thoracic mobility in normal range.",
+    observations:[
+      { id:"pa",     q:"Unilateral PA T4 — arm symptom reproduction?",
+        opts:["✓ No arm symptoms reproduced","⚠ Minor local thoracic ache only","✗ Arm symptoms reproduced unilaterally","✗ Bilateral arm symptoms with PA"],
+        clues:["","Not T4 syndrome — reassess other sources (cervical, TOS, peripheral)","Positive T4 screen — unilateral upper thoracic mobilisation. Rotation SNAG T3/T4. Monitor for arm symptom change","Classic T4 syndrome — bilateral. Upper thoracic mobilisation T3–T5 priority. Often dramatic symptom relief. Add thoracic extension home programme"] },
+      { id:"arm",    q:"Arm symptom quality?",
+        opts:["✓ No arm symptoms","⚠ Vague heaviness in arm","✗ Glove-like tingling (not dermatomal)","✗ Clear dermatomal pattern"],
+        clues:["","Not T4 syndrome — continue other assessment","T4 syndrome pattern — non-dermatomal vague symptoms typical of sympathetic nervous system involvement at T4","Dermatomal tingling — cervical radiculopathy more likely. ULNT + cervical screen priority. T4 may contribute but not primary"] },
+      { id:"neuro",  q:"Neurological screen C5–T1?",
+        opts:["✓ Myotomes and reflexes intact","⚠ Mild sensory change only","✗ Myotome weakness present","✗ Reflex changes present"],
+        clues:["","Normal — T4 syndrome or functional cause likely","Sensory changes without motor — screen double crush. Cervical + thoracic + peripheral combined","Myotome weakness — cervical radiculopathy or myelopathy. Cervical MRI referral. Not T4 syndrome alone","Reflex changes — myelopathy or radiculopathy. Urgent neurological referral if progressive"] },
+      { id:"bilat",  q:"Are symptoms bilateral?",
+        opts:["✓ Unilateral","⚠ Predominantly one side","✗ Bilateral","✗ Bilateral + trunk symptoms"],
+        clues:["","Unilateral — cervical radiculopathy or peripheral more likely than T4. Thoracic still contributory","Bilateral — T4 syndrome or central sensitisation. T4 mobilisation + pain education","Strong T4 syndrome indicator — bilateral non-dermatomal = autonomic referral pattern. T4 upper thoracic mobilisation","If trunk symptoms also present — screen for myelopathy (Lhermitte, Babinski, hyperreflexia). Urgent referral if myelopathic"] },
+      { id:"posture",q:"Upper thoracic kyphosis at T3/T4?",
+        opts:["✓ Normal kyphosis","⚠ Mild flexion increase","✗ Kyphotic flexion at T3/T4 level","✗ Severe kyphosis + chin poke"],
+        clues:["","Normal — less likely pure T4 mechanism","Kyphosis at T3/T4 — confirms postural T4 syndrome. Thoracic extension + FHP correction core of treatment","Classic T4 posture — foam roller extension + chin tuck + scapular retraction. Upper thoracic PA mobilisation","Severe — Janda upper crossed full pattern + thoracic outlet screen"] },
+    ],
+    grades:["Normal — No arm symptom reproduction, intact neurology, no T4 kyphosis","Compensated — Vague arm symptoms without neurological deficit","Abnormal — Arm symptoms reproduced by T4 PA, bilateral non-dermatomal tingling, or myotome changes"],
+  },
+  {
+    id:"tfs_scap", icon:"🦴", label:"Scapular Stability Screen",
+    subtitle:"Winging · Dyskinesis · Lower Trap / Serratus",
+    phase:"Scapulothoracic Motor Control",
+    setup:"(1) Wall push-up — observe for scapular winging (medial border lifting). (2) Arm elevation — observe scapular rhythm (upward rotation, ER, posterior tilt). Normal: scapula smoothly rotates upward 60° with 120° glenohumeral for full 180°. (3) Scapular assistance test: therapist manually assists scapular upward rotation — does shoulder pain improve? (4) Retraction test: manual scapular retraction — does shoulder/cervical pain change?",
+    normalDesc:"No winging on wall push-up. Smooth scapulothoracic rhythm on elevation. Scapula upward rotates 60° to 120° GH. No excessive elevation. No dyskinesis. Scapular assistance test negative (no improvement = non-scapular cause).",
+    observations:[
+      { id:"wing",   q:"Scapular winging?",
+        opts:["✓ No winging","⚠ Mild medial border lift","✗ Medial winging (serratus anterior)","✗ Lateral winging (trapezius)"],
+        clues:["","Minor serratus fatigue — serratus strengthening (wall push-up plus, dynamic hug)","Serratus anterior inhibition — long thoracic nerve screen (punch test). Wall slide + dynamic hug + push-up plus progression","Trapezius weakness (especially lower trap) — Y/T/W exercises. Screen spinal accessory nerve if severe (trap shrug test)"] },
+      { id:"rhythm", q:"Scapulothoracic rhythm on elevation?",
+        opts:["✓ Smooth upward rotation","⚠ Shrug pattern — early elevation","✗ Dyskinesis — jerky / inconsistent","✗ Scapular lag at initiation"],
+        clues:["","Upper trap dominant — lower trap + serratus activation. Elevation cueing during exercise","Scapular dyskinesis — Kibler Type I/II/III. Identify dominant pattern. Scapular PNF + YTWL progression","Lag at initiation — rotator cuff or serratus inhibition. Reduce load, begin at 90° abduction and progress"] },
+      { id:"assist", q:"Scapular assistance test (SAT)?",
+        opts:["✓ Not applicable","⚠ Tested — no change","✗ Positive — shoulder pain reduced","✗ Positive — range improved"],
+        clues:["","","Scapular assistance negative — shoulder pain from non-scapular source (GHJ, rotator cuff, AC)","SAT positive — scapular dysfunction contributing to shoulder impingement. Scapular stabilisation rehab indicated before rotator cuff isolation","SAT positive with range improvement — scapular-related sub-acromial impingement. Lower trap + serratus priority"] },
+      { id:"retract",q:"Scapular retraction test?",
+        opts:["✓ Not applicable","⚠ Tested — no change","✗ Positive — cervical pain reduced","✗ Positive — arm symptoms changed"],
+        clues:["","","Retraction test negative — non-scapular cervical source","Retraction test positive for cervical pain — forward shoulder posture contributing to cervicogenic symptoms. Scapular retraction + DNF priority","Retraction changes arm symptoms — thoracic outlet or neural tension component. Thoracic outlet screen (Roos, EAST)"] },
+      { id:"sym",    q:"Scapular position at rest (symmetry)?",
+        opts:["✓ Level and symmetric","⚠ Mild protraction bilateral","✗ Unilateral protraction/elevation","✗ Bilateral winging at rest"],
+        clues:["","Bilateral minor protraction — postural. Upper crossed correction","Unilateral — dominant hand preference or cervicothoracic restriction. Screen C4/5 for shoulder elevation coupling","Resting winging — significant serratus or trap inhibition. Formal scapular strength assessment"] },
+    ],
+    grades:["Normal — No winging, smooth rhythm, symmetric resting position","Compensated — Mild dyskinesis or SAT positive without functional limitation","Abnormal — Winging, significant dyskinesis, SAT positive with pain/restriction"],
+  },
+];
+
+function ThoracicFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  useEffect(() => {
+    const saved = data["thfs_data"];
+    if (saved && typeof saved === "string") {
+      try { const p=JSON.parse(saved); if(p.findings)setFindings(p.findings); if(p.grades)setGrades(p.grades); if(p.notes)setNotes(p.notes); } catch {}
+    }
+  }, []);
+
+  const save = (f,g,n) => set("thfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
+  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
+  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
+  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
+
+  const completedCount = THORACIC_TESTS.filter(t => grades[t.id] !== undefined).length;
+  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
+  const accentCol = "#0f766e";
+
+  return (
+    <div>
+      <div style={{background:"linear-gradient(135deg,rgba(15,118,110,0.08),rgba(20,184,166,0.05))",border:"1px solid rgba(15,118,110,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontSize:"1.4rem"}}>🫁</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Thoracic Functional Screen</div>
+            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM · Rib mobility · Extension · T4 syndrome · Scapular stability</div>
+          </div>
+          <div style={{marginLeft:"auto",textAlign:"right"}}>
+            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
+            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {THORACIC_TESTS.map(t=>{
+            const g=grades[t.id]; const done=g!==undefined;
+            return (
+              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
+                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
+                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
+                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {THORACIC_TESTS.map(t=>{
+        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
+        return (
+          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
+            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
+            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(15,118,110,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
+            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
+                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+              </div>
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
+            </div>
+            {isOpen && (
+              <div style={{padding:"0 14px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                </div>
+                {showVisual && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div style={{background:"#F0FDFA",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #99F6E4"}}>
+                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
+                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                {t.observations.map(obs=>{
+                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
+                  return (
+                    <div key={obs.id} style={{marginBottom:10}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        {obs.opts.map((opt,idx)=>{
+                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
+                          return (
+                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
+                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
+                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
+                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
+                              </div>
+                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                    </div>
+                  );
+                })}
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
+                  {t.grades.map((gLabel,idx)=>{
+                    const col=gradeColor(idx); const sel=g===idx;
+                    return (
+                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
+                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
+                  placeholder="Rotation degrees, rib spring findings, T4 test result, scapular winging..."
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {completedCount > 0 && (
+        <div style={{background:"#F0FDFA",borderRadius:14,padding:14,border:"1px solid #99F6E4",marginTop:4}}>
+          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Thoracic Screen Summary</div>
+          {THORACIC_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
+            const g=grades[t.id]; const col=gradeColor(g);
+            return (
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                <span style={{fontSize:"1rem"}}>{t.icon}</span>
+                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ELBOW FUNCTIONAL SCREEN ─────────────────────────────────────────────────
+
+const ELBOW_TESTS = [
+  {
+    id:"efs_arom", icon:"🔄", label:"Elbow AROM",
+    subtitle:"Flex · Ext · Pronation · Supination",
+    phase:"Articular / Capsular Screen",
+    setup:"Assess all 4 planes: Flexion (normal 145°), Extension (normal 0° — hyperextension common in hypermobility), Pronation (normal 75–85°), Supination (normal 80–90°). Note: carrying angle (normal 5–15° valgus), end-feel (firm/hard/empty), pain arc, crepitus.",
+    normalDesc:"Flexion 145°, extension 0°, pronation 75°, supination 85°. Firm end-feel. No pain arc. No crepitus. Carrying angle 5–15° valgus. Symmetric bilateral.",
+    observations:[
+      { id:"flex",   q:"Elbow flexion?",
+        opts:["✓ 140–145°","⚠ 120–139° — mild restriction","✗ <120° — significant restriction","✗ Pain at end-range flexion"],
+        clues:["","Posterior capsule or posterior impingement. Extension bias in rehab. Posterior compartment screen (olecranon fossa)","Significant — posterior capsular contracture or prior fracture. End-feel: hard = bony block (loose body), firm = capsular","Pain at end flexion = bicipital tendon or anterior capsule involvement. Resisted flexion test next"] },
+      { id:"ext",    q:"Elbow extension?",
+        opts:["✓ Full extension (0°)","⚠ 5–15° extension deficit","✗ >15° extension deficit (flexion contracture)","✗ Hyperextension present"],
+        clues:["","Common after elbow sprain/fracture — posterior capsule mobilisation. Gravity stretch in prone if pain-free","Flexion contracture — significant. Posterior capsule stretching + dynamic splinting if chronic. Screen for loose body (hard end-feel)","Hyperextension — assess UCL and joint stability. Hypermobility screen (Beighton). Avoid terminal extension loading"] },
+      { id:"prosup", q:"Pronation and supination?",
+        opts:["✓ 75° pro / 85° sup bilateral","⚠ Mild restriction pronation or supination","✗ Significant restriction (>30° loss)","✗ Pain on rotation — radiocapitellar"],
+        clues:["","Minor DRUJ or radiocapitellar restriction. Passive rotation mobilisation","Significant — DRUJ instability, Essex-Lopresti (if trauma history), radiocapitellar arthritis","Radiocapitellar pain on rotation = radial head pathology. Radial head mobilisation. Screen for lateral ligament"] },
+      { id:"carry",  q:"Carrying angle?",
+        opts:["✓ 5–15° valgus (normal)","⚠ Cubitus valgus >15°","✗ Cubitus varus (reverse angle)"],
+        clues:["","Increased valgus — increased ulnar nerve stress. UCL / medial compartment screen. Tardy ulnar nerve palsy risk","Cubitus varus — usually prior supracondylar fracture. Assess functional range and medial stability"] },
+      { id:"crepitus",q:"Crepitus during AROM?",
+        opts:["✓ No crepitus","⚠ Fine crepitus — end range","✗ Coarse crepitus mid-range","✗ Locking or clicking"],
+        clues:["","Minor synovial or degenerative — monitor","Degenerative change — modify loading. Avoid impingement positions. Joint protection education","Locking = loose body (osteochondral fragment). Imaging referral. Do not mobilise into locked position"] },
+    ],
+    grades:["Normal — Full pain-free range, no crepitus, normal carrying angle","Compensated — Minor restriction or end-range pain without instability","Abnormal — Flexion contracture, pain arc, crepitus, or abnormal carrying angle"],
+  },
+  {
+    id:"efs_lat", icon:"🎾", label:"Lateral Epicondyle Load Test",
+    subtitle:"Cozen's · Mill's · Maudsley's — Lateral Epicondylalgia",
+    phase:"Extensor Origin Load / Tendinopathy Screen",
+    setup:"(1) Cozen's: patient makes fist, wrist extends, forearm pronated. Therapist resists wrist extension. Positive = pain at lateral epicondyle. (2) Mill's: therapist passively pronates, flexes wrist, extends elbow. Positive = lateral epicondyle pain. (3) Maudsley: resist extension of 3rd digit. (4) Palpate common extensor origin (CEO) — anterior lateral epicondyle.",
+    normalDesc:"No pain on resisted wrist extension, passive stretch, or 3rd digit extension. Lateral epicondyle non-tender on palpation. Grip strength equal bilateral (dynamometer or squeeze).",
+    observations:[
+      { id:"cozen",  q:"Cozen's test (resisted wrist ext)?",
+        opts:["✓ Pain-free","⚠ Mild — pain during sustained","✗ Positive — pain at lateral epicondyle","✗ Pain + immediate weakness"],
+        clues:["","Minor CEO tendinopathy or cervical referral. Repeat with cervical lateral flexion — if changes, cervical component","Classic lateral epicondylalgia. Load management + IASTM + eccentric programme (Tyler twist, wrist curls)","High irritability — reduce load. Isometric wrist extension for analgesia. PEACE + LOVE principles acutely"] },
+      { id:"mills",  q:"Mill's stretch (passive pronation + wrist flex + elbow ext)?",
+        opts:["✓ No pain","⚠ Mild stretch sensation only","✗ Pain at lateral epicondyle","✗ Pain + elbow clicking"],
+        clues:["","Normal — good tissue extensibility","Positive Mill's = tendinopathy + tissue extensibility deficit. Soft tissue mobilisation CEO + wrist extension mobility. Avoid aggressive stretching in high irritability","Pain + click = radio-capitellar or annular ligament. Palpate radial head. Screen lateral ligament"] },
+      { id:"maud",   q:"Maudsley (resist 3rd digit extension)?",
+        opts:["✓ No pain","⚠ Mild ache during","✗ Positive — lateral epicondyle pain","✗ Positive with grip weakness"],
+        clues:["","Normal","Extensor digitorum communis involvement. Forearm extensor massage + EDC strengthening","Grip weakness with Maudsley positive — screen for PIN (posterior interosseous nerve) entrapment. EDC test, digit extension power"] },
+      { id:"tender", q:"CEO palpation (anterior lateral epicondyle)?",
+        opts:["✓ Non-tender","⚠ Mild tenderness on firm palpation","✗ Tender on light touch","✗ Tender + thickened / nodular"],
+        clues:["","Minor — consistent with low-irritability tendinopathy","High irritability — do not directly palpate. Load management, isometrics only phase 1","Nodular tendinopathy — chronic. IASTM or dry needling. Eccentric + isometric programme. Monitor over 6–12 weeks"] },
+      { id:"grip",   q:"Grip strength comparison?",
+        opts:["✓ Equal bilateral","⚠ Mild deficit (<10%)","✗ Moderate deficit (10–30%)","✗ Severe deficit (>30%) or pain-limited"],
+        clues:["","Minor inhibition — isometric grip strengthening","Significant — functional limitation. Graduated grip programme + proximal strengthening (scapular, rotator cuff, wrist)","Pain-limited grip = high irritability. Isometrics first. Wrist extension isometric hold 45° for immediate analgesia"] },
+    ],
+    grades:["Normal — Pain-free CEO, equal grip, no positive tests","Compensated — Mild tenderness or <10% grip deficit without functional impact","Abnormal — Positive Cozen/Mill's/Maudsley, significant grip deficit, or high irritability"],
+  },
+  {
+    id:"efs_med", icon:"🏌️", label:"Medial Elbow / Valgus Screen",
+    subtitle:"UCL Stress · Golfer's Elbow · Ulnar Nerve",
+    phase:"Medial Compartment / Valgus Load",
+    setup:"(1) Medial epicondyle palpation (FCU, FCR, PT origin). (2) Valgus stress test: elbow 20–30° flexion, apply valgus force. Normal = firm endpoint. (3) Moving valgus stress test (MVST): apply sustained valgus, move elbow 70° to 120° flexion. Positive = medial pain in arc (UCL sign). (4) Resisted wrist flexion (flexor-pronator strain). (5) Ulnar nerve: Tinel at cubital tunnel, sensory screen ring/little finger.",
+    normalDesc:"Medial epicondyle non-tender. Firm UCL endpoint on valgus stress. MVST negative. Resisted wrist flexion pain-free. Tinel at cubital tunnel negative. Normal ring/little finger sensation.",
+    observations:[
+      { id:"ucl",    q:"Valgus stress test (UCL)?",
+        opts:["✓ Firm endpoint, pain-free","⚠ Soft endpoint or mild pain","✗ Instability — excessive opening","✗ Instability + reproduction of medial pain"],
+        clues:["","UCL laxity or minor sprain — dynamic stabiliser rehab (FCU + wrist flexor strengthening). Monitor","UCL insufficiency — significant. Throwing athletes: UCL reconstruction risk. Refer orthopaedics if grade II+","UCL insufficiency with pain = Tommy John pattern. Throwing athlete: specialist referral. Non-athletes: conservative flexor-pronator strengthening"] },
+      { id:"mvst",   q:"Moving valgus stress test (MVST)?",
+        opts:["✓ Negative","⚠ Discomfort but not pain","✗ Positive — medial pain 70–120°","✗ Positive with locking sensation"],
+        clues:["","Normal","MVST positive = UCL stress response. Load management + flexor-pronator strengthening + throwing mechanics assessment","Locking sensation = loose body in posterior medial compartment. Posteromedial impingement screen (extend + valgus in end flexion)"] },
+      { id:"fcu",    q:"Resisted wrist flexion / FCU palpation?",
+        opts:["✓ Pain-free, equal bilateral","⚠ Mild medial elbow ache","✗ Pain at medial epicondyle (golfer's elbow)","✗ Pain + weakness"],
+        clues:["","Monitor — minor flexor-pronator strain or cervical referral. Cervical screen","Medial epicondylalgia (golfer's elbow). FCU/FCR origin tendinopathy. Load management + isometric wrist flexion for analgesia + eccentric programme","Weakness with pain — screen for median nerve or C8/T1 cervical referral. Neurological exam"] },
+      { id:"ulnar",  q:"Ulnar nerve screen (Tinel + sensation)?",
+        opts:["✓ Tinel negative, sensation intact","⚠ Tinel positive — no sensory deficit","✗ Sensory deficit ring/little finger","✗ Intrinsic weakness (Froment's / clawing)"],
+        clues:["","Normal","Cubital tunnel syndrome — mild. Avoid elbow flexion >90° at night (elbow pad). Ulnar nerve gliding","Cubital tunnel — moderate. Sensory deficit present. Avoid flexion >90° sustained. Nerve glide programme. EMG/NCS referral if progressive","Intrinsic weakness = severe cubital tunnel. Froment's test for adductor pollicis. Urgent referral if progressive motor loss"] },
+      { id:"med_tender",q:"Medial epicondyle tenderness?",
+        opts:["✓ Non-tender","⚠ Tender on firm palpation","✗ Tender — golfer's elbow pattern","✗ Tender + valgus instability"],
+        clues:["","Normal","Flexor-pronator tendinopathy. FCU/FCR eccentric loading programme. Soft tissue therapy","Combined medial epicondylalgia + UCL laxity — common in overhead athletes. Treat tendinopathy first, assess UCL once irritability settled"] },
+    ],
+    grades:["Normal — Firm UCL, pain-free wrist flexion, Tinel negative","Compensated — Mild tenderness or minor UCL laxity without functional deficit","Abnormal — UCL instability, positive MVST, golfer's elbow, or ulnar neuropathy"],
+  },
+  {
+    id:"efs_stab", icon:"🛡️", label:"Elbow Stability Screen",
+    subtitle:"PLRI · Varus Stress · Posterolateral Rotatory",
+    phase:"Ligamentous / Joint Stability",
+    setup:"(1) Posterolateral rotatory instability (PLRI) — lateral pivot shift: patient supine, arm overhead, apply axial compression + valgus + supination through elbow extension. Positive = apprehension or subluxation. (2) Varus stress at 20° flexion. (3) Posterolateral apprehension (seated or standing — resist resupination). (4) Chair sign: patient pushes up from chair with forearm supinated — apprehension = positive.",
+    normalDesc:"Lateral pivot shift apprehension negative. No varus laxity. Chair sign negative. Posterolateral apprehension negative. Symmetric stability bilateral.",
+    observations:[
+      { id:"plri",   q:"Lateral pivot shift / PLRI apprehension?",
+        opts:["✓ Negative — no apprehension","⚠ Mild discomfort — no subluxation","✗ Apprehension — positive","✗ Subluxation palpable"],
+        clues:["","May be minor lateral ligament sprain. Monitor and protect supination loading","PLRI positive — lateral ulnar collateral ligament (LUCL) insufficiency. Limit supination in loaded positions. Refer if functional impact significant","LUCL instability — surgical consultation if conservative management fails (common in post-radial head excision or prior dislocation)"] },
+      { id:"chair",  q:"Chair sign (supinated push up)?",
+        opts:["✓ Negative — confident push","⚠ Avoidance but no pain","✗ Positive — apprehension with supination","✗ Pain + instability"],
+        clues:["","Normal","Functional test for PLRI. Positive = patient avoids supinated loading. Confirm with lateral pivot shift","High irritability PLRI. Lateral ulnar collateral reconstruction if conservative fails"] },
+      { id:"varus",  q:"Varus stress test (radial collateral)?",
+        opts:["✓ Firm endpoint","⚠ Soft — minor laxity","✗ Instability — significant opening","✗ Instability + pain"],
+        clues:["","Normal","Minor radial collateral laxity — usually well-tolerated. Monitor. Avoid varus loads","Significant lateral instability — LUCL or radial collateral complex. Refer orthopaedics"] },
+      { id:"post",   q:"Posteromedial impingement screen?",
+        opts:["✓ No posteromedial pain","⚠ Discomfort at end-range extension + valgus","✗ Pain posteromedially (osteophyte)","✗ Locking in extension"],
+        clues:["","Normal","Common in throwing athletes — olecranon osteophyte against medial wall. X-ray. Load management and throwing mechanics","Locking = loose body. Imaging referral. Arthroscopic debridement if symptomatic and conservative fails"] },
+      { id:"nerve",  q:"Radial nerve screen (PIN)?",
+        opts:["✓ Full digit extension, no radial pain","⚠ Mild radial tunnel pain on palpation","✗ Radial tunnel syndrome — pain without weakness","✗ PIN palsy — digit drop"],
+        clues:["","Normal","Radial tunnel syndrome — similar to lateral epicondylalgia but more distal (radial tunnel, not CEO). Palpation 3–5 cm distal to epicondyle. Neural decompression position + elbow extension stretching","PIN palsy = posterior interosseous nerve entrapment. Urgent assessment — digit drop. EMG, refer if not resolving"] },
+    ],
+    grades:["Normal — All stability tests negative, intact radial nerve","Compensated — Minor apprehension or discomfort without instability","Abnormal — PLRI positive, chair sign positive, varus laxity, or PIN involvement"],
+  },
+  {
+    id:"efs_neural", icon:"⚡", label:"ULNT2 — Radial/Median Neural Screen",
+    subtitle:"ULNT2a (Median) · ULNT2b (Radial) · Cubital Tunnel",
+    phase:"Neural Tension / Peripheral Nerve Screen",
+    setup:"ULNT2a (median): Shoulder depression + 10° abduction + ER + wrist/finger ext + elbow extension. ULNT2b (radial): Same but IR + wrist flexion (radial nerve bias). Sensitise with cervical lateral flex. Compare bilateral range and symptom reproduction. Also: cubital tunnel Tinel (medial) and resisted elbow flexion (musculocutaneous screen).",
+    normalDesc:"Mild bilateral stretch at elbow extension endpoint. No symptom reproduction. Cervical sensitisation/desensitisation response present bilaterally. No tingling or numbness in any nerve distribution.",
+    observations:[
+      { id:"ulnt2a", q:"ULNT2a — median nerve (ER + wrist ext)?",
+        opts:["✓ Mild bilateral stretch","⚠ Mildly more symptomatic one side","✗ Symptoms reproduced — median distribution","✗ Major restriction — barely extends past 90°"],
+        clues:["","Minor asymmetry — monitor, screen cervical C6/C7","Positive — median nerve sensitisation, pronator syndrome or carpal tunnel component. Neural slider programme (median bias). Screen carpal tunnel","Severe median restriction = high irritability neural tension. Cervical + elbow + wrist combined dysfunction. Slider neurodynamics only until irritability reduces"] },
+      { id:"ulnt2b", q:"ULNT2b — radial nerve (IR + wrist flex)?",
+        opts:["✓ Mild bilateral stretch","⚠ Mildly more symptomatic one side","✗ Symptoms reproduced — radial distribution","✗ Major restriction"],
+        clues:["","Minor — monitor alongside lateral epicondylalgia","Positive radial — radial tunnel, wrist dorsal sensory branch, or cervical C7. Radial nerve slider (wrist flex + elbow ext + IR)","Severe radial restriction — combined cervical, radial tunnel, and lateral epicondylalgia common. Address in sequence"] },
+      { id:"cervdiff",q:"Cervical lateral flex differentiation?",
+        opts:["✓ Sensitises and desensitises","⚠ Sensitises only","✗ No change — not neural","✗ Worsens both ways"],
+        clues:["","Classic neurodynamic positive — confirms neural origin. Butler neural mobilisation approach","Equivocal — may be muscular. Repeat with shoulder depression only","Not neural tension — myofascial or joint. Proceed to local elbow/wrist testing","Central sensitisation — both directions worsen. Pain education + graded exposure"] },
+      { id:"mcut",   q:"Musculocutaneous screen (resisted elbow flex + forearm sensation)?",
+        opts:["✓ Normal power, sensation intact","⚠ Mild weakness biceps","✗ Weakness biceps + lateral forearm numbness","✗ Complete biceps palsy"],
+        clues:["","Normal","Minor biceps inhibition — screen cervical C6. Pain-inhibited or true nerve","Musculocutaneous or C6 involvement — EMG/NCS referral. Cervical C5/6 MRI if radiculopathic pattern","Complete biceps palsy — urgent. Axillary, musculocutaneous, or C5/6 root avulsion. Emergent referral"] },
+      { id:"tinel",  q:"Tinel at cubital tunnel (medial) + olecranon groove?",
+        opts:["✓ Negative","⚠ Positive Tinel without sensory deficit","✗ Positive + ring/little finger tingling","✗ Positive + intrinsic weakness"],
+        clues:["","Normal","Cubital tunnel irritation — avoid elbow flexion at night. Elbow pad. Ulnar nerve glides","Ulnar neuropathy — sensory involvement. Monitor progression. EMG/NCS if not improving in 6–8 weeks","Motor involvement = significant — urgent EMG/NCS. Refer if intrinsic wasting"] },
+    ],
+    grades:["Normal — Mild bilateral stretch, no symptoms, Tinel negative","Compensated — Mild asymmetry or Tinel positive without sensory/motor deficit","Abnormal — Reproduced symptoms, neurological signs, or significant restriction"],
+  },
+];
+
+function ElbowFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  useEffect(() => {
+    const saved = data["elfs_data"];
+    if (saved && typeof saved === "string") {
+      try { const p=JSON.parse(saved); if(p.findings)setFindings(p.findings); if(p.grades)setGrades(p.grades); if(p.notes)setNotes(p.notes); } catch {}
+    }
+  }, []);
+
+  const save = (f,g,n) => set("elfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
+  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
+  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
+  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
+
+  const completedCount = ELBOW_TESTS.filter(t => grades[t.id] !== undefined).length;
+  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
+  const accentCol = "#0369a1";
+
+  return (
+    <div>
+      <div style={{background:"linear-gradient(135deg,rgba(3,105,161,0.08),rgba(14,165,233,0.05))",border:"1px solid rgba(3,105,161,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontSize:"1.4rem"}}>💪</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Elbow Functional Screen</div>
+            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM · Lateral epicondyle · Medial/UCL · Stability · Neural</div>
+          </div>
+          <div style={{marginLeft:"auto",textAlign:"right"}}>
+            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
+            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {ELBOW_TESTS.map(t=>{
+            const g=grades[t.id]; const done=g!==undefined;
+            return (
+              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
+                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
+                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
+                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {ELBOW_TESTS.map(t=>{
+        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
+        return (
+          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
+            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
+            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(3,105,161,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
+            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
+                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+              </div>
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
+            </div>
+            {isOpen && (
+              <div style={{padding:"0 14px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                </div>
+                {showVisual && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div style={{background:"#F0F9FF",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #BAE6FD"}}>
+                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
+                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                {t.observations.map(obs=>{
+                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
+                  return (
+                    <div key={obs.id} style={{marginBottom:10}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        {obs.opts.map((opt,idx)=>{
+                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
+                          return (
+                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
+                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
+                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
+                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
+                              </div>
+                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                    </div>
+                  );
+                })}
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
+                  {t.grades.map((gLabel,idx)=>{
+                    const col=gradeColor(idx); const sel=g===idx;
+                    return (
+                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
+                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
+                  placeholder="ROM degrees, Cozen's result, UCL stress, neural findings..."
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {completedCount > 0 && (
+        <div style={{background:"#F0F9FF",borderRadius:14,padding:14,border:"1px solid #BAE6FD",marginTop:4}}>
+          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Elbow Screen Summary</div>
+          {ELBOW_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
+            const g=grades[t.id]; const col=gradeColor(g);
+            return (
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                <span style={{fontSize:"1rem"}}>{t.icon}</span>
+                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── WRIST / HAND FUNCTIONAL SCREEN ──────────────────────────────────────────
+
+const WRIST_TESTS = [
+  {
+    id:"wfs_arom", icon:"🔄", label:"Wrist AROM + Grip",
+    subtitle:"Flex · Ext · RD · UD · Grip Strength",
+    phase:"Articular / Tendon / Grip Capacity Screen",
+    setup:"Assess: Flexion (normal 80°), Extension (normal 70°), Radial deviation (normal 20°), Ulnar deviation (normal 30°). Grip: isometric dynamometer (3 trials each hand, average). Pinch: lateral pinch. Compare dominant to non-dominant (dominant typically 10% stronger). Note: deformity, swelling, pain arc.",
+    normalDesc:"Flexion 80°, extension 70°, RD 20°, UD 30°. Grip dominant = non-dominant + 10%. No pain arc. No deformity. End-feel firm throughout. No swelling. Equal bilateral tenodesis (passive opening/closing with wrist movement).",
+    observations:[
+      { id:"ext",    q:"Wrist extension range?",
+        opts:["✓ 70°+ pain-free","⚠ 50–69° or mild discomfort","✗ <50° significant restriction","✗ Pain + crepitus"],
+        clues:["","Wrist capsule tightness or prior sprain. Wrist extension mobilisation (PA on carpals, radial glide). Tendon gliding exercises","Significant restriction — carpal coalition, osteoarthritis, or post-fracture. Mobilisation + splint. Imaging if trauma history","Pain + crepitus = DRJ or radiocarpal OA, or scaphoid non-union. Screen scaphoid anatomical snuffbox"] },
+      { id:"flex",   q:"Wrist flexion range?",
+        opts:["✓ 80°+ pain-free","⚠ 60–79° or mild discomfort","✗ <60° significant restriction","✗ Finger flexion pattern changes with wrist movement"],
+        clues:["","Minor capsular restriction — wrist flexion mobilisation. Volar glides","Significant restriction — Dupuytren's contracture screen (palmar cords), OA, or post-Colles","Tenodesis dysfunction — screen extrinsic tendon tightness (flex wrist = fingers should extend; ext wrist = fingers close)"] },
+      { id:"dev",    q:"Radial / ulnar deviation?",
+        opts:["✓ RD 20° / UD 30° bilateral","⚠ Mild restriction RD or UD one side","✗ Pain at extremes of deviation","✗ Ulnar-sided pain on UD"],
+        clues:["","Minor triquetral or intercarpal restriction — carpal mobilisation","Radiocarpal impingement or styloid conflict — X-ray. Reduce end-range loading","Ulnar-sided UD pain = TFCC or ECU. Screen TFCC (ulnar fovea sign)"] },
+      { id:"grip",   q:"Grip strength comparison?",
+        opts:["✓ Equal ±10%","⚠ 10–25% deficit","✗ >25% deficit","✗ Pain-limited grip — cannot squeeze"],
+        clues:["","Minor inhibition — CTS, tennis elbow, or cervical C8. Isometric grip progression","Significant deficit — functional limitation. Progressive grip strengthening + proximal rehab","Pain-limited — identify source first (CTS, TFCC, scaphoid, tendinopathy) before loading"] },
+      { id:"tenod",  q:"Tenodesis pattern (passive flex/ext)?",
+        opts:["✓ Normal — wrist ext = finger flex, wrist flex = finger ext","⚠ Sluggish tenodesis","✗ Absent tenodesis","✗ Reversed tenodesis"],
+        clues:["","Intrinsic / extrinsic tendon tightness — tendon gliding programme","Absent tenodesis = significant extrinsic tendon adhesion or neurological. Passive tendon gliding + blocking exercises","Reversed tenodesis = intrinsic tightness (positive Bunnell-Littler). Intrinsic stretch + MP mobilisation"] },
+    ],
+    grades:["Normal — Full ROM, equal grip ±10%, normal tenodesis","Compensated — Minor restriction or 10–25% grip deficit without functional limitation","Abnormal — Significant restriction, >25% grip deficit, or pain-limited loading"],
+  },
+  {
+    id:"wfs_cts", icon:"🤏", label:"Carpal Tunnel Screen",
+    subtitle:"Phalen's · Tinel's · Compression Test · CTS",
+    phase:"Median Nerve / Carpal Canal Pressure",
+    setup:"(1) Phalen's: wrist sustained maximal flexion 60s — tingling in median distribution? (2) Tinel's: tap over carpal tunnel (wrist crease, central) — tingling digits 1–3? (3) Carpal compression test (Durkan): direct pressure carpal tunnel 30s. (4) Sensation: 2-point discrimination D1/D2/D3 vs D4/D5. (5) Thenar atrophy — inspect. (6) Screen cervical C6 + ULNT1.",
+    normalDesc:"Phalen's negative at 60s. Tinel's negative. No median sensory deficit D1–D3. 2-point discrimination <6mm. No thenar atrophy. Grip and pinch equal bilateral.",
+    observations:[
+      { id:"phalen", q:"Phalen's test (60s wrist flexion)?",
+        opts:["✓ Negative at 60s","⚠ Positive >45s (mild)","✗ Positive <45s (moderate)","✗ Positive <20s (severe/high pressure)"],
+        clues:["","Minor — conservative management. Night splint (neutral wrist). Activity modification","Moderate CTS — splinting priority. Referral to hand therapist + nerve conduction. Consider injection","Severe CTS — urgent nerve conduction. Surgical referral if motor deficit or rapidly progressive. Splint while awaiting"] },
+      { id:"tinel",  q:"Tinel's at carpal tunnel?",
+        opts:["✓ Negative","⚠ Mild tingling distally","✗ Clear median tingling digits 1–3","✗ Sharp pain — highly irritable"],
+        clues:["","Normal","Positive Tinel's = active demyelination at carpal tunnel. NCS + splinting. Median nerve slider neurodynamics once irritability reduces","High irritability — avoid provocative positions. Neutral wrist splint 24/7 initially"] },
+      { id:"sensation",q:"Median nerve sensation D1–D3?",
+        opts:["✓ Intact and symmetric","⚠ Mildly reduced D3/D2","✗ Numbness D1–D3","✗ Constant numbness + thenar weakness"],
+        clues:["","Monitor — early sensory change. Night splint + activity modification","Sensory deficit = moderate–severe CTS. NCS urgent. Surgical evaluation if not responding to conservative in 8–12 weeks","Constant numbness + motor = severe. Thenar atrophy check. Urgent referral — irreversible axonal loss risk"] },
+      { id:"thenar", q:"Thenar eminence bulk?",
+        opts:["✓ Full and symmetric","⚠ Mild volume reduction","✗ Thenar atrophy present","✗ Complete thenar wasting"],
+        clues:["","Monitor — may be dominant/non-dominant difference","Moderate motor involvement — NCS. Assess opponens and abductor pollicis brevis (APB)","Severe — long-standing CTS. Nerve conduction urgently. Surgical release likely indicated. Assess for irreversible motor damage"] },
+      { id:"doublec", q:"Double crush screen (cervical C6)?",
+        opts:["✓ Cervical screen clear","⚠ Mild cervical tenderness — possibly contributing","✗ Cervical C6 restriction + CTS signs","✗ Positive ULNT1 + CTS signs"],
+        clues:["","Normal — isolated CTS likely","Minor cervical contribution — treat both. Cervical mobilisation may improve CTS symptoms","Double crush syndrome — cervical + carpal tunnel combined. Treat both simultaneously for best outcomes","Double crush confirmed — neural slider neurodynamics + cervical mobilisation + CTS splinting. Neural tissue most sensitised at both sites"] },
+    ],
+    grades:["Normal — Phalen/Tinel negative, intact sensation, no thenar atrophy","Compensated — Phalen positive >45s without sensory deficit","Abnormal — Sensory deficit, thenar atrophy, or positive tests <45s"],
+  },
+  {
+    id:"wfs_tfcc", icon:"🔱", label:"TFCC / Ulnar Wrist Screen",
+    subtitle:"Ulnar Fovea Sign · DRUJ Stability · ECU",
+    phase:"Triangular Fibrocartilage Complex",
+    setup:"(1) Ulnar fovea sign: press firm into fovea (between FCU tendon, ulnar styloid, pisiform) — pain = TFCC/ulnar ligament. (2) DRUJ stability: hold distal ulna, translate dorsal/volar — compare to contralateral. (3) ECU tendon (ulnar dorsal): palpate + resisted ulnar deviation/extension. (4) Piano key test: press on distal ulna in pronation — pain/clicking = DRUJ instability. (5) Ulnar deviation load test: axial load + ulnar deviation + supination.",
+    normalDesc:"Fovea sign negative (no tenderness). DRUJ stable — firm dorsal/volar endpoint symmetric. ECU non-tender. Piano key test negative. No clicking on ulnar deviation load. Distal ulna in slight dorsal relation to radius (normal).",
+    observations:[
+      { id:"fovea",  q:"Ulnar fovea sign?",
+        opts:["✓ Non-tender fovea","⚠ Tender fovea — mild","✗ Tender fovea — reproduction of patient pain","✗ Tender + crepitus on forearm rotation"],
+        clues:["","Normal — TFCC likely intact","Positive fovea = TFCC peripheral tear (foveal attachment) or ulnocarpal ligament strain. Load management, DRUJ stabilisation splint","Crepitus with rotation = DRUJ osteoarthritis or TFCC tear. MRI referral for tear assessment. Refer hand surgeon if functional limitation"] },
+      { id:"druj",   q:"DRUJ stability (dorsal/volar translation)?",
+        opts:["✓ Firm symmetric endpoint","⚠ Mild laxity — greater than contralateral","✗ Instability — significant translation","✗ Painful instability"],
+        clues:["","Normal","Minor DRUJ laxity — ECU and pronator quadratus strengthening. Avoid end-range rotation loading","DRUJ instability — Essex-Lopresti if radial head involved. Refer hand surgeon. DRUJ stabilisation programme if conservative","Painful instability = significant TFCC tear. MRI + hand surgeon referral. Do not load in unstable position"] },
+      { id:"ecu",    q:"ECU palpation + resisted testing?",
+        opts:["✓ Non-tender, full power","⚠ Tender ECU groove","✗ ECU tendinopathy — tender + pain on resist","✗ ECU subluxation — snap felt"],
+        clues:["","Normal","ECU tendinopathy — load management. Eccentric ulnar deviation/extension. Reduce forearm rotation loading","ECU tendinopathy — load management + wrist stabilisation brace. Graduated return to aggravating activity","ECU subluxation = ECU subsheath tear. Click on rotation + ulnar deviation. Immobilisation (supinated) then ECU stabilisation sleeve"] },
+      { id:"piano",  q:"Piano key test (distal ulna press)?",
+        opts:["✓ No pain/clicking","⚠ Discomfort but no click","✗ Click or pop on piano key","✗ Marked instability on press"],
+        clues:["","Normal DRUJ","Mild DRUJ irritation — monitor. Forearm stabilisation exercise","DRUJ instability — ECU + PQ strengthening. DRUJ stabilisation brace. Refer if not resolving","Marked DRUJ instability — hand surgeon referral for reconstruction assessment"] },
+      { id:"uldev",  q:"Ulnar deviation load test?",
+        opts:["✓ Pain-free","⚠ Mild discomfort","✗ Ulnar pain — TFCC or triquetral","✗ Click + pain — lunotriquetral"],
+        clues:["","Normal","TFCC or ulnar styloid impaction — ulnar variance check X-ray. Wafer procedure if + ulnar variance","Lunotriquetral ligament tear — LT shear test. MRI. Refer hand surgeon if unstable","LT instability — VISI pattern on lateral X-ray. Referral"] },
+    ],
+    grades:["Normal — Fovea negative, DRUJ stable, ECU pain-free","Compensated — Mild fovea tenderness or minor DRUJ laxity without instability","Abnormal — Positive fovea, DRUJ instability, ECU subluxation, or positive ulnar load test"],
+  },
+  {
+    id:"wfs_scaph", icon:"🦴", label:"Scaphoid / Carpal Screen",
+    subtitle:"Anatomical Snuffbox · Watson · Scaphoid Shift",
+    phase:"Scaphoid Fracture / SL Ligament Screen",
+    setup:"(1) Anatomical snuffbox tenderness (between APL and EPB/EPL — distal to radial styloid). Positive = scaphoid fracture until proven otherwise. (2) Watson (scaphoid shift): thumb on scaphoid tubercle volarly, passive radial deviation. Positive = clunk + pain (SL instability). (3) Scaphoid compression: axial load through thumb. (4) Scaphoid tubercle palpation (volar wrist crease, radial side). (5) Resisted tip pinch (scaphoid load).",
+    normalDesc:"Anatomical snuffbox non-tender. Watson test negative (no clunk, no pain). Scaphoid compression pain-free. Scaphoid tubercle non-tender. Pinch grip equal bilateral.",
+    observations:[
+      { id:"snuff",  q:"Anatomical snuffbox tenderness?",
+        opts:["✓ Non-tender","⚠ Mild discomfort — not reproduced pain","✗ Tender — positive screen (fracture until proven)","✗ Tender + bruising/swelling"],
+        clues:["","Normal","Snuffbox positive = treat as scaphoid fracture until X-ray (and MRI/CT if X-ray normal). Immobilise thumb spica splint. Refer. Do NOT mobilise","Acute — immobilise immediately. Scaphoid fracture non-union risk is high without early treatment. Imaging urgently. Refer orthopedics"] },
+      { id:"watson", q:"Watson test (scaphoid shift)?",
+        opts:["✓ Negative — no clunk","⚠ Discomfort but no clunk","✗ Positive — clunk + pain","✗ Positive bilateral (may be hypermobile)"],
+        clues:["","Normal SL ligament","Minor SL laxity or dorsal impingement — wrist proprioception + scaphoid stabilisation exercise","SL ligament tear — dorsal intercalated segment instability (DISI) on X-ray. Refer hand surgeon. Wrist stabilisation splint","Bilateral positive — may be constitutional hypermobility (Beighton). Compare to contralateral. Assess for pain + functional limitation"] },
+      { id:"compress",q:"Scaphoid compression (axial through thumb)?",
+        opts:["✓ Pain-free","⚠ Mild ache","✗ Pain at scaphoid — positive","✗ Severe pain — refer"],
+        clues:["","Normal","Mild scaphoid or thumb CMC loading pain — further screen. CMC grind test for basal thumb OA","Scaphoid pain — confirm with snuffbox. Immobilise and image if uncertain","Severe pain — scaphoid fracture or AVN. Emergency management"] },
+      { id:"cmc",    q:"Thumb CMC (basal joint) screen — grind test?",
+        opts:["✓ Pain-free grind test","⚠ Mild crepitus without pain","✗ Pain + crepitus — CMC OA","✗ Laxity + pain — UCL / Bennett's"],
+        clues:["","Normal CMC","Minor CMC OA — activity modification. CMC stabilisation orthosis for gripping. Wrist/hand OA programme","CMC OA — FOPQ (force opposition pinch and grasp) modification. Splint during heavy activity. Intraarticular injection if severe","UCL laxity = skier's / gamekeeper's thumb. Ulnar collateral ligament integrity test. Immobilise if acute + refer"] },
+      { id:"dequerv",q:"De Quervain's screen (Finkelstein)?",
+        opts:["✓ Finkelstein negative","⚠ Mild first dorsal compartment tenderness","✗ Positive Finkelstein — reproduction of radial wrist pain","✗ Positive + crepitus / snapping"],
+        clues:["","Normal APL/EPB tendons","Mild first dorsal compartment irritation — load modification. Thumb spica splint during activity","De Quervain's tenosynovitis — thumb spica splint, IASTM or soft tissue therapy, injection if not responding. Graduated return","Crepitus / snapping = intersecting syndrome (APL/ECRB crossing). More proximal. Treat with IASTM + load modification"] },
+    ],
+    grades:["Normal — Snuffbox negative, Watson negative, CMC pain-free","Compensated — Mild tenderness or minor findings without instability","Abnormal — Snuffbox positive (fracture screen), Watson clunk, CMC OA pain, or positive Finkelstein"],
+  },
+  {
+    id:"wfs_fingers", icon:"🖐️", label:"Finger / Digit Screen",
+    subtitle:"PIP/DIP AROM · Tendon Integrity · Collateral Stability",
+    phase:"Digital Joint / Flexor-Extensor Assessment",
+    setup:"(1) MCP/PIP/DIP flexion: full composite fist (fingertips to distal palmar crease). Extension: full digit extension. (2) Intrinsic tightness (Bunnell-Littler): PIP flexion at 0° MCP vs 45° MCP — tighter at 0° = intrinsic tightness. (3) FDP integrity: hold PIP in extension — patient flexes DIP. (4) Extensor zone: mallet, boutonniere, swan neck patterns. (5) Collateral ligament: RCL/UCL stress at PIP/MCP.",
+    normalDesc:"Composite fist: fingertips to distal palmar crease. Full digit extension. Bunnell-Littler negative. FDP intact (active DIP flexion with PIP stabilised). No extensor zone deformity. Collateral ligaments stable.",
+    observations:[
+      { id:"fist",   q:"Composite fist (fingertips to crease)?",
+        opts:["✓ Fingertips touch distal palmar crease","⚠ Fingertip 1–2cm from crease","✗ Fingertip >2cm from crease","✗ One finger significantly restricted"],
+        clues:["","Minor flexor tendon tightness or joint restriction — flexor tendon gliding + blocking exercises","Significant restriction — place and hold exercises + joint mobilisation at restricted PIP/DIP level","Isolated digit restriction — screen for trigger finger (FDP/FDS tendon nodule), volar plate contracture, or post-fracture"] },
+      { id:"ext",    q:"Digit extension (composite)?",
+        opts:["✓ Full extension all digits","⚠ Mild MCP lag one digit","✗ Extensor lag at MCP (ED)","✗ Extensor lag at PIP (boutonniere)"],
+        clues:["","Monitor — minor intrinsic tightness or MCP joint restriction","Sagittal band disruption at MCP — ED subluxation. Dorsal blocking splint. Buddy strap if unstable","Boutonnière deformity — central slip rupture. PIP extension splint, DIP active flexion while PIP extended. Refer if acute complete rupture"] },
+      { id:"mallet", q:"DIP posture / mallet finger?",
+        opts:["✓ DIP fully extends","⚠ Mild DIP extension lag (<20°)","✗ Mallet finger — DIP flexed at rest","✗ Mallet + fracture (bony mallet)"],
+        clues:["","Monitor — minor extensor tendon laxity","Mallet finger — DIP extension splint continuously 6–8 weeks + active flexion at PIP. Patient education critical (never remove splint for 8 weeks)","Bony mallet — >1/3 articular surface or volar subluxation of DIP. Refer hand surgeon. Surgical fixation may be needed"] },
+      { id:"bunnell",q:"Bunnell-Littler test (intrinsic tightness)?",
+        opts:["✓ Negative — equal PIP flex at 0° and 45° MCP","⚠ Mild — slightly tighter at 0° MCP","✗ Positive — significantly tighter at 0° MCP","✗ Positive bilateral — systemic?"],
+        clues:["","Normal","Minor intrinsic tightness — intrinsic stretching (composite flexion with MCP extension)","Positive Bunnell-Littler = intrinsic contracture. Common in RA, compartment syndrome sequelae. Intrinsic stretching + MCP mobilisation","Bilateral = rheumatological screen. RA, psoriatic arthropathy. Refer rheumatology if suspected inflammatory pattern"] },
+      { id:"fdp",    q:"FDP integrity (isolated DIP flexion)?",
+        opts:["✓ Active DIP flexion with PIP stabilised","⚠ Weak but present DIP flexion","✗ No DIP flexion — FDP absent","✗ Trigger on active flexion"],
+        clues:["","Normal","FDP inhibition — pain or adhesion. Active-assisted DIP flexion exercises + blocking","FDP avulsion or rupture — jersey finger. Urgent surgical referral (within days for zone 1). Do not delay","Triggering = stenosing tenosynovitis. A1 pulley thickening. Corticosteroid injection or surgical release if conservative fails"] },
+    ],
+    grades:["Normal — Composite fist, full extension, intact FDP, no deformity","Compensated — Minor flexion deficit or mild intrinsic tightness without instability","Abnormal — Extensor deformity, FDP absence, boutonnière/mallet, or instability"],
+  },
+];
+
+function WristFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  useEffect(() => {
+    const saved = data["wffs_data"];
+    if (saved && typeof saved === "string") {
+      try { const p=JSON.parse(saved); if(p.findings)setFindings(p.findings); if(p.grades)setGrades(p.grades); if(p.notes)setNotes(p.notes); } catch {}
+    }
+  }, []);
+
+  const save = (f,g,n) => set("wffs_data", JSON.stringify({findings:f,grades:g,notes:n}));
+  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
+  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
+  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
+
+  const completedCount = WRIST_TESTS.filter(t => grades[t.id] !== undefined).length;
+  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
+  const accentCol = "#be185d";
+
+  return (
+    <div>
+      <div style={{background:"linear-gradient(135deg,rgba(190,24,93,0.08),rgba(236,72,153,0.05))",border:"1px solid rgba(190,24,93,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontSize:"1.4rem"}}>🖐️</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Wrist / Hand Functional Screen</div>
+            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM/grip · Carpal tunnel · TFCC · Scaphoid · Digits</div>
+          </div>
+          <div style={{marginLeft:"auto",textAlign:"right"}}>
+            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
+            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+          </div>
+        </div>
+        <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
+          <div style={{fontSize:"0.65rem",color:"#dc2626",fontWeight:700}}>⚠ Positive anatomical snuffbox = scaphoid fracture until proven otherwise. Immobilise + refer immediately.</div>
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {WRIST_TESTS.map(t=>{
+            const g=grades[t.id]; const done=g!==undefined;
+            return (
+              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
+                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
+                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
+                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {WRIST_TESTS.map(t=>{
+        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
+        return (
+          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
+            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
+            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(190,24,93,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
+            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
+                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+              </div>
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
+            </div>
+            {isOpen && (
+              <div style={{padding:"0 14px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                </div>
+                {showVisual && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div style={{background:"#FDF2F8",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #FBCFE8"}}>
+                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
+                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                {t.observations.map(obs=>{
+                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
+                  return (
+                    <div key={obs.id} style={{marginBottom:10}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        {obs.opts.map((opt,idx)=>{
+                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
+                          return (
+                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
+                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
+                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
+                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
+                              </div>
+                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                    </div>
+                  );
+                })}
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
+                  {t.grades.map((gLabel,idx)=>{
+                    const col=gradeColor(idx); const sel=g===idx;
+                    return (
+                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
+                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
+                  placeholder="Grip strength values, Phalen timing, Watson clunk, scaphoid tenderness..."
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {completedCount > 0 && (
+        <div style={{background:"#FDF2F8",borderRadius:14,padding:14,border:"1px solid #FBCFE8",marginTop:4}}>
+          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Wrist/Hand Screen Summary</div>
+          {WRIST_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
+            const g=grades[t.id]; const col=gradeColor(g);
+            return (
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                <span style={{fontSize:"1rem"}}>{t.icon}</span>
+                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── TMJ FUNCTIONAL SCREEN ───────────────────────────────────────────────────
+
+const TMJ_TESTS = [
+  {
+    id:"tmj_arom", icon:"🔄", label:"Jaw AROM Screen",
+    subtitle:"Opening · Lateral Deviation · Protrusion",
+    phase:"TMJ Articular / Disc Displacement Screen",
+    setup:"Patient seated. Assess: (1) Mouth opening — normal 40–55mm (3 finger widths between upper/lower incisors). (2) Lateral excursion L/R — normal 8–12mm each. (3) Protrusion — normal 6–9mm. (4) End-feel on opening: hard = bony block, firm = capsular/disc, soft = muscle. (5) Path of opening: straight = normal, S-curve or C-curve deviation = disc or muscle asymmetry.",
+    normalDesc:"Opening ≥40mm (3 finger widths). Straight path with no deviation. Lateral excursion 8–12mm bilateral symmetric. Protrusion 6–9mm. Firm end-feel. No pain. No clicking.",
+    observations:[
+      { id:"open",   q:"Mouth opening distance?",
+        opts:["✓ ≥40mm (3 finger widths)","⚠ 30–39mm (mild restriction)","✗ <30mm (moderate restriction)","✗ <25mm (severe restriction — cannot eat normally)"],
+        clues:["","Minor capsular or pterygoid restriction — lateral pterygoid stretching + self-mobilisation. Warm pack","Significant — may be acute disc lock (closed lock) if sudden onset. Screen for disc displacement. Manual mobilisation with patient consent","Severe — acute closed lock or capsulitis. Refer TMD specialist / oral surgeon. Do not force opening"] },
+      { id:"path",   q:"Path of opening?",
+        opts:["✓ Straight — no deviation","⚠ Deflection — curves and stays one side","✗ Deviation — curves and returns midline","✗ S-curve bilateral"],
+        clues:["","Normal","Deflection to one side = restricted disc or muscle on that side. Contralateral lateral pterygoid weakness. Lateral excursion to restricted side","Deviation + return midline = disc with reduction. Clicking often accompanies. Monitor — self-care + posture + avoid wide opening","S-curve = bilateral restriction. Bilateral pterygoid muscle guarding or bilateral disc dysfunction"] },
+      { id:"lat",    q:"Lateral excursion symmetry?",
+        opts:["✓ 8–12mm bilateral symmetric","⚠ Mild asymmetry (<3mm difference)","✗ Significant asymmetry (>3mm) or restriction","✗ Contralateral lateral excursion absent"],
+        clues:["","Normal","Minor lateral pterygoid or disc asymmetry — joint mobilisation in restriction direction. Lateral stretching exercise","Significant — ipsilateral disc displacement without reduction, lateral pterygoid hypertonic, or condylar pathology","Absent contralateral excursion = ipsilateral medial pterygoid contracture or condylar ankylosis. Refer"] },
+      { id:"prot",   q:"Protrusion (jaw forward)?",
+        opts:["✓ 6–9mm, pain-free","⚠ Restricted or mildly painful","✗ Pain on protrusion","✗ Cannot protlude (ankylosis / bilateral)"],
+        clues:["","Normal","Posterior capsule or retrodiscal tissue irritation — avoid protrusion loading. Slow return to range","Retrodiscal tissue pain — avoid bruxism + wide opening. Occlusal splint may offload","Bilateral restriction — consult with dentist / oral surgeon for imaging (OPG + MRI TMJ)"] },
+      { id:"endfeel",q:"End-feel on maximum opening?",
+        opts:["✓ Firm — capsular","⚠ Soft — muscle guarding","✗ Hard — bony block","✗ Empty — pain before end range"],
+        clues:["","Normal capsular restriction — mobilisation as appropriate","Muscle guarding — address bruxism, stress, masseter / medial pterygoid hypertension first. Dry needling / trigger point","Bony block — condylar osteophyte, eminence, or fibrous ankylosis. OPG imaging referral","Empty end-feel — acute inflammation or retrodiscal pain. Anti-inflammatory management first"] },
+    ],
+    grades:["Normal — ≥40mm opening, straight path, symmetric lateral excursion","Compensated — 30–39mm or mild deviation without pain at rest","Abnormal — <30mm, disc lock, pain on opening, or absent lateral excursion"],
+  },
+  {
+    id:"tmj_click", icon:"💥", label:"Joint Sound Screen",
+    subtitle:"Clicking · Crepitus · Disc With/Without Reduction",
+    phase:"Disc Displacement Classification",
+    setup:"Palpate bilateral TMJ (lateral pole and posterior) during full opening-closing cycle. Note: (1) Timing of click (early / mid / late on opening), (2) Reciprocal click (opening + closing), (3) Crepitus (fine / coarse), (4) Lock (cannot open or close). Pain vs painless click. Compare bilateral. Auscultation if available.",
+    normalDesc:"Silent opening and closing. No click, no crepitus, no catching. No locking. Palpation: mild condyle translation bilaterally, non-tender.",
+    observations:[
+      { id:"click",  q:"Click on opening?",
+        opts:["✓ No click","⚠ Painless click — no functional limitation","✗ Painful click","✗ Click + limitation of opening"],
+        clues:["","Normal","Disc displacement with reduction (DDwR) — painless click common in general population. Educate: self-care, avoid wide opening, bruxism management. Does not require treatment if painless","Painful DDwR — disc displacement with pain on reduction. TMD physiotherapy: mandibular repositioning, lateral pterygoid strengthening, occlusal splint","DDwR + limited opening — catching disc. Manipulation may reduce. Refer if persistent locked"] },
+      { id:"recip",  q:"Reciprocal click (opening + closing)?",
+        opts:["✓ No click","⚠ Opening click only","✗ Reciprocal click (opening + closing)","✗ Click then lock (intermittent closed lock)"],
+        clues:["","Normal","Disc displacement with reduction during opening only — classic early DDwR. Monitor, self-care","Classic DDwR — disc clicks on in opening, out on closing. Educate + posture + avoid provoking movements. Refer if progressive","Progression to intermittent closed lock — refer TMD specialist. May require manipulation or arthrocentesis"] },
+      { id:"crepit", q:"Crepitus on movement?",
+        opts:["✓ No crepitus","⚠ Fine crepitus end range","✗ Coarse crepitus throughout range","✗ Crepitus + condylar tenderness"],
+        clues:["","Normal","Fine crepitus — degenerative change early stage. Load management, jaw rest phases, soft diet","Coarse crepitus = TMJ OA (degenerative joint disease). OPG imaging. Load management + joint protection education + anti-inflammatory","Condylar tenderness + crepitus — acute OA or condylar resorption. Refer for imaging and dental consultation"] },
+      { id:"lock",   q:"Locking (open or closed)?",
+        opts:["✓ No locking","⚠ Occasional transient catching","✗ Closed lock — cannot open adequately","✗ Open lock — cannot close"],
+        clues:["","Normal","Intermittent catching = transitional disc — self-manipulation technique (lateral chin tuck + gentle manipulation). Education","Closed lock — acute disc displacement without reduction. Urgent referral for manual distraction / arthrocentesis if <2 weeks. If chronic — jaw opening exercises + occlusal splint","Open lock / hypermobility — condyle dislocating anterior to eminence. Avoid wide opening. Occlusal splint. Refer if recurrent"] },
+      { id:"bilat",  q:"Bilateral vs unilateral findings?",
+        opts:["✓ No pathological sounds","⚠ Unilateral only","✗ Bilateral — same type","✗ Bilateral — different type each side"],
+        clues:["","Normal","Unilateral — most common. Address symptomatic side. Monitor asymptomatic","Bilateral same = systemic process (RA, psoriatic, bruxism bilateral). Rheumatological screen. Full TMD assessment","Bilateral different = each side at different stage of disc displacement. Complex TMD. Dental/oral surgery referral recommended"] },
+    ],
+    grades:["Normal — No click, no crepitus, no locking","Compensated — Painless click without functional limitation","Abnormal — Painful click, crepitus, reciprocal click + pain, or locking"],
+  },
+  {
+    id:"tmj_muscle", icon:"💪", label:"Masticatory Muscle Palpation",
+    subtitle:"Masseter · Temporalis · Pterygoids · SCM",
+    phase:"Myofascial / Muscle Guarding Screen",
+    setup:"Bilateral palpation: (1) Masseter (lateral jaw — superficial and deep): 2 finger widths below zygomatic arch. (2) Temporalis (temporal fossa, anterior/middle/posterior fibres). (3) Lateral pterygoid (intraoral — just medial to upper molars, posterior). (4) Medial pterygoid (angle of mandible, medial surface). (5) SCM (refer to temple/eye). (6) Suboccipital muscles. Note: VAS pain 0–10, referral pattern, taut band.",
+    normalDesc:"All muscles non-tender. No taut bands. No referred pain on palpation. Bilateral symmetric. Jaw closes symmetrically. No temporal headache on temporalis palpation.",
+    observations:[
+      { id:"mass",   q:"Masseter tenderness?",
+        opts:["✓ Non-tender","⚠ Mildly tender — pressure required","✗ Tender — patient pain reproduced","✗ Tender + hardened/hypertrophied"],
+        clues:["","Normal","Masseter myalgia — common in bruxism. Dry needling / trigger point massage. Bruxism management (occlusal splint)","Masseter pain reproduction = primary TMD myalgia. High priority muscle in TMD. Dry needling, massage, biofeedback, bruxism guard","Masseter hypertrophy — chronic bruxism. Botox referral if severe. Occlusal splint + stress management"] },
+      { id:"temp",   q:"Temporalis tenderness?",
+        opts:["✓ Non-tender","⚠ Mildly tender","✗ Tender — temporal headache reproduced","✗ Tender + temporal headache at rest"],
+        clues:["","Normal","Minor temporalis myalgia — massage, jaw rest phase, reduce gum chewing","Temporal headache reproduction = temporalis trigger point referring to head. Classic temporal headache + jaw clenching pattern. Dry needling + bruxism management","Temporalis headache at rest = chronic tension-type headache with TMD component. Pain physiology education + combined cervical/TMD treatment"] },
+      { id:"pteryg", q:"Lateral pterygoid provocation?",
+        opts:["✓ No pain on intraoral palpation","⚠ Mildly tender","✗ Pain reproduced on palpation","✗ Pain on palpation + resisted protrusion"],
+        clues:["","Normal","Minor LP involvement — common. Monitor. Opening exercise for LP length","LP tenderness = LP myalgia or retrodiscal strain. Jaw opening in limited range + side-to-side exercise. Avoid wide opening","Pain + resisted protrusion = LP strain / disc dysfunction. Refer if clicking + LP pain — anterior disc displacement mechanism"] },
+      { id:"suboc",  q:"Suboccipital muscles (cervical-TMD link)?",
+        opts:["✓ Non-tender","⚠ Mildly tender","✗ Tender — reproduces headache","✗ Tender + jaw symptoms change with suboccipital release"],
+        clues:["","Normal","Minor suboccipital involvement — cervical posture correction + suboccipital release","Cervicogenic headache component. Watson headache approach. C1/C2/C3 assessment. Upper cervical mobilisation + suboccipital release","Suboccipital release changes TMJ symptoms = strong cervical-TMD link. Treat cervical component alongside TMD. Cervical mobilisation may improve jaw opening"] },
+      { id:"scm_tmj",q:"SCM palpation — referred pain to jaw/face?",
+        opts:["✓ Non-tender","⚠ Tender but no referral","✗ Referral to temple or cheek","✗ Referral to eye / teeth (toothache)"],
+        clues:["","Normal","SCM myalgia — common with FHP. SCM stretching + postural correction","SCM trigger point referring to temple = cervicogenic component of temporal headache. Trigger point release + cervical mobilisation","SCM trigger point referring to eye or simulating toothache — classic SCM referral pattern. Distinguish from dental pathology. Cervical + TMD combined treatment"] },
+    ],
+    grades:["Normal — All muscles non-tender, no referral, no headache reproduction","Compensated — Mild tenderness without referral or functional limitation","Abnormal — Pain reproduction, headache triggered, or significant muscle hypertrophy"],
+  },
+  {
+    id:"tmj_cerv", icon:"🔗", label:"Cervical-TMJ Relationship",
+    subtitle:"CVA · C1/C2 · Watson Headache · Posture Link",
+    phase:"Cervico-Mandibular Screen",
+    setup:"The TMJ and cervical spine are biomechanically linked. Screen: (1) CVA assessment — FHP worsens condylar positioning. (2) Atlanto-axial rotation (C1/C2): cervical rotation test seated. (3) Watson headache test: PA on C2 — reproduces head/jaw symptoms? (4) Does chin tuck change jaw symptoms? (5) Does jaw positioning change neck symptoms? (6) Upper cervical palpation: C0/C1/C2 segmental tenderness.",
+    normalDesc:"CVA >50°. C1/C2 rotation symmetric (80° bilateral). Watson test negative (PA on C2 does not reproduce head or jaw symptoms). Chin tuck does not change jaw pain. No C0/C1/C2 tenderness.",
+    observations:[
+      { id:"cva_tmj",q:"CVA and forward head posture effect on jaw?",
+        opts:["✓ CVA >50° — jaw unaffected","⚠ CVA 45–50° — mild jaw tension","✗ CVA <45° — jaw posture affected","✗ Jaw opens less in erect vs slumped posture"],
+        clues:["","Normal — minimal postural contribution","Minor postural contribution — FHP correction may improve jaw symptoms. DNF activation + postural education","Significant FHP — condylar position changes with head posture. Cervical correction priority. Foam roller + chin tuck before TMD-specific treatment","Postural jaw relationship confirmed — treat posture first then reassess jaw ROM. Highly responsive to cervical correction"] },
+      { id:"watson", q:"Watson headache test (PA on C2) — jaw/head symptom?",
+        opts:["✓ Negative — no symptom change","⚠ Positive — head symptoms reproduced","✗ Positive — jaw symptoms reproduced by C2 PA","✗ Positive — both jaw and head reproduced"],
+        clues:["","Normal — cervical not primary driver of TMD","Cervicogenic headache — C2/3 nociceptive source. Watson headache approach. Upper cervical mobilisation C1/C2/C3","C2 PA reproducing jaw symptoms = strong cervico-mandibular link. Upper cervical mobilisation may directly improve jaw symptoms. Priority: treat C2/3 segment","Combined cervico-TMD — upper cervical + TMD combined treatment most effective. Watson + Rocabado approach"] },
+      { id:"chintu", q:"Does chin tuck change jaw symptoms?",
+        opts:["✓ No change — isolated TMD likely","⚠ Minor improvement","✗ Jaw pain reduces with chin tuck","✗ Jaw opens more with chin tuck"],
+        clues:["","Isolated TMD — treat locally","Minor cervical contribution — teach chin tuck as home exercise","Significant improvement with chin tuck = postural jaw component. DNF activation + postural correction core of treatment","Jaw opens more with chin tuck = upper cervical restriction affecting condylar translation. Upper cervical mobilisation to improve jaw opening"] },
+      { id:"sleep",  q:"Sleep position / bruxism screening?",
+        opts:["✓ No clenching / grinding reported","⚠ Morning jaw stiffness only","✗ Partner reports grinding at night","✗ Toothwear pattern + jaw pain on waking"],
+        clues:["","Normal — assess stress, occlusion","Morning stiffness = parafunctional clenching likely. Occlusal screen + stress management education","Nocturnal bruxism confirmed — refer dentist for hard acrylic occlusal splint. Jaw rest protocol. Stress management","Toothwear + jaw pain = severe bruxism. Dental referral urgent (tooth preservation). Hard splint + physiotherapy combined"] },
+      { id:"occlus", q:"Occlusal / bite concerns?",
+        opts:["✓ No occlusal symptoms reported","⚠ Unilateral chewing preference","✗ Bite feels 'off' or uneven","✗ Recent dental work + new TMD symptoms"],
+        clues:["","Normal","Unilateral chewing = muscular asymmetry or disc displacement preventing comfortable bilateral chewing. Strengthen weaker side, open exercises","Malocclusion contributing — refer dentist for occlusal assessment. Physiotherapy for muscle and disc component","Post-dental TMD — common after extraction, prolonged opening. Refer dentist + mobilise TMJ gently"] },
+    ],
+    grades:["Normal — CVA >50°, Watson negative, no postural jaw link","Compensated — Mild postural contribution without pain or functional limitation","Abnormal — Watson positive, jaw changes with chin tuck, bruxism confirmed, or occlusal complaints"],
+  },
+  {
+    id:"tmj_head", icon:"🤕", label:"Headache Classification Screen",
+    subtitle:"Cervicogenic · Tension-Type · TMD-Related",
+    phase:"Headache Differential Screen",
+    setup:"Classify headache type to guide treatment: (1) Location — unilateral/bilateral, frontal/temporal/occipital/vertex. (2) Quality — pressure/throbbing/stabbing. (3) Duration — episodic (<4h / 4–72h) vs chronic (>15 days/month). (4) Triggers — jaw clenching, posture, stress, weather, food. (5) Associated features — nausea, photophobia, aura (migraine vs non-migraine). (6) Neck involvement — worse with neck movement, relieved by cervical treatment.",
+    normalDesc:"No headache. Or clear migraine classification with neurological features absent. Or cervicogenic — unilateral, neck-movement triggered, relieved by cervical treatment. No red flags.",
+    observations:[
+      { id:"location",q:"Headache location?",
+        opts:["✓ No headache","⚠ Bilateral frontal / band-like (tension-type)","✗ Unilateral — with/without autonomic features","✗ Vertex / parietal / occipital"],
+        clues:["","Normal","Tension-type headache — bilateral pressure band. TMD + cervical components common. Treat both + stress management","Unilateral with autonomic features (lacrimation, nasal congestion) = trigeminal autonomic cephalalgia (TAC) group — refer neurology. Without autonomics = cervicogenic or migraine","Occipital = cervicogenic most likely. Vertex = tension-type or raised ICP (red flag if thunderclap). Watson test for cervicogenic"] },
+      { id:"redflag",q:"Red flag screen?",
+        opts:["✓ No red flags","⚠ New headache — not typical pattern","✗ Worst headache of life / thunderclap","✗ Progressive headache + neurological symptoms"],
+        clues:["","Normal — proceed with treatment","New headache in patient >50 or new pattern — screen red flags carefully. Refer if uncertain","Thunderclap headache = subarachnoid haemorrhage until proven otherwise. EMERGENCY referral immediately","Progressive headache + neuro signs (visual, weakness, confusion) = space-occupying lesion / hydrocephalus. EMERGENCY referral"] },
+      { id:"cerviog",q:"Cervicogenic features?",
+        opts:["✓ No cervicogenic features","⚠ Headache worsens with neck movement","✗ Unilateral headache + restricted cervical rotation","✗ Watson test positive + headache reproduced"],
+        clues:["","Not cervicogenic — focus on local TMD or migraine management","Possible cervicogenic contribution — screen Watson test, upper cervical AROM","Probable cervicogenic headache — Sjaastad criteria: unilateral, side-locked, neck movement triggers, cervical sign positive","Confirmed cervicogenic — upper cervical mobilisation (C1/2/3) + Watson headache technique. Highly responsive to manual therapy"] },
+      { id:"migraine",q:"Migraine features?",
+        opts:["✓ No migraine features","⚠ Migraine without aura — possible","✗ Migraine with aura — typical","✗ Chronic migraine + TMD coexisting"],
+        clues:["","Normal","Monitor — may have cervicogenic + migraine components. Treat cervical component to reduce migraine frequency","Migraine with aura — refer GP for diagnosis + medication management. Physiotherapy for cervical component may reduce frequency. Not primary physiotherapy condition","Chronic migraine + TMD = complex presentation. Multidisciplinary management. Physiotherapy for cervical/TMD component + GP/neurologist for migraine prophylaxis"] },
+      { id:"tmdhea", q:"TMD-related headache features?",
+        opts:["✓ No TMD headache link","⚠ Headache on waking only — bruxism?","✗ Temporal headache + masseter/temporalis pain","✗ Headache worsens with jaw use / eating"],
+        clues:["","Normal","Morning headache = nocturnal bruxism. Occlusal splint + bruxism education + stress management","TMD headache — temporalis trigger point + masseter involvement. Dry needling + occlusal splint + TMD physiotherapy","Headache with jaw use = masticatory myalgia + headache. Jaw rest protocol + soft diet short-term + TMD rehabilitation"] },
+    ],
+    grades:["Normal — No headache or clear non-serious classification","Compensated — Cervicogenic or tension-type without red flags, responsive to treatment","Abnormal — Red flags present, progressive headache, or complex migraine + TMD + cervical combined"],
+  },
+];
+
+function TMJFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  useEffect(() => {
+    const saved = data["tmjfs_data"];
+    if (saved && typeof saved === "string") {
+      try { const p=JSON.parse(saved); if(p.findings)setFindings(p.findings); if(p.grades)setGrades(p.grades); if(p.notes)setNotes(p.notes); } catch {}
+    }
+  }, []);
+
+  const save = (f,g,n) => set("tmjfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
+  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
+  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
+  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
+
+  const completedCount = TMJ_TESTS.filter(t => grades[t.id] !== undefined).length;
+  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
+  const accentCol = "#b45309";
+
+  return (
+    <div>
+      <div style={{background:"linear-gradient(135deg,rgba(180,83,9,0.08),rgba(245,158,11,0.05))",border:"1px solid rgba(180,83,9,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontSize:"1.4rem"}}>🦷</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>TMJ Functional Screen</div>
+            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM · Disc sounds · Muscles · Cervical link · Headache</div>
+          </div>
+          <div style={{marginLeft:"auto",textAlign:"right"}}>
+            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
+            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+          </div>
+        </div>
+        <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
+          <div style={{fontSize:"0.65rem",color:"#dc2626",fontWeight:700}}>⚠ Screen red-flag headache features before any treatment. Thunderclap or progressive headache = emergency referral.</div>
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {TMJ_TESTS.map(t=>{
+            const g=grades[t.id]; const done=g!==undefined;
+            return (
+              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
+                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
+                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
+                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {TMJ_TESTS.map(t=>{
+        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
+        return (
+          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
+            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
+            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(180,83,9,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
+            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
+                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+              </div>
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
+            </div>
+            {isOpen && (
+              <div style={{padding:"0 14px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                </div>
+                {showVisual && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div style={{background:"#FFFBEB",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #FDE68A"}}>
+                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
+                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                {t.observations.map(obs=>{
+                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
+                  return (
+                    <div key={obs.id} style={{marginBottom:10}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        {obs.opts.map((opt,idx)=>{
+                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
+                          return (
+                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
+                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
+                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
+                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
+                              </div>
+                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                    </div>
+                  );
+                })}
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
+                  {t.grades.map((gLabel,idx)=>{
+                    const col=gradeColor(idx); const sel=g===idx;
+                    return (
+                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
+                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
+                  placeholder="Opening mm, click timing, muscle VAS, Watson result, headache features..."
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {completedCount > 0 && (
+        <div style={{background:"#FFFBEB",borderRadius:14,padding:14,border:"1px solid #FDE68A",marginTop:4}}>
+          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 TMJ Screen Summary</div>
+          {TMJ_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
+            const g=grades[t.id]; const col=gradeColor(g);
+            return (
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                <span style={{fontSize:"1rem"}}>{t.icon}</span>
+                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FUNCTIONAL SCREEN HUB ───────────────────────────────────────────────────
 
 function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
@@ -10715,7 +11909,11 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
     { id:"hip",      label:"Hip",      icon:"🦷", color:"#d946ef" },
     { id:"knee",     label:"Knee",     icon:"🦿", color:"#d97706" },
     { id:"ankle",    label:"Ankle",    icon:"🦶", color:"#0d9488" },
-    { id:"cervical", label:"Cervical", icon:"🧠", color:"#7c3aed" },
+    { id:"cervical",  label:"Cervical",  icon:"🧠", color:"#7c3aed" },
+    { id:"thoracic",  label:"Thoracic",  icon:"🫁", color:"#0f766e" },
+    { id:"elbow",     label:"Elbow",     icon:"💪", color:"#0369a1" },
+    { id:"wrist",     label:"Wrist/Hand",icon:"🖐️", color:"#be185d" },
+    { id:"tmj",       label:"TMJ",       icon:"🦷", color:"#b45309" },
   ];
   return (
     <div>
@@ -10739,7 +11937,11 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
       {region === "hip"      && <HipFunctionalScreen      data={data} set={set}/>}
       {region === "knee"     && <KneeFunctionalScreen     data={data} set={set}/>}
       {region === "ankle"    && <AnkleFunctionalScreen    data={data} set={set}/>}
-      {region === "cervical" && <CervicalFunctionalScreen data={data} set={set}/>}
+      {region === "cervical"  && <CervicalFunctionalScreen  data={data} set={set}/>}
+      {region === "thoracic"  && <ThoracicFunctionalScreen  data={data} set={set}/>}
+      {region === "elbow"     && <ElbowFunctionalScreen     data={data} set={set}/>}
+      {region === "wrist"     && <WristFunctionalScreen     data={data} set={set}/>}
+      {region === "tmj"       && <TMJFunctionalScreen       data={data} set={set}/>}
 
       {/* Quick navigation */}
       <div style={{ display:"flex", gap:8, marginTop:16 }}>
