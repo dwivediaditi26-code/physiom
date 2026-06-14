@@ -12871,7 +12871,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                             const sideMt=noSuffix.match(/_(L|R|left|right)$/);
                             const baseKey=sideMt?noSuffix.slice(0,noSuffix.length-sideMt[0].length):noSuffix;
                             const side=sideMt?(/_(L|left)$/.test(noSuffix)?" (L)":" (R)"):"";
-                            const mode=k.includes("_passive")?" passive":"";"
+                            const mode=k.includes("_passive")?" passive":"";
                             const entry=ROM_LABEL_MAP[baseKey];
                             const labelText=(entry?entry.l:baseKey.replace(/^rom_/,"").replace(/_/g," "))+side+mode;
                             const normalVal=entry?entry.n:null;
