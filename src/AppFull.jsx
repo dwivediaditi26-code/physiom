@@ -12864,7 +12864,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       {romKeys.filter(k=>!k.endsWith("_pain")&&!k.endsWith("_ef")).slice(0,8).map(k=>{
                         const val=parseFloat(d[k])||0;
                         // Build readable label: lookup base key, add side if bilateral
-                        const baseKey=k.replace(/_left|_right/,"").replace(/_active|_passive/,"");
+                        const baseKey=k.replace(/_left|_right/,"").replace(/_active|_passive|_arom|_prom/,"");
                         const side=k.includes("_left")?" (L)":k.includes("_right")?" (R)":"";
                         const mode=k.includes("_passive")?" passive":"";
                         const entry=ROM_LABEL_MAP[baseKey];
@@ -12894,8 +12894,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         if(seen.has(base)) return; seen.add(base);
                         const lGrade=d[base+"_L"]||d[base+"_left"]||(sideMatch?null:d[base]);
                         const rGrade=d[base+"_R"]||d[base+"_right"]||null;
-                        const info=MMT_INFO[base];
-                        const muscle=(info&&info.name)||MMT_LABEL_MAP[base]||(base.replace("mmt_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()));
+                        const labelBase=base.replace(/^mmt_mmt_/,"mmt_");
+                        const info=MMT_INFO[labelBase];
+                        const muscle=(info&&info.name)||MMT_LABEL_MAP[labelBase]||(labelBase.replace("mmt_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()));
                         rows.push({base,muscle,root:(info&&info.root)||"",lGrade,rGrade});
                       });
                       const gradeCol=g=>{const n=parseFloat(g)||0;return n>=5?C.green:n>=4?"#d97706":"#dc2626";};
