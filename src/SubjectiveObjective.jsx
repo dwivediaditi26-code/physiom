@@ -10388,6 +10388,323 @@ function AnkleFunctionalScreen({ data, set }) {
   );
 }
 
+// ─── CERVICAL FUNCTIONAL SCREEN ──────────────────────────────────────────────
+
+const CERVICAL_TESTS = [
+  {
+    id:"cfs_arom", icon:"🔄", label:"Cervical AROM Screen",
+    subtitle:"6-Plane ROM + Pain + Combined Movement",
+    phase:"Articular / Capsular / Myofascial Screen",
+    setup:"Patient seated upright, arms relaxed. Assess: Flexion (chin to chest), Extension (look at ceiling), L/R Lateral Flexion (ear to shoulder), L/R Rotation (chin to shoulder). Note range, pain, deviation, and end-feel. Normal values: Flex 45–50°, Ext 45–50°, Lat Flex 45°, Rotation 60–80°.",
+    normalDesc:"Full pain-free range in all planes. Smooth movement. No deviation or arc of pain. Rotation 60–80° bilateral. Lateral flexion 45° bilateral. No referred symptoms.",
+    observations:[
+      { id:"rot",    q:"Cervical rotation — most sensitive restriction?",
+        opts:["✓ 60–80° bilateral, pain-free","⚠ 45–59° or mild pain at end range","✗ <45° one side (significant restriction)","✗ Bilateral equal restriction — capsular pattern"],
+        clues:["","Minor facet/capsular restriction — unilateral or postural. Maitland PA/unilateral PA mobilisation","Significant unilateral restriction — likely C1/C2 (upper cervical) or C4/5/6 facet restriction. Screen with combined movement (rot + ext vs rot + flex)","Bilateral equal loss of rotation — capsular pattern. OA of C1/C2 most likely. Upper cervical screen"] },
+      { id:"flex",   q:"Flexion — chin to chest?",
+        opts:["✓ Chin touches or nears chest","⚠ 2–3 finger widths from chest","✗ >3 finger widths (significant restriction)","✗ Pain/symptom reproduction on flexion"],
+        clues:["","Minor flexion restriction — upper cervical or myofascial. Suboccipital release + DNF activation","Significant flexion restriction — screen for upper cervical instability (Sharp-Purser if flexion reproduces symptoms). Check for cord sign","Symptom reproduction — peripheralisation on flexion = disc or neural tension. Centralisation test (McKenzie cervical). Neurological screen"] },
+      { id:"ext",    q:"Extension — look at ceiling?",
+        opts:["✓ Full extension, pain-free","⚠ Limited or pain at end range","✗ Reproduces headache","✗ Reproduces arm symptoms"],
+        clues:["","Facet joint restriction or myofascial tightness — extension mobilisation if no headache reproduction","Upper cervical facet or C2/3 — cervicogenic headache source. Watson headache approach. Extension mobilisation with caution","Radiculopathy or discogenic — extension + ipsilateral rotation/lateral flex = Spurling test equivalent. Neural screen"] },
+      { id:"latflex",q:"Lateral flexion symmetry?",
+        opts:["✓ 45° bilateral, symmetric","⚠ Asymmetric — tight one side","✗ Pain on lateral flexion (ipsilateral)","✗ Pain + arm symptoms (contralateral)"],
+        clues:["","Ipsilateral scalene/levator tightness — screen CPA (upper trap, levator scapulae)","Ipsilateral facet joint compression pain — unilateral PA mobilisation C3–C6","Contralateral lateral flexion pain = nerve root stretch. Screen with ULNT1. Foraminal compression (Spurling) test"] },
+      { id:"qual",   q:"Quality of movement?",
+        opts:["✓ Smooth, full range","⚠ Hinge point / catches at one level","✗ Deviation during movement","✗ Instability / shake"],
+        clues:["","Segmental restriction — hinge point identifies hypomobile segment. Maitland mobilisation at that level","Segmental restriction with deviation — combined movement restriction (Blake — Maitland) or lateral shift equivalent","Cervical instability — screen Sharp-Purser, transverse ligament test. Refer if positive"] },
+    ],
+    grades:["Normal — Full range all planes, pain-free, smooth movement","Compensated — Minor restriction or end-range pain without symptoms","Abnormal — Restricted rotation, reproduced headache/arm symptoms, or instability"],
+  },
+  {
+    id:"cfs_dnf", icon:"🧠", label:"Deep Neck Flexor Endurance",
+    subtitle:"Cranio-Cervical Flexion — Chin Tuck Hold Test",
+    phase:"DNF Activation / FHP Motor Control",
+    setup:"Patient supine, head on pillow. Perform chin tuck (nod — NOT full flexion lift). Hold chin retracted while breathing. Timer starts. Stop when SCM visibly dominates or chin poke occurs. Normal: 38–40s. Or: Supine chin tuck × 10 without SCM activation — count clean reps.",
+    normalDesc:"Holds 38–40 seconds of chin tuck without SCM dominant strategy. No chin poke. Craniovertebral angle stays maintained. Breathing continues normally throughout.",
+    observations:[
+      { id:"time",   q:"Chin tuck hold duration?",
+        opts:["✓ ≥38 seconds (normal)","⚠ 20–37 seconds (mild deficit)","✗ <20 seconds (significant deficit)","✗ Cannot initiate chin tuck — SCM only"],
+        clues:["","Minor DNF endurance deficit — CCFT programme, staged progression","Significant DNF weakness — classic pattern in cervicogenic headache, FHP, whiplash. Priority: DNF activation at lower pressure levels before endurance training","DNF cannot initiate — severe inhibition. Begin with biofeedback pressure cuff 22mmHg, suboccipital release first. Screen for pain inhibition"] },
+      { id:"scm",    q:"SCM dominance during hold?",
+        opts:["✓ SCM stays relaxed","⚠ SCM activates late (last 10s)","✗ SCM activates immediately at onset","✗ SCM only — no DNF engagement"],
+        clues:["","Minor — acceptable fatigue pattern at end of hold","SCM overactive strategy — upper crossed syndrome pattern (Janda). DNF inhibited. Suboccipital release before activation work","Dominant SCM strategy — classic Janda upper crossed. DNF inhibited by forward head posture. Begin suboccipital release, cranio-cervical nodding biofeedback"] },
+      { id:"chin",   q:"Chin poke during hold?",
+        opts:["✓ Chin stays retracted","⚠ Mild chin drift at fatigue","✗ Chin pokes forward immediately","✗ Cannot retract chin at all"],
+        clues:["","Minor endurance drift — acceptable","Classic forward head posture motor pattern — cannot dissociate cranio-cervical nod from cervicothoracic extension. Priority rehab","Severe FHP pattern — begin with postural correction (chin tuck against wall), suboccipital release, upper thoracic extension mobilisation"] },
+      { id:"breath", q:"Breathing during hold?",
+        opts:["✓ Normal breathing continues","⚠ Breath holds at onset","✗ Breath holds — cannot hold + breathe","✗ Valsalva — strain pattern"],
+        clues:["","Minor breath-hold — cue: breathe normally through the nod","Breath-hold compensation = significant motor control deficit. Begin supine breathing + DNF activation separately before combining","Valsalva pattern — screen for intra-abdominal pressure issues + pain avoidance. Reassure and restart with minimal effort"] },
+      { id:"sym",    q:"Symptom reproduction during test?",
+        opts:["✓ No symptoms","⚠ Mild neck ache","✗ Headache reproduced","✗ Dizziness / vertigo onset"],
+        clues:["","Minor muscle fatigue","Cervicogenic headache — Watson headache approach. Upper cervical (C1/2/3) is likely nociceptive source","Dizziness — cervicogenic or vertebrobasilar. Do Hallpike, smooth pursuit neck torsion test, screen VBI before cervical manipulation"] },
+    ],
+    grades:["Normal — ≥38s, SCM relaxed, chin retracted, pain-free","Compensated — 20–37s or late SCM with controlled form","Abnormal — <20s, SCM dominant from start, chin poke, or symptoms reproduced"],
+  },
+  {
+    id:"cfs_post", icon:"📏", label:"Postural Screen (CVA + FHP)",
+    subtitle:"Craniovertebral Angle + Forward Head Posture",
+    phase:"Postural Assessment / Janda Upper Crossed",
+    setup:"Lateral photograph or direct assessment. Patient standing relaxed in natural posture. Draw (or estimate) angle between: line from tragus of ear to C7 spinous process AND horizontal. CVA normal >50°. Assess: head position relative to shoulder, thoracic kyphosis, scapular position.",
+    normalDesc:"CVA >50° (ear over shoulder). Chin horizontal or level. Thoracic kyphosis mild / normal. Scapulae retracted and level. No shoulder elevation. Earlobe over acromion in lateral view.",
+    observations:[
+      { id:"cva",    q:"Craniovertebral angle (CVA)?",
+        opts:["✓ >50° (normal — ear over shoulder)","⚠ 45–50° (borderline FHP)","✗ <45° (significant FHP)","✗ <35° (severe FHP — clinically significant)"],
+        clues:["","Borderline posture — education, DNF activation, thoracic extension","Significant FHP — each 1° below 50° = 4.5kg increased load on cervical spine. Priority: DNF activation, upper thoracic extension, pec minor / upper trap stretching","Severe FHP — CVA <35° = significantly increased risk of headache, cervical disc loading, shoulder impingement. Full Janda CPA assessment"] },
+      { id:"thor",   q:"Thoracic kyphosis?",
+        opts:["✓ Normal mild kyphosis","⚠ Increased — hyperkyphosis","✗ Significant flexed posture","✗ Flat thoracic (hypolordosis)"],
+        clues:["","Monitor — early kyphosis increase. Thoracic extension mobilisation + prone extension exercise","Hyperkyphosis drives FHP — cannot correct cervical posture without thoracic extension. Foam roller extension + thoracic PA mobilisation priority","Flat thoracic — may indicate ankylosing spondylitis pattern if bilateral. Screen SI joints, hip extension"] },
+      { id:"scap",   q:"Resting scapular position?",
+        opts:["✓ Retracted and level","⚠ Protracted (rounded shoulders)","✗ Elevated + protracted (upper trap dominant)","✗ Asymmetric elevation"],
+        clues:["","Pec minor tightness — classic upper crossed pattern. Pec minor stretch + lower/mid trap activation","Full Janda upper crossed pattern — upper trap + SCM overactive, lower trap + DNF inhibited. CPA assessment priority","Asymmetric elevation — levator scapulae dominant one side. Screen cervical lateral flexion restriction ipsilateral to elevated shoulder"] },
+      { id:"ear",    q:"Earlobe over acromion (lateral view)?",
+        opts:["✓ Earlobe over or near acromion","⚠ Earlobe 2–3cm anterior to acromion","✗ Earlobe clearly anterior (>3cm)"],
+        clues:["","Minor FHP — posture education + targeted activation","Significant FHP — each cm anterior increases cervical load. Quantify with CVA and photograph for baseline + progress monitoring"] },
+      { id:"chin",   q:"Chin position at rest?",
+        opts:["✓ Horizontal chin — neutral","⚠ Chin poke — chin forward and up","✗ Chin depressed — dowager pattern","✗ Head tilted — lateral asymmetry"],
+        clues:["","Classic chin poke = C1/C2 extension + lower cervical flexion. Target with chin tuck exercise (not neck extension)","Dowager hump pattern — C7 prominence with flexed posture. Thoracic extension + upper cervical correction together","Head tilt — screen sternocleidomastoid length asymmetry and C1/C2 rotation restriction"] },
+    ],
+    grades:["Normal — CVA >50°, ear over shoulder, neutral scapulae","Compensated — CVA 45–50° or mild rounding without symptoms","Abnormal — CVA <45°, significant FHP, or full upper crossed pattern"],
+  },
+  {
+    id:"cfs_diz", icon:"😵", label:"Cervicogenic Dizziness Screen",
+    subtitle:"Smooth Pursuit Neck Torsion + VBI Screen",
+    phase:"Vestibular / Proprioceptive / VBI Safety",
+    setup:"STEP 1 — VBI screen (if manual therapy planned): Sustained rotation test 30s each side. STEP 2 — Smooth pursuit neck torsion (SPNT): track moving target eyes only while body turns (dissociation). STEP 3 — Hautant test: arms outstretched, eyes closed, rotate head. Drift = positive. STEP 4 — Head repositioning accuracy: eyes closed, rotate to target, open, measure error. Normal <4.5°.",
+    normalDesc:"VBI screen negative. SPNT — smooth eye tracking without saccades or nystagmus. Hautant — no arm drift. Head repositioning error <4.5° bilateral. No dizziness reproduction with any test.",
+    observations:[
+      { id:"vbi",    q:"Sustained rotation — any symptoms?",
+        opts:["✓ No symptoms 30s each side","⚠ Minor dizziness — settles quickly","✗ Dizziness + nystagmus","✗ Drop attack / diplopia / dysphagia"],
+        clues:["","Possible minor cervicogenic vestibular response — may be proprioceptive not vascular. Monitor, reassess","VBI screen positive — cervical manipulation CONTRAINDICATED. Refer to vestibular physiotherapist. Reassess with positional testing (Dix-Hallpike)","Absolute contraindication to cervical manipulation — 5Ds (Dizziness, Diplopia, Dysarthria, Dysphagia, Drop attack). Emergency referral if acute onset"] },
+      { id:"spnt",   q:"Smooth pursuit neck torsion (SPNT)?",
+        opts:["✓ Smooth tracking — no saccades","⚠ Mild saccades — inconsistent","✗ Clear saccadic eye movement with rotation","✗ Nystagmus present"],
+        clues:["","Minor — may be cervicogenic. Compare sitting vs lying — if worse sitting = cervicogenic component likely","SPNT positive — cervicogenic dizziness likely. Upper cervical proprioceptive dysfunction. Cervical joint position sense training, gaze stability exercises","Nystagmus — vestibular origin (peripheral or central). Dix-Hallpike mandatory before any cervical treatment. Vestibular physiotherapy referral"] },
+      { id:"haut",   q:"Hautant test (arm drift eyes closed + rotation)?",
+        opts:["✓ No arm drift","⚠ Slight drift at end range rotation","✗ Clear bilateral arm drift","✗ Unilateral drift — neurological sign"],
+        clues:["","Minor — possibly normal variation. Reassess with head in neutral","Bilateral drift = vascular or vestibular involvement — VBI screen before treatment. Do not manipulate","Unilateral drift = neurological — screen C5/C6/C7 myotomes and reflexes. Refer if progressive"] },
+      { id:"reposition",q:"Head repositioning accuracy?",
+        opts:["✓ <4.5° error (normal proprioception)","⚠ 4.5–7° error (mild deficit)","✗ >7° error (significant proprioceptive deficit)","✗ Reproduces dizziness on repositioning"],
+        clues:["","Minor cervical proprioceptive deficit — laser pointer training, gaze stability exercises","Significant deficit — typical in chronic WAD and cervicogenic headache. Joint position sense training with laser pointer. Neck muscle endurance + cervical stabilisation","Symptom reproduction = vestibular/proprioceptive overlap — gaze stability + Epley if BPPV suspected + cervical stabilisation"] },
+      { id:"hallpike",q:"Dix-Hallpike result (if performed)?",
+        opts:["✓ Negative — no nystagmus","⚠ Not performed","✗ Positive — torsional nystagmus <60s (BPPV)","✗ Positive — nystagmus >60s or direction-changing (central)"],
+        clues:["","","BPPV — Epley canalith repositioning (posterior canal). Monitor for resolution × 3 Epleys. If no response — anterior or lateral canal or central cause","Direction-changing or prolonged nystagmus = central cause — immediate medical referral. Do not treat cervically"] },
+    ],
+    grades:["Normal — VBI negative, SPNT smooth, no drift, repositioning <4.5°","Compensated — Minor saccades or 4.5–7° repositioning error without symptoms","Abnormal — VBI positive, nystagmus, dizziness reproduced, or Dix-Hallpike positive"],
+  },
+  {
+    id:"cfs_ulnt", icon:"💪", label:"ULNT1 — Upper Limb Neurodynamic",
+    subtitle:"Median Nerve Tension + C6/C7 Radiculopathy Screen",
+    phase:"Neural Tension / Cervical Radiculopathy",
+    setup:"Patient supine. Sequence: (1) Shoulder depression, (2) Shoulder abduction 110°, (3) Wrist/finger extension, (4) Forearm supination, (5) Elbow extension until symptom onset, (6) Cervical lateral flexion away (sensitises) then toward (desensitises). Normal: mild stretch sensation in forearm/hand — bilateral. Positive: reproduces patient symptoms + sensitised by lateral flexion away + desensitised by lateral flexion toward.",
+    normalDesc:"Mild stretch feeling in forearm/cubital fossa bilaterally at elbow extension endpoint. No symptom reproduction. Sensitisation and desensitisation by cervical lateral flexion (normal response). Bilateral equal range.",
+    observations:[
+      { id:"symp",   q:"Symptom reproduction during ULNT1?",
+        opts:["✓ Mild stretch only — bilateral","⚠ Familiar arm/hand symptoms reproduced","✗ Clear neurological symptoms reproduced","✗ Symptoms worse than other side"],
+        clues:["","Normal mechanosensitivity — bilateral mild stretch is expected at end range","Neurodynamic test positive — reproduces patient symptoms. Differentiates nerve from muscle/joint. Neural mobilisation (slider vs tensioner based on irritability)","Positive ULNT1 — bilateral comparison needed. If significantly more symptomatic one side = neural sensitisation. Determine irritability before treatment"] },
+      { id:"diff",   q:"Cervical lateral flexion differentiation?",
+        opts:["✓ Not tested / not applicable","⚠ Sensitises but does not desensitise","✗ Positive — sensitises away AND desensitises toward","✗ No change with lateral flexion — not neural"],
+        clues:["","","Equivocal — may be muscular or myofascial. Repeat with shoulder depression only as first step","Classic neurodynamic positive — sensitisation + desensitisation confirms neural origin. C5/6/7 radiculopathy or peripheral median nerve sensitisation. Butler neural mobilisation approach"] },
+      { id:"level",  q:"Elbow extension deficit (vs other side)?",
+        opts:["✓ Equal bilateral extension","⚠ 5–10° deficit — mildly positive","✗ >10° deficit clearly restricted","✗ Major restriction — barely extends past 90°"],
+        clues:["","Minor — monitor and compare bilaterally","Moderate neurodynamic restriction — neural mobilisation indicated. Determine irritability (slider if high, tensioner if low)","Severe neural tension — high irritability. Begin with cervical pain relief, slider-only neurodynamics. Formal neurological screen C5/C6/C7 myotomes + reflexes"] },
+      { id:"neuro",  q:"Neurological symptoms present?",
+        opts:["✓ Stretch sensation only (non-neurological)","⚠ Tingling / paresthesia in distribution","✗ Numbness in median nerve distribution","✗ Weakness in tested myotome (grip / wrist ext)"],
+        clues:["","Minor neural sensitisation — neural slider mobilisation, cervical decompression position","C6 or C7 radiculopathy pattern — confirm with dermatomal mapping, reflexes (biceps C6, triceps C7), myotome grip strength test","Significant neurological deficit — formal upper limb neurological screen. Refer if progressive weakness. MRI if myelopathy signs present"] },
+      { id:"bilat",  q:"Bilateral comparison?",
+        opts:["✓ Symmetric — equal range and sensation","⚠ Mild asymmetry — same symptoms","✗ Clearly more restricted + symptomatic one side","✗ Bilateral — possible central sensitisation"],
+        clues:["","","Unilateral neural sensitisation — cervical origin on same side most likely. C5/C6/C7 myotome and reflex testing next","Bilateral neural sensitisation — consider central sensitisation (pain catastrophising), thoracic outlet, or double crush syndrome"] },
+    ],
+    grades:["Normal — Mild bilateral stretch, desensitises with lateral flexion","Compensated — Mildly more symptomatic one side without neurological signs","Abnormal — Reproduced symptoms, positive sensitisation, neurological signs, or significant asymmetry"],
+  },
+];
+
+function CervicalFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  useEffect(() => {
+    const saved = data["cfs_data"];
+    if (saved && typeof saved === "string") {
+      try {
+        const p = JSON.parse(saved);
+        if (p.findings) setFindings(p.findings);
+        if (p.grades)   setGrades(p.grades);
+        if (p.notes)    setNotes(p.notes);
+      } catch {}
+    }
+  }, []);
+
+  const save = (f,g,n) => set("cfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
+  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
+  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
+  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
+
+  const completedCount = CERVICAL_TESTS.filter(t => grades[t.id] !== undefined).length;
+  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
+  const accentCol = "#7c3aed";
+
+  return (
+    <div>
+      <div style={{background:"linear-gradient(135deg,rgba(124,58,237,0.08),rgba(139,92,246,0.05))",border:"1px solid rgba(124,58,237,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontSize:"1.4rem"}}>🧠</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Cervical Functional Screen</div>
+            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM · DNF endurance · CVA posture · Dizziness · ULNT1</div>
+          </div>
+          <div style={{marginLeft:"auto",textAlign:"right"}}>
+            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
+            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+          </div>
+        </div>
+        <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
+          <div style={{fontSize:"0.65rem",color:"#dc2626",fontWeight:700}}>⚠ Safety first: Complete VBI screen (ULNT test 4) before any cervical manipulation. If 5Ds present — do not manipulate.</div>
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {CERVICAL_TESTS.map(t=>{
+            const g=grades[t.id]; const done=g!==undefined;
+            return (
+              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
+                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
+                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
+                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {CERVICAL_TESTS.map(t=>{
+        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
+        return (
+          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
+            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
+            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(124,58,237,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
+
+            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
+                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+              </div>
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
+            </div>
+
+            {isOpen && (
+              <div style={{padding:"0 14px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                </div>
+
+                {showVisual && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{background:"#F5F3FF",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #DDD6FE"}}>
+                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
+                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                {t.observations.map(obs=>{
+                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
+                  return (
+                    <div key={obs.id} style={{marginBottom:10}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        {obs.opts.map((opt,idx)=>{
+                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
+                          return (
+                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
+                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
+                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
+                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
+                              </div>
+                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                    </div>
+                  );
+                })}
+
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
+                  {t.grades.map((gLabel,idx)=>{
+                    const col=gradeColor(idx); const sel=g===idx;
+                    return (
+                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
+                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
+                  placeholder="Range values, DNF hold time, CVA measurement, VBI screen result..."
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {completedCount > 0 && (
+        <div style={{background:"#F5F3FF",borderRadius:14,padding:14,border:"1px solid #DDD6FE",marginTop:4}}>
+          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Cervical Screen Summary</div>
+          {CERVICAL_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
+            const g=grades[t.id]; const col=gradeColor(g);
+            return (
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                <span style={{fontSize:"1rem"}}>{t.icon}</span>
+                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+              </div>
+            );
+          })}
+          {Object.values(grades).includes(2) && (
+            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.7rem",color:"#dc2626",lineHeight:1.5}}>
+              ⚠ <strong>Abnormal findings present.</strong> Consider: Sharp-Purser (instability), Spurling (radiculopathy), Watson headache approach (C1/C2/C3), Dix-Hallpike (BPPV), C5/C6/C7 myotomes + reflexes, and formal VBI screen before manual therapy.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FUNCTIONAL SCREEN HUB ───────────────────────────────────────────────────
 
 function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
@@ -10398,6 +10715,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
     { id:"hip",      label:"Hip",      icon:"🦷", color:"#d946ef" },
     { id:"knee",     label:"Knee",     icon:"🦿", color:"#d97706" },
     { id:"ankle",    label:"Ankle",    icon:"🦶", color:"#0d9488" },
+    { id:"cervical", label:"Cervical", icon:"🧠", color:"#7c3aed" },
   ];
   return (
     <div>
@@ -10421,6 +10739,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
       {region === "hip"      && <HipFunctionalScreen      data={data} set={set}/>}
       {region === "knee"     && <KneeFunctionalScreen     data={data} set={set}/>}
       {region === "ankle"    && <AnkleFunctionalScreen    data={data} set={set}/>}
+      {region === "cervical" && <CervicalFunctionalScreen data={data} set={set}/>}
 
       {/* Quick navigation */}
       <div style={{ display:"flex", gap:8, marginTop:16 }}>
