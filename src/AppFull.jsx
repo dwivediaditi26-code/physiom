@@ -12154,8 +12154,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     { k:"overview",    icon:"🏠",  label:"Overview"         },
     { k:"subjective",  icon:"📝",  label:"Subjective"       },
     { k:"assessment",  icon:"📋",  label:"Assessment"       },
-    { k:"impression",  icon:"🎯",  label:"Impression"       },
-    { k:"treatment",   icon:"💊",  label:"Treatment"        },
+      { k:"treatment",   icon:"💊",  label:"Treatment"        },
     { k:"progress",    icon:"📈",  label:"Progress"         },
     { k:"documents",   icon:"📄",  label:"Docs"             },
   ];
@@ -12792,12 +12791,6 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         )}
 
         )}
-        {tab==="impression" && (
-          <div className="tab-content" style={{padding:"16px 16px"}}>
-            <ClinicalImpressionTab d={d} C={C} onSaveField={onSaveField} onNav={onNav}/>
-          </div>
-        )}
-
         {tab==="assessment" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
 

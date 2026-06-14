@@ -3157,6 +3157,345 @@ function SignSessionFields({ PC, data }) {
   );
 }
 
+
+// ── Diagnosis list (used by ClinicalImpressionInSOAP) ──────────────────────
+const PHYSIO_DX_LIST_CM = {
+  "Cervical spine": [
+    {label:"Cervical facet joint dysfunction",icd:"M47.812"},
+    {label:"Cervical disc herniation (specify level)",icd:"M50.1"},
+    {label:"Cervical radiculopathy (specify root)",icd:"M54.2"},
+    {label:"Cervicogenic headache",icd:"G44.841"},
+    {label:"Cervical myofascial pain syndrome",icd:"M79.1"},
+    {label:"Whiplash-associated disorder (WAD II)",icd:"S13.4"},
+    {label:"Cervical spondylosis",icd:"M47.812"},
+    {label:"Upper cervical instability (suspected)",icd:"M53.2"},
+    {label:"Thoracic outlet syndrome (suspected)",icd:"G54.0"},
+    {label:"Cervical canal stenosis",icd:"M48.02"},
+  ],
+  "Lumbar / SI": [
+    {label:"Lumbar facet joint dysfunction",icd:"M47.816"},
+    {label:"Lumbar disc herniation (specify level)",icd:"M51.1"},
+    {label:"Lumbar radiculopathy (specify root)",icd:"M54.4"},
+    {label:"Sacroiliac joint dysfunction",icd:"M53.3"},
+    {label:"Non-specific low back pain",icd:"M54.5"},
+    {label:"Lumbar spondylosis",icd:"M47.816"},
+    {label:"Lumbar spinal stenosis",icd:"M48.06"},
+    {label:"Piriformis syndrome",icd:"G57.0"},
+    {label:"Spondylolisthesis (Grade I/II)",icd:"M43.1"},
+    {label:"Lumbar myofascial pain syndrome",icd:"M79.1"},
+  ],
+  "Hip / Groin": [
+    {label:"Hip osteoarthritis",icd:"M16.9"},
+    {label:"Femoroacetabular impingement (FAI)",icd:"M24.85"},
+    {label:"Hip labral tear (suspected)",icd:"M24.05"},
+    {label:"Greater trochanteric pain syndrome",icd:"M70.60"},
+    {label:"Iliopsoas tendinopathy",icd:"M76.1"},
+    {label:"Adductor-related groin pain",icd:"M76.0"},
+    {label:"Snapping hip syndrome",icd:"M76.3"},
+    {label:"Avascular necrosis (suspected -- refer)",icd:"M87.05"},
+    {label:"Hip bursitis (trochanteric)",icd:"M70.60"},
+    {label:"Athletic pubalgia",icd:"M76.8"},
+  ],
+  "Knee (L)": [
+    {label:"Patellofemoral pain syndrome",icd:"M22.2"},
+    {label:"Knee osteoarthritis (medial compartment)",icd:"M17.11"},
+    {label:"Patellar tendinopathy",icd:"M76.5"},
+    {label:"ACL sprain / tear (suspected)",icd:"M23.61"},
+    {label:"Meniscal injury (suspected)",icd:"M23.2"},
+    {label:"Iliotibial band syndrome",icd:"M76.3"},
+    {label:"Pes anserine bursitis",icd:"M70.5"},
+    {label:"MCL sprain (Grade I/II)",icd:"M23.64"},
+    {label:"Post-operative knee -- rehabilitation",icd:"Z96.65"},
+    {label:"Fat pad impingement",icd:"M79.4"},
+  ],
+  "Knee (R)": [
+    {label:"Patellofemoral pain syndrome",icd:"M22.2"},
+    {label:"Knee osteoarthritis (medial compartment)",icd:"M17.11"},
+    {label:"Patellar tendinopathy",icd:"M76.5"},
+    {label:"ACL sprain / tear (suspected)",icd:"M23.61"},
+    {label:"Meniscal injury (suspected)",icd:"M23.2"},
+    {label:"Iliotibial band syndrome",icd:"M76.3"},
+    {label:"Pes anserine bursitis",icd:"M70.5"},
+    {label:"MCL sprain (Grade I/II)",icd:"M23.64"},
+    {label:"Post-operative knee -- rehabilitation",icd:"Z96.65"},
+    {label:"Fat pad impingement",icd:"M79.4"},
+  ],
+  "Shoulder (L)": [
+    {label:"Rotator cuff tendinopathy",icd:"M75.1"},
+    {label:"Subacromial impingement syndrome",icd:"M75.1"},
+    {label:"Rotator cuff tear (partial / full -- suspected)",icd:"M75.1"},
+    {label:"Frozen shoulder (adhesive capsulitis)",icd:"M75.0"},
+    {label:"AC joint sprain / OA",icd:"M19.11"},
+    {label:"Glenohumeral instability (anterior)",icd:"M24.31"},
+    {label:"Biceps tendinopathy / SLAP (suspected)",icd:"M75.2"},
+    {label:"Shoulder OA (glenohumeral)",icd:"M19.11"},
+    {label:"Post-op shoulder rehabilitation",icd:"Z96.61"},
+    {label:"Cervical-referred shoulder pain (C4/C5)",icd:"M54.2"},
+  ],
+  "Shoulder (R)": [
+    {label:"Rotator cuff tendinopathy",icd:"M75.1"},
+    {label:"Subacromial impingement syndrome",icd:"M75.1"},
+    {label:"Rotator cuff tear (partial / full -- suspected)",icd:"M75.1"},
+    {label:"Frozen shoulder (adhesive capsulitis)",icd:"M75.0"},
+    {label:"AC joint sprain / OA",icd:"M19.11"},
+    {label:"Glenohumeral instability (anterior)",icd:"M24.31"},
+    {label:"Biceps tendinopathy / SLAP (suspected)",icd:"M75.2"},
+    {label:"Shoulder OA (glenohumeral)",icd:"M19.11"},
+    {label:"Post-op shoulder rehabilitation",icd:"Z96.61"},
+    {label:"Cervical-referred shoulder pain (C4/C5)",icd:"M54.2"},
+  ],
+  "Ankle / Foot": [
+    {label:"Lateral ankle sprain (Grade I/II/III)",icd:"S93.4"},
+    {label:"Achilles tendinopathy (mid-portion)",icd:"M76.6"},
+    {label:"Achilles tendinopathy (insertional)",icd:"M76.6"},
+    {label:"Plantar fasciitis",icd:"M72.2"},
+    {label:"Ankle OA",icd:"M19.071"},
+    {label:"Peroneal tendinopathy",icd:"M76.7"},
+    {label:"Posterior tibial tendon dysfunction",icd:"M76.82"},
+    {label:"Sinus tarsi syndrome",icd:"M79.1"},
+    {label:"Hallux valgus (conservative management)",icd:"M20.1"},
+    {label:"Syndesmosis sprain",icd:"S93.4"},
+  ],
+  "Elbow/Wrist/Hand": [
+    {label:"Lateral epicondylalgia (Tennis elbow)",icd:"M77.1"},
+    {label:"Medial epicondylalgia (Golfer elbow)",icd:"M77.0"},
+    {label:"De Quervain tenosynovitis",icd:"M65.4"},
+    {label:"Carpal tunnel syndrome",icd:"G56.0"},
+    {label:"Wrist tendinopathy",icd:"M65.3"},
+    {label:"TFCC injury (suspected)",icd:"M25.331"},
+    {label:"Cubital tunnel syndrome",icd:"G56.2"},
+    {label:"Trigger finger",icd:"M65.3"},
+    {label:"Dupuytren contracture (conservative)",icd:"M72.0"},
+    {label:"Elbow OA",icd:"M19.021"},
+  ],
+  "Thoracic spine": [
+    {label:"Thoracic facet joint dysfunction",icd:"M47.814"},
+    {label:"Thoracic myofascial pain",icd:"M79.1"},
+    {label:"Costochondral / rib dysfunction",icd:"M94.0"},
+    {label:"Thoracic disc herniation",icd:"M51.14"},
+    {label:"Scheuermann disease",icd:"M42.0"},
+    {label:"Thoracic kyphosis (postural)",icd:"M40.04"},
+    {label:"T4 syndrome",icd:"M54.6"},
+    {label:"Intercostal neuralgia",icd:"G58.0"},
+    {label:"Thoracic outlet syndrome (suspected)",icd:"G54.0"},
+    {label:"Post-fracture thoracic rehabilitation",icd:"S22.9"},
+  ],
+  "General": [
+    {label:"Fibromyalgia",icd:"M79.7"},
+    {label:"Chronic widespread pain",icd:"M79.3"},
+    {label:"Post-surgical rehabilitation (specify)",icd:"Z96.9"},
+    {label:"Chronic pain syndrome (central sensitisation)",icd:"G89.4"},
+    {label:"Post-COVID musculoskeletal symptoms",icd:"U09.9"},
+    {label:"Hypermobility syndrome / hEDS",icd:"Q79.6"},
+    {label:"Osteoporosis (fracture prevention)",icd:"M81.0"},
+    {label:"Postural dysfunction",icd:"M40.3"},
+    {label:"Deconditioning / functional decline",icd:"Z73.6"},
+    {label:"Falls prevention programme",icd:"Z91.81"},
+  ],
+};
+const CI_TAG_CFG = {
+  primary:      {label:"Primary Dx",  col:"#4C1D95", bg:"#EDE9FE", border:"#C4B5FD", emoji:"<TARGET_EMOJI>"},
+  differential: {label:"Differential",col:"#92400E", bg:"#FEF3C7", border:"#FCD34D", emoji:"<ARROWS_EMOJI>"},
+  ruledout:     {label:"Ruled Out",   col:"#374151", bg:"#F3F4F6", border:"#D1D5DB", emoji:"X"},
+};
+
+// -- Clinical Impression Block pinned at top of SOAP -----------------------
+function ClinicalImpressionInSOAP({ data, set }) {
+  const PC = typeof getC === "function" ? getC() : {
+    surface:"#ffffff", s2:"#f5f0fb", border:"#d8cce8",
+    accent:"#7c3aed", text:"#1a1025", muted:"#7e6a9a",
+  };
+  const [open,        setOpen]        = React.useState(false);
+  const [pickerReg,   setPickerReg]   = React.useState("General");
+  const [search,      setSearch]      = React.useState("");
+  const [pendingDx,   setPendingDx]   = React.useState(null);
+  const [pendingTag,  setPendingTag]  = React.useState("primary");
+  const [pendingNote, setPendingNote] = React.useState("");
+  const [customDx,    setCustomDx]    = React.useState("");
+
+  const ciItems  = Array.isArray(data.clinical_impression) ? data.clinical_impression : [];
+  const primary  = ciItems.filter(x => x.tag === "primary");
+  const diffList = ciItems.filter(x => x.tag === "differential");
+  const ruled    = ciItems.filter(x => x.tag === "ruledout");
+
+  const allRegions = ["General", ...Object.keys(PHYSIO_DX_LIST_CM).filter(r => r !== "General")];
+  const filtered = search.trim()
+    ? Object.values(PHYSIO_DX_LIST_CM).flat().filter(x => x.label.toLowerCase().includes(search.toLowerCase()))
+    : (PHYSIO_DX_LIST_CM[pickerReg] || []);
+
+  const alreadyAdded = (label) => ciItems.some(x => x.label === label);
+
+  const addDx = () => {
+    const lbl = pendingDx ? pendingDx.label : customDx.trim();
+    if (!lbl) return;
+    const icd = pendingDx ? (pendingDx.icd || "") : "";
+    const newItem = { id: Date.now().toString(), label: lbl, icdCode: icd, tag: pendingTag, notes: pendingNote.trim(), addedAt: new Date().toISOString() };
+    let updated = [...ciItems];
+    if (pendingTag === "primary") updated = updated.map(x => x.tag === "primary" ? { ...x, tag: "differential" } : x);
+    set("clinical_impression", [...updated, newItem]);
+    setPendingDx(null); setCustomDx(""); setPendingNote(""); setOpen(false);
+  };
+
+  const removeDx = (id) => set("clinical_impression", ciItems.filter(x => x.id !== id));
+
+  const promoteTag = (id, newTag) => {
+    let updated = [...ciItems];
+    if (newTag === "primary") updated = updated.map(x => x.tag === "primary" ? { ...x, tag: "differential" } : x);
+    set("clinical_impression", updated.map(x => x.id === id ? { ...x, tag: newTag } : x));
+  };
+
+  const inp = { width:"100%", background:PC.s2, border:"1px solid "+PC.border, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.75rem", boxSizing:"border-box" };
+
+  return (
+    <div style={{ marginBottom:16, borderRadius:16, overflow:"hidden", border:"2px solid #7c3aed40", boxShadow:"0 4px 20px rgba(124,58,237,0.12)" }}>
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(120deg,#7c3aed22 0%,#7c3aed0a 100%)", borderBottom:"2px solid #7c3aed28", padding:"14px 18px", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+        <div style={{ width:44, height:44, borderRadius:12, background:"#7c3aed", boxShadow:"0 4px 14px #7c3aed60", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.3rem", flexShrink:0 }}>
+          <span role="img" aria-label="target">&#x1F3AF;</span>
+        </div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:"1rem", fontWeight:900, color:"#4C1D95", letterSpacing:"0.2px" }}>Clinical Impression</div>
+          <div style={{ fontSize:"0.62rem", fontWeight:600, color:"#7c3aed", opacity:0.75, marginTop:2 }}>Your working diagnosis -- auto-populates the Assessment (A) section</div>
+        </div>
+        <button onClick={() => setOpen(v => !v)} style={{ padding:"8px 16px", background:"#7c3aed", border:"none", borderRadius:10, color:"#fff", fontWeight:800, fontSize:"0.72rem", cursor:"pointer", boxShadow:"0 2px 8px #7c3aed50" }}>
+          {open ? "Close" : ciItems.length === 0 ? "+ Add Diagnosis" : "Manage"}
+        </button>
+      </div>
+
+      {/* Display: no diagnoses yet */}
+      {ciItems.length === 0 && !open && (
+        <div style={{ padding:"20px 18px", textAlign:"center", background:"#ffffff" }}>
+          <div style={{ fontSize:"0.78rem", color:PC.muted, marginBottom:6 }}>No diagnosis set yet</div>
+          <div style={{ fontSize:"0.68rem", color:PC.muted, lineHeight:1.7 }}>
+            Add your working diagnosis -- it will auto-populate the A section below.
+          </div>
+        </div>
+      )}
+
+      {/* Display: diagnoses */}
+      {ciItems.length > 0 && !open && (
+        <div style={{ padding:"14px 18px", background:"#ffffff", display:"flex", flexDirection:"column", gap:10 }}>
+          {primary.map(dx => (
+            <div key={dx.id} style={{ display:"flex", alignItems:"flex-start", gap:10, background:"#EDE9FE", border:"1.5px solid #C4B5FD", borderRadius:12, padding:"12px 14px" }}>
+              <div style={{ flexShrink:0, width:36, height:36, borderRadius:10, background:"#7c3aed", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:900, fontSize:"0.72rem" }}>Dx</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:"0.62rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:3 }}>Working Diagnosis</div>
+                <div style={{ fontSize:"0.88rem", fontWeight:800, color:"#4C1D95", lineHeight:1.4 }}>{dx.label}</div>
+                {dx.icdCode && <div style={{ marginTop:3, display:"inline-block", background:"#C4B5FD", borderRadius:6, padding:"1px 8px", fontSize:"0.62rem", fontWeight:700, color:"#4C1D95" }}>ICD {dx.icdCode}</div>}
+                {dx.notes && <div style={{ marginTop:5, fontSize:"0.73rem", color:"#5B21B6", fontStyle:"italic" }}>{dx.notes}</div>}
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:4, flexShrink:0 }}>
+                <button onClick={() => promoteTag(dx.id, "differential")} style={{ padding:"3px 8px", background:"#C4B5FD", border:"none", borderRadius:6, fontSize:"0.6rem", color:"#4C1D95", cursor:"pointer", fontWeight:700 }}>Diff</button>
+                <button onClick={() => removeDx(dx.id)} style={{ padding:"3px 8px", background:"rgba(220,38,38,0.1)", border:"none", borderRadius:6, fontSize:"0.6rem", color:"#dc2626", cursor:"pointer", fontWeight:700 }}>Remove</button>
+              </div>
+            </div>
+          ))}
+
+          {diffList.length > 0 && (
+            <div>
+              <div style={{ fontSize:"0.58rem", fontWeight:800, color:"#92400E", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Differentials -- considering</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                {diffList.map(dx => (
+                  <div key={dx.id} style={{ display:"flex", alignItems:"center", gap:8, background:"#FEF3C7", border:"1px solid #FCD34D", borderRadius:10, padding:"8px 12px" }}>
+                    <span style={{ fontSize:"0.8rem", fontWeight:700, color:"#92400E", flex:1 }}>{dx.label}{dx.icdCode ? React.createElement("span", {style:{marginLeft:6,fontSize:"0.62rem",fontWeight:600,color:"#78350F"}}, dx.icdCode) : null}</span>
+                    <button onClick={() => promoteTag(dx.id, "primary")} style={{ padding:"2px 7px", background:"#7c3aed", border:"none", borderRadius:5, fontSize:"0.58rem", color:"#fff", cursor:"pointer", fontWeight:800 }}>Primary</button>
+                    <button onClick={() => promoteTag(dx.id, "ruledout")} style={{ padding:"2px 7px", background:"#F3F4F6", border:"none", borderRadius:5, fontSize:"0.58rem", color:"#374151", cursor:"pointer", fontWeight:700 }}>Rule out</button>
+                    <button onClick={() => removeDx(dx.id)} style={{ padding:"2px 7px", background:"rgba(220,38,38,0.08)", border:"none", borderRadius:5, fontSize:"0.58rem", color:"#dc2626", cursor:"pointer", fontWeight:700 }}>X</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {ruled.length > 0 && (
+            <div>
+              <div style={{ fontSize:"0.58rem", fontWeight:800, color:"#6B7280", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:5 }}>Ruled Out</div>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                {ruled.map(dx => (
+                  <div key={dx.id} style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#F3F4F6", border:"1px solid #D1D5DB", borderRadius:20, padding:"3px 10px" }}>
+                    <span style={{ fontSize:"0.7rem", fontWeight:600, color:"#6B7280", textDecoration:"line-through" }}>{dx.label}</span>
+                    <button onClick={() => removeDx(dx.id)} style={{ background:"none", border:"none", color:"#9CA3AF", cursor:"pointer", fontSize:"0.65rem", padding:0, lineHeight:1 }}>x</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Picker (expanded) */}
+      {open && (
+        <div style={{ padding:"16px 18px", background:"#faf8ff", borderTop:"1px solid #7c3aed20" }}>
+          {pendingDx && (
+            <div style={{ background:"#EDE9FE", border:"1.5px solid #C4B5FD", borderRadius:10, padding:"10px 14px", marginBottom:12, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:"0.62rem", fontWeight:700, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:2 }}>Selected</div>
+                <div style={{ fontSize:"0.82rem", fontWeight:800, color:"#4C1D95" }}>{pendingDx.label}</div>
+                {pendingDx.icd && <div style={{ fontSize:"0.62rem", color:"#7c3aed", marginTop:2 }}>ICD: {pendingDx.icd}</div>}
+              </div>
+              <button onClick={() => setPendingDx(null)} style={{ padding:"3px 8px", background:"none", border:"1px solid #C4B5FD", borderRadius:6, color:"#7c3aed", cursor:"pointer", fontSize:"0.65rem", fontWeight:700 }}>Clear</button>
+            </div>
+          )}
+
+          <div style={{ marginBottom:10 }}>
+            <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Add as</div>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              {Object.entries(CI_TAG_CFG).map(([tag, cfg]) => (
+                <button key={tag} onClick={() => setPendingTag(tag)} style={{ padding:"6px 12px", borderRadius:8, background: pendingTag === tag ? cfg.bg : "transparent", border:"1.5px solid "+(pendingTag===tag?cfg.border:PC.border), color: pendingTag===tag?cfg.col:PC.muted, fontWeight:pendingTag===tag?800:500, fontSize:"0.7rem", cursor:"pointer" }}>
+                  {cfg.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search diagnoses..." style={{ ...inp, marginBottom:8 }} />
+
+          {!search.trim() && (
+            <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:10 }}>
+              {allRegions.map(r => (
+                <button key={r} onClick={() => setPickerReg(r)} style={{ padding:"4px 10px", borderRadius:20, background:pickerReg===r?"#7c3aed":"#f5f0fb", border:"1px solid "+(pickerReg===r?"#7c3aed":"#d8cce8"), color:pickerReg===r?"#fff":"#7e6a9a", fontSize:"0.62rem", fontWeight:pickerReg===r?800:500, cursor:"pointer" }}>
+                  {r}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div style={{ maxHeight:200, overflowY:"auto", display:"flex", flexDirection:"column", gap:4, marginBottom:10 }}>
+            {filtered.map((dx, i) => {
+              const added = alreadyAdded(dx.label);
+              const selected = pendingDx && pendingDx.label === dx.label;
+              return (
+                <button key={i} onClick={() => !added && setPendingDx(selected ? null : dx)} disabled={added} style={{ textAlign:"left", padding:"7px 11px", borderRadius:8, background:selected?"#EDE9FE":added?"#F3F4F6":"#fff", border:"1.5px solid "+(selected?"#C4B5FD":added?"#E5E7EB":"#E5E7EB"), color:added?"#9CA3AF":selected?"#4C1D95":PC.text, fontSize:"0.74rem", fontWeight:selected?800:500, cursor:added?"default":"pointer", display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ flex:1 }}>{dx.label}</span>
+                  {dx.icd && <span style={{ fontSize:"0.6rem", color:"#9CA3AF", flexShrink:0 }}>{dx.icd}</span>}
+                  {added && <span style={{ fontSize:"0.6rem", color:"#9CA3AF" }}>added</span>}
+                  {selected && <span style={{ fontSize:"0.65rem", color:"#7c3aed" }}>selected</span>}
+                </button>
+              );
+            })}
+            {filtered.length === 0 && <div style={{ fontSize:"0.72rem", color:PC.muted, padding:"12px", textAlign:"center" }}>No matches -- use custom entry below</div>}
+          </div>
+
+          <div style={{ marginBottom:10 }}>
+            <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:4 }}>Or type a custom diagnosis</div>
+            <input value={customDx} onChange={e => { setCustomDx(e.target.value); if(e.target.value.trim()) setPendingDx(null); }} placeholder="Custom diagnosis name..." style={inp} />
+          </div>
+
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:4 }}>Clinical note (optional)</div>
+            <input value={pendingNote} onChange={e => setPendingNote(e.target.value)} placeholder="e.g. L4/5 confirmed on MRI, awaiting neurosurgery review..." style={inp} />
+          </div>
+
+          <button onClick={addDx} disabled={!pendingDx && !customDx.trim()} style={{ width:"100%", padding:"10px", background:(!pendingDx&&!customDx.trim())?"#E5E7EB":"#7c3aed", border:"none", borderRadius:10, color:(!pendingDx&&!customDx.trim())?"#9CA3AF":"#fff", fontWeight:800, fontSize:"0.78rem", cursor:(!pendingDx&&!customDx.trim())?"default":"pointer" }}>
+            + Add {CI_TAG_CFG[pendingTag] ? CI_TAG_CFG[pendingTag].label : ""}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const aiOnly = initialTab === "ai";
   const PC = typeof getC === "function" ? getC() : {
@@ -3431,6 +3770,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           </div>
         </div>
       ))}
+
+      {/* -- CLINICAL IMPRESSION pinned at top */}
+      {!aiOnly&&<ClinicalImpressionInSOAP data={data} set={set}/>}
 
       {/* ── SESSION DETAILS ─────────────────────────────────────────────────── */}
       {!aiOnly&&<div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
