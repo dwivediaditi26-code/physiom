@@ -8108,12 +8108,611 @@ function FMSCameraPanel({onClose}){
   );
 }
 
+
+// ─── LUMBAR FUNCTIONAL SCREEN ─────────────────────────────────────────────────
+
+const LUMBAR_TESTS = [
+  {
+    id:"lfs_sts", icon:"🪑", label:"Sit-to-Stand",
+    subtitle:"Flexion → Extension Strategy",
+    phase:"Hip Hinge / Load Transfer",
+    setup:"Chair at knee height, no armrests. Feet hip-width, just behind knees. Arms crossed on chest. Rise × 3.",
+    normalDesc:"Controlled 30–40° forward trunk lean, hip hinge initiates rise, lumbar stays neutral, symmetric bilateral loading.",
+    svgNormal:(
+      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
+        {/* Normal: forward lean + hip hinge */}
+        <text x="10" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        {/* Seated */}
+        <circle cx="28" cy="22" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="28" y1="29" x2="24" y2="50" stroke="#059669" strokeWidth="2.5"/> {/* trunk angled fwd */}
+        <line x1="24" y1="50" x2="16" y2="65" stroke="#059669" strokeWidth="2.5"/> {/* thigh */}
+        <line x1="16" y1="65" x2="18" y2="82" stroke="#059669" strokeWidth="2.5"/> {/* shin */}
+        <line x1="28" y1="29" x2="34" y2="44" stroke="#059669" strokeWidth="2"/> {/* arm */}
+        <text x="6" y="92" fontSize="6" fill="#059669">Seated</text>
+        {/* Rising - hip hinge */}
+        <circle cx="72" cy="18" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="72" y1="25" x2="68" y2="48" stroke="#059669" strokeWidth="2.5"/> {/* trunk lean fwd */}
+        <line x1="68" y1="48" x2="60" y2="62" stroke="#059669" strokeWidth="2.5"/> {/* hip hinge */}
+        <line x1="60" y1="62" x2="62" y2="82" stroke="#059669" strokeWidth="2.5"/>
+        <path d="M68,48 Q72,40 75,34" stroke="#059669" strokeWidth="1.5" fill="none" strokeDasharray="3,2"/>
+        <text x="52" y="92" fontSize="6" fill="#059669">Hip leads</text>
+        {/* Standing */}
+        <circle cx="108" cy="14" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="108" y1="21" x2="108" y2="55" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="108" y1="55" x2="104" y2="80" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="108" y1="55" x2="112" y2="80" stroke="#059669" strokeWidth="2.5"/>
+        <text x="95" y="92" fontSize="6" fill="#059669">Upright</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">COMPENSATED</text>
+        {/* Lumbar dominant strategy */}
+        <circle cx="60" cy="18" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="60" y1="25" x2="60" y2="55" stroke="#dc2626" strokeWidth="2.5"/> {/* upright trunk */}
+        <line x1="60" y1="55" x2="52" y2="70" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="60" y1="55" x2="68" y2="70" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="52" y1="70" x2="52" y2="88" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="68" y1="70" x2="68" y2="88" stroke="#dc2626" strokeWidth="2.5"/>
+        {/* Lumbar arch highlight */}
+        <path d="M60,35 Q65,42 60,50" stroke="#f97316" strokeWidth="2" fill="none"/>
+        <text x="67" y="44" fontSize="6" fill="#f97316">Lumbar↑</text>
+        {/* Lateral shift arrow */}
+        <path d="M30,55 L48,55" stroke="#dc2626" strokeWidth="1.5" markerEnd="url(#arr)" strokeDasharray="3,2"/>
+        <text x="4" y="65" fontSize="5.5" fill="#dc2626">Shift</text>
+        <text x="4" y="92" fontSize="6" fill="#dc2626">Lumbar dominant</text>
+        <defs><marker id="arr" markerWidth="5" markerHeight="4" refX="3" refY="2" orient="auto"><path d="M0,0 L5,2 L0,4 Z" fill="#dc2626"/></marker></defs>
+      </svg>
+    ),
+    observations:[
+      { id:"lean",  q:"Forward trunk lean before rise",
+        opts:["✓ Adequate (30–40°)","⚠ Excessive (>45°)","✗ Insufficient — upright strategy"],
+        clues:["","Indicates hip flexor tightness or fear of load","Lumbar extension dominant — glute inhibition"] },
+      { id:"hinge", q:"Hip hinge strategy",
+        opts:["✓ Hip hinge initiates","✗ Lumbar extension dominates","✗ Momentum / bounce used"],
+        clues:["","Gluteal inhibition, hip flexor dominance (Janda LCS)","Motor control deficit — screen for pain avoidance"] },
+      { id:"sym",   q:"Weight bearing symmetry",
+        opts:["✓ Equal bilateral","⚠ Mild lateral shift","✗ Significant shift / one leg dominant"],
+        clues:["","Minor SIJ asymmetry — monitor","SIJ dysfunction or hip joint pathology — do FABER test"] },
+      { id:"knee",  q:"Knee tracking",
+        opts:["✓ Tracks over 2nd toe","⚠ Mild valgus","✗ Significant valgus collapse"],
+        clues:["","Glute med weakness — single-leg squat screen","Dynamic valgus — screen glute med / max and foot pronation"] },
+      { id:"pain",  q:"Pain provocation",
+        opts:["✓ No pain","⚠ Pain at initiation","⚠ Pain mid-rise","✗ Pain at full extension"],
+        clues:["","Discogenic / SIJ loading — centralisation test","Hip joint / mid-range disc","Facet joint or hip extension impingement"] },
+    ],
+    grades:["Normal — Hip hinge, symmetric, pain-free","Compensated — Minor strategy fault, no pain","Abnormal — Lumbar dominant / pain / significant asymmetry"],
+  },
+  {
+    id:"lfs_fwd", icon:"🫄", label:"Forward Bend",
+    subtitle:"Lateral Shift + Centralisation Screen",
+    phase:"Lumbar Flexion / Instability Screen",
+    setup:"Patient stands, feet shoulder-width. Bend forward slowly reaching toward toes. Observe from behind (lateral shift) and side (lumbar curve). Repeat 3×.",
+    normalDesc:"Lumbar flexion reversal with progressive hip contribution. No lateral shift. Symptoms centralise or unchanged.",
+    svgNormal:(
+      <svg viewBox="0 0 140 100" style={{width:"100%",maxWidth:140}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL (side view)</text>
+        {/* Standing */}
+        <circle cx="25" cy="18" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
+        <path d="M25,24 Q23,38 22,50" stroke="#059669" strokeWidth="2.5" fill="none"/> {/* lumbar curve */}
+        <line x1="22" y1="50" x2="18" y2="68" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="18" y1="68" x2="20" y2="86" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="22" y1="50" x2="26" y2="68" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="26" y1="68" x2="24" y2="86" stroke="#059669" strokeWidth="2.5"/>
+        <text x="12" y="96" fontSize="5.5" fill="#059669">Start</text>
+        {/* Mid bend — lumbar flattens */}
+        <circle cx="72" cy="22" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
+        <path d="M72,28 Q68,40 62,52" stroke="#059669" strokeWidth="2.5" fill="none"/>
+        <line x1="62" y1="52" x2="60" y2="70" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="60" y1="70" x2="62" y2="86" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="62" y1="52" x2="66" y2="68" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="66" y1="68" x2="64" y2="86" stroke="#059669" strokeWidth="2.5"/>
+        <text x="52" y="96" fontSize="5.5" fill="#059669">Flat lumbar</text>
+        {/* Full bend */}
+        <circle cx="118" cy="38" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
+        <path d="M118,44 Q110,52 104,56" stroke="#059669" strokeWidth="2.5" fill="none"/>
+        <line x1="104" y1="56" x2="102" y2="72" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="102" y1="72" x2="104" y2="86" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="104" y1="56" x2="108" y2="70" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="108" y1="70" x2="106" y2="86" stroke="#059669" strokeWidth="2.5"/>
+        <text x="98" y="96" fontSize="5.5" fill="#059669">Hip hinge</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 140 100" style={{width:"100%",maxWidth:140}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">ABNORMAL (rear view)</text>
+        {/* Lateral shift — posterior view */}
+        <circle cx="70" cy="18" r="6" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="70" y1="24" x2="76" y2="46" stroke="#dc2626" strokeWidth="2.5"/> {/* spine shifts R */}
+        <line x1="76" y1="46" x2="66" y2="62" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="66" y1="62" x2="64" y2="80" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="66" y1="62" x2="78" y2="80" stroke="#dc2626" strokeWidth="2.5"/>
+        {/* Shoulder vs pelvis lines */}
+        <line x1="50" y1="28" x2="90" y2="28" stroke="#6b7280" strokeWidth="1" strokeDasharray="3,2"/>
+        <line x1="54" y1="62" x2="86" y2="62" stroke="#6b7280" strokeWidth="1" strokeDasharray="3,2"/>
+        {/* Shift arrow */}
+        <path d="M70,35 L80,35" stroke="#dc2626" strokeWidth="2" fill="none"/>
+        <polygon points="80,33 84,35 80,37" fill="#dc2626"/>
+        <text x="85" y="38" fontSize="6" fill="#dc2626">Shift R</text>
+        <text x="18" y="96" fontSize="5.5" fill="#dc2626">Lateral shift = SIJ / disc pathology</text>
+      </svg>
+    ),
+    observations:[
+      { id:"shift",  q:"Lateral shift (from behind)?",
+        opts:["✓ No lateral shift","⚠ Minor shift (<2cm)","✗ Clear lateral shift (>2cm)"],
+        clues:["","Monitor — may be postural habit","SIJ dysfunction or disc herniation with lateral nerve root compression"] },
+      { id:"lumbar", q:"Lumbar curve reversal?",
+        opts:["✓ Flattens smoothly","⚠ Limited reversal","✗ Stays lordotic (instability)","✗ Flat throughout (loss of normal motion)"],
+        clues:["","Early lumbar stiffness — extension bias","Lumbar instability or pain inhibition","Multi-segment stiffness or fusion"] },
+      { id:"rhythm",  q:"Hip vs lumbar contribution?",
+        opts:["✓ Equal hip + lumbar","⚠ Lumbar dominant (hip stiff)","⚠ Hip dominant (lumbar avoidance)"],
+        clues:["","Hip flexor tightness or hip joint restriction","Pain-avoidant lumbar flexion restriction — screen for disc"] },
+      { id:"central", q:"Symptom behaviour on bending?",
+        opts:["✓ No change / centralises","⚠ Peripheralises slightly","✗ Clearly peripheralises","✗ Rapid onset peripheralisation"],
+        clues:["","McKenzie principle — flexion may be directional preference","Neural involvement — limit flexion, try extension","Likely disc with neural compression — McKenzie assessment"] },
+      { id:"return",  q:"Return to upright?",
+        opts:["✓ Smooth reverse hip hinge","⚠ Hitches / catches","✗ Lateral deviation on return","✗ Requires hands-on-thighs"],
+        clues:["","Mild instability segment","Segmental instability — Passive instability tests","Significant extensor weakness or instability"] },
+    ],
+    grades:["Normal — Smooth reversal, no shift, no peripheralisation","Compensated — Minor shift or rhythm fault","Abnormal — Lateral shift, peripheralisation, or instability sign"],
+  },
+  {
+    id:"lfs_sls", icon:"🦩", label:"Single Leg Stance",
+    subtitle:"SIJ & Lumbopelvic Control (Trendelenburg)",
+    phase:"Lumbopelvic Stability / Glute Med",
+    setup:"Patient stands facing therapist. Arms folded. Lift one leg to 90° hip/knee flex. Hold 30 seconds each side. Observe from front and behind.",
+    normalDesc:"Pelvis stays level or rises slightly (Hiked) on lifted side. No trunk lean. Glute med visually contracts on standing side.",
+    svgNormal:(
+      <svg viewBox="0 0 100 100" style={{width:"100%",maxWidth:100}}>
+        <text x="8" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        <circle cx="50" cy="18" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="50" y1="25" x2="50" y2="55" stroke="#059669" strokeWidth="2.5"/>
+        {/* Pelvis horizontal */}
+        <line x1="38" y1="55" x2="62" y2="55" stroke="#059669" strokeWidth="3"/>
+        {/* Standing leg */}
+        <line x1="44" y1="55" x2="44" y2="82" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="44" y1="82" x2="44" y2="96" stroke="#059669" strokeWidth="2"/>
+        {/* Raised leg */}
+        <line x1="56" y1="55" x2="62" y2="70" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="62" y1="70" x2="62" y2="58" stroke="#059669" strokeWidth="2"/>
+        {/* Level pelvis marker */}
+        <line x1="30" y1="55" x2="35" y2="55" stroke="#059669" strokeWidth="1.5" strokeDasharray="2,2"/>
+        <line x1="65" y1="55" x2="70" y2="55" stroke="#059669" strokeWidth="1.5" strokeDasharray="2,2"/>
+        <text x="22" y="70" fontSize="5.5" fill="#059669">Pelvis</text>
+        <text x="22" y="76" fontSize="5.5" fill="#059669">level ✓</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 100 100" style={{width:"100%",maxWidth:100}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">TRENDELENBURG</text>
+        <circle cx="52" cy="18" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        {/* Trunk leans to standing side */}
+        <line x1="52" y1="25" x2="46" y2="55" stroke="#dc2626" strokeWidth="2.5"/>
+        {/* Pelvis drops on lifted side */}
+        <line x1="38" y1="52" x2="60" y2="60" stroke="#dc2626" strokeWidth="3"/>
+        {/* Drop arrow */}
+        <path d="M58,54 L60,62" stroke="#dc2626" strokeWidth="1.5" fill="none"/>
+        <polygon points="58,62 60,66 62,62" fill="#dc2626"/>
+        {/* Standing leg */}
+        <line x1="42" y1="52" x2="42" y2="82" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="42" y1="82" x2="42" y2="96" stroke="#dc2626" strokeWidth="2"/>
+        {/* Raised */}
+        <line x1="56" y1="60" x2="62" y2="74" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="62" y1="74" x2="62" y2="62" stroke="#dc2626" strokeWidth="2"/>
+        <text x="4" y="96" fontSize="5.5" fill="#dc2626">Pelvic drop = Glute med weak</text>
+      </svg>
+    ),
+    observations:[
+      { id:"pelvis",  q:"Pelvic level during stance?",
+        opts:["✓ Level or slight hike (normal)","⚠ Mild drop (<2cm) lifted side","✗ Clear Trendelenburg drop","✗ Positive Trendelenburg + trunk lean"],
+        clues:["","Minor glute med fatigue — compare sides","Glute med weakness on stance side — screen hip abd strength","Severe glute med weakness — may indicate THA, hip pathology, L5 motor"] },
+      { id:"trunk",   q:"Trunk position?",
+        opts:["✓ Stays midline","⚠ Slight lean to stance side","✗ Clear lateral lean (compensated Trendelenburg)"],
+        clues:["","Minor balance compensation","Compensated Trendelenburg — trunk shifts to unload weak glute med. Classic pattern."] },
+      { id:"balance", q:"Balance quality?",
+        opts:["✓ Steady 30 sec","⚠ Sways but maintains","⚠ Cannot reach 30 sec","✗ Unable to stand single leg"],
+        clues:["","Minor proprioceptive deficit","Significant stability deficit — cerebellar or proprioceptive screen","Cannot test — note and refer if bilateral"] },
+      { id:"pain",    q:"Pain on single leg loading?",
+        opts:["✓ No pain","⚠ Groin pain","⚠ SIJ/buttock pain","✗ Lumbar pain reproduced"],
+        clues:["","Hip joint pathology — FADDIR screen","SIJ provocation — do SIJ compression/distraction","Lumbar instability or SIJ dysfunction"] },
+      { id:"sym",     q:"Side-to-side difference?",
+        opts:["✓ Symmetric","⚠ Mild difference (5–10 sec)","✗ Marked difference (>10 sec)","✗ One side unable"],
+        clues:["","Monitoring point","Neurological, hip joint, or SIJ asymmetry","Significant unilateral deficit — warrant full hip screen + L5 myotome test"] },
+    ],
+    grades:["Normal — Level pelvis, balanced 30s, no pain","Compensated — Minor sway or mild pelvic drop","Abnormal — Trendelenburg, trunk lean, or pain reproduced"],
+  },
+  {
+    id:"lfs_squat", icon:"🏋️", label:"Squat Pattern",
+    subtitle:"Hip–Lumbar Rhythm & Pelvic Compensation",
+    phase:"Lower Chain Integration / Motor Control",
+    setup:"Feet shoulder-width, toes 10–30° out. Arms forward for balance. Squat to chair height (thighs ~parallel) × 5 reps. Observe side + front views.",
+    normalDesc:"Lumbar neutral throughout, hips descend symmetrically, knees track over 2nd toe, heels stay down, trunk relatively upright.",
+    svgNormal:(
+      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        {/* Standing */}
+        <circle cx="28" cy="16" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="28" y1="22" x2="28" y2="52" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="28" y1="52" x2="22" y2="80" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="28" y1="52" x2="34" y2="80" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="22" y1="80" x2="20" y2="92" stroke="#059669" strokeWidth="2"/>
+        <line x1="34" y1="80" x2="36" y2="92" stroke="#059669" strokeWidth="2"/>
+        <text x="14" y="100" fontSize="5.5" fill="#059669">Start</text>
+        {/* Squat — neutral */}
+        <circle cx="80" cy="26" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="80" y1="32" x2="76" y2="54" stroke="#059669" strokeWidth="2.5"/> {/* slight trunk lean */}
+        <line x1="76" y1="54" x2="66" y2="76" stroke="#059669" strokeWidth="2.5"/> {/* thigh */}
+        <line x1="66" y1="76" x2="64" y2="92" stroke="#059669" strokeWidth="2"/> {/* shin */}
+        <line x1="76" y1="54" x2="86" y2="76" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="86" y1="76" x2="88" y2="92" stroke="#059669" strokeWidth="2"/>
+        {/* Neutral lumbar curve mark */}
+        <path d="M76,36 Q79,44 76,52" stroke="#059669" strokeWidth="1.5" fill="none"/>
+        <text x="82" y="46" fontSize="5.5" fill="#059669">Neutral</text>
+        <text x="62" y="100" fontSize="5.5" fill="#059669">Squat</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">COMPENSATIONS</text>
+        {/* Butt wink */}
+        <circle cx="30" cy="26" r="6" fill="none" stroke="#f97316" strokeWidth="2"/>
+        <line x1="30" y1="32" x2="26" y2="52" stroke="#f97316" strokeWidth="2.5"/>
+        <path d="M26,52 Q22,60 20,68" stroke="#f97316" strokeWidth="2.5" fill="none"/> {/* pelvis tucks */}
+        <line x1="20" y1="68" x2="18" y2="84" stroke="#f97316" strokeWidth="2"/>
+        <line x1="26" y1="52" x2="34" y2="68" stroke="#f97316" strokeWidth="2.5"/>
+        <line x1="34" y1="68" x2="36" y2="84" stroke="#f97316" strokeWidth="2"/>
+        <text x="6" y="96" fontSize="5.5" fill="#f97316">Butt wink</text>
+        {/* Forward lean */}
+        <circle cx="88" cy="24" r="6" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="88" y1="30" x2="78" y2="54" stroke="#dc2626" strokeWidth="2.5"/> {/* excessive forward lean */}
+        <line x1="78" y1="54" x2="72" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="72" y1="76" x2="72" y2="92" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="78" y1="54" x2="88" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="88" y1="76" x2="86" y2="92" stroke="#dc2626" strokeWidth="2"/>
+        {/* Lean arrow */}
+        <path d="M90,34 L98,42" stroke="#dc2626" strokeWidth="1.5" markerEnd="url(#a2)"/>
+        <text x="74" y="100" fontSize="5.5" fill="#dc2626">Fwd lean</text>
+        <defs><marker id="a2" markerWidth="4" markerHeight="3" refX="2" refY="1.5" orient="auto"><path d="M0,0 L4,1.5 L0,3 Z" fill="#dc2626"/></marker></defs>
+      </svg>
+    ),
+    observations:[
+      { id:"lumbar",  q:"Lumbar spine during descent?",
+        opts:["✓ Neutral maintained","⚠ Butt-wink (posterior pelvic tilt)","✗ Excessive anterior tilt (arch increases)","✗ Lateral lumbar shift"],
+        clues:["","Hip flexor tightness / ankle dorsiflexion deficit — assess hip mobility","Lumbar extensor dominance / weak core","SIJ asymmetry or hip joint pathology — check FABER"] },
+      { id:"knees",   q:"Knee tracking?",
+        opts:["✓ Tracks over 2nd toe","⚠ Mild valgus (<2cm medial)","✗ Clear valgus collapse","⚠ Excessive lateral thrust"],
+        clues:["","Minor glute med fatigue","Dynamic valgus = glute med/max weakness + possible foot pronation — priority","Lateral thrust = lateral compartment OA or LCL laxity"] },
+      { id:"trunk",   q:"Trunk lean?",
+        opts:["✓ Slight forward (<45°)","⚠ Excessive forward (>45°)","✗ Trunk collapses forward"],
+        clues:["","Normal","Ankle dorsiflexion deficit or hip flexor tightness","Significant anterior chain weakness or fear-avoidance"] },
+      { id:"heels",   q:"Heel contact maintained?",
+        opts:["✓ Heels down throughout","⚠ Slight heel rise","✗ Heels lift clearly"],
+        clues:["","","Ankle dorsiflexion restriction — assess with knee-to-wall test","Significant ankle restriction — may need orthotic screen"] },
+      { id:"sym",     q:"Bilateral symmetry?",
+        opts:["✓ Equal bilateral","⚠ Minor asymmetry","✗ Clear side-to-side difference"],
+        clues:["","","Unilateral hip, knee or SIJ pathology — compare single-leg squat"] },
+    ],
+    grades:["Normal — Neutral lumbar, knee tracking, symmetric","Compensated — Butt-wink or minor valgus without pain","Abnormal — Pain, significant valgus collapse, or lateral shift"],
+  },
+  {
+    id:"lfs_step", icon:"🪜", label:"Step-Up 20cm",
+    subtitle:"Gluteal Activation & Lumbopelvic Stability",
+    phase:"Single-Leg Load / Glute Power",
+    setup:"20cm step. Patient steps up leading with test leg. Trail leg does not push off. Step up + controlled step down × 5 each side. Observe from front.",
+    normalDesc:"Trunk upright, pelvis level throughout, knee tracks over foot, controlled eccentric return. Equal bilateral performance.",
+    svgNormal:(
+      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        {/* Step platform */}
+        <rect x="10" y="76" width="50" height="16" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.5"/>
+        <text x="18" y="88" fontSize="6" fill="#6b7280">20cm step</text>
+        {/* Figure on step — trunk upright */}
+        <circle cx="78" cy="18" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="78" y1="25" x2="78" y2="55" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="78" y1="55" x2="74" y2="76" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="74" y1="76" x2="72" y2="92" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="78" y1="55" x2="82" y2="76" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="82" y1="76" x2="84" y2="92" stroke="#059669" strokeWidth="2.5"/>
+        {/* Pelvis level */}
+        <line x1="68" y1="55" x2="88" y2="55" stroke="#059669" strokeWidth="2.5"/>
+        <text x="60" y="50" fontSize="5.5" fill="#059669">Level ✓</text>
+        {/* Knee arrow upward */}
+        <path d="M74,76 L74,68" stroke="#059669" strokeWidth="1.5" fill="none"/>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">COMPENSATIONS</text>
+        <rect x="10" y="76" width="50" height="16" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.5"/>
+        {/* Trunk lean + pelvic drop */}
+        <circle cx="74" cy="22" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="74" y1="29" x2="68" y2="55" stroke="#dc2626" strokeWidth="2.5"/> {/* lean L */}
+        {/* Pelvic drop R */}
+        <line x1="58" y1="52" x2="80" y2="60" stroke="#dc2626" strokeWidth="2.5"/>
+        <path d="M78,54 L80,62" stroke="#dc2626" strokeWidth="1.5" fill="none"/>
+        <polygon points="76,62 80,66 84,62" fill="#dc2626"/>
+        <line x1="62" y1="52" x2="60" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="60" y1="76" x2="58" y2="92" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="76" y1="60" x2="80" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="80" y1="76" x2="82" y2="92" stroke="#dc2626" strokeWidth="2"/>
+        {/* Knee valgus arrow */}
+        <path d="M62,68 L66,68" stroke="#f97316" strokeWidth="2" fill="none"/>
+        <text x="4" y="96" fontSize="5.5" fill="#dc2626">Trunk lean + pelvic drop</text>
+      </svg>
+    ),
+    observations:[
+      { id:"pelvis",  q:"Pelvic position during step-up?",
+        opts:["✓ Level throughout","⚠ Mild drop (<2cm) on trail side","✗ Clear pelvic drop","✗ Lateral pelvic hitch"],
+        clues:["","Minor glute med fatigue","Glute med weakness stance side — correlate with SLS test","Tensor fascia lata dominance — screen IT band / hip lateral rotators"] },
+      { id:"trunk",   q:"Trunk alignment?",
+        opts:["✓ Upright throughout","⚠ Slight ipsilateral lean","✗ Clear trunk lean to stepping side","✗ Trunk rotation"],
+        clues:["","Minor compensated Trendelenburg","Compensated Trendelenburg — glute med weakness","Rotational instability — assess transversus abdominis, multifidus"] },
+      { id:"knee",    q:"Knee tracking on step-up?",
+        opts:["✓ Over 2nd toe","⚠ Mild medial drift","✗ Valgus collapse on loading"],
+        clues:["","Mild glute med weakness or foot pronation","Dynamic valgus — priority rehab target. VMO + glute med + arch support"] },
+      { id:"control", q:"Eccentric control on step-down?",
+        opts:["✓ Controlled slow descent","⚠ Quick drop / loses control","✗ Trunk sway on descent","✗ Cannot control — uses rail"],
+        clues:["","Eccentric deficit — grade glute/quad strength","Eccentric weakness — deceleration training needed","Significant weakness — formal MMT quadriceps and glutes"] },
+      { id:"sym",     q:"Side-to-side difference?",
+        opts:["✓ Symmetric","⚠ Minor (<10% difference)","✗ Marked difference","✗ Cannot complete one side"],
+        clues:["","","Unilateral weakness — hip, knee or SIJ pathology likely","Significant deficit — full lower limb neurological + strength screen"] },
+    ],
+    grades:["Normal — Level pelvis, upright trunk, knee tracking, symmetric","Compensated — Minor pelvic drop or lean without pain","Abnormal — Pain, clear Trendelenburg, valgus collapse, or asymmetric"],
+  },
+];
+
+function LumbarFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  // Persist to patient data
+  useEffect(() => {
+    const saved = data["lfs_data"];
+    if (saved && typeof saved === "string") {
+      try {
+        const p = JSON.parse(saved);
+        if (p.findings) setFindings(p.findings);
+        if (p.grades) setGrades(p.grades);
+        if (p.notes) setNotes(p.notes);
+      } catch {}
+    }
+  }, []);
+
+  const save = (f, g, n) => {
+    set("lfs_data", JSON.stringify({ findings: f, grades: g, notes: n }));
+  };
+
+  const setObs = (testId, obsId, val) => {
+    const nf = { ...findings, [`${testId}_${obsId}`]: val };
+    setFindings(nf);
+    save(nf, grades, notes);
+  };
+
+  const setGrade = (testId, val) => {
+    const ng = { ...grades, [testId]: val };
+    setGrades(ng);
+    save(findings, ng, notes);
+  };
+
+  const setNote = (testId, val) => {
+    const nn = { ...notes, [testId]: val };
+    setNotes(nn);
+    save(findings, grades, nn);
+  };
+
+  const completedCount = LUMBAR_TESTS.filter(t => grades[t.id]).length;
+
+  const gradeColor = (g) =>
+    g === 0 ? "#059669" : g === 1 ? "#d97706" : g === 2 ? "#dc2626" : C.muted;
+
+  const gradeLabel = (t, g) => t.grades[g] || "";
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,rgba(124,58,237,0.08),rgba(59,130,246,0.05))", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          <span style={{ fontSize: "1.4rem" }}>🦴</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: "0.95rem", color: C.text }}>Lumbar Functional Screen</div>
+            <div style={{ fontSize: "0.68rem", color: C.muted }}>5 movement-based tests · Clinical reasoning for students</div>
+          </div>
+          <div style={{ marginLeft: "auto", textAlign: "right" }}>
+            <div style={{ fontSize: "1.2rem", fontWeight: 900, color: C.accent }}>{completedCount}/5</div>
+            <div style={{ fontSize: "0.58rem", color: C.muted }}>graded</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          {LUMBAR_TESTS.map(t => {
+            const g = grades[t.id];
+            const done = g !== undefined;
+            return (
+              <div key={t.id} onClick={() => setActiveTest(activeTest === t.id ? null : t.id)}
+                style={{ padding: "4px 10px", borderRadius: 20, cursor: "pointer", fontSize: "0.68rem", fontWeight: 700,
+                  border: `1px solid ${activeTest === t.id ? C.accent : done ? gradeColor(g) + "60" : C.border}`,
+                  background: activeTest === t.id ? `${C.accent}12` : done ? `${gradeColor(g)}10` : "transparent",
+                  color: activeTest === t.id ? C.accent : done ? gradeColor(g) : C.muted }}>
+                {t.icon} {t.label} {done ? ["✓","⚠","✗"][g] : ""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Test cards */}
+      {LUMBAR_TESTS.map(t => {
+        const isOpen = activeTest === t.id;
+        const g = grades[t.id];
+        const graded = g !== undefined;
+        return (
+          <div key={t.id} style={{ marginBottom: 10, background: C.surface, borderRadius: 14,
+            border: `1.5px solid ${isOpen ? C.accent : graded ? gradeColor(g) + "50" : C.border}`,
+            overflow: "hidden", boxShadow: isOpen ? "0 4px 16px rgba(124,58,237,0.1)" : "0 1px 4px rgba(0,0,0,0.04)" }}>
+
+            {/* Card header */}
+            <div onClick={() => setActiveTest(isOpen ? null : t.id)}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", cursor: "pointer",
+                borderLeft: `4px solid ${graded ? gradeColor(g) : C.border}` }}>
+              <span style={{ fontSize: "1.4rem", flexShrink: 0 }}>{t.icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: "0.85rem", color: C.text }}>{t.label}</div>
+                <div style={{ fontSize: "0.65rem", color: C.muted }}>{t.subtitle}</div>
+              </div>
+              {graded && (
+                <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: "0.65rem", fontWeight: 800,
+                  background: `${gradeColor(g)}15`, color: gradeColor(g), flexShrink: 0 }}>
+                  {["Normal","Compensated","Abnormal"][g]}
+                </span>
+              )}
+              <span style={{ color: C.muted, fontSize: "0.75rem" }}>{isOpen ? "▲" : "▼"}</span>
+            </div>
+
+            {isOpen && (
+              <div style={{ padding: "0 14px 14px" }}>
+
+                {/* Visual toggle + SVGs */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: "0.68rem", fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.5px" }}>📐 Visual Guide</div>
+                  <button onClick={() => setShowVisual(v => !v)} style={{ fontSize: "0.6rem", padding: "2px 8px", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.muted, cursor: "pointer" }}>
+                    {showVisual ? "Hide" : "Show"}
+                  </button>
+                </div>
+
+                {showVisual && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+                    <div style={{ background: "#ECFDF5", borderRadius: 10, padding: 10, border: "1px solid #A7F3D0" }}>
+                      <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "#059669", marginBottom: 6, textTransform: "uppercase" }}>✓ Normal</div>
+                      {t.svgNormal}
+                      <div style={{ fontSize: "0.62rem", color: "#059669", marginTop: 6, lineHeight: 1.4 }}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{ background: "#FEF2F2", borderRadius: 10, padding: 10, border: "1px solid #FECACA" }}>
+                      <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "#dc2626", marginBottom: 6, textTransform: "uppercase" }}>⚠ Watch For</div>
+                      {t.svgAbnormal}
+                    </div>
+                  </div>
+                )}
+
+                {/* Setup */}
+                <div style={{ background: "#F8F7FF", borderRadius: 9, padding: "9px 11px", marginBottom: 12, border: `1px solid ${C.border}` }}>
+                  <div style={{ fontSize: "0.6rem", fontWeight: 800, color: C.accent, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>🎯 Setup & Procedure</div>
+                  <div style={{ fontSize: "0.75rem", color: C.text, lineHeight: 1.6 }}>{t.setup}</div>
+                  <div style={{ marginTop: 6, padding: "4px 8px", background: `${C.accent}08`, borderRadius: 6, border: `1px solid ${C.accent}20` }}>
+                    <div style={{ fontSize: "0.6rem", fontWeight: 700, color: C.accent }}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+
+                {/* Observation checklist */}
+                <div style={{ fontSize: "0.68rem", fontWeight: 800, color: C.text, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>
+                  👁 What To Observe
+                </div>
+                {t.observations.map(obs => {
+                  const val = findings[`${t.id}_${obs.id}`];
+                  const clue = val !== undefined ? obs.clues[val] : null;
+                  return (
+                    <div key={obs.id} style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: "0.72rem", fontWeight: 700, color: C.text, marginBottom: 5 }}>{obs.q}</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {obs.opts.map((opt, idx) => {
+                          const sel = val === idx;
+                          const isNorm = opt.startsWith("✓");
+                          const isWarn = opt.startsWith("⚠");
+                          const isAbn = opt.startsWith("✗");
+                          const col = isNorm ? "#059669" : isWarn ? "#d97706" : isAbn ? "#dc2626" : C.muted;
+                          return (
+                            <div key={idx} onClick={() => setObs(t.id, obs.id, sel ? undefined : idx)}
+                              style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "7px 10px", borderRadius: 8, cursor: "pointer",
+                                border: `1.5px solid ${sel ? col : C.border}`,
+                                background: sel ? `${col}10` : C.s2, transition: "all 0.12s" }}>
+                              <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${sel ? col : C.border}`,
+                                background: sel ? col : "transparent", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                {sel && <span style={{ fontSize: 8, color: "#fff", fontWeight: 900 }}>✓</span>}
+                              </div>
+                              <span style={{ fontSize: "0.72rem", fontWeight: sel ? 700 : 400, color: sel ? col : C.text, lineHeight: 1.35 }}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && (
+                        <div style={{ marginTop: 5, padding: "6px 10px", background: "rgba(124,58,237,0.06)", borderLeft: `3px solid ${C.accent}`, borderRadius: "0 6px 6px 0", fontSize: "0.68rem", color: C.text, lineHeight: 1.5 }}>
+                          <strong>Clinical note:</strong> {clue}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Grade */}
+                <div style={{ fontSize: "0.68rem", fontWeight: 800, color: C.text, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6, marginTop: 4 }}>
+                  📊 Grade This Test
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+                  {t.grades.map((gLabel, idx) => {
+                    const col = gradeColor(idx);
+                    const sel = g === idx;
+                    return (
+                      <div key={idx} onClick={() => setGrade(t.id, sel ? undefined : idx)}
+                        style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9, cursor: "pointer",
+                          border: `1.5px solid ${sel ? col : C.border}`, background: sel ? `${col}12` : C.s2 }}>
+                        <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${sel ? col : C.border}`,
+                          background: sel ? col : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {sel && <span style={{ fontSize: 9, color: "#fff", fontWeight: 900 }}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{ fontSize: "0.73rem", fontWeight: sel ? 700 : 400, color: sel ? col : C.text }}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Notes */}
+                <div style={{ fontSize: "0.65rem", fontWeight: 700, color: C.muted, marginBottom: 4 }}>Therapist notes</div>
+                <textarea value={notes[t.id] || ""} onChange={e => setNote(t.id, e.target.value)}
+                  placeholder="Clinical observations, patient reports, next steps..."
+                  style={{ width: "100%", background: C.s2, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text,
+                    padding: "8px 10px", fontSize: "0.72rem", fontFamily: "inherit", resize: "vertical", minHeight: 56, outline: "none" }}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Summary */}
+      {completedCount > 0 && (
+        <div style={{ background: "#F8F7FF", borderRadius: 14, padding: 14, border: `1px solid ${C.border}`, marginTop: 4 }}>
+          <div style={{ fontWeight: 800, color: C.text, marginBottom: 10 }}>📋 Screen Summary</div>
+          {LUMBAR_TESTS.filter(t => grades[t.id] !== undefined).map(t => {
+            const g = grades[t.id];
+            const col = gradeColor(g);
+            return (
+              <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: `1px solid ${C.border}` }}>
+                <span style={{ fontSize: "1rem" }}>{t.icon}</span>
+                <span style={{ flex: 1, fontSize: "0.75rem", fontWeight: 600, color: C.text }}>{t.label}</span>
+                <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: "0.65rem", fontWeight: 800, background: `${col}15`, color: col }}>
+                  {["Normal","Compensated","Abnormal"][g]}
+                </span>
+              </div>
+            );
+          })}
+          {Object.values(grades).includes(2) && (
+            <div style={{ marginTop: 10, padding: "8px 10px", background: "#FEF2F2", borderRadius: 8, border: "1px solid #FECACA", fontSize: "0.7rem", color: "#dc2626", lineHeight: 1.5 }}>
+              ⚠ <strong>Abnormal findings present.</strong> Consider: SIJ compression/distraction, FABER/FADIR, hip quadrant, L4/5/S1 myotome testing, and McKenzie directional preference assessment.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN FMA SECTION ─────────────────────────────────────────────────────────
 const FMS_STORAGE_KEY2="fms_clinical_v1";
 function loadFMSReport(){try{return JSON.parse(localStorage.getItem(FMS_STORAGE_KEY2)||"{}");}catch{return{};}}
 function saveFMSReport(r){try{localStorage.setItem(FMS_STORAGE_KEY2,JSON.stringify(r));}catch{}}
 
-function FMASection({ navContext={} }){
+function FMASection({ navContext={}, data={}, set=()=>{} }){
     const [selectedTests,setSelectedTests]=useState(()=>{
     const saved=loadFMSReport();
     return Object.keys(saved).length>0?Object.keys(saved):[];
@@ -8211,13 +8810,18 @@ function FMASection({ navContext={} }){
 
       {/* Tab nav */}
       <div style={{display:"flex",gap:5,marginBottom:12}}>
-        {[["select","🗂 Select Tests"],["test","🔍 Assess"],["report","📋 Report"]].map(([k,l])=>(
+        {[["select","🗂 Select Tests"],["test","🔍 Assess"],["report","📋 Report"],["lumbar","🦴 Lumbar Screen"]].map(([k,l])=>(
           <button key={k} type="button" onClick={()=>setActiveSection(k)}
             style={{flex:1,padding:"8px 4px",borderRadius:9,border:`1px solid ${activeSection===k?C.accent:C.border}`,background:activeSection===k?"rgba(0,229,255,0.1)":"transparent",color:activeSection===k?C.accent:C.muted,fontSize:"0.75rem",fontWeight:activeSection===k?700:500,cursor:"pointer"}}>
             {l}
           </button>
         ))}
       </div>
+
+      {/* ── LUMBAR FUNCTIONAL SCREEN ── */}
+      {activeSection==="lumbar"&&(
+        <LumbarFunctionalScreen data={data} set={set}/>
+      )}
 
       {/* ── SELECT TESTS VIEW ── */}
       {activeSection==="select"&&(
