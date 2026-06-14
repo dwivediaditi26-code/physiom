@@ -17669,7 +17669,7 @@ function AppInner({ currentUser, onSignOut }) {
                     </div>
                   );
                 })()}
-                <FMASection data={data} set={set} navContext={active==="fma"?navContext:{}}/>
+                <FMASection data={data} set={set} navTo={navTo} navContext={active==="fma"?navContext:{}}/>
                 </>
               ):tests==="FASCIA_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}

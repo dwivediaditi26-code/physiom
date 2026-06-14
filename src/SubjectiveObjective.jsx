@@ -9274,7 +9274,7 @@ function ShoulderFunctionalScreen({ data, set }) {
 
 // ─── FUNCTIONAL SCREEN HUB ───────────────────────────────────────────────────
 
-function FunctionalScreenHub({ data, set }) {
+function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
   const [region, setRegion] = useState("lumbar");
   const regions = [
     { id:"lumbar",   label:"Lumbar",   icon:"🦴", color:"#7c3aed" },
@@ -9299,6 +9299,20 @@ function FunctionalScreenHub({ data, set }) {
       </div>
       {region === "lumbar"   && <LumbarFunctionalScreen   data={data} set={set}/>}
       {region === "shoulder" && <ShoulderFunctionalScreen data={data} set={set}/>}
+
+      {/* Quick navigation */}
+      <div style={{ display:"flex", gap:8, marginTop:16 }}>
+        <button type="button" onClick={()=>navTo("overview")}
+          style={{ flex:1, padding:"10px 4px", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:"0.78rem", fontFamily:"inherit",
+            border:`1px solid ${C.border}`, background:C.s2, color:C.muted }}>
+          👤 Patient Profile
+        </button>
+        <button type="button" onClick={()=>navTo("soap")}
+          style={{ flex:1, padding:"10px 4px", borderRadius:10, cursor:"pointer", fontWeight:800, fontSize:"0.78rem", fontFamily:"inherit",
+            border:"none", background:`linear-gradient(135deg,${C.accent},${C.a2})`, color:"#fff" }}>
+          📋 Go to SOAP →
+        </button>
+      </div>
     </div>
   );
 }
@@ -9308,7 +9322,7 @@ const FMS_STORAGE_KEY2="fms_clinical_v1";
 function loadFMSReport(){try{return JSON.parse(localStorage.getItem(FMS_STORAGE_KEY2)||"{}");}catch{return{};}}
 function saveFMSReport(r){try{localStorage.setItem(FMS_STORAGE_KEY2,JSON.stringify(r));}catch{}}
 
-function FMASection({ navContext={}, data={}, set=()=>{} }){
+function FMASection({ navContext={}, data={}, set=()=>{}, navTo=()=>{} }){
     const [selectedTests,setSelectedTests]=useState(()=>{
     const saved=loadFMSReport();
     return Object.keys(saved).length>0?Object.keys(saved):[];
@@ -9416,7 +9430,7 @@ function FMASection({ navContext={}, data={}, set=()=>{} }){
 
       {/* ── FUNCTIONAL SCREEN (region selector) ── */}
       {activeSection==="lumbar"&&(
-        <FunctionalScreenHub data={data} set={set}/>
+        <FunctionalScreenHub data={data} set={set} navTo={navTo}/>
       )}
 
       {/* ── SELECT TESTS VIEW ── */}
