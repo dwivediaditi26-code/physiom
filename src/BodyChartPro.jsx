@@ -553,6 +553,16 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
   const [drawStart, setDrawStart]       = useState(null);   // {x,y} SVG coords
   const [drawPreview, setDrawPreview]   = useState(null);   // {x1,y1,x2,y2} live preview
   const svgRef = useRef(null);
+  const panelRef = useRef(null);
+
+  // Auto-scroll panel into view on mobile when a region is selected
+  React.useEffect(() => {
+    if (activePanel && panelRef.current) {
+      setTimeout(() => {
+        panelRef.current.scrollIntoView({ behavior:"smooth", block:"nearest" });
+      }, 50);
+    }
+  }, [activePanel]);
 
   const getSVGXY = (e) => {
     const svg = svgRef.current;
@@ -966,7 +976,7 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
 
       {/* Symptom panel — rendered BELOW chart to avoid covering body image */}
       {activePanel && !adminMode && (
-        <div style={{ marginTop:10, borderRadius:14, border:"1.5px solid #e5e7eb",
+        <div ref={panelRef} style={{ marginTop:10, borderRadius:14, border:"1.5px solid #e5e7eb",
           overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.10)" }}>
           <SymptomPanel
             region={getRegion(activePanel)}
