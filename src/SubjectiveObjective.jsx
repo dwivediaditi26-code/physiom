@@ -9272,6 +9272,487 @@ function ShoulderFunctionalScreen({ data, set }) {
   );
 }
 
+// ─── HIP FUNCTIONAL SCREEN ────────────────────────────────────────────────────
+
+const HIP_TESTS = [
+  {
+    id:"hfs_sls", icon:"🦵", label:"Single Leg Squat",
+    subtitle:"Glute Med / Dynamic Valgus / Pelvic Control",
+    phase:"Frontal Plane Stability — Primary Hip Screen",
+    setup:"Patient stands on one leg, arms crossed. Slowly squat to ~60° knee flexion, return. × 5 each side. Observe from front and behind.",
+    normalDesc:"Pelvis level or slight contralateral hike, knee tracks over 2nd toe, trunk upright, controlled throughout. No hip drop or valgus.",
+    svgNormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        <circle cx="55" cy="18" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="55" y1="25" x2="55" y2="55" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="42" y1="55" x2="68" y2="55" stroke="#059669" strokeWidth="3"/>
+        <line x1="48" y1="55" x2="44" y2="80" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="44" y1="80" x2="44" y2="95" stroke="#059669" strokeWidth="2"/>
+        <line x1="62" y1="55" x2="66" y2="74" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="66" y1="74" x2="60" y2="60" stroke="#059669" strokeWidth="2"/>
+        <text x="14" y="58" fontSize="5.5" fill="#059669">Level ✓</text>
+        <text x="14" y="96" fontSize="6" fill="#059669">Knee over toe · pelvis level</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">VALGUS COLLAPSE</text>
+        <circle cx="58" cy="18" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="58" y1="25" x2="52" y2="55" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="38" y1="53" x2="64" y2="59" stroke="#dc2626" strokeWidth="3"/>
+        <path d="M36,51 L30,58" stroke="#dc2626" strokeWidth="2" fill="none"/>
+        <polygon points="28,57 30,62 34,58" fill="#dc2626"/>
+        <text x="4" y="56" fontSize="5" fill="#dc2626">Drop</text>
+        <line x1="46" y1="53" x2="54" y2="78" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="54" y1="78" x2="48" y2="95" stroke="#dc2626" strokeWidth="2"/>
+        <path d="M54,70 L62,68" stroke="#f97316" strokeWidth="2" fill="none"/>
+        <polygon points="62,66 66,68 62,70" fill="#f97316"/>
+        <text x="68" y="71" fontSize="5" fill="#f97316">Valgus</text>
+        <text x="4" y="100" fontSize="5.5" fill="#dc2626">Pelvic drop + knee valgus</text>
+      </svg>
+    ),
+    observations:[
+      { id:"pelvis", q:"Pelvic position during squat?",
+        opts:["✓ Level or slight contralateral hike","⚠ Mild ipsilateral drop (<2cm)","✗ Clear Trendelenburg drop","✗ Pelvic rotation (trunk twist)"],
+        clues:["","Minor glute med fatigue — compare sides and endurance","Glute med weakness stance side — confirm with hip abductor MMT at 0° and sidelying","Rotational instability — assess multifidus and oblique activation"] },
+      { id:"knee",   q:"Knee tracking?",
+        opts:["✓ Over 2nd toe throughout","⚠ Mild medial drift at depth","✗ Clear valgus from initiation","✗ Lateral thrust"],
+        clues:["","Minor glute med weakness or foot pronation — monitor bilaterally","Dynamic valgus — priority rehab: glute med, glute max, VMO activation. Assess foot pronation","Lateral compartment OA or LCL laxity possible — do varus stress test"] },
+      { id:"trunk",  q:"Trunk alignment?",
+        opts:["✓ Upright midline","⚠ Ipsilateral trunk lean","✗ Clear compensated Trendelenburg lean","✗ Forward trunk collapse"],
+        clues:["","Minor glute med compensation — common in early weakness","Classic Duchenne — trunk shifts ipsilateral to unload weak glute med","Hip flexor weakness or fear-avoidance — assess hip flexor MMT and pain behaviour"] },
+      { id:"depth",  q:"Depth achieved?",
+        opts:["✓ 60°+ knee flexion controlled","⚠ Limited depth (<45°)","✗ Collapses before depth"],
+        clues:["","Hip flexor tightness, hip joint restriction or pain — FADIR screen","Pain-limited or strength-limited — determine which: if pain stops before strength fails = likely hip joint / labral"] },
+      { id:"pain",   q:"Pain during single leg squat?",
+        opts:["✓ No pain","⚠ Lateral hip / gluteal pain","⚠ Groin / anterior hip pain","✗ Knee medial pain"],
+        clues:["","Greater trochanteric bursitis / glute med tendinopathy — do lateral hip palpation and Ober test","Hip joint pathology / labral tear — do FADIR, FABER, hip quadrant test","Medial knee overload secondary to valgus — screen PF joint + MCL"] },
+    ],
+    grades:["Normal — Level pelvis, knee tracking, controlled to depth","Compensated — Minor pelvic drop or mild valgus without pain","Abnormal — Trendelenburg, valgus collapse, pain, or cannot complete"],
+  },
+  {
+    id:"hfs_hinge", icon:"⚽", label:"Hip Hinge Pattern",
+    subtitle:"Posterior Chain Length + Glute Max Activation",
+    phase:"Sagittal Hip Mobility / Posterior Chain",
+    setup:"Standing, feet hip-width, slight knee bend. Patient hinges at hips pushing glutes back (deadlift start position). Spine neutral. Reach fingertips toward floor. Assess spinal position and depth. × 3.",
+    normalDesc:"Spine neutral throughout, 70–90° hip flexion, hamstring stretch felt, glutes loaded, no lumbar flexion to achieve depth.",
+    svgNormal:(
+      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        <circle cx="28" cy="16" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="28" y1="22" x2="28" y2="52" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="28" y1="52" x2="22" y2="78" stroke="#059669" strokeWidth="2"/>
+        <line x1="28" y1="52" x2="34" y2="78" stroke="#059669" strokeWidth="2"/>
+        <text x="14" y="92" fontSize="5.5" fill="#059669">Standing</text>
+        <circle cx="82" cy="24" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="82" y1="30" x2="70" y2="54" stroke="#059669" strokeWidth="2.5"/>
+        <path d="M70,54 Q66,52 64,48" stroke="#059669" strokeWidth="1.5" fill="none" strokeDasharray="2,2"/>
+        <line x1="70" y1="54" x2="64" y2="76" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="64" y1="76" x2="64" y2="94" stroke="#059669" strokeWidth="2"/>
+        <line x1="70" y1="54" x2="80" y2="76" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="80" y1="76" x2="80" y2="94" stroke="#059669" strokeWidth="2"/>
+        <text x="88" y="42" fontSize="5.5" fill="#059669">Neutral</text>
+        <text x="88" y="48" fontSize="5.5" fill="#059669">spine ✓</text>
+        <path d="M82,30 Q88,38 88,44" stroke="#059669" strokeWidth="1" fill="none" strokeDasharray="2,2"/>
+        <text x="50" y="100" fontSize="5.5" fill="#059669">Hip hinge</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">LUMBAR DOMINANT</text>
+        <circle cx="70" cy="24" r="6" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <path d="M70,30 Q62,44 58,54" stroke="#dc2626" strokeWidth="2.5" fill="none"/>
+        <line x1="58" y1="54" x2="54" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="54" y1="76" x2="54" y2="94" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="58" y1="54" x2="68" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="68" y1="76" x2="68" y2="94" stroke="#dc2626" strokeWidth="2"/>
+        <path d="M70,30 Q78,40 76,52" stroke="#f97316" strokeWidth="2" fill="none"/>
+        <text x="78" y="44" fontSize="5.5" fill="#f97316">Lumbar</text>
+        <text x="78" y="50" fontSize="5.5" fill="#f97316">flexes ✗</text>
+        <path d="M44,44 L36,44" stroke="#dc2626" strokeWidth="2" fill="none"/>
+        <polygon points="36,42 32,44 36,46" fill="#dc2626"/>
+        <text x="4" y="44" fontSize="5" fill="#dc2626">Rounds</text>
+        <text x="28" y="100" fontSize="5.5" fill="#dc2626">Lumbar rounds — hip inflexibility</text>
+      </svg>
+    ),
+    observations:[
+      { id:"spine",  q:"Lumbar spine position at depth?",
+        opts:["✓ Neutral throughout","⚠ Slight loss of neutral at full depth","✗ Lumbar flexion throughout","✗ Hyper-extends lumbar (anterior tilt)"],
+        clues:["","Minor hamstring or posterior chain restriction — monitor with flexibility work","Hamstring / posterior chain restriction forcing lumbar flexion substitution. Key disc loading pattern — clinical priority","Lumbar extensor dominance — posterior pelvic tilt mobility exercises needed. Screen for anterior hip tightness"] },
+      { id:"depth",  q:"Hip flexion depth achieved?",
+        opts:["✓ 70°+ (good posterior chain length)","⚠ 45–70° (mild restriction)","✗ <45° (significant restriction)"],
+        clues:["","Moderate hamstring or hip capsule restriction — Thomas test + passive SLR","Significant posterior chain restriction — do SLR, Thomas test, hip joint quadrant test to differentiate hamstring vs capsule"] },
+      { id:"shift",  q:"Weight distribution / lateral shift?",
+        opts:["✓ Symmetric bilateral","⚠ Slight lateral shift","✗ Clear shift to one side"],
+        clues:["","Monitor — possible hip asymmetry","Unilateral hip joint restriction or SIJ dysfunction — compare FABER/FADIR bilaterally"] },
+      { id:"kb",     q:"Knee position throughout?",
+        opts:["✓ Slight flex maintained","⚠ Knees straighten excessively","✗ Valgus during hinge"],
+        clues:["","Hamstring dominant strategy — cueing needed for hip hinge","Dynamic valgus even in hinge position — significant glute med weakness. Priority in rehab"] },
+      { id:"pain",   q:"Pain during hip hinge?",
+        opts:["✓ No pain","⚠ Posterior thigh (hamstring)","⚠ Groin / anterior hip","✗ Lumbar pain"],
+        clues:["","Hamstring tightness or proximal hamstring tendinopathy — palpate ischial tuberosity","Anterior hip impingement during flexion — FAI screen (FADIR), hip quadrant test","Lumbar loading — disc or facet sensitisation. Reduce range and assess centralisation"] },
+    ],
+    grades:["Normal — Neutral spine, 70°+ hip flexion, symmetric","Compensated — Slight loss of neutral at end range only","Abnormal — Lumbar dominant, <45° depth, pain, or lateral shift"],
+  },
+  {
+    id:"hfs_ext", icon:"🏊", label:"Prone Hip Extension",
+    subtitle:"Glute Max Firing Pattern + Lumbar Compensation",
+    phase:"Posterior Chain Motor Control (Janda)",
+    setup:"Patient prone. Hip neutral, knee straight. Slowly lift one leg off table ~10–15cm. Observe firing sequence: Glute max → Hamstring → Contralateral erector. Repeat × 3 each side. Therapist palpates glute max and hamstring.",
+    normalDesc:"Glute max fires FIRST (palpable), then hamstring, then erector. Pelvis stays level. No lumbar rotation to initiate extension.",
+    svgNormal:(
+      <svg viewBox="0 0 130 100" style={{width:"100%",maxWidth:130}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL SEQUENCE</text>
+        <rect x="8" y="52" width="115" height="6" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1"/>
+        <text x="14" y="62" fontSize="5" fill="#6b7280">table</text>
+        <circle cx="28" cy="38" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="28" y1="44" x2="68" y2="52" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="68" y1="52" x2="110" y2="50" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="110" y1="50" x2="120" y2="38" stroke="#059669" strokeWidth="2.5"/>
+        <circle cx="76" cy="50" r="5" fill="#059669" opacity="0.2" stroke="#059669" strokeWidth="1.5"/>
+        <text x="72" y="48" fontSize="5.5" fill="#059669" fontWeight="bold">1</text>
+        <text x="64" y="44" fontSize="5" fill="#059669">Glute</text>
+        <circle cx="96" cy="50" r="5" fill="#d97706" opacity="0.2" stroke="#d97706" strokeWidth="1.5"/>
+        <text x="92" y="48" fontSize="5.5" fill="#d97706" fontWeight="bold">2</text>
+        <text x="88" y="44" fontSize="5" fill="#d97706">Hamst</text>
+        <text x="50" y="96" fontSize="6" fill="#059669">Glute(1) → Hamstring(2) → Erector(3)</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 130 100" style={{width:"100%",maxWidth:130}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">ABNORMAL — GLUTE INHIBITED</text>
+        <rect x="8" y="52" width="115" height="6" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1"/>
+        <circle cx="28" cy="38" r="6" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="28" y1="44" x2="68" y2="52" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="68" y1="52" x2="110" y2="48" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="110" y1="48" x2="120" y2="36" stroke="#dc2626" strokeWidth="2.5"/>
+        <circle cx="76" cy="51" r="5" fill="#dc2626" opacity="0.2" stroke="#dc2626" strokeWidth="1.5"/>
+        <text x="72" y="49" fontSize="5.5" fill="#dc2626" fontWeight="bold">✗</text>
+        <text x="64" y="44" fontSize="5" fill="#dc2626">No glute</text>
+        <circle cx="92" cy="50" r="5" fill="#f97316" opacity="0.2" stroke="#f97316" strokeWidth="1.5"/>
+        <text x="88" y="48" fontSize="5.5" fill="#f97316" fontWeight="bold">1</text>
+        <text x="84" y="44" fontSize="5" fill="#f97316">Hamst</text>
+        <path d="M28,46 L28,55" stroke="#dc2626" strokeWidth="1.5" strokeDasharray="2,2"/>
+        <text x="4" y="76" fontSize="5.5" fill="#dc2626">Lumbar rotation to initiate</text>
+        <text x="4" y="96" fontSize="5.5" fill="#dc2626">Hamstring dominant = Janda LCS</text>
+      </svg>
+    ),
+    observations:[
+      { id:"seq",    q:"Glute max firing sequence?",
+        opts:["✓ Glute fires first (palpable)","⚠ Glute and hamstring fire simultaneously","✗ Hamstring fires first — glute delayed","✗ No palpable glute max contraction"],
+        clues:["","Minor sequencing issue — monitor under load","Classic Janda Lower Crossed Syndrome pattern. Hamstring overactive, glute max inhibited. Priority: glute max activation (bridging, clamshell)","Significant glute max inhibition — likely pain inhibition or Janda LCS. Check for hip flexor tightness (Thomas test) and lumbar extension pain"] },
+      { id:"lumbar", q:"Lumbar/pelvic movement to initiate?",
+        opts:["✓ Pelvis stays level","⚠ Slight lumbar extension","✗ Clear lumbar rotation","✗ Anterior pelvic tilt / hyperlordosis"],
+        clues:["","Minor — cue neutral spine","Substitution for glute max — reduce range until glute activates","Classic LCS compensation — assess hip flexor length. Tight iliopsoas anteriorly tilts pelvis, inhibits glute max"] },
+      { id:"sym",    q:"Bilateral comparison?",
+        opts:["✓ Symmetric sequence both sides","⚠ Minor asymmetry","✗ Clear unilateral glute inhibition","✗ Unable to complete one side due to pain"],
+        clues:["","Monitor under loading","Unilateral glute inhibition — likely same-side hip flexor tightness or pain inhibition from SIJ/hip joint","Pain-inhibited — assess SIJ and hip joint before loading"] },
+      { id:"strength",q:"Perceived glute contraction strength?",
+        opts:["✓ Strong contraction felt","⚠ Mild contraction — fatigues quickly","✗ Very weak — barely palpable","✗ No contraction detected"],
+        clues:["","Glute endurance deficit — progressive loading needed","Glute max grade 3–4/5 weakness — formal MMT and loading progression","Severe glute max weakness — screen L5/S1 myotome, piriformis, and SIJ"] },
+      { id:"pain",   q:"Pain during prone extension?",
+        opts:["✓ No pain","⚠ Posterior hip / SIJ","⚠ Anterior hip / groin","✗ Lumbar pain"],
+        clues:["","SIJ provocation — do Gillet test, SIJ compression/distraction","Hip joint or anterior labrum — FADIR test","Facet joint or disc sensitisation — reduce range, assess prone instability"] },
+    ],
+    grades:["Normal — Glute first, level pelvis, strong contraction, symmetric","Compensated — Simultaneous or minor delay, no pain","Abnormal — Hamstring dominant, lumbar rotation, pain, or absent glute"],
+  },
+  {
+    id:"hfs_rot", icon:"🔄", label:"Seated Hip Rotation",
+    subtitle:"Hip IR/ER Range — FAI + Capsular Screen",
+    phase:"Hip Joint Mobility / Capsular Pattern",
+    setup:"Patient seated at edge of table, hip at 90°. Let foot swing medially (ER) then laterally (IR). Assess range. Normal IR 30–40°, ER 40–60°. Compare bilaterally.",
+    normalDesc:"IR 30–40°, ER 40–60°. Equal bilateral. No end-range pain. Pain or restriction = capsular pattern or FAI.",
+    svgNormal:(
+      <svg viewBox="0 0 130 100" style={{width:"100%",maxWidth:130}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL RANGES</text>
+        <circle cx="65" cy="28" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="65" y1="35" x2="65" y2="60" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="50" y1="60" x2="80" y2="60" stroke="#059669" strokeWidth="3"/>
+        <line x1="65" y1="60" x2="65" y2="90" stroke="#059669" strokeWidth="2.5"/>
+        <path d="M65,90 Q52,85 48,78" stroke="#059669" strokeWidth="2" fill="none"/>
+        <path d="M65,90 Q78,85 82,78" stroke="#059669" strokeWidth="2" fill="none"/>
+        <text x="24" y="80" fontSize="6" fill="#059669" fontWeight="bold">ER 45°</text>
+        <text x="82" y="80" fontSize="6" fill="#059669" fontWeight="bold">IR 35°</text>
+        <text x="55" y="95" fontSize="5.5" fill="#059669">Normal bilateral</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 130 100" style={{width:"100%",maxWidth:130}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">RESTRICTION PATTERNS</text>
+        <circle cx="65" cy="26" r="7" fill="none" stroke="#6b7280" strokeWidth="2"/>
+        <line x1="65" y1="33" x2="65" y2="55" stroke="#6b7280" strokeWidth="2.5"/>
+        <line x1="50" y1="55" x2="80" y2="55" stroke="#6b7280" strokeWidth="3"/>
+        <line x1="65" y1="55" x2="65" y2="82" stroke="#6b7280" strokeWidth="2.5"/>
+        <path d="M65,82 Q56,78 54,72" stroke="#059669" strokeWidth="2" fill="none"/>
+        <text x="28" y="74" fontSize="5.5" fill="#059669">ER ok</text>
+        <path d="M65,82 Q68,76 68,70" stroke="#dc2626" strokeWidth="2.5" fill="none"/>
+        <text x="70" y="72" fontSize="5.5" fill="#dc2626">IR ✗</text>
+        <text x="4" y="90" fontSize="5" fill="#dc2626">IR loss = posterior capsule / FAI</text>
+        <text x="4" y="100" fontSize="5" fill="#f97316">Bilateral IR loss = OA pattern</text>
+      </svg>
+    ),
+    observations:[
+      { id:"ir",     q:"Internal rotation range?",
+        opts:["✓ 30–40° (normal)","⚠ 20–29° (mildly restricted)","✗ <20° (significant restriction)","✗ Painful before end range"],
+        clues:["","Minor posterior capsule tightness or early FAI — FADIR test","Significant IR restriction: posterior capsule (GIRD equivalent at hip) or FAI. Screen FADIR, hip quadrant. Cam or pincer FAI most restricted in IR","Pain before end-range in IR = FAI or early hip OA — refer for imaging if bilateral"] },
+      { id:"er",     q:"External rotation range?",
+        opts:["✓ 40–60° (normal)","⚠ 30–39° (mildly restricted)","✗ <30° (significant restriction)","✗ Bilateral equal restriction"],
+        clues:["","Minor anterior capsule tightness","Anterior capsule or iliopsoas tightness — do Thomas test + passive ER in supine","Bilateral equal restriction — capsular pattern of hip OA (most loss in IR/flex/abd then ER/ext). Refer for imaging if >50yo"] },
+      { id:"sym",    q:"Side-to-side symmetry?",
+        opts:["✓ Symmetric (within 10°)","⚠ 10–20° asymmetry","✗ >20° clear asymmetry","✗ Unilateral end-range pain"],
+        clues:["","Monitor — may be positional or bony asymmetry","Unilateral restriction suggests joint, labral or capsular pathology on restricted side","Unilateral pain at end-range = labral, FAI or early OA — FADIR provocation test"] },
+      { id:"pain",   q:"Pain provocation during rotation?",
+        opts:["✓ No pain","⚠ Anterior groin pain at end IR","⚠ Posterior hip pain at end ER","✗ Pain and apprehension — instability"],
+        clues:["","Classic FAI / labral impingement sign in IR — do FADIR (flexion, adduction, IR) test next","Posterior capsule or external rotator pain — piriformis / external rotator screen, FABER test","Posterior instability pattern — do posterior hip instability tests"] },
+      { id:"oa",     q:"Quality of end-feel?",
+        opts:["✓ Soft tissue / firm (normal)","⚠ Firm and early","✗ Hard (bony) end-feel","✗ Springy / empty end-feel"],
+        clues:["","","Osteophyte or bony restriction — hip OA likely. Confirm with FABER range and X-ray correlation","Labral or intra-articular — log-roll test, hip quadrant (scouring) test"] },
+    ],
+    grades:["Normal — IR 30–40°, ER 40–60°, symmetric, pain-free","Compensated — Minor restriction without pain, within 10° bilaterally","Abnormal — Pain, >20° asymmetry, bony end-feel, or restricted bilateral"],
+  },
+  {
+    id:"hfs_step", icon:"🪜", label:"Lateral Step Down",
+    subtitle:"Eccentric Glute Med — Frontal Plane Deceleration",
+    phase:"Hip Abductor Eccentric Control",
+    setup:"Patient stands sideways on 20cm step, arms crossed. Slowly lower unsupported leg toward floor (eccentric control × 5). Observe pelvic stability, knee tracking. Both sides.",
+    normalDesc:"Pelvis stays level or rises slightly on lowering side. Knee tracks over 2nd toe. Slow controlled descent. No trunk sway.",
+    svgNormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
+        <rect x="20" y="76" width="70" height="14" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.5"/>
+        <text x="34" y="87" fontSize="5.5" fill="#6b7280">Step (20cm)</text>
+        <circle cx="55" cy="20" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
+        <line x1="55" y1="27" x2="55" y2="57" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="40" y1="57" x2="70" y2="57" stroke="#059669" strokeWidth="3"/>
+        <text x="14" y="60" fontSize="5.5" fill="#059669">Level ✓</text>
+        <line x1="48" y1="57" x2="46" y2="76" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="46" y1="76" x2="46" y2="90" stroke="#059669" strokeWidth="2"/>
+        <line x1="62" y1="57" x2="64" y2="76" stroke="#059669" strokeWidth="2.5"/>
+        <line x1="64" y1="76" x2="72" y2="90" stroke="#059669" strokeWidth="2"/>
+        <text x="12" y="100" fontSize="5.5" fill="#059669">Controlled descent</text>
+      </svg>
+    ),
+    svgAbnormal:(
+      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
+        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">PELVIC DROP</text>
+        <rect x="20" y="76" width="70" height="14" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.5"/>
+        <circle cx="58" cy="20" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="58" y1="27" x2="52" y2="57" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="36" y1="54" x2="66" y2="62" stroke="#dc2626" strokeWidth="3"/>
+        <path d="M34,56 L30,64" stroke="#dc2626" strokeWidth="2" fill="none"/>
+        <polygon points="28,63 30,68 34,64" fill="#dc2626"/>
+        <text x="4" y="60" fontSize="5" fill="#dc2626">Drop</text>
+        <line x1="44" y1="54" x2="48" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="48" y1="76" x2="42" y2="90" stroke="#dc2626" strokeWidth="2"/>
+        <line x1="62" y1="62" x2="68" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
+        <line x1="68" y1="76" x2="76" y2="90" stroke="#dc2626" strokeWidth="2"/>
+        <path d="M48,68 L54,66" stroke="#f97316" strokeWidth="1.5" fill="none"/>
+        <text x="56" y="68" fontSize="5" fill="#f97316">Valgus</text>
+        <text x="4" y="100" fontSize="5.5" fill="#dc2626">Drop + valgus = glute med deficit</text>
+      </svg>
+    ),
+    observations:[
+      { id:"pelvis", q:"Pelvic control during descent?",
+        opts:["✓ Level throughout descent","⚠ Mild drop at end range only","✗ Drop immediately on loading","✗ Trunk compensates (ipsilateral lean)"],
+        clues:["","Glute med endurance deficit — eccentric strengthening","Significant glute med weakness — priority. Confirm with MMT sidelying hip abduction","Compensated Trendelenburg — trunk offloads hip abductor demand. More severe than apparent. Assess MMT with trunk stabilised"] },
+      { id:"knee",   q:"Knee tracking on step leg?",
+        opts:["✓ Over 2nd toe throughout","⚠ Mild medial drift","✗ Clear valgus collapse","✗ Lateral thrust"],
+        clues:["","Minor glute med / VMO ratio — monitor","Dynamic valgus — foot pronation screen + hip abductor / external rotator MMT","Lateral compartment / LCL — do varus stress test"] },
+      { id:"speed",  q:"Speed of descent control?",
+        opts:["✓ Slow and controlled","⚠ Slightly fast but recovers","✗ Drops uncontrolled","✗ Cannot complete movement"],
+        clues:["","Minor eccentric deficit","Significant eccentric weakness — nordic-type progression for glute med. Assess hip abductor MMT grade","Severe weakness — formal hip abductor + hip extensor MMT, neurological screen L5"] },
+      { id:"sym",    q:"Side-to-side difference?",
+        opts:["✓ Symmetric","⚠ Minor difference","✗ Clear asymmetry","✗ One side unable to control"],
+        clues:["","Monitor","Unilateral deficit — hip pathology or SIJ dysfunction on weaker side","Significant unilateral weakness — screen for L5 myotome weakness, hip OA, or post-surgical inhibition"] },
+      { id:"pain",   q:"Pain during lateral step down?",
+        opts:["✓ No pain","⚠ Lateral hip pain","⚠ Groin / anterior hip","✗ Medial knee pain"],
+        clues:["","Greater trochanteric bursitis or glute med tendinopathy — palpate GT, Ober test","Hip joint loading — FADIR, hip quadrant, labral screen","Medial knee overload from dynamic valgus — PF joint + MCL assessment"] },
+    ],
+    grades:["Normal — Level pelvis, knee tracking, controlled descent","Compensated — Minor drop at depth or mild valgus","Abnormal — Pelvic drop on loading, valgus collapse, pain, or cannot complete"],
+  },
+];
+
+function HipFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  useEffect(() => {
+    const saved = data["hfs_data"];
+    if (saved && typeof saved === "string") {
+      try {
+        const p = JSON.parse(saved);
+        if (p.findings) setFindings(p.findings);
+        if (p.grades)   setGrades(p.grades);
+        if (p.notes)    setNotes(p.notes);
+      } catch {}
+    }
+  }, []);
+
+  const save = (f, g, n) => set("hfs_data", JSON.stringify({ findings: f, grades: g, notes: n }));
+  const setObs = (tid, oid, val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
+  const setGrade = (tid, val) => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
+  const setNote = (tid, val) => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
+
+  const completedCount = HIP_TESTS.filter(t => grades[t.id] !== undefined).length;
+  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":g===2?"#dc2626":C.muted;
+
+  return (
+    <div>
+      <div style={{ background:"linear-gradient(135deg,rgba(217,70,239,0.08),rgba(124,58,237,0.05))", border:"1px solid rgba(217,70,239,0.22)", borderRadius:14, padding:"14px 16px", marginBottom:14 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
+          <span style={{ fontSize:"1.4rem" }}>🦷</span>
+          <div>
+            <div style={{ fontWeight:800, fontSize:"0.95rem", color:C.text }}>Hip Functional Screen</div>
+            <div style={{ fontSize:"0.68rem", color:C.muted }}>5 tests · Glute med/max · FAI screen · Motor control · Student guide</div>
+          </div>
+          <div style={{ marginLeft:"auto", textAlign:"right" }}>
+            <div style={{ fontSize:"1.2rem", fontWeight:900, color:"#d946ef" }}>{completedCount}/5</div>
+            <div style={{ fontSize:"0.58rem", color:C.muted }}>graded</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+          {HIP_TESTS.map(t => {
+            const g = grades[t.id]; const done = g !== undefined;
+            return (
+              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
+                style={{ padding:"4px 10px", borderRadius:20, cursor:"pointer", fontSize:"0.68rem", fontWeight:700,
+                  border:`1px solid ${activeTest===t.id?"#d946ef":done?gradeColor(g)+"60":C.border}`,
+                  background:activeTest===t.id?"rgba(217,70,239,0.1)":done?`${gradeColor(g)}10`:"transparent",
+                  color:activeTest===t.id?"#d946ef":done?gradeColor(g):C.muted }}>
+                {t.icon} {t.label.split(" ").slice(0,2).join(" ")} {done?["✓","⚠","✗"][g]:""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {HIP_TESTS.map(t => {
+        const isOpen = activeTest===t.id; const g = grades[t.id]; const graded = g !== undefined;
+        return (
+          <div key={t.id} style={{ marginBottom:10, background:C.surface, borderRadius:14,
+            border:`1.5px solid ${isOpen?"#d946ef":graded?gradeColor(g)+"50":C.border}`,
+            overflow:"hidden", boxShadow:isOpen?"0 4px 16px rgba(217,70,239,0.08)":"0 1px 4px rgba(0,0,0,0.04)" }}>
+
+            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
+              style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", cursor:"pointer", borderLeft:`4px solid ${graded?gradeColor(g):C.border}` }}>
+              <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
+                <div style={{ fontSize:"0.65rem", color:C.muted }}>{t.subtitle}</div>
+              </div>
+              {graded && <span style={{ padding:"3px 10px", borderRadius:20, fontSize:"0.65rem", fontWeight:800, background:`${gradeColor(g)}15`, color:gradeColor(g), flexShrink:0 }}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
+            </div>
+
+            {isOpen && (
+              <div style={{ padding:"0 14px 14px" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                  <div style={{ fontSize:"0.68rem", fontWeight:700, color:"#d946ef", textTransform:"uppercase", letterSpacing:"0.5px" }}>📐 Visual Guide</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{ fontSize:"0.6rem", padding:"2px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:"transparent", color:C.muted, cursor:"pointer" }}>{showVisual?"Hide":"Show"}</button>
+                </div>
+
+                {showVisual && (
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
+                    <div style={{ background:"#ECFDF5", borderRadius:10, padding:10, border:"1px solid #A7F3D0" }}>
+                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#059669", marginBottom:6, textTransform:"uppercase" }}>✓ Normal</div>
+                      {t.svgNormal}
+                      <div style={{ fontSize:"0.62rem", color:"#059669", marginTop:6, lineHeight:1.4 }}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{ background:"#FEF2F2", borderRadius:10, padding:10, border:"1px solid #FECACA" }}>
+                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#dc2626", marginBottom:6, textTransform:"uppercase" }}>⚠ Watch For</div>
+                      {t.svgAbnormal}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ background:"#FDF4FF", borderRadius:9, padding:"9px 11px", marginBottom:12, border:"1px solid #E9D5FF" }}>
+                  <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#d946ef", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>🎯 Setup & Procedure</div>
+                  <div style={{ fontSize:"0.75rem", color:C.text, lineHeight:1.6 }}>{t.setup}</div>
+                  <div style={{ marginTop:6, padding:"4px 8px", background:"rgba(217,70,239,0.08)", borderRadius:6, border:"1px solid rgba(217,70,239,0.2)" }}>
+                    <div style={{ fontSize:"0.6rem", fontWeight:700, color:"#d946ef" }}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize:"0.68rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>👁 What To Observe</div>
+                {t.observations.map(obs => {
+                  const val = findings[`${t.id}_${obs.id}`]; const clue = val !== undefined ? obs.clues[val] : null;
+                  return (
+                    <div key={obs.id} style={{ marginBottom:10 }}>
+                      <div style={{ fontSize:"0.72rem", fontWeight:700, color:C.text, marginBottom:5 }}>{obs.q}</div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                        {obs.opts.map((opt, idx) => {
+                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":opt.startsWith("✗")?"#dc2626":C.muted;
+                          return (
+                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
+                              style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"7px 10px", borderRadius:8, cursor:"pointer",
+                                border:`1.5px solid ${sel?col:C.border}`, background:sel?`${col}10`:C.s2, transition:"all 0.12s" }}>
+                              <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${sel?col:C.border}`, background:sel?col:"transparent", flexShrink:0, marginTop:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                                {sel && <span style={{ fontSize:8, color:"#fff", fontWeight:900 }}>✓</span>}
+                              </div>
+                              <span style={{ fontSize:"0.72rem", fontWeight:sel?700:400, color:sel?col:C.text, lineHeight:1.35 }}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && <div style={{ marginTop:5, padding:"6px 10px", background:"rgba(217,70,239,0.06)", borderLeft:"3px solid #d946ef", borderRadius:"0 6px 6px 0", fontSize:"0.68rem", color:C.text, lineHeight:1.5 }}><strong>Clinical note:</strong> {clue}</div>}
+                    </div>
+                  );
+                })}
+
+                <div style={{ fontSize:"0.68rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, marginTop:4 }}>📊 Grade This Test</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:12 }}>
+                  {t.grades.map((gLabel, idx) => {
+                    const col=gradeColor(idx); const sel=g===idx;
+                    return (
+                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
+                        style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderRadius:9, cursor:"pointer", border:`1.5px solid ${sel?col:C.border}`, background:sel?`${col}12`:C.s2 }}>
+                        <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${sel?col:C.border}`, background:sel?col:"transparent", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                          {sel && <span style={{ fontSize:9, color:"#fff", fontWeight:900 }}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{ fontSize:"0.73rem", fontWeight:sel?700:400, color:sel?col:C.text }}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.muted, marginBottom:4 }}>Therapist notes</div>
+                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
+                  placeholder="Clinical observations, motor pattern notes, next steps..."
+                  style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"8px 10px", fontSize:"0.72rem", fontFamily:"inherit", resize:"vertical", minHeight:56, outline:"none" }}/>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {completedCount > 0 && (
+        <div style={{ background:"#FDF4FF", borderRadius:14, padding:14, border:"1px solid #E9D5FF", marginTop:4 }}>
+          <div style={{ fontWeight:800, color:C.text, marginBottom:10 }}>📋 Hip Screen Summary</div>
+          {HIP_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
+            const g=grades[t.id]; const col=gradeColor(g);
+            return (
+              <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
+                <span style={{ fontSize:"1rem" }}>{t.icon}</span>
+                <span style={{ flex:1, fontSize:"0.75rem", fontWeight:600, color:C.text }}>{t.label}</span>
+                <span style={{ padding:"2px 10px", borderRadius:20, fontSize:"0.65rem", fontWeight:800, background:`${col}15`, color:col }}>{["Normal","Compensated","Abnormal"][g]}</span>
+              </div>
+            );
+          })}
+          {Object.values(grades).includes(2) && (
+            <div style={{ marginTop:10, padding:"8px 10px", background:"#FEF2F2", borderRadius:8, border:"1px solid #FECACA", fontSize:"0.7rem", color:"#dc2626", lineHeight:1.5 }}>
+              ⚠ <strong>Abnormal findings present.</strong> Consider: FADIR, FABER, hip quadrant (scouring), Thomas test, hip abductor MMT, L5/S1 myotome testing, and Janda Lower Crossed Syndrome assessment.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FUNCTIONAL SCREEN HUB ───────────────────────────────────────────────────
 
 function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
@@ -9279,6 +9760,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
   const regions = [
     { id:"lumbar",   label:"Lumbar",   icon:"🦴", color:"#7c3aed" },
     { id:"shoulder", label:"Shoulder", icon:"🦾", color:"#0891b2" },
+    { id:"hip",      label:"Hip",      icon:"🦷", color:"#d946ef" },
   ];
   return (
     <div>
@@ -9299,6 +9781,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
       </div>
       {region === "lumbar"   && <LumbarFunctionalScreen   data={data} set={set}/>}
       {region === "shoulder" && <ShoulderFunctionalScreen data={data} set={set}/>}
+      {region === "hip"      && <HipFunctionalScreen      data={data} set={set}/>}
 
       {/* Quick navigation */}
       <div style={{ display:"flex", gap:8, marginTop:16 }}>
