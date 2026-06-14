@@ -8582,15 +8582,18 @@ function LumbarFunctionalScreen({ data, set }) {
                 </div>
 
                 {showVisual && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-                    <div style={{ background: "#ECFDF5", borderRadius: 10, padding: 10, border: "1px solid #A7F3D0" }}>
-                      <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "#059669", marginBottom: 6, textTransform: "uppercase" }}>✓ Normal</div>
-                      {t.svgNormal}
-                      <div style={{ fontSize: "0.62rem", color: "#059669", marginTop: 6, lineHeight: 1.4 }}>{t.normalDesc}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
-                    <div style={{ background: "#FEF2F2", borderRadius: 10, padding: 10, border: "1px solid #FECACA" }}>
-                      <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "#dc2626", marginBottom: 6, textTransform: "uppercase" }}>⚠ Watch For</div>
-                      {t.svgAbnormal}
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -9151,15 +9154,18 @@ function ShoulderFunctionalScreen({ data, set }) {
                 </div>
 
                 {showVisual && (
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
-                    <div style={{ background:"#ECFDF5", borderRadius:10, padding:10, border:"1px solid #A7F3D0" }}>
-                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#059669", marginBottom:6, textTransform:"uppercase" }}>✓ Normal</div>
-                      {t.svgNormal}
-                      <div style={{ fontSize:"0.62rem", color:"#059669", marginTop:6, lineHeight:1.4 }}>{t.normalDesc}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
-                    <div style={{ background:"#FEF2F2", borderRadius:10, padding:10, border:"1px solid #FECACA" }}>
-                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#dc2626", marginBottom:6, textTransform:"uppercase" }}>⚠ Watch For</div>
-                      {t.svgAbnormal}
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -9656,15 +9662,18 @@ function HipFunctionalScreen({ data, set }) {
                 </div>
 
                 {showVisual && (
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
-                    <div style={{ background:"#ECFDF5", borderRadius:10, padding:10, border:"1px solid #A7F3D0" }}>
-                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#059669", marginBottom:6, textTransform:"uppercase" }}>✓ Normal</div>
-                      {t.svgNormal}
-                      <div style={{ fontSize:"0.62rem", color:"#059669", marginTop:6, lineHeight:1.4 }}>{t.normalDesc}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
-                    <div style={{ background:"#FEF2F2", borderRadius:10, padding:10, border:"1px solid #FECACA" }}>
-                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#dc2626", marginBottom:6, textTransform:"uppercase" }}>⚠ Watch For</div>
-                      {t.svgAbnormal}
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -9753,6 +9762,319 @@ function HipFunctionalScreen({ data, set }) {
   );
 }
 
+// ─── KNEE FUNCTIONAL SCREEN ───────────────────────────────────────────────────
+
+const KNEE_TESTS = [
+  {
+    id:"kfs_squat", icon:"🦿", label:"Double Leg Squat",
+    subtitle:"Patellofemoral Loading + Bilateral Valgus Screen",
+    phase:"PF Joint / Basic Knee Mechanics",
+    setup:"Feet shoulder-width, toes slightly out. Arms crossed or overhead. Squat to chair height (thighs parallel) × 5. Observe knee tracking from front and side.",
+    normalDesc:"Knees track over 2nd toe throughout. No valgus. Even bilateral weight distribution. Smooth patellar glide. No anterior knee pain in the arc 30–60°.",
+    observations:[
+      { id:"valgus", q:"Knee valgus during descent?",
+        opts:["✓ Both track over 2nd toe","⚠ Mild bilateral valgus at depth","✗ Clear valgus from initiation","✗ One-sided valgus only"],
+        clues:["","Minor glute med / VMO imbalance — monitor with single-leg squat","Dynamic valgus — glute med, glute max, VMO activation priority. Check foot pronation","Unilateral — asymmetric hip abductor weakness or foot pathology. Compare single-leg squat"] },
+      { id:"pain",   q:"Pain location during squat?",
+        opts:["✓ Pain-free","⚠ Anterior knee (PF joint)","⚠ Medial knee","⚠ Lateral knee (IT band)","✗ Posterior knee"],
+        clues:["","PF joint compression — worse 30–60° arc. Do patellar tilt/glide test, VMO assessment","Medial compartment / MCL — valgus overload. If OA age — weight-bearing X-ray","IT band syndrome — lateral retinaculum tightness. Do Ober test, Noble compression test","Posterior joint — possible PCL, posterior capsule or popliteus pathology"] },
+      { id:"depth",  q:"Depth before symptoms / restriction?",
+        opts:["✓ Full depth pain-free","⚠ Stops at 60° — PF arc","✗ Stops at 30° — early loading pain","✗ Cannot squat at all"],
+        clues:["","PF joint sensitisation at classic compression angle. VMO strengthening + patellar mobilisation","Acute PF or OA sensitivity — reduce load, pool therapy","Significant restriction — screen for effusion (ballottement test), joint space narrowing"] },
+      { id:"heel",   q:"Heel contact maintained?",
+        opts:["✓ Heels flat throughout","⚠ Slight heel rise","✗ Heels lift — forces trunk forward"],
+        clues:["","Ankle dorsiflexion restriction — knee-to-wall test. Tibialis anterior + gastrocnemius","Significant DF restriction — may need heel raise orthotic and ankle joint mobilisation"] },
+      { id:"sym",    q:"Weight bearing symmetry?",
+        opts:["✓ Equal bilateral","⚠ Mild asymmetry","✗ Clearly unilateral load","✗ Cannot weight bear equally"],
+        clues:["","Monitor — possible pain avoidance","Unilateral offloading — pain-inhibited quadriceps. Do quad MMT and effusion screen","Significant asymmetry — post-surgical, ACL, or severe OA pattern"] },
+    ],
+    grades:["Normal — Bilateral tracking, pain-free to depth, symmetric","Compensated — Mild valgus or minor PF discomfort at depth","Abnormal — Pain arc, clear valgus, asymmetric loading"],
+  },
+  {
+    id:"kfs_lunge", icon:"🏃", label:"Forward Lunge",
+    subtitle:"PF Joint + IT Band + Terminal Extension",
+    phase:"Anterior Compartment / Sagittal Knee Load",
+    setup:"Standing. Step forward into lunge — trail knee approaches (not touching) floor. Front shin near vertical, trunk upright. Return. × 5 each leg. Observe from front and side.",
+    normalDesc:"Shin vertical or slight forward lean. Knee stays over foot. Trunk upright. No lateral hip shift. Pain-free through full range. Knee straightens cleanly on return.",
+    observations:[
+      { id:"shin",   q:"Shin angle (tibial inclination)?",
+        opts:["✓ Vertical or slight lean (<10°)","⚠ Excessive forward lean (>15°)","✗ Knee past toes by >5cm"],
+        clues:["","Minor — cue upright shin. Patellar tendon loading increases with forward lean","Significant patellar tendon loading — screen for Osgood-Schlatter (adolescent) or patellar tendinopathy (VISA-P)"] },
+      { id:"pain",   q:"Pain on forward lunge?",
+        opts:["✓ No pain","⚠ Anterior knee at bottom","⚠ Lateral knee (especially step through)","✗ Medial joint line"],
+        clues:["","PF joint compression at lunge depth — patellar taping trial, VMO activation","IT band / lateral retinaculum — worse as knee passes 30° in mid-lunge. Noble compression test","Medial compartment — meniscal or MCL. McMurray and Apley screen"] },
+      { id:"trunk",  q:"Trunk alignment during lunge?",
+        opts:["✓ Upright or neutral lean","⚠ Forward trunk collapse","✗ Lateral trunk lean","✗ Trunk rotation"],
+        clues:["","Hip flexor or quad weakness — step length may need reducing","Contralateral hip abductor weakness or ipsilateral hip joint restriction — single-leg squat comparison","Rotational instability — assess thoracolumbar rotation and hip ER activation"] },
+      { id:"ext",    q:"Full knee extension achieved on return?",
+        opts:["✓ Full extension smooth","⚠ Slight lag at last 5–10°","✗ Clear extension lag (>10°)","✗ Pain at full extension"],
+        clues:["","VMO endurance deficit","Extension lag — VMO weakness (inner range). Terminal extension exercise in sitting + standing","Significant lag — screen for quad weakness, effusion, or post-operative inhibition. MMT in inner range"] },
+      { id:"lateral",q:"Lateral hip shift during lunge?",
+        opts:["✓ Pelvis stays level","⚠ Mild ipsilateral shift","✗ Clear lateral shift"],
+        clues:["","Minor contralateral glute med weakness — compare SLS test","Significant hip abductor weakness driving knee valgus indirectly — glute med / hip ER strengthening before knee loading"] },
+    ],
+    grades:["Normal — Upright trunk, pain-free, full extension on return","Compensated — Forward shin or mild discomfort without restriction","Abnormal — Pain arc, extension lag, lateral shift, or trunk collapse"],
+  },
+  {
+    id:"kfs_step",  icon:"🪜", label:"Lateral Step Down",
+    subtitle:"Eccentric VMO + PF Tracking + Valgus Control",
+    phase:"Eccentric Quad / PF Compression at Speed",
+    setup:"20cm step, sideways. Arms crossed. Lower unsupported leg toward floor slowly (3 sec count) × 5. Observe knee tracking and patellar position from front. Both legs.",
+    normalDesc:"Knee tracks over 2nd toe throughout descent. Patella stays central (no medial or lateral glide). Controlled 3-second descent. No anterior knee pain.",
+    observations:[
+      { id:"track",  q:"Patellar tracking during descent?",
+        opts:["✓ Patella tracks centrally","⚠ Slight medial glide (VMO weak)","✗ Clear medial glide — VMO dominant","✗ Lateral glide — tight lateral retinaculum"],
+        clues:["","Minor VMO underactivation — inner-range quad exercises in terminal extension","VMO underactivation / lateral retinaculum tightness. Patellar taping (McConnell medial glide) + VMO isolation in inner range","Lateral retinaculum tightness — patellar lateral glide assessment, lateral retinaculum stretching, patellar mobilisation"] },
+      { id:"valgus", q:"Knee valgus on loading?",
+        opts:["✓ Tracks over 2nd toe","⚠ Mild medial drift","✗ Clear valgus collapse on step","✗ Rapid uncontrolled collapse"],
+        clues:["","Minor glute med fatigue — compare bilaterally","Dynamic valgus on loading — priority: glute med + hip ER + VMO co-contraction","Severe — functional instability. ACL screen (pivot shift, Lachman). Rule out significant structural deficit"] },
+      { id:"pain",   q:"Anterior knee pain during descent?",
+        opts:["✓ No pain","⚠ Dull ache — PF joint","✗ Sharp pain — PF or patellar tendon","✗ Pain worse on 2nd–5th rep (loading fatigue)"],
+        clues:["","PF joint sensitisation — patellar taping trial, VMO loading","PF or patellar tendon — patellar tilt test, Noble compression, VISA-P score","Reactive tendinopathy pattern — reduce repetitions, monitor load response"] },
+      { id:"speed",  q:"Eccentric control quality?",
+        opts:["✓ Smooth 3-second control","⚠ Slight speed variation","✗ Cannot slow descent — drops","✗ Immediately painful — cannot attempt"],
+        clues:["","Minor eccentric deficit — progressive slow-descent training","Significant eccentric weakness — quad MMT grade 3–4. Nordic hamstring equivalent for quad needed","Pain-limited — establish pain-free range first. Pool therapy, isometrics"] },
+      { id:"sym",    q:"Side-to-side difference?",
+        opts:["✓ Symmetric","⚠ Minor asymmetry","✗ Clear marked difference","✗ One side unable"],
+        clues:["","","Unilateral — prior injury, post-surgical inhibition, or structural asymmetry","Priority — formal quad MMT + neurological screen. Consider post-surgical atrophy"] },
+    ],
+    grades:["Normal — Central tracking, controlled descent, pain-free, symmetric","Compensated — Mild valgus or PF ache without significant restriction","Abnormal — Lateral/medial patellar glide, pain, valgus collapse, or asymmetric"],
+  },
+  {
+    id:"kfs_hop",   icon:"💨", label:"Single Leg Hop & Stick",
+    subtitle:"Dynamic Valgus + Landing Mechanics + ACL Risk",
+    phase:"Neuromuscular Control / ACL Load Screen",
+    setup:"Single leg. Patient hops forward ~30cm and lands on same leg, holds 3 seconds. × 3 each side. Observe knee, hip and trunk on landing. (Caution: skip if acute knee pathology.)",
+    normalDesc:"Soft landing, knee slight flex, tracks over toe. Trunk upright. Pelvis level. Holds stable 3s. No excessive valgus or trunk collapse. Equal bilateral distance.",
+    observations:[
+      { id:"valgus", q:"Knee position on landing?",
+        opts:["✓ Tracks over 2nd toe — stable","⚠ Brief valgus that self-corrects","✗ Clear valgus collapse on landing","✗ Severe — knee caves with trunk shift"],
+        clues:["","Minor — neuromuscular timing — single-leg landing drills","Dynamic valgus — highest ACL risk factor in females. Glute med/max + VMO + hip ER activation. Landing technique training","Significant valgus risk pattern — neuromuscular ACL prevention programme (PEP, FIFA 11+). Do not progress loading until corrected"] },
+      { id:"stable", q:"Landing stability (hold 3s)?",
+        opts:["✓ Holds stable 3 seconds","⚠ Wobbles but stabilises","✗ Cannot hold — hops or takes extra step","✗ Falls or nearly falls"],
+        clues:["","Minor proprioceptive deficit — balance progressions (wobble board, single leg tandem)","Significant instability — screen for effusion (ballottement), ACL laxity (Lachman), meniscal pathology","Significant deficit — formal ligamentous and meniscal screen before progression"] },
+      { id:"sym",    q:"Hop distance symmetry (Limb Symmetry Index)?",
+        opts:["✓ >90% symmetric (LSI normal)","⚠ 80–90% difference","✗ <80% asymmetry (LSI abnormal)","✗ Cannot hop one side"],
+        clues:["","","LSI <90% = return-to-sport criterion not met post-ACL. Requires further quad/hamstring strength and neuromuscular work","Major deficit — post-injury or surgery inhibition. Formal quad/hamstring strength testing before hop testing"] },
+      { id:"trunk",  q:"Trunk position on landing?",
+        opts:["✓ Upright or neutral","⚠ Forward trunk lean","✗ Ipsilateral trunk lean","✗ Trunk rotation"],
+        clues:["","Quad-dominant landing — hip flexion / trunk forward lean increases PF load. Cue hip hinge landing","Trunk shift to unload weak hip abductor — glute med priority. Links to dynamic valgus","Rotational instability — rotational control exercises pre-sport return"] },
+      { id:"sound",  q:"Landing sound quality?",
+        opts:["✓ Soft, quiet landing","⚠ Moderate impact sound","✗ Heavy / loud landing"],
+        clues:["","Minor — cue soft landing technique","Stiff landing — quad-dominant deceleration. Knee flexion on landing too small. Teach hip hinge landing: land on hip-knee-ankle simultaneously"] },
+    ],
+    grades:["Normal — Stable landing, >90% LSI, knee tracking, quiet soft impact","Compensated — Minor valgus correcting or 80–90% LSI","Abnormal — Valgus collapse, <80% LSI, unable to hold, or loud stiff landing"],
+  },
+  {
+    id:"kfs_tke",   icon:"🔲", label:"Wall Slide (PF Tracking)",
+    subtitle:"Patellofemoral Contact at 30 / 60 / 90°",
+    phase:"PF Joint Mechanics / Pain Arc Screen",
+    setup:"Patient back against smooth wall. Slide down to 30°, hold 5s. Then 60°, hold 5s. Then 90°, hold 5s. Note pain onset angle. Observe patellar position and VMO contraction at each angle.",
+    normalDesc:"Pain-free at all angles 30–90°. VMO visible contraction. Patella stays central. PF contact area progressively increases toward 90° with no pain.",
+    observations:[
+      { id:"arc30",  q:"Pain at 30° hold?",
+        opts:["✓ Pain-free at 30°","⚠ Mild discomfort at 30°","✗ Clear pain at 30° — early PF sensitisation"],
+        clues:["","Minor PF irritation — offload with VMO activation in open chain first","Significant early-arc PF pain — reduce load. Patellar taping trial. McConnell medial glide taping"],  },
+      { id:"arc60",  q:"Pain at 60° hold?",
+        opts:["✓ Pain-free at 60°","⚠ Mild discomfort at 60°","✗ Clear pain at 60° — classic PF arc"],
+        clues:["","Classic PF sensitisation range — patellar taping + VMO isolation below 60°","Classic PF compression arc — do patellar tilt/glide, J-sign, VMO MMT inner range"] },
+      { id:"arc90",  q:"Pain at 90° hold?",
+        opts:["✓ Pain-free at 90°","⚠ Mild ache at 90° only","✗ Clear pain at 90°"],
+        clues:["","Greater PF contact area loading — minor sensitisation, avoid sustained 90° holds initially","Deep PF compression pathology — trochlear groove, plica, or patellar baja. Imaging may be needed"] },
+      { id:"vmo",    q:"VMO contraction visible / palpable?",
+        opts:["✓ VMO visible at all angles","⚠ VMO only at 30°","✗ VMO absent — no contraction","✗ VMO fires late (after 60°)"],
+        clues:["","Minor VMO inhibition","Significant VMO inhibition — isolated terminal extension exercise, biofeedback, NMES if available","VMO fires late — patellar instability risk. VMO timing training at inner range before loading"] },
+      { id:"jsign",  q:"Patellar J-sign on descent?",
+        opts:["✓ Smooth central tracking","⚠ Slight lateral deviation at terminal extension","✗ J-sign positive — lateral jump at ~30°"],
+        clues:["","Minor lateral retinaculum tension","J-sign = lateral retinaculum dominance over VMO at terminal extension. Patellar mobility assessment + lateral retinaculum stretching + VMO inner range isolation"] },
+    ],
+    grades:["Normal — Pain-free 30–90°, VMO visible, central patellar tracking","Compensated — Mild ache at 60–90° or VMO only at shallow angles","Abnormal — Pain arc at any angle, VMO absent, or J-sign positive"],
+  },
+];
+
+function KneeFunctionalScreen({ data, set }) {
+  const [activeTest, setActiveTest] = useState(null);
+  const [findings, setFindings] = useState({});
+  const [grades, setGrades] = useState({});
+  const [notes, setNotes] = useState({});
+  const [showVisual, setShowVisual] = useState(true);
+
+  useEffect(() => {
+    const saved = data["kfs_data"];
+    if (saved && typeof saved === "string") {
+      try {
+        const p = JSON.parse(saved);
+        if (p.findings) setFindings(p.findings);
+        if (p.grades)   setGrades(p.grades);
+        if (p.notes)    setNotes(p.notes);
+      } catch {}
+    }
+  }, []);
+
+  const save = (f,g,n) => set("kfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
+  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
+  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
+  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
+
+  const completedCount = KNEE_TESTS.filter(t => grades[t.id] !== undefined).length;
+  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
+
+  return (
+    <div>
+      <div style={{background:"linear-gradient(135deg,rgba(234,179,8,0.08),rgba(245,158,11,0.05))",border:"1px solid rgba(234,179,8,0.25)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <span style={{fontSize:"1.4rem"}}>🦿</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Knee Functional Screen</div>
+            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · PF tracking · VMO · Dynamic valgus · ACL risk · Student guide</div>
+          </div>
+          <div style={{marginLeft:"auto",textAlign:"right"}}>
+            <div style={{fontSize:"1.2rem",fontWeight:900,color:"#d97706"}}>{completedCount}/5</div>
+            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {KNEE_TESTS.map(t=>{
+            const g=grades[t.id]; const done=g!==undefined;
+            return (
+              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                  border:`1px solid ${activeTest===t.id?"#d97706":done?gradeColor(g)+"60":C.border}`,
+                  background:activeTest===t.id?"rgba(234,179,8,0.1)":done?`${gradeColor(g)}10`:"transparent",
+                  color:activeTest===t.id?"#d97706":done?gradeColor(g):C.muted}}>
+                {t.icon} {t.label.split(" ").slice(0,2).join(" ")} {done?["✓","⚠","✗"][g]:""}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {KNEE_TESTS.map(t=>{
+        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
+        return (
+          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
+            border:`1.5px solid ${isOpen?"#d97706":graded?gradeColor(g)+"50":C.border}`,
+            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(234,179,8,0.1)":"0 1px 4px rgba(0,0,0,0.04)"}}>
+
+            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
+                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+              </div>
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
+            </div>
+
+            {isOpen && (
+              <div style={{padding:"0 14px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontSize:"0.68rem",fontWeight:700,color:"#d97706",textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                </div>
+
+                {showVisual && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                    </div>
+                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
+                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
+                          <div key={i} style={{marginBottom:2}}>• {x}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{background:"#FFFBEB",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #FDE68A"}}>
+                  <div style={{fontSize:"0.6rem",fontWeight:800,color:"#d97706",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
+                  <div style={{marginTop:6,padding:"4px 8px",background:"rgba(234,179,8,0.08)",borderRadius:6,border:"1px solid rgba(234,179,8,0.25)"}}>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:"#d97706"}}>Phase: {t.phase}</div>
+                  </div>
+                </div>
+
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                {t.observations.map(obs=>{
+                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
+                  return (
+                    <div key={obs.id} style={{marginBottom:10}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        {obs.opts.map((opt,idx)=>{
+                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
+                          return (
+                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
+                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
+                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
+                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
+                              </div>
+                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:"rgba(234,179,8,0.07)",borderLeft:"3px solid #d97706",borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                    </div>
+                  );
+                })}
+
+                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
+                  {t.grades.map((gLabel,idx)=>{
+                    const col=gradeColor(idx); const sel=g===idx;
+                    return (
+                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
+                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
+                        </div>
+                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
+                  placeholder="Pain arc, patellar tracking, clinical reasoning..."
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {completedCount > 0 && (
+        <div style={{background:"#FFFBEB",borderRadius:14,padding:14,border:"1px solid #FDE68A",marginTop:4}}>
+          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Knee Screen Summary</div>
+          {KNEE_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
+            const g=grades[t.id]; const col=gradeColor(g);
+            return (
+              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                <span style={{fontSize:"1rem"}}>{t.icon}</span>
+                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+              </div>
+            );
+          })}
+          {Object.values(grades).includes(2) && (
+            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.7rem",color:"#dc2626",lineHeight:1.5}}>
+              ⚠ <strong>Abnormal findings present.</strong> Consider: patellar tilt/glide test, J-sign, McMurray meniscal test, Lachman / anterior drawer (ACL), valgus/varus stress (MCL/LCL), Noble compression (IT band), ballottement (effusion), and VISA-P (tendinopathy).
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FUNCTIONAL SCREEN HUB ───────────────────────────────────────────────────
 
 function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
@@ -9761,6 +10083,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
     { id:"lumbar",   label:"Lumbar",   icon:"🦴", color:"#7c3aed" },
     { id:"shoulder", label:"Shoulder", icon:"🦾", color:"#0891b2" },
     { id:"hip",      label:"Hip",      icon:"🦷", color:"#d946ef" },
+    { id:"knee",     label:"Knee",     icon:"🦿", color:"#d97706" },
   ];
   return (
     <div>
@@ -9782,6 +10105,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{} }) {
       {region === "lumbar"   && <LumbarFunctionalScreen   data={data} set={set}/>}
       {region === "shoulder" && <ShoulderFunctionalScreen data={data} set={set}/>}
       {region === "hip"      && <HipFunctionalScreen      data={data} set={set}/>}
+      {region === "knee"     && <KneeFunctionalScreen     data={data} set={set}/>}
 
       {/* Quick navigation */}
       <div style={{ display:"flex", gap:8, marginTop:16 }}>
