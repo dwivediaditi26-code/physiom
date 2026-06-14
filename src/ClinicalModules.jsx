@@ -3793,7 +3793,6 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
         {tabBtn("soap","📄 SOAP Note")}
         {tabBtn("interp","🧠 Suggested Interpretation", totalRules)}
 
-        {tabBtn("extra","✏️ Add Notes")}
         {tabBtn("ai","🤖 AI Assistant")}
       </div>}
 
@@ -3828,9 +3827,6 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
             {/* Copy/print toolbar */}
             <div style={{display:"flex",gap:7,marginBottom:10,flexWrap:"wrap"}}>
-              <button onClick={copyFull} style={{padding:"7px 14px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}40`,borderRadius:8,color:PC.accent,fontSize:"0.7rem",fontWeight:700,cursor:"pointer"}}>
-                {copied==="all"?"✓ Copied!":"📋 Copy Full SOAP"}
-              </button>
               <button onClick={printNote} style={{padding:"7px 14px",background:`${PC.a3}12`,border:`1px solid ${PC.a3}35`,borderRadius:8,color:PC.a3,fontSize:"0.7rem",fontWeight:700,cursor:"pointer"}}>
                 🖨️ Print / PDF
               </button>

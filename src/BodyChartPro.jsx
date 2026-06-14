@@ -270,10 +270,8 @@ function SymptomPanel({ region, entry, onSave, onClose, regions, existingArrows 
 
   return (
     <div style={{
-      position:"absolute", right:0, top:0, bottom:0, width:280,
-      background:"#ffffff", borderLeft:"1px solid #e5e7eb",
-      display:"flex", flexDirection:"column", zIndex:50,
-      boxShadow:"-4px 0 20px rgba(0,0,0,0.12)", borderRadius:"0 12px 12px 0",
+      background:"#ffffff",
+      display:"flex", flexDirection:"column",
       fontFamily:"system-ui,sans-serif"
     }}
     onClick={e=>e.stopPropagation()}
@@ -551,7 +549,22 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
   const [radiationDraw, setRadiationDraw] = useState(null);
   const [arrows, setArrows]             = useState(chartData.arrows || []);
   const [imgLoaded, setImgLoaded]       = useState(false);
+  const [drawMode, setDrawMode]         = useState(false);  // freehand radiation draw
+  const [drawStart, setDrawStart]       = useState(null);   // {x,y} SVG coords
+  const [drawPreview, setDrawPreview]   = useState(null);   // {x1,y1,x2,y2} live preview
   const svgRef = useRef(null);
+
+  const getSVGXY = (e) => {
+    const svg = svgRef.current;
+    if (!svg) return null;
+    const rect = svg.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: ((clientX - rect.left) / rect.width) * 100,
+      y: ((clientY - rect.top) / rect.height) * 100,
+    };
+  };
 
   // Persist whenever entries/arrows change
   useEffect(() => {
@@ -668,6 +681,14 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
             ✕ Clear radiation
           </button>
         )}
+        <button onClick={() => { setDrawMode(d => !d); setDrawStart(null); setDrawPreview(null); }}
+          style={{ padding:"5px 11px", borderRadius:8,
+            border:`1.5px solid ${drawMode ? "#ec4899" : "#e5e7eb"}`,
+            background: drawMode ? "rgba(236,72,153,0.12)" : "transparent",
+            color: drawMode ? "#ec4899" : "#6b7280",
+            fontWeight:700, fontSize:"0.7rem", cursor:"pointer" }}>
+          {drawMode ? "⚡ Drawing… (tap to cancel)" : "⚡ Draw Radiation"}
+        </button>
         <button onClick={() => setAdminMode(p => !p)}
           style={{ padding:"5px 11px", borderRadius:8, border:`1.5px solid ${adminMode?"#7c3aed":"#e5e7eb"}`,
             background:adminMode?"rgba(124,58,237,0.12)":"transparent",
@@ -727,11 +748,61 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           style={{ position:"absolute", inset:0, width:"100%", height:"100%",
-            cursor: radiationMode ? "crosshair" : "default" }}
-          onMouseMove={e=>window._adminDragHandler&&window._adminDragHandler(e)}
-          onMouseUp={()=>window._adminUpHandler&&window._adminUpHandler()}
-          onTouchMove={e=>window._adminDragHandler&&window._adminDragHandler(e)}
-          onTouchEnd={()=>window._adminUpHandler&&window._adminUpHandler()}
+            cursor: drawMode ? "crosshair" : "default" }}
+          onMouseMove={e => {
+            window._adminDragHandler && window._adminDragHandler(e);
+            if (drawMode && drawStart) {
+              const p = getSVGXY(e);
+              if (p) setDrawPreview({ x1:drawStart.x, y1:drawStart.y, x2:p.x, y2:p.y });
+            }
+          }}
+          onMouseUp={e => {
+            window._adminUpHandler && window._adminUpHandler();
+            if (drawMode && drawStart) {
+              const p = getSVGXY(e);
+              if (p) {
+                const dx = p.x - drawStart.x, dy = p.y - drawStart.y;
+                if (Math.sqrt(dx*dx+dy*dy) > 2) {
+                  setArrows(prev => [...prev, { x1:drawStart.x, y1:drawStart.y, x2:p.x, y2:p.y, drawn:true }]);
+                }
+              }
+              setDrawStart(null); setDrawPreview(null); setDrawMode(false);
+            }
+          }}
+          onMouseDown={e => {
+            if (drawMode && !adminMode) {
+              e.preventDefault();
+              const p = getSVGXY(e);
+              if (p) setDrawStart(p);
+            }
+          }}
+          onTouchMove={e => {
+            window._adminDragHandler && window._adminDragHandler(e);
+            if (drawMode && drawStart) {
+              const p = getSVGXY(e);
+              if (p) setDrawPreview({ x1:drawStart.x, y1:drawStart.y, x2:p.x, y2:p.y });
+            }
+          }}
+          onTouchEnd={e => {
+            window._adminUpHandler && window._adminUpHandler();
+            if (drawMode && drawStart) {
+              const p = getSVGXY(e);
+              if (p) {
+                const dx = p.x - drawStart.x, dy = p.y - drawStart.y;
+                if (Math.sqrt(dx*dx+dy*dy) > 2) {
+                  setArrows(prev => [...prev, { x1:drawStart.x, y1:drawStart.y, x2:p.x, y2:p.y, drawn:true }]);
+                }
+              }
+              setDrawStart(null); setDrawPreview(null); setDrawMode(false);
+            }
+          }}
+          onTouchStart={e => {
+            if (drawMode && !adminMode) {
+              e.preventDefault();
+              const p = getSVGXY(e);
+              if (p) setDrawStart(p);
+            }
+          }}
         >
           {/* Region polygons */}
           {effectiveRegions.map(r => {
@@ -822,6 +893,25 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
           {/* Radiation arrows */}
           <RadiationArrows arrows={arrows} />
 
+          {/* Draw mode: live preview line */}
+          {drawMode && drawPreview && (
+            <g>
+              <line x1={drawPreview.x1} y1={drawPreview.y1} x2={drawPreview.x2} y2={drawPreview.y2}
+                stroke="#ec4899" strokeWidth="0.7" strokeDasharray="2,1.5" opacity="0.7"
+                markerEnd="url(#arrowhead)"/>
+            </g>
+          )}
+          {drawMode && drawStart && (
+            <circle cx={drawStart.x} cy={drawStart.y} r="1.2"
+              fill="#ec4899" opacity="0.9" stroke="#fff" strokeWidth="0.3"/>
+          )}
+          {/* Draw mode: instructional hint */}
+          {drawMode && !drawStart && (
+            <text x="50" y="5" textAnchor="middle" fontSize="2" fill="#ec4899" fontWeight="bold" opacity="0.8">
+              Tap start point, drag to destination
+            </text>
+          )}
+
 
 
           {/* Admin overlay */}
@@ -872,18 +962,22 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
           </div>
         )}
 
-        {/* Symptom panel (slides in) */}
-        {activePanel && !adminMode && (
+      </div>
+
+      {/* Symptom panel — rendered BELOW chart to avoid covering body image */}
+      {activePanel && !adminMode && (
+        <div style={{ marginTop:10, borderRadius:14, border:"1.5px solid #e5e7eb",
+          overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.10)" }}>
           <SymptomPanel
             region={getRegion(activePanel)}
             entry={getEntry(activePanel)}
             onSave={handleSave}
-              regions={effectiveRegions}
-              existingArrows={arrows}
+            regions={effectiveRegions}
+            existingArrows={arrows}
             onClose={() => setActivePanel(null)}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Selected regions summary ──────────────────────────────────────────── */}
       {entries.length > 0 && (

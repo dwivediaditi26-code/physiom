@@ -4090,6 +4090,7 @@ function SubjectiveModule({ data, set, onNav }) {
   };
 
   const [activeSection, setActiveSection] = useState("demographics");
+  const sectionTopRef = React.useRef(null);
   const [selectedRegions, setSelectedRegions] = useState(()=>{
     try{ return JSON.parse(data.cx_selected_regions||"[]"); }catch{ return []; }
   });
@@ -4613,9 +4614,18 @@ function SubjectiveModule({ data, set, onNav }) {
             const nextKey = curIdx < sectionKeys.length - 1 ? sectionKeys[curIdx + 1] : null;
             const prevSec = prevKey ? sections[prevKey] : null;
             const nextSec = nextKey ? sections[nextKey] : null;
-            const goTo = (key) => { setActiveSection(key); setSearchTerm(""); window.scrollTo&&window.scrollTo({top:0,behavior:"smooth"}); };
+            const goTo = (key) => {
+              setActiveSection(key);
+              setSearchTerm("");
+              // Scroll the section card to top (works inside any scrollable container)
+              setTimeout(() => {
+                if (sectionTopRef.current) {
+                  sectionTopRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
+                }
+              }, 30);
+            };
             return (
-              <div style={{ background: PC.surface, borderRadius:12,
+              <div ref={sectionTopRef} style={{ background: PC.surface, borderRadius:12,
                 border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44`, overflow:"hidden" }}>
 
                 {/* Section header */}
