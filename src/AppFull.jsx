@@ -3429,7 +3429,10 @@ function measureLandmarks(lm, calibration, view="anterior") {
     if (confidence7 < 0.45) return { suppressed:true, reason:"Insufficient landmark confidence for trunk shift", confidence:r1(confidence7*100) };
     const rawShift7 = r2((shMid.x - hipMid.x)*100);
     const absShift7 = Math.abs(rawShift7);
-    const shiftSide7 = rawShift7 > 0 ? "Right" : rawShift7 < 0 ? "Left" : null;
+    // In anterior view, positive = image right = patient LEFT
+    const shiftSide7 = rawShift7 > 0 ? (view === "anterior" ? "Left" : "Right")
+                     : rawShift7 < 0 ? (view === "anterior" ? "Right" : "Left")
+                     : null;
     let sev7, sevCode7;
     if      (absShift7 < 1.0) { sev7="Normal";      sevCode7=0; }
     else if (absShift7 < 2.0) { sev7="Mild";        sevCode7=1; }
@@ -4436,7 +4439,8 @@ function buildFindings(lm, view, m) {
           const rel = checkLandmarkReliability(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
           const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
           if (sev && rel.reliable) {
-            const side = m.trunkLateralShift > 0 ? "Right" : "Left";
+            // In anterior view, positive = image right = patient LEFT
+            const side = m.trunkLateralShift > 0 ? (view === "anterior" ? "Left" : "Right") : (view === "anterior" ? "Right" : "Left");
             add({
               region: "Thoracic",
               findingName: `Possible trunk shift ${side.toLowerCase()} — low confidence (${abs.toFixed(1)}%)`,
@@ -5894,7 +5898,8 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       parts.push(`${side} Shoulder Elevated`);
     }
     if (m.trunkLateralShift!==null && Math.abs(m.trunkLateralShift||0)>3) {
-      const side=m.trunkLateralShift>0?"Right":"Left";
+      // In anterior view, positive = image right = patient LEFT
+      const side=m.trunkLateralShift>0?(view==="anterior"?"Left":"Right"):(view==="anterior"?"Right":"Left");
       parts.push(`${side} Trunk Shift`);
     }
     if (m.headTiltAngle!==null && Math.abs(m.headTiltAngle||0)>3) {
