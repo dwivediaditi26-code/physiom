@@ -7813,7 +7813,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         if (lm && m && Object.keys(m).length > 0) {
           try { drawOverlay({ ctx, W, H, lm, view, showGrid: true, measurements: m, clearFirst: false }); } catch(oe){ console.warn("drawOverlay bake:", oe); }
         }
-        try { setUploadedImg(oc.toDataURL("image/jpeg", 0.92)); } catch(te){ setUploadedImg(objectUrlRef.current); }
+        let annotatedUrl;
+        try { annotatedUrl = oc.toDataURL("image/jpeg", 0.92); } catch(te){ annotatedUrl = objectUrlRef.current; }
+        setUploadedImg(annotatedUrl);
+        // Save annotated result for multi-view mode
+        if (assessMode === "multi" && annotatedUrl) {
+          saveMvResult(view, m, f, s, r, annotatedUrl);
+        }
       };
       img.src = objectUrlRef.current;
     }
