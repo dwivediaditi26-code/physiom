@@ -4174,53 +4174,52 @@ function SubjectiveModule({ data, set, onNav }) {
     if (!key) { setAiKeyEdit(true); return; }
     stopRecording();
     setAiStatus("processing");
-    const system = `You are a clinical data extractor for a physiotherapy intake form. Extract structured data and return ONLY valid JSON — no explanation, no markdown.
+    const system = `You are a clinical data extractor for a physiotherapy intake form. Extract structured data and return ONLY valid JSON.
 
-Return this exact JSON shape (use null for anything not mentioned):
+Return this exact JSON shape (null for anything not mentioned, empty array [] for arrays):
 {
   "age": number or null,
-  "sex": "Male" | "Female" | "Other" | null,
+  "sex": "Male"|"Female"|"Other"|null,
   "occupation": string or null,
   "region": one of ["Lumbar / SI","Cervical spine","Thoracic spine","Shoulder (L)","Shoulder (R)","Knee (L)","Knee (R)","Hip / Groin","Ankle / Foot","Elbow/Wrist/Hand"] or null,
-  "laterality": "Left" | "Right" | "Bilateral" | null,
+  "laterality": "Left"|"Right"|"Bilateral"|null,
   "duration": one of ["< 1 week (hyperacute)","1–2 weeks (acute)","2–6 weeks (subacute)","6 weeks–3 months","3-6 months (chronic)","6-12 months","1-2 years","> 2 years"] or null,
   "onset": one of ["Sudden — traumatic","Sudden — no trauma","Gradual — insidious","Sport-related","Lifting injury","Twisting injury","MVA / whiplash","Post-surgical","Woke with it","Repetitive strain","After new activity","Post-partum","Post-illness / viral","No clear cause"] or null,
   "nrsNow": number 0-10 or null,
   "nrsWorst": number 0-10 or null,
   "nrsBest": number 0-10 or null,
-  "aggravating": array of strings,
-  "relieving": array of strings,
-  "pattern": one of ["Mechanical — worse with load/posture, better with rest","Inflammatory — morning stiffness >30 min, eases with movement","Neuropathic — constant, burning, worse at night","Postural — sustained position dependent","No clear 24hr pattern"] or null,
-  "morningStiffness": "Stiff but eases quickly <30 min" | "Stiff — takes 30-60 min to ease" | "Stiff — stays bad all morning (inflammatory flag)" | null,
-  "nightPain": true | false | null,
-  "hasRadiation": true | false,
-  "radiationDetail": string or null,
+  "painQuality": array of 0-4 from ["Sharp","Dull","Aching","Throbbing","Burning","Shooting","Stabbing","Electric shock","Tingling","Pins and needles","Numbness","Heaviness","Tightness","Pressure","Cramping","Grinding","Catching","Weakness"],
+  "symptomPattern": one of ["Constant — never goes away","Constant — varies in intensity","Intermittent — clear triggers","Intermittent — unpredictable","Activity-related only","Position-related only","Morning dominant"] or null,
+  "diurnalPattern": one of ["Mechanical — worse with load/posture, better with rest","Inflammatory — morning stiffness >30 min, eases with movement","Neuropathic — constant, burning, worse at night","Postural — sustained position dependent","No clear 24hr pattern","Unpredictable"] or null,
+  "morningSymptoms": array of 0-2 from ["No morning symptoms","Stiff but eases quickly <30 min","Stiff — takes 30–60 min to ease","Stiff — stays bad all morning (inflammatory flag)","Pain on waking — worst first thing","Stiff — takes >1 hour to ease (inflammatory flag)","Painful on waking — stays painful all morning"],
+  "nightSymptoms": array of 0-2 from ["No night symptoms","Difficulty finding comfortable position","Pain on turning over in bed","Wakes once from sleep","Wakes multiple times from sleep","Constant night pain — cannot sleep","Gets up to walk (restlessness / inflammatory)","Wakes once from pain","Wakes 2–3 times from pain"],
+  "aggMovements": array of 0-4 plain English movement descriptions that make it worse,
+  "aggActivities": array of 0-4 plain English activity descriptions that make it worse,
+  "relMovements": array of 0-4 plain English movement or position descriptions that make it better,
+  "hasRadiation": true|false|null,
+  "radiationSide": "Left"|"Right"|"Bilateral"|null,
+  "radiationArea": string describing where it radiates or null,
+  "neuroSymptoms": array of 0-3 from ["No neurological symptoms","Objective numbness in specific area","Tingling","Pins and needles","Shooting pain","Burning — constant","Electric shock quality","Subjective weakness","Dropping objects involuntarily"],
+  "hasLegNeuro": "No leg neurological symptoms"|"Yes — unilateral (L)"|"Yes — unilateral (R)"|"Yes — bilateral (cauda equina / stenosis flag)"|null,
   "flags": array of red flag strings or []
 }
-If input is Hindi or mixed, extract clinical meaning in English.`;
+If input is Hindi/mixed, extract clinical meaning in English.`;
     try {
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: textToParse.trim() },
-          ],
-          temperature: 0.1,
-          max_tokens: 600,
+          messages: [{ role: "system", content: system }, { role: "user", content: textToParse.trim() }],
+          temperature: 0.1, max_tokens: 900,
           response_format: { type: "json_object" },
         }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error?.message || "Groq error");
-      const content = json.choices?.[0]?.message?.content;
-      if (!content) throw new Error("Empty response from Groq");
-      const parsed = JSON.parse(content);
+      const raw = json.choices?.[0]?.message?.content;
+      if (!raw) throw new Error("Empty response from Groq");
+      const parsed = JSON.parse(raw);
       setAiResult(parsed);
       setAiStatus("done");
       setAiReview(true);
@@ -4233,34 +4232,79 @@ If input is Hindi or mixed, extract clinical meaning in English.`;
 
   const applyAiResult = React.useCallback((result) => {
     const updates = { ...data };
+    const SEP = "|||";
+
+    // ── Region prefix helper ─────────────────────────────────────────
+    let reg = result.region || "";
+    if (result.laterality === "Left"  && reg === "Shoulder") reg = "Shoulder (L)";
+    if (result.laterality === "Right" && reg === "Shoulder") reg = "Shoulder (R)";
+    if (result.laterality === "Left"  && reg === "Knee")     reg = "Knee (L)";
+    if (result.laterality === "Right" && reg === "Knee")     reg = "Knee (R)";
+    const prefixMap = {
+      "Cervical spine":"cx","Lumbar / SI":"lx","Thoracic spine":"tx",
+      "Shoulder (L)":"shl","Shoulder (R)":"shr",
+      "Knee (L)":"knl","Knee (R)":"knr",
+      "Hip / Groin":"hp","Ankle / Foot":"af","Elbow/Wrist/Hand":"ew",
+    };
+    const pfx = prefixMap[reg] || null;
+
+    // ── Demographics ─────────────────────────────────────────────────
     if (result.age)        updates.dem_age = String(result.age);
     if (result.sex)        updates.dem_sex = result.sex;
     if (result.occupation) updates.dem_occupation = result.occupation;
-    if (result.onset)      updates.cc_onset = result.onset;
-    if (result.duration)   updates.cc_duration = result.duration;
+
+    // ── Chief Complaint ───────────────────────────────────────────────
+    if (result.onset)    updates.cc_onset    = result.onset;
+    if (result.duration) updates.cc_duration = result.duration;
     if (result.nrsNow   != null) updates.cc_vas_now   = String(Math.round(result.nrsNow));
     if (result.nrsWorst != null) updates.cc_vas_worst = String(Math.round(result.nrsWorst));
     if (result.nrsBest  != null) updates.cc_vas_best  = String(Math.round(result.nrsBest));
-    if (result.pattern)    updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "Pattern: " + result.pattern;
-    if (result.aggravating?.length) updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "Aggravating: " + result.aggravating.join(", ");
-    if (result.relieving?.length)   updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "Relieving: " + result.relieving.join(", ");
-    if (result.hasRadiation === false) updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "No radiation.";
-    if (result.hasRadiation && result.radiationDetail) updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "Radiation: " + result.radiationDetail;
-    if (result.morningStiffness) {
-      const prefix = result.region?.startsWith("Lumbar") ? "lx" : result.region?.startsWith("Cervical") ? "cx" : result.region?.startsWith("Thoracic") ? "tx" : null;
-      if (prefix) updates[prefix + "_morning"] = result.morningStiffness;
+    if (result.painQuality?.length)
+      updates.cc_quality = result.painQuality.join(SEP);
+
+    // ── Region-prefixed fields ─────────────────────────────────────────
+    if (pfx) {
+      // Pain pattern
+      if (result.symptomPattern)
+        updates[pfx + "_pattern"] = result.symptomPattern;
+      if (result.diurnalPattern)
+        updates[pfx + "_24hr"] = result.diurnalPattern;
+
+      // Morning & night symptoms (multicheck)
+      if (result.morningSymptoms?.length)
+        updates[pfx + "_morning"] = result.morningSymptoms.join(SEP);
+      if (result.nightSymptoms?.length)
+        updates[pfx + "_night"] = result.nightSymptoms.join(SEP);
+
+      // Aggravating / relieving — store as notes if no matching field
+      if (result.aggMovements?.length)
+        updates[pfx + "_agg_notes"] = (updates[pfx + "_agg_notes"] || "") +
+          "Movements aggravate: " + result.aggMovements.join(", ");
+      if (result.aggActivities?.length)
+        updates[pfx + "_agg_notes"] = (updates[pfx + "_agg_notes"] ? updates[pfx + "_agg_notes"] + "\n" : "") +
+          "Activities aggravate: " + result.aggActivities.join(", ");
+      if (result.relMovements?.length)
+        updates[pfx + "_rel_notes"] = "Relieves: " + result.relMovements.join(", ");
+
+      // Radiation
+      if (result.hasRadiation === false)
+        updates[pfx + "_radiation"] = "No radiation — local only";
+      else if (result.hasRadiation && result.radiationArea)
+        updates[pfx + "_rad_notes"] = result.radiationArea + (result.radiationSide ? " (" + result.radiationSide + ")" : "");
+
+      // Neurological symptoms
+      if (result.neuroSymptoms?.length) {
+        const neuroField = pfx === "cx" ? "cx_arm_neuro"
+          : pfx === "lx" ? "lx_neuro_quality"
+          : pfx + "_neuro";
+        updates[neuroField] = result.neuroSymptoms.join(SEP);
+      }
+      if (result.hasLegNeuro && pfx === "lx")
+        updates["lx_neuro_present"] = result.hasLegNeuro;
     }
-    if (result.nightPain != null) {
-      const prefix = result.region?.startsWith("Lumbar") ? "lx" : result.region?.startsWith("Cervical") ? "cx" : null;
-      if (prefix) updates[prefix + "_night"] = result.nightPain ? "Wakes from sleep" : "No night symptoms";
-    }
-    // Add region to selected regions
-    if (result.region) {
-      let reg = result.region;
-      if (result.laterality === "Left" && reg === "Shoulder") reg = "Shoulder (L)";
-      if (result.laterality === "Right" && reg === "Shoulder") reg = "Shoulder (R)";
-      if (result.laterality === "Left" && reg === "Knee") reg = "Knee (L)";
-      if (result.laterality === "Right" && reg === "Knee") reg = "Knee (R)";
+
+    // ── Add region to selected regions ───────────────────────────────
+    if (reg) {
       setSelectedRegions(prev => {
         if (prev.includes(reg) || prev.length >= 3) return prev;
         const next = [...prev, reg];
@@ -4268,7 +4312,8 @@ If input is Hindi or mixed, extract clinical meaning in English.`;
         return next;
       });
     }
-    // Count filled fields
+
+    // ── Count filled fields for success banner ────────────────────────
     const filled = [];
     if (result.age) filled.push("Age");
     if (result.sex) filled.push("Sex");
@@ -4278,10 +4323,18 @@ If input is Hindi or mixed, extract clinical meaning in English.`;
     if (result.nrsNow != null) filled.push("NRS now");
     if (result.nrsWorst != null) filled.push("NRS worst");
     if (result.nrsBest != null) filled.push("NRS best");
-    if (result.aggravating?.length) filled.push("Aggravating factors");
-    if (result.relieving?.length) filled.push("Relieving factors");
-    if (result.pattern) filled.push("Pain pattern");
-    if (result.region) filled.push("Region selected");
+    if (result.painQuality?.length) filled.push("Pain quality (" + result.painQuality.join(", ") + ")");
+    if (result.symptomPattern) filled.push("Pain pattern");
+    if (result.diurnalPattern) filled.push("24hr pattern");
+    if (result.morningSymptoms?.length) filled.push("Morning symptoms");
+    if (result.nightSymptoms?.length) filled.push("Night symptoms");
+    if (result.aggMovements?.length || result.aggActivities?.length) filled.push("Aggravating factors");
+    if (result.relMovements?.length) filled.push("Relieving factors");
+    if (result.hasRadiation != null) filled.push("Radiation");
+    if (result.neuroSymptoms?.length) filled.push("Neuro symptoms");
+    if (result.hasLegNeuro) filled.push("Leg neuro");
+    if (reg) filled.push("Region: " + reg);
+
     set(updates);
     setAiOpen(false);
     setAiReview(false);
@@ -4290,7 +4343,7 @@ If input is Hindi or mixed, extract clinical meaning in English.`;
     setActiveSection("demographics");
     if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     setAiSuccess({ count: filled.length, fields: filled });
-    setTimeout(() => setAiSuccess(null), 6000);
+    setTimeout(() => setAiSuccess(null), 8000);
   }, [data, set]);
 
   // ── Build active sections ───────────────────────────────────────────
