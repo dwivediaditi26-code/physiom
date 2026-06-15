@@ -4235,21 +4235,26 @@ function SubjectiveModule({ data, set, onNav }) {
       if (result.nightSymptoms?.length)
         updates[pfx + "_night"] = result.nightSymptoms.join(SEP);
 
-      // Aggravating / relieving — store as notes if no matching field
-      if (result.aggMovements?.length)
-        updates[pfx + "_agg_notes"] = (updates[pfx + "_agg_notes"] || "") +
-          "Movements aggravate: " + result.aggMovements.join(", ");
-      if (result.aggActivities?.length)
-        updates[pfx + "_agg_notes"] = (updates[pfx + "_agg_notes"] ? updates[pfx + "_agg_notes"] + "\n" : "") +
-          "Activities aggravate: " + result.aggActivities.join(", ");
-      if (result.relMovements?.length)
-        updates[pfx + "_rel_notes"] = "Relieves: " + result.relMovements.join(", ");
+      // Aggravating — write to notes AND worst-aggravator text field
+      const allAgg = [...(result.aggMovements||[]), ...(result.aggActivities||[])];
+      if (allAgg.length) {
+        updates[pfx + "_agg_notes"] = allAgg.join("\n");
+        updates[pfx + "_agg_worst"] = allAgg[0];
+      }
+      // Relieving — write to notes AND best-reliever text field
+      if (result.relMovements?.length) {
+        updates[pfx + "_rel_notes"] = result.relMovements.join("\n");
+        updates[pfx + "_rel_best"] = result.relMovements[0];
+      }
 
-      // Radiation
+      // Radiation — radiation field is a multicheck; single option value is fine
       if (result.hasRadiation === false)
         updates[pfx + "_radiation"] = "No radiation — local only";
-      else if (result.hasRadiation && result.radiationArea)
-        updates[pfx + "_rad_notes"] = result.radiationArea + (result.radiationSide ? " (" + result.radiationSide + ")" : "");
+      else if (result.hasRadiation) {
+        if (result.radiationArea)
+          updates[pfx + "_rad_notes"] = result.radiationArea + (result.radiationSide ? " (" + result.radiationSide + ")" : "");
+        // Note: specific radiation destinations should be confirmed by clinician in multicheck
+      }
 
       // Neurological symptoms
       if (result.neuroSymptoms?.length) {
@@ -4604,20 +4609,24 @@ function SubjectiveModule({ data, set, onNav }) {
                 </div>
                 <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:10, maxHeight:220, overflowY:"auto" }}>
                   {[
-                    aiResult.age     && { k:"Age",        v: aiResult.age + " yrs" },
-                    aiResult.sex     && { k:"Sex",        v: aiResult.sex },
-                    aiResult.occupation && { k:"Occupation", v: aiResult.occupation },
-                    aiResult.region  && { k:"Region",     v: aiResult.region + (aiResult.laterality ? ` (${aiResult.laterality})` : "") },
-                    aiResult.onset   && { k:"Onset",      v: aiResult.onset },
-                    aiResult.duration && { k:"Duration",  v: aiResult.duration },
-                    aiResult.nrsWorst != null && { k:"NRS worst", v: aiResult.nrsWorst + "/10" },
-                    aiResult.nrsBest  != null && { k:"NRS best",  v: aiResult.nrsBest  + "/10" },
-                    aiResult.nrsNow   != null && { k:"NRS now",   v: aiResult.nrsNow   + "/10" },
-                    aiResult.aggravating?.length && { k:"Aggravating", v: aiResult.aggravating.join(", ") },
-                    aiResult.relieving?.length   && { k:"Relieving",   v: aiResult.relieving.join(", ") },
-                    aiResult.pattern && { k:"Pattern", v: aiResult.pattern },
-                    aiResult.morningStiffness && { k:"Morning", v: aiResult.morningStiffness },
-                    aiResult.hasRadiation != null && { k:"Radiation", v: aiResult.hasRadiation ? (aiResult.radiationDetail || "Yes") : "None" },
+                    aiResult.age        && { k:"Age",         v: aiResult.age + " yrs" },
+                    aiResult.sex        && { k:"Sex",         v: aiResult.sex },
+                    aiResult.occupation && { k:"Occupation",  v: aiResult.occupation },
+                    aiResult.region     && { k:"Region",      v: aiResult.region + (aiResult.laterality ? ` (${aiResult.laterality})` : "") },
+                    aiResult.onset      && { k:"Onset",       v: aiResult.onset },
+                    aiResult.duration   && { k:"Duration",    v: aiResult.duration },
+                    aiResult.nrsWorst != null && { k:"NRS worst",  v: aiResult.nrsWorst + "/10" },
+                    aiResult.nrsBest  != null && { k:"NRS best",   v: aiResult.nrsBest  + "/10" },
+                    aiResult.nrsNow   != null && { k:"NRS now",    v: aiResult.nrsNow   + "/10" },
+                    aiResult.painQuality?.length && { k:"Pain quality", v: aiResult.painQuality.join(", ") },
+                    aiResult.symptomPattern && { k:"Pattern",      v: aiResult.symptomPattern },
+                    aiResult.diurnalPattern && { k:"24hr pattern", v: aiResult.diurnalPattern },
+                    aiResult.morningSymptoms?.length && { k:"Morning",     v: aiResult.morningSymptoms.join(", ") },
+                    aiResult.nightSymptoms?.length   && { k:"Night",       v: aiResult.nightSymptoms.join(", ") },
+                    (aiResult.aggMovements?.length || aiResult.aggActivities?.length) && { k:"Aggravating", v: [...(aiResult.aggMovements||[]), ...(aiResult.aggActivities||[])].join(", ") },
+                    aiResult.relMovements?.length    && { k:"Relieving",   v: aiResult.relMovements.join(", ") },
+                    aiResult.hasRadiation != null    && { k:"Radiation",   v: aiResult.hasRadiation ? (aiResult.radiationArea || "Yes") : "None" },
+                    aiResult.neuroSymptoms?.length   && { k:"Neuro",       v: aiResult.neuroSymptoms.join(", ") },
                   ].filter(Boolean).map(({k,v}) => (
                     <div key={k} style={{ display:"flex", gap:8, alignItems:"flex-start",
                       background:"#fff", borderRadius:7, padding:"5px 9px",
@@ -4637,9 +4646,11 @@ function SubjectiveModule({ data, set, onNav }) {
                 {/* What still needs physio */}
                 {(() => {
                   const missing = [];
-                  if (!aiResult.hasRadiation && !aiResult.radiationDetail) missing.push("Radiation / referral");
-                  if (aiResult.nightPain == null) missing.push("Night pain");
-                  if (!aiResult.morningStiffness) missing.push("Morning stiffness");
+                  if (aiResult.hasRadiation == null) missing.push("Radiation / referral");
+                  if (!aiResult.nightSymptoms?.length) missing.push("Night symptoms");
+                  if (!aiResult.morningSymptoms?.length) missing.push("Morning stiffness");
+                  if (aiResult.nrsNow == null) missing.push("NRS now");
+                  if (!aiResult.diurnalPattern) missing.push("24hr pattern");
                   return missing.length > 0 ? (
                     <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:7,
                       padding:"6px 10px", fontSize:"0.7rem", color:"#b91c1c", marginBottom:8 }}>

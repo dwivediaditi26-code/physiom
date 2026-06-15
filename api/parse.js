@@ -20,7 +20,7 @@ Return this exact JSON shape (null for anything not mentioned, empty array [] fo
   "occupation": string or null,
   "region": one of ["Lumbar / SI","Cervical spine","Thoracic spine","Shoulder (L)","Shoulder (R)","Knee (L)","Knee (R)","Hip / Groin","Ankle / Foot","Elbow/Wrist/Hand"] or null,
   "laterality": "Left"|"Right"|"Bilateral"|null,
-  "duration": one of ["< 1 week (hyperacute)","1–2 weeks (acute)","2–6 weeks (subacute)","6 weeks–3 months","3-6 months (chronic)","6-12 months","1-2 years","> 2 years"] or null,
+  "duration": one of ["< 1 week (hyperacute)","1–2 weeks (acute)","2–6 weeks (subacute)","6 weeks–3 months","3–6 months (chronic)","6–12 months","1–2 years","> 2 years"] or null,
   "onset": one of ["Sudden — traumatic","Sudden — no trauma","Gradual — insidious","Sport-related","Lifting injury","Twisting injury","MVA / whiplash","Post-surgical","Woke with it","Repetitive strain","After new activity","Post-partum","Post-illness / viral","No clear cause"] or null,
   "nrsNow": number 0-10 or null,
   "nrsWorst": number 0-10 or null,
