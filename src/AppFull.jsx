@@ -7808,8 +7808,11 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         const W = img.naturalWidth, H = img.naturalHeight;
         const oc = document.createElement("canvas"); oc.width=W; oc.height=H;
         const ctx = oc.getContext("2d"); ctx.drawImage(img, 0, 0, W, H);
-        // Only bake manual dots — full analysis overlay is handled by live CanvasOverlayOnImage
         drawManualOverlay({ ctx, W, H, placed:manualPlaced, pointDefs:manualPointDefs, connections:manualConnections });
+        // Also bake full analysis overlay so PDF report gets the annotated image
+        if (lm && m && Object.keys(m).length > 0) {
+          try { drawOverlay({ ctx, W, H, lm, view, showGrid: true, measurements: m, clearFirst: false }); } catch(oe){ console.warn("drawOverlay bake:", oe); }
+        }
         try { setUploadedImg(oc.toDataURL("image/jpeg", 0.92)); } catch(te){ setUploadedImg(objectUrlRef.current); }
       };
       img.src = objectUrlRef.current;
