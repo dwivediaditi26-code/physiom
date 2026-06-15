@@ -1989,9 +1989,10 @@ function AdvancedMeasurementEngine(lm, calibration=null) {
     if (pelvisAngle === null) return null;
 
     const absAngle = Math.abs(pelvisAngle);
-    // Sign: calcAngleDeg(g(24),g(23)) → +ve = Right elevated, -ve = Left elevated
-    const elevationSide = pelvisAngle > 0 ? "Right" : pelvisAngle < 0 ? "Left" : null;
-    const depressionSide = pelvisAngle > 0 ? "Left" : pelvisAngle < 0 ? "Right" : null;
+    // Direct Y comparison: view-independent (lower y = higher anatomically).
+    // g(23)=patient left hip, g(24)=patient right hip; works in both anterior and posterior views.
+    const elevationSide = g(23).y < g(24).y ? "Left" : g(23).y > g(24).y ? "Right" : null;
+    const depressionSide = g(23).y < g(24).y ? "Right" : g(23).y > g(24).y ? "Left" : null;
 
     let severity, severityCode;
     if      (absAngle < 2.0)  { severity = "Normal";      severityCode = 0; }
@@ -2424,7 +2425,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
 
     // Head lateral offset
     if (headLateralOffset !== null && Math.abs(headLateralOffset) > 2.5) {
-      const abs = Math.abs(headLateralOffset); const side = headLateralOffset > 0 ? "right" : "left";
+      const abs = Math.abs(headLateralOffset); const side = headLateralOffset > 0 ? "left" : "right";
       add("Cervical", `Head laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 5 ? "high" : "moderate",
         `Cervical lateral flexion mobilisation contralateral. SCM and scalene release ipsilateral. Assess ocular/vestibular contributions. Pillow height review.`,
         "M54.2", "↔", `Persistent shift: C2–C4 facet dysfunction, alar ligament laxity, or habitual visual dominance.`, "Normal: <2.5%", abs);
@@ -2466,8 +2467,8 @@ function ClinicalFindingsEngine(lm, view, measurements) {
       const safeTrunk = plaus(trunkLateralShift, PLAUS.trunk);
       if (safeTrunk !== null && Math.abs(safeTrunk) > 3.5) {
         const abs = Math.abs(safeTrunk);
-        // Positive = shoulders right of ankles in image coords = trunk shifted RIGHT (image perspective)
-        const side = safeTrunk > 0 ? "right" : "left";
+        // Positive = shoulders right of ankles in image = patient LEFT (anterior view: image right = patient left)
+        const side = safeTrunk > 0 ? "left" : "right";
         add("Thoracic", `Trunk laterally shifted to the ${side} (${abs.toFixed(1)}% from plumb line)`, abs > 7 ? "high" : "moderate",
           `Assess antalgic lean (disc/radiculopathy — trunk shifts AWAY from herniation in paracentral disc, TOWARD in lateral disc). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.`,
           "M54.5", "⇒", `Lateral trunk shift highly associated with L4/L5 disc herniation. All 4 landmarks confirmed ≥0.65 visibility.`, "Normal: <3.5%", abs);
@@ -2543,7 +2544,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
 
     // Weight-bearing asymmetry
     if (weightBearingShift !== null && Math.abs(weightBearingShift) > 4) {
-      const abs = Math.abs(weightBearingShift); const side = weightBearingShift > 0 ? "right" : "left";
+      const abs = Math.abs(weightBearingShift); const side = weightBearingShift > 0 ? "left" : "right";
       add("Balance / Loading", `Weight-bearing asymmetry — loading toward ${side} (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
         `Mirror biofeedback bilateral stance. Scales under each foot if available. Retrain equal loading. Identify driver: pain avoidance, LLD, or habit.`,
         "M62.9", "⊖", `Asymmetric loading >6% associated with increased ipsilateral knee/hip OA progression.`, "Normal: <4%", abs);
@@ -2563,7 +2564,7 @@ function ClinicalFindingsEngine(lm, view, measurements) {
     // COG deviation
     if (cogDeviation !== null && Math.abs(cogDeviation) > 5) {
       const abs = Math.abs(cogDeviation);
-      add("Global Posture", `COG shifted ${cogDeviation > 0 ? "right" : "left"} (${abs.toFixed(1)}%)`, abs > 9 ? "high" : "moderate",
+      add("Global Posture", `COG shifted ${cogDeviation > 0 ? "left" : "right"} (${abs.toFixed(1)}%)`, abs > 9 ? "high" : "moderate",
         `Global postural reset: proprioceptive training single-leg stance, mirror biofeedback, perturbation training. Identify structural driver before retraining.`,
         "M62.9", "⊕", "", "Normal: <5%", abs);
     }
