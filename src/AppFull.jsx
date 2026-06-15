@@ -9194,6 +9194,18 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
     if(!findings.length||!scoreData) return;
     try {
       const annotatedImg = uploadedImg || capturedImg || null;
+      // Build ordered array of all captured view images for dynamic photo grid
+      const _viewOrderRpt = ["anterior","posterior","left","right"];
+      const _viewLabelsRpt = { anterior:"Anterior — Front", posterior:"Posterior — Back", left:"Left Lateral", right:"Right Lateral" };
+      let allViewImgs = [];
+      if (assessMode === "multi" && Object.keys(mvResults||{}).length > 0) {
+        allViewImgs = _viewOrderRpt
+          .filter(vk => mvResults[vk]?.img)
+          .map(vk => ({ img: mvResults[vk].img, label: _viewLabelsRpt[vk], score: mvResults[vk].scoreData?.score ?? null }));
+      }
+      if (allViewImgs.length === 0 && annotatedImg) {
+        allViewImgs = [{ img: annotatedImg, label: _viewLabelsRpt[view] || "Analysis view", score: scoreData?.score ?? null }];
+      }
       const views = [view];
       const m = measurements||{};
 
@@ -9252,6 +9264,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       score: { value: scoreData?.score||0, band: scoreData?.band||"", colour: scoreData?.colour||scoreData?.color||"#dc2626" },
       views,
       annotatedImg,
+      allViewImgs,
       findings: rptFindings,
       muscles: (()=>{
         const mi = buildMuscleImbalance(findings);
@@ -9328,6 +9341,23 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
     const m = d.metrics;
     const scoreColour = d.score.colour||C.red;
+    // Dynamic photo grid — shows only captured views, no placeholders
+    const photoGrid = (imgs, h=200) => {
+      if (!imgs || imgs.length === 0) return '';
+      const cols = imgs.length === 1 ? '1fr' : '1fr 1fr';
+      return `<div style="display:grid;grid-template-columns:${cols};gap:10px">
+        ${imgs.map(({img:src,label,score})=>`
+          <div style="border-radius:10px;overflow:hidden;border:1px solid ${C.border}">
+            <div style="height:${h}px;background:#0f172a;overflow:hidden">
+              <img src="${src}" style="width:100%;height:100%;object-fit:contain"/>
+            </div>
+            <div style="padding:4px 8px;background:${C.surface};display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:0.58rem;font-weight:700;color:${C.muted}">${label||''}</span>
+              ${score!=null?`<span style="font-size:0.6rem;font-weight:800;color:${score>=74?C.green:score>=58?C.yellow:C.red}">${score}/100</span>`:''}
+            </div>
+          </div>`).join('')}
+      </div>`;
+    };
     const img = d.annotatedImg ? `<img src="${d.annotatedImg}" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:${C.muted}"><div style="font-size:2rem">📷</div><div style="font-size:0.65rem;margin-top:6px">Analysed image</div></div>`;
 
     if(type==="basic") {
@@ -9389,10 +9419,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 <div style="width:3px;height:14px;border-radius:2px;background:${C.accent}"></div>
                 <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${C.accent}">Your Posture Photo</div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                <div style="height:200px;border-radius:10px;border:2px dashed ${C.border};background:${C.surface};overflow:hidden">${img}</div>
-                <div style="height:200px;border-radius:10px;border:2px dashed ${C.border};background:${C.surface};display:flex;align-items:center;justify-content:center;flex-direction:column;color:${C.muted}"><div style="font-size:1.5rem">📷</div><div style="font-size:0.62rem;margin-top:6px">Additional view</div></div>
-              </div>
+              ${photoGrid(d.allViewImgs, 200)}
             </div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
               <div style="width:3px;height:14px;border-radius:2px;background:${C.accent}"></div>
@@ -9539,10 +9566,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             <div style="width:3px;height:14px;border-radius:2px;background:${C.accent}"></div>
             <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${C.accent}">Annotated Postural Views</div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div style="height:190px;border-radius:10px;border:2px dashed ${C.border};background:${C.surface};overflow:hidden">${img}</div>
-            <div style="height:190px;border-radius:10px;border:2px dashed ${C.border};background:${C.surface};display:flex;align-items:center;justify-content:center;flex-direction:column;color:${C.muted}"><div style="font-size:1.5rem">📷</div><div style="font-size:0.62rem;margin-top:6px">Additional view</div></div>
-          </div>
+          ${photoGrid(d.allViewImgs, 190)}
         </div>
         ${footer(1,5,"Detailed Clinical Report")}
       </div>
