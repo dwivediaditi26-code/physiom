@@ -11978,7 +11978,6 @@ function FMASection({ navContext={}, data={}, set=()=>{}, navTo=()=>{} }){
     Object.entries(saved).forEach(([k,v])=>{if(v.score!==undefined)s[k]=v.score;});
     return s;
   });
-  const [showCamera,setShowCamera]=useState(false);
   const [expandedDef,setExpandedDef]=useState(null);
   const [activeSection,setActiveSection]=useState("select"); // select | test | report
 
@@ -12043,11 +12042,9 @@ function FMASection({ navContext={}, data={}, set=()=>{}, navTo=()=>{} }){
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
           <div>
             <div style={{fontWeight:800,color:C.accent,marginBottom:3}}>🏃 FMS — Clinical Reasoning Assistant</div>
-            <div style={{fontSize:"0.75rem",color:C.muted}}>Select tests, identify defects manually. AI camera optional. Full clinical interpretation generated per defect.</div>
+            <div style={{fontSize:"0.75rem",color:C.muted}}>Select tests, identify defects manually. Full clinical interpretation generated per defect.</div>
           </div>
-          <button type="button" onClick={()=>setShowCamera(p=>!p)} style={{flexShrink:0,padding:"5px 10px",background:showCamera?"rgba(0,229,255,0.15)":"rgba(0,229,255,0.06)",border:`1px solid ${showCamera?C.accent:C.border}`,borderRadius:8,color:showCamera?C.accent:C.muted,fontSize:"0.7rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
-            📷 Camera {showCamera?"ON":"OFF"}
-          </button>
+
         </div>
         {selectedTests.length>0&&(
           <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap",alignItems:"center"}}>
@@ -12058,8 +12055,6 @@ function FMASection({ navContext={}, data={}, set=()=>{}, navTo=()=>{} }){
         )}
       </div>
 
-      {/* Optional AI Camera */}
-      {showCamera&&<FMSCameraPanel onClose={()=>setShowCamera(false)}/>}
 
       {/* Tab nav */}
       <div style={{display:"flex",gap:5,marginBottom:12}}>
