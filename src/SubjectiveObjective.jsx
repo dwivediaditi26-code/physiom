@@ -4128,6 +4128,105 @@ function SubjectiveModule({ data, set, onNav }) {
       return next;
     });
     setInsight(null);
+  }, [set, data]);
+
+  // ── AI Parser state ────────────────────────────────────────────────
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiMode, setAiMode] = useState("text"); // "text" | "voice"
+  const [aiText, setAiText] = useState("");
+  const [aiStatus, setAiStatus] = useState("idle"); // "idle"|"recording"|"processing"|"done"|"error"
+  const [aiResult, setAiResult] = useState(null);
+  const [aiReview, setAiReview] = useState(false);
+  const aiRecognitionRef = React.useRef(null);
+
+  const stopRecording = React.useCallback(() => {
+    if (aiRecognitionRef.current) { try { aiRecognitionRef.current.stop(); } catch(e){} aiRecognitionRef.current = null; }
+    setAiStatus("idle");
+  }, []);
+
+  const startRecording = React.useCallback(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Voice input requires Chrome browser."); return; }
+    setAiText(""); setAiStatus("recording"); setAiMode("voice");
+    const r = new SR();
+    r.continuous = true; r.interimResults = true; r.lang = "en-IN";
+    r.onresult = (e) => {
+      let final = ""; let interim = "";
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+        else interim += e.results[i][0].transcript;
+      }
+      setAiText((final + interim).trim());
+    };
+    r.onerror = () => { setAiStatus("error"); };
+    r.onend = () => { setAiStatus(s => s === "recording" ? "idle" : s); };
+    r.start();
+    aiRecognitionRef.current = r;
+  }, []);
+
+  const runParse = React.useCallback(async (textToParse) => {
+    if (!textToParse.trim()) return;
+    stopRecording();
+    setAiStatus("processing");
+    try {
+      const res = await fetch("/api/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: textToParse }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Parse failed");
+      setAiResult(json);
+      setAiStatus("done");
+      setAiReview(true);
+    } catch (e) {
+      setAiStatus("error");
+      console.error("AI parse error:", e);
+    }
+  }, [stopRecording]);
+
+  const applyAiResult = React.useCallback((result) => {
+    const updates = { ...data };
+    if (result.age)        updates.dem_age = String(result.age);
+    if (result.sex)        updates.dem_sex = result.sex;
+    if (result.occupation) updates.dem_occupation = result.occupation;
+    if (result.onset)      updates.cc_onset = result.onset;
+    if (result.duration)   updates.cc_duration = result.duration;
+    if (result.nrsNow   != null) updates.cc_vas_now   = String(Math.round(result.nrsNow));
+    if (result.nrsWorst != null) updates.cc_vas_worst = String(Math.round(result.nrsWorst));
+    if (result.nrsBest  != null) updates.cc_vas_best  = String(Math.round(result.nrsBest));
+    if (result.pattern)    updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "Pattern: " + result.pattern;
+    if (result.aggravating?.length) updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "Aggravating: " + result.aggravating.join(", ");
+    if (result.relieving?.length)   updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "Relieving: " + result.relieving.join(", ");
+    if (result.hasRadiation === false) updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "No radiation.";
+    if (result.hasRadiation && result.radiationDetail) updates.cc_notes = (updates.cc_notes ? updates.cc_notes + "\n" : "") + "Radiation: " + result.radiationDetail;
+    if (result.morningStiffness) {
+      const prefix = result.region?.startsWith("Lumbar") ? "lx" : result.region?.startsWith("Cervical") ? "cx" : result.region?.startsWith("Thoracic") ? "tx" : null;
+      if (prefix) updates[prefix + "_morning"] = result.morningStiffness;
+    }
+    if (result.nightPain != null) {
+      const prefix = result.region?.startsWith("Lumbar") ? "lx" : result.region?.startsWith("Cervical") ? "cx" : null;
+      if (prefix) updates[prefix + "_night"] = result.nightPain ? "Wakes from sleep" : "No night symptoms";
+    }
+    // Add region to selected regions
+    if (result.region) {
+      let reg = result.region;
+      if (result.laterality === "Left" && reg === "Shoulder") reg = "Shoulder (L)";
+      if (result.laterality === "Right" && reg === "Shoulder") reg = "Shoulder (R)";
+      if (result.laterality === "Left" && reg === "Knee") reg = "Knee (L)";
+      if (result.laterality === "Right" && reg === "Knee") reg = "Knee (R)";
+      setSelectedRegions(prev => {
+        if (prev.includes(reg) || prev.length >= 3) return prev;
+        const next = [...prev, reg];
+        updates.cx_selected_regions = JSON.stringify(next);
+        return next;
+      });
+    }
+    set(updates);
+    setAiOpen(false);
+    setAiReview(false);
+    setAiStatus("idle");
+    setAiText("");
   }, [data, set]);
 
   // ── Build active sections ───────────────────────────────────────────
@@ -4307,6 +4406,185 @@ function SubjectiveModule({ data, set, onNav }) {
   // ══════════════════════════════════════════════════════════════════
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14, maxWidth:"100%" }}>
+
+      {/* ── AI Smart Parser Strip ─────────────────────────────────── */}
+      <div style={{ background:`linear-gradient(135deg,#ede9fe,#f5f3ff)`, borderRadius:12,
+        border:"1px solid #c4b5fd", padding:"10px 14px" }}>
+        {!aiOpen ? (
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:"0.72rem", fontWeight:700, color:"#5b21b6", flex:1 }}>
+              ✦ AI Smart Parser — speak or type to auto-fill this form
+            </span>
+            <button type="button" onClick={() => { setAiOpen(true); setAiMode("voice"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
+              style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:20,
+                background:"#7c3aed", color:"#fff", border:"none", fontSize:"0.72rem",
+                fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+              🎤 Speak
+            </button>
+            <button type="button" onClick={() => { setAiOpen(true); setAiMode("text"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
+              style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:20,
+                background:"transparent", color:"#7c3aed", border:"1px solid #a78bfa",
+                fontSize:"0.72rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+              ⌨ Type
+            </button>
+          </div>
+        ) : (
+          <div>
+            {/* Header */}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+              <span style={{ fontSize:"0.78rem", fontWeight:700, color:"#5b21b6" }}>
+                {aiStatus === "recording" ? "🔴 Listening..." : aiStatus === "processing" ? "⏳ Groq reading..." : aiStatus === "done" ? "✓ Done" : aiStatus === "error" ? "⚠ Error" : "✦ AI Parser"}
+              </span>
+              <button type="button" onClick={() => { stopRecording(); setAiOpen(false); setAiStatus("idle"); }}
+                style={{ background:"transparent", border:"none", color:"#7c3aed", fontSize:"1rem", cursor:"pointer" }}>✕</button>
+            </div>
+
+            {/* Voice mode */}
+            {aiMode === "voice" && aiStatus !== "done" && (
+              <div>
+                {aiStatus === "idle" || aiStatus === "error" ? (
+                  <button type="button" onClick={startRecording}
+                    style={{ width:"100%", padding:"10px", borderRadius:10, background:"#7c3aed",
+                      color:"#fff", border:"none", fontSize:"0.82rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit", marginBottom:8 }}>
+                    🎤 Tap to start recording
+                  </button>
+                ) : aiStatus === "recording" ? (
+                  <div>
+                    <div style={{ background:"#fee2e2", borderRadius:8, padding:"8px 12px", marginBottom:8,
+                      fontSize:"0.72rem", color:"#b91c1c", display:"flex", alignItems:"center", gap:8 }}>
+                      <span style={{ display:"inline-block", width:8, height:8, borderRadius:"50%",
+                        background:"#dc2626", animation:"pulse 1s infinite" }}></span>
+                      Recording — speak naturally, then tap Stop
+                    </div>
+                    {aiText && <div style={{ fontSize:"0.72rem", color:"#5b21b6", background:"#f5f3ff",
+                      borderRadius:8, padding:"8px 10px", marginBottom:8, lineHeight:1.5 }}>{aiText}</div>}
+                    <div style={{ display:"flex", gap:8 }}>
+                      <button type="button" onClick={() => { stopRecording(); if (aiText) runParse(aiText); }}
+                        style={{ flex:1, padding:"8px", borderRadius:10, background:"#dc2626", color:"#fff",
+                          border:"none", fontSize:"0.78rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+                        ⬛ Stop & Parse
+                      </button>
+                      <button type="button" onClick={() => { stopRecording(); setAiMode("text"); }}
+                        style={{ padding:"8px 12px", borderRadius:10, background:"transparent", color:"#7c3aed",
+                          border:"1px solid #a78bfa", fontSize:"0.72rem", cursor:"pointer", fontFamily:"inherit" }}>
+                        Switch to type
+                      </button>
+                    </div>
+                  </div>
+                ) : aiStatus === "processing" ? (
+                  <div style={{ textAlign:"center", padding:"12px", color:"#92400e", fontSize:"0.78rem" }}>
+                    ⏳ Sending to Groq AI...
+                  </div>
+                ) : null}
+                {aiStatus === "error" && (
+                  <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8,
+                    padding:"8px 12px", fontSize:"0.72rem", color:"#b91c1c", marginTop:6 }}>
+                    Parse failed — check internet connection or try typing instead.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Text mode */}
+            {(aiMode === "text" || (aiMode === "voice" && aiStatus === "done" && !aiReview)) && aiStatus !== "processing" && !aiReview && (
+              <div>
+                <textarea
+                  value={aiText}
+                  onChange={e => setAiText(e.target.value)}
+                  placeholder="e.g. 34M LBP 3mo lifting, worse sitting+bending, better walking+heat, 7/10"
+                  style={{ width:"100%", minHeight:64, padding:"8px 10px", borderRadius:8,
+                    border:"1px solid #c4b5fd", background:"#fff", color:"#1a1025",
+                    fontSize:"0.78rem", fontFamily:"monospace", resize:"vertical",
+                    lineHeight:1.5, outline:"none", boxSizing:"border-box", marginBottom:8 }}
+                />
+                <div style={{ display:"flex", gap:8 }}>
+                  <button type="button"
+                    onClick={() => runParse(aiText)}
+                    disabled={!aiText.trim() || aiStatus === "processing"}
+                    style={{ flex:1, padding:"9px", borderRadius:10,
+                      background: aiText.trim() ? "#7c3aed" : "#c4b5fd",
+                      color:"#fff", border:"none", fontSize:"0.8rem", fontWeight:700,
+                      cursor: aiText.trim() ? "pointer" : "not-allowed", fontFamily:"inherit" }}>
+                    {aiStatus === "processing" ? "Parsing..." : "✦ Parse with Groq AI"}
+                  </button>
+                  <button type="button" onClick={() => { setAiMode("voice"); setAiStatus("idle"); }}
+                    style={{ padding:"9px 12px", borderRadius:10, background:"transparent", color:"#7c3aed",
+                      border:"1px solid #a78bfa", fontSize:"0.72rem", cursor:"pointer", fontFamily:"inherit" }}>
+                    🎤
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Review panel */}
+            {aiReview && aiResult && (
+              <div>
+                <div style={{ fontSize:"0.7rem", fontWeight:700, color:"#5b21b6", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                  Review extracted data
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:10, maxHeight:220, overflowY:"auto" }}>
+                  {[
+                    aiResult.age     && { k:"Age",        v: aiResult.age + " yrs" },
+                    aiResult.sex     && { k:"Sex",        v: aiResult.sex },
+                    aiResult.occupation && { k:"Occupation", v: aiResult.occupation },
+                    aiResult.region  && { k:"Region",     v: aiResult.region + (aiResult.laterality ? ` (${aiResult.laterality})` : "") },
+                    aiResult.onset   && { k:"Onset",      v: aiResult.onset },
+                    aiResult.duration && { k:"Duration",  v: aiResult.duration },
+                    aiResult.nrsWorst != null && { k:"NRS worst", v: aiResult.nrsWorst + "/10" },
+                    aiResult.nrsBest  != null && { k:"NRS best",  v: aiResult.nrsBest  + "/10" },
+                    aiResult.nrsNow   != null && { k:"NRS now",   v: aiResult.nrsNow   + "/10" },
+                    aiResult.aggravating?.length && { k:"Aggravating", v: aiResult.aggravating.join(", ") },
+                    aiResult.relieving?.length   && { k:"Relieving",   v: aiResult.relieving.join(", ") },
+                    aiResult.pattern && { k:"Pattern", v: aiResult.pattern },
+                    aiResult.morningStiffness && { k:"Morning", v: aiResult.morningStiffness },
+                    aiResult.hasRadiation != null && { k:"Radiation", v: aiResult.hasRadiation ? (aiResult.radiationDetail || "Yes") : "None" },
+                  ].filter(Boolean).map(({k,v}) => (
+                    <div key={k} style={{ display:"flex", gap:8, alignItems:"flex-start",
+                      background:"#fff", borderRadius:7, padding:"5px 9px",
+                      border:"1px solid #e9d5ff", fontSize:"0.72rem" }}>
+                      <span style={{ color:"#7c6a9a", minWidth:74, flexShrink:0 }}>{k}</span>
+                      <span style={{ color:"#1a1025", fontWeight:500 }}>{v}</span>
+                    </div>
+                  ))}
+                  {aiResult.flags?.length > 0 && aiResult.flags.map(f => (
+                    <div key={f} style={{ display:"flex", gap:8, background:"#fff7ed",
+                      border:"1px solid #fdba74", borderRadius:7, padding:"5px 9px", fontSize:"0.72rem" }}>
+                      <span style={{ color:"#92400e" }}>⚠ Flag</span>
+                      <span style={{ color:"#92400e", fontWeight:500 }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* What still needs physio */}
+                {(() => {
+                  const missing = [];
+                  if (!aiResult.hasRadiation && !aiResult.radiationDetail) missing.push("Radiation / referral");
+                  if (aiResult.nightPain == null) missing.push("Night pain");
+                  if (!aiResult.morningStiffness) missing.push("Morning stiffness");
+                  return missing.length > 0 ? (
+                    <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:7,
+                      padding:"6px 10px", fontSize:"0.7rem", color:"#b91c1c", marginBottom:8 }}>
+                      <strong>Still ask patient:</strong> {missing.join(" · ")}
+                    </div>
+                  ) : null;
+                })()}
+                <div style={{ display:"flex", gap:8 }}>
+                  <button type="button" onClick={() => applyAiResult(aiResult)}
+                    style={{ flex:1, padding:"9px", borderRadius:10, background:"#7c3aed",
+                      color:"#fff", border:"none", fontSize:"0.8rem", fontWeight:700,
+                      cursor:"pointer", fontFamily:"inherit" }}>
+                    ✓ Apply to form
+                  </button>
+                  <button type="button" onClick={() => { setAiReview(false); setAiStatus("idle"); setAiText(""); setAiResult(null); }}
+                    style={{ padding:"9px 12px", borderRadius:10, background:"transparent", color:"#7c3aed",
+                      border:"1px solid #a78bfa", fontSize:"0.72rem", cursor:"pointer", fontFamily:"inherit" }}>
+                    Re-try
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ── Region selector — collapsed summary row when regions selected ── */}
       {selectedRegions.length === 0 || regionPickerOpen ? (
