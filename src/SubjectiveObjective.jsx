@@ -4140,6 +4140,7 @@ function SubjectiveModule({ data, set, onNav }) {
   const [aiKey, setAiKey] = useState(() => localStorage.getItem("physio_groq_key") || "");
   const [aiKeyEdit, setAiKeyEdit] = useState(false);
   const [aiKeyInput, setAiKeyInput] = useState("");
+  const [aiSuccess, setAiSuccess] = useState(null); // { count, fields[] }
   const aiRecognitionRef = React.useRef(null);
 
   const stopRecording = React.useCallback(() => {
@@ -4267,11 +4268,29 @@ If input is Hindi or mixed, extract clinical meaning in English.`;
         return next;
       });
     }
+    // Count filled fields
+    const filled = [];
+    if (result.age) filled.push("Age");
+    if (result.sex) filled.push("Sex");
+    if (result.occupation) filled.push("Occupation");
+    if (result.onset) filled.push("Onset");
+    if (result.duration) filled.push("Duration");
+    if (result.nrsNow != null) filled.push("NRS now");
+    if (result.nrsWorst != null) filled.push("NRS worst");
+    if (result.nrsBest != null) filled.push("NRS best");
+    if (result.aggravating?.length) filled.push("Aggravating factors");
+    if (result.relieving?.length) filled.push("Relieving factors");
+    if (result.pattern) filled.push("Pain pattern");
+    if (result.region) filled.push("Region selected");
     set(updates);
     setAiOpen(false);
     setAiReview(false);
     setAiStatus("idle");
     setAiText("");
+    setActiveSection("demographics");
+    if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    setAiSuccess({ count: filled.length, fields: filled });
+    setTimeout(() => setAiSuccess(null), 6000);
   }, [data, set]);
 
   // ── Build active sections ───────────────────────────────────────────
@@ -4699,6 +4718,28 @@ If input is Hindi or mixed, extract clinical meaning in English.`;
           </div>
         )}
       </div>
+
+      {/* ── AI success banner ── */}
+      {aiSuccess && (
+        <div style={{ background:"#f0fdf4", border:"1px solid #86efac", borderRadius:10,
+          padding:"10px 14px", display:"flex", alignItems:"flex-start", gap:10 }}>
+          <span style={{ fontSize:"1.1rem" }}>✅</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:"0.75rem", fontWeight:700, color:"#166534", marginBottom:3 }}>
+              {aiSuccess.count} fields auto-filled! Scroll down to review.
+            </div>
+            <div style={{ fontSize:"0.68rem", color:"#166534", lineHeight:1.6 }}>
+              {aiSuccess.fields.join(" · ")}
+            </div>
+            <div style={{ fontSize:"0.65rem", color:"#4ade80", marginTop:4 }}>
+              Check Demographics → Chief Complaint sections below ↓
+            </div>
+          </div>
+          <button type="button" onClick={() => setAiSuccess(null)}
+            style={{ background:"none", border:"none", color:"#166534", cursor:"pointer",
+              fontSize:"1rem", lineHeight:1, padding:0 }}>×</button>
+        </div>
+      )}
 
       {/* ── Region selector — collapsed summary row when regions selected ── */}
       {selectedRegions.length === 0 || regionPickerOpen ? (
