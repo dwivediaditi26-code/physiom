@@ -8183,7 +8183,19 @@ function ObservationModule({ data, set }) {
       {/* 6. Deformity */}
       <Section id="deformity" icon="🔄" title="6 · Deformity">
         <Field label="Findings">
-          <ChipRow k="obs_deformity" options={["None","Contracture","Joint Deformity","Post-Fracture Deformity","Scoliosis","Kyphosis","Hallux Valgus","Malalignment"]}/>
+          <ChipRow k="obs_deformity" options={[
+            "None",
+            "Scoliosis","Kyphosis","Hyperlordosis","Flat Back","Dowager's Hump",
+            "Forward Head Posture","Rounded Shoulders","Scapular Winging",
+            "Genu Valgum","Genu Varum","Genu Recurvatum",
+            "Coxa Vara","Coxa Valga","Leg Length Discrepancy",
+            "Pes Planus","Pes Cavus","Equinus Foot","Calcaneal Valgus","Calcaneal Varus",
+            "Hallux Valgus","Hammer Toe","Claw Toe","Mallet Toe",
+            "Cubitus Valgus","Cubitus Varus",
+            "Boutonnière Deformity","Swan Neck Deformity","Mallet Finger","Trigger Finger",
+            "Dupuytren's Contracture","Heberden's Nodes","Bouchard's Nodes",
+            "Contracture","Post-Fracture Deformity","Malalignment","Muscle Wasting / Atrophy","Joint Effusion / Swelling"
+          ]}/>
         </Field>
         {v("obs_deformity")&&v("obs_deformity")!=="None"&&(
           <>
