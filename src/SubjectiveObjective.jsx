@@ -4181,6 +4181,8 @@ function SubjectiveModule({ data, set, onNav }) {
       setAiReview(true);
     } catch (e) {
       setAiStatus("error");
+      setAiText(prev => prev); // keep text
+      setAiResult({ _errorMsg: e.message });
       console.error("AI parse error:", e);
     }
   }, [stopRecording]);
@@ -4479,7 +4481,7 @@ function SubjectiveModule({ data, set, onNav }) {
                 {aiStatus === "error" && (
                   <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8,
                     padding:"8px 12px", fontSize:"0.72rem", color:"#b91c1c", marginTop:6 }}>
-                    Parse failed — check internet connection or try typing instead.
+                    {aiResult?._errorMsg || "Parse failed — check internet connection or try typing instead."}
                   </div>
                 )}
               </div>
