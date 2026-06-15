@@ -7597,7 +7597,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       if(landmarks){ const oc3=document.createElement("canvas"); oc3.width=W; oc3.height=H; const octx3=oc3.getContext("2d"); octx3.drawImage(fc,0,0,W,H); drawOverlay({ctx:octx3,W,H,lm:landmarks,view:currentView,showGrid:true,measurements,clearFirst:false}); setCapturedImg(oc3.toDataURL("image/jpeg",0.92)); }
       if(measurements&&findings&&scoreData) saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
     }
-    setTab("findings"); if(isMobile) setMobilePanel("results");
+    if(assessMode !== "multi") { setTab("findings"); if(isMobile) setMobilePanel("results"); }
   }
 
   // ── Manual mode derived values ───────────────────────────────────────────────
@@ -7823,8 +7823,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       };
       img.src = objectUrlRef.current;
     }
-    setTab("findings");
-    if(isMobile) setMobilePanel("results");
+    if(assessMode !== "multi") { setTab("findings"); if(isMobile) setMobilePanel("results"); }
   }
 
   function handleModeSwitch(newMode) {
@@ -8678,7 +8677,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             {mvComposite.coverage.viewCount} views · {mvComposite.coverage.frontal?"✓ Frontal":"○ Frontal"} · {mvComposite.coverage.sagittal?"✓ Sagittal":"○ Sagittal"}
           </div>
         </div>
-        <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.68rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}>← Back</button>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>setShowReportModal(true)} style={{padding:"5px 12px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,fontSize:"0.68rem",fontWeight:700,color:"#fff",cursor:"pointer"}}>📄 PDF</button>
+          <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.68rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}>← Back</button>
+        </div>
       </div>
 
       {/* Captured view thumbnails inside report */}
@@ -9191,7 +9193,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
   // ── Report generator ─────────────────────────────────────────────────────────
   function generateReport() {
-    if(!findings.length||!scoreData) return;
+    // In multi-view mode, use composite data if available; fall back to single-view
+    const isMultiRpt = assessMode === "multi" && mvComposite && Object.keys(mvResults||{}).length >= 2;
+    const rptFindings_src  = isMultiRpt ? mvComposite.mergedFindings : findings;
+    const rptScoreData_src = isMultiRpt
+      ? { score: mvComposite.compositeScore, band: mvComposite.compositeBand, colour: mvComposite.compositeColour, color: mvComposite.compositeColour }
+      : scoreData;
+    if(!rptFindings_src?.length || !rptScoreData_src) return;
     try {
       const annotatedImg = uploadedImg || capturedImg || null;
       // Build ordered array of all captured view images for dynamic photo grid
@@ -9206,12 +9214,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       if (allViewImgs.length === 0 && annotatedImg) {
         allViewImgs = [{ img: annotatedImg, label: _viewLabelsRpt[view] || "Analysis view", score: scoreData?.score ?? null }];
       }
-      const views = [view];
+      const views = isMultiRpt ? Object.keys(mvResults) : [view];
       const m = measurements||{};
 
     // Build findings for report
     const isClinicianVerified = Object.keys(verified||{}).length > 0;
-    const rptFindings = findings.map(f=>({
+    const rptFindings = (rptFindings_src||[]).map(f=>({
       region: f.region||f.label||"Finding",
       text: (f.findingName||f.text||f.label||"").replace(/^OBSERVATION[^:]*:\s*/i,"").replace(/^OBSERVATION ONLY[^:]*:\s*/i,""),
       severity: (f.severity||"moderate").toLowerCase(),
@@ -9242,7 +9250,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
     const goals = [];
     if(m.cvaAngle!=null) goals.push({metric:"CVA (Yip 2008)",current:m.cvaAngle.toFixed(1)+"°",target:">55°",timeframe:"6 weeks"});
     if(m.thoracicAngle!=null) goals.push({metric:"Thoracic Kyphosis (Trunk Lean Est.)",current:m.thoracicAngle.toFixed(1)+"°",target:"<45°",timeframe:"8 weeks"});
-    if(scoreData?.score!=null) goals.push({metric:"Posture Score",current:scoreData.score+"/100",target:">60/100",timeframe:"8 weeks"});
+    if(rptScoreData_src?.score!=null) goals.push({metric:"Posture Score",current:rptScoreData_src.score+"/100",target:">60/100",timeframe:"8 weeks"});
 
     const d = {
       analysisMode: isClinicianVerified ? "Clinician Verified" : "AI Estimated",
@@ -9261,7 +9269,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         date: new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}),
         session: sessions.length+1,
       },
-      score: { value: scoreData?.score||0, band: scoreData?.band||"", colour: scoreData?.colour||scoreData?.color||"#dc2626" },
+      score: { value: rptScoreData_src?.score||0, band: rptScoreData_src?.band||"", colour: rptScoreData_src?.colour||rptScoreData_src?.color||"#dc2626" },
       views,
       annotatedImg,
       allViewImgs,
@@ -9287,7 +9295,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       soap: {
         subjective: `Patient presents with postural concerns. Height ${patientHeightCm}cm. Occupation: ${patientInfo.occupation||"not specified"}. No red flags identified during screening.`,
         objective: `Postural analysis (${views.join(", ")}): ${rptFindings.map(f=>f.text).join("; ")}. Reliability ${reliability?.score||0}%. Method: ${reliability?.isManual?"Manual landmark placement":"AI landmark detection"}.`,
-        assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. Score ${scoreData.score}/100 — ${scoreData.band}. ${rptFindings.map(f=>f.region).join(", ")}. Clinical decision regarding referral at clinician discretion — confirm all findings with physical examination before treatment.`,
+        assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. Score ${rptScoreData_src?.score||0}/100 — ${rptScoreData_src?.band||''}. ${rptFindings.map(f=>f.region).join(", ")}. Clinical decision regarding referral at clinician discretion — confirm all findings with physical examination before treatment.`,
         plan: `Janda Approach neuromuscular sequencing programme. Inhibit → Activate → Correct. Daily 10–15 min. Reassess in 4–6 weeks. Monitor for symptom development.`,
       },
       goals,
@@ -9844,14 +9852,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           <button onClick={()=>setShowReportModal(false)}
             style={{flex:1,padding:"11px",border:`1px solid ${PC.border}`,borderRadius:10,
               background:"none",color:PC.muted,fontSize:"0.75rem",cursor:"pointer"}}>Cancel</button>
-          <button onClick={generateReport} disabled={!findings.length||!scoreData}
+          <button onClick={generateReport} disabled={!(assessMode==="multi"?mvComposite:findings.length&&scoreData)}
             style={{flex:2,padding:"11px",border:"none",borderRadius:10,
               background:findings.length&&scoreData?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",
               color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:findings.length&&scoreData?"pointer":"not-allowed"}}>
             Generate & Open PDF →
           </button>
         </div>
-        {!findings.length&&<div style={{fontSize:"0.62rem",color:PC.red,textAlign:"center",marginTop:8}}>Analyse a photo first to generate a report</div>}
+        {!(assessMode==="multi"?mvComposite:findings.length)&&<div style={{fontSize:"0.62rem",color:PC.red,textAlign:"center",marginTop:8}}>{assessMode==="multi"?"Capture ≥2 views and generate composite first":"Analyse a photo first to generate a report"}</div>}
       </div>
     </div>,
     document.body
@@ -9883,7 +9891,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,
               border:"none",borderRadius:9,color:"#fff",
               fontSize:isWide?"0.72rem":"0.62rem",fontWeight:700,cursor:"pointer",
-              opacity:findings.length&&scoreData?1:0.5}}>
+              opacity:(assessMode==="multi"?!!mvComposite:!!(findings.length&&scoreData))?1:0.5}}>
             📄 PDF Report
           </button>
           <button onClick={()=>setShowHistory(h=>!h)}
