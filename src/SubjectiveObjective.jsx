@@ -4137,6 +4137,9 @@ function SubjectiveModule({ data, set, onNav }) {
   const [aiStatus, setAiStatus] = useState("idle"); // "idle"|"recording"|"processing"|"done"|"error"
   const [aiResult, setAiResult] = useState(null);
   const [aiReview, setAiReview] = useState(false);
+  const [aiKey, setAiKey] = useState(() => localStorage.getItem("physio_groq_key") || "");
+  const [aiKeyEdit, setAiKeyEdit] = useState(false);
+  const [aiKeyInput, setAiKeyInput] = useState("");
   const aiRecognitionRef = React.useRef(null);
 
   const stopRecording = React.useCallback(() => {
@@ -4166,26 +4169,66 @@ function SubjectiveModule({ data, set, onNav }) {
 
   const runParse = React.useCallback(async (textToParse) => {
     if (!textToParse.trim()) return;
+    const key = localStorage.getItem("physio_groq_key") || aiKey;
+    if (!key) { setAiKeyEdit(true); return; }
     stopRecording();
     setAiStatus("processing");
+    const system = `You are a clinical data extractor for a physiotherapy intake form. Extract structured data and return ONLY valid JSON — no explanation, no markdown.
+
+Return this exact JSON shape (use null for anything not mentioned):
+{
+  "age": number or null,
+  "sex": "Male" | "Female" | "Other" | null,
+  "occupation": string or null,
+  "region": one of ["Lumbar / SI","Cervical spine","Thoracic spine","Shoulder (L)","Shoulder (R)","Knee (L)","Knee (R)","Hip / Groin","Ankle / Foot","Elbow/Wrist/Hand"] or null,
+  "laterality": "Left" | "Right" | "Bilateral" | null,
+  "duration": one of ["< 1 week (hyperacute)","1–2 weeks (acute)","2–6 weeks (subacute)","6 weeks–3 months","3-6 months (chronic)","6-12 months","1-2 years","> 2 years"] or null,
+  "onset": one of ["Sudden — traumatic","Sudden — no trauma","Gradual — insidious","Sport-related","Lifting injury","Twisting injury","MVA / whiplash","Post-surgical","Woke with it","Repetitive strain","After new activity","Post-partum","Post-illness / viral","No clear cause"] or null,
+  "nrsNow": number 0-10 or null,
+  "nrsWorst": number 0-10 or null,
+  "nrsBest": number 0-10 or null,
+  "aggravating": array of strings,
+  "relieving": array of strings,
+  "pattern": one of ["Mechanical — worse with load/posture, better with rest","Inflammatory — morning stiffness >30 min, eases with movement","Neuropathic — constant, burning, worse at night","Postural — sustained position dependent","No clear 24hr pattern"] or null,
+  "morningStiffness": "Stiff but eases quickly <30 min" | "Stiff — takes 30-60 min to ease" | "Stiff — stays bad all morning (inflammatory flag)" | null,
+  "nightPain": true | false | null,
+  "hasRadiation": true | false,
+  "radiationDetail": string or null,
+  "flags": array of red flag strings or []
+}
+If input is Hindi or mixed, extract clinical meaning in English.`;
     try {
-      const res = await fetch("/api/parse", {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: textToParse }),
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: textToParse.trim() },
+          ],
+          temperature: 0.1,
+          max_tokens: 600,
+          response_format: { type: "json_object" },
+        }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Parse failed");
-      setAiResult(json);
+      if (!res.ok) throw new Error(json.error?.message || "Groq error");
+      const content = json.choices?.[0]?.message?.content;
+      if (!content) throw new Error("Empty response from Groq");
+      const parsed = JSON.parse(content);
+      setAiResult(parsed);
       setAiStatus("done");
       setAiReview(true);
     } catch (e) {
       setAiStatus("error");
-      setAiText(prev => prev); // keep text
       setAiResult({ _errorMsg: e.message });
       console.error("AI parse error:", e);
     }
-  }, [stopRecording]);
+  }, [stopRecording, aiKey]);
 
   const applyAiResult = React.useCallback((result) => {
     const updates = { ...data };
@@ -4417,6 +4460,14 @@ function SubjectiveModule({ data, set, onNav }) {
             <span style={{ fontSize:"0.72rem", fontWeight:700, color:"#5b21b6", flex:1 }}>
               ✦ AI Smart Parser — speak or type to auto-fill this form
             </span>
+            {!aiKey && (
+              <button type="button" onClick={() => setAiKeyEdit(true)}
+                style={{ padding:"4px 8px", borderRadius:8, background:"#fef3c7", color:"#92400e",
+                  border:"1px solid #fcd34d", fontSize:"0.68rem", fontWeight:700, cursor:"pointer",
+                  fontFamily:"inherit", flexShrink:0 }}>
+                ⚠ Set API Key
+              </button>
+            )}
             <button type="button" onClick={() => { setAiOpen(true); setAiMode("voice"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
               style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:20,
                 background:"#7c3aed", color:"#fff", border:"none", fontSize:"0.72rem",
@@ -4437,7 +4488,15 @@ function SubjectiveModule({ data, set, onNav }) {
               <span style={{ fontSize:"0.78rem", fontWeight:700, color:"#5b21b6" }}>
                 {aiStatus === "recording" ? "🔴 Listening..." : aiStatus === "processing" ? "⏳ Groq reading..." : aiStatus === "done" ? "✓ Done" : aiStatus === "error" ? "⚠ Error" : "✦ AI Parser"}
               </span>
-              <button type="button" onClick={() => { stopRecording(); setAiOpen(false); setAiStatus("idle"); }}
+              {!aiKeyEdit && (
+              <button type="button" onClick={() => { setAiKeyEdit(true); setAiKeyInput(aiKey); }}
+                style={{ background:"transparent", border:`1px solid ${aiKey ? "#a78bfa" : "#fcd34d"}`,
+                  borderRadius:6, padding:"3px 7px", fontSize:"0.65rem",
+                  color: aiKey ? "#7c3aed" : "#92400e", cursor:"pointer", fontFamily:"inherit" }}>
+                {aiKey ? "⚙ Key ✓" : "⚠ Set Key"}
+              </button>
+            )}
+            <button type="button" onClick={() => { stopRecording(); setAiOpen(false); setAiStatus("idle"); }}
                 style={{ background:"transparent", border:"none", color:"#7c3aed", fontSize:"1rem", cursor:"pointer" }}>✕</button>
             </div>
 
@@ -4487,8 +4546,61 @@ function SubjectiveModule({ data, set, onNav }) {
               </div>
             )}
 
+            {/* API Key entry */}
+            {aiKeyEdit && (
+              <div style={{ background:"#fefce8", border:"1px solid #fcd34d", borderRadius:10,
+                padding:"10px 14px", marginBottom:8 }}>
+                <div style={{ fontSize:"0.7rem", fontWeight:700, color:"#78350f", marginBottom:6 }}>
+                  🔑 Enter Groq API Key (saved locally, never sent to server)
+                </div>
+                <input
+                  type="password"
+                  value={aiKeyInput}
+                  onChange={e => setAiKeyInput(e.target.value)}
+                  placeholder="gsk_..."
+                  style={{ width:"100%", padding:"7px 10px", borderRadius:7, border:"1px solid #fcd34d",
+                    fontSize:"0.78rem", fontFamily:"monospace", outline:"none",
+                    boxSizing:"border-box", marginBottom:8, background:"#fff" }}
+                />
+                <div style={{ display:"flex", gap:8 }}>
+                  <button type="button"
+                    onClick={() => {
+                      if (aiKeyInput.trim()) {
+                        localStorage.setItem("physio_groq_key", aiKeyInput.trim());
+                        setAiKey(aiKeyInput.trim());
+                        setAiKeyInput("");
+                        setAiKeyEdit(false);
+                      }
+                    }}
+                    style={{ flex:1, padding:"7px", borderRadius:8, background:"#7c3aed",
+                      color:"#fff", border:"none", fontSize:"0.75rem", fontWeight:700,
+                      cursor:"pointer", fontFamily:"inherit" }}>
+                    Save Key
+                  </button>
+                  <button type="button" onClick={() => { setAiKeyEdit(false); setAiKeyInput(""); }}
+                    style={{ padding:"7px 10px", borderRadius:8, background:"transparent",
+                      color:"#7c3aed", border:"1px solid #a78bfa", fontSize:"0.72rem",
+                      cursor:"pointer", fontFamily:"inherit" }}>
+                    Cancel
+                  </button>
+                  {aiKey && (
+                    <button type="button"
+                      onClick={() => { localStorage.removeItem("physio_groq_key"); setAiKey(""); setAiKeyEdit(false); }}
+                      style={{ padding:"7px 10px", borderRadius:8, background:"transparent",
+                        color:"#dc2626", border:"1px solid #fca5a5", fontSize:"0.72rem",
+                        cursor:"pointer", fontFamily:"inherit" }}>
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div style={{ fontSize:"0.65rem", color:"#92400e", marginTop:6 }}>
+                  Get your free key at <strong>console.groq.com</strong> → API Keys
+                </div>
+              </div>
+            )}
+
             {/* Text mode */}
-            {(aiMode === "text" || (aiMode === "voice" && aiStatus === "done" && !aiReview)) && aiStatus !== "processing" && !aiReview && (
+            {!aiKeyEdit && (aiMode === "text" || (aiMode === "voice" && aiStatus === "done" && !aiReview)) && aiStatus !== "processing" && !aiReview && (
               <div>
                 <textarea
                   value={aiText}
