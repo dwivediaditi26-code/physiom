@@ -4087,6 +4087,128 @@ function runEngineV6(data, selectedRegions) {
   const anyUrgent = regionResults.some(r => r.urgentFlag);
   return { regionResults, cross, anyUrgent };
 }
+function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, setActiveSection, setSearchTerm }) {
+  const hasActive = group.keys.includes(activeSection);
+  const groupFilled = group.keys.reduce((n,k)=>n+countFilled(k),0);
+  const [gOpen, setGOpen] = React.useState(hasActive);
+  React.useEffect(()=>{ if(hasActive) setGOpen(true); },[hasActive]);
+  return (
+    <div style={{ border:`1px solid ${hasActive?group.col+"55":PC.border}`, borderRadius:9, overflow:"hidden" }}>
+      <div onClick={()=>setGOpen(o=>!o)}
+        style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+          padding:"6px 10px", cursor:"pointer",
+          background: hasActive ? group.col+"0e" : PC.s2 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <span style={{ fontSize:"0.6rem", fontWeight:700, textTransform:"uppercase",
+            letterSpacing:"0.7px", color: group.col }}>{group.label}</span>
+          <span style={{ fontSize:"0.58rem", color:PC.muted }}>
+            {group.keys.length} section{group.keys.length>1?"s":""}
+          </span>
+          {groupFilled > 0 && (
+            <span style={{ background:group.col, color:"#fff",
+              fontSize:"0.52rem", padding:"1px 5px", borderRadius:99, fontWeight:700 }}>
+              {groupFilled} filled
+            </span>
+          )}
+        </div>
+        <span style={{ fontSize:"0.65rem", color:PC.muted }}>{gOpen?"▲":"▼"}</span>
+      </div>
+      {gOpen && (
+        <div style={{ display:"flex", gap:4, flexWrap:"wrap", padding:"7px 8px",
+          borderTop:`1px solid ${PC.border}`, background:PC.surface }}>
+          {group.keys.map(key => {
+            const s = sections[key]; if (!s) return null;
+            const filled = countFilled(key);
+            const isAct = key === activeSection;
+            const col = group.col;
+            return (
+              <button key={key} type="button"
+                onClick={() => { setActiveSection(key); setSearchTerm(""); }}
+                style={{
+                  padding:"4px 9px", borderRadius:7, whiteSpace:"nowrap", cursor:"pointer",
+                  border:`1px solid ${isAct ? col : PC.border}`,
+                  background: isAct ? col+"18" : PC.s3,
+                  color: isAct ? col : PC.muted,
+                  fontSize:"0.65rem", fontWeight: isAct ? 700 : 500,
+                  display:"flex", alignItems:"center", gap:4, flexShrink:0,
+                  transition:"all 120ms",
+                }}>
+                <span>{s.icon}</span>
+                <span>{s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}</span>
+                {filled > 0 && (
+                  <span style={{ background: isAct ? col : PC.muted, color:"#fff",
+                    fontSize:"0.52rem", padding:"1px 4px", borderRadius:99, fontWeight:700 }}>
+                    {filled}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
+  const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
+  const opts = searchTerm
+    ? f.options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()))
+    : f.options;
+  const hasSelected = selected.length > 0;
+  const [mcOpen, setMcOpen] = React.useState(hasSelected);
+  React.useEffect(() => { if (hasSelected) setMcOpen(true); }, [hasSelected]);
+  return (
+    <div style={{ border:`1px solid ${hasSelected ? PC.accent+"55" : PC.border}`, borderRadius:9, overflow:"hidden" }}>
+      <div onClick={() => setMcOpen(o => !o)}
+        style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+          padding:"6px 10px", cursor:"pointer",
+          background: hasSelected ? PC.accent+"08" : PC.s2 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+          {hasSelected ? (
+            selected.map(s => (
+              <span key={s} style={{ fontSize:"0.65rem", fontWeight:700, padding:"2px 8px",
+                borderRadius:99, background:PC.accent+"18", color:PC.accent,
+                border:`1px solid ${PC.accent}44` }}>{s}</span>
+            ))
+          ) : (
+            <span style={{ fontSize:"0.68rem", color:PC.muted, fontStyle:"italic" }}>
+              {opts.length} options — tap to expand
+            </span>
+          )}
+        </div>
+        <span style={{ fontSize:"0.65rem", color:PC.muted, flexShrink:0, marginLeft:6 }}>
+          {mcOpen ? "▲" : "▼"}
+        </span>
+      </div>
+      {mcOpen && (
+        <div style={{ padding:"8px 10px", borderTop:`1px solid ${PC.border}`,
+          display:"flex", flexWrap:"wrap", gap:5, background:PC.surface }}>
+          {opts.map(opt => {
+            const on = selected.includes(opt);
+            const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("⚠");
+            return (
+              <button key={opt} type="button"
+                onClick={() => toggleMulti(f.id, opt)}
+                style={{
+                  padding:"6px 11px", borderRadius:99, cursor:"pointer",
+                  border:`1px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
+                  background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
+                  color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
+                  fontSize:"0.72rem", fontWeight: on ? 700 : 500,
+                  lineHeight: 1.4,
+                  transition:"all 110ms",
+                }}>
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SubjectiveModule({ data, set, onNav }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
@@ -4401,64 +4523,13 @@ function SubjectiveModule({ data, set, onNav }) {
     };
 
     if (f.type === "multicheck") {
-      const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
-      const opts = searchTerm
-        ? f.options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()))
-        : f.options;
-      const hasSelected = selected.length > 0;
-      // Collapsible wrapper — open if any selected or searching
-      const [mcOpen, setMcOpen] = React.useState(hasSelected);
-      React.useEffect(() => { if (hasSelected) setMcOpen(true); }, [hasSelected]);
       return (
-        <div style={{ border:`1px solid ${hasSelected ? PC.accent+"55" : PC.border}`, borderRadius:9, overflow:"hidden" }}>
-          {/* Header row */}
-          <div onClick={() => setMcOpen(o => !o)}
-            style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              padding:"6px 10px", cursor:"pointer",
-              background: hasSelected ? PC.accent+"08" : PC.s2 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-              {hasSelected ? (
-                selected.map(s => (
-                  <span key={s} style={{ fontSize:"0.65rem", fontWeight:700, padding:"2px 8px",
-                    borderRadius:99, background:PC.accent+"18", color:PC.accent,
-                    border:`1px solid ${PC.accent}44` }}>{s}</span>
-                ))
-              ) : (
-                <span style={{ fontSize:"0.68rem", color:PC.muted, fontStyle:"italic" }}>
-                  {opts.length} options — tap to expand
-                </span>
-              )}
-            </div>
-            <span style={{ fontSize:"0.65rem", color:PC.muted, flexShrink:0, marginLeft:6 }}>
-              {mcOpen ? "▲" : "▼"}
-            </span>
-          </div>
-          {/* Options — only when open */}
-          {mcOpen && (
-            <div style={{ padding:"8px 10px", borderTop:`1px solid ${PC.border}`,
-              display:"flex", flexWrap:"wrap", gap:5, background:PC.surface }}>
-              {opts.map(opt => {
-                const on = selected.includes(opt);
-                const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("⚠");
-                return (
-                  <button key={opt} type="button"
-                    onClick={() => toggleMulti(f.id, opt)}
-                    style={{
-                      padding:"6px 11px", borderRadius:99, cursor:"pointer",
-                      border:`1px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
-                      background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
-                      color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
-                      fontSize:"0.72rem", fontWeight: on ? 700 : 500,
-                      lineHeight: 1.4,
-                      transition:"all 110ms",
-                    }}>
-                    {opt}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <CollapsibleMulticheck
+          f={f} val={val} PC={PC}
+          toggleMulti={toggleMulti}
+          searchTerm={searchTerm}
+          SEP_S={SEP_S}
+        />
       );
     }
 
@@ -5005,71 +5076,18 @@ function SubjectiveModule({ data, set, onNav }) {
 
             return (
               <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                {groups.map(group => {
-                  const hasActive = group.keys.includes(activeSection);
-                  const groupFilled = group.keys.reduce((n,k)=>n+countFilled(k),0);
-                  const [gOpen, setGOpen] = React.useState(hasActive);
-                  // Keep open if active section is in this group
-                  React.useEffect(()=>{ if(hasActive) setGOpen(true); },[hasActive]);
-                  return (
-                    <div key={group.label} style={{ border:`1px solid ${hasActive?group.col+"55":PC.border}`, borderRadius:9, overflow:"hidden" }}>
-                      {/* Group header — always visible, click to collapse */}
-                      <div onClick={()=>setGOpen(o=>!o)}
-                        style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                          padding:"6px 10px", cursor:"pointer",
-                          background: hasActive ? group.col+"0e" : PC.s2 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                          <span style={{ fontSize:"0.6rem", fontWeight:700, textTransform:"uppercase",
-                            letterSpacing:"0.7px", color: group.col }}>{group.label}</span>
-                          <span style={{ fontSize:"0.58rem", color:PC.muted }}>
-                            {group.keys.length} section{group.keys.length>1?"s":""}
-                          </span>
-                          {groupFilled > 0 && (
-                            <span style={{ background:group.col, color:"#fff",
-                              fontSize:"0.52rem", padding:"1px 5px", borderRadius:99, fontWeight:700 }}>
-                              {groupFilled} filled
-                            </span>
-                          )}
-                        </div>
-                        <span style={{ fontSize:"0.65rem", color:PC.muted }}>{gOpen?"▲":"▼"}</span>
-                      </div>
-                      {/* Buttons — only when open */}
-                      {gOpen && (
-                        <div style={{ display:"flex", gap:4, flexWrap:"wrap", padding:"7px 8px",
-                          borderTop:`1px solid ${PC.border}`, background:PC.surface }}>
-                          {group.keys.map(key => {
-                            const s = sections[key]; if (!s) return null;
-                            const filled = countFilled(key);
-                            const isAct = key === activeSection;
-                            const col = group.col;
-                            return (
-                              <button key={key} type="button"
-                                onClick={() => { setActiveSection(key); setSearchTerm(""); }}
-                                style={{
-                                  padding:"4px 9px", borderRadius:7, whiteSpace:"nowrap", cursor:"pointer",
-                                  border:`1px solid ${isAct ? col : PC.border}`,
-                                  background: isAct ? col+"18" : PC.s3,
-                                  color: isAct ? col : PC.muted,
-                                  fontSize:"0.65rem", fontWeight: isAct ? 700 : 500,
-                                  display:"flex", alignItems:"center", gap:4, flexShrink:0,
-                                  transition:"all 120ms",
-                                }}>
-                                <span>{s.icon}</span>
-                                <span>{s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}</span>
-                                {filled > 0 && (
-                                  <span style={{ background: isAct ? col : PC.muted, color:"#fff",
-                                    fontSize:"0.52rem", padding:"1px 4px", borderRadius:99, fontWeight:700 }}>
-                                    {filled}
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {groups.map(group => (
+                  <CollapsibleNavGroup
+                    key={group.label}
+                    group={group}
+                    activeSection={activeSection}
+                    sections={sections}
+                    countFilled={countFilled}
+                    PC={PC}
+                    setActiveSection={setActiveSection}
+                    setSearchTerm={setSearchTerm}
+                  />
+                ))}
               </div>
             );
           })()}
