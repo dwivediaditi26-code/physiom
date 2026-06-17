@@ -5803,9 +5803,15 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx }) {
                       </div>
                       {openPhase[`${kp.id}_${pi}`] && (
                         <div style={{ padding:"10px 12px" }}>
-                          {ph.exercises.map((ex, ei) => (
-                            <div key={ei} style={{ background:"#f9f7ff", border:"1px solid #d8cce8", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
-                              <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#1a1025", marginBottom:4 }}>{ex.name}</div>
+                          {ph.exercises.map((ex, ei) => {
+                            const exId = "proto_" + ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_");
+                            const inProg = programme?.find(e=>e.id===exId);
+                            return (
+                            <div key={ei} style={{ background:"#f9f7ff", border:`1px solid ${inProg?"rgba(0,201,122,0.4)":"#d8cce8"}`, borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
+                              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                                <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#1a1025" }}>{ex.name}</div>
+                                {onAdd && <button onClick={()=>onAdd({...ex,id:exId,phase:ph.phase,target:ex.cues?.slice(0,40)||ex.name})} style={{padding:"3px 10px",borderRadius:7,fontSize:"0.6rem",fontWeight:800,border:`1px solid ${inProg?"rgba(0,201,122,0.5)":"rgba(0,201,122,0.35)"}`,background:inProg?"rgba(0,201,122,0.15)":"rgba(0,201,122,0.08)",color:"#00c97a",cursor:inProg?"default":"pointer",flexShrink:0,marginLeft:8}} disabled={!!inProg}>{inProg?"✓ Added":"+ Add"}</button>}
+                              </div>
                               <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:7 }}>
                                 {[["Sets",ex.sets],["Reps",ex.reps],["Hold",ex.hold+"s"],["Freq",ex.freq]].map(([l,v]) => (
                                   <div key={l} style={{ background:`${ph.color}12`, border:`1px solid ${ph.color}30`, borderRadius:6, padding:"3px 8px", textAlign:"center" }}>
@@ -5820,7 +5826,8 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx }) {
                               </div>
                               <div style={{ fontSize:"0.62rem", color:"#7f5af0" }}>📚 {ex.evidence}</div>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -5896,13 +5903,12 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx }) {
 }
 
 function ExercisePrescriptionModule({ data, set }) {
-  // Initialise from shared data if already saved (patient switch / reload)
-  const [programme,    setProgramme]    = useState(() => { try { const v=data?.hep_programme; return Array.isArray(v)?v:[]; } catch { return []; } });
+  // programme derives directly from shared data — always in sync with QuickVisitForm
+  const programme = Array.isArray(data?.hep_programme) ? data.hep_programme : [];
   const [activeRegion, setActiveRegion] = useState("lumbar");
   const [activePhase,  setActivePhase]  = useState("All");
   const [search,       setSearch]       = useState("");
   const [openEx,       setOpenEx]       = useState(null);
-  const [patientName,  setPatientName]  = useState(data?.dem_name || "");
   const [clinician,    setClinician]    = useState("");
   const [reviewDate,   setReviewDate]   = useState("");
 
@@ -5910,7 +5916,7 @@ function ExercisePrescriptionModule({ data, set }) {
   const phaseColor = {"Phase 1":"#00c97a","Phase 2":"#ffb300","Phase 3":"#ff4d6d"};
 
   // Sync every programme change back into shared patient data
-  const syncProgramme = (next) => { setProgramme(next); if(set) set("hep_programme", next); };
+  const syncProgramme = (next) => { if(set) set("hep_programme", next); };
 
   const _hepSession = () => (Array.isArray(data?.tx_sessions)?data.tx_sessions.length:0)+1;
   const _hepLog = (change) => { if(!set) return; const log=Array.isArray(data?.hep_log)?data.hep_log:[]; set("hep_log",[{session:_hepSession(),date:new Date().toLocaleDateString("en-GB"),changes:[change],version:parseInt(data?.hep_version)||1},...log]); };
@@ -5947,13 +5953,13 @@ function ExercisePrescriptionModule({ data, set }) {
     const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Home Exercise Programme</title>
 <style>@page{size:A4;margin:18mm}*{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}body{background:#fff;color:#1a1a2e;font-size:11px;line-height:1.55}.header{border-bottom:3px solid #0077b6;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start}.logo{font-size:20px;font-weight:900;color:#0077b6}.logo span{color:#00b4d8}.meta{text-align:right;font-size:10px;color:#555}.ex{border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;overflow:hidden;break-inside:avoid}.ex-header{background:#0077b6;color:#fff;padding:8px 12px;display:flex;justify-content:space-between;align-items:center}.ex-title{font-size:12px;font-weight:800}.ex-phase{font-size:9px;opacity:0.8}.ex-body{padding:10px 12px}.ex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}.ex-stat{background:#f0f9ff;border-radius:6px;padding:5px 8px;text-align:center}.ex-stat-val{font-size:13px;font-weight:900;color:#0077b6}.ex-stat-label{font-size:8px;color:#64748b;text-transform:uppercase}.ex-target{font-size:9px;color:#7f5af0;font-weight:700;margin-bottom:5px}.ex-desc{font-size:10.5px;color:#334155;margin-bottom:6px;line-height:1.55}.ex-cues{background:#fefce8;border-left:3px solid #fbbf24;padding:5px 8px;font-size:10px;color:#713f12;margin-bottom:5px}.ex-prog{font-size:9.5px;color:#059669;margin-top:5px}.footer{margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center}.sig{margin-top:20px;display:flex;gap:30px}.sig-line{border-bottom:1px solid #94a3b8;height:28px;margin-bottom:3px}.sig-label{font-size:8px;color:#64748b}</style>
 </head><body>
-<div class="header"><div><div class="logo">Physio<span>Pro</span></div><div style="font-size:11px;color:#555;margin-top:2px">Home Exercise Programme</div></div><div class="meta"><div><b>Patient:</b> ${patientName||"—"}</div><div><b>Date:</b> ${new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"})}</div><div><b>Clinician:</b> ${clinician||"—"}</div>${reviewDate?`<div><b>Review:</b> ${reviewDate}</div>`:""}</div></div>
+<div class="header"><div><div class="logo">Physio<span>Pro</span></div><div style="font-size:11px;color:#555;margin-top:2px">Home Exercise Programme</div></div><div class="meta"><div><b>Patient:</b> ${data?.dem_name||"—"}</div><div><b>Date:</b> ${new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"})}</div><div><b>Clinician:</b> ${clinician||"—"}</div>${reviewDate?`<div><b>Review:</b> ${reviewDate}</div>`:""}</div></div>
 <p style="font-size:10px;color:#555;margin-bottom:14px">Perform exercises as prescribed. Stop if severe pain. Mild discomfort is normal. Contact your physiotherapist if unsure.</p>
 ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-title">${i+1}. ${ex.name}</span><span class="ex-phase">${ex.phase||""}</span></div><div class="ex-body"><div class="ex-target">🎯 ${ex.target}</div><div class="ex-grid"><div class="ex-stat"><div class="ex-stat-val">${ex.customSets}</div><div class="ex-stat-label">Sets</div></div><div class="ex-stat"><div class="ex-stat-val">${ex.customReps}</div><div class="ex-stat-label">Reps</div></div><div class="ex-stat"><div class="ex-stat-val">${ex.customHold}s</div><div class="ex-stat-label">Hold</div></div><div class="ex-stat"><div class="ex-stat-val" style="font-size:9px">${ex.customFreq}</div><div class="ex-stat-label">Freq</div></div></div><div class="ex-desc">${ex.desc}</div><div class="ex-cues">💡 ${ex.cues}</div>${ex.notes?`<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px;font-size:10px;margin-top:5px"><b>Notes:</b> ${ex.notes}</div>`:""}<div class="ex-prog">📈 ${ex.progression}</div><div style="margin-top:8px;font-size:9px;color:#94a3b8">Pain (0–10): ___/10 &nbsp;&nbsp; ☐ Mon ☐ Tue ☐ Wed ☐ Thu ☐ Fri ☐ Sat ☐ Sun</div></div></div>`).join("")}
 <div class="sig"><div style="flex:1"><div class="sig-line"></div><div class="sig-label">Clinician Signature</div></div><div style="flex:1"><div class="sig-line"></div><div class="sig-label">Patient Signature</div></div></div>
 <div class="footer">Generated by PhysioPro · ${new Date().toLocaleString()}</div>
 </body></html>`;
-    downloadPDFFromHTML(html, `HEP_${patientName || "Patient"}_${Date.now()}.pdf`);
+    downloadPDFFromHTML(html, `HEP_${data?.dem_name || "Patient"}_${Date.now()}.pdf`);
   };
 
   const inp={width:"100%",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,color:"#1a1025",fontFamily:"inherit",outline:"none",padding:"7px 10px",fontSize:"0.75rem"};
@@ -6097,12 +6103,12 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:7}}>
             <div style={{fontSize:"0.72rem",fontWeight:800,color:"#00c97a"}}>📋 Patient Programme — {programme.length} exercise{programme.length!==1?"s":""}</div>
             <div style={{display:"flex",gap:6}}>
-              <button onClick={()=>setProgramme([])} style={{padding:"5px 10px",background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.3)",borderRadius:7,color:"#ff4d6d",fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>🗑 Clear</button>
+              <button onClick={()=>syncProgramme([])} style={{padding:"5px 10px",background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.3)",borderRadius:7,color:"#ff4d6d",fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>🗑 Clear</button>
               <button onClick={printHEP} style={{padding:"5px 10px",background:"linear-gradient(135deg,rgba(0,201,122,0.2),rgba(0,229,255,0.15))",border:"1px solid rgba(0,201,122,0.4)",borderRadius:7,color:"#00c97a",fontSize:"0.62rem",fontWeight:800,cursor:"pointer"}}>🖨 Print HEP</button>
             </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:12}}>
-            <div><label style={{fontSize:"0.58rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Patient Name</label><input value={patientName} onChange={e=>setPatientName(e.target.value)} placeholder="Patient name" style={inp}/></div>
+            <div><label style={{fontSize:"0.58rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Patient Name</label><input value={data?.dem_name||""} onChange={e=>set&&set("dem_name",e.target.value)} placeholder="Patient name (syncs from Demographics)" style={inp}/></div>
             <div><label style={{fontSize:"0.58rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Clinician</label><input value={clinician} onChange={e=>setClinician(e.target.value)} placeholder="Your name" style={inp}/></div>
             <div style={{gridColumn:"1/-1"}}><label style={{fontSize:"0.58rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Review Date</label><input value={reviewDate} onChange={e=>setReviewDate(e.target.value)} placeholder="e.g. 2 weeks" style={inp}/></div>
           </div>
