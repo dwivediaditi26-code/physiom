@@ -7556,7 +7556,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
   @media print { body { margin: 20px; } }
 </style></head><body>
 <h1>SOAP Note — ${patName}</h1>
-<div class="meta">Date: ${date} · Auto-generated from PhysioMaster assessment</div>
+<div class="meta">Date: ${date} · Auto-generated from PhysioMind Pro assessment</div>
 <h2>S — Subjective</h2><pre>${(soap.S||"").replace(/</g,"&lt;")}</pre>
 <h2>O — Objective</h2><pre>${(soap.O||"").replace(/</g,"&lt;")}</pre>
 <h2>A — Assessment</h2><pre>${(soap.A||"").replace(/</g,"&lt;")}</pre>

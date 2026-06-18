@@ -1,4 +1,4 @@
-// PhysioMaster AppFull v3.3 — 23 May 2026 — clearRect overlay wipe fix + bilateral knee merge
+// PhysioMind Pro AppFull v3.3 — 23 May 2026 — clearRect overlay wipe fix + bilateral knee merge
 import React, { useState, useCallback, useRef, useEffect, useMemo, Component, Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
 

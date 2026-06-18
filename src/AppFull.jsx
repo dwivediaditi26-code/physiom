@@ -16473,6 +16473,41 @@ function IntakeForm({ PC, onCancel, onSubmit }) {
   );
 }
 
+function OnboardingModal({ PC, onDismiss }) {
+  const STEPS = [
+    { icon:"🩺", title:"Welcome to PhysioMind Pro", desc:"Your complete clinical assessment platform. AI-powered SOAP notes, posture analysis, outcome measures, and exercise prescription — all in one place.", color:"#7c3aed" },
+    { icon:"👤", title:"Start with a Patient",        desc:'Tap "New Patient" on the dashboard to create a record. Fill in the name and chief complaint — everything else can be added as you go.',           color:"#0891b2" },
+    { icon:"📋", title:"Assess Step by Step",          desc:"Work through the left-hand menu: Subjective → Posture → ROM → Special Tests → SOAP. Each module saves automatically as you type.",             color:"#059669" },
+    { icon:"✨", title:"Generate SOAP & Send HEP",     desc:"Once assessed, use the SOAP module to generate an AI clinical note, then build a Home Exercise Programme and send it via WhatsApp or PDF.",   color:"#d97706" },
+  ];
+  const [step, setStep] = React.useState(0);
+  const s = STEPS[step];
+  return (
+    <div onClick={onDismiss} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:PC.surface,borderRadius:20,padding:"28px 24px 22px",maxWidth:400,width:"100%",boxShadow:"0 24px 80px rgba(0,0,0,0.45)",border:`1px solid ${s.color}44`,textAlign:"center"}}>
+        {/* Step dots */}
+        <div style={{display:"flex",gap:6,justifyContent:"center",marginBottom:20}}>
+          {STEPS.map((_,i)=>(<div key={i} style={{width:i===step?20:7,height:7,borderRadius:99,background:i===step?s.color:PC.border,transition:"all 0.3s"}}/>))}
+        </div>
+        <div style={{fontSize:"2.8rem",marginBottom:14,lineHeight:1}}>{s.icon}</div>
+        <div style={{fontWeight:900,fontSize:"1.15rem",color:PC.text,marginBottom:10,letterSpacing:"-0.3px"}}>{s.title}</div>
+        <div style={{fontSize:"0.88rem",color:PC.muted,lineHeight:1.65,marginBottom:24}}>{s.desc}</div>
+        <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center"}}>
+          {step > 0 && (
+            <button onClick={()=>setStep(n=>n-1)} style={{padding:"10px 18px",borderRadius:10,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.muted,fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>← Back</button>
+          )}
+          {step < STEPS.length-1 ? (
+            <button onClick={()=>setStep(n=>n+1)} style={{flex:1,padding:"12px 20px",borderRadius:10,border:"none",background:s.color,color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer"}}>Next →</button>
+          ) : (
+            <button onClick={onDismiss} style={{flex:1,padding:"12px 20px",borderRadius:10,border:"none",background:s.color,color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer"}}>Let's go 🚀</button>
+          )}
+        </div>
+        <button onClick={onDismiss} style={{marginTop:14,background:"none",border:"none",color:PC.muted,fontSize:"0.75rem",cursor:"pointer",textDecoration:"underline"}}>Skip tour</button>
+      </div>
+    </div>
+  );
+}
+
 function AppInner({ currentUser, onSignOut }) {
   const { theme, toggle: toggleTheme, C: TC } = useTheme();
 
@@ -16490,6 +16525,7 @@ function AppInner({ currentUser, onSignOut }) {
 
   const [active, setActive] = useState("home");
   const [navContext, setNavContext] = useState({});
+  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('pm_onboarded'));
 
   // ── Deferred mounting: heavy tabs only render after first visit ──────────
   // This cuts initial render time dramatically
@@ -17154,6 +17190,9 @@ function AppInner({ currentUser, onSignOut }) {
     <div className="pm-shell" style={{background:PC.bg,color:PC.text,fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",transition:"background 0.2s,color 0.15s"}}>
       <MobileStyleInjector/>
 
+      {/* ── Onboarding Modal — fires once on first visit ─────────────────── */}
+      {showOnboarding&&<OnboardingModal PC={PC} onDismiss={()=>{ localStorage.setItem("pm_onboarded","1"); setShowOnboarding(false); }}/>}
+
       {/* Info Modal */}
       {infoModal&&(
         <div onClick={()=>setInfoModal(null)} className="pm-modal-wrap" style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
@@ -17364,7 +17403,7 @@ function AppInner({ currentUser, onSignOut }) {
             {/* Logo mark */}
             <div style={{width:36,height:36,background:`linear-gradient(135deg,${PC.accent}22,${PC.a2}22)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.1rem"}}>⚕</div>
             <div style={{minWidth:0}}>
-              <div style={{fontWeight:800,fontSize:"clamp(0.85rem,3vw,1.05rem)",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",lineHeight:1.2}}>PhysioMind</div>
+              <div style={{fontWeight:800,fontSize:"clamp(0.85rem,3vw,1.05rem)",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",lineHeight:1.2}}>PhysioMind Pro</div>
               <div className="pm-logo-sub" style={{fontSize:"0.55rem",color:PC.muted,letterSpacing:"1px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textTransform:"uppercase",fontWeight:600,marginTop:1}}>Clinical Assessment Platform</div>
             </div>
             {/* Live patient chip */}
