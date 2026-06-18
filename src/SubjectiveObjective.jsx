@@ -944,7 +944,7 @@ function ClinicalImageCard({ id, title, fallbackSvg, C, color }) {
             style={{width:108,height:84,objectFit:"cover",borderRadius:6,cursor:"pointer",display:"block",border:"1px solid rgba(124,58,237,0.2)"}}
           />
           {open && <ImageModal_SO src={full} title={title} onClose={()=>setOpen(false)}/>}
-          <div style={{fontSize:"0.58rem",color:C.muted,marginTop:3}}>📸 Tap to enlarge</div>
+          <div style={{fontSize:"0.78rem",color:C.muted,marginTop:3}}>📸 Tap to enlarge</div>
         </>
       ) : (
         <>
@@ -954,7 +954,7 @@ function ClinicalImageCard({ id, title, fallbackSvg, C, color }) {
               <text x="50%" y="65%" textAnchor="middle" fontSize="9" fill={C?.muted||"#7e6a9a"}>{(title||"").split(" ")[0]}</text>
             </svg>
           )}
-          <div style={{fontSize:"0.58rem",color:C.muted,marginTop:3}}>Illustration</div>
+          <div style={{fontSize:"0.78rem",color:C.muted,marginTop:3}}>Illustration</div>
         </>
       )}
     </div>
@@ -1068,8 +1068,8 @@ function SpecialTestsSection({ data, set, navContext={} }) {
               <button key={key} type="button" onClick={() => { setRegion(key); setOpenTest(null); }}
                 style={{ padding:"6px 12px", borderRadius:20, border:`1px solid ${region===key ? r.color : filled>0 ? r.color+"50" : C.border}`, background:region===key ? `${r.color}18` : "transparent", color:region===key ? r.color : C.muted, fontSize:"0.73rem", fontWeight:region===key ? 700 : 500, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
                 {r.icon} {r.label}
-                {positives > 0 && <span style={{ background:C.red, color:"#fff", borderRadius:10, padding:"0 5px", fontSize:"0.6rem", fontWeight:800 }}>⚠{positives}</span>}
-                {filled > 0 && positives === 0 && <span style={{ background:r.color, color:"#000", borderRadius:10, padding:"0 5px", fontSize:"0.6rem", fontWeight:800 }}>{filled}</span>}
+                {positives > 0 && <span style={{ background:C.red, color:"#fff", borderRadius:10, padding:"0 5px", fontSize:"0.8rem", fontWeight:800 }}>⚠{positives}</span>}
+                {filled > 0 && positives === 0 && <span style={{ background:r.color, color:"#000", borderRadius:10, padding:"0 5px", fontSize:"0.8rem", fontWeight:800 }}>{filled}</span>}
               </button>
             );
           })}
@@ -1097,21 +1097,21 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", gap:7, alignItems:"center", marginBottom:3, flexWrap:"wrap" }}>
                     <span style={{ fontSize:"0.75rem", fontWeight:700, color:color }}>{t.label}</span>
-                    {anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(255,77,109,0.2)", color:C.red, fontSize:"0.65rem", fontWeight:700 }}>⚠ POSITIVE</span>}
-                    {anyVal && !anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(0,201,122,0.15)", color:C.green, fontSize:"0.65rem", fontWeight:700 }}>✓ Recorded</span>}
+                    {anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(255,77,109,0.2)", color:C.red, fontSize:"0.75rem", fontWeight:700 }}>⚠ POSITIVE</span>}
+                    {anyVal && !anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(0,201,122,0.15)", color:C.green, fontSize:"0.75rem", fontWeight:700 }}>✓ Recorded</span>}
                   </div>
-                  <div style={{ fontSize:"0.7rem", color:C.muted }}>Structure: {t.structure}</div>
-                  <div style={{ fontSize:"0.68rem", color:C.muted }}>Sens: {t.sensitivity} · Spec: {t.specificity}</div>
+                  <div style={{ fontSize:"0.8rem", color:C.muted }}>Structure: {t.structure}</div>
+                  <div style={{ fontSize:"0.78rem", color:C.muted }}>Sens: {t.sensitivity} · Spec: {t.specificity}</div>
                   {anyVal && (
-                    <div style={{ marginTop:4, fontSize:"0.72rem", color:anyPositive ? C.red : C.green, fontWeight:600 }}>
+                    <div style={{ marginTop:4, fontSize:"0.82rem", color:anyPositive ? C.red : C.green, fontWeight:600 }}>
                       {leftVal && `L: ${leftVal}`}{leftVal && rightVal && " | "}{rightVal && `R: ${rightVal}`}{singleVal && singleVal}
                     </div>
                   )}
                 </div>
                 <div style={{ display:"flex", gap:7, alignItems:"center", flexShrink:0, marginLeft:10 }}>
                   <button type="button" onClick={e => { e.stopPropagation(); setModalTest(t); }}
-                    style={{ padding:"3px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.62rem", fontWeight:700, cursor:"pointer" }}>ℹ</button>
-                  <span style={{ color:C.muted, fontSize:"0.72rem" }}>{isOpen ? "▲" : "▼"}</span>
+                    style={{ padding:"3px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.82rem", fontWeight:700, cursor:"pointer" }}>ℹ</button>
+                  <span style={{ color:C.muted, fontSize:"0.82rem" }}>{isOpen ? "▲" : "▼"}</span>
                 </div>
               </div>
 
@@ -1131,17 +1131,17 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                     {/* How to + sensitivity */}
                     <div>
                       <div style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, padding:10, marginBottom:8 }}>
-                        <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>👐 How to Perform</div>
+                        <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>👐 How to Perform</div>
                         <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.7 }}>{t.how}</div>
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                         <div style={{ background:"rgba(0,201,122,0.08)", border:"1px solid rgba(0,201,122,0.25)", borderRadius:7, padding:"6px 9px" }}>
-                          <div style={{ fontSize:"0.6rem", fontWeight:700, color:C.green, marginBottom:2 }}>✓ NEGATIVE means</div>
-                          <div style={{ fontSize:"0.72rem", color:C.text }}>{t.negative}</div>
+                          <div style={{ fontSize:"0.8rem", fontWeight:700, color:C.green, marginBottom:2 }}>✓ NEGATIVE means</div>
+                          <div style={{ fontSize:"0.82rem", color:C.text }}>{t.negative}</div>
                         </div>
                         <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.25)", borderRadius:7, padding:"6px 9px" }}>
-                          <div style={{ fontSize:"0.6rem", fontWeight:700, color:C.red, marginBottom:2 }}>⚠ POSITIVE means</div>
-                          <div style={{ fontSize:"0.72rem", color:C.text }}>{t.positive}</div>
+                          <div style={{ fontSize:"0.8rem", fontWeight:700, color:C.red, marginBottom:2 }}>⚠ POSITIVE means</div>
+                          <div style={{ fontSize:"0.82rem", color:C.text }}>{t.positive}</div>
                         </div>
                       </div>
                     </div>
@@ -1149,7 +1149,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
 
                   {/* Result selection — bilateral where needed */}
                   <div>
-                    <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📊 Record Result</div>
+                    <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📊 Record Result</div>
                     {["cervical","shoulder","elbow_wrist","neural","ankle_foot","knee","hip"].includes(region) || t.id.includes("_l_") || t.id.includes("ultt") || t.id.includes("spurling") || t.id.includes("neer") || t.id.includes("hawkins") || t.id.includes("empty_can") || t.id.includes("full_can") || t.id.includes("lift_off") || t.id.includes("belly") || t.id.includes("bear") || t.id.includes("er_lag") || t.id.includes("hornblower") || t.id.includes("obrien") || t.id.includes("speeds") || t.id.includes("yergason") || t.id.includes("apprehension") || t.id.includes("relocation") || t.id.includes("sulcus") || t.id.includes("cozens") || t.id.includes("mills") || t.id.includes("golfers") || t.id.includes("phalen") || t.id.includes("tinel") || t.id.includes("finkelstein") || t.id.includes("watson") || t.id.includes("grind") || t.id.includes("valgus_stress") || t.id.includes("fadir") || t.id.includes("faber_test") || t.id.includes("hip_scour") || t.id.includes("trendelenburg_test") || t.id.includes("thomas_test") || t.id.includes("ober_test") || t.id.includes("piriformis") || t.id.includes("lachmans") || t.id.includes("anterior_drawer") || t.id.includes("posterior_drawer") || t.id.includes("pivot") || t.id.includes("mcmurray_test") || t.id.includes("apley") || t.id.includes("thessaly") || t.id.includes("clarkes") || t.id.includes("patellar") || t.id.includes("noble") || t.id.includes("ant_drawer_ankle") || t.id.includes("talar_tilt") || t.id.includes("thompson_test") || t.id.includes("windlass") || t.id.includes("navicular") || t.id.includes("tinel_ankle") || t.id.includes("royal_london") || t.id.includes("ultt") || t.id.includes("femoral") || t.id.includes("single_leg") ? (
                       // Bilateral
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
@@ -1158,7 +1158,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                           const sidePos = isPositive(sideVal);
                           return (
                             <div key={side}>
-                              <div style={{ fontSize:"0.65rem", fontWeight:700, color:sidePos ? C.red : C.muted, marginBottom:4 }}>{side.toUpperCase()} {sidePos && "⚠"}</div>
+                              <div style={{ fontSize:"0.75rem", fontWeight:700, color:sidePos ? C.red : C.muted, marginBottom:4 }}>{side.toUpperCase()} {sidePos && "⚠"}</div>
                               <select value={sideVal} onChange={e => setTestResult(t.id, side, e.target.value)}
                                 style={{ width:"100%", background:C.s3, border:`1px solid ${sidePos ? C.red : C.border}`, borderRadius:7, color:C.text, padding:"7px 9px", fontSize:"0.76rem", outline:"none", fontFamily:"inherit" }}>
                                 <option value="">— not tested —</option>
@@ -1191,8 +1191,8 @@ function SpecialTestsSection({ data, set, navContext={} }) {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
               <div>
                 <div style={{ fontWeight:800, color:C.accent, fontSize:"1.05rem" }}>{modalTest.label}</div>
-                <div style={{ fontSize:"0.72rem", color:C.muted, marginTop:3 }}>Structure: {modalTest.structure}</div>
-                <div style={{ fontSize:"0.7rem", color:C.muted }}>Sensitivity: {modalTest.sensitivity} · Specificity: {modalTest.specificity}</div>
+                <div style={{ fontSize:"0.82rem", color:C.muted, marginTop:3 }}>Structure: {modalTest.structure}</div>
+                <div style={{ fontSize:"0.8rem", color:C.muted }}>Sensitivity: {modalTest.sensitivity} · Specificity: {modalTest.specificity}</div>
               </div>
               <button onClick={() => setModalTest(null)} style={{ background:"none", border:`1px solid ${C.border}`, color:C.muted, borderRadius:6, padding:"3px 9px", cursor:"pointer" }}>✕</button>
             </div>
@@ -1211,23 +1211,23 @@ function SpecialTestsSection({ data, set, navContext={} }) {
             </div>
 
             <div style={{ marginBottom:12 }}>
-              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
+              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
               <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8 }}>{modalTest.how}</div>
             </div>
 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
               <div style={{ background:"rgba(0,201,122,0.08)", border:"1px solid rgba(0,201,122,0.25)", borderRadius:8, padding:10 }}>
-                <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.green, textTransform:"uppercase", marginBottom:5 }}>✓ Negative</div>
+                <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.green, textTransform:"uppercase", marginBottom:5 }}>✓ Negative</div>
                 <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.negative}</div>
               </div>
               <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.25)", borderRadius:8, padding:10 }}>
-                <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.red, textTransform:"uppercase", marginBottom:5 }}>⚠ Positive</div>
+                <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.red, textTransform:"uppercase", marginBottom:5 }}>⚠ Positive</div>
                 <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.positive}</div>
               </div>
             </div>
 
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Result Options</div>
+              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Result Options</div>
               {modalTest.options.map((o, i) => (
                 <div key={i} style={{ padding:"6px 10px", borderRadius:7, marginBottom:5, background:C.s2, border:`1px solid ${C.border}`, fontSize:"0.78rem", color:isPositive(o) ? C.red : C.text }}>
                   {isPositive(o) ? "⚠ " : "○ "}{o}
@@ -1737,11 +1737,44 @@ function CyriaxModule({ data, set, navContext={} }) {
 
   const tabStyle = (t) => ({ padding:"8px 16px", cursor:"pointer", fontSize:"0.8rem", fontWeight:tab===t?700:500, color:tab===t?C.accent:C.muted, background:"none", border:"none", borderBottom:`2px solid ${tab===t?C.accent:"transparent"}` });
 
+  const [cyriaxHelpOpen, setCyriaxHelpOpen] = React.useState(() => !localStorage.getItem("pm_cyriax_seen"));
   return (
     <div>
+      {/* ── Cyriax Framework Explainer ── */}
+      <div style={{border:`1px solid #7c3aed44`,borderRadius:12,overflow:"hidden",marginBottom:14}}>
+        <div onClick={()=>{setCyriaxHelpOpen(o=>!o); localStorage.setItem("pm_cyriax_seen","1");}}
+          style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",cursor:"pointer",background:"#7c3aed0a"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:"1rem"}}>📚</span>
+            <span style={{fontWeight:700,fontSize:"0.85rem",color:"#7c3aed"}}>What is Cyriax Assessment?</span>
+            <span style={{fontSize:"0.75rem",color:"#7c3aed88",fontStyle:"italic"}}>Tap to {cyriaxHelpOpen?"hide":"show"} guide</span>
+          </div>
+          <span style={{fontSize:"0.75rem",color:"#7c3aed"}}>{cyriaxHelpOpen?"▲":"▼"}</span>
+        </div>
+        {cyriaxHelpOpen && (
+          <div style={{padding:"14px 16px",borderTop:"1px solid #7c3aed22",background:"#faf8ff",fontSize:"0.82rem",color:"#3b2a6a",lineHeight:1.7}}>
+            <p style={{margin:"0 0 10px"}}><strong>Cyriax Orthopaedic Medicine</strong> (James Cyriax, 1947) is a systematic approach to diagnosing musculoskeletal pain by classifying structures as <strong>contractile</strong> (muscle, tendon, enthesis) or <strong>inert</strong> (joint capsule, ligament, bursa, cartilage).</p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+              <div style={{background:"#7c3aed0d",borderRadius:8,padding:10}}>
+                <div style={{fontWeight:700,marginBottom:4,color:"#7c3aed"}}>📋 Assessment order</div>
+                <div>1. <strong>Active ROM</strong> — patient moves (both structures + neuromuscular)<br/>2. <strong>Passive ROM</strong> — examiner moves (inert structures only)<br/>3. <strong>Resisted tests</strong> — isometric (contractile structures only)</div>
+              </div>
+              <div style={{background:"#059669 0d",borderRadius:8,padding:10}}>
+                <div style={{fontWeight:700,marginBottom:4,color:"#059669"}}>🔍 Interpreting findings</div>
+                <div><strong>Strong &amp; Painless</strong> = normal contractile<br/><strong>Strong &amp; Painful</strong> = minor lesion (tendinopathy)<br/><strong>Weak &amp; Painful</strong> = serious lesion / fracture<br/><strong>Weak &amp; Painless</strong> = neurological / rupture</div>
+              </div>
+            </div>
+            <div style={{background:"#b4530910",borderRadius:8,padding:10,border:"1px solid #b4530925"}}>
+              <strong style={{color:"#b45309"}}>⚠ Capsular vs Non-capsular pattern</strong><br/>
+              Capsular pattern = proportional restriction across a joint (e.g. shoulder: ER &gt; Abd &gt; IR). Suggests arthritis, adhesive capsulitis. Non-capsular = selective restriction, suggests ligament, bursitis, or internal derangement.
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Region selector */}
       <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:12, padding:14, marginBottom:14 }}>
-        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ STTT STTT — Region-Specific Assessment</div>
+        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ Cyriax Assessment — Region-Specific</div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
           {Object.entries(CYRIAX_REGIONS_DATA).map(([key, r]) => {
             const hasData = Object.keys(data).some(k => k.startsWith(`cyriax_${key}_`) && data[k]);
@@ -1757,7 +1790,7 @@ function CyriaxModule({ data, set, navContext={} }) {
 
       {/* Anatomy banner */}
       <div style={{ ...boxStyle, borderColor:reg.color+"30" }}>
-        <div style={{ fontSize:"0.65rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>📚 Regional Anatomy</div>
+        <div style={{ fontSize:"0.75rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>📚 Regional Anatomy</div>
         <div style={{ fontSize:"0.76rem", color:C.muted, lineHeight:1.7 }}>{reg.anatomy}</div>
         <div style={{ marginTop:8, padding:"6px 10px", background:`${reg.color}10`, borderRadius:7, fontSize:"0.74rem", color:C.text }}>
           <strong style={{ color:reg.color }}>Capsular Pattern: </strong>{reg.capsularPattern}
@@ -1775,7 +1808,7 @@ function CyriaxModule({ data, set, navContext={} }) {
       {tab === "active" && (
         <div>
           <div style={{ ...boxStyle, borderColor:"rgba(0,229,255,0.2)" }}>
-            <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Active Range of Motion — All Directions</div>
+            <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Active Range of Motion — All Directions</div>
 
             {/* Painful arc */}
             <div style={{ marginBottom:12 }}>
@@ -1788,7 +1821,7 @@ function CyriaxModule({ data, set, navContext={} }) {
 
             {reg.activeROM.map(t => (
               <div key={t.id} data-cy-id={t.id} style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:9, padding:12, marginBottom:9 }}>
-                <div style={{ fontWeight:700, color:C.text, marginBottom:6, fontSize:"0.82rem" }}>{t.label} <span style={{ color:C.muted, fontWeight:400, fontSize:"0.72rem" }}>Normal: {t.normal}</span></div>
+                <div style={{ fontWeight:700, color:C.text, marginBottom:6, fontSize:"0.82rem" }}>{t.label} <span style={{ color:C.muted, fontWeight:400, fontSize:"0.82rem" }}>Normal: {t.normal}</span></div>
                 <div style={{ background:C.s3, borderRadius:7, padding:9, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6, display:"flex", gap:10, alignItems:"flex-start" }}>
                   <SmallClinicalImg id={t.id} title={t.label} />
                   <div style={{flex:1}}><strong style={{ color:C.yellow }}>How: </strong>{t.how}</div>
@@ -1834,7 +1867,7 @@ function CyriaxModule({ data, set, navContext={} }) {
       {tab === "passive" && (
         <div>
           <div style={{ ...boxStyle, borderColor:"rgba(127,90,240,0.3)" }}>
-            <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a2, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Passive ROM — Inert Tissue Testing</div>
+            <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a2, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Passive ROM — Inert Tissue Testing</div>
 
             {/* Capsular pattern */}
             <div style={{ background:"rgba(127,90,240,0.08)", border:`1px solid ${C.a2}40`, borderRadius:9, padding:12, marginBottom:12 }}>
@@ -1847,7 +1880,7 @@ function CyriaxModule({ data, set, navContext={} }) {
                 <option value="Partial capsular — not all directions limited">Partial capsular pattern — not all directions</option>
               </select>
               {CAPSULAR_PATTERNS[region] && (
-                <div style={{ marginTop:8, padding:"6px 9px", background:C.s3, borderRadius:6, fontSize:"0.72rem", color:C.text }}>
+                <div style={{ marginTop:8, padding:"6px 9px", background:C.s3, borderRadius:6, fontSize:"0.82rem", color:C.text }}>
                   <strong style={{ color:C.a2 }}>Expected pattern: </strong>{CAPSULAR_PATTERNS[region].pattern}
                   <br/><strong style={{ color:C.a2 }}>Suggests: </strong>{CAPSULAR_PATTERNS[region].dx}
                 </div>
@@ -1880,7 +1913,7 @@ function CyriaxModule({ data, set, navContext={} }) {
                     {(t.endfeel_options||Object.keys(ENDFEEL_DATA)).map(o=><option key={o} value={o}>{o}</option>)}
                   </select>
                   {v(`pass_ef_${t.id}`) && ENDFEEL_DATA[v(`pass_ef_${t.id}`)] && (
-                    <div style={{ marginTop:6, padding:"6px 9px", background:C.s3, borderRadius:6, fontSize:"0.72rem", color:C.text, lineHeight:1.5 }}>
+                    <div style={{ marginTop:6, padding:"6px 9px", background:C.s3, borderRadius:6, fontSize:"0.82rem", color:C.text, lineHeight:1.5 }}>
                       <strong style={{ color:ENDFEEL_DATA[v(`pass_ef_${t.id}`)].color }}>Clinical significance: </strong>
                       {ENDFEEL_DATA[v(`pass_ef_${t.id}`)].abnormal}
                       <br/><strong style={{ color:C.a3 }}>Treatment: </strong>{ENDFEEL_DATA[v(`pass_ef_${t.id}`)].tx}
@@ -1916,13 +1949,13 @@ function CyriaxModule({ data, set, navContext={} }) {
             {Object.entries(CYRIAX_STTT_INTERPRETATION).map(([key, val]) => (
               <div key={key} style={{ background:`${val.color}10`, border:`1px solid ${val.color}40`, borderRadius:9, padding:"8px 11px" }}>
                 <div style={{ fontWeight:700, color:val.color, fontSize:"0.74rem", marginBottom:3 }}>{val.icon} {key}</div>
-                <div style={{ fontSize:"0.68rem", color:C.text, lineHeight:1.5 }}>{val.tissue}</div>
+                <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.5 }}>{val.tissue}</div>
               </div>
             ))}
           </div>
 
           <div style={boxStyle}>
-            <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a4, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Selective Tissue Tension — Resisted Isometric Tests</div>
+            <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a4, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Selective Tissue Tension — Resisted Isometric Tests</div>
 
             {reg.resistedTests.map(t => {
               const res = v(`res_${t.id}`);
@@ -1930,7 +1963,7 @@ function CyriaxModule({ data, set, navContext={} }) {
               return (
                 <div key={t.id} style={{ background:res?`${resColor(res)}10`:C.s2, border:`1px solid ${res?resColor(res)+"50":C.border}`, borderRadius:9, padding:12, marginBottom:9 }}>
                   <div style={{ fontWeight:700, color:C.text, marginBottom:3, fontSize:"0.82rem" }}>{t.label}</div>
-                  <div style={{ fontSize:"0.7rem", color:C.muted, marginBottom:6 }}>🎯 Muscle tested: {t.muscle}</div>
+                  <div style={{ fontSize:"0.8rem", color:C.muted, marginBottom:6 }}>🎯 Muscle tested: {t.muscle}</div>
                   <div style={{ background:C.s3, borderRadius:7, padding:8, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6 }}>
                     <strong style={{ color:C.yellow }}>How: </strong>{t.how}
                   </div>
@@ -1940,8 +1973,8 @@ function CyriaxModule({ data, set, navContext={} }) {
                   {interp && (
                     <div style={{ marginTop:8, padding:"8px 10px", background:`${interp.color}12`, border:`1px solid ${interp.color}40`, borderRadius:7 }}>
                       <div style={{ fontWeight:700, color:interp.color, fontSize:"0.74rem", marginBottom:3 }}>{interp.icon} {interp.tissue}</div>
-                      <div style={{ fontSize:"0.72rem", color:C.text, lineHeight:1.6, marginBottom:4 }}>{interp.meaning}</div>
-                      <div style={{ fontSize:"0.7rem", color:C.a3 }}><strong>Next step: </strong>{interp.nextStep}</div>
+                      <div style={{ fontSize:"0.82rem", color:C.text, lineHeight:1.6, marginBottom:4 }}>{interp.meaning}</div>
+                      <div style={{ fontSize:"0.8rem", color:C.a3 }}><strong>Next step: </strong>{interp.nextStep}</div>
                     </div>
                   )}
                   <div style={{ marginTop:6 }}>
@@ -1958,7 +1991,7 @@ function CyriaxModule({ data, set, navContext={} }) {
       {tab === "joint_play" && (
         <div>
           <div style={boxStyle}>
-            <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Joint Play / Accessory Motion Assessment</div>
+            <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Joint Play / Accessory Motion Assessment</div>
             <div style={{ background:"rgba(0,201,122,0.06)", border:`1px solid ${C.a3}30`, borderRadius:8, padding:10, marginBottom:12, fontSize:"0.76rem", color:C.text, lineHeight:1.7 }}>
               Joint play tests assess the ACCESSORY MOVEMENTS that accompany physiological motion. Restriction in joint play → restriction in full ROM. Grade using Maitland (I–IV) or Kaltenborn (0–6). Hypomobile = mobilise. Hypermobile = stabilise.
             </div>
@@ -2054,8 +2087,8 @@ function CyriaxModule({ data, set, navContext={} }) {
                   {reasoning.diagnoses.map((d,i)=>(
                     <div key={i} style={{ background:C.s3, borderRadius:8, padding:10, marginBottom:7, borderLeft:`3px solid ${i===0?C.accent:i===1?C.a2:C.a3}` }}>
                       <div style={{ fontWeight:700, color:C.text, marginBottom:3 }}>{i+1}. {d.name}</div>
-                      <div style={{ fontSize:"0.7rem", color:C.muted, marginBottom:3 }}>{d.detail}</div>
-                      <span style={{ fontSize:"0.65rem", padding:"1px 7px", borderRadius:8, background:d.confidence==="High"?"rgba(0,201,122,0.15)":"rgba(255,179,0,0.15)", color:d.confidence==="High"?C.green:C.yellow }}>{d.confidence} Confidence</span>
+                      <div style={{ fontSize:"0.8rem", color:C.muted, marginBottom:3 }}>{d.detail}</div>
+                      <span style={{ fontSize:"0.75rem", padding:"1px 7px", borderRadius:8, background:d.confidence==="High"?"rgba(0,201,122,0.15)":"rgba(255,179,0,0.15)", color:d.confidence==="High"?C.green:C.yellow }}>{d.confidence} Confidence</span>
                     </div>
                   ))}
                 </div>
@@ -2065,7 +2098,7 @@ function CyriaxModule({ data, set, navContext={} }) {
               <div style={{ ...boxStyle }}>
                 <div style={labelStyle}>Differential Diagnoses</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                  {reasoning.differentials.map((d,i)=><span key={i} style={{ padding:"3px 9px", borderRadius:10, fontSize:"0.72rem", background:C.s3, color:C.muted, border:`1px solid ${C.border}` }}>{d}</span>)}
+                  {reasoning.differentials.map((d,i)=><span key={i} style={{ padding:"3px 9px", borderRadius:10, fontSize:"0.82rem", background:C.s3, color:C.muted, border:`1px solid ${C.border}` }}>{d}</span>)}
                 </div>
               </div>
 
@@ -2086,7 +2119,7 @@ function CyriaxModule({ data, set, navContext={} }) {
               <div style={{ ...boxStyle }}>
                 <div style={labelStyle}>Suggested Next Assessments</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                  {reasoning.nextTests.map((t,i)=><span key={i} style={{ padding:"3px 9px", borderRadius:10, fontSize:"0.72rem", background:"rgba(0,229,255,0.1)", color:C.accent, border:`1px solid ${C.accent}30` }}>→ {t}</span>)}
+                  {reasoning.nextTests.map((t,i)=><span key={i} style={{ padding:"3px 9px", borderRadius:10, fontSize:"0.82rem", background:"rgba(0,229,255,0.1)", color:C.accent, border:`1px solid ${C.accent}30` }}>→ {t}</span>)}
                 </div>
               </div>
 
@@ -2969,12 +3002,12 @@ function NavActionBtn({ btn, onNav, PC }) {
           style={{ padding:"7px 8px", background:`${btn.col}08`,
             border:`1px solid ${btn.col}20`, borderLeft:"none",
             borderRadius:"0 7px 7px 0", color:PC.muted, cursor:"pointer",
-            fontSize:"0.58rem", fontWeight:800 }}>
+            fontSize:"0.78rem", fontWeight:800 }}>
           ?
         </button>
       </div>
       {showWhy && (
-        <div style={{ fontSize:"0.62rem", color:PC.muted, padding:"5px 8px",
+        <div style={{ fontSize:"0.82rem", color:PC.muted, padding:"5px 8px",
           background:PC.s3, borderRadius:"0 0 6px 6px",
           border:`1px solid ${btn.col}20`, borderTop:"none", lineHeight:1.5 }}>
           {btn.why}
@@ -4099,19 +4132,19 @@ function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, 
           padding:"6px 10px", cursor:"pointer",
           background: hasActive ? group.col+"0e" : PC.s2 }}>
         <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-          <span style={{ fontSize:"0.6rem", fontWeight:700, textTransform:"uppercase",
+          <span style={{ fontSize:"0.8rem", fontWeight:700, textTransform:"uppercase",
             letterSpacing:"0.7px", color: group.col }}>{group.label}</span>
-          <span style={{ fontSize:"0.58rem", color:PC.muted }}>
+          <span style={{ fontSize:"0.78rem", color:PC.muted }}>
             {group.keys.length} section{group.keys.length>1?"s":""}
           </span>
           {groupFilled > 0 && (
             <span style={{ background:group.col, color:"#fff",
-              fontSize:"0.52rem", padding:"1px 5px", borderRadius:99, fontWeight:700 }}>
+              fontSize:"0.82rem", padding:"1px 5px", borderRadius:99, fontWeight:700 }}>
               {groupFilled} filled
             </span>
           )}
         </div>
-        <span style={{ fontSize:"0.65rem", color:PC.muted }}>{gOpen?"▲":"▼"}</span>
+        <span style={{ fontSize:"0.75rem", color:PC.muted }}>{gOpen?"▲":"▼"}</span>
       </div>
       {gOpen && (
         <div style={{ display:"flex", gap:4, flexWrap:"wrap", padding:"7px 8px",
@@ -4129,7 +4162,7 @@ function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, 
                   border:`1px solid ${isAct ? col : PC.border}`,
                   background: isAct ? col+"18" : PC.s3,
                   color: isAct ? col : PC.muted,
-                  fontSize:"0.65rem", fontWeight: isAct ? 700 : 500,
+                  fontSize:"0.75rem", fontWeight: isAct ? 700 : 500,
                   display:"flex", alignItems:"center", gap:4, flexShrink:0,
                   transition:"all 120ms",
                 }}>
@@ -4137,7 +4170,7 @@ function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, 
                 <span>{s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}</span>
                 {filled > 0 && (
                   <span style={{ background: isAct ? col : PC.muted, color:"#fff",
-                    fontSize:"0.52rem", padding:"1px 4px", borderRadius:99, fontWeight:700 }}>
+                    fontSize:"0.82rem", padding:"1px 4px", borderRadius:99, fontWeight:700 }}>
                     {filled}
                   </span>
                 )}
@@ -4167,17 +4200,17 @@ function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
         <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
           {hasSelected ? (
             selected.map(s => (
-              <span key={s} style={{ fontSize:"0.65rem", fontWeight:700, padding:"2px 8px",
+              <span key={s} style={{ fontSize:"0.75rem", fontWeight:700, padding:"2px 8px",
                 borderRadius:99, background:PC.accent+"18", color:PC.accent,
                 border:`1px solid ${PC.accent}44` }}>{s}</span>
             ))
           ) : (
-            <span style={{ fontSize:"0.68rem", color:PC.muted, fontStyle:"italic" }}>
+            <span style={{ fontSize:"0.78rem", color:PC.muted, fontStyle:"italic" }}>
               {opts.length} options — tap to expand
             </span>
           )}
         </div>
-        <span style={{ fontSize:"0.65rem", color:PC.muted, flexShrink:0, marginLeft:6 }}>
+        <span style={{ fontSize:"0.75rem", color:PC.muted, flexShrink:0, marginLeft:6 }}>
           {mcOpen ? "▲" : "▼"}
         </span>
       </div>
@@ -4195,7 +4228,7 @@ function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
                   border:`1px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
                   background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
                   color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
-                  fontSize:"0.72rem", fontWeight: on ? 700 : 500,
+                  fontSize:"0.82rem", fontWeight: on ? 700 : 500,
                   lineHeight: 1.4,
                   transition:"all 110ms",
                 }}>
@@ -4208,6 +4241,35 @@ function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
     </div>
   );
 }
+
+
+// ── Field-level clinical help text (shown as ⓘ tooltip) ──────────────────────
+const FIELD_HELP = {
+  // Pain descriptors
+  "grf_irritability": "Irritability = how easily symptoms are provoked AND how long they take to settle. HIGH: minimal activity causes severe prolonged pain. LOW: requires significant load, settles quickly. Guides how aggressively to assess.",
+  "sub_vas": "Visual Analogue Scale 0–10. 0 = no pain. 10 = worst imaginable pain. Ask: 'right now' and 'worst in past 24 hours'. >7 = severe, treat as high irritability.",
+  "cc_vas_now": "VAS 0–10 right now. 0 = no pain, 10 = worst imaginable. Use for baseline comparison across sessions.",
+  // Behaviour
+  "cx_behaviour": "Behaviour describes how symptoms change with movement and time. Mechanical: varies with posture/load. Inflammatory: worse at rest, better with movement. Chemical: constant, unrelated to position.",
+  "lx_behaviour": "Mechanical: varies with load/posture. Inflammatory: morning stiffness >30min, improves with movement. Chemical (tissue irritation): constant pain, little postural relief.",
+  // Neurological
+  "lx_dermatomal": "A dermatome is a skin area supplied by a single spinal nerve root. Dermatomal pain suggests nerve root irritation (radiculopathy). Non-dermatomal referred pain is more likely somatic (joints/muscles).",
+  "lx_rf_cauda": "Cauda Equina Syndrome (CES) = compression of the cauda equina nerve roots. EMERGENCY. Classic presentation: saddle anaesthesia, bilateral leg weakness, bladder/bowel dysfunction. Requires immediate emergency referral.",
+  "lx_neuro_signs": "Neurological signs suggest nerve root or cord involvement. Dermatomal numbness = sensory root. Weakness = motor root. Absent reflex = arc interruption. Bilateral signs elevate concern for central pathology.",
+  // Special questions
+  "lx_bladder_baseline": "ALWAYS establish baseline BEFORE onset. New bladder/bowel dysfunction since pain started = potential cauda equina flag. Pre-existing problems are less clinically significant.",
+  "cx_upper_limb": "Cervical myelopathy (cord compression) can cause upper limb clumsiness, grip weakness, and fine motor difficulty. Ask about: dropping objects, difficulty with buttons, handwriting changes.",
+  "cx_instability": "Clinical instability = ligamentous laxity after trauma (e.g. whiplash, RA). Sharp pain with head movement, 'clunking', feeling head will fall off. Cervical manipulation is CONTRAINDICATED if instability suspected.",
+  // Psychosocial
+  "cx_yellow_flags": "Yellow Flags (Kendall 1997) = psychosocial risk factors for chronic pain. Negative beliefs (pain = harm), passive coping, low job satisfaction, and fear-avoidance predict poor outcome more than physical findings.",
+  "lx_yellow_flags": "Yellow Flags = psychosocial risk factors for chronic disability. Include: belief pain is harmful, depression, anxiety, poor work relationships, compensation issues. Screen with STarT MSK or Örebro tools.",
+  // ROM
+  "cx_rom_active": "Active ROM tests contractile and inert structures + neurodynamics. Note: range (degrees if goniometer), end-feel, and pain response (P1 = onset, P2 = end of range). Compare to contralateral side.",
+  "lx_rom_active": "Active lumbar ROM. Flexion: normally >60°. Extension: 25°. Lateral flexion: 25° each. Rotation: 30° each. Instability flag: painful arc on return from flexion, or 'catch' with extension.",
+  // Sleep
+  "cx_night": "Night pain quality matters. Position-dependent = mechanical. Constant regardless of position = potentially serious (inflammatory, neoplastic). Waking from sleep repeatedly with no relief = red flag.",
+  "lx_night": "Night pain: can patient get comfortable? Positional night pain = mechanical. Constant unable to get comfortable = inflammatory or serious pathology. Bladder waking since onset — compare to pre-pain baseline.",
+};
 
 function SubjectiveModule({ data, set, onNav }) {
   const PC = typeof getC === "function" ? getC() : {
@@ -4561,7 +4623,7 @@ function SubjectiveModule({ data, set, onNav }) {
           <span style={{ fontWeight:800, color: col, fontSize:"1.2rem", minWidth:36, textAlign:"center" }}>
             {num}
           </span>
-          <span style={{ fontSize:"0.72rem", color: PC.muted }}>/ 10</span>
+          <span style={{ fontSize:"0.82rem", color: PC.muted }}>/ 10</span>
         </div>
       );
     }
@@ -4588,28 +4650,85 @@ function SubjectiveModule({ data, set, onNav }) {
   // ══════════════════════════════════════════════════════════════════
   // RENDER
   // ══════════════════════════════════════════════════════════════════
+  // ── Red flag detection ─────────────────────────────────────────────
+  const SEP = SEP_S || "|||";
+  const getMulti = (id) => (data[id] ? String(data[id]).split(SEP).filter(Boolean) : []);
+  const caudalFlags = getMulti("lx_rf_cauda").filter(v => !v.startsWith("No cauda"));
+  const hasUrgentCauda = caudalFlags.some(v =>
+    v.includes("Saddle") || v.includes("Bladder retention") || v.includes("Bowel incontinence") || v.includes("Bladder incontinence")
+  );
+  const allRedFlags = [
+    ...caudalFlags,
+    ...getMulti("grf_neuro").filter(v => !v.startsWith("No")),
+    ...getMulti("grf_vascular").filter(v => !v.startsWith("No")),
+    ...getMulti("lx_rf_serious").filter(v => !v.startsWith("No")),
+    ...getMulti("lx_rf_inflammatory").filter(v => !v.startsWith("No")),
+    ...getMulti("cx_rf_other").filter(v => !v.startsWith("No")),
+    ...getMulti("shl_rf").filter(v => !v.startsWith("No")),
+    ...getMulti("shr_rf").filter(v => !v.startsWith("No")),
+    ...getMulti("knl_rf").filter(v => !v.startsWith("No")),
+    ...getMulti("knr_rf").filter(v => !v.startsWith("No")),
+    ...getMulti("hp_rf").filter(v => !v.startsWith("No")),
+  ];
+  const hasAnyRedFlag = allRedFlags.length > 0;
+
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14, maxWidth:"100%" }}>
+
+      {/* ── Red Flag Alert Banner ─────────────────────────────────── */}
+      {hasAnyRedFlag && (
+        <div style={{
+          background: hasUrgentCauda ? "rgba(220,38,38,0.1)" : "rgba(180,83,9,0.09)",
+          border: `2px solid ${hasUrgentCauda ? "#dc2626" : "#b45309"}`,
+          borderRadius:12, padding:"12px 16px",
+          animation: hasUrgentCauda ? "rfpulse 1.5s ease-in-out infinite" : undefined,
+        }}>
+          <style>{`@keyframes rfpulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.25)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}`}</style>
+          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+            <span style={{fontSize:"1.2rem",flexShrink:0}}>{hasUrgentCauda ? "🚨" : "⚠️"}</span>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:900,fontSize:"0.92rem",color: hasUrgentCauda ? "#dc2626" : "#b45309",marginBottom:4}}>
+                {hasUrgentCauda
+                  ? "URGENT — Possible Cauda Equina Syndrome"
+                  : `Clinical Red Flag${allRedFlags.length>1?"s":""} Noted`}
+              </div>
+              {hasUrgentCauda && (
+                <div style={{fontSize:"0.82rem",fontWeight:700,color:"#dc2626",marginBottom:6,padding:"6px 10px",background:"rgba(220,38,38,0.08)",borderRadius:8,border:"1px solid rgba(220,38,38,0.3)"}}>
+                  ⛔ Do not continue routine assessment. Consider immediate referral to emergency services. Document findings and time of assessment.
+                </div>
+              )}
+              <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:4}}>
+                {allRedFlags.slice(0,8).map((f,i)=>(
+                  <span key={i} style={{fontSize:"0.75rem",padding:"3px 8px",borderRadius:99,background: hasUrgentCauda ? "rgba(220,38,38,0.12)" : "rgba(180,83,9,0.1)",color: hasUrgentCauda ? "#dc2626" : "#b45309",fontWeight:700,border:`1px solid ${hasUrgentCauda?"rgba(220,38,38,0.3)":"rgba(180,83,9,0.25)"}`}}>
+                    {f.replace(/\(.*?\)/g,"").trim()}
+                  </span>
+                ))}
+                {allRedFlags.length > 8 && <span style={{fontSize:"0.75rem",color:"#b45309",fontWeight:600}}>+{allRedFlags.length-8} more</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── AI Smart Parser Strip ─────────────────────────────────── */}
       <div style={{ background:`linear-gradient(135deg,#ede9fe,#f5f3ff)`, borderRadius:12,
         border:"1px solid #c4b5fd", padding:"10px 14px" }}>
         {!aiOpen ? (
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:"0.72rem", fontWeight:700, color:"#5b21b6", flex:1 }}>
+            <span style={{ fontSize:"0.82rem", fontWeight:700, color:"#5b21b6", flex:1 }}>
               ✦ AI Smart Parser — speak or type to auto-fill this form
             </span>
 
             <button type="button" onClick={() => { setAiOpen(true); setAiMode("voice"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
               style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:20,
-                background:"#7c3aed", color:"#fff", border:"none", fontSize:"0.72rem",
+                background:"#7c3aed", color:"#fff", border:"none", fontSize:"0.82rem",
                 fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
               🎤 Speak
             </button>
             <button type="button" onClick={() => { setAiOpen(true); setAiMode("text"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
               style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:20,
                 background:"transparent", color:"#7c3aed", border:"1px solid #a78bfa",
-                fontSize:"0.72rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+                fontSize:"0.82rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
               ⌨ Type
             </button>
           </div>
@@ -4637,12 +4756,12 @@ function SubjectiveModule({ data, set, onNav }) {
                 ) : aiStatus === "recording" ? (
                   <div>
                     <div style={{ background:"#fee2e2", borderRadius:8, padding:"8px 12px", marginBottom:8,
-                      fontSize:"0.72rem", color:"#b91c1c", display:"flex", alignItems:"center", gap:8 }}>
+                      fontSize:"0.82rem", color:"#b91c1c", display:"flex", alignItems:"center", gap:8 }}>
                       <span style={{ display:"inline-block", width:8, height:8, borderRadius:"50%",
                         background:"#dc2626", animation:"pulse 1s infinite" }}></span>
                       Recording — speak naturally, then tap Stop
                     </div>
-                    {aiText && <div style={{ fontSize:"0.72rem", color:"#5b21b6", background:"#f5f3ff",
+                    {aiText && <div style={{ fontSize:"0.82rem", color:"#5b21b6", background:"#f5f3ff",
                       borderRadius:8, padding:"8px 10px", marginBottom:8, lineHeight:1.5 }}>{aiText}</div>}
                     <div style={{ display:"flex", gap:8 }}>
                       <button type="button" onClick={() => { stopRecording(); if (aiText) runParse(aiText); }}
@@ -4652,7 +4771,7 @@ function SubjectiveModule({ data, set, onNav }) {
                       </button>
                       <button type="button" onClick={() => { stopRecording(); setAiMode("text"); }}
                         style={{ padding:"8px 12px", borderRadius:10, background:"transparent", color:"#7c3aed",
-                          border:"1px solid #a78bfa", fontSize:"0.72rem", cursor:"pointer", fontFamily:"inherit" }}>
+                          border:"1px solid #a78bfa", fontSize:"0.82rem", cursor:"pointer", fontFamily:"inherit" }}>
                         Switch to type
                       </button>
                     </div>
@@ -4664,7 +4783,7 @@ function SubjectiveModule({ data, set, onNav }) {
                 ) : null}
                 {aiStatus === "error" && (
                   <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8,
-                    padding:"8px 12px", fontSize:"0.72rem", color:"#b91c1c", marginTop:6 }}>
+                    padding:"8px 12px", fontSize:"0.82rem", color:"#b91c1c", marginTop:6 }}>
                     {aiResult?._errorMsg || "Parse failed — check internet connection or try typing instead."}
                   </div>
                 )}
@@ -4697,7 +4816,7 @@ function SubjectiveModule({ data, set, onNav }) {
                   </button>
                   <button type="button" onClick={() => { setAiMode("voice"); setAiStatus("idle"); }}
                     style={{ padding:"9px 12px", borderRadius:10, background:"transparent", color:"#7c3aed",
-                      border:"1px solid #a78bfa", fontSize:"0.72rem", cursor:"pointer", fontFamily:"inherit" }}>
+                      border:"1px solid #a78bfa", fontSize:"0.82rem", cursor:"pointer", fontFamily:"inherit" }}>
                     🎤
                   </button>
                 </div>
@@ -4707,7 +4826,7 @@ function SubjectiveModule({ data, set, onNav }) {
             {/* Review panel */}
             {aiReview && aiResult && (
               <div>
-                <div style={{ fontSize:"0.7rem", fontWeight:700, color:"#5b21b6", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                <div style={{ fontSize:"0.8rem", fontWeight:700, color:"#5b21b6", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
                   Review extracted data
                 </div>
                 <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:10, maxHeight:220, overflowY:"auto" }}>
@@ -4733,14 +4852,14 @@ function SubjectiveModule({ data, set, onNav }) {
                   ].filter(Boolean).map(({k,v}) => (
                     <div key={k} style={{ display:"flex", gap:8, alignItems:"flex-start",
                       background:"#fff", borderRadius:7, padding:"5px 9px",
-                      border:"1px solid #e9d5ff", fontSize:"0.72rem" }}>
+                      border:"1px solid #e9d5ff", fontSize:"0.82rem" }}>
                       <span style={{ color:"#7c6a9a", minWidth:74, flexShrink:0 }}>{k}</span>
                       <span style={{ color:"#1a1025", fontWeight:500 }}>{v}</span>
                     </div>
                   ))}
                   {aiResult.flags?.length > 0 && aiResult.flags.map(f => (
                     <div key={f} style={{ display:"flex", gap:8, background:"#fff7ed",
-                      border:"1px solid #fdba74", borderRadius:7, padding:"5px 9px", fontSize:"0.72rem" }}>
+                      border:"1px solid #fdba74", borderRadius:7, padding:"5px 9px", fontSize:"0.82rem" }}>
                       <span style={{ color:"#92400e" }}>⚠ Flag</span>
                       <span style={{ color:"#92400e", fontWeight:500 }}>{f}</span>
                     </div>
@@ -4756,7 +4875,7 @@ function SubjectiveModule({ data, set, onNav }) {
                   if (!aiResult.diurnalPattern) missing.push("24hr pattern");
                   return missing.length > 0 ? (
                     <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:7,
-                      padding:"6px 10px", fontSize:"0.7rem", color:"#b91c1c", marginBottom:8 }}>
+                      padding:"6px 10px", fontSize:"0.8rem", color:"#b91c1c", marginBottom:8 }}>
                       <strong>Still ask patient:</strong> {missing.join(" · ")}
                     </div>
                   ) : null;
@@ -4770,7 +4889,7 @@ function SubjectiveModule({ data, set, onNav }) {
                   </button>
                   <button type="button" onClick={() => { setAiReview(false); setAiStatus("idle"); setAiText(""); setAiResult(null); }}
                     style={{ padding:"9px 12px", borderRadius:10, background:"transparent", color:"#7c3aed",
-                      border:"1px solid #a78bfa", fontSize:"0.72rem", cursor:"pointer", fontFamily:"inherit" }}>
+                      border:"1px solid #a78bfa", fontSize:"0.82rem", cursor:"pointer", fontFamily:"inherit" }}>
                     Re-try
                   </button>
                 </div>
@@ -4789,10 +4908,10 @@ function SubjectiveModule({ data, set, onNav }) {
             <div style={{ fontSize:"0.75rem", fontWeight:700, color:"#166534", marginBottom:3 }}>
               {aiSuccess.count} fields auto-filled! Scroll down to review.
             </div>
-            <div style={{ fontSize:"0.68rem", color:"#166534", lineHeight:1.6 }}>
+            <div style={{ fontSize:"0.78rem", color:"#166534", lineHeight:1.6 }}>
               {aiSuccess.fields.join(" · ")}
             </div>
-            <div style={{ fontSize:"0.65rem", color:"#4ade80", marginTop:4 }}>
+            <div style={{ fontSize:"0.75rem", color:"#4ade80", marginTop:4 }}>
               Check Demographics → Chief Complaint sections below ↓
             </div>
           </div>
@@ -4814,22 +4933,22 @@ function SubjectiveModule({ data, set, onNav }) {
                 border:`1px solid ${rOpen ? PC.accent : PC.border}`,
                 display:"flex", alignItems:"center", gap:6, cursor:"pointer",
                 minHeight:38, flexWrap:"wrap" }}>
-              <span style={{ fontSize:"0.65rem", fontWeight:700, color:PC.muted, whiteSpace:"nowrap" }}>
+              <span style={{ fontSize:"0.75rem", fontWeight:700, color:PC.muted, whiteSpace:"nowrap" }}>
                 📍 Regions ({selectedRegions.length}/3):
               </span>
               {selectedRegions.length === 0 ? (
-                <span style={{ fontSize:"0.72rem", color:PC.muted, fontStyle:"italic" }}>tap to select…</span>
+                <span style={{ fontSize:"0.82rem", color:PC.muted, fontStyle:"italic" }}>tap to select…</span>
               ) : (
                 selectedRegions.map(r => (
                   <span key={r} style={{
                     display:"inline-flex", alignItems:"center", gap:4,
-                    fontSize:"0.68rem", fontWeight:700, padding:"3px 8px", borderRadius:99,
+                    fontSize:"0.78rem", fontWeight:700, padding:"3px 8px", borderRadius:99,
                     background:(RC_S[r]||PC.accent)+"18", color:RC_S[r]||PC.accent,
                     border:`1px solid ${(RC_S[r]||PC.accent)}44`,
                   }}>
                     {r}
                     <span onClick={e=>{e.stopPropagation();toggleRegion(r);}}
-                      style={{ fontSize:"0.65rem", cursor:"pointer", opacity:0.7 }}>×</span>
+                      style={{ fontSize:"0.75rem", cursor:"pointer", opacity:0.7 }}>×</span>
                   </span>
                 ))
               )}
@@ -4840,7 +4959,7 @@ function SubjectiveModule({ data, set, onNav }) {
               <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0, zIndex:50,
                 background: PC.surface, border:`1px solid ${PC.border}`, borderRadius:10,
                 boxShadow:"0 8px 24px rgba(0,0,0,0.12)", padding:"10px 12px", maxHeight:280, overflowY:"auto" }}>
-                <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase",
+                <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase",
                   letterSpacing:"0.7px", marginBottom:8 }}>
                   Select up to 3 regions
                 </div>
@@ -4860,7 +4979,7 @@ function SubjectiveModule({ data, set, onNav }) {
                         <input type="checkbox" checked={on} disabled={disabled}
                           onChange={() => { if (!disabled) toggleRegion(r); }}
                           style={{ accentColor: col, width:14, height:14, cursor: disabled?"not-allowed":"pointer" }} />
-                        <span style={{ fontSize:"0.72rem", fontWeight: on?700:400,
+                        <span style={{ fontSize:"0.82rem", fontWeight: on?700:400,
                           color: on ? col : PC.text }}>{r}</span>
                       </label>
                     );
@@ -4870,7 +4989,7 @@ function SubjectiveModule({ data, set, onNav }) {
                   <button onClick={() => setRegionPickerOpen(false)}
                     style={{ width:"100%", marginTop:8, padding:"7px", borderRadius:8, border:"none",
                       background:`linear-gradient(135deg,${PC.accent},${PC.a2})`, color:"#fff",
-                      fontWeight:800, fontSize:"0.7rem", cursor:"pointer", fontFamily:"inherit" }}>
+                      fontWeight:800, fontSize:"0.8rem", cursor:"pointer", fontFamily:"inherit" }}>
                     ✓ Done — {selectedRegions.length} region{selectedRegions.length>1?"s":""} selected
                   </button>
                 )}
@@ -4886,7 +5005,7 @@ function SubjectiveModule({ data, set, onNav }) {
           <div style={{ width:`${pct}%`, height:"100%", borderRadius:99, transition:"width 300ms",
             background:`linear-gradient(90deg, ${PC.accent}, ${PC.green})` }} />
         </div>
-        <span style={{ fontSize:"0.72rem", fontWeight:700, color: PC.accent, whiteSpace:"nowrap" }}>
+        <span style={{ fontSize:"0.82rem", fontWeight:700, color: PC.accent, whiteSpace:"nowrap" }}>
           {pct}% · {totalD}/{totalF}
         </span>
       </div>
@@ -5017,7 +5136,7 @@ function SubjectiveModule({ data, set, onNav }) {
             {label}
             {t==="results" && insight && (
               <span style={{ marginLeft:5, background: insight.anyUrgent ? PC.red : PC.green,
-                color:"#fff", fontSize:"0.55rem", padding:"1px 6px", borderRadius:99, fontWeight:700 }}>
+                color:"#fff", fontSize:"0.75rem", padding:"1px 6px", borderRadius:99, fontWeight:700 }}>
                 {insight.anyUrgent ? "⚠" : "✓"}
               </span>
             )}
@@ -5128,12 +5247,12 @@ function SubjectiveModule({ data, set, onNav }) {
                     <div style={{ fontSize:"0.95rem", fontWeight:800, color: secColor }}>
                       {sec.icon} {sec.label}
                     </div>
-                    <span style={{ fontSize:"0.6rem", color: PC.muted, fontWeight:500 }}>
+                    <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:500 }}>
                       {curIdx + 1} / {sectionKeys.length}
                     </span>
                   </div>
                   {sec.description && (
-                    <div style={{ fontSize:"0.68rem", color: PC.muted, marginTop:4, fontStyle:"italic",
+                    <div style={{ fontSize:"0.78rem", color: PC.muted, marginTop:4, fontStyle:"italic",
                       borderLeft:`2px solid ${secColor}44`, paddingLeft:8 }}>
                       {sec.description}
                     </div>
@@ -5149,23 +5268,34 @@ function SubjectiveModule({ data, set, onNav }) {
                       placeholder="🔎 Filter options..."
                       style={{ width:"100%", padding:"7px 11px", marginBottom:12,
                         background: PC.s2, border:`1px solid ${PC.inputBorder}`,
-                        borderRadius:8, fontSize:"0.72rem", color: PC.text,
+                        borderRadius:8, fontSize:"0.82rem", color: PC.text,
                         outline:"none", boxSizing:"border-box" }} />
                   )}
 
-                  {sec.fields.map(field => (
+                  {sec.fields.map(field => {
+                    const helpText = FIELD_HELP[field.id];
+                    return (
                     <div key={field.id} style={{ marginBottom:14 }}>
-                      <label style={{ display:"block", fontSize:"0.72rem", fontWeight:600,
-                        color: PC.text, marginBottom:5, letterSpacing:0.2 }}>
-                        {field.label}
+                      <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.82rem", fontWeight:600,
+                        color: PC.text, marginBottom:5, letterSpacing:0.2, flexWrap:"wrap" }}>
+                        <span>{field.label}</span>
                         {field.type === "textarea" && (
-                          <span style={{ fontSize:"0.6rem", color: PC.muted, fontWeight:400,
-                            marginLeft:6, fontStyle:"italic" }}>notes</span>
+                          <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:400, fontStyle:"italic" }}>notes</span>
+                        )}
+                        {helpText && (
+                          <span title={helpText} style={{
+                            display:"inline-flex", alignItems:"center", justifyContent:"center",
+                            width:16, height:16, borderRadius:"50%",
+                            background: PC.accent+"22", color: PC.accent,
+                            fontSize:"0.72rem", fontWeight:900, cursor:"help",
+                            border:`1px solid ${PC.accent}44`, flexShrink:0, lineHeight:1,
+                          }}>ⓘ</span>
                         )}
                       </label>
                       {renderField(field)}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Prev / Next row */}
@@ -5177,7 +5307,7 @@ function SubjectiveModule({ data, set, onNav }) {
                       flex:1, padding:"11px 12px", background:"transparent", border:"none",
                       borderRight:`1px solid ${PC.border}`,
                       color: prevKey ? PC.muted : PC.border,
-                      fontSize:"0.72rem", fontWeight:500, cursor: prevKey ? "pointer" : "default",
+                      fontSize:"0.82rem", fontWeight:500, cursor: prevKey ? "pointer" : "default",
                       fontFamily:"inherit", textAlign:"left", display:"flex", alignItems:"center", gap:6,
                     }}>
                     {prevKey && <span style={{ fontSize:"0.85rem" }}>←</span>}
@@ -5193,7 +5323,7 @@ function SubjectiveModule({ data, set, onNav }) {
                       background: nextKey ? secColor+"10" : "transparent",
                       border:"none",
                       color: nextKey ? secColor : PC.border,
-                      fontSize:"0.72rem", fontWeight: nextKey ? 700 : 500,
+                      fontSize:"0.82rem", fontWeight: nextKey ? 700 : 500,
                       cursor: nextKey ? "pointer" : "default",
                       fontFamily:"inherit", textAlign:"right", display:"flex",
                       alignItems:"center", justifyContent:"flex-end", gap:6,
@@ -5226,7 +5356,7 @@ function SubjectiveModule({ data, set, onNav }) {
             }}>
             🧠 Review &amp; Run Analysis
             {selectedRegions.length > 0 && (
-              <span style={{ fontSize:"0.65rem", background:"rgba(255,255,255,0.2)",
+              <span style={{ fontSize:"0.75rem", background:"rgba(255,255,255,0.2)",
                 padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
                 {selectedRegions.length} region{selectedRegions.length>1?"s":""}
               </span>
@@ -5258,8 +5388,8 @@ function SubjectiveModule({ data, set, onNav }) {
                 {/* Header */}
                 <div style={{ background:`${regCol}12`, borderBottom:`1px solid ${regCol}22`, padding:"8px 14px", display:"flex", alignItems:"center", gap:8 }}>
                   <div style={{ width:6, height:6, borderRadius:"50%", background:regCol, flexShrink:0 }}/>
-                  <span style={{ fontSize:"0.65rem", fontWeight:800, color:regCol, letterSpacing:"0.5px" }}>{r.region}</span>
-                  <span style={{ fontSize:"0.6rem", color:PC.muted, marginLeft:4 }}>— Guided assessment workflow</span>
+                  <span style={{ fontSize:"0.75rem", fontWeight:800, color:regCol, letterSpacing:"0.5px" }}>{r.region}</span>
+                  <span style={{ fontSize:"0.8rem", color:PC.muted, marginLeft:4 }}>— Guided assessment workflow</span>
                 </div>
                 {/* Action button grid */}
                 <div style={{ padding:"10px 12px", display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
@@ -5282,7 +5412,7 @@ function SubjectiveModule({ data, set, onNav }) {
                 </div>
                 {insight.regionResults.filter(r=>r.urgentFlag).map((r,i)=>(
                   r.precautions.map((p,j)=>(
-                    <div key={`${i}-${j}`} style={{ fontSize:"0.72rem", color: PC.red, marginBottom:3, lineHeight:1.5 }}>• {p}</div>
+                    <div key={`${i}-${j}`} style={{ fontSize:"0.82rem", color: PC.red, marginBottom:3, lineHeight:1.5 }}>• {p}</div>
                   ))
                 ))}
               </div>
@@ -5417,7 +5547,7 @@ function SubjectiveModule({ data, set, onNav }) {
                   </div>
                   <div style={{ display:"flex", gap:5, flexWrap:"wrap", justifyContent:"flex-end" }}>
                     {r.tags.slice(0,4).map(t => (
-                      <span key={t} style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px",
+                      <span key={t} style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 7px",
                         borderRadius:99, background:"rgba(255,255,255,0.25)", color:"#fff" }}>{t}</span>
                     ))}
                   </div>
@@ -5428,11 +5558,11 @@ function SubjectiveModule({ data, set, onNav }) {
                   {/* ── PHASE 1: CLINICAL HYPOTHESES ── */}
                   <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px",
                     borderLeft:`4px solid ${regCol}` }}>
-                    <div style={{ fontSize:"0.6rem", fontWeight:800, textTransform:"uppercase",
+                    <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
                       letterSpacing:1.5, color: regCol, marginBottom:8 }}>
                       Phase 1 — Clinical Hypotheses
                     </div>
-                    <div style={{ fontSize:"0.7rem", color: PC.muted, marginBottom:8, fontStyle:"italic" }}>
+                    <div style={{ fontSize:"0.8rem", color: PC.muted, marginBottom:8, fontStyle:"italic" }}>
                       Presentation suggests — not confirmed diagnosis
                     </div>
                     {r.differentials.length === 0 && (
@@ -5451,14 +5581,14 @@ function SubjectiveModule({ data, set, onNav }) {
                             {di===0?"🔵 High probability":di===1?"🟡 Moderate probability":"⚪ Lower probability"}&nbsp;&nbsp;
                             {d.label}
                           </div>
-                          <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px",
+                          <span style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 7px",
                             borderRadius:99, flexShrink:0,
                             background: confBg(d.confidence), color: confColor(d.confidence) }}>
                             {d.confidence}
                           </span>
                         </div>
                         {d.evidence && (
-                          <div style={{ fontSize:"0.63rem", color: PC.muted, lineHeight:1.45 }}>
+                          <div style={{ fontSize:"0.73rem", color: PC.muted, lineHeight:1.45 }}>
                             Findings consistent with: {d.evidence}
                           </div>
                         )}
@@ -5472,7 +5602,7 @@ function SubjectiveModule({ data, set, onNav }) {
                         {label:"Neural",on:r.radiculopathySig||r.neurodynamicSig,col:"#7c3aed"},
                         {label:"Nociplastic",on:r.nociplasticSig,col:PC.red},
                       ].map(p=>(
-                        <span key={p.label} style={{ fontSize:"0.6rem", fontWeight:700, padding:"3px 9px",
+                        <span key={p.label} style={{ fontSize:"0.8rem", fontWeight:700, padding:"3px 9px",
                           borderRadius:99,
                           background: p.on ? p.col+"15" : PC.s3,
                           color: p.on ? p.col : PC.border,
@@ -5486,17 +5616,17 @@ function SubjectiveModule({ data, set, onNav }) {
                   {/* ── PHASE 2: OBSERVATION ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{ fontSize:"0.68rem", fontWeight:800, textTransform:"uppercase",
+                      <span style={{ fontSize:"0.78rem", fontWeight:800, textTransform:"uppercase",
                         letterSpacing:1.2, color: PC.muted }}>Phase 2 — Observation</span>
-                      <span style={{ fontSize:"0.6rem", color: PC.muted, fontStyle:"italic" }}>Observe for:</span>
+                      <span style={{ fontSize:"0.8rem", color: PC.muted, fontStyle:"italic" }}>Observe for:</span>
                     </div>
                     <div style={{ padding:"10px 13px", display:"flex", flexDirection:"column", gap:6 }}>
                       {obsForRegion.map((o, oi)=>(
                         <div key={oi} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
-                          <span style={{ color: regCol, fontWeight:700, fontSize:"0.7rem", flexShrink:0 }}>→</span>
+                          <span style={{ color: regCol, fontWeight:700, fontSize:"0.8rem", flexShrink:0 }}>→</span>
                           <div>
                             <div style={{ fontSize:"0.73rem", fontWeight:600, color: PC.text }}>{o.item}</div>
-                            <div style={{ fontSize:"0.62rem", color: PC.muted, lineHeight:1.4, fontStyle:"italic" }}>{o.why}</div>
+                            <div style={{ fontSize:"0.82rem", color: PC.muted, lineHeight:1.4, fontStyle:"italic" }}>{o.why}</div>
                           </div>
                         </div>
                       ))}
@@ -5508,26 +5638,26 @@ function SubjectiveModule({ data, set, onNav }) {
                     {/* ROM */}
                     <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                       <div style={{ background: PC.s3, padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
+                        <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
                           letterSpacing:1, color: PC.muted }}>Phase 3a — ROM</span>
-                        {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start ROM →</button>}
+                        {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start ROM →</button>}
                       </div>
                       <div style={{ padding:"10px 12px" }}>
                         {romForRegion.map((rm, rmi)=>(
                           <div key={rmi} style={{ marginBottom:7, paddingBottom:7,
                             borderBottom: rmi < romForRegion.length-1 ? `1px solid ${PC.border}` : "none" }}>
                             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:2 }}>
-                              <div style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{rm.mv}</div>
+                              <div style={{ fontSize:"0.82rem", fontWeight:700, color: PC.text }}>{rm.mv}</div>
                               <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                                <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 6px", borderRadius:99,
+                                <span style={{ fontSize:"0.75rem", fontWeight:700, padding:"1px 6px", borderRadius:99,
                                   background: rm.imp==="High"?PC.green+"15":PC.yellow+"15",
                                   color: rm.imp==="High"?PC.green:PC.yellow }}>
                                   {rm.imp}
                                 </span>
-                                {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.52rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer" }}>→</button>}
+                                {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.82rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer" }}>→</button>}
                               </div>
                             </div>
-                            <div style={{ fontSize:"0.6rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{rm.why}</div>
+                            <div style={{ fontSize:"0.8rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{rm.why}</div>
                           </div>
                         ))}
                       </div>
@@ -5535,19 +5665,19 @@ function SubjectiveModule({ data, set, onNav }) {
                     {/* MMT */}
                     <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                       <div style={{ background: PC.s3, padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
+                        <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
                           letterSpacing:1, color: PC.muted }}>Phase 3b — MMT</span>
-                        {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start MMT →</button>}
+                        {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start MMT →</button>}
                       </div>
                       <div style={{ padding:"10px 12px" }}>
                         {mmtItems.map((mm, mmi)=>(
                           <div key={mmi} style={{ marginBottom:7, paddingBottom:7,
                             borderBottom: mmi < mmtItems.length-1 ? `1px solid ${PC.border}` : "none" }}>
                             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:2 }}>
-                              <div style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{mm.m}</div>
-                              {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.52rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer", flexShrink:0 }}>→</button>}
+                              <div style={{ fontSize:"0.82rem", fontWeight:700, color: PC.text }}>{mm.m}</div>
+                              {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.82rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer", flexShrink:0 }}>→</button>}
                             </div>
-                            <div style={{ fontSize:"0.6rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{mm.why}</div>
+                            <div style={{ fontSize:"0.8rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{mm.why}</div>
                           </div>
                         ))}
                       </div>
@@ -5557,19 +5687,19 @@ function SubjectiveModule({ data, set, onNav }) {
                   {/* ── PHASE 4: FUNCTIONAL ASSESSMENT ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                      <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
+                      <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
                         letterSpacing:1, color: PC.muted }}>Phase 4 — Functional Assessment</span>
-                      {onNav && <button onClick={()=>onNav("fma")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a2+"22", border:`1px solid ${PC.a2}44`, borderRadius:20, color:PC.a2, cursor:"pointer" }}>Open →</button>}
+                      {onNav && <button onClick={()=>onNav("fma")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.a2+"22", border:`1px solid ${PC.a2}44`, borderRadius:20, color:PC.a2, cursor:"pointer" }}>Open →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"flex", flexWrap:"wrap", gap:6 }}>
                       {funcItems.map((fi, fii)=>(
                         onNav ? (
-                          <button key={fii} onClick={()=>onNav("fma")} style={{ fontSize:"0.68rem", padding:"4px 10px", borderRadius:8,
+                          <button key={fii} onClick={()=>onNav("fma")} style={{ fontSize:"0.78rem", padding:"4px 10px", borderRadius:8,
                             background: PC.s2, border:`1px solid ${PC.accent}33`, color: PC.accent, cursor:"pointer", fontWeight:600 }}>
                             {fi} →
                           </button>
                         ) : (
-                          <span key={fii} style={{ fontSize:"0.68rem", padding:"4px 10px", borderRadius:8,
+                          <span key={fii} style={{ fontSize:"0.78rem", padding:"4px 10px", borderRadius:8,
                             background: PC.s2, border:`1px solid ${PC.border}`, color: PC.text }}>
                             {fi}
                           </span>
@@ -5582,17 +5712,17 @@ function SubjectiveModule({ data, set, onNav }) {
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <div>
-                        <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
+                        <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
                           letterSpacing:1, color: PC.muted }}>Phase 5 — Special Tests</span>
-                        <span style={{ fontSize:"0.6rem", color: PC.muted, marginLeft:8, fontStyle:"italic" }}>
+                        <span style={{ fontSize:"0.8rem", color: PC.muted, marginLeft:8, fontStyle:"italic" }}>
                           Selected because of clinical suspicion — not random
                         </span>
                       </div>
-                      {onNav && <button onClick={()=>onNav("special")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a3+"22", border:`1px solid ${PC.a3}44`, borderRadius:20, color:PC.a3, cursor:"pointer", flexShrink:0 }}>Open Tests →</button>}
+                      {onNav && <button onClick={()=>onNav("special")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.a3+"22", border:`1px solid ${PC.a3}44`, borderRadius:20, color:PC.a3, cursor:"pointer", flexShrink:0 }}>Open Tests →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"flex", flexDirection:"column", gap:8 }}>
                       {testsByDx.length === 0 && (
-                        <div style={{ fontSize:"0.7rem", color: PC.muted }}>Complete subjective to generate test suggestions</div>
+                        <div style={{ fontSize:"0.8rem", color: PC.muted }}>Complete subjective to generate test suggestions</div>
                       )}
                       {testsByDx.map((td, tdi)=>(
                         <div key={tdi} style={{
@@ -5601,27 +5731,27 @@ function SubjectiveModule({ data, set, onNav }) {
                           borderLeft:`3px solid ${td.suspicion==="HIGH"?PC.green:td.suspicion==="MODERATE"?PC.yellow:PC.muted}`,
                         }}>
                           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
-                            <div style={{ fontSize:"0.7rem", fontWeight:700, color: PC.text }}>{td.label}</div>
-                            <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px",
+                            <div style={{ fontSize:"0.8rem", fontWeight:700, color: PC.text }}>{td.label}</div>
+                            <span style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 7px",
                               borderRadius:99,
                               background: confBg(td.suspicion), color: confColor(td.suspicion) }}>
                               {td.suspicion} suspicion
                             </span>
                           </div>
-                          <div style={{ fontSize:"0.62rem", color: PC.muted, marginBottom:5, fontStyle:"italic" }}>
+                          <div style={{ fontSize:"0.82rem", color: PC.muted, marginBottom:5, fontStyle:"italic" }}>
                             Why these tests: {td.why}
                           </div>
                           <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
                             {td.tests.map((t,ti)=>(
                               onNav ? (
-                                <button key={ti} onClick={()=>onNav("special")} style={{ fontSize:"0.62rem", padding:"3px 8px",
+                                <button key={ti} onClick={()=>onNav("special")} style={{ fontSize:"0.82rem", padding:"3px 8px",
                                   borderRadius:6, background: PC.surface,
                                   border:`1px solid ${PC.border}`, color: PC.accent, cursor:"pointer",
                                   fontWeight:600 }}>
                                   {t} →
                                 </button>
                               ) : (
-                                <span key={ti} style={{ fontSize:"0.62rem", padding:"3px 8px",
+                                <span key={ti} style={{ fontSize:"0.82rem", padding:"3px 8px",
                                   borderRadius:6, background: PC.surface,
                                   border:`1px solid ${PC.border}`, color: PC.text }}>
                                   {t}
@@ -5635,12 +5765,12 @@ function SubjectiveModule({ data, set, onNav }) {
                       {r.objTests && r.objTests.filter(Boolean).length > 0 && (
                         <div style={{ background: PC.s2, borderRadius:8, padding:"9px 12px",
                           borderLeft:`3px solid ${regCol}` }}>
-                          <div style={{ fontSize:"0.65rem", fontWeight:700, color: regCol, marginBottom:5 }}>
+                          <div style={{ fontSize:"0.75rem", fontWeight:700, color: regCol, marginBottom:5 }}>
                             Baseline Objective Assessment
                           </div>
                           <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
                             {r.objTests.filter(Boolean).map((t,ti)=>(
-                              <span key={ti} style={{ fontSize:"0.62rem", padding:"3px 8px",
+                              <span key={ti} style={{ fontSize:"0.82rem", padding:"3px 8px",
                                 borderRadius:6, background: PC.surface,
                                 border:`1px solid ${PC.border}`, color: PC.text }}>
                                 {t}
@@ -5655,37 +5785,37 @@ function SubjectiveModule({ data, set, onNav }) {
                   {/* ── PHASE 6: CPA / MOTOR CONTROL ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                      <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
+                      <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
                         letterSpacing:1, color: PC.muted }}>Phase 6 — Motor Control / CPA Assessment</span>
-                      {onNav && <button onClick={()=>onNav("nkt")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a4+"22", border:`1px solid ${PC.a4}44`, borderRadius:20, color:PC.a4, cursor:"pointer" }}>Open CPA →</button>}
+                      {onNav && <button onClick={()=>onNav("nkt")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.a4+"22", border:`1px solid ${PC.a4}44`, borderRadius:20, color:PC.a4, cursor:"pointer" }}>Open CPA →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
                       <div>
-                        <div style={{ fontSize:"0.62rem", fontWeight:700, color: PC.red,
+                        <div style={{ fontSize:"0.82rem", fontWeight:700, color: PC.red,
                           textTransform:"uppercase", letterSpacing:1, marginBottom:6 }}>
                           Likely Overactive
                         </div>
                         {nkt.over.map((m,mi)=>(
-                          <div key={mi} style={{ fontSize:"0.68rem", color: PC.text, marginBottom:5,
+                          <div key={mi} style={{ fontSize:"0.78rem", color: PC.text, marginBottom:5,
                             paddingLeft:8, borderLeft:`2px solid ${PC.red}55` }}>
                             {m}
                           </div>
                         ))}
                       </div>
                       <div>
-                        <div style={{ fontSize:"0.62rem", fontWeight:700, color: PC.green,
+                        <div style={{ fontSize:"0.82rem", fontWeight:700, color: PC.green,
                           textTransform:"uppercase", letterSpacing:1, marginBottom:6 }}>
                           Likely Underactive
                         </div>
                         {nkt.under.map((m,mi)=>(
-                          <div key={mi} style={{ fontSize:"0.68rem", color: PC.text, marginBottom:5,
+                          <div key={mi} style={{ fontSize:"0.78rem", color: PC.text, marginBottom:5,
                             paddingLeft:8, borderLeft:`2px solid ${PC.green}55` }}>
                             {m}
                           </div>
                         ))}
                       </div>
                     </div>
-                    <div style={{ padding:"0 13px 10px", fontSize:"0.6rem", color: PC.muted, fontStyle:"italic" }}>
+                    <div style={{ padding:"0 13px 10px", fontSize:"0.8rem", color: PC.muted, fontStyle:"italic" }}>
                       Verify with CPA therapy localisation before treating. Overactive → release first, then activate underactive.
                     </div>
                   </div>
@@ -5693,14 +5823,14 @@ function SubjectiveModule({ data, set, onNav }) {
                   {/* ── PHASE 7: TREATMENT DIRECTION ── */}
                   <div style={{ background: regCol+"08", borderRadius:10, padding:"12px 14px",
                     border:`1px solid ${regCol}33` }}>
-                    <div style={{ fontSize:"0.6rem", fontWeight:800, textTransform:"uppercase",
+                    <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
                       letterSpacing:1.5, color: regCol, marginBottom:10 }}>
                       Phase 7 — Rehab Direction
                     </div>
                     {txDir.map((tx, txi)=>(
                       <div key={txi} style={{ marginBottom:8, paddingBottom:8,
                         borderBottom: txi < txDir.length-1 ? `1px solid ${regCol}22` : "none" }}>
-                        <div style={{ fontSize:"0.7rem", fontWeight:700, color: PC.text, marginBottom:3 }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:700, color: PC.text, marginBottom:3 }}>
                           {txi+1}. {tx.phase}
                         </div>
                         <div style={{ fontSize:"0.66rem", color: PC.muted, lineHeight:1.55 }}>
@@ -5719,7 +5849,7 @@ function SubjectiveModule({ data, set, onNav }) {
           {insight.cross && insight.cross.length > 0 && (
             <div style={{ background: PC.surface, borderRadius:12, padding:"14px 16px",
               border:`1px solid ${PC.accent}33` }}>
-              <div style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase",
+              <div style={{ fontSize:"0.75rem", fontWeight:700, textTransform:"uppercase",
                 letterSpacing:1.2, color: PC.accent, marginBottom:12 }}>
                 🔗 Kinetic Chain & Cross-Region Analysis — {insight.cross.length} interactions
               </div>
@@ -5727,7 +5857,7 @@ function SubjectiveModule({ data, set, onNav }) {
                 <div key={i} style={{ marginBottom:12, paddingBottom:12,
                   borderBottom: i < insight.cross.length-1 ? `1px solid ${PC.border}` : "none" }}>
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:5 }}>
-                    <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 8px",
+                    <span style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 8px",
                       borderRadius:99,
                       background: cf.type.includes("flag") ? PC.red+"12" : cf.type==="Differential" ? PC.accent+"12" : PC.s3,
                       color: cf.type.includes("flag") ? PC.red : cf.type==="Differential" ? PC.accent : PC.muted,
@@ -5738,10 +5868,10 @@ function SubjectiveModule({ data, set, onNav }) {
                       {cf.title}
                     </span>
                   </div>
-                  <div style={{ fontSize:"0.7rem", color: PC.muted, lineHeight:1.55, marginBottom:4 }}>
+                  <div style={{ fontSize:"0.8rem", color: PC.muted, lineHeight:1.55, marginBottom:4 }}>
                     {cf.detail}
                   </div>
-                  <div style={{ fontSize:"0.6rem", color: PC.accent, fontStyle:"italic", opacity:0.7 }}>
+                  <div style={{ fontSize:"0.8rem", color: PC.accent, fontStyle:"italic", opacity:0.7 }}>
                     Ref: {cf.refs}
                   </div>
                 </div>
@@ -5752,7 +5882,7 @@ function SubjectiveModule({ data, set, onNav }) {
           {/* ── SUMMARY FOOTER ── */}
           <div style={{ background: PC.green+"08", border:`1px solid ${PC.green}33`,
             borderRadius:12, padding:"12px 16px" }}>
-            <div style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase",
+            <div style={{ fontSize:"0.75rem", fontWeight:700, textTransform:"uppercase",
               letterSpacing:1, color: PC.green, marginBottom:8 }}>
               Clinical Summary
             </div>
@@ -5768,7 +5898,7 @@ function SubjectiveModule({ data, set, onNav }) {
               {selectedRegions.length >= 3 &&
                 <span style={{ color: PC.yellow }}>Multi-region — nociplastic screening recommended (CSI ≥40, PCS-13, TSK-11).</span>}
             </div>
-            <div style={{ fontSize:"0.58rem", color: PC.muted, marginTop:8,
+            <div style={{ fontSize:"0.78rem", color: PC.muted, marginTop:8,
               borderTop:`1px solid ${PC.green}22`, paddingTop:6, fontStyle:"italic" }}>
               Engine v6 · 7-Phase Clinical Reasoning · Evidence base:
               Magee(7th) · Petty(5th) · Maitland(8th) · Sahrmann · Butler · McKenzie · Brukner & Khan(5th) · Cook & Purdam · Moseley & Butler · Hides · Richardson & Hodges · NICE NG59 · ASAS · Woolf(IASP 2017)
@@ -6709,8 +6839,8 @@ function KineticChainSection({ data, set, navContext={} }) {
             ["Wrist","MOBILITY","#00c97a"],
           ].map(([j,r,col])=>(
             <div key={j} style={{ textAlign:"center", padding:"4px 9px", borderRadius:8, border:`1px solid ${col}40`, background:`${col}10` }}>
-              <div style={{ fontSize:"0.68rem", fontWeight:700, color:col }}>{j}</div>
-              <div style={{ fontSize:"0.55rem", color:col, opacity:0.8 }}>{r}</div>
+              <div style={{ fontSize:"0.78rem", fontWeight:700, color:col }}>{j}</div>
+              <div style={{ fontSize:"0.75rem", color:col, opacity:0.8 }}>{r}</div>
             </div>
           ))}
         </div>
@@ -6725,14 +6855,14 @@ function KineticChainSection({ data, set, navContext={} }) {
           <button key={key} type="button" onClick={()=>{ setRegion(key); setOpenTest(null); }}
             style={{ padding:"6px 13px", borderRadius:20, border:`1px solid ${region===key?r.color:C.border}`, background:region===key?`${r.color}15`:"transparent", color:region===key?r.color:C.muted, fontSize:"0.74rem", fontWeight:region===key?700:400, cursor:"pointer" }}>
             {r.label}
-            <span style={{ marginLeft:5, fontSize:"0.6rem", padding:"1px 5px", borderRadius:8, background:`${roleColor(r.role)}20`, color:roleColor(r.role) }}>{r.role}</span>
+            <span style={{ marginLeft:5, fontSize:"0.8rem", padding:"1px 5px", borderRadius:8, background:`${roleColor(r.role)}20`, color:roleColor(r.role) }}>{r.role}</span>
           </button>
         ))}
       </div>
 
       {/* Region intro */}
       <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:10, padding:14, marginBottom:16, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>
-        <span style={{ padding:"2px 8px", borderRadius:8, background:`${roleColor(reg.role)}20`, color:roleColor(reg.role), fontSize:"0.68rem", fontWeight:700, marginRight:8 }}>{reg.role}</span>
+        <span style={{ padding:"2px 8px", borderRadius:8, background:`${roleColor(reg.role)}20`, color:roleColor(reg.role), fontSize:"0.78rem", fontWeight:700, marginRight:8 }}>{reg.role}</span>
         {reg.intro}
       </div>
 
@@ -6749,20 +6879,20 @@ function KineticChainSection({ data, set, navContext={} }) {
               style={{ padding:"12px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}` }}>
               <div style={{ flex:1 }}>
                 <div style={{ display:"flex", gap:7, alignItems:"center", marginBottom:3 }}>
-                  <span style={{ fontSize:"0.6rem", padding:"2px 7px", borderRadius:7, background:`${roleColor(t.role.split(" ")[0])}20`, color:roleColor(t.role.split(" ")[0]), fontWeight:700 }}>{t.role}</span>
-                  <span style={{ fontSize:"0.6rem", color:C.muted }}>Joint: {t.joint}</span>
+                  <span style={{ fontSize:"0.8rem", padding:"2px 7px", borderRadius:7, background:`${roleColor(t.role.split(" ")[0])}20`, color:roleColor(t.role.split(" ")[0]), fontWeight:700 }}>{t.role}</span>
+                  <span style={{ fontSize:"0.8rem", color:C.muted }}>Joint: {t.joint}</span>
                 </div>
                 <div style={{ fontWeight:700, fontSize:"0.88rem", color:C.text }}>{t.label}</div>
                 {currentVal && (
                   <div style={{ marginTop:5, display:"inline-flex", alignItems:"center", gap:6, padding:"2px 8px", borderRadius:8, background:`${currentOption?.color||C.muted}18`, border:`1px solid ${currentOption?.color||C.muted}40` }}>
                     <div style={{ width:7, height:7, borderRadius:"50%", background:currentOption?.color||C.muted }} />
-                    <span style={{ fontSize:"0.68rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
+                    <span style={{ fontSize:"0.78rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
                   </div>
                 )}
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0, marginLeft:10 }}>
                 <button type="button" onClick={e=>{ e.stopPropagation(); setModalTest(t); }}
-                  style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer" }}>
+                  style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.75rem", fontWeight:700, cursor:"pointer" }}>
                   ℹ How to Test
                 </button>
                 <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
@@ -6775,18 +6905,18 @@ function KineticChainSection({ data, set, navContext={} }) {
 
                 {/* How to */}
                 <div style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, padding:12, marginBottom:12 }}>
-                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
+                  <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
                   <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{t.how}</div>
                 </div>
 
                 {/* Options */}
                 <div style={{ marginBottom:12 }}>
-                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Select Finding — What Each Result Means</div>
+                  <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Select Finding — What Each Result Means</div>
                   {t.options.map(opt=>(
                     <div key={opt.val} onClick={()=>set(t.id, currentVal===opt.val?"":opt.val)}
                       style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"10px 12px", borderRadius:9, marginBottom:7, cursor:"pointer", border:`1px solid ${currentVal===opt.val?opt.color:C.border}`, background:currentVal===opt.val?`${opt.color}12`:"transparent", transition:"all 0.15s" }}>
                       <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${opt.color}`, background:currentVal===opt.val?opt.color:"transparent", flexShrink:0, marginTop:2, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.55rem", fontWeight:900 }}>✓</span>}
+                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.75rem", fontWeight:900 }}>✓</span>}
                       </div>
                       <div style={{ flex:1 }}>
                         <div style={{ fontWeight:700, fontSize:"0.8rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -6798,13 +6928,13 @@ function KineticChainSection({ data, set, navContext={} }) {
 
                 {/* Chain Effect */}
                 <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:8, padding:11, marginBottom:10 }}>
-                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
+                  <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
                   <div style={{ fontSize:"0.77rem", color:C.text, lineHeight:1.6 }}>{t.chainEffect}</div>
                 </div>
 
                 {/* Treatment */}
                 <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:8, padding:11 }}>
-                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>→ Treatment Protocol</div>
+                  <div style={{ fontSize:"0.73rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>→ Treatment Protocol</div>
                   <div style={{ fontSize:"0.77rem", color:C.text, lineHeight:1.7 }}>{t.treatment}</div>
                 </div>
               </div>
@@ -6820,18 +6950,18 @@ function KineticChainSection({ data, set, navContext={} }) {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
               <div>
                 <div style={{ fontWeight:800, color:reg.color, fontSize:"1rem" }}>{modalTest.label}</div>
-                <div style={{ fontSize:"0.7rem", color:C.muted, marginTop:3 }}>{modalTest.joint} · {modalTest.role}</div>
+                <div style={{ fontSize:"0.8rem", color:C.muted, marginTop:3 }}>{modalTest.joint} · {modalTest.role}</div>
               </div>
               <button onClick={()=>setModalTest(null)} style={{ background:"none", border:`1px solid ${C.border}`, color:C.muted, borderRadius:6, padding:"3px 9px", cursor:"pointer" }}>✕</button>
             </div>
 
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
+              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
               <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8 }}>{modalTest.how}</div>
             </div>
 
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📊 What Each Result Means</div>
+              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📊 What Each Result Means</div>
               {modalTest.options.map(opt=>(
                 <div key={opt.val} style={{ padding:"8px 12px", borderRadius:8, marginBottom:7, border:`1px solid ${opt.color}30`, background:`${opt.color}08` }}>
                   <div style={{ fontWeight:700, fontSize:"0.78rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -6841,12 +6971,12 @@ function KineticChainSection({ data, set, navContext={} }) {
             </div>
 
             <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:8, padding:12, marginBottom:14 }}>
-              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
+              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
               <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.chainEffect}</div>
             </div>
 
             <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:8, padding:12, marginBottom:16 }}>
-              <div style={{ fontSize:"0.63rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>→ Treatment Protocol</div>
+              <div style={{ fontSize:"0.73rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>→ Treatment Protocol</div>
               <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.7 }}>{modalTest.treatment}</div>
             </div>
 
@@ -8581,15 +8711,15 @@ function FMSCameraPanel({onClose}){
       <div style={{position:"relative",aspectRatio:"4/3"}}>
         <video ref={videoRef} style={{width:"100%",height:"100%",objectFit:"cover",transform:"scaleX(-1)"}} playsInline muted autoPlay/>
         <canvas ref={canvasRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",transform:"scaleX(-1)",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",top:8,left:8,padding:"3px 8px",borderRadius:8,background:status==="active"?"rgba(0,201,122,0.85)":status==="loading"?"rgba(255,179,0,0.85)":"rgba(255,77,109,0.85)",fontSize:"0.62rem",color:"#fff",fontWeight:700}}>
+        <div style={{position:"absolute",top:8,left:8,padding:"3px 8px",borderRadius:8,background:status==="active"?"rgba(0,201,122,0.85)":status==="loading"?"rgba(255,179,0,0.85)":"rgba(255,77,109,0.85)",fontSize:"0.82rem",color:"#fff",fontWeight:700}}>
           {status==="active"?"🟢 AI Pose Active":status==="loading"?"⏳ Loading...":status==="cam-only"?"📷 Camera Only":"❌ Error"}
         </div>
         <div style={{position:"absolute",top:8,right:8,display:"flex",gap:6}}>
-          <button type="button" onClick={flipCam} style={{padding:"5px 9px",background:"rgba(0,0,0,0.7)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:7,color:"#fff",fontSize:"0.7rem",cursor:"pointer"}}>🔄</button>
-          <button type="button" onClick={onClose} style={{padding:"5px 9px",background:"rgba(255,77,109,0.8)",border:"none",borderRadius:7,color:"#fff",fontSize:"0.7rem",cursor:"pointer",fontWeight:700}}>✕</button>
+          <button type="button" onClick={flipCam} style={{padding:"5px 9px",background:"rgba(0,0,0,0.7)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:7,color:"#fff",fontSize:"0.8rem",cursor:"pointer"}}>🔄</button>
+          <button type="button" onClick={onClose} style={{padding:"5px 9px",background:"rgba(255,77,109,0.8)",border:"none",borderRadius:7,color:"#fff",fontSize:"0.8rem",cursor:"pointer",fontWeight:700}}>✕</button>
         </div>
       </div>
-      <div style={{padding:"8px 12px",background:"rgba(0,229,255,0.05)",borderTop:"1px solid rgba(0,229,255,0.15)",fontSize:"0.7rem",color:"rgba(0,229,255,0.8)"}}>
+      <div style={{padding:"8px 12px",background:"rgba(0,229,255,0.05)",borderTop:"1px solid rgba(0,229,255,0.15)",fontSize:"0.8rem",color:"rgba(0,229,255,0.8)"}}>
         ⚠ AI camera is assistive only — use it to observe posture. All clinical decisions remain manual.
       </div>
     </div>
@@ -9151,12 +9281,12 @@ function LumbarFunctionalScreen({ data, set }) {
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -9711,11 +9841,11 @@ function ShoulderFunctionalScreen({ data, set }) {
           <span style={{ fontSize:"1.4rem" }}>🦾</span>
           <div>
             <div style={{ fontWeight:800, fontSize:"0.95rem", color:C.text }}>Shoulder Functional Screen</div>
-            <div style={{ fontSize:"0.68rem", color:C.muted }}>5 tests · Scapulohumeral rhythm · Arc + Capsular pattern · Student guide</div>
+            <div style={{ fontSize:"0.78rem", color:C.muted }}>5 tests · Scapulohumeral rhythm · Arc + Capsular pattern · Student guide</div>
           </div>
           <div style={{ marginLeft:"auto", textAlign:"right" }}>
             <div style={{ fontSize:"1.2rem", fontWeight:900, color:"#0891b2" }}>{completedCount}/5</div>
-            <div style={{ fontSize:"0.58rem", color:C.muted }}>graded</div>
+            <div style={{ fontSize:"0.78rem", color:C.muted }}>graded</div>
           </div>
         </div>
         <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
@@ -9724,7 +9854,7 @@ function ShoulderFunctionalScreen({ data, set }) {
             const done = g !== undefined;
             return (
               <div key={t.id} onClick={() => setActiveTest(activeTest === t.id ? null : t.id)}
-                style={{ padding:"4px 10px", borderRadius:20, cursor:"pointer", fontSize:"0.68rem", fontWeight:700,
+                style={{ padding:"4px 10px", borderRadius:20, cursor:"pointer", fontSize:"0.78rem", fontWeight:700,
                   border:`1px solid ${activeTest===t.id?"#0891b2":done?gradeColor(g)+"60":C.border}`,
                   background:activeTest===t.id?"rgba(8,145,178,0.1)":done?`${gradeColor(g)}10`:"transparent",
                   color:activeTest===t.id?"#0891b2":done?gradeColor(g):C.muted }}>
@@ -9751,10 +9881,10 @@ function ShoulderFunctionalScreen({ data, set }) {
               <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
-                <div style={{ fontSize:"0.65rem", color:C.muted }}>{t.subtitle}</div>
+                <div style={{ fontSize:"0.75rem", color:C.muted }}>{t.subtitle}</div>
               </div>
               {graded && (
-                <span style={{ padding:"3px 10px", borderRadius:20, fontSize:"0.65rem", fontWeight:800,
+                <span style={{ padding:"3px 10px", borderRadius:20, fontSize:"0.75rem", fontWeight:800,
                   background:`${gradeColor(g)}15`, color:gradeColor(g), flexShrink:0 }}>
                   {["Normal","Compensated","Abnormal"][g]}
                 </span>
@@ -9767,8 +9897,8 @@ function ShoulderFunctionalScreen({ data, set }) {
 
                 {/* Visuals */}
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                  <div style={{ fontSize:"0.68rem", fontWeight:700, color:"#0891b2", textTransform:"uppercase", letterSpacing:"0.5px" }}>📐 Visual Guide</div>
-                  <button onClick={() => setShowVisual(v=>!v)} style={{ fontSize:"0.6rem", padding:"2px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:"transparent", color:C.muted, cursor:"pointer" }}>
+                  <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#0891b2", textTransform:"uppercase", letterSpacing:"0.5px" }}>📐 Visual Guide</div>
+                  <button onClick={() => setShowVisual(v=>!v)} style={{ fontSize:"0.8rem", padding:"2px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:"transparent", color:C.muted, cursor:"pointer" }}>
                     {showVisual?"Hide":"Show"}
                   </button>
                 </div>
@@ -9776,12 +9906,12 @@ function ShoulderFunctionalScreen({ data, set }) {
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -9792,15 +9922,15 @@ function ShoulderFunctionalScreen({ data, set }) {
 
                 {/* Setup */}
                 <div style={{ background:"#F0F9FF", borderRadius:9, padding:"9px 11px", marginBottom:12, border:"1px solid #BAE6FD" }}>
-                  <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#0891b2", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>🎯 Setup & Procedure</div>
+                  <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#0891b2", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>🎯 Setup & Procedure</div>
                   <div style={{ fontSize:"0.75rem", color:C.text, lineHeight:1.6 }}>{t.setup}</div>
                   <div style={{ marginTop:6, padding:"4px 8px", background:"rgba(8,145,178,0.08)", borderRadius:6, border:"1px solid rgba(8,145,178,0.2)" }}>
-                    <div style={{ fontSize:"0.6rem", fontWeight:700, color:"#0891b2" }}>Phase: {t.phase}</div>
+                    <div style={{ fontSize:"0.8rem", fontWeight:700, color:"#0891b2" }}>Phase: {t.phase}</div>
                   </div>
                 </div>
 
                 {/* Observation checklist */}
-                <div style={{ fontSize:"0.68rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>
+                <div style={{ fontSize:"0.78rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>
                   👁 What To Observe
                 </div>
                 {t.observations.map(obs => {
@@ -9808,7 +9938,7 @@ function ShoulderFunctionalScreen({ data, set }) {
                   const clue = val !== undefined ? obs.clues[val] : null;
                   return (
                     <div key={obs.id} style={{ marginBottom:10 }}>
-                      <div style={{ fontSize:"0.72rem", fontWeight:700, color:C.text, marginBottom:5 }}>{obs.q}</div>
+                      <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.text, marginBottom:5 }}>{obs.q}</div>
                       <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                         {obs.opts.map((opt, idx) => {
                           const sel = val === idx;
@@ -9821,13 +9951,13 @@ function ShoulderFunctionalScreen({ data, set }) {
                                 background:sel?col:"transparent", flexShrink:0, marginTop:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
                                 {sel && <span style={{ fontSize:8, color:"#fff", fontWeight:900 }}>✓</span>}
                               </div>
-                              <span style={{ fontSize:"0.72rem", fontWeight:sel?700:400, color:sel?col:C.text, lineHeight:1.35 }}>{opt}</span>
+                              <span style={{ fontSize:"0.82rem", fontWeight:sel?700:400, color:sel?col:C.text, lineHeight:1.35 }}>{opt}</span>
                             </div>
                           );
                         })}
                       </div>
                       {clue && (
-                        <div style={{ marginTop:5, padding:"6px 10px", background:"rgba(8,145,178,0.06)", borderLeft:"3px solid #0891b2", borderRadius:"0 6px 6px 0", fontSize:"0.68rem", color:C.text, lineHeight:1.5 }}>
+                        <div style={{ marginTop:5, padding:"6px 10px", background:"rgba(8,145,178,0.06)", borderLeft:"3px solid #0891b2", borderRadius:"0 6px 6px 0", fontSize:"0.78rem", color:C.text, lineHeight:1.5 }}>
                           <strong>Clinical note:</strong> {clue}
                         </div>
                       )}
@@ -9836,7 +9966,7 @@ function ShoulderFunctionalScreen({ data, set }) {
                 })}
 
                 {/* Grade */}
-                <div style={{ fontSize:"0.68rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, marginTop:4 }}>
+                <div style={{ fontSize:"0.78rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, marginTop:4 }}>
                   📊 Grade This Test
                 </div>
                 <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:12 }}>
@@ -9858,11 +9988,11 @@ function ShoulderFunctionalScreen({ data, set }) {
                 </div>
 
                 {/* Notes */}
-                <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.muted, marginBottom:4 }}>Therapist notes</div>
+                <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.muted, marginBottom:4 }}>Therapist notes</div>
                 <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
                   placeholder="Clinical observations, pattern findings, next assessment steps..."
                   style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text,
-                    padding:"8px 10px", fontSize:"0.72rem", fontFamily:"inherit", resize:"vertical", minHeight:56, outline:"none" }}
+                    padding:"8px 10px", fontSize:"0.82rem", fontFamily:"inherit", resize:"vertical", minHeight:56, outline:"none" }}
                 />
               </div>
             )}
@@ -9881,14 +10011,14 @@ function ShoulderFunctionalScreen({ data, set }) {
               <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
                 <span style={{ fontSize:"1rem" }}>{t.icon}</span>
                 <span style={{ flex:1, fontSize:"0.75rem", fontWeight:600, color:C.text }}>{t.label}</span>
-                <span style={{ padding:"2px 10px", borderRadius:20, fontSize:"0.65rem", fontWeight:800, background:`${col}15`, color:col }}>
+                <span style={{ padding:"2px 10px", borderRadius:20, fontSize:"0.75rem", fontWeight:800, background:`${col}15`, color:col }}>
                   {["Normal","Compensated","Abnormal"][g]}
                 </span>
               </div>
             );
           })}
           {Object.values(grades).includes(2) && (
-            <div style={{ marginTop:10, padding:"8px 10px", background:"#FEF2F2", borderRadius:8, border:"1px solid #FECACA", fontSize:"0.7rem", color:"#dc2626", lineHeight:1.5 }}>
+            <div style={{ marginTop:10, padding:"8px 10px", background:"#FEF2F2", borderRadius:8, border:"1px solid #FECACA", fontSize:"0.8rem", color:"#dc2626", lineHeight:1.5 }}>
               ⚠ <strong>Abnormal findings present.</strong> Consider: Hawkins-Kennedy, Neer impingement, Empty Can (supraspinatus), O'Brien's (SLAP), horizontal adduction (AC), posterior capsule stretch test, and CPA (Janda) for motor pattern.
             </div>
           )}
@@ -10338,11 +10468,11 @@ function HipFunctionalScreen({ data, set }) {
           <span style={{ fontSize:"1.4rem" }}>🦷</span>
           <div>
             <div style={{ fontWeight:800, fontSize:"0.95rem", color:C.text }}>Hip Functional Screen</div>
-            <div style={{ fontSize:"0.68rem", color:C.muted }}>5 tests · Glute med/max · FAI screen · Motor control · Student guide</div>
+            <div style={{ fontSize:"0.78rem", color:C.muted }}>5 tests · Glute med/max · FAI screen · Motor control · Student guide</div>
           </div>
           <div style={{ marginLeft:"auto", textAlign:"right" }}>
             <div style={{ fontSize:"1.2rem", fontWeight:900, color:"#d946ef" }}>{completedCount}/5</div>
-            <div style={{ fontSize:"0.58rem", color:C.muted }}>graded</div>
+            <div style={{ fontSize:"0.78rem", color:C.muted }}>graded</div>
           </div>
         </div>
         <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
@@ -10350,7 +10480,7 @@ function HipFunctionalScreen({ data, set }) {
             const g = grades[t.id]; const done = g !== undefined;
             return (
               <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{ padding:"4px 10px", borderRadius:20, cursor:"pointer", fontSize:"0.68rem", fontWeight:700,
+                style={{ padding:"4px 10px", borderRadius:20, cursor:"pointer", fontSize:"0.78rem", fontWeight:700,
                   border:`1px solid ${activeTest===t.id?"#d946ef":done?gradeColor(g)+"60":C.border}`,
                   background:activeTest===t.id?"rgba(217,70,239,0.1)":done?`${gradeColor(g)}10`:"transparent",
                   color:activeTest===t.id?"#d946ef":done?gradeColor(g):C.muted }}>
@@ -10373,28 +10503,28 @@ function HipFunctionalScreen({ data, set }) {
               <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
-                <div style={{ fontSize:"0.65rem", color:C.muted }}>{t.subtitle}</div>
+                <div style={{ fontSize:"0.75rem", color:C.muted }}>{t.subtitle}</div>
               </div>
-              {graded && <span style={{ padding:"3px 10px", borderRadius:20, fontSize:"0.65rem", fontWeight:800, background:`${gradeColor(g)}15`, color:gradeColor(g), flexShrink:0 }}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              {graded && <span style={{ padding:"3px 10px", borderRadius:20, fontSize:"0.75rem", fontWeight:800, background:`${gradeColor(g)}15`, color:gradeColor(g), flexShrink:0 }}>{["Normal","Compensated","Abnormal"][g]}</span>}
               <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
             </div>
 
             {isOpen && (
               <div style={{ padding:"0 14px 14px" }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                  <div style={{ fontSize:"0.68rem", fontWeight:700, color:"#d946ef", textTransform:"uppercase", letterSpacing:"0.5px" }}>📐 Visual Guide</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{ fontSize:"0.6rem", padding:"2px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:"transparent", color:C.muted, cursor:"pointer" }}>{showVisual?"Hide":"Show"}</button>
+                  <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#d946ef", textTransform:"uppercase", letterSpacing:"0.5px" }}>📐 Visual Guide</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{ fontSize:"0.8rem", padding:"2px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:"transparent", color:C.muted, cursor:"pointer" }}>{showVisual?"Hide":"Show"}</button>
                 </div>
 
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -10404,19 +10534,19 @@ function HipFunctionalScreen({ data, set }) {
                 )}
 
                 <div style={{ background:"#FDF4FF", borderRadius:9, padding:"9px 11px", marginBottom:12, border:"1px solid #E9D5FF" }}>
-                  <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#d946ef", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>🎯 Setup & Procedure</div>
+                  <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#d946ef", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>🎯 Setup & Procedure</div>
                   <div style={{ fontSize:"0.75rem", color:C.text, lineHeight:1.6 }}>{t.setup}</div>
                   <div style={{ marginTop:6, padding:"4px 8px", background:"rgba(217,70,239,0.08)", borderRadius:6, border:"1px solid rgba(217,70,239,0.2)" }}>
-                    <div style={{ fontSize:"0.6rem", fontWeight:700, color:"#d946ef" }}>Phase: {t.phase}</div>
+                    <div style={{ fontSize:"0.8rem", fontWeight:700, color:"#d946ef" }}>Phase: {t.phase}</div>
                   </div>
                 </div>
 
-                <div style={{ fontSize:"0.68rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>👁 What To Observe</div>
+                <div style={{ fontSize:"0.78rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>👁 What To Observe</div>
                 {t.observations.map(obs => {
                   const val = findings[`${t.id}_${obs.id}`]; const clue = val !== undefined ? obs.clues[val] : null;
                   return (
                     <div key={obs.id} style={{ marginBottom:10 }}>
-                      <div style={{ fontSize:"0.72rem", fontWeight:700, color:C.text, marginBottom:5 }}>{obs.q}</div>
+                      <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.text, marginBottom:5 }}>{obs.q}</div>
                       <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                         {obs.opts.map((opt, idx) => {
                           const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":opt.startsWith("✗")?"#dc2626":C.muted;
@@ -10427,17 +10557,17 @@ function HipFunctionalScreen({ data, set }) {
                               <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${sel?col:C.border}`, background:sel?col:"transparent", flexShrink:0, marginTop:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
                                 {sel && <span style={{ fontSize:8, color:"#fff", fontWeight:900 }}>✓</span>}
                               </div>
-                              <span style={{ fontSize:"0.72rem", fontWeight:sel?700:400, color:sel?col:C.text, lineHeight:1.35 }}>{opt}</span>
+                              <span style={{ fontSize:"0.82rem", fontWeight:sel?700:400, color:sel?col:C.text, lineHeight:1.35 }}>{opt}</span>
                             </div>
                           );
                         })}
                       </div>
-                      {clue && <div style={{ marginTop:5, padding:"6px 10px", background:"rgba(217,70,239,0.06)", borderLeft:"3px solid #d946ef", borderRadius:"0 6px 6px 0", fontSize:"0.68rem", color:C.text, lineHeight:1.5 }}><strong>Clinical note:</strong> {clue}</div>}
+                      {clue && <div style={{ marginTop:5, padding:"6px 10px", background:"rgba(217,70,239,0.06)", borderLeft:"3px solid #d946ef", borderRadius:"0 6px 6px 0", fontSize:"0.78rem", color:C.text, lineHeight:1.5 }}><strong>Clinical note:</strong> {clue}</div>}
                     </div>
                   );
                 })}
 
-                <div style={{ fontSize:"0.68rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, marginTop:4 }}>📊 Grade This Test</div>
+                <div style={{ fontSize:"0.78rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, marginTop:4 }}>📊 Grade This Test</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:12 }}>
                   {t.grades.map((gLabel, idx) => {
                     const col=gradeColor(idx); const sel=g===idx;
@@ -10453,10 +10583,10 @@ function HipFunctionalScreen({ data, set }) {
                   })}
                 </div>
 
-                <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.muted, marginBottom:4 }}>Therapist notes</div>
+                <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.muted, marginBottom:4 }}>Therapist notes</div>
                 <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
                   placeholder="Clinical observations, motor pattern notes, next steps..."
-                  style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"8px 10px", fontSize:"0.72rem", fontFamily:"inherit", resize:"vertical", minHeight:56, outline:"none" }}/>
+                  style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"8px 10px", fontSize:"0.82rem", fontFamily:"inherit", resize:"vertical", minHeight:56, outline:"none" }}/>
               </div>
             )}
           </div>
@@ -10472,12 +10602,12 @@ function HipFunctionalScreen({ data, set }) {
               <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
                 <span style={{ fontSize:"1rem" }}>{t.icon}</span>
                 <span style={{ flex:1, fontSize:"0.75rem", fontWeight:600, color:C.text }}>{t.label}</span>
-                <span style={{ padding:"2px 10px", borderRadius:20, fontSize:"0.65rem", fontWeight:800, background:`${col}15`, color:col }}>{["Normal","Compensated","Abnormal"][g]}</span>
+                <span style={{ padding:"2px 10px", borderRadius:20, fontSize:"0.75rem", fontWeight:800, background:`${col}15`, color:col }}>{["Normal","Compensated","Abnormal"][g]}</span>
               </div>
             );
           })}
           {Object.values(grades).includes(2) && (
-            <div style={{ marginTop:10, padding:"8px 10px", background:"#FEF2F2", borderRadius:8, border:"1px solid #FECACA", fontSize:"0.7rem", color:"#dc2626", lineHeight:1.5 }}>
+            <div style={{ marginTop:10, padding:"8px 10px", background:"#FEF2F2", borderRadius:8, border:"1px solid #FECACA", fontSize:"0.8rem", color:"#dc2626", lineHeight:1.5 }}>
               ⚠ <strong>Abnormal findings present.</strong> Consider: FADIR, FABER, hip quadrant (scouring), Thomas test, hip abductor MMT, L5/S1 myotome testing, and Janda Lower Crossed Syndrome assessment.
             </div>
           )}
@@ -10730,11 +10860,11 @@ function KneeFunctionalScreen({ data, set }) {
           <span style={{fontSize:"1.4rem"}}>🦿</span>
           <div>
             <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Knee Functional Screen</div>
-            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · PF tracking · VMO · Dynamic valgus · ACL risk · Student guide</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · PF tracking · VMO · Dynamic valgus · ACL risk · Student guide</div>
           </div>
           <div style={{marginLeft:"auto",textAlign:"right"}}>
             <div style={{fontSize:"1.2rem",fontWeight:900,color:"#d97706"}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
@@ -10742,7 +10872,7 @@ function KneeFunctionalScreen({ data, set }) {
             const g=grades[t.id]; const done=g!==undefined;
             return (
               <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
                   border:`1px solid ${activeTest===t.id?"#d97706":done?gradeColor(g)+"60":C.border}`,
                   background:activeTest===t.id?"rgba(234,179,8,0.1)":done?`${gradeColor(g)}10`:"transparent",
                   color:activeTest===t.id?"#d97706":done?gradeColor(g):C.muted}}>
@@ -10765,28 +10895,28 @@ function KneeFunctionalScreen({ data, set }) {
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
               </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
               <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
             </div>
 
             {isOpen && (
               <div style={{padding:"0 14px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.68rem",fontWeight:700,color:"#d97706",textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                  <div style={{fontSize:"0.78rem",fontWeight:700,color:"#d97706",textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
                 </div>
 
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -10796,19 +10926,19 @@ function KneeFunctionalScreen({ data, set }) {
                 )}
 
                 <div style={{background:"#FFFBEB",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #FDE68A"}}>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:"#d97706",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#d97706",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
                   <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
                   <div style={{marginTop:6,padding:"4px 8px",background:"rgba(234,179,8,0.08)",borderRadius:6,border:"1px solid rgba(234,179,8,0.25)"}}>
-                    <div style={{fontSize:"0.6rem",fontWeight:700,color:"#d97706"}}>Phase: {t.phase}</div>
+                    <div style={{fontSize:"0.8rem",fontWeight:700,color:"#d97706"}}>Phase: {t.phase}</div>
                   </div>
                 </div>
 
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
                 {t.observations.map(obs=>{
                   const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
                   return (
                     <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
                       <div style={{display:"flex",flexDirection:"column",gap:4}}>
                         {obs.opts.map((opt,idx)=>{
                           const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
@@ -10819,17 +10949,17 @@ function KneeFunctionalScreen({ data, set }) {
                               <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
                                 {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
                               </div>
-                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
                             </div>
                           );
                         })}
                       </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:"rgba(234,179,8,0.07)",borderLeft:"3px solid #d97706",borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:"rgba(234,179,8,0.07)",borderLeft:"3px solid #d97706",borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
                     </div>
                   );
                 })}
 
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
                 <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
                   {t.grades.map((gLabel,idx)=>{
                     const col=gradeColor(idx); const sel=g===idx;
@@ -10845,10 +10975,10 @@ function KneeFunctionalScreen({ data, set }) {
                   })}
                 </div>
 
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
                 <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
                   placeholder="Pain arc, patellar tracking, clinical reasoning..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
               </div>
             )}
           </div>
@@ -10864,12 +10994,12 @@ function KneeFunctionalScreen({ data, set }) {
               <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
                 <span style={{fontSize:"1rem"}}>{t.icon}</span>
                 <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
               </div>
             );
           })}
           {Object.values(grades).includes(2) && (
-            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.7rem",color:"#dc2626",lineHeight:1.5}}>
+            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.8rem",color:"#dc2626",lineHeight:1.5}}>
               ⚠ <strong>Abnormal findings present.</strong> Consider: patellar tilt/glide test, J-sign, McMurray meniscal test, Lachman / anterior drawer (ACL), valgus/varus stress (MCL/LCL), Noble compression (IT band), ballottement (effusion), and VISA-P (tendinopathy).
             </div>
           )}
@@ -11070,11 +11200,11 @@ function AnkleFunctionalScreen({ data, set }) {
           <span style={{fontSize:"1.4rem"}}>🦶</span>
           <div>
             <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Ankle / Foot Functional Screen</div>
-            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · Calf endurance · DF mobility · Proprioception · Arch · LSI</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · Calf endurance · DF mobility · Proprioception · Arch · LSI</div>
           </div>
           <div style={{marginLeft:"auto",textAlign:"right"}}>
             <div style={{fontSize:"1.2rem",fontWeight:900,color:"#0d9488"}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
@@ -11082,7 +11212,7 @@ function AnkleFunctionalScreen({ data, set }) {
             const g=grades[t.id]; const done=g!==undefined;
             return (
               <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
                   border:`1px solid ${activeTest===t.id?"#0d9488":done?gradeColor(g)+"60":C.border}`,
                   background:activeTest===t.id?"rgba(20,184,166,0.1)":done?`${gradeColor(g)}10`:"transparent",
                   color:activeTest===t.id?"#0d9488":done?gradeColor(g):C.muted}}>
@@ -11105,28 +11235,28 @@ function AnkleFunctionalScreen({ data, set }) {
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
               </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
               <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
             </div>
 
             {isOpen && (
               <div style={{padding:"0 14px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.68rem",fontWeight:700,color:"#0d9488",textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                  <div style={{fontSize:"0.78rem",fontWeight:700,color:"#0d9488",textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
                 </div>
 
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -11136,19 +11266,19 @@ function AnkleFunctionalScreen({ data, set }) {
                 )}
 
                 <div style={{background:"#F0FDFA",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #99F6E4"}}>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:"#0d9488",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#0d9488",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
                   <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
                   <div style={{marginTop:6,padding:"4px 8px",background:"rgba(20,184,166,0.08)",borderRadius:6,border:"1px solid rgba(20,184,166,0.2)"}}>
-                    <div style={{fontSize:"0.6rem",fontWeight:700,color:"#0d9488"}}>Phase: {t.phase}</div>
+                    <div style={{fontSize:"0.8rem",fontWeight:700,color:"#0d9488"}}>Phase: {t.phase}</div>
                   </div>
                 </div>
 
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
                 {t.observations.map(obs=>{
                   const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
                   return (
                     <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
                       <div style={{display:"flex",flexDirection:"column",gap:4}}>
                         {obs.opts.map((opt,idx)=>{
                           const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
@@ -11159,17 +11289,17 @@ function AnkleFunctionalScreen({ data, set }) {
                               <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
                                 {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
                               </div>
-                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
                             </div>
                           );
                         })}
                       </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:"rgba(20,184,166,0.06)",borderLeft:"3px solid #0d9488",borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:"rgba(20,184,166,0.06)",borderLeft:"3px solid #0d9488",borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
                     </div>
                   );
                 })}
 
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
                 <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
                   {t.grades.map((gLabel,idx)=>{
                     const col=gradeColor(idx); const sel=g===idx;
@@ -11185,10 +11315,10 @@ function AnkleFunctionalScreen({ data, set }) {
                   })}
                 </div>
 
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
                 <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
                   placeholder="Heel raise count, DF measurement, balance quality, arch findings..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
               </div>
             )}
           </div>
@@ -11204,12 +11334,12 @@ function AnkleFunctionalScreen({ data, set }) {
               <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
                 <span style={{fontSize:"1rem"}}>{t.icon}</span>
                 <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
               </div>
             );
           })}
           {Object.values(grades).includes(2) && (
-            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.7rem",color:"#dc2626",lineHeight:1.5}}>
+            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.8rem",color:"#dc2626",lineHeight:1.5}}>
               ⚠ <strong>Abnormal findings present.</strong> Consider: Thompson test (Achilles), anterior drawer + talar tilt (ATFL/CFL), Ottawa ankle rules, windlass test (plantar fascia), tibialis posterior MMT, CAIT questionnaire, and VISA-A (Achilles tendinopathy).
             </div>
           )}
@@ -11384,22 +11514,22 @@ function CervicalFunctionalScreen({ data, set }) {
           <span style={{fontSize:"1.4rem"}}>🧠</span>
           <div>
             <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Cervical Functional Screen</div>
-            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM · DNF endurance · CVA posture · Dizziness · ULNT1</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM · DNF endurance · CVA posture · Dizziness · ULNT1</div>
           </div>
           <div style={{marginLeft:"auto",textAlign:"right"}}>
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
         </div>
         <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
-          <div style={{fontSize:"0.65rem",color:"#dc2626",fontWeight:700}}>⚠ Safety first: Complete VBI screen (ULNT test 4) before any cervical manipulation. If 5Ds present — do not manipulate.</div>
+          <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:700}}>⚠ Safety first: Complete VBI screen (ULNT test 4) before any cervical manipulation. If 5Ds present — do not manipulate.</div>
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {CERVICAL_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
               <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
                   border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
                   background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
                   color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
@@ -11422,28 +11552,28 @@ function CervicalFunctionalScreen({ data, set }) {
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
               </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
               <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
             </div>
 
             {isOpen && (
               <div style={{padding:"0 14px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
                 </div>
 
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -11453,19 +11583,19 @@ function CervicalFunctionalScreen({ data, set }) {
                 )}
 
                 <div style={{background:"#F5F3FF",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #DDD6FE"}}>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
                   <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
                   <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
                   </div>
                 </div>
 
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
                 {t.observations.map(obs=>{
                   const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
                   return (
                     <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
                       <div style={{display:"flex",flexDirection:"column",gap:4}}>
                         {obs.opts.map((opt,idx)=>{
                           const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
@@ -11476,17 +11606,17 @@ function CervicalFunctionalScreen({ data, set }) {
                               <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
                                 {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
                               </div>
-                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
                             </div>
                           );
                         })}
                       </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
                     </div>
                   );
                 })}
 
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
                 <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
                   {t.grades.map((gLabel,idx)=>{
                     const col=gradeColor(idx); const sel=g===idx;
@@ -11502,10 +11632,10 @@ function CervicalFunctionalScreen({ data, set }) {
                   })}
                 </div>
 
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
                 <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
                   placeholder="Range values, DNF hold time, CVA measurement, VBI screen result..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
               </div>
             )}
           </div>
@@ -11521,12 +11651,12 @@ function CervicalFunctionalScreen({ data, set }) {
               <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
                 <span style={{fontSize:"1rem"}}>{t.icon}</span>
                 <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
               </div>
             );
           })}
           {Object.values(grades).includes(2) && (
-            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.7rem",color:"#dc2626",lineHeight:1.5}}>
+            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.8rem",color:"#dc2626",lineHeight:1.5}}>
               ⚠ <strong>Abnormal findings present.</strong> Consider: Sharp-Purser (instability), Spurling (radiculopathy), Watson headache approach (C1/C2/C3), Dix-Hallpike (BPPV), C5/C6/C7 myotomes + reflexes, and formal VBI screen before manual therapy.
             </div>
           )}
@@ -11696,11 +11826,11 @@ function ThoracicFunctionalScreen({ data, set }) {
           <span style={{fontSize:"1.4rem"}}>🫁</span>
           <div>
             <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Thoracic Functional Screen</div>
-            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM · Rib mobility · Extension · T4 syndrome · Scapular stability</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM · Rib mobility · Extension · T4 syndrome · Scapular stability</div>
           </div>
           <div style={{marginLeft:"auto",textAlign:"right"}}>
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
@@ -11708,7 +11838,7 @@ function ThoracicFunctionalScreen({ data, set }) {
             const g=grades[t.id]; const done=g!==undefined;
             return (
               <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
                   border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
                   background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
                   color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
@@ -11730,26 +11860,26 @@ function ThoracicFunctionalScreen({ data, set }) {
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
               </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
               <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
             </div>
             {isOpen && (
               <div style={{padding:"0 14px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
                 </div>
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -11758,18 +11888,18 @@ function ThoracicFunctionalScreen({ data, set }) {
                   </div>
                 )}
                 <div style={{background:"#F0FDFA",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #99F6E4"}}>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
                   <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
                   <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
                   </div>
                 </div>
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
                 {t.observations.map(obs=>{
                   const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
                   return (
                     <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
                       <div style={{display:"flex",flexDirection:"column",gap:4}}>
                         {obs.opts.map((opt,idx)=>{
                           const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
@@ -11780,16 +11910,16 @@ function ThoracicFunctionalScreen({ data, set }) {
                               <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
                                 {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
                               </div>
-                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
                             </div>
                           );
                         })}
                       </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
                     </div>
                   );
                 })}
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
                 <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
                   {t.grades.map((gLabel,idx)=>{
                     const col=gradeColor(idx); const sel=g===idx;
@@ -11804,10 +11934,10 @@ function ThoracicFunctionalScreen({ data, set }) {
                     );
                   })}
                 </div>
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
                 <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
                   placeholder="Rotation degrees, rib spring findings, T4 test result, scapular winging..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
               </div>
             )}
           </div>
@@ -11823,7 +11953,7 @@ function ThoracicFunctionalScreen({ data, set }) {
               <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
                 <span style={{fontSize:"1rem"}}>{t.icon}</span>
                 <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
               </div>
             );
           })}
@@ -11993,11 +12123,11 @@ function ElbowFunctionalScreen({ data, set }) {
           <span style={{fontSize:"1.4rem"}}>💪</span>
           <div>
             <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Elbow Functional Screen</div>
-            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM · Lateral epicondyle · Medial/UCL · Stability · Neural</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM · Lateral epicondyle · Medial/UCL · Stability · Neural</div>
           </div>
           <div style={{marginLeft:"auto",textAlign:"right"}}>
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
@@ -12005,7 +12135,7 @@ function ElbowFunctionalScreen({ data, set }) {
             const g=grades[t.id]; const done=g!==undefined;
             return (
               <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
                   border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
                   background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
                   color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
@@ -12027,26 +12157,26 @@ function ElbowFunctionalScreen({ data, set }) {
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
               </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
               <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
             </div>
             {isOpen && (
               <div style={{padding:"0 14px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
                 </div>
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -12055,18 +12185,18 @@ function ElbowFunctionalScreen({ data, set }) {
                   </div>
                 )}
                 <div style={{background:"#F0F9FF",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #BAE6FD"}}>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
                   <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
                   <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
                   </div>
                 </div>
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
                 {t.observations.map(obs=>{
                   const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
                   return (
                     <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
                       <div style={{display:"flex",flexDirection:"column",gap:4}}>
                         {obs.opts.map((opt,idx)=>{
                           const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
@@ -12077,16 +12207,16 @@ function ElbowFunctionalScreen({ data, set }) {
                               <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
                                 {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
                               </div>
-                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
                             </div>
                           );
                         })}
                       </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
                     </div>
                   );
                 })}
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
                 <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
                   {t.grades.map((gLabel,idx)=>{
                     const col=gradeColor(idx); const sel=g===idx;
@@ -12101,10 +12231,10 @@ function ElbowFunctionalScreen({ data, set }) {
                     );
                   })}
                 </div>
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
                 <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
                   placeholder="ROM degrees, Cozen's result, UCL stress, neural findings..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
               </div>
             )}
           </div>
@@ -12120,7 +12250,7 @@ function ElbowFunctionalScreen({ data, set }) {
               <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
                 <span style={{fontSize:"1rem"}}>{t.icon}</span>
                 <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
               </div>
             );
           })}
@@ -12290,22 +12420,22 @@ function WristFunctionalScreen({ data, set }) {
           <span style={{fontSize:"1.4rem"}}>🖐️</span>
           <div>
             <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Wrist / Hand Functional Screen</div>
-            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM/grip · Carpal tunnel · TFCC · Scaphoid · Digits</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM/grip · Carpal tunnel · TFCC · Scaphoid · Digits</div>
           </div>
           <div style={{marginLeft:"auto",textAlign:"right"}}>
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
         </div>
         <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
-          <div style={{fontSize:"0.65rem",color:"#dc2626",fontWeight:700}}>⚠ Positive anatomical snuffbox = scaphoid fracture until proven otherwise. Immobilise + refer immediately.</div>
+          <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:700}}>⚠ Positive anatomical snuffbox = scaphoid fracture until proven otherwise. Immobilise + refer immediately.</div>
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {WRIST_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
               <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
                   border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
                   background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
                   color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
@@ -12327,26 +12457,26 @@ function WristFunctionalScreen({ data, set }) {
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
               </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
               <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
             </div>
             {isOpen && (
               <div style={{padding:"0 14px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
                 </div>
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -12355,18 +12485,18 @@ function WristFunctionalScreen({ data, set }) {
                   </div>
                 )}
                 <div style={{background:"#FDF2F8",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #FBCFE8"}}>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
                   <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
                   <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
                   </div>
                 </div>
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
                 {t.observations.map(obs=>{
                   const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
                   return (
                     <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
                       <div style={{display:"flex",flexDirection:"column",gap:4}}>
                         {obs.opts.map((opt,idx)=>{
                           const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
@@ -12377,16 +12507,16 @@ function WristFunctionalScreen({ data, set }) {
                               <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
                                 {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
                               </div>
-                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
                             </div>
                           );
                         })}
                       </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
                     </div>
                   );
                 })}
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
                 <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
                   {t.grades.map((gLabel,idx)=>{
                     const col=gradeColor(idx); const sel=g===idx;
@@ -12401,10 +12531,10 @@ function WristFunctionalScreen({ data, set }) {
                     );
                   })}
                 </div>
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
                 <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
                   placeholder="Grip strength values, Phalen timing, Watson clunk, scaphoid tenderness..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
               </div>
             )}
           </div>
@@ -12420,7 +12550,7 @@ function WristFunctionalScreen({ data, set }) {
               <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
                 <span style={{fontSize:"1rem"}}>{t.icon}</span>
                 <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
               </div>
             );
           })}
@@ -12590,22 +12720,22 @@ function TMJFunctionalScreen({ data, set }) {
           <span style={{fontSize:"1.4rem"}}>🦷</span>
           <div>
             <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>TMJ Functional Screen</div>
-            <div style={{fontSize:"0.68rem",color:C.muted}}>5 tests · AROM · Disc sounds · Muscles · Cervical link · Headache</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM · Disc sounds · Muscles · Cervical link · Headache</div>
           </div>
           <div style={{marginLeft:"auto",textAlign:"right"}}>
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.58rem",color:C.muted}}>graded</div>
+            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
         </div>
         <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
-          <div style={{fontSize:"0.65rem",color:"#dc2626",fontWeight:700}}>⚠ Screen red-flag headache features before any treatment. Thunderclap or progressive headache = emergency referral.</div>
+          <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:700}}>⚠ Screen red-flag headache features before any treatment. Thunderclap or progressive headache = emergency referral.</div>
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {TMJ_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
               <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.68rem",fontWeight:700,
+                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
                   border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
                   background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
                   color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
@@ -12627,26 +12757,26 @@ function TMJFunctionalScreen({ data, set }) {
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.65rem",color:C.muted}}>{t.subtitle}</div>
+                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
               </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
+              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
               <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
             </div>
             {isOpen && (
               <div style={{padding:"0 14px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.68rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.6rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
+                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
+                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
                 </div>
                 {showVisual && (
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                     <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.72rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
                     </div>
                     <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.6rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.7rem",color:"#7f1d1d",lineHeight:1.6}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
+                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
                         {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
                           <div key={i} style={{marginBottom:2}}>• {x}</div>
                         ))}
@@ -12655,18 +12785,18 @@ function TMJFunctionalScreen({ data, set }) {
                   </div>
                 )}
                 <div style={{background:"#FFFBEB",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #FDE68A"}}>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
                   <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
                   <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.6rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
+                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
                   </div>
                 </div>
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
                 {t.observations.map(obs=>{
                   const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
                   return (
                     <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
+                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
                       <div style={{display:"flex",flexDirection:"column",gap:4}}>
                         {obs.opts.map((opt,idx)=>{
                           const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
@@ -12677,16 +12807,16 @@ function TMJFunctionalScreen({ data, set }) {
                               <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
                                 {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
                               </div>
-                              <span style={{fontSize:"0.72rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
+                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
                             </div>
                           );
                         })}
                       </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.68rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
+                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
                     </div>
                   );
                 })}
-                <div style={{fontSize:"0.68rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
                 <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
                   {t.grades.map((gLabel,idx)=>{
                     const col=gradeColor(idx); const sel=g===idx;
@@ -12701,10 +12831,10 @@ function TMJFunctionalScreen({ data, set }) {
                     );
                   })}
                 </div>
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
                 <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
                   placeholder="Opening mm, click timing, muscle VAS, Watson result, headache features..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.72rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
+                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
               </div>
             )}
           </div>
@@ -12720,7 +12850,7 @@ function TMJFunctionalScreen({ data, set }) {
               <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
                 <span style={{fontSize:"1rem"}}>{t.icon}</span>
                 <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
               </div>
             );
           })}
@@ -12829,7 +12959,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
             </div>
           ) : (
             <div>
-              <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>
+              <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>
                 {searchResults.length} result{searchResults.length!==1?"s":""}
               </div>
               {searchResults.map((r,i)=>(
@@ -12839,9 +12969,9 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
                   <span style={{fontSize:"1.3rem"}}>{r.test.icon}</span>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:"0.8rem",fontWeight:700,color:C.text}}>{r.test.label}</div>
-                    <div style={{fontSize:"0.62rem",color:C.muted}}>{r.test.subtitle}</div>
+                    <div style={{fontSize:"0.82rem",color:C.muted}}>{r.test.subtitle}</div>
                   </div>
-                  <span style={{padding:"2px 8px",borderRadius:20,fontSize:"0.62rem",fontWeight:700,
+                  <span style={{padding:"2px 8px",borderRadius:20,fontSize:"0.82rem",fontWeight:700,
                     background:`${r.regionColor}15`,color:r.regionColor,flexShrink:0}}>
                     {r.regionIcon} {r.regionLabel}
                   </span>
@@ -12859,7 +12989,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
             const sel = region===r.id;
             return (
               <button key={r.id} type="button" onClick={()=>setRegion(r.id)}
-                style={{padding:"7px 10px",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:"0.72rem",fontFamily:"inherit",
+                style={{padding:"7px 10px",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:"0.82rem",fontFamily:"inherit",
                   border:`1.5px solid ${sel?r.color:C.border}`,
                   background:sel?`${r.color}12`:"transparent",
                   color:sel?r.color:C.muted}}>
@@ -13130,7 +13260,7 @@ function FasciaBodyMap({ selected, onSelect }) {
   ];
   return (
     <div style={{background:C.s2,borderRadius:12,padding:16,border:`1px solid ${C.border}`,marginBottom:16}}>
-      <div style={{fontSize:"0.7rem",fontWeight:700,color:C.muted,textAlign:"center",marginBottom:10,textTransform:"uppercase",letterSpacing:"1px"}}>Fascial Lines — Tap to Select</div>
+      <div style={{fontSize:"0.8rem",fontWeight:700,color:C.muted,textAlign:"center",marginBottom:10,textTransform:"uppercase",letterSpacing:"1px"}}>Fascial Lines — Tap to Select</div>
       <div style={{display:"flex",gap:16,flexWrap:"wrap",alignItems:"flex-start"}}>
         <svg width="300" height="410" viewBox="0 0 300 410" style={{display:"block",flexShrink:0}}>
           {bodyParts.map((p,i)=>p.t==="ellipse"
@@ -13151,12 +13281,12 @@ function FasciaBodyMap({ selected, onSelect }) {
           })}
         </svg>
         <div style={{flex:1,minWidth:160}}>
-          <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Fascial Lines</div>
+          <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Fascial Lines</div>
           {Object.entries(FASCIA_LINES_DATA).map(([key,ln])=>(
             <div key={key} onClick={()=>onSelect(selected===key?null:key)}
               style={{background:selected===key?`${ln.color}18`:C.s3,border:`1px solid ${selected===key?ln.color:C.border}`,borderRadius:8,padding:"7px 10px",marginBottom:5,cursor:"pointer",transition:"all 0.2s"}}>
               <div style={{fontWeight:700,fontSize:"0.74rem",color:ln.color}}>{ln.label}</div>
-              {selected===key&&<div style={{fontSize:"0.68rem",color:C.muted,marginTop:3,lineHeight:1.5}}>{ln.restrictions}</div>}
+              {selected===key&&<div style={{fontSize:"0.78rem",color:C.muted,marginTop:3,lineHeight:1.5}}>{ln.restrictions}</div>}
             </div>
           ))}
         </div>
@@ -13164,9 +13294,9 @@ function FasciaBodyMap({ selected, onSelect }) {
       {selected&&FASCIA_LINES_DATA[selected]&&(
         <div style={{background:`${FASCIA_LINES_DATA[selected].color}08`,border:`1px solid ${FASCIA_LINES_DATA[selected].color}30`,borderRadius:9,padding:12,marginTop:12}}>
           <div style={{fontWeight:700,color:FASCIA_LINES_DATA[selected].color,marginBottom:6,fontSize:"0.85rem"}}>{FASCIA_LINES_DATA[selected].label}</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:"0.72rem"}}>
-            <div><div style={{fontWeight:700,color:C.muted,fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>Route</div><div style={{color:C.text,lineHeight:1.6}}>{FASCIA_LINES_DATA[selected].route}</div></div>
-            <div><div style={{fontWeight:700,color:C.muted,fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>Compensation Pattern</div><div style={{color:C.text,lineHeight:1.6}}>{FASCIA_LINES_DATA[selected].compensation}</div></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:"0.82rem"}}>
+            <div><div style={{fontWeight:700,color:C.muted,fontSize:"0.8rem",textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>Route</div><div style={{color:C.text,lineHeight:1.6}}>{FASCIA_LINES_DATA[selected].route}</div></div>
+            <div><div style={{fontWeight:700,color:C.muted,fontSize:"0.8rem",textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>Compensation Pattern</div><div style={{color:C.text,lineHeight:1.6}}>{FASCIA_LINES_DATA[selected].compensation}</div></div>
           </div>
         </div>
       )}
@@ -13226,33 +13356,33 @@ function FasciaSection({ data, set, navContext={} }) {
             <div onClick={()=>setOpenTest(isOpen?null:t.id)} style={{padding:"12px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}`}}>
               <div style={{flex:1}}>
                 <div style={{display:"flex",gap:7,alignItems:"center",marginBottom:3}}>
-                  <span style={{fontSize:"0.6rem",padding:"2px 7px",borderRadius:7,background:`${reg.color}20`,color:reg.color,fontWeight:700}}>{t.type}</span>
-                  <span style={{fontSize:"0.6rem",color:C.muted}}>Line: {t.line}</span>
+                  <span style={{fontSize:"0.8rem",padding:"2px 7px",borderRadius:7,background:`${reg.color}20`,color:reg.color,fontWeight:700}}>{t.type}</span>
+                  <span style={{fontSize:"0.8rem",color:C.muted}}>Line: {t.line}</span>
                 </div>
                 <div style={{fontWeight:700,fontSize:"0.88rem",color:C.text}}>{t.label}</div>
                 {currentVal&&<div style={{marginTop:5,display:"inline-flex",alignItems:"center",gap:6,padding:"2px 8px",borderRadius:8,background:`${currentOption?.color||C.muted}18`,border:`1px solid ${currentOption?.color||C.muted}40`}}>
                   <div style={{width:7,height:7,borderRadius:"50%",background:currentOption?.color||C.muted}}/>
-                  <span style={{fontSize:"0.68rem",fontWeight:700,color:currentOption?.color||C.muted}}>{currentVal}</span>
+                  <span style={{fontSize:"0.78rem",fontWeight:700,color:currentOption?.color||C.muted}}>{currentVal}</span>
                 </div>}
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0,marginLeft:10}}>
-                <button type="button" onClick={e=>{e.stopPropagation();setModalTest(t);}} style={{padding:"3px 10px",background:"rgba(127,90,240,0.15)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>ℹ Info</button>
+                <button type="button" onClick={e=>{e.stopPropagation();setModalTest(t);}} style={{padding:"3px 10px",background:"rgba(127,90,240,0.15)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>ℹ Info</button>
                 <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
               </div>
             </div>
             {isOpen&&(
               <div style={{padding:"0 14px 14px"}}>
                 <div style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,padding:12,marginBottom:12}}>
-                  <div style={{fontSize:"0.63rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>👐 How to Perform</div>
+                  <div style={{fontSize:"0.73rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>👐 How to Perform</div>
                   <div style={{fontSize:"0.8rem",color:C.text,lineHeight:1.7,whiteSpace:"pre-line"}}>{t.how}</div>
                 </div>
                 <div style={{marginBottom:12}}>
-                  <div style={{fontSize:"0.63rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📊 Select Finding — What Each Result Means</div>
+                  <div style={{fontSize:"0.73rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📊 Select Finding — What Each Result Means</div>
                   {t.options.map(opt=>(
                     <div key={opt.val} onClick={()=>set(t.id,currentVal===opt.val?"":opt.val)}
                       style={{display:"flex",alignItems:"flex-start",gap:12,padding:"10px 12px",borderRadius:9,marginBottom:7,cursor:"pointer",border:`1px solid ${currentVal===opt.val?opt.color:C.border}`,background:currentVal===opt.val?`${opt.color}12`:"transparent",transition:"all 0.15s"}}>
                       <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${opt.color}`,background:currentVal===opt.val?opt.color:"transparent",flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        {currentVal===opt.val&&<span style={{color:"#000",fontSize:"0.55rem",fontWeight:900}}>✓</span>}
+                        {currentVal===opt.val&&<span style={{color:"#000",fontSize:"0.75rem",fontWeight:900}}>✓</span>}
                       </div>
                       <div style={{flex:1}}>
                         <div style={{fontWeight:700,fontSize:"0.8rem",color:opt.color,marginBottom:3}}>{opt.val}</div>
@@ -13262,7 +13392,7 @@ function FasciaSection({ data, set, navContext={} }) {
                   ))}
                 </div>
                 <div style={{background:`${reg.color}08`,border:`1px solid ${reg.color}25`,borderRadius:8,padding:11}}>
-                  <div style={{fontSize:"0.63rem",fontWeight:700,color:reg.color,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>→ Treatment Protocol</div>
+                  <div style={{fontSize:"0.73rem",fontWeight:700,color:reg.color,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>→ Treatment Protocol</div>
                   <div style={{fontSize:"0.77rem",color:C.text,lineHeight:1.7}}>{t.treatment}</div>
                 </div>
               </div>
@@ -13274,15 +13404,15 @@ function FasciaSection({ data, set, navContext={} }) {
         <div onClick={()=>setModalTest(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:C.surface,border:`1px solid ${reg.color}50`,borderRadius:14,padding:24,maxWidth:560,width:"100%",maxHeight:"88vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-              <div><div style={{fontWeight:800,color:reg.color,fontSize:"1rem"}}>{modalTest.label}</div><div style={{fontSize:"0.7rem",color:C.muted,marginTop:3}}>{modalTest.type} · Line: {modalTest.line}</div></div>
+              <div><div style={{fontWeight:800,color:reg.color,fontSize:"1rem"}}>{modalTest.label}</div><div style={{fontSize:"0.8rem",color:C.muted,marginTop:3}}>{modalTest.type} · Line: {modalTest.line}</div></div>
               <button onClick={()=>setModalTest(null)} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:6,padding:"3px 9px",cursor:"pointer"}}>✕</button>
             </div>
             <div style={{marginBottom:14}}>
-              <div style={{fontSize:"0.63rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>👐 How to Perform</div>
+              <div style={{fontSize:"0.73rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>👐 How to Perform</div>
               <div style={{background:C.s2,borderRadius:8,padding:14,fontSize:"0.82rem",color:C.text,lineHeight:1.8,whiteSpace:"pre-line"}}>{modalTest.how}</div>
             </div>
             <div style={{marginBottom:14}}>
-              <div style={{fontSize:"0.63rem",fontWeight:700,color:C.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>📊 What Each Result Means</div>
+              <div style={{fontSize:"0.73rem",fontWeight:700,color:C.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>📊 What Each Result Means</div>
               {modalTest.options.map(opt=>(
                 <div key={opt.val} style={{padding:"8px 12px",borderRadius:8,marginBottom:7,border:`1px solid ${opt.color}30`,background:`${opt.color}08`}}>
                   <div style={{fontWeight:700,fontSize:"0.78rem",color:opt.color,marginBottom:3}}>{opt.val}</div>
@@ -13291,7 +13421,7 @@ function FasciaSection({ data, set, navContext={} }) {
               ))}
             </div>
             <div style={{background:`${reg.color}08`,border:`1px solid ${reg.color}25`,borderRadius:8,padding:12,marginBottom:16}}>
-              <div style={{fontSize:"0.63rem",fontWeight:700,color:reg.color,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>→ Treatment Protocol</div>
+              <div style={{fontSize:"0.73rem",fontWeight:700,color:reg.color,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>→ Treatment Protocol</div>
               <div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.7}}>{modalTest.treatment}</div>
             </div>
             <button onClick={()=>setModalTest(null)} style={{width:"100%",padding:"9px",background:C.a2,border:"none",borderRadius:8,color:"#fff",fontWeight:700,cursor:"pointer"}}>Close</button>
@@ -13323,8 +13453,41 @@ function NKTSection({ data, set, navContext={} }) {
   const [modalTest, setModalTest] = useState(null);
   const reg = NKT_REGIONS[region];
 
+  const [nktHelpOpen, setNktHelpOpen] = React.useState(() => !localStorage.getItem("pm_nkt_seen"));
   return (
     <div>
+      {/* ── NKT Framework Explainer ── */}
+      <div style={{border:"1px solid #0891b244",borderRadius:12,overflow:"hidden",marginBottom:14}}>
+        <div onClick={()=>{setNktHelpOpen(o=>!o); localStorage.setItem("pm_nkt_seen","1");}}
+          style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",cursor:"pointer",background:"#0891b20a"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:"1rem"}}>📚</span>
+            <span style={{fontWeight:700,fontSize:"0.85rem",color:"#0891b2"}}>What is Neurokinetic Therapy (NKT)?</span>
+            <span style={{fontSize:"0.75rem",color:"#0891b288",fontStyle:"italic"}}>Tap to {nktHelpOpen?"hide":"show"} guide</span>
+          </div>
+          <span style={{fontSize:"0.75rem",color:"#0891b2"}}>{nktHelpOpen?"▲":"▼"}</span>
+        </div>
+        {nktHelpOpen && (
+          <div style={{padding:"14px 16px",borderTop:"1px solid #0891b222",background:"#f0faff",fontSize:"0.82rem",color:"#0a3a4a",lineHeight:1.7}}>
+            <p style={{margin:"0 0 10px"}}><strong>Neurokinetic Therapy (NKT)</strong> (David Weinstock) is a functional movement assessment system based on Motor Control Theory. It identifies <strong>compensation patterns</strong> where overactive muscles are substituting for inhibited (neurologically underactive) muscles.</p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+              <div style={{background:"#0891b20d",borderRadius:8,padding:10}}>
+                <div style={{fontWeight:700,marginBottom:4,color:"#0891b2"}}>🧠 Core principle</div>
+                <div>The Motor Control Centre (cerebellum) stores movement programmes. Injury creates <strong>dysfunctional patterns</strong>: one muscle inhibits its antagonist.<br/><br/><strong>Inhibited</strong> = weak, underactive<br/><strong>Facilitated</strong> = overactive, tight</div>
+              </div>
+              <div style={{background:"#05966910",borderRadius:8,padding:10}}>
+                <div style={{fontWeight:700,marginBottom:4,color:"#059669"}}>🔍 Assessment steps</div>
+                <div>1. <strong>Test inhibited muscle</strong> — manual muscle test (MMT) → weak<br/>2. <strong>Treat facilitated muscle</strong> — release (massage, dry needling)<br/>3. <strong>Retest inhibited</strong> — should now test strong<br/>4. If stronger = compensation confirmed</div>
+              </div>
+            </div>
+            <div style={{background:"#7c3aed0d",borderRadius:8,padding:10,border:"1px solid #7c3aed25"}}>
+              <strong style={{color:"#7c3aed"}}>💡 Common patterns</strong><br/>
+              Upper trap facilitating lower trap/serratus (shoulder). SCM facilitating deep cervical flexors (neck pain). Hip flexor facilitating glute max (LBP). Pec minor facilitating lower trap (postural kyphosis).
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Region tabs */}
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
         {Object.entries(NKT_REGIONS).map(([key,r])=>(
@@ -13352,15 +13515,15 @@ function NKTSection({ data, set, navContext={} }) {
               style={{ padding:"12px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}` }}>
               <div>
                 <div style={{ fontWeight:700, fontSize:"0.88rem", color:C.text }}>{t.label}</div>
-                <div style={{ fontSize:"0.7rem", color:C.muted, marginTop:2 }}>🎯 Muscle: {t.muscle} &nbsp;|&nbsp; ⚠️ Compensator: {t.compensator}</div>
+                <div style={{ fontSize:"0.8rem", color:C.muted, marginTop:2 }}>🎯 Muscle: {t.muscle} &nbsp;|&nbsp; ⚠️ Compensator: {t.compensator}</div>
                 {currentVal && <div style={{ marginTop:5, display:"inline-flex", alignItems:"center", gap:6, padding:"2px 8px", borderRadius:8, background:`${currentOption?.color||C.muted}18`, border:`1px solid ${currentOption?.color||C.muted}40` }}>
                   <div style={{ width:7, height:7, borderRadius:"50%", background:currentOption?.color||C.muted }} />
-                  <span style={{ fontSize:"0.68rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
+                  <span style={{ fontSize:"0.78rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
                 </div>}
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                 <button type="button" onClick={e=>{ e.stopPropagation(); setModalTest(t); }}
-                  style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer" }}>
+                  style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.75rem", fontWeight:700, cursor:"pointer" }}>
                   ℹ How to Perform
                 </button>
                 <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
@@ -13372,7 +13535,7 @@ function NKTSection({ data, set, navContext={} }) {
               <div style={{ padding:"0 14px 14px" }}>
                 {/* How to */}
                 <div style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, padding:12, marginBottom:12 }}>
-                  <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
+                  <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
                   <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                     <SmallClinicalImg id={t.id} title={t.label} />
                     <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7, flex:1 }}>{t.how}</div>
@@ -13381,12 +13544,12 @@ function NKTSection({ data, set, navContext={} }) {
 
                 {/* Options */}
                 <div style={{ marginBottom:12 }}>
-                  <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Select Finding — What Each Result Means</div>
+                  <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Select Finding — What Each Result Means</div>
                   {t.options.map(opt=>(
                     <div key={opt.val} onClick={()=>set(t.id, currentVal===opt.val?"":opt.val)}
                       style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"10px 12px", borderRadius:9, marginBottom:7, cursor:"pointer", border:`1px solid ${currentVal===opt.val?opt.color:C.border}`, background:currentVal===opt.val?`${opt.color}12`:"transparent", transition:"all 0.15s" }}>
                       <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${opt.color}`, background:currentVal===opt.val?opt.color:"transparent", flexShrink:0, marginTop:2, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.55rem", fontWeight:900 }}>✓</span>}
+                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.75rem", fontWeight:900 }}>✓</span>}
                       </div>
                       <div style={{ flex:1 }}>
                         <div style={{ fontWeight:700, fontSize:"0.8rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -13398,7 +13561,7 @@ function NKTSection({ data, set, navContext={} }) {
 
                 {/* Treatment */}
                 <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:8, padding:12 }}>
-                  <div style={{ fontSize:"0.65rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>→ Treatment Protocol</div>
+                  <div style={{ fontSize:"0.75rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>→ Treatment Protocol</div>
                   <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.7 }}>{t.treatment}</div>
                 </div>
               </div>
@@ -13414,19 +13577,19 @@ function NKTSection({ data, set, navContext={} }) {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
               <div>
                 <div style={{ fontWeight:800, color:reg.color, fontSize:"1rem" }}>{modalTest.label}</div>
-                <div style={{ fontSize:"0.72rem", color:C.muted, marginTop:3 }}>Muscle: {modalTest.muscle}</div>
+                <div style={{ fontSize:"0.82rem", color:C.muted, marginTop:3 }}>Muscle: {modalTest.muscle}</div>
               </div>
               <button onClick={()=>setModalTest(null)} style={{ background:"none", border:`1px solid ${C.border}`, color:C.muted, borderRadius:6, padding:"3px 9px", cursor:"pointer" }}>✕</button>
             </div>
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>👐 Step-by-Step Procedure</div>
+              <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>👐 Step-by-Step Procedure</div>
               <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
                 <SmallClinicalImg id={modalTest.id} title={modalTest.label} />
                 <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8, flex:1 }}>{modalTest.how}</div>
               </div>
             </div>
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>⚠️ What Each Result Means</div>
+              <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>⚠️ What Each Result Means</div>
               {modalTest.options.map(opt=>(
                 <div key={opt.val} style={{ padding:"8px 12px", borderRadius:8, marginBottom:6, border:`1px solid ${opt.color}30`, background:`${opt.color}08` }}>
                   <div style={{ fontWeight:700, fontSize:"0.78rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -13435,7 +13598,7 @@ function NKTSection({ data, set, navContext={} }) {
               ))}
             </div>
             <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:8, padding:12, marginBottom:14 }}>
-              <div style={{ fontSize:"0.65rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>→ Treatment Protocol</div>
+              <div style={{ fontSize:"0.75rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>→ Treatment Protocol</div>
               <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.7 }}>{modalTest.treatment}</div>
             </div>
             <button onClick={()=>setModalTest(null)} style={{ width:"100%", padding:"9px", background:C.a2, border:"none", borderRadius:8, color:"#fff", fontWeight:700, cursor:"pointer" }}>Close</button>
@@ -13506,9 +13669,9 @@ function CyriaxRegionTests({ data, set }) {
         <div onClick={()=>setModalT(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
           <div onClick={e=>e.stopPropagation()} style={{ background:C.surface, border:`1px solid ${C.accent}40`, borderRadius:14, padding:24, maxWidth:480, width:"100%", maxHeight:"80vh", overflowY:"auto" }}>
             <div style={{ fontWeight:800, color:C.accent, marginBottom:12 }}>{modalT.label}</div>
-            <div style={{ marginBottom:12 }}><div style={{ fontSize:"0.65rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>How to Perform</div><div style={{ background:C.s2, borderRadius:8, padding:12, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{modalT.how}</div></div>
-            <div style={{ marginBottom:16 }}><div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>Clinical Significance</div><div style={{ background:C.s2, borderRadius:8, padding:12, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{modalT.sig}</div></div>
-            <div style={{ marginBottom:14 }}><div style={{ fontSize:"0.65rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>What Each Result Means</div>
+            <div style={{ marginBottom:12 }}><div style={{ fontSize:"0.75rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>How to Perform</div><div style={{ background:C.s2, borderRadius:8, padding:12, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{modalT.how}</div></div>
+            <div style={{ marginBottom:16 }}><div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>Clinical Significance</div><div style={{ background:C.s2, borderRadius:8, padding:12, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{modalT.sig}</div></div>
+            <div style={{ marginBottom:14 }}><div style={{ fontSize:"0.75rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>What Each Result Means</div>
               {[{val:"Strong & Painless (normal)",col:"#00c97a",m:"No contractile lesion at this muscle. Look elsewhere for the pain source."},
                 {val:"Strong & Painful (minor lesion)",col:"#ffb300",m:"Minor lesion of contractile tissue — tendinopathy or small partial tear. Can generate force but hurts. TREAT: DTFM + eccentric loading."},
                 {val:"Weak & Painless (neurological)",col:"#7f5af0",m:"Neurological deficit — nerve root or peripheral nerve. No lesion in the muscle itself. Check dermatomes + reflexes. Consider imaging."},
@@ -13535,9 +13698,9 @@ function CyriaxRegionTests({ data, set }) {
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:7, gap:8 }}>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:"0.8rem", fontWeight:600, color:C.text }}>{t.label}</div>
-                  <div style={{ fontSize:"0.68rem", color:C.muted, marginTop:1 }}>Muscle: {t.muscle}</div>
+                  <div style={{ fontSize:"0.78rem", color:C.muted, marginTop:1 }}>Muscle: {t.muscle}</div>
                 </div>
-                <button type="button" onClick={()=>setModalT(t)} style={{ padding:"2px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer", flexShrink:0 }}>ℹ Info</button>
+                <button type="button" onClick={()=>setModalT(t)} style={{ padding:"2px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.75rem", fontWeight:700, cursor:"pointer", flexShrink:0 }}>ℹ Info</button>
               </div>
               <select value={val} onChange={e=>set(t.id,e.target.value)} style={{...inp, borderColor:isProb?C.red:C.border}}>
                 <option value="">— select result —</option>
@@ -14357,13 +14520,13 @@ function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder
     <div style={{background:C.surface,border:`1px solid ${filled?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:6}}>
         <label style={{fontSize:"0.78rem",fontWeight:600,color:filled?C.text:C.muted,lineHeight:1.4,flex:1}}>
-          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>✓</span>}
+          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.8rem"}}>✓</span>}
         </label>
-        {unit&&<span style={{fontSize:"0.62rem",color:C.muted,flexShrink:0}}>{unit}</span>}
+        {unit&&<span style={{fontSize:"0.82rem",color:C.muted,flexShrink:0}}>{unit}</span>}
       </div>
-      {note&&<div style={{fontSize:"0.68rem",color:C.muted,marginBottom:6,lineHeight:1.4,fontStyle:"italic"}}>{note}</div>}
+      {note&&<div style={{fontSize:"0.78rem",color:C.muted,marginBottom:6,lineHeight:1.4,fontStyle:"italic"}}>{note}</div>}
       {type==="select"&&<select value={val} onChange={e=>set(id,e.target.value)} style={base}><option value="">— select —</option>{options.map(o=><option key={o} value={o}>{o}</option>)}</select>}
-      {type==="range"&&<div><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:"0.68rem",color:C.muted}}>{min}{unit||""}</span><span style={{fontSize:"0.82rem",fontWeight:700,color:C.accent}}>{val||min}{unit||""}</span><span style={{fontSize:"0.68rem",color:C.muted}}>{max}{unit||""}</span></div><input type="range" min={min} max={max} step={step} value={val||min} onChange={e=>set(id,e.target.value)} style={{width:"100%",accentColor:C.accent,cursor:"pointer"}}/></div>}
+      {type==="range"&&<div><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:"0.78rem",color:C.muted}}>{min}{unit||""}</span><span style={{fontSize:"0.82rem",fontWeight:700,color:C.accent}}>{val||min}{unit||""}</span><span style={{fontSize:"0.78rem",color:C.muted}}>{max}{unit||""}</span></div><input type="range" min={min} max={max} step={step} value={val||min} onChange={e=>set(id,e.target.value)} style={{width:"100%",accentColor:C.accent,cursor:"pointer"}}/></div>}
       {type==="num"&&<input type="number" value={val} onChange={e=>set(id,e.target.value)} placeholder={placeholder} min={min} max={max} style={base}/>}
       {type==="textarea"&&<textarea value={val} onChange={e=>set(id,e.target.value)} placeholder={placeholder} rows={3} style={{...base,resize:"vertical",display:"block"}}/>}
     </div>
@@ -14375,10 +14538,10 @@ function ErgoBadge({ level, label, score, max }) {
   const pct=max>0?Math.round(score/max*100):0;
   return (
     <div style={{background:C.s2,border:`1px solid ${col}40`,borderRadius:10,padding:"10px 12px",flex:1,minWidth:110}}>
-      <div style={{fontSize:"0.58rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:C.muted,marginBottom:4}}>{label}</div>
+      <div style={{fontSize:"0.78rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:C.muted,marginBottom:4}}>{label}</div>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
         <span style={{fontWeight:800,fontSize:"0.95rem",color:col}}>{level}</span>
-        <span style={{fontSize:"0.62rem",color:C.muted}}>{score}/{max}</span>
+        <span style={{fontSize:"0.82rem",color:C.muted}}>{score}/{max}</span>
       </div>
       <div style={{height:4,background:C.s3,borderRadius:2}}><div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:2,transition:"width 0.4s"}}/></div>
     </div>
@@ -14428,15 +14591,15 @@ function ErgoModule({ data, set }) {
 
   const overallCol = risks.overall==="High"?C.red:risks.overall==="Moderate"?C.yellow:C.green;
   const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"⏱️"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
-  const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.72rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
+  const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.82rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
 
   const SH = ({id,label,children})=>{
     const isOpen=open[id]!==false;
     return (
       <div style={{marginBottom:14}}>
         <button type="button" onClick={()=>setOpen(p=>({...p,[id]:!isOpen}))} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",background:"transparent",border:"none",cursor:"pointer",padding:"6px 0",marginBottom:isOpen?8:0}}>
-          <div style={{fontSize:"0.63rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
-          <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"▲":"▼"}</span>
+          <div style={{fontSize:"0.73rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
+          <span style={{color:C.muted,fontSize:"0.82rem"}}>{isOpen?"▲":"▼"}</span>
         </button>
         {isOpen&&children}
       </div>
@@ -14447,7 +14610,7 @@ function ErgoModule({ data, set }) {
     const cfg=ERGO_RISK_CFG[id]; if(!cfg) return null;
     const val=data[id]||"";
     if(!val||!cfg.bad(val)) return null;
-    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.7rem",color:C.yellow}}><span style={{flexShrink:0}}>⚠</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
+    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.8rem",color:C.yellow}}><span style={{flexShrink:0}}>⚠</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
   };
 
   const WorkstationTab = ()=>(
@@ -14584,14 +14747,14 @@ function ErgoModule({ data, set }) {
         <div style={{background:C.s2,border:`2px solid ${overallCol}50`,borderRadius:14,padding:"16px 18px",marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,flexWrap:"wrap",gap:10}}>
             <div>
-              <div style={{fontSize:"0.6rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.muted,marginBottom:4}}>Overall Ergonomic Risk Score</div>
+              <div style={{fontSize:"0.8rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.muted,marginBottom:4}}>Overall Ergonomic Risk Score</div>
               <div style={{display:"flex",alignItems:"baseline",gap:8}}>
                 <span style={{fontSize:"2.4rem",fontWeight:900,color:overallCol,lineHeight:1}}>{risks.total}</span>
                 <span style={{fontSize:"0.9rem",color:C.muted}}>/ {risks.maxTotal}</span>
                 <span style={{padding:"3px 10px",borderRadius:20,background:`${overallCol}20`,color:overallCol,fontWeight:800,fontSize:"0.8rem",marginLeft:4}}>{risks.overall} Risk</span>
               </div>
             </div>
-            <div style={{fontSize:"0.72rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
+            <div style={{fontSize:"0.82rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
               {risks.overall==="High"?"⚠️ Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"⚡ Moderate ergonomic exposure. Targeted corrections advised.":"✅ Low ergonomic risk. Maintenance and monitoring."}
             </div>
           </div>
@@ -14606,7 +14769,7 @@ function ErgoModule({ data, set }) {
         {/* Active faults */}
         {faults.length>0&&(
           <div style={{marginBottom:16}}>
-            <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Active Faults ({faults.length})</div>
+            <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Active Faults ({faults.length})</div>
             {faults.map(id=>{
               const cfg=ERGO_RISK_CFG[id];
               const col=cfg.w>=3?C.red:C.yellow;
@@ -14614,14 +14777,14 @@ function ErgoModule({ data, set }) {
                 <div key={id} style={{display:"flex",gap:8,alignItems:"center",padding:"6px 10px",background:C.surface,border:`1px solid ${col}30`,borderRadius:8,marginBottom:4,fontSize:"0.73rem"}}>
                   <span style={{color:col,flexShrink:0}}>{cfg.w>=3?"🔴":"🟡"}</span>
                   <span style={{color:C.text,flex:1}}>{id.replace("ergo_","").replace(/_/g," ")}</span>
-                  <span style={{fontSize:"0.6rem",padding:"1px 6px",borderRadius:6,background:`${col}15`,color:col}}>{ERGO_DOMAIN_LABELS[cfg.domain]}</span>
+                  <span style={{fontSize:"0.8rem",padding:"1px 6px",borderRadius:6,background:`${col}15`,color:col}}>{ERGO_DOMAIN_LABELS[cfg.domain]}</span>
                 </div>
               );
             })}
           </div>
         )}
         {/* Symptom correlation */}
-        <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Body Region — Workstation Correlation</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Body Region — Workstation Correlation</div>
         {correlations.map(c=>{
           const matched=c.drivers.filter(d=>faults.includes(d));
           const pct=matched.length/c.drivers.length;
@@ -14630,20 +14793,20 @@ function ErgoModule({ data, set }) {
             <div key={c.symptom} style={{background:C.surface,border:`1px solid ${matched.length>0?col+"40":C.border}`,borderRadius:10,padding:"9px 12px",marginBottom:6}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:matched.length>0?5:0}}>
                 <span style={{fontWeight:600,fontSize:"0.78rem",color:matched.length>0?C.text:C.muted}}>{c.symptom}</span>
-                <span style={{fontSize:"0.65rem",fontWeight:700,padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col}}>{matched.length}/{c.drivers.length} drivers</span>
+                <span style={{fontSize:"0.75rem",fontWeight:700,padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col}}>{matched.length}/{c.drivers.length} drivers</span>
               </div>
-              {matched.length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{matched.map(f=><span key={f} style={{fontSize:"0.6rem",padding:"2px 7px",borderRadius:6,background:C.s3,color:C.yellow,border:`1px solid ${C.yellow}25`}}>{f.replace("ergo_","").replace(/_/g," ")}</span>)}</div>}
+              {matched.length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{matched.map(f=><span key={f} style={{fontSize:"0.8rem",padding:"2px 7px",borderRadius:6,background:C.s3,color:C.yellow,border:`1px solid ${C.yellow}25`}}>{f.replace("ergo_","").replace(/_/g," ")}</span>)}</div>}
             </div>
           );
         })}
         {/* Future hooks */}
         <div style={{marginTop:16,background:C.s2,border:`1px solid ${C.a2}30`,borderRadius:10,padding:"12px 14px"}}>
-          <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8}}>🔮 Future Integration Hooks</div>
+          <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8}}>🔮 Future Integration Hooks</div>
           {[{icon:"📷",label:"Webcam Posture Analysis",desc:"Real-time AI posture angle measurement"},{icon:"⌚",label:"Wearable Sensor Integration",desc:"IMU / smartwatch postural load import"},{icon:"🤖",label:"AI Posture Tracking",desc:"Continuous scoring with deviation alerts"},{icon:"📈",label:"Longitudinal Risk Tracking",desc:"Session-to-session score comparison"}].map(h=>(
             <div key={h.label} style={{display:"flex",gap:10,alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
               <span style={{fontSize:"1rem",flexShrink:0}}>{h.icon}</span>
               <div style={{flex:1}}><div style={{fontSize:"0.74rem",fontWeight:600,color:C.muted}}>{h.label}</div><div style={{fontSize:"0.66rem",color:C.muted,opacity:0.7}}>{h.desc}</div></div>
-              <span style={{fontSize:"0.6rem",padding:"2px 7px",borderRadius:8,background:"rgba(127,90,240,0.15)",color:C.a2,fontWeight:700}}>Planned</span>
+              <span style={{fontSize:"0.8rem",padding:"2px 7px",borderRadius:8,background:"rgba(127,90,240,0.15)",color:C.a2,fontWeight:700}}>Planned</span>
             </div>
           ))}
         </div>
@@ -14693,12 +14856,12 @@ function ErgoModule({ data, set }) {
           <>
             {highP.length>0&&(
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.red,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.red}}/>🔴 High Priority ({highP.length})</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.red,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.red}}/>🔴 High Priority ({highP.length})</div>
                 {highP.map(id=>{const c=CORRECTIONS[id];return c?(
                   <div key={id} style={{background:C.surface,border:`1px solid ${C.red}30`,borderLeft:`3px solid ${C.red}`,borderRadius:10,padding:"10px 13px",marginBottom:7}}>
                     <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-                      <span style={{fontSize:"0.58rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.red}20`,color:C.red,flexShrink:0,marginTop:1}}>{c.area}</span>
-                      <div><div style={{fontSize:"0.7rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
+                      <span style={{fontSize:"0.78rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.red}20`,color:C.red,flexShrink:0,marginTop:1}}>{c.area}</span>
+                      <div><div style={{fontSize:"0.8rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
                     </div>
                   </div>
                 ):null;})}
@@ -14706,12 +14869,12 @@ function ErgoModule({ data, set }) {
             )}
             {medP.length>0&&(
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.yellow,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.yellow}}/>🟡 Medium Priority ({medP.length})</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.yellow,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.yellow}}/>🟡 Medium Priority ({medP.length})</div>
                 {medP.map(id=>{const c=CORRECTIONS[id];return c?(
                   <div key={id} style={{background:C.surface,border:`1px solid ${C.yellow}25`,borderLeft:`3px solid ${C.yellow}`,borderRadius:10,padding:"10px 13px",marginBottom:7}}>
                     <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-                      <span style={{fontSize:"0.58rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.yellow}15`,color:C.yellow,flexShrink:0,marginTop:1}}>{c.area}</span>
-                      <div><div style={{fontSize:"0.7rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
+                      <span style={{fontSize:"0.78rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.yellow}15`,color:C.yellow,flexShrink:0,marginTop:1}}>{c.area}</span>
+                      <div><div style={{fontSize:"0.8rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
                     </div>
                   </div>
                 ):null;})}
@@ -14719,12 +14882,12 @@ function ErgoModule({ data, set }) {
             )}
             {movPx.length>0&&(
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a3,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a3}}/>🏃 Movement Break Prescription</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a3,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a3}}/>🏃 Movement Break Prescription</div>
                 {movPx.map(mp=>(
                   <div key={mp.label} style={{background:C.surface,border:`1px solid ${C.a3}30`,borderRadius:10,padding:"11px 13px",marginBottom:8}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:C.a3}}>{mp.label}</div>
-                      <span style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
+                      <span style={{fontSize:"0.82rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
                     </div>
                     {mp.ex.map((e,i)=><div key={i} style={{display:"flex",gap:8,padding:"3px 0",fontSize:"0.76rem",color:C.text}}><span style={{color:C.a3,flexShrink:0}}>→</span><span>{e}</span></div>)}
                   </div>
@@ -14732,7 +14895,7 @@ function ErgoModule({ data, set }) {
               </div>
             )}
             <div style={{marginTop:8}}>
-              <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Clinician Notes — Ergonomic</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Clinician Notes — Ergonomic</div>
               <EF id="ergo_clinician_notes" label="Notes / employer recommendations" type="textarea" data={data} set={set} placeholder="Workplace recommendations, equipment requests, employer letter notes, review date..."/>
             </div>
           </>
@@ -14749,7 +14912,7 @@ function ErgoModule({ data, set }) {
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {Object.entries(ERGO_DOMAIN_LABELS).map(([d,l])=>{
               const col=risks[d]==="High"?C.red:risks[d]==="Moderate"?C.yellow:null;
-              return col?<span key={d} style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col,fontWeight:700}}>{l}: {risks[d]}</span>:null;
+              return col?<span key={d} style={{fontSize:"0.82rem",padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col,fontWeight:700}}>{l}: {risks[d]}</span>:null;
             })}
           </div>
         </div>

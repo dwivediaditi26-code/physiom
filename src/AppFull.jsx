@@ -327,11 +327,11 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
       >
         <span style={{fontSize:"1.2rem"}}>📷</span>
         Upload Patient Photo
-        <span style={{fontSize:"0.65rem",opacity:0.75,fontWeight:600}}>JPG / PNG</span>
+        <span style={{fontSize:"0.75rem",opacity:0.75,fontWeight:600}}>JPG / PNG</span>
       </button>
       {/* Front / Back camera toggle — always visible */}
       <div style={{ marginBottom:10 }}>
-        <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📷 Camera</div>
+        <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📷 Camera</div>
         <div style={{ display:"flex", gap:6, marginBottom:8 }}>
           {/* Front camera */}
           <button
@@ -349,7 +349,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
             }}>
             <span style={{fontSize:"1.3rem"}}>🤳</span>
             <span>Front</span>
-            {facingMode==="user" && isActive && <span style={{fontSize:"0.55rem",opacity:0.8}}>● ACTIVE</span>}
+            {facingMode==="user" && isActive && <span style={{fontSize:"0.75rem",opacity:0.8}}>● ACTIVE</span>}
           </button>
           {/* Back camera */}
           <button
@@ -367,14 +367,14 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
             }}>
             <span style={{fontSize:"1.3rem"}}>📷</span>
             <span>Back</span>
-            {facingMode==="environment" && isActive && <span style={{fontSize:"0.55rem",opacity:0.8}}>● ACTIVE</span>}
+            {facingMode==="environment" && isActive && <span style={{fontSize:"0.75rem",opacity:0.8}}>● ACTIVE</span>}
           </button>
           {/* Stop button */}
           {isActive && (
             <button onClick={onStop} style={{
               flex:"0 0 54px", padding:"11px 6px", borderRadius:11,
               background:"rgba(255,77,109,0.12)", border:"1px solid rgba(255,77,109,0.3)",
-              color:"#ff4d6d", fontWeight:800, fontSize:"0.7rem", cursor:"pointer",
+              color:"#ff4d6d", fontWeight:800, fontSize:"0.8rem", cursor:"pointer",
               display:"flex", flexDirection:"column", alignItems:"center", gap:4
             }}>
               <span style={{fontSize:"1.1rem"}}>⏹</span>
@@ -390,12 +390,12 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
             color:isLoading?"#6b8399":"#000", fontWeight:800, fontSize:"0.8rem"
           }}>{isLoading?"⏳ Loading camera…":"▶ Start Camera"}</button>
         )}
-        {canRecalibrate && <button onClick={onRecalibrate} style={{width:"100%",marginTop:6,padding:"8px",borderRadius:9,border:"1px solid rgba(255,179,0,0.3)",background:"rgba(255,179,0,0.08)",color:"#ffb300",fontWeight:700,fontSize:"0.72rem",cursor:"pointer"}}>⟳ Recalibrate</button>}
+        {canRecalibrate && <button onClick={onRecalibrate} style={{width:"100%",marginTop:6,padding:"8px",borderRadius:9,border:"1px solid rgba(255,179,0,0.3)",background:"rgba(255,179,0,0.08)",color:"#ffb300",fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>⟳ Recalibrate</button>}
       </div>
 
       {/* ── VIEW SELECTOR — always visible (Front/Back/Left/Right) ── */}
       <div style={{ marginBottom:10 }}>
-        <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📐 Posture View — select before capturing</div>
+        <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📐 Posture View — select before capturing</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:6 }}>
           {[
             { v:"anterior",  icon:"⬆", label:"Front",  color:"#00e5ff" },
@@ -407,7 +407,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
             return (
               <button key={v} onClick={() => onViewChange && onViewChange(v)} style={{
                 padding:"10px 4px", borderRadius:11, cursor:"pointer", fontWeight:800,
-                fontSize:"0.72rem", display:"flex", flexDirection:"column", alignItems:"center", gap:3,
+                fontSize:"0.82rem", display:"flex", flexDirection:"column", alignItems:"center", gap:3,
                 background: active ? `linear-gradient(135deg,${color},${color}aa)` : `${color}12`,
                 color: active ? "#000" : color,
                 border: active ? "none" : `1px solid ${color}40`,
@@ -422,7 +422,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
           })}
         </div>
         {/* Grid line notice */}
-        <div style={{ marginTop:6, padding:"5px 9px", background:"rgba(0,229,255,0.07)", border:"1px solid rgba(0,229,255,0.18)", borderRadius:8, fontSize:"0.62rem", color:"#7e6a9a", fontStyle:"italic" }}>
+        <div style={{ marginTop:6, padding:"5px 9px", background:"rgba(0,229,255,0.07)", border:"1px solid rgba(0,229,255,0.18)", borderRadius:8, fontSize:"0.82rem", color:"#7e6a9a", fontStyle:"italic" }}>
           🔲 Posture grid lines will appear on captured photo for the selected view
         </div>
       </div>
@@ -432,18 +432,18 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
         <div style={{ display:"flex", gap:7, flexWrap:"wrap", alignItems:"center" }}>
           {/* Zoom */}
           <div style={{ display:"flex", alignItems:"center", gap:5, background:"#ffffff", border:"1px solid #d8cce8", borderRadius:9, padding:"5px 10px", flex:"1 1 auto" }}>
-            <span style={{ fontSize:"0.65rem", color:"#7e6a9a", whiteSpace:"nowrap" }}>🔍 Zoom</span>
+            <span style={{ fontSize:"0.75rem", color:"#7e6a9a", whiteSpace:"nowrap" }}>🔍 Zoom</span>
             <input type="range" min="1" max="2.5" step="0.1" value={zoom||1} onChange={e=>onZoom&&onZoom(Number(e.target.value))}
               style={{ flex:1, accentColor:"#00e5ff", cursor:"pointer", minWidth:60 }}/>
-            <span style={{ fontSize:"0.65rem", color:"#00e5ff", minWidth:26, fontWeight:700 }}>{(zoom||1).toFixed(1)}×</span>
+            <span style={{ fontSize:"0.75rem", color:"#00e5ff", minWidth:26, fontWeight:700 }}>{(zoom||1).toFixed(1)}×</span>
           </div>
 
           {/* Countdown timer */}
           <div style={{ display:"flex", alignItems:"center", gap:5, background:"#ffffff", border:"1px solid #d8cce8", borderRadius:9, padding:"5px 10px" }}>
-            <span style={{ fontSize:"0.65rem", color:"#7e6a9a" }}>⏱</span>
+            <span style={{ fontSize:"0.75rem", color:"#7e6a9a" }}>⏱</span>
             {[3,5,10].map(s => (
               <button key={s} onClick={() => onCountdownChange&&onCountdownChange(s)} style={{
-                padding:"3px 7px", borderRadius:6, fontSize:"0.62rem", fontWeight:700, border:"none", cursor:"pointer",
+                padding:"3px 7px", borderRadius:6, fontSize:"0.82rem", fontWeight:700, border:"none", cursor:"pointer",
                 background: countdownSecs===s ? "#00e5ff" : "#192435", color: countdownSecs===s ? "#000" : "#6b8399"
               }}>{s}s</button>
             ))}
@@ -451,7 +451,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
 
           {/* Burst mode */}
           <button onClick={onBurstToggle} style={{
-            padding:"6px 11px", borderRadius:9, fontSize:"0.65rem", fontWeight:700, border:"none", cursor:"pointer",
+            padding:"6px 11px", borderRadius:9, fontSize:"0.75rem", fontWeight:700, border:"none", cursor:"pointer",
             background: burstMode ? "rgba(255,179,0,0.2)" : "#1a2d45",
             color: burstMode ? "#ffb300" : "#6b8399"
           }}>💥 {burstMode ? "Burst ON" : "Burst"}</button>
@@ -465,7 +465,7 @@ function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecali
 function CameraPositionGuide() {
   return (
     <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.18)", borderRadius:12, padding:14, marginBottom:12 }}>
-      <div style={{ fontSize:"0.7rem", fontWeight:800, color:"#00e5ff", textTransform:"uppercase", letterSpacing:"1px", marginBottom:9 }}>📐 Clinical Setup Guide</div>
+      <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#00e5ff", textTransform:"uppercase", letterSpacing:"1px", marginBottom:9 }}>📐 Clinical Setup Guide</div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))", gap:7 }}>
         {[
           ["📏","2m camera distance"],["🧍","Full body in frame"],
@@ -478,7 +478,7 @@ function CameraPositionGuide() {
           </div>
         ))}
       </div>
-      <div style={{ marginTop:10, padding:"7px 10px", background:"rgba(127,90,240,0.08)", borderRadius:8, fontSize:"0.68rem", color:"#7f5af0", border:"1px solid rgba(127,90,240,0.2)" }}>
+      <div style={{ marginTop:10, padding:"7px 10px", background:"rgba(127,90,240,0.08)", borderRadius:8, fontSize:"0.78rem", color:"#7f5af0", border:"1px solid rgba(127,90,240,0.2)" }}>
         💡 Tip: Tap anywhere on camera to focus · Use zoom for closer inspection · Select a view for guided workflow
       </div>
     </div>
@@ -1085,10 +1085,10 @@ function PostureCameraModule({ activePatient, set }) {
             border:"1px solid rgba(0,229,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.3rem" }}>🎥</div>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:800, fontSize:"0.93rem", color:"#00e5ff" }}>Posture Assessment Camera</div>
-            <div style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>Live Capture → MediaPipe Pose Analysis · Physiotherapy Grade</div>
+            <div style={{ fontSize:"0.82rem", color:"#7e6a9a" }}>Live Capture → MediaPipe Pose Analysis · Physiotherapy Grade</div>
           </div>
           {isLive && videoSize && (
-            <div style={{ fontSize:"0.58rem", padding:"2px 8px", borderRadius:7,
+            <div style={{ fontSize:"0.78rem", padding:"2px 8px", borderRadius:7,
               background:"rgba(0,229,255,0.08)", color:"#00e5ff", border:"1px solid rgba(0,229,255,0.2)", fontWeight:700 }}>
               {videoSize.w}×{videoSize.h}
             </div>
@@ -1099,7 +1099,7 @@ function PostureCameraModule({ activePatient, set }) {
           <div style={{ width:8, height:8, borderRadius:"50%",
             background: isLive ? (isStable && !lightingWarn && !rotationWarn ? "#00c97a" : "#ffb300") : isLoad ? "#ffb300" : isError ? "#ff4d6d" : "#3d3d5c",
             boxShadow: isLive && isStable ? "0 0 8px #00c97a88" : "none" }}/>
-          <span style={{ fontSize:"0.68rem", fontWeight:700, color: isLive ? (isStable && !lightingWarn && !rotationWarn ? "#00c97a" : "#ffb300") : isError ? "#ff4d6d" : "#7e6a9a" }}>
+          <span style={{ fontSize:"0.78rem", fontWeight:700, color: isLive ? (isStable && !lightingWarn && !rotationWarn ? "#00c97a" : "#ffb300") : isError ? "#ff4d6d" : "#7e6a9a" }}>
             {isLoad ? "Starting camera…"
               : isLive ? (
                   !quality.ready ? "Waiting for full body in frame…"
@@ -1116,7 +1116,7 @@ function PostureCameraModule({ activePatient, set }) {
 
       {/* ══ VIEW SELECTOR ═══════════════════════════════════════════════════ */}
       <div style={{ marginBottom:12 }}>
-        <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
+        <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
           📐 Select Posture View
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:6 }}>
@@ -1125,7 +1125,7 @@ function PostureCameraModule({ activePatient, set }) {
             return (
               <button key={v} onClick={() => setActiveView(v)} style={{
                 padding:"10px 4px", borderRadius:11, cursor:"pointer", fontWeight:800,
-                fontSize:"0.72rem", display:"flex", flexDirection:"column", alignItems:"center", gap:3,
+                fontSize:"0.82rem", display:"flex", flexDirection:"column", alignItems:"center", gap:3,
                 background: act ? `linear-gradient(135deg,${col},${col}aa)` : `${col}12`,
                 color: act ? "#000" : col,
                 border: act ? "none" : `1px solid ${col}40`,
@@ -1151,18 +1151,18 @@ function PostureCameraModule({ activePatient, set }) {
         cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:9
       }}>
         <span style={{ fontSize:"1.1rem" }}>📷</span> Upload Patient Photo for Analysis
-        <span style={{ fontSize:"0.62rem", opacity:0.7, fontWeight:600 }}>JPG / PNG</span>
+        <span style={{ fontSize:"0.82rem", opacity:0.7, fontWeight:600 }}>JPG / PNG</span>
       </button>
 
       {/* ══ CAMERA PANEL ════════════════════════════════════════════════════ */}
       {/* Pre-camera setup guide */}
       {isIdle && (
         <div style={{ background:"rgba(0,229,255,0.04)", border:"1px solid rgba(0,229,255,0.16)", borderRadius:12, padding:14, marginBottom:12 }}>
-          <div style={{ fontSize:"0.7rem", fontWeight:800, color:"#00e5ff", textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📐 Setup Guide</div>
+          <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#00e5ff", textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📐 Setup Guide</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
             {[["📏","2m camera distance"],["🧍","Full body in frame"],["💡","Even bright lighting"],["📱","Camera at hip height"],
               ["👕","Form-fitting clothing"],["🦶","Feet fully visible"]].map(([ic,tx],i) => (
-              <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:6, fontSize:"0.7rem", color:"#1a1025" }}>
+              <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:6, fontSize:"0.8rem", color:"#1a1025" }}>
                 <span>{ic}</span><span style={{ lineHeight:1.4 }}>{tx}</span>
               </div>
             ))}
@@ -1197,7 +1197,7 @@ function PostureCameraModule({ activePatient, set }) {
 
           {/* View badge */}
           <div style={{ position:"absolute", top:10, left:10, background:"rgba(6,9,15,0.82)",
-            borderRadius:9, padding:"4px 9px", fontSize:"0.62rem", fontWeight:700,
+            borderRadius:9, padding:"4px 9px", fontSize:"0.82rem", fontWeight:700,
             color:"#7f5af0", border:"1px solid rgba(127,90,240,0.35)", zIndex:15, textTransform:"capitalize" }}>
             {activeView} View
           </div>
@@ -1234,7 +1234,7 @@ function PostureCameraModule({ activePatient, set }) {
             <div style={{ position:"absolute", bottom:90, left:10, right:10, zIndex:20 }}>
               {quality.warnings.slice(0,2).map((w,i) => (
                 <div key={i} style={{ background:"rgba(6,9,15,0.82)", border:`1px solid ${w.color}55`,
-                  borderRadius:8, padding:"5px 10px", fontSize:"0.65rem", fontWeight:700,
+                  borderRadius:8, padding:"5px 10px", fontSize:"0.75rem", fontWeight:700,
                   color:w.color, marginBottom:4, display:"flex", gap:7, alignItems:"center" }}>
                   <span>{w.icon}</span> {w.text}
                 </div>
@@ -1255,7 +1255,7 @@ function PostureCameraModule({ activePatient, set }) {
                     background: blocked ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.18)",
                     border:`2px solid ${blocked?"rgba(255,100,100,0.4)":"rgba(255,255,255,0.4)"}`,
                     cursor:blocked||cdCount!==null?"not-allowed":"pointer",
-                    fontSize:"0.6rem", fontWeight:800, color: blocked?"rgba(255,100,100,0.7)":"#fff",
+                    fontSize:"0.8rem", fontWeight:800, color: blocked?"rgba(255,100,100,0.7)":"#fff",
                     display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:1 }}>
                   {blocked ? "🔒" : "⚡"}<span>{blocked?"Wait":"Now"}</span>
                 </button>
@@ -1326,18 +1326,18 @@ function PostureCameraModule({ activePatient, set }) {
             {/* Zoom */}
             <div style={{ flex:2, display:"flex", alignItems:"center", gap:6, background:"#ffffff",
               border:"1px solid #d8cce8", borderRadius:10, padding:"6px 12px" }}>
-              <span style={{ fontSize:"0.65rem", color:"#7e6a9a" }}>🔍</span>
+              <span style={{ fontSize:"0.75rem", color:"#7e6a9a" }}>🔍</span>
               <input type="range" min="1" max="2.5" step="0.1" value={zoom} onChange={e=>setZoom(Number(e.target.value))}
                 style={{ flex:1, accentColor:"#00e5ff", cursor:"pointer" }}/>
-              <span style={{ fontSize:"0.65rem", color:"#00e5ff", fontWeight:700, minWidth:28 }}>{zoom.toFixed(1)}×</span>
+              <span style={{ fontSize:"0.75rem", color:"#00e5ff", fontWeight:700, minWidth:28 }}>{zoom.toFixed(1)}×</span>
             </div>
             {/* Countdown selector */}
             <div style={{ display:"flex", alignItems:"center", gap:4, background:"#ffffff",
               border:"1px solid #d8cce8", borderRadius:10, padding:"6px 10px" }}>
-              <span style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>⏱</span>
+              <span style={{ fontSize:"0.8rem", color:"#7e6a9a" }}>⏱</span>
               {[0,3,5,10].map(s => (
                 <button key={s} onClick={() => setCdSecs(s)} style={{
-                  padding:"3px 6px", borderRadius:6, fontSize:"0.6rem", fontWeight:700,
+                  padding:"3px 6px", borderRadius:6, fontSize:"0.8rem", fontWeight:700,
                   border:"none", cursor:"pointer",
                   background: cdSecs===s ? "#00e5ff" : "#192435",
                   color: cdSecs===s ? "#000" : "#6b8399"
@@ -1348,7 +1348,7 @@ function PostureCameraModule({ activePatient, set }) {
             <button onClick={stopCamera} style={{
               padding:"8px 12px", borderRadius:10, cursor:"pointer", fontWeight:800,
               background:"rgba(255,77,109,0.1)", border:"1px solid rgba(255,77,109,0.3)",
-              color:"#ff4d6d", fontSize:"0.72rem", display:"flex", flexDirection:"column",
+              color:"#ff4d6d", fontSize:"0.82rem", display:"flex", flexDirection:"column",
               alignItems:"center", gap:2
             }}><span>⏹</span><span>Stop</span></button>
           </>
@@ -1363,7 +1363,7 @@ function PostureCameraModule({ activePatient, set }) {
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
             padding:"9px 13px", borderBottom:"1px solid rgba(0,229,255,0.15)",
             background:"rgba(0,229,255,0.04)" }}>
-            <div style={{ fontSize:"0.65rem", fontWeight:800, color:"#00e5ff" }}>
+            <div style={{ fontSize:"0.75rem", fontWeight:800, color:"#00e5ff" }}>
               📸 Captured — {capturedView?.charAt(0).toUpperCase()+capturedView?.slice(1)} View
               {analysing ? " — Analysing…" : capturedLm ? " — Pose Grid Applied ✓" : analyseError ? " — Detection Failed" : ""}
             </div>
@@ -1371,12 +1371,12 @@ function PostureCameraModule({ activePatient, set }) {
               {!analysing && (
                 <button onClick={() => startCamera(facingMode)} style={{
                   padding:"4px 10px", background:"rgba(0,229,255,0.1)", border:"1px solid rgba(0,229,255,0.25)",
-                  borderRadius:7, color:"#00e5ff", fontSize:"0.62rem", fontWeight:700, cursor:"pointer"
+                  borderRadius:7, color:"#00e5ff", fontSize:"0.82rem", fontWeight:700, cursor:"pointer"
                 }}>📷 Retake</button>
               )}
               <button onClick={() => { setCapturedImg(null); setCapturedLm(null); setAnalysis(null); setAnalyseError(null); }} style={{
                 padding:"4px 10px", background:"rgba(255,77,109,0.1)", border:"1px solid rgba(255,77,109,0.25)",
-                borderRadius:7, color:"#ff4d6d", fontSize:"0.62rem", fontWeight:700, cursor:"pointer"
+                borderRadius:7, color:"#ff4d6d", fontSize:"0.82rem", fontWeight:700, cursor:"pointer"
               }}>✕ Clear</button>
             </div>
           </div>
@@ -1395,7 +1395,7 @@ function PostureCameraModule({ activePatient, set }) {
                 <div style={{ width:44, height:44, border:"3px solid rgba(0,229,255,0.2)",
                   borderTop:"3px solid #00e5ff", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
                 <div style={{ fontSize:"0.75rem", color:"#00e5ff", fontWeight:700 }}>Running MediaPipe analysis…</div>
-                <div style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>Detecting 33 landmarks · Calculating deviations</div>
+                <div style={{ fontSize:"0.82rem", color:"#7e6a9a" }}>Detecting 33 landmarks · Calculating deviations</div>
               </div>
             )}
           </div>
@@ -1404,10 +1404,10 @@ function PostureCameraModule({ activePatient, set }) {
           {analyseError && !analysing && (
             <div style={{ padding:"12px 14px", background:"rgba(255,77,109,0.08)",
               borderTop:"1px solid rgba(255,77,109,0.2)" }}>
-              <div style={{ fontSize:"0.72rem", color:"#ff4d6d", fontWeight:700, marginBottom:4 }}>
+              <div style={{ fontSize:"0.82rem", color:"#ff4d6d", fontWeight:700, marginBottom:4 }}>
                 ⚠ {analyseError}
               </div>
-              <div style={{ fontSize:"0.65rem", color:"#c9b8e8" }}>
+              <div style={{ fontSize:"0.75rem", color:"#c9b8e8" }}>
                 Tips: ensure full body visible from head to feet, bright even lighting, form-fitting clothing, camera 2m away.
               </div>
             </div>
@@ -1432,7 +1432,7 @@ function PostureCameraModule({ activePatient, set }) {
                   <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#00e5ff", marginBottom:3 }}>
                     {analysis.scoreData?.category || "Assessment Complete"}
                   </div>
-                  <div style={{ fontSize:"0.65rem", color:"#7e6a9a", lineHeight:1.4 }}>
+                  <div style={{ fontSize:"0.75rem", color:"#7e6a9a", lineHeight:1.4 }}>
                     {analysis.findings.filter(f=>f.severity==="high").length} high priority ·{" "}
                     {analysis.findings.filter(f=>f.severity!=="high").length} moderate findings
                   </div>
@@ -1447,7 +1447,7 @@ function PostureCameraModule({ activePatient, set }) {
                       padding:"8px 11px", borderRadius:9,
                       background: f.severity==="high" ? "rgba(255,77,109,0.08)" : "rgba(255,179,0,0.07)",
                       borderLeft:`3px solid ${f.severity==="high"?"#ff4d6d":"#ffb300"}`,
-                      fontSize:"0.7rem", color:"#e2d9f3", lineHeight:1.5
+                      fontSize:"0.8rem", color:"#e2d9f3", lineHeight:1.5
                     }}>
                       <span style={{ fontWeight:700, color: f.severity==="high"?"#ff4d6d":"#ffb300", marginRight:6 }}>
                         {f.severity==="high"?"🔴":"🟡"} {f.title || f.label}
@@ -1458,7 +1458,7 @@ function PostureCameraModule({ activePatient, set }) {
                 </div>
               ) : (
                 <div style={{ padding:"10px 12px", background:"rgba(0,201,122,0.08)",
-                  borderRadius:9, fontSize:"0.72rem", color:"#00c97a", fontWeight:700, textAlign:"center" }}>
+                  borderRadius:9, fontSize:"0.82rem", color:"#00c97a", fontWeight:700, textAlign:"center" }}>
                   ✅ No significant postural findings detected for {capturedView} view
                 </div>
               )}
@@ -1502,7 +1502,7 @@ function PostureCameraModule({ activePatient, set }) {
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
             padding:"9px 13px", borderBottom:"1px solid rgba(127,90,240,0.2)",
             background:"rgba(127,90,240,0.04)" }}>
-            <div style={{ fontSize:"0.65rem", fontWeight:800, color:"#7f5af0" }}>
+            <div style={{ fontSize:"0.75rem", fontWeight:800, color:"#7f5af0" }}>
               📷 Uploaded Photo — {uploadView?.charAt(0).toUpperCase()+uploadView?.slice(1)} View
               {uploadBusy ? " — Analysing…" : uploadLm ? " — Pose Grid Applied ✓" : uploadError ? " — Detection Failed" : ""}
             </div>
@@ -1510,7 +1510,7 @@ function PostureCameraModule({ activePatient, set }) {
               {/* View switch for upload */}
               {["anterior","posterior","left","right"].map(v => (
                 <button key={v} onClick={() => setUploadView(v)} style={{
-                  padding:"2px 6px", borderRadius:5, fontSize:"0.55rem", fontWeight:700,
+                  padding:"2px 6px", borderRadius:5, fontSize:"0.75rem", fontWeight:700,
                   border:"none", cursor:"pointer",
                   background: uploadView===v ? "#7f5af0" : "#1a2d45",
                   color: uploadView===v ? "#fff" : "#6b8399"
@@ -1521,7 +1521,7 @@ function PostureCameraModule({ activePatient, set }) {
                 if(uploadObjRef.current){URL.revokeObjectURL(uploadObjRef.current);uploadObjRef.current=null;}
               }} style={{ padding:"4px 9px", background:"rgba(255,77,109,0.1)",
                 border:"1px solid rgba(255,77,109,0.25)", borderRadius:7,
-                color:"#ff4d6d", fontSize:"0.62rem", fontWeight:700, cursor:"pointer" }}>✕</button>
+                color:"#ff4d6d", fontSize:"0.82rem", fontWeight:700, cursor:"pointer" }}>✕</button>
             </div>
           </div>
 
@@ -1543,7 +1543,7 @@ function PostureCameraModule({ activePatient, set }) {
 
           {uploadError && !uploadBusy && (
             <div style={{ padding:"12px 14px", background:"rgba(255,77,109,0.08)", borderTop:"1px solid rgba(255,77,109,0.2)" }}>
-              <div style={{ fontSize:"0.72rem", color:"#ff4d6d", fontWeight:700 }}>⚠ {uploadError}</div>
+              <div style={{ fontSize:"0.82rem", color:"#ff4d6d", fontWeight:700 }}>⚠ {uploadError}</div>
             </div>
           )}
 
@@ -1564,7 +1564,7 @@ function PostureCameraModule({ activePatient, set }) {
                   <div style={{ fontSize:"0.78rem", fontWeight:800, color:"#7f5af0", marginBottom:3 }}>
                     {uploadAnal.scoreData?.category || "Assessment Complete"}
                   </div>
-                  <div style={{ fontSize:"0.63rem", color:"#7e6a9a" }}>
+                  <div style={{ fontSize:"0.73rem", color:"#7e6a9a" }}>
                     {uploadAnal.findings.filter(f=>f.severity==="high").length} high · {uploadAnal.findings.filter(f=>f.severity!=="high").length} moderate
                   </div>
                 </div>
@@ -1573,7 +1573,7 @@ function PostureCameraModule({ activePatient, set }) {
                 <div key={i} style={{ padding:"7px 10px", borderRadius:8, marginBottom:5,
                   background:f.severity==="high"?"rgba(255,77,109,0.08)":"rgba(255,179,0,0.07)",
                   borderLeft:`3px solid ${f.severity==="high"?"#ff4d6d":"#ffb300"}`,
-                  fontSize:"0.68rem", color:"#e2d9f3", lineHeight:1.5 }}>
+                  fontSize:"0.78rem", color:"#e2d9f3", lineHeight:1.5 }}>
                   <span style={{ fontWeight:700, color:f.severity==="high"?"#ff4d6d":"#ffb300", marginRight:5 }}>
                     {f.severity==="high"?"🔴":"🟡"} {f.title||f.label}
                   </span>
@@ -1584,7 +1584,7 @@ function PostureCameraModule({ activePatient, set }) {
               <div style={{ marginTop:8, display:"flex", gap:6, flexWrap:"wrap" }}>
                 {["anterior","posterior","left","right"].map(v => (
                   <button key={v} onClick={() => { setUploadView(v); if(uploadImg){ handleUploadFile({name:"rerun"}); } }} style={{
-                    padding:"4px 10px", borderRadius:7, fontSize:"0.62rem", fontWeight:700,
+                    padding:"4px 10px", borderRadius:7, fontSize:"0.82rem", fontWeight:700,
                     border:"none", cursor:"pointer",
                     background: uploadView===v ? "#7f5af0" : "#1a2d45",
                     color: uploadView===v ? "#fff" : "#6b8399"
@@ -1628,7 +1628,7 @@ function PostureCameraModule({ activePatient, set }) {
         <div style={{ background:"#0a0a14", border:"1px solid rgba(0,229,255,0.18)",
           borderRadius:12, overflow:"hidden", marginBottom:12 }}>
           <div style={{ padding:"8px 12px", borderBottom:"1px solid rgba(0,229,255,0.12)",
-            background:"rgba(0,229,255,0.03)", fontSize:"0.62rem", fontWeight:800, color:"#00e5ff" }}>
+            background:"rgba(0,229,255,0.03)", fontSize:"0.82rem", fontWeight:800, color:"#00e5ff" }}>
             📸 View Bank — {Object.values(viewBank).filter(Boolean).length}/4 Captured
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, background:"rgba(0,229,255,0.04)" }}>
@@ -1644,16 +1644,16 @@ function PostureCameraModule({ activePatient, set }) {
                       <img src={cap.img} alt={v} style={{ width:"100%", display:"block", maxHeight:140, objectFit:"cover" }}/>
                       <div style={{ position:"absolute", top:0, left:0, right:0, padding:"3px 6px",
                         background:"rgba(0,0,0,0.6)", display:"flex", justifyContent:"space-between" }}>
-                        <span style={{ fontSize:"0.58rem", fontWeight:800, color:"#00e5ff" }}>{icons[v]} {labels[v]}</span>
-                        {cap.scoreData?.score && <span style={{ fontSize:"0.62rem", fontWeight:900, color:col }}>{cap.scoreData.score}</span>}
+                        <span style={{ fontSize:"0.78rem", fontWeight:800, color:"#00e5ff" }}>{icons[v]} {labels[v]}</span>
+                        {cap.scoreData?.score && <span style={{ fontSize:"0.82rem", fontWeight:900, color:col }}>{cap.scoreData.score}</span>}
                       </div>
                       <div style={{ padding:"3px 6px", borderTop:"1px solid rgba(0,229,255,0.08)",
                         display:"flex", gap:4, flexWrap:"wrap" }}>
-                        <span style={{ fontSize:"0.52rem", padding:"1px 5px", borderRadius:4,
+                        <span style={{ fontSize:"0.82rem", padding:"1px 5px", borderRadius:4,
                           background:"rgba(255,77,109,0.15)", color:"#ff4d6d", fontWeight:700 }}>
                           🔴 {cap.findings.filter(f=>f.severity==="high").length}
                         </span>
-                        <span style={{ fontSize:"0.52rem", padding:"1px 5px", borderRadius:4,
+                        <span style={{ fontSize:"0.82rem", padding:"1px 5px", borderRadius:4,
                           background:"rgba(255,179,0,0.15)", color:"#ffb300", fontWeight:700 }}>
                           🟡 {cap.findings.filter(f=>f.severity!=="high").length}
                         </span>
@@ -1663,7 +1663,7 @@ function PostureCameraModule({ activePatient, set }) {
                     <div style={{ display:"flex", flexDirection:"column", alignItems:"center",
                       justifyContent:"center", height:80, gap:3, opacity:0.35 }}>
                       <span style={{ fontSize:"1.3rem" }}>{icons[v]}</span>
-                      <span style={{ fontSize:"0.58rem", color:"#6b8399" }}>{labels[v]}</span>
+                      <span style={{ fontSize:"0.78rem", color:"#6b8399" }}>{labels[v]}</span>
                     </div>
                   )}
                 </div>
@@ -1673,13 +1673,13 @@ function PostureCameraModule({ activePatient, set }) {
           <button onClick={() => setViewBank({anterior:null,posterior:null,left:null,right:null})} style={{
             width:"100%", padding:"8px", background:"rgba(255,77,109,0.06)",
             border:"none", borderTop:"1px solid rgba(255,77,109,0.12)",
-            color:"#ff4d6d", fontSize:"0.65rem", fontWeight:700, cursor:"pointer"
+            color:"#ff4d6d", fontSize:"0.75rem", fontWeight:700, cursor:"pointer"
           }}>✕ Clear All Views</button>
         </div>
       )}
 
       {/* Footer */}
-      <div style={{ marginTop:8, fontSize:"0.62rem", color:"#7e6a9a", padding:"7px 11px",
+      <div style={{ marginTop:8, fontSize:"0.82rem", color:"#7e6a9a", padding:"7px 11px",
         background:"#ffffff", borderRadius:8, lineHeight:1.5, border:"1px solid #d8cce8" }}>
         <strong style={{ color:"#1a1025" }}>Privacy:</strong> All processing runs locally in your browser. No video or photos are uploaded to any server.
       </div>
@@ -6112,18 +6112,18 @@ function FindingsDisplay({ findings, PC }) {
     <div style={{ marginTop: 4 }}>
       {/* Summary bar */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-        <div style={{ fontSize:"0.62rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"1px" }}>
+        <div style={{ fontSize:"0.82rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"1px" }}>
           Clinical Findings
         </div>
         <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           {confirmed.length > 0 && (
-            <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+            <span style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
               background: PC.green+"15", color: PC.green, border:`1px solid ${PC.green}33` }}>
               ✓ {confirmed.length} confirmed
             </span>
           )}
           {singleView.length > 0 && (
-            <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+            <span style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
               background: PC.muted+"15", color: PC.muted, border:`1px solid ${PC.border}` }}>
               ○ {singleView.length} single-view
             </span>
@@ -6147,7 +6147,7 @@ function FindingsDisplay({ findings, PC }) {
         <button onClick={() => setShowAll(s => !s)}
           style={{ width:"100%", padding:"9px", marginTop:6, borderRadius:9,
             border:`1px solid ${PC.border}`, background: PC.s2,
-            color: PC.muted, fontSize:"0.7rem", fontWeight:700, cursor:"pointer" }}>
+            color: PC.muted, fontSize:"0.8rem", fontWeight:700, cursor:"pointer" }}>
           {showAll
             ? `▲ Show primary findings only`
             : `▼ Show all ${rest.length} additional findings`}
@@ -6157,7 +6157,7 @@ function FindingsDisplay({ findings, PC }) {
       {/* Clinical note */}
       <div style={{ marginTop:10, padding:"8px 12px", borderRadius:8,
         background: PC.accent+"08", border:`1px solid ${PC.border}`,
-        fontSize:"0.62rem", color:PC.muted, lineHeight:1.5 }}>
+        fontSize:"0.82rem", color:PC.muted, lineHeight:1.5 }}>
         ✓ Confirmed = seen in ≥2 views · ○ Single-view = verify clinically ·
         ⚡ Low confidence = verify with goniometer
       </div>
@@ -6178,33 +6178,33 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
         <div style={{ width:8, height:8, borderRadius:"50%", background:col,
           marginTop:5, flexShrink:0 }}/>
         <div style={{ flex:1 }}>
-          <div style={{ fontSize:"0.72rem", fontWeight:700, color:PC.text, lineHeight:1.3 }}>
+          <div style={{ fontSize:"0.82rem", fontWeight:700, color:PC.text, lineHeight:1.3 }}>
             {f.text}
           </div>
-          <div style={{ fontSize:"0.6rem", color:PC.muted, marginTop:2 }}>
+          <div style={{ fontSize:"0.8rem", color:PC.muted, marginTop:2 }}>
             {f.region} · {f.icd}
           </div>
         </div>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3, flexShrink:0 }}>
           {/* Severity */}
-          <span style={{ fontSize:"0.6rem", color:col, fontWeight:700 }}>
+          <span style={{ fontSize:"0.8rem", color:col, fontWeight:700 }}>
             {f.severity?.toUpperCase()}
           </span>
           {/* Confidence badge */}
           {isConfirmed && (
-            <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
+            <span style={{ fontSize:"0.75rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
               background: PC.green+"20", color: PC.green, border:`1px solid ${PC.green}44` }}>
               ✓ CONFIRMED
             </span>
           )}
           {isLowConf && (
-            <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
+            <span style={{ fontSize:"0.75rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
               background: PC.yellow+"20", color: PC.yellow, border:`1px solid ${PC.yellow}44` }}>
               ⚡ VERIFY
             </span>
           )}
           {!isConfirmed && !isLowConf && (
-            <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
+            <span style={{ fontSize:"0.75rem", fontWeight:700, padding:"1px 5px", borderRadius:99,
               background: PC.muted+"15", color: PC.muted, border:`1px solid ${PC.border}` }}>
               ○ SINGLE VIEW
             </span>
@@ -6214,7 +6214,7 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
       </div>
       {open && (
         <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${col}20`,
-          fontSize:"0.68rem", color:PC.muted, lineHeight:1.6 }}>
+          fontSize:"0.78rem", color:PC.muted, lineHeight:1.6 }}>
           {f.detail && (
             <div style={{ marginBottom:6, fontStyle:"italic", color:PC.muted }}>{f.detail}</div>
           )}
@@ -6222,19 +6222,19 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
             <div><strong style={{ color:col }}>Treatment: </strong>{f.correction}</div>
           )}
           {f.norm && (
-            <div style={{ marginTop:5, fontSize:"0.6rem", fontStyle:"italic" }}>
+            <div style={{ marginTop:5, fontSize:"0.8rem", fontStyle:"italic" }}>
               Reference: {f.norm}
             </div>
           )}
           {isLowConf && (
             <div style={{ marginTop:6, padding:"4px 8px", borderRadius:6,
-              background: PC.yellow+"12", color: PC.yellow, fontSize:"0.6rem", fontWeight:600 }}>
+              background: PC.yellow+"12", color: PC.yellow, fontSize:"0.8rem", fontWeight:600 }}>
               ⚡ Landmark confidence may be affected by lighting or clothing.
               Verify with goniometry or clinical assessment.
             </div>
           )}
           {f.sourceViews && f.sourceViews.length > 0 && (
-            <div style={{ marginTop:5, fontSize:"0.6rem", color:PC.accent }}>
+            <div style={{ marginTop:5, fontSize:"0.8rem", color:PC.accent }}>
               Views: {f.sourceViews.join(" + ")}
             </div>
           )}
@@ -6259,46 +6259,46 @@ function FindingCard({f}){
       <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
         <div style={{width:8,height:8,borderRadius:"50%",background:col,marginTop:5,flexShrink:0}}/>
         <div style={{flex:1}}>
-          <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.text,lineHeight:1.3}}>{displayText}</div>
-          <div style={{fontSize:"0.58rem",color:PC.muted,marginTop:2}}>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.text,lineHeight:1.3}}>{displayText}</div>
+          <div style={{fontSize:"0.78rem",color:PC.muted,marginTop:2}}>
             {f.region} · Confidence: <span style={{color:confColor,fontWeight:700}}>{conf}% ({confLabel})</span>
           </div>
           {needsConfirmation&&<div style={{fontSize:"0.57rem",color:PC.yellow,fontWeight:600,marginTop:1}}>⚡ Clinical confirmation recommended (&lt;80% confidence)</div>}
         </div>
         <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2,flexShrink:0}}>
-          <div style={{fontSize:"0.65rem",color:col,fontWeight:700}}>{f.severity?.toUpperCase()}</div>
+          <div style={{fontSize:"0.75rem",color:col,fontWeight:700}}>{f.severity?.toUpperCase()}</div>
           <div style={{color:PC.muted,fontSize:"0.8rem"}}>{open?"▲":"▼"}</div>
         </div>
       </div>
       {open&&(
-        <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${col}20`,fontSize:"0.68rem",color:PC.muted,lineHeight:1.6}}>
+        <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${col}20`,fontSize:"0.78rem",color:PC.muted,lineHeight:1.6}}>
           {/* Layer 1 — Observation */}
           <div style={{marginBottom:7,padding:"6px 9px",background:`${PC.accent}08`,borderRadius:7,border:`1px solid ${PC.accent}18`}}>
-            <div style={{fontSize:"0.58rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>Layer 1 — Observable Alignment Finding</div>
+            <div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>Layer 1 — Observable Alignment Finding</div>
             <div style={{color:PC.text,fontWeight:600,fontSize:"0.67rem"}}>{displayText}</div>
-            {f.norm&&<div style={{marginTop:3,fontSize:"0.58rem",fontStyle:"italic"}}>Reference: {f.norm}</div>}
+            {f.norm&&<div style={{marginTop:3,fontSize:"0.78rem",fontStyle:"italic"}}>Reference: {f.norm}</div>}
           </div>
           {/* Layer 2 — Possible Contributors */}
           {(f.detail || f.correction) && (
             <div style={{marginBottom:7,padding:"6px 9px",background:"rgba(255,179,0,0.06)",borderRadius:7,border:"1px solid rgba(255,179,0,0.18)"}}>
-              <div style={{fontSize:"0.58rem",fontWeight:800,color:PC.yellow,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>Layer 2 — Possible Contributors (Not Diagnoses)</div>
+              <div style={{fontSize:"0.78rem",fontWeight:800,color:PC.yellow,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>Layer 2 — Possible Contributors (Not Diagnoses)</div>
               <div style={{color:PC.text,fontSize:"0.67rem"}}>{f.detail || f.correction}</div>
             </div>
           )}
           {/* Layer 3 — Recommended Confirmation Tests */}
           {objectiveTests.length>0&&(
             <div style={{padding:"6px 9px",background:"rgba(5,150,105,0.05)",borderRadius:7,border:"1px solid rgba(5,150,105,0.18)"}}>
-              <div style={{fontSize:"0.58rem",fontWeight:800,color:PC.green,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Layer 3 — Recommended Confirmation Tests</div>
+              <div style={{fontSize:"0.78rem",fontWeight:800,color:PC.green,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Layer 3 — Recommended Confirmation Tests</div>
               {objectiveTests.map((t,i)=>(
                 <div key={i} style={{display:"flex",gap:5,alignItems:"flex-start",marginBottom:2}}>
-                  <span style={{color:PC.green,fontSize:"0.65rem"}}>▸</span>
+                  <span style={{color:PC.green,fontSize:"0.75rem"}}>▸</span>
                   <span style={{color:PC.text,fontSize:"0.67rem"}}>{t}</span>
                 </div>
               ))}
             </div>
           )}
           {needsConfirmation&&(
-            <div style={{marginTop:5,padding:"3px 7px",borderRadius:5,background:`${PC.yellow}12`,color:PC.yellow,fontSize:"0.58rem",fontWeight:600}}>
+            <div style={{marginTop:5,padding:"3px 7px",borderRadius:5,background:`${PC.yellow}12`,color:PC.yellow,fontSize:"0.78rem",fontWeight:600}}>
               ⚡ Confidence {conf}% — clinical confirmation recommended before treatment decisions.
             </div>
           )}
@@ -6317,7 +6317,7 @@ function MetricRow({label,value,unit,normal,abnormal}){
   const col=isAbnormal?PC.red:isModerate?PC.yellow:PC.green;
   return(
     <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
-      <div style={{flex:1,fontSize:"0.68rem",color:PC.muted}}>{label}</div>
+      <div style={{flex:1,fontSize:"0.78rem",color:PC.muted}}>{label}</div>
       <div style={{fontSize:"0.75rem",fontWeight:800,color:col,minWidth:60,textAlign:"right"}}>{typeof value==="number"?value.toFixed(1):value}{unit}</div>
       <div style={{width:8,height:8,borderRadius:"50%",background:col,flexShrink:0}}/>
     </div>
@@ -6683,8 +6683,8 @@ function MuscleImbalanceCard({ findings, isWide }) {
         marginBottom:5
       }}>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
-          <span style={{fontSize:"0.65rem",fontWeight:800,color:c}}>{muscle}</span>
-          {hasHigh && <span style={{fontSize:"0.55rem",padding:"1px 5px",borderRadius:4,background:`${c}18`,color:c,fontWeight:700}}>HIGH</span>}
+          <span style={{fontSize:"0.75rem",fontWeight:800,color:c}}>{muscle}</span>
+          {hasHigh && <span style={{fontSize:"0.75rem",padding:"1px 5px",borderRadius:4,background:`${c}18`,color:c,fontWeight:700}}>HIGH</span>}
         </div>
         <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2,lineHeight:1.4}}>
           {regions.map(r=>r.region.replace(/◈\s*/,"")).join(" · ")}
@@ -6700,34 +6700,34 @@ function MuscleImbalanceCard({ findings, isWide }) {
         <span style={{fontSize:"1rem"}}>⚡</span>
         <div>
           <div style={{fontWeight:800,fontSize:"0.78rem",color:PC.text}}>Muscle Imbalance Table</div>
-          <div style={{fontSize:"0.6rem",color:PC.muted}}>Derived from findings — confirm clinically</div>
+          <div style={{fontSize:"0.8rem",color:PC.muted}}>Derived from findings — confirm clinically</div>
         </div>
       </div>
       {/* Two columns */}
       <div style={{display:"grid",gridTemplateColumns:isWide?"1fr 1fr":"1fr 1fr",gap:0}}>
         {/* Tight / Overactive */}
         <div style={{padding:"12px 12px",borderRight:`1px solid ${PC.border}`}}>
-          <div style={{fontSize:"0.62rem",fontWeight:800,color:col.tight,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
+          <div style={{fontSize:"0.82rem",fontWeight:800,color:col.tight,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
             <span>■</span> TIGHT / OVERACTIVE
           </div>
           {tight.length === 0
-            ? <div style={{fontSize:"0.65rem",color:PC.muted,fontStyle:"italic"}}>None identified</div>
+            ? <div style={{fontSize:"0.75rem",color:PC.muted,fontStyle:"italic"}}>None identified</div>
             : tight.map(([m,r]) => muscleChip(m, r, true))
           }
         </div>
         {/* Weak / Underactive */}
         <div style={{padding:"12px 12px"}}>
-          <div style={{fontSize:"0.62rem",fontWeight:800,color:col.weak,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
+          <div style={{fontSize:"0.82rem",fontWeight:800,color:col.weak,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
             <span>⚡</span> WEAK / UNDERACTIVE
           </div>
           {weak.length === 0
-            ? <div style={{fontSize:"0.65rem",color:PC.muted,fontStyle:"italic"}}>None identified</div>
+            ? <div style={{fontSize:"0.75rem",color:PC.muted,fontStyle:"italic"}}>None identified</div>
             : weak.map(([m,r]) => muscleChip(m, r, false))
           }
         </div>
       </div>
       {/* Legend */}
-      <div style={{padding:"8px 14px",background:PC.s2,borderTop:`1px solid ${PC.border}`,fontSize:"0.58rem",color:PC.muted}}>
+      <div style={{padding:"8px 14px",background:PC.s2,borderTop:`1px solid ${PC.border}`,fontSize:"0.78rem",color:PC.muted}}>
         ■ Tight = inhibit first (SMR/stretch)  ·  ⚡ Weak = activate after inhibition  ·  HIGH = high-severity finding source
       </div>
     </div>
@@ -6750,11 +6750,11 @@ function SpecialTestsCard({ findings, isWide }) {
           <span style={{fontSize:"1rem"}}>⚕</span>
           <div>
             <div style={{fontWeight:800,fontSize:"0.78rem",color:PC.text}}>Suggested Special Tests</div>
-            <div style={{fontSize:"0.6rem",color:PC.muted}}>{tests.length} tests indicated by findings</div>
+            <div style={{fontSize:"0.8rem",color:PC.muted}}>{tests.length} tests indicated by findings</div>
           </div>
         </div>
         {tests.length > (isWide ? 6 : 4) && (
-          <button onClick={()=>setOpenAll(o=>!o)} style={{fontSize:"0.62rem",fontWeight:700,color:PC.accent,background:"none",border:"none",cursor:"pointer"}}>
+          <button onClick={()=>setOpenAll(o=>!o)} style={{fontSize:"0.82rem",fontWeight:700,color:PC.accent,background:"none",border:"none",cursor:"pointer"}}>
             {openAll ? "▲ Less" : `▼ All ${tests.length}`}
           </button>
         )}
@@ -6768,10 +6768,10 @@ function SpecialTestsCard({ findings, isWide }) {
             borderRight: isWide && i%2===0 ? `1px solid ${PC.border}` : "none",
           }}>
             <div style={{display:"flex",alignItems:"flex-start",gap:7}}>
-              <div style={{width:20,height:20,borderRadius:6,background:`${PC.accent}15`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.62rem",fontWeight:800,color:PC.accent,flexShrink:0,marginTop:1}}>{i+1}</div>
+              <div style={{width:20,height:20,borderRadius:6,background:`${PC.accent}15`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.82rem",fontWeight:800,color:PC.accent,flexShrink:0,marginTop:1}}>{i+1}</div>
               <div style={{flex:1}}>
-                <div style={{fontSize:"0.7rem",fontWeight:700,color:PC.text,lineHeight:1.3}}>{t.name}</div>
-                <div style={{fontSize:"0.6rem",color:PC.muted,marginTop:2,lineHeight:1.4}}>{t.purpose}</div>
+                <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.text,lineHeight:1.3}}>{t.name}</div>
+                <div style={{fontSize:"0.8rem",color:PC.muted,marginTop:2,lineHeight:1.4}}>{t.purpose}</div>
                 <div style={{marginTop:4,display:"flex",flexWrap:"wrap",gap:3}}>
                   {t.regions.slice(0,2).map(r=>(
                     <span key={r} style={{fontSize:"0.54rem",padding:"1px 6px",borderRadius:4,background:`${PC.accent}10`,color:PC.accent,fontWeight:600}}>
@@ -6816,9 +6816,9 @@ function ExercisePlanTab({ findings, isWide }) {
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
         <div>
           <div style={{fontWeight:900,fontSize:isWide?"0.95rem":"0.85rem",color:PC.text}}>▶ Exercise Programme</div>
-          <div style={{fontSize:"0.62rem",color:PC.muted,marginTop:2}}>{totalCount} exercises in 3 phases · Based on {findings.length} findings</div>
+          <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:2}}>{totalCount} exercises in 3 phases · Based on {findings.length} findings</div>
         </div>
-        <div style={{padding:"4px 10px",borderRadius:8,background:`${PC.accent}12`,border:`1px solid ${PC.accent}25`,fontSize:"0.6rem",fontWeight:700,color:PC.accent}}>
+        <div style={{padding:"4px 10px",borderRadius:8,background:`${PC.accent}12`,border:`1px solid ${PC.accent}25`,fontSize:"0.8rem",fontWeight:700,color:PC.accent}}>
           10–15 min/day
         </div>
       </div>
@@ -6835,9 +6835,9 @@ function ExercisePlanTab({ findings, isWide }) {
               <span style={{fontSize:"1rem"}}>{meta.icon}</span>
               <div style={{flex:1}}>
                 <div style={{fontWeight:800,fontSize:"0.75rem",color:meta.colour}}>{meta.label}</div>
-                <div style={{fontSize:"0.58rem",color:PC.muted,marginTop:1}}>{meta.desc}</div>
+                <div style={{fontSize:"0.78rem",color:PC.muted,marginTop:1}}>{meta.desc}</div>
               </div>
-              <div style={{fontSize:"0.65rem",fontWeight:700,color:meta.colour,background:`${meta.colour}12`,padding:"3px 8px",borderRadius:6}}>
+              <div style={{fontSize:"0.75rem",fontWeight:700,color:meta.colour,background:`${meta.colour}12`,padding:"3px 8px",borderRadius:6}}>
                 {exs.length} ex
               </div>
             </div>
@@ -6868,7 +6868,7 @@ function ExercisePlanTab({ findings, isWide }) {
       })}
 
       {/* Footer disclaimer */}
-      <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.6rem",color:PC.muted,lineHeight:1.6}}>
+      <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.8rem",color:PC.muted,lineHeight:1.6}}>
         ℹ️ This programme is generated from postural analysis findings. Always confirm with clinical examination before prescribing. Adjust load and range to individual tolerance. Reassess in 4–6 weeks.
       </div>
     </div>
@@ -6895,12 +6895,12 @@ function ExerciseItem({ ex, idx, isWide, isLast, isRightCol, expanded, onToggle,
           background: catBg[cat],
           border:`1px solid ${catBorder[cat]}`,
           display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:"0.6rem",fontWeight:800,color:catColor[cat],flexShrink:0,marginTop:1
+          fontSize:"0.8rem",fontWeight:800,color:catColor[cat],flexShrink:0,marginTop:1
         }}>{idx+1}</div>
         <div style={{flex:1}}>
-          <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.text,lineHeight:1.3}}>{ex.name}</div>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.text,lineHeight:1.3}}>{ex.name}</div>
           <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3}}>
-            <span style={{fontSize:"0.62rem",fontWeight:700,color:catColor[cat],
+            <span style={{fontSize:"0.82rem",fontWeight:700,color:catColor[cat],
               background:catBg[cat],border:`1px solid ${catBorder[cat]}`,
               padding:"1px 7px",borderRadius:5}}>{ex.sets}</span>
             <span style={{fontSize:"0.57rem",color:PC.muted,
@@ -6913,7 +6913,7 @@ function ExerciseItem({ ex, idx, isWide, isLast, isRightCol, expanded, onToggle,
             </span>
           </div>
         </div>
-        <span style={{fontSize:"0.65rem",color:PC.muted,flexShrink:0,marginTop:2}}>{expanded?"▲":"▼"}</span>
+        <span style={{fontSize:"0.75rem",color:PC.muted,flexShrink:0,marginTop:2}}>{expanded?"▲":"▼"}</span>
       </div>
       {expanded && (
         <div style={{marginTop:9,paddingTop:9,borderTop:`1px solid ${catBorder[cat]}`,
@@ -6921,16 +6921,16 @@ function ExerciseItem({ ex, idx, isWide, isLast, isRightCol, expanded, onToggle,
           background:catBg[cat],borderRadius:6,padding:"8px 10px",marginLeft:30}}>
           {/* Dosage summary line */}
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:6}}>
-            <span style={{fontSize:"0.6rem",fontWeight:700,color:catColor[cat],
+            <span style={{fontSize:"0.8rem",fontWeight:700,color:catColor[cat],
               padding:"2px 8px",borderRadius:5,background:`${catBg[cat]}`,border:`1px solid ${catBorder[cat]}`}}>
               {ex.sets}
             </span>
-            <span style={{fontSize:"0.6rem",color:PC.muted,padding:"2px 7px",borderRadius:5,
+            <span style={{fontSize:"0.8rem",color:PC.muted,padding:"2px 7px",borderRadius:5,
               background:"rgba(124,58,237,0.07)",border:"1px solid rgba(124,58,237,0.15)"}}>
               Frequency: Daily · Reassess 4–6 wks
             </span>
           </div>
-          <span style={{fontSize:"0.6rem",fontWeight:700,color:catColor[cat]}}>Technique: </span>
+          <span style={{fontSize:"0.8rem",fontWeight:700,color:catColor[cat]}}>Technique: </span>
           {ex.cue}
           {ex.sourceRegion && (
             <div style={{marginTop:5,fontSize:"0.57rem",color:PC.muted,fontStyle:"italic"}}>
@@ -7933,24 +7933,24 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   <div style={{fontWeight:800,fontSize:"0.8rem",color:measurements._kendall.colour}}>
                     {measurements._kendall.type}
                   </div>
-                  <div style={{fontSize:"0.6rem",color:PC.muted,fontWeight:600}}>
+                  <div style={{fontSize:"0.8rem",color:PC.muted,fontWeight:600}}>
                     Kendall Postural Classification · {measurements._kendall.confidence}% confidence
                   </div>
                 </div>
               </div>
-              <div style={{fontSize:"0.68rem",color:PC.text,lineHeight:1.5,marginBottom:8}}>
+              <div style={{fontSize:"0.78rem",color:PC.text,lineHeight:1.5,marginBottom:8}}>
                 {measurements._kendall.description}
               </div>
               {measurements._kendall.tight.length>0&&(
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                   {measurements._kendall.tight.map((m,i)=>(
-                    <span key={i} style={{padding:"2px 8px",borderRadius:10,fontSize:"0.6rem",fontWeight:700,
+                    <span key={i} style={{padding:"2px 8px",borderRadius:10,fontSize:"0.8rem",fontWeight:700,
                       background:"rgba(220,38,38,0.08)",color:PC.red,border:"1px solid rgba(220,38,38,0.2)"}}>
                       ▲ {m}
                     </span>
                   ))}
                   {measurements._kendall.weak.map((m,i)=>(
-                    <span key={i} style={{padding:"2px 8px",borderRadius:10,fontSize:"0.6rem",fontWeight:700,
+                    <span key={i} style={{padding:"2px 8px",borderRadius:10,fontSize:"0.8rem",fontWeight:700,
                       background:"rgba(59,130,246,0.08)",color:"#3B82F6",border:"1px solid rgba(59,130,246,0.2)"}}>
                       ▼ {m}
                     </span>
@@ -7981,10 +7981,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   <div style={{marginTop:6,display:"inline-flex",alignItems:"center",gap:5,padding:"3px 9px",borderRadius:6,
                     background:measurements.cervicalLoadKg>18?"rgba(220,38,38,0.1)":measurements.cervicalLoadKg>12?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
                     border:`1px solid ${measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green}40`}}>
-                    <span style={{fontSize:"0.65rem",fontWeight:700,color:measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green}}>
+                    <span style={{fontSize:"0.75rem",fontWeight:700,color:measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green}}>
                       Cervical load ~{measurements.cervicalLoadKg.toFixed(1)}kg
                     </span>
-                    <span style={{fontSize:"0.58rem",color:PC.muted}}>(neutral 4.5kg)</span>
+                    <span style={{fontSize:"0.78rem",color:PC.muted}}>(neutral 4.5kg)</span>
                   </div>
                 )}
                 {/* Real cm measurements row */}
@@ -7992,7 +7992,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   <div style={{marginTop:8,display:"flex",flexWrap:"wrap",gap:5}}>
                     {/* CVA — most important single measure; always first if present */}
                     {measurements.cvaAngle!=null&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.62rem",fontWeight:700,
+                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
                         background:measurements.cvaAngle<49?"rgba(220,38,38,0.1)":measurements.cvaAngle<55?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
                         color:measurements.cvaAngle<49?PC.red:measurements.cvaAngle<55?PC.yellow:PC.green,
                         border:`1px solid ${measurements.cvaAngle<49?PC.red:measurements.cvaAngle<55?PC.yellow:PC.green}40`}}>
@@ -8000,7 +8000,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                       </span>
                     )}
                     {measurements.fhpCm!=null&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.62rem",fontWeight:700,
+                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
                         background:measurements.fhpCm>3.5?"rgba(220,38,38,0.1)":measurements.fhpCm>2?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
                         color:measurements.fhpCm>3.5?PC.red:measurements.fhpCm>2?PC.yellow:PC.green,
                         border:`1px solid ${measurements.fhpCm>3.5?PC.red:measurements.fhpCm>2?PC.yellow:PC.green}40`}}>
@@ -8008,7 +8008,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                       </span>
                     )}
                     {measurements.shoulderDiffCm!=null&&measurements.shoulderDiffCm>0.3&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.62rem",fontWeight:700,
+                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
                         background:measurements.shoulderDiffCm>1.5?"rgba(220,38,38,0.1)":"rgba(180,83,9,0.1)",
                         color:measurements.shoulderDiffCm>1.5?PC.red:PC.yellow,
                         border:`1px solid ${measurements.shoulderDiffCm>1.5?PC.red:PC.yellow}40`}}>
@@ -8016,7 +8016,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                       </span>
                     )}
                     {measurements.pelvisDiffCm!=null&&measurements.pelvisDiffCm>0.3&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.62rem",fontWeight:700,
+                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
                         background:measurements.pelvisDiffCm>1.5?"rgba(220,38,38,0.1)":"rgba(180,83,9,0.1)",
                         color:measurements.pelvisDiffCm>1.5?PC.red:PC.yellow,
                         border:`1px solid ${measurements.pelvisDiffCm>1.5?PC.red:PC.yellow}40`}}>
@@ -8024,7 +8024,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                       </span>
                     )}
                     {measurements.trunkShiftCm!=null&&measurements.trunkShiftCm>0.5&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.62rem",fontWeight:700,
+                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
                         background:measurements.trunkShiftCm>5?"rgba(156,163,175,0.15)":"rgba(180,83,9,0.1)",
                         color:measurements.trunkShiftCm>5?PC.muted:PC.yellow,
                         border:`1px solid ${measurements.trunkShiftCm>5?PC.muted:PC.yellow}40`}}>
@@ -8034,7 +8034,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   </div>
                 )}
                 {!measurements?._calibrated&&(
-                  <div style={{marginTop:6,fontSize:"0.58rem",color:PC.muted,fontStyle:"italic"}}>
+                  <div style={{marginTop:6,fontSize:"0.78rem",color:PC.muted,fontStyle:"italic"}}>
                     Enter patient height in Metrics tab for real cm measurements
                   </div>
                 )}
@@ -8045,8 +8045,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                       const col=val>=74?PC.green:val>=55?PC.yellow:PC.red;
                       return(
                         <div key={region} style={{display:"flex",alignItems:"center",gap:5,padding:"3px 9px",borderRadius:20,background:`${col}12`,border:`1px solid ${col}30`}}>
-                          <span style={{fontSize:"0.62rem",color:PC.muted,textTransform:"capitalize"}}>{region}</span>
-                          <span style={{fontSize:"0.68rem",fontWeight:800,color:col}}>{Math.round(val)}</span>
+                          <span style={{fontSize:"0.82rem",color:PC.muted,textTransform:"capitalize"}}>{region}</span>
+                          <span style={{fontSize:"0.78rem",fontWeight:800,color:col}}>{Math.round(val)}</span>
                         </div>
                       );
                     })}
@@ -8111,7 +8111,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   💾 Save to {activePatient.name} — {{anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"}[view]||view} View
                 </button>
               ):(
-                <div style={{fontSize:"0.72rem",color:"#92400E",fontWeight:600,textAlign:"center"}}>
+                <div style={{fontSize:"0.82rem",color:"#92400E",fontWeight:600,textAlign:"center"}}>
                   ⚠ Load a patient first to save this analysis
                 </div>
               )}
@@ -8137,7 +8137,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   <span style={{fontSize:"0.95rem"}}>◎</span>
                   <div>
                     <div style={{fontSize:isWide?"0.8rem":"0.72rem",fontWeight:900,color:PC.accent}}>Top 3 — Treat Now</div>
-                    <div style={{fontSize:"0.58rem",color:PC.muted,marginTop:1}}>Highest clinical priority · Address in this order</div>
+                    <div style={{fontSize:"0.78rem",color:PC.muted,marginTop:1}}>Highest clinical priority · Address in this order</div>
                   </div>
                 </div>
                 {top3.map((f,i)=>{
@@ -8150,22 +8150,22 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                       <div style={{width:22,height:22,borderRadius:"50%",
                         background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,
                         display:"flex",alignItems:"center",justifyContent:"center",
-                        fontSize:"0.65rem",fontWeight:900,color:"#fff",flexShrink:0}}>
+                        fontSize:"0.75rem",fontWeight:900,color:"#fff",flexShrink:0}}>
                         {i+1}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
-                          <span style={{fontSize:"0.6rem",fontWeight:700,color:col,
+                          <span style={{fontSize:"0.8rem",fontWeight:700,color:col,
                             padding:"1px 6px",borderRadius:4,background:`${col}15`,
                             border:`1px solid ${col}25`,flexShrink:0}}>
                             {f.severity?.toUpperCase()}{f.confirmed?" ✓":""}
                           </span>
-                          <span style={{fontSize:"0.65rem",fontWeight:700,color:PC.text,
+                          <span style={{fontSize:"0.75rem",fontWeight:700,color:PC.text,
                             whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                             {f.region}
                           </span>
                         </div>
-                        <div style={{fontSize:"0.63rem",color:PC.muted,lineHeight:1.4}}>
+                        <div style={{fontSize:"0.73rem",color:PC.muted,lineHeight:1.4}}>
                           {keyAction}{keyAction&&!keyAction.endsWith(".")?".":""}
                         </div>
                       </div>
@@ -8186,7 +8186,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               {highFindings.length>0&&(
                 <div style={{gridColumn:"1/-1",marginBottom:4}}>
-                  <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>⚠ High Priority</div>
+                  <div style={{fontSize:"0.75rem",fontWeight:700,color:PC.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>⚠ High Priority</div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                     {highFindings.map((f,i)=><FindingCard key={i} f={f}/>)}
                   </div>
@@ -8194,7 +8194,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               )}
               {otherFindings.length>0&&(
                 <div style={{gridColumn:"1/-1"}}>
-                  <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Other Findings</div>
+                  <div style={{fontSize:"0.75rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Other Findings</div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                     {otherFindings.map((f,i)=><FindingCard key={i} f={f}/>)}
                   </div>
@@ -8205,13 +8205,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             <>
               {highFindings.length>0&&(
                 <div style={{marginBottom:10}}>
-                  <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>⚠ High Priority</div>
+                  <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>⚠ High Priority</div>
                   {highFindings.map((f,i)=><FindingCard key={i} f={f}/>)}
                 </div>
               )}
               {otherFindings.length>0&&(
                 <div>
-                  <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>Other Findings</div>
+                  <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>Other Findings</div>
                   {otherFindings.map((f,i)=><FindingCard key={i} f={f}/>)}
                 </div>
               )}
@@ -8221,10 +8221,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           {/* Clinical reasoning cards — inline on findings tab when there are findings */}
           {findings.length > 0 && (
             <div style={{marginTop:18}}>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Clinical Reasoning</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Clinical Reasoning</div>
               <MuscleImbalanceCard findings={findings} isWide={isWide}/>
               <SpecialTestsCard findings={findings} isWide={isWide}/>
-              <div style={{padding:"8px 13px",borderRadius:10,background:`${PC.accent}08`,border:`1px solid ${PC.accent}20`,fontSize:"0.62rem",color:PC.accent,fontWeight:600,cursor:"pointer",textAlign:"center",marginTop:2}}
+              <div style={{padding:"8px 13px",borderRadius:10,background:`${PC.accent}08`,border:`1px solid ${PC.accent}20`,fontSize:"0.82rem",color:PC.accent,fontWeight:600,cursor:"pointer",textAlign:"center",marginTop:2}}
                 onClick={()=>setTab("plan")}>
                 ▶ View Full Exercise Programme →
               </div>
@@ -8241,7 +8241,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           {findings.length > 0 ? (
             <>
               <MuscleImbalanceCard findings={findings} isWide={isWide}/>
-              <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.6rem",color:PC.muted,lineHeight:1.6}}>
+              <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.8rem",color:PC.muted,lineHeight:1.6}}>
                 ℹ️ Possible muscle contribution patterns listed are derived from posture observations using Janda's model as a guide only. These are possible contributors — NOT diagnoses. Always confirm with manual muscle testing, length assessment, and clinical examination before treating.
               </div>
             </>
@@ -8264,7 +8264,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           {findings.length > 0 ? (
             <>
               <SpecialTestsCard findings={findings} isWide={isWide}/>
-              <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.6rem",color:PC.muted,lineHeight:1.6}}>
+              <div style={{padding:"10px 14px",borderRadius:10,background:PC.s2,border:`1px solid ${PC.border}`,fontSize:"0.8rem",color:PC.muted,lineHeight:1.6}}>
                 ℹ️ Tests are suggested based on postural findings. Clinical judgement and contraindication screening required before performing any provocative test. Use in conjunction with patient history and subjective assessment.
               </div>
             </>
@@ -8283,7 +8283,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             // Wide: two-column metric grid
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 32px"}}>
               <div>
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Frontal Plane</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Frontal Plane</div>
                 <MetricRow label="Shoulder Tilt" value={measurements.shoulderAngle} unit="°" normal={3} abnormal={7}/>
                 <MetricRow label="Pelvic Obliquity" value={measurements.pelvisAngle} unit="°" normal={3} abnormal={7}/>
                 <MetricRow label="Head Tilt" value={measurements.headTiltAngle} unit="°" normal={2} abnormal={5}/>
@@ -8304,12 +8304,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 <MetricRow label="Carrying Angle R" value={measurements.carryingAngleR} unit="°" normal={15} abnormal={20}/>
               </div>
               <div>
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Sagittal Plane</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Sagittal Plane</div>
                 {/* CVA — most important sagittal metric, shown prominently */}
                 <div style={{marginBottom:8,padding:"8px 10px",borderRadius:8,
                   background:measurements.cvaAngle!=null&&measurements.cvaAngle<49?"rgba(220,38,38,0.07)":measurements.cvaAngle!=null&&measurements.cvaAngle<55?"rgba(180,83,9,0.07)":"rgba(5,150,105,0.07)",
                   border:`1px solid ${measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}25`}}>
-                  <div style={{fontSize:"0.58rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>CVA — Primary FHP Marker</div>
+                  <div style={{fontSize:"0.78rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>CVA — Primary FHP Marker</div>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
                     <span style={{fontSize:"0.67rem",color:PC.text}}>Craniovertebral Angle</span>
                     <span style={{fontSize:"0.82rem",fontWeight:900,color:measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}}>
@@ -8320,7 +8320,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 </div>
                 {measurements.cervicalLoadKg!=null&&(
                   <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
-                    <div style={{flex:1,fontSize:"0.68rem",color:PC.muted}}>Cervical Load <span style={{fontSize:"0.56rem"}}>(estimated cervical load proxy)</span></div>
+                    <div style={{flex:1,fontSize:"0.78rem",color:PC.muted}}>Cervical Load <span style={{fontSize:"0.56rem"}}>(estimated cervical load proxy)</span></div>
                     <div style={{fontSize:"0.75rem",fontWeight:800,color:measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green}}>{measurements.cervicalLoadKg.toFixed(1)}kg</div>
                   </div>
                 )}
@@ -8329,8 +8329,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 {/* Lumbar lordosis: paired with kyphosis — show together */}
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:"0.68rem",color:PC.muted}}>Lumbar Lordosis (proxy)</div>
-                    <div style={{fontSize:"0.55rem",color:PC.muted,marginTop:1}}>Normal 20–40° · Pairs with thoracic kyphosis — assess together</div>
+                    <div style={{fontSize:"0.78rem",color:PC.muted}}>Lumbar Lordosis (proxy)</div>
+                    <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:1}}>Normal 20–40° · Pairs with thoracic kyphosis — assess together</div>
                   </div>
                   <div style={{fontSize:"0.75rem",fontWeight:800,
                     color:measurements.lumbarProxy==null?"rgba(156,163,175,0.6)":Math.abs(measurements.lumbarProxy)>10?PC.red:Math.abs(measurements.lumbarProxy)>5?PC.yellow:PC.green}}>
@@ -8340,7 +8340,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 <MetricRow label="Hip Extension Proxy" value={measurements.hipExtensionProxy} unit="%" normal={5} abnormal={10}/>
                 <MetricRow label="L Knee Deviation" value={measurements.leftKneeDev} unit="°" normal={5} abnormal={12}/>
                 <MetricRow label="R Knee Deviation" value={measurements.rightKneeDev} unit="°" normal={5} abnormal={12}/>
-                <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Global & Symmetry</div>
+                <div style={{fontSize:"0.75rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Global & Symmetry</div>
                 <MetricRow label="Shoulder/Acromion Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
                 <MetricRow label="C7 Plumb Deviation" value={measurements.c7PlumbDev} unit="%" normal={3} abnormal={6}/>
                 <MetricRow label="COG Deviation" value={measurements.cogDeviation} unit="%" normal={4} abnormal={8}/>
@@ -8356,7 +8356,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           ):(
             // Mobile: stacked
             <>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Frontal Plane</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Frontal Plane</div>
               <MetricRow label="Shoulder Tilt" value={measurements.shoulderAngle} unit="°" normal={3} abnormal={7}/>
               <MetricRow label="Pelvic Obliquity" value={measurements.pelvisAngle} unit="°" normal={3} abnormal={7}/>
               <MetricRow label="Head Tilt" value={measurements.headTiltAngle} unit="°" normal={2} abnormal={5}/>
@@ -8368,23 +8368,23 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               <MetricRow label="R Knee Frontal" value={measurements.rightKneeFrontal} unit="°" normal={5} abnormal={10}/>
               <MetricRow label="Weight-Bearing Shift" value={measurements.weightBearingShift} unit="%" normal={4} abnormal={8}/>
               <MetricRow label="LLD Proxy" value={measurements.lldProxy} unit="mm" normal={5} abnormal={10}/>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Sagittal Plane</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Sagittal Plane</div>
               {/* CVA highlighted card on mobile too */}
               <div style={{marginBottom:8,padding:"8px 10px",borderRadius:8,
                 background:measurements.cvaAngle!=null&&measurements.cvaAngle<49?"rgba(220,38,38,0.07)":measurements.cvaAngle!=null&&measurements.cvaAngle<55?"rgba(180,83,9,0.07)":"rgba(5,150,105,0.07)",
                 border:`1px solid ${measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}25`}}>
                 <div style={{fontSize:"0.56rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>CVA — Primary FHP Marker</div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-                  <span style={{fontSize:"0.65rem",color:PC.text}}>Craniovertebral Angle</span>
+                  <span style={{fontSize:"0.75rem",color:PC.text}}>Craniovertebral Angle</span>
                   <span style={{fontSize:"0.8rem",fontWeight:900,color:measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}}>
                     {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
                   </span>
                 </div>
-                <div style={{fontSize:"0.55rem",color:PC.muted,marginTop:2}}>Normal &gt;55° · &lt;49° = High load</div>
+                <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>Normal &gt;55° · &lt;49° = High load</div>
               </div>
               {measurements.cervicalLoadKg!=null&&(
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
-                  <div style={{flex:1,fontSize:"0.68rem",color:PC.muted}}>Cervical Load Est. <span style={{fontSize:"0.56rem"}}>(estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula))</span></div>
+                  <div style={{flex:1,fontSize:"0.78rem",color:PC.muted}}>Cervical Load Est. <span style={{fontSize:"0.56rem"}}>(estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula))</span></div>
                   <div style={{fontSize:"0.75rem",fontWeight:800,color:measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green,minWidth:60,textAlign:"right"}}>{measurements.cervicalLoadKg.toFixed(1)}kg</div>
                 </div>
               )}
@@ -8393,7 +8393,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               {/* Lumbar lordosis paired with kyphosis */}
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:"0.68rem",color:PC.muted}}>Lumbar Lordosis (proxy)</div>
+                  <div style={{fontSize:"0.78rem",color:PC.muted}}>Lumbar Lordosis (proxy)</div>
                   <div style={{fontSize:"0.54rem",color:PC.muted,marginTop:1}}>Normal 20–40° · Pairs with kyphosis</div>
                 </div>
                 <div style={{fontSize:"0.75rem",fontWeight:800,minWidth:60,textAlign:"right",
@@ -8404,7 +8404,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               <MetricRow label="Hip Extension Proxy" value={measurements.hipExtensionProxy} unit="%" normal={5} abnormal={10}/>
               <MetricRow label="L Knee Deviation" value={measurements.leftKneeDev} unit="°" normal={5} abnormal={12}/>
               <MetricRow label="R Knee Deviation" value={measurements.rightKneeDev} unit="°" normal={5} abnormal={12}/>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>New Measurements</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>New Measurements</div>
               <MetricRow label="Neck Lateral Angle" value={measurements.neckLateralAngle} unit="°" normal={4} abnormal={8}/>
               <MetricRow label="Waist Triangle Asymm." value={measurements.waistTriangleAsymmetry} unit="%" normal={3} abnormal={6}/>
               <MetricRow label="Ankle LLD" value={measurements.ankleLLDmm} unit="mm" normal={5} abnormal={10}/>
@@ -8412,7 +8412,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               <MetricRow label="Tibial Alignment R (Est.)" value={measurements.tibialVarumR} unit="°" normal={5} abnormal={10}/>
               <MetricRow label="Carrying Angle L" value={measurements.carryingAngleL} unit="°" normal={15} abnormal={20}/>
               <MetricRow label="Carrying Angle R" value={measurements.carryingAngleR} unit="°" normal={15} abnormal={20}/>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Bilateral Symmetry &amp; Global</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Bilateral Symmetry &amp; Global</div>
               <MetricRow label="Shoulder/Acromion Asymmetry" value={measurements.scapularAsymm} unit="%" normal={2.5} abnormal={5}/>
               <MetricRow label="C7 Plumb Deviation" value={measurements.c7PlumbDev} unit="%" normal={3} abnormal={6}/>
               <MetricRow label="COG Deviation" value={measurements.cogDeviation} unit="%" normal={4} abnormal={8}/>
@@ -8421,7 +8421,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               <MetricRow label="R Foot Angle" value={measurements.rightFootAngle} unit="°" normal={10} abnormal={20}/>
               <MetricRow label="L Ankle Dorsiflexion" value={measurements.leftAnkleAngle} unit="°" normal={100} abnormal={85}/>
               <MetricRow label="R Ankle Dorsiflexion" value={measurements.rightAnkleAngle} unit="°" normal={100} abnormal={85}/>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:10}}>Syndrome Indices</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:10}}>Syndrome Indices</div>
               <MetricRow label="UCS Index" value={measurements.ucsIndex} unit="" normal={0.6} abnormal={1.0}/>
               <MetricRow label="LCS Index" value={measurements.lcsIndex} unit="" normal={0.5} abnormal={1.0}/>
             </>
@@ -8430,10 +8430,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           {/* PLI — both layouts */}
           {measurements.posturalLoadIndex!=null&&(
             <>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Postural Load Index</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Postural Load Index</div>
               <div style={{padding:"12px 14px",borderRadius:12,border:`1px solid ${measurements.posturalLoadIndex>65?PC.red:measurements.posturalLoadIndex>35?PC.yellow:PC.green}30`,background:`${measurements.posturalLoadIndex>65?PC.red:measurements.posturalLoadIndex>35?PC.yellow:PC.green}08`,marginBottom:10}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
-                  <span style={{fontSize:"0.72rem",color:PC.muted}}>PLI (0 = ideal, 100 = max load)</span>
+                  <span style={{fontSize:"0.82rem",color:PC.muted}}>PLI (0 = ideal, 100 = max load)</span>
                   <span style={{fontSize:"1rem",fontWeight:900,color:measurements.posturalLoadIndex>65?PC.red:measurements.posturalLoadIndex>35?PC.yellow:PC.green}}>{measurements.posturalLoadIndex}/100</span>
                 </div>
                 <div style={{height:6,background:PC.s2,borderRadius:3,overflow:"hidden"}}>
@@ -8446,16 +8446,16 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           {/* Regional sub-scores */}
           {scoreData?.subScores&&!isWide&&(
             <>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Regional Sub-scores</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Regional Sub-scores</div>
               {Object.entries(scoreData.subScores).map(([region,val])=>{
                 const col=val>=74?PC.green:val>=55?PC.yellow:PC.red;
                 return(
                   <div key={region} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${PC.border}`}}>
-                    <div style={{flex:1,fontSize:"0.68rem",color:PC.muted,textTransform:"capitalize"}}>{region}</div>
+                    <div style={{flex:1,fontSize:"0.78rem",color:PC.muted,textTransform:"capitalize"}}>{region}</div>
                     <div style={{width:60,height:4,background:PC.s2,borderRadius:2,overflow:"hidden"}}>
                       <div style={{width:`${val}%`,height:"100%",background:col,borderRadius:2}}/>
                     </div>
-                    <div style={{fontSize:"0.72rem",fontWeight:800,color:col,minWidth:32,textAlign:"right"}}>{Math.round(val)}</div>
+                    <div style={{fontSize:"0.82rem",fontWeight:800,color:col,minWidth:32,textAlign:"right"}}>{Math.round(val)}</div>
                   </div>
                 );
               })}
@@ -8463,9 +8463,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           )}
 
           {/* Calibration */}
-          <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Calibration — Real Measurements</div>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Calibration — Real Measurements</div>
           <div style={{padding:"10px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface,marginBottom:8}}>
-            <div style={{fontSize:"0.7rem",color:PC.muted,marginBottom:8}}>Patient height — used to convert % measurements to real cm</div>
+            <div style={{fontSize:"0.8rem",color:PC.muted,marginBottom:8}}>Patient height — used to convert % measurements to real cm</div>
             <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
               <input type="number" min={100} max={220} value={patientHeightCm}
                 onChange={e=>setPatientHeightCm(Number(e.target.value))}
@@ -8474,7 +8474,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             </div>
             {measurements?._calibrated?(
               <div>
-                <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.green,marginBottom:6}}>✓ Calibrated — showing real measurements</div>
+                <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.green,marginBottom:6}}>✓ Calibrated — showing real measurements</div>
                 {[
                   ["Forward Head Posture", measurements.fhpCm, "cm", 2, 3.5, "Normal: <1.5cm"],
                   ["Shoulder Height Diff", measurements.shoulderDiffCm, "cm", 0.8, 1.8, "Normal: <0.5cm"],
@@ -8488,8 +8488,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   return(
                     <div key={label} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${PC.border}`}}>
                       <div style={{flex:1}}>
-                        <div style={{fontSize:"0.68rem",color:PC.muted}}>{label}</div>
-                        <div style={{fontSize:"0.55rem",color:PC.muted,opacity:0.7}}>{hint}</div>
+                        <div style={{fontSize:"0.78rem",color:PC.muted}}>{label}</div>
+                        <div style={{fontSize:"0.75rem",color:PC.muted,opacity:0.7}}>{hint}</div>
                       </div>
                       <div style={{fontSize:"0.82rem",fontWeight:800,color:col}}>{val.toFixed(1)}{unit}</div>
                       <div style={{width:8,height:8,borderRadius:"50%",background:col,flexShrink:0}}/>
@@ -8498,14 +8498,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 })}
               </div>
             ):(
-              <div style={{fontSize:"0.65rem",color:PC.muted,fontStyle:"italic"}}>
+              <div style={{fontSize:"0.75rem",color:PC.muted,fontStyle:"italic"}}>
                 Upload a photo or start camera to compute calibration from detected landmarks.
               </div>
             )}
           </div>
           {reliability?.icc!=null&&(
             <div style={{padding:"8px 0",borderBottom:`1px solid ${PC.border}`,display:"flex",justifyContent:"space-between"}}>
-              <span style={{fontSize:"0.7rem",color:PC.muted}}>ICC estimate (test-retest reliability)</span>
+              <span style={{fontSize:"0.8rem",color:PC.muted}}>ICC estimate (test-retest reliability)</span>
               <span style={{fontSize:"0.75rem",fontWeight:800,color:reliability.icc>0.75?PC.green:reliability.icc>0.5?PC.yellow:PC.red}}>{reliability.icc}</span>
             </div>
           )}
@@ -8517,17 +8517,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         <div style={{padding: isWide?"20px 24px":"14px 16px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <div style={{fontWeight:700,fontSize: isWide?"0.95rem":"0.8rem",color:PC.text}}>Session History</div>
-            {sessions.length>0&&<button onClick={clearHistory} style={{fontSize:"0.68rem",color:PC.red,background:"none",border:"none",cursor:"pointer"}}>Clear all</button>}
+            {sessions.length>0&&<button onClick={clearHistory} style={{fontSize:"0.78rem",color:PC.red,background:"none",border:"none",cursor:"pointer"}}>Clear all</button>}
           </div>
           {sessions.length===0&&<div style={{textAlign:"center",color:PC.muted,fontSize:"0.82rem",padding:"30px"}}>No sessions yet. Capture or analyse a photo to start tracking.</div>}
           {sessions.length>=2&&(
             <div style={{padding:"12px 14px",borderRadius:12,border:`1px solid ${PC.border}`,marginBottom:14,background:PC.surface}}>
-              <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>Score Trend</div>
+              <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>Score Trend</div>
               <div style={{display:"flex",alignItems:"center",gap:14}}>
                 <PostureSparkline sessions={sessions} colour={PC.accent}/>
                 <div>
-                  <div style={{fontSize:"0.82rem",fontWeight:900,color:PC.accent}}>{sessions[sessions.length-1].score} <span style={{fontSize:"0.65rem",fontWeight:400,color:PC.muted}}>latest</span></div>
-                  <div style={{fontSize:"0.65rem",color:sessions[sessions.length-1].score>=sessions[sessions.length-2].score?PC.green:PC.red}}>
+                  <div style={{fontSize:"0.82rem",fontWeight:900,color:PC.accent}}>{sessions[sessions.length-1].score} <span style={{fontSize:"0.75rem",fontWeight:400,color:PC.muted}}>latest</span></div>
+                  <div style={{fontSize:"0.75rem",color:sessions[sessions.length-1].score>=sessions[sessions.length-2].score?PC.green:PC.red}}>
                     {sessions[sessions.length-1].score>=sessions[sessions.length-2].score?"▲":"▼"} {Math.abs(sessions[sessions.length-1].score-sessions[sessions.length-2].score)} vs prev
                   </div>
                 </div>
@@ -8539,9 +8539,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               <div key={i} style={{padding:"11px 14px",borderRadius:11,border:`1px solid ${PC.border}`,marginBottom: isWide?0:8,background:PC.surface}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div style={{fontWeight:700,fontSize:"0.75rem",color:PC.text}}>{VIEWS[s.view]?.label||s.view} · Score {s.score}</div>
-                  <div style={{fontSize:"0.62rem",color:PC.muted}}>{new Date(s.time).toLocaleTimeString()}</div>
+                  <div style={{fontSize:"0.82rem",color:PC.muted}}>{new Date(s.time).toLocaleTimeString()}</div>
                 </div>
-                <div style={{fontSize:"0.68rem",color:PC.muted,marginTop:3}}>{s.band} · {s.findings} finding{s.findings!==1?"s":""}</div>
+                <div style={{fontSize:"0.78rem",color:PC.muted,marginTop:3}}>{s.band} · {s.findings} finding{s.findings!==1?"s":""}</div>
               </div>
             ))}
           </div>
@@ -8577,7 +8577,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             color:assessMode===m?PC.accent:PC.muted,
             fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer",textAlign:"center"}}>
           <div>{label}</div>
-          <div style={{fontSize:"0.55rem",fontWeight:400,marginTop:2,opacity:0.75}}>{sub}</div>
+          <div style={{fontSize:"0.75rem",fontWeight:400,marginTop:2,opacity:0.75}}>{sub}</div>
         </button>
       ))}
     </div>
@@ -8586,9 +8586,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   // Multi-view progress strip (shown below view selector in multi mode)
   const mvCaptureStrip = assessMode==="multi" && (
     <div style={{padding:isWide?"12px 20px":"10px 16px",background:PC.s2,borderBottom:`1px solid ${PC.border}`}}>
-      <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span>☰ Multi-View Progress ({mvCapturedCount}/4)</span>
-        {mvCapturedCount>0&&<button onClick={handleClearMv} style={{fontSize:"0.58rem",color:PC.red,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>Reset all</button>}
+        {mvCapturedCount>0&&<button onClick={handleClearMv} style={{fontSize:"0.78rem",color:PC.red,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>Reset all</button>}
       </div>
       {/* Per-view dots */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:10}}>
@@ -8599,7 +8599,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               border:`1px solid ${done?PC.green:isAct?meta.colour:PC.border}`,
               background:done?`${PC.green}12`:isAct?`${meta.colour}12`:"transparent",cursor:"pointer",textAlign:"center"}}>
               <div style={{fontSize:"0.9rem"}}>{done?"✅":meta.icon}</div>
-              <div style={{fontSize:"0.55rem",fontWeight:700,color:done?PC.green:isAct?meta.colour:PC.muted,marginTop:2}}>{meta.short}</div>
+              <div style={{fontSize:"0.75rem",fontWeight:700,color:done?PC.green:isAct?meta.colour:PC.muted,marginTop:2}}>{meta.short}</div>
             </button>
           );
         })}
@@ -8612,10 +8612,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           <div key={label} style={{flex:1,padding:"5px 8px",borderRadius:7,
             background:has?`${PC.green}10`:`${PC.border}40`,border:`1px solid ${has?PC.green:PC.border}`,
             display:"flex",alignItems:"center",gap:5}}>
-            <span style={{fontSize:"0.65rem"}}>{has?"✓":"○"}</span>
+            <span style={{fontSize:"0.75rem"}}>{has?"✓":"○"}</span>
             <div>
-              <div style={{fontSize:"0.6rem",fontWeight:700,color:has?PC.green:PC.muted}}>{label}</div>
-              <div style={{fontSize:"0.52rem",color:PC.muted}}>{tip}</div>
+              <div style={{fontSize:"0.8rem",fontWeight:700,color:has?PC.green:PC.muted}}>{label}</div>
+              <div style={{fontSize:"0.82rem",color:PC.muted}}>{tip}</div>
             </div>
           </div>
         ))}
@@ -8634,7 +8634,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   // Multi-view thumbnail strip — shows captured images side by side
   const mvThumbnailStrip = assessMode==="multi" && mvCapturedCount > 0 && (
     <div style={{padding:"10px 16px",background:PC.surface,borderBottom:`1px solid ${PC.border}`}}>
-      <div style={{fontSize:"0.58rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>
+      <div style={{fontSize:"0.78rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>
         Captured Views — {mvCapturedCount} of 4
       </div>
       <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
@@ -8655,8 +8655,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 <div style={{width:"100%",height:56,background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>{meta.icon}</div>
               )}
               <div style={{padding:"2px 4px",background:res?"rgba(5,150,105,0.85)":isActive?`rgba(124,58,237,0.85)`:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <span style={{fontSize:"0.52rem",fontWeight:700,color:"#fff"}}>{meta.short}</span>
-                {res?.scoreData&&<span style={{fontSize:"0.52rem",color:"#fff",fontWeight:800}}>{res.scoreData.score}</span>}
+                <span style={{fontSize:"0.82rem",fontWeight:700,color:"#fff"}}>{meta.short}</span>
+                {res?.scoreData&&<span style={{fontSize:"0.82rem",color:"#fff",fontWeight:800}}>{res.scoreData.score}</span>}
                 {!res&&isActive&&<span style={{fontSize:"0.5rem",color:"#fff"}}>active</span>}
               </div>
             </div>
@@ -8673,19 +8673,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       <div style={{padding:isWide?"18px 24px":"14px 16px",borderBottom:`1px solid ${PC.border}`,background:PC.surface,display:"flex",alignItems:"center",justifyContent:"space-between",position:isWide?"sticky":"static",top:0,zIndex:5}}>
         <div>
           <div style={{fontWeight:900,fontSize:isWide?"1rem":"0.9rem",color:PC.text}}>Multi-View Composite Report</div>
-          <div style={{fontSize:"0.62rem",color:PC.muted,marginTop:2}}>
+          <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:2}}>
             {mvComposite.coverage.viewCount} views · {mvComposite.coverage.frontal?"✓ Frontal":"○ Frontal"} · {mvComposite.coverage.sagittal?"✓ Sagittal":"○ Sagittal"}
           </div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>setShowReportModal(true)} style={{padding:"5px 12px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,fontSize:"0.68rem",fontWeight:700,color:"#fff",cursor:"pointer"}}>📄 PDF</button>
-          <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.68rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}>← Back</button>
+          <button onClick={()=>setShowReportModal(true)} style={{padding:"5px 12px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,fontSize:"0.78rem",fontWeight:700,color:"#fff",cursor:"pointer"}}>📄 PDF</button>
+          <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.78rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}>← Back</button>
         </div>
       </div>
 
       {/* Captured view thumbnails inside report */}
       <div style={{padding:"10px 16px",borderBottom:`1px solid ${PC.border}`,background:PC.s2}}>
-        <div style={{fontSize:"0.58rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Views Analysed</div>
+        <div style={{fontSize:"0.78rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Views Analysed</div>
         <div style={{display:"flex",gap:8,overflowX:"auto"}}>
           {mvViewOrder.map(vk=>{
             const res=mvResults[vk]; if(!res) return null;
@@ -8694,8 +8694,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               <div key={vk} style={{flexShrink:0,width:isWide?88:72,borderRadius:9,overflow:"hidden",border:`2px solid ${PC.green}`}}>
                 {res.img&&<img src={res.img} alt={meta.label} style={{width:"100%",height:isWide?64:54,objectFit:"cover",display:"block"}}/>}
                 <div style={{padding:"2px 5px",background:"rgba(5,150,105,0.85)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <span style={{fontSize:"0.52rem",fontWeight:700,color:"#fff"}}>{meta.short}</span>
-                  {res.scoreData&&<span style={{fontSize:"0.55rem",color:"#fff",fontWeight:800}}>{res.scoreData.score}</span>}
+                  <span style={{fontSize:"0.82rem",fontWeight:700,color:"#fff"}}>{meta.short}</span>
+                  {res.scoreData&&<span style={{fontSize:"0.75rem",color:"#fff",fontWeight:800}}>{res.scoreData.score}</span>}
                 </div>
               </div>
             );
@@ -8712,13 +8712,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               <div style={{fontWeight:900,fontSize:isWide?"1rem":"0.88rem",color:mvComposite.compositeColour}}>
                 {mvComposite.compositeBand}
               </div>
-              <div style={{fontSize:"0.72rem",color:PC.text,fontWeight:700,marginTop:2}}>
+              <div style={{fontSize:"0.82rem",color:PC.text,fontWeight:700,marginTop:2}}>
                 Posture Score: {mvComposite.compositeScore}/100
-                {mvComposite.frontalScore!=null&&<span style={{fontSize:"0.6rem",opacity:0.75}}> · Frontal: {mvComposite.frontalScore}</span>}
-                {mvComposite.sagittalScore!=null&&<span style={{fontSize:"0.6rem",opacity:0.75}}> · Sagittal: {mvComposite.sagittalScore}</span>}
-                {mvComposite.crossPlaneCount>0&&<span style={{fontSize:"0.6rem",color:PC.green}}> · {mvComposite.crossPlaneCount} cross-plane finding{mvComposite.crossPlaneCount>1?"s":""}</span>}
+                {mvComposite.frontalScore!=null&&<span style={{fontSize:"0.8rem",opacity:0.75}}> · Frontal: {mvComposite.frontalScore}</span>}
+                {mvComposite.sagittalScore!=null&&<span style={{fontSize:"0.8rem",opacity:0.75}}> · Sagittal: {mvComposite.sagittalScore}</span>}
+                {mvComposite.crossPlaneCount>0&&<span style={{fontSize:"0.8rem",color:PC.green}}> · {mvComposite.crossPlaneCount} cross-plane finding{mvComposite.crossPlaneCount>1?"s":""}</span>}
               </div>
-              <div style={{fontSize:"0.62rem",color:PC.muted,marginTop:4,lineHeight:1.5}}>
+              <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:4,lineHeight:1.5}}>
                 {mvComposite.summary}
               </div>
             </div>
@@ -8738,7 +8738,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 <div key={range} style={{flex:1,textAlign:"center",padding:"5px 2px",borderRadius:7,
                   background:isActive?col+"20":"transparent",
                   border:isActive?`1px solid ${col}55`:`1px solid transparent`}}>
-                  <div style={{fontSize:"0.55rem",fontWeight:isActive?800:400,color:isActive?col:PC.muted,lineHeight:1.2}}>{label}</div>
+                  <div style={{fontSize:"0.75rem",fontWeight:isActive?800:400,color:isActive?col:PC.muted,lineHeight:1.2}}>{label}</div>
                   <div style={{fontSize:"0.48rem",color:isActive?col:PC.muted,opacity:0.7}}>{range}</div>
                 </div>
               );
@@ -8749,12 +8749,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         {(mvComposite.sagittalPattern||mvComposite.frontalPattern)&&(
           <div style={{marginBottom:14,display:"flex",flexDirection:"column",gap:6}}>
             {mvComposite.sagittalPattern&&(
-              <div style={{padding:"9px 13px",borderRadius:10,background:`${PC.accent}10`,border:`1px solid ${PC.accent}25`,fontSize:"0.72rem",fontWeight:700,color:PC.accent}}>
+              <div style={{padding:"9px 13px",borderRadius:10,background:`${PC.accent}10`,border:`1px solid ${PC.accent}25`,fontSize:"0.82rem",fontWeight:700,color:PC.accent}}>
                 ◈ Sagittal: {mvComposite.sagittalPattern}
               </div>
             )}
             {mvComposite.frontalPattern&&(
-              <div style={{padding:"9px 13px",borderRadius:10,background:`${PC.a2}10`,border:`1px solid ${PC.a2}25`,fontSize:"0.72rem",fontWeight:700,color:PC.a2}}>
+              <div style={{padding:"9px 13px",borderRadius:10,background:`${PC.a2}10`,border:`1px solid ${PC.a2}25`,fontSize:"0.82rem",fontWeight:700,color:PC.a2}}>
                 ◈ Frontal: {mvComposite.frontalPattern}
               </div>
             )}
@@ -8763,15 +8763,15 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         {/* Regional sub-scores */}
         {mvComposite.subScores&&(
           <div style={{marginBottom:16}}>
-            <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Regional Scores</div>
+            <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Regional Scores</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
               {Object.entries(mvComposite.subScores).map(([region,val])=>{
                 if(val==null) return null;
                 const col=val>=74?PC.green:val>=55?PC.yellow:PC.red;
                 return(
                   <div key={region} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,background:`${col}12`,border:`1px solid ${col}30`}}>
-                    <span style={{fontSize:"0.62rem",color:PC.muted,textTransform:"capitalize"}}>{region}</span>
-                    <span style={{fontSize:"0.7rem",fontWeight:800,color:col}}>{val}</span>
+                    <span style={{fontSize:"0.82rem",color:PC.muted,textTransform:"capitalize"}}>{region}</span>
+                    <span style={{fontSize:"0.8rem",fontWeight:800,color:col}}>{val}</span>
                   </div>
                 );
               })}
@@ -8817,7 +8817,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
       {/* View selector */}
       <div style={{padding: isWide?"12px 20px":"10px 16px",background:PC.s2,borderBottom:`1px solid ${PC.border}`}}>
-        <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Select View</div>
+        <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Select View</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap: isWide?10:7}}>
           {Object.entries(VIEWS).map(([key,meta])=>{
             const active=view===key;
@@ -8835,7 +8835,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           <div>{viewMeta.helper}</div>
           {viewMeta.checks&&(
             <div style={{display:"flex",flexWrap:"wrap",gap:"3px 10px",marginTop:5}}>
-              {viewMeta.checks.map((c,i)=><span key={i} style={{color:PC.a3,fontSize:"0.62rem"}}>✓ {c}</span>)}
+              {viewMeta.checks.map((c,i)=><span key={i} style={{color:PC.a3,fontSize:"0.82rem"}}>✓ {c}</span>)}
             </div>
           )}
         </div>
@@ -8879,11 +8879,11 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                       transform:camFacing==="user"?"scaleX(-1)":"none",
                       pointerEvents:"none"}}/>
                   <div style={{position:"absolute",top:8,left:8,display:"flex",gap:5,flexWrap:"wrap"}}>
-                    <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:hasData?PC.green:PC.yellow}}>
+                    <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:hasData?PC.green:PC.yellow}}>
                       {hasData?`● Tracking · ${reliability?.score}% · ICC ${reliability?.icc??"-"}`:"● Searching…"}
                     </div>
-                    {motionWarning&&<div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:PC.yellow}}>⟳ Hold still</div>}
-                    <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.62rem",fontWeight:700,color:PC.a3}}>— {patientHeightCm}cm</div>
+                    {motionWarning&&<div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:PC.yellow}}>⟳ Hold still</div>}
+                    <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:PC.a3}}>— {patientHeightCm}cm</div>
                   </div>
                   {scoreData&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
                   {countdown!==null&&(
@@ -8911,7 +8911,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           <div style={{padding: isWide?"20px":"16px"}}>
             {error&&<div style={{padding:"10px 13px",background:"rgba(220,38,38,0.08)",border:`1px solid ${PC.red}30`,borderRadius:9,fontSize:"0.76rem",color:PC.red,marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <span>{error}</span>
-        {error.includes("camera")||error.includes("Camera")?<button onClick={()=>{setError(null);setCamStatus("idle");}} style={{marginLeft:8,padding:"3px 10px",borderRadius:6,border:`1px solid ${PC.red}`,background:"transparent",color:PC.red,fontSize:"0.68rem",fontWeight:700,cursor:"pointer"}}>Retry</button>:null}
+        {error.includes("camera")||error.includes("Camera")?<button onClick={()=>{setError(null);setCamStatus("idle");}} style={{marginLeft:8,padding:"3px 10px",borderRadius:6,border:`1px solid ${PC.red}`,background:"transparent",color:PC.red,fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>Retry</button>:null}
       </div>}
             <button onClick={()=>fileInputRef.current?.click()}
               disabled={inputMode==="ai"?(mpStatus!=="ready"||analysing):false}
@@ -8930,14 +8930,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               <div>
                 <div style={{marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                    <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.accent}}>✋ Manual Points: {manualPlacedCount} / {manualTotal}</div>
+                    <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.accent}}>✋ Manual Points: {manualPlacedCount} / {manualTotal}</div>
                     <div style={{display:"flex",gap:6}}>
                       <button onClick={undoLastManual} disabled={manualPlacedCount===0}
-                        style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.65rem",fontWeight:700,color:PC.muted,cursor:manualPlacedCount>0?"pointer":"not-allowed"}}>
+                        style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.75rem",fontWeight:700,color:PC.muted,cursor:manualPlacedCount>0?"pointer":"not-allowed"}}>
                         ↩ Undo
                       </button>
                       <button onClick={resetManual} disabled={manualPlacedCount===0}
-                        style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${PC.red}30`,background:"rgba(220,38,38,0.06)",fontSize:"0.65rem",fontWeight:700,color:PC.red,cursor:manualPlacedCount>0?"pointer":"not-allowed"}}>
+                        style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${PC.red}30`,background:"rgba(220,38,38,0.06)",fontSize:"0.75rem",fontWeight:700,color:PC.red,cursor:manualPlacedCount>0?"pointer":"not-allowed"}}>
                         Reset
                       </button>
                     </div>
@@ -8947,11 +8947,11 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   </div>
                 </div>
                 {nextManualIdx >= 0 ? (
-                  <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.accent}10`,border:`1px solid ${PC.accent}30`,fontSize:"0.7rem",color:PC.accent,marginBottom:9,fontWeight:700}}>
+                  <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.accent}10`,border:`1px solid ${PC.accent}30`,fontSize:"0.8rem",color:PC.accent,marginBottom:9,fontWeight:700}}>
                     Next: {nextManualIdx+1}. {manualPointDefs[nextManualIdx]?.label} — {manualPointDefs[nextManualIdx]?.desc}
                   </div>
                 ) : (
-                  <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.green}10`,border:`1px solid ${PC.green}30`,fontSize:"0.7rem",color:PC.green,marginBottom:9,fontWeight:700}}>
+                  <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.green}10`,border:`1px solid ${PC.green}30`,fontSize:"0.8rem",color:PC.green,marginBottom:9,fontWeight:700}}>
                     All points placed!
                   </div>
                 )}
@@ -8996,8 +8996,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                     const isNext=def.id===manualPointDefs[nextManualIdx]?.id;
                     return(
                       <div key={def.id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:done?`${PC.green}10`:isNext?`${PC.accent}10`:"transparent",border:`1px solid ${done?PC.green:isNext?PC.accent:PC.border}`}}>
-                        <div style={{width:14,height:14,borderRadius:"50%",background:done?PC.green:isNext?PC.accent:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.55rem",fontWeight:900,color:"#fff",flexShrink:0}}>{done?"✓":def.id+1}</div>
-                        <div style={{fontSize:"0.6rem",color:done?PC.green:isNext?PC.accent:PC.muted,fontWeight:done||isNext?700:400,lineHeight:1.2}}>{def.label}</div>
+                        <div style={{width:14,height:14,borderRadius:"50%",background:done?PC.green:isNext?PC.accent:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.75rem",fontWeight:900,color:"#fff",flexShrink:0}}>{done?"✓":def.id+1}</div>
+                        <div style={{fontSize:"0.8rem",color:done?PC.green:isNext?PC.accent:PC.muted,fontWeight:done||isNext?700:400,lineHeight:1.2}}>{def.label}</div>
                       </div>
                     );
                   })}
@@ -9012,7 +9012,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 {/* ── C7 / T12 Spinal Levels (Manual mode) ── */}
                 {isLat && uploadedImg && (
                   <div style={{marginTop:10,padding:"10px 12px",background:"rgba(251,191,36,0.05)",border:`1px solid ${spinalLevelMode?"rgba(251,191,36,0.5)":"rgba(251,191,36,0.2)"}`,borderRadius:10}}>
-                    <div style={{fontSize:"0.65rem",fontWeight:800,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:7}}>🦴 Spinal Levels — C7 · T12</div>
+                    <div style={{fontSize:"0.75rem",fontWeight:800,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:7}}>🦴 Spinal Levels — C7 · T12</div>
                     <div style={{display:"flex",gap:7}}>
                       {[
                         { key:'c7',  label:'C7',  sublabel:'Base of neck',          color:'#fbbf24' },
@@ -9024,7 +9024,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                           <div key={lv.key} style={{flex:1}}>
                             <button
                               onClick={()=>setSpinalLevelMode(isActive?null:lv.key)}
-                              style={{width:"100%",padding:"7px 4px",borderRadius:8,border:`1.5px solid ${isActive?lv.color:placed?lv.color+"60":"rgba(255,255,255,0.12)"}`,background:isActive?`${lv.color}20`:placed?`${lv.color}10`:"transparent",color:isActive?lv.color:placed?lv.color:"#7e6a9a",fontWeight:700,fontSize:"0.62rem",cursor:"pointer",textAlign:"center"}}>
+                              style={{width:"100%",padding:"7px 4px",borderRadius:8,border:`1.5px solid ${isActive?lv.color:placed?lv.color+"60":"rgba(255,255,255,0.12)"}`,background:isActive?`${lv.color}20`:placed?`${lv.color}10`:"transparent",color:isActive?lv.color:placed?lv.color:"#7e6a9a",fontWeight:700,fontSize:"0.82rem",cursor:"pointer",textAlign:"center"}}>
                               {placed?"✅ ":""}{lv.label}
                               <div style={{fontSize:"0.53rem",fontWeight:400}}>{isActive?"👆 Tap photo":placed?"Placed":"Tap to mark"}</div>
                             </button>
@@ -9039,7 +9039,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                       })}
                     </div>
                     {spinalLevelMode&&(
-                      <div style={{marginTop:6,fontSize:"0.6rem",color:spinalLevelMode==='c7'?"#fbbf24":"#f87171",fontWeight:700}}>
+                      <div style={{marginTop:6,fontSize:"0.8rem",color:spinalLevelMode==='c7'?"#fbbf24":"#f87171",fontWeight:700}}>
                         👆 Tap on the photo above to mark {spinalLevelMode==='c7'?"C7 (base of neck, spinous process)":"T12 (thoracolumbar junction)"}
                       </div>
                     )}
@@ -9127,7 +9127,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   return(
                     <div key={pt.id} style={{position:"absolute",left:`${p.x*100}%`,top:`${p.y*100}%`,transform:"translate(-50%,-50%)",pointerEvents:"none",zIndex:20}}>
                       <div style={{width:14,height:14,borderRadius:"50%",background:pt.color,border:"2px solid white",boxShadow:`0 0 6px ${pt.color}`}}/>
-                      <span style={{position:"absolute",left:16,top:-4,fontSize:"0.58rem",fontWeight:800,color:pt.color,whiteSpace:"nowrap",textShadow:"0 1px 3px rgba(0,0,0,0.9)"}}>{pt.label}</span>
+                      <span style={{position:"absolute",left:16,top:-4,fontSize:"0.78rem",fontWeight:800,color:pt.color,whiteSpace:"nowrap",textShadow:"0 1px 3px rgba(0,0,0,0.9)"}}>{pt.label}</span>
                     </div>
                   );
                 })}
@@ -9137,7 +9137,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                   if (!remaining.length) return null;
                   const next=remaining[0];
                   return(
-                    <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.75)",color:next.color,padding:"5px 12px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:20}}>
+                    <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.75)",color:next.color,padding:"5px 12px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:20}}>
                       👆 Tap: {next.label} — {next.desc}
                     </div>
                   );
@@ -9158,7 +9158,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                     return (
                       <div key={lv.key} style={{position:"absolute",left:0,right:0,top:`${imgY*100}%`,pointerEvents:"none",zIndex:25,display:"flex",alignItems:"center",gap:4}}>
                         <div style={{width:"100%",height:1.5,background:`${lv.color}80`,borderTop:`1.5px dashed ${lv.color}`}}/>
-                        <div style={{position:"absolute",left:6,background:"rgba(0,0,0,0.75)",color:lv.color,padding:"1px 6px",borderRadius:4,fontSize:"0.6rem",fontWeight:800,whiteSpace:"nowrap"}}>{lv.label}</div>
+                        <div style={{position:"absolute",left:6,background:"rgba(0,0,0,0.75)",color:lv.color,padding:"1px 6px",borderRadius:4,fontSize:"0.8rem",fontWeight:800,whiteSpace:"nowrap"}}>{lv.label}</div>
                       </div>
                     );
                   });
@@ -9166,7 +9166,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
                 {/* Spinal tap mode hint */}
                 {spinalLevelMode&&(
-                  <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.85)",color:spinalLevelMode==='c7'?"#fbbf24":"#f87171",padding:"5px 14px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:30}}>
+                  <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.85)",color:spinalLevelMode==='c7'?"#fbbf24":"#f87171",padding:"5px 14px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:30}}>
                     👆 Tap to mark {spinalLevelMode==='c7'?"C7 — base of neck":"T12 — thoracolumbar junction"}
                   </div>
                 )}
@@ -9497,8 +9497,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               </div>
             </div>
             <div style="margin-top:14px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#f8fafc,#f0f9ff);border:1px solid #bae6fd;display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:0.58rem;color:${C.muted}">Generated by <strong>PostureAI</strong> · Basic Report · ${credits} credits</div>
-              <div style="font-size:0.58rem;color:${C.muted}">50 credits = ₹99 / $10</div>
+              <div style="font-size:0.58rem;color:${C.muted}">Generated by <strong>PhysioMind Pro</strong> · Basic Report</div>
             </div>
           </div>
           ${footer(2,2,"Basic Report")}
@@ -9771,8 +9770,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             </div>
           </div>
           <div style="margin-top:14px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#f8fafc,#f0f9ff);border:1px solid #bae6fd;display:flex;justify-content:space-between;align-items:center">
-            <div style="font-size:0.58rem;color:${C.muted}">Generated by <strong>PostureAI</strong> · Detailed Report · ${credits} credits used</div>
-            <div style="font-size:0.58rem;color:${C.muted}">50 credits = ₹99 / $10 · ID: ${Date.now().toString(36).toUpperCase()}</div>
+            <div style="font-size:0.58rem;color:${C.muted}">Generated by <strong>PhysioMind Pro</strong> · Detailed Report · ID: ${Date.now().toString(36).toUpperCase()}</div>
           </div>
         </div>
         ${footer(5,5,"Detailed Clinical Report")}
@@ -9786,7 +9784,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       <div onClick={e=>e.stopPropagation()}
         style={{width:"100%",maxWidth:440,background:PC.surface,borderRadius:16,padding:24,boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <div style={{fontWeight:900,fontSize:"1rem",color:PC.text,marginBottom:4}}>📄 Generate Report</div>
-        <div style={{fontSize:"0.68rem",color:PC.muted,marginBottom:18}}>Fill in patient details then choose report type</div>
+        <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:18}}>Fill in patient details then choose report type</div>
 
         {/* Report type toggle */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:18}}>
@@ -9796,29 +9794,29 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               padding:12,borderRadius:10,border:`2px solid ${reportType===t.id?PC.accent:PC.border}`,
               background:reportType===t.id?`${PC.accent}10`:PC.surface,cursor:"pointer",textAlign:"left"}}>
               <div style={{fontSize:"0.75rem",fontWeight:800,color:reportType===t.id?PC.accent:PC.text}}>{t.label}</div>
-              <div style={{fontSize:"0.62rem",color:PC.muted,marginTop:2}}>{t.sub}</div>
+              <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:2}}>{t.sub}</div>
               <div style={{marginTop:6,padding:"2px 8px",borderRadius:5,display:"inline-block",
                 background:reportType===t.id?PC.accent:`${PC.accent}15`,
                 color:reportType===t.id?"#fff":PC.accent,
-                fontSize:"0.62rem",fontWeight:700}}>{t.credits} credits · {t.pages}</div>
+                fontSize:"0.82rem",fontWeight:700}}>{t.pages}</div>
             </button>
           ))}
         </div>
 
         {/* Patient info */}
         <div style={{marginBottom:14}}>
-          <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Patient Information</div>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Patient Information</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {[{key:"name",label:"Full Name",placeholder:"e.g. Priya Sharma",full:true},
               {key:"age",label:"Age",placeholder:"e.g. 28"},
               {key:"sex",label:"Sex",placeholder:"Female / Male"},
               {key:"occupation",label:"Occupation",placeholder:"e.g. Software Engineer",full:true}].map(f=>(
               <div key={f.key} style={{gridColumn:f.full?"1/-1":"auto"}}>
-                <div style={{fontSize:"0.6rem",color:PC.muted,marginBottom:3}}>{f.label}</div>
+                <div style={{fontSize:"0.8rem",color:PC.muted,marginBottom:3}}>{f.label}</div>
                 <input value={patientInfo[f.key]||""} placeholder={f.placeholder}
                   onChange={e=>setPatientInfo(p=>({...p,[f.key]:e.target.value}))}
                   style={{width:"100%",padding:"7px 10px",border:`1px solid ${PC.border}`,borderRadius:7,
-                    fontSize:"0.72rem",color:PC.text,background:PC.bg,outline:"none"}}/>
+                    fontSize:"0.82rem",color:PC.text,background:PC.bg,outline:"none"}}/>
               </div>
             ))}
           </div>
@@ -9826,17 +9824,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
         {/* Clinician info */}
         <div style={{marginBottom:20}}>
-          <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Clinician</div>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Clinician</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {[{key:"name",label:"Your Name",placeholder:"Dr. A. Mehta"},
               {key:"credentials",label:"Credentials",placeholder:"MPT, MIAP"},
               {key:"clinic",label:"Clinic Name",placeholder:"BalancePoint Physio",full:true}].map(f=>(
               <div key={f.key} style={{gridColumn:f.full?"1/-1":"auto"}}>
-                <div style={{fontSize:"0.6rem",color:PC.muted,marginBottom:3}}>{f.label}</div>
+                <div style={{fontSize:"0.8rem",color:PC.muted,marginBottom:3}}>{f.label}</div>
                 <input value={clinicianInfo[f.key]||""} placeholder={f.placeholder}
                   onChange={e=>setClinicianInfo(p=>({...p,[f.key]:e.target.value}))}
                   style={{width:"100%",padding:"7px 10px",border:`1px solid ${PC.border}`,borderRadius:7,
-                    fontSize:"0.72rem",color:PC.text,background:PC.bg,outline:"none"}}/>
+                    fontSize:"0.82rem",color:PC.text,background:PC.bg,outline:"none"}}/>
               </div>
             ))}
           </div>
@@ -9844,8 +9842,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
         {/* Credits note */}
         <div style={{padding:"8px 12px",borderRadius:8,background:`${PC.accent}08`,
-          border:`1px solid ${PC.accent}25`,marginBottom:16,fontSize:"0.62rem",color:PC.accent}}>
-          {reportType==="basic"?2:5} credits will be used · 50 credits = ₹99 / $10
+          border:`1px solid ${PC.accent}25`,marginBottom:16,fontSize:"0.82rem",color:PC.accent}}>
         </div>
 
         <div style={{display:"flex",gap:10}}>
@@ -9859,7 +9856,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             Generate & Open PDF →
           </button>
         </div>
-        {!(assessMode==="multi"?mvComposite:findings.length)&&<div style={{fontSize:"0.62rem",color:PC.red,textAlign:"center",marginTop:8}}>{assessMode==="multi"?"Capture ≥2 views and generate composite first":"Analyse a photo first to generate a report"}</div>}
+        {!(assessMode==="multi"?mvComposite:findings.length)&&<div style={{fontSize:"0.82rem",color:PC.red,textAlign:"center",marginTop:8}}>{assessMode==="multi"?"Capture ≥2 views and generate composite first":"Analyse a photo first to generate a report"}</div>}
       </div>
     </div>,
     document.body
@@ -9932,7 +9929,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               {findings.length>0&&(
                 <span style={{marginLeft:5,padding:"1px 6px",borderRadius:10,
                   background:scoreData?.colour||PC.accent,color:"#fff",
-                  fontSize:"0.62rem",fontWeight:800}}>
+                  fontSize:"0.82rem",fontWeight:800}}>
                   {scoreData?.score??findings.length}
                 </span>
               )}
@@ -10006,7 +10003,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             {[...sessions].reverse().map((s,i)=>(
               <div key={i} style={{padding:"11px 14px",borderRadius:11,border:`1px solid ${PC.border}`,marginBottom:8}}>
                 <div style={{fontWeight:700,fontSize:"0.75rem"}}>{VIEWS[s.view]?.label} · Score {s.score} — {s.band}</div>
-                <div style={{fontSize:"0.65rem",color:PC.muted,marginTop:2}}>{new Date(s.time).toLocaleString()} · {s.findings} findings</div>
+                <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>{new Date(s.time).toLocaleString()} · {s.findings} findings</div>
               </div>
             ))}
             <button onClick={()=>setShowHistory(false)} style={{marginTop:14,width:"100%",padding:"13px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}30`,borderRadius:10,color:PC.accent,fontWeight:700,cursor:"pointer"}}>Close</button>
@@ -10050,14 +10047,14 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
           {s && <ScoreRingNew score={s.score} band={s.band} colour={s.colour} size={58}/>}
           <div>
             <div style={{ fontWeight:800, color:C2.accent, fontSize:"0.83rem" }}>📐 Live Analysis</div>
-            <div style={{ fontSize:"0.6rem", color:C2.muted, marginTop:1 }}>
+            <div style={{ fontSize:"0.8rem", color:C2.muted, marginTop:1 }}>
               {highF.length > 0 ? `🔴 ${highF.length} priority · ` : ""}Findings: {f.length} · {r?.status}
             </div>
           </div>
         </div>
         <div style={{ display:"flex", gap:5 }}>
           {[["🌡",showHeatmap,setHeat],["🏷",showLabels,setLbls]].map(([lbl,val,setter],i)=>(
-            <button key={i} onClick={()=>setter(v=>!v)} style={{ padding:"3px 8px", borderRadius:6, border:`1px solid ${val?C2.accent:C2.border}`, background:val?"rgba(0,229,255,0.1)":"transparent", color:val?C2.accent:C2.muted, fontSize:"0.7rem", cursor:"pointer" }}>{lbl}</button>
+            <button key={i} onClick={()=>setter(v=>!v)} style={{ padding:"3px 8px", borderRadius:6, border:`1px solid ${val?C2.accent:C2.border}`, background:val?"rgba(0,229,255,0.1)":"transparent", color:val?C2.accent:C2.muted, fontSize:"0.8rem", cursor:"pointer" }}>{lbl}</button>
           ))}
         </div>
       </div>
@@ -10076,7 +10073,7 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
       {/* Tabs */}
       <div style={{ display:"flex", borderBottom:"1px solid #d8cce8" }}>
         {[["findings",`🔍 Findings (${f.length})`],["metrics","📐 Metrics"],["bilateral","⚖ Balance"],["actions","💊 Actions"]].map(([t,lbl])=>(
-          <button key={t} onClick={()=>setTab(t)} style={{ flex:1, padding:"8px 2px", border:"none", borderBottom:`2px solid ${tab===t?C2.accent:"transparent"}`, background:"transparent", color:tab===t?C2.accent:C2.muted, fontWeight:tab===t?800:500, fontSize:"0.58rem", cursor:"pointer", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{lbl}</button>
+          <button key={t} onClick={()=>setTab(t)} style={{ flex:1, padding:"8px 2px", border:"none", borderBottom:`2px solid ${tab===t?C2.accent:"transparent"}`, background:"transparent", color:tab===t?C2.accent:C2.muted, fontWeight:tab===t?800:500, fontSize:"0.78rem", cursor:"pointer", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{lbl}</button>
         ))}
       </div>
 
@@ -10097,7 +10094,7 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
               const abs=Math.abs(val),col=abs<t[0]?"#00c97a":abs<t[1]?"#ffb300":"#ff4d6d";
               return(
                 <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 10px", background:`${col}09`, border:`1px solid ${col}22`, borderRadius:7, marginBottom:4 }}>
-                  <span style={{ fontSize:"0.68rem", color:C2.muted }}>{label}</span>
+                  <span style={{ fontSize:"0.78rem", color:C2.muted }}>{label}</span>
                   <span style={{ fontSize:"0.82rem", fontWeight:800, color:col }}>{val>0?"+":""}{Math.round(val*10)/10}{unit}</span>
                 </div>
               );
@@ -10113,8 +10110,8 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
               return(
                 <div key={label} style={{ marginBottom:9 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-                    <span style={{ fontSize:"0.72rem", fontWeight:700, color:col }}>{label}</span>
-                    <span style={{ fontSize:"0.62rem", color:C2.muted }}>Δ{sym.diff>0?"+":""}{sym.diff}%</span>
+                    <span style={{ fontSize:"0.82rem", fontWeight:700, color:col }}>{label}</span>
+                    <span style={{ fontSize:"0.82rem", color:C2.muted }}>Δ{sym.diff>0?"+":""}{sym.diff}%</span>
                   </div>
                   <div style={{ display:"flex", height:8, borderRadius:4, overflow:"hidden", background:C2.s2 }}>
                     <div style={{ width:`${lPct}%`, background:sym.diff>0?col:"#1a2d45", borderRadius:"4px 0 0 4px" }}/>
@@ -10122,7 +10119,7 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
                     <div style={{ flex:1, background:sym.diff<0?col:"#1a2d45", borderRadius:"0 4px 4px 0" }}/>
                   </div>
                   <div style={{ display:"flex", justifyContent:"space-between", marginTop:2 }}>
-                    <span style={{ fontSize:"0.52rem", color:C2.muted }}>L</span><span style={{ fontSize:"0.52rem", color:C2.muted }}>R</span>
+                    <span style={{ fontSize:"0.82rem", color:C2.muted }}>L</span><span style={{ fontSize:"0.82rem", color:C2.muted }}>R</span>
                   </div>
                 </div>
               );
@@ -10131,11 +10128,11 @@ function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
         )}
         {tab==="actions" && (
           f.length===0
-            ? <div style={{ textAlign:"center", color:C2.muted, fontSize:"0.72rem", padding:14 }}>No specific actions needed</div>
+            ? <div style={{ textAlign:"center", color:C2.muted, fontSize:"0.82rem", padding:14 }}>No specific actions needed</div>
             : f.map((fi,i)=>(
               <div key={i} style={{ marginBottom:8, padding:"9px 11px", background:C2.s2, border:`1px solid ${fi.severity==="high"?C2.red:C2.yellow}28`, borderRadius:9 }}>
-                <div style={{ fontWeight:700, fontSize:"0.72rem", color:fi.severity==="high"?C2.red:C2.yellow, marginBottom:4 }}>{fi.icon} {fi.text}</div>
-                <div style={{ fontSize:"0.68rem", color:C2.text, lineHeight:1.6, padding:"6px 9px", background:`${fi.severity==="high"?C2.red:C2.yellow}08`, borderRadius:7 }}>{fi.correction}</div>
+                <div style={{ fontWeight:700, fontSize:"0.82rem", color:fi.severity==="high"?C2.red:C2.yellow, marginBottom:4 }}>{fi.icon} {fi.text}</div>
+                <div style={{ fontSize:"0.78rem", color:C2.text, lineHeight:1.6, padding:"6px 9px", background:`${fi.severity==="high"?C2.red:C2.yellow}08`, borderRadius:7 }}>{fi.correction}</div>
               </div>
             ))
         )}
@@ -10321,21 +10318,21 @@ function FindingTracePanel({ findings }) {
   return (
     <div style={{marginTop:10,borderRadius:10,border:`1px solid ${C.border}`,overflow:"hidden"}}>
       <div onClick={()=>setOpen(o=>!o)} style={{padding:"8px 13px",background:C.s2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontSize:"0.72rem",fontWeight:700,color:C.accent}}>🔍 Finding Derivation Trace ({traceable.length})</span>
-        <span style={{fontSize:"0.65rem",color:C.muted}}>{open?"▲ Hide":"▼ Show"} clinical audit trail</span>
+        <span style={{fontSize:"0.82rem",fontWeight:700,color:C.accent}}>🔍 Finding Derivation Trace ({traceable.length})</span>
+        <span style={{fontSize:"0.75rem",color:C.muted}}>{open?"▲ Hide":"▼ Show"} clinical audit trail</span>
       </div>
       {open && (
         <div style={{padding:"10px 13px",background:C.surface}}>
           {traceable.map((f,i) => (
             <div key={i} style={{marginBottom:8,padding:"7px 10px",borderRadius:8,background:C.s2,border:`1px solid ${C.border}`}}>
-              <div style={{fontSize:"0.68rem",fontWeight:700,color:C.text,marginBottom:3}}>
+              <div style={{fontSize:"0.78rem",fontWeight:700,color:C.text,marginBottom:3}}>
                 Finding: {(f.findingName||f.text||'').replace(/^OBSERVATION:\s*/i,'')}
               </div>
-              <div style={{fontSize:"0.6rem",color:C.muted}}>
+              <div style={{fontSize:"0.8rem",color:C.muted}}>
                 Derived from: {f._derivedFrom.join(' → ')}
               </div>
               {f._requiresVerification && (
-                <div style={{fontSize:"0.58rem",color:"#b45309",fontWeight:600,marginTop:2}}>
+                <div style={{fontSize:"0.78rem",color:"#b45309",fontWeight:600,marginTop:2}}>
                   ⚠ Dedicated tibial landmarks (Tibial Tuberosity, Mid-Shaft, Malleoli) required for clinical confirmation
                 </div>
               )}
@@ -10363,15 +10360,15 @@ function LandmarkVerificationPanel({ verified, activeLandmark, setActiveLandmark
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
         <div>
           <div style={{fontWeight:800,fontSize:"0.82rem",color:C.accent}}>📍 Clinical Landmark Verification</div>
-          <div style={{fontSize:"0.62rem",color:C.muted,marginTop:2}}>Tap a landmark → click on the image to place it. Verified points override AI estimates.</div>
+          <div style={{fontSize:"0.82rem",color:C.muted,marginTop:2}}>Tap a landmark → click on the image to place it. Verified points override AI estimates.</div>
         </div>
         {verifiedCount > 0 && (
-          <span style={{padding:"2px 9px",borderRadius:8,background:"rgba(5,150,105,0.12)",border:"1px solid rgba(5,150,105,0.35)",color:C.green,fontSize:"0.62rem",fontWeight:700}}>{verifiedCount} verified</span>
+          <span style={{padding:"2px 9px",borderRadius:8,background:"rgba(5,150,105,0.12)",border:"1px solid rgba(5,150,105,0.35)",color:C.green,fontSize:"0.82rem",fontWeight:700}}>{verifiedCount} verified</span>
         )}
       </div>
       {PRIORITIES.map(({ level, label, color, keys }) => (
         <div key={level} style={{marginBottom:10}}>
-          <div style={{fontSize:"0.58rem",fontWeight:700,color:color,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:5}}>{label}</div>
+          <div style={{fontSize:"0.78rem",fontWeight:700,color:color,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:5}}>{label}</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:5}}>
             {keys.map(key => {
               const def = VERIFIED_LANDMARK_MAP[key];
@@ -10388,9 +10385,9 @@ function LandmarkVerificationPanel({ verified, activeLandmark, setActiveLandmark
                     display:"flex",alignItems:"center",gap:7
                   }}>
                   <span style={{fontSize:"0.75rem"}}>{isVerified ? "✅" : isActive ? "🎯" : "☐"}</span>
-                  <span style={{fontSize:"0.65rem",fontWeight:isActive||isVerified?700:500,color:isActive?"#7c3aed":isVerified?"#059669":C.text,flex:1,lineHeight:1.3}}>{def.label}</span>
+                  <span style={{fontSize:"0.75rem",fontWeight:isActive||isVerified?700:500,color:isActive?"#7c3aed":isVerified?"#059669":C.text,flex:1,lineHeight:1.3}}>{def.label}</span>
                   {isVerified && (
-                    <span onClick={e=>{e.stopPropagation();onClear(key);}} style={{fontSize:"0.58rem",color:C.muted,cursor:"pointer",padding:"1px 4px",borderRadius:4,background:"rgba(0,0,0,0.05)"}} title="Remove">✕</span>
+                    <span onClick={e=>{e.stopPropagation();onClear(key);}} style={{fontSize:"0.78rem",color:C.muted,cursor:"pointer",padding:"1px 4px",borderRadius:4,background:"rgba(0,0,0,0.05)"}} title="Remove">✕</span>
                   )}
                 </button>
               );
@@ -10399,7 +10396,7 @@ function LandmarkVerificationPanel({ verified, activeLandmark, setActiveLandmark
         </div>
       ))}
       {activeLandmark && (
-        <div style={{marginTop:6,padding:"7px 11px",background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.25)",borderRadius:8,fontSize:"0.68rem",color:"#7c3aed",fontWeight:700,textAlign:"center"}}>
+        <div style={{marginTop:6,padding:"7px 11px",background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.25)",borderRadius:8,fontSize:"0.78rem",color:"#7c3aed",fontWeight:700,textAlign:"center"}}>
           🎯 Click anywhere on the image to place <strong>{VERIFIED_LANDMARK_MAP[activeLandmark]?.label}</strong>
         </div>
       )}
@@ -10537,12 +10534,12 @@ function PhotoUploadAnalyzer() {
       <div style={{padding:"11px 14px",borderBottom:`1px solid ${C2.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:7}}>
         <div>
           <div style={{fontWeight:800,fontSize:"0.9rem",color:C2.accent}}>📷 Photo Upload Analysis</div>
-          <div style={{fontSize:"0.65rem",color:C2.muted,marginTop:2}}>{mpReady?"✅ AI Ready — Advanced Biomechanical Engine":"⏳ Loading AI engine…"}</div>
+          <div style={{fontSize:"0.75rem",color:C2.muted,marginTop:2}}>{mpReady?"✅ AI Ready — Advanced Biomechanical Engine":"⏳ Loading AI engine…"}</div>
         </div>
         <div style={{display:"flex",gap:6}}>
-          <button onClick={()=>setShowHistory(true)} style={{padding:"4px 10px",background:`${C2.a2}15`,border:`1px solid ${C2.a2}30`,borderRadius:7,color:C2.a2,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>📁 History</button>
+          <button onClick={()=>setShowHistory(true)} style={{padding:"4px 10px",background:`${C2.a2}15`,border:`1px solid ${C2.a2}30`,borderRadius:7,color:C2.a2,fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>📁 History</button>
           {["upload","results"].map(t=>(
-            <button key={t} onClick={()=>setTab(t)} style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${tab===t?C2.accent:C2.border}`,background:tab===t?"rgba(0,229,255,0.1)":"transparent",color:tab===t?C2.accent:C2.muted,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>
+            <button key={t} onClick={()=>setTab(t)} style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${tab===t?C2.accent:C2.border}`,background:tab===t?"rgba(0,229,255,0.1)":"transparent",color:tab===t?C2.accent:C2.muted,fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>
               {t==="upload"?"📤 Upload":"📊 Results"}
             </button>
           ))}
@@ -10551,7 +10548,7 @@ function PhotoUploadAnalyzer() {
 
       {/* View selector */}
       <div style={{padding:"10px 14px",background:C2.s2,borderBottom:`1px solid ${C2.border}`}}>
-        <div style={{fontSize:"0.58rem",fontWeight:700,color:C2.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>
+        <div style={{fontSize:"0.78rem",fontWeight:700,color:C2.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>
           📐 Select View — choose <em>before</em> uploading
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:8}}>
@@ -10560,15 +10557,15 @@ function PhotoUploadAnalyzer() {
             return(
               <button key={key} onClick={()=>setView(key)} style={{padding:"8px 4px",borderRadius:9,border:`1px solid ${act?meta.colour:C2.border}`,background:act?`${meta.colour}18`:"transparent",cursor:"pointer",textAlign:"center"}}>
                 <div style={{fontSize:"0.85rem"}}>{meta.icon}</div>
-                <div style={{fontSize:"0.6rem",fontWeight:800,color:act?meta.colour:C2.muted}}>{meta.short}</div>
+                <div style={{fontSize:"0.8rem",fontWeight:800,color:act?meta.colour:C2.muted}}>{meta.short}</div>
               </button>
             );
           })}
         </div>
-        <div style={{fontSize:"0.68rem",color:C2.muted,lineHeight:1.6,padding:"6px 10px",background:`${vm.colour}08`,border:`1px solid ${vm.colour}20`,borderRadius:8}}>
+        <div style={{fontSize:"0.78rem",color:C2.muted,lineHeight:1.6,padding:"6px 10px",background:`${vm.colour}08`,border:`1px solid ${vm.colour}20`,borderRadius:8}}>
           <span style={{color:vm.colour,fontWeight:700}}>{vm.short}: </span>{vm.helper}
         </div>
-        <div style={{marginTop:6,padding:"5px 9px",background:"rgba(124,58,237,0.06)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:8,fontSize:"0.62rem",color:C2.muted,fontStyle:"italic"}}>
+        <div style={{marginTop:6,padding:"5px 9px",background:"rgba(124,58,237,0.06)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:8,fontSize:"0.82rem",color:C2.muted,fontStyle:"italic"}}>
           🔲 Posture grid lines will be drawn on the photo for the selected view — select view first, then upload
         </div>
       </div>
@@ -10581,14 +10578,14 @@ function PhotoUploadAnalyzer() {
             <div onClick={()=>fileRef.current?.click()} style={{border:`2px dashed ${vm.colour}40`,borderRadius:14,padding:"32px 20px",textAlign:"center",cursor:"pointer",background:`${vm.colour}05`}}>
               <div style={{fontSize:"2.5rem",marginBottom:10}}>📸</div>
               <div style={{fontWeight:800,color:vm.colour,fontSize:"0.88rem",marginBottom:6}}>Select Patient Photo</div>
-              <div style={{fontSize:"0.72rem",color:C2.muted,lineHeight:1.6}}>Tap to upload from gallery.<br/>Full body visible for best results.</div>
+              <div style={{fontSize:"0.82rem",color:C2.muted,lineHeight:1.6}}>Tap to upload from gallery.<br/>Full body visible for best results.</div>
             </div>
           ):(
             <div>
               <div style={{position:"relative",borderRadius:12,overflow:"hidden",background:"#f5f0fb",marginBottom:9,cursor:activeLandmark?"crosshair":"default"}} onClick={handleImageClick}>
                 <img ref={imgRef} src={image} alt="Upload" style={{width:"100%",display:"block",maxHeight:360,objectFit:"contain"}}/>
                 <canvas ref={canvasRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-                {loading&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{color:C2.accent,fontSize:"1.1rem",fontWeight:700}}>⏳ Analysing…</div><div style={{fontSize:"0.7rem",color:C2.muted}}>Running AI pose detection</div></div>}
+                {loading&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{color:C2.accent,fontSize:"1.1rem",fontWeight:700}}>⏳ Analysing…</div><div style={{fontSize:"0.8rem",color:C2.muted}}>Running AI pose detection</div></div>}
                 {scoreData&&!loading&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingNew score={scoreData?.score} band={scoreData?.band} colour={scoreData?.colour} size={72}/></div>}
                 {activeLandmark&&!loading&&<div style={{position:"absolute",inset:0,border:"3px solid #7c3aed",borderRadius:12,pointerEvents:"none",animation:"pulse 1s infinite"}}/>}
                 {Object.entries(verified).map(([key,coords])=>(
@@ -10600,11 +10597,11 @@ function PhotoUploadAnalyzer() {
               {/* Overlay controls */}
               <div style={{display:"flex",gap:7,marginBottom:9,flexWrap:"wrap"}}>
                 {[["showHeatmap","🌡 Heat",showHeatmap,setHeatmap],["showLabels","🏷 Labels",showLabels,setLabels]].map(([k,lbl,val,setter])=>(
-                  <button key={k} onClick={()=>setter(v=>!v)} style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${val?C2.accent:C2.border}`,background:val?"rgba(0,229,255,0.1)":"transparent",color:val?C2.accent:C2.muted,fontSize:"0.65rem",fontWeight:600,cursor:"pointer"}}>{lbl}</button>
+                  <button key={k} onClick={()=>setter(v=>!v)} style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${val?C2.accent:C2.border}`,background:val?"rgba(0,229,255,0.1)":"transparent",color:val?C2.accent:C2.muted,fontSize:"0.75rem",fontWeight:600,cursor:"pointer"}}>{lbl}</button>
                 ))}
-                <button onClick={()=>fileRef.current?.click()} style={{marginLeft:"auto",padding:"4px 10px",background:`${vm.colour}15`,border:`1px solid ${vm.colour}30`,borderRadius:7,color:vm.colour,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>📤 New Photo</button>
+                <button onClick={()=>fileRef.current?.click()} style={{marginLeft:"auto",padding:"4px 10px",background:`${vm.colour}15`,border:`1px solid ${vm.colour}30`,borderRadius:7,color:vm.colour,fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>📤 New Photo</button>
               </div>
-              {detectedViewNotice&&<div style={{padding:"7px 11px",background:"rgba(0,229,255,0.1)",border:"1px solid rgba(0,229,255,0.35)",borderRadius:8,fontSize:"0.72rem",color:"#00e5ff",fontWeight:600,marginBottom:8}}>{detectedViewNotice}</div>}
+              {detectedViewNotice&&<div style={{padding:"7px 11px",background:"rgba(0,229,255,0.1)",border:"1px solid rgba(0,229,255,0.35)",borderRadius:8,fontSize:"0.82rem",color:"#00e5ff",fontWeight:600,marginBottom:8}}>{detectedViewNotice}</div>}
               {error&&<div style={{padding:"8px 11px",background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.3)",borderRadius:8,fontSize:"0.74rem",color:C2.red,marginBottom:8}}>{error}</div>}
               {scoreData&&(
                 <button onClick={()=>setTab("results")} style={{width:"100%",padding:"11px",background:`linear-gradient(135deg,${C2.accent},${C2.a2})`,border:"none",borderRadius:10,color:"#1a1025",fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>View Full Analysis →</button>
@@ -10612,8 +10609,8 @@ function PhotoUploadAnalyzer() {
               {/* Developer Validation Mode Panel — toggle with Ctrl+Shift+D */}
               {devMode && scoreData && measurements && (
                 <div style={{marginTop:10,padding:"10px 13px",background:"rgba(0,229,255,0.07)",border:"1px solid rgba(0,229,255,0.3)",borderRadius:10,fontFamily:"monospace"}}>
-                  <div style={{fontSize:"0.65rem",fontWeight:800,color:"#00e5ff",marginBottom:7}}>🔧 DEV MODE — Raw Measurements (Ctrl+Shift+D to hide)</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,fontSize:"0.6rem",color:"#7e6a9a"}}>
+                  <div style={{fontSize:"0.75rem",fontWeight:800,color:"#00e5ff",marginBottom:7}}>🔧 DEV MODE — Raw Measurements (Ctrl+Shift+D to hide)</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,fontSize:"0.8rem",color:"#7e6a9a"}}>
                     {[
                       ["Shoulder Angle", measurements?.shoulderAngle?.toFixed(2)+"°"],
                       ["Pelvic Angle", measurements?.pelvisAngle?.toFixed(2)+"°"],
@@ -10657,18 +10654,18 @@ function PhotoUploadAnalyzer() {
           <div style={{display:"flex",gap:12,alignItems:"center",padding:"11px 13px",background:`${scoreData?.colour||C2.accent}09`,border:`1px solid ${scoreData?.colour||C2.accent}25`,borderRadius:12,marginBottom:12}}>
             <ScoreRingNew score={scoreData?.score||0} band={scoreData?.band||"—"} colour={scoreData?.colour||C2.muted} size={68}/>
             <div style={{flex:1}}>
-              <div style={{fontSize:"0.68rem",color:C2.muted,marginBottom:5}}>
+              <div style={{fontSize:"0.78rem",color:C2.muted,marginBottom:5}}>
                 {analysisResult.view && (
-                  <span style={{padding:"1px 7px",borderRadius:5,background:`${vm.colour}15`,color:vm.colour,fontWeight:700,marginRight:6,fontSize:"0.62rem"}}>
+                  <span style={{padding:"1px 7px",borderRadius:5,background:`${vm.colour}15`,color:vm.colour,fontWeight:700,marginRight:6,fontSize:"0.82rem"}}>
                     {({anterior:"⬆ Anterior",posterior:"⬇ Posterior",left:"◀ Left Lateral",right:"▶ Right Lateral"})[analysisResult.view]||analysisResult.view} View
                   </span>
                 )}
                 {new Date(analysisResult.capturedAt).toLocaleTimeString()}
               </div>
               <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                <span style={{fontSize:"0.62rem",padding:"2px 8px",borderRadius:7,background:"rgba(0,229,255,0.1)",color:C2.accent}}>Reliability: {reliability?.status}</span>
-                <span style={{fontSize:"0.62rem",padding:"2px 8px",borderRadius:7,background:"rgba(255,77,109,0.1)",color:C2.red}}>Priority: {highF.length}</span>
-                <span style={{fontSize:"0.62rem",padding:"2px 8px",borderRadius:7,background:"rgba(255,179,0,0.1)",color:C2.yellow}}>Findings: {findings?.length||0}</span>
+                <span style={{fontSize:"0.82rem",padding:"2px 8px",borderRadius:7,background:"rgba(0,229,255,0.1)",color:C2.accent}}>Reliability: {reliability?.status}</span>
+                <span style={{fontSize:"0.82rem",padding:"2px 8px",borderRadius:7,background:"rgba(255,77,109,0.1)",color:C2.red}}>Priority: {highF.length}</span>
+                <span style={{fontSize:"0.82rem",padding:"2px 8px",borderRadius:7,background:"rgba(255,179,0,0.1)",color:C2.yellow}}>Findings: {findings?.length||0}</span>
               </div>
             </div>
           </div>
@@ -10676,12 +10673,12 @@ function PhotoUploadAnalyzer() {
           {/* Mode badge */}
           <div style={{marginBottom:10}}>
             {isClinicianVerified ? (
-              <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,background:"rgba(5,150,105,0.12)",border:"1px solid rgba(5,150,105,0.35)",color:"#059669",fontSize:"0.68rem",fontWeight:800}}>
+              <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,background:"rgba(5,150,105,0.12)",border:"1px solid rgba(5,150,105,0.35)",color:"#059669",fontSize:"0.78rem",fontWeight:800}}>
                 ✅ Clinician Verified Analysis
                 <span style={{fontWeight:400,color:"#059669",opacity:0.8}}>({verifiedCount} landmark{verifiedCount!==1?"s":""} verified)</span>
               </div>
             ) : (
-              <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,background:"rgba(120,120,120,0.08)",border:"1px solid rgba(120,120,120,0.2)",color:C2.muted,fontSize:"0.68rem",fontWeight:800}}>
+              <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,background:"rgba(120,120,120,0.08)",border:"1px solid rgba(120,120,120,0.2)",color:C2.muted,fontSize:"0.78rem",fontWeight:800}}>
                 🤖 AI Estimated Analysis
                 <span style={{fontWeight:400,opacity:0.7}}>— verify landmarks below to boost confidence</span>
               </div>
@@ -10698,13 +10695,13 @@ function PhotoUploadAnalyzer() {
             <div style={{marginBottom:12}}>
               {highF.length>0&&(
                 <div style={{marginBottom:8}}>
-                  <div style={{fontSize:"0.6rem",fontWeight:700,color:C2.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>🔴 Priority ({highF.length})</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:700,color:C2.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>🔴 Priority ({highF.length})</div>
                   {highF.map((f,i)=><FindingCardNew key={i} f={f} defaultOpen={i===0}/>)}
                 </div>
               )}
               {otherF.length>0&&(
                 <div>
-                  <div style={{fontSize:"0.6rem",fontWeight:700,color:C2.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>🟡 Notable ({otherF.length})</div>
+                  <div style={{fontSize:"0.8rem",fontWeight:700,color:C2.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>🟡 Notable ({otherF.length})</div>
                   {otherF.map((f,i)=><FindingCardNew key={i} f={f}/>)}
                 </div>
               )}
@@ -10716,12 +10713,12 @@ function PhotoUploadAnalyzer() {
           {/* Clinical Metrics Dashboard */}
           {measurements&&(
             <div style={{marginBottom:12}}>
-              <div style={{fontSize:"0.6rem",fontWeight:700,color:C2.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📐 Clinical Metrics</div>
+              <div style={{fontSize:"0.8rem",fontWeight:700,color:C2.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📐 Clinical Metrics</div>
 
               {/* Sub-scores radar row */}
               {scoreData?.subScores&&(
                 <div style={{marginBottom:10}}>
-                  <div style={{fontSize:"0.58rem",color:C2.muted,marginBottom:5,fontWeight:600}}>Regional Scores</div>
+                  <div style={{fontSize:"0.78rem",color:C2.muted,marginBottom:5,fontWeight:600}}>Regional Scores</div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5}}>
                     {Object.entries(scoreData?.subScores).map(([region,val])=>{
                       const col=val>=80?"#00c97a":val>=60?"#ffb300":"#ff4d6d";
@@ -10741,12 +10738,12 @@ function PhotoUploadAnalyzer() {
               {reliability&&(
                 <div style={{display:"flex",gap:6,marginBottom:8}}>
                   <div style={{flex:1,padding:"5px 9px",background:"rgba(0,229,255,0.06)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:8}}>
-                    <div style={{fontSize:"0.58rem",color:C2.muted}}>Tracking Quality</div>
+                    <div style={{fontSize:"0.78rem",color:C2.muted}}>Tracking Quality</div>
                     <div style={{fontSize:"0.8rem",fontWeight:800,color:C2.accent}}>{reliability.status} · {reliability.score}%</div>
                   </div>
                   {reliability.icc&&(
                     <div style={{flex:1,padding:"5px 9px",background:"rgba(0,229,255,0.06)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:8}}>
-                      <div style={{fontSize:"0.58rem",color:C2.muted}}>ICC Proxy</div>
+                      <div style={{fontSize:"0.78rem",color:C2.muted}}>ICC Proxy</div>
                       <div style={{fontSize:"0.8rem",fontWeight:800,color:C2.accent}}>{reliability.icc}</div>
                     </div>
                   )}
@@ -10795,7 +10792,7 @@ function PhotoUploadAnalyzer() {
                 return(
                   <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:`${col}08`,border:`1px solid ${col}20`,borderRadius:8,marginBottom:4}}>
                     <div>
-                      <div style={{fontSize:"0.7rem",color:C2.text,fontWeight:600}}>{m.label}{m.side?` (${m.side} short)`:""}</div>
+                      <div style={{fontSize:"0.8rem",color:C2.text,fontWeight:600}}>{m.label}{m.side?` (${m.side} short)`:""}</div>
                       {m.norm&&<div style={{fontSize:"0.57rem",color:C2.muted}}>{m.norm}</div>}
                     </div>
                     <span style={{fontSize:"0.9rem",fontWeight:900,color:col,flexShrink:0,marginLeft:8}}>{display}</span>
@@ -10804,7 +10801,7 @@ function PhotoUploadAnalyzer() {
               })}
             </div>
           )}
-          <div style={{fontSize:"0.62rem",color:C2.muted,padding:"7px 10px",background:C2.s2,borderRadius:7,lineHeight:1.6,marginBottom:10}}>⚠ Observational AI analysis — not a clinical diagnosis. All findings require clinical correlation and manual assessment.</div>
+          <div style={{fontSize:"0.82rem",color:C2.muted,padding:"7px 10px",background:C2.s2,borderRadius:7,lineHeight:1.6,marginBottom:10}}>⚠ Observational AI analysis — not a clinical diagnosis. All findings require clinical correlation and manual assessment.</div>
 
           {/* ── Manual Save to Patient Record ── */}
           {activePatient&&(
@@ -10845,7 +10842,7 @@ function PhotoUploadAnalyzer() {
             </button>
           )}
           {!activePatient&&(
-            <div style={{padding:"9px 12px",background:"#FFF7ED",borderRadius:9,border:"1px solid #FDE68A",fontSize:"0.72rem",color:"#92400E",textAlign:"center"}}>
+            <div style={{padding:"9px 12px",background:"#FFF7ED",borderRadius:9,border:"1px solid #FDE68A",fontSize:"0.82rem",color:"#92400E",textAlign:"center"}}>
               Load a patient first to save this analysis to their record
             </div>
           )}
@@ -10860,8 +10857,8 @@ function PhotoUploadAnalyzer() {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
               <div style={{fontWeight:800,color:C2.accent,fontSize:"0.9rem"}}>📁 Photo Analysis History</div>
               <div style={{display:"flex",gap:7}}>
-                <button onClick={clearHistory} style={{padding:"4px 10px",background:"rgba(255,77,109,0.1)",border:`1px solid rgba(255,77,109,0.3)`,borderRadius:7,color:C2.red,fontSize:"0.65rem",cursor:"pointer"}}>Clear</button>
-                <button onClick={()=>setShowHistory(false)} style={{padding:"4px 10px",background:C2.s2,border:`1px solid ${C2.border}`,borderRadius:7,color:C2.muted,fontSize:"0.65rem",cursor:"pointer"}}>Close</button>
+                <button onClick={clearHistory} style={{padding:"4px 10px",background:"rgba(255,77,109,0.1)",border:`1px solid rgba(255,77,109,0.3)`,borderRadius:7,color:C2.red,fontSize:"0.75rem",cursor:"pointer"}}>Clear</button>
+                <button onClick={()=>setShowHistory(false)} style={{padding:"4px 10px",background:C2.s2,border:`1px solid ${C2.border}`,borderRadius:7,color:C2.muted,fontSize:"0.75rem",cursor:"pointer"}}>Close</button>
               </div>
             </div>
             {sessions.length===0?<div style={{textAlign:"center",color:C2.muted,padding:24,fontSize:"0.78rem"}}>No sessions yet</div>:(
@@ -10874,10 +10871,10 @@ function PhotoUploadAnalyzer() {
                         <div style={{fontWeight:700,color:C2.text,fontSize:"0.78rem"}}>{(s.view||"").toUpperCase()} · {s.band||"—"}</div>
                         <div style={{fontSize:"1.2rem",fontWeight:900,color:col}}>{s.score}</div>
                       </div>
-                      <div style={{fontSize:"0.6rem",color:C2.muted,marginBottom:5}}>{new Date(s.capturedAt).toLocaleString()}</div>
+                      <div style={{fontSize:"0.8rem",color:C2.muted,marginBottom:5}}>{new Date(s.capturedAt).toLocaleString()}</div>
                       <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                        <span style={{fontSize:"0.58rem",padding:"1px 7px",borderRadius:6,background:"rgba(255,77,109,0.1)",color:C2.red}}>Priority: {s.highCount||0}</span>
-                        <span style={{fontSize:"0.58rem",padding:"1px 7px",borderRadius:6,background:"rgba(255,179,0,0.1)",color:C2.yellow}}>Findings: {s.findingsCount||0}</span>
+                        <span style={{fontSize:"0.78rem",padding:"1px 7px",borderRadius:6,background:"rgba(255,77,109,0.1)",color:C2.red}}>Priority: {s.highCount||0}</span>
+                        <span style={{fontSize:"0.78rem",padding:"1px 7px",borderRadius:6,background:"rgba(255,179,0,0.1)",color:C2.yellow}}>Findings: {s.findingsCount||0}</span>
                       </div>
                     </div>
                   );
@@ -11244,7 +11241,7 @@ export function BodyChartInteractive({ data, set, compact = false }) {
               background: active===t.id ? t.bg : "#F9FAFB",
               color: active===t.id ? t.color : "#6B7280",
               fontWeight: active===t.id ? 800 : 500,
-              fontSize:"0.72rem", cursor:"pointer", display:"flex", alignItems:"center", gap:5,
+              fontSize:"0.82rem", cursor:"pointer", display:"flex", alignItems:"center", gap:5,
               transition:"all 0.15s",
             }}>
             <span style={{ fontSize:"1rem", lineHeight:1 }}>{t.symbol}</span>
@@ -11254,14 +11251,14 @@ export function BodyChartInteractive({ data, set, compact = false }) {
         {markers.length > 0 && (
           <button onClick={() => set("body_chart", [])}
             style={{ padding:"5px 11px", borderRadius:20, border:"1px solid #FCA5A5",
-              background:"#FEF2F2", color:"#EF4444", fontSize:"0.72rem", cursor:"pointer", marginLeft:"auto" }}>
+              background:"#FEF2F2", color:"#EF4444", fontSize:"0.82rem", cursor:"pointer", marginLeft:"auto" }}>
             Clear all
           </button>
         )}
       </div>
 
       {/* Instruction */}
-      <div style={{ fontSize:"0.65rem", color:"#9CA3AF", marginBottom:7, textAlign:"center" }}>
+      <div style={{ fontSize:"0.75rem", color:"#9CA3AF", marginBottom:7, textAlign:"center" }}>
         Tap body area to mark <strong style={{color:activeType?.color}}>{activeType?.label}</strong> · Tap again to remove
       </div>
 
@@ -11316,7 +11313,7 @@ export function BodyChartInteractive({ data, set, compact = false }) {
             top:`${Math.max(tooltip.y - 12, 2)}%`,
             background:"rgba(0,0,0,0.85)",
             color:"#fff", padding:"4px 9px", borderRadius:8,
-            fontSize:"0.65rem", fontWeight:700, whiteSpace:"nowrap",
+            fontSize:"0.75rem", fontWeight:700, whiteSpace:"nowrap",
             pointerEvents:"none", zIndex:10,
             border:`1px solid ${activeType?.color}`,
           }}>
@@ -11328,7 +11325,7 @@ export function BodyChartInteractive({ data, set, compact = false }) {
       {/* Marker list */}
       {markers.length > 0 && (
         <div style={{ marginTop:10 }}>
-          <div style={{ fontSize:"0.62rem", fontWeight:700, color:"#6B7280",
+          <div style={{ fontSize:"0.82rem", fontWeight:700, color:"#6B7280",
             textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>
             Marked areas ({markers.length})
           </div>
@@ -11340,10 +11337,10 @@ export function BodyChartInteractive({ data, set, compact = false }) {
                   onClick={() => set("body_chart", markers.filter(x => x.id !== m.id))}
                   style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px",
                     borderRadius:20, background:t.bg, border:`1px solid ${t.color}40`,
-                    fontSize:"0.68rem", fontWeight:600, color:t.color, cursor:"pointer" }}>
+                    fontSize:"0.78rem", fontWeight:600, color:t.color, cursor:"pointer" }}>
                   <span>{t.symbol}</span>
                   <span style={{color:"#374151"}}>{m.region}</span>
-                  <span style={{color:"#9CA3AF",fontSize:"0.55rem"}}>✕</span>
+                  <span style={{color:"#9CA3AF",fontSize:"0.75rem"}}>✕</span>
                 </div>
               );
             })}
@@ -11467,14 +11464,14 @@ function BodyChartWidget({ data, set, compact = false }) {
 
   if (compact) {
     if (markers.length === 0) return (
-      <div style={{ padding:"10px 0", color:PC.muted, fontSize:"0.68rem", textAlign:"center" }}>No pain areas marked</div>
+      <div style={{ padding:"10px 0", color:PC.muted, fontSize:"0.78rem", textAlign:"center" }}>No pain areas marked</div>
     );
     return (
       <div>
         <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
           {["anterior","posterior"].map(v => (
             <div key={v} style={{ textAlign:"center" }}>
-              <div style={{ fontSize:"0.58rem", color:PC.muted, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>{v==="anterior"?"Front":"Back"}</div>
+              <div style={{ fontSize:"0.78rem", color:PC.muted, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>{v==="anterior"?"Front":"Back"}</div>
               <BodySVG v={v} w={DISPLAY_W} h={DISPLAY_H} interactive={false}/>
             </div>
           ))}
@@ -11483,7 +11480,7 @@ function BodyChartWidget({ data, set, compact = false }) {
           {[...new Set(markers.map(m => JSON.stringify({r:m.region, t:m.type})))].map((key,i) => {
             const { r, t } = JSON.parse(key);
             const pt = BODY_PAIN_TYPES.find(p => p.id === t) || BODY_PAIN_TYPES[0];
-            return <span key={i} style={{ padding:"2px 8px", borderRadius:20, background:pt.bg, border:`1px solid ${pt.color}40`, fontSize:"0.6rem", fontWeight:700, color:pt.color }}>{pt.label}: {r}</span>;
+            return <span key={i} style={{ padding:"2px 8px", borderRadius:20, background:pt.bg, border:`1px solid ${pt.color}40`, fontSize:"0.8rem", fontWeight:700, color:pt.color }}>{pt.label}: {r}</span>;
           })}
         </div>
       </div>
@@ -11494,13 +11491,13 @@ function BodyChartWidget({ data, set, compact = false }) {
     <div style={{ background:PC.surface, border:`1px solid ${PC.border}`, borderRadius:16, overflow:"hidden", marginBottom:16 }}>
       <div style={{ padding:"14px 16px 10px", background:`${PC.accent}08`, borderBottom:`1px solid ${PC.border}` }}>
         <div style={{ fontSize:"0.8rem", fontWeight:800, color:PC.text, marginBottom:2 }}>🗺️ Body Chart</div>
-        <div style={{ fontSize:"0.62rem", color:PC.muted }}>Select a pain type, then tap the body to mark location. Tap an existing marker to remove it.</div>
+        <div style={{ fontSize:"0.82rem", color:PC.muted }}>Select a pain type, then tap the body to mark location. Tap an existing marker to remove it.</div>
       </div>
       <div style={{ display:"flex" }}>
         <div style={{ padding:"14px 10px 14px 14px", borderRight:`1px solid ${PC.border}` }}>
           <div style={{ display:"flex", gap:5, marginBottom:10 }}>
             {["anterior","posterior"].map(v => (
-              <button key={v} onClick={() => setView(v)} style={{ flex:1, padding:"5px 8px", borderRadius:7, border:`1.5px solid ${view===v?PC.accent:PC.border}`, background:view===v?`${PC.accent}15`:"transparent", color:view===v?PC.accent:PC.muted, fontSize:"0.6rem", fontWeight:800, cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.5px" }}>
+              <button key={v} onClick={() => setView(v)} style={{ flex:1, padding:"5px 8px", borderRadius:7, border:`1.5px solid ${view===v?PC.accent:PC.border}`, background:view===v?`${PC.accent}15`:"transparent", color:view===v?PC.accent:PC.muted, fontSize:"0.8rem", fontWeight:800, cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.5px" }}>
                 {v === "anterior" ? "Front" : "Back"}
               </button>
             ))}
@@ -11509,22 +11506,22 @@ function BodyChartWidget({ data, set, compact = false }) {
         </div>
         <div style={{ flex:1, padding:"14px 14px 14px 12px", display:"flex", flexDirection:"column", gap:10 }}>
           <div>
-            <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:7 }}>Mark type</div>
+            <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:7 }}>Mark type</div>
             <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
               {BODY_PAIN_TYPES.map(pt => (
                 <button key={pt.id} onClick={() => setActiveType(pt.id)} style={{ display:"flex", alignItems:"center", gap:9, padding:"7px 10px", borderRadius:9, border:`1.5px solid ${activeType===pt.id?pt.color:PC.border}`, background:activeType===pt.id?pt.bg:"transparent", cursor:"pointer" }}>
                   <div style={{ width:20, height:20, borderRadius:"50%", background:pt.color, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
                     <span style={{ fontSize:8, color:"white", fontWeight:900 }}>{pt.symbol}</span>
                   </div>
-                  <span style={{ fontSize:"0.7rem", fontWeight:activeType===pt.id?800:500, color:activeType===pt.id?pt.color:PC.muted }}>{pt.label}</span>
-                  {activeType===pt.id && <span style={{ marginLeft:"auto", fontSize:"0.58rem", color:pt.color, fontWeight:700 }}>● Active</span>}
+                  <span style={{ fontSize:"0.8rem", fontWeight:activeType===pt.id?800:500, color:activeType===pt.id?pt.color:PC.muted }}>{pt.label}</span>
+                  {activeType===pt.id && <span style={{ marginLeft:"auto", fontSize:"0.78rem", color:pt.color, fontWeight:700 }}>● Active</span>}
                 </button>
               ))}
             </div>
           </div>
           {currentMarkers.length > 0 && (
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Marked — {view==="anterior"?"Front":"Back"} ({currentMarkers.length})</div>
+              <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Marked — {view==="anterior"?"Front":"Back"} ({currentMarkers.length})</div>
               <div style={{ display:"flex", flexDirection:"column", gap:4, maxHeight:160, overflowY:"auto" }}>
                 {currentMarkers.map(m => {
                   const pt = BODY_PAIN_TYPES.find(p => p.id === m.type) || BODY_PAIN_TYPES[0];
@@ -11542,9 +11539,9 @@ function BodyChartWidget({ data, set, compact = false }) {
           )}
           {currentMarkers.length === 0 && (
             <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <div style={{ textAlign:"center", color:PC.muted, fontSize:"0.68rem", lineHeight:1.7 }}>
+              <div style={{ textAlign:"center", color:PC.muted, fontSize:"0.78rem", lineHeight:1.7 }}>
                 No areas marked<br/>
-                <span style={{ fontSize:"0.6rem" }}>Select a type then tap the body diagram</span>
+                <span style={{ fontSize:"0.8rem" }}>Select a type then tap the body diagram</span>
               </div>
             </div>
           )}
@@ -11552,13 +11549,13 @@ function BodyChartWidget({ data, set, compact = false }) {
       </div>
       {markers.length > 0 && (
         <div style={{ borderTop:`1px solid ${PC.border}`, padding:"10px 14px", background:PC.s2||"#f9f7ff" }}>
-          <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>All marked regions</div>
+          <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>All marked regions</div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
             {markers.map(m => {
               const pt = BODY_PAIN_TYPES.find(p => p.id === m.type) || BODY_PAIN_TYPES[0];
-              return <span key={m.id} style={{ padding:"3px 10px", borderRadius:20, background:pt.bg, border:`1px solid ${pt.color}45`, fontSize:"0.62rem", fontWeight:700, color:pt.color }}>{pt.label}: {m.region}</span>;
+              return <span key={m.id} style={{ padding:"3px 10px", borderRadius:20, background:pt.bg, border:`1px solid ${pt.color}45`, fontSize:"0.82rem", fontWeight:700, color:pt.color }}>{pt.label}: {m.region}</span>;
             })}
-            <button onClick={() => set("body_chart", [])} style={{ padding:"3px 10px", borderRadius:20, background:"transparent", border:`1px solid ${PC.border}`, fontSize:"0.62rem", color:PC.muted, cursor:"pointer" }}>Clear all</button>
+            <button onClick={() => set("body_chart", [])} style={{ padding:"3px 10px", borderRadius:20, background:"transparent", border:`1px solid ${PC.border}`, fontSize:"0.82rem", color:PC.muted, cursor:"pointer" }}>Clear all</button>
           </div>
         </div>
       )}
@@ -12470,7 +12467,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       const {r,t}=JSON.parse(key);
                       const colors={"pain":"#EF4444","referred":"#F97316","numb":"#3B82F6","tingling":"#EAB308","stiff":"#8B5CF6"};
                       const bgs={"pain":"#FEF2F2","referred":"#FFF7ED","numb":"#EFF6FF","tingling":"#FEFCE8","stiff":"#F5F3FF"};
-                      return <span key={i} style={{padding:"2px 8px",borderRadius:20,background:bgs[t]||"#f3f4f6",border:`1px solid ${colors[t]||"#ccc"}40`,fontSize:"0.6rem",fontWeight:700,color:colors[t]||"#666"}}>{t}: {r}</span>;
+                      return <span key={i} style={{padding:"2px 8px",borderRadius:20,background:bgs[t]||"#f3f4f6",border:`1px solid ${colors[t]||"#ccc"}40`,fontSize:"0.8rem",fontWeight:700,color:colors[t]||"#666"}}>{t}: {r}</span>;
                     })}
                   </div>
                 </div>
@@ -13772,17 +13769,17 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
           <div style={{fontWeight:800,fontSize:"0.9rem",color:"#111827",
             whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
             {patient.name || "Unnamed Patient"}
-            {hasRed && <span style={{marginLeft:6,fontSize:"0.7rem",color:"#ef4444"}}>🚩</span>}
+            {hasRed && <span style={{marginLeft:6,fontSize:"0.8rem",color:"#ef4444"}}>🚩</span>}
           </div>
-          <div style={{fontSize:"0.72rem",color:"#6B7280",marginTop:2,
+          <div style={{fontSize:"0.82rem",color:"#6B7280",marginTop:2,
             whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
             {[age,sex,occ].filter(Boolean).join(" · ") || "No demographics"}
           </div>
-          {dx && <div style={{fontSize:"0.68rem",color:"#059669",marginTop:3,
+          {dx && <div style={{fontSize:"0.78rem",color:"#059669",marginTop:3,
             whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontWeight:600}}>🩺 {dx}</div>}
           {vas && <div style={{marginTop:4}}>
             <span style={{padding:"2px 8px",borderRadius:99,background:`${vasColor}15`,
-              border:`1px solid ${vasColor}40`,fontSize:"0.65rem",fontWeight:700,color:vasColor}}>
+              border:`1px solid ${vasColor}40`,fontSize:"0.75rem",fontWeight:700,color:vasColor}}>
               NRS {vas}/10
             </span>
           </div>}
@@ -13798,7 +13795,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
           </button>
           <button onClick={e=>{e.stopPropagation();onDelete();}}
             style={{background:"none",border:"1px solid #E5E7EB",borderRadius:7,
-              color:"#9CA3AF",cursor:"pointer",fontSize:"0.65rem",padding:"4px 8px",fontWeight:600}}>
+              color:"#9CA3AF",cursor:"pointer",fontSize:"0.75rem",padding:"4px 8px",fontWeight:600}}>
             Remove
           </button>
         </div>
@@ -13892,7 +13889,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
               <div style={{fontWeight:900,fontSize:"1.1rem",color:"#7c3aed",letterSpacing:"-0.3px"}}>
                 👥 Patient Database
               </div>
-              <div style={{fontSize:"0.68rem",color:"#6B7280",marginTop:2}}>
+              <div style={{fontSize:"0.78rem",color:"#6B7280",marginTop:2}}>
                 {localPatients.length} patient{localPatients.length!==1?"s":""} · {redFlagCount} with flags
               </div>
             </div>
@@ -13919,7 +13916,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
                 style={{padding:"6px 12px",borderRadius:20,
                   border:`1px solid ${sortBy===v?"#7c3aed":"#E5E7EB"}`,
                   background:sortBy===v?"#7c3aed":"white",
-                  color:sortBy===v?"white":"#6B7280",fontSize:"0.68rem",fontWeight:700,cursor:"pointer"}}>
+                  color:sortBy===v?"white":"#6B7280",fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>
                 {l}
               </button>
             ))}
@@ -13927,7 +13924,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
               style={{padding:"6px 12px",borderRadius:20,marginLeft:"auto",
                 border:`1px solid ${filterFlag?"#ef4444":"#E5E7EB"}`,
                 background:filterFlag?"#FEF2F2":"white",
-                color:filterFlag?"#ef4444":"#6B7280",fontSize:"0.68rem",fontWeight:700,cursor:"pointer"}}>
+                color:filterFlag?"#ef4444":"#6B7280",fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>
               🚩 Flags only
             </button>
           </div>
@@ -13944,7 +13941,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
             <div key={s.label} style={{flex:1,padding:"10px 4px",textAlign:"center",
               borderRight:"1px solid #E5E7EB"}}>
               <div style={{fontWeight:900,fontSize:"1rem",color:s.color}}>{s.val}</div>
-              <div style={{fontSize:"0.6rem",color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.5px",marginTop:2}}>{s.label}</div>
+              <div style={{fontSize:"0.8rem",color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.5px",marginTop:2}}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -13983,7 +13980,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
             <button onClick={()=>fileRef.current?.click()}
               style={{flex:1,padding:"9px",background:"rgba(0,201,122,0.08)",
                 border:"1px solid rgba(0,201,122,0.2)",borderRadius:9,
-                color:"#00c97a",fontSize:"0.7rem",fontWeight:700,cursor:"pointer"}}>
+                color:"#00c97a",fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
               📂 Import JSON
             </button>
             <input ref={fileRef} type="file" accept=".json" onChange={handleImportFile} style={{display:"none"}}/>
@@ -13997,7 +13994,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
               }}
               style={{flex:1,padding:"9px",background:"rgba(127,90,240,0.08)",
                 border:"1px solid rgba(127,90,240,0.2)",borderRadius:9,
-                color:"#7f5af0",fontSize:"0.7rem",fontWeight:700,cursor:"pointer"}}>
+                color:"#7f5af0",fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
               💾 Export All
             </button>
           </div>
@@ -14167,7 +14164,7 @@ function PostureDefectDetail({ defectId, onClose }) {
           <span style={{fontSize:"1.8rem"}}>{d.icon}</span>
           <div style={{flex:1}}>
             <div style={{fontSize:"1rem",fontWeight:800,color:"#1a1025"}}>{d.label}</div>
-            <span style={{fontSize:"0.65rem",padding:"2px 8px",borderRadius:6,background:"rgba(0,229,255,0.12)",color:"#00e5ff",fontWeight:700}}>{d.region}</span>
+            <span style={{fontSize:"0.75rem",padding:"2px 8px",borderRadius:6,background:"rgba(0,229,255,0.12)",color:"#00e5ff",fontWeight:700}}>{d.region}</span>
           </div>
           <button onClick={onClose} style={{background:"none",border:"1px solid #d8cce8",borderRadius:8,color:"#7e6a9a",cursor:"pointer",padding:"5px 10px",fontSize:"0.75rem"}}>✕</button>
         </div>
@@ -14178,28 +14175,28 @@ function PostureDefectDetail({ defectId, onClose }) {
         {/* Muscles */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
           <div style={{background:"rgba(255,77,109,0.06)",border:"1px solid rgba(255,77,109,0.2)",borderRadius:10,padding:"10px 12px"}}>
-            <div style={{fontSize:"0.6rem",fontWeight:800,color:"#ff4d6d",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:7}}>🔴 Tight / Overactive</div>
-            {d.tight_muscles.map((m,i)=><div key={i} style={{fontSize:"0.68rem",color:"#1a1025",padding:"2px 0",borderBottom:"1px solid rgba(255,77,109,0.08)",lineHeight:1.4}}>{m}</div>)}
+            <div style={{fontSize:"0.8rem",fontWeight:800,color:"#ff4d6d",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:7}}>🔴 Tight / Overactive</div>
+            {d.tight_muscles.map((m,i)=><div key={i} style={{fontSize:"0.78rem",color:"#1a1025",padding:"2px 0",borderBottom:"1px solid rgba(255,77,109,0.08)",lineHeight:1.4}}>{m}</div>)}
           </div>
           <div style={{background:"rgba(0,201,122,0.06)",border:"1px solid rgba(0,201,122,0.2)",borderRadius:10,padding:"10px 12px"}}>
-            <div style={{fontSize:"0.6rem",fontWeight:800,color:"#00c97a",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:7}}>🟢 Weak / Inhibited</div>
-            {d.weak_muscles.map((m,i)=><div key={i} style={{fontSize:"0.68rem",color:"#1a1025",padding:"2px 0",borderBottom:"1px solid rgba(0,201,122,0.08)",lineHeight:1.4}}>{m}</div>)}
+            <div style={{fontSize:"0.8rem",fontWeight:800,color:"#00c97a",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:7}}>🟢 Weak / Inhibited</div>
+            {d.weak_muscles.map((m,i)=><div key={i} style={{fontSize:"0.78rem",color:"#1a1025",padding:"2px 0",borderBottom:"1px solid rgba(0,201,122,0.08)",lineHeight:1.4}}>{m}</div>)}
           </div>
         </div>
         {/* Kinetic chain */}
         <div style={{background:"rgba(127,90,240,0.07)",border:"1px solid rgba(127,90,240,0.2)",borderRadius:10,padding:"10px 13px",marginBottom:14}}>
-          <div style={{fontSize:"0.6rem",fontWeight:800,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>🔗 Kinetic Chain</div>
-          <div style={{fontSize:"0.72rem",color:"#1a1025",lineHeight:1.6,fontStyle:"italic"}}>{d.kinetic_chain}</div>
+          <div style={{fontSize:"0.8rem",fontWeight:800,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>🔗 Kinetic Chain</div>
+          <div style={{fontSize:"0.82rem",color:"#1a1025",lineHeight:1.6,fontStyle:"italic"}}>{d.kinetic_chain}</div>
         </div>
         {/* Exercises */}
         {d.exercises?.length > 0 && (
           <div>
-            <div style={{fontSize:"0.6rem",fontWeight:800,color:"#00e5ff",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8}}>💪 Corrective Exercises</div>
+            <div style={{fontSize:"0.8rem",fontWeight:800,color:"#00e5ff",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8}}>💪 Corrective Exercises</div>
             <div style={{display:"flex",flexDirection:"column",gap:5}}>
               {d.exercises.map((ex,i)=>(
                 <div key={i} style={{display:"flex",gap:8,padding:"6px 10px",background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.12)",borderRadius:8,alignItems:"center"}}>
-                  <span style={{color:"#00e5ff",fontWeight:800,fontSize:"0.7rem",flexShrink:0}}>{i+1}.</span>
-                  <span style={{fontSize:"0.72rem",color:"#1a1025"}}>{ex}</span>
+                  <span style={{color:"#00e5ff",fontWeight:800,fontSize:"0.8rem",flexShrink:0}}>{i+1}.</span>
+                  <span style={{fontSize:"0.82rem",color:"#1a1025"}}>{ex}</span>
                 </div>
               ))}
             </div>
@@ -14286,18 +14283,18 @@ function PostureDefectModule() {
     <div>
       {/* ── STEP 1: View guidance ── */}
       <div style={{marginBottom:16}}>
-        <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:9}}>📋 Assessment Views — Position patient accordingly</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:9}}>📋 Assessment Views — Position patient accordingly</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
           {PLAN_VIEWS.map(v => (
             <div key={v.key} style={{background:"rgba(0,229,255,0.04)",border:"1px solid rgba(0,229,255,0.14)",borderRadius:10,padding:"9px 11px"}}>
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
                 <span style={{fontSize:"1rem"}}>{v.icon}</span>
-                <span style={{fontSize:"0.72rem",fontWeight:800,color:"#00e5ff"}}>{v.label}</span>
+                <span style={{fontSize:"0.82rem",fontWeight:800,color:"#00e5ff"}}>{v.label}</span>
                 {defectsByView[v.key]?.length > 0 && (
                   <span style={{marginLeft:"auto",padding:"1px 6px",borderRadius:6,background:"rgba(0,229,255,0.15)",color:"#00e5ff",fontSize:"0.56rem",fontWeight:800}}>{defectsByView[v.key].length}</span>
                 )}
               </div>
-              <div style={{fontSize:"0.63rem",color:"#7e6a9a",lineHeight:1.4}}>{v.tip}</div>
+              <div style={{fontSize:"0.73rem",color:"#7e6a9a",lineHeight:1.4}}>{v.tip}</div>
               {defectsByView[v.key]?.length > 0 && (
                 <div style={{marginTop:6,display:"flex",flexWrap:"wrap",gap:3}}>
                   {defectsByView[v.key].map(id => (
@@ -14314,16 +14311,16 @@ function PostureDefectModule() {
 
       {/* ── STEP 2: Defect selector ── */}
       <div style={{marginBottom:14}}>
-        <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
+        <div style={{fontSize:"0.82rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
           🔍 Select Observed Defects
-          {selectedDefects.length > 0 && <span style={{marginLeft:8,padding:"1px 7px",borderRadius:8,background:"rgba(255,77,109,0.15)",color:"#ff4d6d",fontSize:"0.58rem",fontWeight:800}}>{selectedDefects.length} selected</span>}
+          {selectedDefects.length > 0 && <span style={{marginLeft:8,padding:"1px 7px",borderRadius:8,background:"rgba(255,77,109,0.15)",color:"#ff4d6d",fontSize:"0.78rem",fontWeight:800}}>{selectedDefects.length} selected</span>}
         </div>
 
         {/* Region filter */}
         <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:9}}>
           {regions.map(r => (
             <button key={r} onClick={() => setRegionFilter(r)}
-              style={{padding:"3px 9px",borderRadius:8,fontSize:"0.6rem",fontWeight:700,border:`1px solid ${regionFilter===r?"rgba(0,229,255,0.5)":"#1a2d45"}`,background:regionFilter===r?"rgba(0,229,255,0.12)":"transparent",color:regionFilter===r?"#00e5ff":"#6b8399",cursor:"pointer"}}>
+              style={{padding:"3px 9px",borderRadius:8,fontSize:"0.8rem",fontWeight:700,border:`1px solid ${regionFilter===r?"rgba(0,229,255,0.5)":"#1a2d45"}`,background:regionFilter===r?"rgba(0,229,255,0.12)":"transparent",color:regionFilter===r?"#00e5ff":"#6b8399",cursor:"pointer"}}>
               {r}
             </button>
           ))}
@@ -14335,10 +14332,10 @@ function PostureDefectModule() {
             const sel = selectedDefects.includes(d.id);
             return (
               <button key={d.id} onClick={() => setSelectedDefects(sel ? selectedDefects.filter(s => s !== d.id) : [...selectedDefects, d.id])}
-                style={{padding:"8px 10px",borderRadius:9,fontSize:"0.68rem",fontWeight:sel?700:500,border:`1px solid ${sel?"rgba(255,77,109,0.45)":"#1a2d45"}`,background:sel?"rgba(255,77,109,0.1)":"rgba(19,28,40,0.7)",color:sel?"#ff4d6d":"#94a3b8",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"flex-start",gap:6}}>
+                style={{padding:"8px 10px",borderRadius:9,fontSize:"0.78rem",fontWeight:sel?700:500,border:`1px solid ${sel?"rgba(255,77,109,0.45)":"#1a2d45"}`,background:sel?"rgba(255,77,109,0.1)":"rgba(19,28,40,0.7)",color:sel?"#ff4d6d":"#94a3b8",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"flex-start",gap:6}}>
                 <span style={{fontSize:"1rem",flexShrink:0}}>{d.icon}</span>
                 <span style={{flex:1,lineHeight:1.3}}>{d.label}</span>
-                {sel && <span style={{color:"#ff4d6d",fontSize:"0.6rem",flexShrink:0}}>✓</span>}
+                {sel && <span style={{color:"#ff4d6d",fontSize:"0.8rem",flexShrink:0}}>✓</span>}
               </button>
             );
           })}
@@ -14348,7 +14345,7 @@ function PostureDefectModule() {
       {/* ── STEP 3: Selected findings with severity + tap-to-expand ── */}
       {selectedDefects.length > 0 && (
         <div style={{marginBottom:14}}>
-          <div style={{fontSize:"0.62rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
             📌 Findings — tap card to view full clinical detail
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:7}}>
@@ -14364,11 +14361,11 @@ function PostureDefectModule() {
                     <span style={{fontSize:"1.1rem"}}>{d.icon}</span>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:"0.76rem",fontWeight:700,color:"#1a1025",lineHeight:1.3}}>{d.label}</div>
-                      <div style={{fontSize:"0.6rem",color:"#7e6a9a",marginTop:1}}>{d.region}</div>
+                      <div style={{fontSize:"0.8rem",color:"#7e6a9a",marginTop:1}}>{d.region}</div>
                     </div>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
-                      <span style={{fontSize:"0.62rem",color:"#00e5ff",fontWeight:700}}>📋 Detail →</span>
-                      <button onClick={e=>{e.stopPropagation();setSelectedDefects(p=>p.filter(s=>s!==id));}} style={{background:"none",border:"1px solid #d8cce8",borderRadius:5,color:"#7e6a9a",cursor:"pointer",fontSize:"0.6rem",padding:"1px 6px",lineHeight:1.4}}>✕</button>
+                      <span style={{fontSize:"0.82rem",color:"#00e5ff",fontWeight:700}}>📋 Detail →</span>
+                      <button onClick={e=>{e.stopPropagation();setSelectedDefects(p=>p.filter(s=>s!==id));}} style={{background:"none",border:"1px solid #d8cce8",borderRadius:5,color:"#7e6a9a",cursor:"pointer",fontSize:"0.8rem",padding:"1px 6px",lineHeight:1.4}}>✕</button>
                     </div>
                   </div>
 
@@ -14376,7 +14373,7 @@ function PostureDefectModule() {
                   <div style={{padding:"0 13px 10px",display:"flex",gap:4}}>
                     {["mild","moderate","severe"].map(s => (
                       <button key={s} onClick={() => setDefectSeverity(p => ({...p,[id]:s}))}
-                        style={{flex:1,padding:"5px 3px",borderRadius:7,fontSize:"0.6rem",fontWeight:sev===s?800:500,border:`1px solid ${sev===s?SEVERITY_COLOR[s]+"80":"#1a2d45"}`,background:sev===s?SEVERITY_BG[s]:"transparent",color:sev===s?SEVERITY_COLOR[s]:"#6b8399",cursor:"pointer",textTransform:"capitalize"}}>
+                        style={{flex:1,padding:"5px 3px",borderRadius:7,fontSize:"0.8rem",fontWeight:sev===s?800:500,border:`1px solid ${sev===s?SEVERITY_COLOR[s]+"80":"#1a2d45"}`,background:sev===s?SEVERITY_BG[s]:"transparent",color:sev===s?SEVERITY_COLOR[s]:"#6b8399",cursor:"pointer",textTransform:"capitalize"}}>
                         {s}
                       </button>
                     ))}
@@ -14385,16 +14382,16 @@ function PostureDefectModule() {
                   {/* Quick summary row */}
                   <div style={{padding:"8px 13px",background:"rgba(6,9,15,0.5)",borderTop:"1px solid #d8cce8",display:"flex",gap:8,flexWrap:"wrap"}}>
                     <div style={{flex:"1 1 120px"}}>
-                      <div style={{fontSize:"0.55rem",fontWeight:700,color:"#ff4d6d",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🔴 Tight</div>
-                      <div style={{fontSize:"0.62rem",color:"#1a1025",lineHeight:1.4}}>{d.tight_muscles.slice(0,2).join(", ")}{d.tight_muscles.length>2?` +${d.tight_muscles.length-2} more`:""}</div>
+                      <div style={{fontSize:"0.75rem",fontWeight:700,color:"#ff4d6d",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🔴 Tight</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a1025",lineHeight:1.4}}>{d.tight_muscles.slice(0,2).join(", ")}{d.tight_muscles.length>2?` +${d.tight_muscles.length-2} more`:""}</div>
                     </div>
                     <div style={{flex:"1 1 120px"}}>
-                      <div style={{fontSize:"0.55rem",fontWeight:700,color:"#00c97a",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🟢 Weak</div>
-                      <div style={{fontSize:"0.62rem",color:"#1a1025",lineHeight:1.4}}>{d.weak_muscles.slice(0,2).join(", ")}{d.weak_muscles.length>2?` +${d.weak_muscles.length-2} more`:""}</div>
+                      <div style={{fontSize:"0.75rem",fontWeight:700,color:"#00c97a",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🟢 Weak</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a1025",lineHeight:1.4}}>{d.weak_muscles.slice(0,2).join(", ")}{d.weak_muscles.length>2?` +${d.weak_muscles.length-2} more`:""}</div>
                     </div>
                     <div style={{flex:"1 1 120px"}}>
-                      <div style={{fontSize:"0.55rem",fontWeight:700,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🔗 Chain</div>
-                      <div style={{fontSize:"0.62rem",color:"#1a1025",lineHeight:1.4,fontStyle:"italic"}}>{d.kinetic_chain.split("→")[0].trim()} →…</div>
+                      <div style={{fontSize:"0.75rem",fontWeight:700,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🔗 Chain</div>
+                      <div style={{fontSize:"0.82rem",color:"#1a1025",lineHeight:1.4,fontStyle:"italic"}}>{d.kinetic_chain.split("→")[0].trim()} →…</div>
                     </div>
                   </div>
                 </div>
@@ -14415,16 +14412,16 @@ function PostureDefectModule() {
           ) : (
             <div style={{background:"#ffffff",border:"1px solid rgba(0,201,122,0.3)",borderRadius:12,padding:"13px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:"0.72rem",fontWeight:800,color:"#00c97a"}}>📄 PDF Report Details</div>
-                <button onClick={() => setShowExport(false)} style={{background:"none",border:"1px solid #d8cce8",borderRadius:6,color:"#7e6a9a",cursor:"pointer",padding:"3px 8px",fontSize:"0.65rem"}}>✕</button>
+                <div style={{fontSize:"0.82rem",fontWeight:800,color:"#00c97a"}}>📄 PDF Report Details</div>
+                <button onClick={() => setShowExport(false)} style={{background:"none",border:"1px solid #d8cce8",borderRadius:6,color:"#7e6a9a",cursor:"pointer",padding:"3px 8px",fontSize:"0.75rem"}}>✕</button>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
                 <div>
-                  <label style={{fontSize:"0.6rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:4}}>Patient Name</label>
+                  <label style={{fontSize:"0.8rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:4}}>Patient Name</label>
                   <input value={patientName} onChange={e=>setPatientName(e.target.value)} placeholder="Patient name" style={inputStyle}/>
                 </div>
                 <div>
-                  <label style={{fontSize:"0.6rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:4}}>Clinician</label>
+                  <label style={{fontSize:"0.8rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:4}}>Clinician</label>
                   <input value={clinicianName} onChange={e=>setClinicianName(e.target.value)} placeholder="Your name" style={inputStyle}/>
                 </div>
               </div>
@@ -14440,7 +14437,7 @@ function PostureDefectModule() {
       {/* Defect detail modal */}
       {openDefect && <PostureDefectDetail defectId={openDefect} onClose={() => setOpenDefect(null)}/>}
 
-      <div style={{padding:"7px 11px",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,fontSize:"0.6rem",color:"#7e6a9a",lineHeight:1.5}}>
+      <div style={{padding:"7px 11px",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,fontSize:"0.8rem",color:"#7e6a9a",lineHeight:1.5}}>
         ⚠ Manual observational assessment. Select all defects observed across each view. Tap any finding card for full clinical detail, muscles, kinetic chain, and exercise programme.
       </div>
     </div>
@@ -14464,7 +14461,7 @@ function HomeModule({ onNav }) {
     { icon:"🧠", title:"CPA Assessment", desc:"Neurokinetic Therapy muscle testing with inhibitor-facilitator relationships across regions.", nav:"nkt", color:"#7c3aed" },
     { icon:"⛓️", title:"Kinetic Chain", desc:"Joint-by-joint analysis of the kinetic chain from foot to cervical spine.", nav:"kinetic", color:"#9333ea" },
     { icon:"💊", title:"Treatment Prescription", desc:"Evidence-based exercise programming, HEP generation, treatment technique logging, and session records.", nav:"exercise", color:"#7c3aed" },
-    { icon:"🤖", title:"SOAP Notes + AI", desc:"AI-powered SOAP note generation from your assessment data with Anthropic Claude integration.", nav:"soap", color:"#9333ea" },
+    { icon:"🤖", title:"SOAP Notes + AI", desc:"AI-powered SOAP note generation from your assessment data using Groq AI.", nav:"soap", color:"#9333ea" },
   ];
 
   return (
@@ -14507,7 +14504,7 @@ function HomeModule({ onNav }) {
           <div key={i} style={{background:"#fff",border:"1px solid #d8cce8",borderRadius:14,padding:"18px 16px",textAlign:"center",boxShadow:"0 2px 12px rgba(124,58,237,0.07)"}}>
             <div style={{fontSize:"1.5rem",marginBottom:6}}>{s.icon}</div>
             <div style={{fontSize:"1.6rem",fontWeight:900,color:"#7c3aed",lineHeight:1}}>{s.num}</div>
-            <div style={{fontSize:"0.65rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.5px",marginTop:4}}>{s.label}</div>
+            <div style={{fontSize:"0.75rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.5px",marginTop:4}}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -14533,7 +14530,7 @@ function HomeModule({ onNav }) {
                 <div style={{fontSize:"0.85rem",fontWeight:700,color:"#1a1025",lineHeight:1.2}}>{f.title}</div>
               </div>
               <div style={{fontSize:"0.75rem",color:"#7e6a9a",lineHeight:1.55}}>{f.desc}</div>
-              <div style={{marginTop:10,fontSize:"0.68rem",fontWeight:700,color:f.color}}>Open →</div>
+              <div style={{marginTop:10,fontSize:"0.78rem",fontWeight:700,color:f.color}}>Open →</div>
             </button>
           ))}
         </div>
@@ -14550,7 +14547,7 @@ function HomeModule({ onNav }) {
           ].map((step,i)=>(
             <div key={i} style={{
               padding:"5px 12px",background:"#fff",border:"1px solid #d8cce8",
-              borderRadius:8,fontSize:"0.72rem",fontWeight:600,color:"#1a1025"
+              borderRadius:8,fontSize:"0.82rem",fontWeight:600,color:"#1a1025"
             }}>{step}</div>
           ))}
         </div>
@@ -14870,7 +14867,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
             )}
             <button onClick={onSignOut}
               style={{padding:"6px 12px",borderRadius:9,border:"1px solid #d8cce8",
-                background:"transparent",color:"#7e6a9a",fontSize:"0.7rem",
+                background:"transparent",color:"#7e6a9a",fontSize:"0.8rem",
                 fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
               Sign out
             </button>
@@ -15953,7 +15950,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
                 <span style={{fontSize:"24px"}}>📄</span>
                 <div><h2 style={{margin:0,fontSize:"1.3rem",fontWeight:800,letterSpacing:"-0.3px"}}>Clinical PDF Reports</h2><p style={{margin:"2px 0 0",fontSize:"0.75rem",opacity:0.8}}>Generate 3 world-class professional documents</p></div>
               </div>
-              {patName !== "Patient" && <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",background:"rgba(255,255,255,0.12)",borderRadius:8,width:"fit-content"}}><div style={{width:6,height:6,borderRadius:"50%",background:"#34d399"}}/><span style={{fontSize:"0.8rem",fontWeight:600}}>{patName}</span>{age && age !== "--" && <span style={{fontSize:"0.72rem",opacity:0.7}}>&#183; Age {age}</span>}</div>}
+              {patName !== "Patient" && <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",background:"rgba(255,255,255,0.12)",borderRadius:8,width:"fit-content"}}><div style={{width:6,height:6,borderRadius:"50%",background:"#34d399"}}/><span style={{fontSize:"0.8rem",fontWeight:600}}>{patName}</span>{age && age !== "--" && <span style={{fontSize:"0.82rem",opacity:0.7}}>&#183; Age {age}</span>}</div>}
             </div>
             <button onClick={onClose} style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,color:"#fff",cursor:"pointer",padding:"8px 14px",fontSize:"0.8rem",fontWeight:600}}>✕ Close</button>
           </div>
@@ -15971,26 +15968,26 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
                     <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:10}}>
                       <div style={{width:44,height:44,background:report.gradient,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}} dangerouslySetInnerHTML={{__html:report.icon}}/>
                       <div>
-                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}><h3 style={{margin:0,fontSize:"1rem",fontWeight:800,color:"#1e293b"}}>{report.title}</h3><span style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:5,background:"rgba(100,116,139,0.12)",color:"#64748b",fontWeight:600}}>{report.pages}</span></div>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}><h3 style={{margin:0,fontSize:"1rem",fontWeight:800,color:"#1e293b"}}>{report.title}</h3><span style={{fontSize:"0.82rem",padding:"2px 7px",borderRadius:5,background:"rgba(100,116,139,0.12)",color:"#64748b",fontWeight:600}}>{report.pages}</span></div>
                         <p style={{margin:0,fontSize:"0.75rem",color:"#64748b",fontWeight:500}}>{report.subtitle}</p>
                       </div>
                     </div>
                     <p style={{margin:"0 0 10px",fontSize:"0.78rem",color:"#475569",lineHeight:1.6}}>{report.desc}</p>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{report.tags.map(tag=><span key={tag} style={{fontSize:"0.65rem",padding:"2px 8px",borderRadius:5,background:report.color+"12",border:`1px solid ${report.color}25`,color:report.color,fontWeight:600}}>{tag}</span>)}</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{report.tags.map(tag=><span key={tag} style={{fontSize:"0.75rem",padding:"2px 8px",borderRadius:5,background:report.color+"12",border:`1px solid ${report.color}25`,color:report.color,fontWeight:600}}>{tag}</span>)}</div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"18px 20px",borderLeft:"1px solid #e2e8f0",minWidth:130,gap:10}}>
-                    {done[report.id] && <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"rgba(5,150,105,0.1)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:8}}><span style={{color:"#059669",fontSize:"0.65rem",fontWeight:700}}>✓ Generated</span></div>}
+                    {done[report.id] && <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"rgba(5,150,105,0.1)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:8}}><span style={{color:"#059669",fontSize:"0.75rem",fontWeight:700}}>✓ Generated</span></div>}
                     <button onClick={()=>generatePdf(report.id)} disabled={generating!==null} style={{width:"100%",padding:"12px 16px",background:generating===report.id?"#94a3b8":report.gradient,border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:generating?"not-allowed":"pointer",opacity:generating&&generating!==report.id?0.5:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
                       {generating===report.id?"⏳ Generating...":"📥 Generate PDF"}
                     </button>
-                    <div style={{fontSize:"0.65rem",color:"#94a3b8",textAlign:"center",lineHeight:1.4}}>Opens in new tab<br/>Print → Save as PDF</div>
+                    <div style={{fontSize:"0.75rem",color:"#94a3b8",textAlign:"center",lineHeight:1.4}}>Opens in new tab<br/>Print → Save as PDF</div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
           <div style={{marginTop:18,padding:"16px 20px",background:"linear-gradient(135deg,rgba(124,58,237,0.06),rgba(37,99,235,0.04))",border:"1px solid rgba(124,58,237,0.2)",borderRadius:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
-            <div><div style={{fontWeight:700,fontSize:"0.88rem",color:"#1e293b"}}>Generate All 4 Reports</div><div style={{fontSize:"0.72rem",color:"#64748b",marginTop:2}}>Create all documents at once for a complete patient report package</div></div>
+            <div><div style={{fontWeight:700,fontSize:"0.88rem",color:"#1e293b"}}>Generate All 4 Reports</div><div style={{fontSize:"0.82rem",color:"#64748b",marginTop:2}}>Create all documents at once for a complete patient report package</div></div>
             <button onClick={async()=>{for(const r of reports){await generatePdf(r.id);await new Promise(res=>setTimeout(res,1500));}}} disabled={generating!==null} style={{padding:"12px 22px",background:"linear-gradient(135deg,#1a3a5c,#7c3aed)",border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.8rem",cursor:generating?"not-allowed":"pointer",whiteSpace:"nowrap",flexShrink:0,boxShadow:"0 2px 12px rgba(124,58,237,0.3)"}}>
               📄 Generate All
             </button>
@@ -16051,10 +16048,10 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
           </div>
 
           <div style={{marginTop:14,padding:"12px 16px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10}}>
-            <div style={{fontSize:"0.7rem",fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>💡 Tips for best results</div>
+            <div style={{fontSize:"0.8rem",fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>💡 Tips for best results</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 16px"}}>
               {["Complete patient demographics before generating","Add exercises in the Exercise Prescription module","Record ROM measurements for detailed tables","Run AI Diagnosis first for diagnostic content","Use Chrome or Edge for best PDF quality","Enable Print: Background Graphics for full colour"].map(tip=>(
-                <div key={tip} style={{fontSize:"0.72rem",color:"#94a3b8",display:"flex",gap:6,alignItems:"flex-start",padding:"2px 0"}}><span style={{color:"#7c3aed",fontWeight:700,flexShrink:0}}>→</span>{tip}</div>
+                <div key={tip} style={{fontSize:"0.82rem",color:"#94a3b8",display:"flex",gap:6,alignItems:"flex-start",padding:"2px 0"}}><span style={{color:"#7c3aed",fontWeight:700,flexShrink:0}}>→</span>{tip}</div>
               ))}
             </div>
           </div>
@@ -16235,7 +16232,7 @@ function QuickVisitForm({ PC, data, set, navTo }) {
   const [removeId, setRemoveId] = useState(null);
   const txOptions = ["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Postural correction","Manual therapy","Other"];
   const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
-  const lbl = {fontSize:"0.6rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
+  const lbl = {fontSize:"0.8rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
 
   const prog = Array.isArray(data.hep_programme)?data.hep_programme:[];
 
@@ -16300,7 +16297,7 @@ function QuickVisitForm({ PC, data, set, navTo }) {
 
   return(
     <div>
-      <div style={{fontSize:"0.62rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6}}>1 · Today — Session {sessionNo}</div>
+      <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6}}>1 · Today — Session {sessionNo}</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div><label style={lbl}>Pain — start of session (NRS 0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 5" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
         <div><label style={lbl}>Pain — end of session (NRS 0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 3" value={qv.pain_after} onChange={e=>setQv(p=>({...p,pain_after:e.target.value}))}/></div>
@@ -16309,26 +16306,26 @@ function QuickVisitForm({ PC, data, set, navTo }) {
       <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>
         {txOptions.map(t=>(
           <button key={t} onClick={()=>setQv(p=>({...p,treatment:p.treatment?(p.treatment.includes(t)?p.treatment:`${p.treatment}, ${t}`):t}))}
-            style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(t)?PC.accent:PC.border}`,background:qv.treatment.includes(t)?`${PC.accent}14`:"transparent",color:qv.treatment.includes(t)?PC.accent:PC.muted,fontWeight:700,fontSize:"0.6rem",cursor:"pointer"}}>{t}</button>
+            style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(t)?PC.accent:PC.border}`,background:qv.treatment.includes(t)?`${PC.accent}14`:"transparent",color:qv.treatment.includes(t)?PC.accent:PC.muted,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>{t}</button>
         ))}
       </div>
       <div style={{marginBottom:10}}><label style={lbl}>Patient response</label><input style={inp} placeholder="e.g. Good improvement, less pain on movement" value={qv.response} onChange={e=>setQv(p=>({...p,response:e.target.value}))}/></div>
       <div style={{marginBottom:12}}><label style={lbl}>Plan for next session</label><input style={inp} placeholder="e.g. Progress to single-leg squat" value={qv.next_plan} onChange={e=>setQv(p=>({...p,next_plan:e.target.value}))}/></div>
 
       {/* ── 2 · Home protocol — edit per session ── */}
-      <div style={{fontSize:"0.62rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6}}>2 · Home protocol {prog.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· v{parseInt(data.hep_version)||1} · {prog.length} exercise{prog.length!==1?"s":""}</span>}</div>
+      <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6}}>2 · Home protocol {prog.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· v{parseInt(data.hep_version)||1} · {prog.length} exercise{prog.length!==1?"s":""}</span>}</div>
       {prog.length===0&&(
-        <div style={{padding:"10px 12px",background:PC.s2,borderRadius:9,fontSize:"0.7rem",color:PC.muted,marginBottom:8}}>No protocol yet — add exercises below or build it in the Exercise Prescription tab.</div>
+        <div style={{padding:"10px 12px",background:PC.s2,borderRadius:9,fontSize:"0.8rem",color:PC.muted,marginBottom:8}}>No protocol yet — add exercises below or build it in the Exercise Prescription tab.</div>
       )}
       {prog.map(e=>(
         <div key={e.id} style={{marginBottom:5}}>
           <div style={{display:"flex",alignItems:"center",gap:7,padding:"8px 10px",background:e.addedSession===sessionNo?`${PC.accent}10`:PC.s2,border:`1px solid ${e.addedSession===sessionNo?PC.accent+"35":PC.border}`,borderRadius:9}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text}}>{e.name}
-                {e.addedSession===sessionNo&&<span style={{marginLeft:6,fontSize:"0.55rem",fontWeight:800,color:PC.accent}}>＋ just added</span>}
-                {e.progressedSession===sessionNo&&<span style={{marginLeft:6,fontSize:"0.55rem",fontWeight:800,color:PC.a3}}>↑ progressed</span>}
+                {e.addedSession===sessionNo&&<span style={{marginLeft:6,fontSize:"0.75rem",fontWeight:800,color:PC.accent}}>＋ just added</span>}
+                {e.progressedSession===sessionNo&&<span style={{marginLeft:6,fontSize:"0.75rem",fontWeight:800,color:PC.a3}}>↑ progressed</span>}
               </div>
-              <div style={{fontSize:"0.62rem",color:PC.muted}}>{hepDose(e)}</div>
+              <div style={{fontSize:"0.82rem",color:PC.muted}}>{hepDose(e)}</div>
             </div>
             <Pill bg={`${PC.a3}18`} col={PC.a3} title="Progress dosage" onClick={()=>startProgress(e)}>↑</Pill>
             <Pill bg="rgba(220,38,38,0.1)" col="#dc2626" title="Remove" onClick={()=>setRemoveId(removeId===e.id?null:e.id)}>−</Pill>
@@ -16336,17 +16333,17 @@ function QuickVisitForm({ PC, data, set, navTo }) {
           {editId===e.id&&(
             <div style={{display:"flex",gap:6,alignItems:"center",padding:"7px 10px",background:`${PC.a3}08`,border:`1px dashed ${PC.a3}40`,borderRadius:9,marginTop:3}}>
               {["sets","reps","hold"].map(f=>(
-                <input key={f} style={{...inp,width:62,padding:"5px 7px",fontSize:"0.72rem"}} placeholder={f} value={editDose[f]} onChange={ev=>setEditDose(p=>({...p,[f]:ev.target.value}))}/>
+                <input key={f} style={{...inp,width:62,padding:"5px 7px",fontSize:"0.82rem"}} placeholder={f} value={editDose[f]} onChange={ev=>setEditDose(p=>({...p,[f]:ev.target.value}))}/>
               ))}
-              <span style={{fontSize:"0.58rem",color:PC.muted}}>sets × reps · hold s</span>
-              <button onClick={applyProgress} style={{marginLeft:"auto",padding:"5px 12px",borderRadius:7,border:"none",background:PC.a3,color:"#fff",fontWeight:800,fontSize:"0.65rem",cursor:"pointer"}}>✓ Apply</button>
+              <span style={{fontSize:"0.78rem",color:PC.muted}}>sets × reps · hold s</span>
+              <button onClick={applyProgress} style={{marginLeft:"auto",padding:"5px 12px",borderRadius:7,border:"none",background:PC.a3,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer"}}>✓ Apply</button>
             </div>
           )}
           {removeId===e.id&&(
             <div style={{display:"flex",gap:5,flexWrap:"wrap",padding:"7px 10px",background:"rgba(220,38,38,0.05)",border:"1px dashed rgba(220,38,38,0.35)",borderRadius:9,marginTop:3,alignItems:"center"}}>
-              <span style={{fontSize:"0.6rem",color:"#dc2626",fontWeight:700}}>Why?</span>
+              <span style={{fontSize:"0.8rem",color:"#dc2626",fontWeight:700}}>Why?</span>
               {["Mastered","Aggravating","Replaced","Other"].map(r=>(
-                <button key={r} onClick={()=>removeExercise(e.id,r)} style={{padding:"4px 10px",borderRadius:7,border:"1px solid rgba(220,38,38,0.3)",background:"transparent",color:"#dc2626",fontWeight:700,fontSize:"0.62rem",cursor:"pointer"}}>{r}</button>
+                <button key={r} onClick={()=>removeExercise(e.id,r)} style={{padding:"4px 10px",borderRadius:7,border:"1px solid rgba(220,38,38,0.3)",background:"transparent",color:"#dc2626",fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>{r}</button>
               ))}
             </div>
           )}
@@ -16355,12 +16352,12 @@ function QuickVisitForm({ PC, data, set, navTo }) {
 
       {/* Add exercise — library picker */}
       {!pickerOpen?(
-        <div onClick={()=>setPickerOpen(true)} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.72rem",fontWeight:700,color:PC.accent,cursor:"pointer",marginBottom:10}}>＋ Add exercise from library</div>
+        <div onClick={()=>setPickerOpen(true)} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.82rem",fontWeight:700,color:PC.accent,cursor:"pointer",marginBottom:10}}>＋ Add exercise from library</div>
       ):(
         <div style={{border:`1.5px solid ${PC.accent}35`,borderRadius:11,padding:"10px",marginBottom:10,background:`${PC.accent}06`}}>
           <div style={{display:"flex",gap:6,marginBottom:7}}>
             {[["library","📚 Library"],["templates","📦 Templates"]].map(([m,l])=>(
-              <button key={m} onClick={()=>setPickerMode(m)} style={{flex:1,padding:"7px",borderRadius:8,border:`1px solid ${pickerMode===m?PC.accent:PC.border}`,background:pickerMode===m?`${PC.accent}15`:"transparent",color:pickerMode===m?PC.accent:PC.muted,fontWeight:800,fontSize:"0.68rem",cursor:"pointer"}}>{l}</button>
+              <button key={m} onClick={()=>setPickerMode(m)} style={{flex:1,padding:"7px",borderRadius:8,border:`1px solid ${pickerMode===m?PC.accent:PC.border}`,background:pickerMode===m?`${PC.accent}15`:"transparent",color:pickerMode===m?PC.accent:PC.muted,fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>{l}</button>
             ))}
             <button onClick={()=>setPickerOpen(false)} style={{padding:"0 10px",borderRadius:8,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,cursor:"pointer",fontWeight:700}}>✕</button>
           </div>
@@ -16373,27 +16370,27 @@ function QuickVisitForm({ PC, data, set, navTo }) {
                   <div key={key} style={{marginBottom:4}}>
                     <div onClick={()=>setOpenTemplate(isOpen?null:key)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,cursor:"pointer",background:PC.surface,border:`1px solid ${isOpen?PC.accent+"45":PC.border}`}}>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.text}}>{t.label}</div>
-                        <div style={{fontSize:"0.58rem",color:PC.muted}}>{t.exercises.length} exercises{tx?` · ${(tx.manual||[]).length} manual · ${(tx.machine||[]).length} machine`:""}</div>
+                        <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{t.label}</div>
+                        <div style={{fontSize:"0.78rem",color:PC.muted}}>{t.exercises.length} exercises{tx?` · ${(tx.manual||[]).length} manual · ${(tx.machine||[]).length} machine`:""}</div>
                       </div>
-                      <span style={{fontSize:"0.65rem",color:PC.accent,fontWeight:800}}>{isOpen?"▲":"▼"}</span>
+                      <span style={{fontSize:"0.75rem",color:PC.accent,fontWeight:800}}>{isOpen?"▲":"▼"}</span>
                     </div>
                     {isOpen&&(
                       <div style={{padding:"8px 10px",border:`1px dashed ${PC.accent}35`,borderTop:"none",borderRadius:"0 0 8px 8px",background:`${PC.accent}05`}}>
-                        <button onClick={()=>{addTemplate(key);setOpenTemplate(null);}} style={{width:"100%",padding:"8px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.68rem",cursor:"pointer",marginBottom:7}}>＋ Add {t.exercises.length} exercises to protocol</button>
+                        <button onClick={()=>{addTemplate(key);setOpenTemplate(null);}} style={{width:"100%",padding:"8px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:"pointer",marginBottom:7}}>＋ Add {t.exercises.length} exercises to protocol</button>
                         {tx&&(tx.manual||[]).length>0&&(
                           <div style={{marginBottom:5}}>
-                            <div style={{fontSize:"0.55rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>🤲 Manual — tap to add to treatment</div>
+                            <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>🤲 Manual — tap to add to treatment</div>
                             <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                              {tx.manual.map(m=><button key={m} onClick={()=>addTx(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(m)?PC.accent:PC.border}`,background:qv.treatment.includes(m)?`${PC.accent}14`:PC.surface,color:qv.treatment.includes(m)?PC.accent:PC.text,fontWeight:700,fontSize:"0.6rem",cursor:"pointer"}}>{qv.treatment.includes(m)?"✓ ":""}{m}</button>)}
+                              {tx.manual.map(m=><button key={m} onClick={()=>addTx(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(m)?PC.accent:PC.border}`,background:qv.treatment.includes(m)?`${PC.accent}14`:PC.surface,color:qv.treatment.includes(m)?PC.accent:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>{qv.treatment.includes(m)?"✓ ":""}{m}</button>)}
                             </div>
                           </div>
                         )}
                         {tx&&(tx.machine||[]).length>0&&(
                           <div>
-                            <div style={{fontSize:"0.55rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>⚡ Machine — tap to add to treatment</div>
+                            <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>⚡ Machine — tap to add to treatment</div>
                             <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                              {tx.machine.map(m=><button key={m} onClick={()=>addTx(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(m)?PC.a2:PC.border}`,background:qv.treatment.includes(m)?`${PC.a2}14`:PC.surface,color:qv.treatment.includes(m)?PC.a2:PC.text,fontWeight:700,fontSize:"0.6rem",cursor:"pointer"}}>{qv.treatment.includes(m)?"✓ ":""}{m}</button>)}
+                              {tx.machine.map(m=><button key={m} onClick={()=>addTx(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(m)?PC.a2:PC.border}`,background:qv.treatment.includes(m)?`${PC.a2}14`:PC.surface,color:qv.treatment.includes(m)?PC.a2:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>{qv.treatment.includes(m)?"✓ ":""}{m}</button>)}
                             </div>
                           </div>
                         )}
@@ -16417,17 +16414,17 @@ function QuickVisitForm({ PC, data, set, navTo }) {
           {pickerMode==="library"&&pickerResults.map(ex=>(
             <div key={ex.id} onClick={()=>addExercise(ex)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 9px",borderRadius:8,cursor:"pointer",background:PC.surface,border:`1px solid ${PC.border}`,marginBottom:4}}>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.text}}>{ex.name}</div>
-                <div style={{fontSize:"0.58rem",color:PC.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ex.sets}×{ex.reps}{ex.hold?` · ${ex.hold}s`:""} · {ex.freq} · {ex.target}</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{ex.name}</div>
+                <div style={{fontSize:"0.78rem",color:PC.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ex.sets}×{ex.reps}{ex.hold?` · ${ex.hold}s`:""} · {ex.freq} · {ex.target}</div>
               </div>
-              <span style={{fontSize:"0.72rem",fontWeight:800,color:PC.accent,flexShrink:0}}>＋ Add</span>
+              <span style={{fontSize:"0.82rem",fontWeight:800,color:PC.accent,flexShrink:0}}>＋ Add</span>
             </div>
           ))}
         </div>
       )}
 
       {pending.length>0&&(
-        <div style={{padding:"8px 11px",background:`${PC.accent}0a`,border:`1px solid ${PC.accent}25`,borderRadius:9,fontSize:"0.65rem",color:PC.text,marginBottom:10,lineHeight:1.6}}>
+        <div style={{padding:"8px 11px",background:`${PC.accent}0a`,border:`1px solid ${PC.accent}25`,borderRadius:9,fontSize:"0.75rem",color:PC.text,marginBottom:10,lineHeight:1.6}}>
           <span style={{fontWeight:800,color:PC.accent}}>This session:</span> {pending.join(" · ")} <span style={{color:PC.muted}}>(will be logged as v{(parseInt(data.hep_version)||1)+1} on save)</span>
         </div>
       )}
@@ -16436,8 +16433,8 @@ function QuickVisitForm({ PC, data, set, navTo }) {
         {saved?"✅ Saved — opening SOAP to sign…":"Save & Go to SOAP →"}
       </button>
       <div style={{display:"flex",gap:8}}>
-        <button onClick={()=>sendHepWhatsApp(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a3}40`,background:`${PC.a3}10`,color:PC.a3,fontWeight:800,fontSize:"0.72rem",cursor:"pointer"}}>📲 Send protocol — WhatsApp</button>
-        <button onClick={()=>downloadHepPdf(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a2}40`,background:`${PC.a2}10`,color:PC.a2,fontWeight:800,fontSize:"0.72rem",cursor:"pointer"}}>📄 PDF handout</button>
+        <button onClick={()=>sendHepWhatsApp(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a3}40`,background:`${PC.a3}10`,color:PC.a3,fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>📲 Send protocol — WhatsApp</button>
+        <button onClick={()=>downloadHepPdf(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a2}40`,background:`${PC.a2}10`,color:PC.a2,fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>📄 PDF handout</button>
       </div>
     </div>
   );
@@ -16445,28 +16442,114 @@ function QuickVisitForm({ PC, data, set, navTo }) {
 
 function IntakeForm({ PC, onCancel, onSubmit }) {
   const [fd, setFd] = useState({});
-  const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.82rem",marginBottom:12};
-  const lbl = {fontSize:"0.62rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
-  return(
+  const [tab, setTab] = React.useState("essential");
+  const set = (k,v) => setFd(p=>({...p,[k]:v}));
+  const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.82rem",marginBottom:0};
+  const lbl = {fontSize:"0.78rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
+  const field = (label, node) => (
+    <div style={{marginBottom:12}}>
+      <label style={lbl}>{label}</label>
+      {node}
+    </div>
+  );
+  const sel = (k, opts) => (
+    <select style={inp} value={fd[k]||""} onChange={e=>set(k,e.target.value)}>
+      <option value="">—</option>
+      {opts.map(o=><option key={o}>{o}</option>)}
+    </select>
+  );
+  const tabs = [{id:"essential",label:"Essential"},{id:"contact",label:"Contact"},{id:"clinical",label:"Clinical"},{id:"consent",label:"Consent"}];
+  const tabStyle = (id) => ({
+    padding:"6px 14px", borderRadius:8, border:"none", cursor:"pointer", fontSize:"0.8rem", fontWeight:tab===id?700:500,
+    background: tab===id ? PC.accent : PC.s2,
+    color: tab===id ? "#fff" : PC.muted,
+  });
+  const canSubmit = fd.dem_name?.trim() && fd.consent_treat;
+  return (
     <div>
-      <label style={lbl}>Full name *</label>
-      <input style={inp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>setFd(p=>({...p,dem_name:e.target.value}))} autoFocus/>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-        <div><label style={lbl}>Age</label><input style={{...inp,marginBottom:0}} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>setFd(p=>({...p,dem_age:e.target.value}))}/></div>
-        <div><label style={lbl}>Sex</label><select style={{...inp,marginBottom:0}} value={fd.dem_sex||""} onChange={e=>setFd(p=>({...p,dem_sex:e.target.value}))}><option value="">—</option><option>Female</option><option>Male</option><option>Other</option></select></div>
+      {/* Tabs */}
+      <div style={{display:"flex",gap:6,marginBottom:18,flexWrap:"wrap"}}>
+        {tabs.map(t=><button key={t.id} style={tabStyle(t.id)} onClick={()=>setTab(t.id)}>{t.label}</button>)}
       </div>
-      <div style={{marginTop:12}}>
-        <label style={lbl}>Chief complaint / diagnosis</label>
-        <input style={inp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>setFd(p=>({...p,cc_main:e.target.value}))}/>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-        <div><label style={lbl}>Pain now (0–10)</label><input style={{...inp,marginBottom:0}} type="number" min="0" max="10" placeholder="0–10" value={fd.cc_vas_now||""} onChange={e=>setFd(p=>({...p,cc_vas_now:e.target.value}))}/></div>
-        <div><label style={lbl}>Occupation</label><input style={{...inp,marginBottom:0}} placeholder="e.g. Teacher" value={fd.dem_occupation||""} onChange={e=>setFd(p=>({...p,dem_occupation:e.target.value}))}/></div>
-      </div>
+
+      {/* Essential */}
+      {tab==="essential" && (
+        <div>
+          {field("Full name *", <input style={inp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>)}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+            <div>{field("Date of birth", <input type="date" style={inp} value={fd.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>)}</div>
+            <div>{field("Age", <input style={inp} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>)}</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+            <div>{field("Sex", sel("dem_sex",["Female","Male","Non-binary","Prefer not to say"]))}</div>
+            <div>{field("Dominant hand", sel("dem_hand",["Right","Left","Ambidextrous"]))}</div>
+          </div>
+          {field("Occupation", <input style={inp} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>)}
+          {field("Chief complaint *", <input style={inp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>)}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div>{field("Pain now (0–10)", <input style={inp} type="number" min="0" max="10" placeholder="0–10" value={fd.cc_vas_now||""} onChange={e=>set("cc_vas_now",e.target.value)}/>)}</div>
+            <div>{field("Duration", <input style={inp} placeholder="e.g. 3 weeks, 6 months" value={fd.cc_duration||""} onChange={e=>set("cc_duration",e.target.value)}/>)}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Contact */}
+      {tab==="contact" && (
+        <div>
+          {field("Phone number", <input style={inp} type="tel" placeholder="+91 98765 43210" value={fd.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>)}
+          {field("Email address", <input style={inp} type="email" placeholder="patient@email.com" value={fd.dem_email||""} onChange={e=>set("dem_email",e.target.value)}/>)}
+          {field("Address", <input style={inp} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>)}
+          {field("Emergency contact name", <input style={inp} placeholder="Full name" value={fd.dem_ec_name||""} onChange={e=>set("dem_ec_name",e.target.value)}/>)}
+          {field("Emergency contact phone", <input style={inp} type="tel" placeholder="+91 98765 43210" value={fd.dem_ec_phone||""} onChange={e=>set("dem_ec_phone",e.target.value)}/>)}
+        </div>
+      )}
+
+      {/* Clinical */}
+      {tab==="clinical" && (
+        <div>
+          {field("Referring doctor / GP", <input style={inp} placeholder="Dr. Name, Hospital" value={fd.dem_referral_dr||""} onChange={e=>set("dem_referral_dr",e.target.value)}/>)}
+          {field("Referral source", sel("dem_referral_source",["GP","Self-referral","Specialist","Workplace / Employer","Insurance","Other"]))}
+          {field("Insurance / Fund", <input style={inp} placeholder="e.g. CGHS, ESI, Private, Self-pay" value={fd.dem_insurance||""} onChange={e=>set("dem_insurance",e.target.value)}/>)}
+          {field("Policy / Member number", <input style={inp} placeholder="Optional" value={fd.dem_policy_no||""} onChange={e=>set("dem_policy_no",e.target.value)}/>)}
+          {field("Relevant medical history", <textarea style={{...inp,minHeight:72,resize:"vertical"}} placeholder="Diabetes, hypertension, previous surgeries..." value={fd.dem_medical_hx||""} onChange={e=>set("dem_medical_hx",e.target.value)}/>)}
+          {field("Current medications", <input style={inp} placeholder="e.g. Metformin 500mg, Amlodipine 5mg" value={fd.dem_medications||""} onChange={e=>set("dem_medications",e.target.value)}/>)}
+        </div>
+      )}
+
+      {/* Consent */}
+      {tab==="consent" && (
+        <div>
+          <div style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,padding:14,marginBottom:14,fontSize:"0.82rem",color:PC.muted,lineHeight:1.6}}>
+            <strong style={{color:PC.text}}>Consent to Treatment</strong><br/>
+            I consent to physiotherapy assessment and treatment. I understand I may withdraw consent at any time. Treatment goals and procedures have been explained to me.
+          </div>
+          <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",marginBottom:14}}>
+            <input type="checkbox" checked={!!fd.consent_treat} onChange={e=>set("consent_treat",e.target.checked)} style={{marginTop:3,width:16,height:16,flexShrink:0}}/>
+            <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:600}}>I consent to physiotherapy assessment and treatment <span style={{color:"#ef4444"}}>*</span></span>
+          </label>
+          <div style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,padding:14,marginBottom:14,fontSize:"0.82rem",color:PC.muted,lineHeight:1.6}}>
+            <strong style={{color:PC.text}}>Data Storage Consent</strong><br/>
+            Your clinical data is stored locally on this device only. It is not shared with third parties. You may request deletion at any time.
+          </div>
+          <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",marginBottom:14}}>
+            <input type="checkbox" checked={!!fd.consent_data} onChange={e=>set("consent_data",e.target.checked)} style={{marginTop:3,width:16,height:16,flexShrink:0}}/>
+            <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:500}}>I consent to storage of my clinical data on this device</span>
+          </label>
+          {!fd.consent_treat && (
+            <div style={{padding:"8px 12px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,fontSize:"0.78rem",color:"#ef4444",fontWeight:600}}>
+              ⚠ Treatment consent is required to create a patient record.
+            </div>
+          )}
+          <div style={{marginTop:12,padding:"8px 12px",background:PC.s3,borderRadius:8,fontSize:"0.75rem",color:PC.muted}}>
+            Consent date: {new Date().toLocaleDateString("en-GB")} · Clinician: Dr. Demo
+          </div>
+        </div>
+      )}
+
       <div style={{display:"flex",gap:10,marginTop:20}}>
-        <button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.78rem"}}>Cancel</button>
-        <button disabled={!fd.dem_name?.trim()} onClick={()=>onSubmit(fd)} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:fd.dem_name?.trim()?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:fd.dem_name?.trim()?"pointer":"not-allowed",fontSize:"0.82rem"}}>
-          Start Assessment →
+        <button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.82rem"}}>Cancel</button>
+        <button disabled={!canSubmit} onClick={()=>onSubmit(fd)} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:canSubmit?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:canSubmit?"pointer":"not-allowed",fontSize:"0.82rem"}}>
+          {canSubmit ? "Start Assessment →" : "Complete Consent tab first"}
         </button>
       </div>
     </div>
@@ -16526,6 +16609,7 @@ function AppInner({ currentUser, onSignOut }) {
   const [active, setActive] = useState("home");
   const [navContext, setNavContext] = useState({});
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('pm_onboarded'));
+  const [lastSaved, setLastSaved] = useState(null);
 
   // ── Deferred mounting: heavy tabs only render after first visit ──────────
   // This cuts initial render time dramatically
@@ -16710,7 +16794,7 @@ function AppInner({ currentUser, onSignOut }) {
   useEffect(() => {
     if (!data || Object.keys(data).length === 0) return;
     const timer = setTimeout(() => {
-      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch {}
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); setLastSaved(new Date()); } catch {}
     }, 2000);
     return () => clearTimeout(timer);
   }, [data]);
@@ -16965,7 +17049,7 @@ function AppInner({ currentUser, onSignOut }) {
             const col=isNaN(num)?PC.muted:num<(t.normal||0)*0.8?PC.red:num<(t.normal||0)*0.9?PC.yellow:PC.green;
             return(
               <div key={sfx}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,color:col,marginBottom:3}}>{side} {!isNaN(num)&&num<(t.normal||0)*0.8?"⚠ LIMITED":""}</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,color:col,marginBottom:3}}>{side} {!isNaN(num)&&num<(t.normal||0)*0.8?"⚠ LIMITED":""}</div>
                 <input type="number" value={sv} onChange={e=>set(t.id+sfx,e.target.value)} placeholder={`N=${t.normal||""}°`} style={{...base,borderColor:!isNaN(num)&&num<(t.normal||0)*0.8?PC.red:PC.border}} />
               </div>
             );
@@ -16981,7 +17065,7 @@ function AppInner({ currentUser, onSignOut }) {
             const sv=data[t.id+sfx]||"",prob=isProb(sv);
             return(
               <div key={sfx}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,color:prob?PC.red:PC.muted,marginBottom:3}}>{side} {prob?"⚠":""}</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,color:prob?PC.red:PC.muted,marginBottom:3}}>{side} {prob?"⚠":""}</div>
                 <select value={sv} onChange={e=>set(t.id+sfx,e.target.value)} style={{...base,borderColor:prob?PC.red:PC.border}}>
                   <option value="">— select —</option>
                   {t.options.map(o=><option key={o} value={o}>{o}</option>)}
@@ -17054,8 +17138,8 @@ function AppInner({ currentUser, onSignOut }) {
               </div>
             )}
           </div>
-          {pct===100&&<span style={{fontSize:"0.55rem",color:PC.green,flexShrink:0,fontWeight:800}}>✓</span>}
-          {pct>0&&pct<100&&<span style={{fontSize:"0.55rem",color:PC.muted,flexShrink:0,fontWeight:600,background:PC.s2,padding:"1px 4px",borderRadius:4}}>{pct}%</span>}
+          {pct===100&&<span style={{fontSize:"0.75rem",color:PC.green,flexShrink:0,fontWeight:800}}>✓</span>}
+          {pct>0&&pct<100&&<span style={{fontSize:"0.75rem",color:PC.muted,flexShrink:0,fontWeight:600,background:PC.s2,padding:"1px 4px",borderRadius:4}}>{pct}%</span>}
         </div>
       </div>
     );
@@ -17074,8 +17158,8 @@ function AppInner({ currentUser, onSignOut }) {
           transition:"all 0.15s",
         }}>
           <span style={{fontSize:"0.85rem",flexShrink:0}}>{icon}</span>
-          <div style={{flex:1,fontSize:"0.72rem",fontWeight:700,color:isOpen?accentColor:PC.text,textTransform:"uppercase",letterSpacing:"0.5px"}}>{label}</div>
-          <span style={{fontSize:"0.65rem",color:isOpen?accentColor:PC.muted,transition:"transform 0.2s",display:"inline-block",transform:isOpen?"rotate(0deg)":"rotate(-90deg)"}}>▾</span>
+          <div style={{flex:1,fontSize:"0.82rem",fontWeight:700,color:isOpen?accentColor:PC.text,textTransform:"uppercase",letterSpacing:"0.5px"}}>{label}</div>
+          <span style={{fontSize:"0.75rem",color:isOpen?accentColor:PC.muted,transition:"transform 0.2s",display:"inline-block",transform:isOpen?"rotate(0deg)":"rotate(-90deg)"}}>▾</span>
         </div>
         {isOpen && (
           <div style={{paddingBottom:4}}>
@@ -17110,16 +17194,16 @@ function AppInner({ currentUser, onSignOut }) {
         <span style={{fontSize:"1.05rem"}}>👋</span>
         <div>
           <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.text,lineHeight:1.2}}>Hello, Dr {currentUser?.user_metadata?.full_name?.split(" ")[0]||currentUser?.email?.split("@")[0]||"Doctor"}</div>
-          <div style={{fontSize:"0.58rem",color:PC.muted}}>{new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</div>
+          <div style={{fontSize:"0.78rem",color:PC.muted}}>{new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</div>
         </div>
       </div>
 
       {/* Patient controls */}
       <div style={{padding:"4px 8px 12px",borderBottom:`1px solid ${PC.border}`,marginBottom:8}}>
-        <button onClick={()=>setShowPatientDb(true)} style={{width:"100%",padding:"9px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:"#9333ea",fontWeight:600,fontSize:"0.7rem",cursor:"pointer",marginBottom:5,display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
+        <button onClick={()=>setShowPatientDb(true)} style={{width:"100%",padding:"9px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:"#9333ea",fontWeight:600,fontSize:"0.8rem",cursor:"pointer",marginBottom:5,display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
           👥 {patients.length} Patient{patients.length!==1?"s":""}
         </button>
-        <button onClick={createNewPatient} style={{width:"100%",padding:"8px 10px",background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.a3}25`,borderRadius:8,color:PC.a3,fontWeight:600,fontSize:"0.68rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
+        <button onClick={createNewPatient} style={{width:"100%",padding:"8px 10px",background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.a3}25`,borderRadius:8,color:PC.a3,fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
           ＋ New Patient
         </button>
       </div>
@@ -17179,7 +17263,7 @@ function AppInner({ currentUser, onSignOut }) {
         }}>
           <span style={{fontSize:"0.9rem"}}>📄</span>
           <div style={{fontSize:"0.76rem",fontWeight:700,color:"#dc2626"}}>Generate PDF Reports</div>
-          <span style={{marginLeft:"auto",fontSize:"0.55rem",padding:"2px 6px",borderRadius:5,background:"rgba(220,38,38,0.15)",color:"#dc2626",fontWeight:800}}>3 PDFs</span>
+          <span style={{marginLeft:"auto",fontSize:"0.75rem",padding:"2px 6px",borderRadius:5,background:"rgba(220,38,38,0.15)",color:"#dc2626",fontWeight:800}}>3 PDFs</span>
         </div>
       </div>
 
@@ -17198,8 +17282,8 @@ function AppInner({ currentUser, onSignOut }) {
         <div onClick={()=>setInfoModal(null)} className="pm-modal-wrap" style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div onClick={e=>e.stopPropagation()} className="pm-modal-box" style={{background:PC.surface,border:`1px solid ${PC.accent}40`,borderRadius:14,padding:24,maxWidth:500,width:"100%",maxHeight:"82vh",overflowY:"auto"}}>
             <div style={{fontWeight:800,color:PC.accent,marginBottom:14,fontSize:"1rem"}}>{infoModal.label}</div>
-            {infoModal.sig&&<div style={{marginBottom:12}}><div style={{fontSize:"0.62rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>📊 Significance</div><div style={{background:PC.s2,borderRadius:8,padding:12,fontSize:"0.8rem",color:PC.text,lineHeight:1.7}}>{infoModal.sig}</div></div>}
-            {infoModal.how&&<div style={{marginBottom:16}}><div style={{fontSize:"0.62rem",fontWeight:700,color:PC.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>👐 How to Perform</div><div style={{background:PC.s2,borderRadius:8,padding:12,fontSize:"0.8rem",color:PC.text,lineHeight:1.7}}>{infoModal.how}</div></div>}
+            {infoModal.sig&&<div style={{marginBottom:12}}><div style={{fontSize:"0.82rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>📊 Significance</div><div style={{background:PC.s2,borderRadius:8,padding:12,fontSize:"0.8rem",color:PC.text,lineHeight:1.7}}>{infoModal.sig}</div></div>}
+            {infoModal.how&&<div style={{marginBottom:16}}><div style={{fontSize:"0.82rem",fontWeight:700,color:PC.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>👐 How to Perform</div><div style={{background:PC.s2,borderRadius:8,padding:12,fontSize:"0.8rem",color:PC.text,lineHeight:1.7}}>{infoModal.how}</div></div>}
             <button onClick={()=>setInfoModal(null)} style={{padding:"10px 20px",background:PC.a2,border:"none",borderRadius:8,color:"#fff",fontWeight:700,cursor:"pointer",width:"100%",fontSize:"0.85rem"}}>Close</button>
           </div>
         </div>
@@ -17243,7 +17327,7 @@ function AppInner({ currentUser, onSignOut }) {
         <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
           <div style={{width:"100%",maxWidth:420,background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
             <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New patient</div>
-            <div style={{fontSize:"0.72rem",color:PC.muted,marginBottom:20}}>Fill the basics — you can add more detail later</div>
+            <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:20}}>Fill the basics — you can add more detail later</div>
             <IntakeForm PC={PC} onCancel={()=>setShowIntake(false)} onSubmit={finaliseNewPatient}/>
           </div>
         </div>
@@ -17289,16 +17373,16 @@ function AppInner({ currentUser, onSignOut }) {
             <span style={{fontSize:"1.1rem"}}>{urgentFlags.length>0?"🚨":"⚠️"}</span>
             <div>
               <div style={{fontWeight:800,fontSize:"0.78rem",color:"#000"}}>{urgentFlags.length>0?"URGENT RED FLAGS DETECTED":"RED FLAGS PRESENT"}</div>
-              <div style={{fontSize:"0.62rem",color:"rgba(0,0,0,0.7)",fontWeight:600}}>{urgentFlags.length>0?"Do not proceed — refer immediately":"Review before proceeding with treatment"}</div>
+              <div style={{fontSize:"0.82rem",color:"rgba(0,0,0,0.7)",fontWeight:600}}>{urgentFlags.length>0?"Do not proceed — refer immediately":"Review before proceeding with treatment"}</div>
             </div>
           </div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",flex:1}}>
             {activeRedFlags.slice(0,4).map((f,i)=>(
-              <span key={i} style={{background:"rgba(0,0,0,0.18)",borderRadius:6,padding:"2px 8px",fontSize:"0.62rem",fontWeight:700,color:"#000"}}>{f}</span>
+              <span key={i} style={{background:"rgba(0,0,0,0.18)",borderRadius:6,padding:"2px 8px",fontSize:"0.82rem",fontWeight:700,color:"#000"}}>{f}</span>
             ))}
-            {activeRedFlags.length>4&&<span style={{background:"rgba(0,0,0,0.18)",borderRadius:6,padding:"2px 8px",fontSize:"0.62rem",fontWeight:700,color:"#000"}}>+{activeRedFlags.length-4} more</span>}
+            {activeRedFlags.length>4&&<span style={{background:"rgba(0,0,0,0.18)",borderRadius:6,padding:"2px 8px",fontSize:"0.82rem",fontWeight:700,color:"#000"}}>+{activeRedFlags.length-4} more</span>}
           </div>
-          <button onClick={()=>navTo("subjective")} style={{background:"rgba(0,0,0,0.2)",border:"1px solid rgba(0,0,0,0.3)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.65rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>View →</button>
+          <button onClick={()=>navTo("subjective")} style={{background:"rgba(0,0,0,0.2)",border:"1px solid rgba(0,0,0,0.3)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>View →</button>
           <button onClick={()=>{
             const now = new Date();
             const entry = {
@@ -17314,7 +17398,7 @@ function AppInner({ currentUser, onSignOut }) {
             set("rf_referral_log", [...existing, entry]);
             setJsonMsg({type:"success", text:"✅ Referral documented & saved to patient record"});
             setTimeout(()=>setJsonMsg(null), 3000);
-          }} style={{background:"rgba(0,0,0,0.25)",border:"1px solid rgba(0,0,0,0.4)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.65rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>
+          }} style={{background:"rgba(0,0,0,0.25)",border:"1px solid rgba(0,0,0,0.4)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>
             📋 Document Referral
           </button>
         </div>
@@ -17324,7 +17408,7 @@ function AppInner({ currentUser, onSignOut }) {
       {draftRestored && (
         <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",zIndex:1000,background:"rgba(124,58,237,0.95)",color:"#fff",fontWeight:700,fontSize:"0.75rem",padding:"10px 18px",borderRadius:12,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",display:"flex",gap:12,alignItems:"center",whiteSpace:"nowrap"}}>
           💾 Unsaved draft restored
-          <button onClick={()=>{ setDraftRestored(false); try { localStorage.removeItem(DRAFT_KEY); } catch {} }} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:6,color:"#fff",fontWeight:800,fontSize:"0.7rem",cursor:"pointer",padding:"3px 8px"}}>Dismiss</button>
+          <button onClick={()=>{ setDraftRestored(false); try { localStorage.removeItem(DRAFT_KEY); } catch {} }} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:6,color:"#fff",fontWeight:800,fontSize:"0.8rem",cursor:"pointer",padding:"3px 8px"}}>Dismiss</button>
         </div>
       )}
 
@@ -17341,15 +17425,15 @@ function AppInner({ currentUser, onSignOut }) {
           <div style={{background:PC.surface,border:`1px solid rgba(0,229,255,0.25)`,borderRadius:16,padding:22,maxWidth:500,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <div style={{fontWeight:800,color:PC.accent,fontSize:"1rem"}}>💾 Save / Load Assessment</div>
-              <button onClick={()=>setShowJsonPanel(false)} style={{background:"none",border:`1px solid ${PC.border}`,borderRadius:7,color:PC.muted,cursor:"pointer",padding:"4px 10px",fontSize:"0.72rem"}}>✕ Close</button>
+              <button onClick={()=>setShowJsonPanel(false)} style={{background:"none",border:`1px solid ${PC.border}`,borderRadius:7,color:PC.muted,cursor:"pointer",padding:"4px 10px",fontSize:"0.82rem"}}>✕ Close</button>
             </div>
 
             {/* Patient info preview */}
             {(data["dem_name"]||data["dem_age"]||data["dem_occupation"]) && (
               <div style={{background:PC.s2,borderRadius:10,padding:"10px 14px",marginBottom:14,border:`1px solid ${PC.border}`}}>
-                <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Current Patient</div>
+                <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Current Patient</div>
                 <div style={{fontWeight:700,color:PC.text,fontSize:"0.88rem"}}>{data["dem_name"]||"—"}</div>
-                <div style={{fontSize:"0.72rem",color:PC.muted,marginTop:2}}>
+                <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:2}}>
                   {[data["dem_age"]&&`Age ${data["dem_age"]}`,data["dem_occupation"]].filter(Boolean).join(" · ")}
                 </div>
               </div>
@@ -17357,23 +17441,23 @@ function AppInner({ currentUser, onSignOut }) {
 
             {/* Export */}
             <div style={{marginBottom:14}}>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📤 Export</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📤 Export</div>
               <button onClick={exportJSON} style={{width:"100%",padding:"12px",background:"rgba(0,201,122,0.12)",border:`1px solid rgba(0,201,122,0.3)`,borderRadius:10,color:PC.green,fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>
                 ⬇ Download Assessment JSON
               </button>
-              <div style={{fontSize:"0.65rem",color:PC.muted,marginTop:5}}>Saves all {completedCount} completed fields. Reload anytime to resume.</div>
+              <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:5}}>Saves all {completedCount} completed fields. Reload anytime to resume.</div>
             </div>
 
             {/* Import from file */}
             <div style={{marginBottom:10}}>
-              <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📥 Import</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📥 Import</div>
               <button onClick={()=>importRef.current?.click()} style={{width:"100%",padding:"12px",background:"rgba(255,179,0,0.1)",border:`1px solid rgba(255,179,0,0.3)`,borderRadius:10,color:PC.yellow,fontWeight:800,fontSize:"0.8rem",cursor:"pointer",marginBottom:8}}>
                 📂 Open Assessment File
               </button>
               <input ref={importRef} type="file" accept=".json" onChange={importFromFile} style={{display:"none"}}/>
               <textarea value={jsonImportText} onChange={e=>setJsonImportText(e.target.value)}
                 placeholder='Or paste JSON here...'
-                style={{width:"100%",background:PC.s3,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"monospace",outline:"none",padding:"8px 10px",fontSize:"0.72rem",resize:"vertical",minHeight:80}}/>
+                style={{width:"100%",background:PC.s3,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"monospace",outline:"none",padding:"8px 10px",fontSize:"0.82rem",resize:"vertical",minHeight:80}}/>
               {jsonImportText && (
                 <button onClick={importJSON} style={{width:"100%",marginTop:8,padding:"11px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:10,color:"#000",fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>
                   ▶ Load Assessment
@@ -17381,7 +17465,7 @@ function AppInner({ currentUser, onSignOut }) {
               )}
             </div>
 
-            <div style={{marginTop:10,padding:"8px 12px",background:PC.s3,border:`1px solid ${PC.border}`,borderRadius:8,fontSize:"0.62rem",color:PC.muted,lineHeight:1.5}}>
+            <div style={{marginTop:10,padding:"8px 12px",background:PC.s3,border:`1px solid ${PC.border}`,borderRadius:8,fontSize:"0.82rem",color:PC.muted,lineHeight:1.5}}>
               ⚠ Loading an assessment will replace all current data. Export first if needed.
             </div>
           </div>
@@ -17404,13 +17488,13 @@ function AppInner({ currentUser, onSignOut }) {
             <div style={{width:36,height:36,background:`linear-gradient(135deg,${PC.accent}22,${PC.a2}22)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.1rem"}}>⚕</div>
             <div style={{minWidth:0}}>
               <div style={{fontWeight:800,fontSize:"clamp(0.85rem,3vw,1.05rem)",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",lineHeight:1.2}}>PhysioMind Pro</div>
-              <div className="pm-logo-sub" style={{fontSize:"0.55rem",color:PC.muted,letterSpacing:"1px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textTransform:"uppercase",fontWeight:600,marginTop:1}}>Clinical Assessment Platform</div>
+              <div className="pm-logo-sub" style={{fontSize:"0.75rem",color:PC.muted,letterSpacing:"1px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textTransform:"uppercase",fontWeight:600,marginTop:1}}>Clinical Assessment Platform</div>
             </div>
             {/* Live patient chip */}
             {activePatient&&(
               <div className="pm-live-chip" style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",background:PC.isDark?"rgba(129,140,248,0.08)":"rgba(79,70,229,0.05)",border:`1px solid ${PC.isDark?"rgba(129,140,248,0.2)":"rgba(79,70,229,0.15)"}`,borderRadius:20,cursor:"pointer"}} onClick={()=>setShowPatientDb(true)}>
                 <div style={{width:6,height:6,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 5px ${PC.a3}`}}/>
-                <span style={{fontSize:"0.72rem",fontWeight:700,color:PC.a2,whiteSpace:"nowrap"}}>{activePatient.name.length>16?activePatient.name.slice(0,16)+"…":activePatient.name}</span>
+                <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.a2,whiteSpace:"nowrap"}}>{activePatient.name.length>16?activePatient.name.slice(0,16)+"…":activePatient.name}</span>
               </div>
             )}
           </div>
@@ -17420,11 +17504,11 @@ function AppInner({ currentUser, onSignOut }) {
             {hasRedFlags && (
               <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:urgentFlags.length>0?"rgba(248,113,113,0.12)":"rgba(251,191,36,0.1)",border:`1px solid ${urgentFlags.length>0?"rgba(248,113,113,0.3)":"rgba(251,191,36,0.3)"}`,borderRadius:20}}>
                 <div style={{width:6,height:6,borderRadius:"50%",background:urgentFlags.length>0?PC.red:PC.yellow,animation:"pulse 1.5s infinite"}}/>
-                <span style={{fontSize:"0.6rem",fontWeight:700,color:urgentFlags.length>0?PC.red:PC.yellow,whiteSpace:"nowrap"}}>{urgentFlags.length>0?"URGENT FLAG":"Flag"}</span>
+                <span style={{fontSize:"0.8rem",fontWeight:700,color:urgentFlags.length>0?PC.red:PC.yellow,whiteSpace:"nowrap"}}>{urgentFlags.length>0?"URGENT FLAG":"Flag"}</span>
               </div>
             )}
             {/* Patient selector */}
-            <button className="pm-patients-btn" onClick={()=>setShowPatientDb(true)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontWeight:600,fontSize:"0.72rem",cursor:"pointer",whiteSpace:"nowrap"}}>
+            <button className="pm-patients-btn" onClick={()=>setShowPatientDb(true)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontWeight:600,fontSize:"0.82rem",cursor:"pointer",whiteSpace:"nowrap"}}>
               <span style={{fontSize:"0.85rem"}}>👥</span>
               <span>{patients.length} Patients</span>
             </button>
@@ -17447,26 +17531,28 @@ function AppInner({ currentUser, onSignOut }) {
               <span style={{fontSize:"0.78rem",color:PC.a2,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:160}}>
                 {activePatient.name}
               </span>
-              {activePatient.data?.dem_age && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500,whiteSpace:"nowrap",flexShrink:0}}>· {activePatient.data.dem_age}y</span>}
-              {activePatient.data?.dem_gender && <span style={{fontSize:"0.65rem",color:PC.muted,fontWeight:500,whiteSpace:"nowrap",flexShrink:0}}>{activePatient.data.dem_gender}</span>}
-              <span style={{fontSize:"0.6rem",color:PC.accent,fontWeight:600,flexShrink:0,whiteSpace:"nowrap"}}>👤 Profile</span>
+              {activePatient.data?.dem_age && <span style={{fontSize:"0.75rem",color:PC.muted,fontWeight:500,whiteSpace:"nowrap",flexShrink:0}}>· {activePatient.data.dem_age}y</span>}
+              {activePatient.data?.dem_gender && <span style={{fontSize:"0.75rem",color:PC.muted,fontWeight:500,whiteSpace:"nowrap",flexShrink:0}}>{activePatient.data.dem_gender}</span>}
+              <span style={{fontSize:"0.8rem",color:PC.accent,fontWeight:600,flexShrink:0,whiteSpace:"nowrap"}}>👤 Profile</span>
             </div>
           </div>
           {/* Row 2: saved time + buttons */}
           <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap"}}>
-            <span style={{fontSize:"0.58rem",color:PC.muted,fontWeight:500,flex:1,whiteSpace:"nowrap"}}>
-              ● Saved {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}
+            <span style={{fontSize:"0.78rem",color:PC.green,fontWeight:600,flex:1,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
+              {lastSaved
+                ? <>✓ Saved {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</>
+                : <>● {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</>}
             </span>
-            <button onClick={createNewPatient} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.62rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>＋ New</button>
-            <button onClick={()=>setShowPatientDb(true)} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.a2,fontSize:"0.62rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Switch Patient</button>
+            <button onClick={createNewPatient} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>＋ New</button>
+            <button onClick={()=>setShowPatientDb(true)} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.a2,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Switch Patient</button>
           </div>
         </div>
       )}
       {!activePatient && (
         <div style={{background:PC.isDark?"rgba(56,189,248,0.03)":"rgba(3,105,161,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"9px 24px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-          <span style={{fontSize:"0.7rem",color:PC.muted,fontWeight:500}}>No active patient — create or load a patient record to save assessments</span>
-          <button onClick={createNewPatient} style={{padding:"5px 14px",background:`linear-gradient(135deg,${PC.accent}18,${PC.a2}12)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:7,color:PC.accent,fontSize:"0.68rem",fontWeight:700,cursor:"pointer"}}>＋ New Patient</button>
-          <button onClick={()=>setShowPatientDb(true)} style={{padding:"5px 14px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.a2,fontSize:"0.68rem",fontWeight:600,cursor:"pointer"}}>Load Patient</button>
+          <span style={{fontSize:"0.8rem",color:PC.muted,fontWeight:500}}>No active patient — create or load a patient record to save assessments</span>
+          <button onClick={createNewPatient} style={{padding:"5px 14px",background:`linear-gradient(135deg,${PC.accent}18,${PC.a2}12)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:7,color:PC.accent,fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>＋ New Patient</button>
+          <button onClick={()=>setShowPatientDb(true)} style={{padding:"5px 14px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.a2,fontSize:"0.78rem",fontWeight:600,cursor:"pointer"}}>Load Patient</button>
         </div>
       )}
 
@@ -17486,8 +17572,8 @@ function AppInner({ currentUser, onSignOut }) {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                 <div style={{fontSize:"1.05rem",fontWeight:800,color:PC.accent}}>📋 Multi-System Diagnosis Report</div>
                 <div style={{display:"flex",gap:8}}>
-                  <span style={{fontSize:"0.65rem",padding:"2px 8px",borderRadius:10,background:"rgba(0,229,255,0.1)",color:PC.accent}}>{completedCount} fields · {dx.dx.length} diagnoses</span>
-                  <button onClick={()=>setShowDx(false)} style={{background:"none",border:`1px solid ${PC.border}`,color:PC.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:"0.72rem"}}>✕</button>
+                  <span style={{fontSize:"0.75rem",padding:"2px 8px",borderRadius:10,background:"rgba(0,229,255,0.1)",color:PC.accent}}>{completedCount} fields · {dx.dx.length} diagnoses</span>
+                  <button onClick={()=>setShowDx(false)} style={{background:"none",border:`1px solid ${PC.border}`,color:PC.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:"0.82rem"}}>✕</button>
                 </div>
               </div>
               {dx.redFlags.length>0&&(
@@ -17511,8 +17597,8 @@ function AppInner({ currentUser, onSignOut }) {
                         <div onClick={()=>setExpandedDx(p=>({...p,[i]:!p[i]}))} style={{padding:"11px 13px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",borderLeft:`3px solid ${col}`}}>
                           <div>
                             <div style={{display:"flex",gap:7,alignItems:"center",marginBottom:4}}>
-                              <span style={{fontSize:"0.6rem",fontWeight:700,padding:"2px 7px",borderRadius:7,background:`${col}20`,color:col}}>{d.system}</span>
-                              <span style={{fontSize:"0.6rem",fontWeight:700,padding:"2px 7px",borderRadius:7,background:d.confidence==="High"?"rgba(0,201,122,0.15)":"rgba(255,179,0,0.15)",color:d.confidence==="High"?PC.green:PC.yellow}}>{d.confidence}</span>
+                              <span style={{fontSize:"0.8rem",fontWeight:700,padding:"2px 7px",borderRadius:7,background:`${col}20`,color:col}}>{d.system}</span>
+                              <span style={{fontSize:"0.8rem",fontWeight:700,padding:"2px 7px",borderRadius:7,background:d.confidence==="High"?"rgba(0,201,122,0.15)":"rgba(255,179,0,0.15)",color:d.confidence==="High"?PC.green:PC.yellow}}>{d.confidence}</span>
                             </div>
                             <div style={{fontWeight:700,fontSize:"0.86rem"}}>{i+1}. {d.name}</div>
                           </div>
@@ -17520,10 +17606,10 @@ function AppInner({ currentUser, onSignOut }) {
                         </div>
                         {exp&&(
                           <div style={{padding:"0 13px 13px 16px"}}>
-                            <div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Evidence</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{d.evidence.map((e,j)=><span key={j} style={{fontSize:"0.68rem",padding:"2px 7px",borderRadius:7,background:PC.s3,color:PC.text,border:`1px solid ${PC.border}`}}>✓ {e}</span>)}</div></div>
-                            {d.mechanism&&<div style={{marginBottom:10}}><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Mechanism</div><div style={{background:PC.s3,borderRadius:8,padding:10,fontSize:"0.76rem",color:PC.text,lineHeight:1.6}}>{d.mechanism}</div></div>}
-                            {d.treatment&&d.treatment.length>0&&<div><div style={{fontSize:"0.6rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Treatment Plan</div>{d.treatment.map((t,j)=><div key={j} style={{display:"flex",gap:8,padding:"5px 9px",background:PC.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}><span style={{color:PC.a3,fontWeight:700,flexShrink:0}}>→</span><span style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.5}}>{t}</span></div>)}</div>}
-                            {d.interpretation&&<div style={{marginTop:10,padding:"8px 11px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.68rem",color:PC.yellow,lineHeight:1.5}}>⚠ {d.interpretation}</div>}
+                            <div style={{marginBottom:10}}><div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Evidence</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{d.evidence.map((e,j)=><span key={j} style={{fontSize:"0.78rem",padding:"2px 7px",borderRadius:7,background:PC.s3,color:PC.text,border:`1px solid ${PC.border}`}}>✓ {e}</span>)}</div></div>
+                            {d.mechanism&&<div style={{marginBottom:10}}><div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Mechanism</div><div style={{background:PC.s3,borderRadius:8,padding:10,fontSize:"0.76rem",color:PC.text,lineHeight:1.6}}>{d.mechanism}</div></div>}
+                            {d.treatment&&d.treatment.length>0&&<div><div style={{fontSize:"0.8rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Treatment Plan</div>{d.treatment.map((t,j)=><div key={j} style={{display:"flex",gap:8,padding:"5px 9px",background:PC.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}><span style={{color:PC.a3,fontWeight:700,flexShrink:0}}>→</span><span style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.5}}>{t}</span></div>)}</div>}
+                            {d.interpretation&&<div style={{marginTop:10,padding:"8px 11px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.78rem",color:PC.yellow,lineHeight:1.5}}>⚠ {d.interpretation}</div>}
                           </div>
                         )}
                       </div>
@@ -17531,7 +17617,7 @@ function AppInner({ currentUser, onSignOut }) {
                   })}
                   {dx.fmsTotal!==null&&(
                     <div style={{marginTop:10,padding:12,background:PC.s2,borderRadius:8,border:`1px solid ${PC.border}`,display:"flex",alignItems:"center",gap:12}}>
-                      <div style={{textAlign:"center",minWidth:55}}><div style={{fontSize:"1.8rem",fontWeight:800,color:dx.fmsTotal>=17?PC.green:dx.fmsTotal>=15?PC.yellow:PC.red}}>{dx.fmsTotal}</div><div style={{fontSize:"0.58rem",color:PC.muted}}>FMS/21</div></div>
+                      <div style={{textAlign:"center",minWidth:55}}><div style={{fontSize:"1.8rem",fontWeight:800,color:dx.fmsTotal>=17?PC.green:dx.fmsTotal>=15?PC.yellow:PC.red}}>{dx.fmsTotal}</div><div style={{fontSize:"0.78rem",color:PC.muted}}>FMS/21</div></div>
                       <div style={{fontSize:"0.76rem",color:PC.muted}}>{dx.fmsTotal>=17?"✅ Low risk":dx.fmsTotal>=15?"⚠️ Moderate risk — corrective exercises":"🔴 High risk — corrective exercises before loading"}</div>
                     </div>
                   )}
@@ -17545,7 +17631,7 @@ function AppInner({ currentUser, onSignOut }) {
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>
               <div>
                 <div style={{fontSize:"clamp(1rem,3vw,1.25rem)",fontWeight:800,letterSpacing:"-0.3px",color:PC.text,lineHeight:1.1}}>{currentSection.label}</div>
-                <div style={{fontSize:"0.62rem",fontWeight:600,letterSpacing:"0.8px",textTransform:"uppercase",color:PC.muted,marginTop:2}}>{currentSection.desc||"Clinical Assessment"}</div>
+                <div style={{fontSize:"0.82rem",fontWeight:600,letterSpacing:"0.8px",textTransform:"uppercase",color:PC.muted,marginTop:2}}>{currentSection.desc||"Clinical Assessment"}</div>
               </div>
             </div>
             <div style={{height:"1px",background:`linear-gradient(90deg,${PC.accent}50,${PC.a2}30,transparent)`}}/>
@@ -17568,7 +17654,7 @@ function AppInner({ currentUser, onSignOut }) {
           {Object.entries(currentSection.groups).map(([groupName,tests])=>(
             <div key={groupName} style={{marginBottom:28}}>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.4px",color:PC.a2,whiteSpace:"nowrap"}}>{groupName}</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.4px",color:PC.a2,whiteSpace:"nowrap"}}>{groupName}</div>
                 <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${PC.border},transparent)`}}/>
               </div>
 
@@ -17607,7 +17693,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17640,7 +17726,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17673,7 +17759,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17685,7 +17771,7 @@ function AppInner({ currentUser, onSignOut }) {
                 <SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                  <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
+                  <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
                   <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
                     Continue SOAP →
                   </button>
@@ -17713,7 +17799,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17746,7 +17832,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17779,7 +17865,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17812,7 +17898,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17845,7 +17931,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17878,7 +17964,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17890,7 +17976,7 @@ function AppInner({ currentUser, onSignOut }) {
                 <NeurologicalModule data={data} set={set} navContext={active==="neuro"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                  <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
+                  <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
                   <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
                     Continue SOAP →
                   </button>
@@ -17918,7 +18004,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17951,7 +18037,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -17963,7 +18049,7 @@ function AppInner({ currentUser, onSignOut }) {
                 <MMTModule data={data} set={set} navContext={active==="mmt"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                  <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
+                  <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
                   <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
                     Continue SOAP →
                   </button>
@@ -17991,7 +18077,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -18003,7 +18089,7 @@ function AppInner({ currentUser, onSignOut }) {
                 <ROMModule data={data} set={set} navContext={active==="rom"?navContext:{}}/>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                  <div style={{fontSize:"0.72rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
+                  <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
                   <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
                     Continue SOAP →
                   </button>
@@ -18031,7 +18117,7 @@ function AppInner({ currentUser, onSignOut }) {
                           <React.Fragment key={s.k}>
                             <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
                               <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.68rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
+                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
                             </div>
                             {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
                           </React.Fragment>
@@ -18051,7 +18137,7 @@ function AppInner({ currentUser, onSignOut }) {
                   {/* ── Quick Visit Banner ── */}
                   <div style={{background:`linear-gradient(135deg,${PC.accent}12,${PC.a2}08)`,border:`1.5px solid ${PC.accent}30`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
                     <div style={{fontWeight:800,fontSize:"0.88rem",color:PC.accent,marginBottom:4}}>⚡ Quick Visit</div>
-                    <div style={{fontSize:"0.7rem",color:PC.muted,marginBottom:12}}>For follow-ups — fill these 4 fields and sign. Takes 60 seconds.</div>
+                    <div style={{fontSize:"0.8rem",color:PC.muted,marginBottom:12}}>For follow-ups — fill these 4 fields and sign. Takes 60 seconds.</div>
                     <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo}/>
                   </div>
                 </div>
@@ -18069,14 +18155,14 @@ function AppInner({ currentUser, onSignOut }) {
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10,gap:8}}>
                           <label style={{fontSize:"0.82rem",fontWeight:600,color:hasVal?PC.text:PC.muted,lineHeight:1.4,flex:1,letterSpacing:"-0.1px"}}>
                             {t.label}
-                            {hasVal&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:16,height:16,background:PC.a3+"22",borderRadius:"50%",marginLeft:7,fontSize:"0.55rem",color:PC.a3,fontWeight:800,verticalAlign:"middle"}}>✓</span>}
+                            {hasVal&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:16,height:16,background:PC.a3+"22",borderRadius:"50%",marginLeft:7,fontSize:"0.75rem",color:PC.a3,fontWeight:800,verticalAlign:"middle"}}>✓</span>}
                           </label>
-                          {hasInfo&&<button type="button" onClick={()=>setInfoModal(t)} style={{padding:"3px 10px",background:PC.isDark?"rgba(129,140,248,0.1)":"rgba(79,70,229,0.06)",border:`1px solid ${PC.a2}30`,borderRadius:7,color:PC.a2,fontSize:"0.62rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,letterSpacing:"0.2px"}}>ℹ Info</button>}
+                          {hasInfo&&<button type="button" onClick={()=>setInfoModal(t)} style={{padding:"3px 10px",background:PC.isDark?"rgba(129,140,248,0.1)":"rgba(79,70,229,0.06)",border:`1px solid ${PC.a2}30`,borderRadius:7,color:PC.a2,fontSize:"0.82rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,letterSpacing:"0.2px"}}>ℹ Info</button>}
                         </div>
                         <Field t={t}/>
                         {hasVal&&t.sig&&(
-                          <div style={{marginTop:10,padding:"9px 12px",background:PC.accentSoft||"rgba(56,189,248,0.06)",border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:8,fontSize:"0.68rem",color:PC.text,lineHeight:1.6,opacity:0.9}}>
-                            <span style={{fontWeight:700,color:PC.accent,marginRight:5,fontSize:"0.65rem",letterSpacing:"0.3px"}}>⚕ CLINICAL</span>{t.sig}
+                          <div style={{marginTop:10,padding:"9px 12px",background:PC.accentSoft||"rgba(56,189,248,0.06)",border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:8,fontSize:"0.78rem",color:PC.text,lineHeight:1.6,opacity:0.9}}>
+                            <span style={{fontWeight:700,color:PC.accent,marginRight:5,fontSize:"0.75rem",letterSpacing:"0.3px"}}>⚕ CLINICAL</span>{t.sig}
                           </div>
                         )}
                       </div>

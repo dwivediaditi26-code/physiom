@@ -10,13 +10,13 @@ function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder
     <div style={{background:C.surface,border:`1px solid ${filled?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:6}}>
         <label style={{fontSize:"0.78rem",fontWeight:600,color:filled?C.text:C.muted,lineHeight:1.4,flex:1}}>
-          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>✓</span>}
+          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.8rem"}}>✓</span>}
         </label>
-        {unit&&<span style={{fontSize:"0.62rem",color:C.muted,flexShrink:0}}>{unit}</span>}
+        {unit&&<span style={{fontSize:"0.82rem",color:C.muted,flexShrink:0}}>{unit}</span>}
       </div>
-      {note&&<div style={{fontSize:"0.68rem",color:C.muted,marginBottom:6,lineHeight:1.4,fontStyle:"italic"}}>{note}</div>}
+      {note&&<div style={{fontSize:"0.78rem",color:C.muted,marginBottom:6,lineHeight:1.4,fontStyle:"italic"}}>{note}</div>}
       {type==="select"&&<select value={val} onChange={e=>set(id,e.target.value)} style={base}><option value="">— select —</option>{options.map(o=><option key={o} value={o}>{o}</option>)}</select>}
-      {type==="range"&&<div><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:"0.68rem",color:C.muted}}>{min}{unit||""}</span><span style={{fontSize:"0.82rem",fontWeight:700,color:C.accent}}>{val||min}{unit||""}</span><span style={{fontSize:"0.68rem",color:C.muted}}>{max}{unit||""}</span></div><input type="range" min={min} max={max} step={step} value={val||min} onChange={e=>set(id,e.target.value)} style={{width:"100%",accentColor:C.accent,cursor:"pointer"}}/></div>}
+      {type==="range"&&<div><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:"0.78rem",color:C.muted}}>{min}{unit||""}</span><span style={{fontSize:"0.82rem",fontWeight:700,color:C.accent}}>{val||min}{unit||""}</span><span style={{fontSize:"0.78rem",color:C.muted}}>{max}{unit||""}</span></div><input type="range" min={min} max={max} step={step} value={val||min} onChange={e=>set(id,e.target.value)} style={{width:"100%",accentColor:C.accent,cursor:"pointer"}}/></div>}
       {type==="num"&&<input type="number" value={val} onChange={e=>set(id,e.target.value)} placeholder={placeholder} min={min} max={max} style={base}/>}
       {type==="textarea"&&<textarea value={val} onChange={e=>set(id,e.target.value)} placeholder={placeholder} rows={3} style={{...base,resize:"vertical",display:"block"}}/>}
     </div>
@@ -28,10 +28,10 @@ function ErgoBadge({ level, label, score, max }) {
   const pct=max>0?Math.round(score/max*100):0;
   return (
     <div style={{background:C.s2,border:`1px solid ${col}40`,borderRadius:10,padding:"10px 12px",flex:1,minWidth:110}}>
-      <div style={{fontSize:"0.58rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:C.muted,marginBottom:4}}>{label}</div>
+      <div style={{fontSize:"0.78rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:C.muted,marginBottom:4}}>{label}</div>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
         <span style={{fontWeight:800,fontSize:"0.95rem",color:col}}>{level}</span>
-        <span style={{fontSize:"0.62rem",color:C.muted}}>{score}/{max}</span>
+        <span style={{fontSize:"0.82rem",color:C.muted}}>{score}/{max}</span>
       </div>
       <div style={{height:4,background:C.s3,borderRadius:2}}><div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:2,transition:"width 0.4s"}}/></div>
     </div>
@@ -81,15 +81,15 @@ function ErgoModule({ data, set }) {
 
   const overallCol = risks.overall==="High"?C.red:risks.overall==="Moderate"?C.yellow:C.green;
   const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"⏱️"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
-  const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.72rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
+  const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.82rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
 
   const SH = ({id,label,children})=>{
     const isOpen=open[id]!==false;
     return (
       <div style={{marginBottom:14}}>
         <button type="button" onClick={()=>setOpen(p=>({...p,[id]:!isOpen}))} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",background:"transparent",border:"none",cursor:"pointer",padding:"6px 0",marginBottom:isOpen?8:0}}>
-          <div style={{fontSize:"0.63rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
-          <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"▲":"▼"}</span>
+          <div style={{fontSize:"0.73rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
+          <span style={{color:C.muted,fontSize:"0.82rem"}}>{isOpen?"▲":"▼"}</span>
         </button>
         {isOpen&&children}
       </div>
@@ -100,7 +100,7 @@ function ErgoModule({ data, set }) {
     const cfg=ERGO_RISK_CFG[id]; if(!cfg) return null;
     const val=data[id]||"";
     if(!val||!cfg.bad(val)) return null;
-    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.7rem",color:C.yellow}}><span style={{flexShrink:0}}>⚠</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
+    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.8rem",color:C.yellow}}><span style={{flexShrink:0}}>⚠</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
   };
 
   const WorkstationTab = ()=>(
@@ -237,14 +237,14 @@ function ErgoModule({ data, set }) {
         <div style={{background:C.s2,border:`2px solid ${overallCol}50`,borderRadius:14,padding:"16px 18px",marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,flexWrap:"wrap",gap:10}}>
             <div>
-              <div style={{fontSize:"0.6rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.muted,marginBottom:4}}>Overall Ergonomic Risk Score</div>
+              <div style={{fontSize:"0.8rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.muted,marginBottom:4}}>Overall Ergonomic Risk Score</div>
               <div style={{display:"flex",alignItems:"baseline",gap:8}}>
                 <span style={{fontSize:"2.4rem",fontWeight:900,color:overallCol,lineHeight:1}}>{risks.total}</span>
                 <span style={{fontSize:"0.9rem",color:C.muted}}>/ {risks.maxTotal}</span>
                 <span style={{padding:"3px 10px",borderRadius:20,background:`${overallCol}20`,color:overallCol,fontWeight:800,fontSize:"0.8rem",marginLeft:4}}>{risks.overall} Risk</span>
               </div>
             </div>
-            <div style={{fontSize:"0.72rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
+            <div style={{fontSize:"0.82rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
               {risks.overall==="High"?"⚠️ Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"⚡ Moderate ergonomic exposure. Targeted corrections advised.":"✅ Low ergonomic risk. Maintenance and monitoring."}
             </div>
           </div>
@@ -259,7 +259,7 @@ function ErgoModule({ data, set }) {
         {/* Active faults */}
         {faults.length>0&&(
           <div style={{marginBottom:16}}>
-            <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Active Faults ({faults.length})</div>
+            <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Active Faults ({faults.length})</div>
             {faults.map(id=>{
               const cfg=ERGO_RISK_CFG[id];
               const col=cfg.w>=3?C.red:C.yellow;
@@ -267,14 +267,14 @@ function ErgoModule({ data, set }) {
                 <div key={id} style={{display:"flex",gap:8,alignItems:"center",padding:"6px 10px",background:C.surface,border:`1px solid ${col}30`,borderRadius:8,marginBottom:4,fontSize:"0.73rem"}}>
                   <span style={{color:col,flexShrink:0}}>{cfg.w>=3?"🔴":"🟡"}</span>
                   <span style={{color:C.text,flex:1}}>{id.replace("ergo_","").replace(/_/g," ")}</span>
-                  <span style={{fontSize:"0.6rem",padding:"1px 6px",borderRadius:6,background:`${col}15`,color:col}}>{ERGO_DOMAIN_LABELS[cfg.domain]}</span>
+                  <span style={{fontSize:"0.8rem",padding:"1px 6px",borderRadius:6,background:`${col}15`,color:col}}>{ERGO_DOMAIN_LABELS[cfg.domain]}</span>
                 </div>
               );
             })}
           </div>
         )}
         {/* Symptom correlation */}
-        <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Body Region — Workstation Correlation</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Body Region — Workstation Correlation</div>
         {correlations.map(c=>{
           const matched=c.drivers.filter(d=>faults.includes(d));
           const pct=matched.length/c.drivers.length;
@@ -283,20 +283,20 @@ function ErgoModule({ data, set }) {
             <div key={c.symptom} style={{background:C.surface,border:`1px solid ${matched.length>0?col+"40":C.border}`,borderRadius:10,padding:"9px 12px",marginBottom:6}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:matched.length>0?5:0}}>
                 <span style={{fontWeight:600,fontSize:"0.78rem",color:matched.length>0?C.text:C.muted}}>{c.symptom}</span>
-                <span style={{fontSize:"0.65rem",fontWeight:700,padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col}}>{matched.length}/{c.drivers.length} drivers</span>
+                <span style={{fontSize:"0.75rem",fontWeight:700,padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col}}>{matched.length}/{c.drivers.length} drivers</span>
               </div>
-              {matched.length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{matched.map(f=><span key={f} style={{fontSize:"0.6rem",padding:"2px 7px",borderRadius:6,background:C.s3,color:C.yellow,border:`1px solid ${C.yellow}25`}}>{f.replace("ergo_","").replace(/_/g," ")}</span>)}</div>}
+              {matched.length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{matched.map(f=><span key={f} style={{fontSize:"0.8rem",padding:"2px 7px",borderRadius:6,background:C.s3,color:C.yellow,border:`1px solid ${C.yellow}25`}}>{f.replace("ergo_","").replace(/_/g," ")}</span>)}</div>}
             </div>
           );
         })}
         {/* Future hooks */}
         <div style={{marginTop:16,background:C.s2,border:`1px solid ${C.a2}30`,borderRadius:10,padding:"12px 14px"}}>
-          <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8}}>🔮 Future Integration Hooks</div>
+          <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8}}>🔮 Future Integration Hooks</div>
           {[{icon:"📷",label:"Webcam Posture Analysis",desc:"Real-time AI posture angle measurement"},{icon:"⌚",label:"Wearable Sensor Integration",desc:"IMU / smartwatch postural load import"},{icon:"🤖",label:"AI Posture Tracking",desc:"Continuous scoring with deviation alerts"},{icon:"📈",label:"Longitudinal Risk Tracking",desc:"Session-to-session score comparison"}].map(h=>(
             <div key={h.label} style={{display:"flex",gap:10,alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
               <span style={{fontSize:"1rem",flexShrink:0}}>{h.icon}</span>
               <div style={{flex:1}}><div style={{fontSize:"0.74rem",fontWeight:600,color:C.muted}}>{h.label}</div><div style={{fontSize:"0.66rem",color:C.muted,opacity:0.7}}>{h.desc}</div></div>
-              <span style={{fontSize:"0.6rem",padding:"2px 7px",borderRadius:8,background:"rgba(127,90,240,0.15)",color:C.a2,fontWeight:700}}>Planned</span>
+              <span style={{fontSize:"0.8rem",padding:"2px 7px",borderRadius:8,background:"rgba(127,90,240,0.15)",color:C.a2,fontWeight:700}}>Planned</span>
             </div>
           ))}
         </div>
@@ -346,12 +346,12 @@ function ErgoModule({ data, set }) {
           <>
             {highP.length>0&&(
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.red,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.red}}/>🔴 High Priority ({highP.length})</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.red,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.red}}/>🔴 High Priority ({highP.length})</div>
                 {highP.map(id=>{const c=CORRECTIONS[id];return c?(
                   <div key={id} style={{background:C.surface,border:`1px solid ${C.red}30`,borderLeft:`3px solid ${C.red}`,borderRadius:10,padding:"10px 13px",marginBottom:7}}>
                     <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-                      <span style={{fontSize:"0.58rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.red}20`,color:C.red,flexShrink:0,marginTop:1}}>{c.area}</span>
-                      <div><div style={{fontSize:"0.7rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
+                      <span style={{fontSize:"0.78rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.red}20`,color:C.red,flexShrink:0,marginTop:1}}>{c.area}</span>
+                      <div><div style={{fontSize:"0.8rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
                     </div>
                   </div>
                 ):null;})}
@@ -359,12 +359,12 @@ function ErgoModule({ data, set }) {
             )}
             {medP.length>0&&(
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.yellow,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.yellow}}/>🟡 Medium Priority ({medP.length})</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.yellow,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.yellow}}/>🟡 Medium Priority ({medP.length})</div>
                 {medP.map(id=>{const c=CORRECTIONS[id];return c?(
                   <div key={id} style={{background:C.surface,border:`1px solid ${C.yellow}25`,borderLeft:`3px solid ${C.yellow}`,borderRadius:10,padding:"10px 13px",marginBottom:7}}>
                     <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-                      <span style={{fontSize:"0.58rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.yellow}15`,color:C.yellow,flexShrink:0,marginTop:1}}>{c.area}</span>
-                      <div><div style={{fontSize:"0.7rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
+                      <span style={{fontSize:"0.78rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.yellow}15`,color:C.yellow,flexShrink:0,marginTop:1}}>{c.area}</span>
+                      <div><div style={{fontSize:"0.8rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
                     </div>
                   </div>
                 ):null;})}
@@ -372,12 +372,12 @@ function ErgoModule({ data, set }) {
             )}
             {movPx.length>0&&(
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a3,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a3}}/>🏃 Movement Break Prescription</div>
+                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a3,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a3}}/>🏃 Movement Break Prescription</div>
                 {movPx.map(mp=>(
                   <div key={mp.label} style={{background:C.surface,border:`1px solid ${C.a3}30`,borderRadius:10,padding:"11px 13px",marginBottom:8}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:C.a3}}>{mp.label}</div>
-                      <span style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
+                      <span style={{fontSize:"0.82rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
                     </div>
                     {mp.ex.map((e,i)=><div key={i} style={{display:"flex",gap:8,padding:"3px 0",fontSize:"0.76rem",color:C.text}}><span style={{color:C.a3,flexShrink:0}}>→</span><span>{e}</span></div>)}
                   </div>
@@ -385,7 +385,7 @@ function ErgoModule({ data, set }) {
               </div>
             )}
             <div style={{marginTop:8}}>
-              <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Clinician Notes — Ergonomic</div>
+              <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Clinician Notes — Ergonomic</div>
               <EF id="ergo_clinician_notes" label="Notes / employer recommendations" type="textarea" data={data} set={set} placeholder="Workplace recommendations, equipment requests, employer letter notes, review date..."/>
             </div>
           </>
@@ -402,7 +402,7 @@ function ErgoModule({ data, set }) {
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {Object.entries(ERGO_DOMAIN_LABELS).map(([d,l])=>{
               const col=risks[d]==="High"?C.red:risks[d]==="Moderate"?C.yellow:null;
-              return col?<span key={d} style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col,fontWeight:700}}>{l}: {risks[d]}</span>:null;
+              return col?<span key={d} style={{fontSize:"0.82rem",padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col,fontWeight:700}}>{l}: {risks[d]}</span>:null;
             })}
           </div>
         </div>
@@ -471,13 +471,13 @@ function GaitModule({ data, set }) {
     {key:"muscles",  label:"Muscle/Joint",   icon:"💪"},
     {key:"plan",     label:"Plan & Goals",   icon:"📋"},
   ];
-  const tb = k=>({padding:"7px 11px",borderRadius:20,cursor:"pointer",fontSize:"0.72rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
+  const tb = k=>({padding:"7px 11px",borderRadius:20,cursor:"pointer",fontSize:"0.82rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
   const inp = {width:"100%",background:C.s3,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem",WebkitAppearance:"none",appearance:"none"};
   const row = (label, id, type="text", opts=null, note=null)=>{
     const val=data[id]||"";
     return(
       <div style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,padding:"9px 12px",marginBottom:7}}>
-        <div style={{fontSize:"0.76rem",fontWeight:600,color:val?C.text:C.muted,marginBottom:5}}>{label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>✓</span>}</div>
+        <div style={{fontSize:"0.76rem",fontWeight:600,color:val?C.text:C.muted,marginBottom:5}}>{label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.8rem"}}>✓</span>}</div>
         {note&&<div style={{fontSize:"0.67rem",color:C.muted,marginBottom:5,fontStyle:"italic"}}>{note}</div>}
         {type==="select"&&<select value={val} onChange={e=>set(id,e.target.value)} style={inp}><option value="">— select —</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>}
         {type==="text"&&<input value={val} onChange={e=>set(id,e.target.value)} style={inp}/>}
@@ -492,8 +492,8 @@ function GaitModule({ data, set }) {
     const isOpen=openSec[id]!==false;
     return(<div style={{marginBottom:12}}>
       <button type="button" onClick={()=>setOpenSec(p=>({...p,[id]:!isOpen}))} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",background:"transparent",border:"none",cursor:"pointer",padding:"5px 0",marginBottom:isOpen?7:0}}>
-        <div style={{fontSize:"0.63rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
-        <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"▲":"▼"}</span>
+        <div style={{fontSize:"0.73rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
+        <span style={{color:C.muted,fontSize:"0.82rem"}}>{isOpen?"▲":"▼"}</span>
       </button>
       {isOpen&&children}
     </div>);
@@ -530,7 +530,7 @@ function GaitModule({ data, set }) {
             const base={width:"100%",background:C.s3,border:`1px solid ${val?C.accent+"40":C.border}`,borderRadius:8,color:C.text,fontFamily:"inherit",outline:"none",padding:"7px 9px",fontSize:"0.75rem",WebkitAppearance:"none",appearance:"none"};
             return(
               <div key={f.id}>
-                <div style={{fontSize:"0.58rem",fontWeight:700,color:val?C.green:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.5px"}}>{f.label}</div>
+                <div style={{fontSize:"0.78rem",fontWeight:700,color:val?C.green:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.5px"}}>{f.label}</div>
                 {f.type==="select"?(
                   <select style={base} value={val} onChange={e=>set(f.id,e.target.value)}>
                     <option value="">—</option>
@@ -543,7 +543,7 @@ function GaitModule({ data, set }) {
             );
           })}
         </div>
-        <button onClick={()=>setShowFull(v=>!v)} style={{fontSize:"0.68rem",fontWeight:600,color:C.muted,background:"transparent",border:"none",cursor:"pointer",padding:0}}>
+        <button onClick={()=>setShowFull(v=>!v)} style={{fontSize:"0.78rem",fontWeight:600,color:C.muted,background:"transparent",border:"none",cursor:"pointer",padding:0}}>
           {showFull?"▲ Hide full analysis":"▼ Detailed analysis (phases, scales, muscle/joint)"}
         </button>
       </div>
@@ -552,7 +552,7 @@ function GaitModule({ data, set }) {
       {(fallRisk||activeGaits.length>0)&&(
         <div style={{background:fallRisk==="High"?"rgba(255,77,109,0.1)":"rgba(255,179,0,0.08)",border:`1px solid ${fallCol}40`,borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
           {fallRisk&&<span style={{fontWeight:800,color:fallCol,fontSize:"0.85rem"}}>{fallRisk==="High"?"🔴":"🟡"} Fall Risk: {fallRisk}</span>}
-          {activeGaits.map(g=><span key={g.id} style={{fontSize:"0.65rem",padding:"2px 8px",borderRadius:8,background:`${C.yellow}15`,color:C.yellow,fontWeight:600}}>{g.label}</span>)}
+          {activeGaits.map(g=><span key={g.id} style={{fontSize:"0.75rem",padding:"2px 8px",borderRadius:8,background:`${C.yellow}15`,color:C.yellow,fontWeight:600}}>{g.label}</span>)}
         </div>
       )}
 
@@ -617,7 +617,7 @@ function GaitModule({ data, set }) {
         {/* Summary of deviations */}
         {phaseDeviations.length>0&&(
           <div style={{background:"rgba(255,179,0,0.06)",border:`1px solid ${C.yellow}30`,borderRadius:10,padding:"10px 12px",marginBottom:12}}>
-            <div style={{fontSize:"0.62rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Deviations Found ({phaseDeviations.length} phases)</div>
+            <div style={{fontSize:"0.82rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Deviations Found ({phaseDeviations.length} phases)</div>
             {phaseDeviations.map(p=><div key={p.id} style={{fontSize:"0.74rem",color:C.text,marginBottom:3}}>
               <span style={{color:p.type==="stance"?C.accent:C.a2,fontWeight:600}}>{p.phase}: </span>{data[p.id+"_dev"]}
             </div>)}
@@ -625,7 +625,7 @@ function GaitModule({ data, set }) {
         )}
         {["stance","swing"].map(type=>(
           <div key={type} style={{marginBottom:14}}>
-            <div style={{fontSize:"0.63rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:type==="stance"?C.accent:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{fontSize:"0.73rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:type==="stance"?C.accent:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
               <div style={{height:1,width:10,background:type==="stance"?C.accent:C.a2}}/>{type==="stance"?"STANCE PHASE (60%)":"SWING PHASE (40%)"}
             </div>
             {GAIT_PHASES.filter(p=>p.type===type).map(p=>{
@@ -637,9 +637,9 @@ function GaitModule({ data, set }) {
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7,gap:8}}>
                     <div>
                       <span style={{fontWeight:700,color:hasDeviation?C.yellow:C.text,fontSize:"0.83rem"}}>{p.phase}</span>
-                      <span style={{fontSize:"0.65rem",color:C.muted,marginLeft:8}}>{p.pct}</span>
+                      <span style={{fontSize:"0.75rem",color:C.muted,marginLeft:8}}>{p.pct}</span>
                     </div>
-                    {hasDeviation&&<span style={{fontSize:"0.6rem",padding:"1px 7px",borderRadius:8,background:`${C.yellow}15`,color:C.yellow,fontWeight:700}}>DEVIATION</span>}
+                    {hasDeviation&&<span style={{fontSize:"0.8rem",padding:"1px 7px",borderRadius:8,background:`${C.yellow}15`,color:C.yellow,fontWeight:700}}>DEVIATION</span>}
                   </div>
                   <select value={dev} onChange={e=>set(p.id+"_dev",e.target.value)} style={{...inp,marginBottom:hasDeviation?7:0,borderColor:hasDeviation?C.yellow+"60":C.border}}>
                     <option value="">— select deviation —</option>
@@ -673,10 +673,10 @@ function GaitModule({ data, set }) {
           return(
             <div key={p.id} style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:7}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                <span style={{fontSize:"0.78rem",fontWeight:600,color:val?C.text:C.muted}}>{p.label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>✓</span>}</span>
+                <span style={{fontSize:"0.78rem",fontWeight:600,color:val?C.text:C.muted}}>{p.label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.8rem"}}>✓</span>}</span>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                  <span style={{fontSize:"0.62rem",color:C.muted}}>Normal: {p.normal} {p.unit}</span>
-                  {val&&<span style={{fontSize:"0.72rem",fontWeight:700,color:C.accent}}>{val} {p.unit}</span>}
+                  <span style={{fontSize:"0.82rem",color:C.muted}}>Normal: {p.normal} {p.unit}</span>
+                  {val&&<span style={{fontSize:"0.82rem",fontWeight:700,color:C.accent}}>{val} {p.unit}</span>}
                 </div>
               </div>
               <input type="number" value={val} onChange={e=>set(p.id,e.target.value)} placeholder={p.placeholder} style={inp} step="0.01"/>
@@ -706,13 +706,13 @@ function GaitModule({ data, set }) {
                   <div style={{fontSize:"0.8rem",fontWeight:700,color:flagged?C.red:val?C.text:C.muted}}>{t.label}{flagged&&" ⚠️"}</div>
                   <div style={{fontSize:"0.67rem",color:C.muted,marginTop:2}}>{t.note}</div>
                 </div>
-                <span style={{fontSize:"0.62rem",color:C.muted,flexShrink:0,textAlign:"right"}}>Normal: {t.normal}</span>
+                <span style={{fontSize:"0.82rem",color:C.muted,flexShrink:0,textAlign:"right"}}>Normal: {t.normal}</span>
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <input type="number" value={val} onChange={e=>set(t.id,e.target.value)} placeholder="Enter result" step="0.1" style={{...inp,flex:1}}/>
                 <span style={{fontSize:"0.76rem",color:C.muted,flexShrink:0}}>{t.unit}</span>
               </div>
-              {flagged&&<div style={{marginTop:6,fontSize:"0.72rem",color:C.red,fontWeight:600}}>⚠ TUG ≥13.5s — High fall risk. Refer for falls prevention program.</div>}
+              {flagged&&<div style={{marginTop:6,fontSize:"0.82rem",color:C.red,fontWeight:600}}>⚠ TUG ≥13.5s — High fall risk. Refer for falls prevention program.</div>}
             </div>
           );
         })}
@@ -726,7 +726,7 @@ function GaitModule({ data, set }) {
             <div key={s.id} style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:8}}>
                 <div>
-                  <div style={{fontWeight:700,fontSize:"0.85rem",color:val?C.text:C.muted}}>{s.label} <span style={{fontWeight:400,fontSize:"0.72rem",color:C.muted}}>({s.full})</span></div>
+                  <div style={{fontWeight:700,fontSize:"0.85rem",color:val?C.text:C.muted}}>{s.label} <span style={{fontWeight:400,fontSize:"0.82rem",color:C.muted}}>({s.full})</span></div>
                   <div style={{fontSize:"0.67rem",color:C.muted,marginTop:2}}>Range: {s.range} | {s.cutoffs}</div>
                 </div>
                 {val&&<span style={{fontSize:"0.88rem",fontWeight:800,color:C.accent,flexShrink:0}}>{val}</span>}
@@ -751,8 +751,8 @@ function GaitModule({ data, set }) {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:"0.85rem",color:present?C.yellow:C.text,marginBottom:3}}>{g.label}</div>
-                  <div style={{fontSize:"0.72rem",color:C.muted,marginBottom:2}}><strong style={{color:present?C.accent:C.muted}}>Cause:</strong> {g.cause}</div>
-                  <div style={{fontSize:"0.72rem",color:C.muted}}><strong style={{color:present?C.accent:C.muted}}>Sign:</strong> {g.sign}</div>
+                  <div style={{fontSize:"0.82rem",color:C.muted,marginBottom:2}}><strong style={{color:present?C.accent:C.muted}}>Cause:</strong> {g.cause}</div>
+                  <div style={{fontSize:"0.82rem",color:C.muted}}><strong style={{color:present?C.accent:C.muted}}>Sign:</strong> {g.sign}</div>
                 </div>
                 <select value={val} onChange={e=>set(g.id,e.target.value)} style={{...inp,width:"auto",minWidth:100,flexShrink:0,borderColor:present?C.yellow:C.border}}>
                   <option value="">— screen —</option>
@@ -795,13 +795,13 @@ function GaitModule({ data, set }) {
 
       {/* ── PLAN & GOALS ── */}
       {tab==="plan"&&<div>
-        <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Short Term Goals (2–4 weeks)</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Short Term Goals (2–4 weeks)</div>
         {row("Goal 1","g_stg1")} {row("Goal 2","g_stg2")} {row("Goal 3","g_stg3")}
 
-        <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a3,marginBottom:8,marginTop:12,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a3}}/>Long Term Goals (6–12 weeks)</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a3,marginBottom:8,marginTop:12,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a3}}/>Long Term Goals (6–12 weeks)</div>
         {row("Goal 1","g_ltg1")} {row("Goal 2","g_ltg2")}
 
-        <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.accent,marginBottom:8,marginTop:12,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.accent}}/>Treatment Plan</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.accent,marginBottom:8,marginTop:12,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.accent}}/>Treatment Plan</div>
         {[
           {id:"g_tx_strength",  label:"Strengthening",         placeholder:"e.g. Glute med, TA, quad — specify exercises"},
           {id:"g_tx_stretch",   label:"Stretching / Mobility", placeholder:"e.g. Hip flexor, gastroc, hamstring"},
@@ -813,7 +813,7 @@ function GaitModule({ data, set }) {
           {id:"g_tx_education", label:"Patient Education",     placeholder:"e.g. Fall prevention, home exercise program"},
         ].map(f=>row(f.label,f.id,"textarea",null,f.placeholder))}
 
-        <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,marginTop:12,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Outcome Measures</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,marginTop:12,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Outcome Measures</div>
         {row("Selected Outcome Measures","g_outcomes","select",["LEFS (lower extremity)","KOOS (knee)","HOOS (hip)","DASH (upper limb compensation)","SF-36 (general health)","WOMAC (osteoarthritis)","LEFS + TUG","KOOS + BBS"])}
         {row("Reassessment Frequency","g_reassess","select",["Every 2 weeks","Every 4 weeks","Every 6 weeks","At discharge"])}
         {row("Discharge Criteria","g_discharge","textarea")}
@@ -1209,7 +1209,7 @@ function OMSlider({id, min=0, max=10, step=1, value, onChange, showVal=true}){
   const col  = pct<=30?"#00c97a":pct<=60?"#ffb300":"#ff4d6d";
   return(
     <div style={{display:"flex",alignItems:"center",gap:10}}>
-      <span style={{fontSize:"0.65rem",color:"#7e6a9a",minWidth:14}}>{min}</span>
+      <span style={{fontSize:"0.75rem",color:"#7e6a9a",minWidth:14}}>{min}</span>
       <div style={{flex:1,position:"relative",height:24,display:"flex",alignItems:"center"}}>
         <div style={{position:"absolute",width:"100%",height:4,background:"#ede7f6",borderRadius:2}}/>
         <div style={{position:"absolute",width:`${pct}%`,height:4,background:col,borderRadius:2,transition:"width 0.15s"}}/>
@@ -1218,7 +1218,7 @@ function OMSlider({id, min=0, max=10, step=1, value, onChange, showVal=true}){
           style={{position:"absolute",width:"100%",opacity:0,height:24,cursor:"pointer",zIndex:2}}/>
         <div style={{position:"absolute",left:`${pct}%`,transform:"translateX(-50%)",width:16,height:16,borderRadius:"50%",background:col,border:"2px solid #d8cce8",transition:"left 0.15s",pointerEvents:"none"}}/>
       </div>
-      <span style={{fontSize:"0.65rem",color:"#7e6a9a",minWidth:14,textAlign:"right"}}>{max}</span>
+      <span style={{fontSize:"0.75rem",color:"#7e6a9a",minWidth:14,textAlign:"right"}}>{max}</span>
       {showVal&&<span style={{minWidth:28,fontSize:"0.78rem",fontWeight:800,color:col,textAlign:"right"}}>{value??"-"}</span>}
     </div>
   );
@@ -1252,8 +1252,8 @@ function ScoreGauge({ score, maxScore, color, label, mcid }) {
   return (
     <div style={{ marginBottom: 6 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
-        <span style={{ fontSize:"0.62rem", color:"#7e6a9a" }}>{label}</span>
-        <span style={{ fontSize:"1rem", fontWeight:900, color, fontFamily:"monospace" }}>{score}<span style={{ fontSize:"0.6rem", color:"#7e6a9a", fontWeight:400 }}>/{maxScore}</span></span>
+        <span style={{ fontSize:"0.82rem", color:"#7e6a9a" }}>{label}</span>
+        <span style={{ fontSize:"1rem", fontWeight:900, color, fontFamily:"monospace" }}>{score}<span style={{ fontSize:"0.8rem", color:"#7e6a9a", fontWeight:400 }}>/{maxScore}</span></span>
       </div>
       <div style={{ height:8, background:"#ede7f6", borderRadius:4, overflow:"hidden", position:"relative" }}>
         <div style={{ height:"100%", width:`${pct}%`, background:`linear-gradient(90deg,${color}99,${color})`, borderRadius:4, transition:"width 0.6s cubic-bezier(0.34,1.56,0.64,1)" }}/>
@@ -1418,37 +1418,37 @@ function OutcomeMeasuresModule() {
         <div style={{ flex:1, background:"#ffffff", border:"1px solid #d8cce8", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:12 }}>
           <div>
             <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#00e5ff", fontFamily:"monospace", lineHeight:1 }}>{completedCount}</div>
-            <div style={{ fontSize:"0.55rem", color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px" }}>Completed</div>
+            <div style={{ fontSize:"0.75rem", color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px" }}>Completed</div>
           </div>
           <div style={{ width:1, height:32, background:"#ede7f6" }}/>
           <div>
             <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#7f5af0", fontFamily:"monospace", lineHeight:1 }}>{sessions.length}</div>
-            <div style={{ fontSize:"0.55rem", color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px" }}>Sessions</div>
+            <div style={{ fontSize:"0.75rem", color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px" }}>Sessions</div>
           </div>
           <div style={{ width:1, height:32, background:"#ede7f6" }}/>
           <div>
             <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#ffb300", fontFamily:"monospace", lineHeight:1 }}>{Object.keys(OUTCOME_DB).length}</div>
-            <div style={{ fontSize:"0.55rem", color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px" }}>Available</div>
+            <div style={{ fontSize:"0.75rem", color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px" }}>Available</div>
           </div>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-          <button onClick={saveSession} style={{ padding:"8px 13px", background:"linear-gradient(135deg,rgba(0,201,122,0.2),rgba(0,229,255,0.1))", border:"1px solid rgba(0,201,122,0.35)", borderRadius:8, color:"#00c97a", fontWeight:800, fontSize:"0.68rem", cursor:"pointer", whiteSpace:"nowrap" }}>💾 Save Session</button>
-          <button onClick={exportSessionsPDF} style={{ padding:"8px 13px", background:"rgba(127,90,240,0.1)", border:"1px solid rgba(127,90,240,0.3)", borderRadius:8, color:"#7f5af0", fontWeight:700, fontSize:"0.68rem", cursor:"pointer", whiteSpace:"nowrap" }}>📄 Export PDF</button>
+          <button onClick={saveSession} style={{ padding:"8px 13px", background:"linear-gradient(135deg,rgba(0,201,122,0.2),rgba(0,229,255,0.1))", border:"1px solid rgba(0,201,122,0.35)", borderRadius:8, color:"#00c97a", fontWeight:800, fontSize:"0.78rem", cursor:"pointer", whiteSpace:"nowrap" }}>💾 Save Session</button>
+          <button onClick={exportSessionsPDF} style={{ padding:"8px 13px", background:"rgba(127,90,240,0.1)", border:"1px solid rgba(127,90,240,0.3)", borderRadius:8, color:"#7f5af0", fontWeight:700, fontSize:"0.78rem", cursor:"pointer", whiteSpace:"nowrap" }}>📄 Export PDF</button>
         </div>
       </div>
 
       {/* ── Session history panel ── */}
       <div style={{ marginBottom:14 }}>
         <div style={{ display:"flex", gap:6, marginBottom: showHistory ? 8 : 0 }}>
-          <button onClick={() => setShowHistory(h => !h)} style={{ padding:"6px 12px", background: showHistory?"rgba(127,90,240,0.15)":"transparent", border:`1px solid ${showHistory?"rgba(127,90,240,0.35)":"#1a2d45"}`, borderRadius:8, color: showHistory?"#7f5af0":"#6b8399", fontWeight:700, fontSize:"0.68rem", cursor:"pointer" }}>
+          <button onClick={() => setShowHistory(h => !h)} style={{ padding:"6px 12px", background: showHistory?"rgba(127,90,240,0.15)":"transparent", border:`1px solid ${showHistory?"rgba(127,90,240,0.35)":"#1a2d45"}`, borderRadius:8, color: showHistory?"#7f5af0":"#6b8399", fontWeight:700, fontSize:"0.78rem", cursor:"pointer" }}>
             📈 Progress History {sessions.length > 0 ? `(${sessions.length} sessions)` : ""}
           </button>
-          {sessions.length > 0 && <button onClick={clearHistory} style={{ padding:"6px 10px", background:"transparent", border:"1px solid rgba(255,77,109,0.25)", borderRadius:8, color:"rgba(255,77,109,0.6)", fontSize:"0.62rem", cursor:"pointer" }}>✕ Clear</button>}
+          {sessions.length > 0 && <button onClick={clearHistory} style={{ padding:"6px 10px", background:"transparent", border:"1px solid rgba(255,77,109,0.25)", borderRadius:8, color:"rgba(255,77,109,0.6)", fontSize:"0.82rem", cursor:"pointer" }}>✕ Clear</button>}
         </div>
 
         {showHistory && sessions.length > 0 && (
           <div style={{ background:"#ffffff", border:"1px solid rgba(127,90,240,0.25)", borderRadius:12, padding:"13px" }}>
-            <div style={{ fontSize:"0.6rem", fontWeight:700, color:"#7f5af0", textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Score Progression Across Sessions</div>
+            <div style={{ fontSize:"0.8rem", fontWeight:700, color:"#7f5af0", textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Score Progression Across Sessions</div>
             {Object.keys(sessions[sessions.length - 1].scores).map(id => {
               const m = OUTCOME_DB[id]; if (!m) return null;
               const vals = sessions.map(s => s.scores[id]).filter(x => x !== undefined && typeof x !== "object");
@@ -1463,13 +1463,13 @@ function OutcomeMeasuresModule() {
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
                     <span style={{ fontSize:"1rem" }}>{m.icon}</span>
                     <div style={{ flex:1 }}>
-                      <div style={{ fontSize:"0.72rem", fontWeight:700, color:"#1a1025" }}>{m.label.split(" — ")[0]}</div>
-                      {interp && <div style={{ fontSize:"0.6rem", color: interp.color, fontWeight:700, marginTop:1 }}>{interp.label}</div>}
+                      <div style={{ fontSize:"0.82rem", fontWeight:700, color:"#1a1025" }}>{m.label.split(" — ")[0]}</div>
+                      {interp && <div style={{ fontSize:"0.8rem", color: interp.color, fontWeight:700, marginTop:1 }}>{interp.label}</div>}
                     </div>
                     <div style={{ textAlign:"right", flexShrink:0 }}>
                       <div style={{ fontSize:"1.1rem", fontWeight:900, color: col, fontFamily:"monospace" }}>{latest}{m.unit}</div>
                       {change !== null && (
-                        <div style={{ fontSize:"0.65rem", fontWeight:800, color: improved?"#00c97a":"#ff4d6d" }}>
+                        <div style={{ fontSize:"0.75rem", fontWeight:800, color: improved?"#00c97a":"#ff4d6d" }}>
                           {change > 0 ? "+" : ""}{Math.round(change * 10) / 10}{m.unit} {improved ? "▲" : "▼"}
                         </div>
                       )}
@@ -1480,14 +1480,14 @@ function OutcomeMeasuresModule() {
                     <div style={{ flex:1 }}>
                       {/* MCID check */}
                       {change !== null && m.mcid && (
-                        <div style={{ padding:"4px 8px", background: Math.abs(change) >= m.mcid ? (improved?"rgba(0,201,122,0.1)":"rgba(255,77,109,0.1)") : "rgba(255,179,0,0.08)", border:`1px solid ${Math.abs(change)>=m.mcid?(improved?"rgba(0,201,122,0.3)":"rgba(255,77,109,0.3)"):"rgba(255,179,0,0.25)"}`, borderRadius:7, fontSize:"0.6rem", color: Math.abs(change)>=m.mcid?(improved?"#00c97a":"#ff4d6d"):"#ffb300", fontWeight:700 }}>
+                        <div style={{ padding:"4px 8px", background: Math.abs(change) >= m.mcid ? (improved?"rgba(0,201,122,0.1)":"rgba(255,77,109,0.1)") : "rgba(255,179,0,0.08)", border:`1px solid ${Math.abs(change)>=m.mcid?(improved?"rgba(0,201,122,0.3)":"rgba(255,77,109,0.3)"):"rgba(255,179,0,0.25)"}`, borderRadius:7, fontSize:"0.8rem", color: Math.abs(change)>=m.mcid?(improved?"#00c97a":"#ff4d6d"):"#ffb300", fontWeight:700 }}>
                           {Math.abs(change) >= m.mcid ? (improved ? "✅ Exceeds MCID — Clinically significant improvement" : "⚠ Exceeds MCID — Clinically significant decline") : `⬤ Below MCID (need ${m.mcid}${m.unit})`}
                         </div>
                       )}
                       {/* Session dots */}
                       <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginTop:6 }}>
                         {vals.map((v, i) => (
-                          <span key={i} style={{ fontSize:"0.55rem", padding:"1px 5px", background:"#ede7f6", borderRadius:4, color:"#7e6a9a" }}>S{i + 1}: {v}{m.unit}</span>
+                          <span key={i} style={{ fontSize:"0.75rem", padding:"1px 5px", background:"#ede7f6", borderRadius:4, color:"#7e6a9a" }}>S{i + 1}: {v}{m.unit}</span>
                         ))}
                       </div>
                     </div>
@@ -1513,7 +1513,7 @@ function OutcomeMeasuresModule() {
       <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:12 }}>
         {["All", ...categories].map(c => (
           <button key={c} onClick={() => setCatFilter(c)}
-            style={{ padding:"3px 9px", borderRadius:8, fontSize:"0.6rem", fontWeight:700, border:`1px solid ${catFilter===c?(OM_CAT_COLOR[c]||"rgba(0,229,255,0.5)"):"#1a2d45"}`, background:catFilter===c?`${OM_CAT_COLOR[c]||"rgba(0,229,255,0.18)"}22`:"transparent", color:catFilter===c?(OM_CAT_COLOR[c]||"#00e5ff"):"#6b8399", cursor:"pointer" }}>
+            style={{ padding:"3px 9px", borderRadius:8, fontSize:"0.8rem", fontWeight:700, border:`1px solid ${catFilter===c?(OM_CAT_COLOR[c]||"rgba(0,229,255,0.5)"):"#1a2d45"}`, background:catFilter===c?`${OM_CAT_COLOR[c]||"rgba(0,229,255,0.18)"}22`:"transparent", color:catFilter===c?(OM_CAT_COLOR[c]||"#00e5ff"):"#6b8399", cursor:"pointer" }}>
             {c}
           </button>
         ))}
@@ -1545,18 +1545,18 @@ function OutcomeMeasuresModule() {
                 )}
                 {score !== null && typeof score === "object" && (
                   <div style={{ textAlign:"right" }}>
-                    <div style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>PA: <b style={{ color: score.pa>15?"#ff4d6d":"#00c97a" }}>{score.pa}</b></div>
-                    <div style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>W: <b style={{ color: score.w>34?"#ff4d6d":"#00c97a" }}>{score.w}</b></div>
+                    <div style={{ fontSize:"0.8rem", color:"#7e6a9a" }}>PA: <b style={{ color: score.pa>15?"#ff4d6d":"#00c97a" }}>{score.pa}</b></div>
+                    <div style={{ fontSize:"0.8rem", color:"#7e6a9a" }}>W: <b style={{ color: score.w>34?"#ff4d6d":"#00c97a" }}>{score.w}</b></div>
                   </div>
                 )}
               </div>
-              <div style={{ fontSize:"0.68rem", fontWeight:700, color:"#1a1025", lineHeight:1.3, marginBottom:4 }}>{m.label.split(" — ")[0]}</div>
-              <div style={{ fontSize:"0.55rem", padding:"1px 6px", borderRadius:5, background:`${col}18`, color:col, display:"inline-block", marginBottom:5 }}>{m.category}</div>
+              <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#1a1025", lineHeight:1.3, marginBottom:4 }}>{m.label.split(" — ")[0]}</div>
+              <div style={{ fontSize:"0.75rem", padding:"1px 6px", borderRadius:5, background:`${col}18`, color:col, display:"inline-block", marginBottom:5 }}>{m.category}</div>
               {/* Severity badge */}
               {interp && (
                 <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:4 }}>
                   <div style={{ width:6, height:6, borderRadius:"50%", background: interp.color, flexShrink:0 }}/>
-                  <div style={{ fontSize:"0.62rem", fontWeight:800, color: interp.color }}>{interp.label}</div>
+                  <div style={{ fontSize:"0.82rem", fontWeight:800, color: interp.color }}>{interp.label}</div>
                 </div>
               )}
               {/* Score gauge */}
@@ -1567,11 +1567,11 @@ function OutcomeMeasuresModule() {
               )}
               {/* Progress change */}
               {change !== null && (
-                <div style={{ fontSize:"0.58rem", color: isImproved(m.id,change)?"#00c97a":"#ff4d6d", fontWeight:700 }}>
+                <div style={{ fontSize:"0.78rem", color: isImproved(m.id,change)?"#00c97a":"#ff4d6d", fontWeight:700 }}>
                   {change > 0 ? "+" : ""}{Math.round(change * 10) / 10}{m.unit} {isImproved(m.id,change)?"▲":"▼"} from S1
                 </div>
               )}
-              {!score && score !== 0 && <div style={{ fontSize:"0.6rem", color:"#3a5070" }}>Tap to complete →</div>}
+              {!score && score !== 0 && <div style={{ fontSize:"0.8rem", color:"#3a5070" }}>Tap to complete →</div>}
             </div>
           );
         })}
@@ -1593,13 +1593,13 @@ function OutcomeMeasuresModule() {
               <span style={{ fontSize:"1.6rem" }}>{activeMeasure.icon}</span>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:"0.9rem", fontWeight:800, color:"#1a1025", lineHeight:1.2 }}>{activeMeasure.label}</div>
-                <div style={{ fontSize:"0.62rem", color:col, marginTop:2 }}>{activeMeasure.category}</div>
-                <div style={{ fontSize:"0.65rem", color:"#7e6a9a", marginTop:5, lineHeight:1.55 }}>{activeMeasure.description}</div>
+                <div style={{ fontSize:"0.82rem", color:col, marginTop:2 }}>{activeMeasure.category}</div>
+                <div style={{ fontSize:"0.75rem", color:"#7e6a9a", marginTop:5, lineHeight:1.55 }}>{activeMeasure.description}</div>
               </div>
               {score !== null && typeof score !== "object" && (
                 <div style={{ flexShrink:0, textAlign:"center" }}>
                   <ScoreRing score={score} maxScore={activeMeasure.maxScore} color={interp?.color||col} size={72}/>
-                  <div style={{ fontSize:"0.52rem", color:"#7e6a9a", marginTop:2 }}>{activeMeasure.unit}</div>
+                  <div style={{ fontSize:"0.82rem", color:"#7e6a9a", marginTop:2 }}>{activeMeasure.unit}</div>
                 </div>
               )}
             </div>
@@ -1617,11 +1617,11 @@ function OutcomeMeasuresModule() {
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
                   <div style={{ width:10, height:10, borderRadius:"50%", background:interp.color }}/>
                   <div style={{ fontSize:"0.82rem", fontWeight:900, color:interp.color }}>{interp.label}</div>
-                  <div style={{ marginLeft:"auto", fontSize:"0.65rem", fontWeight:700, color:interp.color, background:`${interp.color}18`, padding:"2px 8px", borderRadius:6 }}>{score}{activeMeasure.unit}</div>
+                  <div style={{ marginLeft:"auto", fontSize:"0.75rem", fontWeight:700, color:interp.color, background:`${interp.color}18`, padding:"2px 8px", borderRadius:6 }}>{score}{activeMeasure.unit}</div>
                 </div>
                 <div style={{ fontSize:"0.74rem", color:"#1a1025", lineHeight:1.65 }}>{interp.text}</div>
                 {activeMeasure.mcid && (
-                  <div style={{ marginTop:7, fontSize:"0.62rem", color:"#7e6a9a", display:"flex", alignItems:"center", gap:5 }}>
+                  <div style={{ marginTop:7, fontSize:"0.82rem", color:"#7e6a9a", display:"flex", alignItems:"center", gap:5 }}>
                     <span>📏 MCID = {activeMeasure.mcid}{activeMeasure.unit}</span>
                     <span style={{ color:"#3a5070" }}>— minimum change needed to be clinically meaningful</span>
                   </div>
@@ -1631,7 +1631,7 @@ function OutcomeMeasuresModule() {
 
             {/* Normal values reference */}
             {activeMeasure.normalRange && (
-              <div style={{ padding:"8px 12px", background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.15)", borderRadius:8, marginBottom:12, fontSize:"0.65rem", color:"#7e6a9a" }}>
+              <div style={{ padding:"8px 12px", background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.15)", borderRadius:8, marginBottom:12, fontSize:"0.75rem", color:"#7e6a9a" }}>
                 📊 <span style={{ color:"#00e5ff", fontWeight:700 }}>Normal / Asymptomatic:</span> {activeMeasure.normalRange}
               </div>
             )}
@@ -1639,15 +1639,15 @@ function OutcomeMeasuresModule() {
             {/* MCID progress from last session */}
             {change !== null && (
               <div style={{ padding:"11px 13px", background:"rgba(127,90,240,0.07)", border:"1px solid rgba(127,90,240,0.2)", borderRadius:10, marginBottom:14 }}>
-                <div style={{ fontSize:"0.58rem", fontWeight:700, color:"#7f5af0", textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📈 Change vs Last Saved Session</div>
+                <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#7f5af0", textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📈 Change vs Last Saved Session</div>
                 <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
                   <div>
                     <div style={{ fontSize:"1.3rem", fontWeight:900, color: isImproved(activeMeasure.id,change)?"#00c97a":"#ff4d6d", fontFamily:"monospace" }}>
                       {change > 0 ? "+" : ""}{Math.round(change * 10) / 10}{activeMeasure.unit}
                     </div>
-                    <div style={{ fontSize:"0.58rem", color:"#7e6a9a" }}>S{sessions.length}: {prev}{activeMeasure.unit} → now: {score}{activeMeasure.unit}</div>
+                    <div style={{ fontSize:"0.78rem", color:"#7e6a9a" }}>S{sessions.length}: {prev}{activeMeasure.unit} → now: {score}{activeMeasure.unit}</div>
                   </div>
-                  <div style={{ flex:1, padding:"6px 10px", background: Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"rgba(0,201,122,0.1)":"rgba(255,77,109,0.1)"):"rgba(255,179,0,0.08)", border:`1px solid ${Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"rgba(0,201,122,0.3)":"rgba(255,77,109,0.3)"):"rgba(255,179,0,0.25)"}`, borderRadius:8, fontSize:"0.65rem", color:Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"#00c97a":"#ff4d6d"):"#ffb300", fontWeight:700 }}>
+                  <div style={{ flex:1, padding:"6px 10px", background: Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"rgba(0,201,122,0.1)":"rgba(255,77,109,0.1)"):"rgba(255,179,0,0.08)", border:`1px solid ${Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"rgba(0,201,122,0.3)":"rgba(255,77,109,0.3)"):"rgba(255,179,0,0.25)"}`, borderRadius:8, fontSize:"0.75rem", color:Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"#00c97a":"#ff4d6d"):"#ffb300", fontWeight:700 }}>
                     {Math.abs(change) >= mcid
                       ? (isImproved(activeMeasure.id,change) ? "✅ Exceeds MCID — Clinically significant improvement" : "⚠ Exceeds MCID — Clinically significant decline")
                       : `⬤ Below MCID — need ${(mcid - Math.abs(change)).toFixed(1)} more to be clinically significant`}
@@ -1666,8 +1666,8 @@ function OutcomeMeasuresModule() {
               {activeMeasure.fields.map((f, fi) => (
                 <div key={f.id} style={{ background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:10, padding:"10px 12px" }}>
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:7 }}>
-                    <span style={{ fontSize:"0.58rem", fontWeight:800, color:col, background:`${col}18`, padding:"1px 6px", borderRadius:4, flexShrink:0 }}>Q{fi+1}</span>
-                    <div style={{ fontSize:"0.72rem", fontWeight:600, color:"#1a1025", lineHeight:1.4 }}>{f.label}</div>
+                    <span style={{ fontSize:"0.78rem", fontWeight:800, color:col, background:`${col}18`, padding:"1px 6px", borderRadius:4, flexShrink:0 }}>Q{fi+1}</span>
+                    <div style={{ fontSize:"0.82rem", fontWeight:600, color:"#1a1025", lineHeight:1.4 }}>{f.label}</div>
                   </div>
                   {renderField(activeMeasure, f)}
                 </div>
@@ -1681,7 +1681,7 @@ function OutcomeMeasuresModule() {
         );
       })()}
 
-      <div style={{ padding:"8px 12px", background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:8, fontSize:"0.6rem", color:"#7e6a9a", lineHeight:1.6 }}>
+      <div style={{ padding:"8px 12px", background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:8, fontSize:"0.8rem", color:"#7e6a9a", lineHeight:1.6 }}>
         ⚠ Scores calculated per original validated questionnaire criteria. MCID = Minimum Clinically Important Difference per published literature. Session history persists across browser sessions via localStorage. Use 💾 Save Session after each clinical appointment.
       </div>
     </div>
@@ -3159,12 +3159,12 @@ function SignSessionFields({ PC, data }) {
   const [sTx, setSTx]   = useState(data.tx_techniques||"");
   const [sResp, setSResp] = useState("");
   const si = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"7px 9px",fontSize:"0.75rem",marginBottom:8};
-  const lb = {fontSize:"0.58rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.5px"};
+  const lb = {fontSize:"0.78rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.5px"};
   // Store in window so parent sign action can read it
   window.__signSession = {vasEnd:sVas, treatment:sTx, response:sResp};
   return(
     <div style={{background:PC.s2,borderRadius:10,padding:"10px 12px",marginBottom:14}}>
-      <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.accent,marginBottom:8}}>📋 Log this session (optional)</div>
+      <div style={{fontSize:"0.75rem",fontWeight:700,color:PC.accent,marginBottom:8}}>📋 Log this session (optional)</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
         <div><label style={lb}>Pain at end (0–10)</label><input style={{...si,marginBottom:0}} type="number" min="0" max="10" placeholder="0–10" value={sVas} onChange={e=>setSVas(e.target.value)}/></div>
         <div><label style={lb}>Treatment given</label><select style={{...si,marginBottom:0,WebkitAppearance:"none"}} value={sTx} onChange={e=>setSTx(e.target.value)}><option value="">—</option>{["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Other"].map(t=><option key={t}>{t}</option>)}</select></div>
@@ -3373,9 +3373,9 @@ function ClinicalImpressionInSOAP({ data, set }) {
         </div>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:"1rem", fontWeight:900, color:"#4C1D95", letterSpacing:"0.2px" }}>Clinical Impression</div>
-          <div style={{ fontSize:"0.62rem", fontWeight:600, color:"#7c3aed", opacity:0.75, marginTop:2 }}>Your working diagnosis -- auto-populates the Assessment (A) section</div>
+          <div style={{ fontSize:"0.82rem", fontWeight:600, color:"#7c3aed", opacity:0.75, marginTop:2 }}>Your working diagnosis -- auto-populates the Assessment (A) section</div>
         </div>
-        <button onClick={() => setOpen(v => !v)} style={{ padding:"8px 16px", background:"#7c3aed", border:"none", borderRadius:10, color:"#fff", fontWeight:800, fontSize:"0.72rem", cursor:"pointer", boxShadow:"0 2px 8px #7c3aed50" }}>
+        <button onClick={() => setOpen(v => !v)} style={{ padding:"8px 16px", background:"#7c3aed", border:"none", borderRadius:10, color:"#fff", fontWeight:800, fontSize:"0.82rem", cursor:"pointer", boxShadow:"0 2px 8px #7c3aed50" }}>
           {open ? "Close" : ciItems.length === 0 ? "+ Add Diagnosis" : "Manage"}
         </button>
       </div>
@@ -3384,7 +3384,7 @@ function ClinicalImpressionInSOAP({ data, set }) {
       {ciItems.length === 0 && !open && (
         <div style={{ padding:"20px 18px", textAlign:"center", background:"#ffffff" }}>
           <div style={{ fontSize:"0.78rem", color:PC.muted, marginBottom:6 }}>No diagnosis set yet</div>
-          <div style={{ fontSize:"0.68rem", color:PC.muted, lineHeight:1.7 }}>
+          <div style={{ fontSize:"0.78rem", color:PC.muted, lineHeight:1.7 }}>
             Add your working diagnosis -- it will auto-populate the A section below.
           </div>
         </div>
@@ -3395,30 +3395,30 @@ function ClinicalImpressionInSOAP({ data, set }) {
         <div style={{ padding:"14px 18px", background:"#ffffff", display:"flex", flexDirection:"column", gap:10 }}>
           {primary.map(dx => (
             <div key={dx.id} style={{ display:"flex", alignItems:"flex-start", gap:10, background:"#EDE9FE", border:"1.5px solid #C4B5FD", borderRadius:12, padding:"12px 14px" }}>
-              <div style={{ flexShrink:0, width:36, height:36, borderRadius:10, background:"#7c3aed", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:900, fontSize:"0.72rem" }}>Dx</div>
+              <div style={{ flexShrink:0, width:36, height:36, borderRadius:10, background:"#7c3aed", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:900, fontSize:"0.82rem" }}>Dx</div>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize:"0.62rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:3 }}>Working Diagnosis</div>
+                <div style={{ fontSize:"0.82rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:3 }}>Working Diagnosis</div>
                 <div style={{ fontSize:"0.88rem", fontWeight:800, color:"#4C1D95", lineHeight:1.4 }}>{dx.label}</div>
-                {dx.icdCode && <div style={{ marginTop:3, display:"inline-block", background:"#C4B5FD", borderRadius:6, padding:"1px 8px", fontSize:"0.62rem", fontWeight:700, color:"#4C1D95" }}>ICD {dx.icdCode}</div>}
+                {dx.icdCode && <div style={{ marginTop:3, display:"inline-block", background:"#C4B5FD", borderRadius:6, padding:"1px 8px", fontSize:"0.82rem", fontWeight:700, color:"#4C1D95" }}>ICD {dx.icdCode}</div>}
                 {dx.notes && <div style={{ marginTop:5, fontSize:"0.73rem", color:"#5B21B6", fontStyle:"italic" }}>{dx.notes}</div>}
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:4, flexShrink:0 }}>
-                <button onClick={() => promoteTag(dx.id, "differential")} style={{ padding:"3px 8px", background:"#C4B5FD", border:"none", borderRadius:6, fontSize:"0.6rem", color:"#4C1D95", cursor:"pointer", fontWeight:700 }}>Diff</button>
-                <button onClick={() => removeDx(dx.id)} style={{ padding:"3px 8px", background:"rgba(220,38,38,0.1)", border:"none", borderRadius:6, fontSize:"0.6rem", color:"#dc2626", cursor:"pointer", fontWeight:700 }}>Remove</button>
+                <button onClick={() => promoteTag(dx.id, "differential")} style={{ padding:"3px 8px", background:"#C4B5FD", border:"none", borderRadius:6, fontSize:"0.8rem", color:"#4C1D95", cursor:"pointer", fontWeight:700 }}>Diff</button>
+                <button onClick={() => removeDx(dx.id)} style={{ padding:"3px 8px", background:"rgba(220,38,38,0.1)", border:"none", borderRadius:6, fontSize:"0.8rem", color:"#dc2626", cursor:"pointer", fontWeight:700 }}>Remove</button>
               </div>
             </div>
           ))}
 
           {diffList.length > 0 && (
             <div>
-              <div style={{ fontSize:"0.58rem", fontWeight:800, color:"#92400E", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Differentials -- considering</div>
+              <div style={{ fontSize:"0.78rem", fontWeight:800, color:"#92400E", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Differentials -- considering</div>
               <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
                 {diffList.map(dx => (
                   <div key={dx.id} style={{ display:"flex", alignItems:"center", gap:8, background:"#FEF3C7", border:"1px solid #FCD34D", borderRadius:10, padding:"8px 12px" }}>
-                    <span style={{ fontSize:"0.8rem", fontWeight:700, color:"#92400E", flex:1 }}>{dx.label}{dx.icdCode ? React.createElement("span", {style:{marginLeft:6,fontSize:"0.62rem",fontWeight:600,color:"#78350F"}}, dx.icdCode) : null}</span>
-                    <button onClick={() => promoteTag(dx.id, "primary")} style={{ padding:"2px 7px", background:"#7c3aed", border:"none", borderRadius:5, fontSize:"0.58rem", color:"#fff", cursor:"pointer", fontWeight:800 }}>Primary</button>
-                    <button onClick={() => promoteTag(dx.id, "ruledout")} style={{ padding:"2px 7px", background:"#F3F4F6", border:"none", borderRadius:5, fontSize:"0.58rem", color:"#374151", cursor:"pointer", fontWeight:700 }}>Rule out</button>
-                    <button onClick={() => removeDx(dx.id)} style={{ padding:"2px 7px", background:"rgba(220,38,38,0.08)", border:"none", borderRadius:5, fontSize:"0.58rem", color:"#dc2626", cursor:"pointer", fontWeight:700 }}>X</button>
+                    <span style={{ fontSize:"0.8rem", fontWeight:700, color:"#92400E", flex:1 }}>{dx.label}{dx.icdCode ? React.createElement("span", {style:{marginLeft:6,fontSize:"0.82rem",fontWeight:600,color:"#78350F"}}, dx.icdCode) : null}</span>
+                    <button onClick={() => promoteTag(dx.id, "primary")} style={{ padding:"2px 7px", background:"#7c3aed", border:"none", borderRadius:5, fontSize:"0.78rem", color:"#fff", cursor:"pointer", fontWeight:800 }}>Primary</button>
+                    <button onClick={() => promoteTag(dx.id, "ruledout")} style={{ padding:"2px 7px", background:"#F3F4F6", border:"none", borderRadius:5, fontSize:"0.78rem", color:"#374151", cursor:"pointer", fontWeight:700 }}>Rule out</button>
+                    <button onClick={() => removeDx(dx.id)} style={{ padding:"2px 7px", background:"rgba(220,38,38,0.08)", border:"none", borderRadius:5, fontSize:"0.78rem", color:"#dc2626", cursor:"pointer", fontWeight:700 }}>X</button>
                   </div>
                 ))}
               </div>
@@ -3427,12 +3427,12 @@ function ClinicalImpressionInSOAP({ data, set }) {
 
           {ruled.length > 0 && (
             <div>
-              <div style={{ fontSize:"0.58rem", fontWeight:800, color:"#6B7280", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:5 }}>Ruled Out</div>
+              <div style={{ fontSize:"0.78rem", fontWeight:800, color:"#6B7280", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:5 }}>Ruled Out</div>
               <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                 {ruled.map(dx => (
                   <div key={dx.id} style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#F3F4F6", border:"1px solid #D1D5DB", borderRadius:20, padding:"3px 10px" }}>
-                    <span style={{ fontSize:"0.7rem", fontWeight:600, color:"#6B7280", textDecoration:"line-through" }}>{dx.label}</span>
-                    <button onClick={() => removeDx(dx.id)} style={{ background:"none", border:"none", color:"#9CA3AF", cursor:"pointer", fontSize:"0.65rem", padding:0, lineHeight:1 }}>x</button>
+                    <span style={{ fontSize:"0.8rem", fontWeight:600, color:"#6B7280", textDecoration:"line-through" }}>{dx.label}</span>
+                    <button onClick={() => removeDx(dx.id)} style={{ background:"none", border:"none", color:"#9CA3AF", cursor:"pointer", fontSize:"0.75rem", padding:0, lineHeight:1 }}>x</button>
                   </div>
                 ))}
               </div>
@@ -3447,19 +3447,19 @@ function ClinicalImpressionInSOAP({ data, set }) {
           {pendingDx && (
             <div style={{ background:"#EDE9FE", border:"1.5px solid #C4B5FD", borderRadius:10, padding:"10px 14px", marginBottom:12, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize:"0.62rem", fontWeight:700, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:2 }}>Selected</div>
+                <div style={{ fontSize:"0.82rem", fontWeight:700, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:2 }}>Selected</div>
                 <div style={{ fontSize:"0.82rem", fontWeight:800, color:"#4C1D95" }}>{pendingDx.label}</div>
-                {pendingDx.icd && <div style={{ fontSize:"0.62rem", color:"#7c3aed", marginTop:2 }}>ICD: {pendingDx.icd}</div>}
+                {pendingDx.icd && <div style={{ fontSize:"0.82rem", color:"#7c3aed", marginTop:2 }}>ICD: {pendingDx.icd}</div>}
               </div>
-              <button onClick={() => setPendingDx(null)} style={{ padding:"3px 8px", background:"none", border:"1px solid #C4B5FD", borderRadius:6, color:"#7c3aed", cursor:"pointer", fontSize:"0.65rem", fontWeight:700 }}>Clear</button>
+              <button onClick={() => setPendingDx(null)} style={{ padding:"3px 8px", background:"none", border:"1px solid #C4B5FD", borderRadius:6, color:"#7c3aed", cursor:"pointer", fontSize:"0.75rem", fontWeight:700 }}>Clear</button>
             </div>
           )}
 
           <div style={{ marginBottom:10 }}>
-            <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Add as</div>
+            <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Add as</div>
             <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
               {Object.entries(CI_TAG_CFG).map(([tag, cfg]) => (
-                <button key={tag} onClick={() => setPendingTag(tag)} style={{ padding:"6px 12px", borderRadius:8, background: pendingTag === tag ? cfg.bg : "transparent", border:"1.5px solid "+(pendingTag===tag?cfg.border:PC.border), color: pendingTag===tag?cfg.col:PC.muted, fontWeight:pendingTag===tag?800:500, fontSize:"0.7rem", cursor:"pointer" }}>
+                <button key={tag} onClick={() => setPendingTag(tag)} style={{ padding:"6px 12px", borderRadius:8, background: pendingTag === tag ? cfg.bg : "transparent", border:"1.5px solid "+(pendingTag===tag?cfg.border:PC.border), color: pendingTag===tag?cfg.col:PC.muted, fontWeight:pendingTag===tag?800:500, fontSize:"0.8rem", cursor:"pointer" }}>
                   {cfg.label}
                 </button>
               ))}
@@ -3471,7 +3471,7 @@ function ClinicalImpressionInSOAP({ data, set }) {
           {!search.trim() && (
             <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:10 }}>
               {allRegions.map(r => (
-                <button key={r} onClick={() => setPickerReg(r)} style={{ padding:"4px 10px", borderRadius:20, background:pickerReg===r?"#7c3aed":"#f5f0fb", border:"1px solid "+(pickerReg===r?"#7c3aed":"#d8cce8"), color:pickerReg===r?"#fff":"#7e6a9a", fontSize:"0.62rem", fontWeight:pickerReg===r?800:500, cursor:"pointer" }}>
+                <button key={r} onClick={() => setPickerReg(r)} style={{ padding:"4px 10px", borderRadius:20, background:pickerReg===r?"#7c3aed":"#f5f0fb", border:"1px solid "+(pickerReg===r?"#7c3aed":"#d8cce8"), color:pickerReg===r?"#fff":"#7e6a9a", fontSize:"0.82rem", fontWeight:pickerReg===r?800:500, cursor:"pointer" }}>
                   {r}
                 </button>
               ))}
@@ -3485,22 +3485,22 @@ function ClinicalImpressionInSOAP({ data, set }) {
               return (
                 <button key={i} onClick={() => !added && setPendingDx(selected ? null : dx)} disabled={added} style={{ textAlign:"left", padding:"7px 11px", borderRadius:8, background:selected?"#EDE9FE":added?"#F3F4F6":"#fff", border:"1.5px solid "+(selected?"#C4B5FD":added?"#E5E7EB":"#E5E7EB"), color:added?"#9CA3AF":selected?"#4C1D95":PC.text, fontSize:"0.74rem", fontWeight:selected?800:500, cursor:added?"default":"pointer", display:"flex", alignItems:"center", gap:8 }}>
                   <span style={{ flex:1 }}>{dx.label}</span>
-                  {dx.icd && <span style={{ fontSize:"0.6rem", color:"#9CA3AF", flexShrink:0 }}>{dx.icd}</span>}
-                  {added && <span style={{ fontSize:"0.6rem", color:"#9CA3AF" }}>added</span>}
-                  {selected && <span style={{ fontSize:"0.65rem", color:"#7c3aed" }}>selected</span>}
+                  {dx.icd && <span style={{ fontSize:"0.8rem", color:"#9CA3AF", flexShrink:0 }}>{dx.icd}</span>}
+                  {added && <span style={{ fontSize:"0.8rem", color:"#9CA3AF" }}>added</span>}
+                  {selected && <span style={{ fontSize:"0.75rem", color:"#7c3aed" }}>selected</span>}
                 </button>
               );
             })}
-            {filtered.length === 0 && <div style={{ fontSize:"0.72rem", color:PC.muted, padding:"12px", textAlign:"center" }}>No matches -- use custom entry below</div>}
+            {filtered.length === 0 && <div style={{ fontSize:"0.82rem", color:PC.muted, padding:"12px", textAlign:"center" }}>No matches -- use custom entry below</div>}
           </div>
 
           <div style={{ marginBottom:10 }}>
-            <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:4 }}>Or type a custom diagnosis</div>
+            <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:4 }}>Or type a custom diagnosis</div>
             <input value={customDx} onChange={e => { setCustomDx(e.target.value); if(e.target.value.trim()) setPendingDx(null); }} placeholder="Custom diagnosis name..." style={inp} />
           </div>
 
           <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:"0.6rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:4 }}>Clinical note (optional)</div>
+            <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:4 }}>Clinical note (optional)</div>
             <input value={pendingNote} onChange={e => setPendingNote(e.target.value)} placeholder="e.g. L4/5 confirmed on MRI, awaiting neurosurgery review..." style={inp} />
           </div>
 
@@ -3704,7 +3704,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   // ── Styles ────────────────────────────────────────────────────────────────
   const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.76rem"};
   const ta  = {...inp,resize:"vertical",minHeight:60};
-  const lbl = {fontSize:"0.6rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.8px"};
+  const lbl = {fontSize:"0.8rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.8px"};
 
   const sectionColors = {"S":"#7c3aed","O":"#06b6d4","A":"#10b981","P":"#f59e0b"};
   const sectionLabels = {"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"};
@@ -3722,7 +3722,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
     }}>
       {label}
       {badge !== null && badge > 0 && (
-        <span style={{background:PC.accent,color:"#fff",borderRadius:20,padding:"1px 6px",fontSize:"0.58rem",fontWeight:900}}>{badge}</span>
+        <span style={{background:PC.accent,color:"#fff",borderRadius:20,padding:"1px 6px",fontSize:"0.78rem",fontWeight:900}}>{badge}</span>
       )}
     </button>
   );
@@ -3736,7 +3736,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
     }[conf] || {bg:"rgba(124,58,237,0.1)",color:"#7c3aed"};
     return (
       <span style={{padding:"1px 7px",borderRadius:20,background:cfg.bg,color:cfg.color,
-        fontSize:"0.58rem",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.6px"}}>
+        fontSize:"0.78rem",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.6px"}}>
         {conf}
       </span>
     );
@@ -3753,21 +3753,21 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           <span style={{width:8,height:8,borderRadius:"50%",background:"#10b981",
             boxShadow:"0 0 0 3px rgba(16,185,129,0.2)",flexShrink:0,
             animation:"pm-pulse 2s ease-in-out infinite"}}/>
-          <span style={{fontSize:"0.68rem",fontWeight:800,color:PC.text,
+          <span style={{fontSize:"0.78rem",fontWeight:800,color:PC.text,
             textTransform:"uppercase",letterSpacing:"0.8px"}}>SOAP Auto-Filling in Real Time</span>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           {totalRules > 0 && (
             <div style={{padding:"3px 10px",background:`${PC.a3}15`,
               border:`1px solid ${PC.a3}35`,borderRadius:20,
-              fontSize:"0.65rem",fontWeight:700,color:PC.a3}}>
+              fontSize:"0.75rem",fontWeight:700,color:PC.a3}}>
               🧠 {totalRules} clinical finding{totalRules!==1?"s":""} detected
             </div>
           )}
           {urgentRules.length > 0 && (
             <div style={{padding:"3px 10px",background:"rgba(220,38,38,0.12)",
               border:"1px solid rgba(220,38,38,0.4)",borderRadius:20,
-              fontSize:"0.65rem",fontWeight:800,color:"#dc2626",
+              fontSize:"0.75rem",fontWeight:800,color:"#dc2626",
               animation:"pm-pulse 1.5s ease-in-out infinite"}}>
               ⚠️ {urgentRules.length} URGENT
             </div>
@@ -3793,7 +3793,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
       {/* ── SESSION DETAILS ─────────────────────────────────────────────────── */}
       {!aiOnly&&<div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
-        <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>📋 Session Details</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>📋 Session Details</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
           <div><label style={lbl}>Clinician Name</label><input value={clinician} onChange={e=>{setClinician(e.target.value);set("soap_clinician",e.target.value);}} placeholder="Your name" style={inp}/></div>
           <div><label style={lbl}>Clinic / Practice</label><input value={clinic} onChange={e=>{setClinic(e.target.value);set("soap_clinic",e.target.value);}} placeholder="Clinic name" style={inp}/></div>
@@ -3824,16 +3824,16 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               <div style={{marginBottom:12,background:`${PC.s2}`,border:`1px solid ${PC.border}`,borderRadius:12,overflow:"hidden"}}>
                 <button onClick={()=>setShowPrevNote(v=>!v)}
                   style={{width:"100%",padding:"9px 14px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8,textAlign:"left"}}>
-                  <span style={{fontSize:"0.65rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>
+                  <span style={{fontSize:"0.75rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>
                     {showPrevNote?"▾":"▸"} Previous Note: {lastNote.session} — {lastNote.lockedAtDisplay}
                   </span>
-                  <span style={{marginLeft:"auto",fontSize:"0.6rem",color:PC.muted}}>by {lastNote.clinician}</span>
+                  <span style={{marginLeft:"auto",fontSize:"0.8rem",color:PC.muted}}>by {lastNote.clinician}</span>
                 </button>
                 {showPrevNote&&(
                   <div style={{padding:"10px 14px",borderTop:`1px solid ${PC.border}`}}>
                     {["S","O","A","P"].map(k=>lastNote[k]&&(
                       <div key={k} style={{marginBottom:8}}>
-                        <div style={{fontSize:"0.6rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>{k} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[k]}</div>
+                        <div style={{fontSize:"0.8rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>{k} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[k]}</div>
                         <div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6,background:PC.surface,borderRadius:7,padding:"6px 10px",whiteSpace:"pre-wrap"}}>{lastNote[k].slice(0,250)}{lastNote[k].length>250?"…":""}</div>
                       </div>
                     ))}
@@ -3844,13 +3844,13 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
             {/* Copy/print toolbar */}
             <div style={{display:"flex",gap:7,marginBottom:10,flexWrap:"wrap"}}>
-              <button onClick={printNote} style={{padding:"7px 14px",background:`${PC.a3}12`,border:`1px solid ${PC.a3}35`,borderRadius:8,color:PC.a3,fontSize:"0.7rem",fontWeight:700,cursor:"pointer"}}>
+              <button onClick={printNote} style={{padding:"7px 14px",background:`${PC.a3}12`,border:`1px solid ${PC.a3}35`,borderRadius:8,color:PC.a3,fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
                 🖨️ Print / PDF
               </button>
-              <button onClick={()=>setLockConfirm(true)} style={{padding:"7px 14px",background:"rgba(220,38,38,0.08)",border:"1.5px solid rgba(220,38,38,0.4)",borderRadius:8,color:"#dc2626",fontSize:"0.7rem",fontWeight:800,cursor:"pointer"}}>
+              <button onClick={()=>setLockConfirm(true)} style={{padding:"7px 14px",background:"rgba(220,38,38,0.08)",border:"1.5px solid rgba(220,38,38,0.4)",borderRadius:8,color:"#dc2626",fontSize:"0.8rem",fontWeight:800,cursor:"pointer"}}>
                 🔒 Sign &amp; Lock Note
               </button>
-              <div style={{marginLeft:"auto",fontSize:"0.62rem",color:PC.muted,display:"flex",alignItems:"center"}}>
+              <div style={{marginLeft:"auto",fontSize:"0.82rem",color:PC.muted,display:"flex",alignItems:"center"}}>
                 Updates live as you fill assessment fields ↗
               </div>
             </div>
@@ -3890,7 +3890,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                         {sectionIcons[key]}&nbsp;&nbsp;{sectionLabels[key]}
                       </div>
                       {/* Subtitle */}
-                      <div style={{fontSize:"0.62rem",fontWeight:600,marginTop:3,
+                      <div style={{fontSize:"0.82rem",fontWeight:600,marginTop:3,
                         color:sectionColors[key],opacity:0.72}}>
                         {{"S":"Patient-reported history, symptoms & pain behaviour",
                           "O":"Clinical findings, measurements & objective observations",
@@ -3905,7 +3905,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                     style={{padding:"6px 14px",
                       background:sectionColors[key],border:"none",
                       borderRadius:9,color:"#ffffff",
-                      fontSize:"0.65rem",fontWeight:800,cursor:"pointer",
+                      fontSize:"0.75rem",fontWeight:800,cursor:"pointer",
                       boxShadow:`0 2px 8px ${sectionColors[key]}45`,flexShrink:0}}>
                     {copied===key?"✓ Copied":"Copy"}
                   </button>
@@ -3949,21 +3949,21 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                     <div style={{borderBottom:`1px solid ${sectionColors[key]}20`,background:`${sectionColors[key]}04`}}>
                       <button onClick={()=>setShowSummary(s=>({...s,[key]:!s[key]}))}
                         style={{width:"100%",padding:"8px 18px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8,textAlign:"left"}}>
-                        <span style={{fontSize:"0.6rem",fontWeight:700,color:sectionColors[key],textTransform:"uppercase",letterSpacing:"0.8px"}}>
+                        <span style={{fontSize:"0.8rem",fontWeight:700,color:sectionColors[key],textTransform:"uppercase",letterSpacing:"0.8px"}}>
                           {showSummary[key]?"▾":"▸"} Assessment Data
                         </span>
-                        <span style={{fontSize:"0.58rem",color:PC.muted}}>{fields.filter(f=>f.val&&String(f.val).trim()&&f.val!=="  /10").length} fields</span>
+                        <span style={{fontSize:"0.78rem",color:PC.muted}}>{fields.filter(f=>f.val&&String(f.val).trim()&&f.val!=="  /10").length} fields</span>
                       </button>
                       {showSummary[key]&&(
                         <div style={{padding:"0 18px 12px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 16px"}}>
                           {fields.map((f,i)=>f.val||f.editable ? (
                             <div key={i} style={{padding:"4px 0",borderBottom:`1px solid ${PC.border}`}}>
-                              <div style={{fontSize:"0.6rem",color:PC.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{f.label}</div>
+                              <div style={{fontSize:"0.8rem",color:PC.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{f.label}</div>
                               {f.editable
                                 ? <input value={data[f.key]||""} onChange={e=>set(f.key,e.target.value)}
                                     placeholder={f.placeholder||""}
-                                    style={{fontSize:"0.72rem",color:PC.text,fontWeight:600,background:"none",border:"none",borderBottom:`1px solid ${sectionColors[key]}40`,outline:"none",width:"100%",padding:"1px 0",fontFamily:"inherit"}}/>
-                                : <div style={{fontSize:"0.72rem",color:PC.text,fontWeight:600,lineHeight:1.4}}>{String(f.val||"")}</div>
+                                    style={{fontSize:"0.82rem",color:PC.text,fontWeight:600,background:"none",border:"none",borderBottom:`1px solid ${sectionColors[key]}40`,outline:"none",width:"100%",padding:"1px 0",fontFamily:"inherit"}}/>
+                                : <div style={{fontSize:"0.82rem",color:PC.text,fontWeight:600,lineHeight:1.4}}>{String(f.val||"")}</div>
                               }
                             </div>
                           ) : null)}
@@ -3983,9 +3983,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                         style={{width:"100%",minHeight:120,background:"#FFFEF5",border:`1.5px solid ${sectionColors[key]}60`,borderRadius:10,padding:"10px 12px",fontSize:"0.83rem",color:"#0a0a0a",lineHeight:1.9,fontFamily:"'Segoe UI','Inter','Helvetica Neue',Arial,sans-serif",resize:"vertical",outline:"none",boxSizing:"border-box"}}
                       />
                       <div style={{display:"flex",gap:7,marginTop:8}}>
-                        <button onClick={()=>saveEdit(key)} style={{padding:"6px 16px",background:sectionColors[key],border:"none",borderRadius:8,color:"white",fontWeight:800,fontSize:"0.7rem",cursor:"pointer"}}>💾 Save</button>
-                        <button onClick={()=>setEditMode(m=>({...m,[key]:false}))} style={{padding:"6px 12px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:8,color:PC.muted,fontWeight:600,fontSize:"0.7rem",cursor:"pointer"}}>Cancel</button>
-                        <button onClick={()=>resetEdit(key)} style={{padding:"6px 12px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:8,color:PC.muted,fontWeight:600,fontSize:"0.7rem",cursor:"pointer"}}>↺ Reset to auto</button>
+                        <button onClick={()=>saveEdit(key)} style={{padding:"6px 16px",background:sectionColors[key],border:"none",borderRadius:8,color:"white",fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>💾 Save</button>
+                        <button onClick={()=>setEditMode(m=>({...m,[key]:false}))} style={{padding:"6px 12px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:8,color:PC.muted,fontWeight:600,fontSize:"0.8rem",cursor:"pointer"}}>Cancel</button>
+                        <button onClick={()=>resetEdit(key)} style={{padding:"6px 12px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:8,color:PC.muted,fontWeight:600,fontSize:"0.8rem",cursor:"pointer"}}>↺ Reset to auto</button>
                       </div>
                     </div>
                   ) : (
@@ -3993,8 +3993,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                       <pre style={{margin:0,fontSize:"0.83rem",color:"#0a0a0a",fontWeight:500,lineHeight:2.0,whiteSpace:"pre-wrap",fontFamily:"'Segoe UI','Inter','Helvetica Neue',Arial,sans-serif",letterSpacing:"0.15px"}}>
                         {getSOAPText(key) || <span style={{color:"#c4b5d4",fontStyle:"italic",fontWeight:400}}>Fill assessment fields to auto-populate…</span>}
                       </pre>
-                      {data[`soap_${key.toLowerCase()}_edit`]&&<div style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:4,padding:"2px 8px",background:`${sectionColors[key]}12`,borderRadius:20,fontSize:"0.6rem",color:sectionColors[key],fontWeight:700}}>✏️ Edited</div>}
-                      <button onClick={()=>startEdit(key)} style={{marginTop:8,display:"block",padding:"5px 14px",background:`${sectionColors[key]}12`,border:`1px solid ${sectionColors[key]}35`,borderRadius:8,color:sectionColors[key],fontWeight:700,fontSize:"0.68rem",cursor:"pointer"}}>✏️ Edit this section</button>
+                      {data[`soap_${key.toLowerCase()}_edit`]&&<div style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:4,padding:"2px 8px",background:`${sectionColors[key]}12`,borderRadius:20,fontSize:"0.8rem",color:sectionColors[key],fontWeight:700}}>✏️ Edited</div>}
+                      <button onClick={()=>startEdit(key)} style={{marginTop:8,display:"block",padding:"5px 14px",background:`${sectionColors[key]}12`,border:`1px solid ${sectionColors[key]}35`,borderRadius:8,color:sectionColors[key],fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>✏️ Edit this section</button>
                     </div>
                   )}
                 </div>
@@ -4007,7 +4007,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             <div>
               <div style={{marginBottom:10,padding:"9px 14px",background:`${PC.accent}08`,
                 border:`1px solid ${PC.accent}28`,borderRadius:11}}>
-                <div style={{fontSize:"0.65rem",fontWeight:800,color:PC.accent,
+                <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.accent,
                   textTransform:"uppercase",letterSpacing:"0.8px"}}>🧠 Suggested Interpretation</div>
               </div>
               {totalRules===0?(
@@ -4027,9 +4027,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                           {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
                            Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐️",Correlation:"🔗"}[r.module]||"⚕️"
                         }</span>
-                        <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,
+                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,
                           textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
-                        <span style={{fontSize:"0.72rem",fontWeight:700,color:PC.text,flex:1}}>{r.tag}</span>
+                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.text,flex:1}}>{r.tag}</span>
                         {confBadge(r.confidence)}
                       </div>
                       <p style={{margin:0,fontSize:"0.75rem",color:PC.muted,lineHeight:1.7}}>{r.text}</p>
@@ -4054,9 +4054,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               display:"flex",alignItems:"center",gap:8}}>
               🧠 Suggested Interpretation
               {totalRules>0&&<span style={{padding:"2px 10px",borderRadius:20,
-                background:PC.accent,color:"#fff",fontSize:"0.62rem",fontWeight:900}}>{totalRules}</span>}
+                background:PC.accent,color:"#fff",fontSize:"0.82rem",fontWeight:900}}>{totalRules}</span>}
             </div>
-            <div style={{fontSize:"0.72rem",color:PC.muted,lineHeight:1.65}}>
+            <div style={{fontSize:"0.82rem",color:PC.muted,lineHeight:1.65}}>
               <strong style={{color:PC.text}}>Rule-based clinical reasoning engine</strong> — deterministic physiotherapy logic, NOT generative AI.
               Updates in real time as you fill any assessment field. Each interpretation is sourced from predefined clinical rules, correlation pathways, and special test clusters.
             </div>
@@ -4079,7 +4079,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               {/* Section: Correlated Findings */}
               {corrRules.length>0&&(
                 <>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:"#06b6d4",textTransform:"uppercase",
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#06b6d4",textTransform:"uppercase",
                     letterSpacing:"1.5px",marginBottom:2,display:"flex",alignItems:"center",gap:8}}>
                     <div style={{height:1,width:8,background:"#06b6d4"}}/> Cross-Module Correlations
                   </div>
@@ -4101,7 +4101,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               {/* Section: High Confidence */}
               {highRules.length>0&&(
                 <>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:"#059669",textTransform:"uppercase",
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",textTransform:"uppercase",
                     letterSpacing:"1.5px",marginTop:6,marginBottom:2,display:"flex",alignItems:"center",gap:8}}>
                     <div style={{height:1,width:8,background:"#059669"}}/> High Confidence Findings
                   </div>
@@ -4114,7 +4114,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                           {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
                            Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐️"}[r.module]||"⚕️"
                         }</span>
-                        <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,
+                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,
                           textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
                         <span style={{fontSize:"0.73rem",fontWeight:800,color:PC.text,flex:1}}>{r.tag}</span>
                         {confBadge(r.confidence)}
@@ -4128,7 +4128,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               {/* Section: Moderate */}
               {modRules.length>0&&(
                 <>
-                  <div style={{fontSize:"0.6rem",fontWeight:800,color:"#b45309",textTransform:"uppercase",
+                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#b45309",textTransform:"uppercase",
                     letterSpacing:"1.5px",marginTop:6,marginBottom:2,display:"flex",alignItems:"center",gap:8}}>
                     <div style={{height:1,width:8,background:"#b45309"}}/> Additional Findings
                   </div>
@@ -4141,9 +4141,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                           {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
                            Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐️"}[r.module]||"⚕️"
                         }</span>
-                        <span style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,
+                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,
                           textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
-                        <span style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,flex:1}}>{r.tag}</span>
+                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,flex:1}}>{r.tag}</span>
                         {confBadge(r.confidence)}
                       </div>
                       <p style={{margin:0,fontSize:"0.76rem",color:PC.muted,lineHeight:1.7}}>{r.text}</p>
@@ -4161,7 +4161,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       ══════════════════════════════════════════════════════════════ */}
       {activeTab==="extra" && (
         <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"14px"}}>
-          <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
             ✏️ Additional Clinical Notes (appended to auto-generated SOAP)
           </div>
           <div style={{display:"grid",gap:10}}>
@@ -4192,7 +4192,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       ══════════════════════════════════════════════════════════════ */}
       {activeTab==="ai" && (
         <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"14px"}}>
-          <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
             🤖 AI Clinical Assistant (Groq — Llama 3.3 70B)
           </div>
 
@@ -4211,7 +4211,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                   Save Key
                 </button>
               </div>
-              {aiError&&<div style={{marginTop:7,fontSize:"0.68rem",color:"#dc2626",padding:"6px 10px",background:"rgba(220,38,38,0.08)",borderRadius:6}}>{aiError}</div>}
+              {aiError&&<div style={{marginTop:7,fontSize:"0.78rem",color:"#dc2626",padding:"6px 10px",background:"rgba(220,38,38,0.08)",borderRadius:6}}>{aiError}</div>}
             </div>
           ) : (
             <div>
@@ -4228,7 +4228,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 <div>
                   <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
                     {["What is the most likely diagnosis?","Are there any red flags?","What treatment do you recommend?","What are the differential diagnoses?","Is this inflammatory or mechanical?"].map(q=>(
-                      <button key={q} onClick={()=>setAiQuestion(q)} style={{padding:"4px 9px",background:"rgba(0,229,255,0.07)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:6,color:"#00e5ff",fontSize:"0.6rem",cursor:"pointer"}}>
+                      <button key={q} onClick={()=>setAiQuestion(q)} style={{padding:"4px 9px",background:"rgba(0,229,255,0.07)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:6,color:"#00e5ff",fontSize:"0.8rem",cursor:"pointer"}}>
                         {q}
                       </button>
                     ))}
@@ -4245,7 +4245,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               )}
               {aiMode==="ddx"&&(
                 <div>
-                  <div style={{fontSize:"0.68rem",color:PC.muted,marginBottom:12,lineHeight:1.65}}>AI will analyse all assessment data and generate a full clinical differential diagnosis with confidence ratings and treatment guidance.</div>
+                  <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:12,lineHeight:1.65}}>AI will analyse all assessment data and generate a full clinical differential diagnosis with confidence ratings and treatment guidance.</div>
                   <button onClick={runDdx} disabled={aiLoading} style={{width:"100%",padding:"12px",background:aiLoading?"rgba(127,90,240,0.2)":"linear-gradient(135deg,#7f5af0,#a78bfa)",border:"none",borderRadius:8,color:aiLoading?"#6b8399":"#fff",fontWeight:800,fontSize:"0.8rem",cursor:aiLoading?"default":"pointer"}}>
                     {aiLoading?"🔄 Analysing...":"🔬 Generate Full Differential Diagnosis"}
                   </button>
@@ -4253,28 +4253,28 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               )}
               {aiMode==="enhance"&&(
                 <div>
-                  <div style={{fontSize:"0.68rem",color:PC.muted,marginBottom:12,lineHeight:1.65}}>AI will rewrite the auto-generated SOAP note with professional clinical language, proper terminology, and medico-legally defensible documentation.</div>
+                  <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:12,lineHeight:1.65}}>AI will rewrite the auto-generated SOAP note with professional clinical language, proper terminology, and medico-legally defensible documentation.</div>
                   <button onClick={runEnhance} disabled={aiLoading} style={{width:"100%",padding:"12px",background:aiLoading?"rgba(0,201,122,0.15)":"linear-gradient(135deg,#00c97a,#00e5ff)",border:"none",borderRadius:8,color:aiLoading?"#6b8399":"#000",fontWeight:800,fontSize:"0.8rem",cursor:aiLoading?"default":"pointer"}}>
                     {aiLoading?"🔄 Enhancing SOAP note...":"✨ Enhance SOAP Note with AI"}
                   </button>
                 </div>
               )}
 
-              {aiError&&<div style={{marginTop:10,padding:"9px 12px",background:"rgba(220,38,38,0.08)",border:"1px solid rgba(220,38,38,0.25)",borderRadius:8,fontSize:"0.7rem",color:"#dc2626",lineHeight:1.6}}><strong>Error:</strong> {aiError}</div>}
+              {aiError&&<div style={{marginTop:10,padding:"9px 12px",background:"rgba(220,38,38,0.08)",border:"1px solid rgba(220,38,38,0.25)",borderRadius:8,fontSize:"0.8rem",color:"#dc2626",lineHeight:1.6}}><strong>Error:</strong> {aiError}</div>}
 
               {aiResponse&&!aiLoading&&(
                 <div style={{marginTop:12,background:PC.s2,border:"1px solid rgba(127,90,240,0.25)",borderRadius:10,overflow:"hidden"}}>
                   <div style={{padding:"8px 13px",background:"rgba(127,90,240,0.1)",borderBottom:"1px solid rgba(127,90,240,0.15)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontWeight:700,fontSize:"0.72rem",color:"#a78bfa"}}>🤖 AI Clinical Response</span>
-                    <button onClick={()=>navigator.clipboard?.writeText(aiResponse)} style={{padding:"2px 9px",background:"rgba(0,229,255,0.1)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:5,color:"#00e5ff",fontSize:"0.6rem",cursor:"pointer"}}>Copy</button>
+                    <span style={{fontWeight:700,fontSize:"0.82rem",color:"#a78bfa"}}>🤖 AI Clinical Response</span>
+                    <button onClick={()=>navigator.clipboard?.writeText(aiResponse)} style={{padding:"2px 9px",background:"rgba(0,229,255,0.1)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:5,color:"#00e5ff",fontSize:"0.8rem",cursor:"pointer"}}>Copy</button>
                   </div>
                   <div style={{padding:"13px 14px",fontSize:"0.75rem",color:PC.text,lineHeight:1.8,whiteSpace:"pre-wrap",maxHeight:480,overflowY:"auto"}}>{aiResponse}</div>
-                  <div style={{padding:"7px 13px",fontSize:"0.58rem",color:PC.muted,borderTop:`1px solid ${PC.border}`}}>⚠ AI-generated — for clinical decision support only. Clinician responsible for all clinical decisions.</div>
+                  <div style={{padding:"7px 13px",fontSize:"0.78rem",color:PC.muted,borderTop:`1px solid ${PC.border}`}}>⚠ AI-generated — for clinical decision support only. Clinician responsible for all clinical decisions.</div>
                 </div>
               )}
 
               <div style={{marginTop:10,textAlign:"right"}}>
-                <button onClick={clearKey} style={{background:"none",border:"none",color:PC.muted,fontSize:"0.6rem",cursor:"pointer",textDecoration:"underline"}}>Change API Key</button>
+                <button onClick={clearKey} style={{background:"none",border:"none",color:PC.muted,fontSize:"0.8rem",cursor:"pointer",textDecoration:"underline"}}>Change API Key</button>
               </div>
             </div>
           )}
@@ -4295,7 +4295,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 ⚠️ Enter your clinician name (Session Details section above) before signing.
               </div>
             )}
-            <div style={{fontSize:"0.68rem",color:PC.muted,marginBottom:12}}>
+            <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:12}}>
               <strong>Clinician:</strong> {clinician||"—"} &nbsp;|&nbsp; <strong>Session:</strong> {session} &nbsp;|&nbsp; <strong>Date:</strong> {new Date().toLocaleDateString("en-AU",{day:"2-digit",month:"long",year:"numeric"})}
             </div>
             {/* Session quick fields — saves to tx_sessions on sign */}
@@ -4360,9 +4360,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             <div style={{textAlign:"center",marginBottom:16}}>
               <div style={{fontSize:"2.2rem",marginBottom:8}}>✅</div>
               <div style={{fontWeight:800,fontSize:"0.95rem",color:"#059669",marginBottom:4}}>SOAP note signed and saved</div>
-              <div style={{fontSize:"0.72rem",color:"#7e6a9a"}}>{data.dem_name||"Patient"} · {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</div>
+              <div style={{fontSize:"0.82rem",color:"#7e6a9a"}}>{data.dem_name||"Patient"} · {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</div>
             </div>
-            <div style={{fontSize:"0.68rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:8}}>What do you want to do next?</div>
+            <div style={{fontSize:"0.78rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:8}}>What do you want to do next?</div>
             <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
               {[
                 {icon:"🧍",label:"Run posture analysis",nav:"posture",col:"#7c3aed"},
@@ -4392,20 +4392,20 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           <div style={{padding:"12px 16px",background:"rgba(220,38,38,0.06)",borderBottom:"1px solid rgba(220,38,38,0.15)",display:"flex",alignItems:"center",gap:8}}>
             <span>🔒</span>
             <span style={{fontWeight:800,fontSize:"0.78rem",color:"#dc2626",textTransform:"uppercase",letterSpacing:"0.8px"}}>Signed &amp; Locked Notes ({lockedNotes.length})</span>
-            <span style={{marginLeft:"auto",fontSize:"0.65rem",color:PC.muted}}>Read-only</span>
+            <span style={{marginLeft:"auto",fontSize:"0.75rem",color:PC.muted}}>Read-only</span>
           </div>
           {[...lockedNotes].reverse().map((n, i) => (
             <div key={n.id||i} style={{padding:"14px 16px",borderBottom:i<lockedNotes.length-1?"1px solid rgba(220,38,38,0.1)":"none"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10,flexWrap:"wrap",gap:6}}>
                 <div>
                   <div style={{fontWeight:800,fontSize:"0.8rem",color:PC.text}}>{n.session}</div>
-                  <div style={{fontSize:"0.68rem",color:PC.muted,marginTop:2}}>🗓 {n.lockedAtDisplay} &nbsp;|&nbsp; 👤 {n.clinician}{n.clinic?" · "+n.clinic:""}</div>
+                  <div style={{fontSize:"0.78rem",color:PC.muted,marginTop:2}}>🗓 {n.lockedAtDisplay} &nbsp;|&nbsp; 👤 {n.clinician}{n.clinic?" · "+n.clinic:""}</div>
                 </div>
-                <span style={{padding:"3px 10px",background:"rgba(220,38,38,0.08)",border:"1px solid rgba(220,38,38,0.3)",borderRadius:20,fontSize:"0.62rem",fontWeight:800,color:"#dc2626"}}>LOCKED</span>
+                <span style={{padding:"3px 10px",background:"rgba(220,38,38,0.08)",border:"1px solid rgba(220,38,38,0.3)",borderRadius:20,fontSize:"0.82rem",fontWeight:800,color:"#dc2626"}}>LOCKED</span>
               </div>
               {["S","O","A","P"].map(key => (
                 <div key={key} style={{marginBottom:8}}>
-                  <div style={{fontSize:"0.62rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>{key} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[key]}</div>
+                  <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>{key} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[key]}</div>
                   <div style={{background:PC.s2,borderRadius:8,padding:"8px 12px",fontSize:"0.74rem",color:PC.text,lineHeight:1.65,whiteSpace:"pre-wrap"}}>{n[key]||"—"}</div>
                 </div>
               ))}
@@ -5576,7 +5576,7 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
         {protocols.map(p => (
           <button key={p.id} onClick={() => { setOpenId(openId === p.id ? null : p.id); setOpenTx(null); }}
-            style={{ padding:"6px 13px", borderRadius:20, fontSize:"0.65rem", fontWeight:700,
+            style={{ padding:"6px 13px", borderRadius:20, fontSize:"0.75rem", fontWeight:700,
               background: openId === p.id ? `${p.color}18` : "transparent",
               border: `1px solid ${openId === p.id ? p.color : "#d8cce8"}`,
               color: openId === p.id ? p.color : "#7e6a9a", cursor:"pointer" }}>
@@ -5589,20 +5589,20 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
         if (!p) return null;
         return (
           <div style={{ background:`${p.color}06`, border:`1px solid ${p.color}30`, borderRadius:10, padding:"12px" }}>
-            <div style={{ fontSize:"0.6rem", color:p.color, fontWeight:700, marginBottom:12,
+            <div style={{ fontSize:"0.8rem", color:p.color, fontWeight:700, marginBottom:12,
               background:`${p.color}12`, display:"inline-block", padding:"3px 10px",
               borderRadius:6, border:`1px solid ${p.color}30` }}>📚 {p.evidence}</div>
             <div style={{ display:"flex", gap:6, marginBottom:12 }}>
               <button onClick={() => setOpenTx(null)} style={{ flex:1, padding:"8px", borderRadius:8,
                 border:`1px solid ${openTx !== "tx" ? p.color : "#d8cce8"}`,
                 background: openTx !== "tx" ? `${p.color}15` : "transparent",
-                color: openTx !== "tx" ? p.color : "#7e6a9a", fontSize:"0.65rem", fontWeight:800, cursor:"pointer" }}>
+                color: openTx !== "tx" ? p.color : "#7e6a9a", fontSize:"0.75rem", fontWeight:800, cursor:"pointer" }}>
                 💪 Exercise Protocol
               </button>
               <button onClick={() => setOpenTx("tx")} style={{ flex:1, padding:"8px", borderRadius:8,
                 border:`1px solid ${openTx === "tx" ? p.color : "#d8cce8"}`,
                 background: openTx === "tx" ? `${p.color}15` : "transparent",
-                color: openTx === "tx" ? p.color : "#7e6a9a", fontSize:"0.65rem", fontWeight:800, cursor:"pointer" }}>
+                color: openTx === "tx" ? p.color : "#7e6a9a", fontSize:"0.75rem", fontWeight:800, cursor:"pointer" }}>
                 🏥 Treatment Techniques
               </button>
             </div>
@@ -5610,10 +5610,10 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
               <div key={pi} style={{ marginBottom:8, border:`1px solid ${ph.color}30`, borderRadius:8, overflow:"hidden" }}>
                 <div onClick={() => togglePhase(`${p.id}_${pi}`)}
                   style={{ padding:"10px 12px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", background:`${ph.color}10` }}>
-                  <div style={{ fontWeight:800, fontSize:"0.72rem", color:ph.color }}>{ph.phase}</div>
+                  <div style={{ fontWeight:800, fontSize:"0.82rem", color:ph.color }}>{ph.phase}</div>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    <span style={{ fontSize:"0.6rem", color:"#7e6a9a" }}>{ph.exercises.length} exercises</span>
-                    <span style={{ color:ph.color, fontSize:"0.7rem" }}>{openPhase[`${p.id}_${pi}`] ? "▲" : "▼"}</span>
+                    <span style={{ fontSize:"0.8rem", color:"#7e6a9a" }}>{ph.exercises.length} exercises</span>
+                    <span style={{ color:ph.color, fontSize:"0.8rem" }}>{openPhase[`${p.id}_${pi}`] ? "▲" : "▼"}</span>
                   </div>
                 </div>
                 {openPhase[`${p.id}_${pi}`] && (
@@ -5624,14 +5624,14 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
                         <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:7 }}>
                           {[["Sets",ex.sets],["Reps",ex.reps],["Hold",ex.hold+"s"],["Freq",ex.freq]].map(([l,v]) => (
                             <div key={l} style={{ background:`${ph.color}12`, border:`1px solid ${ph.color}30`, borderRadius:6, padding:"3px 8px", textAlign:"center" }}>
-                              <div style={{ fontSize:"0.72rem", fontWeight:900, color:ph.color }}>{v}</div>
-                              <div style={{ fontSize:"0.52rem", color:"#7e6a9a", textTransform:"uppercase" }}>{l}</div>
+                              <div style={{ fontSize:"0.82rem", fontWeight:900, color:ph.color }}>{v}</div>
+                              <div style={{ fontSize:"0.82rem", color:"#7e6a9a", textTransform:"uppercase" }}>{l}</div>
                             </div>
                           ))}
                         </div>
                         <div style={{ fontSize:"0.73rem", color:"#334155", lineHeight:1.6, marginBottom:6 }}>{ex.desc}</div>
-                        <div style={{ background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:6, padding:"5px 8px", fontSize:"0.68rem", color:"#b45309", marginBottom:5 }}>💡 {ex.cues}</div>
-                        <div style={{ fontSize:"0.62rem", color:"#7f5af0" }}>📚 {ex.evidence}</div>
+                        <div style={{ background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:6, padding:"5px 8px", fontSize:"0.78rem", color:"#b45309", marginBottom:5 }}>💡 {ex.cues}</div>
+                        <div style={{ fontSize:"0.82rem", color:"#7f5af0" }}>📚 {ex.evidence}</div>
                       </div>
                     ))}
                   </div>
@@ -5644,7 +5644,7 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
                   <div key={ti} style={{ background:"#f9f7ff", border:`1px solid ${p.color}25`, borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
                     <div style={{ fontWeight:800, fontSize:"0.76rem", color:p.color, marginBottom:5 }}>🏥 {tx.name}</div>
                     <div style={{ fontSize:"0.73rem", color:"#334155", lineHeight:1.6, marginBottom:6 }}>{tx.desc}</div>
-                    <div style={{ fontSize:"0.62rem", color:"#7f5af0" }}>📚 {tx.evidence}</div>
+                    <div style={{ fontSize:"0.82rem", color:"#7f5af0" }}>📚 {tx.evidence}</div>
                   </div>
                 ))}
               </div>
@@ -5695,10 +5695,10 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
         style={{ padding:"11px 14px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <span style={{ fontSize:"0.85rem" }}>📋</span>
-          <span style={{ fontSize:"0.72rem", fontWeight:800, color:"#7c3aed" }}>Protocols &amp; Templates</span>
-          <span style={{ fontSize:"0.58rem", color:"#7e6a9a" }}>Quick-load evidence-based programmes</span>
+          <span style={{ fontSize:"0.82rem", fontWeight:800, color:"#7c3aed" }}>Protocols &amp; Templates</span>
+          <span style={{ fontSize:"0.78rem", color:"#7e6a9a" }}>Quick-load evidence-based programmes</span>
         </div>
-        <span style={{ color:"#7e6a9a", fontSize:"0.7rem" }}>{open ? "▲" : "▼"}</span>
+        <span style={{ color:"#7e6a9a", fontSize:"0.8rem" }}>{open ? "▲" : "▼"}</span>
       </div>
 
       {open && (
@@ -5706,7 +5706,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
           <div style={{ display:"flex", gap:3, padding:"7px 10px", overflowX:"auto", borderBottom:"1px solid #e8e0f4", background:"#faf8ff" }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => { setActiveTab(t.id); setOpenId(null); setOpenTpl(null); }}
-                style={{ padding:"4px 10px", borderRadius:7, fontSize:"0.6rem", fontWeight:activeTab===t.id?800:500, flexShrink:0,
+                style={{ padding:"4px 10px", borderRadius:7, fontSize:"0.8rem", fontWeight:activeTab===t.id?800:500, flexShrink:0,
                   border:`1px solid ${activeTab===t.id?t.color+"60":"#d8cce8"}`,
                   background: activeTab===t.id?`${t.color}12`:"transparent",
                   color: activeTab===t.id?t.color:"#7e6a9a", cursor:"pointer" }}>
@@ -5769,16 +5769,16 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                       <div style={{ background:`${kp.color}06`, border:`1px solid ${kp.color}30`, borderRadius:9, padding:"10px" }}>
                         <div style={{ fontSize:"0.57rem", color:kp.color, fontWeight:700, marginBottom:8, background:`${kp.color}12`, display:"inline-block", padding:"2px 9px", borderRadius:5, border:`1px solid ${kp.color}30` }}>📚 {kp.evidence}</div>
                         <div style={{ display:"flex", gap:5, marginBottom:9 }}>
-                          <button onClick={() => setOpenTx(null)} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx!=="tx"?kp.color:"#d8cce8"}`, background:openTx!=="tx"?`${kp.color}15`:"transparent", color:openTx!=="tx"?kp.color:"#7e6a9a", fontSize:"0.6rem", fontWeight:800, cursor:"pointer" }}>💪 Exercises</button>
-                          <button onClick={() => setOpenTx("tx")} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx==="tx"?kp.color:"#d8cce8"}`, background:openTx==="tx"?`${kp.color}15`:"transparent", color:openTx==="tx"?kp.color:"#7e6a9a", fontSize:"0.6rem", fontWeight:800, cursor:"pointer" }}>🏥 Treatment</button>
+                          <button onClick={() => setOpenTx(null)} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx!=="tx"?kp.color:"#d8cce8"}`, background:openTx!=="tx"?`${kp.color}15`:"transparent", color:openTx!=="tx"?kp.color:"#7e6a9a", fontSize:"0.8rem", fontWeight:800, cursor:"pointer" }}>💪 Exercises</button>
+                          <button onClick={() => setOpenTx("tx")} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx==="tx"?kp.color:"#d8cce8"}`, background:openTx==="tx"?`${kp.color}15`:"transparent", color:openTx==="tx"?kp.color:"#7e6a9a", fontSize:"0.8rem", fontWeight:800, cursor:"pointer" }}>🏥 Treatment</button>
                         </div>
                         {openTx !== "tx" && kp.phases.map((ph, pi) => (
                           <div key={pi} style={{ marginBottom:6, border:`1px solid ${ph.color}30`, borderRadius:7, overflow:"hidden" }}>
                             <div onClick={() => togglePhase(`${kp.id}_${pi}`)} style={{ padding:"7px 10px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", background:`${ph.color}10` }}>
-                              <div style={{ fontWeight:800, fontSize:"0.65rem", color:ph.color }}>{ph.phase}</div>
+                              <div style={{ fontWeight:800, fontSize:"0.75rem", color:ph.color }}>{ph.phase}</div>
                               <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                                 <span style={{ fontSize:"0.57rem", color:"#7e6a9a" }}>{ph.exercises.length} ex</span>
-                                <span style={{ color:ph.color, fontSize:"0.63rem" }}>{openPhase[`${kp.id}_${pi}`]?"▲":"▼"}</span>
+                                <span style={{ color:ph.color, fontSize:"0.73rem" }}>{openPhase[`${kp.id}_${pi}`]?"▲":"▼"}</span>
                               </div>
                             </div>
                             {openPhase[`${kp.id}_${pi}`] && (
@@ -5801,7 +5801,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                                       ))}
                                     </div>
                                     <div style={{ fontSize:"0.66rem", color:"#334155", lineHeight:1.5, marginBottom:4 }}>{ex.desc}</div>
-                                    <div style={{ background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:5, padding:"3px 7px", fontSize:"0.62rem", color:"#b45309", marginBottom:3 }}>💡 {ex.cues}</div>
+                                    <div style={{ background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:5, padding:"3px 7px", fontSize:"0.82rem", color:"#b45309", marginBottom:3 }}>💡 {ex.cues}</div>
                                     <div style={{ fontSize:"0.57rem", color:"#7f5af0" }}>📚 {ex.evidence}</div>
                                   </div>
                                   );
@@ -5851,13 +5851,13 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                         <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"rgba(124,58,237,0.06)":"#f9f7ff", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#d8cce8"}` }}>
                           <div style={{ flex:1 }}>
                             <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#1a1025" }}>{t.label}</div>
-                            <div style={{ fontSize:"0.55rem", color:"#7e6a9a" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
+                            <div style={{ fontSize:"0.75rem", color:"#7e6a9a" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
                           </div>
                           <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
                         </div>
                         {isOpen && (
                           <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"rgba(124,58,237,0.03)" }}>
-                            <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.63rem", cursor:"pointer", marginBottom:6 }}>
+                            <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:6 }}>
                               ＋ Add {t.exercises.filter(id=>!programme?.find(p=>p.id===id)).length} new exercises
                             </button>
                             {tx&&(tx.manual||[]).length>0&&(
@@ -5961,11 +5961,11 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
 
       {/* Region selector */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-        <label style={{fontSize:"0.65rem",fontWeight:700,color:"#7e6a9a",whiteSpace:"nowrap"}}>📍 Region:</label>
+        <label style={{fontSize:"0.75rem",fontWeight:700,color:"#7e6a9a",whiteSpace:"nowrap"}}>📍 Region:</label>
         <select
           value={activeRegion}
           onChange={e=>setActiveRegion(e.target.value)}
-          style={{flex:1,padding:"6px 10px",borderRadius:8,border:"1px solid #d8cce8",background:"#f5f0fb",color:"#1a1025",fontSize:"0.7rem",fontFamily:"inherit",fontWeight:600,cursor:"pointer",outline:"none"}}
+          style={{flex:1,padding:"6px 10px",borderRadius:8,border:"1px solid #d8cce8",background:"#f5f0fb",color:"#1a1025",fontSize:"0.8rem",fontFamily:"inherit",fontWeight:600,cursor:"pointer",outline:"none"}}
         >
           {Object.entries(EXERCISE_DB).map(([key,r])=>(
             <option key={key} value={key}>{r.icon} {r.label}</option>
@@ -5977,17 +5977,17 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
       <div style={{display:"flex",gap:7,marginBottom:10,flexWrap:"wrap"}}>
         <div style={{display:"flex",gap:4}}>
           {phases.map(p=>(
-            <button key={p} onClick={()=>setActivePhase(p)} style={{padding:"4px 9px",borderRadius:7,fontSize:"0.6rem",fontWeight:activePhase===p?800:500,border:`1px solid ${activePhase===p?(phaseColor[p]||"rgba(0,229,255,0.4)"):"#1a2d45"}`,background:activePhase===p?`${phaseColor[p]||"rgba(0,229,255,0.18)"}18`:"transparent",color:activePhase===p?(phaseColor[p]||"#00e5ff"):"#6b8399",cursor:"pointer"}}>{p}</button>
+            <button key={p} onClick={()=>setActivePhase(p)} style={{padding:"4px 9px",borderRadius:7,fontSize:"0.8rem",fontWeight:activePhase===p?800:500,border:`1px solid ${activePhase===p?(phaseColor[p]||"rgba(0,229,255,0.4)"):"#1a2d45"}`,background:activePhase===p?`${phaseColor[p]||"rgba(0,229,255,0.18)"}18`:"transparent",color:activePhase===p?(phaseColor[p]||"#00e5ff"):"#6b8399",cursor:"pointer"}}>{p}</button>
           ))}
         </div>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search exercises or muscles..." style={{flex:1,minWidth:120,background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,color:"#1a1025",fontFamily:"inherit",outline:"none",padding:"5px 10px",fontSize:"0.72rem"}}/>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search exercises or muscles..." style={{flex:1,minWidth:120,background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,color:"#1a1025",fontFamily:"inherit",outline:"none",padding:"5px 10px",fontSize:"0.82rem"}}/>
       </div>
 
       {/* Exercise library */}
       <div style={{marginBottom:14}}>
         {Object.entries(filteredCategories).map(([cat,exs])=>(
           <div key={cat} style={{marginBottom:12}}>
-            <div style={{fontSize:"0.6rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1px",marginBottom:7,display:"flex",alignItems:"center",gap:7}}>
+            <div style={{fontSize:"0.8rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1px",marginBottom:7,display:"flex",alignItems:"center",gap:7}}>
               <div style={{height:1,width:8,background:region.color,borderRadius:1}}/>{cat}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:5}}>
@@ -6000,14 +6000,14 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
                       <div style={{flex:1}}>
                         <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
                           <span style={{fontSize:"0.75rem",fontWeight:700,color:"#1a1025"}}>{ex.name}</span>
-                          <span style={{fontSize:"0.55rem",padding:"1px 6px",borderRadius:5,background:`${phaseColor[ex.phase]||"#1a2d45"}18`,color:phaseColor[ex.phase]||"#6b8399",border:`1px solid ${phaseColor[ex.phase]||"#1a2d45"}40`,fontWeight:700}}>{ex.phase}</span>
-                          <span style={{fontSize:"0.55rem",color:"#ffb300",fontWeight:700}}>⭐ {ex.evidence?.split(" — ")[0]}</span>
+                          <span style={{fontSize:"0.75rem",padding:"1px 6px",borderRadius:5,background:`${phaseColor[ex.phase]||"#1a2d45"}18`,color:phaseColor[ex.phase]||"#6b8399",border:`1px solid ${phaseColor[ex.phase]||"#1a2d45"}40`,fontWeight:700}}>{ex.phase}</span>
+                          <span style={{fontSize:"0.75rem",color:"#ffb300",fontWeight:700}}>⭐ {ex.evidence?.split(" — ")[0]}</span>
                         </div>
-                        <div style={{fontSize:"0.63rem",color:"#7e6a9a",marginTop:2}}>{ex.target}</div>
+                        <div style={{fontSize:"0.73rem",color:"#7e6a9a",marginTop:2}}>{ex.target}</div>
                       </div>
                       <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0}}>
-                        <span style={{fontSize:"0.6rem",color:"#7e6a9a"}}>{isOpen?"▲":"▼"}</span>
-                        <button onClick={e=>{e.stopPropagation();inProg?removeEx(ex.id):addEx(ex);}} style={{padding:"4px 10px",borderRadius:7,fontSize:"0.62rem",fontWeight:800,border:`1px solid ${inProg?"rgba(255,77,109,0.4)":"rgba(0,201,122,0.4)"}`,background:inProg?"rgba(255,77,109,0.12)":"rgba(0,201,122,0.12)",color:inProg?"#ff4d6d":"#00c97a",cursor:"pointer"}}>{inProg?"✕ Remove":"+ Add"}</button>
+                        <span style={{fontSize:"0.8rem",color:"#7e6a9a"}}>{isOpen?"▲":"▼"}</span>
+                        <button onClick={e=>{e.stopPropagation();inProg?removeEx(ex.id):addEx(ex);}} style={{padding:"4px 10px",borderRadius:7,fontSize:"0.82rem",fontWeight:800,border:`1px solid ${inProg?"rgba(255,77,109,0.4)":"rgba(0,201,122,0.4)"}`,background:inProg?"rgba(255,77,109,0.12)":"rgba(0,201,122,0.12)",color:inProg?"#ff4d6d":"#00c97a",cursor:"pointer"}}>{inProg?"✕ Remove":"+ Add"}</button>
                       </div>
                     </div>
                     {isOpen&&(
@@ -6016,14 +6016,14 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
                           {[["Sets",ex.sets],["Reps",ex.reps],["Hold",`${ex.hold}s`],["Freq",ex.freq]].map(([l,v])=>(
                             <div key={l} style={{background:"#f5f0fb",borderRadius:8,padding:"7px",textAlign:"center"}}>
                               <div style={{fontSize:"0.85rem",fontWeight:900,color:region.color}}>{v}</div>
-                              <div style={{fontSize:"0.55rem",color:"#7e6a9a",textTransform:"uppercase"}}>{l}</div>
+                              <div style={{fontSize:"0.75rem",color:"#7e6a9a",textTransform:"uppercase"}}>{l}</div>
                             </div>
                           ))}
                         </div>
                         <div style={{fontSize:"0.73rem",color:"#1a1025",lineHeight:1.6,marginBottom:7}}>{ex.desc}</div>
-                        <div style={{padding:"7px 10px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.7rem",color:"#ffb300",marginBottom:7}}>💡 {ex.cues}</div>
-                        <div style={{fontSize:"0.65rem",color:"#00c97a",marginBottom:4}}>📈 Progression: {ex.progression}</div>
-                        <div style={{fontSize:"0.62rem",color:"#7f5af0"}}>📚 Evidence: {ex.evidence}</div>
+                        <div style={{padding:"7px 10px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.8rem",color:"#ffb300",marginBottom:7}}>💡 {ex.cues}</div>
+                        <div style={{fontSize:"0.75rem",color:"#00c97a",marginBottom:4}}>📈 Progression: {ex.progression}</div>
+                        <div style={{fontSize:"0.82rem",color:"#7f5af0"}}>📚 Evidence: {ex.evidence}</div>
                       </div>
                     )}
                   </div>
@@ -6038,38 +6038,38 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
       {programme.length>0&&(
         <div style={{background:"#ffffff",border:"1px solid rgba(0,201,122,0.3)",borderRadius:14,padding:"14px",marginBottom:14}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:7}}>
-            <div style={{fontSize:"0.72rem",fontWeight:800,color:"#00c97a"}}>📋 Patient Programme — {programme.length} exercise{programme.length!==1?"s":""}</div>
+            <div style={{fontSize:"0.82rem",fontWeight:800,color:"#00c97a"}}>📋 Patient Programme — {programme.length} exercise{programme.length!==1?"s":""}</div>
             <div style={{display:"flex",gap:6}}>
-              <button onClick={()=>syncProgramme([])} style={{padding:"5px 10px",background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.3)",borderRadius:7,color:"#ff4d6d",fontSize:"0.62rem",fontWeight:700,cursor:"pointer"}}>🗑 Clear</button>
-              <button onClick={printHEP} style={{padding:"5px 10px",background:"linear-gradient(135deg,rgba(0,201,122,0.2),rgba(0,229,255,0.15))",border:"1px solid rgba(0,201,122,0.4)",borderRadius:7,color:"#00c97a",fontSize:"0.62rem",fontWeight:800,cursor:"pointer"}}>🖨 Print HEP</button>
+              <button onClick={()=>syncProgramme([])} style={{padding:"5px 10px",background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.3)",borderRadius:7,color:"#ff4d6d",fontSize:"0.82rem",fontWeight:700,cursor:"pointer"}}>🗑 Clear</button>
+              <button onClick={printHEP} style={{padding:"5px 10px",background:"linear-gradient(135deg,rgba(0,201,122,0.2),rgba(0,229,255,0.15))",border:"1px solid rgba(0,201,122,0.4)",borderRadius:7,color:"#00c97a",fontSize:"0.82rem",fontWeight:800,cursor:"pointer"}}>🖨 Print HEP</button>
             </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:12}}>
-            <div><label style={{fontSize:"0.58rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Patient Name</label><input value={data?.dem_name||""} onChange={e=>set&&set("dem_name",e.target.value)} placeholder="Patient name (syncs from Demographics)" style={inp}/></div>
-            <div><label style={{fontSize:"0.58rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Clinician</label><input value={clinician} onChange={e=>setClinician(e.target.value)} placeholder="Your name" style={inp}/></div>
-            <div style={{gridColumn:"1/-1"}}><label style={{fontSize:"0.58rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Review Date</label><input value={reviewDate} onChange={e=>setReviewDate(e.target.value)} placeholder="e.g. 2 weeks" style={inp}/></div>
+            <div><label style={{fontSize:"0.78rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Patient Name</label><input value={data?.dem_name||""} onChange={e=>set&&set("dem_name",e.target.value)} placeholder="Patient name (syncs from Demographics)" style={inp}/></div>
+            <div><label style={{fontSize:"0.78rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Clinician</label><input value={clinician} onChange={e=>setClinician(e.target.value)} placeholder="Your name" style={inp}/></div>
+            <div style={{gridColumn:"1/-1"}}><label style={{fontSize:"0.78rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Review Date</label><input value={reviewDate} onChange={e=>setReviewDate(e.target.value)} placeholder="e.g. 2 weeks" style={inp}/></div>
           </div>
           {programme.map((ex,i)=>(
             <div key={ex.id} style={{background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
               <div style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:9}}>
-                <span style={{width:22,height:22,borderRadius:"50%",background:"rgba(0,201,122,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.62rem",fontWeight:800,color:"#00c97a",flexShrink:0}}>{i+1}</span>
-                <div style={{flex:1}}><div style={{fontSize:"0.75rem",fontWeight:700,color:"#1a1025"}}>{ex.name}</div><div style={{fontSize:"0.6rem",color:"#7e6a9a"}}>{ex.target}</div></div>
-                <button onClick={()=>removeEx(ex.id)} style={{background:"none",border:"1px solid #d8cce8",borderRadius:6,color:"#7e6a9a",cursor:"pointer",fontSize:"0.65rem",padding:"2px 7px"}}>✕</button>
+                <span style={{width:22,height:22,borderRadius:"50%",background:"rgba(0,201,122,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.82rem",fontWeight:800,color:"#00c97a",flexShrink:0}}>{i+1}</span>
+                <div style={{flex:1}}><div style={{fontSize:"0.75rem",fontWeight:700,color:"#1a1025"}}>{ex.name}</div><div style={{fontSize:"0.8rem",color:"#7e6a9a"}}>{ex.target}</div></div>
+                <button onClick={()=>removeEx(ex.id)} style={{background:"none",border:"1px solid #d8cce8",borderRadius:6,color:"#7e6a9a",cursor:"pointer",fontSize:"0.75rem",padding:"2px 7px"}}>✕</button>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:8}}>
                 {[["Sets","customSets"],["Reps","customReps"],["Hold (s)","customHold"]].map(([label,field])=>(
-                  <div key={field}><div style={{fontSize:"0.55rem",color:"#7e6a9a",marginBottom:2,textTransform:"uppercase"}}>{label}</div><input type="number" value={ex[field]} onChange={e=>updateEx(ex.id,field,e.target.value)} style={{...inp,padding:"5px 8px",textAlign:"center"}}/></div>
+                  <div key={field}><div style={{fontSize:"0.75rem",color:"#7e6a9a",marginBottom:2,textTransform:"uppercase"}}>{label}</div><input type="number" value={ex[field]} onChange={e=>updateEx(ex.id,field,e.target.value)} style={{...inp,padding:"5px 8px",textAlign:"center"}}/></div>
                 ))}
-                <div><div style={{fontSize:"0.55rem",color:"#7e6a9a",marginBottom:2,textTransform:"uppercase"}}>Frequency</div><input value={ex.customFreq} onChange={e=>updateEx(ex.id,"customFreq",e.target.value)} style={{...inp,padding:"5px 8px"}}/></div>
+                <div><div style={{fontSize:"0.75rem",color:"#7e6a9a",marginBottom:2,textTransform:"uppercase"}}>Frequency</div><input value={ex.customFreq} onChange={e=>updateEx(ex.id,"customFreq",e.target.value)} style={{...inp,padding:"5px 8px"}}/></div>
               </div>
-              <div><div style={{fontSize:"0.55rem",color:"#7e6a9a",marginBottom:2,textTransform:"uppercase"}}>Clinical Notes</div><input value={ex.notes||""} onChange={e=>updateEx(ex.id,"notes",e.target.value)} placeholder="Patient-specific notes, modifications..." style={inp}/></div>
+              <div><div style={{fontSize:"0.75rem",color:"#7e6a9a",marginBottom:2,textTransform:"uppercase"}}>Clinical Notes</div><input value={ex.notes||""} onChange={e=>updateEx(ex.id,"notes",e.target.value)} placeholder="Patient-specific notes, modifications..." style={inp}/></div>
             </div>
           ))}
           <button onClick={printHEP} style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,#00c97a,#00e5ff)",border:"none",borderRadius:10,color:"#000",fontWeight:900,fontSize:"0.82rem",cursor:"pointer",marginTop:4}}>🖨 Print / Download Home Exercise Programme (HEP)</button>
         </div>
       )}
 
-      <div style={{padding:"7px 11px",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,fontSize:"0.6rem",color:"#7e6a9a",lineHeight:1.5}}>
+      <div style={{padding:"7px 11px",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,fontSize:"0.8rem",color:"#7e6a9a",lineHeight:1.5}}>
         ⚠ Exercise prescriptions are clinical suggestions. Modify sets/reps/frequency based on individual patient capacity, irritability, and response. Evidence ratings reflect current literature.
       </div>
     </div>
@@ -6451,7 +6451,7 @@ function GradeChip({ value, selected, onClick }) {
     <button
       onClick={onClick}
       style={{
-        padding:"5px 10px", borderRadius:8, fontSize:"0.72rem", fontWeight:700,
+        padding:"5px 10px", borderRadius:8, fontSize:"0.82rem", fontWeight:700,
         border:`1.5px solid ${selected ? color : C.border}`,
         background: selected ? `${color}20` : "transparent",
         color: selected ? color : C.muted,
@@ -6546,16 +6546,16 @@ function PalpationModule({ data, set }) {
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
           <div>
             <div style={{ fontWeight:800, fontSize:"0.95rem", color:C.accent }}>🖐️ Palpation Map</div>
-            <div style={{ fontSize:"0.68rem", color:C.muted, marginTop:2 }}>
+            <div style={{ fontSize:"0.78rem", color:C.muted, marginTop:2 }}>
               Tap any region on the body — anatomical point auto-generates. Record tenderness, tissue quality & findings.
             </div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-            <span style={{ fontSize:"0.65rem", color:C.muted }}>{pins.length} point{pins.length !== 1 ? "s" : ""} recorded</span>
+            <span style={{ fontSize:"0.75rem", color:C.muted }}>{pins.length} point{pins.length !== 1 ? "s" : ""} recorded</span>
             {pins.length > 0 && (
               <button onClick={() => { setPins([]); setSelected(null); }}
                 style={{ padding:"4px 10px", borderRadius:7, border:`1px solid ${C.red}40`,
-                  background:"rgba(255,77,109,0.08)", color:C.red, fontSize:"0.62rem",
+                  background:"rgba(255,77,109,0.08)", color:C.red, fontSize:"0.82rem",
                   fontWeight:700, cursor:"pointer" }}>Clear all</button>
             )}
           </div>
@@ -6564,15 +6564,15 @@ function PalpationModule({ data, set }) {
         {/* Instruction */}
         <div style={{ marginTop:8, display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
           <div style={{ padding:"5px 10px", background:"rgba(0,229,255,0.08)", border:`1px solid ${C.accent}25`,
-            borderRadius:8, fontSize:"0.65rem", color:C.accent }}>
+            borderRadius:8, fontSize:"0.75rem", color:C.accent }}>
             👆 Tap body → anatomical point appears
           </div>
           <div style={{ padding:"5px 10px", background:"rgba(127,90,240,0.08)", border:`1px solid ${C.a2}25`,
-            borderRadius:8, fontSize:"0.65rem", color:C.a2 }}>
+            borderRadius:8, fontSize:"0.75rem", color:C.a2 }}>
             🔴 Coloured dots = recorded findings
           </div>
           <div style={{ padding:"5px 10px", background:"rgba(0,201,122,0.08)", border:`1px solid ${C.green}25`,
-            borderRadius:8, fontSize:"0.65rem", color:C.green }}>
+            borderRadius:8, fontSize:"0.75rem", color:C.green }}>
             Dot colour = tenderness grade
           </div>
         </div>
@@ -6636,10 +6636,10 @@ function PalpationModule({ data, set }) {
           {hovered && (
             <div style={{ marginTop:6, padding:"6px 12px", background:C.s2,
               border:`1px solid ${C.accent}40`, borderRadius:8, maxWidth:280,
-              fontSize:"0.68rem", color:C.accent, fontWeight:600, textAlign:"center",
+              fontSize:"0.78rem", color:C.accent, fontWeight:600, textAlign:"center",
               animation:"slideIn 0.15s ease" }}>
               {ANATOMICAL_HOTSPOTS.find(h => h.id === hovered)?.label}
-              <div style={{ color:C.muted, fontWeight:400, fontSize:"0.6rem", marginTop:1 }}>
+              <div style={{ color:C.muted, fontWeight:400, fontSize:"0.8rem", marginTop:1 }}>
                 Click to add palpation point
               </div>
             </div>
@@ -6648,14 +6648,14 @@ function PalpationModule({ data, set }) {
           {/* Tenderness legend */}
           <div style={{ marginTop:10, padding:"8px 10px", background:C.surface,
             border:`1px solid ${C.border}`, borderRadius:8, maxWidth:280, width:"100%" }}>
-            <div style={{ fontSize:"0.58rem", fontWeight:700, color:C.muted,
+            <div style={{ fontSize:"0.78rem", fontWeight:700, color:C.muted,
               textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>Tenderness Legend</div>
             <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
               {GRADES.map(g => (
                 <div key={g} style={{ display:"flex", alignItems:"center", gap:4 }}>
                   <div style={{ width:9, height:9, borderRadius:"50%", background:GRADE_COLOR[g],
                     boxShadow:`0 0 4px ${GRADE_COLOR[g]}` }}/>
-                  <span style={{ fontSize:"0.6rem", color:C.muted, fontWeight:600 }}>{g}</span>
+                  <span style={{ fontSize:"0.8rem", color:C.muted, fontWeight:600 }}>{g}</span>
                 </div>
               ))}
             </div>
@@ -6673,7 +6673,7 @@ function PalpationModule({ data, set }) {
               <div style={{ fontWeight:700, color:C.text, marginBottom:6 }}>
                 Tap any point on the body
               </div>
-              <div style={{ fontSize:"0.72rem", color:C.muted, lineHeight:1.6 }}>
+              <div style={{ fontSize:"0.82rem", color:C.muted, lineHeight:1.6 }}>
                 The anatomical structure name auto-fills.<br/>
                 Then record tenderness grade, tissue quality,<br/>
                 temperature and clinical notes.
@@ -6684,7 +6684,7 @@ function PalpationModule({ data, set }) {
           {/* Pin list (when nothing selected) */}
           {!selPin && pins.length > 0 && (
             <div style={{ animation:"slideIn 0.2s ease" }}>
-              <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.muted,
+              <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.muted,
                 textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>
                 Recorded Points — {pins.length}
               </div>
@@ -6700,7 +6700,7 @@ function PalpationModule({ data, set }) {
                       <div style={{ width:28, height:28, borderRadius:"50%",
                         background:`${gc}20`, border:`2px solid ${gc}`,
                         display:"flex", alignItems:"center", justifyContent:"center",
-                        fontSize:"0.7rem", fontWeight:900, color:gc, flexShrink:0 }}>
+                        fontSize:"0.8rem", fontWeight:900, color:gc, flexShrink:0 }}>
                         {pin.tenderness || "?"}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
@@ -6708,7 +6708,7 @@ function PalpationModule({ data, set }) {
                           overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                           {pin.label}
                         </div>
-                        <div style={{ fontSize:"0.62rem", color:C.muted, marginTop:2 }}>
+                        <div style={{ fontSize:"0.82rem", color:C.muted, marginTop:2 }}>
                           {pin.side === "front" ? "Anterior" : "Posterior"}
                           {pin.temp ? ` · ${pin.temp}` : ""}
                           {(pin.texture || []).length > 0 ? ` · ${pin.texture.join(", ")}` : ""}
@@ -6716,7 +6716,7 @@ function PalpationModule({ data, set }) {
                       </div>
                       <button onClick={e => { e.stopPropagation(); removePin(pin.id); }}
                         style={{ background:"none", border:"none", color:C.muted,
-                          cursor:"pointer", fontSize:"0.72rem", padding:"0 3px", lineHeight:1 }}>✕</button>
+                          cursor:"pointer", fontSize:"0.82rem", padding:"0 3px", lineHeight:1 }}>✕</button>
                     </div>
                   );
                 })}
@@ -6734,7 +6734,7 @@ function PalpationModule({ data, set }) {
                   <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:4 }}>
                     <div style={{ width:8, height:8, borderRadius:"50%",
                       background:C.accent, boxShadow:`0 0 6px ${C.accent}` }}/>
-                    <div style={{ fontSize:"0.62rem", color:C.muted,
+                    <div style={{ fontSize:"0.82rem", color:C.muted,
                       textTransform:"uppercase", letterSpacing:"1px" }}>
                       {selPin.side === "front" ? "Anterior" : "Posterior"} Surface
                     </div>
@@ -6746,12 +6746,12 @@ function PalpationModule({ data, set }) {
                 <div style={{ display:"flex", gap:5, flexShrink:0 }}>
                   <button onClick={() => setSelected(null)}
                     style={{ padding:"4px 10px", borderRadius:7, border:`1px solid ${C.border}`,
-                      background:"transparent", color:C.muted, fontSize:"0.62rem", cursor:"pointer" }}>
+                      background:"transparent", color:C.muted, fontSize:"0.82rem", cursor:"pointer" }}>
                     ← Back
                   </button>
                   <button onClick={() => removePin(selPin.id)}
                     style={{ padding:"4px 9px", borderRadius:7, border:`1px solid ${C.red}40`,
-                      background:"rgba(255,77,109,0.08)", color:C.red, fontSize:"0.62rem", cursor:"pointer" }}>
+                      background:"rgba(255,77,109,0.08)", color:C.red, fontSize:"0.82rem", cursor:"pointer" }}>
                     Remove
                   </button>
                 </div>
@@ -6760,13 +6760,13 @@ function PalpationModule({ data, set }) {
               {/* Structures at this point */}
               <div style={{ background:C.s2, border:`1px solid ${C.border}`,
                 borderRadius:9, padding:"9px 12px", marginBottom:12 }}>
-                <div style={{ fontSize:"0.58rem", fontWeight:700, color:C.accent,
+                <div style={{ fontSize:"0.78rem", fontWeight:700, color:C.accent,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
                   🏗 Structures at this point
                 </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
                   {selPin.structures.map((s, i) => (
-                    <span key={i} style={{ fontSize:"0.65rem", padding:"2px 8px", borderRadius:20,
+                    <span key={i} style={{ fontSize:"0.75rem", padding:"2px 8px", borderRadius:20,
                       background:C.s3, border:`1px solid ${C.border}`, color:C.text }}>
                       {s}
                     </span>
@@ -6776,7 +6776,7 @@ function PalpationModule({ data, set }) {
 
               {/* ── Tenderness Grade ── */}
               <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
+                <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
                   Tenderness Grade (0 – 4+)
                 </div>
@@ -6788,7 +6788,7 @@ function PalpationModule({ data, set }) {
                   ))}
                 </div>
                 {selPin.tenderness && (
-                  <div style={{ marginTop:6, fontSize:"0.65rem", color:GRADE_COLOR[selPin.tenderness],
+                  <div style={{ marginTop:6, fontSize:"0.75rem", color:GRADE_COLOR[selPin.tenderness],
                     padding:"4px 9px", background:`${GRADE_COLOR[selPin.tenderness]}12`,
                     borderRadius:7, border:`1px solid ${GRADE_COLOR[selPin.tenderness]}30` }}>
                     {{
@@ -6804,7 +6804,7 @@ function PalpationModule({ data, set }) {
 
               {/* ── Tissue Temperature ── */}
               <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
+                <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
                   Tissue Temperature (dorsum of hand)
                 </div>
@@ -6814,7 +6814,7 @@ function PalpationModule({ data, set }) {
                     const col = {"Normal":C.green,"Warm":C.yellow,"Hot":C.red,"Cool":"#38bdf8","Cold":"#0ea5e9"}[t];
                     return (
                       <button key={t} onClick={() => updatePin(selPin.id, "temp", sel ? "" : t)}
-                        style={{ padding:"4px 10px", borderRadius:8, fontSize:"0.68rem", fontWeight:sel ? 700 : 400,
+                        style={{ padding:"4px 10px", borderRadius:8, fontSize:"0.78rem", fontWeight:sel ? 700 : 400,
                           border:`1px solid ${sel ? col : C.border}`, background:sel ? `${col}18` : "transparent",
                           color:sel ? col : C.muted, cursor:"pointer", transition:"all 0.12s" }}>
                         {t}
@@ -6826,7 +6826,7 @@ function PalpationModule({ data, set }) {
 
               {/* ── Tissue Quality ── */}
               <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
+                <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
                   Tissue Quality (select all that apply)
                 </div>
@@ -6835,7 +6835,7 @@ function PalpationModule({ data, set }) {
                     const sel = (selPin.texture || []).includes(tex);
                     return (
                       <button key={tex} onClick={() => toggleTexture(selPin.id, tex)}
-                        style={{ padding:"4px 10px", borderRadius:8, fontSize:"0.65rem", fontWeight:sel ? 700 : 400,
+                        style={{ padding:"4px 10px", borderRadius:8, fontSize:"0.75rem", fontWeight:sel ? 700 : 400,
                           border:`1px solid ${sel ? C.a2 : C.border}`, background:sel ? "rgba(127,90,240,0.14)" : "transparent",
                           color:sel ? C.a2 : C.muted, cursor:"pointer", transition:"all 0.12s" }}>
                         {sel ? "✓ " : ""}{tex}
@@ -6847,7 +6847,7 @@ function PalpationModule({ data, set }) {
 
               {/* ── Bilateral comparison ── */}
               <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
+                <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>
                   Bilateral Comparison
                 </div>
@@ -6856,7 +6856,7 @@ function PalpationModule({ data, set }) {
                     const sel = selPin.bilateral === opt;
                     return (
                       <button key={opt} onClick={() => updatePin(selPin.id, "bilateral", sel ? "" : opt)}
-                        style={{ flex:1, padding:"5px 4px", borderRadius:8, fontSize:"0.6rem",
+                        style={{ flex:1, padding:"5px 4px", borderRadius:8, fontSize:"0.8rem",
                           fontWeight:sel ? 700 : 400, border:`1px solid ${sel ? C.a3 : C.border}`,
                           background:sel ? "rgba(0,201,122,0.12)" : "transparent",
                           color:sel ? C.a3 : C.muted, cursor:"pointer" }}>
@@ -6869,7 +6869,7 @@ function PalpationModule({ data, set }) {
 
               {/* ── Clinical Notes ── */}
               <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted,
+                <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>
                   Clinical Notes
                 </div>
@@ -6885,7 +6885,7 @@ function PalpationModule({ data, set }) {
               {/* Mini summary */}
               {(selPin.tenderness || selPin.temp || (selPin.texture||[]).length > 0) && (
                 <div style={{ padding:"9px 12px", background:C.s2, borderRadius:9,
-                  border:`1px solid ${C.border}`, fontSize:"0.68rem", color:C.muted,
+                  border:`1px solid ${C.border}`, fontSize:"0.78rem", color:C.muted,
                   lineHeight:1.65 }}>
                   <span style={{ color:C.text, fontWeight:700 }}>Summary: </span>
                   {selPin.label}
@@ -6907,16 +6907,16 @@ function PalpationModule({ data, set }) {
                       <button onClick={() => prev && setSelected(prev.id)}
                         style={{ padding:"5px 12px", borderRadius:8, border:`1px solid ${C.border}`,
                           background:"transparent", color:prev ? C.muted : "transparent",
-                          fontSize:"0.65rem", cursor:prev ? "pointer" : "default" }}>
+                          fontSize:"0.75rem", cursor:prev ? "pointer" : "default" }}>
                         ← Prev
                       </button>
-                      <span style={{ fontSize:"0.6rem", color:C.muted, alignSelf:"center" }}>
+                      <span style={{ fontSize:"0.8rem", color:C.muted, alignSelf:"center" }}>
                         {idx + 1} / {pins.length}
                       </span>
                       <button onClick={() => next && setSelected(next.id)}
                         style={{ padding:"5px 12px", borderRadius:8, border:`1px solid ${C.border}`,
                           background:"transparent", color:next ? C.muted : "transparent",
-                          fontSize:"0.65rem", cursor:next ? "pointer" : "default" }}>
+                          fontSize:"0.75rem", cursor:next ? "pointer" : "default" }}>
                         Next →
                       </button>
                     </>;
@@ -6933,20 +6933,20 @@ function PalpationModule({ data, set }) {
         <div style={{ marginTop:16, background:C.surface, border:`1px solid ${C.border}`,
           borderRadius:12, overflow:"hidden" }}>
           <div style={{ padding:"10px 14px", borderBottom:`1px solid ${C.border}`,
-            fontSize:"0.72rem", fontWeight:700, color:C.text, display:"flex",
+            fontSize:"0.82rem", fontWeight:700, color:C.text, display:"flex",
             justifyContent:"space-between", alignItems:"center" }}>
             📋 Palpation Summary — All Points
-            <span style={{ color:C.muted, fontWeight:400, fontSize:"0.62rem" }}>
+            <span style={{ color:C.muted, fontWeight:400, fontSize:"0.82rem" }}>
               {pins.filter(p => p.tenderness).length}/{pins.length} graded
             </span>
           </div>
           <div style={{ overflowX:"auto" }}>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:"0.68rem" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:"0.78rem" }}>
               <thead>
                 <tr style={{ background:C.s2 }}>
                   {["Anatomical Point","Side","Grade","Temp","Tissue Quality","Bilateral","Notes"].map(h => (
                     <th key={h} style={{ padding:"7px 10px", textAlign:"left", color:C.muted,
-                      fontWeight:700, fontSize:"0.6rem", textTransform:"uppercase",
+                      fontWeight:700, fontSize:"0.8rem", textTransform:"uppercase",
                       letterSpacing:"0.8px", borderBottom:`1px solid ${C.border}` }}>
                       {h}
                     </th>
@@ -7029,7 +7029,7 @@ function TreatmentTechniquesModule({ data, set }) {
   const inp = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.75rem", WebkitAppearance:"none", appearance:"none" };
   const sel = { ...inp };
   const ta  = { ...inp, resize:"vertical", minHeight:60 };
-  const lbl = { fontSize:"0.6rem", fontWeight:700, color:PC.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:"0.8px" };
+  const lbl = { fontSize:"0.8rem", fontWeight:700, color:PC.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:"0.8px" };
 
   // ── Entry form state ───────────────────────────────────────────────────────
   const blank = { id:null, type:"manual", region:"", technique:"", grade:"", laterality:"", dosage:"", duration:"", response:"", notes:"", dn_muscle:"", dn_needles:"", dn_depth:"", dn_twitch:"", us_freq:"", us_intensity:"", us_mode:"", us_area:"", tape_type:"", tape_goal:"", st_technique:"", st_region:"", electro_type:"", electro_params:"" };
@@ -7071,12 +7071,12 @@ function TreatmentTechniquesModule({ data, set }) {
             <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
               {MAITLAND_GRADES.map(g=>(
                 <button key={g.grade} onClick={()=>fset("grade",g.grade)}
-                  style={{padding:"5px 10px",borderRadius:8,fontSize:"0.68rem",fontWeight:form.grade===g.grade?800:500,border:`1px solid ${form.grade===g.grade?"rgba(0,229,255,0.6)":PC.border}`,background:form.grade===g.grade?"rgba(0,229,255,0.12)":"transparent",color:form.grade===g.grade?PC.accent:PC.muted,cursor:"pointer"}}>
+                  style={{padding:"5px 10px",borderRadius:8,fontSize:"0.78rem",fontWeight:form.grade===g.grade?800:500,border:`1px solid ${form.grade===g.grade?"rgba(0,229,255,0.6)":PC.border}`,background:form.grade===g.grade?"rgba(0,229,255,0.12)":"transparent",color:form.grade===g.grade?PC.accent:PC.muted,cursor:"pointer"}}>
                   {g.grade}
                 </button>
               ))}
             </div>
-            {form.grade && <div style={{marginTop:5,fontSize:"0.62rem",color:PC.muted,padding:"5px 9px",background:PC.s3,borderRadius:7}}>{MAITLAND_GRADES.find(g=>g.grade===form.grade)?.desc}</div>}
+            {form.grade && <div style={{marginTop:5,fontSize:"0.82rem",color:PC.muted,padding:"5px 9px",background:PC.s3,borderRadius:7}}>{MAITLAND_GRADES.find(g=>g.grade===form.grade)?.desc}</div>}
           </div>
           <div className="pm-grid-2">
             <div><label style={lbl}>Sets / Reps or Duration</label><input value={form.dosage} onChange={e=>fset("dosage",e.target.value)} placeholder="e.g. 3×30s, 60 oscillations" style={inp}/></div>
@@ -7171,7 +7171,7 @@ function TreatmentTechniquesModule({ data, set }) {
 
       {/* ── Technique Entry Form ── */}
       <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
-        <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>
+        <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>
           {editing?"✏️ Edit Technique":"➕ Add Treatment Technique"}
         </div>
 
@@ -7179,7 +7179,7 @@ function TreatmentTechniquesModule({ data, set }) {
         <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
           {TABS.map(t=>(
             <button key={t.key} onClick={()=>{setActiveTab(t.key);fset("type",t.key);}}
-              style={{padding:"5px 10px",borderRadius:8,fontSize:"0.62rem",fontWeight:activeTab===t.key?800:500,border:`1px solid ${activeTab===t.key?typeColor(t.key)+"60":PC.border}`,background:activeTab===t.key?`${typeColor(t.key)}18`:"transparent",color:activeTab===t.key?typeColor(t.key):PC.muted,cursor:"pointer"}}>
+              style={{padding:"5px 10px",borderRadius:8,fontSize:"0.82rem",fontWeight:activeTab===t.key?800:500,border:`1px solid ${activeTab===t.key?typeColor(t.key)+"60":PC.border}`,background:activeTab===t.key?`${typeColor(t.key)}18`:"transparent",color:activeTab===t.key?typeColor(t.key):PC.muted,cursor:"pointer"}}>
               {t.icon} {t.label}
             </button>
           ))}
@@ -7208,7 +7208,7 @@ function TreatmentTechniquesModule({ data, set }) {
       {/* ── Recorded Techniques ── */}
       {techniques.length>0&&(
         <div>
-          <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>
             📌 Techniques This Session ({techniques.length})
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -7218,20 +7218,20 @@ function TreatmentTechniquesModule({ data, set }) {
                   <span style={{fontSize:"1.1rem"}}>{typeIcon(t.type)}</span>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text,lineHeight:1.3}}>{techniqueLabel(t)}</div>
-                    {t.dosage&&<div style={{fontSize:"0.62rem",color:PC.muted,marginTop:1}}>{t.dosage}{t.duration?` · ${t.duration}`:""}</div>}
-                    {t.response&&<div style={{marginTop:4,fontSize:"0.65rem",color:PC.a3,lineHeight:1.4}}>↳ {t.response}</div>}
+                    {t.dosage&&<div style={{fontSize:"0.82rem",color:PC.muted,marginTop:1}}>{t.dosage}{t.duration?` · ${t.duration}`:""}</div>}
+                    {t.response&&<div style={{marginTop:4,fontSize:"0.75rem",color:PC.a3,lineHeight:1.4}}>↳ {t.response}</div>}
                   </div>
                   <div style={{display:"flex",gap:5,flexShrink:0}}>
-                    <button onClick={()=>editEntry(t)} style={{background:`${typeColor(t.type)}15`,border:`1px solid ${typeColor(t.type)}40`,borderRadius:6,color:typeColor(t.type),cursor:"pointer",fontSize:"0.6rem",padding:"3px 8px",fontWeight:700}}>✏️</button>
-                    <button onClick={()=>deleteTechnique(t.id)} style={{background:"none",border:"none",color:"rgba(255,77,109,0.5)",cursor:"pointer",fontSize:"0.7rem",padding:"3px 5px"}}>✕</button>
+                    <button onClick={()=>editEntry(t)} style={{background:`${typeColor(t.type)}15`,border:`1px solid ${typeColor(t.type)}40`,borderRadius:6,color:typeColor(t.type),cursor:"pointer",fontSize:"0.8rem",padding:"3px 8px",fontWeight:700}}>✏️</button>
+                    <button onClick={()=>deleteTechnique(t.id)} style={{background:"none",border:"none",color:"rgba(255,77,109,0.5)",cursor:"pointer",fontSize:"0.8rem",padding:"3px 5px"}}>✕</button>
                   </div>
                 </div>
-                {t.notes&&<div style={{padding:"6px 12px 8px",borderTop:`1px solid ${PC.border}`,fontSize:"0.62rem",color:PC.muted,fontStyle:"italic"}}>{t.notes}</div>}
+                {t.notes&&<div style={{padding:"6px 12px 8px",borderTop:`1px solid ${PC.border}`,fontSize:"0.82rem",color:PC.muted,fontStyle:"italic"}}>{t.notes}</div>}
               </div>
             ))}
           </div>
           <button onClick={()=>{save([]);showToast("Cleared all techniques");}}
-            style={{marginTop:10,width:"100%",padding:"8px",background:"transparent",border:`1px solid rgba(255,77,109,0.3)`,borderRadius:9,color:"rgba(255,77,109,0.7)",fontSize:"0.7rem",cursor:"pointer"}}>
+            style={{marginTop:10,width:"100%",padding:"8px",background:"transparent",border:`1px solid rgba(255,77,109,0.3)`,borderRadius:9,color:"rgba(255,77,109,0.7)",fontSize:"0.8rem",cursor:"pointer"}}>
             🗑 Clear All Techniques
           </button>
         </div>
@@ -7242,12 +7242,12 @@ function TreatmentTechniquesModule({ data, set }) {
 
       {/* ── Maitland Grade Reference ── */}
       <div style={{marginTop:14,background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"13px"}}>
-        <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:9}}>📚 Maitland Grade Reference</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:9}}>📚 Maitland Grade Reference</div>
         <div style={{display:"flex",flexDirection:"column",gap:5}}>
           {MAITLAND_GRADES.map(g=>(
             <div key={g.grade} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"6px 10px",background:PC.s3,borderRadius:8}}>
               <span style={{fontWeight:800,fontSize:"0.78rem",color:PC.accent,flexShrink:0,minWidth:28}}>G{g.grade}</span>
-              <span style={{fontSize:"0.68rem",color:PC.text,lineHeight:1.5}}>{g.desc}</span>
+              <span style={{fontSize:"0.78rem",color:PC.text,lineHeight:1.5}}>{g.desc}</span>
             </div>
           ))}
         </div>
@@ -7324,7 +7324,7 @@ function TreatmentSessionLogModule({ data, set }) {
 
   const inp = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.75rem", WebkitAppearance:"none", appearance:"none" };
   const ta  = { ...inp, resize:"vertical", minHeight:70 };
-  const lbl = { fontSize:"0.6rem", fontWeight:700, color:PC.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:"0.8px" };
+  const lbl = { fontSize:"0.8rem", fontWeight:700, color:PC.muted, display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:"0.8px" };
 
   const SESSION_TYPES = ["Initial Assessment","Follow-up Treatment","Review Session","Discharge","Pre-competition","Post-surgical","Telehealth","Group Class"];
   const TX_CATEGORIES = ["Manual therapy","Joint mobilisation","Manipulation","Dry needling","Soft tissue massage","Ultrasound","TENS/IFT","Exercise therapy","Hydrotherapy","Taping/strapping","Education & advice","Postural correction","Neural mobilisation","Other"];
@@ -7348,13 +7348,13 @@ function TreatmentSessionLogModule({ data, set }) {
 
       {/* ── Session Entry Form ── */}
       <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
-        <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
+        <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
           {editing?"✏️ Edit Session Log":"📋 Log Treatment Session"}
         </div>
 
         {/* Auto-pull banner */}
         {!editing&&(autoTechniques||autoHEP)&&(
-          <div style={{marginBottom:10,padding:"8px 11px",background:"rgba(0,201,122,0.07)",border:"1px solid rgba(0,201,122,0.25)",borderRadius:9,fontSize:"0.65rem",color:PC.green,lineHeight:1.6}}>
+          <div style={{marginBottom:10,padding:"8px 11px",background:"rgba(0,201,122,0.07)",border:"1px solid rgba(0,201,122,0.25)",borderRadius:9,fontSize:"0.75rem",color:PC.green,lineHeight:1.6}}>
             <span style={{fontWeight:700}}>🔗 Auto-synced from this session:</span>
             {autoTechniques&&<div style={{marginTop:3}}>🦴 <b>Techniques:</b> {autoTechniques}</div>}
             {autoHEP&&<div style={{marginTop:2}}>🏋 <b>HEP:</b> {autoHEP}</div>}
@@ -7385,7 +7385,7 @@ function TreatmentSessionLogModule({ data, set }) {
             </div>
           </div>
         </div>
-        {(form.vasStart||form.vasEnd)&&(()=>{const ch=vasChange(form.vasStart,form.vasEnd);return ch!==null?<div style={{marginBottom:8,padding:"6px 10px",background:ch<0?"rgba(0,201,122,0.1)":ch>0?"rgba(255,77,109,0.1)":"rgba(255,179,0,0.1)",border:`1px solid ${ch<0?"rgba(0,201,122,0.3)":ch>0?"rgba(255,77,109,0.3)":"rgba(255,179,0,0.3)"}`,borderRadius:8,fontSize:"0.68rem",fontWeight:700,color:ch<0?PC.green:ch>0?PC.red:PC.yellow}}>VAS change: {ch>0?"+":""}{ch} — {ch<0?"✅ Improved":ch>0?"⚠️ Increased":"→ No change"}</div>:null;})()}
+        {(form.vasStart||form.vasEnd)&&(()=>{const ch=vasChange(form.vasStart,form.vasEnd);return ch!==null?<div style={{marginBottom:8,padding:"6px 10px",background:ch<0?"rgba(0,201,122,0.1)":ch>0?"rgba(255,77,109,0.1)":"rgba(255,179,0,0.1)",border:`1px solid ${ch<0?"rgba(0,201,122,0.3)":ch>0?"rgba(255,77,109,0.3)":"rgba(255,179,0,0.3)"}`,borderRadius:8,fontSize:"0.78rem",fontWeight:700,color:ch<0?PC.green:ch>0?PC.red:PC.yellow}}>VAS change: {ch>0?"+":""}{ch} — {ch<0?"✅ Improved":ch>0?"⚠️ Increased":"→ No change"}</div>:null;})()}
 
         {/* Treatment given */}
         <div style={{marginBottom:8}}>
@@ -7394,7 +7394,7 @@ function TreatmentSessionLogModule({ data, set }) {
             {TX_CATEGORIES.map(c=>{
               const sel=(form.techniques||"").split(",").map(s=>s.trim()).includes(c);
               return <button key={c} onClick={()=>{const arr=(form.techniques||"").split(",").map(s=>s.trim()).filter(Boolean);const next=sel?arr.filter(x=>x!==c):[...arr,c];fset("techniques",next.join(", "));}}
-                style={{padding:"3px 9px",borderRadius:7,fontSize:"0.6rem",fontWeight:sel?700:400,border:`1px solid ${sel?"rgba(0,229,255,0.5)":PC.border}`,background:sel?"rgba(0,229,255,0.12)":"transparent",color:sel?PC.accent:PC.muted,cursor:"pointer"}}>{c}</button>;
+                style={{padding:"3px 9px",borderRadius:7,fontSize:"0.8rem",fontWeight:sel?700:400,border:`1px solid ${sel?"rgba(0,229,255,0.5)":PC.border}`,background:sel?"rgba(0,229,255,0.12)":"transparent",color:sel?PC.accent:PC.muted,cursor:"pointer"}}>{c}</button>;
             })}
           </div>
           <textarea value={form.treatmentGiven} onChange={e=>fset("treatmentGiven",e.target.value)} placeholder="Describe treatment in detail — techniques, grades, parameters, regions treated..." style={ta}/>
@@ -7437,7 +7437,7 @@ function TreatmentSessionLogModule({ data, set }) {
       {/* ── Session History ── */}
       {sessions.length>0&&(
         <div>
-          <div style={{fontSize:"0.62rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:9}}>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:9}}>
             🗂 Session History ({sessions.length})
           </div>
           {sessions.map((s,idx)=>{
@@ -7448,29 +7448,29 @@ function TreatmentSessionLogModule({ data, set }) {
                 {/* Card header */}
                 <div onClick={()=>setExpanded(isOpen?null:s.id)} style={{padding:"11px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:9}}>
                   <div style={{width:32,height:32,borderRadius:9,background:`rgba(0,229,255,0.1)`,border:`1px solid rgba(0,229,255,0.25)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <span style={{fontSize:"0.72rem",fontWeight:900,color:PC.accent}}>#{s.sessionNo||idx+1}</span>
+                    <span style={{fontSize:"0.82rem",fontWeight:900,color:PC.accent}}>#{s.sessionNo||idx+1}</span>
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text}}>{s.date} — {s.type||"Treatment"}</div>
-                    <div style={{fontSize:"0.62rem",color:PC.muted,marginTop:1}}>{s.clinician||""}{s.techniques?` · ${s.techniques.split(",").slice(0,2).join(", ")}${s.techniques.split(",").length>2?" +more":""}`:""}</div>
+                    <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:1}}>{s.clinician||""}{s.techniques?` · ${s.techniques.split(",").slice(0,2).join(", ")}${s.techniques.split(",").length>2?" +more":""}`:""}</div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-                    {ch!==null&&<span style={{fontSize:"0.65rem",fontWeight:700,padding:"2px 7px",borderRadius:7,background:ch<0?"rgba(0,201,122,0.12)":ch>0?"rgba(255,77,109,0.12)":"rgba(255,179,0,0.1)",color:ch<0?PC.green:ch>0?PC.red:PC.yellow}}>{ch>0?"+":""}{ch} VAS</span>}
-                    <span style={{color:PC.muted,fontSize:"0.65rem"}}>{isOpen?"▲":"▼"}</span>
+                    {ch!==null&&<span style={{fontSize:"0.75rem",fontWeight:700,padding:"2px 7px",borderRadius:7,background:ch<0?"rgba(0,201,122,0.12)":ch>0?"rgba(255,77,109,0.12)":"rgba(255,179,0,0.1)",color:ch<0?PC.green:ch>0?PC.red:PC.yellow}}>{ch>0?"+":""}{ch} VAS</span>}
+                    <span style={{color:PC.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
                   </div>
                 </div>
 
                 {/* Expanded detail */}
                 {isOpen&&(
                   <div style={{padding:"0 13px 13px",borderTop:`1px solid ${PC.border}`}}>
-                    {s.treatmentGiven&&<div style={{marginTop:10}}><div style={{fontSize:"0.58rem",fontWeight:700,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Treatment Given</div><div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6,background:PC.s3,borderRadius:8,padding:"8px 11px"}}>{s.treatmentGiven}</div></div>}
-                    {s.response&&<div style={{marginTop:8}}><div style={{fontSize:"0.58rem",fontWeight:700,color:PC.green,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Patient Response</div><div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6,background:"rgba(0,201,122,0.06)",border:"1px solid rgba(0,201,122,0.2)",borderRadius:8,padding:"8px 11px"}}>{s.response}</div></div>}
-                    {s.nextPlan&&<div style={{marginTop:8}}><div style={{fontSize:"0.58rem",fontWeight:700,color:PC.a2,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Next Session Plan</div><div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6,background:"rgba(127,90,240,0.06)",border:"1px solid rgba(127,90,240,0.2)",borderRadius:8,padding:"8px 11px"}}>{s.nextPlan}</div></div>}
-                    {s.goals&&<div style={{marginTop:8}}><div style={{fontSize:"0.58rem",fontWeight:700,color:PC.yellow,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Goals</div><div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6}}>{s.goals}</div></div>}
-                    {s.notes&&<div style={{marginTop:6,fontSize:"0.65rem",color:PC.muted,fontStyle:"italic"}}>{s.notes}</div>}
+                    {s.treatmentGiven&&<div style={{marginTop:10}}><div style={{fontSize:"0.78rem",fontWeight:700,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Treatment Given</div><div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6,background:PC.s3,borderRadius:8,padding:"8px 11px"}}>{s.treatmentGiven}</div></div>}
+                    {s.response&&<div style={{marginTop:8}}><div style={{fontSize:"0.78rem",fontWeight:700,color:PC.green,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Patient Response</div><div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6,background:"rgba(0,201,122,0.06)",border:"1px solid rgba(0,201,122,0.2)",borderRadius:8,padding:"8px 11px"}}>{s.response}</div></div>}
+                    {s.nextPlan&&<div style={{marginTop:8}}><div style={{fontSize:"0.78rem",fontWeight:700,color:PC.a2,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Next Session Plan</div><div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6,background:"rgba(127,90,240,0.06)",border:"1px solid rgba(127,90,240,0.2)",borderRadius:8,padding:"8px 11px"}}>{s.nextPlan}</div></div>}
+                    {s.goals&&<div style={{marginTop:8}}><div style={{fontSize:"0.78rem",fontWeight:700,color:PC.yellow,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Goals</div><div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6}}>{s.goals}</div></div>}
+                    {s.notes&&<div style={{marginTop:6,fontSize:"0.75rem",color:PC.muted,fontStyle:"italic"}}>{s.notes}</div>}
                     <div style={{display:"flex",gap:6,marginTop:10}}>
-                      <button onClick={()=>editSession(s)} style={{padding:"6px 12px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}40`,borderRadius:7,color:PC.accent,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>✏️ Edit</button>
-                      <button onClick={()=>deleteSession(s.id)} style={{padding:"6px 10px",background:"rgba(255,77,109,0.08)",border:"1px solid rgba(255,77,109,0.25)",borderRadius:7,color:"#ff4d6d",fontSize:"0.65rem",cursor:"pointer"}}>🗑 Delete</button>
+                      <button onClick={()=>editSession(s)} style={{padding:"6px 12px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}40`,borderRadius:7,color:PC.accent,fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>✏️ Edit</button>
+                      <button onClick={()=>deleteSession(s.id)} style={{padding:"6px 10px",background:"rgba(255,77,109,0.08)",border:"1px solid rgba(255,77,109,0.25)",borderRadius:7,color:"#ff4d6d",fontSize:"0.75rem",cursor:"pointer"}}>🗑 Delete</button>
                     </div>
                   </div>
                 )}
@@ -7583,7 +7583,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
     background:"linear-gradient(135deg,#7c3aed,#9333ea)",
     border:"none", borderRadius:24, padding:"10px 16px",
     color:"#fff", cursor:"pointer", boxShadow:"0 4px 20px rgba(124,58,237,0.4)",
-    fontSize:"0.72rem", fontWeight:800, letterSpacing:"0.3px",
+    fontSize:"0.82rem", fontWeight:800, letterSpacing:"0.3px",
     transition:"all 0.2s",
   };
 
@@ -7607,7 +7607,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
               minWidth:20, height:20, borderRadius:10, padding:"0 5px",
               background:"#059669", border:"2px solid #fff",
               display:"flex", alignItems:"center", justifyContent:"center",
-              fontSize:"0.6rem", fontWeight:800, color:"#fff",
+              fontSize:"0.8rem", fontWeight:800, color:"#fff",
             }}>{totalFilled}</span>
           )}
         </button>
@@ -7620,7 +7620,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
         {hasContent && (
           <span style={{
             background:"rgba(255,255,255,0.25)", borderRadius:10,
-            padding:"2px 8px", fontSize:"0.65rem", fontWeight:800
+            padding:"2px 8px", fontSize:"0.75rem", fontWeight:800
           }}>{totalFilled} fields</span>
         )}
       </button>
@@ -7680,10 +7680,10 @@ function LiveSOAPPanel({ data, onNavigate }) {
             boxShadow:"0 0 6px #4ade80",
             animation:"pulse 2s infinite"
           }}/>
-          <span style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.8)",fontWeight:700}}>LIVE</span>
+          <span style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.8)",fontWeight:700}}>LIVE</span>
         </div>
         {!isMobile && (
-          <button onClick={()=>setMinimal(m=>!m)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:6,color:"#fff",padding:"3px 7px",cursor:"pointer",fontSize:"0.6rem",fontWeight:700}}>
+          <button onClick={()=>setMinimal(m=>!m)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:6,color:"#fff",padding:"3px 7px",cursor:"pointer",fontSize:"0.8rem",fontWeight:700}}>
             {minimal?"⬆":"⬇"}
           </button>
         )}
@@ -7714,8 +7714,8 @@ function LiveSOAPPanel({ data, onNavigate }) {
               display:"flex", flexDirection:"column", alignItems:"center", gap:2,
               transition:"all 0.15s",
             }}>
-              <span style={{fontSize:"0.7rem"}}>{sec.icon}</span>
-              <span style={{fontSize:"0.6rem",fontWeight:active?800:600,color:active?sec.col:"#7e6a9a"}}>{key}</span>
+              <span style={{fontSize:"0.8rem"}}>{sec.icon}</span>
+              <span style={{fontSize:"0.8rem",fontWeight:active?800:600,color:active?sec.col:"#7e6a9a"}}>{key}</span>
               {count > 0 && (
                 <span style={{
                   fontSize:"0.5rem",fontWeight:800,
@@ -7742,7 +7742,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
           }}>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <span style={{fontSize:"0.9rem"}}>{currentSec.icon}</span>
-              <span style={{fontSize:"0.72rem",fontWeight:800,color:currentSec.col,letterSpacing:"0.5px",textTransform:"uppercase"}}>
+              <span style={{fontSize:"0.82rem",fontWeight:800,color:currentSec.col,letterSpacing:"0.5px",textTransform:"uppercase"}}>
                 {currentSec.label}
               </span>
             </div>
@@ -7751,7 +7751,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
                 padding:"3px 8px",background:"transparent",
                 border:`1px solid ${currentSec.col}33`,
                 borderRadius:6,color:currentSec.col,
-                cursor:"pointer",fontSize:"0.58rem",fontWeight:700,
+                cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
               }}>
                 {copied===tab ? "✅ Copied" : "📋 Copy"}
               </button>
@@ -7773,7 +7773,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
           ) : (
             <div style={{
               textAlign:"center",padding:"24px 12px",
-              color:"#7e6a9a",fontSize:"0.68rem",lineHeight:1.6,
+              color:"#7e6a9a",fontSize:"0.78rem",lineHeight:1.6,
             }}>
               <div style={{fontSize:"1.5rem",marginBottom:8}}>
                 {tab==="S"?"💬":tab==="O"?"📊":tab==="A"?"🧠":"📝"}
@@ -7784,7 +7784,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
                  tab==="A" ? "Assessment generates after findings are entered" :
                  "Plan auto-generates from assessment findings"}
               </div>
-              <div style={{fontSize:"0.62rem",color:"#a09ab8"}}>
+              <div style={{fontSize:"0.82rem",color:"#a09ab8"}}>
                 Fill any assessment tab — this updates automatically
               </div>
             </div>
@@ -7801,7 +7801,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
                 <button key={key} onClick={()=>{ onNavigate(key); setOpen(false); }} style={{
                   padding:"4px 10px",background:"rgba(124,58,237,0.06)",
                   border:"1px solid rgba(124,58,237,0.2)",borderRadius:20,
-                  color:"#7c3aed",cursor:"pointer",fontSize:"0.62rem",fontWeight:700,
+                  color:"#7c3aed",cursor:"pointer",fontSize:"0.82rem",fontWeight:700,
                 }}>
                   {icon} {label}
                 </button>
@@ -7822,7 +7822,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
           flex:1,padding:"7px 10px",
           background:"linear-gradient(135deg,#7c3aed,#9333ea)",
           border:"none",borderRadius:8,color:"#fff",
-          cursor:"pointer",fontSize:"0.65rem",fontWeight:800,
+          cursor:"pointer",fontSize:"0.75rem",fontWeight:800,
           display:"flex",alignItems:"center",justifyContent:"center",gap:5,
         }}>
           <span>📄</span> Export PDF
@@ -7845,7 +7845,7 @@ ${soap.P}` : "";
           background:"rgba(124,58,237,0.08)",
           border:"1px solid rgba(124,58,237,0.2)",
           borderRadius:8,color:"#7c3aed",
-          cursor:"pointer",fontSize:"0.65rem",fontWeight:800,
+          cursor:"pointer",fontSize:"0.75rem",fontWeight:800,
           display:"flex",alignItems:"center",justifyContent:"center",gap:5,
         }}>
           📋 Copy All
@@ -7856,7 +7856,7 @@ ${soap.P}` : "";
             background:"rgba(5,150,105,0.08)",
             border:"1px solid rgba(5,150,105,0.2)",
             borderRadius:8,color:"#059669",
-            cursor:"pointer",fontSize:"0.65rem",fontWeight:800,
+            cursor:"pointer",fontSize:"0.75rem",fontWeight:800,
           }} title="Open full SOAP editor">
             🔗
           </button>
@@ -7936,7 +7936,7 @@ function ObservationModule({ data, set }) {
           <button key={opt} onClick={()=> multi ? toggleChip(k,opt) : sv(k, v(k)===opt?"":opt)}
             style={{padding:"5px 12px",borderRadius:99,border:`1px solid ${active?PC.accent:PC.border}`,
               background:active?`${PC.accent}18`:PC.s2,color:active?PC.accent:PC.muted,
-              fontWeight:active?800:500,fontSize:"0.68rem",cursor:"pointer",transition:"all 0.15s"}}>
+              fontWeight:active?800:500,fontSize:"0.78rem",cursor:"pointer",transition:"all 0.15s"}}>
             {opt}
           </button>
         );
@@ -7956,9 +7956,9 @@ function ObservationModule({ data, set }) {
           background:isOpen?`${PC.accent}06`:"transparent"}}>
           <span style={{fontSize:"1rem"}}>{icon}</span>
           <span style={{flex:1,fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{title}</span>
-          {isPriority&&<span style={{fontSize:"0.55rem",fontWeight:800,color:PC.accent,
+          {isPriority&&<span style={{fontSize:"0.75rem",fontWeight:800,color:PC.accent,
             padding:"2px 7px",borderRadius:99,background:`${PC.accent}15`,textTransform:"uppercase"}}>Priority</span>}
-          <span style={{color:PC.muted,fontSize:"0.7rem"}}>{isOpen?"▲":"▼"}</span>
+          <span style={{color:PC.muted,fontSize:"0.8rem"}}>{isOpen?"▲":"▼"}</span>
         </div>
         {isOpen&&<div style={{padding:"0 14px 14px"}}>{children}</div>}
       </div>
@@ -7967,7 +7967,7 @@ function ObservationModule({ data, set }) {
 
   const Field = ({label, children}) => (
     <div style={{marginBottom:12}}>
-      <div style={{fontSize:"0.6rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",
+      <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",
         letterSpacing:"0.6px",marginBottom:2}}>{label}</div>
       {children}
     </div>
@@ -7996,7 +7996,7 @@ function ObservationModule({ data, set }) {
         {OBS_BODY_REGIONS.map(r=>(
           <button key={r.id} onClick={()=>setRegion(r.id)}
             style={{flexShrink:0,padding:"6px 14px",borderRadius:99,fontWeight:region===r.id?800:500,
-              fontSize:"0.68rem",border:`1px solid ${region===r.id?PC.accent:PC.border}`,
+              fontSize:"0.78rem",border:`1px solid ${region===r.id?PC.accent:PC.border}`,
               background:region===r.id?`${PC.accent}18`:PC.s2,
               color:region===r.id?PC.accent:PC.muted,cursor:"pointer"}}>
             {r.label}
@@ -8006,24 +8006,24 @@ function ObservationModule({ data, set }) {
 
       {/* Date / save row */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-        <span style={{fontSize:"0.65rem",color:PC.muted,flex:1}}>📅 {new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</span>
+        <span style={{fontSize:"0.75rem",color:PC.muted,flex:1}}>📅 {new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</span>
         <button onClick={saveSnapshot} style={{padding:"6px 14px",borderRadius:99,border:"none",
           background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,
-          fontSize:"0.65rem",cursor:"pointer"}}>💾 Save snapshot</button>
+          fontSize:"0.75rem",cursor:"pointer"}}>💾 Save snapshot</button>
         {snaps.length>0&&<button onClick={()=>setShowHistory(h=>!h)} style={{padding:"6px 12px",
           borderRadius:99,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.muted,
-          fontWeight:700,fontSize:"0.65rem",cursor:"pointer"}}>📂 {snaps.length} entries</button>}
+          fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>📂 {snaps.length} entries</button>}
       </div>
 
       {/* History panel */}
       {showHistory&&snaps.length>0&&(
         <div style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:12,padding:12,marginBottom:12}}>
-          <div style={{fontSize:"0.72rem",fontWeight:800,color:PC.accent,marginBottom:8}}>Previous entries</div>
+          <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.accent,marginBottom:8}}>Previous entries</div>
           {snaps.map((sn,i)=>(
             <div key={i} style={{padding:"7px 10px",background:PC.surface,borderRadius:8,marginBottom:5,
               border:`1px solid ${PC.border}`}}>
-              <div style={{fontSize:"0.65rem",fontWeight:700,color:PC.text}}>{sn.date} · {sn.time}</div>
-              {sn.summary&&<div style={{fontSize:"0.65rem",color:PC.muted,marginTop:2,lineHeight:1.5}}>{sn.summary.slice(0,120)}{sn.summary.length>120?"…":""}</div>}
+              <div style={{fontSize:"0.75rem",fontWeight:700,color:PC.text}}>{sn.date} · {sn.time}</div>
+              {sn.summary&&<div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2,lineHeight:1.5}}>{sn.summary.slice(0,120)}{sn.summary.length>120?"…":""}</div>}
             </div>
           ))}
         </div>
@@ -8160,7 +8160,7 @@ function ObservationModule({ data, set }) {
       <Section id="summary" icon="📋" title="8 · Observation Summary">
         <textarea style={{...inp,minHeight:100}} value={v("obs_summary")} onChange={e=>sv("obs_summary",e.target.value)}
           placeholder="Patient appears alert and cooperative. Mild right shoulder elevation noted with forward head posture. Moderate quadriceps wasting on the right side. Mild edema around right knee. Healed surgical scar present over anterior knee."/>
-        <div style={{fontSize:"0.6rem",color:PC.muted,marginTop:4}}>Summarise all visual inspection findings in clinical language. This populates the SOAP Objective section.</div>
+        <div style={{fontSize:"0.8rem",color:PC.muted,marginTop:4}}>Summarise all visual inspection findings in clinical language. This populates the SOAP Objective section.</div>
       </Section>
     </div>
   );
