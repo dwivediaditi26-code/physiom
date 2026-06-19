@@ -21,6 +21,28 @@ import { analyzeSagittalContour, renderContourDebugOverlay, warmupContourEngine 
 import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
 import HybridKendall from "./HybridKendall";
 
+// ── Lazy-loaded heavy modules (split into separate async chunks) ──────────────
+const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
+const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
+const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
+const LazySOAP          = lazy(() => import("./lazy_clinical.jsx"));
+const LazyExercise      = lazy(() => import("./lazy_exercise.jsx"));
+const LazyOutcomes      = lazy(() => import("./lazy_outcomes.jsx"));
+const LazyNeuro         = lazy(() => import("./lazy_neuro.jsx"));
+const LazyBodyChart     = lazy(() => import("./lazy_bodychart.jsx"));
+const LazyGait          = lazy(() => import("./lazy_gait.jsx"));
+const LazyPalpation     = lazy(() => import("./lazy_palpation.jsx"));
+const LazyTreatment     = lazy(() => import("./lazy_treatment.jsx"));
+
+// Minimal Suspense fallback
+const TabFallback = () => (
+  <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:40,color:"#9ca3af",fontSize:"0.88rem",gap:10}}>
+    <span style={{display:"inline-block",width:18,height:18,border:"2px solid #e5e7eb",borderTopColor:"#7c3aed",borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>
+    Loading module...
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+  </div>
+);
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POSE_CONNECTIONS = [
   [11,12],[11,13],[13,15],[12,14],[14,16],   // shoulders + arms
@@ -17664,11 +17686,11 @@ function AppInner({ currentUser, onSignOut }) {
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
-                  <SubjectiveModule data={data} set={set} onNav={navTo}/>
-                  <BodyChartPro data={data} set={set}/>
+                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo}/></Suspense>
+                  <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
                 </div>
               ):tests==="PALPATION_MODULE"?(
-                <PalpationModule data={data} set={set}/>
+                <Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set}/></Suspense>
               ):tests==="POSTURE_DEFECT_MODULE"?(
                 <PostureDefectModule/>
               ):tests==="OBSERVATION_MODULE"?(
@@ -17735,7 +17757,7 @@ function AppInner({ currentUser, onSignOut }) {
                     </div>
                   );
                 })()}
-                <CyriaxModule data={data} set={set} navContext={active==="cyriax"?navContext:{}}/>
+                <Suspense fallback={<TabFallback/>}><LazySTT data={data} set={set} navContext={active==="cyriax"?navContext:{}}/></Suspense>
                 </>
               ):tests==="SPECIAL_TESTS_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
@@ -17808,7 +17830,7 @@ function AppInner({ currentUser, onSignOut }) {
                     </div>
                   );
                 })()}
-                <NKTSection data={data} set={set} navContext={active==="nkt"?navContext:{}}/>
+                <Suspense fallback={<TabFallback/>}><LazyCPA data={data} set={set} navContext={active==="nkt"?navContext:{}}/></Suspense>
                 </>
               ):tests==="FMA_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
@@ -17973,7 +17995,7 @@ function AppInner({ currentUser, onSignOut }) {
                     </div>
                   );
                 })()}
-                <NeurologicalModule data={data} set={set} navContext={active==="neuro"?navContext:{}}/>
+                <Suspense fallback={<TabFallback/>}><LazyNeuro data={data} set={set} navContext={active==="neuro"?navContext:{}}/></Suspense>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
                   <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
@@ -18013,7 +18035,7 @@ function AppInner({ currentUser, onSignOut }) {
                     </div>
                   );
                 })()}
-                <GaitModule data={data} set={set}/>
+                <Suspense fallback={<TabFallback/>}><LazyGait data={data} set={set}/></Suspense>
                 </>
               ):tests==="MMT_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
@@ -18126,12 +18148,12 @@ function AppInner({ currentUser, onSignOut }) {
                     </div>
                   );
                 })()}
-                <OutcomeMeasuresPro data={data} set={set}/>
+                <Suspense fallback={<TabFallback/>}><LazyOutcomes data={data} set={set}/></Suspense>
                 </>
               ):tests==="EXERCISE_MODULE"?(
-                <ExercisePrescriptionModule data={data} set={set}/>
+                <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
               ):tests==="TX_TECHNIQUES_MODULE"?(
-                <TreatmentTechniquesModule data={data} set={set}/>
+                <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
               ):tests==="TX_SESSION_MODULE"?(
                 <div>
                   {/* ── Quick Visit Banner ── */}
@@ -18142,9 +18164,9 @@ function AppInner({ currentUser, onSignOut }) {
                   </div>
                 </div>
               ):tests==="SOAP_MODULE"?(
-                <SOAPNoteModule data={data} set={set} onNav={navTo}/>
+                <Suspense fallback={<TabFallback/>}><LazySOAP data={data} set={set} onNav={navTo}/></Suspense>
               ):tests==="AI_MODULE"?(
-                <SOAPNoteModule data={data} set={set} onNav={navTo} initialTab="ai"/>
+                <Suspense fallback={<TabFallback/>}><LazySOAP data={data} set={set} onNav={navTo} initialTab="ai"/></Suspense>
               ):(
                 <div style={{display:"grid",gap:8}}>
                   {tests.map(t=>{
