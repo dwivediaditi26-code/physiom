@@ -1737,26 +1737,26 @@ function CyriaxModule({ data, set, navContext={} }) {
 
   const tabStyle = (t) => ({ padding:"8px 16px", cursor:"pointer", fontSize:"0.8rem", fontWeight:tab===t?700:500, color:tab===t?C.accent:C.muted, background:"none", border:"none", borderBottom:`2px solid ${tab===t?C.accent:"transparent"}` });
 
-  const [cyriaxHelpOpen, setCyriaxHelpOpen] = React.useState(() => !localStorage.getItem("pm_cyriax_seen"));
+  const [cyriaxHelpOpen, setCyriaxHelpOpen] = React.useState(() => !localStorage.getItem("pm_stt_seen"));
   return (
     <div>
-      {/* ── Cyriax Framework Explainer ── */}
+      {/* ── STT Framework Explainer ── */}
       <div style={{border:`1px solid #7c3aed44`,borderRadius:12,overflow:"hidden",marginBottom:14}}>
-        <div onClick={()=>{setCyriaxHelpOpen(o=>!o); localStorage.setItem("pm_cyriax_seen","1");}}
+        <div onClick={()=>{setCyriaxHelpOpen(o=>!o); localStorage.setItem("pm_stt_seen","1");}}
           style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",cursor:"pointer",background:"#7c3aed0a"}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:"1rem"}}>📚</span>
-            <span style={{fontWeight:700,fontSize:"0.85rem",color:"#7c3aed"}}>What is Cyriax Assessment?</span>
+            <span style={{fontWeight:700,fontSize:"0.85rem",color:"#7c3aed"}}>What is STT Assessment?</span>
             <span style={{fontSize:"0.75rem",color:"#7c3aed88",fontStyle:"italic"}}>Tap to {cyriaxHelpOpen?"hide":"show"} guide</span>
           </div>
           <span style={{fontSize:"0.75rem",color:"#7c3aed"}}>{cyriaxHelpOpen?"▲":"▼"}</span>
         </div>
         {cyriaxHelpOpen && (
           <div style={{padding:"14px 16px",borderTop:"1px solid #7c3aed22",background:"#faf8ff",fontSize:"0.82rem",color:"#3b2a6a",lineHeight:1.7}}>
-            <p style={{margin:"0 0 10px"}}><strong>Cyriax Orthopaedic Medicine</strong> (James Cyriax, 1947) is a systematic approach to diagnosing musculoskeletal pain by classifying structures as <strong>contractile</strong> (muscle, tendon, enthesis) or <strong>inert</strong> (joint capsule, ligament, bursa, cartilage).</p>
+            <p style={{margin:"0 0 10px"}}><strong>Selective Tissue Tension (STT)</strong> is a systematic orthopaedic assessment approach that identifies the source of musculoskeletal pain by classifying structures as <strong>contractile</strong> (muscle, tendon, enthesis) or <strong>inert</strong> (joint capsule, ligament, bursa, nerve, cartilage). Systematic loading of each tissue type isolates the structure at fault.</p>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
               <div style={{background:"#7c3aed0d",borderRadius:8,padding:10}}>
-                <div style={{fontWeight:700,marginBottom:4,color:"#7c3aed"}}>📋 Assessment order</div>
+                <div style={{fontWeight:700,marginBottom:4,color:"#7c3aed"}}>📋 STT Assessment order</div>
                 <div>1. <strong>Active ROM</strong> — patient moves (both structures + neuromuscular)<br/>2. <strong>Passive ROM</strong> — examiner moves (inert structures only)<br/>3. <strong>Resisted tests</strong> — isometric (contractile structures only)</div>
               </div>
               <div style={{background:"#059669 0d",borderRadius:8,padding:10}}>
@@ -1774,7 +1774,7 @@ function CyriaxModule({ data, set, navContext={} }) {
 
       {/* Region selector */}
       <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:12, padding:14, marginBottom:14 }}>
-        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ Cyriax Assessment — Region-Specific</div>
+        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ STT Assessment — Region-Specific</div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
           {Object.entries(CYRIAX_REGIONS_DATA).map(([key, r]) => {
             const hasData = Object.keys(data).some(k => k.startsWith(`cyriax_${key}_`) && data[k]);
@@ -13453,27 +13453,27 @@ function NKTSection({ data, set, navContext={} }) {
   const [modalTest, setModalTest] = useState(null);
   const reg = NKT_REGIONS[region];
 
-  const [nktHelpOpen, setNktHelpOpen] = React.useState(() => !localStorage.getItem("pm_nkt_seen"));
+  const [nktHelpOpen, setNktHelpOpen] = React.useState(() => !localStorage.getItem("pm_cpa_seen"));
   return (
     <div>
-      {/* ── NKT Framework Explainer ── */}
+      {/* ── CPA Framework Explainer ── */}
       <div style={{border:"1px solid #0891b244",borderRadius:12,overflow:"hidden",marginBottom:14}}>
-        <div onClick={()=>{setNktHelpOpen(o=>!o); localStorage.setItem("pm_nkt_seen","1");}}
+        <div onClick={()=>{setNktHelpOpen(o=>!o); localStorage.setItem("pm_cpa_seen","1");}}
           style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",cursor:"pointer",background:"#0891b20a"}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:"1rem"}}>📚</span>
-            <span style={{fontWeight:700,fontSize:"0.85rem",color:"#0891b2"}}>What is Neurokinetic Therapy (NKT)?</span>
+            <span style={{fontWeight:700,fontSize:"0.85rem",color:"#0891b2"}}>What is CPA Assessment?</span>
             <span style={{fontSize:"0.75rem",color:"#0891b288",fontStyle:"italic"}}>Tap to {nktHelpOpen?"hide":"show"} guide</span>
           </div>
           <span style={{fontSize:"0.75rem",color:"#0891b2"}}>{nktHelpOpen?"▲":"▼"}</span>
         </div>
         {nktHelpOpen && (
           <div style={{padding:"14px 16px",borderTop:"1px solid #0891b222",background:"#f0faff",fontSize:"0.82rem",color:"#0a3a4a",lineHeight:1.7}}>
-            <p style={{margin:"0 0 10px"}}><strong>Neurokinetic Therapy (NKT)</strong> (David Weinstock) is a functional movement assessment system based on Motor Control Theory. It identifies <strong>compensation patterns</strong> where overactive muscles are substituting for inhibited (neurologically underactive) muscles.</p>
+            <p style={{margin:"0 0 10px"}}><strong>Compensation Pattern Analysis (CPA)</strong> is a functional movement assessment approach based on motor control principles. It identifies <strong>compensation patterns</strong> where overactive (facilitated) muscles substitute for inhibited (neurologically underactive) muscles, creating dysfunctional movement and pain.</p>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
               <div style={{background:"#0891b20d",borderRadius:8,padding:10}}>
-                <div style={{fontWeight:700,marginBottom:4,color:"#0891b2"}}>🧠 Core principle</div>
-                <div>The Motor Control Centre (cerebellum) stores movement programmes. Injury creates <strong>dysfunctional patterns</strong>: one muscle inhibits its antagonist.<br/><br/><strong>Inhibited</strong> = weak, underactive<br/><strong>Facilitated</strong> = overactive, tight</div>
+                <div style={{fontWeight:700,marginBottom:4,color:"#0891b2"}}>🧠 CPA core principle</div>
+                <div>The nervous system stores movement programmes that can become disrupted after injury or disuse. Injury creates <strong>dysfunctional compensation patterns</strong>: one overactive muscle inhibits its paired antagonist.<br/><br/><strong>Inhibited</strong> = weak, underactive<br/><strong>Facilitated</strong> = overactive, tight</div>
               </div>
               <div style={{background:"#05966910",borderRadius:8,padding:10}}>
                 <div style={{fontWeight:700,marginBottom:4,color:"#059669"}}>🔍 Assessment steps</div>

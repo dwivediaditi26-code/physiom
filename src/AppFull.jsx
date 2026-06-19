@@ -14458,7 +14458,7 @@ function HomeModule({ onNav }) {
     { icon:"🔬", title:"100+ Special Tests", desc:"Evidence-based special tests for cervical, shoulder, elbow, wrist, hip, knee, and ankle with sensitivity/specificity data.", nav:"special", color:"#9333ea" },
     { icon:"⚡", title:"Neurological Assessment", desc:"Dermatomes, myotomes, reflexes, neural tension tests, and red flag neurological screening.", nav:"neuro", color:"#7c3aed" },
     { icon:"🚶", title:"Gait Analysis", desc:"Observational gait analysis across stance, swing, and double support phases with clinical correlations.", nav:"gait", color:"#9333ea" },
-    { icon:"🧠", title:"CPA Assessment", desc:"Neurokinetic Therapy muscle testing with inhibitor-facilitator relationships across regions.", nav:"nkt", color:"#7c3aed" },
+    { icon:"🧠", title:"CPA Assessment", desc:"Compensation Pattern Analysis — functional muscle testing to identify inhibitor-facilitator relationships across regions.", nav:"nkt", color:"#7c3aed" },
     { icon:"⛓️", title:"Kinetic Chain", desc:"Joint-by-joint analysis of the kinetic chain from foot to cervical spine.", nav:"kinetic", color:"#9333ea" },
     { icon:"💊", title:"Treatment Prescription", desc:"Evidence-based exercise programming, HEP generation, treatment technique logging, and session records.", nav:"exercise", color:"#7c3aed" },
     { icon:"🤖", title:"SOAP Notes + AI", desc:"AI-powered SOAP note generation from your assessment data using Groq AI.", nav:"soap", color:"#9333ea" },
