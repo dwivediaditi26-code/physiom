@@ -3150,1274 +3150,470 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   };
 }
 
+
 // ═══════════════════════════════════════════════════════════════════════════════
-// SOAP NOTE MODULE — Upgraded with Real-Time SOAP + Suggested Interpretation
+// SOAP NOTE MODULE — Structured UI (S/O/A/P tabs + 14-module objective grid)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function SignSessionFields({ PC, data }) {
-  const [sVas, setSVas] = useState(data.cc_vas_now||"");
-  const [sTx, setSTx]   = useState(data.tx_techniques||"");
-  const [sResp, setSResp] = useState("");
-  const si = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"7px 9px",fontSize:"0.75rem",marginBottom:8};
-  const lb = {fontSize:"0.78rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.5px"};
-  // Store in window so parent sign action can read it
-  window.__signSession = {vasEnd:sVas, treatment:sTx, response:sResp};
-  return(
-    <div style={{background:PC.s2,borderRadius:10,padding:"10px 12px",marginBottom:14}}>
-      <div style={{fontSize:"0.75rem",fontWeight:700,color:PC.accent,marginBottom:8}}>📋 Log this session (optional)</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        <div><label style={lb}>Pain at end (0–10)</label><input style={{...si,marginBottom:0}} type="number" min="0" max="10" placeholder="0–10" value={sVas} onChange={e=>setSVas(e.target.value)}/></div>
-        <div><label style={lb}>Treatment given</label><select style={{...si,marginBottom:0,WebkitAppearance:"none"}} value={sTx} onChange={e=>setSTx(e.target.value)}><option value="">—</option>{["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Other"].map(t=><option key={t}>{t}</option>)}</select></div>
-      </div>
-      <div style={{marginTop:6}}><label style={lb}>Patient response</label><input style={{...si,marginBottom:0}} placeholder="e.g. Good improvement, less stiffness" value={sResp} onChange={e=>setSResp(e.target.value)}/></div>
-    </div>
-  );
+function soapV(data, k) { return String(data[k] || "").trim(); }
+function soapA(data, k) {
+  const x = data[k];
+  if (Array.isArray(x)) return x.filter(Boolean).join(", ");
+  if (typeof x === "string") return x.split("|||").filter(Boolean).join(", ");
+  return String(x || "");
 }
-
-
-// ── Diagnosis list (used by ClinicalImpressionInSOAP) ──────────────────────
-const PHYSIO_DX_LIST_CM = {
-  "Cervical spine": [
-    {label:"Cervical facet joint dysfunction",icd:"M47.812"},
-    {label:"Cervical disc herniation (specify level)",icd:"M50.1"},
-    {label:"Cervical radiculopathy (specify root)",icd:"M54.2"},
-    {label:"Cervicogenic headache",icd:"G44.841"},
-    {label:"Cervical myofascial pain syndrome",icd:"M79.1"},
-    {label:"Whiplash-associated disorder (WAD II)",icd:"S13.4"},
-    {label:"Cervical spondylosis",icd:"M47.812"},
-    {label:"Upper cervical instability (suspected)",icd:"M53.2"},
-    {label:"Thoracic outlet syndrome (suspected)",icd:"G54.0"},
-    {label:"Cervical canal stenosis",icd:"M48.02"},
-  ],
-  "Lumbar / SI": [
-    {label:"Lumbar facet joint dysfunction",icd:"M47.816"},
-    {label:"Lumbar disc herniation (specify level)",icd:"M51.1"},
-    {label:"Lumbar radiculopathy (specify root)",icd:"M54.4"},
-    {label:"Sacroiliac joint dysfunction",icd:"M53.3"},
-    {label:"Non-specific low back pain",icd:"M54.5"},
-    {label:"Lumbar spondylosis",icd:"M47.816"},
-    {label:"Lumbar spinal stenosis",icd:"M48.06"},
-    {label:"Piriformis syndrome",icd:"G57.0"},
-    {label:"Spondylolisthesis (Grade I/II)",icd:"M43.1"},
-    {label:"Lumbar myofascial pain syndrome",icd:"M79.1"},
-  ],
-  "Hip / Groin": [
-    {label:"Hip osteoarthritis",icd:"M16.9"},
-    {label:"Femoroacetabular impingement (FAI)",icd:"M24.85"},
-    {label:"Hip labral tear (suspected)",icd:"M24.05"},
-    {label:"Greater trochanteric pain syndrome",icd:"M70.60"},
-    {label:"Iliopsoas tendinopathy",icd:"M76.1"},
-    {label:"Adductor-related groin pain",icd:"M76.0"},
-    {label:"Snapping hip syndrome",icd:"M76.3"},
-    {label:"Avascular necrosis (suspected -- refer)",icd:"M87.05"},
-    {label:"Hip bursitis (trochanteric)",icd:"M70.60"},
-    {label:"Athletic pubalgia",icd:"M76.8"},
-  ],
-  "Knee (L)": [
-    {label:"Patellofemoral pain syndrome",icd:"M22.2"},
-    {label:"Knee osteoarthritis (medial compartment)",icd:"M17.11"},
-    {label:"Patellar tendinopathy",icd:"M76.5"},
-    {label:"ACL sprain / tear (suspected)",icd:"M23.61"},
-    {label:"Meniscal injury (suspected)",icd:"M23.2"},
-    {label:"Iliotibial band syndrome",icd:"M76.3"},
-    {label:"Pes anserine bursitis",icd:"M70.5"},
-    {label:"MCL sprain (Grade I/II)",icd:"M23.64"},
-    {label:"Post-operative knee -- rehabilitation",icd:"Z96.65"},
-    {label:"Fat pad impingement",icd:"M79.4"},
-  ],
-  "Knee (R)": [
-    {label:"Patellofemoral pain syndrome",icd:"M22.2"},
-    {label:"Knee osteoarthritis (medial compartment)",icd:"M17.11"},
-    {label:"Patellar tendinopathy",icd:"M76.5"},
-    {label:"ACL sprain / tear (suspected)",icd:"M23.61"},
-    {label:"Meniscal injury (suspected)",icd:"M23.2"},
-    {label:"Iliotibial band syndrome",icd:"M76.3"},
-    {label:"Pes anserine bursitis",icd:"M70.5"},
-    {label:"MCL sprain (Grade I/II)",icd:"M23.64"},
-    {label:"Post-operative knee -- rehabilitation",icd:"Z96.65"},
-    {label:"Fat pad impingement",icd:"M79.4"},
-  ],
-  "Shoulder (L)": [
-    {label:"Rotator cuff tendinopathy",icd:"M75.1"},
-    {label:"Subacromial impingement syndrome",icd:"M75.1"},
-    {label:"Rotator cuff tear (partial / full -- suspected)",icd:"M75.1"},
-    {label:"Frozen shoulder (adhesive capsulitis)",icd:"M75.0"},
-    {label:"AC joint sprain / OA",icd:"M19.11"},
-    {label:"Glenohumeral instability (anterior)",icd:"M24.31"},
-    {label:"Biceps tendinopathy / SLAP (suspected)",icd:"M75.2"},
-    {label:"Shoulder OA (glenohumeral)",icd:"M19.11"},
-    {label:"Post-op shoulder rehabilitation",icd:"Z96.61"},
-    {label:"Cervical-referred shoulder pain (C4/C5)",icd:"M54.2"},
-  ],
-  "Shoulder (R)": [
-    {label:"Rotator cuff tendinopathy",icd:"M75.1"},
-    {label:"Subacromial impingement syndrome",icd:"M75.1"},
-    {label:"Rotator cuff tear (partial / full -- suspected)",icd:"M75.1"},
-    {label:"Frozen shoulder (adhesive capsulitis)",icd:"M75.0"},
-    {label:"AC joint sprain / OA",icd:"M19.11"},
-    {label:"Glenohumeral instability (anterior)",icd:"M24.31"},
-    {label:"Biceps tendinopathy / SLAP (suspected)",icd:"M75.2"},
-    {label:"Shoulder OA (glenohumeral)",icd:"M19.11"},
-    {label:"Post-op shoulder rehabilitation",icd:"Z96.61"},
-    {label:"Cervical-referred shoulder pain (C4/C5)",icd:"M54.2"},
-  ],
-  "Ankle / Foot": [
-    {label:"Lateral ankle sprain (Grade I/II/III)",icd:"S93.4"},
-    {label:"Achilles tendinopathy (mid-portion)",icd:"M76.6"},
-    {label:"Achilles tendinopathy (insertional)",icd:"M76.6"},
-    {label:"Plantar fasciitis",icd:"M72.2"},
-    {label:"Ankle OA",icd:"M19.071"},
-    {label:"Peroneal tendinopathy",icd:"M76.7"},
-    {label:"Posterior tibial tendon dysfunction",icd:"M76.82"},
-    {label:"Sinus tarsi syndrome",icd:"M79.1"},
-    {label:"Hallux valgus (conservative management)",icd:"M20.1"},
-    {label:"Syndesmosis sprain",icd:"S93.4"},
-  ],
-  "Elbow/Wrist/Hand": [
-    {label:"Lateral epicondylalgia (Tennis elbow)",icd:"M77.1"},
-    {label:"Medial epicondylalgia (Golfer elbow)",icd:"M77.0"},
-    {label:"De Quervain tenosynovitis",icd:"M65.4"},
-    {label:"Carpal tunnel syndrome",icd:"G56.0"},
-    {label:"Wrist tendinopathy",icd:"M65.3"},
-    {label:"TFCC injury (suspected)",icd:"M25.331"},
-    {label:"Cubital tunnel syndrome",icd:"G56.2"},
-    {label:"Trigger finger",icd:"M65.3"},
-    {label:"Dupuytren contracture (conservative)",icd:"M72.0"},
-    {label:"Elbow OA",icd:"M19.021"},
-  ],
-  "Thoracic spine": [
-    {label:"Thoracic facet joint dysfunction",icd:"M47.814"},
-    {label:"Thoracic myofascial pain",icd:"M79.1"},
-    {label:"Costochondral / rib dysfunction",icd:"M94.0"},
-    {label:"Thoracic disc herniation",icd:"M51.14"},
-    {label:"Scheuermann disease",icd:"M42.0"},
-    {label:"Thoracic kyphosis (postural)",icd:"M40.04"},
-    {label:"T4 syndrome",icd:"M54.6"},
-    {label:"Intercostal neuralgia",icd:"G58.0"},
-    {label:"Thoracic outlet syndrome (suspected)",icd:"G54.0"},
-    {label:"Post-fracture thoracic rehabilitation",icd:"S22.9"},
-  ],
-  "General": [
-    {label:"Fibromyalgia",icd:"M79.7"},
-    {label:"Chronic widespread pain",icd:"M79.3"},
-    {label:"Post-surgical rehabilitation (specify)",icd:"Z96.9"},
-    {label:"Chronic pain syndrome (central sensitisation)",icd:"G89.4"},
-    {label:"Post-COVID musculoskeletal symptoms",icd:"U09.9"},
-    {label:"Hypermobility syndrome / hEDS",icd:"Q79.6"},
-    {label:"Osteoporosis (fracture prevention)",icd:"M81.0"},
-    {label:"Postural dysfunction",icd:"M40.3"},
-    {label:"Deconditioning / functional decline",icd:"Z73.6"},
-    {label:"Falls prevention programme",icd:"Z91.81"},
-  ],
-};
-const CI_TAG_CFG = {
-  primary:      {label:"Primary Dx",  col:"#4C1D95", bg:"#EDE9FE", border:"#C4B5FD", emoji:"<TARGET_EMOJI>"},
-  differential: {label:"Differential",col:"#92400E", bg:"#FEF3C7", border:"#FCD34D", emoji:"<ARROWS_EMOJI>"},
-  ruledout:     {label:"Ruled Out",   col:"#374151", bg:"#F3F4F6", border:"#D1D5DB", emoji:"X"},
-};
-
-// -- Clinical Impression Block pinned at top of SOAP -----------------------
-function ClinicalImpressionInSOAP({ data, set }) {
-  const PC = typeof getC === "function" ? getC() : {
-    surface:"#ffffff", s2:"#f5f0fb", border:"#d8cce8",
-    accent:"#7c3aed", text:"#1a1025", muted:"#7e6a9a",
+function soapScan(data, suf) {
+  const PXS = ["cx","lx","shl","shr","hp","knl","knr","af","ew","tx"];
+  return PXS.flatMap(px => {
+    const x = data[`${px}_${suf}`];
+    return x ? String(x).split("|||").filter(Boolean) : [];
+  }).join(", ");
+}
+function nrsColor(n) {
+  const v = parseFloat(n);
+  if (isNaN(v)) return "#888";
+  if (v >= 7) return "#dc2626";
+  if (v >= 4) return "#b45309";
+  return "#059669";
+}
+function romPct(val, norm) {
+  const n = parseFloat(val);
+  if (isNaN(n) || norm === 0) return null;
+  return Math.round((n / norm) * 100);
+}
+function romFlag(pct) {
+  if (pct === null) return null;
+  if (pct < 50) return { icon: "❌", color: "#dc2626" };
+  if (pct < 75) return { icon: "⚠", color: "#b45309" };
+  return { icon: "✓", color: "#059669" };
+}
+function detectModules(data) {
+  const has = (keys) => keys.some(k => data[k] && String(data[k]).trim() && String(data[k]).trim() !== "[]");
+  return {
+    subjective: has(["cc_main","dem_name"]),
+    rom: has(["rom_cflex","rom_lflex","rom_sflex_L","rom_sflex_R","rom_kflex_L","rom_kflex_R","rom_adf_L","rom_adf_R"]),
+    mmt: has(["muscle_sh_r_abductors","muscle_kn_l_quads","neuro_weakness"]),
+    posture: has(["post_fhp","post_kyphosis","sagFHPCm","fhpDevCm","posture_defect_forward_head"]),
+    postureAI: has(["sagFHPCm","cvaAngle","sagThorKyph","sagLumLord"]),
+    palpation: has(["palp_pins","cx_palpation","lx_palpation","shr_palpation","knl_palpation"]),
+    outcomes: has(["om_report","ndi_score","psfs_score","koos_score","dash_score","lefs_score"]),
+    stt: has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can","knl_stt_lachman","af_stt_windlass"]),
+    functional: has(["fl_work","fl_mobility","fl_self_care","fl_domestic","ar_goal_function"]),
+    neuro: has(["neuro_dermatomal","neuro_reflex_biceps","neuro_sensation","neuro_weakness","neuro_reflex_ankle"]),
+    gait: has(["gait_pattern","gait_cadence","gait_antalgic","gait_trendelenburg"]),
+    kinetic: has(["kinetic_primary","kinetic_compensation","kinetic_notes"]),
+    cpa: has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes","cx_stt_passive_rotation_r","shr_stt_empty_can"]),
+    fascia: has(["fascia_restriction","fascia_notes","fascia_line"]),
   };
-  const [open,        setOpen]        = React.useState(false);
-  const [pickerReg,   setPickerReg]   = React.useState("General");
-  const [search,      setSearch]      = React.useState("");
-  const [pendingDx,   setPendingDx]   = React.useState(null);
-  const [pendingTag,  setPendingTag]  = React.useState("primary");
-  const [pendingNote, setPendingNote] = React.useState("");
-  const [customDx,    setCustomDx]    = React.useState("");
-
-  const ciItems  = Array.isArray(data.clinical_impression) ? data.clinical_impression : [];
-  const primary  = ciItems.filter(x => x.tag === "primary");
-  const diffList = ciItems.filter(x => x.tag === "differential");
-  const ruled    = ciItems.filter(x => x.tag === "ruledout");
-
-  const allRegions = ["General", ...Object.keys(PHYSIO_DX_LIST_CM).filter(r => r !== "General")];
-  const filtered = search.trim()
-    ? Object.values(PHYSIO_DX_LIST_CM).flat().filter(x => x.label.toLowerCase().includes(search.toLowerCase()))
-    : (PHYSIO_DX_LIST_CM[pickerReg] || []);
-
-  const alreadyAdded = (label) => ciItems.some(x => x.label === label);
-
-  const addDx = () => {
-    const lbl = pendingDx ? pendingDx.label : customDx.trim();
-    if (!lbl) return;
-    const icd = pendingDx ? (pendingDx.icd || "") : "";
-    const newItem = { id: Date.now().toString(), label: lbl, icdCode: icd, tag: pendingTag, notes: pendingNote.trim(), addedAt: new Date().toISOString() };
-    let updated = [...ciItems];
-    if (pendingTag === "primary") updated = updated.map(x => x.tag === "primary" ? { ...x, tag: "differential" } : x);
-    set("clinical_impression", [...updated, newItem]);
-    setPendingDx(null); setCustomDx(""); setPendingNote(""); setOpen(false);
-  };
-
-  const removeDx = (id) => set("clinical_impression", ciItems.filter(x => x.id !== id));
-
-  const promoteTag = (id, newTag) => {
-    let updated = [...ciItems];
-    if (newTag === "primary") updated = updated.map(x => x.tag === "primary" ? { ...x, tag: "differential" } : x);
-    set("clinical_impression", updated.map(x => x.id === id ? { ...x, tag: newTag } : x));
-  };
-
-  const inp = { width:"100%", background:PC.s2, border:"1px solid "+PC.border, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.75rem", boxSizing:"border-box" };
-
-  return (
-    <div style={{ marginBottom:16, borderRadius:16, overflow:"hidden", border:"2px solid #7c3aed40", boxShadow:"0 4px 20px rgba(124,58,237,0.12)" }}>
-
-      {/* Header */}
-      <div style={{ background:"linear-gradient(120deg,#7c3aed22 0%,#7c3aed0a 100%)", borderBottom:"2px solid #7c3aed28", padding:"14px 18px", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-        <div style={{ width:44, height:44, borderRadius:12, background:"#7c3aed", boxShadow:"0 4px 14px #7c3aed60", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.3rem", flexShrink:0 }}>
-          <span role="img" aria-label="target">&#x1F3AF;</span>
-        </div>
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:"1rem", fontWeight:900, color:"#4C1D95", letterSpacing:"0.2px" }}>Clinical Impression</div>
-          <div style={{ fontSize:"0.82rem", fontWeight:600, color:"#7c3aed", opacity:0.75, marginTop:2 }}>Your working diagnosis -- auto-populates the Assessment (A) section</div>
-        </div>
-        <button onClick={() => setOpen(v => !v)} style={{ padding:"8px 16px", background:"#7c3aed", border:"none", borderRadius:10, color:"#fff", fontWeight:800, fontSize:"0.82rem", cursor:"pointer", boxShadow:"0 2px 8px #7c3aed50" }}>
-          {open ? "Close" : ciItems.length === 0 ? "+ Add Diagnosis" : "Manage"}
-        </button>
-      </div>
-
-      {/* Display: no diagnoses yet */}
-      {ciItems.length === 0 && !open && (
-        <div style={{ padding:"20px 18px", textAlign:"center", background:"#ffffff" }}>
-          <div style={{ fontSize:"0.78rem", color:PC.muted, marginBottom:6 }}>No diagnosis set yet</div>
-          <div style={{ fontSize:"0.78rem", color:PC.muted, lineHeight:1.7 }}>
-            Add your working diagnosis -- it will auto-populate the A section below.
-          </div>
-        </div>
-      )}
-
-      {/* Display: diagnoses */}
-      {ciItems.length > 0 && !open && (
-        <div style={{ padding:"14px 18px", background:"#ffffff", display:"flex", flexDirection:"column", gap:10 }}>
-          {primary.map(dx => (
-            <div key={dx.id} style={{ display:"flex", alignItems:"flex-start", gap:10, background:"#EDE9FE", border:"1.5px solid #C4B5FD", borderRadius:12, padding:"12px 14px" }}>
-              <div style={{ flexShrink:0, width:36, height:36, borderRadius:10, background:"#7c3aed", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:900, fontSize:"0.82rem" }}>Dx</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:"0.82rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:3 }}>Working Diagnosis</div>
-                <div style={{ fontSize:"0.88rem", fontWeight:800, color:"#4C1D95", lineHeight:1.4 }}>{dx.label}</div>
-                {dx.icdCode && <div style={{ marginTop:3, display:"inline-block", background:"#C4B5FD", borderRadius:6, padding:"1px 8px", fontSize:"0.82rem", fontWeight:700, color:"#4C1D95" }}>ICD {dx.icdCode}</div>}
-                {dx.notes && <div style={{ marginTop:5, fontSize:"0.73rem", color:"#5B21B6", fontStyle:"italic" }}>{dx.notes}</div>}
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:4, flexShrink:0 }}>
-                <button onClick={() => promoteTag(dx.id, "differential")} style={{ padding:"3px 8px", background:"#C4B5FD", border:"none", borderRadius:6, fontSize:"0.8rem", color:"#4C1D95", cursor:"pointer", fontWeight:700 }}>Diff</button>
-                <button onClick={() => removeDx(dx.id)} style={{ padding:"3px 8px", background:"rgba(220,38,38,0.1)", border:"none", borderRadius:6, fontSize:"0.8rem", color:"#dc2626", cursor:"pointer", fontWeight:700 }}>Remove</button>
-              </div>
-            </div>
-          ))}
-
-          {diffList.length > 0 && (
-            <div>
-              <div style={{ fontSize:"0.78rem", fontWeight:800, color:"#92400E", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Differentials -- considering</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-                {diffList.map(dx => (
-                  <div key={dx.id} style={{ display:"flex", alignItems:"center", gap:8, background:"#FEF3C7", border:"1px solid #FCD34D", borderRadius:10, padding:"8px 12px" }}>
-                    <span style={{ fontSize:"0.8rem", fontWeight:700, color:"#92400E", flex:1 }}>{dx.label}{dx.icdCode ? React.createElement("span", {style:{marginLeft:6,fontSize:"0.82rem",fontWeight:600,color:"#78350F"}}, dx.icdCode) : null}</span>
-                    <button onClick={() => promoteTag(dx.id, "primary")} style={{ padding:"2px 7px", background:"#7c3aed", border:"none", borderRadius:5, fontSize:"0.78rem", color:"#fff", cursor:"pointer", fontWeight:800 }}>Primary</button>
-                    <button onClick={() => promoteTag(dx.id, "ruledout")} style={{ padding:"2px 7px", background:"#F3F4F6", border:"none", borderRadius:5, fontSize:"0.78rem", color:"#374151", cursor:"pointer", fontWeight:700 }}>Rule out</button>
-                    <button onClick={() => removeDx(dx.id)} style={{ padding:"2px 7px", background:"rgba(220,38,38,0.08)", border:"none", borderRadius:5, fontSize:"0.78rem", color:"#dc2626", cursor:"pointer", fontWeight:700 }}>X</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {ruled.length > 0 && (
-            <div>
-              <div style={{ fontSize:"0.78rem", fontWeight:800, color:"#6B7280", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:5 }}>Ruled Out</div>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                {ruled.map(dx => (
-                  <div key={dx.id} style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#F3F4F6", border:"1px solid #D1D5DB", borderRadius:20, padding:"3px 10px" }}>
-                    <span style={{ fontSize:"0.8rem", fontWeight:600, color:"#6B7280", textDecoration:"line-through" }}>{dx.label}</span>
-                    <button onClick={() => removeDx(dx.id)} style={{ background:"none", border:"none", color:"#9CA3AF", cursor:"pointer", fontSize:"0.75rem", padding:0, lineHeight:1 }}>x</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Picker (expanded) */}
-      {open && (
-        <div style={{ padding:"16px 18px", background:"#faf8ff", borderTop:"1px solid #7c3aed20" }}>
-          {pendingDx && (
-            <div style={{ background:"#EDE9FE", border:"1.5px solid #C4B5FD", borderRadius:10, padding:"10px 14px", marginBottom:12, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:"0.82rem", fontWeight:700, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:2 }}>Selected</div>
-                <div style={{ fontSize:"0.82rem", fontWeight:800, color:"#4C1D95" }}>{pendingDx.label}</div>
-                {pendingDx.icd && <div style={{ fontSize:"0.82rem", color:"#7c3aed", marginTop:2 }}>ICD: {pendingDx.icd}</div>}
-              </div>
-              <button onClick={() => setPendingDx(null)} style={{ padding:"3px 8px", background:"none", border:"1px solid #C4B5FD", borderRadius:6, color:"#7c3aed", cursor:"pointer", fontSize:"0.75rem", fontWeight:700 }}>Clear</button>
-            </div>
-          )}
-
-          <div style={{ marginBottom:10 }}>
-            <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Add as</div>
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-              {Object.entries(CI_TAG_CFG).map(([tag, cfg]) => (
-                <button key={tag} onClick={() => setPendingTag(tag)} style={{ padding:"6px 12px", borderRadius:8, background: pendingTag === tag ? cfg.bg : "transparent", border:"1.5px solid "+(pendingTag===tag?cfg.border:PC.border), color: pendingTag===tag?cfg.col:PC.muted, fontWeight:pendingTag===tag?800:500, fontSize:"0.8rem", cursor:"pointer" }}>
-                  {cfg.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search diagnoses..." style={{ ...inp, marginBottom:8 }} />
-
-          {!search.trim() && (
-            <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:10 }}>
-              {allRegions.map(r => (
-                <button key={r} onClick={() => setPickerReg(r)} style={{ padding:"4px 10px", borderRadius:20, background:pickerReg===r?"#7c3aed":"#f5f0fb", border:"1px solid "+(pickerReg===r?"#7c3aed":"#d8cce8"), color:pickerReg===r?"#fff":"#7e6a9a", fontSize:"0.82rem", fontWeight:pickerReg===r?800:500, cursor:"pointer" }}>
-                  {r}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div style={{ maxHeight:200, overflowY:"auto", display:"flex", flexDirection:"column", gap:4, marginBottom:10 }}>
-            {filtered.map((dx, i) => {
-              const added = alreadyAdded(dx.label);
-              const selected = pendingDx && pendingDx.label === dx.label;
-              return (
-                <button key={i} onClick={() => !added && setPendingDx(selected ? null : dx)} disabled={added} style={{ textAlign:"left", padding:"7px 11px", borderRadius:8, background:selected?"#EDE9FE":added?"#F3F4F6":"#fff", border:"1.5px solid "+(selected?"#C4B5FD":added?"#E5E7EB":"#E5E7EB"), color:added?"#9CA3AF":selected?"#4C1D95":PC.text, fontSize:"0.74rem", fontWeight:selected?800:500, cursor:added?"default":"pointer", display:"flex", alignItems:"center", gap:8 }}>
-                  <span style={{ flex:1 }}>{dx.label}</span>
-                  {dx.icd && <span style={{ fontSize:"0.8rem", color:"#9CA3AF", flexShrink:0 }}>{dx.icd}</span>}
-                  {added && <span style={{ fontSize:"0.8rem", color:"#9CA3AF" }}>added</span>}
-                  {selected && <span style={{ fontSize:"0.75rem", color:"#7c3aed" }}>selected</span>}
-                </button>
-              );
-            })}
-            {filtered.length === 0 && <div style={{ fontSize:"0.82rem", color:PC.muted, padding:"12px", textAlign:"center" }}>No matches -- use custom entry below</div>}
-          </div>
-
-          <div style={{ marginBottom:10 }}>
-            <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:4 }}>Or type a custom diagnosis</div>
-            <input value={customDx} onChange={e => { setCustomDx(e.target.value); if(e.target.value.trim()) setPendingDx(null); }} placeholder="Custom diagnosis name..." style={inp} />
-          </div>
-
-          <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.6px", marginBottom:4 }}>Clinical note (optional)</div>
-            <input value={pendingNote} onChange={e => setPendingNote(e.target.value)} placeholder="e.g. L4/5 confirmed on MRI, awaiting neurosurgery review..." style={inp} />
-          </div>
-
-          <button onClick={addDx} disabled={!pendingDx && !customDx.trim()} style={{ width:"100%", padding:"10px", background:(!pendingDx&&!customDx.trim())?"#E5E7EB":"#7c3aed", border:"none", borderRadius:10, color:(!pendingDx&&!customDx.trim())?"#9CA3AF":"#fff", fontWeight:800, fontSize:"0.78rem", cursor:(!pendingDx&&!customDx.trim())?"default":"pointer" }}>
-            + Add {CI_TAG_CFG[pendingTag] ? CI_TAG_CFG[pendingTag].label : ""}
-          </button>
-        </div>
-      )}
-    </div>
-  );
 }
 
 function SOAPNoteModule({ data, set, onNav, initialTab }) {
-  const aiOnly = initialTab === "ai";
-  const PC = typeof getC === "function" ? getC() : {
-    surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
-    accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#1a1025",
-    muted:"#7e6a9a", red:"#dc2626", yellow:"#b45309", green:"#059669",
-    isDark:false
-  };
-
-  // Sync FMA + Outcome Measures localStorage data into patient record on SOAP open
   useEffect(() => {
     try {
       const fmaStored = JSON.parse(localStorage.getItem("fms_clinical_v1") || "{}");
-      if (Object.keys(fmaStored).length > 0 && !data.fma_report) {
-        set("fma_report", fmaStored);
-      }
+      if (Object.keys(fmaStored).length > 0 && !data.fma_report) set("fma_report", fmaStored);
     } catch {}
     try {
       const omSessions = JSON.parse(localStorage.getItem("physio_om_sessions") || "[]");
       if (omSessions.length > 0) {
-        // Use the latest session scores
         const latest = omSessions[omSessions.length - 1];
-        if (latest?.scores && !data.om_report) {
-          set("om_report", { scores: latest.scores, date: latest.date, sessionCount: omSessions.length });
-        }
+        if (latest?.scores && !data.om_report) set("om_report", { scores: latest.scores, date: latest.date, sessionCount: omSessions.length });
       }
     } catch {}
   }, []);
 
-  const lastNote = Array.isArray(data.soap_signed_notes)&&data.soap_signed_notes.length>0
+  const lastNote = Array.isArray(data.soap_signed_notes) && data.soap_signed_notes.length > 0
     ? [...data.soap_signed_notes].reverse()[0] : null;
   const [clinician, setClinician] = useState(data.soap_clinician || lastNote?.clinician || "");
   const [clinic,    setClinic]    = useState(data.soap_clinic    || lastNote?.clinic    || "");
   const [session,   setSession]   = useState(data.soap_session   || "Initial Assessment");
-  const [extraS,    setExtraS]    = useState(data.soap_extra_s   || "");
-  const [extraO,    setExtraO]    = useState(data.soap_extra_o   || "");
-  const [extraA,    setExtraA]    = useState(data.soap_extra_a   || "");
-  const [extraP,    setExtraP]    = useState(data.soap_extra_p   || "");
-  const [copied,    setCopied]    = useState(null);
+  const [soapTab,   setSoapTab]   = useState(initialTab === "ai" ? "A" : "S");
+  const [objMod,    setObjMod]    = useState("obs");
   const [lockConfirm, setLockConfirm] = useState(false);
   const [lockSuccess, setLockSuccess] = useState(false);
+  const [extraS, setExtraS] = useState(data.soap_extra_s || "");
+  const [extraO, setExtraO] = useState(data.soap_extra_o || "");
+  const [extraA, setExtraA] = useState(data.soap_extra_a || "");
+  const [extraP, setExtraP] = useState(data.soap_extra_p || "");
   const lockedNotes = Array.isArray(data.soap_signed_notes) ? data.soap_signed_notes : [];
-  const [activeTab, setActiveTab] = useState(initialTab||"soap");
-  // Editable SOAP text per section (null = use auto-generated)
-  const [editMode, setEditMode] = useState({S:false,O:false,A:false,P:false});
-  const [editText, setEditText] = useState({S:"",O:"",A:"",P:""});
-  const [showPrevNote, setShowPrevNote] = useState(false);
-  const [showSummary, setShowSummary] = useState({S:true,O:true,A:true,P:true});
-  const getSOAPText = (key) => data[`soap_${key.toLowerCase()}_edit`] || soap[key] || "";
-  const saveEdit = (key) => {
-    set(`soap_${key.toLowerCase()}_edit`, editText[key]);
-    setEditMode(m=>({...m,[key]:false}));
+  const mods = useMemo(() => detectModules(data), [data]);
+
+  const v = (k) => soapV(data, k);
+  const a = (k) => soapA(data, k);
+  const scan = (s) => soapScan(data, s);
+
+  const name     = v("dem_name") || "Patient";
+  const age      = v("dem_age");
+  const sex      = v("dem_sex") || v("dem_gender");
+  const occ      = v("dem_occupation");
+  const vasNow   = v("cc_vas_now")   || v("pa_vas_now");
+  const vasWorst = v("cc_vas_worst") || v("pa_vas_worst");
+  const vasBest  = v("cc_vas_best")  || v("pa_vas_best");
+  const cc       = v("cc_main");
+  const agg      = [a("cc_agg"), scan("agg_mov"), scan("agg_post"), scan("agg_act"), a("agg_movement"), a("agg_posture"), a("agg_activity")].filter(Boolean).join(", ");
+  const ease     = [a("cc_rel"), scan("rel_mov"), scan("rel_manual"), a("rel_posture"), a("rel_manual")].filter(Boolean).join(", ");
+  const loc      = [scan("loc"), scan("location"), a("cc_location")].filter(Boolean)[0] || "";
+  const rad      = [scan("radiation"), a("cc_radiation")].filter(s => s && !s.toLowerCase().includes("no radiation")).join(", ");
+  const dur      = a("cc_duration");
+  const onset    = a("cc_onset");
+  const morning  = [scan("morning"), scan("sb_morning"), a("sb_morning")].filter(Boolean)[0] || "";
+  const night    = [scan("night"),   scan("sb_night"),   a("sb_night")  ].filter(Boolean)[0] || "";
+  const phx      = a("pmh_conditions") || a("phx_conditions");
+  const meds     = a("med_current")    || v("meds_current");
+  const goals    = [v("ar_goal_pain"), v("ar_goal_function"), v("ar_goal_return"), v("ar_goal_sport")].filter(Boolean);
+  const dx       = v("soap_a_diagnosis") || v("soap_assessment");
+  const icd      = v("soap_icd10");
+
+  const MOD_LIST = [
+    {key:"subjective",label:"Subjective"},{key:"rom",label:"ROM"},{key:"mmt",label:"MMT"},
+    {key:"posture",label:"Posture"},{key:"stt",label:"STT"},{key:"neuro",label:"Neuro"},
+    {key:"palpation",label:"Palpation"},{key:"outcomes",label:"Outcomes"},{key:"cpa",label:"CPA"},
+    {key:"functional",label:"Functional"},{key:"postureAI",label:"AI Analysis"},
+    {key:"gait",label:"Gait"},{key:"kinetic",label:"Kinetic"},{key:"fascia",label:"Fascia"},
+  ];
+  const doneCount = MOD_LIST.filter(m => mods[m.key]).length;
+  const pct = Math.round((doneCount / MOD_LIST.length) * 100);
+
+  const rfMap = {
+    s_red1:"Unexplained weight loss",s_red2:"Night sweats/fever",s_red3:"Cancer history",
+    s_red4:"Bilateral neural symptoms",s_red5:"Bowel/bladder dysfunction",
+    s_red6:"Saddle anaesthesia",s_red7:"Progressive neuro deficit",
+    lx_rf_cauda:"Cauda equina screen",cx_rf_myelopathy:"Myelopathy screen",cx_rf_vbi:"VBI screen",
   };
-  const resetEdit = (key) => {
-    set(`soap_${key.toLowerCase()}_edit`, "");
-    setEditMode(m=>({...m,[key]:false}));
+  const redFlags = Object.entries(rfMap).filter(([k]) => {
+    const val = String(data[k]||"").toLowerCase();
+    return val && !val.includes("no ") && !val.includes("negative") && !val.includes("proceed") && !val.includes("none") && !val.includes("no cauda") && !val.includes("no myelopathy") && !val.includes("no vbi");
+  }).map(([,label]) => label);
+
+  const cs = {
+    wrap:   { fontFamily:"inherit", fontSize:"0.8rem" },
+    ptBar:  { display:"flex", alignItems:"center", gap:12, padding:"10px 12px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:12, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", marginBottom:8 },
+    av:     { width:38, height:38, borderRadius:"50%", background:"#CECBF6", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:500, color:"#3C3489", flexShrink:0 },
+    chip:   (bg,cl) => ({ fontSize:10, padding:"2px 7px", borderRadius:100, fontWeight:500, background:bg, color:cl, whiteSpace:"nowrap" }),
+    progRow:{ display:"flex", alignItems:"center", gap:8, padding:"7px 12px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:10, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", marginBottom:8 },
+    tabRow: { display:"flex", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:10, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", overflow:"hidden", marginBottom:8 },
+    tab:    (active, bg, cl) => ({ flex:1, padding:"9px 4px", textAlign:"center", fontSize:13, fontWeight:500, cursor:"pointer", borderRight:"0.5px solid var(--color-border-tertiary,#e2d9f3)", color: active ? cl : "var(--color-text-secondary,#7e6a9a)", background: active ? bg : "transparent" }),
+    card:   { background:"var(--color-background-primary,#fff)", border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", borderRadius:12, marginBottom:8, overflow:"hidden" },
+    ch:     { display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)" },
+    sl:     (bg,cl) => ({ width:22, height:22, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:500, flexShrink:0, background:bg, color:cl }),
+    ctitle: { fontSize:12, fontWeight:500, color:"var(--color-text-primary,#1a1025)" },
+    cb:     { padding:"10px 12px" },
+    sub:    { fontSize:10, fontWeight:500, color:"var(--color-text-secondary,#7e6a9a)", textTransform:"uppercase", letterSpacing:"0.05em", margin:"8px 0 4px" },
+    sub0:   { fontSize:10, fontWeight:500, color:"var(--color-text-secondary,#7e6a9a)", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 },
+    ccQ:    { fontSize:12, fontStyle:"italic", padding:"7px 9px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, borderLeft:"2px solid #B5D4F4", lineHeight:1.5, color:"var(--color-text-primary,#1a1025)" },
+    nrsRow: { display:"flex", gap:6, margin:"6px 0" },
+    nrsC:   { flex:1, textAlign:"center", padding:"6px 4px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)" },
+    nrsL:   { fontSize:9, color:"var(--color-text-secondary,#7e6a9a)" },
+    two:    { display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 },
+    colB:   { padding:"7px 8px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8 },
+    colBL:  { fontSize:10, color:"var(--color-text-secondary,#7e6a9a)", fontWeight:500, marginBottom:3 },
+    bl:     { fontSize:11, color:"var(--color-text-primary,#1a1025)", padding:"1px 0", display:"flex", gap:4, lineHeight:1.4 },
+    pillRow:{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:8 },
+    pill:   (done, active) => ({ fontSize:10, padding:"4px 9px", borderRadius:100, border:`0.5px solid ${active?"#AFA9EC":done?"#9FE1CB":"var(--color-border-tertiary,#e2d9f3)"}`, background:active?"#EEEDFE":done?"#E1F5EE":"transparent", color:active?"#3C3489":done?"#085041":"var(--color-text-secondary,#7e6a9a)", fontWeight:active?500:400, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }),
+    modBox: { background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, padding:"8px 10px" },
+    rt:     { width:"100%", fontSize:11, borderCollapse:"collapse" },
+    trRow:  { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)", fontSize:11 },
+    dxB:    { padding:"8px 10px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, borderLeft:"3px solid #534AB7", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 },
+    findG:  { display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginTop:6 },
+    findPos:{ padding:"7px 8px", borderRadius:8, background:"#FCEBEB", border:"0.5px solid #F09595" },
+    findNeg:{ padding:"7px 8px", borderRadius:8, background:"#EAF3DE", border:"0.5px solid #C0DD97" },
+    sevRow: { display:"flex", gap:5, marginTop:6 },
+    sevC:   { flex:1, textAlign:"center", padding:"6px 4px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)" },
+    planR:  { display:"flex", gap:7, padding:"4px 0", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)", fontSize:12, alignItems:"flex-start" },
+    planN:  { width:16, height:16, borderRadius:"50%", background:"#FAEEDA", color:"#633806", fontSize:9, fontWeight:500, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1 },
+    infoR:  { display:"flex", gap:5, alignItems:"flex-start", fontSize:11, color:"var(--color-text-secondary,#7e6a9a)", padding:"3px 0" },
+    inp:    { width:"100%", background:"var(--color-background-secondary,#f5f0fb)", border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", borderRadius:8, color:"var(--color-text-primary,#1a1025)", fontFamily:"inherit", outline:"none", padding:"7px 9px", fontSize:"0.78rem", marginBottom:4 },
+    signBtn:{ width:"100%", padding:12, background:"#534AB7", color:"#EEEDFE", border:"none", borderRadius:10, fontSize:13, fontWeight:500, cursor:"pointer", marginTop:6, fontFamily:"inherit" },
+    lockBtn:{ width:"100%", padding:12, background:"#dc2626", color:"#fff", border:"none", borderRadius:10, fontSize:13, fontWeight:500, cursor:"pointer", marginTop:6, fontFamily:"inherit" },
+    na:     { fontSize:11, color:"var(--color-text-secondary,#7e6a9a)", fontStyle:"italic" },
   };
-  const startEdit = (key) => {
-    setEditText(t=>({...t,[key]: data[`soap_${key.toLowerCase()}_edit`] || soap[key] || ""}));
-    setEditMode(m=>({...m,[key]:true}));
-  }; // "soap" | "interp" | "both"
+  const thS = { padding:"3px 5px", fontSize:10, color:"var(--color-text-secondary,#7e6a9a)", textAlign:"left", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)", fontWeight:500 };
+  const tdS = { padding:"3px 5px", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)", fontSize:11, color:"var(--color-text-primary,#1a1025)" };
 
-  // Real-time SOAP auto-built every render (useMemo for perf)
-  const soap = useMemo(() => buildRealtimeSOAP(data, extraS, extraO, extraA, extraP), [data, extraS, extraO, extraA, extraP]);
-  const interpretations = useMemo(() => buildClinicalInterpretation(data), [data]);
+  const romRows = useMemo(() => {
+    const rv = (k) => v("rom_"+k+"_arom") || v("rom_"+k) || "";
+    const rvLR = (k,s) => { const sfxs=s==="L"?["_L_arom","_left","_L"]:["_R_arom","_right","_R"]; return sfxs.map(sfx=>v("rom_"+k+sfx)).find(x=>x)||""; };
+    const rows = [];
+    [["C-Flex","cflex",45],["C-Ext","cext",45],["C-Rot R","crotr",60],["C-Rot L","crotl",60],["C-Lat R","clatr",45],["C-Lat L","clatl",45],
+     ["L-Flex","lflex",60],["L-Ext","lext",25],["L-Rot R","lrotr",5],["L-Rot L","lrotl",5],["Th-Flex","thflex",50],["Th-Ext","thext",25]
+    ].forEach(([label,key,norm]) => { const val=rv(key); if(val){const p=romPct(val,norm);rows.push({label,single:val,norm,pct:p,flag:romFlag(p)});}});
+    [["Sh-Flex","sflex",180],["Sh-Abd","sabd",180],["Sh-ER","ser",90],["Sh-IR","sir",70],
+     ["Hip-Flex","hflex",120],["Kn-Flex","kflex",140],["Ank-DF","adf",20],["Ank-PF","apf",50],["El-Flex","eflex",145],["Wr-Flex","wflex",80]
+    ].forEach(([label,key,norm]) => { const vl=rvLR(key,"L"),vr=rvLR(key,"R"); if(vl||vr){const pl=romPct(vl,norm),pr=romPct(vr,norm);rows.push({label,l:vl,r:vr,norm,pctL:pl,pctR:pr,flagL:romFlag(pl),flagR:romFlag(pr)});}});
+    return rows;
+  }, [data]);
 
-  const urgentRules = interpretations.filter(r => r.confidence === "URGENT");
-  const highRules = interpretations.filter(r => r.confidence === "HIGH" && r.module !== "Correlation");
-  const corrRules = interpretations.filter(r => r.module === "Correlation");
-  const modRules = interpretations.filter(r => r.confidence === "MOD");
-  const totalRules = interpretations.length;
+  const sttRows = useMemo(() => {
+    return [
+      ["cx_spurling","Spurling's","Nerve root compression"],["cx_distraction","Cervical distraction","Radiculopathy"],
+      ["cx_rf_vbi","VBI screen","Vertebrobasilar"],["cx_rf_myelopathy","Myelopathy screen","Upper motor neuron"],
+      ["lx_slr_l","SLR left","L4/5/S1 root"],["lx_slr_r","SLR right","Lumbar root"],
+      ["lx_crossed_slr","Crossed SLR","Central disc"],["lx_femoral_stretch","Femoral stretch","L2/3/4 root"],
+      ["shr_stt_empty_can","Empty can","Supraspinatus"],["shr_stt_neer","Neer's","Subacromial"],
+      ["shr_stt_hawkins","Hawkins-Kennedy","Impingement"],["knl_stt_lachman","Lachman","ACL"],
+      ["knl_stt_anterior_drawer","Ant drawer","ACL"],["af_stt_windlass","Windlass","Plantar fascia"],
+    ].map(([key,name,sig]) => ({key,name,sig,val:v(key)})).filter(t=>t.val);
+  }, [data]);
 
-  // ── AI Clinical Assistant ─────────────────────────────────────────────────
-  const [aiKey,       setAiKey]       = useState(() => localStorage.getItem("groq_api_key") || "");
-  const [aiKeyInput,  setAiKeyInput]  = useState("");
-  const [aiKeySet,    setAiKeySet]    = useState(() => !!localStorage.getItem("groq_api_key"));
-  const [aiMode,      setAiMode]      = useState("ask");
-  const [aiQuestion,  setAiQuestion]  = useState("");
-  const [aiResponse,  setAiResponse]  = useState(null);
-  const [aiLoading,   setAiLoading]   = useState(false);
-  const [aiError,     setAiError]     = useState(null);
+  const palpPins = useMemo(() => { try { return JSON.parse(data.palp_pins||"[]"); } catch { return []; } }, [data]);
 
-  const saveKey = () => {
-    const k = aiKeyInput.trim();
-    if (!k.startsWith("gsk_")) { setAiError("Invalid key — Groq keys start with 'gsk_'"); return; }
-    localStorage.setItem("groq_api_key", k);
-    setAiKey(k); setAiKeySet(true); setAiKeyInput(""); setAiError(null);
-  };
-  const clearKey = () => { localStorage.removeItem("groq_api_key"); setAiKey(""); setAiKeySet(false); setAiResponse(null); };
+  const neuroRows = [
+    {label:"Dermatomal pattern",val:v("neuro_dermatomal")},{label:"Sensation",val:v("neuro_sensation")},
+    {label:"Biceps reflex (C5/6)",val:v("neuro_reflex_biceps")},{label:"Triceps reflex (C7)",val:v("neuro_reflex_triceps")},
+    {label:"Knee reflex (L3/4)",val:v("neuro_reflex_knee")},{label:"Ankle reflex (S1)",val:v("neuro_reflex_ankle")},
+    {label:"Motor weakness",val:v("neuro_weakness")},{label:"Babinski",val:v("neuro_babinski")},
+  ].filter(r=>r.val);
 
-  const buildPatientContext = () => {
-    return `SOAP NOTE:\nS: ${soap.S}\n\nO: ${soap.O}\n\nA: ${soap.A}\n\nP: ${soap.P}`;
-  };
+  const omRows = useMemo(() => {
+    const rows = [];
+    if(v("ndi_score"))  rows.push({name:"NDI",  score:v("ndi_score"),  max:50, note:"Neck Disability Index"});
+    if(v("psfs_score")) rows.push({name:"PSFS", score:v("psfs_score"), max:10, note:"Patient-Specific Functional"});
+    if(v("koos_score")) rows.push({name:"KOOS", score:v("koos_score"), max:100,note:"Knee Injury & OA"});
+    if(v("dash_score")) rows.push({name:"DASH", score:v("dash_score"), max:100,note:"Arm/Shoulder/Hand"});
+    if(v("lefs_score")) rows.push({name:"LEFS", score:v("lefs_score"), max:80, note:"Lower Extremity Functional"});
+    const omR = data.om_report;
+    if(omR?.scores) Object.entries(omR.scores).slice(0,4).forEach(([k,s])=>rows.push({name:k.toUpperCase(),score:String(s),max:"",note:""}));
+    return rows;
+  }, [data]);
 
-  const callGroq = async (prompt) => {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method:"POST",
-      headers:{"Content-Type":"application/json", "Authorization":`Bearer ${aiKey}`},
-      body: JSON.stringify({ model:"llama-3.3-70b-versatile", messages:[{role:"user",content:prompt}], temperature:0.4, max_tokens:1200 })
-    });
-    if (!res.ok) {
-      const e = await res.json();
-      const msg = e?.error?.message || `HTTP ${res.status}`;
-      if (msg.includes('rate')||msg.includes('limit')) throw new Error("Groq rate limit — wait a few seconds and retry.");
-      throw new Error(msg);
-    }
-    const json = await res.json();
-    return json.choices?.[0]?.message?.content || "No response received.";
-  };
+  const cpaText = [v("cpa_pattern")||v("cpa_notes")||scan("cpa"),v("cx_stt_passive_rotation_r")&&"Cervical passive: "+v("cx_stt_passive_rotation_r")].filter(Boolean);
+  const funcBullets = [a("fl_work"),a("fl_mobility"),a("fl_self_care"),a("fl_domestic"),v("ar_goal_function")].filter(Boolean).flatMap(s=>s.split(",").map(x=>x.trim()).filter(Boolean));
 
-  const runAsk = async () => {
-    if (!aiQuestion.trim()) return;
-    setAiLoading(true); setAiError(null); setAiResponse(null);
-    try {
-      const context = buildPatientContext();
-      const prompt = `You are an expert physiotherapist and clinical reasoning assistant.\n\nPatient SOAP Note:\n${context}\n\nClinician Question: ${aiQuestion}\n\nProvide a concise, evidence-based clinical response (2-4 paragraphs max).`;
-      setAiResponse(await callGroq(prompt));
-    } catch(e) { setAiError(e.message); }
-    setAiLoading(false);
-  };
+  const posFindings = useMemo(() => {
+    const f=[];
+    sttRows.forEach(t=>{const lc=t.val.toLowerCase();if(lc.includes("positive")||lc.includes("+ve"))f.push(t.name+" — "+t.val.slice(0,35));});
+    romRows.forEach(r=>{if(r.single&&r.flag&&r.flag.icon!=="✓")f.push(r.label+": "+r.single+"° ("+r.pct+"%)");if(r.flagL&&r.flagL.icon!=="✓")f.push(r.label+" L: "+r.l+"°");if(r.flagR&&r.flagR.icon!=="✓")f.push(r.label+" R: "+r.r+"°");});
+    neuroRows.forEach(n=>{const lc=n.val.toLowerCase();if(lc.includes("reduced")||lc.includes("weak")||lc.includes("absent"))f.push(n.label+": "+n.val.slice(0,35));});
+    if(redFlags.length) f.push("⚠ Red flags: "+redFlags.join(", "));
+    return f.slice(0,8);
+  }, [sttRows,romRows,neuroRows,redFlags]);
 
-  const runDdx = async () => {
-    setAiLoading(true); setAiError(null); setAiResponse(null);
-    try {
-      const context = buildPatientContext();
-      const prompt = `You are an expert physiotherapist. Analyse this patient data and generate a clinical differential diagnosis with confidence levels and evidence-based treatment recommendations.\n\nPatient Data:\n${context}\n\nProvide:\n1. Top 3 differential diagnoses with confidence %\n2. Key supporting evidence for each\n3. Tests needed to confirm primary diagnosis\n4. Evidence-based treatment priorities\n\nBe concise and clinically precise.`;
-      setAiResponse(await callGroq(prompt));
-    } catch(e) { setAiError(e.message); }
-    setAiLoading(false);
-  };
+  const negFindings = useMemo(() => {
+    const f=[];
+    sttRows.forEach(t=>{const lc=t.val.toLowerCase();if(lc.includes("negative")||lc.includes("-ve")||lc.includes("normal")||lc.includes("intact"))f.push(t.name+" — "+t.val.slice(0,30));});
+    neuroRows.forEach(n=>{const lc=n.val.toLowerCase();if(lc.includes("intact")||lc.includes("normal")||lc.includes("5/5"))f.push(n.label+": "+n.val.slice(0,30));});
+    if(!redFlags.length) f.push("Red flags — nil identified");
+    return f.slice(0,6);
+  }, [sttRows,neuroRows,redFlags]);
 
-  const runEnhance = async () => {
-    setAiLoading(true); setAiError(null); setAiResponse(null);
-    try {
-      const prompt = `You are an expert physiotherapy documentation specialist. Rewrite this SOAP note with professional clinical language, proper medical terminology, expanded clinical reasoning, and medico-legally defensible documentation.\n\nOriginal SOAP:\nS: ${soap.S}\n\nO: ${soap.O}\n\nA: ${soap.A}\n\nP: ${soap.P}\n\nProvide the enhanced SOAP note maintaining the same structure (S/O/A/P). Use professional physiotherapy terminology throughout.`;
-      setAiResponse(await callGroq(prompt));
-    } catch(e) { setAiError(e.message); }
-    setAiLoading(false);
-  };
-
-  // ── Copy helpers ──────────────────────────────────────────────────────────
-  const copySection = (key, text) => {
-    navigator.clipboard?.writeText(text).then(() => { setCopied(key); setTimeout(()=>setCopied(null),2000); });
-  };
-  const copyFull = () => {
-    const d2 = new Date().toLocaleDateString("en-AU",{day:"2-digit",month:"long",year:"numeric"});
-    const text = [
-      `SOAP CLINICAL NOTE`,
-      `Patient: ${data["dem_name"]||"—"} | Date: ${d2} | Session: ${session}`,
-      `Clinician: ${clinician||"—"} | Clinic: ${clinic||"—"}`,
-      data.soap_icd10?`ICD-10: ${data.soap_icd10}`:"",
-      "═".repeat(60),
-      `\nSUBJECTIVE (S):\n${getSOAPText("S")}`,
-      `\nOBJECTIVE (O):\n${getSOAPText("O")}`,
-      `\nASSESSMENT (A):\n${getSOAPText("A")}`,
-      `\nPLAN (P):\n${getSOAPText("P")}`,
-    ].filter(Boolean).join("\n");
-    navigator.clipboard?.writeText(text).then(() => { setCopied("all"); setTimeout(()=>setCopied(null),2000); });
-  };
-
-  const printNote = () => {
-    const d2 = new Date().toLocaleDateString("en-AU",{day:"2-digit",month:"long",year:"numeric"});
-    const bodyHTML = `
-      <div class="info-grid">
-        <div class="info-box"><div class="info-label">Patient</div><div class="info-value">${data["dem_name"]||"—"}</div></div>
-        <div class="info-box"><div class="info-label">Session</div><div class="info-value">${session}</div></div>
-        <div class="info-box"><div class="info-label">Date</div><div class="info-value">${d2}</div></div>
-        <div class="info-box"><div class="info-label">Clinician</div><div class="info-value">${clinician||"—"} · ${clinic||"—"}</div></div>
-      </div>
-      <span class="badge badge-blue">SOAP CLINICAL NOTE — Auto-Generated</span>
-      <h2>S — Subjective</h2><div class="section-box" style="white-space:pre-wrap">${soap.S}</div>
-      <h2>O — Objective</h2><div class="section-box" style="white-space:pre-wrap">${soap.O}</div>
-      <h2>A — Assessment</h2><div class="section-box" style="white-space:pre-wrap">${soap.A}</div>
-      <h2>P — Plan</h2><div class="section-box" style="white-space:pre-wrap">${soap.P}</div>
-      <div class="sig-row">
-        <div class="sig-col"><div class="sig-line"></div><div class="sig-label">Clinician Signature</div></div>
-        <div class="sig-col"><div class="sig-line"></div><div class="sig-label">Date</div></div>
-        <div class="sig-col"><div class="sig-line"></div><div class="sig-label">Patient Signature (consent)</div></div>
-      </div>`;
-    if (typeof makePDFPage === "function" && typeof downloadPDFFromHTML === "function") {
-      const html = makePDFPage("SOAP Clinical Note", `<div><strong>Patient:</strong> ${data["dem_name"]||"—"}</div><div><strong>Date:</strong> ${d2}</div><div><strong>Clinician:</strong> ${clinician||"—"}</div>`, bodyHTML);
-      downloadPDFFromHTML(html, `SOAP_${data["dem_name"]||"Patient"}_${Date.now()}.pdf`);
-    } else {
-      const win = window.open("","_blank");
-      if (win) { win.document.write(`<html><body style="font-family:Arial,sans-serif;padding:20px">${bodyHTML}</body></html>`); win.document.close(); setTimeout(()=>win.print(),500); }
-    }
+  const handleSign = () => {
+    if(!lockConfirm){setLockConfirm(true);return;}
+    const soap = buildRealtimeSOAP(data, extraS, extraO, extraA, extraP);
+    const now = new Date();
+    const note = { id:Date.now(), session:session||"Session", clinician, clinic, lockedAt:now.toISOString(),
+      lockedAtDisplay:now.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})+" "+now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}),
+      S:soap.S, O:soap.O, A:soap.A, P:soap.P, vasNow, dx, icd };
+    const existing = Array.isArray(data.soap_signed_notes)?data.soap_signed_notes:[];
+    set("soap_signed_notes",[...existing,note]);
+    set("soap_clinician",clinician); set("soap_clinic",clinic); set("soap_session",session);
+    setLockConfirm(false); setLockSuccess(true);
+    setTimeout(()=>setLockSuccess(false),3000);
   };
 
-  // ── Styles ────────────────────────────────────────────────────────────────
-  const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.76rem"};
-  const ta  = {...inp,resize:"vertical",minHeight:60};
-  const lbl = {fontSize:"0.8rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.8px"};
-
-  const sectionColors = {"S":"#7c3aed","O":"#06b6d4","A":"#10b981","P":"#f59e0b"};
-  const sectionLabels = {"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"};
-  const sectionIcons  = {"S":"📋","O":"🔬","A":"🧠","P":"📌"};
-
-  const tabBtn = (id, label, badge=null) => (
-    <button key={id} onClick={()=>setActiveTab(id)} style={{
-      padding:"8px 12px", borderRadius:9,
-      background: activeTab===id ? `${PC.accent}18` : "transparent",
-      border: `1px solid ${activeTab===id ? PC.accent+"50" : PC.border}`,
-      color: activeTab===id ? PC.accent : PC.muted,
-      fontWeight: activeTab===id ? 800 : 500, fontSize:"0.73rem",
-      cursor:"pointer", fontFamily:"inherit",
-      display:"flex", alignItems:"center", gap:6,
-    }}>
-      {label}
-      {badge !== null && badge > 0 && (
-        <span style={{background:PC.accent,color:"#fff",borderRadius:20,padding:"1px 6px",fontSize:"0.78rem",fontWeight:900}}>{badge}</span>
-      )}
-    </button>
-  );
-
-  // ── Interpretation badge confidence render ────────────────────────────────
-  const confBadge = (conf) => {
-    const cfg = {
-      HIGH:   {bg:"rgba(16,185,129,0.12)",color:"#059669"},
-      MOD:    {bg:"rgba(180,83,9,0.12)",  color:"#b45309"},
-      URGENT: {bg:"rgba(220,38,38,0.15)", color:"#dc2626"},
-    }[conf] || {bg:"rgba(124,58,237,0.1)",color:"#7c3aed"};
-    return (
-      <span style={{padding:"1px 7px",borderRadius:20,background:cfg.bg,color:cfg.color,
-        fontSize:"0.78rem",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.6px"}}>
-        {conf}
-      </span>
-    );
-  };
+  const OBJ_MODS = [
+    {key:"obs",label:"Observation",done:mods.posture},{key:"rom",label:"ROM",done:mods.rom},
+    {key:"mmt",label:"MMT",done:mods.mmt},{key:"neuro",label:"Neuro",done:mods.neuro},
+    {key:"stt",label:"STT",done:mods.stt},{key:"palp",label:"Palpation",done:mods.palpation},
+    {key:"cpa",label:"CPA",done:mods.cpa},{key:"func",label:"Functional",done:mods.functional},
+    {key:"outcome",label:"Outcomes",done:mods.outcomes},{key:"postureAI",label:"AI Analysis",done:mods.postureAI},
+    {key:"gait",label:"Gait",done:mods.gait},{key:"kinetic",label:"Kinetic chain",done:mods.kinetic},
+    {key:"fascia",label:"Fascia",done:mods.fascia},
+  ];
+  const initials = name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
 
   return (
-    <div>
-
-      {/* ── LIVE STATUS BAR ────────────────────────────────────────────────── */}
-      {!aiOnly&&<div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
-        background:`${PC.accent}0a`,border:`1px solid ${PC.accent}25`,
-        borderRadius:12,marginBottom:12,flexWrap:"wrap"}}>
-        <div style={{display:"flex",alignItems:"center",gap:7}}>
-          <span style={{width:8,height:8,borderRadius:"50%",background:"#10b981",
-            boxShadow:"0 0 0 3px rgba(16,185,129,0.2)",flexShrink:0,
-            animation:"pm-pulse 2s ease-in-out infinite"}}/>
-          <span style={{fontSize:"0.78rem",fontWeight:800,color:PC.text,
-            textTransform:"uppercase",letterSpacing:"0.8px"}}>SOAP Auto-Filling in Real Time</span>
-        </div>
-        <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          {totalRules > 0 && (
-            <div style={{padding:"3px 10px",background:`${PC.a3}15`,
-              border:`1px solid ${PC.a3}35`,borderRadius:20,
-              fontSize:"0.75rem",fontWeight:700,color:PC.a3}}>
-              🧠 {totalRules} clinical finding{totalRules!==1?"s":""} detected
-            </div>
-          )}
-          {urgentRules.length > 0 && (
-            <div style={{padding:"3px 10px",background:"rgba(220,38,38,0.12)",
-              border:"1px solid rgba(220,38,38,0.4)",borderRadius:20,
-              fontSize:"0.75rem",fontWeight:800,color:"#dc2626",
-              animation:"pm-pulse 1.5s ease-in-out infinite"}}>
-              ⚠️ {urgentRules.length} URGENT
-            </div>
-          )}
-        </div>
-      </div>}
-
-      {/* ── URGENT FLAGS — always visible at top ───────────────────────────── */}
-      {!aiOnly&&urgentRules.map((r,i) => (
-        <div key={i} style={{background:"rgba(220,38,38,0.07)",
-          border:"1.5px solid rgba(220,38,38,0.6)",borderRadius:12,
-          padding:"12px 16px",marginBottom:10,display:"flex",gap:10}}>
-          <span style={{fontSize:"1.4rem",flexShrink:0}}>🚨</span>
-          <div>
-            <div style={{fontWeight:800,color:"#dc2626",fontSize:"0.82rem",marginBottom:4}}>{r.tag}</div>
-            <div style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.65}}>{r.text}</div>
+    <div style={cs.wrap}>
+      {/* Patient header */}
+      <div style={cs.ptBar}>
+        <div style={cs.av}>{initials}</div>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:500,color:"var(--color-text-primary,#1a1025)"}}>{name}</div>
+          <div style={{fontSize:11,color:"var(--color-text-secondary,#7e6a9a)"}}>{[age&&age+"y",sex,occ].filter(Boolean).join(" · ")}</div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:4}}>
+            <span style={cs.chip("#E6F1FB","#0C447C")}>{session||"Assessment"}</span>
+            {icd&&<span style={cs.chip("#EEEDFE","#3C3489")}>{icd}</span>}
+            <span style={cs.chip("#FAEEDA","#633806")}>{new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</span>
+            {clinician&&<span style={cs.chip("#F1EFE8","#444441")}>{clinician}</span>}
           </div>
         </div>
-      ))}
+      </div>
 
-      {/* -- CLINICAL IMPRESSION pinned at top */}
-      {!aiOnly&&<ClinicalImpressionInSOAP data={data} set={set}/>}
-
-      {/* ── SESSION DETAILS ─────────────────────────────────────────────────── */}
-      {!aiOnly&&<div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
-        <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>📋 Session Details</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-          <div><label style={lbl}>Clinician Name</label><input value={clinician} onChange={e=>{setClinician(e.target.value);set("soap_clinician",e.target.value);}} placeholder="Your name" style={inp}/></div>
-          <div><label style={lbl}>Clinic / Practice</label><input value={clinic} onChange={e=>{setClinic(e.target.value);set("soap_clinic",e.target.value);}} placeholder="Clinic name" style={inp}/></div>
+      {/* Progress bar */}
+      <div style={cs.progRow}>
+        <span style={{fontSize:10,color:"var(--color-text-secondary,#7e6a9a)",whiteSpace:"nowrap"}}>Modules done</span>
+        <div style={{flex:1,height:4,background:"var(--color-border-tertiary,#e2d9f3)",borderRadius:100,overflow:"hidden"}}>
+          <div style={{height:"100%",background:"#534AB7",borderRadius:100,width:pct+"%"}}/>
         </div>
-        <div><label style={lbl}>Session Type</label>
-          <select value={session} onChange={e=>{setSession(e.target.value);set("soap_session",e.target.value);}} style={inp}>
-            {["Initial Assessment","Follow-up Session","Discharge Assessment","Telehealth Consultation","Home Visit","Post-surgical Review","Group Session","Sports Field Assessment"].map(s=><option key={s}>{s}</option>)}
-          </select>
+        <span style={{fontSize:10,fontWeight:500,color:"#534AB7",whiteSpace:"nowrap"}}>{doneCount}/{MOD_LIST.length}</span>
+        <div style={{display:"flex",gap:3}}>
+          {MOD_LIST.map(m=><div key={m.key} title={m.label} style={{width:6,height:6,borderRadius:"50%",background:mods[m.key]?"#534AB7":"var(--color-border-tertiary,#e2d9f3)"}}/>)}
         </div>
-      </div>}
+      </div>
 
-      {/* ── MAIN TAB BAR ──────────────────────────────────────────────────────── */}
-      {!aiOnly&&<div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
-        {tabBtn("soap","📄 SOAP Note")}
-        {tabBtn("interp","🧠 Suggested Interpretation", totalRules)}
+      {/* S/O/A/P tabs */}
+      <div style={cs.tabRow}>
+        {[["S","Subjective","#E6F1FB","#0C447C"],["O","Objective","#E1F5EE","#085041"],["A","Assessment","#EEEDFE","#3C3489"],["P","Plan","#FAEEDA","#633806"]].map(([t,label,bg,cl],idx,arr)=>(
+          <div key={t} onClick={()=>setSoapTab(t)} style={{...cs.tab(soapTab===t,bg,cl),borderRight:idx<arr.length-1?"0.5px solid var(--color-border-tertiary,#e2d9f3)":"none"}}>
+            {t}
+            <div style={{width:5,height:5,borderRadius:"50%",background:"currentColor",margin:"2px auto 0",opacity:soapTab===t?0.5:0.15}}/>
+          </div>
+        ))}
+      </div>
 
-        {tabBtn("ai","🤖 AI Assistant")}
-      </div>}
+      {/* ── S ── */}
+      {soapTab==="S"&&(
+        <div style={cs.card}>
+          <div style={cs.ch}><div style={cs.sl("#E6F1FB","#0C447C")}>S</div><div style={cs.ctitle}>Subjective</div></div>
+          <div style={cs.cb}>
+            {cc&&(<><div style={cs.sub0}>Chief complaint</div><div style={cs.ccQ}>"{cc}"</div></>)}
+            {redFlags.length>0&&<div style={{marginTop:8,padding:"7px 10px",background:"#FCEBEB",border:"0.5px solid #F09595",borderRadius:8,fontSize:11,color:"#791F1F",fontWeight:500}}>⚠ Red flags: {redFlags.join(", ")} — medical review indicated</div>}
+            {(vasNow||vasWorst||vasBest)&&(<><div style={cs.sub}>Pain scores (NRS)</div><div style={cs.nrsRow}>
+              {[["Now",vasNow,nrsColor(vasNow)],["Worst",vasWorst,"#dc2626"],["Best",vasBest,"#059669"]].map(([l,val,cl])=>val?<div key={l} style={cs.nrsC}><div style={cs.nrsL}>{l}</div><div style={{fontSize:18,fontWeight:500,color:cl}}>{val}</div><div style={cs.nrsL}>/10</div></div>:null)}
+            </div></>)}
+            {loc&&(<><div style={cs.sub}>Location{rad?" & radiation":""}</div><div style={cs.bl}><span>·</span><span>{loc}</span></div>{rad&&<div style={cs.bl}><span>·</span><span>Radiates: {rad}</span></div>}</>)}
+            {(agg||ease)&&(<><div style={cs.sub}>Aggravating & easing</div><div style={cs.two}>
+              {agg&&<div style={cs.colB}><div style={cs.colBL}>Aggravating</div>{agg.split(",").slice(0,4).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x.trim()}</span></div>)}</div>}
+              {ease&&<div style={cs.colB}><div style={cs.colBL}>Easing</div>{ease.split(",").slice(0,4).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x.trim()}</span></div>)}</div>}
+            </div></>)}
+            {(dur||onset||morning||night)&&(<><div style={cs.sub}>24-hour behaviour</div>
+              {dur&&<div style={cs.bl}><span>·</span><span>Duration: {dur}</span></div>}
+              {onset&&<div style={cs.bl}><span>·</span><span>Onset: {onset}</span></div>}
+              {morning&&<div style={cs.bl}><span>·</span><span>Morning: {morning}</span></div>}
+              {night&&<div style={cs.bl}><span>·</span><span>Night: {night}</span></div>}
+            </>)}
+            {(phx||meds)&&(<><div style={cs.sub}>History & medications</div>
+              {phx&&<div style={cs.bl}><span>·</span><span>PMH: {phx}</span></div>}
+              {meds&&<div style={cs.bl}><span>·</span><span>Meds: {meds}</span></div>}
+            </>)}
+            {goals.length>0&&(<><div style={cs.sub}>Patient goals</div>{goals.map((g,i)=><div key={i} style={cs.bl}><span>·</span><span>{g}</span></div>)}</>)}
+            <div style={{marginTop:8}}><textarea placeholder="Add subjective notes..." value={extraS} onChange={e=>setExtraS(e.target.value)} onBlur={()=>set("soap_extra_s",extraS)} style={{...cs.inp,resize:"vertical",minHeight:50}}/></div>
+          </div>
+        </div>
+      )}
 
-      {/* ══════════════════════════════════════════════════════════════
-          SOAP TAB — Real-time auto-filled note
-      ══════════════════════════════════════════════════════════════ */}
-      {activeTab==="soap" && (
-        <div>
-          <div style={{marginBottom:14}}>
-            {/* Previous Note Reference */}
-            {lastNote&&(
-              <div style={{marginBottom:12,background:`${PC.s2}`,border:`1px solid ${PC.border}`,borderRadius:12,overflow:"hidden"}}>
-                <button onClick={()=>setShowPrevNote(v=>!v)}
-                  style={{width:"100%",padding:"9px 14px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8,textAlign:"left"}}>
-                  <span style={{fontSize:"0.75rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>
-                    {showPrevNote?"▾":"▸"} Previous Note: {lastNote.session} — {lastNote.lockedAtDisplay}
-                  </span>
-                  <span style={{marginLeft:"auto",fontSize:"0.8rem",color:PC.muted}}>by {lastNote.clinician}</span>
-                </button>
-                {showPrevNote&&(
-                  <div style={{padding:"10px 14px",borderTop:`1px solid ${PC.border}`}}>
-                    {["S","O","A","P"].map(k=>lastNote[k]&&(
-                      <div key={k} style={{marginBottom:8}}>
-                        <div style={{fontSize:"0.8rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>{k} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[k]}</div>
-                        <div style={{fontSize:"0.73rem",color:PC.text,lineHeight:1.6,background:PC.surface,borderRadius:7,padding:"6px 10px",whiteSpace:"pre-wrap"}}>{lastNote[k].slice(0,250)}{lastNote[k].length>250?"…":""}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+      {/* ── O ── */}
+      {soapTab==="O"&&(
+        <div style={cs.card}>
+          <div style={cs.ch}><div style={cs.sl("#E1F5EE","#085041")}>O</div><div style={cs.ctitle}>Objective — tap module to view</div></div>
+          <div style={cs.cb}>
+            <div style={cs.pillRow}>
+              {OBJ_MODS.map(m=><div key={m.key} onClick={()=>setObjMod(m.key)} style={cs.pill(m.done,objMod===m.key)}>{m.done?"✓ ":""}{m.label}</div>)}
+            </div>
+            <div style={cs.modBox}>
+              {objMod==="obs"&&(mods.posture?<div>{[v("post_fhp"),v("post_kyphosis"),v("post_lordosis"),v("post_pelvis"),v("post_sh"),v("post_scoliosis"),v("post_notes"),data.sagFHPCm&&`FHP: ${data.sagFHPCm}cm`,data.cvaAngle&&`CVA: ${data.cvaAngle}°`,data.sagThorKyph&&`Thoracic kyphosis: ${data.sagThorKyph}°`].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Observation/posture not recorded this session</div>)}
+              {objMod==="rom"&&(romRows.length>0?<table style={cs.rt}><thead><tr><th style={thS}>Movement</th><th style={thS}>Result</th><th style={thS}>Norm</th><th style={thS}>Status</th></tr></thead><tbody>{romRows.map((r,i)=>r.single?<tr key={i}><td style={tdS}>{r.label}</td><td style={tdS}>{r.single}°</td><td style={{...tdS,color:"var(--color-text-secondary,#7e6a9a)"}}>{r.norm}°</td><td style={{...tdS,color:r.flag?.color}}>{r.flag?.icon} {r.pct}%</td></tr>:<tr key={i}><td style={tdS}>{r.label}</td><td style={tdS}>{r.l||"—"}° / {r.r||"—"}°</td><td style={{...tdS,color:"var(--color-text-secondary,#7e6a9a)"}}>{r.norm}°</td><td style={tdS}>{r.flagL&&<span style={{color:r.flagL.color,marginRight:4}}>L:{r.pctL}%</span>}{r.flagR&&<span style={{color:r.flagR.color}}>R:{r.pctR}%</span>}</td></tr>)}</tbody></table>:<div style={cs.na}>ROM not recorded this session</div>)}
+              {objMod==="mmt"&&(mods.mmt?<div>{[v("neuro_weakness"),v("muscle_sh_r_abductors"),v("muscle_sh_r_er"),v("muscle_kn_l_quads"),v("muscle_kn_l_hams")].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>MMT not recorded this session</div>)}
+              {objMod==="neuro"&&(neuroRows.length>0?<table style={cs.rt}><thead><tr><th style={thS}>Test</th><th style={thS}>Finding</th></tr></thead><tbody>{neuroRows.map((r,i)=><tr key={i}><td style={tdS}>{r.label}</td><td style={{...tdS,color:r.val.toLowerCase().includes("reduced")||r.val.toLowerCase().includes("weak")?"#dc2626":r.val.toLowerCase().includes("intact")||r.val.toLowerCase().includes("normal")?"#059669":"var(--color-text-primary)"}}>{r.val}</td></tr>)}</tbody></table>:<div style={cs.na}>Neurological exam not recorded this session</div>)}
+              {objMod==="stt"&&(sttRows.length>0?<div>{sttRows.map((t,i)=>{const isPos=t.val.toLowerCase().includes("positive")||t.val.toLowerCase().includes("+ve");const isNeg=t.val.toLowerCase().includes("negative")||t.val.toLowerCase().includes("-ve")||t.val.toLowerCase().includes("normal");return<div key={i} style={{...cs.trRow,borderBottom:i<sttRows.length-1?"0.5px solid var(--color-border-tertiary,#e2d9f3)":"none"}}><span style={{flex:1,color:"var(--color-text-primary)"}}>{t.name}</span><span style={{fontWeight:500,color:isPos?"#dc2626":isNeg?"#059669":"inherit",margin:"0 8px",fontSize:11}}>{t.val.slice(0,25)}</span><span style={{fontSize:10,color:"var(--color-text-secondary,#7e6a9a)",textAlign:"right",maxWidth:120}}>{t.sig}</span></div>;})}</div>:<div style={cs.na}>Special tests not recorded this session</div>)}
+              {objMod==="palp"&&(palpPins.filter(p=>p.tenderness).length>0||["cx","lx","shr","knl","af"].some(px=>v(px+"_palpation"))?<div>{palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=><div key={i} style={cs.bl}><span>·</span><span>{p.label}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — Grade {p.tenderness}+{p.notes?" · "+p.notes:""}</span></div>)}{["cx","lx","shr","knl","af"].map(px=>v(px+"_palpation")&&<div key={px} style={cs.bl}><span>·</span><span>{px.toUpperCase()}: {v(px+"_palpation")}</span></div>)}</div>:<div style={cs.na}>Palpation not recorded this session</div>)}
+              {objMod==="cpa"&&(cpaText.length>0?<div>{cpaText.map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>CPA not recorded this session</div>)}
+              {objMod==="func"&&(funcBullets.length>0?<div>{funcBullets.slice(0,8).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Functional assessment not recorded this session</div>)}
+              {objMod==="outcome"&&(omRows.length>0?<table style={cs.rt}><thead><tr><th style={thS}>Scale</th><th style={thS}>Score</th><th style={thS}>Note</th></tr></thead><tbody>{omRows.map((r,i)=><tr key={i}><td style={tdS}>{r.name}</td><td style={{...tdS,fontWeight:500}}>{r.score}{r.max?"/"+r.max:""}</td><td style={{...tdS,color:"var(--color-text-secondary,#7e6a9a)",fontSize:10}}>{r.note}</td></tr>)}</tbody></table>:<div style={cs.na}>Outcome measures not recorded this session</div>)}
+              {objMod==="postureAI"&&(mods.postureAI?<div>{[data.sagFHPCm&&`FHP: ${data.sagFHPCm}cm anterior`,data.cvaAngle&&`CVA: ${data.cvaAngle}°`,data.sagThorKyph&&`Thoracic kyphosis: ${data.sagThorKyph}°`,data.sagLumLord&&`Lumbar lordosis: ${data.sagLumLord}°`,data.sagPelvicShift&&`Pelvic shift: ${data.sagPelvicShift}cm`].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>AI posture analysis not done this session</div>)}
+              {objMod==="gait"&&(mods.gait?<div>{[v("gait_pattern"),v("gait_cadence"),v("gait_antalgic"),v("gait_trendelenburg"),v("gait_notes")].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Gait analysis not done this session</div>)}
+              {objMod==="kinetic"&&(mods.kinetic?<div>{[v("kinetic_primary"),v("kinetic_compensation"),v("kinetic_notes")].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Kinetic chain assessment not done this session</div>)}
+              {objMod==="fascia"&&(mods.fascia?<div>{[v("fascia_restriction"),v("fascia_line"),v("fascia_notes")].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Fascia integration not done this session</div>)}
+            </div>
+            <div style={{marginTop:8}}><textarea placeholder="Add objective notes..." value={extraO} onChange={e=>setExtraO(e.target.value)} onBlur={()=>set("soap_extra_o",extraO)} style={{...cs.inp,resize:"vertical",minHeight:40}}/></div>
+          </div>
+        </div>
+      )}
+
+      {/* ── A ── */}
+      {soapTab==="A"&&(
+        <div style={cs.card}>
+          <div style={cs.ch}><div style={cs.sl("#EEEDFE","#3C3489")}>A</div><div style={cs.ctitle}>Assessment</div></div>
+          <div style={cs.cb}>
+            <div style={cs.sub0}>Working diagnosis</div>
+            <div style={cs.dxB}>
+              <div style={{fontSize:13,fontWeight:500,color:"var(--color-text-primary,#1a1025)"}}>{dx||"Enter diagnosis below"}</div>
+              {icd&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:100,background:"#EEEDFE",color:"#3C3489",fontWeight:500,whiteSpace:"nowrap"}}>{icd}</span>}
+            </div>
+            <div style={{marginTop:6,display:"grid",gap:4}}>
+              <input placeholder="Working diagnosis..." value={dx} onChange={e=>set("soap_a_diagnosis",e.target.value)} style={cs.inp}/>
+              <input placeholder="ICD-10 code (e.g. M54.5)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={cs.inp}/>
+            </div>
+            {(posFindings.length>0||negFindings.length>0)&&(<><div style={cs.sub}>Clinical reasoning</div>
+              <div style={cs.findG}>
+                <div style={cs.findPos}><div style={{fontSize:10,fontWeight:500,color:"#791F1F",marginBottom:3}}>Key positive findings</div>{posFindings.map((f,i)=><div key={i} style={{fontSize:10,padding:"1px 0",display:"flex",gap:3,lineHeight:1.4,color:"var(--color-text-primary)"}}><span style={{color:"#dc2626"}}>·</span><span>{f}</span></div>)}{posFindings.length===0&&<div style={{fontSize:10,color:"#791F1F",fontStyle:"italic"}}>No positive findings recorded</div>}</div>
+                <div style={cs.findNeg}><div style={{fontSize:10,fontWeight:500,color:"#27500A",marginBottom:3}}>Screened negative</div>{negFindings.map((f,i)=><div key={i} style={{fontSize:10,padding:"1px 0",display:"flex",gap:3,lineHeight:1.4,color:"var(--color-text-primary)"}}><span style={{color:"#059669"}}>·</span><span>{f}</span></div>)}{negFindings.length===0&&<div style={{fontSize:10,color:"#27500A",fontStyle:"italic"}}>No negatives yet</div>}</div>
               </div>
+            </>)}
+            <div style={cs.sevRow}>
+              {[["Irritability",v("soap_irritability")||"—"],["Stage",v("soap_stage")||"—"],["Prognosis",v("soap_prognosis")||"—"],["Severity",v("soap_severity")||"—"]].map(([l,val])=>(
+                <div key={l} style={cs.sevC}><div style={{fontSize:9,color:"var(--color-text-secondary,#7e6a9a)"}}>{l}</div><div style={{fontSize:11,fontWeight:500,marginTop:1,color:"var(--color-text-primary)"}}>{val}</div></div>
+              ))}
+            </div>
+            <div style={{marginTop:6,display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+              {[["soap_irritability","Irritability"],["soap_stage","Stage"],["soap_prognosis","Prognosis"],["soap_severity","Severity"]].map(([k,ph])=>(
+                <input key={k} placeholder={ph} value={v(k)} onChange={e=>set(k,e.target.value)} style={cs.inp}/>
+              ))}
+            </div>
+            <textarea placeholder="Additional assessment notes..." value={extraA} onChange={e=>setExtraA(e.target.value)} onBlur={()=>set("soap_extra_a",extraA)} style={{...cs.inp,resize:"vertical",minHeight:50,marginTop:2}}/>
+          </div>
+        </div>
+      )}
+
+      {/* ── P ── */}
+      {soapTab==="P"&&(
+        <div style={cs.card}>
+          <div style={cs.ch}><div style={cs.sl("#FAEEDA","#633806")}>P</div><div style={cs.ctitle}>Plan</div></div>
+          <div style={cs.cb}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
+              <input placeholder="Clinician name" value={clinician} onChange={e=>setClinician(e.target.value)} style={cs.inp}/>
+              <input placeholder="Clinic name" value={clinic} onChange={e=>setClinic(e.target.value)} style={cs.inp}/>
+              <input placeholder="Session type (e.g. Initial Assessment)" value={session} onChange={e=>setSession(e.target.value)} style={{...cs.inp,gridColumn:"1/-1"}}/>
+            </div>
+            {goals.length>0&&(<><div style={cs.sub0}>Treatment goals</div>{goals.map((g,i)=><div key={i} style={cs.planR}><div style={cs.planN}>{i+1}</div><div style={{color:"var(--color-text-primary)",lineHeight:1.4,fontSize:12}}>{g}</div></div>)}</>)}
+            {v("tx_techniques")&&(<><div style={cs.sub}>Treatment this session</div>{v("tx_techniques").split("|||").filter(Boolean).map((t,i)=><div key={i} style={cs.planR}><div style={cs.planN}>{i+1}</div><div style={{color:"var(--color-text-primary)",lineHeight:1.4,fontSize:12}}>{t}</div></div>)}</>)}
+            {Array.isArray(data.hep_programme)&&data.hep_programme.length>0&&(<><div style={cs.sub}>Home exercise programme</div>{data.hep_programme.slice(0,6).map((ex,i)=><div key={i} style={cs.bl}><span>·</span><span>{ex.name}{ex.sets?" · "+ex.sets+" sets":""}{ex.reps?" × "+ex.reps+" reps":""}</span></div>)}</>)}
+            <div style={cs.sub}>Review & referral</div>
+            <div style={{display:"grid",gap:4,marginTop:4}}>
+              <textarea placeholder="Plan notes, precautions, referral, review frequency..." value={extraP} onChange={e=>setExtraP(e.target.value)} onBlur={()=>set("soap_extra_p",extraP)} style={{...cs.inp,resize:"vertical",minHeight:60}}/>
+              <input placeholder="Referral (if any)" value={v("soap_referral")} onChange={e=>set("soap_referral",e.target.value)} style={cs.inp}/>
+              <input placeholder="Imaging / investigations requested" value={v("soap_imaging")} onChange={e=>set("soap_imaging",e.target.value)} style={cs.inp}/>
+            </div>
+            {lockSuccess&&<div style={{padding:"8px 12px",background:"#EAF3DE",border:"0.5px solid #C0DD97",borderRadius:8,fontSize:12,color:"#27500A",marginTop:6}}>✓ Note signed and locked successfully</div>}
+            {lockConfirm?(
+              <div style={{marginTop:8}}>
+                <div style={{fontSize:12,color:"#dc2626",marginBottom:6}}>Sign and lock this note? This cannot be undone.</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                  <button onClick={()=>setLockConfirm(false)} style={{...cs.signBtn,background:"var(--color-background-secondary,#f5f0fb)",color:"var(--color-text-primary)"}}>Cancel</button>
+                  <button onClick={handleSign} style={cs.lockBtn}>Confirm sign & lock</button>
+                </div>
+              </div>
+            ):(
+              <button onClick={handleSign} style={cs.signBtn}>Sign & lock note</button>
             )}
-
-            {/* Copy/print toolbar */}
-            <div style={{display:"flex",gap:7,marginBottom:10,flexWrap:"wrap"}}>
-              <button onClick={printNote} style={{padding:"7px 14px",background:`${PC.a3}12`,border:`1px solid ${PC.a3}35`,borderRadius:8,color:PC.a3,fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
-                🖨️ Print / PDF
-              </button>
-              <button onClick={()=>setLockConfirm(true)} style={{padding:"7px 14px",background:"rgba(220,38,38,0.08)",border:"1.5px solid rgba(220,38,38,0.4)",borderRadius:8,color:"#dc2626",fontSize:"0.8rem",fontWeight:800,cursor:"pointer"}}>
-                🔒 Sign &amp; Lock Note
-              </button>
-              <div style={{marginLeft:"auto",fontSize:"0.82rem",color:PC.muted,display:"flex",alignItems:"center"}}>
-                Updates live as you fill assessment fields ↗
-              </div>
-            </div>
-
-            {/* SOAP sections */}
-            {["S","O","A","P"].map(key => (
-              <div key={key} style={{marginBottom:14,background:"#ffffff",
-                border:`2px solid ${sectionColors[key]}35`,
-                borderRadius:16,overflow:"hidden",
-                boxShadow:`0 3px 16px ${sectionColors[key]}18`}}>
-
-                {/* ── Colourful Header ── */}
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-                  padding:"12px 16px",
-                  background:`linear-gradient(120deg,${sectionColors[key]}22 0%,${sectionColors[key]}0a 100%)`,
-                  borderBottom:`2px solid ${sectionColors[key]}28`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:12}}>
-
-                    {/* Solid colour letter badge */}
-                    <div style={{width:40,height:40,borderRadius:12,
-                      background:sectionColors[key],
-                      boxShadow:`0 4px 14px ${sectionColors[key]}60`,
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontWeight:900,fontSize:"1.2rem",color:"#ffffff",flexShrink:0}}>
-                      {key}
-                    </div>
-
-                    <div>
-                      {/* Big bold coloured heading */}
-                      <div style={{
-                        fontSize:"1rem",
-                        fontWeight:900,
-                        color:sectionColors[key],
-                        letterSpacing:"0.3px",
-                        lineHeight:1.15,
-                        fontFamily:"'Segoe UI','Inter','Helvetica Neue',sans-serif"}}>
-                        {sectionIcons[key]}&nbsp;&nbsp;{sectionLabels[key]}
-                      </div>
-                      {/* Subtitle */}
-                      <div style={{fontSize:"0.82rem",fontWeight:600,marginTop:3,
-                        color:sectionColors[key],opacity:0.72}}>
-                        {{"S":"Patient-reported history, symptoms & pain behaviour",
-                          "O":"Clinical findings, measurements & objective observations",
-                          "A":"Clinical reasoning, differential diagnosis & interpretation",
-                          "P":"Treatment plan, rehabilitation goals & home programme"}[key]}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Copy button */}
-                  <button onClick={()=>copySection(key,soap[key])}
-                    style={{padding:"6px 14px",
-                      background:sectionColors[key],border:"none",
-                      borderRadius:9,color:"#ffffff",
-                      fontSize:"0.75rem",fontWeight:800,cursor:"pointer",
-                      boxShadow:`0 2px 8px ${sectionColors[key]}45`,flexShrink:0}}>
-                    {copied===key?"✓ Copied":"Copy"}
-                  </button>
-                </div>
-
-                {/* ── Assessment Summary (collapsible) ── */}
-                {(()=>{
-                  const summaryFields = {
-                    S:[
-                      {label:"Chief Complaint", val: data.cc_main||(Object.values(typeof REG_MOD_S!=="undefined"?REG_MOD_S:{}).find(r=>data[r.prefix+"_cc"])? data[Object.values(REG_MOD_S).find(r=>data[r.prefix+"_cc"])?.prefix+"_cc"] : "")},
-                      {label:"Pain (NRS Now/Worst)", val: [data.cc_vas_now||data.pa_vas_now,data.cc_vas_worst||data.pa_vas_worst].filter(Boolean).join(" / ")+"  /10"},
-                      {label:"Pain Locations", val: Array.isArray(data.body_chart)&&data.body_chart.length>0 ? [...new Set(data.body_chart.map(m=>m.region))].join(", ") : Array.isArray(data.cc_location)?data.cc_location.slice(0,3).join(", "):data.cc_location||""},
-                      {label:"Mechanism / Onset", val: data.cc_onset_type||data.moi_type||(Array.isArray(data.cc_onset)?data.cc_onset[0]:data.cc_onset)||""},
-                      {label:"Aggravating", val: data.cc_agg||(Array.isArray(data.cx_agg_mov)?data.cx_agg_mov.slice(0,2).join(", "):"")||""},
-                      {label:"Easing", val: data.cc_rel||(Array.isArray(data.cx_rel_mov)?data.cx_rel_mov.slice(0,2).join(", "):"")||""},
-                      {label:"Medications", val: data.meds_current||data.medications||""},
-                    ],
-                    O:[
-                      {label:"ROM Region", val: (()=>{const romR=[["Cervical",["rom_cflex_arom","rom_cext_arom"]],["Lumbar",["rom_lflex_arom","rom_lext_arom"]],["Shoulder",["rom_sflex_R_arom","rom_sflex_L_arom"]],["Hip",["rom_hflex_R_arom"]],["Knee",["rom_kflex_R_arom"]]];const found=romR.find(([,keys])=>keys.some(k=>data[k]));return found?`${found[0]}: ${romR.find(([n])=>n===found[0])[1].filter(k=>data[k]).map(k=>data[k]+"°").join(" / ")}`:""})()},
-                      {label:"Positive Special Tests", val: Object.keys(data).filter(k=>k.startsWith("st_")&&data[k]==="Positive").slice(0,3).map(k=>{const NAMES={st_spurling:"Spurling's",st_lachmans:"Lachman's",st_slump_test:"Slump",st_hawkins:"Hawkins-Kennedy",st_neer:"Neer's",st_mcmurray_test:"McMurray's",st_faber_test:"FABER",st_slr_test:"SLR"};return NAMES[k]||k.replace(/^st_/,"").replace(/_/g," ");}).join(", ")||""},
-                      {label:"MMT Findings", val: Object.keys(data).filter(k=>k.startsWith("mmt_")&&data[k]).slice(0,3).map(k=>k.replace("mmt_","").replace(/_/g," ")+" "+data[k]).join(", ")||""},
-                      {label:"Posture", val: Object.keys(data).filter(k=>k.startsWith("posture_defect_")&&data[k]).slice(0,3).map(k=>k.replace("posture_defect_","").replace(/_/g," ")).join(", ")||""},
-                      {label:"Palpation", val: (()=>{ try{ const pins=JSON.parse(data.palp_pins||"[]"); if(pins.length>0){ const pts=pins.slice(0,4).map(p=>p.label+(p.tenderness?` (${p.tenderness}+)`:"")); return pts.join(", ")+(pins.length>4?` +${pins.length-4} more`:""); } } catch(e){} return data.palp_findings||data.palpation_notes||""; })()},
-                    ],
-                    A:[
-                      {label:"Working Diagnosis", val: data.soap_a_diagnosis||data.soap_assessment||""},
-                      {label:"ICD-10 Code", val: data.soap_icd10||"", editable:true, key:"soap_icd10", placeholder:"e.g. M54.5 — Low back pain"},
-                      {label:"Clinical Findings", val: (typeof buildClinicalInterpretation==="function"?buildClinicalInterpretation(data):[]).filter(r=>r.confidence==="HIGH"||r.confidence==="URGENT").slice(0,3).map(r=>r.tag).join("; ")||""},
-                      {label:"Patient Goals", val: [data.ar_goal_function,data.ar_goal_pain,data.ar_goal_return].filter(Boolean).join("; ")||data.sub_goals||""},
-                    ],
-                    P:[
-                      {label:"Treatment Goals", val: [data.ar_goal_function,data.ar_goal_pain].filter(Boolean).slice(0,2).join("; ")||data.sub_goals||""},
-                      {label:"Session Frequency", val: data.tx_frequency||data.plan_frequency||""},
-                      {label:"HEP Exercises", val: Array.isArray(data.hep_programme)&&data.hep_programme.length>0?data.hep_programme.slice(0,4).map(e=>e.name).join(", "):Array.isArray(data.hep_exercises)?data.hep_exercises.slice(0,4).map(e=>e.name).join(", "):""},
-                      {label:"Precautions", val: data.plan_precautions||data.tx_precautions||""},
-                    ],
-                  };
-                  const fields = summaryFields[key]||[];
-                  const hasData = fields.some(f=>f.val&&String(f.val).trim()&&f.val!=="  /10");
-                  return hasData ? (
-                    <div style={{borderBottom:`1px solid ${sectionColors[key]}20`,background:`${sectionColors[key]}04`}}>
-                      <button onClick={()=>setShowSummary(s=>({...s,[key]:!s[key]}))}
-                        style={{width:"100%",padding:"8px 18px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8,textAlign:"left"}}>
-                        <span style={{fontSize:"0.8rem",fontWeight:700,color:sectionColors[key],textTransform:"uppercase",letterSpacing:"0.8px"}}>
-                          {showSummary[key]?"▾":"▸"} Assessment Data
-                        </span>
-                        <span style={{fontSize:"0.78rem",color:PC.muted}}>{fields.filter(f=>f.val&&String(f.val).trim()&&f.val!=="  /10").length} fields</span>
-                      </button>
-                      {showSummary[key]&&(
-                        <div style={{padding:"0 18px 12px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 16px"}}>
-                          {fields.map((f,i)=>f.val||f.editable ? (
-                            <div key={i} style={{padding:"4px 0",borderBottom:`1px solid ${PC.border}`}}>
-                              <div style={{fontSize:"0.8rem",color:PC.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{f.label}</div>
-                              {f.editable
-                                ? <input value={data[f.key]||""} onChange={e=>set(f.key,e.target.value)}
-                                    placeholder={f.placeholder||""}
-                                    style={{fontSize:"0.82rem",color:PC.text,fontWeight:600,background:"none",border:"none",borderBottom:`1px solid ${sectionColors[key]}40`,outline:"none",width:"100%",padding:"1px 0",fontFamily:"inherit"}}/>
-                                : <div style={{fontSize:"0.82rem",color:PC.text,fontWeight:600,lineHeight:1.4}}>{String(f.val||"")}</div>
-                              }
-                            </div>
-                          ) : null)}
-                        </div>
-                      )}
-                    </div>
-                  ) : null;
-                })()}
-
-                {/* ── Editable SOAP Text ── */}
-                <div style={{padding:"12px 18px 14px",background:"#ffffff"}}>
-                  {editMode[key] ? (
-                    <div>
-                      <textarea
-                        value={editText[key]}
-                        onChange={e=>setEditText(t=>({...t,[key]:e.target.value}))}
-                        style={{width:"100%",minHeight:120,background:"#FFFEF5",border:`1.5px solid ${sectionColors[key]}60`,borderRadius:10,padding:"10px 12px",fontSize:"0.83rem",color:"#0a0a0a",lineHeight:1.9,fontFamily:"'Segoe UI','Inter','Helvetica Neue',Arial,sans-serif",resize:"vertical",outline:"none",boxSizing:"border-box"}}
-                      />
-                      <div style={{display:"flex",gap:7,marginTop:8}}>
-                        <button onClick={()=>saveEdit(key)} style={{padding:"6px 16px",background:sectionColors[key],border:"none",borderRadius:8,color:"white",fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>💾 Save</button>
-                        <button onClick={()=>setEditMode(m=>({...m,[key]:false}))} style={{padding:"6px 12px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:8,color:PC.muted,fontWeight:600,fontSize:"0.8rem",cursor:"pointer"}}>Cancel</button>
-                        <button onClick={()=>resetEdit(key)} style={{padding:"6px 12px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:8,color:PC.muted,fontWeight:600,fontSize:"0.8rem",cursor:"pointer"}}>↺ Reset to auto</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <pre style={{margin:0,fontSize:"0.83rem",color:"#0a0a0a",fontWeight:500,lineHeight:2.0,whiteSpace:"pre-wrap",fontFamily:"'Segoe UI','Inter','Helvetica Neue',Arial,sans-serif",letterSpacing:"0.15px"}}>
-                        {getSOAPText(key) || <span style={{color:"#c4b5d4",fontStyle:"italic",fontWeight:400}}>Fill assessment fields to auto-populate…</span>}
-                      </pre>
-                      {data[`soap_${key.toLowerCase()}_edit`]&&<div style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:4,padding:"2px 8px",background:`${sectionColors[key]}12`,borderRadius:20,fontSize:"0.8rem",color:sectionColors[key],fontWeight:700}}>✏️ Edited</div>}
-                      <button onClick={()=>startEdit(key)} style={{marginTop:8,display:"block",padding:"5px 14px",background:`${sectionColors[key]}12`,border:`1px solid ${sectionColors[key]}35`,borderRadius:8,color:sectionColors[key],fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>✏️ Edit this section</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* SPLIT VIEW — Interpretation alongside */}
-          {activeTab==="both" && (
-            <div>
-              <div style={{marginBottom:10,padding:"9px 14px",background:`${PC.accent}08`,
-                border:`1px solid ${PC.accent}28`,borderRadius:11}}>
-                <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.accent,
-                  textTransform:"uppercase",letterSpacing:"0.8px"}}>🧠 Suggested Interpretation</div>
-              </div>
-              {totalRules===0?(
-                <div style={{textAlign:"center",padding:"32px 20px",background:PC.surface,
-                  border:`1px solid ${PC.border}`,borderRadius:13,color:PC.muted,fontSize:"0.78rem"}}>
-                  Fill assessment fields to generate clinical interpretation
-                </div>
-              ):(
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  {[...corrRules,...highRules,...modRules].map((r,i)=>(
-                    <div key={i} style={{background:PC.surface,
-                      border:`1px solid ${r.module==="Correlation"?"rgba(6,182,212,0.4)":PC.border}`,
-                      borderRadius:12,padding:"11px 14px",
-                      borderLeft:`3px solid ${r.module==="Correlation"?"#06b6d4":r.confidence==="HIGH"?"#10b981":"#b45309"}`}}>
-                      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:6,flexWrap:"wrap"}}>
-                        <span style={{fontSize:"0.75rem"}}>{
-                          {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
-                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐️",Correlation:"🔗"}[r.module]||"⚕️"
-                        }</span>
-                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,
-                          textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
-                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.text,flex:1}}>{r.tag}</span>
-                        {confBadge(r.confidence)}
-                      </div>
-                      <p style={{margin:0,fontSize:"0.75rem",color:PC.muted,lineHeight:1.7}}>{r.text}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════
-          INTERPRETATION TAB — Suggested Interpretation full panel
-      ══════════════════════════════════════════════════════════════ */}
-      {activeTab==="interp" && (
-        <div>
-          {/* Header card */}
-          <div style={{padding:"14px 16px",background:`${PC.accent}08`,
-            border:`1px solid ${PC.accent}28`,borderRadius:12,marginBottom:14}}>
-            <div style={{fontWeight:800,color:PC.accent,fontSize:"0.85rem",marginBottom:4,
-              display:"flex",alignItems:"center",gap:8}}>
-              🧠 Suggested Interpretation
-              {totalRules>0&&<span style={{padding:"2px 10px",borderRadius:20,
-                background:PC.accent,color:"#fff",fontSize:"0.82rem",fontWeight:900}}>{totalRules}</span>}
-            </div>
-            <div style={{fontSize:"0.82rem",color:PC.muted,lineHeight:1.65}}>
-              <strong style={{color:PC.text}}>Rule-based clinical reasoning engine</strong> — deterministic physiotherapy logic, NOT generative AI.
-              Updates in real time as you fill any assessment field. Each interpretation is sourced from predefined clinical rules, correlation pathways, and special test clusters.
-            </div>
-          </div>
-
-          {totalRules===0?(
-            <div style={{textAlign:"center",padding:"48px 24px",background:PC.surface,
-              border:`1px solid ${PC.border}`,borderRadius:14}}>
-              <div style={{fontSize:"2.5rem",marginBottom:12}}>🧠</div>
-              <div style={{fontWeight:700,color:PC.text,fontSize:"0.9rem",marginBottom:6}}>No findings yet</div>
-              <div style={{color:PC.muted,fontSize:"0.78rem",lineHeight:1.7}}>
-                Start filling assessment fields in any module<br/>
-                <span style={{color:PC.accent,fontWeight:700}}>Subjective → Posture → ROM → MMT → Special Tests</span><br/>
-                and interpretations will appear here automatically.
-              </div>
-            </div>
-          ):(
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-
-              {/* Section: Correlated Findings */}
-              {corrRules.length>0&&(
-                <>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#06b6d4",textTransform:"uppercase",
-                    letterSpacing:"1.5px",marginBottom:2,display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{height:1,width:8,background:"#06b6d4"}}/> Cross-Module Correlations
-                  </div>
-                  {corrRules.map((r,i)=>(
-                    <div key={i} style={{background:`rgba(6,182,212,0.05)`,
-                      border:`1.5px solid rgba(6,182,212,0.45)`,borderRadius:13,
-                      padding:"14px 16px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,flexWrap:"wrap"}}>
-                        <span style={{fontSize:"0.9rem"}}>🔗</span>
-                        <span style={{fontSize:"0.73rem",fontWeight:800,color:"#06b6d4",flex:1}}>{r.tag}</span>
-                        {confBadge(r.confidence)}
-                      </div>
-                      <p style={{margin:0,fontSize:"0.79rem",color:PC.text,lineHeight:1.75}}>{r.text}</p>
-                    </div>
-                  ))}
-                </>
-              )}
-
-              {/* Section: High Confidence */}
-              {highRules.length>0&&(
-                <>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",textTransform:"uppercase",
-                    letterSpacing:"1.5px",marginTop:6,marginBottom:2,display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{height:1,width:8,background:"#059669"}}/> High Confidence Findings
-                  </div>
-                  {highRules.map((r,i)=>(
-                    <div key={i} style={{background:PC.surface,
-                      border:`1px solid ${PC.border}`,borderRadius:12,
-                      padding:"13px 15px",borderLeft:"3px solid #059669"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7,flexWrap:"wrap"}}>
-                        <span style={{fontSize:"0.82rem"}}>{
-                          {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
-                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐️"}[r.module]||"⚕️"
-                        }</span>
-                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,
-                          textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
-                        <span style={{fontSize:"0.73rem",fontWeight:800,color:PC.text,flex:1}}>{r.tag}</span>
-                        {confBadge(r.confidence)}
-                      </div>
-                      <p style={{margin:0,fontSize:"0.78rem",color:PC.text,lineHeight:1.75}}>{r.text}</p>
-                    </div>
-                  ))}
-                </>
-              )}
-
-              {/* Section: Moderate */}
-              {modRules.length>0&&(
-                <>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#b45309",textTransform:"uppercase",
-                    letterSpacing:"1.5px",marginTop:6,marginBottom:2,display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{height:1,width:8,background:"#b45309"}}/> Additional Findings
-                  </div>
-                  {modRules.map((r,i)=>(
-                    <div key={i} style={{background:PC.surface,
-                      border:`1px solid ${PC.border}`,borderRadius:11,
-                      padding:"11px 14px",borderLeft:"3px solid #b45309"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
-                        <span style={{fontSize:"0.82rem"}}>{
-                          {Subjective:"📋",Posture:"🧍",ROM:"📐",MMT:"💪","Special Tests":"🔬",
-                           Neurology:"⚡",Gait:"🚶",Functional:"🏃",Palpation:"🖐️"}[r.module]||"⚕️"
-                        }</span>
-                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,
-                          textTransform:"uppercase",letterSpacing:"0.6px"}}>{r.module}</span>
-                        <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,flex:1}}>{r.tag}</span>
-                        {confBadge(r.confidence)}
-                      </div>
-                      <p style={{margin:0,fontSize:"0.76rem",color:PC.muted,lineHeight:1.7}}>{r.text}</p>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════
-          ADD NOTES TAB — Additional clinical notes per SOAP section
-      ══════════════════════════════════════════════════════════════ */}
-      {activeTab==="extra" && (
-        <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"14px"}}>
-          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
-            ✏️ Additional Clinical Notes (appended to auto-generated SOAP)
-          </div>
-          <div style={{display:"grid",gap:10}}>
-            {["S","O","A","P"].map(key=>(
-              <div key={key}>
-                <label style={{...lbl,color:sectionColors[key]}}>
-                  {sectionIcons[key]} Additional {sectionLabels[key]} Notes
-                </label>
-                <textarea
-                  value={key==="S"?extraS:key==="O"?extraO:key==="A"?extraA:extraP}
-                  onChange={e=>{
-                    if(key==="S"){setExtraS(e.target.value);set("soap_extra_s",e.target.value);}
-                    else if(key==="O"){setExtraO(e.target.value);set("soap_extra_o",e.target.value);}
-                    else if(key==="A"){setExtraA(e.target.value);set("soap_extra_a",e.target.value);}
-                    else{setExtraP(e.target.value);set("soap_extra_p",e.target.value);}
-                  }}
-                  placeholder={`Additional ${sectionLabels[key].toLowerCase()} notes to append...`}
-                  rows={3} style={ta}
-                />
-              </div>
-            ))}
           </div>
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════
-          AI ASSISTANT TAB
-      ══════════════════════════════════════════════════════════════ */}
-      {activeTab==="ai" && (
-        <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"14px"}}>
-          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>
-            🤖 AI Clinical Assistant (Groq — Llama 3.3 70B)
-          </div>
-
-          {!aiKeySet ? (
-            <div>
-              <div style={{fontSize:"0.73rem",color:PC.muted,marginBottom:10,lineHeight:1.65}}>
-                Enter your free <strong style={{color:PC.text}}>Groq API key</strong> to enable AI clinical reasoning.<br/>
-                <span style={{color:"#059669"}}>✓ 100% free · 30 req/min · Llama 3.3 70B</span>
-              </div>
-              <div style={{display:"flex",gap:8}}>
-                <input value={aiKeyInput} onChange={e=>{setAiKeyInput(e.target.value);setAiError(null);}}
-                  onKeyDown={e=>e.key==="Enter"&&saveKey()}
-                  placeholder="gsk_... paste your Groq API key"
-                  type="password" style={{flex:1,...inp}}/>
-                <button onClick={saveKey} style={{padding:"9px 16px",background:"linear-gradient(135deg,#7f5af0,#00e5ff)",border:"none",borderRadius:8,color:"#000",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap"}}>
-                  Save Key
-                </button>
-              </div>
-              {aiError&&<div style={{marginTop:7,fontSize:"0.78rem",color:"#dc2626",padding:"6px 10px",background:"rgba(220,38,38,0.08)",borderRadius:6}}>{aiError}</div>}
-            </div>
-          ) : (
-            <div>
-              <div style={{display:"flex",gap:6,marginBottom:13}}>
-                {[{id:"ask",icon:"💬",label:"Ask AI"},{id:"ddx",icon:"🔬",label:"Full DDx"},{id:"enhance",icon:"✨",label:"Enhance SOAP"}].map(({id,icon,label})=>(
-                  <button key={id} onClick={()=>{setAiMode(id);setAiResponse(null);setAiError(null);}}
-                    style={{flex:1,padding:"8px 4px",background:aiMode===id?"rgba(127,90,240,0.2)":"rgba(127,90,240,0.06)",border:`1px solid ${aiMode===id?"rgba(127,90,240,0.5)":"rgba(127,90,240,0.2)"}`,borderRadius:8,color:aiMode===id?"#a78bfa":"#6b8399",fontWeight:aiMode===id?800:500,fontSize:"0.66rem",cursor:"pointer",fontFamily:"inherit"}}>
-                    <div style={{fontSize:"1rem",marginBottom:2}}>{icon}</div>{label}
-                  </button>
+      {/* Locked notes history */}
+      {lockedNotes.length>0&&(
+        <div style={cs.card}>
+          <div style={cs.ch}><div style={{...cs.sl("#F1EFE8","#444441")}}>🔒</div><div style={cs.ctitle}>Locked notes ({lockedNotes.length})</div></div>
+          <div style={cs.cb}>
+            {[...lockedNotes].reverse().map((n,i)=>(
+              <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:i<lockedNotes.length-1?"0.5px solid var(--color-border-tertiary,#e2d9f3)":"none"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <div><div style={{fontSize:12,fontWeight:500,color:"var(--color-text-primary)"}}>{n.session}</div><div style={{fontSize:11,color:"var(--color-text-secondary,#7e6a9a)"}}>{n.lockedAtDisplay} · {n.clinician}{n.clinic?" · "+n.clinic:""}</div></div>
+                  <span style={{padding:"2px 8px",background:"#FCEBEB",border:"0.5px solid #F09595",borderRadius:100,fontSize:10,fontWeight:500,color:"#dc2626"}}>LOCKED</span>
+                </div>
+                {["S","O","A","P"].map(key=>(
+                  <div key={key} style={{marginBottom:6}}>
+                    <div style={{fontSize:10,fontWeight:500,color:"var(--color-text-secondary,#7e6a9a)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{key} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[key]}</div>
+                    <div style={{background:"var(--color-background-secondary,#f5f0fb)",borderRadius:8,padding:"6px 10px",fontSize:11,lineHeight:1.6,whiteSpace:"pre-wrap",color:"var(--color-text-primary)"}}>{n[key]||"—"}</div>
+                  </div>
                 ))}
               </div>
-
-              {aiMode==="ask"&&(
-                <div>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-                    {["What is the most likely diagnosis?","Are there any red flags?","What treatment do you recommend?","What are the differential diagnoses?","Is this inflammatory or mechanical?"].map(q=>(
-                      <button key={q} onClick={()=>setAiQuestion(q)} style={{padding:"4px 9px",background:"rgba(0,229,255,0.07)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:6,color:"#00e5ff",fontSize:"0.8rem",cursor:"pointer"}}>
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                  <textarea value={aiQuestion} onChange={e=>setAiQuestion(e.target.value)}
-                    onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();runAsk();}}}
-                    placeholder="Type your clinical question... (Enter to send)"
-                    rows={3} style={{...ta,marginBottom:8}}/>
-                  <button onClick={runAsk} disabled={aiLoading||!aiQuestion.trim()}
-                    style={{width:"100%",padding:"10px",background:aiLoading||!aiQuestion.trim()?"rgba(127,90,240,0.2)":"linear-gradient(135deg,#7f5af0,#00e5ff)",border:"none",borderRadius:8,color:aiLoading?"#6b8399":"#000",fontWeight:800,fontSize:"0.76rem",cursor:aiLoading?"default":"pointer"}}>
-                    {aiLoading?"🔄 Thinking...":"💬 Ask AI"}
-                  </button>
-                </div>
-              )}
-              {aiMode==="ddx"&&(
-                <div>
-                  <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:12,lineHeight:1.65}}>AI will analyse all assessment data and generate a full clinical differential diagnosis with confidence ratings and treatment guidance.</div>
-                  <button onClick={runDdx} disabled={aiLoading} style={{width:"100%",padding:"12px",background:aiLoading?"rgba(127,90,240,0.2)":"linear-gradient(135deg,#7f5af0,#a78bfa)",border:"none",borderRadius:8,color:aiLoading?"#6b8399":"#fff",fontWeight:800,fontSize:"0.8rem",cursor:aiLoading?"default":"pointer"}}>
-                    {aiLoading?"🔄 Analysing...":"🔬 Generate Full Differential Diagnosis"}
-                  </button>
-                </div>
-              )}
-              {aiMode==="enhance"&&(
-                <div>
-                  <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:12,lineHeight:1.65}}>AI will rewrite the auto-generated SOAP note with professional clinical language, proper terminology, and medico-legally defensible documentation.</div>
-                  <button onClick={runEnhance} disabled={aiLoading} style={{width:"100%",padding:"12px",background:aiLoading?"rgba(0,201,122,0.15)":"linear-gradient(135deg,#00c97a,#00e5ff)",border:"none",borderRadius:8,color:aiLoading?"#6b8399":"#000",fontWeight:800,fontSize:"0.8rem",cursor:aiLoading?"default":"pointer"}}>
-                    {aiLoading?"🔄 Enhancing SOAP note...":"✨ Enhance SOAP Note with AI"}
-                  </button>
-                </div>
-              )}
-
-              {aiError&&<div style={{marginTop:10,padding:"9px 12px",background:"rgba(220,38,38,0.08)",border:"1px solid rgba(220,38,38,0.25)",borderRadius:8,fontSize:"0.8rem",color:"#dc2626",lineHeight:1.6}}><strong>Error:</strong> {aiError}</div>}
-
-              {aiResponse&&!aiLoading&&(
-                <div style={{marginTop:12,background:PC.s2,border:"1px solid rgba(127,90,240,0.25)",borderRadius:10,overflow:"hidden"}}>
-                  <div style={{padding:"8px 13px",background:"rgba(127,90,240,0.1)",borderBottom:"1px solid rgba(127,90,240,0.15)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontWeight:700,fontSize:"0.82rem",color:"#a78bfa"}}>🤖 AI Clinical Response</span>
-                    <button onClick={()=>navigator.clipboard?.writeText(aiResponse)} style={{padding:"2px 9px",background:"rgba(0,229,255,0.1)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:5,color:"#00e5ff",fontSize:"0.8rem",cursor:"pointer"}}>Copy</button>
-                  </div>
-                  <div style={{padding:"13px 14px",fontSize:"0.75rem",color:PC.text,lineHeight:1.8,whiteSpace:"pre-wrap",maxHeight:480,overflowY:"auto"}}>{aiResponse}</div>
-                  <div style={{padding:"7px 13px",fontSize:"0.78rem",color:PC.muted,borderTop:`1px solid ${PC.border}`}}>⚠ AI-generated — for clinical decision support only. Clinician responsible for all clinical decisions.</div>
-                </div>
-              )}
-
-              <div style={{marginTop:10,textAlign:"right"}}>
-                <button onClick={clearKey} style={{background:"none",border:"none",color:PC.muted,fontSize:"0.8rem",cursor:"pointer",textDecoration:"underline"}}>Change API Key</button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── SIGN & LOCK CONFIRMATION MODAL ──────────────────────────────── */}
-      {lockConfirm && (
-        <div style={{position:"fixed",inset:0,top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:PC.surface,borderRadius:20,padding:28,maxWidth:420,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.4)"}}>
-            <div style={{fontSize:"1.5rem",marginBottom:8}}>🔒</div>
-            <div style={{fontSize:"1rem",fontWeight:800,color:PC.text,marginBottom:6}}>Sign &amp; Lock This Note?</div>
-            <div style={{fontSize:"0.76rem",color:PC.muted,marginBottom:16,lineHeight:1.6}}>
-              This saves a <strong>timestamped, read-only copy</strong> of the current SOAP note to this patient record. Locked notes cannot be edited.
-            </div>
-            {!clinician.trim() && (
-              <div style={{background:"rgba(220,38,38,0.08)",border:"1px solid rgba(220,38,38,0.3)",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:"0.73rem",color:"#dc2626",fontWeight:600}}>
-                ⚠️ Enter your clinician name (Session Details section above) before signing.
-              </div>
-            )}
-            <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:12}}>
-              <strong>Clinician:</strong> {clinician||"—"} &nbsp;|&nbsp; <strong>Session:</strong> {session} &nbsp;|&nbsp; <strong>Date:</strong> {new Date().toLocaleDateString("en-AU",{day:"2-digit",month:"long",year:"numeric"})}
-            </div>
-            {/* Session quick fields — saves to tx_sessions on sign */}
-            <SignSessionFields PC={PC} data={data}/>
-            <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>setLockConfirm(false)} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.78rem"}}>Cancel</button>
-              <button
-                disabled={!clinician.trim()}
-                onClick={()=>{
-                  if (!clinician.trim()) return;
-                  const now = new Date();
-                  const entry = {
-                    id: now.getTime().toString(36),
-                    lockedAt: now.toISOString(),
-                    lockedAtDisplay: now.toLocaleDateString("en-AU",{day:"2-digit",month:"long",year:"numeric"})+" "+now.toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"}),
-                    clinician, clinic, session,
-                    patient: data["dem_name"]||"Unknown",
-                    S: getSOAPText("S"), O: getSOAPText("O"), A: getSOAPText("A"), P: getSOAPText("P"),
-                    icd10: data.soap_icd10||"",
-                  };
-                  // Also save as tx_session entry
-                  const signSession = window.__signSession||{};
-                  if(signSession.vasEnd||signSession.treatment||signSession.response){
-                    const existSess=Array.isArray(data.tx_sessions)?data.tx_sessions:[];
-                    const sessEntry={id:(Date.now()+1).toString(36),date:now.toLocaleDateString("en-GB"),sessionNo:existSess.length+1,type:session||"Follow-up",vasEnd:signSession.vasEnd||"",treatmentGiven:signSession.treatment||"",response:signSession.response||"",savedAt:now.toISOString()};
-                    if(typeof set==="function") set("tx_sessions",[sessEntry,...existSess]);
-                  }
-                  const updated = [...lockedNotes, entry];
-                  if (typeof set === "function") {
-                    // Save signed notes array
-                    set("soap_signed_notes", updated);
-                    // Also save flat keys so Patient Profile Assessment tab can read them
-                    // (these are the generated SOAP texts including all module data)
-                    setTimeout(()=>{
-                      if (typeof set === "function") {
-                        set("soap_s", entry.S);
-                        set("soap_o", entry.O);
-                        set("soap_a", entry.A);
-                        set("soap_p", entry.P);
-                        set("soap_last_signed", entry.lockedAt);
-                        set("soap_last_clinician", entry.clinician);
-                      }
-                    }, 50);
-                  }
-                  setLockConfirm(false);
-                  setLockSuccess(true);
-                  setTimeout(()=>setLockSuccess(false), 4000);
-                }}
-                style={{flex:2,padding:"10px",borderRadius:10,background:clinician.trim()?"#dc2626":"#ccc",color:"#fff",fontWeight:800,cursor:clinician.trim()?"pointer":"not-allowed",fontSize:"0.78rem",border:"none"}}
-              >
-                🔒 Confirm Sign &amp; Lock
-              </button>
-            </div>
+            ))}
           </div>
         </div>
       )}
-
-      {/* ── LOCK SUCCESS TOAST ───────────────────────────────────────────── */}
-      {lockSuccess && (
-        <div style={{position:"fixed",inset:0,zIndex:9998,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div style={{width:"100%",maxWidth:380,background:"#fff",borderRadius:16,padding:"22px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{textAlign:"center",marginBottom:16}}>
-              <div style={{fontSize:"2.2rem",marginBottom:8}}>✅</div>
-              <div style={{fontWeight:800,fontSize:"0.95rem",color:"#059669",marginBottom:4}}>SOAP note signed and saved</div>
-              <div style={{fontSize:"0.82rem",color:"#7e6a9a"}}>{data.dem_name||"Patient"} · {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</div>
-            </div>
-            <div style={{fontSize:"0.78rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:8}}>What do you want to do next?</div>
-            <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
-              {[
-                {icon:"🧍",label:"Run posture analysis",nav:"posture",col:"#7c3aed"},
-                {icon:"📊",label:"Record outcome measures",nav:"outcome",col:"#0891b2"},
-                {icon:"💪",label:"Add exercises (HEP)",nav:"exercise",col:"#059669"},
-                {icon:"📅",label:"Log today's treatment session",nav:"tx_sessions",col:"#d97706"},
-              ].map(item=>(
-                <button key={item.nav} onClick={()=>{setLockSuccess(false);if(typeof onNav==="function")onNav(item.nav);}}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
-                    background:`${item.col}10`,border:`1px solid ${item.col}30`,
-                    borderRadius:10,cursor:"pointer",width:"100%",textAlign:"left",
-                    fontFamily:"inherit",color:item.col,fontWeight:700,fontSize:"0.78rem"}}>
-                  <span style={{fontSize:"1rem"}}>{item.icon}</span>{item.label}
-                </button>
-              ))}
-            </div>
-            <button onClick={()=>setLockSuccess(false)} style={{width:"100%",padding:"10px",borderRadius:10,border:"1px solid #d8cce8",background:"transparent",color:"#7e6a9a",fontWeight:600,cursor:"pointer",fontSize:"0.78rem"}}>
-              Done for now
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── LOCKED NOTES HISTORY ─────────────────────────────────────────── */}
-      {lockedNotes.length > 0 && (
-        <div style={{marginTop:20,background:PC.surface,border:"1.5px solid rgba(220,38,38,0.25)",borderRadius:16,overflow:"hidden"}}>
-          <div style={{padding:"12px 16px",background:"rgba(220,38,38,0.06)",borderBottom:"1px solid rgba(220,38,38,0.15)",display:"flex",alignItems:"center",gap:8}}>
-            <span>🔒</span>
-            <span style={{fontWeight:800,fontSize:"0.78rem",color:"#dc2626",textTransform:"uppercase",letterSpacing:"0.8px"}}>Signed &amp; Locked Notes ({lockedNotes.length})</span>
-            <span style={{marginLeft:"auto",fontSize:"0.75rem",color:PC.muted}}>Read-only</span>
-          </div>
-          {[...lockedNotes].reverse().map((n, i) => (
-            <div key={n.id||i} style={{padding:"14px 16px",borderBottom:i<lockedNotes.length-1?"1px solid rgba(220,38,38,0.1)":"none"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10,flexWrap:"wrap",gap:6}}>
-                <div>
-                  <div style={{fontWeight:800,fontSize:"0.8rem",color:PC.text}}>{n.session}</div>
-                  <div style={{fontSize:"0.78rem",color:PC.muted,marginTop:2}}>🗓 {n.lockedAtDisplay} &nbsp;|&nbsp; 👤 {n.clinician}{n.clinic?" · "+n.clinic:""}</div>
-                </div>
-                <span style={{padding:"3px 10px",background:"rgba(220,38,38,0.08)",border:"1px solid rgba(220,38,38,0.3)",borderRadius:20,fontSize:"0.82rem",fontWeight:800,color:"#dc2626"}}>LOCKED</span>
-              </div>
-              {["S","O","A","P"].map(key => (
-                <div key={key} style={{marginBottom:8}}>
-                  <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>{key} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[key]}</div>
-                  <div style={{background:PC.s2,borderRadius:8,padding:"8px 12px",fontSize:"0.74rem",color:PC.text,lineHeight:1.65,whiteSpace:"pre-wrap"}}>{n[key]||"—"}</div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
     </div>
   );
 }
-
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
