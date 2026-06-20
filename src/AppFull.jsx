@@ -10921,136 +10921,325 @@ const DB_KEY = "physio_patient_db_v1";
 const DRAFT_KEY = "physio_draft_v1";
 
 const DEMO_PATIENTS = [
+  // ── 1. Cervical radiculopathy — office worker ────────────────────────────
   {
-    id:"demo_001", name:"Aisha Malik", lastDx:"", hasRedFlags:false,
-    createdAt:"2025-01-10T09:00:00Z", updatedAt:"2025-01-10T09:00:00Z",
+    id:"demo_001", name:"Meera Nair", lastDx:"Cervical radiculopathy C6", hasRedFlags:false,
+    createdAt:"2026-05-15T09:00:00Z", updatedAt:"2026-05-15T09:30:00Z",
     data:{
-      dem_name:"Aisha Malik", dem_age:"34", dem_sex:"Female", dem_occupation:"Office administrator",
-      dem_work_status:"Full time employed",
-      cc_main:"My neck has been killing me for weeks. I wake up with terrible stiffness and by afternoon I can barely turn my head.",
-      cc_location:["Neck — posterior","Neck — lateral (R)","Shoulder (R)"],
-      cc_symptom_type:["Stiffness","Aching","Sharp"],
-      cc_onset:["Gradual — insidious"], cc_duration:["1–3 months"],
-      pa_vas_now:"5", pa_vas_worst:"8", pa_vas_best:"2",
-      pa_quality:["Aching","Stiffness","Sharp"],
-      sb_morning:["Worse on waking — prolonged stiffness (>30 min)"],
-      sb_night:["Pain disturbs sleep — takes time to settle"],
-      agg_posture:["Prolonged sitting > 1 hour","Computer work","Looking down (phone use)"],
-      agg_movement:["Rotation right","Looking over shoulder"],
-      rel_manual:["Heat application"],
-      moi_type:["Postural overload"], moi_activity:"Sitting at desk all day working from home",
-      phx_conditions:"Migraine (occasional)",
-      dem_gp:"Dr. Patel",
+      dem_name:"Meera Nair", dem_age:"38", dem_sex:"Female",
+      dem_occupation:"Software engineer", dem_work_status:"Full time employed",
+      dem_phone:"9845012345", dem_email:"meera.nair@email.com",
+      dem_address:"14B, Koramangala, Bengaluru",
+      dem_gp:"Dr. Suresh Rao",
+      cc_main:"Sharp pain in my right neck radiating into my right arm with tingling in my thumb and index finger. Started after sitting long hours on video calls.",
+      cc_location:["Neck — posterior","Neck — lateral (R)","Shoulder (R)","Forearm — lateral (R)","Hand/fingers (R)"],
+      cc_radiation:["Radiates to shoulder (R)","Radiates to arm (R)","Radiates to hand/fingers (R)"],
+      cc_symptom_type:["Sharp","Burning","Tingling/pins & needles","Numbness"],
+      cc_quality:["Sharp","Burning","Tingling","Numb"],
+      cc_onset:["Gradual — insidious","Postural overload"],
+      cc_duration:["3–6 months (chronic)"],
+      cc_vas_now:"6", cc_vas_worst:"9", cc_vas_best:"2",
+      pa_vas_now:"6", pa_vas_worst:"9", pa_vas_best:"2",
+      pa_quality:["Sharp","Burning","Tingling","Numb"],
+      pa_nature:["Neuropathic — burning, shooting, dermatomal"],
+      pa_pattern:["Constant — varies in intensity","Activity dependent"],
+      // Cervical regional fields
+      cx_loc:"Neck — posterior, Neck — lateral (R), Shoulder (R)",
+      cx_radiation:"Radiates to shoulder (R), Radiates to arm (R), Radiates to hand/fingers (R)",
+      cx_quality:"Sharp, Burning, Tingling, Numb",
+      cx_moi:"Postural overload — sustained flexion",
+      cx_agg_mov:"Cervical rotation right, Lateral flexion right, Extension",
+      cx_agg_post:"Prolonged sitting > 1 hour, Computer/keyboard work",
+      cx_rel_mov:"Cervical traction in neutral, Arm elevation (shoulder abduction)",
+      cx_rel_manual:"Heat application, Gentle cervical SNAG",
+      cx_morning:"Stiff on waking — improves within 30 min",
+      cx_night:"Arm/leg symptoms at night (neural), Pain disturbs sleep",
+      sb_morning:["Stiff on waking — improves with movement"],
+      sb_night:["Arm/leg symptoms at night (neural)","Pain disturbs sleep — takes time to settle"],
+      agg_posture:["Prolonged sitting > 1 hour","Computer work"],
+      agg_movement:["Cervical rotation right","Looking over shoulder"],
+      rel_manual:["Heat application","Cervical traction"],
+      moi_type:["Postural overload"], moi_activity:"12-hour remote work days, poor desk ergonomics",
+      phx_conditions:"Nil significant", meds_current:"Ibuprofen 400mg PRN",
+      // Neurological
+      neuro_dermatomal:"C6 — thumb and index finger (R)",
+      neuro_reflex_biceps:"Reduced (R)",
+      neuro_sensation:"Reduced pin prick — lateral forearm & thumb (R)",
+      neuro_weakness:"Wrist extension weak (R) — 4/5",
+      // ROM
+      rom_cx_flex:"45°", rom_cx_ext:"35°", rom_cx_rot_r:"40° (painful, limited)",
+      rom_cx_rot_l:"70°", rom_cx_lat_r:"25°", rom_cx_lat_l:"45°",
+      // STT
+      cx_stt_passive_rotation_r:"Painful arc 30–50°, end-range pain",
+      cx_stt_passive_rotation_l:"Full range, pain free",
+      cx_spurling:"Positive (R) — reproduces arm symptoms",
+      cx_distraction:"Positive — relieves arm symptoms",
+      // Diagnosis
+      soap_a_diagnosis:"Cervical radiculopathy C6 nerve root (R)",
+      soap_icd10:"M54.12",
+      // Goals
+      ar_goal_pain:"Reduce arm pain from 6/10 to 2/10 within 4 weeks",
+      ar_goal_function:"Return to full-day computer work pain-free within 6 weeks",
+      ar_goal_return:"Return to badminton training within 8 weeks",
+      // Functional limitations
+      fl_work:["Computer work painful","Cannot sit > 1 hour"],
+      fl_self_care:["Dressing — upper body difficulty","Cannot carry bag on right shoulder"],
     }
   },
+  // ── 2. Lumbar disc prolapse with sciatica ────────────────────────────────
   {
-    id:"demo_002", name:"James Okonkwo", lastDx:"", hasRedFlags:false,
-    createdAt:"2025-01-11T10:00:00Z", updatedAt:"2025-01-11T10:00:00Z",
+    id:"demo_002", name:"Arjun Pillai", lastDx:"L4/5 disc prolapse — left sciatica", hasRedFlags:false,
+    createdAt:"2026-05-16T10:00:00Z", updatedAt:"2026-05-16T10:30:00Z",
     data:{
-      dem_name:"James Okonkwo", dem_age:"52", dem_sex:"Male", dem_occupation:"Warehouse operative",
-      dem_work_status:["Full time employed","Off work — injury"],
-      cc_main:"Sharp pain down my left leg when I bend forward. Started after lifting a heavy pallet last month.",
-      cc_location:["Lower back","Buttock (L)","Thigh posterior (L)"],
-      cc_radiation:["Radiates to leg (L)","Radiates to calf"],
-      cc_symptom_type:["Sharp","Shooting","Tingling/pins & needles"],
+      dem_name:"Arjun Pillai", dem_age:"45", dem_sex:"Male",
+      dem_occupation:"Civil engineer — site work", dem_work_status:["Full time employed","Restricted duties"],
+      dem_phone:"9876543210", dem_gp:"Dr. Kavitha Menon",
+      cc_main:"Severe shooting pain from my lower back down my left leg to my foot. Coughing makes it unbearable. Started after I bent to pick up a drawing tube 3 weeks ago.",
+      cc_location:["Lower back","Buttock (L)","Thigh posterior (L)","Calf (L)","Foot (L)"],
+      cc_radiation:["Radiates to leg (L)","Radiates to calf","Radiates to foot"],
+      cc_symptom_type:["Sharp","Shooting","Burning","Tingling/pins & needles"],
+      cc_quality:["Sharp","Shooting","Burning","Tingling"],
       cc_onset:["Lifting injury — flexed spine"], cc_duration:["2–4 weeks (subacute)"],
-      pa_vas_now:"6", pa_vas_worst:"9", pa_vas_best:"3",
-      pa_quality:["Sharp","Shooting","Burning","Tingling"],
+      cc_vas_now:"7", cc_vas_worst:"10", cc_vas_best:"3",
+      pa_vas_now:"7", pa_vas_worst:"10", pa_vas_best:"3",
+      pa_nature:["Neuropathic — burning, shooting, dermatomal"],
+      pa_pattern:["Constant — varies in intensity","Position dependent"],
+      // Lumbar regional fields
+      lx_loc:"Lower back, Buttock (L), Thigh posterior (L), Calf (L)",
+      lx_radiation:"Radiates to leg (L), Radiates to foot (L)",
+      lx_quality:"Sharp, Shooting, Burning, Tingling",
+      lx_moi:"Lifting injury — flexed spine",
+      lx_agg_mov:"Forward bending, Sitting > 20 min, Coughing/sneezing, Getting in/out of car",
+      lx_agg_post:"Prolonged sitting, Slouched posture",
+      lx_rel_mov:"Walking short distances, Lying with knees bent",
+      lx_rel_post:"Lying prone with pillow under abdomen",
+      lx_morning:"Worst on waking — eases with movement within 30 min",
+      lx_night:"Pain wakes from sleep — position change required",
+      lx_rf_cauda:"No cauda equina symptoms",
       sb_morning:["Worst on waking — eases quickly (<30 min)"],
       sb_night:["Pain wakes from sleep — can return to sleep"],
       agg_movement:["Forward bending","Getting in/out of car","Coughing / sneezing"],
       rel_posture:["Lying with knees bent"],
-      moi_type:["Lifting injury — flexed spine"], moi_activity:"Lifting a 40kg pallet at warehouse",
-      phx_conditions:"Hypertension", meds_current:"Amlodipine 5mg",
-      s_red4:"", // no bilateral pins
+      moi_type:["Lifting injury — flexed spine"],
+      moi_activity:"Bending to pick up rolled drawing tube from ground, twisted simultaneously",
+      phx_conditions:"Nil", meds_current:"Diclofenac 75mg BD, Pregabalin 75mg nocte",
+      // Neurology
+      neuro_dermatomal:"L5 — dorsum of foot (L)",
+      neuro_reflex_ankle:"Normal (L), Normal (R)",
+      neuro_sensation:"Reduced pin prick — dorsum foot (L)",
+      neuro_weakness:"Extensor hallucis longus weak (L) — 4/5",
+      // ROM
+      rom_lx_flex:"Severely limited — fingers to knees only, pain + sciatic referral",
+      rom_lx_ext:"20° — mild increase in back pain",
+      rom_lx_rot_r:"30°", rom_lx_rot_l:"20°",
+      // Lumbar special tests
+      lx_slr_l:"Positive at 30° — reproduces left leg symptoms",
+      lx_slr_r:"Negative",
+      lx_crossed_slr:"Negative",
+      lx_femoral_stretch:"Negative",
+      // Imaging
+      dem_imaging:"MRI lumbar spine (05/2026): L4/5 disc protrusion with left paracentral herniation, moderate left neural foraminal stenosis, contact with L5 nerve root.",
+      // Diagnosis
+      soap_a_diagnosis:"L4/5 intervertebral disc prolapse with left L5 radiculopathy",
+      soap_icd10:"M51.16",
+      // Goals
+      ar_goal_pain:"Reduce leg pain from 7/10 to 3/10 within 4 weeks",
+      ar_goal_function:"Walk 500m without stopping within 3 weeks",
+      ar_goal_return:"Return to site supervision (light duties) within 6 weeks",
+      fl_work:["Cannot stand > 15 min","Cannot drive","Heavy lifting not possible"],
+      fl_mobility:["Cannot walk > 100m","Stairs — moderate difficulty"],
     }
   },
+  // ── 3. Rotator cuff tear — elderly active patient ────────────────────────
   {
-    id:"demo_003", name:"Priya Sharma", lastDx:"", hasRedFlags:false,
-    createdAt:"2025-01-12T11:00:00Z", updatedAt:"2025-01-12T11:00:00Z",
+    id:"demo_003", name:"Sudha Krishnamurthy", lastDx:"Partial thickness supraspinatus tear (R)", hasRedFlags:false,
+    createdAt:"2026-05-17T11:00:00Z", updatedAt:"2026-05-17T11:30:00Z",
     data:{
-      dem_name:"Priya Sharma", dem_age:"28", dem_sex:"Female", dem_occupation:"Physiotherapy student",
-      dem_work_status:"Student",
-      cc_main:"My left knee swells up after running and feels unstable going down stairs.",
+      dem_name:"Sudha Krishnamurthy", dem_age:"62", dem_sex:"Female",
+      dem_occupation:"Retired school principal", dem_work_status:"Retired",
+      dem_gp:"Dr. Anand Krishnan",
+      cc_main:"Deep aching pain in my right shoulder for 8 months. I can't lift my arm above my head or reach behind my back. Wakes me up at night when I roll onto it.",
+      cc_location:["Shoulder (R)","Upper arm (R)"],
+      cc_symptom_type:["Aching","Weakness","Catching","Night pain"],
+      cc_quality:["Aching","Deep","Dull","Catching"],
+      cc_onset:["Gradual — insidious"], cc_duration:["6–12 months"],
+      cc_vas_now:"5", cc_vas_worst:"8", cc_vas_best:"1",
+      pa_vas_now:"5", pa_vas_worst:"8", pa_vas_best:"1",
+      pa_pattern:["Constant — varies in intensity","Night pain waking patient","Activity dependent"],
+      // Shoulder regional fields
+      shr_loc:"Shoulder (R), Upper arm lateral (R)",
+      shr_quality:"Aching, Deep, Catching, Weakness",
+      shr_moi:"Gradual onset — degenerative rotator cuff",
+      shr_agg_mov:"Reaching overhead, Reaching across body, Arm behind back",
+      shr_agg_act:"Housework, Gardening, Lifting groceries",
+      shr_rel_manual:"Heat application, Rest",
+      shr_night:"Cannot sleep on affected side, Pain wakes from sleep",
+      shr_morning:"Prolonged stiffness on waking (>30 min)",
+      sb_morning:["Worse on waking — prolonged stiffness (>30 min)"],
+      sb_night:["Cannot sleep on affected side","Pain wakes from sleep — can return to sleep"],
+      agg_movement:["Reaching overhead","Reaching across body"],
+      rel_manual:["Heat application"],
+      moi_type:["Gradual — degenerative"], moi_activity:"Habitual overhead reach for kitchen shelving",
+      phx_conditions:"Osteopenia, Hypertension",
+      meds_current:"Amlodipine 5mg, Calcium + Vit D supplement",
+      // ROM
+      rom_sh_r_flex:"120° (painful arc 80–120°)",
+      rom_sh_r_abd:"100° (painful arc 70–110°)",
+      rom_sh_r_er:"30° (limited)",
+      rom_sh_r_ir:"55°",
+      // STT shoulder tests
+      shr_stt_empty_can:"Positive (R) — weak and painful",
+      shr_stt_neer:"Positive (R)",
+      shr_stt_hawkins:"Positive (R)",
+      shr_stt_liftoff:"Negative — subscapularis intact",
+      // Muscle strength
+      muscle_sh_r_abductors:"3+/5 — weak, cannot sustain against resistance",
+      muscle_sh_r_er:"3/5",
+      // Imaging
+      dem_imaging:"Ultrasound right shoulder (04/2026): Partial thickness articular surface tear of supraspinatus — 8mm x 6mm. Mild subacromial bursitis.",
+      // Diagnosis
+      soap_a_diagnosis:"Partial thickness supraspinatus tear with secondary subacromial impingement (R)",
+      soap_icd10:"M75.11",
+      // Goals
+      ar_goal_pain:"Reduce night pain and achieve uninterrupted sleep within 3 weeks",
+      ar_goal_function:"Achieve overhead reach for daily activities within 8 weeks",
+      ar_goal_return:"Return to swimming (modified) within 12 weeks",
+      fl_self_care:["Dressing — upper body difficulty","Washing hair — difficulty","Cannot reach overhead shelves"],
+      fl_domestic:["Cooking — cannot lift pots","Cleaning — cannot reach high surfaces"],
+    }
+  },
+  // ── 4. ACL reconstruction rehab — athlete ────────────────────────────────
+  {
+    id:"demo_004", name:"Rohan Desai", lastDx:"Post-op ACL reconstruction (L) — 6 weeks", hasRedFlags:false,
+    createdAt:"2026-05-18T12:00:00Z", updatedAt:"2026-05-18T12:30:00Z",
+    data:{
+      dem_name:"Rohan Desai", dem_age:"24", dem_sex:"Male",
+      dem_occupation:"Football player (semi-professional)", dem_work_status:"Part time employed",
+      dem_gp:"Dr. Priya Balasubramaniam",
+      cc_main:"Post-operative rehabilitation following left ACL reconstruction with hamstring graft 6 weeks ago. Swelling has reduced but knee still feels unstable and I can't run yet.",
       cc_location:["Knee (L)"],
-      cc_symptom_type:["Pain","Swelling","Giving way","Clicking"],
-      cc_onset:["Non-contact sport injury","Gradual — insidious"], cc_duration:["3–6 months (chronic)"],
-      pa_vas_now:"4", pa_vas_worst:"7", pa_vas_best:"0",
-      pa_quality:["Aching","Sharp","Throbbing"],
+      cc_symptom_type:["Swelling","Stiffness","Instability","Weakness"],
+      cc_quality:["Aching","Stiffness","Heaviness"],
+      cc_onset:["Non-contact sport injury","Surgical (post-operative)"],
+      cc_duration:["2–4 weeks (subacute)"],
+      cc_vas_now:"3", cc_vas_worst:"6", cc_vas_best:"0",
       pa_pattern:["Only with specific movements","Post-activity delayed"],
-      sb_morning:["Stiff on waking — improves with movement"],
-      agg_activity:["Running","Stairs — down","Squatting","Gym — cardio"],
-      rel_posture:["Lying flat"],
-      rel_manual:["Ice application"],
-      moi_type:["Running injury"], moi_activity:"Training for half marathon",
+      // Knee regional fields
+      knl_loc:"Knee — anterior (L), Knee — medial (L)",
+      knl_quality:"Aching, Stiffness, Heaviness",
+      knl_moi:"Non-contact sport injury — ACL tear, subsequent surgical reconstruction",
+      knl_agg_mov:"Deep knee bend, Stairs — descending, Pivoting",
+      knl_agg_act:"Prolonged walking, Standing > 30 min",
+      knl_rel_mov:"Elevation, Ice application",
+      knl_rel_manual:"Ice, Compression bandage",
+      knl_morning:"Mild stiffness on waking — resolves within 15 min",
+      knl_night:"Mild aching if walked a lot during the day",
+      sb_morning:["Mild stiffness on waking — resolves quickly"],
+      agg_activity:["Stairs — descending","Pivoting","Running"],
+      rel_manual:["Ice application","Elevation"],
+      moi_type:["Non-contact sport injury"],
+      moi_activity:"Non-contact deceleration and pivot during football match — immediate collapse, heard a pop",
+      phx_conditions:"Nil", meds_current:"Celecoxib 200mg PRN (post-op)",
+      // ROM
+      rom_kn_l_flex:"100° (target: 130° by week 8)",
+      rom_kn_l_ext:"−5° (full extension deficit)",
+      rom_kn_r_flex:"140°", rom_kn_r_ext:"0°",
+      // Muscle strength
+      muscle_kn_l_quads:"4−/5 — ongoing inhibition",
+      muscle_kn_l_hams:"3+/5 — graft site soreness",
+      muscle_kn_l_calf:"5/5",
+      // Special tests
+      knl_stt_lachman:"Negative (post-op — graft stable)",
+      knl_stt_anterior_drawer:"Negative",
+      knl_effusion:"Trace effusion — fluctuation test positive (mild)",
+      // Surgical info
+      dem_imaging:"Op note (04/2026): Left ACL reconstruction — 4-strand hamstring autograft, femoral and tibial fixation with Endobutton and bio-absorbable screw. Medial meniscus — stable bucket handle tear, partial resection.",
+      // Diagnosis
+      soap_a_diagnosis:"Post-operative rehabilitation — left ACL reconstruction with hamstring autograft (6 weeks)",
+      soap_icd10:"Z96.651",
+      // Goals
+      ar_goal_pain:"Pain-free ambulation and stairs by week 8",
+      ar_goal_function:"Achieve full ROM and single-leg squat by week 12",
+      ar_goal_sport:"Return to running by week 16, football training by week 24",
+      ar_sport_level:["Competitive — 5+ days/week"],
+      ar_sports_played:["Football — 11-a-side"],
+      ar_goal_return:"Return to competitive football within 9 months of surgery",
+      fl_mobility:["Stairs — moderate difficulty","Cannot run"],
+      fl_work:["Cannot perform on-field coaching","Gym sessions modified"],
+    }
+  },
+  // ── 5. Plantar fasciitis — runner ────────────────────────────────────────
+  {
+    id:"demo_005", name:"Divya Rajan", lastDx:"Chronic plantar fasciitis (R)", hasRedFlags:false,
+    createdAt:"2026-05-19T13:00:00Z", updatedAt:"2026-05-19T13:30:00Z",
+    data:{
+      dem_name:"Divya Rajan", dem_age:"33", dem_sex:"Female",
+      dem_occupation:"Paediatrician", dem_work_status:"Full time employed",
+      dem_gp:"Dr. Sunil Mathew",
+      cc_main:"Sharp stabbing pain under my right heel every morning when I take my first steps. It eases after walking around but comes back badly after long clinic shifts on hard floors.",
+      cc_location:["Heel (R)","Foot — plantar (R)"],
+      cc_symptom_type:["Sharp","Stabbing","Aching"],
+      cc_quality:["Sharp","Stabbing","Aching","Burning"],
+      cc_onset:["Gradual — insidious","Overuse/overtraining"],
+      cc_duration:["6–12 months"],
+      cc_vas_now:"4", cc_vas_worst:"8", cc_vas_best:"0",
+      pa_pattern:["Morning dominant","Activity dependent","Post-activity delayed"],
+      // Ankle/foot regional fields
+      af_loc:"Heel (R), Foot plantar (R)",
+      af_quality:"Sharp, Stabbing, Aching",
+      af_moi:"Overuse — increased running mileage",
+      af_agg_mov:"First steps on waking, Toe extension, Standing on tiptoe",
+      af_agg_act:"Prolonged standing, Running, Hard floor surfaces",
+      af_rel_mov:"Plantar fascia stretches, Calf stretches",
+      af_rel_manual:"Ice after activity, Night splint",
+      af_morning:"Worst on waking — classic first-step pain, improves within 10 min of walking",
+      af_night:"Mild aching if on feet all day",
+      sb_morning:["Worst on waking — immediate severe pain, eases with activity"],
+      agg_activity:["Running","Prolonged standing","Hard floor surfaces"],
+      rel_manual:["Ice application","Foot massage"],
+      moi_type:["Overuse/overtraining"], moi_activity:"Increased running from 20km/wk to 50km/wk over 3 weeks (marathon training)",
+      phx_conditions:"Nil", meds_current:"Nil",
+      // ROM
+      rom_af_r_df:"10° (limited — tight gastrosoleus)",
+      rom_af_r_pf:"45°",
+      rom_af_l_df:"20°",
+      // Special tests
+      af_stt_windlass:"Positive (R) — reproduces heel pain",
+      af_palpation_medial_calcaneal:"Tenderness ++ at medial calcaneal tubercle (R)",
+      af_tightness_gastroc:"Positive bilateral — R > L",
+      af_tightness_soleus:"Positive (R)",
+      // Imaging
+      dem_imaging:"X-ray right foot (03/2026): Mild plantar calcaneal spur — 5mm. No stress fracture.",
+      // Diagnosis
+      soap_a_diagnosis:"Chronic plantar fasciitis with calcaneal spur — right foot",
+      soap_icd10:"M72.2",
+      // Goals
+      ar_goal_pain:"Eliminate first-step pain within 4 weeks",
+      ar_goal_function:"Stand through full 8-hour clinic shift pain-free within 6 weeks",
+      ar_goal_sport:"Return to running 20km/week within 10 weeks",
       ar_sport_level:["Active — 4–5x/week"],
       ar_sports_played:["Running — road"],
-      ar_goal_sport:"Return to running half marathon training",
-      phx_conditions:"None",
-    }
-  },
-  {
-    id:"demo_004", name:"Robert Chen", lastDx:"", hasRedFlags:false,
-    createdAt:"2025-01-13T12:00:00Z", updatedAt:"2025-01-13T12:00:00Z",
-    data:{
-      dem_name:"Robert Chen", dem_age:"67", dem_sex:"Male", dem_occupation:"Retired teacher",
-      dem_work_status:"Retired",
-      cc_main:"Both shoulders ache constantly. I can't lift my arms above my head anymore and getting dressed in the morning is a real struggle.",
-      cc_location:["Shoulder (L)","Shoulder (R)","Upper arm (L)","Upper arm (R)"],
-      cc_symptom_type:["Aching","Stiffness","Weakness"],
-      cc_onset:["Gradual — insidious"], cc_duration:["1–2 years"],
-      pa_vas_now:"5", pa_vas_worst:"7", pa_vas_best:"2",
-      pa_quality:["Aching","Deep","Constant ache"],
-      pa_pattern:["Constant — varies in intensity","Morning dominant"],
-      sb_morning:["Worse on waking — prolonged stiffness (>30 min)"],
-      sb_night:["Cannot sleep on affected side","Pain disturbs sleep — takes time to settle"],
-      agg_movement:["Reaching overhead","Reaching across body"],
-      agg_activity:["Housework","Gardening"],
-      rel_manual:["Heat application","Physiotherapy manual therapy"],
-      phx_conditions:"Type 2 diabetes, Hypertension",
-      meds_current:"Metformin 500mg, Lisinopril 10mg",
-      fl_self_care:["Dressing — upper body difficulty","Washing hair — difficulty"],
-      fl_domestic:["Cleaning — cannot vacuum","Ironing — cannot perform"],
-    }
-  },
-  {
-    id:"demo_005", name:"Sarah Thompson", lastDx:"", hasRedFlags:false,
-    createdAt:"2025-01-14T13:00:00Z", updatedAt:"2025-01-14T13:00:00Z",
-    data:{
-      dem_name:"Sarah Thompson", dem_age:"41", dem_sex:"Female", dem_occupation:"Nurse",
-      dem_work_status:"Full time employed",
-      cc_main:"I get burning pain in my right wrist and hand, especially at night. My fingers feel numb when I wake up.",
-      cc_location:["Wrist (R)","Hand/fingers (R)"],
-      cc_radiation:["Radiates to hand/fingers (R)"],
-      cc_symptom_type:["Burning","Tingling/pins & needles","Numbness","Weakness"],
-      cc_onset:["Repetitive strain","Occupational injury"], cc_duration:["6–12 months"],
-      pa_vas_now:"4", pa_vas_worst:"7", pa_vas_best:"1",
-      pa_quality:["Burning","Tingling","Pins and needles","Numb"],
-      pa_nature:["Neuropathic — burning, shooting, dermatomal"],
-      pa_pattern:["Night pain waking patient","Activity dependent"],
-      sb_night:["Wakes once per night","Arm/leg symptoms at night (neural)"],
-      sb_morning:["Pain free on waking then worsens"],
-      agg_activity:["Computer/keyboard work","Carrying children"],
-      agg_movement:["Reaching across body"],
-      rel_posture:["Lying with arms at sides"],
-      rel_manual:["Massage — general"],
-      moi_type:["Repetitive strain","Occupational injury"],
-      moi_activity:"Long shifts doing patient transfers and documentation",
-      phx_conditions:"Hypothyroidism", meds_current:"Levothyroxine 75mcg",
-      fl_work:["Cannot sit > 1 hour","Computer work painful"],
-      fl_self_care:["Dressing — upper body difficulty"],
+      ar_goal_return:"Complete half marathon within 5 months",
+      fl_work:["Cannot stand full clinic shift","Hard floors extremely painful"],
+      fl_mobility:["Cannot walk barefoot on hard floors","Cannot run currently"],
     }
   },
 ];
 
+const DEMO_VERSION = "v2026-06"; // bump this when demo patients change
+
 function loadPatientDB() {
   try {
     const stored = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
-    // Seed demo patients if DB is empty or has never had them
-    const hasDemos = stored.some(p => p.id && p.id.startsWith("demo_"));
-    if (!hasDemos) {
-      const seeded = [...DEMO_PATIENTS, ...stored];
-      try { localStorage.setItem(DB_KEY, JSON.stringify(seeded)); } catch {}
+    const demoVersion = localStorage.getItem("pm_demo_version");
+    // Replace stale demo patients when version changes, keep real patients
+    const realPatients = stored.filter(p => !p.id.startsWith("demo_"));
+    if (demoVersion !== DEMO_VERSION) {
+      const seeded = [...DEMO_PATIENTS, ...realPatients];
+      try {
+        localStorage.setItem(DB_KEY, JSON.stringify(seeded));
+        localStorage.setItem("pm_demo_version", DEMO_VERSION);
+      } catch {}
       return seeded;
     }
     return stored;
