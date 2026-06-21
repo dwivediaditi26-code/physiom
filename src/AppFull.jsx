@@ -10926,6 +10926,14 @@ const DEMO_VERSION = "v2026-06"; // bump this when demo patients change
 
 function loadPatientDB() {
   try {
+    // One-time clear: if user has old demo data from before v2026-06-21, wipe it
+    const cleared = localStorage.getItem("pm_cleared_demo_v1");
+    if (!cleared) {
+      localStorage.removeItem(DB_KEY);
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.setItem("pm_cleared_demo_v1", "1");
+      return [];
+    }
     const stored = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
     // Remove any old demo patients that were previously seeded
     const real = stored.filter(p => !p.id.startsWith("demo_"));
