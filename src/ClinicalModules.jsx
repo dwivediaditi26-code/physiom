@@ -3217,12 +3217,10 @@ function detectModulesV2(data) {
       "n_c4","n_c5","n_c6","n_c7","n_l4","n_l5","n_s1",
       "n_c4_left","n_c5_left","n_l4_left","n_l5_left","n_s1_left"]),
     gait: has(["gait_pattern","gait_cadence","gait_antalgic","gait_trendelenburg","gait_notes"]),
-    kinetic: has(["kinetic_primary","kinetic_compensation","kinetic_notes",
-      "kc_ankle_df","kc_subtalar","kc_great_toe","kc_hip_ir_mob","kc_hip_ext_mob",
-      "kc_lumbar_stability","kc_thoracic_rotation","kc_scapulohumeral_rhythm","kc_cervical_rot_mob"]),
+    kinetic: Object.keys(data).some(k=>(k.startsWith("kc_")||k==="kinetic_primary"||k==="kinetic_compensation"||k==="kinetic_notes")&&data[k]&&String(data[k]).trim()),
     cpa: has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes",
       "nkt_dnf","nkt_scm","nkt_upper_trap","nkt_gmax","nkt_gmed","nkt_psoas","nkt_ta"]),
-    fascia: has(["fascia_restriction","fascia_notes","fascia_line"]),
+    fascia: Object.keys(data).some(k=>(k.startsWith("fa_")||k.startsWith("fascia_"))&&data[k]&&String(data[k]).trim()),
     observation: has([...Object.keys(data).filter(k=>k.includes("_observation")||k.includes("obs_")), "lx_observation","cx_observation","shr_observation","knl_observation"]),
   };
 }
@@ -3897,7 +3895,18 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {/* Fascia Integration */}
           {mods.fascia&&<>
             <div style={subH}>Fascia Integration</div>
-            {[v("fascia_restriction")&&["Restriction",v("fascia_restriction")],v("fascia_line")&&["Fascial line",v("fascia_line")],v("fascia_notes")&&["Notes",v("fascia_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:90}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
+            {(()=>{
+              const FA_NAMES={"fa_skin_roll":"Skin Rolling","fa_passive_tension":"Passive Line Tension","fa_active_line_load":"Active Line Load","fa_densification":"Densification Test","fa_scar":"Scar/Adhesion","fa_sbl_hamstring":"SBL Hamstring","fa_tlf":"TLF Assessment","fa_spiral_rot":"Spiral Rotation","fa_ll_test":"Lateral Line","fa_dfl_arch":"DFL Medial Arch","fa_dfl_breathing":"DFL Diaphragm","fa_remote_test":"Remote Restriction","fa_force_closure":"Force Closure/SIJ","fa_compensation_map":"Compensation Pattern"};
+              const faItems=Object.keys(data).filter(k=>(k.startsWith("fa_")||k.startsWith("fascia_"))&&data[k]&&String(data[k]).trim()).map(k=>({label:FA_NAMES[k]||k.replace(/^fa_/,"").replace(/_/g," "),val:String(data[k])}));
+              const restrict=faItems.filter(({val})=>/restrict|tight|dysfunc|adher|dense|scar/i.test(val));
+              const normal=faItems.filter(({val})=>/normal|pass|adequate|clear/i.test(val));
+              const other=faItems.filter(({val})=>!/restrict|tight|dysfunc|adher|dense|scar|normal|pass|adequate|clear/i.test(val));
+              return <div style={{marginTop:4}}>
+                {restrict.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#B45309",marginBottom:3}}>Restricted / Dysfunctional</div><div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>{restrict.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}</div></>}
+                {other.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#6366F1",marginBottom:3}}>Findings</div><div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>{other.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#EDE9FE",color:"#4F46E5",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}</div></>}
+                {normal.length>0&&<div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Normal: {normal.map(({label})=>label).join(", ")}</div>}
+              </div>;
+            })()}
           </>}
 
           {!mods.posture&&!mods.rom&&!mods.mmt&&!mods.neuro&&!mods.stt&&!mods.palpation&&!mods.gait&&!mods.postureAI&&<div style={na}>No objective findings recorded yet.</div>}
@@ -3913,33 +3922,96 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {secBadge("Clinical impression")}
         </div>
         <div style={cb}>
-          {/* Provisional diagnosis */}
-          <div style={{padding:"12px 14px",background:"#EEF2FF",border:"1px solid #C7D2FE",borderRadius:12,marginBottom:12}}>
-            <div style={{fontSize:10,fontWeight:600,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>Provisional Diagnosis</div>
-            <div style={{fontSize:16,fontWeight:700,color:"#1E40AF",lineHeight:1.3}}>{dx||<span style={{color:"#9CA3AF",fontWeight:400,fontSize:13}}>Enter diagnosis below</span>}</div>
+          {/* ── Suggested Clinical Diagnosis ── */}
+          {(()=>{
+            const soap = buildRealtimeSOAP(data);
+            const autoA = soap.A || "";
+            const suggestMatch = autoA.match(/Working diagnosis[:\s]+([^.\n]+)/i)||autoA.match(/diagnosis[:\s]+([^.\n]+)/i);
+            const suggestDx = suggestMatch ? suggestMatch[1].trim() : null;
+            return suggestDx ? (
+              <div style={{padding:"10px 14px",background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:12,marginBottom:10}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#065F46",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>💡 Suggested Clinical Diagnosis</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#064E3B",lineHeight:1.4}}>{suggestDx}</div>
+                {!dx&&<button onClick={()=>set("soap_a_diagnosis",suggestDx)} style={{marginTop:6,padding:"4px 12px",fontSize:11,background:"#059669",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use this diagnosis</button>}
+              </div>
+            ) : null;
+          })()}
+
+          {/* ── Provisional Diagnosis Input ── */}
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:11,fontWeight:600,color:"#374151",marginBottom:4}}>Provisional Diagnosis</div>
+            <input placeholder="Type working / provisional diagnosis..." value={dx} onChange={e=>set("soap_a_diagnosis",e.target.value)} style={{...inp,marginBottom:4,fontSize:14,fontWeight:600,color:"#1E40AF",background:"#EEF2FF",border:"2px solid #C7D2FE"}}/>
+            {dx&&<div style={{padding:"8px 12px",background:"#EEF2FF",border:"1px solid #C7D2FE",borderRadius:10}}>
+              <div style={{fontSize:10,fontWeight:600,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>Provisional Diagnosis</div>
+              <div style={{fontSize:15,fontWeight:700,color:"#1E40AF"}}>{dx}</div>
+            </div>}
           </div>
 
-          {/* Inputs */}
-          <input placeholder="Working diagnosis / Provisional diagnosis..." value={dx} onChange={e=>set("soap_a_diagnosis",e.target.value)} style={inp}/>
-          <input placeholder="ICD-10 code (e.g. M54.5)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={inp}/>
+          {/* ── ICD-10 Code ── */}
+          <input placeholder="ICD-10 code (e.g. M54.5 — Low Back Pain)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={inp}/>
 
-          {probList||posFindings.length>0?<><div style={subH}>Problem list</div>
-            {probList?<div style={{fontSize:12,color:"#374151",marginBottom:6}}>{probList}</div>:<div style={{fontSize:12,color:"#374151",marginBottom:6}}>{posFindings.slice(0,3).join(". ")}</div>}
-          </>:null}
+          {/* ── Differential Diagnosis ── */}
+          {(()=>{
+            const DIFF_DX_OPTIONS = {
+              cervical: ["Cervical Radiculopathy","Cervical Facet Syndrome","Cervical Disc Herniation","Cervicogenic Headache","Thoracic Outlet Syndrome","Myelopathy"],
+              shoulder: ["Rotator Cuff Tear","Subacromial Impingement","Adhesive Capsulitis","AC Joint Pathology","Biceps Tendinopathy","Labral Tear","GH Instability"],
+              elbow: ["Lateral Epicondylalgia","Medial Epicondylalgia","Cubital Tunnel Syndrome","Radial Tunnel Syndrome","OA Elbow","Biceps Tendinopathy"],
+              wrist: ["Carpal Tunnel Syndrome","De Quervain's Tenosynovitis","TFCC Tear","Scaphoid Fracture","Wrist OA","Ganglion Cyst"],
+              lumbar: ["Lumbar Disc Herniation","Lumbar Facet Syndrome","Lumbar Radiculopathy","Lumbar Canal Stenosis","SIJ Dysfunction","Spondylolisthesis","Piriformis Syndrome","Myofascial Pain"],
+              hip: ["Hip OA","FAI","Hip Labral Tear","Greater Trochanteric Pain Syndrome","Piriformis Syndrome","Snapping Hip"],
+              knee: ["ACL Injury","Meniscal Tear","Patellofemoral Pain","ITB Syndrome","Knee OA","Pes Anserinus Bursitis","PCL Injury"],
+              ankle: ["Lateral Ankle Sprain","Achilles Tendinopathy","Plantar Fasciitis","Anterior Ankle Impingement","Peroneal Tendinopathy"],
+              general: ["Myofascial Pain Syndrome","Fibromyalgia","Central Sensitisation","Referred Pain","Somatic Symptom Disorder","Hypermobility Spectrum Disorder"]
+            };
+            const body = String(data.dem_body_part||data.soap_region||data.cx_region||data.lx_region||"").toLowerCase();
+            let dxOpts = [...DIFF_DX_OPTIONS.general];
+            if(body.includes("cerv")||body.includes("neck")) dxOpts=[...DIFF_DX_OPTIONS.cervical,...dxOpts];
+            else if(body.includes("shou")) dxOpts=[...DIFF_DX_OPTIONS.shoulder,...dxOpts];
+            else if(body.includes("elbow")||body.includes("cx_lat")) dxOpts=[...DIFF_DX_OPTIONS.elbow,...dxOpts];
+            else if(body.includes("wrist")||body.includes("hand")) dxOpts=[...DIFF_DX_OPTIONS.wrist,...dxOpts];
+            else if(body.includes("lumb")||body.includes("low back")||body.includes("lx")) dxOpts=[...DIFF_DX_OPTIONS.lumbar,...dxOpts];
+            else if(body.includes("hip")||body.includes("pelv")) dxOpts=[...DIFF_DX_OPTIONS.hip,...dxOpts];
+            else if(body.includes("knee")) dxOpts=[...DIFF_DX_OPTIONS.knee,...dxOpts];
+            else if(body.includes("ankle")||body.includes("foot")) dxOpts=[...DIFF_DX_OPTIONS.ankle,...dxOpts];
+            else dxOpts=[...DIFF_DX_OPTIONS.lumbar,...DIFF_DX_OPTIONS.cervical,...DIFF_DX_OPTIONS.shoulder,...dxOpts];
 
-          {/* Clinical notes / key findings */}
-          {(clinNotes||posFindings.length>0||negFindings.length>0)&&<>
-            <div style={subH}>Clinical notes</div>
-            {clinNotes?<div style={{fontSize:12,color:"#374151",marginBottom:8}}>{clinNotes}</div>:
-              <div style={{fontSize:12,color:"#374151",marginBottom:8}}>
-                {[...sttRows.filter(t=>{const lc=t.val.toLowerCase();return lc.includes("positive")||lc.includes("+ve");}).map(t=>t.name+" +ve at "+t.val.match(/\d+/)?.[0]+"°"),...romRows.filter(r=>r.single&&r.pct&&r.pct<75).map(r=>r.label+" restricted to "+r.single+"° (N:"+r.norm+"°)")].filter(Boolean).slice(0,4).join(". ")}{"."}
-              </div>}
-            <input placeholder="Clinical notes / key findings..." value={v("soap_clinical_notes")} onChange={e=>set("soap_clinical_notes",e.target.value)} style={inp}/>
+            const selectedDiffs = v("soap_differential_dx") ? JSON.parse(v("soap_differential_dx"))||[] : [];
+
+            const toggleDiff = (opt) => {
+              const curr = v("soap_differential_dx") ? JSON.parse(v("soap_differential_dx"))||[] : [];
+              const next = curr.includes(opt) ? curr.filter(x=>x!==opt) : [...curr, opt];
+              set("soap_differential_dx", JSON.stringify(next));
+            };
+
+            return (
+              <div style={{marginBottom:10}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:6}}>Differential Diagnosis <span style={{fontWeight:400,color:"#9CA3AF",fontSize:10}}>(tap to select)</span></div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:6}}>
+                  {dxOpts.map((opt,i)=>{
+                    const sel = selectedDiffs.includes(opt);
+                    return <button key={i} onClick={()=>toggleDiff(opt)} style={{padding:"4px 10px",borderRadius:99,fontSize:11,fontWeight:sel?700:500,border:`1.5px solid ${sel?"#6366F1":"#D1D5DB"}`,background:sel?"#6366F1":"#F9FAFB",color:sel?"#fff":"#374151",cursor:"pointer",transition:"all 0.15s"}}>{opt}</button>;
+                  })}
+                </div>
+                {selectedDiffs.length>0&&<div style={{padding:"8px 12px",background:"#EEF2FF",border:"1px solid #C7D2FE",borderRadius:10}}>
+                  <div style={{fontSize:10,fontWeight:600,color:"#4F46E5",marginBottom:4}}>SELECTED DIFFERENTIALS</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                    {selectedDiffs.map((d,i)=><span key={i} style={{padding:"2px 10px",background:"#6366F1",color:"#fff",borderRadius:99,fontSize:11,fontWeight:600}}>{d}</span>)}
+                  </div>
+                </div>}
+                <input placeholder="Add custom differential diagnosis..." onKeyDown={e=>{if(e.key==="Enter"&&e.target.value.trim()){toggleDiff(e.target.value.trim());e.target.value="";}}} style={{...inp,marginTop:6,marginBottom:0,fontSize:12}} />
+              </div>
+            );
+          })()}
+
+          {/* ── Problem List ── */}
+          {(probList||posFindings.length>0)&&<>
+            <div style={subH}>Problem list</div>
+            <div style={{fontSize:12,color:"#374151",marginBottom:6,lineHeight:1.5}}>{probList||posFindings.slice(0,3).join(". ")}</div>
           </>}
 
-          {/* Positive / negative grid */}
+          {/* ── Key Positives / Negatives ── */}
           {(posFindings.length>0||negFindings.length>0)&&<>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
               {posFindings.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:10}}>
                 <div style={{fontSize:10,fontWeight:600,color:"#991B1B",marginBottom:5}}>KEY POSITIVES</div>
                 {posFindings.map((f,i)=><div key={i} style={{fontSize:10,color:"#374151",padding:"1px 0",display:"flex",gap:4,lineHeight:1.4}}><span style={{color:"#DC2626"}}>·</span>{f}</div>)}
@@ -3951,13 +4023,16 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             </div>
           </>}
 
-          {/* Severity/irritability */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:10}}>
+          {/* ── Clinical Notes ── */}
+          <input placeholder="Clinical notes / key findings..." value={v("soap_clinical_notes")} onChange={e=>set("soap_clinical_notes",e.target.value)} style={inp}/>
+
+          {/* ── Severity / Stage ── */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:4}}>
             {[["soap_irritability","Irritability"],["soap_stage","Stage"],["soap_prognosis","Prognosis"],["soap_severity","Severity"]].map(([k,ph])=>(
               <input key={k} placeholder={ph} value={v(k)} onChange={e=>set(k,e.target.value)} style={{...inp,marginBottom:0}}/>
             ))}
           </div>
-          <textarea placeholder="Additional assessment notes..." value={extraA} onChange={e=>setExtraA(e.target.value)} onBlur={()=>set("soap_extra_a",extraA)} style={{...inp,resize:"vertical",minHeight:40,marginTop:6}}/>
+          <textarea placeholder="Additional assessment notes..." value={extraA} onChange={e=>setExtraA(e.target.value)} onBlur={()=>set("soap_extra_a",extraA)} style={{...inp,resize:"vertical",minHeight:60,marginTop:6}}/>
         </div>
       </div>
 
