@@ -6,6 +6,7 @@ import { C, getC } from "./utils.jsx";
 const ALL_TESTS = {
   home:{ label:"Home", icon:"🏠", desc:"App Overview & Features", groups:{ "Welcome":"HOME_MODULE" }},
   dashboard:{ label:"Dashboard", icon:"📊", desc:"Therapist Overview", groups:{ "Therapist Dashboard":"DASHBOARD_MODULE" }},
+  demographics:{ label:"Demographics", icon:"👤", desc:"Patient Information", groups:{ "Demographic Data":"DEMOGRAPHICS_MODULE" }},
   subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
   palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
   posture:{ label:"Posture Analysis", icon:"🧍", desc:"AI Postural Analysis", groups:{}},

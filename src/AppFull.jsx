@@ -17082,7 +17082,7 @@ function AppInner({ currentUser, onSignOut }) {
   // ── Deferred mounting: heavy tabs only render after first visit ──────────
   // This cuts initial render time dramatically
   // Once mounted, component stays mounted (data preserved)
-  const [mountedTabs, setMountedTabs] = useState(new Set(["home", "subjective"]));
+  const [mountedTabs, setMountedTabs] = useState(new Set(["home", "demographics", "subjective"]));
   // Heavy tabs — only mount on first visit
   const HEAVY_TABS = new Set([
     "posture", "ddx", "fms", "nkt", "cyriax",
@@ -17692,6 +17692,7 @@ function AppInner({ currentUser, onSignOut }) {
 
       {/* 3. Assessment (collapsible) */}
       <SidebarGroup groupKey="assessment" icon="🩺" label="Assessment" accentColor="#7c3aed">
+        <SidebarItem navKey="demographics"   icon="👤" label="Demographics"/>
         <SidebarItem navKey="subjective"    icon="📝" label="Subjective Assessment"/>
         <SidebarItem navKey="posture"       icon="🧍" label="Posture Analysis"/>
         <SidebarItem navKey="observation"   icon="👁️" label="Observation"/>
@@ -18267,6 +18268,37 @@ function AppInner({ currentUser, onSignOut }) {
                 <HomeModule onNav={navTo}/>
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} currentUser={currentUser} onSignOut={onSignOut}/>
+              ):tests==="DEMOGRAPHICS_MODULE"?(
+                <div style={{background:PC.s2,borderRadius:14,border:`1px solid ${PC.border}`,overflow:"hidden"}}>
+                  {[
+                    {l:"Full Name",     v:data.dem_name},
+                    {l:"Date of Birth", v:data.dem_dob},
+                    {l:"Age",           v:data.dem_age?`${data.dem_age} years`:null},
+                    {l:"Sex",           v:data.dem_sex||data.dem_gender},
+                    {l:"Dominant Hand", v:data.dem_dominant||data.dem_hand},
+                    {l:"Occupation",    v:data.dem_occupation},
+                    {l:"Work Status",   v:Array.isArray(data.dem_work_status)?data.dem_work_status.join(", "):data.dem_work_status},
+                    {l:"Referred By",   v:data.dem_referral},
+                    {l:"GP",            v:data.dem_gp||data.dem_referral_dr},
+                    {l:"Phone",         v:data.dem_phone||data.dem_contact},
+                    {l:"Email",         v:data.dem_email},
+                    {l:"Address",       v:data.dem_address},
+                    {l:"Insurance",     v:data.dem_insurance},
+                    {l:"Medical Hx",    v:data.dem_medical_hx},
+                    {l:"Medications",   v:data.dem_medications||data.dem_medication},
+                    {l:"Consent",       v:data.dem_consent||(data.consent_treat?"Yes — written":null)},
+                  ].filter(r=>r.v).map((row,i,arr)=>(
+                    <div key={i} style={{display:"flex",gap:12,padding:"11px 16px",borderBottom:i<arr.length-1?`1px solid ${PC.border}`:"none",alignItems:"flex-start"}}>
+                      <span style={{fontSize:"0.78rem",color:PC.muted,minWidth:110,flexShrink:0,paddingTop:1}}>{row.l}</span>
+                      <span style={{fontSize:"0.85rem",fontWeight:600,color:PC.text,flex:1,lineHeight:1.5}}>{row.v}</span>
+                    </div>
+                  ))}
+                  {!(data.dem_name||data.dem_age) && (
+                    <div style={{padding:"24px 16px",textAlign:"center",color:PC.muted,fontSize:"0.82rem"}}>
+                      No demographic data recorded yet. Create a new patient or fill in via the New Patient form.
+                    </div>
+                  )}
+                </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
                   <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo}/></Suspense>

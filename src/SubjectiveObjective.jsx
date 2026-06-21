@@ -4710,46 +4710,6 @@ function SubjectiveModule({ data, set, onNav }) {
         </div>
       )}
 
-      {/* ── DEMOGRAPHIC DATA ─────────────────────────────────────────── */}
-      {(()=>{
-        const PC2 = PC;
-        const rows = [
-          {l:"Full Name",    v: data.dem_name},
-          {l:"Date of Birth",v: data.dem_dob},
-          {l:"Age",          v: data.dem_age ? `${data.dem_age} yrs` : null},
-          {l:"Sex",          v: data.dem_sex || data.dem_gender},
-          {l:"Hand",         v: data.dem_dominant || data.dem_hand},
-          {l:"Occupation",   v: data.dem_occupation},
-          {l:"Work Status",  v: data.dem_work_status},
-          {l:"Referred By",  v: data.dem_referral},
-          {l:"GP",           v: data.dem_gp},
-          {l:"Consent",      v: data.dem_consent||(data.consent_treat?"Yes — written":null)},
-        ].filter(r => r.v);
-        return (
-          <div style={{background:PC2.s2,borderRadius:12,border:`1px solid ${PC2.border}`,marginBottom:12,overflow:"hidden"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:`1px solid ${PC2.border}`}}>
-              <span style={{fontSize:"0.82rem",fontWeight:800,color:PC2.text,letterSpacing:"-0.2px"}}>👤 Demographic Data</span>
-              <span onClick={()=>onNav&&onNav("demographics")} style={{fontSize:"0.75rem",color:PC2.accent,fontWeight:700,cursor:"pointer"}}>Edit →</span>
-            </div>
-            {rows.length > 0 ? (
-              <div style={{padding:"8px 14px"}}>
-                {rows.map((row,i)=>(
-                  <div key={i} style={{display:"flex",gap:10,padding:"6px 0",borderBottom:i<rows.length-1?`1px solid ${PC2.border}`:"none",alignItems:"flex-start"}}>
-                    <span style={{fontSize:"0.75rem",color:PC2.muted,minWidth:100,flexShrink:0,paddingTop:1}}>{row.l}</span>
-                    <span style={{fontSize:"0.8rem",fontWeight:600,color:PC2.text,flex:1}}>{row.v}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontSize:"0.78rem",color:PC2.muted}}>No demographic data recorded.</span>
-                <span onClick={()=>onNav&&onNav("demographics")} style={{fontSize:"0.75rem",color:PC2.accent,fontWeight:700,cursor:"pointer"}}>Fill now →</span>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
       {/* ── AI Smart Parser Strip ─────────────────────────────────── */}
       <div style={{ background:`linear-gradient(135deg,#ede9fe,#f5f3ff)`, borderRadius:12,
         border:"1px solid #c4b5fd", padding:"10px 14px" }}>
