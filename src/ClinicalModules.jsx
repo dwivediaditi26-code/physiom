@@ -3155,6 +3155,8 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SOAP NOTE MODULE v2 — Reference-style vertical card layout
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -3238,6 +3240,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const [session,   setSession]   = useState(data.soap_session   || "Initial Assessment");
   const [lockConfirm, setLockConfirm] = useState(false);
   const [lockSuccess, setLockSuccess] = useState(false);
+  const [activeSection, setActiveSection] = useState("S");
+  const soapContainerRef = useRef(null);
   const [extraS, setExtraS] = useState(data.soap_extra_s || "");
   const [extraO, setExtraO] = useState(data.soap_extra_o || "");
   const [extraA, setExtraA] = useState(data.soap_extra_a || "");
@@ -3480,7 +3484,18 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const tbl   = { width:"100%",borderCollapse:"collapse" };
 
   return (
-    <div style={wrap}>
+    <div style={wrap} ref={soapContainerRef} onScroll={()=>{
+      const sections = [{id:"S",el:"soap-sec-S"},{id:"O",el:"soap-sec-O"},{id:"A",el:"soap-sec-A"},{id:"P",el:"soap-sec-P"}];
+      const container = soapContainerRef.current;
+      if(!container) return;
+      const scrollTop = container.scrollTop + 120;
+      let active = "S";
+      for(const {id,el} of sections){
+        const domEl = document.getElementById(el);
+        if(domEl && domEl.offsetTop <= scrollTop) active = id;
+      }
+      setActiveSection(active);
+    }}>
 
       {/* ── PATIENT HEADER ── */}
       <div style={{...card(),marginBottom:12}}>
@@ -3526,8 +3541,40 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
         </div>
       </div>
 
+      {/* ── STICKY S/O/A/P NAV BAR ── */}
+      <div style={{position:"sticky",top:0,zIndex:50,background:"#F8F8FC",borderBottom:"1px solid #E5E7EB",padding:"0 4px",marginBottom:8,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:0,overflowX:"auto"}}>
+          {[
+            {id:"S",label:"Subjective",sub:"History",color:"#1D4ED8",bg:"#DBEAFE",icon:"💬"},
+            {id:"O",label:"Objective",sub:"Clinical",color:"#065F46",bg:"#D1FAE5",icon:"🩺"},
+            {id:"A",label:"Assessment",sub:"Diagnosis",color:"#B45309",bg:"#FEF3C7",icon:"🧠"},
+            {id:"P",label:"Plan",sub:"Treatment",color:"#7C3AED",bg:"#EDE9FE",icon:"📋"},
+          ].map(({id,label,sub,color,bg,icon})=>{
+            const isActive = activeSection===id;
+            return (
+              <button key={id} onClick={()=>{
+                const el = document.getElementById("soap-sec-"+id);
+                if(el){el.scrollIntoView({behavior:"smooth",block:"start"});}
+                setActiveSection(id);
+              }} style={{
+                flex:"1 1 0",minWidth:0,border:"none",cursor:"pointer",padding:"10px 4px 8px",
+                background:isActive?bg:"transparent",
+                borderBottom:isActive?`2px solid ${color}`:"2px solid transparent",
+                transition:"all 0.15s",
+              }}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                  <span style={{fontSize:15}}>{icon}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:isActive?color:"#6B7280"}}>{id} · {label}</span>
+                  <span style={{fontSize:9,color:isActive?color+"AA":"#9CA3AF",display:"block"}}>{sub}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* ── S — SUBJECTIVE ── */}
-      <div style={card()}>
+      <div id="soap-sec-S" style={card()}>
         <div style={ch("#FAFAFA")}>
           {secIcon("#DBEAFE","#1D4ED8","💬")}
           {secTitle("S · Subjective","Patient reported")}
@@ -3557,7 +3604,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── O — OBJECTIVE ── */}
-      <div style={card()}>
+      <div id="soap-sec-O" style={card()}>
         <div style={ch("#FAFAFA")}>
           {secIcon("#D1FAE5","#065F46","🩺")}
           {secTitle("O · Objective","Clinical findings")}
@@ -3738,7 +3785,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── A — ASSESSMENT ── */}
-      <div style={card()}>
+      <div id="soap-sec-A" style={card()}>
         <div style={ch("#FAFAFA")}>
           {secIcon("#F3F4F6","#374151","📋")}
           {secTitle("A · Assessment","Clinical impression")}
@@ -3794,7 +3841,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── P — PLAN ── */}
-      <div style={card()}>
+      <div id="soap-sec-P" style={card()}>
         <div style={ch("#FAFAFA")}>
           {secIcon("#D1FAE5","#065F46","✅")}
           {secTitle("P · Plan","Treatment & goals")}
@@ -3895,30 +3942,6 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 }
 
 
-
-// EXERCISE PRESCRIPTION MODULE
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ============================================================
-// ExercisePrescription.jsx
-// Drop-in Exercise Prescription module for PhysioMind
-//
-// EXPORTS:
-//   • EXERCISE_DB           — full exercise database (214 exercises, 18 regions)
-//   • PROGRAMME_TEMPLATES   — 37 quick-load evidence-based HEP templates
-//   • ALL_EXERCISES         — flat array of every exercise (for search)
-//   • ExercisePrescriptionModule — React component
-//
-// PROPS:
-//   <ExercisePrescriptionModule data={data} set={set} />
-//     data  — shared patient data object (reads data.hep_programme, data.dem_name)
-//     set   — function(key, value) to write back to shared state
-//             e.g. set("hep_programme", [...])
-//
-// DEPENDENCIES:
-//   React (useState, useMemo — already imported in parent)
-//   Uses getC() for colour palette — ensure this is defined in your app
-// ============================================================
 
 const EXERCISE_DB = {
   cervical: {
