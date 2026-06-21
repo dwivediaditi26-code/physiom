@@ -1,5 +1,6 @@
 // ClinicalModules.jsx — Gait, Outcomes, SOAP, Exercise, Palpation, Treatment, SessionLog
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { getTopDiagnoses } from "./DiagnosisEngine.js";
 import { C, getC } from "./utils.jsx";
 
 function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder="", data, set, note }) {
@@ -3975,18 +3976,33 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           <div style={{marginBottom:16}}>
             <div style={{fontSize:13,fontWeight:700,color:"#1E40AF",letterSpacing:"0.01em",marginBottom:8,borderBottom:"2px solid #C7D2FE",paddingBottom:6}}>Provisional Diagnosis</div>
 
-            {/* Suggested from data */}
+            {/* Suggested from DiagnosisEngine — top 3 */}
             {(()=>{
-              const soap = buildRealtimeSOAP(data);
-              const autoA = soap.A || "";
-              const suggestMatch = autoA.match(/Working diagnosis[:\s]+([^.\n]+)/i)||autoA.match(/diagnosis[:\s]+([^.\n]+)/i);
-              const suggestDx = suggestMatch ? suggestMatch[1].trim() : null;
-              return suggestDx ? (
-                <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:10,marginBottom:8}}>
-                  <span style={{fontSize:11,color:"#065F46",fontWeight:600,flex:1}}>💡 {suggestDx}</span>
-                  {!dx&&<button onClick={()=>set("soap_a_diagnosis",suggestDx)} style={{padding:"3px 10px",fontSize:11,background:"#059669",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>Use</button>}
-                </div>
-              ) : null;
+              const suggestions = getTopDiagnoses(data, 3);
+              if (!suggestions.length) return null;
+              const CONF_STYLE = {
+                High:   { bg:"#ECFDF5", border:"#6EE7B7", badge:"#059669", badgeTxt:"#fff" },
+                Moderate:{ bg:"#FFFBEB", border:"#FDE68A", badge:"#D97706", badgeTxt:"#fff" },
+                Low:    { bg:"#F9FAFB", border:"#E5E7EB", badge:"#6B7280", badgeTxt:"#fff" },
+              };
+              return <div style={{marginBottom:10}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#065F46",marginBottom:6}}>💡 Suggested Clinical Diagnoses</div>
+                {suggestions.map((s,i)=>{
+                  const cs = CONF_STYLE[s.confidenceLabel] || CONF_STYLE.Low;
+                  return <div key={i} style={{padding:"10px 12px",background:cs.bg,border:`1.5px solid ${cs.border}`,borderRadius:12,marginBottom:6}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:4}}>
+                      <span style={{fontSize:13,fontWeight:700,color:"#111827",flex:1,lineHeight:1.3}}>{i+1}. {s.diagnosis}</span>
+                      <span style={{padding:"2px 8px",borderRadius:99,fontSize:10,fontWeight:700,background:cs.badge,color:cs.badgeTxt,whiteSpace:"nowrap"}}>{s.confidenceLabel} {s.confidence}%</span>
+                    </div>
+                    <div style={{fontSize:10,color:"#6B7280",marginBottom:5}}>{s.icd10} · {s.region} · {s.hits}/{s.total} criteria</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:5}}>
+                      {s.supportingFindings.map((f,fi)=><span key={fi} style={{padding:"2px 7px",borderRadius:6,background:"rgba(0,0,0,0.06)",fontSize:10,color:"#374151"}}>{f}</span>)}
+                    </div>
+                    <div style={{fontSize:9,color:"#9CA3AF",marginBottom:4}}>Ref: {s.reference}</div>
+                    {!dx&&<button onClick={()=>set("soap_a_diagnosis",s.diagnosis)} style={{padding:"3px 10px",fontSize:10,background:"#1E40AF",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use as Provisional Dx</button>}
+                  </div>;
+                })}
+              </div>;
             })()}
 
             {/* Manual input */}
