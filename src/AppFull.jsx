@@ -18992,7 +18992,47 @@ function AppInner({ currentUser, onSignOut }) {
                 <Suspense fallback={<TabFallback/>}><LazyOutcomes data={data} set={set}/></Suspense>
                 </>
               ):tests==="TREATMENT_MODULE"?(
-                <>{(()=>{
+                <>
+                  {(()=>{
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:active==="demographics"},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="tx_techniques"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
+                  return(
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{marginTop:8,height:4,borderRadius:4,background:"#E5E7EB",overflow:"hidden"}}>
+                        <div style={{height:"100%",borderRadius:4,background:"#6D28D9",width:`${pct}%`,transition:"width 0.4s"}}/>
+                      </div>
+                    </div>
+                  );
+                })()}
+                {(()=>{
                   const isMobile=window.innerWidth<768;
                   const [txTab,setTxTab]=React.useState("exercise");
                   if(isMobile){
