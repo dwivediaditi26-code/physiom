@@ -3208,13 +3208,20 @@ function detectModulesV2(data) {
     posture: has(["post_fhp","post_kyphosis","post_lordosis","post_pelvis","post_sh","post_scoliosis","post_notes",...Object.keys(data).filter(k=>k.startsWith("posture_defect_")&&data[k])]),
     postureAI: has(["sagFHPCm","cvaAngle","sagThorKyph","sagLumLord","fhpDevCm"]),
     palpation: has(["palp_pins","cx_palpation","lx_palpation","shr_palpation","knl_palpation","af_palpation"]),
-    outcomes: has(["om_report","ndi_score","psfs_score","koos_score","dash_score","lefs_score"]),
+    outcomes: has(["om_report","ndi_score","psfs_score","koos_score","dash_score","lefs_score",
+      "om_psfs_1_activity","om_ndi_1","om_koos_pain","om_dash_1","om_lefs_1","om_odi_score",
+      "om_ndi_score","om_dash_score","om_lefs_score"]),
     stt: has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can","knl_stt_lachman","af_stt_windlass"]),
     functional: has(["fl_work","fl_mobility","fl_self_care","fl_domestic","ar_goal_function"]),
-    neuro: has(["neuro_dermatomal","neuro_reflex_biceps","neuro_sensation","neuro_weakness","neuro_reflex_ankle"]),
+    neuro: has(["neuro_dermatomal","neuro_reflex_biceps","neuro_sensation","neuro_weakness","neuro_reflex_ankle",
+      "n_c4","n_c5","n_c6","n_c7","n_l4","n_l5","n_s1",
+      "n_c4_left","n_c5_left","n_l4_left","n_l5_left","n_s1_left"]),
     gait: has(["gait_pattern","gait_cadence","gait_antalgic","gait_trendelenburg","gait_notes"]),
-    kinetic: has(["kinetic_primary","kinetic_compensation","kinetic_notes"]),
-    cpa: has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes"]),
+    kinetic: has(["kinetic_primary","kinetic_compensation","kinetic_notes",
+      "kc_ankle_df","kc_subtalar","kc_great_toe","kc_hip_ir_mob","kc_hip_ext_mob",
+      "kc_lumbar_stability","kc_thoracic_rotation","kc_scapulohumeral_rhythm","kc_cervical_rot_mob"]),
+    cpa: has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes",
+      "nkt_dnf","nkt_scm","nkt_upper_trap","nkt_gmax","nkt_gmed","nkt_psoas","nkt_ta"]),
     fascia: has(["fascia_restriction","fascia_notes","fascia_line"]),
     observation: has([...Object.keys(data).filter(k=>k.includes("_observation")||k.includes("obs_")), "lx_observation","cx_observation","shr_observation","knl_observation"]),
   };
@@ -3391,34 +3398,82 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
     ["af_stt_talar","Talar tilt","Lateral ankle"],
   ].map(([key,name,sig])=>({key,name,sig,val:v(key)})).filter(t=>t.val), [data]);
 
-  // Neuro rows
-  const neuroRows = [
-    {label:"Dermatomal pattern",val:v("neuro_dermatomal")},
-    {label:"Sensation",val:v("neuro_sensation")},
-    {label:"Biceps reflex (C5/6)",val:v("neuro_reflex_biceps")},
-    {label:"Triceps reflex (C7)",val:v("neuro_reflex_triceps")},
-    {label:"Knee reflex (L3/4)",val:v("neuro_reflex_knee")},
-    {label:"Ankle reflex (S1)",val:v("neuro_reflex_ankle")},
-    {label:"Motor weakness",val:v("neuro_weakness")},
-    {label:"Babinski",val:v("neuro_babinski")},
-    {label:"UL tension test A",val:v("cx_ultt_a")||v("ultt_a")},
-    {label:"UL tension test B",val:v("cx_ultt_b")||v("ultt_b")},
-  ].filter(r=>r.val);
+  // Neuro rows — includes both neuro_* fields and actual n_* dermatome/myotome/reflex fields
+  const neuroRows = useMemo(() => {
+    const rows = [];
+    // Standard fields
+    if(v("neuro_dermatomal")) rows.push({label:"Dermatomal pattern",val:v("neuro_dermatomal")});
+    if(v("neuro_sensation"))  rows.push({label:"Sensation",val:v("neuro_sensation")});
+    if(v("neuro_weakness"))   rows.push({label:"Motor weakness",val:v("neuro_weakness")});
+    if(v("neuro_reflex_biceps"))  rows.push({label:"Biceps reflex (C5/6)",val:v("neuro_reflex_biceps")});
+    if(v("neuro_reflex_triceps")) rows.push({label:"Triceps reflex (C7)",val:v("neuro_reflex_triceps")});
+    if(v("neuro_reflex_knee"))    rows.push({label:"Knee reflex (L3/4)",val:v("neuro_reflex_knee")});
+    if(v("neuro_reflex_ankle"))   rows.push({label:"Ankle reflex (S1)",val:v("neuro_reflex_ankle")});
+    if(v("neuro_babinski"))   rows.push({label:"Babinski",val:v("neuro_babinski")});
+    if(v("cx_ultt_a")||v("ultt_a")) rows.push({label:"UL tension test A",val:v("cx_ultt_a")||v("ultt_a")});
+    if(v("cx_ultt_b")||v("ultt_b")) rows.push({label:"UL tension test B",val:v("cx_ultt_b")||v("ultt_b")});
+    // Actual dermatome fields (n_c3–n_s2, bilateral)
+    const DERM_LEVELS = ["c3","c4","c5","c6","c7","c8","t1","t2","l1","l2","l3","l4","l5","s1","s2"];
+    DERM_LEVELS.forEach(lvl => {
+      const left  = v(`n_${lvl}_left`)  || v(`n_${lvl}`);
+      const right = v(`n_${lvl}_right`);
+      if (left && right && left !== right) rows.push({label:`Dermatome ${lvl.toUpperCase()}`,val:`L: ${left} / R: ${right}`});
+      else if (left)  rows.push({label:`Dermatome ${lvl.toUpperCase()}`,val:left});
+      else if (right) rows.push({label:`Dermatome ${lvl.toUpperCase()} (R)`,val:right});
+    });
+    // Myotomes (n_c5–n_s2 motor)
+    ["c5","c6","c7","c8","t1","l3","l4","l5","s1"].forEach(lvl => {
+      const val = v(`n_${lvl}_motor`) || v(`n_myo_${lvl}`);
+      if (val) rows.push({label:`Myotome ${lvl.toUpperCase()}`,val});
+    });
+    // Reflexes from neuro module
+    [["n_biceps","Biceps reflex (C5/6)"],["n_brachio","Brachioradialis (C6)"],
+     ["n_triceps","Triceps reflex (C7)"],["n_patella","Patellar reflex (L3/4)"],
+     ["n_achilles","Achilles reflex (S1)"],["n_babinski","Babinski"]].forEach(([k,label]) => {
+      const val = v(k);
+      if (val) rows.push({label, val});
+    });
+    // Neural tension tests
+    [["nt_slump","Slump test"],["nt_slr","SLR"],["nt_ultt1","ULTT1"],
+     ["nt_ultt2","ULTT2"],["nt_ultt3","ULTT3"],["nt_femoral","Femoral stretch"]].forEach(([k,label]) => {
+      const val = v(k);
+      if (val) rows.push({label, val});
+    });
+    if(v("neuro_clinician_notes")) rows.push({label:"Clinical notes",val:v("neuro_clinician_notes")});
+    return rows;
+  }, [data]);
 
   // Palpation
   const palpPins = useMemo(() => { try { return JSON.parse(data.palp_pins||"[]"); } catch { return []; } }, [data]);
   const palpText = ["cx","lx","shr","shl","knl","knr","af"].map(px=>[px.toUpperCase(),v(px+"_palpation")]).filter(([,val])=>val);
 
-  // Outcome measures
+  // Outcome measures — reads all om_* fields + session report
   const omRows = useMemo(() => {
     const rows = [];
-    if(v("ndi_score"))  rows.push({name:"NDI",  score:v("ndi_score"),  max:50,  note:"Neck Disability Index"});
-    if(v("psfs_score")) rows.push({name:"PSFS", score:v("psfs_score"), max:10,  note:"Patient-Specific Functional"});
-    if(v("koos_score")) rows.push({name:"KOOS", score:v("koos_score"), max:100, note:"Knee Injury & OA"});
-    if(v("dash_score")) rows.push({name:"DASH", score:v("dash_score"), max:100, note:"Arm/Shoulder/Hand"});
-    if(v("lefs_score")) rows.push({name:"LEFS", score:v("lefs_score"), max:80,  note:"Lower Extremity Functional"});
+    // Direct score fields
+    if(v("ndi_score")||v("om_ndi_score"))   rows.push({name:"NDI",  score:v("ndi_score")||v("om_ndi_score"),  max:"50",  note:"Neck Disability Index"});
+    if(v("psfs_score"))                      rows.push({name:"PSFS", score:v("psfs_score"), max:"10",  note:"Patient-Specific Functional"});
+    if(v("koos_score"))                      rows.push({name:"KOOS", score:v("koos_score"), max:"100", note:"Knee Injury & OA"});
+    if(v("dash_score")||v("om_dash_score")) rows.push({name:"DASH", score:v("dash_score")||v("om_dash_score"), max:"100", note:"Arm/Shoulder/Hand"});
+    if(v("lefs_score")||v("om_lefs_score")) rows.push({name:"LEFS", score:v("lefs_score")||v("om_lefs_score"), max:"80",  note:"Lower Extremity Functional"});
+    if(v("om_odi_score"))                   rows.push({name:"ODI",  score:v("om_odi_score"), max:"100%", note:"Oswestry Disability"});
+    // om_report from session
     const omR = data.om_report;
-    if(omR?.scores) Object.entries(omR.scores).slice(0,3).forEach(([k,s])=>rows.push({name:k.toUpperCase(),score:String(s),max:"",note:""}));
+    if(omR?.scores) Object.entries(omR.scores).slice(0,5).forEach(([k,s])=>{
+      if(!rows.find(r=>r.name===k.toUpperCase())) rows.push({name:k.toUpperCase(),score:String(s),max:"",note:""});
+    });
+    // PSFS activities (om_psfs_*)
+    [1,2,3].forEach(i=>{
+      const act=v(`om_psfs_${i}_activity`)||v(`psfs_act_${i}`);
+      const sc=v(`om_psfs_${i}_now`)||v(`psfs_now_${i}`);
+      if(act&&sc) rows.push({name:`PSFS: ${String(act).slice(0,20)}`,score:sc,max:"10",note:"Patient-Specific"});
+    });
+    // NDI items summary if no total
+    if(!rows.find(r=>r.name==="NDI")) {
+      const ndiVals=[1,2,3,4,5,6,7,8,9,10].map(i=>Number(v(`om_ndi_${i}`)||0));
+      const ndiTotal=ndiVals.reduce((a,b)=>a+b,0);
+      if(ndiTotal>0) rows.push({name:"NDI",score:String(ndiTotal),max:"50",note:"Neck Disability Index"});
+    }
     return rows;
   }, [data]);
 
@@ -3770,7 +3825,36 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {/* Kinetic Chain */}
           {mods.kinetic&&<>
             <div style={subH}>Kinetic Chain</div>
+            {/* Legacy fields */}
             {[v("kinetic_primary")&&["Primary dysfunction",v("kinetic_primary")],v("kinetic_compensation")&&["Compensation",v("kinetic_compensation")],v("kinetic_notes")&&["Notes",v("kinetic_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:110}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
+            {/* kc_* fields from Kinetic Chain module */}
+            {(()=>{
+              const KC=[["kc_ankle_df","Ankle DF"],["kc_subtalar","Subtalar"],["kc_great_toe","1st MTP Ext"],
+                ["kc_knee_stability","Knee Valgus"],["kc_patellar_mobility","Patellar Mob"],["kc_tibiofemoral_rot","Tibial Rot"],
+                ["kc_hip_ir_mob","Hip IR"],["kc_hip_ext_mob","Hip Ext (Thomas)"],["kc_hip_er_mob","Hip ER"],
+                ["kc_hip_abd_mob","Hip Abd"],["kc_lumbar_stability","Lumbar Stability"],["kc_lumbar_flexion_ctrl","Lumbar Flex Ctrl"],
+                ["kc_lumbar_rotation_ctrl","Lumbar Rot Ctrl"],["kc_thoracic_rotation","Thoracic Rot"],
+                ["kc_thoracic_extension","Thoracic Ext"],["kc_rib_mobility","Rib Cage"],
+                ["kc_scapulohumeral_rhythm","Scapulohumeral Rhythm"],["kc_gh_ir_mob","GH IR (GIRD)"],
+                ["kc_cervical_thoracic_jct","CT Junction"],["kc_cervical_rot_mob","Cervical Rot"],["kc_cervical_flex_ext","Cervical Flex/Ext"]];
+              const items = KC.map(([id,label])=>{const val=v(id);return val?{id,label,val}:null;}).filter(Boolean);
+              if(!items.length) return null;
+              const fail=items.filter(({val})=>/restrict|limit|dysfunc|unstable|abnormal|fail|hypomob|tight/i.test(val));
+              const hyper=items.filter(({val})=>/hyper|lax|excess|unstable/i.test(val));
+              const norm=items.filter(({val})=>/normal|pass|adequate|full/i.test(val));
+              return <div style={{marginTop:4}}>
+                {fail.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#B45309",marginBottom:3}}>Restricted / Dysfunctional</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                    {fail.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}
+                  </div></>}
+                {hyper.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#7C3AED",marginBottom:3}}>Hypermobile / Lax</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                    {hyper.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#EDE9FE",color:"#5B21B6",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}
+                  </div></>}
+                {norm.length>0&&<div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Normal: {norm.map(({label})=>label).join(", ")}</div>}
+                {v("kc_notes")&&<div style={{fontSize:11,color:"#374151",marginTop:2}}>Notes: {v("kc_notes")}</div>}
+              </div>;
+            })()}
           </>}
 
           {/* Fascia Integration */}
