@@ -1,6 +1,6 @@
 // ClinicalModules.jsx — Gait, Outcomes, SOAP, Exercise, Palpation, Treatment, SessionLog
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { getTopDiagnoses } from "./DiagnosisEngine.js";
+import { getTopDiagnoses, ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { C, getC } from "./utils.jsx";
 
 function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder="", data, set, note }) {
@@ -3985,17 +3985,19 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               ankle: ["Lateral Ankle Sprain","Achilles Tendinopathy","Plantar Fasciitis","Anterior Ankle Impingement","Peroneal Tendinopathy","Tibialis Posterior Dysfunction","Sinus Tarsi Syndrome"],
               general: ["Myofascial Pain Syndrome","Fibromyalgia","Central Sensitisation","Referred Pain","Somatic Symptom Disorder","Hypermobility Spectrum Disorder","Complex Regional Pain Syndrome"]
             };
+            // Use complete ALL_DIAGNOSES list — region-specific ones bubble to top
             const body = String(data.dem_body_part||data.soap_region||data.cx_region||data.lx_region||"").toLowerCase();
-            let allOpts = [];
-            if(body.includes("cerv")||body.includes("neck")) allOpts=[...DIFF_DX.cervical,...DIFF_DX.general];
-            else if(body.includes("shou")) allOpts=[...DIFF_DX.shoulder,...DIFF_DX.general];
-            else if(body.includes("elbow")) allOpts=[...DIFF_DX.elbow,...DIFF_DX.general];
-            else if(body.includes("wrist")||body.includes("hand")) allOpts=[...DIFF_DX.wrist,...DIFF_DX.general];
-            else if(body.includes("lumb")||body.includes("low back")||body.includes("lx")) allOpts=[...DIFF_DX.lumbar,...DIFF_DX.general];
-            else if(body.includes("hip")||body.includes("pelv")) allOpts=[...DIFF_DX.hip,...DIFF_DX.general];
-            else if(body.includes("knee")) allOpts=[...DIFF_DX.knee,...DIFF_DX.general];
-            else if(body.includes("ankle")||body.includes("foot")) allOpts=[...DIFF_DX.ankle,...DIFF_DX.general];
-            else allOpts=[...DIFF_DX.lumbar,...DIFF_DX.cervical,...DIFF_DX.shoulder,...DIFF_DX.general];
+            const PRIORITY = body.includes("cerv")||body.includes("neck") ? DIFF_DX.cervical
+              : body.includes("shou") ? DIFF_DX.shoulder
+              : body.includes("elbow") ? DIFF_DX.elbow
+              : body.includes("wrist")||body.includes("hand") ? DIFF_DX.wrist
+              : body.includes("lumb")||body.includes("low back")||body.includes("lx") ? DIFF_DX.lumbar
+              : body.includes("hip")||body.includes("pelv") ? DIFF_DX.hip
+              : body.includes("knee") ? DIFF_DX.knee
+              : body.includes("ankle")||body.includes("foot") ? DIFF_DX.ankle
+              : [...DIFF_DX.lumbar,...DIFF_DX.cervical,...DIFF_DX.shoulder];
+            // Region-specific first, then all remaining diagnoses
+            const allOpts = [...new Set([...PRIORITY, ...ALL_DIAGNOSES])];
 
             const selectedDiffs = (()=>{ try{ return JSON.parse(v("soap_differential_dx")||"[]"); }catch{return[];} })();
             const toggleDiff = (opt) => {

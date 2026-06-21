@@ -1,528 +1,869 @@
 /**
- * DiagnosisEngine.js
- * Clinical diagnosis suggestion engine for PhysioM
- * Based on: Magee's Orthopedic Physical Assessment (7th ed.),
- *           Wainner CPR (2003), Cook et al., Dutton's Orthopaedic,
- *           Clinical Prediction Rules literature
+ * DiagnosisEngine.js — PhysioM Clinical Reasoning Engine
+ *
+ * Sources used per diagnosis:
+ *   MAG  = Magee's Orthopedic Physical Assessment, 7th ed.
+ *   MAIT = Maitland's Vertebral Manipulation, 8th ed.
+ *   CYR  = Cyriax Orthopaedic Medicine, 3rd ed.
+ *   KEN  = Kendall's Muscles: Testing and Function, 5th ed.
+ *   BUT  = Butler's Mobilisation of the Nervous System
+ *   DUT  = Dutton's Orthopaedic Examination, 5th ed.
+ *   COOK = Cook Clinical Reasoning in Musculoskeletal Practice
+ *   CPR  = Published Clinical Prediction Rules (cited per diagnosis)
+ *   NICE = NICE Clinical Guidelines
+ *   PAIN = Explain Pain, Butler & Moseley
  */
 
-// Helper: check if a field value is "positive"
-const isPos = (val) => {
-  if (!val) return false;
-  const s = String(val).toLowerCase();
-  return s.includes("positive") || s.includes("+ve") || s === "yes" || s === "present" || s === "true";
-};
+const isPos  = v => { if(!v) return false; const s=String(v).toLowerCase(); return s.includes("positive")||s.includes("+ve")||s==="yes"||s==="present"||s==="true"; };
+const isNeg  = v => { if(!v) return false; const s=String(v).toLowerCase(); return s.includes("negative")||s.includes("-ve")||s==="no"||s==="absent"; };
+const num    = v => { const n=parseFloat(String(v||"").replace(/[^\d.-]/g,"")); return isNaN(n)?null:n; };
+const txt    = v => v && String(v).trim().length > 0;
+const match  = (v,...terms) => terms.some(t=>String(v||"").toLowerCase().includes(t.toLowerCase()));
 
-const isNeg = (val) => {
-  if (!val) return false;
-  const s = String(val).toLowerCase();
-  return s.includes("negative") || s.includes("-ve") || s === "no" || s === "absent";
-};
-
-const numVal = (val) => {
-  const n = parseFloat(String(val || "").replace(/[^\d.-]/g, ""));
-  return isNaN(n) ? null : n;
-};
-
-const hasText = (val) => val && String(val).trim().length > 0;
-
-/**
- * Main export: runDiagnosisEngine(data)
- * Returns array of { diagnosis, icd10, confidence, confidenceLabel, supportingFindings, region, reference }
- * Sorted by confidence descending.
- */
 export function runDiagnosisEngine(data) {
   const d = data || {};
-  const v = (k) => d[k] || "";
+  const v = k => d[k] || "";
   const results = [];
 
-  const add = (region, diagnosis, icd10, hits, total, findings, reference) => {
-    const pct = Math.round((hits / total) * 100);
-    const label = pct >= 80 ? "High" : pct >= 55 ? "Moderate" : "Low";
-    if (hits >= 1) {
-      results.push({ region, diagnosis, icd10, confidence: pct, confidenceLabel: label, supportingFindings: findings.filter(Boolean), hits, total, reference });
-    }
+  const add = (region, diagnosis, icd10, hits, total, findings, refs) => {
+    const pct = Math.round((hits/total)*100);
+    const label = pct>=80?"High":pct>=55?"Moderate":"Low";
+    if(hits>=1) results.push({region,diagnosis,icd10,confidence:pct,confidenceLabel:label,supportingFindings:findings.filter(Boolean),hits,total,reference:refs});
   };
 
-  // ═══════════════════════════════════════════════════════
-  // CERVICAL SPINE
-  // ═══════════════════════════════════════════════════════
+  // ── helpers ──────────────────────────────────────────
+  const age  = num(v("dem_age"));
+  const sex  = String(v("dem_gender")||v("dem_sex")||"").toLowerCase();
+  const bmi  = num(v("dem_bmi"));
+  const onset= String(v("s_onset")||"").toLowerCase();
+  const aggr = String(v("s_aggravating")||"").toLowerCase();
+  const ease = String(v("s_easing")||"").toLowerCase();
+  const behav= String(v("s_behaviour")||"").toLowerCase();
+  const loc  = String(v("s_location")||v("dem_body_part")||"").toLowerCase();
+  const cc   = String(v("s_chief_complaint")||"").toLowerCase();
+  const rad  = String(v("s_radiation")||"").toLowerCase();
+  const mech = String(v("s_mechanism")||"").toLowerCase();
+  const palp = String(v("lx_palpation")||v("cx_palpation")||v("shr_palpation")||v("palpation_notes")||"").toLowerCase();
 
-  // Cervical Radiculopathy — Wainner CPR (2003): 4 criteria
+  // ═══════════════════════════════════════════════
+  // CERVICAL SPINE
+  // ═══════════════════════════════════════════════
+
+  // Cervical Radiculopathy — Wainner CPR 2003 (Spine)
   {
     const spurling   = isPos(v("st_spurling"));
     const distract   = isPos(v("st_distraction"));
-    const upper_limb = isPos(v("st_upper_limb_tension")) || isPos(v("st_ultt"));
-    const cx_rot     = numVal(v("cx_rot_r")) || numVal(v("cx_rot_l"));
-    const rotLimit   = cx_rot !== null && cx_rot < 60;
-    const arm_pain   = hasText(v("s_radiation")) && /arm|hand|finger|elbow|forearm/i.test(v("s_radiation"));
-    const hits = [spurling, distract, upper_limb, rotLimit].filter(Boolean).length;
-    add("Cervical", "Cervical Radiculopathy", "M54.12", hits, 4,
-      [spurling && "Spurling's Test +ve", distract && "Cervical Distraction +ve",
-       upper_limb && "ULTT +ve", rotLimit && `Cervical rotation < 60° (${cx_rot}°)`,
-       arm_pain && "Arm/hand radiation reported"],
-      "Wainner et al. 2003 CPR; Magee Ch.4"
-    );
+    const ultt       = isPos(v("st_upper_limb_tension"))||isPos(v("st_ultt"));
+    const cx_rot     = num(v("cx_rot_r"))||num(v("cx_rot_l"));
+    const rotLimit   = cx_rot!==null && cx_rot<60;
+    const armPain    = match(rad,"arm","hand","finger","elbow","forearm");
+    const dermatomal = txt(v("n_c5"))||txt(v("n_c6"))||txt(v("n_c7"))||txt(v("n_c8"))||txt(v("neuro_dermatomal"));
+    const weaknessUL = txt(v("neuro_weakness")) && match(v("neuro_weakness"),"arm","grip","wrist","finger");
+    const gradOnset  = match(onset,"gradual","insidious","slow");
+    const hits=[spurling,distract,ultt,rotLimit,armPain,dermatomal,weaknessUL].filter(Boolean).length;
+    add("Cervical","Cervical Radiculopathy","M54.12",hits,7,[
+      spurling&&"Spurling's Test +ve (Sn 0.50, Sp 0.86 — Wainner CPR)",
+      distract&&"Cervical Distraction relieves symptoms (CYR end-feel + Butler neural tension)",
+      ultt&&"ULTT +ve — neural mechanosensitivity (Butler: Mobilisation of NS)",
+      rotLimit&&`Cervical rotation < 60° — ${cx_rot}° (Maitland: segmental hypomobility)`,
+      armPain&&"Arm/hand radiation (dermatomal pattern — MAG Ch.4)",
+      dermatomal&&"C5–C8 dermatomal neurological pattern (KEN myotomal testing)",
+      weaknessUL&&"Upper limb myotomal weakness (KEN Ch.5)"
+    ],"Wainner et al. 2003 CPR; MAG Ch.4; Butler NS Mob; Maitland Cervical");
   }
 
-  // Cervical Facet Syndrome
+  // Cervical Facet Syndrome — Maitland PIVM + Cyriax
   {
-    const locPain    = /neck|cerv|occipit/i.test(v("s_location") || v("dem_body_part") || "");
-    const spurling   = isPos(v("st_spurling"));
-    const noRadiate  = !hasText(v("s_radiation")) || !/arm|hand|finger/i.test(v("s_radiation"));
-    const extPain    = /pain|restrict/i.test(v("cx_ext") || "");
-    const sideFlexPain = isPos(v("st_foraminal_compression")) || /pain/i.test(v("cx_lat_r") || v("cx_lat_l") || "");
-    const hits = [locPain, !spurling && noRadiate, extPain || sideFlexPain].filter(Boolean).length;
-    add("Cervical", "Cervical Facet Syndrome", "M47.812", hits, 3,
-      [locPain && "Localised cervical/occipital pain", !spurling && "Spurling's negative (non-radicular)",
-       extPain && "Pain on extension", sideFlexPain && "Pain on ipsilateral side-flexion/compression"],
-      "Magee Orthopedic Physical Assessment Ch.4; Dutton Ch.25"
-    );
+    const localPain  = match(loc,"neck","cerv","occipit","suboccip");
+    const extPain    = match(v("cx_ext")||"","pain","limit","restrict");
+    const latFlexPain= match(v("cx_lat_r")||v("cx_lat_l")||"","pain","restrict");
+    const noRad      = !match(rad,"arm","hand","finger","below elbow");
+    const morningS   = match(behav+aggr,"morning","stiff");
+    const palpTend   = match(palp,"facet","paravert","tender");
+    const spurlingNeg= isNeg(v("st_spurling"))||!isPos(v("st_spurling"));
+    const pivm       = isPos(v("cx_pivm"))||match(v("cx_pivm")||"","restrict","stiff","hypomob");
+    const hits=[localPain,extPain||latFlexPain,noRad,morningS||palpTend,pivm].filter(Boolean).length;
+    add("Cervical","Cervical Facet Syndrome","M47.812",hits,5,[
+      localPain&&"Localised cervical/occipital pain (Cyriax: non-capsular pattern)",
+      extPain&&"Pain on extension (Maitland: posterior joint loading)",
+      latFlexPain&&"Pain ipsilateral side-flexion (Maitland PIVM assessment)",
+      noRad&&"No arm radiation below elbow (differentiates from radiculopathy)",
+      morningS&&"Morning stiffness (Maitland: grade I-II mobilisation indicated)",
+      palpTend&&"Paravertebral tenderness on palpation (Maitland PA pressures)",
+      pivm&&"PIVM restricted at segmental level (Maitland Vertebral Manipulation)"
+    ],"Maitland Vertebral Manipulation 8th ed.; Cyriax Orthopaedic Medicine; MAG Ch.4");
   }
 
-  // Cervicogenic Headache
+  // Cervicogenic Headache — ICHD-3 + Hall & Robinson FRT
   {
-    const headache   = /head|occipit/i.test(v("s_location") || v("s_chief_complaint") || "");
-    const cx_flex    = numVal(v("cx_flex"));
-    const flexLimit  = cx_flex !== null && cx_flex < 40;
-    const frt        = isPos(v("st_frt")) || isPos(v("st_flexion_rotation_test"));
-    const unilateral = /one side|unilateral|left|right/i.test(v("s_chief_complaint") || "");
-    const hits = [headache, flexLimit, frt, unilateral].filter(Boolean).length;
-    add("Cervical", "Cervicogenic Headache", "G44.841", hits, 4,
-      [headache && "Headache / occipital pain", flexLimit && `Cervical flexion restricted (${cx_flex}°)`,
-       frt && "Flexion Rotation Test +ve", unilateral && "Unilateral head/neck pain"],
-      "Hall & Robinson FRT (Sp 0.93); Magee Ch.4"
-    );
+    const headache   = match(loc+cc,"head","occipit","temple","frontal","unilateral");
+    const frt        = isPos(v("st_frt"))||isPos(v("st_flexion_rotation_test"));
+    const cxFlex     = num(v("cx_flex"));
+    const flexLimit  = cxFlex!==null && cxFlex<40;
+    const unilateral = match(cc+loc,"one side","unilateral","left","right");
+    const nausea     = match(cc+behav,"nausea","vomit","light");
+    const neckMove   = match(aggr,"neck","turn","look","bend");
+    const hits=[headache,frt,flexLimit,unilateral,neckMove].filter(Boolean).length;
+    add("Cervical","Cervicogenic Headache","G44.841",hits,5,[
+      headache&&"Headache/occipital pain (ICHD-3 cervicogenic criteria)",
+      frt&&"Flexion-Rotation Test +ve — Sp 0.93 (Hall & Robinson 2010)",
+      flexLimit&&`Cervical flexion restricted ${cxFlex}° (Maitland: C1-2 restriction)`,
+      unilateral&&"Unilateral head/neck pain (DUT: C2-3 zygapophyseal referral)",
+      neckMove&&"Neck movement aggravates headache (COOK clinical reasoning)"
+    ],"Hall & Robinson FRT 2010; ICHD-3; Maitland Ch.6; DUT Ch.25");
   }
 
   // Cervical Disc Herniation
   {
     const spurling   = isPos(v("st_spurling"));
+    const ultt       = isPos(v("st_upper_limb_tension"))||isPos(v("st_ultt"));
     const distract   = isPos(v("st_distraction"));
-    const ultt       = isPos(v("st_upper_limb_tension")) || isPos(v("st_ultt"));
-    const dermatomal = hasText(v("neuro_dermatomal")) || hasText(v("n_c5")) || hasText(v("n_c6")) || hasText(v("n_c7"));
-    const arm_rad    = /arm|forearm|hand|finger/i.test(v("s_radiation") || "");
-    const hits = [spurling, ultt, dermatomal, arm_rad].filter(Boolean).length;
-    add("Cervical", "Cervical Disc Herniation", "M50.10", hits, 4,
-      [spurling && "Spurling's +ve", distract && "Distraction relieves symptoms",
-       dermatomal && "Dermatomal neurological pattern", arm_rad && "Arm/hand radiation"],
-      "Magee Ch.4; Wainner CPR"
-    );
+    const armRad     = match(rad,"arm","forearm","hand","finger");
+    const dermatomal = txt(v("neuro_dermatomal"))||txt(v("n_c5"))||txt(v("n_c6"))||txt(v("n_c7"));
+    const flexWorsen = match(aggr,"flex","sit","forward","bend");
+    const nightPain  = match(behav,"night","sleep","rest");
+    const hits=[spurling,ultt,armRad,dermatomal,flexWorsen].filter(Boolean).length;
+    add("Cervical","Cervical Disc Herniation","M50.10",hits,5,[
+      spurling&&"Spurling's +ve (foraminal compression — MAG Ch.4)",
+      ultt&&"ULTT +ve (dural/neural tension — Butler: Mob NS)",
+      distract&&"Distraction relieves (disc unloading — CYR)",
+      armRad&&"Arm/hand radiation along dermatomal pattern",
+      dermatomal&&"C5-C8 dermatomal/myotomal involvement (KEN)",
+      flexWorsen&&"Flexion/sitting worsens (Maitland: disc directional preference)",
+      nightPain&&"Night pain (COOK: chemical irritation pattern)"
+    ],"MAG Ch.4; Butler NS Mob; Cyriax; Maitland; KEN Ch.5");
   }
 
-  // Myelopathy
+  // Cervical Myelopathy — Cook et al. 2009
   {
-    const hoffmann  = isPos(v("st_hoffmann"));
-    const inverted  = isPos(v("st_inverted_supinator"));
-    const babinski  = isPos(v("st_babinski"));
-    const bilateral = /bilat|both/i.test(v("s_location") || v("s_radiation") || "");
-    const gait_dist = hasText(v("gait_pattern")) && /atax|shuffl|spastic|wide/i.test(v("gait_pattern"));
-    const hits = [hoffmann, inverted, babinski, gait_dist].filter(Boolean).length;
-    add("Cervical", "Cervical Myelopathy", "G99.2", hits, 4,
-      [hoffmann && "Hoffmann's Sign +ve", inverted && "Inverted Supinator Sign +ve",
-       babinski && "Babinski +ve", gait_dist && "Gait disturbance present"],
-      "Cook et al. 2009; Magee Ch.4 UMN signs"
-    );
+    const hoffmann   = isPos(v("st_hoffmann"));
+    const babinski   = isPos(v("st_babinski"));
+    const invSupin   = isPos(v("st_inverted_supinator"));
+    const gaitDist   = txt(v("gait_pattern")) && match(v("gait_pattern"),"atax","shuffl","spastic","wide","unstead");
+    const bilateral  = match(rad+loc,"bilat","both","legs","arms");
+    const clonus     = isPos(v("st_clonus"));
+    const hits=[hoffmann,babinski,invSupin,gaitDist,clonus].filter(Boolean).length;
+    add("Cervical","Cervical Myelopathy","G99.2",hits,5,[
+      hoffmann&&"Hoffmann's Sign +ve — UMN (Cook et al. 2009: Sn 0.58, Sp 0.78)",
+      babinski&&"Babinski +ve — UMN pathology (DUT: long tract signs)",
+      invSupin&&"Inverted Supinator Sign +ve (MAG: C5-6 cord compression)",
+      gaitDist&&"Gait disturbance — ataxic/spastic (NICE: urgent referral criteria)",
+      clonus&&"Clonus present (NICE: red flag — refer neurology)",
+      bilateral&&"Bilateral limb symptoms (red flag pattern)"
+    ],"Cook et al. 2009; MAG Ch.4; DUT Ch.25; NICE Cervical Myelopathy Guideline");
   }
 
-  // ═══════════════════════════════════════════════════════
+  // Thoracic Outlet Syndrome
+  {
+    const roos       = isPos(v("st_roos"))||isPos(v("st_east_test"));
+    const adson      = isPos(v("st_adson"));
+    const ultt       = isPos(v("st_ultt"))||isPos(v("st_upper_limb_tension"));
+    const armFatigue = match(aggr+cc,"overhead","arm up","carry","fatigue");
+    const ulnarDist  = match(rad+v("neuro_dermatomal")||"","ring","little","4th","5th","ulnar","medial forearm");
+    const hits=[roos,adson,ultt,armFatigue,ulnarDist].filter(Boolean).length;
+    add("Cervical/Thoracic","Thoracic Outlet Syndrome","G54.0",hits,5,[
+      roos&&"ROOS/EAST Test +ve (3-min elevated arm stress — DUT)",
+      adson&&"Adson's Test +ve (scalene compression — MAG Ch.4)",
+      ultt&&"ULTT +ve (neurodynamic — Butler: Mob NS)",
+      armFatigue&&"Overhead/arm elevation aggravates (positional compression)",
+      ulnarDist&&"Ulnar/medial forearm distribution symptoms (C8-T1 — KEN)"
+    ],"DUT Ch.26; MAG Ch.4; Butler NS Mob; KEN Ch.5");
+  }
+
+  // ═══════════════════════════════════════════════
   // LUMBAR SPINE
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════
 
-  // Lumbar Disc Herniation with Radiculopathy
+  // Lumbar Disc Herniation — Devillé meta-analysis + Maitland
   {
-    const slr       = isPos(v("st_slr_test")) || isPos(v("st_slr"));
-    const crossed   = isPos(v("st_crossed_slr")) || isPos(v("st_well_leg_raise"));
-    const lx_flex   = numVal(v("lx_flex"));
-    const flexLimit = lx_flex !== null && lx_flex < 60;
-    const radiation = /leg|foot|calf|buttock|glut/i.test(v("s_radiation") || "");
-    const dermL     = hasText(v("n_l4")) || hasText(v("n_l5")) || hasText(v("n_s1"));
-    const hits = [slr, crossed, flexLimit, radiation, dermL].filter(Boolean).length;
-    add("Lumbar", "Lumbar Disc Herniation with Radiculopathy", "M51.16", hits, 5,
-      [slr && "SLR +ve (neural tension)", crossed && "Crossed SLR +ve (high specificity)",
-       flexLimit && `Lumbar flexion restricted (${lx_flex}°)`, radiation && "Leg/foot radiation",
-       dermL && "L4/L5/S1 dermatomal involvement"],
-      "Magee Ch.9; Deville et al. SLR meta-analysis"
-    );
+    const slr        = isPos(v("st_slr_test"))||isPos(v("st_slr"));
+    const crossedSlr = isPos(v("st_crossed_slr"))||isPos(v("st_well_leg_raise"));
+    const lxFlex     = num(v("lx_flex"));
+    const flexLimit  = lxFlex!==null && lxFlex<60;
+    const legRad     = match(rad,"leg","foot","calf","buttock","below knee","thigh");
+    const dermL      = txt(v("n_l4"))||txt(v("n_l5"))||txt(v("n_s1"));
+    const flexWorsen = match(aggr,"sit","flex","forward","bend","sneeze","cough");
+    const extEase    = match(ease,"stand","walk","extend","lie");
+    const acuteOnset = match(onset,"sudden","acute","lift","bend");
+    const hits=[slr,crossedSlr,flexLimit,legRad,dermL,flexWorsen].filter(Boolean).length;
+    add("Lumbar","Lumbar Disc Herniation with Radiculopathy","M51.16",hits,6,[
+      slr&&"SLR +ve — neural tension (Devillé 2000: Sn 0.92, Sp 0.28)",
+      crossedSlr&&"Crossed SLR +ve — high specificity (Sp 0.90) for disc herniation",
+      flexLimit&&`Lumbar flexion restricted ${lxFlex}° (Maitland: disc directional preference)`,
+      legRad&&"Leg/foot radiation below knee (dermatomal pattern — KEN)",
+      dermL&&"L4/L5/S1 neurological involvement (KEN myotomal testing)",
+      flexWorsen&&"Sitting/flexion worsens — Valsalva aggravates (CYR: disc sign)",
+      extEase&&"Extension/walking eases (Maitland McKenzie directional preference)",
+      acuteOnset&&"Acute onset with loading mechanism"
+    ],"Devillé 2000 SLR meta-analysis; Maitland Vertebral Manip; CYR; KEN Ch.8; COOK Ch.9");
   }
 
-  // Lumbar Facet Syndrome
+  // Lumbar Facet Syndrome — Maitland + Cyriax
   {
-    const extPain   = /pain|restrict/i.test(v("lx_ext") || "");
-    const localised = !/leg|foot|below knee/i.test(v("s_radiation") || "");
-    const slr       = isPos(v("st_slr_test")) || isPos(v("st_slr"));
-    const morningS  = /morning|stiff|better with movement/i.test(v("s_aggravating") || v("s_behaviour") || "");
-    const palpTend  = hasText(v("palpation_lx")) || hasText(v("lx_palpation"));
-    const hits = [extPain, localised && !slr, morningS, palpTend].filter(Boolean).length;
-    add("Lumbar", "Lumbar Facet Syndrome", "M47.816", hits, 4,
-      [extPain && "Pain on lumbar extension/side-flex", localised && "Localised LBP without radiation",
-       !slr && "SLR negative", morningS && "Morning stiffness / better with movement",
-       palpTend && "Paravertebral tenderness on palpation"],
-      "Magee Ch.9; Maitland PIVM assessment"
-    );
+    const extPain    = match(v("lx_ext")||"","pain","limit","restrict");
+    const noLegRad   = !match(rad,"below knee","calf","foot","leg");
+    const morningS   = match(aggr+behav,"morning","stiff","activity","move");
+    const palpTend   = match(palp,"facet","paravert","tender","zygapo");
+    const pivm       = isPos(v("lx_pivm"))||match(v("lx_pivm")||"","restrict","stiff");
+    const unilateral = match(loc,"one side","unilateral","left","right");
+    const slrNeg     = isNeg(v("st_slr"))||(!isPos(v("st_slr_test"))&&!isPos(v("st_slr")));
+    const age50      = age!==null && age>40;
+    const hits=[extPain,noLegRad&&slrNeg,morningS,palpTend,pivm,age50].filter(Boolean).length;
+    add("Lumbar","Lumbar Facet Syndrome","M47.816",hits,6,[
+      extPain&&"Extension/side-flex loads posterior joints (Maitland: PA pressure reproduces)",
+      noLegRad&&"No radiation below knee (Cyriax: differentiates from disc)",
+      slrNeg&&"SLR negative (Maitland: rules out significant disc/nerve root)",
+      morningS&&"Morning stiffness improves with movement (Maitland: grade III-IV indicated)",
+      palpTend&&"Paravertebral/facet tenderness on palpation (Maitland PA pressures)",
+      pivm&&"PIVM restricted/painful at affected segment (Maitland Vertebral Manip)",
+      age50&&`Age >40: degenerative facet changes likely (NICE LBP guideline, age ${age}y)`
+    ],"Maitland Vertebral Manipulation 8th ed.; Cyriax Orthopaedic Medicine; NICE LBP 2021; DUT Ch.22");
   }
 
-  // Lumbar Canal Stenosis
+  // Lumbar Canal Stenosis — Katz 1995 + Sugioka 2008
   {
-    const bilateral = /bilat|both leg/i.test(v("s_radiation") || "");
-    const walkLimit = /walk|distance|stand/i.test(v("s_aggravating") || "");
-    const relief    = /sit|forward flex|lean/i.test(v("s_easing") || "");
-    const age       = numVal(v("dem_age"));
-    const older     = age !== null && age > 50;
-    const extPain   = /pain/i.test(v("lx_ext") || "");
-    const hits = [bilateral, walkLimit, relief, older, extPain].filter(Boolean).length;
-    add("Lumbar", "Lumbar Canal Stenosis", "M48.06", hits, 5,
-      [bilateral && "Bilateral leg symptoms", walkLimit && "Claudication on walking/standing",
-       relief && "Relief with sitting/forward flexion", older && `Age > 50 (${age}y)`,
-       extPain && "Extension provokes symptoms"],
-      "Katz et al. 1995; Magee Ch.9 neurogenic claudication"
-    );
+    const bilateral  = match(rad+loc,"bilat","both leg","both limb");
+    const walkLimit  = match(aggr,"walk","stand","extend","distance");
+    const sitRelief  = match(ease,"sit","forward flex","lean","crouch","shop cart");
+    const older      = age!==null && age>55;
+    const extPain    = match(v("lx_ext")||"","pain","limit");
+    const neuroclaud = match(cc,"claudic","cramp","heavy","numb","tingle") && match(aggr,"walk","stand");
+    const hits=[bilateral,walkLimit,sitRelief,older,neuroclaud].filter(Boolean).length;
+    add("Lumbar","Lumbar Canal Stenosis","M48.06",hits,5,[
+      bilateral&&"Bilateral leg symptoms (Katz 1995: bilateral = more specific for stenosis)",
+      walkLimit&&"Walking/standing distance limited (neurogenic claudication — DUT Ch.22)",
+      sitRelief&&"Relief with sitting/forward flexion — 'shopping cart sign' (Sugioka 2008)",
+      older&&`Age >55 (${age}y) — degenerative stenosis pattern (NICE)`,
+      neuroclaud&&"Neurogenic claudication: cramp/heaviness/numbness on walking",
+      extPain&&"Extension provokes/worsens symptoms (Maitland: canal narrowing)"
+    ],"Katz et al. 1995; Sugioka 2008 CPR; Maitland; DUT Ch.22; NICE LBP 2021");
   }
 
-  // SIJ Dysfunction — van der Wurff CPR: ≥3 of 5 provocation tests
+  // SIJ Dysfunction — Laslett CPR + van der Wurff
   {
-    const thigh_thrust = isPos(v("st_thigh_thrust")) || isPos(v("st_posterior_shear"));
-    const compression  = isPos(v("st_sacral_compression")) || isPos(v("st_compression"));
-    const distraction  = isPos(v("st_sacral_distraction")) || isPos(v("st_distraction_sij"));
-    const faber        = isPos(v("st_faber")) || isPos(v("st_patrick"));
-    const gaenslen    = isPos(v("st_gaenslen"));
-    const hits = [thigh_thrust, compression, distraction, faber, gaenslen].filter(Boolean).length;
-    add("Lumbar/Pelvis", "SIJ Dysfunction", "M53.3", hits, 5,
-      [thigh_thrust && "Thigh Thrust +ve", compression && "Sacral Compression +ve",
-       distraction && "Sacral Distraction +ve", faber && "FABER +ve", gaenslen && "Gaenslen's +ve"],
-      "van der Wurff CPR 2006 (≥3/5 = Sn 0.85, Sp 0.79); Laslett et al."
-    );
+    const thighThrust= isPos(v("st_thigh_thrust"))||isPos(v("st_posterior_shear"));
+    const compress   = isPos(v("st_sacral_compression"))||isPos(v("st_compression"));
+    const distract   = isPos(v("st_sacral_distraction"))||isPos(v("st_distraction_sij"));
+    const faber      = isPos(v("st_faber"))||isPos(v("st_patrick"));
+    const gaenslen   = isPos(v("st_gaenslen"));
+    const sijLoc     = match(loc,"sij","sacral","sacroiliac","posterior iliac","psis");
+    const pelvicPain = match(loc+cc,"pelvi","groin","buttock") && !match(rad,"below knee");
+    const hits=[thighThrust,compress,distract,faber,gaenslen,sijLoc].filter(Boolean).length;
+    add("Lumbar/Pelvis","SIJ Dysfunction","M53.3",hits,6,[
+      thighThrust&&"Thigh Thrust +ve — best single SIJ test (Laslett: Sn 0.88)",
+      compress&&"Sacral Compression +ve (van der Wurff CPR: ≥3/5 = Sn 0.85, Sp 0.79)",
+      distract&&"Sacral Distraction +ve (van der Wurff CPR)",
+      faber&&"FABER +ve — hip/SIJ stress (MAG Ch.11)",
+      gaenslen&&"Gaenslen's +ve — SIJ torsion stress (DUT Ch.27)",
+      sijLoc&&"PSIS/sacral localised pain (Maitland: SIJ palpation)",
+      pelvicPain&&"Pelvic/buttock pain without below-knee radiation"
+    ],"Laslett et al. 2005; van der Wurff 2006 CPR; Maitland; MAG Ch.9; DUT Ch.27");
   }
 
   // Piriformis Syndrome
   {
-    const freiberg  = isPos(v("st_freiberg"));
-    const pace      = isPos(v("st_pace"));
-    const beatty    = isPos(v("st_beatty"));
-    const buttock   = /buttock|piriform|deep glut/i.test(v("s_location") || "");
-    const hits = [freiberg, pace, beatty, buttock].filter(Boolean).length;
-    add("Lumbar/Hip", "Piriformis Syndrome", "G57.00", hits, 4,
-      [freiberg && "Freiberg's Test +ve", pace && "Pace's Test +ve",
-       beatty && "Beatty's Test +ve", buttock && "Deep buttock / gluteal pain"],
-      "Magee Ch.11; Fishman et al."
-    );
+    const freiberg   = isPos(v("st_freiberg"));
+    const pace       = isPos(v("st_pace"));
+    const beatty     = isPos(v("st_beatty"));
+    const deepButtock= match(loc,"buttock","piriform","deep glut","sciatic notch");
+    const irPain     = match(v("rom_hp_ir_r")||v("rom_hp_ir_l")||"","pain","limit","restrict");
+    const slrPos     = isPos(v("st_slr_test"))||isPos(v("st_slr"));
+    const hits=[freiberg,pace,beatty,deepButtock,irPain].filter(Boolean).length;
+    add("Lumbar/Hip","Piriformis Syndrome","G57.00",hits,5,[
+      freiberg&&"Freiberg's Test +ve — passive IR pain (MAG Ch.11)",
+      pace&&"Pace's Test +ve — resisted ER/abd pain (DUT Ch.27)",
+      beatty&&"Beatty's Test +ve — lateral decubitus hip abduction (MAG)",
+      deepButtock&&"Deep buttock/piriformis point pain (Maitland: piriformis palpation)",
+      irPain&&"Hip internal rotation provokes pain (CYR: non-capsular pattern)",
+      slrPos&&"SLR may be positive (sciatic nerve irritation — BUT)"
+    ],"Fishman et al.; MAG Ch.11; DUT Ch.27; CYR; BUT Mob NS");
   }
 
-  // ═══════════════════════════════════════════════════════
-  // SHOULDER
-  // ═══════════════════════════════════════════════════════
-
-  // Rotator Cuff Tear — Hegedus meta-analysis cluster
+  // Spondylolisthesis
   {
-    const empty_can  = isPos(v("st_empty_can")) || isPos(v("st_supraspinatus"));
-    const drop_arm   = isPos(v("st_drop_arm"));
-    const ext_rot_wk = isPos(v("st_external_rotation_lag")) || isPos(v("st_er_lag"));
-    const painful_arc= isPos(v("st_painful_arc"));
-    const hits = [empty_can, drop_arm, ext_rot_wk, painful_arc].filter(Boolean).length;
-    add("Shoulder", "Rotator Cuff Tear", "M75.120", hits, 4,
-      [empty_can && "Empty Can (Jobe) +ve", drop_arm && "Drop Arm Test +ve",
-       ext_rot_wk && "External Rotation Lag Sign +ve", painful_arc && "Painful Arc +ve"],
-      "Hegedus et al. 2008 meta-analysis; Magee Ch.5"
-    );
+    const stepDef    = match(palp+v("obs_deformity_description")||"","step","defect","shelf");
+    const extPain    = match(v("lx_ext")||"","pain","limit");
+    const young      = age!==null && age<30;
+    const sport      = match(cc+onset,"gymnast","bowler","cricket","sport","extension sport");
+    const slr        = isPos(v("st_slr_test"))||isPos(v("st_slr"));
+    const hamTight   = match(v("kc_hamstring")||v("rom_hip_flex")||"","tight","limit","restrict");
+    const hits=[stepDef,extPain,young&&sport,hamTight].filter(Boolean).length;
+    add("Lumbar","Spondylolisthesis","M43.10",hits,4,[
+      stepDef&&"Step deformity on palpation (MAG: spinous process step sign)",
+      extPain&&"Extension provokes/worsens (MAG Ch.9: pars stress)",
+      young&&sport&&`Young athlete (${age}y) with extension sport (COOK: pars interarticularis)`,
+      hamTight&&"Hamstring tightness — protective guarding (DUT Ch.22)",
+      slr&&"SLR may be positive if nerve root compromise (Maitland)"
+    ],"MAG Ch.9; COOK Clinical Reasoning; DUT Ch.22; Maitland");
+  }
+
+  // Non-Specific LBP / Myofascial LBP
+  {
+    const lbpLoc     = match(loc,"low back","lumbar","lumb","lx");
+    const noRad      = !match(rad,"below knee","leg","calf","foot");
+    const slrNeg     = !isPos(v("st_slr_test"))&&!isPos(v("st_slr"));
+    const noNeuro    = !txt(v("n_l4"))&&!txt(v("n_l5"))&&!txt(v("n_s1"));
+    const palpTend   = match(palp,"tender","trigger","spasm","taut");
+    const stressWork = match(v("s_psychosocial")||v("s_yellow_flag")||"","stress","work","anxiet","fear","depress");
+    const hits=[lbpLoc,noRad&&slrNeg&&noNeuro,palpTend,stressWork].filter(Boolean).length;
+    add("Lumbar","Non-Specific Low Back Pain / Myofascial","M54.50",hits,4,[
+      lbpLoc&&"Lumbar region pain — no serious pathology identified",
+      noRad&&slrNeg&&"No radiation, negative neural tension — non-radicular (NICE LBP)",
+      palpTend&&"Myofascial trigger points / muscle spasm on palpation (COOK)",
+      stressWork&&"Psychosocial/yellow flags present (NICE LBP 2021: biopsychosocial)",
+      noNeuro&&"No neurological deficit (DUT: mechanical LBP)"
+    ],"NICE LBP 2021; COOK Ch.9; DUT Ch.22; PAIN Butler & Moseley");
+  }
+
+  // ═══════════════════════════════════════════════
+  // SHOULDER
+  // ═══════════════════════════════════════════════
+
+  // Rotator Cuff Tear — Hegedus meta-analysis
+  {
+    const emptyCan   = isPos(v("st_empty_can"))||isPos(v("st_supraspinatus"));
+    const dropArm    = isPos(v("st_drop_arm"));
+    const erLag      = isPos(v("st_external_rotation_lag"))||isPos(v("st_er_lag"));
+    const painfulArc = isPos(v("st_painful_arc"));
+    const sAbd       = num(v("rom_shr_abd_R"))||num(v("rom_shr_abd_L"))||num(v("rom_sabd"));
+    const abdWeakness= sAbd!==null&&sAbd<90;
+    const trauma     = match(onset+mech,"fall","trauma","lift","force");
+    const nightPain  = match(behav,"night","sleep");
+    const hits=[emptyCan,dropArm,erLag,painfulArc,abdWeakness,nightPain].filter(Boolean).length;
+    add("Shoulder","Rotator Cuff Tear","M75.120",hits,6,[
+      emptyCan&&"Empty Can (Jobe) +ve — supraspinatus (Hegedus 2012: Sn 0.69, Sp 0.66)",
+      dropArm&&"Drop Arm Test +ve — massive tear (MAG Ch.5: Sp 0.98)",
+      erLag&&"External Rotation Lag Sign +ve — infraspinatus (Hertel: Sp 0.98)",
+      painfulArc&&"Painful Arc 60–120° — impingement/cuff tear (CYR: arc sign)",
+      abdWeakness&&`Shoulder abduction restricted/weak ${sAbd}° (KEN Ch.4: deltoid/supraspinatus)`,
+      nightPain&&"Night pain — inflammatory/full thickness tear (COOK)",
+      trauma&&"Traumatic onset (MAG: acute tear mechanism)"
+    ],"Hegedus et al. 2012 meta-analysis; MAG Ch.5; CYR; KEN Ch.4; Hertel lag signs");
   }
 
   // Subacromial Impingement
   {
     const neer       = isPos(v("st_neer"));
-    const hawkins    = isPos(v("st_hawkins")) || isPos(v("st_hawkins_kennedy"));
-    const painful_arc= isPos(v("st_painful_arc"));
-    const empty_can  = isPos(v("st_empty_can"));
-    const hits = [neer, hawkins, painful_arc, !isPos(v("st_drop_arm"))].filter(Boolean).length;
-    add("Shoulder", "Subacromial Impingement Syndrome", "M75.1", hits, 4,
-      [neer && "Neer Impingement +ve", hawkins && "Hawkins-Kennedy +ve",
-       painful_arc && "Painful Arc 60–120°", empty_can && "Empty Can +ve"],
-      "Magee Ch.5; Hegedus meta-analysis 2012"
-    );
+    const hawkins    = isPos(v("st_hawkins"))||isPos(v("st_hawkins_kennedy"));
+    const painfulArc = isPos(v("st_painful_arc"));
+    const emptyCan   = isPos(v("st_empty_can"));
+    const overhead   = match(aggr,"overhead","reach","lift","arm above");
+    const noDropArm  = !isPos(v("st_drop_arm"));
+    const hits=[neer,hawkins,painfulArc,overhead,noDropArm&&emptyCan].filter(Boolean).length;
+    add("Shoulder","Subacromial Impingement Syndrome","M75.1",hits,5,[
+      neer&&"Neer Impingement Sign +ve (MAG Ch.5: Sn 0.72)",
+      hawkins&&"Hawkins-Kennedy +ve — internal rotation impingement (Sn 0.80 — Hegedus)",
+      painfulArc&&"Painful Arc 60–120° (CYR: classic impingement arc)",
+      overhead&&"Overhead activity aggravates (DUT Ch.20: outlet impingement)",
+      noDropArm&&"Drop arm negative — no full tear (CYR: differentiates from cuff tear)",
+      emptyCan&&"Empty Can +ve (MAG: supraspinatus outlet compression)"
+    ],"Hegedus et al. 2012; MAG Ch.5; CYR; DUT Ch.20; COOK shoulder chapter");
   }
 
-  // Adhesive Capsulitis (Frozen Shoulder)
+  // Adhesive Capsulitis — Cyriax capsular pattern
   {
-    const shr_flex  = numVal(v("rom_shr_flex_R") || v("rom_shr_flex_L") || v("rom_sflex"));
-    const shr_abd   = numVal(v("rom_shr_abd_R") || v("rom_shr_abd_L") || v("rom_sabd"));
-    const shr_er    = numVal(v("rom_shr_er_R") || v("rom_shr_er_L") || v("rom_ser"));
-    const capsular  = (shr_er !== null && shr_er < 30) && (shr_abd !== null && shr_abd < 90);
-    const nightPain = /night/i.test(v("s_behaviour") || "");
-    const gradual   = /gradual|insidious/i.test(v("s_onset") || "");
-    const hits = [capsular, nightPain, gradual, shr_flex !== null && shr_flex < 120].filter(Boolean).length;
-    add("Shoulder", "Adhesive Capsulitis (Frozen Shoulder)", "M75.0", hits, 4,
-      [capsular && `Capsular pattern: ER < 30° (${shr_er}°), Abd < 90° (${shr_abd}°)`,
-       nightPain && "Night pain", gradual && "Gradual/insidious onset",
-       shr_flex !== null && shr_flex < 120 && `Flexion restricted (${shr_flex}°)`],
-      "Magee Ch.5 capsular pattern; Cyriax end-feel"
-    );
+    const sER        = num(v("rom_shr_er_R"))||num(v("rom_shr_er_L"))||num(v("rom_ser"));
+    const sAbd       = num(v("rom_shr_abd_R"))||num(v("rom_shr_abd_L"))||num(v("rom_sabd"));
+    const sFlex      = num(v("rom_shr_flex_R"))||num(v("rom_shr_flex_L"))||num(v("rom_sflex"));
+    const capsular   = (sER!==null&&sER<40)&&(sAbd!==null&&sAbd<90);
+    const nightPain  = match(behav,"night","sleep","3am","wake");
+    const gradOnset  = match(onset,"gradual","insidious","slow","months");
+    const diabetes   = match(v("dem_pmh")||v("s_pmh")||"","diabet","dm","insulin");
+    const allMotion  = (sER!==null&&sER<40)||(sAbd!==null&&sAbd<90)||(sFlex!==null&&sFlex<120);
+    const hits=[capsular,nightPain,gradOnset,allMotion].filter(Boolean).length;
+    add("Shoulder","Adhesive Capsulitis (Frozen Shoulder)","M75.0",hits,4,[
+      capsular&&`Capsular pattern: ER ${sER}° < 40°, Abd ${sAbd}° < 90° (Cyriax: ER>Abd>Flex proportional loss)`,
+      nightPain&&"Night pain — freezing phase (COOK: inflammatory phase)",
+      gradOnset&&"Gradual/insidious onset over months (DUT Ch.20: stages)",
+      diabetes&&"Diabetes/endocrine history — increased risk (MAG Ch.5)",
+      allMotion&&"Global restriction all planes — empty end-feel (CYR: capsular end-feel)"
+    ],"Cyriax Orthopaedic Medicine; MAG Ch.5; DUT Ch.20; COOK Clinical Reasoning");
   }
 
   // Biceps Tendinopathy / SLAP
   {
-    const speeds    = isPos(v("st_speeds"));
-    const yergason = isPos(v("st_yergason"));
-    const obriens  = isPos(v("st_obriens")) || isPos(v("st_active_compression"));
-    const anterior  = /anterior|bicipital groove|front of shoulder/i.test(v("s_location") || "");
-    const hits = [speeds, yergason, obriens, anterior].filter(Boolean).length;
-    add("Shoulder", "Biceps Tendinopathy / SLAP Lesion", "M75.2", hits, 4,
-      [speeds && "Speed's Test +ve", yergason && "Yergason's Test +ve",
-       obriens && "O'Brien's Active Compression +ve", anterior && "Anterior shoulder / bicipital groove pain"],
-      "Magee Ch.5; Liu et al. O'Brien test"
-    );
+    const speeds     = isPos(v("st_speeds"));
+    const yergason   = isPos(v("st_yergason"));
+    const obriens    = isPos(v("st_obriens"))||isPos(v("st_active_compression"));
+    const anterior   = match(loc,"anterior","bicipital groove","front","bicep");
+    const overhead   = match(cc+aggr,"overhead","throw","rack","pull");
+    const hits=[speeds,yergason,obriens,anterior,overhead].filter(Boolean).length;
+    add("Shoulder","Biceps Tendinopathy / SLAP Lesion","M75.2",hits,5,[
+      speeds&&"Speed's Test +ve — bicipital groove tenderness (MAG Ch.5: Sn 0.90)",
+      yergason&&"Yergason's Test +ve — biceps resisted supination (MAG Ch.5)",
+      obriens&&"O'Brien's Active Compression +ve (Liu 1996: SLAP Sn 0.90, Sp 0.98)",
+      anterior&&"Anterior shoulder/bicipital groove pain (CYR: tendon palpation)",
+      overhead&&"Overhead/throwing aggravates (DUT Ch.20: SLAP mechanism)"
+    ],"Liu et al. 1996; MAG Ch.5; CYR; DUT Ch.20");
   }
 
   // AC Joint Pathology
   {
-    const crossarm  = isPos(v("st_cross_arm")) || isPos(v("st_horizontal_adduction"));
-    const obriens  = isPos(v("st_obriens"));
-    const acTend   = /ac joint|acromioclavicular/i.test(v("s_location") || v("lx_palpation") || "");
-    const hits = [crossarm, obriens, acTend].filter(Boolean).length;
-    add("Shoulder", "AC Joint Pathology", "M75.5", hits, 3,
-      [crossarm && "Cross-arm Adduction Test +ve", obriens && "O'Brien's +ve",
-       acTend && "AC joint tenderness"],
-      "Magee Ch.5; Chronopoulos et al."
-    );
+    const crossArm   = isPos(v("st_cross_arm"))||isPos(v("st_horizontal_adduction"));
+    const obriens    = isPos(v("st_obriens"));
+    const acTend     = match(palp+loc,"ac joint","acromioclavic","acromio");
+    const crossAdPain= match(aggr,"cross body","reach across","adduct");
+    const hits=[crossArm,obriens,acTend,crossAdPain].filter(Boolean).length;
+    add("Shoulder","AC Joint Pathology","M75.5",hits,4,[
+      crossArm&&"Cross-arm Adduction Test +ve (Chronopoulos 2004: Sn 0.77, Sp 0.79)",
+      obriens&&"O'Brien's +ve at AC joint (MAG Ch.5: AC vs SLAP differentiation)",
+      acTend&&"AC joint local tenderness on palpation (CYR: local anaesthetic test)",
+      crossAdPain&&"Cross-body adduction/reach aggravates (DUT Ch.20)"
+    ],"Chronopoulos et al. 2004; MAG Ch.5; CYR; DUT Ch.20");
   }
 
-  // ═══════════════════════════════════════════════════════
+  // GH Instability
+  {
+    const apprehend  = isPos(v("st_apprehension"))||isPos(v("st_anterior_apprehension"));
+    const relocation = isPos(v("st_relocation"));
+    const sulcus     = isPos(v("st_sulcus_sign"));
+    const young      = age!==null&&age<35;
+    const sport      = match(cc+onset,"throw","sport","rugby","contact","gym");
+    const hits=[apprehend,relocation,sulcus,young&&sport].filter(Boolean).length;
+    add("Shoulder","Glenohumeral Instability","M25.311",hits,4,[
+      apprehend&&"Anterior Apprehension +ve (MAG Ch.5: Sp 0.99 for anterior instability)",
+      relocation&&"Relocation Test +ve — confirms anterior instability (DUT Ch.20)",
+      sulcus&&"Sulcus Sign +ve — inferior instability/multidirectional (MAG Ch.5)",
+      young&&sport&&`Young athletic patient (${age}y) — high risk group (COOK)`,
+    ],"MAG Ch.5; DUT Ch.20; COOK Clinical Reasoning");
+  }
+
+  // ═══════════════════════════════════════════════
   // ELBOW
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════
 
   // Lateral Epicondylalgia
   {
-    const cozen     = isPos(v("st_cozen")) || isPos(v("st_tennis_elbow"));
-    const mill      = isPos(v("st_mill"));
-    const maudsley  = isPos(v("st_maudsley"));
-    const lateral   = /lateral|outer|extensor|tennis/i.test(v("s_location") || "");
-    const hits = [cozen, mill, maudsley, lateral].filter(Boolean).length;
-    add("Elbow", "Lateral Epicondylalgia (Tennis Elbow)", "M77.1", hits, 4,
-      [cozen && "Cozen's Test +ve", mill && "Mill's Test +ve",
-       maudsley && "Maudsley's Test +ve", lateral && "Lateral elbow / extensor forearm pain"],
-      "Magee Ch.6; Shiri & Viikari-Juntura"
-    );
+    const cozen      = isPos(v("st_cozen"))||isPos(v("st_tennis_elbow"));
+    const mill       = isPos(v("st_mill"));
+    const maudsley   = isPos(v("st_maudsley"));
+    const lateral    = match(loc,"lateral","outer","extensor","tennis","epicondyl");
+    const grip       = match(aggr,"grip","jar","turn","wring","type");
+    const tender     = match(palp,"lateral epicondyle","extensor","ECRB");
+    const hits=[cozen,mill,maudsley,lateral,grip,tender].filter(Boolean).length;
+    add("Elbow","Lateral Epicondylalgia (Tennis Elbow)","M77.1",hits,6,[
+      cozen&&"Cozen's Test +ve — resisted wrist ext (MAG Ch.6: Sn 0.85)",
+      mill&&"Mill's Test +ve — passive wrist flex stretches ECRB (CYR)",
+      maudsley&&"Maudsley's Test +ve — resisted 3rd finger ext (MAG Ch.6)",
+      lateral&&"Lateral elbow/extensor forearm pain (DUT Ch.17)",
+      grip&&"Grip/wrist extension aggravates (COOK: tendinopathy load model)",
+      tender&&"Lateral epicondyle/ECRB tenderness on palpation (CYR)"
+    ],"MAG Ch.6; Cyriax Orthopaedic Medicine; DUT Ch.17; COOK tendinopathy model");
   }
 
   // Medial Epicondylalgia
   {
-    const golfer    = isPos(v("st_golfer_elbow")) || isPos(v("st_medial_epicondyle"));
-    const medial    = /medial|inner|flexor|golfer/i.test(v("s_location") || "");
-    const hits = [golfer, medial].filter(Boolean).length;
-    add("Elbow", "Medial Epicondylalgia (Golfer's Elbow)", "M77.0", hits, 2,
-      [golfer && "Medial Epicondyle Stress Test +ve", medial && "Medial elbow / flexor forearm pain"],
-      "Magee Ch.6"
-    );
+    const golfer     = isPos(v("st_golfer_elbow"))||isPos(v("st_medial_epicondyle"));
+    const medial     = match(loc,"medial","inner","flexor","golfer");
+    const flexGrip   = match(aggr,"grip","flex","wrist","throw");
+    const hits=[golfer,medial,flexGrip].filter(Boolean).length;
+    add("Elbow","Medial Epicondylalgia (Golfer's Elbow)","M77.0",hits,3,[
+      golfer&&"Medial Epicondyle Stress Test +ve (MAG Ch.6)",
+      medial&&"Medial elbow/flexor forearm pain (CYR: common flexor origin)",
+      flexGrip&&"Grip/wrist flexion aggravates (COOK: tendinopathy load)"
+    ],"MAG Ch.6; CYR; COOK tendinopathy continuum");
   }
 
   // Cubital Tunnel Syndrome
   {
-    const tinel_elbow = isPos(v("st_tinel_elbow")) || isPos(v("st_tinel_cubital"));
-    const elbow_flex_test = isPos(v("st_elbow_flexion_test"));
-    const ring_little = /ring|little|4th|5th|ulnar/i.test(v("s_radiation") || v("neuro_dermatomal") || "");
-    const hits = [tinel_elbow, elbow_flex_test, ring_little].filter(Boolean).length;
-    add("Elbow", "Cubital Tunnel Syndrome (Ulnar Nerve)", "G56.20", hits, 3,
-      [tinel_elbow && "Tinel's at cubital tunnel +ve", elbow_flex_test && "Elbow Flexion Test +ve",
-       ring_little && "Ring/little finger paraesthesia"],
-      "Magee Ch.6; Novak et al."
-    );
+    const tinelElbow = isPos(v("st_tinel_elbow"))||isPos(v("st_tinel_cubital"));
+    const elbowFlex  = isPos(v("st_elbow_flexion_test"));
+    const ringLittle = match(rad+v("neuro_dermatomal")||"","ring","little","4th","5th","ulnar","medial forearm");
+    const nightTing  = match(behav+cc,"tingle","numb","pins","night","sleep elbow bent");
+    const hits=[tinelElbow,elbowFlex,ringLittle,nightTing].filter(Boolean).length;
+    add("Elbow","Cubital Tunnel Syndrome","G56.20",hits,4,[
+      tinelElbow&&"Tinel's at cubital tunnel +ve (Novak: Sn 0.70, Sp 0.98)",
+      elbowFlex&&"Elbow Flexion Test +ve — sustained flexion reproduces (MAG Ch.6)",
+      ringLittle&&"Ring/little finger paraesthesia — ulnar nerve (KEN; BUT)",
+      nightTing&&"Night symptoms when elbow flexed (DUT Ch.17: positional compression)"
+    ],"Novak et al.; MAG Ch.6; KEN; Butler Mob NS; DUT Ch.17");
   }
 
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════
   // WRIST / HAND
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════
 
-  // Carpal Tunnel Syndrome — Wainner CPR
+  // Carpal Tunnel Syndrome — Wainner CPR 2005
   {
-    const phalen    = isPos(v("st_phalen"));
-    const tinel_w   = isPos(v("st_tinel_wrist")) || isPos(v("st_tinel"));
-    const flick     = isPos(v("st_flick_sign"));
-    const carpal_compress = isPos(v("st_carpal_compression"));
-    const thumb_med = /thumb|index|middle|median|lateral 3/i.test(v("s_radiation") || v("neuro_dermatomal") || "");
-    const hits = [phalen, tinel_w, flick, carpal_compress, thumb_med].filter(Boolean).length;
-    add("Wrist", "Carpal Tunnel Syndrome", "G56.00", hits, 5,
-      [phalen && "Phalen's Test +ve", tinel_w && "Tinel's at wrist +ve",
-       flick && "Flick Sign +ve", carpal_compress && "Carpal Compression Test +ve",
-       thumb_med && "Median nerve distribution symptoms"],
-      "Wainner et al. 2005 CPR; Magee Ch.7"
-    );
+    const phalen     = isPos(v("st_phalen"));
+    const tinelW     = isPos(v("st_tinel_wrist"))||isPos(v("st_tinel"));
+    const flick      = isPos(v("st_flick_sign"));
+    const carpComp   = isPos(v("st_carpal_compression"));
+    const thumbIndex = match(rad+v("neuro_dermatomal")||"","thumb","index","middle","median","lateral 3");
+    const nightSymp  = match(behav,"night","wake","shake","flick");
+    const age35f     = sex.includes("f") && age!==null && age>35;
+    const hits=[phalen,tinelW,flick,carpComp,thumbIndex,nightSymp].filter(Boolean).length;
+    add("Wrist","Carpal Tunnel Syndrome","G56.00",hits,6,[
+      phalen&&"Phalen's Test +ve (Wainner CPR 2005: Sn 0.75)",
+      tinelW&&"Tinel's at wrist +ve (BUT: median nerve mechanosensitivity)",
+      flick&&"Flick Sign +ve — shaking relieves (DUT Ch.18: Sn 0.93)",
+      carpComp&&"Carpal Compression Test +ve (Durkan: Sp 0.97)",
+      thumbIndex&&"Thumb/index/middle finger — median nerve distribution (KEN Ch.5)",
+      nightSymp&&"Night symptoms — position-dependent compression (CYR)",
+      age35f&&`Female >35y (${age}y) — highest risk demographic (COOK)`
+    ],"Wainner et al. 2005 CPR; DUT Ch.18; Durkan 1991; CYR; KEN Ch.5; BUT Mob NS");
   }
 
   // De Quervain's Tenosynovitis
   {
-    const finkelstein = isPos(v("st_finkelstein"));
-    const thumb_base  = /thumb|radial|de quervain|first cmcarpometacarpal/i.test(v("s_location") || "");
-    const hits = [finkelstein, thumb_base].filter(Boolean).length;
-    add("Wrist", "De Quervain's Tenosynovitis", "M65.4", hits, 2,
-      [finkelstein && "Finkelstein's Test +ve", thumb_base && "Thumb base / radial wrist pain"],
-      "Magee Ch.7"
-    );
+    const finkelstein= isPos(v("st_finkelstein"));
+    const thumbBase  = match(loc,"thumb","radial","de quervain","first","snuffbox");
+    const newMother  = match(v("dem_pmh")||cc+onset,"post partum","new mother","baby","infant","carry");
+    const hits=[finkelstein,thumbBase,newMother].filter(Boolean).length;
+    add("Wrist","De Quervain's Tenosynovitis","M65.4",hits,3,[
+      finkelstein&&"Finkelstein's Test +ve (MAG Ch.7: Sn 0.81, Sp 0.50 — high Sn)",
+      thumbBase&&"Thumb base/radial styloid pain (CYR: APL/EPB tendon)",
+      newMother&&"Post-partum/new parent — repetitive infant carrying (DUT Ch.18)"
+    ],"MAG Ch.7; CYR; DUT Ch.18");
   }
 
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════
   // HIP
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════
 
-  // Hip OA
+  // Hip OA — Sutlive CPR 2008 + Cyriax capsular pattern
   {
-    const hip_flex  = numVal(v("rom_hp_flex_R") || v("rom_hp_flex_L") || v("rom_hflex"));
-    const hip_ir    = numVal(v("rom_hp_ir_R") || v("rom_hp_ir_L") || v("rom_hir"));
-    const capsular  = (hip_flex !== null && hip_flex < 100) && (hip_ir !== null && hip_ir < 15);
-    const faber     = isPos(v("st_faber")) || isPos(v("st_patrick"));
-    const groin     = /groin|anterior hip|hip joint/i.test(v("s_location") || "");
-    const age       = numVal(v("dem_age"));
-    const hits = [capsular, faber, groin, age !== null && age > 45].filter(Boolean).length;
-    add("Hip", "Hip Osteoarthritis", "M16.10", hits, 4,
-      [capsular && `Capsular pattern: Flex restricted (${hip_flex}°), IR restricted (${hip_ir}°)`,
-       faber && "FABER +ve", groin && "Anterior hip / groin pain",
-       age !== null && age > 45 && `Age > 45 (${age}y)`],
-      "Magee Ch.11; Sutlive et al. CPR 2008"
-    );
+    const hipFlex    = num(v("rom_hp_flex_R"))||num(v("rom_hp_flex_L"))||num(v("rom_hflex"));
+    const hipIR      = num(v("rom_hp_ir_R"))||num(v("rom_hp_ir_L"))||num(v("rom_hir"));
+    const hipAbd     = num(v("rom_hp_abd_R"))||num(v("rom_hp_abd_L"));
+    const capsular   = (hipFlex!==null&&hipFlex<100)&&(hipIR!==null&&hipIR<15);
+    const faber      = isPos(v("st_faber"))||isPos(v("st_patrick"));
+    const groin      = match(loc,"groin","anterior hip","hip joint","c-sign");
+    const scour      = isPos(v("st_scour"))||isPos(v("st_quadrant"));
+    const crepitus   = isPos(v("st_crepitus"))||match(v("obs_general_notes")||"","crepitus","creak");
+    const older      = age!==null&&age>45;
+    const hits=[capsular,faber,groin,scour,crepitus,older].filter(Boolean).length;
+    add("Hip","Hip Osteoarthritis","M16.10",hits,6,[
+      capsular&&`Cyriax capsular pattern: Flex ${hipFlex}° (<100°), IR ${hipIR}° (<15°) — proportional loss`,
+      faber&&"FABER +ve — hip/SIJ stress (Sutlive CPR 2008 criterion)",
+      groin&&"Anterior hip/groin 'C-sign' pain (Sutlive CPR: location criterion)",
+      scour&&"Scour/Quadrant Test +ve — acetabular loading (MAG Ch.11)",
+      crepitus&&"Crepitus on movement (DUT Ch.26: articular degeneration)",
+      older&&`Age >45 (${age}y) — primary OA most likely (NICE Hip OA guideline)`
+    ],"Sutlive et al. 2008 CPR; Cyriax capsular pattern; MAG Ch.11; DUT Ch.26; NICE Hip OA");
   }
 
-  // FAI (Femoroacetabular Impingement)
+  // FAI
   {
-    const fadir     = isPos(v("st_fadir")) || isPos(v("st_impingement_hip"));
-    const faber     = isPos(v("st_faber")) || isPos(v("st_patrick"));
-    const groin     = /groin|anterior hip|deep hip/i.test(v("s_location") || "");
-    const young     = numVal(v("dem_age")); const isYoung = young !== null && young < 45;
-    const hits = [fadir, faber, groin, isYoung].filter(Boolean).length;
-    add("Hip", "Femoroacetabular Impingement (FAI)", "M24.85", hits, 4,
-      [fadir && "FADIR Test +ve", faber && "FABER +ve",
-       groin && "Groin / anterior hip pain", isYoung && `Young active patient (${young}y)`],
-      "Magee Ch.11; Reiman et al. meta-analysis"
-    );
+    const fadir      = isPos(v("st_fadir"))||isPos(v("st_impingement_hip"));
+    const faber      = isPos(v("st_faber"))||isPos(v("st_patrick"));
+    const groin      = match(loc,"groin","anterior hip","deep hip");
+    const young      = age!==null&&age<40;
+    const sport      = match(cc+onset,"sport","run","squat","pivot","football","hockey");
+    const hipIR      = num(v("rom_hp_ir_R"))||num(v("rom_hp_ir_L"));
+    const irLimit    = hipIR!==null&&hipIR<20;
+    const hits=[fadir,faber,groin,young&&sport,irLimit].filter(Boolean).length;
+    add("Hip","Femoroacetabular Impingement (FAI)","M24.85",hits,5,[
+      fadir&&"FADIR Test +ve (Reiman 2015 meta-analysis: Sn 0.87 for FAI)",
+      faber&&"FABER +ve — anterior/lateral hip stress (MAG Ch.11)",
+      groin&&"Deep groin/anterior hip pain (DUT Ch.26: cam/pincer pattern)",
+      young&&sport&&`Young active patient (${age}y) — cam/pincer most likely (COOK)`,
+      irLimit&&`Hip IR restricted ${hipIR}° (Cyriax: early capsular restriction in FAI)`
+    ],"Reiman et al. 2015 meta-analysis; MAG Ch.11; DUT Ch.26; CYR; COOK");
   }
 
   // Greater Trochanteric Pain Syndrome
   {
-    const ober      = isPos(v("st_ober"));
-    const lateral   = /lateral hip|greater trochanter|GTPS|ITB/i.test(v("s_location") || "");
-    const palpTend  = /trochanter/i.test(v("palpation_hip") || v("lx_palpation") || "");
-    const hits = [ober, lateral, palpTend].filter(Boolean).length;
-    add("Hip", "Greater Trochanteric Pain Syndrome", "M70.60", hits, 3,
-      [ober && "Ober's Test +ve (ITB tightness)", lateral && "Lateral hip / trochanteric pain",
-       palpTend && "Trochanteric tenderness on palpation"],
-      "Magee Ch.11; Grimaldi & Fearon"
-    );
+    const ober       = isPos(v("st_ober"));
+    const lateral    = match(loc,"lateral hip","greater trochanter","GTPS","ITB","outer hip");
+    const palpTend   = match(palp+loc,"trochanter","gtps","gluteus med");
+    const femAdPain  = match(aggr,"cross leg","adduct","lie on side","single leg");
+    const hits=[ober,lateral,palpTend,femAdPain].filter(Boolean).length;
+    add("Hip","Greater Trochanteric Pain Syndrome","M70.60",hits,4,[
+      ober&&"Ober's Test +ve — ITB/TFL tightness (MAG Ch.11)",
+      lateral&&"Lateral hip/greater trochanteric pain (Grimaldi & Fearon: tendinopathy model)",
+      palpTend&&"Trochanteric tenderness on palpation (DUT Ch.26: gluteal tendinopathy)",
+      femAdPain&&"Cross-leg adduction/side-lying aggravates (Grimaldi: compressive load)"
+    ],"Grimaldi & Fearon; MAG Ch.11; DUT Ch.26; COOK tendinopathy model");
   }
 
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════
   // KNEE
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════
 
-  // ACL Injury — Swain CPR
+  // ACL Injury — Benjaminse meta-analysis
   {
-    const lachman   = isPos(v("st_lachman"));
-    const ant_drawer= isPos(v("st_anterior_drawer_knee")) || isPos(v("st_anterior_drawer"));
-    const pivot     = isPos(v("st_pivot_shift"));
-    const trauma    = /trauma|twist|plant|cut|pivot|sport/i.test(v("s_onset") || v("s_mechanism") || "");
-    const effusion  = isPos(v("obs_swelling_present")) || /effusion|swelling/i.test(v("s_chief_complaint") || "");
-    const hits = [lachman, ant_drawer, pivot, trauma].filter(Boolean).length;
-    add("Knee", "ACL Injury", "S83.511A", hits, 4,
-      [lachman && "Lachman's Test +ve (gold standard)", ant_drawer && "Anterior Drawer +ve",
-       pivot && "Pivot Shift +ve (high specificity)", trauma && "Traumatic twisting/pivoting mechanism",
-       effusion && "Acute haemarthrosis / effusion"],
-      "Magee Ch.12; Swain et al. CPR; Benjaminse meta-analysis"
-    );
+    const lachman    = isPos(v("st_lachman"));
+    const antDrawer  = isPos(v("st_anterior_drawer_knee"))||isPos(v("st_anterior_drawer"));
+    const pivot      = isPos(v("st_pivot_shift"));
+    const trauma     = match(onset+mech,"twist","plant","cut","pivot","sport","land","decel");
+    const effusion   = isPos(v("obs_swelling_present"))||match(cc+v("s_chief_complaint")||"","swell","haemarthrosis","effusion");
+    const instability= match(cc,"give","buckle","unstable","give way");
+    const hits=[lachman,antDrawer,pivot,trauma,effusion].filter(Boolean).length;
+    add("Knee","ACL Injury","S83.511A",hits,5,[
+      lachman&&"Lachman's Test +ve — gold standard (Benjaminse 2006: Sn 0.85, Sp 0.94)",
+      antDrawer&&"Anterior Drawer +ve (MAG Ch.12)",
+      pivot&&"Pivot Shift +ve — anterolateral instability (Sp 0.98 — Benjaminse)",
+      trauma&&"Twisting/pivoting/deceleration mechanism (DUT Ch.23: ACL injury pattern)",
+      effusion&&"Acute haemarthrosis — ACL tear until proven otherwise (COOK)",
+      instability&&"Giving way/buckling (MAG Ch.12: functional instability)"
+    ],"Benjaminse et al. 2006 meta-analysis; MAG Ch.12; DUT Ch.23; COOK");
   }
 
-  // Meniscal Tear
+  // Meniscal Tear — Hegedus + Karachalios
   {
-    const mcmurray  = isPos(v("st_mcmurray"));
-    const thessaly  = isPos(v("st_thessaly"));
-    const apley     = isPos(v("st_apley"));
-    const jointLine = /joint line/i.test(v("s_location") || v("palpation_knee") || "");
-    const hits = [mcmurray, thessaly, apley, jointLine].filter(Boolean).length;
-    add("Knee", "Meniscal Tear", "S83.200A", hits, 4,
-      [mcmurray && "McMurray's Test +ve", thessaly && "Thessaly Test +ve (most sensitive)",
-       apley && "Apley's Compression +ve", jointLine && "Joint line tenderness"],
-      "Magee Ch.12; Hegedus meta-analysis; Karachalios Thessaly"
-    );
+    const mcmurray   = isPos(v("st_mcmurray"));
+    const thessaly   = isPos(v("st_thessaly"));
+    const apley      = isPos(v("st_apley"));
+    const jointLine  = match(loc+palp,"joint line","medial joint","lateral joint");
+    const twistMech  = match(onset+mech,"twist","squat","kneel","rot");
+    const lockingCC  = match(cc,"lock","catch","click","block");
+    const hits=[mcmurray,thessaly,apley,jointLine,lockingCC].filter(Boolean).length;
+    add("Knee","Meniscal Tear","S83.200A",hits,5,[
+      mcmurray&&"McMurray's +ve (MAG Ch.12: Sn 0.53, Sp 0.59 — best with cluster)",
+      thessaly&&"Thessaly Test +ve at 20° (Karachalios 2005: Sn 0.89, Sp 0.97 — most accurate)",
+      apley&&"Apley's Compression +ve (MAG Ch.12: prone tibial compression)",
+      jointLine&&"Joint line tenderness (DUT Ch.23: Sn 0.63 — location criterion)",
+      twistMech&&"Twisting/squatting mechanism (COOK: meniscal loading pattern)",
+      lockingCC&&"Locking/catching/clicking (MAG Ch.12: bucket-handle pattern)"
+    ],"Karachalios et al. 2005; Hegedus meta-analysis; MAG Ch.12; DUT Ch.23; COOK");
   }
 
-  // Patellofemoral Pain Syndrome
+  // Patellofemoral Pain
   {
-    const clarke    = isPos(v("st_clarke")) || isPos(v("st_patella_grind"));
-    const stairPain = /stair|squat|prolonged sit|theater/i.test(v("s_aggravating") || "");
-    const anterior  = /anterior|front|peripatellar|retropatellar/i.test(v("s_location") || "");
-    const hits = [clarke, stairPain, anterior].filter(Boolean).length;
-    add("Knee", "Patellofemoral Pain Syndrome", "M22.2", hits, 3,
-      [clarke && "Clarke's Sign +ve", stairPain && "Stairs / squatting / prolonged sitting aggravates",
-       anterior && "Anterior / peripatellar knee pain"],
-      "Magee Ch.12; Nijs et al."
-    );
+    const clarke     = isPos(v("st_clarke"))||isPos(v("st_patella_grind"));
+    const stairSquat = match(aggr,"stair","squat","sit","kneel","prolonged","theater","cinema");
+    const anterior   = match(loc,"anterior","front","peripatellar","retropatellar","kneecap");
+    const young      = age!==null&&age<35;
+    const crepitus   = isPos(v("st_crepitus"))||match(cc,"crunch","grind","creak");
+    const hits=[clarke,stairSquat,anterior,young].filter(Boolean).length;
+    add("Knee","Patellofemoral Pain Syndrome","M22.2",hits,4,[
+      clarke&&"Clarke's Sign +ve (MAG Ch.12: patellar compression)",
+      stairSquat&&"Stairs/squatting/prolonged sitting aggravates — 'theater sign' (DUT Ch.23)",
+      anterior&&"Anterior/peripatellar/retropatellar pain (COOK: PFJ load pattern)",
+      young&&`Young patient (${age}y) — most common knee pain 15–35y (Nijs et al.)`,
+      crepitus&&"Crepitus on movement (MAG Ch.12: articular surface)"
+    ],"Nijs et al.; MAG Ch.12; DUT Ch.23; COOK patellofemoral chapter");
   }
 
-  // Knee OA
+  // Knee OA — Altman criteria 1986
   {
-    const kflex     = numVal(v("rom_knl_flex_R") || v("rom_knl_flex_L") || v("rom_kflex"));
-    const flexLimit = kflex !== null && kflex < 110;
-    const crepitus  = isPos(v("st_crepitus")) || /crepitus/i.test(v("obs_general_notes") || "");
-    const age       = numVal(v("dem_age"));
-    const varus     = /varum|varus|bow/i.test(v("obs_posture_lower") || "");
-    const hits = [flexLimit, crepitus, age !== null && age > 50, varus].filter(Boolean).length;
-    add("Knee", "Knee Osteoarthritis", "M17.11", hits, 4,
-      [flexLimit && `Knee flexion restricted (${kflex}°)`, crepitus && "Crepitus present",
-       age !== null && age > 50 && `Age > 50 (${age}y)`, varus && "Varus deformity"],
-      "Magee Ch.12; Altman criteria 1986"
-    );
+    const kFlex      = num(v("rom_knl_flex_R"))||num(v("rom_knl_flex_L"))||num(v("rom_kflex"));
+    const flexLimit  = kFlex!==null&&kFlex<110;
+    const crepitus   = isPos(v("st_crepitus"))||match(v("obs_general_notes")||"","crepitus");
+    const older      = age!==null&&age>50;
+    const varus      = match(v("obs_posture_lower")||"","varum","varus","bow");
+    const morningS   = match(behav+aggr,"morning","stiff") && match(ease,"move","warm","walk");
+    const bonyEng    = match(palp,"bony","osteophyte","enlarge");
+    const hits=[flexLimit,crepitus,older,varus,morningS].filter(Boolean).length;
+    add("Knee","Knee Osteoarthritis","M17.11",hits,5,[
+      flexLimit&&`Knee flexion restricted ${kFlex}° (CYR: capsular pattern — flex>ext)`,
+      crepitus&&"Crepitus on movement (Altman 1986 criteria)",
+      older&&`Age >50 (${age}y) — primary OA most common (NICE Knee OA guideline)`,
+      varus&&"Varus deformity — medial compartment (MAG Ch.12)",
+      morningS&&"Morning stiffness <30 min improves with movement (Altman criteria)",
+      bonyEng&&"Bony enlargement on palpation (Altman criteria: osteophytes)"
+    ],"Altman et al. 1986 criteria; CYR capsular pattern; MAG Ch.12; DUT Ch.23; NICE Knee OA");
   }
 
-  // ═══════════════════════════════════════════════════════
+  // ITB Syndrome
+  {
+    const obers      = isPos(v("st_ober"));
+    const noble      = isPos(v("st_noble_compression"));
+    const lateral    = match(loc,"lateral knee","ITB","outer knee","iliotibial");
+    const runner     = match(cc+aggr,"run","cycle","downhill","distance","repeat");
+    const hits=[obers,noble,lateral,runner].filter(Boolean).length;
+    add("Knee","ITB Syndrome","M76.3",hits,4,[
+      obers&&"Ober's Test +ve — ITB tightness (MAG Ch.11)",
+      noble&&"Noble Compression Test +ve at 30° (MAG Ch.12: 2cm above lat epicondyle)",
+      lateral&&"Lateral knee pain at ITB insertion (DUT Ch.23)",
+      runner&&"Running/cycling/downhill aggravates (COOK: friction model)"
+    ],"MAG Ch.11-12; DUT Ch.23; COOK tendinopathy model");
+  }
+
+  // Patellar Tendinopathy
+  {
+    const patellarTend= match(palp+loc,"patellar tendon","inferior pole","infrapatellar");
+    const jumpSport   = match(cc+aggr,"jump","land","run","sport","basketball","volley");
+    const squat       = match(aggr,"squat","lunge","stairs","load");
+    const young2      = age!==null&&age<40;
+    const hits=[patellarTend,jumpSport,squat,young2].filter(Boolean).length;
+    add("Knee","Patellar Tendinopathy","M76.5",hits,4,[
+      patellarTend&&"Patellar tendon/inferior pole tenderness (COOK: tendinopathy continuum)",
+      jumpSport&&"Jumping/landing sport — 'jumper's knee' (DUT Ch.23)",
+      squat&&"Squatting/loading aggravates (COOK: reactive tendinopathy load)",
+      young2&&`Young active patient (${age}y) — peak incidence 15–35y`
+    ],"COOK tendinopathy continuum; DUT Ch.23; MAG Ch.12");
+  }
+
+  // ═══════════════════════════════════════════════
   // ANKLE / FOOT
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════
 
   // Lateral Ankle Sprain
   {
-    const ant_drawer_ank = isPos(v("st_anterior_drawer_ankle"));
-    const talar_tilt     = isPos(v("st_talar_tilt"));
-    const lateral_ank    = /lateral|outer|CFL|ATFL|peroneal/i.test(v("s_location") || "");
-    const trauma_ank     = /inversion|roll|twist/i.test(v("s_onset") || v("s_mechanism") || "");
-    const hits = [ant_drawer_ank, talar_tilt, lateral_ank, trauma_ank].filter(Boolean).length;
-    add("Ankle", "Lateral Ankle Sprain (ATFL/CFL)", "S93.401A", hits, 4,
-      [ant_drawer_ank && "Anterior Drawer (ankle) +ve", talar_tilt && "Talar Tilt +ve",
-       lateral_ank && "Lateral ankle pain", trauma_ank && "Inversion/rolling mechanism"],
-      "Magee Ch.13; van Dijk criteria"
-    );
+    const antDrawerA = isPos(v("st_anterior_drawer_ankle"));
+    const talarTilt  = isPos(v("st_talar_tilt"));
+    const lateralAnk = match(loc,"lateral","outer","CFL","ATFL","peroneal","fibula");
+    const inversion  = match(onset+mech,"inversion","roll","twist","land","turn over");
+    const effusion   = isPos(v("obs_swelling_present"))||match(cc,"swell","bruise");
+    const hits=[antDrawerA,talarTilt,lateralAnk,inversion,effusion].filter(Boolean).length;
+    add("Ankle","Lateral Ankle Sprain (ATFL/CFL)","S93.401A",hits,5,[
+      antDrawerA&&"Anterior Drawer (ankle) +ve — ATFL laxity (van Dijk: Sn 0.73, Sp 0.97 at 5d)",
+      talarTilt&&"Talar Tilt +ve — CFL laxity (MAG Ch.13)",
+      lateralAnk&&"Lateral ankle/fibular pain (DUT Ch.25)",
+      inversion&&"Inversion/rolling mechanism (Ottawa Ankle Rules: mechanism)",
+      effusion&&"Swelling/bruising — ATFL/CFL disruption (COOK)"
+    ],"van Dijk 1996; Ottawa Ankle Rules; MAG Ch.13; DUT Ch.25; COOK");
   }
 
-  // Achilles Tendinopathy
+  // Achilles Tendinopathy — Cook & Purdam
   {
-    const arc_sign  = isPos(v("st_arc_sign")) || isPos(v("st_royal_london"));
-    const thompson  = isPos(v("st_thompson")) || isPos(v("st_simmonds"));
-    const posterior = /achilles|posterior heel|tendon/i.test(v("s_location") || "");
-    const morning   = /morning|first step|stiff/i.test(v("s_behaviour") || v("s_aggravating") || "");
-    const hits = [arc_sign, posterior, morning, !isPos(v("st_thompson"))].filter(Boolean).length;
-    add("Ankle", "Achilles Tendinopathy", "M76.6", hits, 4,
-      [arc_sign && "Arc Sign / Royal London Hospital Test +ve",
-       thompson && "Thompson Test +ve (rules out rupture)", posterior && "Posterior heel / Achilles tendon pain",
-       morning && "Morning stiffness / first step pain"],
-      "Magee Ch.13; Cook & Purdam continuum model"
-    );
+    const arcSign    = isPos(v("st_arc_sign"))||isPos(v("st_royal_london"));
+    const thompson   = isPos(v("st_thompson"))||isPos(v("st_simmonds"));
+    const posterior  = match(loc,"achilles","posterior heel","tendon","mid-tendon");
+    const morningS   = match(behav+aggr,"morning","first step","stiff","warm up");
+    const running    = match(aggr+cc,"run","walk","sport","jump","load");
+    const hits=[arcSign,posterior,morningS,running,!thompson].filter(Boolean).length;
+    add("Ankle","Achilles Tendinopathy","M76.6",hits,5,[
+      arcSign&&"Arc Sign +ve — tendon nodule moves with ankle (Royal London Hospital Test)",
+      posterior&&"Posterior heel/mid-tendon pain (COOK: tendinopathy continuum)",
+      morningS&&"Morning stiffness, 'warm-up' pattern (COOK: reactive/degenerative)",
+      running&&"Running/loading aggravates (COOK: load management principle)",
+      !thompson&&"Thompson Test negative — no rupture (MAG Ch.13: differentiates rupture)"
+    ],"COOK & Purdam tendinopathy continuum; MAG Ch.13; DUT Ch.25");
   }
 
   // Plantar Fasciitis
   {
-    const windlass  = isPos(v("st_windlass"));
-    const heel_pain = /plantar|heel|sole|arch/i.test(v("s_location") || "");
-    const morning   = /morning|first step/i.test(v("s_behaviour") || v("s_aggravating") || "");
-    const hits = [windlass, heel_pain, morning].filter(Boolean).length;
-    add("Ankle", "Plantar Fasciitis", "M72.2", hits, 3,
-      [windlass && "Windlass Test +ve", heel_pain && "Plantar heel / arch pain",
-       morning && "Worst on first steps in morning"],
-      "Magee Ch.13; Owens et al."
-    );
+    const windlass   = isPos(v("st_windlass"));
+    const heel       = match(loc,"plantar","heel","sole","arch","medial calcan");
+    const firstStep  = match(behav+aggr,"morning","first step","get up","out of bed");
+    const bmi30      = bmi!==null&&bmi>28;
+    const hits=[windlass,heel,firstStep,bmi30].filter(Boolean).length;
+    add("Ankle","Plantar Fasciitis","M72.2",hits,4,[
+      windlass&&"Windlass Test +ve — passive great toe extension (Owens: Sn 0.32, Sp 0.100)",
+      heel&&"Plantar heel/medial calcaneal pain (DUT Ch.25: enthesopathy)",
+      firstStep&&"Worst on first steps in morning — 'start-up pain' (COOK: fascia loading)",
+      bmi30&&`BMI ${bmi} >28 — significant risk factor (NICE: weight management)`
+    ],"Owens et al.; MAG Ch.13; DUT Ch.25; COOK; NICE musculoskeletal foot");
   }
 
-  // Sort by confidence desc, then hits desc
-  results.sort((a, b) => b.confidence - a.confidence || b.hits - a.hits);
+  // Peroneal Tendinopathy
+  {
+    const lateral2   = match(loc,"peroneal","lateral ankle","fibula","outer ankle");
+    const inversion2 = match(onset+mech,"inversion","sprain","ankle","roll");
+    const eversion   = match(v("rom_af_eversion")||"","pain","weak","resist");
+    const hits=[lateral2,inversion2,eversion].filter(Boolean).length;
+    add("Ankle","Peroneal Tendinopathy","M76.7",hits,3,[
+      lateral2&&"Lateral ankle/peroneal groove pain (DUT Ch.25: peroneal tendon)",
+      inversion2&&"Previous inversion sprain history (MAG Ch.13: mechanism)",
+      eversion&&"Pain/weakness on resisted eversion (CYR: peroneal testing)"
+    ],"MAG Ch.13; CYR; DUT Ch.25");
+  }
 
+  // ═══════════════════════════════════════════════
+  // GENERAL / SYSTEMIC
+  // ═══════════════════════════════════════════════
+
+  // Central Sensitisation — PAIN Butler & Moseley
+  {
+    const widespread = match(loc+cc,"widespread","whole body","multiple","everywhere");
+    const allodyn    = match(cc+behav,"light touch","clothing","wind","allodyn");
+    const disproportionate = match(cc+v("s_yellow_flag")||"","worse than","severe","excruciating","10/10");
+    const yellow     = txt(v("s_psychosocial"))||txt(v("s_yellow_flag"));
+    const sleepIssue = match(behav,"sleep","insomnia","fatigue","tired");
+    const hits=[widespread,allodyn,disproportionate,yellow,sleepIssue].filter(Boolean).length;
+    add("General","Central Sensitisation / Nociplastic Pain","M79.7",hits,5,[
+      widespread&&"Widespread/multi-site pain (PAIN: central sensitisation pattern)",
+      allodyn&&"Allodynia — pain to light touch (PAIN Butler & Moseley: CS)",
+      disproportionate&&"Disproportionate pain response (COOK: CS flags)",
+      yellow&&"Psychosocial yellow flags present (NICE: biopsychosocial model)",
+      sleepIssue&&"Sleep disturbance/fatigue (PAIN: neuroplastic changes)"
+    ],"Butler & Moseley — Explain Pain; COOK Ch.3; NICE LBP 2021 biopsychosocial");
+  }
+
+  // Fibromyalgia
+  {
+    const widespread2= match(loc+cc,"widespread","fibromyalg","all over","multiple site");
+    const fatigue    = match(cc+behav,"fatigue","exhausted","tired","fog","cognit");
+    const tender11   = match(palp+cc,"tender point","11/18","fibro","diffuse tender");
+    const female     = sex.includes("f");
+    const age30_60   = age!==null&&age>25&&age<65;
+    const hits=[widespread2,fatigue,tender11,female&&age30_60].filter(Boolean).length;
+    add("General","Fibromyalgia","M79.7",hits,4,[
+      widespread2&&"Widespread musculoskeletal pain (ACR 2010: widespread pain index)",
+      fatigue&&"Fatigue/cognitive symptoms (ACR 2010: symptom severity scale)",
+      tender11&&"Multiple tender points (ACR 1990: ≥11/18 tender points)",
+      female&&age30_60&&`Female, ${age}y — highest prevalence group (DUT; PAIN)`
+    ],"ACR 1990/2010 criteria; PAIN Butler & Moseley; DUT; COOK biopsychosocial");
+  }
+
+  // Hypermobility Spectrum Disorder
+  {
+    const beighton   = num(v("st_beighton"))||num(v("beighton_score"));
+    const hypermob   = beighton!==null&&beighton>=4;
+    const multiJoint = match(loc+cc,"multiple joint","hypermob","lax","loose","flexible","unstable");
+    const clicks     = match(cc+behav,"click","pop","sublux","dislocat");
+    const young3     = age!==null&&age<40;
+    const hits=[hypermob,multiJoint,clicks,young3&&multiJoint].filter(Boolean).length;
+    add("General","Hypermobility Spectrum Disorder","M35.7",hits,4,[
+      hypermob&&`Beighton Score ${beighton}/9 ≥ 4 (Grahame: HSD criteria)`,
+      multiJoint&&"Multi-joint hypermobility/instability (DUT: connective tissue)",
+      clicks&&"Recurrent clicking/subluxation (MAG: joint laxity pattern)",
+      young3&&multiJoint&&`Young patient (${age}y) — peak presentation (Grahame)`
+    ],"Grahame HSD criteria; DUT; MAG; COOK");
+  }
+
+  results.sort((a,b)=>b.confidence-a.confidence||b.hits-a.hits);
   return results;
 }
 
+export function getTopDiagnoses(data,n=3){ return runDiagnosisEngine(data).slice(0,n); }
+
 /**
- * getTopDiagnoses(data, n=3)
- * Returns top N diagnoses — convenience wrapper
+ * ALL_DIAGNOSES — complete flat list for dropdown
+ * Used in Assessment section so no diagnosis name is ever missing
  */
-export function getTopDiagnoses(data, n = 3) {
-  return runDiagnosisEngine(data).slice(0, n);
-}
+export const ALL_DIAGNOSES = [
+  // Cervical
+  "Cervical Radiculopathy","Cervical Facet Syndrome","Cervical Disc Herniation",
+  "Cervicogenic Headache","Cervical Myelopathy","Cervical Spondylosis","Upper Cervical Instability",
+  "Thoracic Outlet Syndrome","Cervical Sprain/Strain","Cervical Canal Stenosis",
+  "C1-C2 Instability","Cervical Myofascial Pain","Post-Whiplash Associated Disorder",
+  // Thoracic
+  "Thoracic Facet Syndrome","Thoracic Disc Herniation","Thoracic Outlet Syndrome",
+  "Costochondritis","Rib Stress Fracture","Scheuermann's Disease","Thoracic Myofascial Pain",
+  // Lumbar
+  "Lumbar Disc Herniation with Radiculopathy","Lumbar Facet Syndrome","Lumbar Canal Stenosis",
+  "SIJ Dysfunction","Spondylolisthesis","Piriformis Syndrome","Non-Specific Low Back Pain",
+  "Lumbar Myofascial Pain","Lumbar Spondylosis","Cauda Equina Syndrome","Lumbar Stress Fracture",
+  "Ankylosing Spondylitis","Lumbar Radiculopathy (L4)","Lumbar Radiculopathy (L5)","Lumbar Radiculopathy (S1)",
+  // Shoulder
+  "Rotator Cuff Tear (Supraspinatus)","Rotator Cuff Tear (Infraspinatus)","Rotator Cuff Tear (Subscapularis)",
+  "Subacromial Impingement Syndrome","Adhesive Capsulitis (Frozen Shoulder)","Biceps Tendinopathy",
+  "SLAP Lesion","AC Joint Pathology","Glenohumeral Instability","Calcific Tendinopathy",
+  "Shoulder OA","Rotator Cuff Tendinopathy","Long Head Biceps Rupture","Brachial Neuritis (Parsonage-Turner)",
+  // Elbow
+  "Lateral Epicondylalgia (Tennis Elbow)","Medial Epicondylalgia (Golfer's Elbow)",
+  "Cubital Tunnel Syndrome","Radial Tunnel Syndrome","Elbow OA","Olecranon Bursitis",
+  "Biceps Tendon Rupture (distal)","Pronator Teres Syndrome","Posterior Interosseous Nerve Syndrome",
+  // Wrist/Hand
+  "Carpal Tunnel Syndrome","De Quervain's Tenosynovitis","TFCC Tear","Scaphoid Fracture",
+  "Wrist OA","Ganglion Cyst","Ulnar Nerve Entrapment","Kienbock's Disease",
+  "Trigger Finger","Dupuytren's Contracture","CMC Joint OA (Thumb)","Skier's Thumb (UCL)",
+  // Hip
+  "Hip OA","Femoroacetabular Impingement (FAI)","Hip Labral Tear",
+  "Greater Trochanteric Pain Syndrome","Piriformis Syndrome","Snapping Hip Syndrome",
+  "Psoas Tendinopathy","Hip Stress Fracture","Avascular Necrosis Hip","Gluteal Tendinopathy",
+  "Hamstring Origin Tendinopathy","Ischial Bursitis",
+  // Knee
+  "ACL Injury","PCL Injury","MCL Sprain","LCL Sprain","Meniscal Tear (Medial)",
+  "Meniscal Tear (Lateral)","Patellofemoral Pain Syndrome","Knee OA","ITB Syndrome",
+  "Patellar Tendinopathy","Pes Anserinus Bursitis","Hoffa's Fat Pad Syndrome",
+  "Osgood-Schlatter Disease","Plica Syndrome","Prepatellar Bursitis","Knee Effusion",
+  // Ankle/Foot
+  "Lateral Ankle Sprain (ATFL/CFL)","High Ankle Sprain (Syndesmosis)","Achilles Tendinopathy",
+  "Achilles Rupture","Plantar Fasciitis","Peroneal Tendinopathy","Tibialis Posterior Tendinopathy",
+  "Anterior Ankle Impingement","Posterior Ankle Impingement","Sinus Tarsi Syndrome",
+  "Hallux Valgus","Morton's Neuroma","Stress Fracture (Foot/Ankle)","Tarsal Tunnel Syndrome",
+  "Sesamoiditis","Tibialis Anterior Tendinopathy",
+  // Neurological
+  "Cervical Myelopathy","Lumbar Myelopathy","Peripheral Neuropathy","Meralgia Paraesthetica",
+  "Tarsal Tunnel Syndrome","Brachial Plexus Injury","Complex Regional Pain Syndrome",
+  // General
+  "Myofascial Pain Syndrome","Fibromyalgia","Central Sensitisation / Nociplastic Pain",
+  "Hypermobility Spectrum Disorder","Referred Pain (visceral)","Osteoporosis",
+  "Rheumatoid Arthritis","Reactive Arthritis","Psoriatic Arthritis","Gout","Pseudogout",
+  "Somatic Symptom Disorder","Chronic Widespread Pain"
+];
