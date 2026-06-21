@@ -18033,6 +18033,34 @@ function AppInner({ currentUser, onSignOut }) {
                       </>)}
                     </>);
                   })()}
+                  {/* ── Save Patient Button ── */}
+                  <div style={{marginTop:20,padding:"14px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:14,display:"flex",flexDirection:"column",gap:10}}>
+                    {!activePatientId ? (
+                      <div style={{textAlign:"center"}}>
+                        <div style={{fontSize:12,color:PC.muted,marginBottom:10}}>Fill in the patient name above, then save to create their record.</div>
+                        <button
+                          disabled={!data.dem_name?.trim()}
+                          onClick={()=>{
+                            if(!data.dem_name?.trim()) return;
+                            const newP={id:genId(),name:data.dem_name,data,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),hasRedFlags:false,lastDx:data.cc_main||""};
+                            setPatients(prev=>{const updated=[newP,...prev];savePatientDB(updated);return updated;});
+                            setActivePatientId(newP.id);
+                            setJsonMsg({type:"success",text:`✅ Patient saved: ${data.dem_name}`});
+                            setTimeout(()=>setJsonMsg(null),2500);
+                          }}
+                          style={{padding:"12px 32px",background:data.dem_name?.trim()?PC.accent:"#D1D5DB",border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.9rem",cursor:data.dem_name?.trim()?"pointer":"not-allowed",width:"100%"}}>
+                          💾 Save Patient to Database
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
+                        <span style={{fontSize:13,color:"#059669",fontWeight:700}}>✅ Patient record auto-saving</span>
+                        <button onClick={()=>navTo("subjective")} style={{padding:"8px 20px",background:PC.accent,border:"none",borderRadius:8,color:"#fff",fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>
+                          Next → Subjective
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
