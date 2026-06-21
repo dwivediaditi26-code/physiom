@@ -11883,6 +11883,7 @@ function QuickNotesWidget({ d, patient, onSaveField, C }) {
 // ─── PATIENT PROFILE MODAL ─────────────────────────────────────────────────────
 
 // ROM key → {label, normal}
+// ROM normals — updated 2026-06-21
 const ROM_LABEL_MAP = {
   "rom_cflex":{l:"Cervical Flexion",n:45},"rom_cext":{l:"Cervical Extension",n:45},
   "rom_clatl":{l:"Cervical Lat Flex L",n:45},"rom_clatr":{l:"Cervical Lat Flex R",n:45},
@@ -13394,11 +13395,10 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                               <div key={k} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"#F9FAFB",border:`1px solid ${C.border}`,borderRadius:8}}>
                                 <div style={{flex:1,minWidth:0,paddingRight:8}}>
                                   <div style={{fontSize:12,fontWeight:500,color:C.text,lineHeight:1.3}}>{labelText}</div>
-                                  {normalVal&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>normal {normalVal}°</div>}
+
                                 </div>
                                 <div style={{flexShrink:0,textAlign:"right"}}>
-                                  <span style={{fontSize:18,fontWeight:500,color:numCol}}>{val>0?val:"—"}</span><span style={{fontSize:10,color:C.muted}}>°</span>
-                                  {pct!==null&&<div style={{fontSize:11,fontWeight:700,color:numCol,marginTop:2}}>{Math.round(pct)}%</div>}
+                                  <span style={{fontSize:18,fontWeight:500,color:"#7c3aed"}}>{val>0?val:parseFloat(d[k])||"—"}</span><span style={{fontSize:10,color:C.muted}}>°</span>
                                 </div>
                               </div>
                             );
