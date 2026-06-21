@@ -14160,7 +14160,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
             background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
             color:"white",fontSize:14,fontWeight:800,cursor:"pointer",letterSpacing:"-0.2px",
             boxShadow:`0 4px 16px rgba(109,40,217,0.35)`}}>
-            + New Assessment
+            Open in Assessment →
           </button>
         )}
         {tab==="treatment" && (
@@ -14180,10 +14180,12 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         )}
         {(tab==="overview"||tab==="posture") && (
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>setTab("assessment")} style={{flex:2,padding:"13px",borderRadius:12,
+            <button onClick={()=>{ onLoadAssessment && onLoadAssessment(patient); onClose(); }}
+              style={{flex:2,padding:"13px",borderRadius:12,
               border:"none",background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
-              color:"white",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-              Continue Assessment
+              color:"white",fontSize:13,fontWeight:700,cursor:"pointer",
+              boxShadow:"0 4px 16px rgba(109,40,217,0.3)"}}>
+              Open in Assessment →
             </button>
             <button onClick={()=>setTab("documents")} style={{flex:1,padding:"13px",borderRadius:12,
               border:`1.5px solid ${C.primary}`,background:"white",
@@ -14333,8 +14335,13 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
     {profilePatient && (
       <PatientProfileModal
         patient={profilePatient.id===activeId ? {...profilePatient, data:{...liveData,...profilePatient.data}} : profilePatient}
-        onClose={()=>setProfilePatient(null)}
-        onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); }}
+        onClose={()=>{
+          // ← back from nested profile: activate patient + close DB panel → land in main app
+          if(profilePatient.id !== activeId) onSelect(profilePatient);
+          setProfilePatient(null);
+          onClose();
+        }}
+        onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); onClose(); }}
         onSaveField={handleSaveField}
         onNav={(key)=>{
           setProfilePatient(null);
@@ -17197,17 +17204,20 @@ function AppInner({ currentUser, onSignOut }) {
 
   const [data, setData] = useState(() => {
     try {
-      const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      // Support both old format (bare data obj) and new format {pid, data}
+      const draft = raw && raw.pid ? raw.data : raw;
       if (draft && Object.keys(draft).length > 5) return draft;
     } catch {}
     return DEMO_DATA;
   });
-  const [draftRestored, setDraftRestored] = useState(() => {
+  const [draftPatientId, setDraftPatientId] = useState(() => {
     try {
-      const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-      return !!(draft && Object.keys(draft).length > 5);
-    } catch { return false; }
+      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      return (raw && raw.pid) ? raw.pid : null;
+    } catch { return null; }
   });
+  const [draftRestored, setDraftRestored] = useState(false);
   const [showDx, setShowDx] = useState(false);
   const [dx, setDx] = useState(null);
   const [infoModal, setInfoModal] = useState(null);
@@ -17265,10 +17275,14 @@ function AppInner({ currentUser, onSignOut }) {
   useEffect(() => {
     if (!data || Object.keys(data).length === 0) return;
     const timer = setTimeout(() => {
-      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); setLastSaved(new Date()); } catch {}
+      try {
+        // Store {pid, data} so we can check which patient the draft belongs to
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: activePatientId || null, data }));
+        setLastSaved(new Date());
+      } catch {}
     }, 2000);
     return () => clearTimeout(timer);
-  }, [data]);
+  }, [data, activePatientId]);
 
   // ── Task helpers ─────────────────────────────────────────────────────────
   const saveTasks = (tasks) => { setTaskDB(tasks); saveTaskDB(tasks); };
@@ -17365,7 +17379,22 @@ function AppInner({ currentUser, onSignOut }) {
   const selectPatient = (p) => {
     const hasChanges = Object.keys(data).length > 0 && activePatientId !== p.id;
     if (hasChanges) { setPendingPatient(p); setShowUnsaved(true); return; }
-    setData(p.data || {});
+    // Check if there's a draft for THIS specific patient
+    try {
+      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      const draftPid = raw && raw.pid ? raw.pid : null;
+      const draftData = raw && raw.pid ? raw.data : raw;
+      if (draftPid === p.id && draftData && Object.keys(draftData).length > 5) {
+        setData(draftData);
+        setDraftRestored(true);
+        setTimeout(() => setDraftRestored(false), 4000);
+      } else {
+        setData(p.data || {});
+        setDraftRestored(false);
+      }
+    } catch {
+      setData(p.data || {});
+    }
     setActivePatientId(p.id);
     setShowPatientDb(false);
     setJsonMsg({ type:"success", text:`✅ Loaded: ${p.name || "Patient"}` });
