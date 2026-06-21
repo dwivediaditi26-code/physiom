@@ -14276,7 +14276,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
 }
 
 // ─── PATIENT DATABASE PANEL ────────────────────────────────────────────────────
-function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose, onImport, onNav, liveData={} }) {
+function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose: closePanel, onImport, onNav, liveData={} }) {
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
@@ -14339,14 +14339,14 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
           // ← back from nested profile: activate patient + close DB panel → land in main app
           if(profilePatient.id !== activeId) onSelect(profilePatient);
           setProfilePatient(null);
-          onClose();
+          closePanel();
         }}
-        onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); onClose(); }}
+        onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); closePanel(); }}
         onSaveField={handleSaveField}
         onNav={(key)=>{
           setProfilePatient(null);
           if(profilePatient.id !== activeId) onSelect(profilePatient);
-          onClose();
+          closePanel();
           setTimeout(()=>onNav&&onNav(key), 80);
         }}
       />
@@ -14369,7 +14369,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
                 {localPatients.length} patient{localPatients.length!==1?"s":""} · {redFlagCount} with flags
               </div>
             </div>
-            <button onClick={onClose}
+            <button onClick={closePanel}
               style={{background:"#F3F4F6",border:"1px solid #E5E7EB",borderRadius:10,
                 color:"#374151",cursor:"pointer",padding:"9px 16px",fontSize:"0.8rem",fontWeight:700}}>✕ Close</button>
           </div>
@@ -14478,7 +14478,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
       </div>
 
       {/* Click outside */}
-      <div style={{flex:1}} onClick={onClose}/>
+      <div style={{flex:1}} onClick={closePanel}/>
     </div>
     </>
   );
@@ -17271,17 +17271,18 @@ function AppInner({ currentUser, onSignOut }) {
   }, []);
 
   // ── Auto-save draft to localStorage (2s debounce) ─────────────────────
+  // activePatientId captured via closure — NOT in deps to avoid Rollup TDZ bug
   useEffect(() => {
     if (!data || Object.keys(data).length === 0) return;
+    const pid = activePatientId;
     const timer = setTimeout(() => {
       try {
-        // Store {pid, data} so we can check which patient the draft belongs to
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: activePatientId || null, data }));
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: pid || null, data }));
         setLastSaved(new Date());
       } catch {}
     }, 2000);
     return () => clearTimeout(timer);
-  }, [data, activePatientId]);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Task helpers ─────────────────────────────────────────────────────────
   const saveTasks = (tasks) => { setTaskDB(tasks); saveTaskDB(tasks); };
