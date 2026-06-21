@@ -14334,7 +14334,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
     {/* Profile modal */}
     {profilePatient && (
       <PatientProfileModal
-        patient={profilePatient.id===activeId ? {...profilePatient, data:{...liveData,...profilePatient.data}} : profilePatient}
+        patient={profilePatient.id===activeId ? {...profilePatient, data:{...profilePatient.data,...liveData}} : profilePatient}
         onClose={()=>{
           // ← back from nested profile: activate patient + close DB panel → land in main app
           if(profilePatient.id !== activeId) onSelect(profilePatient);
@@ -14439,7 +14439,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
               isActive={p.id === activeId}
               onSelect={()=>onSelect(p)}
               onDelete={()=>onDelete(p.id)}
-              onProfile={()=>setProfilePatient(p)}
+              onProfile={()=>setProfilePatient(p.id===activeId ? {...p, data:{...p.data,...liveData}} : p)}
             />
           ))}
         </div>
@@ -18024,7 +18024,7 @@ function AppInner({ currentUser, onSignOut }) {
           {/* Row 1: dot + name + age/gender */}
           <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
             <div style={{width:7,height:7,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 6px ${PC.a3}`,flexShrink:0}}/>
-            <div onClick={()=>setProfilePatient({...activePatient,data:{...data}})}
+            <div onClick={()=>setProfilePatient({...activePatient,data:{...activePatient.data,...data}})}
               style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",minWidth:0,flex:1,overflow:"hidden"}}
               onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
               onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
@@ -18293,7 +18293,7 @@ function AppInner({ currentUser, onSignOut }) {
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo}/>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} currentUser={currentUser} onSignOut={onSignOut}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p.id===activePatientId ? {...p, data:{...p.data,...data}} : p)} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
                 <div style={{display:"flex",flexDirection:"column",gap:14}}>
                   {(()=>{
