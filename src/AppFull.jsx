@@ -17205,13 +17205,18 @@ function AppInner({ currentUser, onSignOut }) {
   const [data, setData] = useState(() => {
     try {
       const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-      // Support both old format (bare data obj) and new format {pid, data}
-      const draft = raw && raw.pid ? raw.data : raw;
+      const draft = raw && raw.pid ? raw.data : (raw && !raw.pid ? raw : null);
       if (draft && Object.keys(draft).length > 5) return draft;
     } catch {}
     return DEMO_DATA;
   });
-  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      const draft = raw && raw.pid ? raw.data : (raw && !raw.pid ? raw : null);
+      return !!(draft && Object.keys(draft).length > 5);
+    } catch { return false; }
+  });
   const [showDx, setShowDx] = useState(false);
   const [dx, setDx] = useState(null);
   const [infoModal, setInfoModal] = useState(null);
@@ -17373,18 +17378,16 @@ function AppInner({ currentUser, onSignOut }) {
   const selectPatient = (p) => {
     const hasChanges = Object.keys(data).length > 0 && activePatientId !== p.id;
     if (hasChanges) { setPendingPatient(p); setShowUnsaved(true); return; }
-    // Check if there's a draft for THIS specific patient
+    // Load patient data; ignore any draft that belongs to a different patient
     try {
       const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
       const draftPid = raw && raw.pid ? raw.pid : null;
-      const draftData = raw && raw.pid ? raw.data : raw;
+      const draftData = raw && raw.pid ? raw.data : null;
       if (draftPid === p.id && draftData && Object.keys(draftData).length > 5) {
-        setData(draftData);
-        setDraftRestored(true);
-        setTimeout(() => setDraftRestored(false), 4000);
+        setData(draftData); // restore draft for THIS patient only
       } else {
-        setData(p.data || {});
-        setDraftRestored(false);
+        setData(p.data || {}); // use saved data, ignore other patient's draft
+        try { if (draftPid && draftPid !== p.id) localStorage.removeItem(DRAFT_KEY); } catch {}
       }
     } catch {
       setData(p.data || {});
