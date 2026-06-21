@@ -14214,63 +14214,69 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
   const sex    = patient.data?.dem_sex    || patient.data?.dem_gender || "";
   const occ    = patient.data?.dem_occupation || "";
   const dx     = patient.lastDx || "";
-  const filled = Object.keys(patient.data||{}).filter(k=>patient.data[k]&&patient.data[k]!=="").length;
   const hasRed = patient.hasRedFlags;
   const vas    = patient.data?.pa_vas_now;
   const vasColor = vas ? (parseInt(vas)>=7?"#ff4d6d":parseInt(vas)>=4?"#ffb300":"#00c97a") : null;
+  const updatedAt = patient.updatedAt ? new Date(patient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : null;
 
   return (
     <div style={{
-      padding:"14px 14px", borderRadius:14, marginBottom:8,
+      padding:"14px 14px 10px", borderRadius:14, marginBottom:8,
       background: isActive ? "#F0EEFF" : "#FFFFFF",
       border: `1.5px solid ${hasRed ? "#FCA5A5" : isActive ? "#7c3aed" : "#E5E7EB"}`,
       transition:"all 0.15s", position:"relative",
       boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
     }}>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        {/* Avatar */}
-        <div style={{width:48,height:48,borderRadius:13,background:avatarGrad(patient.id),
+      {/* Top row: avatar + info */}
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+        <div style={{width:44,height:44,borderRadius:12,background:avatarGrad(patient.id),
           display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:"0.9rem",fontWeight:900,color:"#fff",flexShrink:0,
+          fontSize:"0.85rem",fontWeight:900,color:"#fff",flexShrink:0,
           boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
           {getInitials(patient.name)}
         </div>
-
-        <div style={{flex:1,minWidth:0}} onClick={onSelect}>
+        <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:800,fontSize:"0.9rem",color:"#111827",
             whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
             {patient.name || "Unnamed Patient"}
             {hasRed && <span style={{marginLeft:6,fontSize:"0.8rem",color:"#ef4444"}}>🚩</span>}
+            {isActive && <span style={{marginLeft:6,fontSize:"0.7rem",background:"#7c3aed",color:"#fff",borderRadius:99,padding:"1px 7px",fontWeight:700,verticalAlign:"middle"}}>Active</span>}
           </div>
-          <div style={{fontSize:"0.82rem",color:"#6B7280",marginTop:2,
+          <div style={{fontSize:"0.78rem",color:"#6B7280",marginTop:2,
             whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
             {[age,sex,occ].filter(Boolean).join(" · ") || "No demographics"}
           </div>
-          {dx && <div style={{fontSize:"0.78rem",color:"#059669",marginTop:3,
-            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontWeight:600}}>🩺 {dx}</div>}
-          {vas && <div style={{marginTop:4}}>
-            <span style={{padding:"2px 8px",borderRadius:99,background:`${vasColor}15`,
-              border:`1px solid ${vasColor}40`,fontSize:"0.75rem",fontWeight:700,color:vasColor}}>
-              NRS {vas}/10
-            </span>
-          </div>}
+          {dx && <div style={{fontSize:"0.75rem",color:"#059669",marginTop:2,fontWeight:600,
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>🩺 {dx}</div>}
         </div>
-
-        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
-          <button onClick={e=>{e.stopPropagation();onProfile();}}
-            style={{background:"#7c3aed",border:"none",
-              color:"white",borderRadius:10,cursor:"pointer",fontSize:"0.75rem",
-              padding:"9px 16px",fontWeight:800,letterSpacing:"0.2px",
-              boxShadow:"0 2px 6px rgba(124,58,237,0.3)",minWidth:72}}>
-            Profile
-          </button>
-          <button onClick={e=>{e.stopPropagation();onDelete();}}
-            style={{background:"none",border:"1px solid #E5E7EB",borderRadius:7,
-              color:"#9CA3AF",cursor:"pointer",fontSize:"0.75rem",padding:"4px 8px",fontWeight:600}}>
-            Remove
-          </button>
-        </div>
+        {vas && <span style={{flexShrink:0,padding:"2px 8px",borderRadius:99,background:`${vasColor}15`,
+          border:`1px solid ${vasColor}40`,fontSize:"0.72rem",fontWeight:700,color:vasColor}}>
+          NRS {vas}
+        </span>}
       </div>
+
+      {/* Bottom row: two action buttons + remove */}
+      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+        <button onClick={e=>{e.stopPropagation();onSelect();}}
+          style={{flex:2,padding:"9px 0",borderRadius:10,border:"none",
+            background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+            color:"white",fontSize:"0.78rem",fontWeight:800,cursor:"pointer",
+            boxShadow:"0 2px 8px rgba(124,58,237,0.3)",letterSpacing:"0.1px"}}>
+          Open Assessment
+        </button>
+        <button onClick={e=>{e.stopPropagation();onProfile();}}
+          style={{flex:1,padding:"9px 0",borderRadius:10,
+            border:"1.5px solid #7c3aed",background:"white",
+            color:"#7c3aed",fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>
+          Profile
+        </button>
+        <button onClick={e=>{e.stopPropagation();onDelete();}}
+          style={{flexShrink:0,background:"none",border:"1px solid #E5E7EB",borderRadius:8,
+            color:"#9CA3AF",cursor:"pointer",fontSize:"0.72rem",padding:"9px 10px",fontWeight:600}}>
+          ✕
+        </button>
+      </div>
+      {updatedAt&&<div style={{fontSize:"0.68rem",color:"#9CA3AF",marginTop:5,textAlign:"right"}}>Last updated {updatedAt}</div>}
     </div>
   );
 }
