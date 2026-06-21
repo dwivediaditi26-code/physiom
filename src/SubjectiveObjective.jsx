@@ -4279,7 +4279,7 @@ function SubjectiveModule({ data, set, onNav }) {
     isDark:false, inputBg:"#f5f0fb", inputBorder:"#c8b8e0",
   };
 
-  const [activeSection, setActiveSection] = useState("demographics");
+  const [activeSection, setActiveSection] = useState("complaint");
   const sectionTopRef = React.useRef(null);
   const [selectedRegions, setSelectedRegions] = useState(()=>{
     try{ return JSON.parse(data.cx_selected_regions||"[]"); }catch{ return []; }
@@ -4488,7 +4488,7 @@ function SubjectiveModule({ data, set, onNav }) {
     setAiReview(false);
     setAiStatus("idle");
     setAiText("");
-    setActiveSection("demographics");
+    setActiveSection("complaint");
     if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     setAiSuccess({ count: filled.length, fields: filled });
     setTimeout(() => setAiSuccess(null), 8000);
@@ -4497,7 +4497,7 @@ function SubjectiveModule({ data, set, onNav }) {
   // ── Build active sections ───────────────────────────────────────────
   const sections = useMemo(() => {
     // ORDER:
-    // 1. Demographics + Chief Complaint (always first — core identity)
+    // 1. Chief Complaint (always first)
     // 2. Region-specific modules (the clinical meat — loaded by selection)
     // 3. Trailing universal sections (goals, history, red flags, PMH, lifestyle, paediatric, hypermobility)
     // 4. Conditional: Sleep, Sport (auto-loaded)
@@ -4505,8 +4505,7 @@ function SubjectiveModule({ data, set, onNav }) {
 
     const m = {};
 
-    // ── Step 1: Core opening sections (demographics + complaint only) ──
-    m.demographics   = UNIV_S.demographics;
+    // ── Step 1: Core opening sections (complaint only) ──
     m.complaint      = UNIV_S.complaint;
 
     // ── Step 2: Region-specific modules ───────────────────────────────
@@ -5212,7 +5211,7 @@ function SubjectiveModule({ data, set, onNav }) {
           })()}
 
           {/* No region selected prompt */}
-          {selectedRegions.length === 0 && !["demographics","complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
+          {selectedRegions.length === 0 && !["complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
             <div style={{ background:"#fffbeb", border:`1px solid ${PC.yellow}55`, borderRadius:10,
               padding:"12px 16px", color: PC.yellow, fontSize:"0.78rem" }}>
               ⚠ Select at least one region above to load the region-specific assessment module

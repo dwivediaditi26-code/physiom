@@ -17494,11 +17494,6 @@ function AppInner({ currentUser, onSignOut }) {
 
   const runDx = () => { setDx(generateDiagnosis(data)); setShowDx(true); };
   const navTo = useCallback((key, ctx = {}) => {
-    if (key === "demographics") {
-      // Open PatientProfileModal on the Demographics tab
-      if (activePatient) { setProfilePatient({...activePatient, data:{...activePatient.data,...data}}); setProfileTab("demographics"); }
-      return;
-    }
     setActive(key);
     setNavContext(ctx);
     setNavOpen(false);
