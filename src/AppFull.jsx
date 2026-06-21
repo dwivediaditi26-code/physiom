@@ -18192,31 +18192,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="OBSERVATION_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18225,31 +18235,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="CYRIAX_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18258,31 +18278,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="SPECIAL_TESTS_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18298,31 +18328,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="NKT_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18331,31 +18371,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="FMA_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18364,31 +18414,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="FASCIA_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18397,31 +18457,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="KC_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18430,31 +18500,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="CYRIAX_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18463,31 +18543,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="NEURO_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18503,31 +18593,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="GAIT_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18536,31 +18636,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="MMT_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18576,31 +18686,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="ROM_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
@@ -18616,31 +18736,41 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="OUTCOME_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
-                  const steps=[{k:"subjective",l:"S",full:"Subjective"},{k:"rom",l:"O",full:"Objective"},{k:"assessment_summary",l:"A",full:"Assessment"},{k:"soap",l:"P",full:"Plan"}];
-                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome"];
-                  const currentStep=oKeys.includes(active)?"rom":["soap"].includes(active)?"soap":active;
-                  const getSCount=()=>!!(data.cc_main||data.dem_name);
-                  const getOCount=()=>Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
-                  const getACount=()=>!!(data.soap_a||data.soap_extra_a||data.cx_insight);
-                  const getPCount=()=>!!(data.soap_p||data.soap_extra_p||data.tx_sessions?.length);
-                  const done={subjective:getSCount(),rom:getOCount(),assessment_summary:getACount(),soap:getPCount()};
-                  const activeStep=oKeys.includes(active)?"rom":active==="soap"?"soap":active;
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
                   return(
-                    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16,background:PC.s2,borderRadius:10,padding:"8px 12px",border:`1px solid ${PC.border}`}}>
-                      {steps.map((s,i)=>{
-                        const isAct=s.k===activeStep||(s.k==="rom"&&oKeys.includes(active));
-                        const isDone=done[s.k];
-                        const col=isAct?PC.accent:isDone?"#059669":PC.muted;
-                        return(
-                          <React.Fragment key={s.k}>
-                            <div onClick={()=>navTo(s.k==="rom"?active:s.k)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",padding:"2px 6px",borderRadius:6,background:isAct?`${PC.accent}12`:"transparent"}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",background:isAct?PC.accent:isDone?"#059669":PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isAct||isDone?"#fff":PC.muted,flexShrink:0}}>{isDone&&!isAct?"✓":s.l}</div>
-                              <span style={{fontSize:"0.78rem",fontWeight:isAct?800:500,color:col,whiteSpace:"nowrap"}}>{s.full}</span>
-                            </div>
-                            {i<steps.length-1&&<div style={{flex:1,height:1,background:PC.border,margin:"0 4px"}}/>}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{height:2,background:"#E5E7EB",borderRadius:999,marginTop:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
+                      </div>
                     </div>
                   );
                 })()}
