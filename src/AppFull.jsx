@@ -17084,6 +17084,7 @@ function AppInner({ currentUser, onSignOut }) {
   // Once mounted, component stays mounted (data preserved)
   const [mountedTabs, setMountedTabs] = useState(new Set(["home", "demographics", "subjective"]));
   const [subjBodyChartTab, setSubjBodyChartTab] = useState(false);
+  const [txTab, setTxTab] = useState("exercise");
   // Heavy tabs — only mount on first visit
   const HEAVY_TABS = new Set([
     "posture", "ddx", "fms", "nkt", "cyriax",
@@ -19034,7 +19035,6 @@ function AppInner({ currentUser, onSignOut }) {
                 })()}
                 {(()=>{
                   const isMobile=window.innerWidth<768;
-                  const [txTab,setTxTab]=React.useState("exercise");
                   if(isMobile){
                     return(
                       <div>
