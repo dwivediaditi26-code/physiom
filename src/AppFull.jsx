@@ -11891,7 +11891,7 @@ const ROM_LABEL_MAP = {
   "rom_throtl":{l:"Thoracic Rotation L",n:35},"rom_throtr":{l:"Thoracic Rotation R",n:35},
   "rom_lflex":{l:"Lumbar Flexion",n:60},"rom_lext":{l:"Lumbar Extension",n:25},
   "rom_llfl":{l:"Lumbar Lat Flex L",n:25},"rom_llfr":{l:"Lumbar Lat Flex R",n:25},
-  "rom_lrotl":{l:"Lumbar Rotation L",n:5},"rom_lrotr":{l:"Lumbar Rotation R",n:5},
+  "rom_lrotl":{l:"Lumbar Rotation L",n:30},"rom_lrotr":{l:"Lumbar Rotation R",n:30},
   "rom_sflex":{l:"Shoulder Flexion",n:180},"rom_sext":{l:"Shoulder Extension",n:60},
   "rom_sabd":{l:"Shoulder Abduction",n:180},"rom_sadd":{l:"Shoulder Adduction",n:30},
   "rom_ser":{l:"Shoulder ER",n:90},"rom_sir":{l:"Shoulder IR",n:70},
@@ -13397,7 +13397,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                                   {normalVal&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>normal {normalVal}°</div>}
                                 </div>
                                 <div style={{flexShrink:0,textAlign:"right"}}>
-                                  <span style={{fontSize:18,fontWeight:500,color:numCol}}>{d[k]}</span><span style={{fontSize:10,color:C.muted}}>°</span>
+                                  <span style={{fontSize:18,fontWeight:500,color:numCol}}>{val>0?val:"—"}</span><span style={{fontSize:10,color:C.muted}}>°</span>
+                                  {pct!==null&&<div style={{fontSize:11,fontWeight:700,color:numCol,marginTop:2}}>{Math.round(pct)}%</div>}
                                 </div>
                               </div>
                             );
