@@ -3972,76 +3972,30 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
         </div>
         <div style={cb}>
 
-          {/* ═══ 1. PROVISIONAL DIAGNOSIS ═══ */}
-          <div style={{marginBottom:16}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#1E40AF",letterSpacing:"0.01em",marginBottom:8,borderBottom:"2px solid #C7D2FE",paddingBottom:6}}>Provisional Diagnosis</div>
-
-            {/* Suggested from DiagnosisEngine — top 3 */}
-            {(()=>{
-              const suggestions = getTopDiagnoses(data, 3);
-              if (!suggestions.length) return null;
-              const CONF_STYLE = {
-                High:   { bg:"#ECFDF5", border:"#6EE7B7", badge:"#059669", badgeTxt:"#fff" },
-                Moderate:{ bg:"#FFFBEB", border:"#FDE68A", badge:"#D97706", badgeTxt:"#fff" },
-                Low:    { bg:"#F9FAFB", border:"#E5E7EB", badge:"#6B7280", badgeTxt:"#fff" },
-              };
-              return <div style={{marginBottom:10}}>
-                <div style={{fontSize:11,fontWeight:700,color:"#065F46",marginBottom:6}}>💡 Suggested Clinical Diagnoses</div>
-                {suggestions.map((s,i)=>{
-                  const cs = CONF_STYLE[s.confidenceLabel] || CONF_STYLE.Low;
-                  return <div key={i} style={{padding:"10px 12px",background:cs.bg,border:`1.5px solid ${cs.border}`,borderRadius:12,marginBottom:6}}>
-                    <div style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:4}}>
-                      <span style={{fontSize:13,fontWeight:700,color:"#111827",flex:1,lineHeight:1.3}}>{i+1}. {s.diagnosis}</span>
-                      <span style={{padding:"2px 8px",borderRadius:99,fontSize:10,fontWeight:700,background:cs.badge,color:cs.badgeTxt,whiteSpace:"nowrap"}}>{s.confidenceLabel} {s.confidence}%</span>
-                    </div>
-                    <div style={{fontSize:10,color:"#6B7280",marginBottom:5}}>{s.icd10} · {s.region} · {s.hits}/{s.total} criteria</div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:5}}>
-                      {s.supportingFindings.map((f,fi)=><span key={fi} style={{padding:"2px 7px",borderRadius:6,background:"rgba(0,0,0,0.06)",fontSize:10,color:"#374151"}}>{f}</span>)}
-                    </div>
-                    <div style={{fontSize:9,color:"#9CA3AF",marginBottom:4}}>Ref: {s.reference}</div>
-                    {!dx&&<button onClick={()=>set("soap_a_diagnosis",s.diagnosis)} style={{padding:"3px 10px",fontSize:10,background:"#1E40AF",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use as Provisional Dx</button>}
-                  </div>;
-                })}
-              </div>;
-            })()}
-
-            {/* Manual input */}
-            <input placeholder="Type provisional / working diagnosis..." value={dx} onChange={e=>set("soap_a_diagnosis",e.target.value)} style={{...inp,marginBottom:6,fontSize:13,fontWeight:600,color:"#1E40AF"}}/>
-            <input placeholder="ICD-10 code (e.g. M51.1)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={{...inp,marginBottom:0,fontSize:12}}/>
-
-            {/* Display chosen diagnosis */}
-            {dx&&<div style={{marginTop:8,padding:"10px 14px",background:"#EEF2FF",border:"2px solid #6366F1",borderRadius:12}}>
-              <div style={{fontSize:10,fontWeight:700,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>Provisional Diagnosis</div>
-              <div style={{fontSize:15,fontWeight:700,color:"#1E40AF",lineHeight:1.3}}>{dx}</div>
-              {icd&&<div style={{fontSize:11,color:"#6366F1",marginTop:2}}>ICD-10: {icd}</div>}
-            </div>}
-          </div>
-
-          {/* ═══ 2. DIFFERENTIAL DIAGNOSIS ═══ */}
+          {/* ═══ DIAGNOSIS FIELDS (shared dropdown logic) ═══ */}
           {(()=>{
             const DIFF_DX = {
-              cervical: ["Cervical Radiculopathy","Cervical Facet Syndrome","Cervical Disc Herniation","Cervicogenic Headache","Thoracic Outlet Syndrome","Myelopathy","Cervical Spondylosis"],
-              shoulder: ["Rotator Cuff Tear","Subacromial Impingement","Adhesive Capsulitis","AC Joint Pathology","Biceps Tendinopathy","Labral Tear","GH Instability","Calcific Tendinopathy"],
-              elbow: ["Lateral Epicondylalgia","Medial Epicondylalgia","Cubital Tunnel Syndrome","Radial Tunnel Syndrome","Elbow OA","Biceps Tendinopathy","Olecranon Bursitis"],
-              wrist: ["Carpal Tunnel Syndrome","De Quervain's Tenosynovitis","TFCC Tear","Scaphoid Fracture","Wrist OA","Ganglion Cyst","Ulnar Nerve Entrapment"],
-              lumbar: ["Lumbar Disc Herniation","Lumbar Facet Syndrome","Lumbar Radiculopathy","Lumbar Canal Stenosis","SIJ Dysfunction","Spondylolisthesis","Piriformis Syndrome","Myofascial Pain","Spondylosis"],
-              hip: ["Hip OA","FAI","Hip Labral Tear","Greater Trochanteric Pain Syndrome","Piriformis Syndrome","Snapping Hip","SIJ Dysfunction"],
-              knee: ["ACL Injury","Meniscal Tear","Patellofemoral Pain","ITB Syndrome","Knee OA","Pes Anserinus Bursitis","PCL Injury","Patellar Tendinopathy"],
-              ankle: ["Lateral Ankle Sprain","Achilles Tendinopathy","Plantar Fasciitis","Anterior Ankle Impingement","Peroneal Tendinopathy","Tibialis Posterior Dysfunction"],
-              general: ["Myofascial Pain Syndrome","Fibromyalgia","Central Sensitisation","Referred Pain","Somatic Symptom Disorder","Hypermobility Spectrum Disorder"]
+              cervical: ["Cervical Radiculopathy","Cervical Facet Syndrome","Cervical Disc Herniation","Cervicogenic Headache","Thoracic Outlet Syndrome","Myelopathy","Cervical Spondylosis","Upper Cervical Instability"],
+              shoulder: ["Rotator Cuff Tear","Subacromial Impingement","Adhesive Capsulitis","AC Joint Pathology","Biceps Tendinopathy","Labral Tear","GH Instability","Calcific Tendinopathy","Shoulder OA"],
+              elbow: ["Lateral Epicondylalgia","Medial Epicondylalgia","Cubital Tunnel Syndrome","Radial Tunnel Syndrome","Elbow OA","Biceps Tendinopathy","Olecranon Bursitis","Pronator Teres Syndrome"],
+              wrist: ["Carpal Tunnel Syndrome","De Quervain's Tenosynovitis","TFCC Tear","Scaphoid Fracture","Wrist OA","Ganglion Cyst","Ulnar Nerve Entrapment","Kienbock's Disease"],
+              lumbar: ["Lumbar Disc Herniation","Lumbar Facet Syndrome","Lumbar Radiculopathy","Lumbar Canal Stenosis","SIJ Dysfunction","Spondylolisthesis","Piriformis Syndrome","Myofascial Pain","Lumbar Spondylosis","Cauda Equina Syndrome"],
+              hip: ["Hip OA","FAI","Hip Labral Tear","Greater Trochanteric Pain Syndrome","Piriformis Syndrome","Snapping Hip","SIJ Dysfunction","Psoas Tendinopathy"],
+              knee: ["ACL Injury","Meniscal Tear","Patellofemoral Pain","ITB Syndrome","Knee OA","Pes Anserinus Bursitis","PCL Injury","Patellar Tendinopathy","Hoffa's Fat Pad Syndrome"],
+              ankle: ["Lateral Ankle Sprain","Achilles Tendinopathy","Plantar Fasciitis","Anterior Ankle Impingement","Peroneal Tendinopathy","Tibialis Posterior Dysfunction","Sinus Tarsi Syndrome"],
+              general: ["Myofascial Pain Syndrome","Fibromyalgia","Central Sensitisation","Referred Pain","Somatic Symptom Disorder","Hypermobility Spectrum Disorder","Complex Regional Pain Syndrome"]
             };
             const body = String(data.dem_body_part||data.soap_region||data.cx_region||data.lx_region||"").toLowerCase();
-            let opts = [];
-            if(body.includes("cerv")||body.includes("neck")) opts=[...DIFF_DX.cervical];
-            else if(body.includes("shou")) opts=[...DIFF_DX.shoulder];
-            else if(body.includes("elbow")) opts=[...DIFF_DX.elbow];
-            else if(body.includes("wrist")||body.includes("hand")) opts=[...DIFF_DX.wrist];
-            else if(body.includes("lumb")||body.includes("low back")||body.includes("lx")) opts=[...DIFF_DX.lumbar];
-            else if(body.includes("hip")||body.includes("pelv")) opts=[...DIFF_DX.hip];
-            else if(body.includes("knee")) opts=[...DIFF_DX.knee];
-            else if(body.includes("ankle")||body.includes("foot")) opts=[...DIFF_DX.ankle];
-            else opts=[...DIFF_DX.lumbar,...DIFF_DX.cervical,...DIFF_DX.shoulder];
-            opts=[...opts,...DIFF_DX.general];
+            let allOpts = [];
+            if(body.includes("cerv")||body.includes("neck")) allOpts=[...DIFF_DX.cervical,...DIFF_DX.general];
+            else if(body.includes("shou")) allOpts=[...DIFF_DX.shoulder,...DIFF_DX.general];
+            else if(body.includes("elbow")) allOpts=[...DIFF_DX.elbow,...DIFF_DX.general];
+            else if(body.includes("wrist")||body.includes("hand")) allOpts=[...DIFF_DX.wrist,...DIFF_DX.general];
+            else if(body.includes("lumb")||body.includes("low back")||body.includes("lx")) allOpts=[...DIFF_DX.lumbar,...DIFF_DX.general];
+            else if(body.includes("hip")||body.includes("pelv")) allOpts=[...DIFF_DX.hip,...DIFF_DX.general];
+            else if(body.includes("knee")) allOpts=[...DIFF_DX.knee,...DIFF_DX.general];
+            else if(body.includes("ankle")||body.includes("foot")) allOpts=[...DIFF_DX.ankle,...DIFF_DX.general];
+            else allOpts=[...DIFF_DX.lumbar,...DIFF_DX.cervical,...DIFF_DX.shoulder,...DIFF_DX.general];
 
             const selectedDiffs = (()=>{ try{ return JSON.parse(v("soap_differential_dx")||"[]"); }catch{return[];} })();
             const toggleDiff = (opt) => {
@@ -4051,52 +4005,116 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               }catch{ set("soap_differential_dx",JSON.stringify([opt])); }
             };
 
-            return <div style={{marginBottom:16}}>
-              <div style={{fontSize:13,fontWeight:700,color:"#374151",letterSpacing:"0.01em",marginBottom:8,borderBottom:"2px solid #E5E7EB",paddingBottom:6}}>Differential Diagnosis</div>
-
-              {/* Selected list */}
-              {selectedDiffs.length>0&&<div style={{marginBottom:10,padding:"10px 12px",background:"#F5F3FF",border:"2px solid #8B5CF6",borderRadius:12}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Selected Differentials</div>
-                <ol style={{margin:0,padding:"0 0 0 18px"}}>
-                  {selectedDiffs.map((d,i)=><li key={i} style={{fontSize:13,color:"#3730A3",fontWeight:600,marginBottom:3,lineHeight:1.4}}>
-                    {d}
-                    <button onClick={()=>toggleDiff(d)} style={{marginLeft:8,fontSize:10,color:"#9CA3AF",background:"none",border:"none",cursor:"pointer",padding:0}}>✕</button>
-                  </li>)}
-                </ol>
-              </div>}
-
-              {/* Manual entry */}
-              <input placeholder="Type and press Enter to add custom differential..." onKeyDown={e=>{if(e.key==="Enter"&&e.target.value.trim()){toggleDiff(e.target.value.trim());e.target.value="";}}} style={{...inp,marginBottom:8,fontSize:12}}/>
-
-              {/* Searchable scrollable list */}
-              {(()=>{
-                const [diffSearch, setDiffSearch] = React.useState("");
-                const filtered = opts.filter(o=>!selectedDiffs.includes(o)&&(!diffSearch||o.toLowerCase().includes(diffSearch.toLowerCase())));
-                return <>
-                  <div style={{position:"relative",marginBottom:6}}>
-                    <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"#9CA3AF"}}>🔍</span>
+            // Reusable dropdown component (inline)
+            const DiagDropdown = ({label, value, onChange, excludeList=[], color="#1E40AF", borderColor="#C7D2FE", badgeColor="#4F46E5"}) => {
+              const [open, setOpen] = React.useState(false);
+              const [search, setSearch] = React.useState("");
+              const filtered = allOpts.filter(o=>!excludeList.includes(o)&&(!search||o.toLowerCase().includes(search.toLowerCase())));
+              return <div style={{position:"relative",marginBottom:4}}>
+                {/* Input row with dropdown toggle */}
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  <input
+                    placeholder={`Type ${label.toLowerCase()}...`}
+                    value={value}
+                    onChange={e=>onChange(e.target.value)}
+                    onFocus={()=>setOpen(true)}
+                    style={{...inp,marginBottom:0,flex:1,fontSize:13,fontWeight:600,color,borderColor:open?badgeColor:borderColor}}
+                  />
+                  <button onClick={()=>setOpen(o=>!o)} style={{padding:"8px 12px",borderRadius:10,border:`1.5px solid ${open?badgeColor:borderColor}`,background:open?"#EEF2FF":"#F9FAFB",cursor:"pointer",fontSize:12,color:open?badgeColor:"#6B7280",fontWeight:600,whiteSpace:"nowrap"}}>
+                    {open ? "▲ Close" : "▼ List"}
+                  </button>
+                </div>
+                {/* Dropdown panel */}
+                {open&&<div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:999,background:"#fff",border:`1.5px solid ${badgeColor}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,0.12)",overflow:"hidden"}}>
+                  <div style={{padding:"8px 10px",borderBottom:"1px solid #F3F4F6",background:"#F9FAFB",display:"flex",gap:6,alignItems:"center"}}>
+                    <span style={{fontSize:12,color:"#9CA3AF"}}>🔍</span>
                     <input
-                      placeholder="Search diagnoses..."
-                      value={diffSearch}
-                      onChange={e=>setDiffSearch(e.target.value)}
-                      style={{...inp,marginBottom:0,paddingLeft:30,fontSize:12,background:"#F9FAFB"}}
+                      autoFocus
+                      placeholder="Search..."
+                      value={search}
+                      onChange={e=>setSearch(e.target.value)}
+                      style={{flex:1,border:"none",outline:"none",fontSize:12,background:"transparent",color:"#374151"}}
                     />
-                    {diffSearch&&<button onClick={()=>setDiffSearch("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#9CA3AF"}}>✕</button>}
+                    {search&&<button onClick={()=>setSearch("")} style={{background:"none",border:"none",cursor:"pointer",color:"#9CA3AF",fontSize:12}}>✕</button>}
+                    <span style={{fontSize:10,color:"#9CA3AF"}}>{filtered.length}</span>
                   </div>
-                  <div style={{maxHeight:220,overflowY:"auto",border:"1px solid #E5E7EB",borderRadius:10,background:"#F9FAFB"}}>
+                  <div style={{maxHeight:200,overflowY:"auto"}}>
                     {filtered.length===0
-                      ? <div style={{padding:"12px 14px",fontSize:12,color:"#9CA3AF",textAlign:"center"}}>No matches — press Enter above to add custom</div>
+                      ? <div style={{padding:"12px 14px",fontSize:12,color:"#9CA3AF",textAlign:"center"}}>No matches</div>
                       : filtered.map((opt,i)=>(
-                        <button key={i} onClick={()=>toggleDiff(opt)} style={{display:"block",width:"100%",padding:"9px 14px",fontSize:12,fontWeight:500,border:"none",borderBottom:i<filtered.length-1?"1px solid #F3F4F6":"none",background:"transparent",color:"#374151",cursor:"pointer",textAlign:"left"}}>
+                        <button key={i} onClick={()=>{onChange(opt);setOpen(false);setSearch("");}}
+                          style={{display:"block",width:"100%",padding:"10px 14px",fontSize:12,fontWeight:500,border:"none",borderBottom:i<filtered.length-1?"1px solid #F9FAFB":"none",background:"transparent",color:"#374151",cursor:"pointer",textAlign:"left"}}>
                           {opt}
                         </button>
                       ))
                     }
                   </div>
-                  {filtered.length>0&&<div style={{fontSize:10,color:"#9CA3AF",marginTop:3,textAlign:"right"}}>{filtered.length} option{filtered.length!==1?"s":""}</div>}
-                </>;
-              })()}
-            </div>;
+                </div>}
+                {/* Tap outside to close */}
+                {open&&<div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:998}}/>}
+              </div>;
+            };
+
+            return <>
+              {/* ═══ 1. PROVISIONAL DIAGNOSIS ═══ */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#1E40AF",marginBottom:8,borderBottom:"2px solid #C7D2FE",paddingBottom:6}}>Provisional Diagnosis</div>
+
+                {/* AI suggestions */}
+                {(()=>{
+                  const suggestions = getTopDiagnoses(data, 3);
+                  if (!suggestions.length) return null;
+                  const CS = {High:{bg:"#ECFDF5",border:"#6EE7B7",badge:"#059669"},Moderate:{bg:"#FFFBEB",border:"#FDE68A",badge:"#D97706"},Low:{bg:"#F9FAFB",border:"#E5E7EB",badge:"#6B7280"}};
+                  return <div style={{marginBottom:10}}>
+                    <div style={{fontSize:11,fontWeight:700,color:"#065F46",marginBottom:6}}>💡 Suggested Clinical Diagnoses</div>
+                    {suggestions.map((s,i)=>{
+                      const cs=CS[s.confidenceLabel]||CS.Low;
+                      return <div key={i} style={{padding:"9px 12px",background:cs.bg,border:`1.5px solid ${cs.border}`,borderRadius:10,marginBottom:5}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                          <span style={{fontSize:12,fontWeight:700,color:"#111827",flex:1}}>{i+1}. {s.diagnosis}</span>
+                          <span style={{padding:"2px 7px",borderRadius:99,fontSize:10,fontWeight:700,background:cs.badge,color:"#fff"}}>{s.confidenceLabel} {s.confidence}%</span>
+                        </div>
+                        <div style={{fontSize:10,color:"#6B7280",marginBottom:4}}>{s.icd10} · {s.hits}/{s.total} criteria · {s.reference}</div>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:4}}>
+                          {s.supportingFindings.map((f,fi)=><span key={fi} style={{padding:"1px 6px",borderRadius:6,background:"rgba(0,0,0,0.06)",fontSize:10,color:"#374151"}}>{f}</span>)}
+                        </div>
+                        {!dx&&<button onClick={()=>set("soap_a_diagnosis",s.diagnosis)} style={{padding:"3px 10px",fontSize:10,background:"#1E40AF",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use as Provisional Dx</button>}
+                      </div>;
+                    })}
+                  </div>;
+                })()}
+
+                <DiagDropdown label="Provisional Diagnosis" value={dx} onChange={val=>set("soap_a_diagnosis",val)} color="#1E40AF" borderColor="#C7D2FE" badgeColor="#4F46E5"/>
+                <input placeholder="ICD-10 code (e.g. M51.1)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={{...inp,marginBottom:0,fontSize:12}}/>
+                {dx&&<div style={{marginTop:8,padding:"10px 14px",background:"#EEF2FF",border:"2px solid #6366F1",borderRadius:12}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>Provisional Diagnosis</div>
+                  <div style={{fontSize:15,fontWeight:700,color:"#1E40AF",lineHeight:1.3}}>{dx}</div>
+                  {icd&&<div style={{fontSize:11,color:"#6366F1",marginTop:2}}>ICD-10: {icd}</div>}
+                </div>}
+              </div>
+
+              {/* ═══ 2. DIFFERENTIAL DIAGNOSIS ═══ */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#374151",marginBottom:8,borderBottom:"2px solid #E5E7EB",paddingBottom:6}}>Differential Diagnosis</div>
+
+                {selectedDiffs.length>0&&<div style={{marginBottom:10,padding:"10px 12px",background:"#F5F3FF",border:"2px solid #8B5CF6",borderRadius:12}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Selected Differentials</div>
+                  <ol style={{margin:0,padding:"0 0 0 18px"}}>
+                    {selectedDiffs.map((d,i)=><li key={i} style={{fontSize:13,color:"#3730A3",fontWeight:600,marginBottom:3,lineHeight:1.4}}>
+                      {d} <button onClick={()=>toggleDiff(d)} style={{marginLeft:6,fontSize:10,color:"#9CA3AF",background:"none",border:"none",cursor:"pointer",padding:0}}>✕</button>
+                    </li>)}
+                  </ol>
+                </div>}
+
+                {/* Manual entry */}
+                <div style={{fontSize:11,color:"#6B7280",marginBottom:4,fontWeight:500}}>Type manually + Enter:</div>
+                <input placeholder="Type and press Enter to add custom differential..." onKeyDown={e=>{if(e.key==="Enter"&&e.target.value.trim()){toggleDiff(e.target.value.trim());e.target.value="";}}} style={{...inp,marginBottom:8,fontSize:12}}/>
+
+                {/* Select from list */}
+                <div style={{fontSize:11,color:"#6B7280",marginBottom:4,fontWeight:500}}>Or select from list:</div>
+                <DiagDropdown label="Differential Diagnosis" value="" onChange={val=>{if(val)toggleDiff(val);}} excludeList={selectedDiffs} color="#374151" borderColor="#D1D5DB" badgeColor="#8B5CF6"/>
+              </div>
+            </>;
           })()}
 
           {/* ── Problem List / Key Findings ── */}
