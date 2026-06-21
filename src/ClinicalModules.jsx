@@ -3153,6 +3153,8 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SOAP NOTE MODULE v2 — Reference-style vertical card layout
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -3199,7 +3201,7 @@ function detectModulesV2(data) {
   const has = (keys) => keys.some(k => data[k] && String(data[k]).trim() && String(data[k]).trim() !== "[]");
   return {
     subjective: has(["cc_main","dem_name"]),
-    rom: has(["rom_cflex","rom_lflex","rom_sflex_L","rom_sflex_R","rom_kflex_L","rom_kflex_R","rom_adf_L","rom_adf_R","rom_cext","rom_lext"]),
+    rom: has(["rom_cflex","rom_lflex","rom_sflex_L","rom_sflex_R","rom_kflex_L","rom_kflex_R","rom_adf_L","rom_adf_R","rom_cext","rom_lext","rom_lx_flex","rom_lx_ext","rom_lx_rot_l","rom_lx_rot_r","rom_cx_flex","rom_cx_ext","rom_shr_flex","rom_knl_flex"]),
     mmt: has(["muscle_sh_r_abductors","muscle_kn_l_quads","neuro_weakness","mmt_deltoid","mmt_biceps","mmt_wext"]),
     posture: has(["post_fhp","post_kyphosis","post_lordosis","post_pelvis","post_sh","post_scoliosis","post_notes",...Object.keys(data).filter(k=>k.startsWith("posture_defect_")&&data[k])]),
     postureAI: has(["sagFHPCm","cvaAngle","sagThorKyph","sagLumLord","fhpDevCm"]),
@@ -3323,8 +3325,32 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
   // ROM rows
   const romRows = useMemo(() => {
-    const rv = (k) => v("rom_"+k+"_arom") || v("rom_"+k) || "";
-    const rvS = (k,s) => { const sfxs=s==="L"?["_L_arom","_left","_L"]:["_R_arom","_right","_R"]; return sfxs.map(sfx=>v("rom_"+k+sfx)).find(x=>x)||""; };
+    const rv = (k) => {
+      // Standard field: rom_lflex / rom_lflex_arom
+      const std = v("rom_"+k+"_arom") || v("rom_"+k);
+      if (std) return std;
+      // Regional prefix style: rom_lx_flex, rom_cx_flex etc.
+      const regionMap = {
+        lflex:"lx_flex",lext:"lx_ext",lrotr:"lx_rot_r",lrotl:"lx_rot_l",
+        cflex:"cx_flex",cext:"cx_ext",crotr:"cx_rot_r",crotl:"cx_rot_l",
+        clatr:"cx_lat_r",clatl:"cx_lat_l",thflex:"tx_flex",thext:"tx_ext",
+      };
+      if (regionMap[k]) { const alt = v("rom_"+regionMap[k]); if (alt) return alt; }
+      return "";
+    };
+    const rvS = (k,s) => {
+      const sfxs = s==="L" ? ["_L_arom","_left","_L"] : ["_R_arom","_right","_R"];
+      const std = sfxs.map(sfx=>v("rom_"+k+sfx)).find(x=>x);
+      if (std) return std;
+      // Regional prefix style: rom_knl_flex_L, rom_shr_flex_L, etc.
+      const regionMap2 = { sflex:"shr_flex",sabd:"shr_abd",ser:"shr_er",sir:"shr_ir",
+        hflex:"hp_flex",kflex:"knl_flex",adf:"af_df",apf:"af_pf",eflex:"ew_flex",wflex:"wr_flex" };
+      if (regionMap2[k]) {
+        const side = s==="L"?"_L":"_R";
+        return v("rom_"+regionMap2[k]+side) || v("rom_"+regionMap2[k]+"_"+s.toLowerCase()) || "";
+      }
+      return "";
+    };
     const rows = [];
     [["Cervical flexion","cflex",45],["Cervical extension","cext",45],["Cervical rotation R","crotr",60],
      ["Cervical rotation L","crotl",60],["Cervical lateral R","clatr",45],["Cervical lateral L","clatl",45],
@@ -3870,8 +3896,6 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
 
 
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // EXERCISE PRESCRIPTION MODULE
 // ═══════════════════════════════════════════════════════════════════════════════
 

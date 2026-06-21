@@ -11039,15 +11039,43 @@ const DEMO_PATIENTS = [
       lx_femoral_stretch:"Negative",
       // Imaging
       dem_imaging:"MRI lumbar spine (05/2026): L4/5 disc protrusion with left paracentral herniation, moderate left neural foraminal stenosis, contact with L5 nerve root.",
+      // ROM — standard SOAP field names
+      rom_lflex:"40", rom_lext:"20", rom_lrotr:"30", rom_lrotl:"20",
+      // Palpation
+      lx_palpation:"L4/L5 spinous processes — Grade 3+ tenderness (L). L4–L5 facet joints — Grade 2+ (L). Paraspinal muscle spasm bilateral, worse left.",
+      palp_pins: JSON.stringify([
+        {label:"L4/L5 Spinous Processes",side:"left",tenderness:"3",notes:"Reproduces referral"},
+        {label:"L4–L5 Facet Joints",side:"left",tenderness:"2",notes:""},
+        {label:"Piriformis",side:"left",tenderness:"2",notes:"Taut band present"},
+      ]),
+      // Posture
+      post_lordosis:"Loss of lumbar lordosis — flattened", post_pelvis:"Lateral shift to right (antalgic)",
+      post_notes:"Lateral shift right, loss of lumbar lordosis",
+      // Gait
+      gait_pattern:"Antalgic", gait_antalgic:"Trunk list to right", gait_notes:"Reduced stride length (L)",
+      // Functional limitations
+      fl_self_care:"Unable to put on shoes/socks unaided",
+      // Outcome Measures
+      psfs_score:"3.5",
       // Diagnosis
       soap_a_diagnosis:"L4/5 intervertebral disc prolapse with left L5 radiculopathy",
       soap_icd10:"M51.16",
+      soap_problem_list:"Acute LBP with L5 radiculopathy, reduced lumbar ROM, neurological deficit L4–L5",
+      soap_clinical_notes:"SLR +ve at 30°, lumbar flexion restricted (fingers to knees). Neurodynamic compromise L5. MRI confirms L4/5 protrusion.",
+      soap_goal_short:"Reduce leg pain to 4/10, improve SLR to 60°, lumbar flexion to 60° within 2–4 weeks",
+      soap_goal_long:"Return to full desk work, pain ≤1/10, full ROM, no neurological deficit",
+      soap_total_sessions:"12 sessions", soap_frequency:"3×/week × 4 weeks",
+      soap_precautions:"Avoid prolonged sitting >30 min. Use lumbar roll. No forward bending or lifting for 2 weeks. Core stabilisation phase begins week 2.",
+      soap_modalities:"Hot pack / MWD, Interferential therapy (IFT), Lumbar traction",
+      soap_irritability:"High — position-dependent, night pain", soap_stage:"Subacute (3 weeks)",
+      soap_prognosis:"Good — MRI central/paracentral, no bony pathology",
+      soap_severity:"Moderate–severe (VAS 7/10)",
       // Goals
       ar_goal_pain:"Reduce leg pain from 7/10 to 3/10 within 4 weeks",
       ar_goal_function:"Walk 500m without stopping within 3 weeks",
       ar_goal_return:"Return to site supervision (light duties) within 6 weeks",
-      fl_work:["Cannot stand > 15 min","Cannot drive","Heavy lifting not possible"],
-      fl_mobility:["Cannot walk > 100m","Stairs — moderate difficulty"],
+      fl_work:"Cannot stand >15 min, Cannot drive, Heavy lifting not possible",
+      fl_mobility:"Cannot walk >100m, Stairs moderate difficulty",
     }
   },
   // ── 3. Rotator cuff tear — elderly active patient ────────────────────────
