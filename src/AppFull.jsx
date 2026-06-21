@@ -17712,8 +17712,7 @@ function AppInner({ currentUser, onSignOut }) {
 
       {/* 5. Treatment (collapsible) */}
       <SidebarGroup groupKey="treatment" icon="💊" label="Treatment" accentColor="#059669">
-        <SidebarItem navKey="exercise"     icon="🏋" label="Exercise Prescription"/>
-        <SidebarItem navKey="tx_techniques" icon="🤲" label="Tx Techniques"/>
+        <SidebarItem navKey="treatment"    icon="💊" label="Treatment"/>
       </SidebarGroup>
 
       {/* 6. Documentation (collapsible) */}
@@ -18274,7 +18273,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:active==="demographics"},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18363,7 +18362,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:active==="demographics"},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18413,7 +18412,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18456,7 +18455,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18499,7 +18498,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18549,7 +18548,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18592,7 +18591,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18635,7 +18634,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18678,7 +18677,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18721,7 +18720,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18764,7 +18763,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18814,7 +18813,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18857,7 +18856,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18907,7 +18906,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18957,7 +18956,7 @@ function AppInner({ currentUser, onSignOut }) {
                     {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
-                    {key:"treatment",short:"Treatment",nav:"tx_techniques",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"||active==="tx_techniques"||active==="exercise"},
                     {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
                   ];
                   const doneCount=wfSteps.filter(s=>s.done).length;
@@ -18992,8 +18991,14 @@ function AppInner({ currentUser, onSignOut }) {
                 })()}
                 <Suspense fallback={<TabFallback/>}><LazyOutcomes data={data} set={set}/></Suspense>
                 </>
+              ):tests==="TREATMENT_MODULE"?(
+                <div style={{display:"flex",flexDirection:"column",gap:24}}>
+                  <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
+                  <div style={{height:"1px",background:`linear-gradient(90deg,${PC.accent}40,transparent)`}}/>
+                  <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
+                </div>
               ):tests==="EXERCISE_MODULE"?(
-                <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
+                <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/>
               ):tests==="TX_TECHNIQUES_MODULE"?(
                 <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
               ):tests==="TX_SESSION_MODULE"?(
@@ -19058,7 +19063,7 @@ function AppInner({ currentUser, onSignOut }) {
         {(()=>{
           const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
           const advKeys=["cyriax_full","kinetic","nkt","fascia"];
-          const treatKeys=["exercise","tx_techniques"];
+          const treatKeys=["treatment","exercise","tx_techniques"];
           const docKeys=["tx_sessions","soap"];
 
           const BnavItem = ({navKey,icon,label}) => {
@@ -19098,8 +19103,7 @@ function AppInner({ currentUser, onSignOut }) {
                 <BnavItem navKey="fascia"      icon="🕸️" label="Fascia Integration"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="treatment"?" open":""}`}>
-                <BnavItem navKey="exercise"      icon="🏋" label="Exercise Prescription"/>
-                <BnavItem navKey="tx_techniques" icon="🤲" label="Tx Techniques"/>
+                <BnavItem navKey="treatment"    icon="💊" label="Treatment"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="documentation"?" open":""}`}>
                 <BnavItem navKey="tx_sessions" icon="⚡" label="Quick Visit"/>
@@ -19120,7 +19124,7 @@ function AppInner({ currentUser, onSignOut }) {
           {(()=>{
             const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
             const advKeys=["cyriax_full","kinetic","nkt","fascia"];
-            const treatKeys=["exercise","tx_techniques"];
+            const treatKeys=["treatment","exercise","tx_techniques"];
             const docKeys=["tx_sessions","soap"];
             const topKeys=["home","dashboard"];
 
