@@ -18998,7 +18998,7 @@ function AppInner({ currentUser, onSignOut }) {
                   <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
                 </div>
               ):tests==="EXERCISE_MODULE"?(
-                <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/>
+                <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
               ):tests==="TX_TECHNIQUES_MODULE"?(
                 <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
               ):tests==="TX_SESSION_MODULE"?(
