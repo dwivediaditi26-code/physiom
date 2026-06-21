@@ -3152,7 +3152,8 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SOAP NOTE MODULE — Structured UI (S/O/A/P tabs + 14-module objective grid)
+
+// SOAP NOTE MODULE v2 — Reference-style vertical card layout
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function soapV(data, k) { return String(data[k] || "").trim(); }
@@ -3167,7 +3168,7 @@ function soapScan(data, suf) {
   return PXS.flatMap(px => {
     const x = data[`${px}_${suf}`];
     return x ? String(x).split("|||").filter(Boolean) : [];
-  }).join(", ");
+  }).filter(Boolean);
 }
 function nrsColor(n) {
   const v = parseFloat(n);
@@ -3176,34 +3177,42 @@ function nrsColor(n) {
   if (v >= 4) return "#b45309";
   return "#059669";
 }
+function nrsBg(n) {
+  const v = parseFloat(n);
+  if (isNaN(v)) return "#f5f5f5";
+  if (v >= 7) return "#FEF2F2";
+  if (v >= 4) return "#FFFBEB";
+  return "#F0FDF4";
+}
 function romPct(val, norm) {
   const n = parseFloat(val);
   if (isNaN(n) || norm === 0) return null;
   return Math.round((n / norm) * 100);
 }
-function romFlag(pct) {
-  if (pct === null) return null;
-  if (pct < 50) return { icon: "❌", color: "#dc2626" };
-  if (pct < 75) return { icon: "⚠", color: "#b45309" };
-  return { icon: "✓", color: "#059669" };
+function romStatusColor(pct) {
+  if (pct === null) return "#888";
+  if (pct < 50) return "#dc2626";
+  if (pct < 75) return "#b45309";
+  return "#059669";
 }
-function detectModules(data) {
+function detectModulesV2(data) {
   const has = (keys) => keys.some(k => data[k] && String(data[k]).trim() && String(data[k]).trim() !== "[]");
   return {
     subjective: has(["cc_main","dem_name"]),
-    rom: has(["rom_cflex","rom_lflex","rom_sflex_L","rom_sflex_R","rom_kflex_L","rom_kflex_R","rom_adf_L","rom_adf_R"]),
-    mmt: has(["muscle_sh_r_abductors","muscle_kn_l_quads","neuro_weakness"]),
-    posture: has(["post_fhp","post_kyphosis","sagFHPCm","fhpDevCm","posture_defect_forward_head"]),
-    postureAI: has(["sagFHPCm","cvaAngle","sagThorKyph","sagLumLord"]),
-    palpation: has(["palp_pins","cx_palpation","lx_palpation","shr_palpation","knl_palpation"]),
+    rom: has(["rom_cflex","rom_lflex","rom_sflex_L","rom_sflex_R","rom_kflex_L","rom_kflex_R","rom_adf_L","rom_adf_R","rom_cext","rom_lext"]),
+    mmt: has(["muscle_sh_r_abductors","muscle_kn_l_quads","neuro_weakness","mmt_deltoid","mmt_biceps","mmt_wext"]),
+    posture: has(["post_fhp","post_kyphosis","post_lordosis","post_pelvis","post_sh","post_scoliosis","post_notes",...Object.keys(data).filter(k=>k.startsWith("posture_defect_")&&data[k])]),
+    postureAI: has(["sagFHPCm","cvaAngle","sagThorKyph","sagLumLord","fhpDevCm"]),
+    palpation: has(["palp_pins","cx_palpation","lx_palpation","shr_palpation","knl_palpation","af_palpation"]),
     outcomes: has(["om_report","ndi_score","psfs_score","koos_score","dash_score","lefs_score"]),
     stt: has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can","knl_stt_lachman","af_stt_windlass"]),
     functional: has(["fl_work","fl_mobility","fl_self_care","fl_domestic","ar_goal_function"]),
     neuro: has(["neuro_dermatomal","neuro_reflex_biceps","neuro_sensation","neuro_weakness","neuro_reflex_ankle"]),
-    gait: has(["gait_pattern","gait_cadence","gait_antalgic","gait_trendelenburg"]),
+    gait: has(["gait_pattern","gait_cadence","gait_antalgic","gait_trendelenburg","gait_notes"]),
     kinetic: has(["kinetic_primary","kinetic_compensation","kinetic_notes"]),
-    cpa: has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes","cx_stt_passive_rotation_r","shr_stt_empty_can"]),
+    cpa: has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes"]),
     fascia: has(["fascia_restriction","fascia_notes","fascia_line"]),
+    observation: has([...Object.keys(data).filter(k=>k.includes("_observation")||k.includes("obs_")), "lx_observation","cx_observation","shr_observation","knl_observation"]),
   };
 }
 
@@ -3217,18 +3226,14 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       const omSessions = JSON.parse(localStorage.getItem("physio_om_sessions") || "[]");
       if (omSessions.length > 0) {
         const latest = omSessions[omSessions.length - 1];
-        if (latest?.scores && !data.om_report) set("om_report", { scores: latest.scores, date: latest.date, sessionCount: omSessions.length });
+        if (latest?.scores && !data.om_report) set("om_report", { scores: latest.scores, date: latest.date });
       }
     } catch {}
   }, []);
 
-  const lastNote = Array.isArray(data.soap_signed_notes) && data.soap_signed_notes.length > 0
-    ? [...data.soap_signed_notes].reverse()[0] : null;
-  const [clinician, setClinician] = useState(data.soap_clinician || lastNote?.clinician || "");
-  const [clinic,    setClinic]    = useState(data.soap_clinic    || lastNote?.clinic    || "");
+  const [clinician, setClinician] = useState(data.soap_clinician || "");
+  const [clinic,    setClinic]    = useState(data.soap_clinic    || "");
   const [session,   setSession]   = useState(data.soap_session   || "Initial Assessment");
-  const [soapTab,   setSoapTab]   = useState(initialTab === "ai" ? "A" : "S");
-  const [objMod,    setObjMod]    = useState("obs");
   const [lockConfirm, setLockConfirm] = useState(false);
   const [lockSuccess, setLockSuccess] = useState(false);
   const [extraS, setExtraS] = useState(data.soap_extra_s || "");
@@ -3236,163 +3241,175 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const [extraA, setExtraA] = useState(data.soap_extra_a || "");
   const [extraP, setExtraP] = useState(data.soap_extra_p || "");
   const lockedNotes = Array.isArray(data.soap_signed_notes) ? data.soap_signed_notes : [];
-  const mods = useMemo(() => detectModules(data), [data]);
+  const mods = useMemo(() => detectModulesV2(data), [data]);
 
   const v = (k) => soapV(data, k);
   const a = (k) => soapA(data, k);
   const scan = (s) => soapScan(data, s);
 
+  // Patient info
   const name     = v("dem_name") || "Patient";
   const age      = v("dem_age");
   const sex      = v("dem_sex") || v("dem_gender");
-  const occ      = v("dem_occupation");
-  const vasNow   = v("cc_vas_now")   || v("pa_vas_now");
+  const phone    = v("dem_phone") || v("dem_mobile");
+  const patId    = v("dem_id") || v("patient_id");
+  const dob      = v("dem_dob");
+  const therapist= clinician || v("soap_clinician");
+  const vasNow   = v("cc_vas_now") || v("pa_vas_now");
   const vasWorst = v("cc_vas_worst") || v("pa_vas_worst");
-  const vasBest  = v("cc_vas_best")  || v("pa_vas_best");
+  const vasBest  = v("cc_vas_best") || v("pa_vas_best");
   const cc       = v("cc_main");
-  const agg      = [a("cc_agg"), scan("agg_mov"), scan("agg_post"), scan("agg_act"), a("agg_movement"), a("agg_posture"), a("agg_activity")].filter(Boolean).join(", ");
-  const ease     = [a("cc_rel"), scan("rel_mov"), scan("rel_manual"), a("rel_posture"), a("rel_manual")].filter(Boolean).join(", ");
-  const loc      = [scan("loc"), scan("location"), a("cc_location")].filter(Boolean)[0] || "";
-  const rad      = [scan("radiation"), a("cc_radiation")].filter(s => s && !s.toLowerCase().includes("no radiation")).join(", ");
-  const dur      = a("cc_duration");
   const onset    = a("cc_onset");
-  const morning  = [scan("morning"), scan("sb_morning"), a("sb_morning")].filter(Boolean)[0] || "";
-  const night    = [scan("night"),   scan("sb_night"),   a("sb_night")  ].filter(Boolean)[0] || "";
+  const dur      = a("cc_duration");
+  const loc      = [scan("loc").join(", "), scan("location").join(", "), a("cc_location")].filter(Boolean)[0] || "";
+  const rad      = [scan("radiation").join(", "), a("cc_radiation")].filter(s => s && !s.toLowerCase().includes("no radiation")).join(", ");
+  const agg      = [...scan("agg_mov"), ...scan("agg_post"), ...scan("agg_act"), a("cc_agg"), a("agg_movement"), a("agg_posture"), a("agg_activity")].filter(Boolean);
+  const ease     = [...scan("rel_mov"), ...scan("rel_manual"), a("cc_rel"), a("rel_posture"), a("rel_manual")].filter(Boolean);
+  const morning  = [...scan("sb_morning"), ...scan("morning"), a("sb_morning")].filter(Boolean)[0] || "";
+  const night    = [...scan("sb_night"),   ...scan("night"),   a("sb_night")  ].filter(Boolean)[0] || "";
   const phx      = a("pmh_conditions") || a("phx_conditions");
-  const meds     = a("med_current")    || v("meds_current");
-  const goals    = [v("ar_goal_pain"), v("ar_goal_function"), v("ar_goal_return"), v("ar_goal_sport")].filter(Boolean);
+  const meds     = a("med_current") || v("meds_current");
+  const goals_ar = [v("ar_goal_pain"), v("ar_goal_function"), v("ar_goal_return"), v("ar_goal_sport")].filter(Boolean);
   const dx       = v("soap_a_diagnosis") || v("soap_assessment");
   const icd      = v("soap_icd10");
+  const probList = v("soap_problem_list");
+  const clinNotes= v("soap_clinical_notes");
+  const stGoals  = v("soap_goal_short");
+  const ltGoals  = v("soap_goal_long");
+  const totalSess= v("soap_total_sessions");
+  const freq     = v("soap_frequency");
+  const precautions = v("soap_precautions");
+  const referral = v("soap_referral");
+  const imaging  = v("soap_imaging");
+  const modalities = a("soap_modalities") || a("tx_modalities");
 
-  const MOD_LIST = [
-    {key:"subjective",label:"Subjective"},{key:"rom",label:"ROM"},{key:"mmt",label:"MMT"},
-    {key:"posture",label:"Posture"},{key:"stt",label:"STT"},{key:"neuro",label:"Neuro"},
-    {key:"palpation",label:"Palpation"},{key:"outcomes",label:"Outcomes"},{key:"cpa",label:"CPA"},
-    {key:"functional",label:"Functional"},{key:"postureAI",label:"AI Analysis"},
-    {key:"gait",label:"Gait"},{key:"kinetic",label:"Kinetic"},{key:"fascia",label:"Fascia"},
-  ];
-  const doneCount = MOD_LIST.filter(m => mods[m.key]).length;
-  const pct = Math.round((doneCount / MOD_LIST.length) * 100);
+  const initials = name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
 
+  // Red flags
   const rfMap = {
     s_red1:"Unexplained weight loss",s_red2:"Night sweats/fever",s_red3:"Cancer history",
-    s_red4:"Bilateral neural symptoms",s_red5:"Bowel/bladder dysfunction",
-    s_red6:"Saddle anaesthesia",s_red7:"Progressive neuro deficit",
-    lx_rf_cauda:"Cauda equina screen",cx_rf_myelopathy:"Myelopathy screen",cx_rf_vbi:"VBI screen",
+    s_red4:"Bilateral neural symptoms",s_red5:"Bowel/bladder dysfunction",s_red6:"Saddle anaesthesia",
+    s_red7:"Progressive neuro deficit",lx_rf_cauda:"Cauda equina screen",
+    cx_rf_myelopathy:"Myelopathy screen",cx_rf_vbi:"VBI screen",
   };
   const redFlags = Object.entries(rfMap).filter(([k]) => {
     const val = String(data[k]||"").toLowerCase();
     return val && !val.includes("no ") && !val.includes("negative") && !val.includes("proceed") && !val.includes("none") && !val.includes("no cauda") && !val.includes("no myelopathy") && !val.includes("no vbi");
   }).map(([,label]) => label);
 
-  const cs = {
-    wrap:   { fontFamily:"inherit", fontSize:"0.8rem" },
-    ptBar:  { display:"flex", alignItems:"center", gap:12, padding:"10px 12px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:12, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", marginBottom:8 },
-    av:     { width:38, height:38, borderRadius:"50%", background:"#CECBF6", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:500, color:"#3C3489", flexShrink:0 },
-    chip:   (bg,cl) => ({ fontSize:10, padding:"2px 7px", borderRadius:100, fontWeight:500, background:bg, color:cl, whiteSpace:"nowrap" }),
-    progRow:{ display:"flex", alignItems:"center", gap:8, padding:"7px 12px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:10, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", marginBottom:8 },
-    tabRow: { display:"flex", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:10, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", overflow:"hidden", marginBottom:8 },
-    tab:    (active, bg, cl) => ({ flex:1, padding:"9px 4px", textAlign:"center", fontSize:13, fontWeight:500, cursor:"pointer", borderRight:"0.5px solid var(--color-border-tertiary,#e2d9f3)", color: active ? cl : "var(--color-text-secondary,#7e6a9a)", background: active ? bg : "transparent" }),
-    card:   { background:"var(--color-background-primary,#fff)", border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", borderRadius:12, marginBottom:8, overflow:"hidden" },
-    ch:     { display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)" },
-    sl:     (bg,cl) => ({ width:22, height:22, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:500, flexShrink:0, background:bg, color:cl }),
-    ctitle: { fontSize:12, fontWeight:500, color:"var(--color-text-primary,#1a1025)" },
-    cb:     { padding:"10px 12px" },
-    sub:    { fontSize:10, fontWeight:500, color:"var(--color-text-secondary,#7e6a9a)", textTransform:"uppercase", letterSpacing:"0.05em", margin:"8px 0 4px" },
-    sub0:   { fontSize:10, fontWeight:500, color:"var(--color-text-secondary,#7e6a9a)", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 },
-    ccQ:    { fontSize:12, fontStyle:"italic", padding:"7px 9px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, borderLeft:"2px solid #B5D4F4", lineHeight:1.5, color:"var(--color-text-primary,#1a1025)" },
-    nrsRow: { display:"flex", gap:6, margin:"6px 0" },
-    nrsC:   { flex:1, textAlign:"center", padding:"6px 4px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)" },
-    nrsL:   { fontSize:9, color:"var(--color-text-secondary,#7e6a9a)" },
-    two:    { display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 },
-    colB:   { padding:"7px 8px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8 },
-    colBL:  { fontSize:10, color:"var(--color-text-secondary,#7e6a9a)", fontWeight:500, marginBottom:3 },
-    bl:     { fontSize:11, color:"var(--color-text-primary,#1a1025)", padding:"1px 0", display:"flex", gap:4, lineHeight:1.4 },
-    pillRow:{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:8 },
-    pill:   (done, active) => ({ fontSize:10, padding:"4px 9px", borderRadius:100, border:`0.5px solid ${active?"#AFA9EC":done?"#9FE1CB":"var(--color-border-tertiary,#e2d9f3)"}`, background:active?"#EEEDFE":done?"#E1F5EE":"transparent", color:active?"#3C3489":done?"#085041":"var(--color-text-secondary,#7e6a9a)", fontWeight:active?500:400, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }),
-    modBox: { background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, padding:"8px 10px" },
-    rt:     { width:"100%", fontSize:11, borderCollapse:"collapse" },
-    trRow:  { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)", fontSize:11 },
-    dxB:    { padding:"8px 10px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, borderLeft:"3px solid #534AB7", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 },
-    findG:  { display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginTop:6 },
-    findPos:{ padding:"7px 8px", borderRadius:8, background:"#FCEBEB", border:"0.5px solid #F09595" },
-    findNeg:{ padding:"7px 8px", borderRadius:8, background:"#EAF3DE", border:"0.5px solid #C0DD97" },
-    sevRow: { display:"flex", gap:5, marginTop:6 },
-    sevC:   { flex:1, textAlign:"center", padding:"6px 4px", background:"var(--color-background-secondary,#f5f0fb)", borderRadius:8, border:"0.5px solid var(--color-border-tertiary,#e2d9f3)" },
-    planR:  { display:"flex", gap:7, padding:"4px 0", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)", fontSize:12, alignItems:"flex-start" },
-    planN:  { width:16, height:16, borderRadius:"50%", background:"#FAEEDA", color:"#633806", fontSize:9, fontWeight:500, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1 },
-    infoR:  { display:"flex", gap:5, alignItems:"flex-start", fontSize:11, color:"var(--color-text-secondary,#7e6a9a)", padding:"3px 0" },
-    inp:    { width:"100%", background:"var(--color-background-secondary,#f5f0fb)", border:"0.5px solid var(--color-border-tertiary,#e2d9f3)", borderRadius:8, color:"var(--color-text-primary,#1a1025)", fontFamily:"inherit", outline:"none", padding:"7px 9px", fontSize:"0.78rem", marginBottom:4 },
-    signBtn:{ width:"100%", padding:12, background:"#534AB7", color:"#EEEDFE", border:"none", borderRadius:10, fontSize:13, fontWeight:500, cursor:"pointer", marginTop:6, fontFamily:"inherit" },
-    lockBtn:{ width:"100%", padding:12, background:"#dc2626", color:"#fff", border:"none", borderRadius:10, fontSize:13, fontWeight:500, cursor:"pointer", marginTop:6, fontFamily:"inherit" },
-    na:     { fontSize:11, color:"var(--color-text-secondary,#7e6a9a)", fontStyle:"italic" },
-  };
-  const thS = { padding:"3px 5px", fontSize:10, color:"var(--color-text-secondary,#7e6a9a)", textAlign:"left", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)", fontWeight:500 };
-  const tdS = { padding:"3px 5px", borderBottom:"0.5px solid var(--color-border-tertiary,#e2d9f3)", fontSize:11, color:"var(--color-text-primary,#1a1025)" };
+  // Functional limitations
+  const flChips = [a("fl_work"),a("fl_mobility"),a("fl_self_care"),a("fl_domestic")].filter(Boolean).flatMap(s=>s.split(",").map(x=>x.trim()).filter(Boolean));
 
+  // Posture defects
+  const postDefectList = [
+    ["forward_head","Forward Head Posture"],["rounded_shoulders","Rounded/Protracted Shoulders"],
+    ["thoracic_kyphosis","Increased Thoracic Kyphosis"],["lumbar_hyperlordosis","Lumbar Hyperlordosis"],
+    ["anterior_pelvic_tilt","Anterior Pelvic Tilt"],["posterior_pelvic_tilt","Posterior Pelvic Tilt"],
+    ["genu_valgum","Genu Valgum"],["genu_varum","Genu Varum"],
+    ["foot_pronation","Foot Overpronation"],["foot_supination","Foot Supination"],
+    ["scoliosis","Scoliosis"],["head_tilt","Lateral Head Tilt"],["scapular_winging","Scapular Winging"],
+  ].filter(([id]) => data[`posture_defect_${id}`]);
+
+  // Observation chips (regional)
+  const obsChips = ["cx","lx","shr","shl","knl","knr","af","hp"].flatMap(px => {
+    const obs = v(`${px}_observation`);
+    return obs ? obs.split("|||").filter(Boolean).map(o=>({region:px.toUpperCase(), text:o})) : [];
+  });
+  const postureTextFields = [
+    ["Head/cervical", v("post_fhp")],["Thoracic",v("post_kyphosis")],
+    ["Lumbar",v("post_lordosis")],["Pelvis",v("post_pelvis")],
+    ["Shoulders",v("post_sh")],["Scoliosis",v("post_scoliosis")],
+  ].filter(([,val])=>val);
+
+  // ROM rows
   const romRows = useMemo(() => {
     const rv = (k) => v("rom_"+k+"_arom") || v("rom_"+k) || "";
-    const rvLR = (k,s) => { const sfxs=s==="L"?["_L_arom","_left","_L"]:["_R_arom","_right","_R"]; return sfxs.map(sfx=>v("rom_"+k+sfx)).find(x=>x)||""; };
+    const rvS = (k,s) => { const sfxs=s==="L"?["_L_arom","_left","_L"]:["_R_arom","_right","_R"]; return sfxs.map(sfx=>v("rom_"+k+sfx)).find(x=>x)||""; };
     const rows = [];
-    [["C-Flex","cflex",45],["C-Ext","cext",45],["C-Rot R","crotr",60],["C-Rot L","crotl",60],["C-Lat R","clatr",45],["C-Lat L","clatl",45],
-     ["L-Flex","lflex",60],["L-Ext","lext",25],["L-Rot R","lrotr",5],["L-Rot L","lrotl",5],["Th-Flex","thflex",50],["Th-Ext","thext",25]
-    ].forEach(([label,key,norm]) => { const val=rv(key); if(val){const p=romPct(val,norm);rows.push({label,single:val,norm,pct:p,flag:romFlag(p)});}});
-    [["Sh-Flex","sflex",180],["Sh-Abd","sabd",180],["Sh-ER","ser",90],["Sh-IR","sir",70],
-     ["Hip-Flex","hflex",120],["Kn-Flex","kflex",140],["Ank-DF","adf",20],["Ank-PF","apf",50],["El-Flex","eflex",145],["Wr-Flex","wflex",80]
-    ].forEach(([label,key,norm]) => { const vl=rvLR(key,"L"),vr=rvLR(key,"R"); if(vl||vr){const pl=romPct(vl,norm),pr=romPct(vr,norm);rows.push({label,l:vl,r:vr,norm,pctL:pl,pctR:pr,flagL:romFlag(pl),flagR:romFlag(pr)});}});
+    [["Cervical flexion","cflex",45],["Cervical extension","cext",45],["Cervical rotation R","crotr",60],
+     ["Cervical rotation L","crotl",60],["Cervical lateral R","clatr",45],["Cervical lateral L","clatl",45],
+     ["Lumbar flexion","lflex",80],["Lumbar extension","lext",25],["Lumbar rotation R","lrotr",5],["Lumbar rotation L","lrotl",5],
+     ["Thoracic flexion","thflex",50],["Thoracic extension","thext",25],
+    ].forEach(([label,key,norm]) => { const val=rv(key); if(val){ const p=romPct(val,norm); rows.push({label,single:val,norm,pct:p,bilateral:false}); }});
+    [["Shoulder flexion","sflex",180],["Shoulder abduction","sabd",180],["Shoulder ER","ser",90],["Shoulder IR","sir",70],
+     ["Hip flexion","hflex",120],["Knee flexion","kflex",140],["Ankle DF","adf",20],["Ankle PF","apf",50],
+     ["Elbow flexion","eflex",145],["Wrist flexion","wflex",80],
+    ].forEach(([label,key,norm]) => { const vl=rvS(key,"L"),vr=rvS(key,"R"); if(vl||vr){ rows.push({label,l:vl,r:vr,norm,bilateral:true}); }});
     return rows;
   }, [data]);
 
-  const sttRows = useMemo(() => {
-    return [
-      ["cx_spurling","Spurling's","Nerve root compression"],["cx_distraction","Cervical distraction","Radiculopathy"],
-      ["cx_rf_vbi","VBI screen","Vertebrobasilar"],["cx_rf_myelopathy","Myelopathy screen","Upper motor neuron"],
-      ["lx_slr_l","SLR left","L4/5/S1 root"],["lx_slr_r","SLR right","Lumbar root"],
-      ["lx_crossed_slr","Crossed SLR","Central disc"],["lx_femoral_stretch","Femoral stretch","L2/3/4 root"],
-      ["shr_stt_empty_can","Empty can","Supraspinatus"],["shr_stt_neer","Neer's","Subacromial"],
-      ["shr_stt_hawkins","Hawkins-Kennedy","Impingement"],["knl_stt_lachman","Lachman","ACL"],
-      ["knl_stt_anterior_drawer","Ant drawer","ACL"],["af_stt_windlass","Windlass","Plantar fascia"],
-    ].map(([key,name,sig]) => ({key,name,sig,val:v(key)})).filter(t=>t.val);
+  // MMT rows
+  const mmtRows = useMemo(() => {
+    const fields = Object.entries(data).filter(([k,v2])=>k.startsWith("muscle_")||k.startsWith("mmt_"))
+      .map(([k,v2])=>[k.replace(/^(muscle_|mmt_)/,"").replace(/_/g," "),String(v2||"")]).filter(([,v2])=>v2);
+    const neuroWeak = v("neuro_weakness");
+    if(neuroWeak) fields.push(["Neurological weakness",neuroWeak]);
+    return fields.slice(0,10);
   }, [data]);
 
-  const palpPins = useMemo(() => { try { return JSON.parse(data.palp_pins||"[]"); } catch { return []; } }, [data]);
+  // STT rows
+  const sttRows = useMemo(() => [
+    ["cx_spurling","Spurling's","Nerve root compression"],["cx_distraction","Cervical distraction","Radiculopathy"],
+    ["cx_rf_vbi","VBI screen","Vertebrobasilar"],["cx_rf_myelopathy","Myelopathy screen","UMN"],
+    ["lx_slr_l","SLR left","L4/5/S1 root"],["lx_slr_r","SLR right","Lumbar root"],
+    ["lx_crossed_slr","Crossed SLR","Central disc"],["lx_femoral_stretch","Femoral stretch","L2/3/4 root"],
+    ["lx_slump","Slump test","Neurodynamic"],
+    ["shr_stt_empty_can","Empty can","Supraspinatus"],["shr_stt_neer","Neer's","Subacromial"],
+    ["shr_stt_hawkins","Hawkins-Kennedy","Impingement"],
+    ["knl_stt_lachman","Lachman","ACL"],["knl_stt_anterior_drawer","Ant drawer","ACL"],
+    ["knl_stt_mcmurray","McMurray","Meniscus"],["af_stt_windlass","Windlass","Plantar fascia"],
+    ["af_stt_talar","Talar tilt","Lateral ankle"],
+  ].map(([key,name,sig])=>({key,name,sig,val:v(key)})).filter(t=>t.val), [data]);
 
+  // Neuro rows
   const neuroRows = [
-    {label:"Dermatomal pattern",val:v("neuro_dermatomal")},{label:"Sensation",val:v("neuro_sensation")},
-    {label:"Biceps reflex (C5/6)",val:v("neuro_reflex_biceps")},{label:"Triceps reflex (C7)",val:v("neuro_reflex_triceps")},
-    {label:"Knee reflex (L3/4)",val:v("neuro_reflex_knee")},{label:"Ankle reflex (S1)",val:v("neuro_reflex_ankle")},
-    {label:"Motor weakness",val:v("neuro_weakness")},{label:"Babinski",val:v("neuro_babinski")},
+    {label:"Dermatomal pattern",val:v("neuro_dermatomal")},
+    {label:"Sensation",val:v("neuro_sensation")},
+    {label:"Biceps reflex (C5/6)",val:v("neuro_reflex_biceps")},
+    {label:"Triceps reflex (C7)",val:v("neuro_reflex_triceps")},
+    {label:"Knee reflex (L3/4)",val:v("neuro_reflex_knee")},
+    {label:"Ankle reflex (S1)",val:v("neuro_reflex_ankle")},
+    {label:"Motor weakness",val:v("neuro_weakness")},
+    {label:"Babinski",val:v("neuro_babinski")},
+    {label:"UL tension test A",val:v("cx_ultt_a")||v("ultt_a")},
+    {label:"UL tension test B",val:v("cx_ultt_b")||v("ultt_b")},
   ].filter(r=>r.val);
 
+  // Palpation
+  const palpPins = useMemo(() => { try { return JSON.parse(data.palp_pins||"[]"); } catch { return []; } }, [data]);
+  const palpText = ["cx","lx","shr","shl","knl","knr","af"].map(px=>[px.toUpperCase(),v(px+"_palpation")]).filter(([,val])=>val);
+
+  // Outcome measures
   const omRows = useMemo(() => {
     const rows = [];
-    if(v("ndi_score"))  rows.push({name:"NDI",  score:v("ndi_score"),  max:50, note:"Neck Disability Index"});
-    if(v("psfs_score")) rows.push({name:"PSFS", score:v("psfs_score"), max:10, note:"Patient-Specific Functional"});
-    if(v("koos_score")) rows.push({name:"KOOS", score:v("koos_score"), max:100,note:"Knee Injury & OA"});
-    if(v("dash_score")) rows.push({name:"DASH", score:v("dash_score"), max:100,note:"Arm/Shoulder/Hand"});
-    if(v("lefs_score")) rows.push({name:"LEFS", score:v("lefs_score"), max:80, note:"Lower Extremity Functional"});
+    if(v("ndi_score"))  rows.push({name:"NDI",  score:v("ndi_score"),  max:50,  note:"Neck Disability Index"});
+    if(v("psfs_score")) rows.push({name:"PSFS", score:v("psfs_score"), max:10,  note:"Patient-Specific Functional"});
+    if(v("koos_score")) rows.push({name:"KOOS", score:v("koos_score"), max:100, note:"Knee Injury & OA"});
+    if(v("dash_score")) rows.push({name:"DASH", score:v("dash_score"), max:100, note:"Arm/Shoulder/Hand"});
+    if(v("lefs_score")) rows.push({name:"LEFS", score:v("lefs_score"), max:80,  note:"Lower Extremity Functional"});
     const omR = data.om_report;
-    if(omR?.scores) Object.entries(omR.scores).slice(0,4).forEach(([k,s])=>rows.push({name:k.toUpperCase(),score:String(s),max:"",note:""}));
+    if(omR?.scores) Object.entries(omR.scores).slice(0,3).forEach(([k,s])=>rows.push({name:k.toUpperCase(),score:String(s),max:"",note:""}));
     return rows;
   }, [data]);
 
-  const cpaText = [v("cpa_pattern")||v("cpa_notes")||scan("cpa"),v("cx_stt_passive_rotation_r")&&"Cervical passive: "+v("cx_stt_passive_rotation_r")].filter(Boolean);
-  const funcBullets = [a("fl_work"),a("fl_mobility"),a("fl_self_care"),a("fl_domestic"),v("ar_goal_function")].filter(Boolean).flatMap(s=>s.split(",").map(x=>x.trim()).filter(Boolean));
-
+  // Positive/negative findings for Assessment
   const posFindings = useMemo(() => {
     const f=[];
-    sttRows.forEach(t=>{const lc=t.val.toLowerCase();if(lc.includes("positive")||lc.includes("+ve"))f.push(t.name+" — "+t.val.slice(0,35));});
-    romRows.forEach(r=>{if(r.single&&r.flag&&r.flag.icon!=="✓")f.push(r.label+": "+r.single+"° ("+r.pct+"%)");if(r.flagL&&r.flagL.icon!=="✓")f.push(r.label+" L: "+r.l+"°");if(r.flagR&&r.flagR.icon!=="✓")f.push(r.label+" R: "+r.r+"°");});
-    neuroRows.forEach(n=>{const lc=n.val.toLowerCase();if(lc.includes("reduced")||lc.includes("weak")||lc.includes("absent"))f.push(n.label+": "+n.val.slice(0,35));});
-    if(redFlags.length) f.push("⚠ Red flags: "+redFlags.join(", "));
+    sttRows.forEach(t=>{const lc=t.val.toLowerCase();if(lc.includes("positive")||lc.includes("+ve"))f.push(t.name+" +ve ("+t.sig+")");});
+    romRows.forEach(r=>{
+      if(r.single){const p=romPct(r.single,r.norm);if(p&&p<75)f.push(r.label+": "+r.single+"° / "+r.norm+"° norm");}
+      if(r.bilateral){const pl=romPct(r.l,r.norm),pr=romPct(r.r,r.norm);if(pl&&pl<75)f.push(r.label+" L: "+r.l+"°");if(pr&&pr<75)f.push(r.label+" R: "+r.r+"°");}
+    });
+    neuroRows.forEach(n=>{const lc=n.val.toLowerCase();if(lc.includes("reduced")||lc.includes("weak")||lc.includes("absent"))f.push(n.label+": "+n.val.slice(0,40));});
+    if(redFlags.length) f.push("Red flags: "+redFlags.join(", "));
     return f.slice(0,8);
   }, [sttRows,romRows,neuroRows,redFlags]);
 
   const negFindings = useMemo(() => {
     const f=[];
-    sttRows.forEach(t=>{const lc=t.val.toLowerCase();if(lc.includes("negative")||lc.includes("-ve")||lc.includes("normal")||lc.includes("intact"))f.push(t.name+" — "+t.val.slice(0,30));});
+    sttRows.forEach(t=>{const lc=t.val.toLowerCase();if(lc.includes("negative")||lc.includes("-ve"))f.push(t.name+" -ve");});
     neuroRows.forEach(n=>{const lc=n.val.toLowerCase();if(lc.includes("intact")||lc.includes("normal")||lc.includes("5/5"))f.push(n.label+": "+n.val.slice(0,30));});
-    if(!redFlags.length) f.push("Red flags — nil identified");
+    if(!redFlags.length) f.push("Red flags — nil");
     return f.slice(0,6);
   }, [sttRows,neuroRows,redFlags]);
 
@@ -3400,9 +3417,12 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
     if(!lockConfirm){setLockConfirm(true);return;}
     const soap = buildRealtimeSOAP(data, extraS, extraO, extraA, extraP);
     const now = new Date();
-    const note = { id:Date.now(), session:session||"Session", clinician, clinic, lockedAt:now.toISOString(),
+    const note = {
+      id:Date.now(), session, clinician, clinic,
+      lockedAt:now.toISOString(),
       lockedAtDisplay:now.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})+" "+now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}),
-      S:soap.S, O:soap.O, A:soap.A, P:soap.P, vasNow, dx, icd };
+      S:soap.S, O:soap.O, A:soap.A, P:soap.P, vasNow, dx, icd,
+    };
     const existing = Array.isArray(data.soap_signed_notes)?data.soap_signed_notes:[];
     set("soap_signed_notes",[...existing,note]);
     set("soap_clinician",clinician); set("soap_clinic",clinic); set("soap_session",session);
@@ -3410,210 +3430,445 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
     setTimeout(()=>setLockSuccess(false),3000);
   };
 
-  const OBJ_MODS = [
-    {key:"obs",label:"Observation",done:mods.posture},{key:"rom",label:"ROM",done:mods.rom},
-    {key:"mmt",label:"MMT",done:mods.mmt},{key:"neuro",label:"Neuro",done:mods.neuro},
-    {key:"stt",label:"STT",done:mods.stt},{key:"palp",label:"Palpation",done:mods.palpation},
-    {key:"cpa",label:"CPA",done:mods.cpa},{key:"func",label:"Functional",done:mods.functional},
-    {key:"outcome",label:"Outcomes",done:mods.outcomes},{key:"postureAI",label:"AI Analysis",done:mods.postureAI},
-    {key:"gait",label:"Gait",done:mods.gait},{key:"kinetic",label:"Kinetic chain",done:mods.kinetic},
-    {key:"fascia",label:"Fascia",done:mods.fascia},
-  ];
-  const initials = name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  // Module count for progress
+  const MOD_KEYS = ["subjective","rom","mmt","posture","postureAI","palpation","outcomes","stt","functional","neuro","gait","kinetic","cpa","fascia"];
+  const doneCount = MOD_KEYS.filter(k=>mods[k]).length;
+
+  // ── Styles ──
+  const wrap  = { fontFamily:"inherit", fontSize:"0.82rem", paddingBottom:24 };
+  const card  = (border="#E5E7EB") => ({ background:"#fff", border:`1px solid ${border}`, borderRadius:16, marginBottom:12, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.04)" });
+  const ch    = (bg="#fff") => ({ display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:bg,borderBottom:"1px solid #F3F4F6" });
+  const secIcon = (bg,cl,emoji) => <div style={{width:34,height:34,borderRadius:10,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0,color:cl}}>{emoji}</div>;
+  const secTitle = (t,sub) => <div><div style={{fontSize:14,fontWeight:600,color:"#111827"}}>{t}</div>{sub&&<div style={{fontSize:11,color:"#6B7280"}}>{sub}</div>}</div>;
+  const secBadge = (t) => <div style={{marginLeft:"auto",fontSize:11,color:"#6B7280",background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:20,padding:"2px 10px"}}>{t}</div>;
+  const cb    = { padding:"12px 14px" };
+  const lbl   = { fontSize:11,color:"#9CA3AF",fontWeight:500,marginBottom:4,display:"block" };
+  const val_  = { fontSize:13,color:"#111827",lineHeight:1.5 };
+  const row   = { borderBottom:"1px solid #F3F4F6",padding:"8px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,fontSize:13 };
+  const chip_ = (bg,cl) => ({ display:"inline-block",padding:"3px 10px",borderRadius:100,background:bg,color:cl,fontSize:11,fontWeight:500,margin:"2px 3px 2px 0" });
+  const inp   = { width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"7px 10px",fontSize:"0.78rem",fontFamily:"inherit",outline:"none",color:"#111827",background:"#FAFAFA",marginBottom:4,boxSizing:"border-box" };
+  const subH  = { fontSize:10,fontWeight:600,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.07em",margin:"12px 0 6px",borderTop:"1px solid #F3F4F6",paddingTop:8 };
+  const na    = { fontSize:12,color:"#9CA3AF",fontStyle:"italic",padding:"4px 0" };
+  const thS   = { padding:"5px 8px",fontSize:10,color:"#9CA3AF",textAlign:"left",borderBottom:"1px solid #F3F4F6",fontWeight:500 };
+  const tdS   = { padding:"5px 8px",borderBottom:"1px solid #F9FAFB",fontSize:12,color:"#111827",verticalAlign:"top" };
+  const tbl   = { width:"100%",borderCollapse:"collapse" };
 
   return (
-    <div style={cs.wrap}>
-      {/* Patient header */}
-      <div style={cs.ptBar}>
-        <div style={cs.av}>{initials}</div>
-        <div style={{flex:1}}>
-          <div style={{fontSize:14,fontWeight:500,color:"var(--color-text-primary,#1a1025)"}}>{name}</div>
-          <div style={{fontSize:11,color:"var(--color-text-secondary,#7e6a9a)"}}>{[age&&age+"y",sex,occ].filter(Boolean).join(" · ")}</div>
-          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:4}}>
-            <span style={cs.chip("#E6F1FB","#0C447C")}>{session||"Assessment"}</span>
-            {icd&&<span style={cs.chip("#EEEDFE","#3C3489")}>{icd}</span>}
-            <span style={cs.chip("#FAEEDA","#633806")}>{new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</span>
-            {clinician&&<span style={cs.chip("#F1EFE8","#444441")}>{clinician}</span>}
-          </div>
-        </div>
-      </div>
+    <div style={wrap}>
 
-      {/* Progress bar */}
-      <div style={cs.progRow}>
-        <span style={{fontSize:10,color:"var(--color-text-secondary,#7e6a9a)",whiteSpace:"nowrap"}}>Modules done</span>
-        <div style={{flex:1,height:4,background:"var(--color-border-tertiary,#e2d9f3)",borderRadius:100,overflow:"hidden"}}>
-          <div style={{height:"100%",background:"#534AB7",borderRadius:100,width:pct+"%"}}/>
-        </div>
-        <span style={{fontSize:10,fontWeight:500,color:"#534AB7",whiteSpace:"nowrap"}}>{doneCount}/{MOD_LIST.length}</span>
-        <div style={{display:"flex",gap:3}}>
-          {MOD_LIST.map(m=><div key={m.key} title={m.label} style={{width:6,height:6,borderRadius:"50%",background:mods[m.key]?"#534AB7":"var(--color-border-tertiary,#e2d9f3)"}}/>)}
-        </div>
-      </div>
-
-      {/* S/O/A/P tabs */}
-      <div style={cs.tabRow}>
-        {[["S","Subjective","#E6F1FB","#0C447C"],["O","Objective","#E1F5EE","#085041"],["A","Assessment","#EEEDFE","#3C3489"],["P","Plan","#FAEEDA","#633806"]].map(([t,label,bg,cl],idx,arr)=>(
-          <div key={t} onClick={()=>setSoapTab(t)} style={{...cs.tab(soapTab===t,bg,cl),borderRight:idx<arr.length-1?"0.5px solid var(--color-border-tertiary,#e2d9f3)":"none"}}>
-            {t}
-            <div style={{width:5,height:5,borderRadius:"50%",background:"currentColor",margin:"2px auto 0",opacity:soapTab===t?0.5:0.15}}/>
-          </div>
-        ))}
-      </div>
-
-      {/* ── S ── */}
-      {soapTab==="S"&&(
-        <div style={cs.card}>
-          <div style={cs.ch}><div style={cs.sl("#E6F1FB","#0C447C")}>S</div><div style={cs.ctitle}>Subjective</div></div>
-          <div style={cs.cb}>
-            {cc&&(<><div style={cs.sub0}>Chief complaint</div><div style={cs.ccQ}>"{cc}"</div></>)}
-            {redFlags.length>0&&<div style={{marginTop:8,padding:"7px 10px",background:"#FCEBEB",border:"0.5px solid #F09595",borderRadius:8,fontSize:11,color:"#791F1F",fontWeight:500}}>⚠ Red flags: {redFlags.join(", ")} — medical review indicated</div>}
-            {(vasNow||vasWorst||vasBest)&&(<><div style={cs.sub}>Pain scores (NRS)</div><div style={cs.nrsRow}>
-              {[["Now",vasNow,nrsColor(vasNow)],["Worst",vasWorst,"#dc2626"],["Best",vasBest,"#059669"]].map(([l,val,cl])=>val?<div key={l} style={cs.nrsC}><div style={cs.nrsL}>{l}</div><div style={{fontSize:18,fontWeight:500,color:cl}}>{val}</div><div style={cs.nrsL}>/10</div></div>:null)}
-            </div></>)}
-            {loc&&(<><div style={cs.sub}>Location{rad?" & radiation":""}</div><div style={cs.bl}><span>·</span><span>{loc}</span></div>{rad&&<div style={cs.bl}><span>·</span><span>Radiates: {rad}</span></div>}</>)}
-            {(agg||ease)&&(<><div style={cs.sub}>Aggravating & easing</div><div style={cs.two}>
-              {agg&&<div style={cs.colB}><div style={cs.colBL}>Aggravating</div>{agg.split(",").slice(0,4).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x.trim()}</span></div>)}</div>}
-              {ease&&<div style={cs.colB}><div style={cs.colBL}>Easing</div>{ease.split(",").slice(0,4).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x.trim()}</span></div>)}</div>}
-            </div></>)}
-            {(dur||onset||morning||night)&&(<><div style={cs.sub}>24-hour behaviour</div>
-              {dur&&<div style={cs.bl}><span>·</span><span>Duration: {dur}</span></div>}
-              {onset&&<div style={cs.bl}><span>·</span><span>Onset: {onset}</span></div>}
-              {morning&&<div style={cs.bl}><span>·</span><span>Morning: {morning}</span></div>}
-              {night&&<div style={cs.bl}><span>·</span><span>Night: {night}</span></div>}
-            </>)}
-            {(phx||meds)&&(<><div style={cs.sub}>History & medications</div>
-              {phx&&<div style={cs.bl}><span>·</span><span>PMH: {phx}</span></div>}
-              {meds&&<div style={cs.bl}><span>·</span><span>Meds: {meds}</span></div>}
-            </>)}
-            {goals.length>0&&(<><div style={cs.sub}>Patient goals</div>{goals.map((g,i)=><div key={i} style={cs.bl}><span>·</span><span>{g}</span></div>)}</>)}
-            <div style={{marginTop:8}}><textarea placeholder="Add subjective notes..." value={extraS} onChange={e=>setExtraS(e.target.value)} onBlur={()=>set("soap_extra_s",extraS)} style={{...cs.inp,resize:"vertical",minHeight:50}}/></div>
-          </div>
-        </div>
-      )}
-
-      {/* ── O ── */}
-      {soapTab==="O"&&(
-        <div style={cs.card}>
-          <div style={cs.ch}><div style={cs.sl("#E1F5EE","#085041")}>O</div><div style={cs.ctitle}>Objective — tap module to view</div></div>
-          <div style={cs.cb}>
-            <div style={cs.pillRow}>
-              {OBJ_MODS.map(m=><div key={m.key} onClick={()=>setObjMod(m.key)} style={cs.pill(m.done,objMod===m.key)}>{m.done?"✓ ":""}{m.label}</div>)}
-            </div>
-            <div style={cs.modBox}>
-              {objMod==="obs"&&(mods.posture?<div>{[v("post_fhp"),v("post_kyphosis"),v("post_lordosis"),v("post_pelvis"),v("post_sh"),v("post_scoliosis"),v("post_notes"),data.sagFHPCm&&`FHP: ${data.sagFHPCm}cm`,data.cvaAngle&&`CVA: ${data.cvaAngle}°`,data.sagThorKyph&&`Thoracic kyphosis: ${data.sagThorKyph}°`].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Observation/posture not recorded this session</div>)}
-              {objMod==="rom"&&(romRows.length>0?<table style={cs.rt}><thead><tr><th style={thS}>Movement</th><th style={thS}>Result</th><th style={thS}>Norm</th><th style={thS}>Status</th></tr></thead><tbody>{romRows.map((r,i)=>r.single?<tr key={i}><td style={tdS}>{r.label}</td><td style={tdS}>{r.single}°</td><td style={{...tdS,color:"var(--color-text-secondary,#7e6a9a)"}}>{r.norm}°</td><td style={{...tdS,color:r.flag?.color}}>{r.flag?.icon} {r.pct}%</td></tr>:<tr key={i}><td style={tdS}>{r.label}</td><td style={tdS}>{r.l||"—"}° / {r.r||"—"}°</td><td style={{...tdS,color:"var(--color-text-secondary,#7e6a9a)"}}>{r.norm}°</td><td style={tdS}>{r.flagL&&<span style={{color:r.flagL.color,marginRight:4}}>L:{r.pctL}%</span>}{r.flagR&&<span style={{color:r.flagR.color}}>R:{r.pctR}%</span>}</td></tr>)}</tbody></table>:<div style={cs.na}>ROM not recorded this session</div>)}
-              {objMod==="mmt"&&(mods.mmt?<div>{[v("neuro_weakness"),v("muscle_sh_r_abductors"),v("muscle_sh_r_er"),v("muscle_kn_l_quads"),v("muscle_kn_l_hams")].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>MMT not recorded this session</div>)}
-              {objMod==="neuro"&&(neuroRows.length>0?<table style={cs.rt}><thead><tr><th style={thS}>Test</th><th style={thS}>Finding</th></tr></thead><tbody>{neuroRows.map((r,i)=><tr key={i}><td style={tdS}>{r.label}</td><td style={{...tdS,color:r.val.toLowerCase().includes("reduced")||r.val.toLowerCase().includes("weak")?"#dc2626":r.val.toLowerCase().includes("intact")||r.val.toLowerCase().includes("normal")?"#059669":"var(--color-text-primary)"}}>{r.val}</td></tr>)}</tbody></table>:<div style={cs.na}>Neurological exam not recorded this session</div>)}
-              {objMod==="stt"&&(sttRows.length>0?<div>{sttRows.map((t,i)=>{const isPos=t.val.toLowerCase().includes("positive")||t.val.toLowerCase().includes("+ve");const isNeg=t.val.toLowerCase().includes("negative")||t.val.toLowerCase().includes("-ve")||t.val.toLowerCase().includes("normal");return<div key={i} style={{...cs.trRow,borderBottom:i<sttRows.length-1?"0.5px solid var(--color-border-tertiary,#e2d9f3)":"none"}}><span style={{flex:1,color:"var(--color-text-primary)"}}>{t.name}</span><span style={{fontWeight:500,color:isPos?"#dc2626":isNeg?"#059669":"inherit",margin:"0 8px",fontSize:11}}>{t.val.slice(0,25)}</span><span style={{fontSize:10,color:"var(--color-text-secondary,#7e6a9a)",textAlign:"right",maxWidth:120}}>{t.sig}</span></div>;})}</div>:<div style={cs.na}>Special tests not recorded this session</div>)}
-              {objMod==="palp"&&(palpPins.filter(p=>p.tenderness).length>0||["cx","lx","shr","knl","af"].some(px=>v(px+"_palpation"))?<div>{palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=><div key={i} style={cs.bl}><span>·</span><span>{p.label}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — Grade {p.tenderness}+{p.notes?" · "+p.notes:""}</span></div>)}{["cx","lx","shr","knl","af"].map(px=>v(px+"_palpation")&&<div key={px} style={cs.bl}><span>·</span><span>{px.toUpperCase()}: {v(px+"_palpation")}</span></div>)}</div>:<div style={cs.na}>Palpation not recorded this session</div>)}
-              {objMod==="cpa"&&(cpaText.length>0?<div>{cpaText.map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>CPA not recorded this session</div>)}
-              {objMod==="func"&&(funcBullets.length>0?<div>{funcBullets.slice(0,8).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Functional assessment not recorded this session</div>)}
-              {objMod==="outcome"&&(omRows.length>0?<table style={cs.rt}><thead><tr><th style={thS}>Scale</th><th style={thS}>Score</th><th style={thS}>Note</th></tr></thead><tbody>{omRows.map((r,i)=><tr key={i}><td style={tdS}>{r.name}</td><td style={{...tdS,fontWeight:500}}>{r.score}{r.max?"/"+r.max:""}</td><td style={{...tdS,color:"var(--color-text-secondary,#7e6a9a)",fontSize:10}}>{r.note}</td></tr>)}</tbody></table>:<div style={cs.na}>Outcome measures not recorded this session</div>)}
-              {objMod==="postureAI"&&(mods.postureAI?<div>{[data.sagFHPCm&&`FHP: ${data.sagFHPCm}cm anterior`,data.cvaAngle&&`CVA: ${data.cvaAngle}°`,data.sagThorKyph&&`Thoracic kyphosis: ${data.sagThorKyph}°`,data.sagLumLord&&`Lumbar lordosis: ${data.sagLumLord}°`,data.sagPelvicShift&&`Pelvic shift: ${data.sagPelvicShift}cm`].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>AI posture analysis not done this session</div>)}
-              {objMod==="gait"&&(mods.gait?<div>{[v("gait_pattern"),v("gait_cadence"),v("gait_antalgic"),v("gait_trendelenburg"),v("gait_notes")].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Gait analysis not done this session</div>)}
-              {objMod==="kinetic"&&(mods.kinetic?<div>{[v("kinetic_primary"),v("kinetic_compensation"),v("kinetic_notes")].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Kinetic chain assessment not done this session</div>)}
-              {objMod==="fascia"&&(mods.fascia?<div>{[v("fascia_restriction"),v("fascia_line"),v("fascia_notes")].filter(Boolean).map((x,i)=><div key={i} style={cs.bl}><span>·</span><span>{x}</span></div>)}</div>:<div style={cs.na}>Fascia integration not done this session</div>)}
-            </div>
-            <div style={{marginTop:8}}><textarea placeholder="Add objective notes..." value={extraO} onChange={e=>setExtraO(e.target.value)} onBlur={()=>set("soap_extra_o",extraO)} style={{...cs.inp,resize:"vertical",minHeight:40}}/></div>
-          </div>
-        </div>
-      )}
-
-      {/* ── A ── */}
-      {soapTab==="A"&&(
-        <div style={cs.card}>
-          <div style={cs.ch}><div style={cs.sl("#EEEDFE","#3C3489")}>A</div><div style={cs.ctitle}>Assessment</div></div>
-          <div style={cs.cb}>
-            <div style={cs.sub0}>Working diagnosis</div>
-            <div style={cs.dxB}>
-              <div style={{fontSize:13,fontWeight:500,color:"var(--color-text-primary,#1a1025)"}}>{dx||"Enter diagnosis below"}</div>
-              {icd&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:100,background:"#EEEDFE",color:"#3C3489",fontWeight:500,whiteSpace:"nowrap"}}>{icd}</span>}
-            </div>
-            <div style={{marginTop:6,display:"grid",gap:4}}>
-              <input placeholder="Working diagnosis..." value={dx} onChange={e=>set("soap_a_diagnosis",e.target.value)} style={cs.inp}/>
-              <input placeholder="ICD-10 code (e.g. M54.5)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={cs.inp}/>
-            </div>
-            {(posFindings.length>0||negFindings.length>0)&&(<><div style={cs.sub}>Clinical reasoning</div>
-              <div style={cs.findG}>
-                <div style={cs.findPos}><div style={{fontSize:10,fontWeight:500,color:"#791F1F",marginBottom:3}}>Key positive findings</div>{posFindings.map((f,i)=><div key={i} style={{fontSize:10,padding:"1px 0",display:"flex",gap:3,lineHeight:1.4,color:"var(--color-text-primary)"}}><span style={{color:"#dc2626"}}>·</span><span>{f}</span></div>)}{posFindings.length===0&&<div style={{fontSize:10,color:"#791F1F",fontStyle:"italic"}}>No positive findings recorded</div>}</div>
-                <div style={cs.findNeg}><div style={{fontSize:10,fontWeight:500,color:"#27500A",marginBottom:3}}>Screened negative</div>{negFindings.map((f,i)=><div key={i} style={{fontSize:10,padding:"1px 0",display:"flex",gap:3,lineHeight:1.4,color:"var(--color-text-primary)"}}><span style={{color:"#059669"}}>·</span><span>{f}</span></div>)}{negFindings.length===0&&<div style={{fontSize:10,color:"#27500A",fontStyle:"italic"}}>No negatives yet</div>}</div>
+      {/* ── PATIENT HEADER ── */}
+      <div style={{...card(),marginBottom:12}}>
+        <div style={{padding:"14px 14px 10px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:48,height:48,borderRadius:"50%",background:"#DBEAFE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:600,color:"#1E40AF",flexShrink:0}}>{initials}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:17,fontWeight:700,color:"#111827"}}>{name}</div>
+              <div style={{fontSize:12,color:"#6B7280",marginTop:2}}>
+                {[age&&age+"yrs",sex&&sex.toUpperCase(),phone].filter(Boolean).join(" · ")}
               </div>
-            </>)}
-            <div style={cs.sevRow}>
-              {[["Irritability",v("soap_irritability")||"—"],["Stage",v("soap_stage")||"—"],["Prognosis",v("soap_prognosis")||"—"],["Severity",v("soap_severity")||"—"]].map(([l,val])=>(
-                <div key={l} style={cs.sevC}><div style={{fontSize:9,color:"var(--color-text-secondary,#7e6a9a)"}}>{l}</div><div style={{fontSize:11,fontWeight:500,marginTop:1,color:"var(--color-text-primary)"}}>{val}</div></div>
-              ))}
             </div>
-            <div style={{marginTop:6,display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
-              {[["soap_irritability","Irritability"],["soap_stage","Stage"],["soap_prognosis","Prognosis"],["soap_severity","Severity"]].map(([k,ph])=>(
-                <input key={k} placeholder={ph} value={v(k)} onChange={e=>set(k,e.target.value)} style={cs.inp}/>
-              ))}
+            {vasNow&&<div style={{textAlign:"center",padding:"6px 12px",background:nrsBg(vasNow),borderRadius:12,border:`1px solid ${nrsColor(vasNow)}30`}}>
+              <div style={{fontSize:9,color:nrsColor(vasNow),fontWeight:600,textTransform:"uppercase"}}>Pain</div>
+              <div style={{fontSize:18,fontWeight:700,color:nrsColor(vasNow)}}>{vasNow}<span style={{fontSize:11}}>/10</span></div>
+            </div>}
+          </div>
+
+          {/* Meta row */}
+          <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",marginTop:12,padding:"8px 0",borderTop:"1px solid #F3F4F6",fontSize:12,color:"#6B7280"}}>
+            <div><span style={{fontWeight:600,color:"#374151"}}>Date</span><br/>{new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div>
+            {patId&&<div><span style={{fontWeight:600,color:"#374151"}}>Patient ID</span><br/>{patId}</div>}
+            {dob&&<div><span style={{fontWeight:600,color:"#374151"}}>DOB</span><br/>{dob}</div>}
+            {therapist&&<div><span style={{fontWeight:600,color:"#374151"}}>Therapist</span><br/>{therapist}</div>}
+            <div><span style={{fontWeight:600,color:"#374151"}}>Mode</span><br/><span style={{background:"#D1FAE5",color:"#065F46",padding:"1px 6px",borderRadius:4,fontSize:11}}>Digital template</span></div>
+          </div>
+
+          {/* Progress */}
+          <div style={{marginTop:8,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{flex:1,height:3,background:"#E5E7EB",borderRadius:100,overflow:"hidden"}}>
+              <div style={{height:"100%",background:"#6366F1",width:(doneCount/MOD_KEYS.length*100)+"%",borderRadius:100}}/>
             </div>
-            <textarea placeholder="Additional assessment notes..." value={extraA} onChange={e=>setExtraA(e.target.value)} onBlur={()=>set("soap_extra_a",extraA)} style={{...cs.inp,resize:"vertical",minHeight:50,marginTop:2}}/>
+            <span style={{fontSize:10,color:"#9CA3AF",whiteSpace:"nowrap"}}>{doneCount}/{MOD_KEYS.length} modules</span>
           </div>
         </div>
-      )}
 
-      {/* ── P ── */}
-      {soapTab==="P"&&(
-        <div style={cs.card}>
-          <div style={cs.ch}><div style={cs.sl("#FAEEDA","#633806")}>P</div><div style={cs.ctitle}>Plan</div></div>
-          <div style={cs.cb}>
+        {/* Session + ICD row */}
+        <div style={{padding:"8px 14px",background:"#F9FAFB",borderTop:"1px solid #F3F4F6",display:"flex",flexWrap:"wrap",gap:6,alignItems:"center"}}>
+          {icd&&<span style={chip_("#EEF2FF","#4F46E5")}>{icd}</span>}
+          <span style={chip_("#F0FDF4","#166534")}>{session}</span>
+          {clinic&&<span style={chip_("#F9FAFB","#374151")}>{clinic}</span>}
+          {redFlags.length>0&&<span style={chip_("#FEF2F2","#DC2626")}>⚠ {redFlags.length} red flag{redFlags.length>1?"s":""}</span>}
+        </div>
+      </div>
+
+      {/* ── S — SUBJECTIVE ── */}
+      <div style={card()}>
+        <div style={ch("#FAFAFA")}>
+          {secIcon("#DBEAFE","#1D4ED8","💬")}
+          {secTitle("S · Subjective","Patient reported")}
+          {secBadge("Patient reported")}
+        </div>
+        <div style={cb}>
+          {cc&&<><span style={lbl}>Chief complaint</span><div style={{...val_,fontWeight:500,marginBottom:8}}>{cc}</div></>}
+          {redFlags.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,color:"#991B1B",marginBottom:8,fontWeight:500}}>⚠ Red flags: {redFlags.join(", ")} — medical review indicated</div>}
+          {loc&&<><span style={lbl}>Pain site</span><div style={{...val_,marginBottom:8}}>{loc}{rad?" → radiates: "+rad:""}</div></>}
+          {onset&&<><span style={lbl}>Onset / mechanism</span><div style={{...val_,marginBottom:8}}>{[onset,dur].filter(Boolean).join(", ")}</div></>}
+          {agg.length>0&&<><span style={lbl}>Aggravating factors</span><div style={{marginBottom:8}}>{agg.slice(0,6).map((x,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{x}</span>)}</div></>}
+          {ease.length>0&&<><span style={lbl}>Relieving factors</span><div style={{marginBottom:8}}>{ease.slice(0,5).map((x,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{x}</span>)}</div></>}
+          {(morning||night)&&<><span style={lbl}>24-hour behaviour</span>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
-              <input placeholder="Clinician name" value={clinician} onChange={e=>setClinician(e.target.value)} style={cs.inp}/>
-              <input placeholder="Clinic name" value={clinic} onChange={e=>setClinic(e.target.value)} style={cs.inp}/>
-              <input placeholder="Session type (e.g. Initial Assessment)" value={session} onChange={e=>setSession(e.target.value)} style={{...cs.inp,gridColumn:"1/-1"}}/>
+              {morning&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:10,color:"#9CA3AF",fontWeight:500}}>Morning</div><div style={{fontSize:12,color:"#111827",marginTop:2}}>{morning}</div></div>}
+              {night&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:10,color:"#9CA3AF",fontWeight:500}}>Night</div><div style={{fontSize:12,color:"#111827",marginTop:2}}>{night}</div></div>}
             </div>
-            {goals.length>0&&(<><div style={cs.sub0}>Treatment goals</div>{goals.map((g,i)=><div key={i} style={cs.planR}><div style={cs.planN}>{i+1}</div><div style={{color:"var(--color-text-primary)",lineHeight:1.4,fontSize:12}}>{g}</div></div>)}</>)}
-            {v("tx_techniques")&&(<><div style={cs.sub}>Treatment this session</div>{v("tx_techniques").split("|||").filter(Boolean).map((t,i)=><div key={i} style={cs.planR}><div style={cs.planN}>{i+1}</div><div style={{color:"var(--color-text-primary)",lineHeight:1.4,fontSize:12}}>{t}</div></div>)}</>)}
-            {Array.isArray(data.hep_programme)&&data.hep_programme.length>0&&(<><div style={cs.sub}>Home exercise programme</div>{data.hep_programme.slice(0,6).map((ex,i)=><div key={i} style={cs.bl}><span>·</span><span>{ex.name}{ex.sets?" · "+ex.sets+" sets":""}{ex.reps?" × "+ex.reps+" reps":""}</span></div>)}</>)}
-            <div style={cs.sub}>Review & referral</div>
-            <div style={{display:"grid",gap:4,marginTop:4}}>
-              <textarea placeholder="Plan notes, precautions, referral, review frequency..." value={extraP} onChange={e=>setExtraP(e.target.value)} onBlur={()=>set("soap_extra_p",extraP)} style={{...cs.inp,resize:"vertical",minHeight:60}}/>
-              <input placeholder="Referral (if any)" value={v("soap_referral")} onChange={e=>set("soap_referral",e.target.value)} style={cs.inp}/>
-              <input placeholder="Imaging / investigations requested" value={v("soap_imaging")} onChange={e=>set("soap_imaging",e.target.value)} style={cs.inp}/>
-            </div>
-            {lockSuccess&&<div style={{padding:"8px 12px",background:"#EAF3DE",border:"0.5px solid #C0DD97",borderRadius:8,fontSize:12,color:"#27500A",marginTop:6}}>✓ Note signed and locked successfully</div>}
-            {lockConfirm?(
-              <div style={{marginTop:8}}>
-                <div style={{fontSize:12,color:"#dc2626",marginBottom:6}}>Sign and lock this note? This cannot be undone.</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                  <button onClick={()=>setLockConfirm(false)} style={{...cs.signBtn,background:"var(--color-background-secondary,#f5f0fb)",color:"var(--color-text-primary)"}}>Cancel</button>
-                  <button onClick={handleSign} style={cs.lockBtn}>Confirm sign & lock</button>
-                </div>
-              </div>
-            ):(
-              <button onClick={handleSign} style={cs.signBtn}>Sign & lock note</button>
-            )}
-          </div>
+          </>}
+          {(phx||meds)&&<><span style={lbl}>History & medications</span>
+            {phx&&<div style={{fontSize:12,color:"#374151",marginBottom:4}}>PMH: {phx}</div>}
+            {meds&&<div style={{fontSize:12,color:"#374151",marginBottom:8}}>Meds: {meds}</div>}
+          </>}
+          {goals_ar.length>0&&<><span style={lbl}>Patient goals</span><div style={{marginBottom:8}}>{goals_ar.map((g,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"3px 0",display:"flex",gap:6}}><span style={{color:"#6366F1"}}>→</span>{g}</div>)}</div></>}
+          {v("dem_occupation")&&<div style={{fontSize:12,color:"#9CA3AF"}}>{v("dem_occupation")}{v("dem_dominant_hand")?" · "+v("dem_dominant_hand")+" hand":""}</div>}
+          <textarea placeholder="Additional subjective notes..." value={extraS} onChange={e=>setExtraS(e.target.value)} onBlur={()=>set("soap_extra_s",extraS)} style={{...inp,resize:"vertical",minHeight:40,marginTop:8}}/>
         </div>
-      )}
+      </div>
 
-      {/* Locked notes history */}
-      {lockedNotes.length>0&&(
-        <div style={cs.card}>
-          <div style={cs.ch}><div style={{...cs.sl("#F1EFE8","#444441")}}>🔒</div><div style={cs.ctitle}>Locked notes ({lockedNotes.length})</div></div>
-          <div style={cs.cb}>
-            {[...lockedNotes].reverse().map((n,i)=>(
-              <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:i<lockedNotes.length-1?"0.5px solid var(--color-border-tertiary,#e2d9f3)":"none"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                  <div><div style={{fontSize:12,fontWeight:500,color:"var(--color-text-primary)"}}>{n.session}</div><div style={{fontSize:11,color:"var(--color-text-secondary,#7e6a9a)"}}>{n.lockedAtDisplay} · {n.clinician}{n.clinic?" · "+n.clinic:""}</div></div>
-                  <span style={{padding:"2px 8px",background:"#FCEBEB",border:"0.5px solid #F09595",borderRadius:100,fontSize:10,fontWeight:500,color:"#dc2626"}}>LOCKED</span>
-                </div>
-                {["S","O","A","P"].map(key=>(
-                  <div key={key} style={{marginBottom:6}}>
-                    <div style={{fontSize:10,fontWeight:500,color:"var(--color-text-secondary,#7e6a9a)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{key} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[key]}</div>
-                    <div style={{background:"var(--color-background-secondary,#f5f0fb)",borderRadius:8,padding:"6px 10px",fontSize:11,lineHeight:1.6,whiteSpace:"pre-wrap",color:"var(--color-text-primary)"}}>{n[key]||"—"}</div>
+      {/* ── O — OBJECTIVE ── */}
+      <div style={card()}>
+        <div style={ch("#FAFAFA")}>
+          {secIcon("#D1FAE5","#065F46","🩺")}
+          {secTitle("O · Objective","Clinical findings")}
+          {secBadge("Clinical findings")}
+        </div>
+        <div style={cb}>
+
+          {/* Posture / Observation */}
+          {(mods.posture||obsChips.length>0)&&<>
+            <div style={subH}>Posture</div>
+            {postureTextFields.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,minWidth:90,fontSize:12}}>{r}</span><span style={{color:"#111827",flex:1,textAlign:"right",fontSize:12}}>{t}</span></div>)}
+            {postDefectList.length>0&&<div style={{marginTop:6}}>{postDefectList.map(([,l],i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{l}</span>)}</div>}
+            {obsChips.map((o,i)=><span key={i} style={{...chip_("#F3F4F6","#374151"),fontSize:11}}>{o.region}: {o.text}</span>)}
+          </>}
+
+          {/* AI Posture Analysis */}
+          {mods.postureAI&&<>
+            <div style={subH}>AI Postural Analysis</div>
+            {[
+              ["CVA",data.cvaAngle,"°","≥ 50°",50,"gte"],
+              ["FHP",data.sagFHPCm||data.fhpDevCm,"cm","< 2.5cm",2.5,"lte"],
+              ["Thoracic kyphosis",data.sagThorKyph,"°","20–40°",null,null,20,40],
+              ["Lumbar lordosis",data.sagLumLord,"°","30–50°",null,null,30,50],
+              ["Pelvic shift",data.sagPelvicShift,"cm","< 2cm",2,"lte"],
+            ].filter(([,val])=>val!=null&&val!=="").map(([label,val,unit,norm,normNum,dir,lo,hi],i)=>{
+              const n=parseFloat(val);
+              let flag=null;
+              if(!isNaN(n)){
+                if(normNum!=null){flag=dir==="gte"?(n<normNum?{t:"Below normal",c:"#B45309",b:"#FEF3C7"}:{t:"Normal",c:"#065F46",b:"#D1FAE5"}):(n>normNum?{t:"Elevated",c:"#B45309",b:"#FEF3C7"}:{t:"Normal",c:"#065F46",b:"#D1FAE5"});}
+                else if(lo!=null){flag=(n<lo||n>hi)?{t:n<lo?"Low":"High",c:"#B45309",b:"#FEF3C7"}:{t:"Normal",c:"#065F46",b:"#D1FAE5"};}
+              }
+              return <div key={i} style={row}>
+                <span style={{color:"#374151",fontWeight:500,fontSize:12,flex:1}}>{label}</span>
+                <span style={{fontWeight:600,color:"#111827",marginRight:8,fontSize:13}}>{val}{unit}</span>
+                <span style={{fontSize:10,color:"#9CA3AF",marginRight:8}}>{norm}</span>
+                {flag&&<span style={{fontSize:10,padding:"1px 7px",borderRadius:100,background:flag.b,color:flag.c,fontWeight:500}}>{flag.t}</span>}
+              </div>;
+            })}
+          </>}
+
+          {/* Gait */}
+          {mods.gait&&<>
+            <div style={subH}>Gait</div>
+            {[v("gait_pattern")&&["Pattern",v("gait_pattern")],v("gait_antalgic")&&["Antalgic",v("gait_antalgic")],v("gait_trendelenburg")&&["Trendelenburg",v("gait_trendelenburg")],v("gait_cadence")&&["Cadence",v("gait_cadence")],v("gait_notes")&&["Notes",v("gait_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,fontSize:12,minWidth:90}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
+          </>}
+
+          {/* Neuro (general — above region) */}
+          {v("neuro_dermatomal")&&<>
+            <div style={subH}>Neuro (general)</div>
+            <div style={{fontSize:12,color:"#374151",marginBottom:4}}>{[v("neuro_dermatomal"),v("neuro_sensation")].filter(Boolean).join(". ")}</div>
+          </>}
+
+          {/* Neurological radiation chips */}
+          {(rad||v("neuro_weakness"))&&<>
+            {rad&&<div style={{marginBottom:6}}><span style={chip_("#EDE9FE","#5B21B6")}>Radiation / Referral</span>{v("neuro_sensation")&&v("neuro_sensation").toLowerCase().includes("tin")&&<span style={chip_("#EDE9FE","#5B21B6")}>Tingling / Pins &amp; Needles</span>}</div>}
+            {rad&&<div style={{fontSize:12,color:"#374151",marginBottom:4}}>Radiates → {rad}{v("neuro_dermatomal")?" · Nerve: "+v("neuro_dermatomal"):""}</div>}
+          </>}
+
+          {/* OBSERVATION chips (regional) */}
+          {(postDefectList.length>0||obsChips.length>0)&&<>
+            <div style={subH}>Observation</div>
+            {postDefectList.map(([,l],i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{l}</span>)}
+            {obsChips.map((o,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{o.text}</span>)}
+          </>}
+
+          {/* Palpation */}
+          {(palpPins.filter(p=>p.tenderness).length>0||palpText.length>0)&&<>
+            <div style={subH}>Palpation — Tender</div>
+            {palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{p.label}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — grade {p.tenderness}+</span>)}
+            {palpText.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:50}}>{r}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
+          </>}
+
+          {/* Neurological */}
+          {neuroRows.length>0&&<>
+            <div style={subH}>Neurological</div>
+            {neuroRows.map((r,i)=>{
+              const lc=r.val.toLowerCase();
+              const isAbn=lc.includes("reduced")||lc.includes("weak")||lc.includes("absent")||lc.includes("positive");
+              const isN=lc.includes("intact")||lc.includes("normal")||lc.includes("5/5")||lc.includes("negative");
+              return <div key={i} style={row}>
+                <span style={{color:"#374151",fontSize:12,flex:1}}>{r.label}</span>
+                <span style={{fontSize:12,fontWeight:500,color:isAbn?"#DC2626":isN?"#059669":"#111827"}}>{r.val}</span>
+              </div>;
+            })}
+          </>}
+
+          {/* Range of Motion */}
+          {romRows.length>0&&<>
+            <div style={subH}>Range of Motion</div>
+            {romRows.map((r,i)=>{
+              if(!r.bilateral){
+                const p=r.pct;
+                const col=romStatusColor(p);
+                return <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
+                  <div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px"}}>
+                    <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label}</div>
+                    <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.single}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
                   </div>
-                ))}
+                  <div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{fontSize:13,fontWeight:600,color:col}}>{p!=null?p+"%":"—"}</span>
+                  </div>
+                </div>;
+              } else {
+                return <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
+                  {r.l&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px"}}>
+                    <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label} (L)</div>
+                    <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.l}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
+                    {romPct(r.l,r.norm)!=null&&<div style={{fontSize:11,color:romStatusColor(romPct(r.l,r.norm)),fontWeight:500,marginTop:2}}>{romPct(r.l,r.norm)}%</div>}
+                  </div>}
+                  {r.r&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px"}}>
+                    <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label} (R)</div>
+                    <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.r}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
+                    {romPct(r.r,r.norm)!=null&&<div style={{fontSize:11,color:romStatusColor(romPct(r.r,r.norm)),fontWeight:500,marginTop:2}}>{romPct(r.r,r.norm)}%</div>}
+                  </div>}
+                </div>;
+              }
+            })}
+          </>}
+
+          {/* MMT */}
+          {mmtRows.length>0&&<>
+            <div style={subH}>Manual Muscle Testing (MMT)</div>
+            {mmtRows.map(([muscle,gr],i)=><div key={i} style={row}>
+              <span style={{color:"#374151",fontSize:12,flex:1,textTransform:"capitalize"}}>{muscle}</span>
+              <span style={{fontSize:12,fontWeight:600,color:"#111827"}}>{gr}</span>
+            </div>)}
+          </>}
+
+          {/* Special Tests */}
+          {sttRows.length>0&&<>
+            <div style={subH}>Special Tests</div>
+            {sttRows.filter(t=>{const lc=t.val.toLowerCase();return lc.includes("negative")||lc.includes("-ve");}).length>0&&
+              <div style={{fontSize:12,color:"#374151",marginBottom:6}}>
+                Negative: {sttRows.filter(t=>{const lc=t.val.toLowerCase();return lc.includes("negative")||lc.includes("-ve");}).map(t=>t.name).join(", ")}
+              </div>}
+            {sttRows.filter(t=>{const lc=t.val.toLowerCase();return lc.includes("positive")||lc.includes("+ve");}).map((t,i)=><div key={i} style={row}>
+              <span style={{color:"#374151",fontSize:12,flex:1}}>{t.name}</span>
+              <span style={{fontSize:11,fontWeight:500,color:"#DC2626",padding:"1px 8px",background:"#FEF2F2",borderRadius:100}}>Positive</span>
+              <span style={{fontSize:10,color:"#9CA3AF",marginLeft:6}}>{t.sig}</span>
+            </div>)}
+          </>}
+
+          {/* Functional Limitations */}
+          {(flChips.length>0||v("ar_goal_function"))&&<>
+            <div style={subH}>Functional limitations</div>
+            <div style={{marginBottom:6}}>{flChips.map((x,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{x}</span>)}</div>
+            {v("ar_goal_function")&&<div style={{fontSize:12,color:"#374151"}}>{v("ar_goal_function")}</div>}
+          </>}
+
+          {/* Outcome Measures */}
+          {omRows.length>0&&<>
+            <div style={subH}>Outcome Measures</div>
+            <table style={tbl}><thead><tr><th style={thS}>Scale</th><th style={thS}>Score</th><th style={thS}>Max</th><th style={thS}>Description</th></tr></thead>
+            <tbody>{omRows.map((r,i)=><tr key={i}><td style={{...tdS,fontWeight:600}}>{r.name}</td><td style={{...tdS,fontWeight:700,color:"#6366F1"}}>{r.score}</td><td style={{...tdS,color:"#9CA3AF"}}>{r.max||"—"}</td><td style={{...tdS,color:"#6B7280",fontSize:10}}>{r.note}</td></tr>)}</tbody></table>
+          </>}
+
+          {/* CPA */}
+          {mods.cpa&&<>
+            <div style={subH}>Compensation Pattern Analysis (CPA)</div>
+            {[v("cpa_pattern"),v("cpa_notes"),...["cx","lx","shr","knl"].map(px=>v(px+"_cpa")).filter(Boolean)].filter(Boolean).map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"2px 0"}}>{x}</div>)}
+          </>}
+
+          {/* Kinetic Chain */}
+          {mods.kinetic&&<>
+            <div style={subH}>Kinetic Chain</div>
+            {[v("kinetic_primary")&&["Primary dysfunction",v("kinetic_primary")],v("kinetic_compensation")&&["Compensation",v("kinetic_compensation")],v("kinetic_notes")&&["Notes",v("kinetic_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:110}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
+          </>}
+
+          {/* Fascia Integration */}
+          {mods.fascia&&<>
+            <div style={subH}>Fascia Integration</div>
+            {[v("fascia_restriction")&&["Restriction",v("fascia_restriction")],v("fascia_line")&&["Fascial line",v("fascia_line")],v("fascia_notes")&&["Notes",v("fascia_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:90}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
+          </>}
+
+          {!mods.posture&&!mods.rom&&!mods.mmt&&!mods.neuro&&!mods.stt&&!mods.palpation&&!mods.gait&&!mods.postureAI&&<div style={na}>No objective findings recorded yet.</div>}
+          <textarea placeholder="Additional objective notes..." value={extraO} onChange={e=>setExtraO(e.target.value)} onBlur={()=>set("soap_extra_o",extraO)} style={{...inp,resize:"vertical",minHeight:40,marginTop:8}}/>
+        </div>
+      </div>
+
+      {/* ── A — ASSESSMENT ── */}
+      <div style={card()}>
+        <div style={ch("#FAFAFA")}>
+          {secIcon("#F3F4F6","#374151","📋")}
+          {secTitle("A · Assessment","Clinical impression")}
+          {secBadge("Clinical impression")}
+        </div>
+        <div style={cb}>
+          {/* Provisional diagnosis */}
+          <div style={{padding:"12px 14px",background:"#EEF2FF",border:"1px solid #C7D2FE",borderRadius:12,marginBottom:12}}>
+            <div style={{fontSize:10,fontWeight:600,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>Provisional Diagnosis</div>
+            <div style={{fontSize:16,fontWeight:700,color:"#1E40AF",lineHeight:1.3}}>{dx||<span style={{color:"#9CA3AF",fontWeight:400,fontSize:13}}>Enter diagnosis below</span>}</div>
+          </div>
+
+          {/* Inputs */}
+          <input placeholder="Working diagnosis / Provisional diagnosis..." value={dx} onChange={e=>set("soap_a_diagnosis",e.target.value)} style={inp}/>
+          <input placeholder="ICD-10 code (e.g. M54.5)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={inp}/>
+
+          {probList||posFindings.length>0?<><div style={subH}>Problem list</div>
+            {probList?<div style={{fontSize:12,color:"#374151",marginBottom:6}}>{probList}</div>:<div style={{fontSize:12,color:"#374151",marginBottom:6}}>{posFindings.slice(0,3).join(". ")}</div>}
+          </>:null}
+
+          {/* Clinical notes / key findings */}
+          {(clinNotes||posFindings.length>0||negFindings.length>0)&&<>
+            <div style={subH}>Clinical notes</div>
+            {clinNotes?<div style={{fontSize:12,color:"#374151",marginBottom:8}}>{clinNotes}</div>:
+              <div style={{fontSize:12,color:"#374151",marginBottom:8}}>
+                {[...sttRows.filter(t=>{const lc=t.val.toLowerCase();return lc.includes("positive")||lc.includes("+ve");}).map(t=>t.name+" +ve at "+t.val.match(/\d+/)?.[0]+"°"),...romRows.filter(r=>r.single&&r.pct&&r.pct<75).map(r=>r.label+" restricted to "+r.single+"° (N:"+r.norm+"°)")].filter(Boolean).slice(0,4).join(". ")}{"."}
+              </div>}
+            <input placeholder="Clinical notes / key findings..." value={v("soap_clinical_notes")} onChange={e=>set("soap_clinical_notes",e.target.value)} style={inp}/>
+          </>}
+
+          {/* Positive / negative grid */}
+          {(posFindings.length>0||negFindings.length>0)&&<>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
+              {posFindings.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:10}}>
+                <div style={{fontSize:10,fontWeight:600,color:"#991B1B",marginBottom:5}}>KEY POSITIVES</div>
+                {posFindings.map((f,i)=><div key={i} style={{fontSize:10,color:"#374151",padding:"1px 0",display:"flex",gap:4,lineHeight:1.4}}><span style={{color:"#DC2626"}}>·</span>{f}</div>)}
+              </div>}
+              {negFindings.length>0&&<div style={{padding:"8px 10px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:10}}>
+                <div style={{fontSize:10,fontWeight:600,color:"#166534",marginBottom:5}}>SCREENED NEGATIVE</div>
+                {negFindings.map((f,i)=><div key={i} style={{fontSize:10,color:"#374151",padding:"1px 0",display:"flex",gap:4,lineHeight:1.4}}><span style={{color:"#16A34A"}}>·</span>{f}</div>)}
+              </div>}
+            </div>
+          </>}
+
+          {/* Severity/irritability */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:10}}>
+            {[["soap_irritability","Irritability"],["soap_stage","Stage"],["soap_prognosis","Prognosis"],["soap_severity","Severity"]].map(([k,ph])=>(
+              <input key={k} placeholder={ph} value={v(k)} onChange={e=>set(k,e.target.value)} style={{...inp,marginBottom:0}}/>
+            ))}
+          </div>
+          <textarea placeholder="Additional assessment notes..." value={extraA} onChange={e=>setExtraA(e.target.value)} onBlur={()=>set("soap_extra_a",extraA)} style={{...inp,resize:"vertical",minHeight:40,marginTop:6}}/>
+        </div>
+      </div>
+
+      {/* ── P — PLAN ── */}
+      <div style={card()}>
+        <div style={ch("#FAFAFA")}>
+          {secIcon("#D1FAE5","#065F46","✅")}
+          {secTitle("P · Plan","Treatment & goals")}
+          {secBadge("Treatment & goals")}
+        </div>
+        <div style={cb}>
+          {/* Clinician fields */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
+            <input placeholder="Clinician name" value={clinician} onChange={e=>setClinician(e.target.value)} style={{...inp,marginBottom:0}}/>
+            <input placeholder="Clinic name" value={clinic} onChange={e=>setClinic(e.target.value)} style={{...inp,marginBottom:0}}/>
+            <input placeholder="Session type (e.g. Initial Assessment)" value={session} onChange={e=>setSession(e.target.value)} style={{...inp,marginBottom:0,gridColumn:"1/-1"}}/>
+          </div>
+
+          {/* Goals */}
+          {stGoals&&<><span style={lbl}>Short-term goals (2–4 wks)</span><div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"8px 10px",fontSize:13,color:"#111827",fontWeight:500,marginBottom:6}}>{stGoals}</div></>}
+          {ltGoals&&<><span style={lbl}>Long-term goals (discharge)</span><div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"8px 10px",fontSize:13,color:"#111827",fontWeight:500,marginBottom:6}}>{ltGoals}</div></>}
+          {goals_ar.length>0&&!stGoals&&<><span style={lbl}>Treatment goals</span>{goals_ar.map((g,i)=><div key={i} style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#111827",marginBottom:4}}><span style={{color:"#6B7280",fontSize:11,fontWeight:500}}>{i+1}. </span>{g}</div>)}</>}
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
+            {[["soap_total_sessions","Total sessions",totalSess],["soap_frequency","Frequency",freq]].map(([k,ph,val2])=>(
+              <div key={k}>
+                {val2?<><span style={lbl}>{ph}</span><div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"6px 10px",fontSize:13,color:"#111827",fontWeight:500,marginBottom:4}}>{val2}</div></>:null}
+                <input placeholder={ph} value={v(k)} onChange={e=>set(k,e.target.value)} style={{...inp,marginBottom:0}}/>
               </div>
             ))}
           </div>
+
+          {/* Precautions */}
+          {precautions&&<><span style={lbl}>General advice / precautions</span><div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#374151",marginBottom:8,lineHeight:1.5}}>{precautions}</div></>}
+
+          {/* Modalities */}
+          {modalities&&<><span style={lbl}>Modalities</span><div style={{marginBottom:8}}>{modalities.split(",").map((m,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{m.trim()}</span>)}</div></>}
+
+          {/* HEP summary */}
+          {Array.isArray(data.hep_programme)&&data.hep_programme.length>0&&<>
+            <span style={lbl}>Home exercise programme</span>
+            <div style={{marginBottom:2}}><span style={{fontSize:11,color:"#6B7280"}}>Frequency: </span><span style={{fontSize:12,color:"#6366F1",fontWeight:600}}>{v("hep_frequency")||"As prescribed"}</span></div>
+            {data.hep_programme.slice(0,6).map((ex,i)=><div key={i} style={{padding:"5px 0",borderBottom:"1px solid #F3F4F6",fontSize:12,color:"#374151",display:"flex",gap:6}}><span style={{width:20,height:20,borderRadius:"50%",background:"#FEF3C7",color:"#92400E",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>{ex.name}{ex.sets?" — "+ex.sets+"×"+(ex.reps||""):""}{ex.hold?" hold "+ex.hold+"s":""}</div>)}
+          </>}
+
+          {/* Prescription */}
+          {v("tx_techniques")&&<>
+            <span style={lbl}>Clinic exercises / Treatment this session</span>
+            {v("tx_techniques").split("|||").filter(Boolean).map((t,i)=><div key={i} style={{padding:"5px 0",borderBottom:"1px solid #F3F4F6",fontSize:12,color:"#374151",display:"flex",gap:6}}><span style={{width:20,height:20,borderRadius:"50%",background:"#DBEAFE",color:"#1E40AF",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>{t}</div>)}
+          </>}
+
+          {/* Plan inputs */}
+          <div style={{marginTop:8,display:"grid",gap:4}}>
+            <input placeholder="Short-term goals (2–4 wks)" value={v("soap_goal_short")} onChange={e=>set("soap_goal_short",e.target.value)} style={{...inp,marginBottom:0}}/>
+            <input placeholder="Long-term goals (discharge)" value={v("soap_goal_long")} onChange={e=>set("soap_goal_long",e.target.value)} style={{...inp,marginBottom:0}}/>
+            <input placeholder="Total sessions" value={v("soap_total_sessions")} onChange={e=>set("soap_total_sessions",e.target.value)} style={{...inp,marginBottom:0}}/>
+            <input placeholder="Frequency (e.g. 3×/week × 4 weeks)" value={v("soap_frequency")} onChange={e=>set("soap_frequency",e.target.value)} style={{...inp,marginBottom:0}}/>
+            <textarea placeholder="General advice / precautions..." value={v("soap_precautions")} onChange={e=>set("soap_precautions",e.target.value)} style={{...inp,resize:"vertical",minHeight:50,marginBottom:0}}/>
+            <input placeholder="Modalities (e.g. Hot pack, IFT, Traction)" value={v("soap_modalities")} onChange={e=>set("soap_modalities",e.target.value)} style={{...inp,marginBottom:0}}/>
+            <input placeholder="Referral (if any)" value={v("soap_referral")} onChange={e=>set("soap_referral",e.target.value)} style={{...inp,marginBottom:0}}/>
+            <input placeholder="Imaging / investigations requested" value={v("soap_imaging")} onChange={e=>set("soap_imaging",e.target.value)} style={{...inp,marginBottom:0}}/>
+            <textarea placeholder="Additional plan notes..." value={extraP} onChange={e=>setExtraP(e.target.value)} onBlur={()=>set("soap_extra_p",extraP)} style={{...inp,resize:"vertical",minHeight:40,marginBottom:0}}/>
+          </div>
+
+          {/* Sign & lock */}
+          {lockSuccess&&<div style={{padding:"8px 12px",background:"#D1FAE5",border:"1px solid #6EE7B7",borderRadius:8,fontSize:12,color:"#065F46",marginTop:8}}>✓ Note signed and locked successfully</div>}
+          {lockConfirm?<div style={{marginTop:8}}>
+            <div style={{fontSize:12,color:"#DC2626",marginBottom:6}}>Sign and lock this note? This cannot be undone.</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              <button onClick={()=>setLockConfirm(false)} style={{padding:"10px",background:"#F3F4F6",color:"#374151",border:"1px solid #E5E7EB",borderRadius:8,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
+              <button onClick={handleSign} style={{padding:"10px",background:"#DC2626",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>Confirm sign &amp; lock</button>
+            </div>
+          </div>:<button onClick={handleSign} style={{width:"100%",marginTop:10,padding:"12px",background:"#6366F1",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit",letterSpacing:"0.01em"}}>Sign &amp; lock note</button>}
         </div>
-      )}
+      </div>
+
+      {/* ── LOCKED NOTES HISTORY ── */}
+      {lockedNotes.length>0&&<div style={card()}>
+        <div style={ch("#FAFAFA")}>
+          {secIcon("#F3F4F6","#374151","🔒")}
+          {secTitle(`Locked notes (${lockedNotes.length})`,"Previous signed notes")}
+        </div>
+        <div style={cb}>
+          {[...lockedNotes].reverse().map((n,i)=>(
+            <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:i<lockedNotes.length-1?"1px solid #F3F4F6":"none"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div><div style={{fontSize:13,fontWeight:600,color:"#111827"}}>{n.session}</div><div style={{fontSize:11,color:"#9CA3AF"}}>{n.lockedAtDisplay} · {n.clinician}{n.clinic?" · "+n.clinic:""}</div></div>
+                <span style={{padding:"2px 8px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:100,fontSize:10,fontWeight:600,color:"#DC2626"}}>LOCKED</span>
+              </div>
+              {["S","O","A","P"].map(key=>(
+                <div key={key} style={{marginBottom:6}}>
+                  <div style={{fontSize:10,fontWeight:600,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{key} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[key]}</div>
+                  <div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 10px",fontSize:11,lineHeight:1.6,whiteSpace:"pre-wrap",color:"#374151"}}>{n[key]||"—"}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>}
+
     </div>
   );
 }
+
+
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
