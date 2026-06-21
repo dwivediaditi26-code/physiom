@@ -17211,12 +17211,6 @@ function AppInner({ currentUser, onSignOut }) {
     } catch {}
     return DEMO_DATA;
   });
-  const [draftPatientId, setDraftPatientId] = useState(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-      return (raw && raw.pid) ? raw.pid : null;
-    } catch { return null; }
-  });
   const [draftRestored, setDraftRestored] = useState(false);
   const [showDx, setShowDx] = useState(false);
   const [dx, setDx] = useState(null);
