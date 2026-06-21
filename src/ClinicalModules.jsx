@@ -4068,13 +4068,34 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               {/* Manual entry */}
               <input placeholder="Type and press Enter to add custom differential..." onKeyDown={e=>{if(e.key==="Enter"&&e.target.value.trim()){toggleDiff(e.target.value.trim());e.target.value="";}}} style={{...inp,marginBottom:8,fontSize:12}}/>
 
-              {/* Tap-to-select chips */}
-              <div style={{fontSize:11,color:"#6B7280",marginBottom:5,fontWeight:500}}>Select from list:</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                {opts.filter(o=>!selectedDiffs.includes(o)).map((opt,i)=>(
-                  <button key={i} onClick={()=>toggleDiff(opt)} style={{padding:"5px 11px",borderRadius:8,fontSize:12,fontWeight:500,border:"1.5px solid #D1D5DB",background:"#F9FAFB",color:"#374151",cursor:"pointer",textAlign:"left"}}>{opt}</button>
-                ))}
-              </div>
+              {/* Searchable scrollable list */}
+              {(()=>{
+                const [diffSearch, setDiffSearch] = React.useState("");
+                const filtered = opts.filter(o=>!selectedDiffs.includes(o)&&(!diffSearch||o.toLowerCase().includes(diffSearch.toLowerCase())));
+                return <>
+                  <div style={{position:"relative",marginBottom:6}}>
+                    <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"#9CA3AF"}}>🔍</span>
+                    <input
+                      placeholder="Search diagnoses..."
+                      value={diffSearch}
+                      onChange={e=>setDiffSearch(e.target.value)}
+                      style={{...inp,marginBottom:0,paddingLeft:30,fontSize:12,background:"#F9FAFB"}}
+                    />
+                    {diffSearch&&<button onClick={()=>setDiffSearch("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#9CA3AF"}}>✕</button>}
+                  </div>
+                  <div style={{maxHeight:220,overflowY:"auto",border:"1px solid #E5E7EB",borderRadius:10,background:"#F9FAFB"}}>
+                    {filtered.length===0
+                      ? <div style={{padding:"12px 14px",fontSize:12,color:"#9CA3AF",textAlign:"center"}}>No matches — press Enter above to add custom</div>
+                      : filtered.map((opt,i)=>(
+                        <button key={i} onClick={()=>toggleDiff(opt)} style={{display:"block",width:"100%",padding:"9px 14px",fontSize:12,fontWeight:500,border:"none",borderBottom:i<filtered.length-1?"1px solid #F3F4F6":"none",background:"transparent",color:"#374151",cursor:"pointer",textAlign:"left"}}>
+                          {opt}
+                        </button>
+                      ))
+                    }
+                  </div>
+                  {filtered.length>0&&<div style={{fontSize:10,color:"#9CA3AF",marginTop:3,textAlign:"right"}}>{filtered.length} option{filtered.length!==1?"s":""}</div>}
+                </>;
+              })()}
             </div>;
           })()}
 
