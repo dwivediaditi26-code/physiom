@@ -18992,10 +18992,14 @@ function AppInner({ currentUser, onSignOut }) {
                 <Suspense fallback={<TabFallback/>}><LazyOutcomes data={data} set={set}/></Suspense>
                 </>
               ):tests==="TREATMENT_MODULE"?(
-                <div style={{display:"flex",flexDirection:"column",gap:24}}>
-                  <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
-                  <div style={{height:"1px",background:`linear-gradient(90deg,${PC.accent}40,transparent)`}}/>
-                  <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
+                <div style={{display:"flex",flexDirection:"row",gap:20,alignItems:"flex-start"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
+                  </div>
+                  <div style={{width:1,alignSelf:"stretch",background:PC.border,flexShrink:0}}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
+                  </div>
                 </div>
               ):tests==="EXERCISE_MODULE"?(
                 <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
