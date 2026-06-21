@@ -13358,14 +13358,22 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
               const romKeys = Object.keys(d).filter(k=>k.startsWith("rom_")&&k!=="rom_snapshots"&&d[k]);
               const mmtKeys = Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]&&!k.endsWith("_pain")&&!k.endsWith("_ef"));
-              const stKeys  = Object.keys(d).filter(k=>k.startsWith("st_")&&d[k]);
-              const neuroKeys = Object.keys(d).filter(k=>typeof d[k]==="string"&&d[k]&&(/^n_ref_/.test(k)||/^myo_/.test(k)||/^nt_/.test(k)||/^n_(c\d|t\d|l\d|s\d|s4s5)(_|$)/.test(k)||k.startsWith("n_der_")||k.startsWith("n_myot_")));
+              // Special tests: st_* AND regional keys (cx_spurling, lx_slr_*, shr_stt_*, knl_stt_*, af_stt_*)
+              const stKeys  = Object.keys(d).filter(k=>d[k]&&(k.startsWith("st_")||/^(cx|lx|shr|shl|knl|knr|af|hp|ew)_stt_/.test(k)||/^(cx_spurling|cx_distraction|cx_rf_vbi|lx_slr_l|lx_slr_r|lx_slump|lx_femoral|shr_stt|knl_stt|af_stt)/.test(k)));
+              // Neuro: n_* dermatome/myotome/reflex fields from Neuro module
+              const neuroKeys = Object.keys(d).filter(k=>typeof d[k]==="string"&&d[k]&&(
+                /^n_(c|t|l|s)\d/.test(k)||k.startsWith("n_ref_")||k.startsWith("n_der_")||
+                k.startsWith("n_myot_")||/^myo_/.test(k)||/^nt_/.test(k)||
+                /^(n_biceps|n_triceps|n_patella|n_achilles|n_babinski|n_brachio)$/.test(k)||
+                k.startsWith("neuro_")||k.startsWith("nrf_")
+              ));
               const kcKeys  = Object.keys(d).filter(k=>k.startsWith("kc_")&&d[k]);
-              const faKeys  = Object.keys(d).filter(k=>k.startsWith("fa_")&&d[k]);
+              const faKeys  = Object.keys(d).filter(k=>(k.startsWith("fa_")||k.startsWith("fascia_"))&&d[k]);
               const cyKeys  = Object.keys(d).filter(k=>k.startsWith("cy_")&&d[k]);
               const nktKeys = Object.keys(d).filter(k=>k.startsWith("nkt_")&&d[k]);
               const obsKeys = Object.keys(d).filter(k=>k.startsWith("obs_")&&k!=="obs_snapshots"&&d[k]);
-              const omKeys  = Object.keys(d).filter(k=>k.startsWith("om_history_")&&d[k]);
+              // Outcome measures: om_history_* OR om_psfs_* / om_ndi_* / ndi_score / psfs_score etc
+              const omKeys  = Object.keys(d).filter(k=>d[k]&&(k.startsWith("om_history_")||k.startsWith("om_psfs_")||k.startsWith("om_ndi_")||k.startsWith("om_koos_")||k.startsWith("om_dash_")||k.startsWith("om_lefs_")||/^(ndi_score|psfs_score|koos_score|dash_score|lefs_score|om_odi_score|om_report)$/.test(k)));
               const hasGait = !!(d.ag_antalgic||d.gait_pattern||d.g_rom_findings);
               const hasErgo = !!(d.ergo_total_score||d.ergo_cervical_risk);
 
@@ -17452,11 +17460,11 @@ function AppInner({ currentUser, onSignOut }) {
   // set(id, val) — legacy field-by-field style
   const set = useCallback((idOrObj, val) => {
     if (typeof idOrObj === "object" && idOrObj !== null) {
-      // New style: set({ ...data, field: value })
-      setData(idOrObj);
+      // New style: set({ ...data, field: value }) — merge over current state to avoid stale overwrites
+      setData(prev => ({ ...prev, ...idOrObj }));
     } else {
       // Legacy style: set("field_id", value)
-      setData(p => ({ ...p, [idOrObj]: val }));
+      setData(prev => ({ ...prev, [idOrObj]: val }));
     }
   }, []);
   const sections = Object.entries(ALL_TESTS);
