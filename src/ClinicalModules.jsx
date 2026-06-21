@@ -2542,37 +2542,37 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     // Unilateral movements (single value)
     const uniPairs = [
       // Cervical
-      ["C-Flex","rom_cflex",45],["C-Ext","rom_cext",45],
-      ["C-Lat Flex L","rom_clatl",45],["C-Lat Flex R","rom_clatr",45],
-      ["C-Rot L","rom_crotl",60],["C-Rot R","rom_crotr",60],
+      ["Cervical Flexion","rom_cflex",45],["Cervical Extension","rom_cext",45],
+      ["Cervical Lateral Flexion L","rom_clatl",45],["Cervical Lateral Flexion R","rom_clatr",45],
+      ["Cervical Rotation L","rom_crotl",60],["Cervical Rotation R","rom_crotr",60],
       // Thoracic
-      ["Th-Flex","rom_thflex",50],["Th-Ext","rom_thext",25],
-      ["Th-Rot L","rom_throtl",35],["Th-Rot R","rom_throtr",35],
+      ["Thoracic Flexion","rom_thflex",50],["Thoracic Extension","rom_thext",25],
+      ["Thoracic Rotation L","rom_throtl",35],["Thoracic Rotation R","rom_throtr",35],
       // Lumbar
-      ["L-Flex","rom_lflex",60],["L-Ext","rom_lext",25],
-      ["L-Lat Flex L","rom_llfl",25],["L-Lat Flex R","rom_llfr",25],
-      ["L-Rot L","rom_lrotl",5],["L-Rot R","rom_lrotr",5],
+      ["Lumbar Flexion","rom_lflex",60],["Lumbar Extension","rom_lext",25],
+      ["Lumbar Lateral Flexion L","rom_llfl",25],["Lumbar Lateral Flexion R","rom_llfr",25],
+      ["Lumbar Rotation L","rom_lrotl",5],["Lumbar Rotation R","rom_lrotr",5],
     ];
     // Bilateral movements (left and right stored as romKey_left / romKey_right)
     const bilaPairs = [
       // Shoulder
-      ["Sh-Flex","rom_sflex",180],["Sh-Ext","rom_sext",60],
-      ["Sh-Abd","rom_sabd",180],["Sh-Add","rom_sadd",30],
-      ["Sh-ER","rom_ser",90],["Sh-IR","rom_sir",70],
+      ["Shoulder Flexion","rom_sflex",180],["Shoulder Extension","rom_sext",60],
+      ["Shoulder Abduction","rom_sabd",180],["Shoulder Adduction","rom_sadd",30],
+      ["Shoulder External Rotation","rom_ser",90],["Shoulder Internal Rotation","rom_sir",70],
       // Elbow
-      ["El-Flex","rom_eflex",145],["El-Ext","rom_eext",0],
-      ["El-Sup","rom_esup",90],["El-Pro","rom_epro",90],
+      ["Elbow Flexion","rom_eflex",145],["Elbow Extension","rom_eext",0],
+      ["Forearm Supination","rom_esup",90],["Forearm Pronation","rom_epro",90],
       // Wrist
-      ["Wr-Flex","rom_wflex",80],["Wr-Ext","rom_wext",70],
+      ["Wrist Flexion","rom_wflex",80],["Wrist Extension","rom_wext",70],
       // Hip
-      ["Hip-Flex","rom_hflex",120],["Hip-Ext","rom_hext",20],
-      ["Hip-Abd","rom_habd",45],["Hip-Add","rom_hadd",30],
-      ["Hip-ER","rom_her",45],["Hip-IR","rom_hir",45],
+      ["Hip Flexion","rom_hflex",120],["Hip Extension","rom_hext",20],
+      ["Hip Abduction","rom_habd",45],["Hip Adduction","rom_hadd",30],
+      ["Hip External Rotation","rom_her",45],["Hip Internal Rotation","rom_hir",45],
       // Knee
-      ["Kn-Flex","rom_kflex",140],["Kn-Ext","rom_kext",0],
+      ["Knee Flexion","rom_kflex",140],["Knee Extension","rom_kext",0],
       // Ankle
-      ["Ank-DF","rom_adf",20],["Ank-PF","rom_apf",50],
-      ["Ank-Inv","rom_ainv",35],["Ank-Ev","rom_aev",15],
+      ["Ankle Dorsiflexion","rom_adf",20],["Ankle Plantarflexion","rom_apf",50],
+      ["Ankle Inversion","rom_ainv",35],["Ankle Eversion","rom_aev",15],
     ];
     // Helper to format single value with norm comparison
     const fmtVal = (val, norm) => {
@@ -2712,19 +2712,94 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (neuroLines.length) O_parts.push(`Neurological:\n${neuroLines.join("\n")}.`);
   }
 
-  // Special Tests
-  const allStKeys = Object.keys(data).filter(k => k.startsWith("st_") || k.startsWith("lx_kemp") || k.startsWith("lx_slump") || k.startsWith("lx_slr") || k.startsWith("lx_prone"));
-  const posTestsList = allStKeys.filter(k => String(data[k]).toLowerCase().includes("positive")).map(k => {
-    const label = k.replace("st_","").replace("lx_","").replace(/_/g," ");
-    const result = String(data[k]).substring(0,50);
-    return `${label} (${result})`;
-  });
-  const negTestsList = allStKeys.filter(k => String(data[k]).toLowerCase().includes("negative")).map(k => k.replace("st_","").replace("lx_","").replace(/_/g," "));
-  if (posTestsList.length || negTestsList.length) {
-    const stLines = [];
-    if (posTestsList.length) stLines.push(`  Positive: ${posTestsList.join("; ")}`);
-    if (negTestsList.length) stLines.push(`  Negative: ${negTestsList.join(", ")}`);
-    O_parts.push(`Special Tests:\n${stLines.join("\n")}.`);
+  // Special Tests — with proper clinical labels
+  {
+    const ST_LABEL_MAP = {
+      // Lumbar / Neural
+      "st_slr":"Straight Leg Raise","st_slr_test":"Straight Leg Raise","st_slr_left":"SLR (Left)","st_slr_right":"SLR (Right)",
+      "st_crossed_slr":"Crossed SLR","st_well_leg_raise":"Well Leg Raise","st_slump":"Slump Test",
+      "st_femoral_nerve":"Femoral Nerve Stretch","st_kemp":"Kemp's Test","st_prone_instability":"Prone Instability Test",
+      "st_valsalva":"Valsalva Manoeuvre","st_seated_flexion":"Seated Flexion Test",
+      // SIJ
+      "st_faber":"FABER / Patrick's Test","st_fadir":"FADIR Test","st_thigh_thrust":"Thigh Thrust",
+      "st_gaenslen":"Gaenslen's Test","st_sacral_compression":"Sacral Compression","st_sacral_distraction":"Sacral Distraction",
+      "st_compression":"Compression Test","st_distraction_sij":"SIJ Distraction",
+      // Cervical
+      "st_spurling":"Spurling's Test","st_distraction":"Cervical Distraction","st_vbi":"VBI Screen",
+      "st_upper_limb_tension":"ULTT (Median)","st_ultt":"ULTT","st_ultt2":"ULTT2 (Radial)","st_ultt3":"ULTT3 (Ulnar)",
+      "st_sharp_purser":"Sharp-Purser Test","st_frt":"Flexion-Rotation Test","st_alar_ligament":"Alar Ligament Test",
+      "st_foraminal_compression":"Foraminal Compression","st_hoffmann":"Hoffmann's Sign","st_babinski":"Babinski Sign",
+      "st_inverted_supinator":"Inverted Supinator Sign","st_clonus":"Clonus",
+      // Shoulder
+      "st_empty_can":"Empty Can (Jobe)","st_full_can":"Full Can Test","st_drop_arm":"Drop Arm Test",
+      "st_neer":"Neer Impingement","st_hawkins":"Hawkins-Kennedy","st_hawkins_kennedy":"Hawkins-Kennedy",
+      "st_painful_arc":"Painful Arc","st_external_rotation_lag":"External Rotation Lag Sign",
+      "st_er_lag":"External Rotation Lag Sign","st_internal_rotation_lag":"Internal Rotation Lag Sign",
+      "st_speeds":"Speed's Test","st_yergason":"Yergason's Test","st_obriens":"O'Brien's Active Compression",
+      "st_active_compression":"Active Compression Test","st_cross_arm":"Cross-Arm Adduction Test",
+      "st_horizontal_adduction":"Horizontal Adduction Test","st_apprehension":"Anterior Apprehension Test",
+      "st_anterior_apprehension":"Anterior Apprehension Test","st_relocation":"Relocation Test",
+      "st_sulcus_sign":"Sulcus Sign","st_supraspinatus":"Supraspinatus Test",
+      // Elbow
+      "st_cozen":"Cozen's Test","st_mill":"Mill's Test","st_maudsley":"Maudsley's Test",
+      "st_tennis_elbow":"Tennis Elbow Test","st_golfer_elbow":"Golfer's Elbow Test",
+      "st_tinel_elbow":"Tinel's at Elbow","st_tinel_cubital":"Tinel's (Cubital Tunnel)",
+      "st_elbow_flexion_test":"Elbow Flexion Test","st_medial_epicondyle":"Medial Epicondyle Stress Test",
+      // Wrist/Hand
+      "st_phalen":"Phalen's Test","st_tinel_wrist":"Tinel's at Wrist","st_tinel":"Tinel's Sign",
+      "st_carpal_compression":"Carpal Compression Test","st_finkelstein":"Finkelstein's Test","st_flick_sign":"Flick Sign",
+      // Hip
+      "st_patrick":"Patrick's (FABER) Test","st_ober":"Ober's Test","st_scour":"Scour / Quadrant Test",
+      "st_quadrant":"Hip Quadrant Test","st_impingement_hip":"Hip Impingement (FADIR)",
+      "st_freiberg":"Freiberg's Test","st_pace":"Pace's Test","st_beatty":"Beatty's Test",
+      "st_noble_compression":"Noble Compression Test","st_piriformis":"Piriformis Test",
+      "st_trendelenburg":"Trendelenburg Test",
+      // Knee
+      "st_lachman":"Lachman's Test","st_anterior_drawer":"Anterior Drawer (Knee)","st_anterior_drawer_knee":"Anterior Drawer (Knee)",
+      "st_posterior_drawer":"Posterior Drawer","st_pivot_shift":"Pivot Shift Test",
+      "st_mcmurray":"McMurray's Test","st_thessaly":"Thessaly Test","st_apley":"Apley's Compression",
+      "st_valgus_stress":"Valgus Stress Test","st_varus_stress":"Varus Stress Test",
+      "st_patella_grind":"Patellar Grind Test","st_clarke":"Clarke's Sign",
+      "st_crepitus":"Crepitus","st_ballottement":"Ballottement Test",
+      // Ankle/Foot
+      "st_anterior_drawer_ankle":"Anterior Drawer (Ankle)","st_talar_tilt":"Talar Tilt Test",
+      "st_thompson":"Thompson's Test","st_simmonds":"Simmonds Test",
+      "st_windlass":"Windlass Test","st_arc_sign":"Arc Sign","st_royal_london":"Royal London Hospital Test",
+      "st_ottawa_ankle":"Ottawa Ankle Rules","st_homan":"Homan's Sign",
+      // Lumbar aliases
+      "lx_kemp":"Kemp's Test","lx_slump":"Slump Test","lx_slr":"SLR (Lumbar)",
+      "lx_slr_left":"SLR Left","lx_slr_right":"SLR Right","lx_prone":"Prone Instability",
+      // Beighton / other
+      "st_beighton":"Beighton Score","st_upper_limb_tension":"ULTT","st_straight_leg":"Straight Leg Raise",
+    };
+    const toLabel = (k) => {
+      if (ST_LABEL_MAP[k]) return ST_LABEL_MAP[k];
+      // Auto-format: remove prefix, split underscores, title-case
+      return k.replace(/^(st_|lx_)/,"").split("_").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
+    };
+    const allStKeys = Object.keys(data).filter(k =>
+      (k.startsWith("st_") || k.startsWith("lx_kemp") || k.startsWith("lx_slump") || k.startsWith("lx_slr") || k.startsWith("lx_prone"))
+      && data[k] && String(data[k]).trim()
+    );
+    const posTests = allStKeys.filter(k => {
+      const s = String(data[k]).toLowerCase();
+      return s.includes("positive") || s.includes("+ve");
+    }).map(k => `${toLabel(k)}`);
+    const negTests = allStKeys.filter(k => {
+      const s = String(data[k]).toLowerCase();
+      return s.includes("negative") || s.includes("-ve");
+    }).map(k => toLabel(k));
+    const otherTests = allStKeys.filter(k => {
+      const s = String(data[k]).toLowerCase();
+      return !s.includes("positive") && !s.includes("+ve") && !s.includes("negative") && !s.includes("-ve");
+    }).map(k => `${toLabel(k)}: ${data[k]}`);
+    if (posTests.length || negTests.length || otherTests.length) {
+      const stLines = [];
+      if (posTests.length) stLines.push(`  Positive: ${posTests.join("; ")}`);
+      if (negTests.length) stLines.push(`  Negative: ${negTests.join(", ")}`);
+      if (otherTests.length) stLines.push(`  Other: ${otherTests.join("; ")}`);
+      O_parts.push(`Special Tests:\n${stLines.join("\n")}.`);
+    }
   }
 
   // ── CPA (Neurokinetic Therapy) ──────────────────────────────────────────
@@ -3367,9 +3442,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
      ["Lumbar flexion","lflex",80],["Lumbar extension","lext",25],["Lumbar rotation R","lrotr",5],["Lumbar rotation L","lrotl",5],
      ["Thoracic flexion","thflex",50],["Thoracic extension","thext",25],
     ].forEach(([label,key,norm]) => { const val=rv(key); if(val){ const p=romPct(val,norm); rows.push({label,single:val,norm,pct:p,bilateral:false}); }});
-    [["Shoulder flexion","sflex",180],["Shoulder abduction","sabd",180],["Shoulder ER","ser",90],["Shoulder IR","sir",70],
-     ["Hip flexion","hflex",120],["Knee flexion","kflex",140],["Ankle DF","adf",20],["Ankle PF","apf",50],
-     ["Elbow flexion","eflex",145],["Wrist flexion","wflex",80],
+    [["Shoulder Flexion","sflex",180],["Shoulder Abduction","sabd",180],["Shoulder Ext Rotation","ser",90],["Shoulder Int Rotation","sir",70],
+     ["Hip Flexion","hflex",120],["Knee Flexion","kflex",140],["Ankle Dorsiflexion","adf",20],["Ankle Plantarflexion","apf",50],
+     ["Elbow Flexion","eflex",145],["Wrist Flexion","wflex",80],["Hip Abduction","habd",45],["Hip Int Rotation","hir",45],
     ].forEach(([label,key,norm]) => { const vl=rvS(key,"L"),vr=rvS(key,"R"); if(vl||vr){ rows.push({label,l:vl,r:vr,norm,bilateral:true}); }});
     return rows;
   }, [data]);
@@ -7350,26 +7425,98 @@ function LiveSOAPPanel({ data, onNavigate }) {
   const exportPDF = () => {
     if (!soap) return;
     const patName = String(data["dem_name"] || "Patient").replace(/[^a-zA-Z0-9 ]/g,"").trim();
-    const date    = new Date().toLocaleDateString("en-AU");
+    const dob     = data["dem_dob"] || "";
+    const age2    = data["dem_age"] ? `${data["dem_age"]}y` : "";
+    const sex2    = data["dem_gender"] || data["dem_sex"] || "";
+    const dx      = data["soap_a_diagnosis"] || "";
+    const icd2    = data["soap_icd10"] || "";
+    const clinician = data["soap_clinician"] || "";
+    const date    = new Date().toLocaleDateString("en-AU", {day:"2-digit",month:"long",year:"numeric"});
+
+    const formatSection = (text) => {
+      if (!text) return "<p style=\"color:#9CA3AF;font-style:italic\">No data recorded.</p>";
+      return text.split("\n").map(line => {
+        const escaped = line.replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        if (!escaped.trim()) return "<br>";
+        // Section headers (e.g. "Range of Motion:", "Special Tests:")
+        if (/^[A-Z][A-Za-z \/()]+:$/.test(escaped.trim())) {
+          return `<div class="subsection">${escaped.trim()}</div>`;
+        }
+        // Indented lines
+        if (escaped.startsWith("  ")) {
+          const isPos = escaped.toLowerCase().includes("positive");
+          const isNeg = escaped.toLowerCase().includes("negative");
+          const isFlag = escaped.includes("⚠") || escaped.includes("❌");
+          const cls = isPos?"pos":isNeg?"neg":isFlag?"flag":"item";
+          return `<div class="${cls}">${escaped.trim()}</div>`;
+        }
+        return `<div class="line">${escaped}</div>`;
+      }).join("");
+    };
+
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
 <title>SOAP Note — ${patName}</title>
 <style>
-  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #1a1025; line-height: 1.6; }
-  h1 { color: #7c3aed; font-size: 1.4rem; border-bottom: 2px solid #7c3aed; padding-bottom: 8px; }
-  h2 { font-size: 1rem; color: #7c3aed; margin: 20px 0 6px; text-transform: uppercase; letter-spacing: 1px; }
-  pre { background: #f5f0fb; padding: 12px 16px; border-radius: 8px; white-space: pre-wrap; font-size: 0.82rem; font-family: inherit; }
-  .meta { font-size: 0.8rem; color: #7e6a9a; margin-bottom: 24px; }
-  @media print { body { margin: 20px; } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, Arial, sans-serif; max-width: 820px; margin: 32px auto; color: #111827; line-height: 1.65; font-size: 13px; background: #fff; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #6366F1; padding-bottom: 14px; margin-bottom: 20px; }
+  .header-left h1 { font-size: 22px; font-weight: 800; color: #1E1B4B; margin-bottom: 4px; }
+  .header-left .meta { font-size: 12px; color: #6B7280; }
+  .header-right { text-align: right; font-size: 12px; color: #6B7280; }
+  .dx-banner { background: #EEF2FF; border-left: 4px solid #6366F1; padding: 10px 14px; border-radius: 0 8px 8px 0; margin-bottom: 20px; }
+  .dx-banner .dx-label { font-size: 10px; font-weight: 700; color: #4F46E5; text-transform: uppercase; letter-spacing: 0.08em; }
+  .dx-banner .dx-name { font-size: 16px; font-weight: 700; color: #1E40AF; }
+  .dx-banner .icd { font-size: 11px; color: #6366F1; margin-top: 2px; }
+  .section { margin-bottom: 22px; page-break-inside: avoid; }
+  .section-header { display: flex; align-items: center; gap: 10px; background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px 14px; margin-bottom: 10px; }
+  .section-icon { font-size: 16px; }
+  .section-title { font-size: 14px; font-weight: 700; color: #111827; }
+  .section-sub { font-size: 11px; color: #6B7280; margin-left: auto; }
+  .section-body { padding: 0 4px; }
+  .subsection { font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.06em; margin: 10px 0 4px; border-bottom: 1px solid #F3F4F6; padding-bottom: 2px; }
+  .item { font-size: 12.5px; color: #374151; padding: 2px 0 2px 12px; border-left: 2px solid #E5E7EB; margin: 2px 0; }
+  .pos  { font-size: 12.5px; color: #DC2626; padding: 2px 0 2px 12px; border-left: 2px solid #FCA5A5; margin: 2px 0; font-weight: 600; }
+  .neg  { font-size: 12.5px; color: #059669; padding: 2px 0 2px 12px; border-left: 2px solid #A7F3D0; margin: 2px 0; }
+  .flag { font-size: 12.5px; color: #D97706; padding: 2px 0 2px 12px; border-left: 2px solid #FDE68A; margin: 2px 0; font-weight: 600; }
+  .line { font-size: 12.5px; color: #111827; padding: 1px 0; }
+  .footer { margin-top: 32px; padding-top: 10px; border-top: 1px solid #E5E7EB; font-size: 11px; color: #9CA3AF; display: flex; justify-content: space-between; }
+  @media print { body { margin: 16px; } .section { page-break-inside: avoid; } }
 </style></head><body>
-<h1>SOAP Note — ${patName}</h1>
-<div class="meta">Date: ${date} · Auto-generated from PhysioMind Pro assessment</div>
-<h2>S — Subjective</h2><pre>${(soap.S||"").replace(/</g,"&lt;")}</pre>
-<h2>O — Objective</h2><pre>${(soap.O||"").replace(/</g,"&lt;")}</pre>
-<h2>A — Assessment</h2><pre>${(soap.A||"").replace(/</g,"&lt;")}</pre>
-<h2>P — Plan</h2><pre>${(soap.P||"").replace(/</g,"&lt;")}</pre>
+<div class="header">
+  <div class="header-left">
+    <h1>${patName}</h1>
+    <div class="meta">${[dob,age2,sex2].filter(Boolean).join(" · ")}</div>
+  </div>
+  <div class="header-right">
+    <div><strong>SOAP Note</strong></div>
+    <div>${date}</div>
+    ${clinician ? `<div>${clinician}</div>` : ""}
+  </div>
+</div>
+${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div><div class="dx-name">${dx}</div>${icd2?`<div class="icd">ICD-10: ${icd2}</div>`:""}</div>` : ""}
+<div class="section">
+  <div class="section-header"><span class="section-icon">💬</span><span class="section-title">S — Subjective</span><span class="section-sub">Patient reported</span></div>
+  <div class="section-body">${formatSection(soap.S)}</div>
+</div>
+<div class="section">
+  <div class="section-header"><span class="section-icon">📋</span><span class="section-title">O — Objective</span><span class="section-sub">Clinical findings</span></div>
+  <div class="section-body">${formatSection(soap.O)}</div>
+</div>
+<div class="section">
+  <div class="section-header"><span class="section-icon">🧠</span><span class="section-title">A — Assessment</span><span class="section-sub">Clinical impression</span></div>
+  <div class="section-body">${formatSection(soap.A)}</div>
+</div>
+<div class="section">
+  <div class="section-header"><span class="section-icon">✅</span><span class="section-title">P — Plan</span><span class="section-sub">Treatment & goals</span></div>
+  <div class="section-body">${formatSection(soap.P)}</div>
+</div>
+<div class="footer">
+  <span>Generated by PhysioM · ${date}</span>
+  <span>Clinician: ${clinician || "—"}</span>
+</div>
 </body></html>`;
-    const w = window.open("","_blank","width=900,height=700");
-    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 600); }
+    const w = window.open("","_blank","width=960,height=800");
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 800); }
   };
 
   const SECTION_LABELS = {
@@ -7564,17 +7711,29 @@ function LiveSOAPPanel({ data, onNavigate }) {
             </div>
           </div>
 
-          {/* SOAP text */}
+          {/* SOAP text — formatted */}
           {currentText ? (
-            <div style={{
-              fontSize:"0.67rem", color:"#1a1025",
-              lineHeight:1.65, whiteSpace:"pre-wrap",
-              background:"#faf5ff", borderRadius:8,
-              padding:"10px 12px",
-              border:"1px solid rgba(124,58,237,0.1)",
-              fontFamily:"'Segoe UI',system-ui,sans-serif",
-            }}>
-              {currentText}
+            <div style={{background:"#faf5ff",borderRadius:8,padding:"10px 12px",border:"1px solid rgba(124,58,237,0.1)",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+              {currentText.split("\n").map((line,i)=>{
+                if(!line.trim()) return <div key={i} style={{height:6}}/>;
+                // Section header (e.g. "Range of Motion:", "Special Tests:")
+                if(/^[A-Z][A-Za-z /()]+:$/.test(line.trim())){
+                  return <div key={i} style={{fontSize:10,fontWeight:700,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.07em",marginTop:10,marginBottom:3,borderBottom:"1px solid #E0D9F7",paddingBottom:2}}>{line.trim()}</div>;
+                }
+                // Indented lines
+                if(line.startsWith("  ")){
+                  const txt=line.trim();
+                  const isPos=/positive|\+ve/i.test(txt);
+                  const isNeg=/negative|-ve/i.test(txt);
+                  const isFlag=/⚠|❌|urgent|red flag/i.test(txt);
+                  const color=isPos?"#DC2626":isNeg?"#059669":isFlag?"#D97706":"#374151";
+                  const bg=isPos?"#FEF2F2":isNeg?"#F0FDF4":isFlag?"#FFFBEB":"transparent";
+                  const border=isPos?"#FCA5A5":isNeg?"#A7F3D0":isFlag?"#FDE68A":"#E5E7EB";
+                  return <div key={i} style={{fontSize:11.5,color,background:bg,borderLeft:`2px solid ${border}`,paddingLeft:8,paddingTop:2,paddingBottom:2,marginBottom:2,borderRadius:"0 4px 4px 0",fontWeight:isPos||isFlag?600:400}}>{txt}</div>;
+                }
+                // Top-level line
+                return <div key={i} style={{fontSize:12,color:"#1a1025",fontWeight:500,marginTop:4,lineHeight:1.5}}>{line}</div>;
+              })}
             </div>
           ) : (
             <div style={{
