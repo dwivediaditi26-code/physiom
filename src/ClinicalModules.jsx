@@ -3211,7 +3211,7 @@ function detectModulesV2(data) {
     outcomes: has(["om_report","ndi_score","psfs_score","koos_score","dash_score","lefs_score",
       "om_psfs_1_activity","om_ndi_1","om_koos_pain","om_dash_1","om_lefs_1","om_odi_score",
       "om_ndi_score","om_dash_score","om_lefs_score"]),
-    stt: has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can","knl_stt_lachman","af_stt_windlass"]),
+    stt: Object.keys(data).some(k=>k.startsWith("st_")&&data[k]&&String(data[k]).trim()) || has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can"]),
     functional: has(["fl_work","fl_mobility","fl_self_care","fl_domestic","ar_goal_function"]),
     neuro: has(["neuro_dermatomal","neuro_reflex_biceps","neuro_sensation","neuro_weakness","neuro_reflex_ankle",
       "n_c4","n_c5","n_c6","n_c7","n_l4","n_l5","n_s1",
@@ -3385,18 +3385,55 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   }, [data]);
 
   // STT rows
-  const sttRows = useMemo(() => [
-    ["cx_spurling","Spurling's","Nerve root compression"],["cx_distraction","Cervical distraction","Radiculopathy"],
-    ["cx_rf_vbi","VBI screen","Vertebrobasilar"],["cx_rf_myelopathy","Myelopathy screen","UMN"],
-    ["lx_slr_l","SLR left","L4/5/S1 root"],["lx_slr_r","SLR right","Lumbar root"],
-    ["lx_crossed_slr","Crossed SLR","Central disc"],["lx_femoral_stretch","Femoral stretch","L2/3/4 root"],
-    ["lx_slump","Slump test","Neurodynamic"],
-    ["shr_stt_empty_can","Empty can","Supraspinatus"],["shr_stt_neer","Neer's","Subacromial"],
-    ["shr_stt_hawkins","Hawkins-Kennedy","Impingement"],
-    ["knl_stt_lachman","Lachman","ACL"],["knl_stt_anterior_drawer","Ant drawer","ACL"],
-    ["knl_stt_mcmurray","McMurray","Meniscus"],["af_stt_windlass","Windlass","Plantar fascia"],
-    ["af_stt_talar","Talar tilt","Lateral ankle"],
-  ].map(([key,name,sig])=>({key,name,sig,val:v(key)})).filter(t=>t.val), [data]);
+  const sttRows = useMemo(() => {
+    const rows = [];
+    // Map of st_* id -> [display name, clinical significance]
+    const ST_NAMES = {
+      "st_spurling":"Spurling's Test","st_distraction":"Cervical Distraction","st_sharp_purser":"Sharp-Purser",
+      "st_vbi":"VBI Test","st_alar":"Alar Ligament","st_flex_rot":"Flexion-Rotation Test",
+      "st_jackson":"Jackson's Compression","st_axial_loading":"Axial Loading",
+      "st_neer":"Neer's Test","st_hawkins":"Hawkins-Kennedy","st_empty_can":"Empty Can (Jobe)",
+      "st_full_can":"Full Can Test","st_lift_off":"Lift-Off (Gerber)","st_belly_press":"Belly Press",
+      "st_bear_hug":"Bear Hug","st_er_lag":"ER Lag Sign","st_hornblower":"Hornblower's Sign",
+      "st_obrien":"O'Brien's Test","st_speeds":"Speed's Test","st_yergason":"Yergason's Test",
+      "st_apprehension":"Apprehension Test","st_relocation":"Relocation Test","st_sulcus":"Sulcus Sign",
+      "st_acromioclavicular":"AC Paxinos Test","st_cross_arm":"Cross-Arm Test",
+      "st_cozens":"Cozen's Test","st_mills":"Mill's Test","st_golfers":"Golfer's Elbow Test",
+      "st_phalen":"Phalen's Test","st_tinel_wrist":"Tinel's (Wrist)","st_finkelstein":"Finkelstein's",
+      "st_watson":"Watson Scaphoid Shift",
+      "st_slr_test":"SLR","st_slump_test":"Slump Test","st_prone_instab":"Prone Instability",
+      "st_stork":"Stork Test","st_kemp":"Kemp's Test","st_adams":"Adam's Forward Bend",
+      "st_si_distraction":"SI Distraction","st_si_compression":"SI Compression",
+      "st_gaenslen":"Gaenslen's Test","st_thigh_thrust":"Thigh Thrust","st_lateral_shift":"Lateral Shift",
+      "st_faber_test":"FABER/Patrick's","st_fadir_test":"FADIR Test","st_hip_scour":"Hip Scour",
+      "st_trendelenburg_test":"Trendelenburg","st_thomas_test":"Thomas Test","st_ober_test":"Ober's Test",
+      "st_piriformis_test":"Piriformis (FAIR)","st_90_90":"90-90 Hamstring",
+      "st_lachmans":"Lachman's Test","st_anterior_drawer":"Anterior Drawer","st_posterior_drawer":"Posterior Drawer",
+      "st_pivot_shift":"Pivot Shift","st_valgus_stress_knee":"Valgus Stress","st_varus_stress_knee":"Varus Stress",
+      "st_mcmurray_test":"McMurray's Test","st_apley":"Apley's Grind","st_thessaly":"Thessaly Test",
+      "st_clarkes":"Clarke's Sign","st_patellar_grind":"Patellar Grind","st_effusion":"Ballottement Test",
+      "st_noble":"Noble Compression","st_ant_drawer_ankle":"Ankle Anterior Drawer","st_talar_tilt":"Talar Tilt",
+      "st_squeeze_ankle":"Squeeze/Mortise","st_thompson_test":"Thompson's Test","st_windlass_test":"Windlass Test",
+      "st_navicular_drop":"Navicular Drop","st_tinel_ankle":"Tinel's (Ankle)","st_royal_london":"Royal London",
+      "st_ultt1":"ULTT1 (Median)","st_ultt2":"ULTT2 (Radial)","st_ultt3":"ULTT3 (Ulnar)",
+      "st_femoral_nerve_stretch":"Femoral Nerve Stretch","st_babinski":"Babinski","st_hoffmanns":"Hoffmann's",
+    };
+    // Scan all st_* keys in data (bilateral: st_xxx_left / st_xxx_right / st_xxx)
+    const seen = new Set();
+    Object.keys(data).forEach(k => {
+      const base = k.replace(/_left$|_right$/, "");
+      if (!base.startsWith("st_") || seen.has(base)) return;
+      seen.add(base);
+      const left  = v(base+"_left");
+      const right = v(base+"_right");
+      const single= v(base);
+      const combined = [left&&`L: ${left}`, right&&`R: ${right}`].filter(Boolean).join(" / ") || single;
+      if (!combined) return;
+      const name = ST_NAMES[base] || base.replace(/^st_/,"").replace(/_/g," ").replace(/\w/g,c=>c.toUpperCase());
+      rows.push({key:base, name, sig:"", val:combined});
+    });
+    return rows;
+  }, [data]);
 
   // Neuro rows — includes both neuro_* fields and actual n_* dermatome/myotome/reflex fields
   const neuroRows = useMemo(() => {
@@ -3480,7 +3517,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   // Positive/negative findings for Assessment
   const posFindings = useMemo(() => {
     const f=[];
-    sttRows.forEach(t=>{const lc=t.val.toLowerCase();if(lc.includes("positive")||lc.includes("+ve"))f.push(t.name+" +ve ("+t.sig+")");});
+    sttRows.forEach(t=>{const lc=t.val.toLowerCase();if(lc.includes("positive")||lc.includes("+ve"))f.push(t.name+(t.sig?" +ve ("+t.sig+")":" +ve"));});
     romRows.forEach(r=>{
       if(r.single){const p=romPct(r.single,r.norm);if(p&&p<75)f.push(r.label+": "+r.single+"° / "+r.norm+"° norm");}
       if(r.bilateral){const pl=romPct(r.l,r.norm),pr=romPct(r.r,r.norm);if(pl&&pl<75)f.push(r.label+" L: "+r.l+"°");if(pr&&pr<75)f.push(r.label+" R: "+r.r+"°");}
