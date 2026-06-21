@@ -13224,7 +13224,6 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
           </div>
         )}
 
-        )}
         {tab==="assessment" && (
           <div className="tab-content" style={{padding:"16px 16px"}}>
 
