@@ -18264,35 +18264,54 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
-                <div style={{background:PC.s2,borderRadius:14,border:`1px solid ${PC.border}`,overflow:"hidden"}}>
-                  {[
-                    {l:"Full Name",     v:data.dem_name},
-                    {l:"Date of Birth", v:data.dem_dob},
-                    {l:"Age",           v:data.dem_age?`${data.dem_age} years`:null},
-                    {l:"Sex",           v:data.dem_sex||data.dem_gender},
-                    {l:"Dominant Hand", v:data.dem_dominant||data.dem_hand},
-                    {l:"Occupation",    v:data.dem_occupation},
-                    {l:"Work Status",   v:Array.isArray(data.dem_work_status)?data.dem_work_status.join(", "):data.dem_work_status},
-                    {l:"Referred By",   v:data.dem_referral},
-                    {l:"GP",            v:data.dem_gp||data.dem_referral_dr},
-                    {l:"Phone",         v:data.dem_phone||data.dem_contact},
-                    {l:"Email",         v:data.dem_email},
-                    {l:"Address",       v:data.dem_address},
-                    {l:"Insurance",     v:data.dem_insurance},
-                    {l:"Medical Hx",    v:data.dem_medical_hx},
-                    {l:"Medications",   v:data.dem_medications||data.dem_medication},
-                    {l:"Consent",       v:data.dem_consent||(data.consent_treat?"Yes — written":null)},
-                  ].filter(r=>r.v).map((row,i,arr)=>(
-                    <div key={i} style={{display:"flex",gap:12,padding:"11px 16px",borderBottom:i<arr.length-1?`1px solid ${PC.border}`:"none",alignItems:"flex-start"}}>
-                      <span style={{fontSize:"0.78rem",color:PC.muted,minWidth:110,flexShrink:0,paddingTop:1}}>{row.l}</span>
-                      <span style={{fontSize:"0.85rem",fontWeight:600,color:PC.text,flex:1,lineHeight:1.5}}>{row.v}</span>
-                    </div>
-                  ))}
-                  {!(data.dem_name||data.dem_age) && (
-                    <div style={{padding:"24px 16px",textAlign:"center",color:PC.muted,fontSize:"0.82rem"}}>
-                      No demographic data recorded yet. Create a new patient or fill in via the New Patient form.
-                    </div>
-                  )}
+                <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                  {(()=>{
+                    const inp={width:"100%",background:PC.s3,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.85rem",boxSizing:"border-box"};
+                    const lbl={fontSize:"0.78rem",fontWeight:700,color:PC.muted,marginBottom:5,display:"block"};
+                    const sel=(id,opts)=>(<select style={inp} value={data[id]||""} onChange={e=>set(id,e.target.value)}><option value="">— select —</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>);
+                    const field=(label,el)=>(<div style={{marginBottom:12}}><label style={lbl}>{label}</label>{el}</div>);
+                    const card=(title,children)=>(<div style={{background:PC.s2,borderRadius:12,border:`1px solid ${PC.border}`,padding:"14px 16px"}}><div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:12}}>{title}</div>{children}</div>);
+                    return(<>
+                      {card("Personal Details",<>
+                        {field("Full Name",<input style={inp} placeholder="e.g. Riya Sharma" value={data.dem_name||""} onChange={e=>set("dem_name",e.target.value)}/>)}
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                          <div>{field("Date of Birth",<input style={inp} type="date" value={data.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>)}</div>
+                          <div>{field("Age",<input style={inp} type="number" placeholder="e.g. 34" value={data.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>)}</div>
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                          <div>{field("Sex",sel("dem_sex",["Female","Male","Non-binary","Prefer not to say"]))}</div>
+                          <div>{field("Dominant Hand",sel("dem_dominant",["Right","Left","Ambidextrous"]))}</div>
+                        </div>
+                        {field("Occupation",<input style={inp} placeholder="e.g. Teacher, Desk worker" value={data.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>)}
+                        {field("Employer / Industry",<input style={inp} placeholder="e.g. ABC Corp, Healthcare" value={data.dem_employer||""} onChange={e=>set("dem_employer",e.target.value)}/>)}
+                        {field("Work Status",sel("dem_work_status",["Full time","Part time","Self employed","Off work — injury","Off work — illness","Retired","Unemployed","Student","Home duties"]))}
+                      </>)}
+                      {card("Contact Details",<>
+                        {field("Phone Number",<input style={inp} type="tel" placeholder="+91 98765 43210" value={data.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>)}
+                        {field("Email Address",<input style={inp} type="email" placeholder="patient@email.com" value={data.dem_email||""} onChange={e=>set("dem_email",e.target.value)}/>)}
+                        {field("Address",<input style={inp} placeholder="Street, City, Postcode" value={data.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>)}
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                          <div>{field("Emergency Contact Name",<input style={inp} placeholder="Full name" value={data.dem_ec_name||""} onChange={e=>set("dem_ec_name",e.target.value)}/>)}</div>
+                          <div>{field("Emergency Contact Phone",<input style={inp} type="tel" placeholder="+91 98765 43210" value={data.dem_ec_phone||""} onChange={e=>set("dem_ec_phone",e.target.value)}/>)}</div>
+                        </div>
+                      </>)}
+                      {card("Clinical & Referral",<>
+                        {field("Referring Doctor / GP",<input style={inp} placeholder="Dr. Name, Hospital" value={data.dem_referral_dr||data.dem_gp||""} onChange={e=>set("dem_referral_dr",e.target.value)}/>)}
+                        {field("Referral Source",sel("dem_referral",["GP","Self-referral","Specialist","Workplace / Employer","Insurance","Other"]))}
+                        {field("Insurance / Fund",<input style={inp} placeholder="e.g. CGHS, ESI, Private, Self-pay" value={data.dem_insurance||""} onChange={e=>set("dem_insurance",e.target.value)}/>)}
+                        {field("Policy / Member Number",<input style={inp} placeholder="Optional" value={data.dem_policy_no||""} onChange={e=>set("dem_policy_no",e.target.value)}/>)}
+                        {field("Relevant Medical History",<textarea style={{...inp,minHeight:72,resize:"vertical"}} placeholder="Diabetes, hypertension, previous surgeries..." value={data.dem_medical_hx||""} onChange={e=>set("dem_medical_hx",e.target.value)}/>)}
+                        {field("Current Medications",<input style={inp} placeholder="e.g. Metformin 500mg, Amlodipine 5mg" value={data.dem_medications||""} onChange={e=>set("dem_medications",e.target.value)}/>)}
+                      </>)}
+                      {card("Consent",<>
+                        {field("Consent to Treatment",sel("dem_consent",["Yes — verbal","Yes — written","Not yet"]))}
+                        <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginTop:4}}>
+                          <input type="checkbox" checked={!!data.consent_treat} onChange={e=>set("consent_treat",e.target.checked)} style={{width:16,height:16,flexShrink:0}}/>
+                          <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:600}}>Written consent obtained</span>
+                        </label>
+                      </>)}
+                    </>);
+                  })()}
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
