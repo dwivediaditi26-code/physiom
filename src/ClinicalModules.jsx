@@ -3970,96 +3970,105 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {secBadge("Clinical impression")}
         </div>
         <div style={cb}>
-          {/* ── Suggested Clinical Diagnosis ── */}
-          {(()=>{
-            const soap = buildRealtimeSOAP(data);
-            const autoA = soap.A || "";
-            const suggestMatch = autoA.match(/Working diagnosis[:\s]+([^.\n]+)/i)||autoA.match(/diagnosis[:\s]+([^.\n]+)/i);
-            const suggestDx = suggestMatch ? suggestMatch[1].trim() : null;
-            return suggestDx ? (
-              <div style={{padding:"10px 14px",background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:12,marginBottom:10}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#065F46",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>💡 Suggested Clinical Diagnosis</div>
-                <div style={{fontSize:14,fontWeight:700,color:"#064E3B",lineHeight:1.4}}>{suggestDx}</div>
-                {!dx&&<button onClick={()=>set("soap_a_diagnosis",suggestDx)} style={{marginTop:6,padding:"4px 12px",fontSize:11,background:"#059669",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use this diagnosis</button>}
-              </div>
-            ) : null;
-          })()}
 
-          {/* ── Provisional Diagnosis Input ── */}
-          <div style={{marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:600,color:"#374151",marginBottom:4}}>Provisional Diagnosis</div>
-            <input placeholder="Type working / provisional diagnosis..." value={dx} onChange={e=>set("soap_a_diagnosis",e.target.value)} style={{...inp,marginBottom:4,fontSize:14,fontWeight:600,color:"#1E40AF",background:"#EEF2FF",border:"2px solid #C7D2FE"}}/>
-            {dx&&<div style={{padding:"8px 12px",background:"#EEF2FF",border:"1px solid #C7D2FE",borderRadius:10}}>
-              <div style={{fontSize:10,fontWeight:600,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>Provisional Diagnosis</div>
-              <div style={{fontSize:15,fontWeight:700,color:"#1E40AF"}}>{dx}</div>
+          {/* ═══ 1. PROVISIONAL DIAGNOSIS ═══ */}
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#1E40AF",letterSpacing:"0.01em",marginBottom:8,borderBottom:"2px solid #C7D2FE",paddingBottom:6}}>Provisional Diagnosis</div>
+
+            {/* Suggested from data */}
+            {(()=>{
+              const soap = buildRealtimeSOAP(data);
+              const autoA = soap.A || "";
+              const suggestMatch = autoA.match(/Working diagnosis[:\s]+([^.\n]+)/i)||autoA.match(/diagnosis[:\s]+([^.\n]+)/i);
+              const suggestDx = suggestMatch ? suggestMatch[1].trim() : null;
+              return suggestDx ? (
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:10,marginBottom:8}}>
+                  <span style={{fontSize:11,color:"#065F46",fontWeight:600,flex:1}}>💡 {suggestDx}</span>
+                  {!dx&&<button onClick={()=>set("soap_a_diagnosis",suggestDx)} style={{padding:"3px 10px",fontSize:11,background:"#059669",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>Use</button>}
+                </div>
+              ) : null;
+            })()}
+
+            {/* Manual input */}
+            <input placeholder="Type provisional / working diagnosis..." value={dx} onChange={e=>set("soap_a_diagnosis",e.target.value)} style={{...inp,marginBottom:6,fontSize:13,fontWeight:600,color:"#1E40AF"}}/>
+            <input placeholder="ICD-10 code (e.g. M51.1)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={{...inp,marginBottom:0,fontSize:12}}/>
+
+            {/* Display chosen diagnosis */}
+            {dx&&<div style={{marginTop:8,padding:"10px 14px",background:"#EEF2FF",border:"2px solid #6366F1",borderRadius:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>Provisional Diagnosis</div>
+              <div style={{fontSize:15,fontWeight:700,color:"#1E40AF",lineHeight:1.3}}>{dx}</div>
+              {icd&&<div style={{fontSize:11,color:"#6366F1",marginTop:2}}>ICD-10: {icd}</div>}
             </div>}
           </div>
 
-          {/* ── ICD-10 Code ── */}
-          <input placeholder="ICD-10 code (e.g. M54.5 — Low Back Pain)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={inp}/>
-
-          {/* ── Differential Diagnosis ── */}
+          {/* ═══ 2. DIFFERENTIAL DIAGNOSIS ═══ */}
           {(()=>{
-            const DIFF_DX_OPTIONS = {
-              cervical: ["Cervical Radiculopathy","Cervical Facet Syndrome","Cervical Disc Herniation","Cervicogenic Headache","Thoracic Outlet Syndrome","Myelopathy"],
-              shoulder: ["Rotator Cuff Tear","Subacromial Impingement","Adhesive Capsulitis","AC Joint Pathology","Biceps Tendinopathy","Labral Tear","GH Instability"],
-              elbow: ["Lateral Epicondylalgia","Medial Epicondylalgia","Cubital Tunnel Syndrome","Radial Tunnel Syndrome","OA Elbow","Biceps Tendinopathy"],
-              wrist: ["Carpal Tunnel Syndrome","De Quervain's Tenosynovitis","TFCC Tear","Scaphoid Fracture","Wrist OA","Ganglion Cyst"],
-              lumbar: ["Lumbar Disc Herniation","Lumbar Facet Syndrome","Lumbar Radiculopathy","Lumbar Canal Stenosis","SIJ Dysfunction","Spondylolisthesis","Piriformis Syndrome","Myofascial Pain"],
-              hip: ["Hip OA","FAI","Hip Labral Tear","Greater Trochanteric Pain Syndrome","Piriformis Syndrome","Snapping Hip"],
-              knee: ["ACL Injury","Meniscal Tear","Patellofemoral Pain","ITB Syndrome","Knee OA","Pes Anserinus Bursitis","PCL Injury"],
-              ankle: ["Lateral Ankle Sprain","Achilles Tendinopathy","Plantar Fasciitis","Anterior Ankle Impingement","Peroneal Tendinopathy"],
+            const DIFF_DX = {
+              cervical: ["Cervical Radiculopathy","Cervical Facet Syndrome","Cervical Disc Herniation","Cervicogenic Headache","Thoracic Outlet Syndrome","Myelopathy","Cervical Spondylosis"],
+              shoulder: ["Rotator Cuff Tear","Subacromial Impingement","Adhesive Capsulitis","AC Joint Pathology","Biceps Tendinopathy","Labral Tear","GH Instability","Calcific Tendinopathy"],
+              elbow: ["Lateral Epicondylalgia","Medial Epicondylalgia","Cubital Tunnel Syndrome","Radial Tunnel Syndrome","Elbow OA","Biceps Tendinopathy","Olecranon Bursitis"],
+              wrist: ["Carpal Tunnel Syndrome","De Quervain's Tenosynovitis","TFCC Tear","Scaphoid Fracture","Wrist OA","Ganglion Cyst","Ulnar Nerve Entrapment"],
+              lumbar: ["Lumbar Disc Herniation","Lumbar Facet Syndrome","Lumbar Radiculopathy","Lumbar Canal Stenosis","SIJ Dysfunction","Spondylolisthesis","Piriformis Syndrome","Myofascial Pain","Spondylosis"],
+              hip: ["Hip OA","FAI","Hip Labral Tear","Greater Trochanteric Pain Syndrome","Piriformis Syndrome","Snapping Hip","SIJ Dysfunction"],
+              knee: ["ACL Injury","Meniscal Tear","Patellofemoral Pain","ITB Syndrome","Knee OA","Pes Anserinus Bursitis","PCL Injury","Patellar Tendinopathy"],
+              ankle: ["Lateral Ankle Sprain","Achilles Tendinopathy","Plantar Fasciitis","Anterior Ankle Impingement","Peroneal Tendinopathy","Tibialis Posterior Dysfunction"],
               general: ["Myofascial Pain Syndrome","Fibromyalgia","Central Sensitisation","Referred Pain","Somatic Symptom Disorder","Hypermobility Spectrum Disorder"]
             };
             const body = String(data.dem_body_part||data.soap_region||data.cx_region||data.lx_region||"").toLowerCase();
-            let dxOpts = [...DIFF_DX_OPTIONS.general];
-            if(body.includes("cerv")||body.includes("neck")) dxOpts=[...DIFF_DX_OPTIONS.cervical,...dxOpts];
-            else if(body.includes("shou")) dxOpts=[...DIFF_DX_OPTIONS.shoulder,...dxOpts];
-            else if(body.includes("elbow")||body.includes("cx_lat")) dxOpts=[...DIFF_DX_OPTIONS.elbow,...dxOpts];
-            else if(body.includes("wrist")||body.includes("hand")) dxOpts=[...DIFF_DX_OPTIONS.wrist,...dxOpts];
-            else if(body.includes("lumb")||body.includes("low back")||body.includes("lx")) dxOpts=[...DIFF_DX_OPTIONS.lumbar,...dxOpts];
-            else if(body.includes("hip")||body.includes("pelv")) dxOpts=[...DIFF_DX_OPTIONS.hip,...dxOpts];
-            else if(body.includes("knee")) dxOpts=[...DIFF_DX_OPTIONS.knee,...dxOpts];
-            else if(body.includes("ankle")||body.includes("foot")) dxOpts=[...DIFF_DX_OPTIONS.ankle,...dxOpts];
-            else dxOpts=[...DIFF_DX_OPTIONS.lumbar,...DIFF_DX_OPTIONS.cervical,...DIFF_DX_OPTIONS.shoulder,...dxOpts];
+            let opts = [];
+            if(body.includes("cerv")||body.includes("neck")) opts=[...DIFF_DX.cervical];
+            else if(body.includes("shou")) opts=[...DIFF_DX.shoulder];
+            else if(body.includes("elbow")) opts=[...DIFF_DX.elbow];
+            else if(body.includes("wrist")||body.includes("hand")) opts=[...DIFF_DX.wrist];
+            else if(body.includes("lumb")||body.includes("low back")||body.includes("lx")) opts=[...DIFF_DX.lumbar];
+            else if(body.includes("hip")||body.includes("pelv")) opts=[...DIFF_DX.hip];
+            else if(body.includes("knee")) opts=[...DIFF_DX.knee];
+            else if(body.includes("ankle")||body.includes("foot")) opts=[...DIFF_DX.ankle];
+            else opts=[...DIFF_DX.lumbar,...DIFF_DX.cervical,...DIFF_DX.shoulder];
+            opts=[...opts,...DIFF_DX.general];
 
-            const selectedDiffs = v("soap_differential_dx") ? JSON.parse(v("soap_differential_dx"))||[] : [];
-
+            const selectedDiffs = (()=>{ try{ return JSON.parse(v("soap_differential_dx")||"[]"); }catch{return[];} })();
             const toggleDiff = (opt) => {
-              const curr = v("soap_differential_dx") ? JSON.parse(v("soap_differential_dx"))||[] : [];
-              const next = curr.includes(opt) ? curr.filter(x=>x!==opt) : [...curr, opt];
-              set("soap_differential_dx", JSON.stringify(next));
+              try{
+                const curr = JSON.parse(v("soap_differential_dx")||"[]");
+                set("soap_differential_dx", JSON.stringify(curr.includes(opt)?curr.filter(x=>x!==opt):[...curr,opt]));
+              }catch{ set("soap_differential_dx",JSON.stringify([opt])); }
             };
 
-            return (
-              <div style={{marginBottom:10}}>
-                <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:6}}>Differential Diagnosis <span style={{fontWeight:400,color:"#9CA3AF",fontSize:10}}>(tap to select)</span></div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:6}}>
-                  {dxOpts.map((opt,i)=>{
-                    const sel = selectedDiffs.includes(opt);
-                    return <button key={i} onClick={()=>toggleDiff(opt)} style={{padding:"4px 10px",borderRadius:99,fontSize:11,fontWeight:sel?700:500,border:`1.5px solid ${sel?"#6366F1":"#D1D5DB"}`,background:sel?"#6366F1":"#F9FAFB",color:sel?"#fff":"#374151",cursor:"pointer",transition:"all 0.15s"}}>{opt}</button>;
-                  })}
-                </div>
-                {selectedDiffs.length>0&&<div style={{padding:"8px 12px",background:"#EEF2FF",border:"1px solid #C7D2FE",borderRadius:10}}>
-                  <div style={{fontSize:10,fontWeight:600,color:"#4F46E5",marginBottom:4}}>SELECTED DIFFERENTIALS</div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                    {selectedDiffs.map((d,i)=><span key={i} style={{padding:"2px 10px",background:"#6366F1",color:"#fff",borderRadius:99,fontSize:11,fontWeight:600}}>{d}</span>)}
-                  </div>
-                </div>}
-                <input placeholder="Add custom differential diagnosis..." onKeyDown={e=>{if(e.key==="Enter"&&e.target.value.trim()){toggleDiff(e.target.value.trim());e.target.value="";}}} style={{...inp,marginTop:6,marginBottom:0,fontSize:12}} />
+            return <div style={{marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#374151",letterSpacing:"0.01em",marginBottom:8,borderBottom:"2px solid #E5E7EB",paddingBottom:6}}>Differential Diagnosis</div>
+
+              {/* Selected list */}
+              {selectedDiffs.length>0&&<div style={{marginBottom:10,padding:"10px 12px",background:"#F5F3FF",border:"2px solid #8B5CF6",borderRadius:12}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Selected Differentials</div>
+                <ol style={{margin:0,padding:"0 0 0 18px"}}>
+                  {selectedDiffs.map((d,i)=><li key={i} style={{fontSize:13,color:"#3730A3",fontWeight:600,marginBottom:3,lineHeight:1.4}}>
+                    {d}
+                    <button onClick={()=>toggleDiff(d)} style={{marginLeft:8,fontSize:10,color:"#9CA3AF",background:"none",border:"none",cursor:"pointer",padding:0}}>✕</button>
+                  </li>)}
+                </ol>
+              </div>}
+
+              {/* Manual entry */}
+              <input placeholder="Type and press Enter to add custom differential..." onKeyDown={e=>{if(e.key==="Enter"&&e.target.value.trim()){toggleDiff(e.target.value.trim());e.target.value="";}}} style={{...inp,marginBottom:8,fontSize:12}}/>
+
+              {/* Tap-to-select chips */}
+              <div style={{fontSize:11,color:"#6B7280",marginBottom:5,fontWeight:500}}>Select from list:</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {opts.filter(o=>!selectedDiffs.includes(o)).map((opt,i)=>(
+                  <button key={i} onClick={()=>toggleDiff(opt)} style={{padding:"5px 11px",borderRadius:8,fontSize:12,fontWeight:500,border:"1.5px solid #D1D5DB",background:"#F9FAFB",color:"#374151",cursor:"pointer",textAlign:"left"}}>{opt}</button>
+                ))}
               </div>
-            );
+            </div>;
           })()}
 
-          {/* ── Problem List ── */}
-          {(probList||posFindings.length>0)&&<>
-            <div style={subH}>Problem list</div>
-            <div style={{fontSize:12,color:"#374151",marginBottom:6,lineHeight:1.5}}>{probList||posFindings.slice(0,3).join(". ")}</div>
-          </>}
-
-          {/* ── Key Positives / Negatives ── */}
-          {(posFindings.length>0||negFindings.length>0)&&<>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+          {/* ── Problem List / Key Findings ── */}
+          {(probList||posFindings.length>0||negFindings.length>0)&&<>
+            {(probList||posFindings.length>0)&&<>
+              <div style={subH}>Problem list</div>
+              <div style={{fontSize:12,color:"#374151",marginBottom:6,lineHeight:1.5}}>{probList||posFindings.slice(0,3).join(". ")}</div>
+            </>}
+            {(posFindings.length>0||negFindings.length>0)&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
               {posFindings.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:10}}>
                 <div style={{fontSize:10,fontWeight:600,color:"#991B1B",marginBottom:5}}>KEY POSITIVES</div>
                 {posFindings.map((f,i)=><div key={i} style={{fontSize:10,color:"#374151",padding:"1px 0",display:"flex",gap:4,lineHeight:1.4}}><span style={{color:"#DC2626"}}>·</span>{f}</div>)}
@@ -4068,13 +4077,11 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 <div style={{fontSize:10,fontWeight:600,color:"#166534",marginBottom:5}}>SCREENED NEGATIVE</div>
                 {negFindings.map((f,i)=><div key={i} style={{fontSize:10,color:"#374151",padding:"1px 0",display:"flex",gap:4,lineHeight:1.4}}><span style={{color:"#16A34A"}}>·</span>{f}</div>)}
               </div>}
-            </div>
+            </div>}
           </>}
 
-          {/* ── Clinical Notes ── */}
+          {/* ── Clinical Notes & Severity ── */}
           <input placeholder="Clinical notes / key findings..." value={v("soap_clinical_notes")} onChange={e=>set("soap_clinical_notes",e.target.value)} style={inp}/>
-
-          {/* ── Severity / Stage ── */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:4}}>
             {[["soap_irritability","Irritability"],["soap_stage","Stage"],["soap_prognosis","Prognosis"],["soap_severity","Severity"]].map(([k,ph])=>(
               <input key={k} placeholder={ph} value={v(k)} onChange={e=>set(k,e.target.value)} style={{...inp,marginBottom:0}}/>
