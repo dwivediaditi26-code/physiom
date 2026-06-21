@@ -18992,15 +18992,37 @@ function AppInner({ currentUser, onSignOut }) {
                 <Suspense fallback={<TabFallback/>}><LazyOutcomes data={data} set={set}/></Suspense>
                 </>
               ):tests==="TREATMENT_MODULE"?(
-                <div style={{display:"flex",flexDirection:"row",gap:20,alignItems:"flex-start"}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
-                  </div>
-                  <div style={{width:1,alignSelf:"stretch",background:PC.border,flexShrink:0}}/>
-                  <div style={{flex:1,minWidth:0}}>
-                    <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
-                  </div>
-                </div>
+                <>{(()=>{
+                  const isMobile=window.innerWidth<768;
+                  const [txTab,setTxTab]=React.useState("exercise");
+                  if(isMobile){
+                    return(
+                      <div>
+                        <div style={{display:"flex",gap:8,marginBottom:16}}>
+                          <button onClick={()=>setTxTab("exercise")} style={{flex:1,padding:"10px 8px",borderRadius:10,border:`2px solid ${txTab==="exercise"?PC.accent:PC.border}`,background:txTab==="exercise"?`${PC.accent}15`:PC.s2,color:txTab==="exercise"?PC.accent:PC.text,fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>🏋 Exercise Prescription</button>
+                          <button onClick={()=>setTxTab("tx")} style={{flex:1,padding:"10px 8px",borderRadius:10,border:`2px solid ${txTab==="tx"?PC.accent:PC.border}`,background:txTab==="tx"?`${PC.accent}15`:PC.s2,color:txTab==="tx"?PC.accent:PC.text,fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>🤲 Tx Techniques</button>
+                        </div>
+                        {txTab==="exercise"
+                          ? <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
+                          : <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
+                        }
+                      </div>
+                    );
+                  }
+                  return(
+                    <div style={{display:"flex",flexDirection:"row",gap:20,alignItems:"flex-start"}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>🏋 Exercise Prescription</div>
+                        <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
+                      </div>
+                      <div style={{width:1,alignSelf:"stretch",background:PC.border,flexShrink:0}}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>🤲 Tx Techniques</div>
+                        <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
+                      </div>
+                    </div>
+                  );
+                })()}</>
               ):tests==="EXERCISE_MODULE"?(
                 <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
               ):tests==="TX_TECHNIQUES_MODULE"?(
