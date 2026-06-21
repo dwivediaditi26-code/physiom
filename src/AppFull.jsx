@@ -12229,9 +12229,9 @@ function ClinicalImpressionTab({ d, C, onSaveField, onNav }) {
   );
 }
 
-function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav }) {
+function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav, initialTab }) {
   const { useState, useEffect, useMemo } = React;
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState(initialTab||"overview");
   const [assessView, setAssessView]     = useState("latest");
   const [treatCat, setTreatCat]         = useState("exercises");
   const [expanded, setExpanded]         = useState(null);
@@ -12435,6 +12435,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
   const TABS = [
     { k:"overview",    icon:"🏠",  label:"Overview"         },
+    { k:"demographics",icon:"👤",  label:"Demographics"     },
     { k:"subjective",  icon:"📝",  label:"Subjective"       },
     { k:"assessment",  icon:"📋",  label:"Assessment"       },
     { k:"posture",     icon:"🧍",  label:"Posture"          },
@@ -12642,7 +12643,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
             key: "demographics",
             label: "Demographics",
             short: "Demo",
-            nav: "overview",
+            nav: "demographics",
             done: !!(d.dem_name && d.dem_age),
             icon: "👤",
           },
@@ -12992,6 +12993,85 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
             <div style={{background:C.white,borderRadius:16,padding:18,marginTop:14,boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
               <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:12,letterSpacing:"-0.3px"}}>📌 Clinical Notes</div>
               <QuickNotesWidget d={d} patient={patient} onSaveField={onSaveField} C={C}/>
+            </div>
+          </div>
+        )}
+        {/* ════════════════════════════════════════
+            DEMOGRAPHICS TAB
+        ════════════════════════════════════════ */}
+        {tab==="demographics" && (
+          <div className="tab-content" style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
+
+            {/* ── PERSONAL DETAILS ── */}
+            <div style={{background:C.white,borderRadius:16,padding:18,boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <span style={{fontSize:15,fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}>👤 Personal Details</span>
+              </div>
+              {[
+                {l:"Full Name",       v:d.dem_name},
+                {l:"Date of Birth",   v:d.dem_dob},
+                {l:"Age",             v:d.dem_age?`${d.dem_age} years`:null},
+                {l:"Sex",             v:d.dem_sex||d.dem_gender},
+                {l:"Dominant Hand",   v:d.dem_hand},
+                {l:"Occupation",      v:d.dem_occupation},
+                {l:"Work Status",     v:Array.isArray(d.dem_work_status)?d.dem_work_status.join(", "):d.dem_work_status},
+              ].filter(r=>r.v).map((row,i,arr)=>(
+                <div key={i} style={{display:"flex",gap:12,padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
+                  <span style={{fontSize:11.5,color:C.muted,minWidth:120,flexShrink:0,paddingTop:1,fontWeight:500}}>{row.l}</span>
+                  <span style={{fontSize:13,fontWeight:600,color:C.text,flex:1,lineHeight:1.4}}>{row.v}</span>
+                </div>
+              ))}
+              {!(d.dem_name||d.dem_age||d.dem_sex) && (
+                <div style={{textAlign:"center",padding:"16px 0",color:C.muted,fontSize:12}}>No personal details recorded yet.</div>
+              )}
+            </div>
+
+            {/* ── CONTACT DETAILS ── */}
+            {(d.dem_phone||d.dem_email||d.dem_address||d.dem_ec_name) && (
+              <div style={{background:C.white,borderRadius:16,padding:18,boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+                <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14,letterSpacing:"-0.3px"}}>📞 Contact Details</div>
+                {[
+                  {l:"Phone",              v:d.dem_phone||d.dem_contact},
+                  {l:"Email",              v:d.dem_email},
+                  {l:"Address",            v:d.dem_address},
+                  {l:"Emergency Contact",  v:d.dem_ec_name},
+                  {l:"Emergency Phone",    v:d.dem_ec_phone},
+                ].filter(r=>r.v).map((row,i,arr)=>(
+                  <div key={i} style={{display:"flex",gap:12,padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
+                    <span style={{fontSize:11.5,color:C.muted,minWidth:120,flexShrink:0,paddingTop:1,fontWeight:500}}>{row.l}</span>
+                    <span style={{fontSize:13,fontWeight:600,color:C.text,flex:1,lineHeight:1.4}}>{row.v}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── CLINICAL / REFERRAL ── */}
+            {(d.dem_referral_dr||d.dem_referral||d.dem_referral_source||d.dem_insurance||d.dem_policy_no||d.dem_medical_hx||d.dem_medications||d.dem_gp) && (
+              <div style={{background:C.white,borderRadius:16,padding:18,boxShadow:"0 1px 8px rgba(0,0,0,0.05)"}}>
+                <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:14,letterSpacing:"-0.3px"}}>📋 Clinical & Referral</div>
+                {[
+                  {l:"Referring Doctor",  v:d.dem_referral_dr||d.dem_gp||d.dem_referral},
+                  {l:"Referral Source",   v:d.dem_referral_source},
+                  {l:"Insurance / Fund",  v:d.dem_insurance},
+                  {l:"Policy No.",        v:d.dem_policy_no},
+                  {l:"Medical History",   v:d.dem_medical_hx},
+                  {l:"Medications",       v:d.dem_medications||d.dem_medication},
+                ].filter(r=>r.v).map((row,i,arr)=>(
+                  <div key={i} style={{display:"flex",gap:12,padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
+                    <span style={{fontSize:11.5,color:C.muted,minWidth:120,flexShrink:0,paddingTop:1,fontWeight:500}}>{row.l}</span>
+                    <span style={{fontSize:13,fontWeight:600,color:C.text,flex:1,lineHeight:1.4}}>{row.v}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── CONSENT ── */}
+            <div style={{background:d.consent_treat?"#ECFDF5":"#FFF7ED",border:`1px solid ${d.consent_treat?"#BBF7D0":"#FDE68A"}`,borderRadius:12,padding:"12px 16px",display:"flex",gap:10,alignItems:"center"}}>
+              <span style={{fontSize:20}}>{d.consent_treat?"✅":"⚠️"}</span>
+              <div>
+                <div style={{fontSize:12,fontWeight:800,color:d.consent_treat?"#065F46":"#92400E"}}>Consent to Treatment</div>
+                <div style={{fontSize:11,color:d.consent_treat?"#047857":"#B45309",marginTop:2}}>{d.consent_treat?"Consent obtained":"Consent not yet recorded"}</div>
+              </div>
             </div>
           </div>
         )}
@@ -17226,6 +17306,7 @@ function AppInner({ currentUser, onSignOut }) {
   const [pendingPatient, setPendingPatient] = useState(null);
   const [showPdfReports, setShowPdfReports] = useState(false);
   const [profilePatient, setProfilePatient] = useState(null);
+  const [profileTab, setProfileTab] = useState(null);
   const [showIntake, setShowIntake] = useState(false);
   const [intakeData, setIntakeData] = useState({});
 
@@ -17413,6 +17494,11 @@ function AppInner({ currentUser, onSignOut }) {
 
   const runDx = () => { setDx(generateDiagnosis(data)); setShowDx(true); };
   const navTo = useCallback((key, ctx = {}) => {
+    if (key === "demographics") {
+      // Open PatientProfileModal on the Demographics tab
+      if (activePatient) { setProfilePatient({...activePatient, data:{...activePatient.data,...data}}); setProfileTab("demographics"); }
+      return;
+    }
     setActive(key);
     setNavContext(ctx);
     setNavOpen(false);
@@ -17701,12 +17787,13 @@ function AppInner({ currentUser, onSignOut }) {
           patient={profilePatient.id===activePatient?.id
             ? {...profilePatient, data:{...profilePatient.data,...data}}
             : profilePatient}
-          onClose={()=>setProfilePatient(null)}
+          onClose={()=>{ setProfilePatient(null); setProfileTab(null); }}
           onLoadAssessment={(p)=>{ selectPatient(p); setProfilePatient(null); }}
           onSaveField={(id,newData)=>{
             setPatients(prev=>prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p));
           }}
-          onNav={(key)=>{ setProfilePatient(null); navTo(key); }}
+          onNav={(key)=>{ if(key==="demographics"){ setProfileTab("demographics"); } else { setProfilePatient(null); setProfileTab(null); navTo(key); } }}
+          initialTab={profileTab||undefined}
         />
       )}
 
@@ -18194,7 +18281,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18237,7 +18324,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18280,7 +18367,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18330,7 +18417,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18373,7 +18460,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18416,7 +18503,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18459,7 +18546,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18502,7 +18589,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18545,7 +18632,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18595,7 +18682,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18638,7 +18725,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18688,7 +18775,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
@@ -18738,7 +18825,7 @@ function AppInner({ currentUser, onSignOut }) {
                 {(()=>{
                   const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
                   const wfSteps=[
-                    {key:"demographics",short:"Demographics",nav:"subjective",done:!!(data.dem_name&&data.dem_age),isActive:false},
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:false},
                     {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
                     {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
                     {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
