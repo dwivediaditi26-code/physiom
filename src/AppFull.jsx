@@ -18295,7 +18295,7 @@ function AppInner({ currentUser, onSignOut }) {
                     Continue SOAP →
                   </button>
                 </div>
-</>
+              </>
               ):tests==="NKT_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
@@ -18500,7 +18500,7 @@ function AppInner({ currentUser, onSignOut }) {
                     Continue SOAP →
                   </button>
                 </div>
-</>
+              </>
               ):tests==="GAIT_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
@@ -18573,7 +18573,7 @@ function AppInner({ currentUser, onSignOut }) {
                     Continue SOAP →
                   </button>
                 </div>
-</>
+              </>
               ):tests==="ROM_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
@@ -18613,7 +18613,7 @@ function AppInner({ currentUser, onSignOut }) {
                     Continue SOAP →
                   </button>
                 </div>
-</>
+              </>
               ):tests==="OUTCOME_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 {(()=>{
