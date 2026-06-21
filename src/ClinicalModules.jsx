@@ -3221,7 +3221,7 @@ function detectModulesV2(data) {
     cpa: has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes",
       "nkt_dnf","nkt_scm","nkt_upper_trap","nkt_gmax","nkt_gmed","nkt_psoas","nkt_ta"]),
     fascia: Object.keys(data).some(k=>(k.startsWith("fa_")||k.startsWith("fascia_"))&&data[k]&&String(data[k]).trim()),
-    observation: has([...Object.keys(data).filter(k=>k.includes("_observation")||k.includes("obs_")), "lx_observation","cx_observation","shr_observation","knl_observation"]),
+    observation: Object.keys(data).some(k=>(k.startsWith("obs_")||k.includes("_observation"))&&data[k]&&String(data[k]).trim()),
   };
 }
 
@@ -3703,12 +3703,60 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
         <div style={cb}>
 
           {/* Posture / Observation */}
-          {(mods.posture||obsChips.length>0)&&<>
-            <div style={subH}>Posture</div>
-            {postureTextFields.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,minWidth:90,fontSize:12}}>{r}</span><span style={{color:"#111827",flex:1,textAlign:"right",fontSize:12}}>{t}</span></div>)}
-            {postDefectList.length>0&&<div style={{marginTop:6}}>{postDefectList.map(([,l],i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{l}</span>)}</div>}
-            {obsChips.map((o,i)=><span key={i} style={{...chip_("#F3F4F6","#374151"),fontSize:11}}>{o.region}: {o.text}</span>)}
-          </>}
+          {(()=>{
+            // Rich ObservationModule fields
+            const obsFields = [
+              ["General", [
+                ["Appearance",v("obs_appearance")],["Build",v("obs_build")],
+                ["Nutrition",v("obs_nutrition")],["Attitude",v("obs_attitude")],
+                ["Consciousness",v("obs_consciousness")],
+              ]],
+              ["Posture", [
+                ["Head/Neck",v("obs_posture_head")],["Shoulders",v("obs_posture_shoulders")],
+                ["Scapula",v("obs_posture_scapula")],["Thoracic",v("obs_posture_thoracic")],
+                ["Lumbar",v("obs_posture_lumbar")],["Pelvis",v("obs_posture_pelvis")],
+                ["Knees",v("obs_posture_lower")],["Feet",v("obs_posture_feet")],
+              ]],
+              ["Swelling / Effusion", [
+                ["Swelling",v("obs_swelling_present")==="Present"?[v("obs_swelling_location"),v("obs_swelling_grade"),v("obs_swelling_type")].filter(Boolean).join(", ")||"Present":null],
+              ]],
+              ["Skin & Trophic", [
+                ["Skin colour",v("obs_skin_color")],["Skin temp",v("obs_skin_temp")],
+                ["Atrophy",v("obs_atrophy")],["Scar",v("obs_scar")],
+              ]],
+              ["Deformity", [
+                ["Deformity",v("obs_deformity_present")==="Present"?v("obs_deformity_description")||"Present":null],
+                ["Assistive device",v("obs_assistive_device")],
+              ]],
+            ];
+            const hasObs = obsFields.some(([,fields])=>fields.some(([,val])=>val));
+            const hasLegacy = mods.posture||obsChips.length>0||postDefectList.length>0||postureTextFields.length>0;
+            const obsSummary = v("obs_summary");
+            if (!hasObs && !hasLegacy && !obsSummary) return null;
+            return <>
+              <div style={subH}>Observation &amp; Posture</div>
+              {obsSummary&&<div style={{fontSize:12,color:"#374151",marginBottom:6,background:"#F9FAFB",padding:"8px 10px",borderRadius:8,lineHeight:1.5}}>{obsSummary}</div>}
+              {hasObs&&obsFields.map(([section,fields],si)=>{
+                const filled=fields.filter(([,val])=>val);
+                if(!filled.length) return null;
+                // Highlight abnormal postural findings
+                const isAbnormal = (val)=>val&&!/neutral|normal|symmetrical|alert|cooperat|healthy/i.test(val);
+                return <div key={si} style={{marginBottom:6}}>
+                  <div style={{fontSize:10,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>{section}</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                    {filled.map(([label,val],fi)=>{
+                      const abn=isAbnormal(val);
+                      return <span key={fi} style={{padding:"3px 9px",borderRadius:99,fontSize:11,background:abn?"#FEF3C7":"#F3F4F6",color:abn?"#92400E":"#374151",border:`1px solid ${abn?"#FDE68A":"#E5E7EB"}`,fontWeight:abn?600:400}}>{label}: {val}</span>;
+                    })}
+                  </div>
+                </div>;
+              })}
+              {/* Legacy posture fields */}
+              {postureTextFields.length>0&&<>{postureTextFields.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,minWidth:90,fontSize:12}}>{r}</span><span style={{color:"#111827",flex:1,textAlign:"right",fontSize:12}}>{t}</span></div>)}</>}
+              {postDefectList.length>0&&<div style={{marginTop:4,display:"flex",flexWrap:"wrap",gap:4}}>{postDefectList.map(([,l],i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{l}</span>)}</div>}
+              {obsChips.length>0&&<div style={{marginTop:4,display:"flex",flexWrap:"wrap",gap:4}}>{obsChips.map((o,i)=><span key={i} style={{...chip_("#F3F4F6","#374151"),fontSize:11}}>{o.region}: {o.text}</span>)}</div>}
+            </>;
+          })()}
 
           {/* AI Posture Analysis */}
           {mods.postureAI&&<>
