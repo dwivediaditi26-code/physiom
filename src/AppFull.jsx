@@ -17083,6 +17083,7 @@ function AppInner({ currentUser, onSignOut }) {
   // This cuts initial render time dramatically
   // Once mounted, component stays mounted (data preserved)
   const [mountedTabs, setMountedTabs] = useState(new Set(["home", "demographics", "subjective"]));
+  const [subjBodyChartTab, setSubjBodyChartTab] = useState(false);
   // Heavy tabs — only mount on first visit
   const HEAVY_TABS = new Set([
     "posture", "ddx", "fms", "nkt", "cyriax",
@@ -18315,8 +18316,10 @@ function AppInner({ currentUser, onSignOut }) {
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
-                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo}/></Suspense>
-                  <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
+                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")}/></Suspense>
+                  {subjBodyChartTab && (
+                    <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
+                  )}
                 </div>
               ):tests==="PALPATION_MODULE"?(
                 <Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set}/></Suspense>

@@ -4271,7 +4271,7 @@ const FIELD_HELP = {
   "lx_night": "Night pain: can patient get comfortable? Positional night pain = mechanical. Constant unable to get comfortable = inflammatory or serious pathology. Bladder waking since onset — compare to pre-pain baseline.",
 };
 
-function SubjectiveModule({ data, set, onNav }) {
+function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#1a1025",
@@ -4567,7 +4567,7 @@ function SubjectiveModule({ data, set, onNav }) {
     if (selectedRegions.length === 0) return;
     const result = runEngineV6(data, selectedRegions);
     setInsight(result);
-    setActiveTab("results");
+    setActiveTab("results"); onTabChange&&onTabChange("results");
     setShowInsight(true);
     // Persist insight so it survives navigation to ROM/MMT and back
     try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
@@ -5125,8 +5125,8 @@ function SubjectiveModule({ data, set, onNav }) {
 
       {/* ── Tabs ── */}
       <div style={{ display:"flex", borderBottom:`1px solid ${PC.border}`, gap:0 }}>
-        {[["form","📝 Assessment"],["results","🧠 Interpretation"]].map(([t, label]) => (
-          <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
+        {[["form","📝 Assessment"],["bodychart","🫁 Body Chart"],["results","🧠 Interpretation"]].map(([t, label]) => (
+          <button key={t} type="button" onClick={() => { setActiveTab(t); onTabChange&&onTabChange(t); }} style={{
             padding:"8px 16px", background:"transparent", border:"none", cursor:"pointer",
             borderBottom: activeTab===t ? `2px solid ${PC.accent}` : "2px solid transparent",
             color: activeTab===t ? PC.accent : PC.muted,
@@ -5367,6 +5367,10 @@ function SubjectiveModule({ data, set, onNav }) {
       {/* ════════════════════════════════════════════════════
           RESULTS TAB
       ════════════════════════════════════════════════════ */}
+      {activeTab === "bodychart" && (
+        <div id="subjective-bodychart-slot" style={{minHeight:200}}/>
+      )}
+
       {activeTab === "results" && !insight && (
         <div style={{ background: PC.surface, borderRadius:12, padding:28,
           border:`1px solid ${PC.border}`, textAlign:"center", color: PC.muted, fontSize:"0.8rem" }}>
