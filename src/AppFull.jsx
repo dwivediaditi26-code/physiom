@@ -18267,6 +18267,45 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="DEMOGRAPHICS_MODULE"?(
                 <div style={{display:"flex",flexDirection:"column",gap:14}}>
                   {(()=>{
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:active==="demographics"},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
+                  return(
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{marginTop:8,height:4,borderRadius:4,background:"#E5E7EB",overflow:"hidden"}}>
+                        <div style={{height:"100%",borderRadius:4,background:"#6D28D9",width:`${pct}%`,transition:"width 0.4s"}}/>
+                      </div>
+                    </div>
+                  );
+                })()}
+                  {(()=>{
                     const inp={width:"100%",background:PC.s3,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.85rem",boxSizing:"border-box"};
                     const lbl={fontSize:"0.78rem",fontWeight:700,color:PC.muted,marginBottom:5,display:"block"};
                     const sel=(id,opts)=>(<select style={inp} value={data[id]||""} onChange={e=>set(id,e.target.value)}><option value="">— select —</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>);
@@ -18316,6 +18355,45 @@ function AppInner({ currentUser, onSignOut }) {
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
+                  {(()=>{
+                  const oKeys=["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+                  const wfSteps=[
+                    {key:"demographics",short:"Demographics",nav:"demographics",done:!!(data.dem_name&&data.dem_age),isActive:active==="demographics"},
+                    {key:"subjective",short:"Subjective",nav:"subjective",done:!!(data.cc_main||data.lx_loc||data.cx_loc),isActive:active==="subjective"},
+                    {key:"objective",short:"Objective",nav:"rom",done:!!(data.rom_lflex||data.rom_cflex||data.rom_lx_flex||Object.keys(data).some(k=>k.startsWith("rom_")||k.startsWith("mmt_"))),isActive:oKeys.includes(active)},
+                    {key:"treatment",short:"Treatment",nav:"treatment",done:!!(data.soap_modalities||data.soap_frequency||data.hep_programme||data.tx_techniques),isActive:active==="treatment"||active==="exercise"},
+                    {key:"soap",short:"SOAP",nav:"soap",done:!!(data.soap_a_diagnosis||data.soap_icd10||data.soap_a),isActive:active==="soap"},
+                  ];
+                  const doneCount=wfSteps.filter(s=>s.done).length;
+                  const pct=Math.round((doneCount/wfSteps.length)*100);
+                  return(
+                    <div style={{marginBottom:16,background:PC.s2,borderRadius:12,padding:"10px 12px 8px",border:`1px solid ${PC.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <span style={{fontSize:9,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.8px"}}>Clinical Workflow</span>
+                        <span style={{fontSize:9,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:0}}>
+                        {wfSteps.map((step,i)=>{
+                          const isLast=i===wfSteps.length-1;
+                          return(
+                            <React.Fragment key={step.key}>
+                              <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto"}}>
+                                <div style={{width:24,height:24,borderRadius:"50%",background:step.done?"#6D28D9":step.isActive?"#EDE9FE":PC.s3,border:`2px solid ${step.done?"#6D28D9":step.isActive?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:step.isActive?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s"}}>
+                                  {step.done?<span style={{fontSize:11,color:"#fff",fontWeight:900}}>✓</span>:<span style={{fontSize:9,color:step.isActive?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
+                                </div>
+                                <div style={{fontSize:8,fontWeight:step.isActive?800:step.done?700:500,color:step.done?"#6D28D9":step.isActive?"#6D28D9":PC.muted,marginTop:3,textAlign:"center",whiteSpace:"nowrap"}}>{step.short}</div>
+                              </div>
+                              {!isLast&&<div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:4,transition:"background 0.3s"}}/>}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{marginTop:8,height:4,borderRadius:4,background:"#E5E7EB",overflow:"hidden"}}>
+                        <div style={{height:"100%",borderRadius:4,background:"#6D28D9",width:`${pct}%`,transition:"width 0.4s"}}/>
+                      </div>
+                    </div>
+                  );
+                })()}
                   <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")}/></Suspense>
                   {subjBodyChartTab && (
                     <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
@@ -18976,7 +19054,7 @@ function AppInner({ currentUser, onSignOut }) {
 
         {/* ── Expandable sub-panel ── */}
         {(()=>{
-          const assessKeys=["subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
+          const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
           const advKeys=["cyriax_full","kinetic","nkt","fascia"];
           const treatKeys=["exercise","tx_techniques"];
           const docKeys=["tx_sessions","soap"];
@@ -18998,6 +19076,7 @@ function AppInner({ currentUser, onSignOut }) {
           return (
             <>
               <div className={`pm-bnav-panel${bnavTab==="assessment"?" open":""}`}>
+                <BnavItem navKey="demographics" icon="👤" label="Demographics"/>
                 <BnavItem navKey="subjective"  icon="📝" label="Subjective Assessment"/>
                 <BnavItem navKey="posture"     icon="🧍" label="Posture Analysis"/>
                 <BnavItem navKey="observation" icon="👁️" label="Observation"/>
@@ -19037,7 +19116,7 @@ function AppInner({ currentUser, onSignOut }) {
         {/* ── Tab strip ── */}
         <div className="pm-bnav-tabs">
           {(()=>{
-            const assessKeys=["subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
+            const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
             const advKeys=["cyriax_full","kinetic","nkt","fascia"];
             const treatKeys=["exercise","tx_techniques"];
             const docKeys=["tx_sessions","soap"];
