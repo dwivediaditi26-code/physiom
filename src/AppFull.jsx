@@ -12986,7 +12986,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       <div style={{paddingTop:6}}>
                         <span style={{fontSize:11.5,color:C.muted}}>Medications</span>
                         <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:5}}>
-                          {(d.med_current||d.sub_medications||"").split("|").filter(Boolean).map((m,mi)=>(
+                          {(Array.isArray(d.med_current||d.sub_medications)?(d.med_current||d.sub_medications):(d.med_current||d.sub_medications||"").split("|")).filter(Boolean).map((m,mi)=>(
                             <span key={mi} style={{fontSize:11,padding:"3px 9px",background:"#EDE9FE",color:"#5B21B6",borderRadius:99,fontWeight:600}}>{m.trim()}</span>
                           ))}
                         </div>
