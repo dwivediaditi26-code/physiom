@@ -3023,6 +3023,73 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const fmaObs = v("fma_squat") || v("fma_notes") || v("fma_movement") || v("functional_notes");
   if (fmaObs) O_parts.push(`Functional Movement: ${fmaObs}.`);
 
+
+  // ── ADVANCED FUNCTIONAL SCREENS (*fs_data fields) ────────────────────────
+  // Each functional screen stores: { findings: {testId_obsId: value}, grades: {testId: 0|1|2}, notes: {testId: string} }
+  {
+    const FS_REGIONS = [
+      { key: "kfs_data",  label: "Knee Functional Screen" },
+      { key: "lfs_data",  label: "Lumbar Functional Screen" },
+      { key: "sfs_data",  label: "Shoulder Functional Screen" },
+      { key: "hfs_data",  label: "Hip Functional Screen" },
+      { key: "afs_data",  label: "Ankle Functional Screen" },
+      { key: "thfs_data", label: "Thoracic Functional Screen" },
+      { key: "elfs_data", label: "Elbow Functional Screen" },
+      { key: "wffs_data", label: "Wrist/Hand Functional Screen" },
+      { key: "tmjfs_data",label: "TMJ Functional Screen" },
+      { key: "cfs_data",  label: "Cervical Functional Screen" },
+    ];
+    const gradeLabel = (g) => g === 0 ? "Normal" : g === 1 ? "Compensated" : g === 2 ? "Abnormal" : `Grade ${g}`;
+    const gradeFlag  = (g) => g === 0 ? "✅" : g === 1 ? "⚠️" : "🔴";
+    FS_REGIONS.forEach(({ key, label }) => {
+      const raw = data[key];
+      if (!raw) return;
+      let parsed;
+      try { parsed = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { return; }
+      const { grades = {}, notes = {} } = parsed;
+      const gradeEntries = Object.entries(grades);
+      if (!gradeEntries.length) return;
+      const abnormal = gradeEntries.filter(([,g]) => g === 2).map(([id]) => id.replace(/_/g, " "));
+      const compensated = gradeEntries.filter(([,g]) => g === 1).map(([id]) => id.replace(/_/g, " "));
+      const normal = gradeEntries.filter(([,g]) => g === 0).map(([id]) => id.replace(/_/g, " "));
+      const fsLines = [];
+      if (abnormal.length)    fsLines.push(`  🔴 Abnormal: ${abnormal.join(", ")}`);
+      if (compensated.length) fsLines.push(`  ⚠️  Compensated: ${compensated.join(", ")}`);
+      if (normal.length && (abnormal.length || compensated.length))
+        fsLines.push(`  ✅ Normal: ${normal.join(", ")}`);
+      const noteEntries = Object.entries(notes).filter(([,n]) => n && String(n).trim());
+      if (noteEntries.length) fsLines.push(`  Notes: ${noteEntries.map(([id,n]) => `${id.replace(/_/g," ")}: ${String(n).slice(0,80)}`).join("; ")}`);
+      if (fsLines.length) O_parts.push(`${label}:\n${fsLines.join("\n")}.`);
+    });
+  }
+
+  // ── ERGONOMIC RISK ASSESSMENT ──────────────────────────────────────────────
+  {
+    const ergoTotal = v("ergo_total_score");
+    const ergoCx    = v("ergo_cervical_risk");
+    const ergoLx    = v("ergo_lumbar_risk");
+    const ergoUcs   = v("ergo_ucs_risk");
+    const ergoRsi   = v("ergo_rsi_risk");
+    const ergoNerve = v("ergo_nerve_risk");
+    if (ergoTotal || ergoCx || ergoLx) {
+      const riskFlag = (s) => {
+        const n = parseFloat(s);
+        if (isNaN(n)) return s;
+        return n >= 7 ? `${s} 🔴 HIGH` : n >= 4 ? `${s} ⚠️ MODERATE` : `${s} ✅ LOW`;
+      };
+      const ergoLines = [];
+      if (ergoTotal)  ergoLines.push(`  Overall Ergonomic Risk: ${riskFlag(ergoTotal)}`);
+      if (ergoCx)     ergoLines.push(`  Cervical Risk: ${riskFlag(ergoCx)}`);
+      if (ergoLx)     ergoLines.push(`  Lumbar Risk: ${riskFlag(ergoLx)}`);
+      if (ergoUcs)    ergoLines.push(`  UCS Risk: ${riskFlag(ergoUcs)}`);
+      if (ergoRsi)    ergoLines.push(`  RSI Risk: ${riskFlag(ergoRsi)}`);
+      if (ergoNerve)  ergoLines.push(`  Nerve Risk: ${riskFlag(ergoNerve)}`);
+      const sittingHrs = v("ergo_sitting_hrs");
+      if (sittingHrs) ergoLines.push(`  Sitting hours/day: ${sittingHrs}`);
+      if (ergoLines.length) O_parts.push(`Ergonomic Assessment:\n${ergoLines.join("\n")}.`);
+    }
+  }
+
   // Session treatment log
   const txSessArr = Array.isArray(data.tx_sessions) ? data.tx_sessions : [];
   const latestSess = txSessArr[0];
