@@ -222,23 +222,10 @@ const MOBILE_CSS = `
     .pm-patients-btn { display: none !important; }
     .pm-header { padding: 0 12px !important; }
   }
-  .pm-bnav.bnav-hidden { transform: translateY(100%); }
+  /* .pm-bnav.bnav-hidden — removed: nav is now always visible */
 
-  /* Pull handle / toggle tab */
-  .pm-bnav-handle {
-    display: none; position: fixed; bottom: 0; left: 50%;
-    transform: translateX(-50%); z-index: 141;
-    background: #ffffff; border: 1px solid #d8cce8; border-bottom: none;
-    border-radius: 12px 12px 0 0; padding: 5px 22px 3px;
-    cursor: pointer; font-family: inherit; line-height: 1;
-    box-shadow: 0 -3px 10px rgba(124,58,237,0.10);
-    transition: bottom 0.32s cubic-bezier(0.4,0,0.2,1);
-    align-items: center; gap: 5px;
-  }
-  @media (max-width: 767px) { .pm-bnav-handle { display: flex; } }
-  .pm-bnav-handle-arrow { font-size: 0.6rem; color: #7c3aed; transition: transform 0.3s; }
-  .pm-bnav-handle.bnav-hidden .pm-bnav-handle-arrow { transform: rotate(180deg); }
-  .pm-bnav-handle-label { font-size: 0.52rem; font-weight: 800; color: #7c3aed; letter-spacing: 0.5px; text-transform: uppercase; }
+  /* Pull handle — removed (nav is now always visible) */
+  .pm-bnav-handle { display: none !important; }
 
   /* Tab strip — always visible inside drawer */
   .pm-bnav-tabs {

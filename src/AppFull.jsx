@@ -16909,7 +16909,7 @@ function AppInner({ currentUser, onSignOut }) {
   const [infoModal, setInfoModal] = useState(null);
   const [expandedDx, setExpandedDx] = useState({});
   const [navOpen, setNavOpen] = useState(false);
-  const [bnavHidden, setBnavHidden] = useState(false);
+  // bnavHidden removed — bottom nav is now always visible
   const [bnavTab, setBnavTab] = useState(null); // null=no panel open, or "assessment"|"advanced"|"treatment"|"documentation"|"top"
   const [showJsonPanel, setShowJsonPanel] = useState(false);
   const [jsonImportText, setJsonImportText] = useState("");
@@ -18233,19 +18233,8 @@ function AppInner({ currentUser, onSignOut }) {
         </div>
       </div>
 
-      {/* ── BOTTOM NAV DRAWER (mobile) ── */}
-      {/* Pull handle — always visible, toggles whole drawer */}
-      <button
-        className={`pm-bnav-handle${bnavHidden?" bnav-hidden":""}`}
-        style={{ bottom: bnavHidden ? 0 : (bnavTab ? "calc(62px + 220px)" : "62px") }}
-        onClick={()=>{ setBnavHidden(h=>!h); if(!bnavHidden) setBnavTab(null); }}
-        aria-label={bnavHidden?"Show navigation":"Hide navigation"}
-      >
-        <span className="pm-bnav-handle-label">Nav</span>
-        <span className="pm-bnav-handle-arrow">▾</span>
-      </button>
-
-      <nav className={`pm-bnav${bnavHidden?" bnav-hidden":""}`} aria-label="Section navigation">
+      {/* ── BOTTOM NAV DRAWER (mobile) — always visible ── */}
+      <nav className="pm-bnav" aria-label="Section navigation">
 
         {/* ── Expandable sub-panel ── */}
         {(()=>{
