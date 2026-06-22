@@ -4184,60 +4184,76 @@ function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, 
 }
 
 function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
+  const VISIBLE = 6; // always-visible options
   const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
   const opts = searchTerm
     ? f.options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()))
     : f.options;
   const hasSelected = selected.length > 0;
-  const [mcOpen, setMcOpen] = React.useState(hasSelected);
-  React.useEffect(() => { if (hasSelected) setMcOpen(true); }, [hasSelected]);
+  const [showMore, setShowMore] = React.useState(false);
+
+  // Sort: selected options first, then rest in original order
+  const sortedOpts = [
+    ...opts.filter(o => selected.includes(o)),
+    ...opts.filter(o => !selected.includes(o)),
+  ];
+  const visibleOpts = showMore ? sortedOpts : sortedOpts.slice(0, VISIBLE);
+  const hiddenCount = sortedOpts.length - VISIBLE;
+
+  const PillBtn = ({ opt }) => {
+    const on = selected.includes(opt);
+    const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("⚠");
+    return (
+      <button type="button" onClick={() => toggleMulti(f.id, opt)}
+        style={{
+          padding:"9px 14px", borderRadius:99, cursor:"pointer",
+          border:`1.5px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
+          background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
+          color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
+          fontSize:"0.88rem", fontWeight: on ? 700 : 500,
+          lineHeight:1.4, minHeight:38, transition:"all 110ms",
+        }}>
+        {opt}
+      </button>
+    );
+  };
+
   return (
     <div style={{ border:`1px solid ${hasSelected ? PC.accent+"55" : PC.border}`, borderRadius:9, overflow:"hidden" }}>
-      <div onClick={() => setMcOpen(o => !o)}
-        style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          padding:"12px 12px", cursor:"pointer",
-          background: hasSelected ? PC.accent+"08" : PC.s2 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-          {hasSelected ? (
-            selected.map(s => (
-              <span key={s} style={{ fontSize:"0.75rem", fontWeight:700, padding:"2px 8px",
-                borderRadius:99, background:PC.accent+"18", color:PC.accent,
-                border:`1px solid ${PC.accent}44` }}>{s}</span>
-            ))
-          ) : (
-            <span style={{ fontSize:"0.78rem", color:PC.muted, fontStyle:"italic" }}>
-              {opts.length} options — tap to expand
-            </span>
-          )}
-        </div>
-        <span style={{ fontSize:"0.75rem", color:PC.muted, flexShrink:0, marginLeft:6 }}>
-          {mcOpen ? "▲" : "▼"}
-        </span>
-      </div>
-      {mcOpen && (
-        <div style={{ padding:"12px 12px", borderTop:`1px solid ${PC.border}`,
-          display:"flex", flexWrap:"wrap", gap:8, background:PC.surface }}>
-          {opts.map(opt => {
-            const on = selected.includes(opt);
-            const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("⚠");
-            return (
-              <button key={opt} type="button"
-                onClick={() => toggleMulti(f.id, opt)}
-                style={{
-                  padding:"9px 14px", borderRadius:99, cursor:"pointer",
-                  border:`1.5px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
-                  background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
-                  color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
-                  fontSize:"0.88rem", fontWeight: on ? 700 : 500,
-                  lineHeight: 1.4, minHeight:38,
-                  transition:"all 110ms",
-                }}>
-                {opt}
-              </button>
-            );
-          })}
+      {/* Selected tags summary strip (only when something selected) */}
+      {hasSelected && (
+        <div style={{ display:"flex", alignItems:"center", gap:5, flexWrap:"wrap",
+          padding:"8px 12px 6px", background:PC.accent+"06",
+          borderBottom:`1px solid ${PC.accent}22` }}>
+          {selected.map(s => (
+            <span key={s} style={{ fontSize:"0.75rem", fontWeight:700, padding:"2px 8px",
+              borderRadius:99, background:PC.accent+"18", color:PC.accent,
+              border:`1px solid ${PC.accent}44` }}>{s}</span>
+          ))}
         </div>
       )}
+      {/* Always-visible pills */}
+      <div style={{ padding:"10px 12px", display:"flex", flexWrap:"wrap", gap:8, background:PC.surface }}>
+        {visibleOpts.map(opt => <PillBtn key={opt} opt={opt} />)}
+        {!showMore && hiddenCount > 0 && (
+          <button type="button" onClick={() => setShowMore(true)}
+            style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
+              border:`1.5px dashed ${PC.border}`, background:"transparent",
+              color:PC.muted, fontSize:"0.82rem", fontWeight:600,
+              lineHeight:1.4, minHeight:38 }}>
+            +{hiddenCount} more
+          </button>
+        )}
+        {showMore && hiddenCount > 0 && (
+          <button type="button" onClick={() => setShowMore(false)}
+            style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
+              border:`1.5px dashed ${PC.border}`, background:"transparent",
+              color:PC.muted, fontSize:"0.82rem", fontWeight:600,
+              lineHeight:1.4, minHeight:38 }}>
+            Show less ▲
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -4291,6 +4307,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
+  const [showSavedToast, setShowSavedToast] = useState(false);
   const [regionPickerOpen, setRegionPickerOpen] = useState(false);
 
   // ── Field update helpers ────────────────────────────────────────────
@@ -4571,6 +4588,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     setShowInsight(true);
     // Persist insight so it survives navigation to ROM/MMT and back
     try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
+    // Show saved confirmation toast
+    setShowSavedToast(true);
+    setTimeout(() => setShowSavedToast(false), 3000);
   };
 
   // ── Inline field renderer (app UI style) ───────────────────────────
@@ -5008,16 +5028,58 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
         );
       })()}
 
-      {/* ── Progress bar — inline slim strip ── */}
-      <div style={{ display:"flex", alignItems:"center", gap:8, padding:"0 2px" }}>
-        <div style={{ flex:1, height:5, background: PC.s3, borderRadius:99, overflow:"hidden" }}>
-          <div style={{ width:`${pct}%`, height:"100%", borderRadius:99, transition:"width 300ms",
-            background:`linear-gradient(90deg, ${PC.accent}, ${PC.green})` }} />
-        </div>
-        <span style={{ fontSize:"0.82rem", fontWeight:700, color: PC.accent, whiteSpace:"nowrap" }}>
-          {pct}% · {totalD}/{totalF}
-        </span>
-      </div>
+      {/* ── Progress bar — grouped status pills ── */}
+      {(()=>{
+        // Core group: complaint + universal sections
+        const coreKeys = Object.keys(UNIV_S||{});
+        const coreFields = Object.values(UNIV_S||{}).flatMap(s=>s.fields||[]).filter(f=>f.id);
+        const coreDone = coreFields.filter(f=>data[f.id]&&data[f.id]!=="").length;
+        const coreTotal = coreFields.length;
+
+        // Region group: region-specific sections
+        const regFields = Object.values(REG_MOD_S||{}).flatMap(mod=>
+          Object.values(mod.sections||mod||{}).flatMap(s=>s.fields?s.fields:[])
+        ).filter(f=>f&&f.id);
+        const regDone = regFields.filter(f=>data[f.id]&&data[f.id]!=="").length;
+        const regTotal = regFields.length;
+
+        // BPS group
+        const bpsFields = Object.values(BPS_S||{}).flatMap(s=>s.fields||[]).filter(f=>f.id);
+        const bpsDone = bpsFields.filter(f=>data[f.id]&&data[f.id]!=="").length;
+        const bpsTotal = bpsFields.length;
+
+        const hasRegion = selectedRegions.length > 0;
+        const hasBPS = needsBPS_S(data);
+
+        const groups = [
+          { label:"Core", done: coreDone >= Math.round(coreTotal*0.5), pct: Math.round(coreDone/Math.max(coreTotal,1)*100) },
+          hasRegion && { label:"Region", done: regDone > 0 && regDone >= Math.round(regTotal*0.4), pct: Math.round(regDone/Math.max(regTotal,1)*100) },
+          hasBPS && { label:"BPS", done: bpsDone > 0, pct: Math.round(bpsDone/Math.max(bpsTotal,1)*100) },
+        ].filter(Boolean);
+
+        return (
+          <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 2px", flexWrap:"wrap" }}>
+            <div style={{ flex:1, height:4, background: PC.s3, borderRadius:99, overflow:"hidden", minWidth:60 }}>
+              <div style={{ width:`${pct}%`, height:"100%", borderRadius:99, transition:"width 300ms",
+                background:`linear-gradient(90deg, ${PC.accent}, ${PC.green})` }} />
+            </div>
+            {groups.map(g => (
+              <span key={g.label} style={{
+                fontSize:"0.73rem", fontWeight:700, padding:"2px 8px", borderRadius:99,
+                background: g.done ? PC.green+"18" : PC.s3,
+                color: g.done ? PC.green : PC.muted,
+                border: `1px solid ${g.done ? PC.green+"44" : PC.border}`,
+                whiteSpace:"nowrap",
+              }}>
+                {g.done ? "✓ " : ""}{g.label}{!g.done && g.pct > 0 ? ` ${g.pct}%` : ""}
+              </span>
+            ))}
+            {groups.length === 0 && (
+              <span style={{ fontSize:"0.73rem", color: PC.muted }}>{pct}%</span>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Summary modal — shows filled values as readable text ── */}
       {showSummary && (()=>{
@@ -5918,6 +5980,22 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               Magee(7th) · Petty(5th) · Maitland(8th) · Sahrmann · Butler · McKenzie · Brukner & Khan(5th) · Cook & Purdam · Moseley & Butler · Hides · Richardson & Hodges · NICE NG59 · ASAS · Woolf(IASP 2017)
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Saved confirmation toast ── */}
+      {showSavedToast && (
+        <div style={{
+          position:"fixed", bottom:80, left:"50%", transform:"translateX(-50%)",
+          background:"#059669", color:"#fff",
+          padding:"10px 22px", borderRadius:50,
+          fontSize:"0.88rem", fontWeight:700,
+          boxShadow:"0 4px 20px rgba(5,150,105,0.35)",
+          zIndex:9999, display:"flex", alignItems:"center", gap:8,
+          animation:"fadeUp 0.25s ease",
+          pointerEvents:"none",
+        }}>
+          <span style={{fontSize:"1rem"}}>✓</span> Assessment saved
         </div>
       )}
     </div>

@@ -14722,7 +14722,7 @@ function HomeModule({ onNav }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // THERAPIST DASHBOARD MODULE
 // ═══════════════════════════════════════════════════════════════════════════
-function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask, onProfile, currentUser, onSignOut }) {
+function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask, onProfile, onQuickStart, currentUser, onSignOut }) {
   const { useState, useEffect, useMemo, useCallback } = React;
   const [activeTab,   setActiveTab]   = useState("pending");
   const [scheduleTab, setScheduleTab] = useState("all");
@@ -15354,7 +15354,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                     display:"flex",alignItems:"center",gap:12,
                     opacity:appt.status==="completed"?0.7:1,cursor:"pointer",
                     animation:"fadeUp 0.4s ease both",animationDelay:`${i*0.05}s`,
-                  }} onClick={()=>onProfile ? onProfile(patients.find(p2=>p2.id===appt.id)||patients[i]) : onNav("subjective")}>
+                  }} onClick={()=>onQuickStart ? onQuickStart(patients.find(p2=>p2.id===appt.id)||patients[i]) : onNav("subjective")}>
                     <div style={{width:40,height:40,borderRadius:11,
                       background:`${appt.color}18`,border:`1.5px solid ${appt.color}25`,
                       display:"flex",alignItems:"center",justifyContent:"center",
@@ -17983,7 +17983,7 @@ function AppInner({ currentUser, onSignOut }) {
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo}/>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} currentUser={currentUser} onSignOut={onSignOut}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
                 <div style={{display:"flex",flexDirection:"column",gap:14}}>
                   {(()=>{
