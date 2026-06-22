@@ -11012,9 +11012,7 @@ const SEED_PATIENT = {
     lx_fn_walking:"Walks >1 km",
     lx_fn_adl:["Putting on shoes and socks","Bending to floor level","Getting out of bed"],
     lx_fn_work:"Modified duties",
-    lx_fn_psfs:"1. Sitting at desk for 1 hour: 3/10
-2. Walking 5km: 2/10
-3. Getting in/out of car: 4/10",
+    lx_fn_psfs:"1. Sitting at desk for 1 hour: 3/10\n2. Walking 5km: 2/10\n3. Getting in/out of car: 4/10",
     lx_fn_notes:"Significant work impact. Cannot exercise at previous level.",
     bps_beliefs:"Believes disc is permanently damaged. Fears surgery inevitable.",
     bps_social:"Supportive partner and family. Works from home.",
