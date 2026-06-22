@@ -12502,7 +12502,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   <React.Fragment key={step.key}>
                     {/* step bubble */}
                     <div
-                      onClick={() => setTab(step.nav)}
+                      onClick={() => navTo(step.nav)}
                       style={{
                         display: "flex",
                         flexDirection: "column",
@@ -17181,7 +17181,7 @@ function AppInner({ currentUser, onSignOut }) {
     setData(intake);
     setActivePatientId(newP.id);
     setShowIntake(false);
-    navTo("subjective");
+    navTo("demographics");
     setJsonMsg({ type:"success", text:`✅ Patient created: ${name}` });
     setTimeout(() => setJsonMsg(null), 2500);
   };
