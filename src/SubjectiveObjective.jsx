@@ -2791,12 +2791,12 @@ const needsBPS_S=(d)=>
   /Off work/.test(d.dem_work_status||"");
 
 const needsSleep_S=(d,regions)=>{
-  const poorSleep=/poor|very poor/.test((d.ls_sleep_quality||"").toLowerCase());
+  const poorSleep=/poor|very poor/.test((Array.isArray(d.ls_sleep_quality)?d.ls_sleep_quality.join(', '):(d.ls_sleep_quality||"")).toLowerCase());
   const nightPain=regions.some(r=>{
     const px=REG_MOD_S[r]?.prefix;
     if(!px) return false;
-    const n=(d[`${px}_night`]||"").toLowerCase();
-    const p=(d[`${px}_pattern`]||"").toLowerCase();
+    const n=(Array.isArray(d[`${px}_night`])?d[`${px}_night`].join(", "):(d[`${px}_night`]||"")).toLowerCase();
+    const p=(Array.isArray(d[`${px}_pattern`])?d[`${px}_pattern`].join(", "):(d[`${px}_pattern`]||"")).toLowerCase();
     return /wakes|cannot sleep|night pain|constant night/.test(n)||/night dominant/.test(p);
   });
   return poorSleep||nightPain;
@@ -2814,7 +2814,7 @@ const needsSport_S=(d,regions)=>{
 // ══════════════════════════════════════════════════════════════════════
 
 const needsHypermobility_S=(d)=>{
-  const hm=String(d.hm_screen||"").toLowerCase();
+  const hm=String(Array.isArray(d.hm_screen)?d.hm_screen.join(", "):(d.hm_screen||"")).toLowerCase();
   return /multiple joint|beighton|loose.*since childhood|recurrent disloc/.test(hm);
 };
 // ══════════════════════════════════════════════════════════════════════
