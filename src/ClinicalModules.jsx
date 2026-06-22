@@ -3461,50 +3461,90 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   // STT rows
   const sttRows = useMemo(() => {
     const rows = [];
-    // Map of st_* id -> [display name, clinical significance]
+    // Comprehensive label map: short-form, long-form, lx_* aliases all included
     const ST_NAMES = {
-      "st_spurling":"Spurling's Test","st_distraction":"Cervical Distraction","st_sharp_purser":"Sharp-Purser",
-      "st_vbi":"VBI Test","st_alar":"Alar Ligament","st_flex_rot":"Flexion-Rotation Test",
+      // Lumbar / Neural
+      "st_slr":"Straight Leg Raise","st_slr_test":"Straight Leg Raise",
+      "st_crossed_slr":"Crossed SLR","st_well_leg_raise":"Well Leg Raise",
+      "st_slump":"Slump Test","st_slump_test":"Slump Test",
+      "st_prone_instability":"Prone Instability Test","st_prone_instab":"Prone Instability Test",
+      "st_kemp":"Kemp's Test","st_stork":"Stork Test","st_adams":"Adam's Forward Bend",
+      "st_valsalva":"Valsalva Manoeuvre","st_lateral_shift":"Lateral Shift",
+      "st_femoral_nerve":"Femoral Nerve Stretch","st_femoral_nerve_stretch":"Femoral Nerve Stretch",
+      // lx_* aliases
+      "lx_kemp":"Kemp's Test","lx_slump":"Slump Test",
+      "lx_slr":"Straight Leg Raise","lx_slr_left":"SLR (Left)","lx_slr_right":"SLR (Right)",
+      "lx_prone_instab":"Prone Instability Test","lx_prone":"Prone Instability Test",
+      // SIJ
+      "st_faber":"FABER / Patrick's Test","st_faber_test":"FABER / Patrick's Test",
+      "st_fadir":"FADIR Test","st_fadir_test":"FADIR Test",
+      "st_thigh_thrust":"Thigh Thrust","st_gaenslen":"Gaenslen's Test",
+      "st_si_distraction":"SI Distraction","st_si_compression":"SI Compression",
+      "st_sacral_compression":"Sacral Compression","st_sacral_distraction":"Sacral Distraction",
+      // Cervical
+      "st_spurling":"Spurling's Test","st_distraction":"Cervical Distraction",
+      "st_sharp_purser":"Sharp-Purser Test","st_vbi":"VBI Screen",
+      "st_alar":"Alar Ligament Test","st_flex_rot":"Flexion-Rotation Test",
       "st_jackson":"Jackson's Compression","st_axial_loading":"Axial Loading",
-      "st_neer":"Neer's Test","st_hawkins":"Hawkins-Kennedy","st_empty_can":"Empty Can (Jobe)",
-      "st_full_can":"Full Can Test","st_lift_off":"Lift-Off (Gerber)","st_belly_press":"Belly Press",
+      "st_ultt1":"ULTT1 (Median)","st_ultt2":"ULTT2 (Radial)","st_ultt3":"ULTT3 (Ulnar)",
+      "st_babinski":"Babinski Sign","st_hoffmanns":"Hoffmann's Sign","st_hoffmann":"Hoffmann's Sign",
+      "st_clonus":"Clonus",
+      // Shoulder
+      "st_neer":"Neer's Test","st_hawkins":"Hawkins-Kennedy","st_hawkins_kennedy":"Hawkins-Kennedy",
+      "st_empty_can":"Empty Can (Jobe)","st_full_can":"Full Can Test",
+      "st_lift_off":"Lift-Off (Gerber)","st_belly_press":"Belly Press",
       "st_bear_hug":"Bear Hug","st_er_lag":"ER Lag Sign","st_hornblower":"Hornblower's Sign",
       "st_obrien":"O'Brien's Test","st_speeds":"Speed's Test","st_yergason":"Yergason's Test",
       "st_apprehension":"Apprehension Test","st_relocation":"Relocation Test","st_sulcus":"Sulcus Sign",
       "st_acromioclavicular":"AC Paxinos Test","st_cross_arm":"Cross-Arm Test",
+      "st_painful_arc":"Painful Arc","st_drop_arm":"Drop Arm Test",
+      // Elbow
       "st_cozens":"Cozen's Test","st_mills":"Mill's Test","st_golfers":"Golfer's Elbow Test",
-      "st_phalen":"Phalen's Test","st_tinel_wrist":"Tinel's (Wrist)","st_finkelstein":"Finkelstein's",
-      "st_watson":"Watson Scaphoid Shift",
-      "st_slr_test":"SLR","st_slump_test":"Slump Test","st_prone_instab":"Prone Instability",
-      "st_stork":"Stork Test","st_kemp":"Kemp's Test","st_adams":"Adam's Forward Bend",
-      "st_si_distraction":"SI Distraction","st_si_compression":"SI Compression",
-      "st_gaenslen":"Gaenslen's Test","st_thigh_thrust":"Thigh Thrust","st_lateral_shift":"Lateral Shift",
-      "st_faber_test":"FABER/Patrick's","st_fadir_test":"FADIR Test","st_hip_scour":"Hip Scour",
-      "st_trendelenburg_test":"Trendelenburg","st_thomas_test":"Thomas Test","st_ober_test":"Ober's Test",
-      "st_piriformis_test":"Piriformis (FAIR)","st_90_90":"90-90 Hamstring",
-      "st_lachmans":"Lachman's Test","st_anterior_drawer":"Anterior Drawer","st_posterior_drawer":"Posterior Drawer",
-      "st_pivot_shift":"Pivot Shift","st_valgus_stress_knee":"Valgus Stress","st_varus_stress_knee":"Varus Stress",
-      "st_mcmurray_test":"McMurray's Test","st_apley":"Apley's Grind","st_thessaly":"Thessaly Test",
-      "st_clarkes":"Clarke's Sign","st_patellar_grind":"Patellar Grind","st_effusion":"Ballottement Test",
-      "st_noble":"Noble Compression","st_ant_drawer_ankle":"Ankle Anterior Drawer","st_talar_tilt":"Talar Tilt",
-      "st_squeeze_ankle":"Squeeze/Mortise","st_thompson_test":"Thompson's Test","st_windlass_test":"Windlass Test",
-      "st_navicular_drop":"Navicular Drop","st_tinel_ankle":"Tinel's (Ankle)","st_royal_london":"Royal London",
-      "st_ultt1":"ULTT1 (Median)","st_ultt2":"ULTT2 (Radial)","st_ultt3":"ULTT3 (Ulnar)",
-      "st_femoral_nerve_stretch":"Femoral Nerve Stretch","st_babinski":"Babinski","st_hoffmanns":"Hoffmann's",
+      "st_maudsley":"Maudsley's Test","st_tinel_elbow":"Tinel's (Elbow)",
+      "st_elbow_flexion_test":"Elbow Flexion Test",
+      // Wrist/Hand
+      "st_phalen":"Phalen's Test","st_tinel_wrist":"Tinel's (Wrist)",
+      "st_finkelstein":"Finkelstein's Test","st_watson":"Watson Scaphoid Shift",
+      "st_carpal_compression":"Carpal Compression Test",
+      // Hip
+      "st_hip_scour":"Hip Scour","st_scour":"Hip Scour / Quadrant",
+      "st_trendelenburg":"Trendelenburg Test","st_trendelenburg_test":"Trendelenburg Test",
+      "st_thomas_test":"Thomas Test","st_ober":"Ober's Test","st_ober_test":"Ober's Test",
+      "st_piriformis":"Piriformis (FAIR)","st_piriformis_test":"Piriformis (FAIR)",
+      "st_90_90":"90-90 Hamstring Test",
+      // Knee
+      "st_lachman":"Lachman's Test","st_lachmans":"Lachman's Test",
+      "st_anterior_drawer":"Anterior Drawer","st_posterior_drawer":"Posterior Drawer",
+      "st_pivot_shift":"Pivot Shift Test","st_valgus_stress":"Valgus Stress Test",
+      "st_valgus_stress_knee":"Valgus Stress Test","st_varus_stress_knee":"Varus Stress Test",
+      "st_mcmurray":"McMurray's Test","st_mcmurray_test":"McMurray's Test",
+      "st_apley":"Apley's Grind","st_thessaly":"Thessaly Test",
+      "st_clarkes":"Clarke's Sign","st_patellar_grind":"Patellar Grind",
+      "st_effusion":"Ballottement Test","st_noble":"Noble Compression",
+      // Ankle/Foot
+      "st_ant_drawer_ankle":"Anterior Drawer (Ankle)","st_anterior_drawer_ankle":"Anterior Drawer (Ankle)",
+      "st_talar_tilt":"Talar Tilt Test","st_squeeze_ankle":"Squeeze/Mortise Test",
+      "st_thompson":"Thompson's Test","st_thompson_test":"Thompson's Test",
+      "st_windlass":"Windlass Test","st_windlass_test":"Windlass Test",
+      "st_navicular_drop":"Navicular Drop","st_tinel_ankle":"Tinel's (Ankle)",
+      "st_royal_london":"Royal London Hospital Test","st_ottawa_ankle":"Ottawa Ankle Rules",
     };
-    // Scan all st_* keys in data (bilateral: st_xxx_left / st_xxx_right / st_xxx)
+    // Label helper: map key -> clinical name, fallback to auto-format
+    const stLabel = (k) => ST_NAMES[k] || k.replace(/^(st_|lx_)/,"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+    // Scan both st_* and lx_* keys; collapse bilateral _left/_right variants
     const seen = new Set();
     Object.keys(data).forEach(k => {
+      const isStKey = k.startsWith("st_") || k.startsWith("lx_");
+      if (!isStKey) return;
       const base = k.replace(/_left$|_right$/, "");
-      if (!base.startsWith("st_") || seen.has(base)) return;
+      if (seen.has(base)) return;
       seen.add(base);
-      const left  = v(base+"_left");
-      const right = v(base+"_right");
-      const single= v(base);
+      const left   = v(base+"_left");
+      const right  = v(base+"_right");
+      const single = v(base);
       const combined = [left&&`L: ${left}`, right&&`R: ${right}`].filter(Boolean).join(" / ") || single;
       if (!combined) return;
-      const name = ST_NAMES[base] || base.replace(/^st_/,"").replace(/_/g," ").replace(/\w/g,c=>c.toUpperCase());
-      rows.push({key:base, name, sig:"", val:combined});
+      rows.push({key:base, name:stLabel(base), sig:"", val:combined});
     });
     return rows;
   }, [data]);
