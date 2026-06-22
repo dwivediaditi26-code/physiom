@@ -17004,7 +17004,12 @@ function AppInner({ currentUser, onSignOut }) {
       return updated;
     });
   };
-  const [activePatientId, setActivePatientId] = useState(null);
+  const [activePatientId, setActivePatientId] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      return (raw && raw.pid) ? raw.pid : null;
+    } catch { return null; }
+  });
   const [showPatientDb, setShowPatientDb] = useState(false);
   const [showUnsaved, setShowUnsaved] = useState(false);
   const [pendingPatient, setPendingPatient] = useState(null);
