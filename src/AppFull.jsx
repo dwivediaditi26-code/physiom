@@ -11137,9 +11137,10 @@ function loadPatientDB() {
     if (real.length !== stored.length) {
       try { localStorage.setItem(DB_KEY, JSON.stringify(real)); } catch {}
     }
-    // Seed Priya Sharma if no patients exist, or if she exists with empty data (fix bad seed)
+    // Seed Priya Sharma if no patients exist, or data is outdated (< full field count)
+    const priya = real.find(p => p.id === SEED_PATIENT.id);
     const needsSeed = real.length === 0 ||
-      real.every(p => p.id === SEED_PATIENT.id && Object.keys(p.data || {}).length === 0);
+      (priya && Object.keys(priya.data || {}).length < 180);
     if (needsSeed) {
       const others = real.filter(p => p.id !== SEED_PATIENT.id);
       const seeded = [SEED_PATIENT, ...others];
