@@ -7874,6 +7874,8 @@ ${soap.P}` : "";
   );
 
 
+}
+
 export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP,
   SOAPNoteModule, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX, ExercisePrescriptionModule, PalpationModule,
   TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel, ObservationModule };
