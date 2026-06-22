@@ -10920,6 +10920,74 @@ function PhotoUploadAnalyzer() {
 const DB_KEY = "physio_patient_db_v1";
 const DRAFT_KEY = "physio_draft_v1";
 
+const SEED_PATIENT = {
+  id: "pt_priya_sharma_01",
+  name: "Priya Sharma",
+  createdAt: "2026-06-22T08:00:00.000Z",
+  updatedAt: "2026-06-22T08:52:36.000Z",
+  hasRedFlags: false,
+  lastDx: "L4/L5 disc herniation with radiculopathy — McKenzie Derangement Syndrome (Extension bias)",
+  data: {
+    dem_name:"Priya Sharma", dem_age:"34", dem_gender:"Female", dem_occupation:"Software Engineer",
+    dem_referral:"Self", dem_phone:"9876543210", dem_email:"priya.sharma@email.com",
+    dem_address:"Mumbai, Maharashtra",
+    cc_primary:"Lower back pain radiating to left leg",
+    cc_onset:"2026-05-10", cc_mechanism:"Prolonged sitting at desk, sudden onset after forward bend",
+    cc_duration:"6 weeks", cc_frequency:"Constant",
+    cc_aggravating:"Sitting >30 min, forward bending, coughing, sneezing",
+    cc_relieving:"Walking, lying prone, McKenzie extension exercises",
+    cc_previous:"No prior episodes",
+    cc_goals:"Return to pain-free work and light jogging",
+    nrs_current:"6", nrs_best:"3", nrs_worst:"8",
+    pq_quality:["Sharp","Burning","Radiating"],
+    pq_area:"Left lumbar and posterior thigh to knee",
+    pq_24hr:"Worse in morning, eases with movement, worsens after prolonged sitting",
+    pq_night:"Disturbs sleep when rolling over",
+    pq_posture:"Worst sitting, best prone lying",
+    rr_centralisation:"Yes — pain centralises with prone press-ups",
+    rr_peripheralisation:"Yes — with flexion",
+    rr_direction:"Extension",
+    red_cauda:"No", red_bladder:"No", red_bowel:"No", red_saddle:"No",
+    red_bilateral:"No", red_progressive:"No", red_cancer:"No", red_weightloss:"No",
+    red_fever:"No", red_trauma:"No", red_steroids:"No",
+    yf_fear:"Mild — worried about worsening with exercise",
+    yf_catastrophising:"Occasional",
+    yf_workstress:"Moderate — deadline pressure",
+    yf_depression:"No",
+    pmh_conditions:"None significant", pmh_surgeries:"None", pmh_medications:"Ibuprofen 400mg PRN",
+    pmh_allergies:"None", pmh_imaging:"MRI L-spine 2026-05-20: L4/L5 disc herniation left paracentral, mild neural foraminal stenosis",
+    pmh_investigations:"MRI confirms L4/L5 left paracentral disc herniation",
+    sxax_screen:"Nil — no upper limb symptoms, no cervical involvement",
+    reg_location:"Lumbar spine L4/L5, left S1 dermatome",
+    reg_radiation:"Left posterior thigh to knee",
+    reg_dermatomal:"L4/L5 distribution — medial leg and dorsum of foot",
+    reg_myotomal:"L5 — EHL weakness grade 4/5",
+    reg_reflex:"Left knee jerk reduced",
+    reg_sensation:"Reduced pinprick L4/L5 dermatome left",
+    reg_slr:"Positive left at 40°",
+    reg_faber:"Negative bilaterally",
+    reg_fadir:"Negative",
+    reg_ober:"Negative",
+    reg_thomas:"Positive left — hip flexor tightness",
+    reg_prone_instability:"Negative",
+    reg_palpation:"Tenderness L4/L5 left paraspinal, gluteal trigger points",
+    reg_rom_flex:"50% — pain and peripheralisation",
+    reg_rom_ext:"80% — centralisation of symptoms",
+    reg_rom_lb:"70% left, 60% right",
+    reg_rom_rot:"60% bilateral",
+    bps_beliefs:"Fears disc is 'slipped out', worried about permanent damage",
+    bps_social:"Works from home, supportive family",
+    bps_psychological:"Mild anxiety about recovery timeline",
+    bps_expectations:"Wants to avoid surgery, return to jogging in 8 weeks",
+    sleep_quality:"4/10 — wakes 2-3x from pain",
+    sleep_hours:"5-6",
+    sleep_position:"Side-lying with pillow between knees best",
+    sport_activity:"Light walking, no running since onset",
+    sport_level:"Recreational jogger pre-injury",
+    sport_goals:"Return to 5km jogging",
+  }
+};
+
 const DEMO_PATIENTS = [];
 
 const DEMO_VERSION = "v2026-06"; // bump this when demo patients change
@@ -10927,18 +10995,25 @@ const DEMO_VERSION = "v2026-06"; // bump this when demo patients change
 function loadPatientDB() {
   try {
     // One-time clear: if user has old demo data from before v2026-06-21, wipe it
-    const cleared = localStorage.getItem("pm_cleared_demo_v1");
+    const cleared = localStorage.getItem("pm_cleared_demo_v2");
     if (!cleared) {
       localStorage.removeItem(DB_KEY);
       localStorage.removeItem(DRAFT_KEY);
-      localStorage.setItem("pm_cleared_demo_v1", "1");
-      return [];
+      localStorage.setItem("pm_cleared_demo_v2", "1");
     }
     const stored = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
     // Remove any old demo patients that were previously seeded
     const real = stored.filter(p => !p.id.startsWith("demo_"));
     if (real.length !== stored.length) {
       try { localStorage.setItem(DB_KEY, JSON.stringify(real)); } catch {}
+    }
+    // Seed Priya Sharma if no patients exist yet
+    if (real.length === 0) {
+      const seeded = [SEED_PATIENT];
+      try { localStorage.setItem(DB_KEY, JSON.stringify(seeded)); } catch {}
+      // Also seed the draft so she's immediately active
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: SEED_PATIENT.id, data: SEED_PATIENT.data })); } catch {}
+      return seeded;
     }
     return real;
   } catch { return []; }
