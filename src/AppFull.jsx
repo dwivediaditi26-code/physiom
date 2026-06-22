@@ -18322,9 +18322,9 @@ function AppInner({ currentUser, onSignOut }) {
                   </div>
                 </div>
               ):tests==="SOAP_MODULE"?(
-                <Suspense fallback={<TabFallback/>}><LazySOAP data={data} set={set} onNav={navTo}/></Suspense>
+              <LiveSOAPPanel data={data} onNavigate={navTo}/>
               ):tests==="AI_MODULE"?(
-                <Suspense fallback={<TabFallback/>}><LazySOAP data={data} set={set} onNav={navTo} initialTab="ai"/></Suspense>
+              <LiveSOAPPanel data={data} onNavigate={navTo}/>
               ):(
                 <div style={{display:"grid",gap:8}}>
                   {tests.map(t=>{
