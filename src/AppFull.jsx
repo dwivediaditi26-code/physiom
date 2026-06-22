@@ -7,7 +7,7 @@ import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection,
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
   ErgoModule, CyriaxModule, CyriaxRegionTests, generateDiagnosis,
   PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
-import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule, LiveSOAPPanel,
+import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, SOAPDocViewer, ExercisePrescriptionModule, LiveSOAPPanel,
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
   buildClinicalInterpretation, Sparkline, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX, ObservationModule } from "./ClinicalModules.jsx";
 import BodyChartPro from "./BodyChartPro.jsx";
@@ -18322,9 +18322,9 @@ function AppInner({ currentUser, onSignOut }) {
                   </div>
                 </div>
               ):tests==="SOAP_MODULE"?(
-              <LiveSOAPPanel data={data} onNavigate={navTo}/>
+              <SOAPDocViewer data={data} onNavigate={navTo}/>
               ):tests==="AI_MODULE"?(
-              <LiveSOAPPanel data={data} onNavigate={navTo}/>
+              <SOAPDocViewer data={data} onNavigate={navTo}/>
               ):(
                 <div style={{display:"grid",gap:8}}>
                   {tests.map(t=>{
