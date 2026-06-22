@@ -11026,21 +11026,110 @@ const SEED_PATIENT = {
     bps_outcome:"PHQ-2: 1/6 — no significant depression.",
     sleep_quality:"4/10", sleep_hours:"5-6",
     sleep_position:"Side-lying with pillow between knees best tolerated",
+
+    // ── KINETIC CHAIN ─────────────────────────────────────────────────────
+    kc_ankle_df:"Moderately restricted — 4–6cm / 10–14°",
+    kc_subtalar:"Hypermobile — excessive pronation",
+    kc_great_toe:"Mildly restricted — 40–59°",
+    kc_knee_stability:"Dynamic valgus — functional tasks only",
+    kc_patellar_mobility:"Restricted lateral tilt — J-tracking pattern",
+    kc_tibiofemoral_rot:"Reduced screw-home mechanism",
+    kc_hip_ir_mob:"Restricted — <30° bilateral",
+    kc_hip_ext_mob:"Restricted — Thomas test positive (hip flexor tightness)",
+    kc_hip_er_mob:"Normal",
+    kc_hip_abd_mob:"Mildly restricted — Ober test mildly positive",
+    kc_lumbar_stability:"Unstable — poor segmental control (prone instability positive)",
+    kc_lumbar_flexion_ctrl:"Dysfunctional — early hinge at L4/L5",
+    kc_lumbar_rotation_ctrl:"Restricted rotation control — poor dissociation",
+    kc_thoracic_rotation:"Restricted bilateral — <40°",
+    kc_thoracic_extension:"Restricted — flat thoracic kyphosis",
+    kc_rib_mobility:"Limited left rib expansion",
+    kc_scapulohumeral_rhythm:"Abnormal — early scapular elevation",
+    kc_gh_ir_mob:"Restricted — GIRD positive right shoulder",
+    kc_cervical_thoracic_jct:"Dysfunctional — loss of CT junction mobility",
+    kc_cervical_rot_mob:"Restricted left rotation — 55°",
+    kc_cervical_flex_ext:"Restricted extension — chin poke pattern",
+    kc_notes:"Ankle DF restriction driving knee valgus. Thoracic stiffness limiting cervical and shoulder mobility. Classic lower crossed syndrome + early upper crossed pattern.",
+
+    // ── FASCIA ────────────────────────────────────────────────────────────
+    fa_skin_roll:"Restricted — taut band with tenderness (fascial densification)",
+    fa_passive_tension:"Restricted SBL — hamstring and thoracolumbar tension",
+    fa_active_line_load:"SBL overloaded — posterior chain dominant pattern",
+    fa_densification:"Densification present — lumbar and cervical regions (Stecco positive)",
+    fa_sbl_hamstring:"Restricted — fascial vs muscle length test positive",
+    fa_tlf:"Restricted TLF — poor lumbar dissociation and rotation",
+    fa_spiral_rot:"Asymmetric spiral rotation — right dominant compensation",
+    fa_ll_test:"Restricted lateral line — left hip",
+    fa_dfl_arch:"DFL arch collapsed — poor intrinsic foot support",
+    fa_dfl_breathing:"Diaphragm restricted — paradoxical breathing pattern noted",
+    fa_remote_test:"Positive — cervical symptoms change with lumbar treatment (regional interdependence)",
+    fa_force_closure:"Reduced — SIJ force closure deficit",
+    fa_compensation_map:"SBL dominant with DFL inhibition — posterior chain overload pattern",
+    fa_scar:"No surgical scars",
+
+    // ── NKT / CPA ─────────────────────────────────────────────────────────
+    nkt_dnf:"Inhibited", nkt_scm:"Facilitated", nkt_upper_trap:"Facilitated",
+    nkt_lower_trap:"Inhibited", nkt_serratus:"Inhibited", nkt_subscapularis:"Inhibited",
+    nkt_infraspinatus:"Facilitated", nkt_pec_minor:"Facilitated",
+    nkt_ta:"Inhibited", nkt_multifidus:"Inhibited", nkt_diaphragm:"Inhibited",
+    nkt_ql:"Facilitated", nkt_psoas:"Facilitated", nkt_erector_spinae:"Facilitated",
+    nkt_gmax:"Inhibited", nkt_gmed:"Inhibited", nkt_tfl:"Facilitated",
+    nkt_vmo:"Inhibited", nkt_hamstrings:"Facilitated", nkt_gastroc:"Facilitated",
+    nkt_tib_ant:"Inhibited",
+    nkt_notes:"Classic LCS + UCS pattern. Glute inhibition with TFL/hamstring dominance driving lumbar overload. DNF inhibited with SCM/upper trap facilitation.",
+
+    // ── FUNCTIONAL SCREENS ────────────────────────────────────────────────
+    kfs_data:JSON.stringify({ grades:{ kfs_squat:2, kfs_lunge:1, kfs_step_down:2, kfs_single_leg:2 }, notes:{ kfs_squat:"Clear dynamic valgus bilateral, heel rise at 60° squat depth", kfs_step_down:"Contralateral hip drop — Trendelenburg pattern" } }),
+    lfs_data:JSON.stringify({ grades:{ lfs_flexion:2, lfs_extension:1, lfs_rot:2, lfs_lateral:1 }, notes:{ lfs_flexion:"Early hinge L4/L5, poor hip hinge dissociation from lumbar" } }),
+    sfs_data:JSON.stringify({ grades:{ sfs_overhead:2, sfs_push:1, sfs_pull:2 }, notes:{ sfs_overhead:"Early scapular elevation with loss of posterior tilt — impingement risk" } }),
+    hfs_data:JSON.stringify({ grades:{ hfs_squat:1, hfs_hinge:2, hfs_lunge:1 }, notes:{ hfs_hinge:"Hip flexor dominant pattern, poor posterior chain activation" } }),
+    afs_data:JSON.stringify({ grades:{ afs_raise:2, afs_lunge:2, afs_hop:1 }, notes:{ afs_raise:"Cannot complete single leg heel raise — gastroc/soleus inhibition" } }),
+
+    // ── OUTCOME MEASURES ─────────────────────────────────────────────────
+    om_report:{ scores:{ ndi:"42%", odi:"38%", psfs:"4.2/10", dash:"36" } },
+
+    // ── ERGONOMICS ────────────────────────────────────────────────────────
+    ergo_total_score:"7", ergo_cervical_risk:"8", ergo_lumbar_risk:"6",
+    ergo_ucs_risk:"7", ergo_rsi_risk:"5", ergo_nerve_risk:"4",
+    ergo_sitting_hrs:"9 hours/day",
+
+    // ── TREATMENT TECHNIQUES ──────────────────────────────────────────────
+    tx_techniques:[
+      { type:"manual", technique:"PA central glide", region:"L4/5", grade:"III", dosage:"3×60s", response:"Pain reduced 7→4/10, centralisation confirmed" },
+      { type:"dn", dn_muscle:"Gluteus Medius", laterality:"bilateral", dn_needles:"4", dn_depth:"30mm", dn_twitch:"positive" },
+      { type:"st", st_technique:"Myofascial release", st_region:"Thoracolumbar fascia", duration:"5 min" }
+    ],
+
+    // ── EXERCISE PRESCRIPTION ─────────────────────────────────────────────
+    hep_programme:[
+      { name:"Dead Bug", sets:"3", reps:"10", hold:"5", freq:"daily", notes:"Maintain neutral spine, no lumbar extension" },
+      { name:"Glute Bridge", sets:"3", reps:"15", hold:"3", freq:"daily", notes:"Bilateral to start, progress to single leg week 2" },
+      { name:"Wall Ankle DF Lunge", sets:"3", reps:"10", hold:"2", freq:"daily", notes:"Measure distance to wall — target 10cm" },
+      { name:"Thoracic Rotation in Side Lying", sets:"2", reps:"10", hold:"3", freq:"daily", notes:"Keep hips stacked, focus thoracic not lumbar" },
+      { name:"McKenzie Press-Up", sets:"3", reps:"10", hold:"1", freq:"every 2 hrs", notes:"Centralise leg pain — stop if peripheralises" }
+    ],
+
+    // ── GAIT ──────────────────────────────────────────────────────────────
+    gait_observation:"Antalgic gait with reduced left stance phase and trunk lean",
+    gait_deviations:"Bilateral dynamic valgus on loading, reduced push-off right, minor Trendelenburg left",
+
+    // ── FMA ───────────────────────────────────────────────────────────────
+    fma_report:{ scores:{ squat:1, gait:2, single_leg:1, lunge:2, bend:2 } },
   }
 };
 
 const DEMO_PATIENTS = [];
 
-const DEMO_VERSION = "v2026-06"; // bump this when demo patients change
+const DEMO_VERSION = "v2026-06b"; // bump this when demo patients change
 
 function loadPatientDB() {
   try {
     // One-time clear: if user has old demo data from before v2026-06-21, wipe it
-    const cleared = localStorage.getItem("pm_cleared_demo_v2");
+    const cleared = localStorage.getItem("pm_cleared_demo_v3");
     if (!cleared) {
       localStorage.removeItem(DB_KEY);
       localStorage.removeItem(DRAFT_KEY);
-      localStorage.setItem("pm_cleared_demo_v2", "1");
+      localStorage.setItem("pm_cleared_demo_v3", "1");
     }
     const stored = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
     // Remove any old demo patients that were previously seeded
