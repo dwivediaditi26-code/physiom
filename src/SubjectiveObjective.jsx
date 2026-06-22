@@ -4129,12 +4129,12 @@ function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, 
     <div style={{ border:`1px solid ${hasActive?group.col+"55":PC.border}`, borderRadius:9, overflow:"hidden" }}>
       <div onClick={()=>setGOpen(o=>!o)}
         style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          padding:"6px 10px", cursor:"pointer",
+          padding:"10px 12px", cursor:"pointer",
           background: hasActive ? group.col+"0e" : PC.s2 }}>
         <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-          <span style={{ fontSize:"0.8rem", fontWeight:700, textTransform:"uppercase",
+          <span style={{ fontSize:"0.88rem", fontWeight:700, textTransform:"uppercase",
             letterSpacing:"0.7px", color: group.col }}>{group.label}</span>
-          <span style={{ fontSize:"0.78rem", color:PC.muted }}>
+          <span style={{ fontSize:"0.84rem", color:PC.muted }}>
             {group.keys.length} section{group.keys.length>1?"s":""}
           </span>
           {groupFilled > 0 && (
@@ -4147,7 +4147,7 @@ function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, 
         <span style={{ fontSize:"0.75rem", color:PC.muted }}>{gOpen?"▲":"▼"}</span>
       </div>
       {gOpen && (
-        <div style={{ display:"flex", gap:4, flexWrap:"wrap", padding:"7px 8px",
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap", padding:"10px 10px",
           borderTop:`1px solid ${PC.border}`, background:PC.surface }}>
           {group.keys.map(key => {
             const s = sections[key]; if (!s) return null;
@@ -4158,13 +4158,13 @@ function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, 
               <button key={key} type="button"
                 onClick={() => { setActiveSection(key); setSearchTerm(""); }}
                 style={{
-                  padding:"4px 9px", borderRadius:7, whiteSpace:"nowrap", cursor:"pointer",
-                  border:`1px solid ${isAct ? col : PC.border}`,
+                  padding:"9px 13px", borderRadius:8, whiteSpace:"nowrap", cursor:"pointer",
+                  border:`1.5px solid ${isAct ? col : PC.border}`,
                   background: isAct ? col+"18" : PC.s3,
                   color: isAct ? col : PC.muted,
-                  fontSize:"0.75rem", fontWeight: isAct ? 700 : 500,
-                  display:"flex", alignItems:"center", gap:4, flexShrink:0,
-                  transition:"all 120ms",
+                  fontSize:"0.85rem", fontWeight: isAct ? 700 : 500,
+                  display:"flex", alignItems:"center", gap:5, flexShrink:0,
+                  minHeight:40, transition:"all 120ms",
                 }}>
                 <span>{s.icon}</span>
                 <span>{s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}</span>
@@ -4195,7 +4195,7 @@ function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
     <div style={{ border:`1px solid ${hasSelected ? PC.accent+"55" : PC.border}`, borderRadius:9, overflow:"hidden" }}>
       <div onClick={() => setMcOpen(o => !o)}
         style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          padding:"6px 10px", cursor:"pointer",
+          padding:"12px 12px", cursor:"pointer",
           background: hasSelected ? PC.accent+"08" : PC.s2 }}>
         <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
           {hasSelected ? (
@@ -4215,8 +4215,8 @@ function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
         </span>
       </div>
       {mcOpen && (
-        <div style={{ padding:"8px 10px", borderTop:`1px solid ${PC.border}`,
-          display:"flex", flexWrap:"wrap", gap:5, background:PC.surface }}>
+        <div style={{ padding:"12px 12px", borderTop:`1px solid ${PC.border}`,
+          display:"flex", flexWrap:"wrap", gap:8, background:PC.surface }}>
           {opts.map(opt => {
             const on = selected.includes(opt);
             const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("⚠");
@@ -4224,12 +4224,12 @@ function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
               <button key={opt} type="button"
                 onClick={() => toggleMulti(f.id, opt)}
                 style={{
-                  padding:"6px 11px", borderRadius:99, cursor:"pointer",
-                  border:`1px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
+                  padding:"9px 14px", borderRadius:99, cursor:"pointer",
+                  border:`1.5px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
                   background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
                   color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
-                  fontSize:"0.82rem", fontWeight: on ? 700 : 500,
-                  lineHeight: 1.4,
+                  fontSize:"0.88rem", fontWeight: on ? 700 : 500,
+                  lineHeight: 1.4, minHeight:38,
                   transition:"all 110ms",
                 }}>
                 {opt}
@@ -4577,10 +4577,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const renderField = (f) => {
     const val = data[f.id] || "";
     const inputStyle = {
-      width:"100%", padding:"8px 10px",
-      background: PC.inputBg, border:`1px solid ${PC.inputBorder}`,
-      borderRadius:8, color: PC.text, fontFamily:"inherit",
-      fontSize:"0.82rem", outline:"none", boxSizing:"border-box",
+      width:"100%", padding:"12px 14px",
+      background: PC.inputBg, border:`1.5px solid ${PC.inputBorder}`,
+      borderRadius:10, color: PC.text, fontFamily:"inherit",
+      fontSize:"0.95rem", outline:"none", boxSizing:"border-box",
+      minHeight:48, lineHeight:1.4,
     };
 
     if (f.type === "multicheck") {
@@ -4607,22 +4608,31 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       return (
         <textarea value={val} onChange={e => setField(f.id, e.target.value)}
           placeholder={f.placeholder || "Clinical notes — patient quotes, specific detail, clinician observations..."}
-          rows={3} style={{ ...inputStyle, resize:"vertical", minHeight:64, lineHeight:1.5 }} />
+          rows={4} style={{ ...inputStyle, resize:"vertical", minHeight:88, lineHeight:1.6 }} />
       );
     }
 
     if (f.type === "range") {
       const num = parseInt(val || 0);
       const col = num >= 7 ? PC.red : num >= 4 ? PC.yellow : PC.green;
+      const colBg = num >= 7 ? PC.red+"18" : num >= 4 ? PC.yellow+"18" : PC.green+"18";
       return (
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ background: colBg, borderRadius:10, padding:"10px 14px", border:`1.5px solid ${col}33` }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:6 }}>
+            <span style={{ fontWeight:900, color: col, fontSize:"1.6rem", minWidth:40, textAlign:"center", lineHeight:1 }}>
+              {num}
+            </span>
+            <span style={{ fontSize:"0.82rem", color: PC.muted }}>/ 10</span>
+            <span style={{ marginLeft:"auto", fontSize:"0.78rem", color: col, fontWeight:700 }}>
+              {num === 0 ? "No pain" : num <= 3 ? "Mild" : num <= 6 ? "Moderate" : num <= 8 ? "Severe" : "Worst"}
+            </span>
+          </div>
           <input type="range" min="0" max="10" value={num}
             onChange={e => setField(f.id, e.target.value)}
-            style={{ flex:1, accentColor: col, height:28, cursor:"pointer" }} />
-          <span style={{ fontWeight:800, color: col, fontSize:"1.2rem", minWidth:36, textAlign:"center" }}>
-            {num}
-          </span>
-          <span style={{ fontSize:"0.82rem", color: PC.muted }}>/ 10</span>
+            style={{ width:"100%", accentColor: col, height:32, cursor:"pointer" }} />
+          <div style={{ display:"flex", justifyContent:"space-between", fontSize:"0.72rem", color: PC.muted, marginTop:3 }}>
+            <span>0</span><span>5</span><span>10</span>
+          </div>
         </div>
       );
     }
@@ -4928,15 +4938,15 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             {/* Trigger row */}
             <div
               onClick={() => setRegionPickerOpen(o => !o)}
-              style={{ background: PC.surface, borderRadius:10, padding:"8px 12px",
-                border:`1px solid ${rOpen ? PC.accent : PC.border}`,
-                display:"flex", alignItems:"center", gap:6, cursor:"pointer",
-                minHeight:38, flexWrap:"wrap" }}>
-              <span style={{ fontSize:"0.75rem", fontWeight:700, color:PC.muted, whiteSpace:"nowrap" }}>
+              style={{ background: PC.surface, borderRadius:10, padding:"12px 14px",
+                border:`1.5px solid ${rOpen ? PC.accent : PC.border}`,
+                display:"flex", alignItems:"center", gap:8, cursor:"pointer",
+                minHeight:48, flexWrap:"wrap" }}>
+              <span style={{ fontSize:"0.88rem", fontWeight:700, color:PC.muted, whiteSpace:"nowrap" }}>
                 📍 Regions ({selectedRegions.length}/3):
               </span>
               {selectedRegions.length === 0 ? (
-                <span style={{ fontSize:"0.82rem", color:PC.muted, fontStyle:"italic" }}>tap to select…</span>
+                <span style={{ fontSize:"0.88rem", color:PC.muted, fontStyle:"italic" }}>tap to select…</span>
               ) : (
                 selectedRegions.map(r => (
                   <span key={r} style={{
@@ -5241,42 +5251,43 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                 border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44`, overflow:"hidden" }}>
 
                 {/* Section header */}
-                <div style={{ padding:"14px 18px 10px", borderBottom:`1px solid ${PC.border}` }}>
+                <div style={{ padding:"16px 18px 12px", borderBottom:`1px solid ${PC.border}`, background: secColor+"06" }}>
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <div style={{ fontSize:"0.95rem", fontWeight:800, color: secColor }}>
+                    <div style={{ fontSize:"1.05rem", fontWeight:800, color: secColor }}>
                       {sec.icon} {sec.label}
                     </div>
-                    <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:500 }}>
+                    <span style={{ fontSize:"0.85rem", color: PC.muted, fontWeight:600,
+                      background: PC.s2, borderRadius:20, padding:"2px 10px" }}>
                       {curIdx + 1} / {sectionKeys.length}
                     </span>
                   </div>
                   {sec.description && (
-                    <div style={{ fontSize:"0.78rem", color: PC.muted, marginTop:4, fontStyle:"italic",
-                      borderLeft:`2px solid ${secColor}44`, paddingLeft:8 }}>
+                    <div style={{ fontSize:"0.82rem", color: PC.muted, marginTop:6, fontStyle:"italic",
+                      borderLeft:`3px solid ${secColor}55`, paddingLeft:10, lineHeight:1.5 }}>
                       {sec.description}
                     </div>
                   )}
                 </div>
 
                 {/* Fields */}
-                <div style={{ padding:"14px 18px" }}>
+                <div style={{ padding:"18px 18px" }}>
                   {/* Search (multicheck sections only) */}
                   {sec.fields.some(f => f.type === "multicheck") && (
                     <input type="text" value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
                       placeholder="🔎 Filter options..."
-                      style={{ width:"100%", padding:"7px 11px", marginBottom:12,
-                        background: PC.s2, border:`1px solid ${PC.inputBorder}`,
-                        borderRadius:8, fontSize:"0.82rem", color: PC.text,
-                        outline:"none", boxSizing:"border-box" }} />
+                      style={{ width:"100%", padding:"11px 14px", marginBottom:14,
+                        background: PC.s2, border:`1.5px solid ${PC.inputBorder}`,
+                        borderRadius:10, fontSize:"0.95rem", color: PC.text,
+                        outline:"none", boxSizing:"border-box", minHeight:46 }} />
                   )}
 
                   {sec.fields.map(field => {
                     const helpText = FIELD_HELP[field.id];
                     return (
-                    <div key={field.id} style={{ marginBottom:14 }}>
-                      <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.82rem", fontWeight:600,
-                        color: PC.text, marginBottom:5, letterSpacing:0.2, flexWrap:"wrap" }}>
+                    <div key={field.id} style={{ marginBottom:20 }}>
+                      <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.93rem", fontWeight:600,
+                        color: PC.text, marginBottom:8, letterSpacing:0.1, flexWrap:"wrap" }}>
                         <span>{field.label}</span>
                         {field.type === "textarea" && (
                           <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:400, fontStyle:"italic" }}>notes</span>
@@ -5303,13 +5314,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     onClick={() => prevKey && goTo(prevKey)}
                     disabled={!prevKey}
                     style={{
-                      flex:1, padding:"11px 12px", background:"transparent", border:"none",
+                      flex:1, padding:"15px 14px", background:"transparent", border:"none",
                       borderRight:`1px solid ${PC.border}`,
                       color: prevKey ? PC.muted : PC.border,
-                      fontSize:"0.82rem", fontWeight:500, cursor: prevKey ? "pointer" : "default",
+                      fontSize:"0.9rem", fontWeight:500, cursor: prevKey ? "pointer" : "default",
                       fontFamily:"inherit", textAlign:"left", display:"flex", alignItems:"center", gap:6,
                     }}>
-                    {prevKey && <span style={{ fontSize:"0.85rem" }}>←</span>}
+                    {prevKey && <span style={{ fontSize:"1rem" }}>←</span>}
                     <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                       {prevSec ? `${prevSec.icon} ${prevSec.label}` : ""}
                     </span>
@@ -5318,11 +5329,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     onClick={() => nextKey && goTo(nextKey)}
                     disabled={!nextKey}
                     style={{
-                      flex:1, padding:"11px 12px",
-                      background: nextKey ? secColor+"10" : "transparent",
+                      flex:1, padding:"15px 14px",
+                      background: nextKey ? secColor+"14" : "transparent",
                       border:"none",
                       color: nextKey ? secColor : PC.border,
-                      fontSize:"0.82rem", fontWeight: nextKey ? 700 : 500,
+                      fontSize:"0.9rem", fontWeight: nextKey ? 700 : 500,
                       cursor: nextKey ? "pointer" : "default",
                       fontFamily:"inherit", textAlign:"right", display:"flex",
                       alignItems:"center", justifyContent:"flex-end", gap:6,
@@ -5330,7 +5341,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                       {nextSec ? `${nextSec.icon} ${nextSec.label}` : "All done ✓"}
                     </span>
-                    {nextKey && <span style={{ fontSize:"0.85rem" }}>→</span>}
+                    {nextKey && <span style={{ fontSize:"1rem" }}>→</span>}
                   </button>
                 </div>
 
