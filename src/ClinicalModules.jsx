@@ -1,6 +1,6 @@
 // ClinicalModules.jsx — Gait, Outcomes, SOAP, Exercise, Palpation, Treatment, SessionLog
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { getTopDiagnoses, ALL_DIAGNOSES } from "./DiagnosisEngine.js";
+import { getTopDiagnoses, getTopDiagnosesEnhanced, ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { C, getC } from "./utils.jsx";
 
 function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder="", data, set, note }) {
@@ -4345,23 +4345,34 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
                 {/* AI suggestions */}
                 {(()=>{
-                  const suggestions = getTopDiagnoses(data, 3);
+                  const suggestions = getTopDiagnosesEnhanced(data, 4);
                   if (!suggestions.length) return null;
-                  const CS = {High:{bg:"#ECFDF5",border:"#6EE7B7",badge:"#059669"},Moderate:{bg:"#FFFBEB",border:"#FDE68A",badge:"#D97706"},Low:{bg:"#F9FAFB",border:"#E5E7EB",badge:"#6B7280"}};
+                  const CS = {
+                    High:      {bg:"#ECFDF5",border:"#6EE7B7",badge:"#059669"},
+                    Moderate:  {bg:"#FFFBEB",border:"#FDE68A",badge:"#D97706"},
+                    Low:       {bg:"#F9FAFB",border:"#E5E7EB",badge:"#6B7280"},
+                    URGENT:    {bg:"#FFF7ED",border:"#FED7AA",badge:"#EA580C"},
+                    EMERGENCY: {bg:"#FEF2F2",border:"#FECACA",badge:"#DC2626"},
+                  };
                   return <div style={{marginBottom:10}}>
                     <div style={{fontSize:11,fontWeight:700,color:"#065F46",marginBottom:6}}>💡 Suggested Clinical Diagnoses</div>
                     {suggestions.map((s,i)=>{
-                      const cs=CS[s.confidenceLabel]||CS.Low;
+                      const key = s.urgency||s.confidenceLabel;
+                      const cs  = CS[key]||CS.Low;
+                      const isUrgent = s.urgency==="EMERGENCY"||s.urgency==="URGENT";
                       return <div key={i} style={{padding:"9px 12px",background:cs.bg,border:`1.5px solid ${cs.border}`,borderRadius:10,marginBottom:5}}>
                         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                          {isUrgent && <span style={{fontSize:13}}>{s.urgency==="EMERGENCY"?"🆘":"🔴"}</span>}
                           <span style={{fontSize:12,fontWeight:700,color:"#111827",flex:1}}>{i+1}. {s.diagnosis}</span>
-                          <span style={{padding:"2px 7px",borderRadius:99,fontSize:10,fontWeight:700,background:cs.badge,color:"#fff"}}>{s.confidenceLabel} {s.confidence}%</span>
+                          <span style={{padding:"2px 7px",borderRadius:99,fontSize:10,fontWeight:700,background:cs.badge,color:"#fff"}}>
+                            {s.urgency || `${s.confidenceLabel} ${s.confidence}%`}
+                          </span>
                         </div>
                         <div style={{fontSize:10,color:"#6B7280",marginBottom:4}}>{s.icd10} · {s.hits}/{s.total} criteria · {s.reference}</div>
                         <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:4}}>
-                          {s.supportingFindings.map((f,fi)=><span key={fi} style={{padding:"1px 6px",borderRadius:6,background:"rgba(0,0,0,0.06)",fontSize:10,color:"#374151"}}>{f}</span>)}
+                          {s.supportingFindings.map((f,fi)=><span key={fi} style={{padding:"1px 6px",borderRadius:6,background:isUrgent?"rgba(220,38,38,0.08)":"rgba(0,0,0,0.06)",fontSize:10,color:isUrgent?"#991B1B":"#374151"}}>{f}</span>)}
                         </div>
-                        {!dx&&<button onClick={()=>set("soap_a_diagnosis",s.diagnosis)} style={{padding:"3px 10px",fontSize:10,background:"#1E40AF",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use as Provisional Dx</button>}
+                        {!dx&&<button onClick={()=>set("soap_a_diagnosis",s.diagnosis)} style={{padding:"3px 10px",fontSize:10,background:isUrgent?"#DC2626":"#1E40AF",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use as Provisional Dx</button>}
                       </div>;
                     })}
                   </div>;

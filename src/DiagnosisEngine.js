@@ -867,3 +867,316 @@ export const ALL_DIAGNOSES = [
   "Rheumatoid Arthritis","Reactive Arthritis","Psoriatic Arthritis","Gout","Pseudogout",
   "Somatic Symptom Disorder","Chronic Widespread Pain"
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEUROLOGICAL PATTERN MATCHING ENGINE
+// Added as a second pass after runDiagnosisEngine — reads dermatome/myotome/
+// reflex/neural-tension keys stored by PhysioNeuro.jsx and generates specific
+// nerve-root level diagnoses with confidence boosted when the full clinical
+// triad (sensory + motor + reflex) is present at the same level.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function runNeuroPatternEngine(data) {
+  if (!data) return [];
+  const d = data;
+  const results = [];
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+  const pos  = k => { const v = String(d[k]||"").toLowerCase(); return v.includes("positive")||v.includes("+ve")||v==="present"||v==="yes"; };
+  const abn  = k => { const v = String(d[k]||""); return v.length>0 && !v.startsWith("Normal") && !v.startsWith("5"); };
+  const dim  = k => { const v = String(d[k]||"").toLowerCase(); return v.includes("diminish")||v.includes("absent")||v.includes("reduced")||v.includes("0")||v.includes("1+"); };
+  const sidedAbn = (base) => abn(base+"_left")||abn(base+"_right");
+  const sidedPos = (base) => pos(base+"_left")||pos(base+"_right");
+  const sidedDim = (base) => dim(base+"_left")||dim(base+"_right");
+
+  const push = (region, diagnosis, icd10, confidence, findings, refs, urgency) => {
+    const label = urgency==="EMERGENCY"?"EMERGENCY":urgency==="URGENT"?"URGENT":confidence>=80?"High":confidence>=55?"Moderate":"Low";
+    results.push({
+      region, diagnosis, icd10,
+      confidence, confidenceLabel: label,
+      supportingFindings: findings.filter(Boolean),
+      hits: findings.filter(Boolean).length,
+      total: findings.length,
+      reference: refs,
+      urgency: urgency||null,
+    });
+  };
+
+  // ── UMN / MYELOPATHY — highest priority ────────────────────────────────────
+  const babinski   = sidedPos("n_ref_babinski");
+  const hoffmann   = sidedPos("n_ref_hoffmann");
+  const clonus     = sidedPos("n_ref_clonus_ankle")||sidedPos("n_ref_clonus_knee")||sidedPos("n_ref_clonus_wrist");
+  const trommer    = sidedPos("n_ref_trommer");
+  const pronDrift  = sidedPos("n_ref_pronator");
+  const hyperref   = Object.keys(d).some(k=>k.startsWith("n_ref_")&&!k.includes("babinski")&&!k.includes("hoffmann")&&!k.includes("clonus")&&String(d[k]).toLowerCase().includes("hyper"));
+
+  const umnCount = [babinski,hoffmann,clonus,trommer,pronDrift].filter(Boolean).length;
+  if (umnCount >= 2) {
+    push("Neurological","Cervical Myelopathy / Cord Compression","G99.2",
+      Math.min(95, 60 + umnCount*8),
+      [
+        babinski  && "Babinski Sign +ve — corticospinal tract lesion (UMN)",
+        hoffmann  && "Hoffmann's Sign +ve — C8/T1 cord involvement (Cook 2009)",
+        clonus    && "Sustained Clonus +ve — UMN hyperexcitability (>3 beats)",
+        trommer   && "Trömner's Sign +ve — cervical cord UMN pattern",
+        pronDrift && "Pronator Drift +ve — contralateral corticospinal lesion",
+        hyperref  && "Hyperreflexia noted — loss of descending inhibition",
+      ],
+      "Cook et al. 2009; Maitland Cervical; MAG Ch.4; DUT Ch.25; NICE Myelopathy",
+      "URGENT"
+    );
+  } else if (umnCount === 1) {
+    push("Neurological","Possible Myelopathy — Screen Further","G99.2",
+      50,
+      [
+        babinski  && "Babinski Sign +ve",
+        hoffmann  && "Hoffmann's Sign +ve",
+        clonus    && "Clonus +ve",
+        trommer   && "Trömner's Sign +ve",
+      ],
+      "Cook et al. 2009; MAG Ch.4",
+      "URGENT"
+    );
+  }
+
+  // ── CAUDA EQUINA ───────────────────────────────────────────────────────────
+  const caudaFlag   = pos("nrf_cauda")||pos("nrf_sphincter")||pos("nrf_saddle");
+  const saddleSens  = sidedAbn("n_s4s5")||sidedAbn("n_s3");
+  const bilLegWeak  = (abn("myo_l4_left")&&abn("myo_l4_right"))||(abn("myo_l5_left")&&abn("myo_l5_right"))||(abn("myo_s1_left")&&abn("myo_s1_right"));
+  const slrBilat    = sidedPos("nt_slr") && (pos("nt_slr_left")&&pos("nt_slr_right"));
+  if (caudaFlag || saddleSens || bilLegWeak) {
+    push("Neurological","Cauda Equina Syndrome","G83.4",
+      caudaFlag ? 92 : 75,
+      [
+        caudaFlag  && "Red flag: saddle anaesthesia / sphincter dysfunction reported",
+        saddleSens && "S3/S4/S5 dermatomal sensory loss — saddle distribution",
+        bilLegWeak && "Bilateral lower limb myotomal weakness (L4/L5/S1)",
+        slrBilat   && "Bilateral positive SLR — central compression pattern",
+      ],
+      "NICE CES Guidelines; MAG Ch.9; DUT Ch.22",
+      "EMERGENCY"
+    );
+  }
+
+  // ── LUMBAR NERVE ROOT LEVELS ───────────────────────────────────────────────
+
+  // L4 root — Patella reflex, ankle DF, medial leg/foot sensation
+  {
+    const sens    = sidedAbn("n_l4");
+    const motor   = sidedAbn("myo_l4")||abn("myo_l4_left")||abn("myo_l4_right");
+    const reflex  = sidedDim("n_ref_patella");
+    const slr     = sidedPos("nt_slr");
+    const femoral = sidedPos("nt_femoral");
+    const triad   = [sens,motor,reflex].filter(Boolean).length;
+    if (triad >= 1 || (slr && (sens||motor))) {
+      const conf = triad===3?90:triad===2?78:slr?65:52;
+      push("Lumbar","Lumbar Radiculopathy — L4 Root","M54.14",conf,
+        [
+          sens    && "L4 dermatomal sensory change — medial leg / medial foot (KEN)",
+          motor   && "L4 myotomal weakness — ankle dorsiflexion / tibialis anterior (KEN)",
+          reflex  && "Patella reflex diminished/absent — L3/4 root (MAG Ch.9)",
+          slr     && "SLR positive — L4/5 neural tension (Devillé 2000: Sn 0.92)",
+          femoral && "Femoral nerve tension +ve — upper lumbar root (L2–L4)",
+          triad===3 && "FULL TRIAD: sensory + motor + reflex at L4 — high specificity for L3/4 disc",
+        ],
+        "KEN Ch.8; MAG Ch.9; Devillé 2000 SLR meta-analysis; Maitland Vertebral Manip"
+      );
+    }
+  }
+
+  // L5 root — No standard reflex, EHL weakness, dorsum foot sensation
+  {
+    const sens    = sidedAbn("n_l5");
+    const motor   = sidedAbn("myo_l5")||abn("myo_l5_left")||abn("myo_l5_right");
+    const slr     = sidedPos("nt_slr");
+    const slump   = sidedPos("nt_slump");
+    const triad   = [sens,motor,slr||slump].filter(Boolean).length;
+    if (triad >= 1) {
+      const conf = (sens&&motor&&(slr||slump))?88:(sens&&motor)?75:(triad>=1)?58:45;
+      push("Lumbar","Lumbar Radiculopathy — L5 Root","M54.15",conf,
+        [
+          sens    && "L5 dermatomal sensory loss — dorsum foot / 1st–2nd web space (KEN)",
+          motor   && "L5 myotomal weakness — great toe extension (EHL) / hip abduction (KEN)",
+          slr     && "SLR positive — L4/5 or L5/S1 nerve root tension",
+          slump   && "Slump test +ve — neuromeningeal tension (Sn 0.84, Sp 0.83)",
+          (sens&&motor) && "Sensory + motor deficit at L5 — L4/5 disc herniation most likely level",
+        ],
+        "KEN Ch.8; MAG Ch.9; Maitland; Butler Mob NS; Devillé 2000"
+      );
+    }
+  }
+
+  // S1 root — Achilles reflex, plantarflexion, lateral foot sensation
+  {
+    const sens    = sidedAbn("n_s1");
+    const motor   = sidedAbn("myo_s1")||abn("myo_s1_left")||abn("myo_s1_right");
+    const reflex  = sidedDim("n_ref_achilles");
+    const slr     = sidedPos("nt_slr");
+    const slump   = sidedPos("nt_slump");
+    const triad   = [sens,motor,reflex].filter(Boolean).length;
+    if (triad >= 1 || (slr && (sens||motor))) {
+      const conf = triad===3?92:triad===2?80:slr?66:54;
+      push("Lumbar","Lumbar Radiculopathy — S1 Root","M54.12",conf,
+        [
+          sens    && "S1 dermatomal sensory loss — lateral foot / heel / sole (KEN)",
+          motor   && "S1 myotomal weakness — ankle plantarflexion / gastrocnemius (KEN)",
+          reflex  && "Achilles reflex diminished/absent — most sensitive S1 indicator (MAG)",
+          slr     && "SLR +ve — L5/S1 nerve root (Devillé 2000)",
+          slump   && "Slump test +ve — neuromeningeal involvement",
+          triad===3 && "FULL TRIAD: sensory + motor + reflex at S1 — L5/S1 disc highly likely",
+        ],
+        "KEN Ch.8; MAG Ch.9; Devillé 2000; Maitland Vertebral Manip"
+      );
+    }
+  }
+
+  // ── CERVICAL NERVE ROOT LEVELS ─────────────────────────────────────────────
+
+  // C5 — Biceps reflex, deltoid/shoulder abd, lateral arm sensation
+  {
+    const sens   = sidedAbn("n_c5");
+    const motor  = sidedAbn("myo_c5")||abn("myo_c5_left")||abn("myo_c5_right");
+    const reflex = sidedDim("n_ref_bicep");
+    const ultt   = sidedPos("nt_ultt1")||sidedPos("nt_ultt2");
+    const triad  = [sens,motor,reflex].filter(Boolean).length;
+    if (triad >= 1) {
+      push("Cervical","Cervical Radiculopathy — C5 Root","M54.12",
+        triad===3?88:triad===2?74:58,
+        [
+          sens   && "C5 dermatomal loss — lateral arm / deltoid badge (KEN)",
+          motor  && "C5 myotomal weakness — shoulder abduction / elbow flexion (KEN)",
+          reflex && "Biceps reflex diminished — C5/C6 root (MAG Ch.4)",
+          ultt   && "ULTT positive — C5–C7 neural mechanosensitivity (Butler)",
+          triad===3 && "FULL TRIAD at C5 — C4/5 disc herniation pattern",
+        ],
+        "KEN Ch.5; MAG Ch.4; Wainner CPR 2003; Butler Mob NS; Maitland Cervical"
+      );
+    }
+  }
+
+  // C6 — Brachioradialis reflex, wrist extension, thumb/index sensation
+  {
+    const sens   = sidedAbn("n_c6");
+    const motor  = sidedAbn("myo_c6")||abn("myo_c6_left")||abn("myo_c6_right");
+    const reflex = sidedDim("n_ref_brad");
+    const ultt   = sidedPos("nt_ultt1");
+    const triad  = [sens,motor,reflex].filter(Boolean).length;
+    if (triad >= 1) {
+      push("Cervical","Cervical Radiculopathy — C6 Root","M54.12",
+        triad===3?90:triad===2?76:60,
+        [
+          sens   && "C6 dermatomal loss — lateral forearm / thumb + index finger (KEN)",
+          motor  && "C6 myotomal weakness — wrist extension (ECRL/ECRB) (KEN)",
+          reflex && "Brachioradialis reflex diminished — C5/C6 root (MAG Ch.4)",
+          ultt   && "ULTT1 (median) +ve — C6 mechanosensitivity (Butler)",
+          triad===3 && "FULL TRIAD at C6 — C5/6 disc (most common cervical level) highly likely",
+        ],
+        "KEN Ch.5; MAG Ch.4; Wainner CPR 2003; Butler Mob NS"
+      );
+    }
+  }
+
+  // C7 — Triceps reflex, elbow extension, middle finger sensation
+  {
+    const sens   = sidedAbn("n_c7");
+    const motor  = sidedAbn("myo_c7")||abn("myo_c7_left")||abn("myo_c7_right");
+    const reflex = sidedDim("n_ref_tricep");
+    const ultt   = sidedPos("nt_ultt2");
+    const triad  = [sens,motor,reflex].filter(Boolean).length;
+    if (triad >= 1) {
+      push("Cervical","Cervical Radiculopathy — C7 Root","M54.12",
+        triad===3?88:triad===2?74:58,
+        [
+          sens   && "C7 dermatomal loss — middle finger (KEN)",
+          motor  && "C7 myotomal weakness — elbow extension / wrist flexion (KEN)",
+          reflex && "Triceps reflex diminished — most common cause is C7 radiculopathy (MAG)",
+          ultt   && "ULTT2 (radial) +ve — C6–C8 neural tension (Butler)",
+          triad===3 && "FULL TRIAD at C7 — C6/7 disc herniation pattern",
+        ],
+        "KEN Ch.5; MAG Ch.4; Wainner CPR 2003; Butler Mob NS"
+      );
+    }
+  }
+
+  // C8 — Finger flexion/grip weakness, ring/little finger sensation
+  {
+    const sens  = sidedAbn("n_c8");
+    const motor = sidedAbn("myo_c8")||abn("myo_c8_left")||abn("myo_c8_right");
+    const ultt  = sidedPos("nt_ultt3");
+    if (sens||motor) {
+      push("Cervical","Cervical Radiculopathy — C8 Root","M54.12",
+        (sens&&motor)?72:54,
+        [
+          sens  && "C8 dermatomal loss — ring + little finger / medial forearm (KEN)",
+          motor && "C8 myotomal weakness — finger flexion / grip strength (KEN)",
+          ultt  && "ULTT3 (ulnar) +ve — C8/T1 neural tension (Butler)",
+        ],
+        "KEN Ch.5; MAG Ch.4; Butler Mob NS"
+      );
+    }
+  }
+
+  // ── MULTI-LEVEL / PERIPHERAL POLYNEUROPATHY ────────────────────────────────
+  const levelsAffected = ["n_l4","n_l5","n_s1","n_c5","n_c6","n_c7","n_c8"].filter(k=>sidedAbn(k));
+  const reflexesAbn    = ["n_ref_patella","n_ref_achilles","n_ref_bicep","n_ref_brad","n_ref_tricep"].filter(k=>sidedDim(k));
+  if (levelsAffected.length >= 3 || reflexesAbn.length >= 3) {
+    push("Neurological","Peripheral Polyneuropathy","G62.9",
+      levelsAffected.length>=4?78:65,
+      [
+        levelsAffected.length>=3 && `${levelsAffected.length} dermatomal levels affected — non-root-specific distribution`,
+        reflexesAbn.length>=3    && `${reflexesAbn.length} reflexes diminished/absent bilaterally`,
+        levelsAffected.length>=3 && "Multi-level sensory involvement: peripheral polyneuropathy > multi-level disc",
+        "Consider: diabetes, B12 deficiency, alcohol, chemotherapy, idiopathic",
+      ],
+      "DUT Ch.30; MAG Appendix; NICE Neuropathy Guidelines"
+    );
+  }
+
+  // ── THORACIC OUTLET SYNDROME ───────────────────────────────────────────────
+  {
+    const t1Sens  = sidedAbn("n_t1");
+    const c8Sens  = sidedAbn("n_c8");
+    const ultt3   = sidedPos("nt_ultt3");
+    const ulnar   = sidedAbn("myo_t1")||abn("myo_t1_left")||abn("myo_t1_right");
+    const tosCrit = [t1Sens,c8Sens,ultt3,ulnar].filter(Boolean).length;
+    if (tosCrit >= 2) {
+      push("Upper Limb","Thoracic Outlet Syndrome (Neurogenic)","G54.0",
+        tosCrit>=3?75:58,
+        [
+          t1Sens && "T1 dermatomal sensory change — medial forearm (KEN)",
+          c8Sens && "C8 dermatomal involvement — ring/little finger (KEN)",
+          ultt3  && "ULTT3 (ulnar) +ve — lower trunk brachial plexus (Butler)",
+          ulnar  && "T1 myotomal weakness — intrinsic hand muscles (KEN)",
+        ],
+        "DUT Ch.18; MAG Ch.5; Butler Mob NS; Roos TOS criteria"
+      );
+    }
+  }
+
+  results.sort((a,b)=>b.confidence-a.confidence||b.hits-a.hits);
+  return results;
+}
+
+/**
+ * Combined engine — merges structural + neurological results, deduplicates,
+ * promotes urgent findings to top, returns top N.
+ */
+export function getTopDiagnosesEnhanced(data, n=4) {
+  const structural = runDiagnosisEngine(data);
+  const neuro      = runNeuroPatternEngine(data);
+
+  // Merge: neuro results first if urgent, then interleave
+  const urgent   = neuro.filter(r=>r.urgency==="EMERGENCY"||r.urgency==="URGENT");
+  const neuroReg = neuro.filter(r=>!r.urgency);
+  const combined = [...urgent, ...structural, ...neuroReg];
+
+  // Deduplicate by diagnosis name
+  const seen = new Set();
+  const deduped = combined.filter(r=>{
+    if (seen.has(r.diagnosis)) return false;
+    seen.add(r.diagnosis);
+    return true;
+  });
+
+  return deduped.slice(0, n);
+}
