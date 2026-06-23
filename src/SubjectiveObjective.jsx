@@ -4961,13 +4961,14 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             { id:"lumbar",   name:"Lumbar / SI",    lr:false, keys:{ B:"Lumbar / SI" } },
           ]},
           { id:"upper", label:"Upper limb", icon:"💪", regions:[
-            { id:"shoulder", name:"Shoulder", lr:true, keys:{ L:"Shoulder (L)", R:"Shoulder (R)", B_L:"Shoulder (L)", B_R:"Shoulder (R)" } },
-            { id:"elbow",    name:"Elbow / Wrist / Hand", lr:false, keys:{ B:"Elbow/Wrist/Hand" } },
+            { id:"shoulder", name:"Shoulder",   lr:true, keys:{ L:"Shoulder (L)",    R:"Shoulder (R)",    B_L:"Shoulder (L)",    B_R:"Shoulder (R)" } },
+            { id:"elbow",    name:"Elbow",       lr:true, keys:{ L:"Elbow (L)",       R:"Elbow (R)",       B_L:"Elbow (L)",       B_R:"Elbow (R)" } },
+            { id:"wrist",    name:"Wrist / Hand",lr:true, keys:{ L:"Wrist/Hand (L)",  R:"Wrist/Hand (R)",  B_L:"Wrist/Hand (L)",  B_R:"Wrist/Hand (R)" } },
           ]},
           { id:"lower", label:"Lower limb", icon:"🦵", regions:[
-            { id:"hip",   name:"Hip / Groin",  lr:false, keys:{ B:"Hip / Groin" } },
+            { id:"hip",   name:"Hip / Groin",  lr:true, keys:{ L:"Hip/Groin (L)", R:"Hip/Groin (R)", B_L:"Hip/Groin (L)", B_R:"Hip/Groin (R)" } },
             { id:"knee",  name:"Knee",          lr:true,  keys:{ L:"Knee (L)", R:"Knee (R)", B_L:"Knee (L)", B_R:"Knee (R)" } },
-            { id:"ankle", name:"Ankle / Foot",  lr:false, keys:{ B:"Ankle / Foot" } },
+            { id:"ankle", name:"Ankle / Foot",  lr:true, keys:{ L:"Ankle/Foot (L)", R:"Ankle/Foot (R)", B_L:"Ankle/Foot (L)", B_R:"Ankle/Foot (R)" } },
           ]},
           { id:"other", label:"Other", icon:"🔵", regions:[
             { id:"tmj",  name:"TMJ / Jaw",     lr:false, keys:{ B:"TMJ / Jaw" } },
