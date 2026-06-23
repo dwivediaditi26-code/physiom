@@ -11115,6 +11115,38 @@ const SEED_PATIENT = {
 
     // ── FMA ───────────────────────────────────────────────────────────────
     fma_report:{ scores:{ squat:1, gait:2, single_leg:1, lunge:2, bend:2 } },
+
+    // ── SPECIAL TESTS (STT) ───────────────────────────────────────────────
+    // Cervical
+    st_spurling:"Positive — right (radiculopathy)",
+    st_distraction:"Negative",
+    st_vbi:"Negative",
+    st_frt:"Positive — restricted right rotation (C1/C2)",
+    st_upper_limb_tension:"Positive — right (median nerve)",
+    // Lumbar / Neural
+    lx_slr_left:"Negative",
+    lx_slr_right:"Positive — 45° reproduction of right leg pain",
+    lx_slump:"Positive — right leg symptoms reproduced",
+    lx_kemp:"Positive — right-sided lumbar pain",
+    // Shoulder
+    st_hawkins:"Positive — right subacromial pain",
+    st_neer:"Positive — right subacromial",
+    st_empty_can:"Negative",
+    st_apprehension:"Negative",
+    st_speeds:"Negative",
+    // Knee
+    st_lachman:"Negative",
+    st_mcmurray:"Positive — medial joint line click right",
+    st_valgus_stress:"Negative",
+    st_varus_stress:"Negative",
+    st_anterior_drawer:"Negative",
+    // Hip
+    st_faber:"Positive — right groin pain reproduction",
+    st_fadir:"Positive — right anterior hip pain",
+    st_trendelenburg:"Positive — left (gluteus medius weakness)",
+    // Ankle
+    st_anterior_drawer_ankle:"Negative",
+    st_thompson:"Negative",
   }
 };
 
@@ -11125,11 +11157,11 @@ const DEMO_VERSION = "v2026-06b"; // bump this when demo patients change
 function loadPatientDB() {
   try {
     // One-time clear: if user has old demo data from before v2026-06-21, wipe it
-    const cleared = localStorage.getItem("pm_cleared_demo_v3");
+    const cleared = localStorage.getItem("pm_cleared_demo_v4");
     if (!cleared) {
       localStorage.removeItem(DB_KEY);
       localStorage.removeItem(DRAFT_KEY);
-      localStorage.setItem("pm_cleared_demo_v3", "1");
+      localStorage.setItem("pm_cleared_demo_v4", "1");
     }
     const stored = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
     // Remove any old demo patients that were previously seeded
@@ -11140,7 +11172,7 @@ function loadPatientDB() {
     // Seed Priya Sharma if no patients exist, or data is outdated (< full field count)
     const priya = real.find(p => p.id === SEED_PATIENT.id);
     const needsSeed = real.length === 0 ||
-      (priya && Object.keys(priya.data || {}).length < 180);
+      (priya && Object.keys(priya.data || {}).length < 230);
     if (needsSeed) {
       const others = real.filter(p => p.id !== SEED_PATIENT.id);
       const seeded = [SEED_PATIENT, ...others];
