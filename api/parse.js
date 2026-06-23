@@ -8,8 +8,8 @@ export default async function handler(req, res) {
   const { text } = req.body || {};
   if (!text || !text.trim()) return res.status(400).json({ error: 'No text provided' });
 
-  const GROQ_KEY = process.env.GROQ_API_KEY;
-  if (!GROQ_KEY) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
+  const DS_KEY = process.env.DEEPSEEK_API_KEY;
+  if (!DS_KEY) return res.status(500).json({ error: 'DEEPSEEK_API_KEY not configured' });
 
   const system = `You are a clinical data extractor for a physiotherapy intake form. Extract structured data and return ONLY valid JSON.
 
@@ -43,14 +43,14 @@ Return this exact JSON shape (null for anything not mentioned, empty array [] fo
 If input is Hindi/mixed, extract clinical meaning in English.`;
 
   try {
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const dsRes = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROQ_KEY}`,
+        'Authorization': `Bearer ${DS_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'deepseek-chat',
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: text.trim() },
@@ -61,13 +61,13 @@ If input is Hindi/mixed, extract clinical meaning in English.`;
       }),
     });
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text();
-      return res.status(502).json({ error: 'Groq error', detail: errText });
+    if (!dsRes.ok) {
+      const errText = await dsRes.text();
+      return res.status(502).json({ error: 'DeepSeek error', detail: errText });
     }
 
-    const groqData = await groqRes.json();
-    const content = groqData.choices?.[0]?.message?.content;
+    const dsData = await dsRes.json();
+    const content = dsData.choices?.[0]?.message?.content;
     if (!content) return res.status(502).json({ error: 'Empty response' });
     const parsed = JSON.parse(content);
     return res.status(200).json(parsed);
