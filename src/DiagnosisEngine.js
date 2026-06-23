@@ -1165,13 +1165,14 @@ export function getTopDiagnosesEnhanced(data, n=4) {
   const structural  = runDiagnosisEngine(data);
   const neuro       = runNeuroPatternEngine(data);
   const functional  = runFunctionalScreenEngine(data);
+  const outcome     = runOutcomeMeasureEngine(data);
 
   // Urgent neuro findings always surface first
   const urgent   = neuro.filter(r=>r.urgency==="EMERGENCY"||r.urgency==="URGENT");
   const neuroReg = neuro.filter(r=>!r.urgency);
 
-  // Interleave: urgent → structural → neuro (non-urgent) → functional
-  const combined = [...urgent, ...structural, ...neuroReg, ...functional];
+  // Interleave: urgent → structural → neuro (non-urgent) → functional → outcome
+  const combined = [...urgent, ...structural, ...neuroReg, ...functional, ...outcome];
 
   // Deduplicate by diagnosis name — first occurrence wins (highest confidence)
   const seen = new Set();
@@ -1434,6 +1435,204 @@ export function runFunctionalScreenEngine(data) {
         );
       }
     }
+  }
+
+  results.sort((a,b)=>b.confidence-a.confidence||b.hits-a.hits);
+  return results;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OUTCOME MEASURE ENGINE
+// Applies published cutoffs to scored outcome measures.
+// Reads raw question values and computes scores where needed.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function runOutcomeMeasureEngine(data) {
+  if (!data) return [];
+  const d = data;
+  const results = [];
+  const n = k => { const v = parseFloat(String(d[k]||"").replace(/[^0-9.-]/g,"")); return isNaN(v)?null:v; };
+
+  const pushOM = (region, diagnosis, icd10, confidence, findings, refs, urgency) => {
+    const label = urgency==="URGENT"?"URGENT":confidence>=80?"High":confidence>=55?"Moderate":"Low";
+    results.push({ region, diagnosis, icd10, confidence, confidenceLabel:label,
+      supportingFindings: findings.filter(Boolean),
+      hits: findings.filter(Boolean).length, total: findings.length,
+      reference: refs, urgency: urgency||null });
+  };
+
+  // ── ODI — Oswestry Disability Index (%): higher = more disability ─────────
+  const odi = n("om_odi_score");
+  if (odi !== null) {
+    if (odi >= 41) {
+      pushOM("Lumbar","Severe Lumbar Disability — High ODI","M54.5",
+        odi>=61?85:72,
+        [
+          `ODI: ${odi}% — ${odi>=61?"Crippled/Bed-bound":odi>=41?"Severe disability":"Moderate disability"} (Fairbank & Pynsent 2000)`,
+          odi>=61 && "ODI ≥61%: severe/crippled category — consider surgical/MDT referral",
+          odi>=41 && odi<61 && "ODI 41–60%: severe disability — significant functional limitation in all ADLs",
+          "Consistent with significant lumbar disc/radiculopathy or stenosis severity",
+        ],
+        "Fairbank & Pynsent 2000; NICE LBP 2021; MCID = 10%"
+      );
+    } else if (odi >= 21) {
+      pushOM("Lumbar","Moderate Lumbar Disability — ODI","M54.5", 60,
+        [`ODI: ${odi}% — Moderate disability (Fairbank 2000). MCID = 10%.`],
+        "Fairbank & Pynsent 2000"
+      );
+    }
+  }
+
+  // ── NDI — Neck Disability Index (%): higher = more disability ────────────
+  const ndi = n("om_ndi_score") ?? n("ndi_score");
+  if (ndi !== null) {
+    if (ndi >= 29) {
+      pushOM("Cervical","Severe Cervical Disability — High NDI","M54.2",
+        ndi>=49?84:70,
+        [
+          `NDI: ${ndi}% — ${ndi>=49?"Complete disability":ndi>=29?"Severe disability":"Moderate"} (Vernon & Mior 1991)`,
+          ndi>=29 && "NDI ≥29%: severe disability — functional impact on all daily cervical-dependent tasks",
+          "Consistent with cervical radiculopathy or disc pathology severity",
+        ],
+        "Vernon & Mior 1991; MCID = 7.5–8.5%; Pietrobon et al. 2002"
+      );
+    } else if (ndi >= 15) {
+      pushOM("Cervical","Moderate Cervical Disability — NDI","M54.2", 58,
+        [`NDI: ${ndi}% — Moderate disability (Vernon 1991). MCID = 7.5%.`],
+        "Vernon & Mior 1991"
+      );
+    }
+  }
+
+  // ── DASH — Disabilities of the Arm, Shoulder & Hand (0–100) ─────────────
+  const dash = n("om_dash_score") ?? n("dash_score");
+  if (dash !== null && dash >= 30) {
+    pushOM("Upper Limb","Upper Limb Functional Disability — DASH","M79.89",
+      dash>=60?78:62,
+      [
+        `DASH: ${dash}/100 — ${dash>=60?"Severe":"Moderate"} upper limb disability (Hudak et al. 1996)`,
+        dash>=60 && "DASH ≥60: severe disability — significant impact on work, ADL, and leisure",
+        "Consistent with rotator cuff pathology, cervical radiculopathy, or elbow/wrist disorder severity",
+      ],
+      "Hudak et al. 1996; MCID = 10–15 points; SEM = 10 points"
+    );
+  }
+
+  // ── LEFS — Lower Extremity Functional Scale (0–80): lower = more disability
+  const lefs = n("om_lefs_score") ?? n("lefs_score");
+  if (lefs !== null && lefs <= 53) {
+    pushOM("Lower Limb","Lower Extremity Functional Deficit — LEFS","M79.89",
+      lefs<=35?76:60,
+      [
+        `LEFS: ${lefs}/80 — ${lefs<=35?"Severe":"Moderate"} lower limb disability (Binkley et al. 1999)`,
+        lefs<=35 && "LEFS ≤35: severe disability — consistent with significant knee/hip/ankle pathology",
+        lefs>35&&lefs<=53 && "LEFS 36–53: moderate disability — functional limitations in stairs, running, sport",
+      ],
+      "Binkley et al. 1999; MCID = 9 points; Norman et al. 2008"
+    );
+  }
+
+  // ── PSFS — Patient Specific Functional Scale (0–10): lower = more disability
+  const psfs1 = n("om_psfs1_now");
+  const psfs2 = n("om_psfs2_now");
+  const psfs3 = n("om_psfs3_now");
+  const psfsScores = [psfs1,psfs2,psfs3].filter(x=>x!==null);
+  if (psfsScores.length > 0) {
+    const psfsAvg = psfsScores.reduce((a,b)=>a+b,0)/psfsScores.length;
+    const act1 = String(d.om_psfs1||"").toLowerCase();
+    const act2 = String(d.om_psfs2||"").toLowerCase();
+    const act3 = String(d.om_psfs3||"").toLowerCase();
+    const allActs = act1+" "+act2+" "+act3;
+    const sittingLow = (act1.includes("sit")||act2.includes("sit")||act3.includes("sit")) &&
+      psfsScores.some((s,i)=>([act1,act2,act3][i]||"").includes("sit")&&s<=4);
+
+    if (psfsAvg <= 4) {
+      pushOM("Function","Significant Functional Limitation — PSFS","Z73.6",
+        psfsAvg<=2?80:65,
+        [
+          `PSFS avg: ${psfsAvg.toFixed(1)}/10 — ${psfsAvg<=2?"Severe":"Significant"} activity limitation (Stratford et al. 1995)`,
+          sittingLow && "Sitting tolerance ≤4/10 — discogenic flexion-load pattern (McKenzie)",
+          (allActs.includes("walk")||allActs.includes("run")) && psfsAvg<=3 && "Walking/running severely limited — neurogenic or mechanical loading pattern",
+          "PSFS ≤4: MCID = 2 points — functional goals should be primary treatment target",
+        ],
+        "Stratford et al. 1995; MCID = 2 points; Horn et al. 2012"
+      );
+    }
+  }
+
+  // ── KOOS — Knee Injury & OA Outcome Score (0–100): lower = more problems ──
+  const koosPain = n("om_koos_pain");
+  const koosADL  = n("om_koos_adl") ?? n("om_koos_function");
+  const koosQoL  = n("om_koos_qol");
+  const koosMin  = [koosPain,koosADL,koosQoL].filter(x=>x!==null);
+  if (koosMin.length > 0) {
+    const koosAvg = koosMin.reduce((a,b)=>a+b,0)/koosMin.length;
+    if (koosAvg <= 60) {
+      pushOM("Knee","Knee Joint Pathology — KOOS","M25.36",
+        koosAvg<=40?80:65,
+        [
+          `KOOS avg: ${koosAvg.toFixed(0)}/100 — ${koosAvg<=40?"Severe":"Moderate"} knee symptoms (Roos & Lohmander 2003)`,
+          koosPain&&koosPain<=50 && `KOOS Pain: ${koosPain}/100 — significant pain-related limitation`,
+          koosADL&&koosADL<=60  && `KOOS ADL: ${koosADL}/100 — daily function compromised`,
+          koosQoL&&koosQoL<=40  && `KOOS QoL: ${koosQoL}/100 — quality of life severely affected`,
+          "Consistent with knee OA, meniscal pathology, or ACL/PCL injury severity",
+        ],
+        "Roos & Lohmander 2003 KOOS; MCID = 8–10 points; NICE OA 2022"
+      );
+    }
+  }
+
+  // ── TSK-11 — Tampa Scale of Kinesiophobia (11–44): higher = more fear ─────
+  // Compute from raw tsk_q1..tsk_q11 (reverse items 4 and 8, 1-indexed)
+  const tskRaw = Array.from({length:11},(_,i)=>n(`tsk_q${i+1}`));
+  const tskFilled = tskRaw.filter(x=>x!==null);
+  let tskScore = null;
+  if (tskFilled.length >= 8) {
+    const reverse = [3,7]; // 0-indexed (items 4 and 8)
+    tskScore = tskRaw.map((v,i)=>v===null?0:reverse.includes(i)?5-v:v).reduce((a,b)=>a+b,0);
+  }
+
+  // ── FABQ — Fear Avoidance Beliefs (PA: 0–24, Work: 0–42) ─────────────────
+  const fabqPA  = ["fabq_pa1","fabq_pa2","fabq_pa3","fabq_pa4"].map(k=>n(k)).filter(x=>x!==null);
+  const fabqW   = ["fabq_w5","fabq_w6","fabq_w7","fabq_w9","fabq_w10","fabq_w11","fabq_w15"].map(k=>n(k)).filter(x=>x!==null);
+  const fabqPAScore = fabqPA.length>=3 ? fabqPA.reduce((a,b)=>a+b,0) : null;
+  const fabqWScore  = fabqW.length>=5  ? fabqW.reduce((a,b)=>a+b,0)  : null;
+
+  // ── PCS — Pain Catastrophising Scale (0–52): higher = more catastrophising ─
+  const pcsItems = Array.from({length:13},(_,i)=>n(`pcs_q${i+1}`));
+  const pcsFilled = pcsItems.filter(x=>x!==null);
+  const pcsScore = pcsFilled.length>=10 ? pcsItems.map(v=>v||0).reduce((a,b)=>a+b,0) : null;
+
+  // ── Psychosocial flag: FABQ + TSK + PCS combined ─────────────────────────
+  const highFABQ = (fabqPAScore !== null && fabqPAScore >= 15) || (fabqWScore !== null && fabqWScore >= 34);
+  const highTSK  = tskScore !== null && tskScore >= 37;
+  const highPCS  = pcsScore !== null && pcsScore >= 30;
+  const psychCount = [highFABQ, highTSK, highPCS].filter(Boolean).length;
+
+  if (psychCount >= 2) {
+    pushOM("Psychosocial","Central Sensitisation / Nociplastic Pain Pattern","M54.59",
+      psychCount===3?85:72,
+      [
+        highFABQ && `FABQ elevated — ${fabqPAScore!==null?`PA: ${fabqPAScore}/24`:""}${fabqWScore!==null?` Work: ${fabqWScore}/42`:""} (Waddell 1993: PA≥15, Work≥34 = high fear-avoidance)`,
+        highTSK  && `TSK-11: ${tskScore}/44 ≥37 — high kinesiophobia (Vlaeyen & Linton 2000)`,
+        highPCS  && `PCS: ${pcsScore}/52 ≥30 — clinically significant pain catastrophising (Sullivan 1995)`,
+        psychCount>=2 && "2+ psychosocial risk scales elevated — biopsychosocial management required",
+        "Graded exposure therapy + pain neuroscience education BEFORE loading",
+      ],
+      "Vlaeyen & Linton 2000; Waddell FABQ 1993; Sullivan PCS 1995; NICE LBP 2021",
+      null
+    );
+  } else if (psychCount === 1) {
+    pushOM("Psychosocial","Psychosocial Yellow Flags Present","Z65.8",
+      55,
+      [
+        highFABQ && `FABQ elevated — fear-avoidance beliefs present (Waddell 1993)`,
+        highTSK  && `TSK-11: ${tskScore}/44 ≥37 — kinesiophobia present (Vlaeyen 2000)`,
+        highPCS  && `PCS: ${pcsScore}/52 ≥30 — pain catastrophising present (Sullivan 1995)`,
+        "Yellow flag: screen for psychosocial barriers to recovery",
+      ],
+      "Kendall et al. Yellow Flags 1997; NICE LBP 2021"
+    );
   }
 
   results.sort((a,b)=>b.confidence-a.confidence||b.hits-a.hits);
