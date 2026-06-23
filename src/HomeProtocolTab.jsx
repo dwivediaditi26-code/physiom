@@ -26,6 +26,9 @@ function buildWAText(programme, precautions, clinicName, therapistName, phone, p
     if (instr) {
       instr.split(". ").filter(Boolean).forEach(s => lines.push(`   → ${s.trim()}`));
     }
+    if (ex.hepLink && ex.hepLink.trim()) {
+      lines.push(`   🎥 Video: ${ex.hepLink.trim()}`);
+    }
     lines.push("");
   });
   if (precautions && precautions.trim()) {
@@ -237,6 +240,13 @@ export default function HomeProtocolTab({ data, set, PC }) {
                     onChange={e => updateField(ex.id, "hepInstruction", e.target.value)}
                     placeholder="How to do this exercise (sent in WhatsApp message)..."
                   />
+                  <div style={{ ...lbl, marginBottom: 4, marginTop: 8 }}>Video / link (optional)</div>
+                  <input
+                    style={{ ...inp }}
+                    value={ex.hepLink || ""}
+                    onChange={e => updateField(ex.id, "hepLink", e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                  />
                 </div>
               )}
             </div>
@@ -366,6 +376,11 @@ export default function HomeProtocolTab({ data, set, PC }) {
                       {instr && (
                         <div style={{ fontSize: "0.75rem", color: "#555", fontStyle: "italic", marginTop: 3 }}>
                           {instr}
+                        </div>
+                      )}
+                      {ex.hepLink && ex.hepLink.trim() && (
+                        <div style={{ fontSize: "0.75rem", marginTop: 4 }}>
+                          🎥 <a href={ex.hepLink.trim()} target="_blank" rel="noreferrer" style={{ color: "#075e54", fontWeight: 700, wordBreak: "break-all" }}>{ex.hepLink.trim()}</a>
                         </div>
                       )}
                     </div>
