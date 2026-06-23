@@ -3087,17 +3087,33 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       if (!raw) return;
       let parsed;
       try { parsed = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { return; }
-      const { grades = {}, notes = {} } = parsed;
+      const { findings = {}, grades = {}, notes = {} } = parsed;
       const gradeEntries = Object.entries(grades);
-      if (!gradeEntries.length) return;
-      const abnormal = gradeEntries.filter(([,g]) => g === 2).map(([id]) => id.replace(/_/g, " "));
-      const compensated = gradeEntries.filter(([,g]) => g === 1).map(([id]) => id.replace(/_/g, " "));
-      const normal = gradeEntries.filter(([,g]) => g === 0).map(([id]) => id.replace(/_/g, " "));
+      const findingEntries = Object.entries(findings).filter(([,v]) => v && String(v).trim());
+      // Show if grades OR findings have data
+      if (!gradeEntries.length && !findingEntries.length) return;
       const fsLines = [];
-      if (abnormal.length)    fsLines.push(`  🔴 Abnormal: ${abnormal.join(", ")}`);
-      if (compensated.length) fsLines.push(`  ⚠️  Compensated: ${compensated.join(", ")}`);
-      if (normal.length && (abnormal.length || compensated.length))
-        fsLines.push(`  ✅ Normal: ${normal.join(", ")}`);
+      // Grade summary
+      if (gradeEntries.length) {
+        const abnormal    = gradeEntries.filter(([,g]) => g === 2).map(([id]) => id.replace(/_/g, " "));
+        const compensated = gradeEntries.filter(([,g]) => g === 1).map(([id]) => id.replace(/_/g, " "));
+        const normal      = gradeEntries.filter(([,g]) => g === 0).map(([id]) => id.replace(/_/g, " "));
+        if (abnormal.length)    fsLines.push(`  🔴 Abnormal: ${abnormal.join(", ")}`);
+        if (compensated.length) fsLines.push(`  ⚠️  Compensated: ${compensated.join(", ")}`);
+        if (normal.length && (abnormal.length || compensated.length))
+          fsLines.push(`  ✅ Normal: ${normal.join(", ")}`);
+      }
+      // Findings fallback (when grades not set)
+      if (!gradeEntries.length && findingEntries.length) {
+        const positives = findingEntries.filter(([,v]) => {
+          const s = String(v).toLowerCase();
+          return s.includes("positive") || s.includes("present") || s.includes("abnormal") || s.includes("impaired") || s.includes("reduced") || s.includes("restricted") || s.includes("yes");
+        }).map(([id,v]) => `${id.replace(/_/g," ")}: ${String(v).slice(0,60)}`);
+        const allFindings = findingEntries.map(([id,v]) => `${id.replace(/_/g," ")}: ${String(v).slice(0,60)}`);
+        const toShow = positives.length ? positives : allFindings.slice(0,6);
+        if (toShow.length) fsLines.push(`  Findings: ${toShow.join("; ")}`);
+      }
+      // Notes
       const noteEntries = Object.entries(notes).filter(([,n]) => n && String(n).trim());
       if (noteEntries.length) fsLines.push(`  Notes: ${noteEntries.map(([id,n]) => `${id.replace(/_/g," ")}: ${String(n).slice(0,80)}`).join("; ")}`);
       if (fsLines.length) O_parts.push(`${label}:\n${fsLines.join("\n")}.`);
