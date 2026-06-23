@@ -1,18 +1,54 @@
 import { useState, useRef, useEffect } from "react";
 
 function buildPatientContext(data) {
+  // Privacy: only clinical data — no demographics (name, age, sex, occupation)
   if (!data) return "";
   const lines = [];
-  if (data.dem_name)       lines.push(`Patient: ${data.dem_name}`);
-  if (data.dem_age)        lines.push(`Age: ${data.dem_age}`);
-  if (data.dem_sex)        lines.push(`Sex: ${data.dem_sex}`);
-  if (data.dem_occupation) lines.push(`Occupation: ${data.dem_occupation}`);
-  if (data.cc_main)        lines.push(`Chief Complaint: ${data.cc_main}`);
-  if (data.cc_onset)       lines.push(`Onset: ${data.cc_onset}`);
-  if (data.cc_duration)    lines.push(`Duration: ${data.cc_duration}`);
-  if (data.cc_vas_now)     lines.push(`Pain (NRS now): ${data.cc_vas_now}/10`);
-  if (data.cc_vas_worst)   lines.push(`Pain (NRS worst): ${data.cc_vas_worst}/10`);
-  if (data.soap_a_diagnosis || data.soap_assessment) lines.push(`Working Diagnosis: ${data.soap_a_diagnosis || data.soap_assessment}`);
+
+  // ── SUBJECTIVE ──
+  if (data.cc_main)            lines.push(`Chief Complaint: ${data.cc_main}`);
+  if (data.cc_onset)           lines.push(`Onset: ${data.cc_onset}`);
+  if (data.cc_duration)        lines.push(`Duration: ${data.cc_duration}`);
+  if (data.cc_vas_now)         lines.push(`Pain (NRS now): ${data.cc_vas_now}/10`);
+  if (data.cc_vas_worst)       lines.push(`Pain (NRS worst): ${data.cc_vas_worst}/10`);
+  if (data.cc_vas_best)        lines.push(`Pain (NRS best): ${data.cc_vas_best}/10`);
+  if (data.lx_loc)             lines.push(`Lumbar region: ${data.lx_loc}`);
+  if (data.cx_loc)             lines.push(`Cervical region: ${data.cx_loc}`);
+  if (data.cc_agg)             lines.push(`Aggravating: ${data.cc_agg}`);
+  if (data.cc_rel)             lines.push(`Relieving: ${data.cc_rel}`);
+  if (data.cc_24h)             lines.push(`24-hour behaviour: ${data.cc_24h}`);
+  if (data.hx_pmh)             lines.push(`Past medical history: ${data.hx_pmh}`);
+  if (data.hx_medications)     lines.push(`Medications: ${data.hx_medications}`);
+  if (data.hx_imaging)         lines.push(`Imaging: ${data.hx_imaging}`);
+
+  // ── OBJECTIVE ──
+  const romEntries = Object.entries(data).filter(([k]) => k.startsWith("rom_") && data[k]);
+  if (romEntries.length) {
+    const romSummary = romEntries.map(([k, v]) => `${k.replace("rom_", "").replace(/_/g, " ")}: ${v}`).join(", ");
+    lines.push(`ROM: ${romSummary}`);
+  }
+  const mmtEntries = Object.entries(data).filter(([k]) => k.startsWith("mmt_") && data[k]);
+  if (mmtEntries.length) {
+    const mmtSummary = mmtEntries.map(([k, v]) => `${k.replace("mmt_", "").replace(/_/g, " ")}: ${v}`).join(", ");
+    lines.push(`MMT: ${mmtSummary}`);
+  }
+  const stEntries = Object.entries(data).filter(([k]) => k.startsWith("st_") && data[k]);
+  if (stEntries.length) {
+    const stSummary = stEntries.map(([k, v]) => `${k.replace("st_", "").replace(/_/g, " ")}: ${v}`).join(", ");
+    lines.push(`Special Tests: ${stSummary}`);
+  }
+  if (data.posture_notes)      lines.push(`Posture: ${data.posture_notes}`);
+  if (data.palpation_notes)    lines.push(`Palpation: ${data.palpation_notes}`);
+
+  // ── ASSESSMENT / TREATMENT ──
+  if (data.soap_a_diagnosis || data.soap_assessment)
+    lines.push(`Working Diagnosis: ${data.soap_a_diagnosis || data.soap_assessment}`);
+  if (data.soap_icd10)         lines.push(`ICD-10: ${data.soap_icd10}`);
+  if (data.soap_modalities)    lines.push(`Treatment/Modalities: ${data.soap_modalities}`);
+  if (data.hep_programme)      lines.push(`Home Exercise Programme: ${data.hep_programme}`);
+  if (data.soap_p_goals)       lines.push(`Goals: ${data.soap_p_goals}`);
+  if (data.soap_p_plan)        lines.push(`Plan: ${data.soap_p_plan}`);
+
   return lines.join("\n");
 }
 
