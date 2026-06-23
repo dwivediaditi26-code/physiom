@@ -3065,7 +3065,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   if (fmaObs) O_parts.push(`Functional Movement: ${fmaObs}.`);
 
 
-  // ── ADVANCED FUNCTIONAL SCREENS (*fs_data fields) ────────────────────────
+  // ── ADVANCED FUNCTIONAL SCREENS (v2) (*fs_data fields) ────────────────────────
   // Each functional screen stores: { findings: {testId_obsId: value}, grades: {testId: 0|1|2}, notes: {testId: string} }
   {
     const FS_REGIONS = [
