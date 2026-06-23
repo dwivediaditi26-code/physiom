@@ -2912,36 +2912,55 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (kcLines.length) O_parts.push(`Kinetic Chain Assessment:\n${kcLines.join("\n")}.`);
   }
 
-  // ── CYRIAX / END-FEEL ASSESSMENT — dynamic scan of all cy_* fields ──────────
+  // ── STTT / CYRIAX ASSESSMENT — scan cyriax_<region>_* and legacy cy_* keys ──
   {
     const cyriaxLines = [];
-    // Dynamically scan all cy_* keys actually stored (handles all region prefixes: cy_c_, cy_s_, cy_e_, cy_k_, cy_a_ etc.)
-    const cyKeys = Object.keys(data).filter(k => k.startsWith("cy_") && data[k] && String(data[k]).trim() && !["cy_contractile","cy_non_contractile","cy_capsular_pattern","cy_capsular","cy_endfeel","cy_notes"].includes(k));
-    // Group by movement type (resisted/active/passive/endfeel)
+    const SKIP_EXACT = new Set(["cy_contractile","cy_non_contractile","cy_capsular_pattern","cy_capsular","cy_endfeel","cy_notes"]);
+    // CyriaxModule saves: cyriax_<regionName>_<moveId>  e.g. cyriax_shoulder_a_abd
+    // Legacy keys use cy_* prefix — scan both
+    const cyKeys = Object.keys(data).filter(k =>
+      (k.startsWith("cy_") || k.startsWith("cyriax_")) &&
+      data[k] && String(data[k]).trim() && !SKIP_EXACT.has(k)
+    );
     const resisted = [], active = [], passive = [], endfeel = [], other = [];
+    const REGION_LABEL = { cervical:"Cervical", shoulder:"Shoulder", elbow:"Elbow", wrist_hand:"Wrist/Hand", hip:"Hip", knee:"Knee", ankle_foot:"Ankle/Foot", lumbar:"Lumbar", thoracic:"Thoracic", tmj:"TMJ" };
     cyKeys.forEach(k => {
-      const label = k.replace(/^cy_[a-z]_/, "").replace(/_/g," ").replace(/\w/g, l=>l.toUpperCase());
       const val = String(data[k]).trim();
       if (!val || val==="Not tested") return;
-      const region = k.match(/^cy_([csekhwtf])_/) ? ({c:"Cervical",s:"Shoulder",e:"Elbow",k:"Knee",h:"Hip",w:"Wrist",t:"TMJ",f:"Foot/Ankle"}[k[3]] || "") : "";
-      const entry = `  ${region?`[${region}] `:""}${label}: ${val}`;
+      let region = "";
+      let moveLabel = k;
+      const cyriaxMatch = k.match(/^cyriax_([a-z_]+?)_([a-z_]+(?:_[a-z0-9]+)*)$/);
+      if (cyriaxMatch) {
+        region = REGION_LABEL[cyriaxMatch[1]] || cyriaxMatch[1].replace(/_/g," ");
+        moveLabel = cyriaxMatch[2].replace(/_/g," ").replace(/\b\w/g, l=>l.toUpperCase());
+      } else {
+        const legacyMatch = k.match(/^cy_([csekhwtf])_(.+)$/);
+        if (legacyMatch) {
+          region = ({c:"Cervical",s:"Shoulder",e:"Elbow",k:"Knee",h:"Hip",w:"Wrist",t:"TMJ",f:"Foot/Ankle"}[legacyMatch[1]] || "");
+          moveLabel = legacyMatch[2].replace(/_/g," ").replace(/\b\w/g, l=>l.toUpperCase());
+        } else {
+          moveLabel = k.replace(/^cy_/, "").replace(/_/g," ").replace(/\b\w/g, l=>l.toUpperCase());
+        }
+      }
+      const entry = `  ${region?`[${region}] `:""}${moveLabel}: ${val}`;
       if (k.includes("_r_")) resisted.push(entry);
       else if (k.includes("_a_")) active.push(entry);
       else if (k.includes("_p_")) passive.push(entry);
       else other.push(entry);
     });
-    // End-feel
     const efKeys = Object.keys(data).filter(k => k.startsWith("ef_") || k.startsWith("endfeel_") || k==="cy_endfeel");
     efKeys.forEach(k => { const val=v(k); if(val) endfeel.push(`  End-feel: ${val}`); });
     if (active.length)   cyriaxLines.push("  Active movements:", ...active);
     if (passive.length)  cyriaxLines.push("  Passive movements:", ...passive);
     if (resisted.length) cyriaxLines.push("  Resisted tests:", ...resisted);
     if (endfeel.length)  cyriaxLines.push(...endfeel);
+    if (other.length)    cyriaxLines.push(...other);
     if (v("cy_contractile"))     cyriaxLines.push(`  Contractile: ${v("cy_contractile")}`);
     if (v("cy_non_contractile")) cyriaxLines.push(`  Non-contractile: ${v("cy_non_contractile")}`);
     if (v("cy_capsular_pattern")||v("cy_capsular")) cyriaxLines.push(`  Capsular pattern: ${v("cy_capsular_pattern")||v("cy_capsular")}`);
     if (v("cy_notes")) cyriaxLines.push(`  Notes: ${v("cy_notes")}`);
     if (cyriaxLines.length) O_parts.push(`STTT / Selective Tissue Tension:\n${cyriaxLines.join("\n")}.`);
+  }
   }
 
   // ── FASCIAL ASSESSMENT ────────────────────────────────────────────────────
@@ -3354,7 +3373,7 @@ function detectModulesV2(data) {
     outcomes: has(["om_report","ndi_score","psfs_score","koos_score","dash_score","lefs_score",
       "om_psfs_1_activity","om_ndi_1","om_koos_pain","om_dash_1","om_lefs_1","om_odi_score",
       "om_ndi_score","om_dash_score","om_lefs_score"]),
-    stt: Object.keys(data).some(k=>k.startsWith("st_")&&data[k]&&String(data[k]).trim()) || has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can"]),
+    stt: Object.keys(data).some(k=>(k.startsWith("st_")||k.startsWith("cyriax_")||k.startsWith("cy_"))&&data[k]&&String(data[k]).trim()) || has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can"]),
     functional: has(["fl_work","fl_mobility","fl_self_care","fl_domestic","ar_goal_function"]),
     neuro: has(["neuro_dermatomal","neuro_reflex_biceps","neuro_sensation","neuro_weakness","neuro_reflex_ankle",
       "n_c4","n_c5","n_c6","n_c7","n_l4","n_l5","n_s1",
