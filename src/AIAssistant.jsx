@@ -106,7 +106,7 @@ export default function AIAssistant({ data, PC }) {
               AI Clinical Assistant
             </div>
             <div style={{ fontSize: "0.75rem", color: muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginTop: 1 }}>
-              Powered by Google Gemini 2.0 Flash
+              Powered by Groq · llama-3.3-70b
             </div>
           </div>
           {messages.length > 0 && (
