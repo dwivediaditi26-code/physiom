@@ -2961,7 +2961,6 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (v("cy_notes")) cyriaxLines.push(`  Notes: ${v("cy_notes")}`);
     if (cyriaxLines.length) O_parts.push(`STTT / Selective Tissue Tension:\n${cyriaxLines.join("\n")}.`);
   }
-  }
 
   // ── FASCIAL ASSESSMENT ────────────────────────────────────────────────────
   {
