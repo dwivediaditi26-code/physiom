@@ -4197,6 +4197,48 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             })()}
           </>}
 
+          {/* ── ADVANCED FUNCTIONAL SCREENS ── */}
+          {(()=>{
+            const FS_REGIONS=[
+              {key:"kfs_data",label:"Knee Functional Screen"},
+              {key:"lfs_data",label:"Lumbar Functional Screen"},
+              {key:"sfs_data",label:"Shoulder Functional Screen"},
+              {key:"hfs_data",label:"Hip Functional Screen"},
+              {key:"afs_data",label:"Ankle Functional Screen"},
+              {key:"thfs_data",label:"Thoracic Functional Screen"},
+              {key:"elfs_data",label:"Elbow Functional Screen"},
+              {key:"wffs_data",label:"Wrist/Hand Functional Screen"},
+              {key:"tmjfs_data",label:"TMJ Functional Screen"},
+              {key:"cfs_data",label:"Cervical Functional Screen"},
+            ];
+            const rendered=FS_REGIONS.map(({key,label})=>{
+              const raw=data[key]; if(!raw) return null;
+              let parsed; try{parsed=typeof raw==="string"?JSON.parse(raw):raw;}catch{return null;}
+              const{grades={},notes={}}=parsed;
+              const ge=Object.entries(grades);
+              if(!ge.length) return null;
+              const abnormal=ge.filter(([,g])=>g===2).map(([id])=>id.replace(/_/g," "));
+              const compensated=ge.filter(([,g])=>g===1).map(([id])=>id.replace(/_/g," "));
+              const normal=ge.filter(([,g])=>g===0).map(([id])=>id.replace(/_/g," "));
+              const noteEntries=Object.entries(notes).filter(([,n])=>n&&String(n).trim());
+              return <div key={key} style={{marginBottom:8,padding:"8px 10px",background:"#F9FAFB",borderRadius:8,border:"1px solid #E5E7EB"}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:4}}>{label}</div>
+                {abnormal.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:3}}>
+                  <span style={{fontSize:10,fontWeight:600,color:"#991B1B",marginRight:4}}>🔴 Abnormal:</span>
+                  {abnormal.map((t,i)=><span key={i} style={{padding:"1px 7px",borderRadius:99,background:"#FEE2E2",color:"#991B1B",fontSize:11,fontWeight:500}}>{t}</span>)}
+                </div>}
+                {compensated.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:3}}>
+                  <span style={{fontSize:10,fontWeight:600,color:"#92400E",marginRight:4}}>⚠️ Compensated:</span>
+                  {compensated.map((t,i)=><span key={i} style={{padding:"1px 7px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:500}}>{t}</span>)}
+                </div>}
+                {normal.length>0&&(abnormal.length||compensated.length)>0&&<div style={{fontSize:11,color:"#6B7280"}}>✅ Normal: {normal.join(", ")}</div>}
+                {noteEntries.length>0&&<div style={{marginTop:4,fontSize:11,color:"#374151",fontStyle:"italic"}}>{noteEntries.map(([id,n])=>`${id.replace(/_/g," ")}: ${String(n).slice(0,100)}`).join(" · ")}</div>}
+              </div>;
+            }).filter(Boolean);
+            if(!rendered.length) return null;
+            return <><div style={subH}>Functional Screens</div>{rendered}</>;
+          })()}
+
           {!mods.posture&&!mods.rom&&!mods.mmt&&!mods.neuro&&!mods.stt&&!mods.palpation&&!mods.gait&&!mods.postureAI&&<div style={na}>No objective findings recorded yet.</div>}
           <textarea placeholder="Additional objective notes..." value={extraO} onChange={e=>setExtraO(e.target.value)} onBlur={()=>set("soap_extra_o",extraO)} style={{...inp,resize:"vertical",minHeight:40,marginTop:8}}/>
         </div>
