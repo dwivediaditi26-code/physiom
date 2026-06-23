@@ -8,8 +8,8 @@ export default async function handler(req, res) {
   const { messages, patientContext } = req.body || {};
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'No messages provided' });
 
-  const GROQ_KEY = process.env.GROQ_API_KEY;
-  if (!GROQ_KEY) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
+  const DS_KEY = process.env.DEEPSEEK_API_KEY;
+  if (!DS_KEY) return res.status(500).json({ error: 'DEEPSEEK_API_KEY not configured' });
 
   const systemPrompt = `You are an expert clinical physiotherapy AI assistant. You assist physiotherapists with:
 - Clinical reasoning and differential diagnosis
@@ -25,14 +25,14 @@ ${patientContext ? `CURRENT PATIENT CONTEXT:\n${patientContext}\n` : ''}
 Respond clearly and concisely. Use clinical terminology appropriately. Always remind the clinician that final decisions rest with them. Format lists with dashes when helpful.`;
 
   try {
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const dsRes = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROQ_KEY}`,
+        'Authorization': `Bearer ${DS_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'deepseek-chat',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages,
@@ -42,14 +42,14 @@ Respond clearly and concisely. Use clinical terminology appropriately. Always re
       }),
     });
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text();
-      return res.status(502).json({ error: 'Groq error', detail: errText });
+    if (!dsRes.ok) {
+      const errText = await dsRes.text();
+      return res.status(502).json({ error: 'DeepSeek error', detail: errText });
     }
 
-    const data = await groqRes.json();
+    const data = await dsRes.json();
     const reply = data.choices?.[0]?.message?.content;
-    if (!reply) return res.status(502).json({ error: 'Empty response from Groq' });
+    if (!reply) return res.status(502).json({ error: 'Empty response from DeepSeek' });
     return res.status(200).json({ reply });
   } catch (e) {
     return res.status(500).json({ error: e.message });
