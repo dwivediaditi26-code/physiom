@@ -21,6 +21,7 @@ import { analyzeSagittalContour, renderContourDebugOverlay, warmupContourEngine 
 import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
 import HybridKendall from "./HybridKendall";
 import AIAssistant from "./AIAssistant.jsx";
+import HomeProtocolTab from "./HomeProtocolTab.jsx";
 
 // ── Lazy-loaded heavy modules (split into separate async chunks) ──────────────
 const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
@@ -17020,7 +17021,7 @@ function AppInner({ currentUser, onSignOut }) {
   // Once mounted, component stays mounted (data preserved)
   const [mountedTabs, setMountedTabs] = useState(new Set(["home", "demographics", "subjective"]));
   const [subjBodyChartTab, setSubjBodyChartTab] = useState(false);
-  const [txTab, setTxTab] = useState("exercise");
+  const [txTab, setTxTab] = useState("exercise");  // "exercise" | "tx" | "hep"
   // Heavy tabs — only mount on first visit
   const HEAVY_TABS = new Set([
     "posture", "ddx", "fms", "nkt", "cyriax",
@@ -18407,27 +18408,32 @@ function AppInner({ currentUser, onSignOut }) {
                     return(
                       <div>
                         <div style={{display:"flex",gap:8,marginBottom:16}}>
-                          <button onClick={()=>setTxTab("exercise")} style={{flex:1,padding:"10px 8px",borderRadius:10,border:`2px solid ${txTab==="exercise"?PC.accent:PC.border}`,background:txTab==="exercise"?`${PC.accent}15`:PC.s2,color:txTab==="exercise"?PC.accent:PC.text,fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>🏋 Exercise Prescription</button>
-                          <button onClick={()=>setTxTab("tx")} style={{flex:1,padding:"10px 8px",borderRadius:10,border:`2px solid ${txTab==="tx"?PC.accent:PC.border}`,background:txTab==="tx"?`${PC.accent}15`:PC.s2,color:txTab==="tx"?PC.accent:PC.text,fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>🤲 Tx Techniques</button>
+                          <button onClick={()=>setTxTab("exercise")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${txTab==="exercise"?PC.accent:PC.border}`,background:txTab==="exercise"?`${PC.accent}15`:PC.s2,color:txTab==="exercise"?PC.accent:PC.text,fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>🏋 Exercise</button>
+                          <button onClick={()=>setTxTab("tx")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${txTab==="tx"?PC.accent:PC.border}`,background:txTab==="tx"?`${PC.accent}15`:PC.s2,color:txTab==="tx"?PC.accent:PC.text,fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>🤲 Techniques</button>
+                          <button onClick={()=>setTxTab("hep")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${txTab==="hep"?PC.accent:PC.border}`,background:txTab==="hep"?`${PC.accent}15`:PC.s2,color:txTab==="hep"?PC.accent:PC.text,fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>🏠 Home Protocol</button>
                         </div>
                         {txTab==="exercise"
                           ? <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
+                          : txTab==="hep"
+                          ? <HomeProtocolTab data={data} set={set} PC={PC}/>
                           : <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
                         }
                       </div>
                     );
                   }
                   return(
-                    <div style={{display:"flex",flexDirection:"row",gap:20,alignItems:"flex-start"}}>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>🏋 Exercise Prescription</div>
-                        <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
+                    <div>
+                      {/* Desktop 3-tab row */}
+                      <div style={{display:"flex",gap:6,marginBottom:16,background:PC.s2,borderRadius:10,padding:4,border:`1px solid ${PC.border}`}}>
+                        {[["exercise","🏋","Exercise Prescription"],["tx","🤲","Tx Techniques"],["hep","🏠","Home Protocol"]].map(([key,icon,label])=>(
+                          <button key={key} onClick={()=>setTxTab(key)} style={{flex:1,padding:"9px 8px",borderRadius:8,border:`1.5px solid ${txTab===key?PC.accent:PC.border}`,background:txTab===key?`${PC.accent}12`:PC.surface,color:txTab===key?PC.accent:PC.muted,fontWeight:700,fontSize:"0.8rem",cursor:"pointer",transition:"all 0.15s"}}>
+                            {icon} {label}
+                          </button>
+                        ))}
                       </div>
-                      <div style={{width:1,alignSelf:"stretch",background:PC.border,flexShrink:0}}/>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:12}}>🤲 Tx Techniques</div>
-                        <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
-                      </div>
+                      {txTab==="exercise" && <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>}
+                      {txTab==="tx"       && <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>}
+                      {txTab==="hep"      && <HomeProtocolTab data={data} set={set} PC={PC}/>}
                     </div>
                   );
                 })()}</>
