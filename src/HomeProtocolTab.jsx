@@ -305,23 +305,96 @@ export default function HomeProtocolTab({ data, set, PC }) {
             💬 WhatsApp preview — live
           </div>
 
-          {waText ? (
+          {programme.length > 0 ? (
+            /* ── Styled WhatsApp bubble preview ── */
             <div style={{
-              background: isDark ? "#1a2f1a" : "#dcf8c6",
-              border: `1px solid ${isDark ? "#2d4a2d" : "#b5e7a0"}`,
+              background: "#e5ddd5",
               borderRadius: 12,
-              padding: "12px 14px",
-              fontSize: "0.78rem",
-              lineHeight: 1.7,
-              color: isDark ? "#c8e6c9" : "#1a3a1a",
-              fontFamily: "monospace",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
+              padding: "12px 10px",
               marginBottom: 12,
-              maxHeight: 400,
+              maxHeight: 460,
               overflowY: "auto",
             }}>
-              {waText}
+              <div style={{
+                background: "#fff",
+                borderRadius: "4px 12px 12px 12px",
+                padding: "10px 13px",
+                maxWidth: "92%",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                fontSize: "0.8rem",
+                lineHeight: 1.6,
+                color: "#111",
+                fontFamily: "inherit",
+              }}>
+                {/* Clinic header */}
+                <div style={{ fontWeight: 800, color: "#075e54", marginBottom: 2, fontSize: "0.85rem" }}>
+                  🏥 {clinicName || "Physio Clinic"}
+                </div>
+                {(therapistName || phone) && (
+                  <div style={{ fontSize: "0.75rem", color: "#555", marginBottom: 8 }}>
+                    {therapistName}{therapistName && phone ? " · " : ""}{phone}
+                  </div>
+                )}
+                {/* Title */}
+                <div style={{ fontWeight: 800, fontSize: "0.85rem", color: "#111", marginBottom: 2 }}>
+                  🏠 Home Exercise Programme
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "#666", marginBottom: 10 }}>
+                  Patient: {patientName} · {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                </div>
+                {/* Exercise cards */}
+                {programme.map((ex, i) => {
+                  const sets = ex.customSets || ex.sets || "";
+                  const reps = ex.customReps || ex.reps || "";
+                  const hold = ex.customHold || ex.hold || "";
+                  const freq = ex.customFreq || ex.freq || "";
+                  const instr = ex.hepInstruction || ex.desc || "";
+                  return (
+                    <div key={ex.id} style={{
+                      background: "#f0faf0",
+                      borderLeft: "3px solid #25d366",
+                      borderRadius: "0 8px 8px 0",
+                      padding: "7px 10px",
+                      marginBottom: 7,
+                    }}>
+                      <div style={{ fontWeight: 800, fontSize: "0.82rem", color: "#1a3a1a", marginBottom: 3 }}>
+                        {i + 1}. {ex.name}
+                      </div>
+                      <div style={{ fontSize: "0.75rem", color: "#444" }}>
+                        {sets} sets × {reps} reps{hold ? ` · hold ${hold}s` : ""}{freq ? ` · ${freq}` : ""}
+                      </div>
+                      {instr && (
+                        <div style={{ fontSize: "0.75rem", color: "#555", fontStyle: "italic", marginTop: 3 }}>
+                          {instr}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {/* Precautions */}
+                {precautions && precautions.trim() && (
+                  <div style={{
+                    background: "#fff8e1",
+                    borderLeft: "3px solid #f0a500",
+                    borderRadius: "0 8px 8px 0",
+                    padding: "7px 10px",
+                    marginBottom: 7,
+                    fontSize: "0.75rem",
+                    color: "#5a3e00",
+                  }}>
+                    <span style={{ fontWeight: 800 }}>⚠️ Precautions: </span>{precautions.trim()}
+                  </div>
+                )}
+                {/* Footer */}
+                <div style={{ borderTop: "1px solid #eee", paddingTop: 7, marginTop: 4, fontSize: "0.75rem", color: "#555" }}>
+                  📞 Questions? Call or WhatsApp anytime.
+                  {phone && <div style={{ color: "#075e54", fontWeight: 700 }}>{phone}</div>}
+                </div>
+                {/* Timestamp */}
+                <div style={{ fontSize: "0.68rem", color: "#999", textAlign: "right", marginTop: 6 }}>
+                  {new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} ✓✓
+                </div>
+              </div>
             </div>
           ) : (
             <div style={{
