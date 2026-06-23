@@ -2824,17 +2824,20 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       ["nkt_triceps","Triceps"],["nkt_wrist_ext","Wrist Ext"],["nkt_wrist_flex","Wrist Flex"],
       ["nkt_pronator","Pronator Teres"],["nkt_grip","Grip/Intrinsics"],
     ];
-    const nktInh = [], nktFac = [], nktNorm = [];
+    const nktInh = [], nktFac = [], nktNorm = [], nktOver = [];
     NKT_IDS.forEach(([id, label]) => {
       const val = String(data[id]||"").trim();
-      if (val === "Inhibited") nktInh.push(label);
-      else if (val === "Facilitated") nktFac.push(label);
-      else if (val === "Normal") nktNorm.push(label);
+      if (!val) return;
+      if (val.includes("Inhibited") || val.includes("inhibited") || val.includes("Complete inhibition")) nktInh.push(`${label} (${val})`);
+      else if (val.includes("Overactive") || val.includes("overactive")) nktOver.push(`${label} (${val})`);
+      else if (val.includes("Facilitated") || val.includes("facilitated")) nktFac.push(label);
+      else if (val.includes("Normal") || val.includes("normal")) nktNorm.push(label);
     });
     const nktLines = [];
-    if (nktInh.length) nktLines.push(`  Inhibited (MCC dysfunction): ${nktInh.join(", ")}`);
-    if (nktFac.length) nktLines.push(`  Facilitated/Overactive (compensating): ${nktFac.join(", ")}`);
-    if (nktNorm.length && (nktInh.length || nktFac.length)) nktLines.push(`  Normal: ${nktNorm.slice(0,5).join(", ")}${nktNorm.length>5?` + ${nktNorm.length-5} more`:""}`);
+    if (nktInh.length)  nktLines.push(`  Inhibited: ${nktInh.join(", ")}`);
+    if (nktOver.length) nktLines.push(`  Overactive/Facilitated: ${nktOver.join(", ")}`);
+    if (nktFac.length)  nktLines.push(`  Facilitated normal: ${nktFac.join(", ")}`);
+    if (nktNorm.length && (nktInh.length || nktOver.length)) nktLines.push(`  Normal: ${nktNorm.slice(0,5).join(", ")}${nktNorm.length>5?` + ${nktNorm.length-5} more`:""}`);
     if (v("nkt_notes")) nktLines.push(`  Notes: ${v("nkt_notes")}`);
     if (nktLines.length) O_parts.push(`Neuromuscular Assessment (CPA):\n${nktLines.join("\n")}.`);
   }
@@ -3002,33 +3005,53 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     }
   }
 
-  // Outcome Measures — read from patient data AND om_report (synced from OutcomeMeasuresModule localStorage)
+  // Outcome Measures — read om_history_<scaleId> (OutcomeMeasuresPro), om_report, and direct fields
   {
     const omRows = [];
-    // PSFS from Subjective fields
+    const addedScales = new Set();
+    const SCALE_LABELS = {
+      ndi:"NDI",odi:"ODI",dash:"DASH",lefs:"LEFS",psfs:"PSFS",
+      koos:"KOOS",hoos:"HOOS",bbs:"Berg Balance",vas:"VAS Pain",
+      tsk:"TSK-11",fabq:"FABQ",pcs:"PCS",rmdq:"RMDQ",spadi:"SPADI",
+      faam:"FAAM",quickdash:"QuickDASH",womac:"WOMAC",asia:"ASIA",
+    };
+    // Primary source: om_history_<scaleId> saved by OutcomeMeasuresPro
+    Object.keys(data).forEach(k => {
+      if (!k.startsWith("om_history_")) return;
+      const scaleId = k.replace("om_history_","");
+      try {
+        const hist = typeof data[k] === "string" ? JSON.parse(data[k]) : data[k];
+        if (Array.isArray(hist) && hist.length > 0) {
+          const latest = hist[hist.length - 1];
+          const label = SCALE_LABELS[scaleId] || scaleId.toUpperCase();
+          const dateStr = latest.date ? ` (${new Date(latest.date).toLocaleDateString()})` : "";
+          omRows.push(`${label}: ${latest.score}${dateStr}`);
+          addedScales.add(scaleId);
+        }
+      } catch {}
+    });
+    // PSFS activities from subjective
     [1,2,3].forEach(i => {
       const act = v(`om_psfs${i}`);
       const now2 = v(`om_psfs${i}_now`);
       const goal2 = v(`om_psfs${i}_goal`);
       if (act) omRows.push(`PSFS Activity ${i}: "${act}" — ${now2||"—"}/10 (goal: ${goal2||"—"}/10)`);
     });
-    // Scores from OutcomeMeasuresModule (synced via om_report on SOAP open)
+    // Fallback: om_report (legacy sync)
     const omReport = data.om_report;
     if (omReport?.scores) {
-      const scoreLabels = {
-        odi:"ODI",ndi:"NDI",dash:"DASH",lefs:"LEFS",psfs:"PSFS",
-        koos:"KOOS",hoos:"HOOS",groc:"GROC",tsk:"TSK",pseq:"PSEQ",bbs:"Berg Balance",
-      };
       Object.entries(omReport.scores).forEach(([id,score]) => {
-        const label = scoreLabels[id]||id.toUpperCase();
-        omRows.push(`${label}: ${score}`);
+        if (!addedScales.has(id)) {
+          omRows.push(`${SCALE_LABELS[id]||id.toUpperCase()}: ${score}`);
+          addedScales.add(id);
+        }
       });
     }
-    // Direct data fields
-    if (v("om_odi_score")&&!omReport?.scores?.odi) omRows.push(`ODI: ${v("om_odi_score")}%`);
-    if (v("om_dash_score")&&!omReport?.scores?.dash) omRows.push(`DASH: ${v("om_dash_score")}`);
-    if (v("om_ndi_score")&&!omReport?.scores?.ndi) omRows.push(`NDI: ${v("om_ndi_score")}%`);
-    if (v("om_lefs_score")&&!omReport?.scores?.lefs) omRows.push(`LEFS: ${v("om_lefs_score")}/80`);
+    // Fallback: direct score fields
+    if (v("om_odi_score")&&!addedScales.has("odi")) omRows.push(`ODI: ${v("om_odi_score")}%`);
+    if (v("om_dash_score")&&!addedScales.has("dash")) omRows.push(`DASH: ${v("om_dash_score")}`);
+    if (v("om_ndi_score")&&!addedScales.has("ndi")) omRows.push(`NDI: ${v("om_ndi_score")}%`);
+    if (v("om_lefs_score")&&!addedScales.has("lefs")) omRows.push(`LEFS: ${v("om_lefs_score")}/80`);
     if (omRows.length) O_parts.push(`Outcome Measures:\n  ${omRows.join("\n  ")}.`);
   }
 
