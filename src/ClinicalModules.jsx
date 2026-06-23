@@ -6063,40 +6063,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
         ))}
       </div>
 
-      {/* Programme builder */}
-      {programme.length>0&&(
-        <div style={{background:"#ffffff",border:"1px solid rgba(0,201,122,0.3)",borderRadius:14,padding:"14px",marginBottom:14}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:7}}>
-            <div style={{fontSize:"0.82rem",fontWeight:800,color:"#00c97a"}}>📋 Patient Programme — {programme.length} exercise{programme.length!==1?"s":""}</div>
-            <div style={{display:"flex",gap:6}}>
-              <button onClick={()=>syncProgramme([])} style={{padding:"5px 10px",background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.3)",borderRadius:7,color:"#ff4d6d",fontSize:"0.82rem",fontWeight:700,cursor:"pointer"}}>🗑 Clear</button>
-              <button onClick={printHEP} style={{padding:"5px 10px",background:"linear-gradient(135deg,rgba(0,201,122,0.2),rgba(0,229,255,0.15))",border:"1px solid rgba(0,201,122,0.4)",borderRadius:7,color:"#00c97a",fontSize:"0.82rem",fontWeight:800,cursor:"pointer"}}>🖨 Print HEP</button>
-            </div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:12}}>
-            <div><label style={{fontSize:"0.78rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Patient Name</label><input value={data?.dem_name||""} onChange={e=>set&&set("dem_name",e.target.value)} placeholder="Patient name (syncs from Demographics)" style={inp}/></div>
-            <div><label style={{fontSize:"0.78rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Clinician</label><input value={clinician} onChange={e=>setClinician(e.target.value)} placeholder="Your name" style={inp}/></div>
-            <div style={{gridColumn:"1/-1"}}><label style={{fontSize:"0.78rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:3}}>Review Date</label><input value={reviewDate} onChange={e=>setReviewDate(e.target.value)} placeholder="e.g. 2 weeks" style={inp}/></div>
-          </div>
-          {programme.map((ex,i)=>(
-            <div key={ex.id} style={{background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
-              <div style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:9}}>
-                <span style={{width:22,height:22,borderRadius:"50%",background:"rgba(0,201,122,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.82rem",fontWeight:800,color:"#00c97a",flexShrink:0}}>{i+1}</span>
-                <div style={{flex:1}}><div style={{fontSize:"0.75rem",fontWeight:700,color:"#1a1025"}}>{ex.name}</div><div style={{fontSize:"0.8rem",color:"#7e6a9a"}}>{ex.target}</div></div>
-                <button onClick={()=>removeEx(ex.id)} style={{background:"none",border:"1px solid #d8cce8",borderRadius:6,color:"#7e6a9a",cursor:"pointer",fontSize:"0.75rem",padding:"2px 7px"}}>✕</button>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:8}}>
-                {[["Sets","customSets"],["Reps","customReps"],["Hold (s)","customHold"]].map(([label,field])=>(
-                  <div key={field}><div style={{fontSize:"0.75rem",color:"#7e6a9a",marginBottom:2,textTransform:"uppercase"}}>{label}</div><input type="number" value={ex[field]} onChange={e=>updateEx(ex.id,field,e.target.value)} style={{...inp,padding:"5px 8px",textAlign:"center"}}/></div>
-                ))}
-                <div><div style={{fontSize:"0.75rem",color:"#7e6a9a",marginBottom:2,textTransform:"uppercase"}}>Frequency</div><input value={ex.customFreq} onChange={e=>updateEx(ex.id,"customFreq",e.target.value)} style={{...inp,padding:"5px 8px"}}/></div>
-              </div>
-              <div><div style={{fontSize:"0.75rem",color:"#7e6a9a",marginBottom:2,textTransform:"uppercase"}}>Clinical Notes</div><input value={ex.notes||""} onChange={e=>updateEx(ex.id,"notes",e.target.value)} placeholder="Patient-specific notes, modifications..." style={inp}/></div>
-            </div>
-          ))}
-          <button onClick={printHEP} style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,#00c97a,#00e5ff)",border:"none",borderRadius:10,color:"#000",fontWeight:900,fontSize:"0.82rem",cursor:"pointer",marginTop:4}}>🖨 Print / Download Home Exercise Programme (HEP)</button>
-        </div>
-      )}
+
 
       <div style={{padding:"7px 11px",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,fontSize:"0.8rem",color:"#7e6a9a",lineHeight:1.5}}>
         ⚠ Exercise prescriptions are clinical suggestions. Modify sets/reps/frequency based on individual patient capacity, irritability, and response. Evidence ratings reflect current literature.
