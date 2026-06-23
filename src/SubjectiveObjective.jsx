@@ -4971,8 +4971,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             { id:"ankle", name:"Ankle / Foot",  lr:true, keys:{ L:"Ankle/Foot (L)", R:"Ankle/Foot (R)", B_L:"Ankle/Foot (L)", B_R:"Ankle/Foot (R)" } },
           ]},
           { id:"thorax", label:"Thorax / Ribs", icon:"🫁", regions:[
-            { id:"ribs",     name:"Ribs / Thorax", lr:true, keys:{ L:"Ribs (L)",  R:"Ribs (R)",  B_L:"Ribs (L)",  B_R:"Ribs (R)" } },
-            { id:"sternum",  name:"Sternum",        lr:false, keys:{ B:"Sternum" } },
+            { id:"thorax_r", name:"Thorax",     lr:true, keys:{ L:"Thorax (L)", R:"Thorax (R)", B_L:"Thorax (L)", B_R:"Thorax (R)" } },
+            { id:"ribs",     name:"Ribs",        lr:true, keys:{ L:"Ribs (L)",   R:"Ribs (R)",   B_L:"Ribs (L)",   B_R:"Ribs (R)" } },
           ]},
           { id:"other", label:"Other", icon:"🔵", regions:[
             { id:"tmj",  name:"TMJ / Jaw",  lr:true, keys:{ L:"TMJ (L)", R:"TMJ (R)", B_L:"TMJ (L)", B_R:"TMJ (R)" } },
