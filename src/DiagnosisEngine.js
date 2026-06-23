@@ -1171,8 +1171,11 @@ export function getTopDiagnosesEnhanced(data, n=4) {
   const urgent   = neuro.filter(r=>r.urgency==="EMERGENCY"||r.urgency==="URGENT");
   const neuroReg = neuro.filter(r=>!r.urgency);
 
-  // Interleave: urgent → structural → neuro (non-urgent) → functional → outcome
-  const combined = [...urgent, ...structural, ...neuroReg, ...functional, ...outcome];
+  // Pool all non-urgent results and sort by confidence so highest wins
+  const pool = [...structural, ...neuroReg, ...functional, ...outcome];
+  pool.sort((a,b) => b.confidence - a.confidence || b.hits - a.hits);
+
+  const combined = [...urgent, ...pool];
 
   // Deduplicate by diagnosis name — first occurrence wins (highest confidence)
   const seen = new Set();
