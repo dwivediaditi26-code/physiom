@@ -18446,7 +18446,24 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="SOAP_MODULE"?(
               <SOAPNoteModule data={data} set={set}/>
               ):tests==="AI_MODULE"?(
-              <SOAPNoteModule data={data} set={set}/>
+              <div>
+                {/* ── AI Assistant Banner ── */}
+                <div style={{background:`linear-gradient(135deg,${PC.accent}12,${PC.a2}08)`,border:`1.5px solid ${PC.accent}30`,borderRadius:14,padding:"14px 16px",marginBottom:20}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+                    <div style={{width:34,height:34,background:`linear-gradient(135deg,${PC.accent}22,${PC.a2}18)`,border:`1px solid ${PC.accent}30`,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>🤖</div>
+                    <div>
+                      <div style={{fontWeight:800,fontSize:"1rem",color:PC.accent,letterSpacing:"-0.2px",lineHeight:1.1}}>AI Clinical Assistant</div>
+                      <div style={{fontSize:"0.78rem",color:PC.muted,fontWeight:600,letterSpacing:"0.3px",textTransform:"uppercase",marginTop:2}}>Powered by PhysioMind Pro</div>
+                    </div>
+                  </div>
+                  <div style={{height:1,background:`linear-gradient(90deg,${PC.accent}40,${PC.a2}20,transparent)`,margin:"10px 0"}}/>
+                  <div style={{fontSize:"0.8rem",color:PC.muted,lineHeight:1.5}}>Generate AI-powered SOAP notes, clinical impressions, and documentation from your assessment data.</div>
+                </div>
+                {/* ── SOAP Note Module ── */}
+                <div style={{borderRadius:14,overflow:"hidden",border:`1.5px solid ${PC.border}`}}>
+                  <SOAPNoteModule data={data} set={set}/>
+                </div>
+              </div>
               ):(
                 <div style={{display:"grid",gap:8}}>
                   {tests.map(t=>{
