@@ -1162,15 +1162,18 @@ export function runNeuroPatternEngine(data) {
  * promotes urgent findings to top, returns top N.
  */
 export function getTopDiagnosesEnhanced(data, n=4) {
-  const structural = runDiagnosisEngine(data);
-  const neuro      = runNeuroPatternEngine(data);
+  const structural  = runDiagnosisEngine(data);
+  const neuro       = runNeuroPatternEngine(data);
+  const functional  = runFunctionalScreenEngine(data);
 
-  // Merge: neuro results first if urgent, then interleave
+  // Urgent neuro findings always surface first
   const urgent   = neuro.filter(r=>r.urgency==="EMERGENCY"||r.urgency==="URGENT");
   const neuroReg = neuro.filter(r=>!r.urgency);
-  const combined = [...urgent, ...structural, ...neuroReg];
 
-  // Deduplicate by diagnosis name
+  // Interleave: urgent → structural → neuro (non-urgent) → functional
+  const combined = [...urgent, ...structural, ...neuroReg, ...functional];
+
+  // Deduplicate by diagnosis name — first occurrence wins (highest confidence)
   const seen = new Set();
   const deduped = combined.filter(r=>{
     if (seen.has(r.diagnosis)) return false;
@@ -1179,4 +1182,260 @@ export function getTopDiagnosesEnhanced(data, n=4) {
   });
 
   return deduped.slice(0, n);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FUNCTIONAL SCREEN ENGINE
+// Reads kfs_data, lfs_data, sfs_data, afs_data (JSON blobs) and sp_fms_* keys.
+// Grade 2 = Abnormal, Grade 1 = Compensated, Grade 0 = Cannot perform (severe).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function runFunctionalScreenEngine(data) {
+  if (!data) return [];
+  const results = [];
+
+  const pushFS = (region, diagnosis, icd10, confidence, findings, refs) => {
+    const label = confidence>=80?"High":confidence>=55?"Moderate":"Low";
+    results.push({
+      region, diagnosis, icd10, confidence, confidenceLabel:label,
+      supportingFindings: findings.filter(Boolean),
+      hits: findings.filter(Boolean).length,
+      total: findings.length,
+      reference: refs,
+      urgency: null,
+    });
+  };
+
+  // ── Parse JSON screen blobs safely ────────────────────────────────────────
+  const parseScreen = key => {
+    try {
+      const raw = data[key];
+      if (!raw) return null;
+      return typeof raw === "string" ? JSON.parse(raw) : raw;
+    } catch { return null; }
+  };
+
+  const grade = (screen, key) => screen?.grades?.[key] ?? null;
+  const abn   = (screen, key) => grade(screen,key) === 2;
+  const comp  = (screen, key) => grade(screen,key) === 1;
+  const poor  = (screen, key) => grade(screen,key) === 0;
+  const note  = (screen, key) => screen?.notes?.[key] || null;
+
+  // ── KNEE FUNCTIONAL SCREEN (kfs_data) ─────────────────────────────────────
+  const kfs = parseScreen("kfs_data");
+  if (kfs) {
+    const squat   = abn(kfs,"kfs_squat")  || poor(kfs,"kfs_squat");
+    const lunge   = abn(kfs,"kfs_lunge")  || poor(kfs,"kfs_lunge");
+    const stepDn  = abn(kfs,"kfs_step_down");
+    const singleL = abn(kfs,"kfs_single_leg") || poor(kfs,"kfs_single_leg");
+    const sqComp  = comp(kfs,"kfs_squat");
+    const lunComp = comp(kfs,"kfs_lunge");
+
+    // PFPS / VMO inhibition pattern: squat + step down abnormal
+    if (squat && stepDn) {
+      pushFS("Knee","Patellofemoral Pain Syndrome","M22.2",
+        singleL ? 82 : 70,
+        [
+          squat   && `Squat: Abnormal — ${note(kfs,"kfs_squat")||"dynamic valgus / patellar maltracking"}`,
+          stepDn  && `Step-down: Abnormal — ${note(kfs,"kfs_step_down")||"Trendelenburg, hip control deficit"}`,
+          singleL && `Single-leg: Abnormal — ${note(kfs,"kfs_single_leg")||"VMO inhibition, lateral thrust"}`,
+          squat&&stepDn&&singleL && "Triple screen failure: squat + step-down + single-leg — VMO/hip control deficit confirmed",
+        ],
+        "Nijs et al. PFPS criteria; Cook Clinical Reasoning; MAG Ch.12; Crossley 2016"
+      );
+    }
+
+    // Hip abductor / glute med weakness: step down + single leg
+    if (stepDn && singleL) {
+      pushFS("Hip/Knee","Hip Abductor Weakness — Lumbopelvic Control Deficit","M62.89",
+        78,
+        [
+          stepDn  && "Step-down abnormal — contralateral pelvic drop (Trendelenburg pattern)",
+          singleL && "Single-leg stance abnormal — gluteus medius inhibition",
+          lunge   && `Lunge: ${abn(kfs,"kfs_lunge")?"Abnormal":"Compensated"} — hip/knee valgus loading`,
+          "Hip abductor strengthening + neuromuscular control programme indicated",
+        ],
+        "Grimaldi glute med criteria; Cook FMS; MAG Ch.11; DUT Ch.27"
+      );
+    }
+
+    // Knee OA pattern: squat + lunge both limited (load-dependent)
+    if ((squat||sqComp) && (lunge||lunComp) && !stepDn) {
+      pushFS("Knee","Knee OA / Chondral Pathology","M17.1",
+        squat&&lunge ? 65 : 50,
+        [
+          (squat||sqComp) && `Squat: ${squat?"Abnormal":"Compensated"} — load-dependent knee pain/restriction`,
+          (lunge||lunComp) && `Lunge: ${lunge?"Abnormal":"Compensated"} — tibiofemoral compression pattern`,
+          "Both weight-bearing closed-chain tasks limited — consistent with articular/chondral pathology",
+        ],
+        "NICE OA Guidelines; MAG Ch.12; COOK tendinopathy model"
+      );
+    }
+  }
+
+  // ── LUMBAR FUNCTIONAL SCREEN (lfs_data) ───────────────────────────────────
+  const lfs = parseScreen("lfs_data");
+  if (lfs) {
+    const flex    = abn(lfs,"lfs_flexion")   || poor(lfs,"lfs_flexion");
+    const ext     = abn(lfs,"lfs_extension") || poor(lfs,"lfs_extension");
+    const rot     = abn(lfs,"lfs_rot")       || poor(lfs,"lfs_rot");
+    const lat     = abn(lfs,"lfs_lateral")   || poor(lfs,"lfs_lateral");
+    const flexC   = comp(lfs,"lfs_flexion");
+    const extC    = comp(lfs,"lfs_extension");
+
+    // Discogenic: flexion abnormal, extension compensated/normal
+    if (flex && !ext) {
+      pushFS("Lumbar","Lumbar Discogenic Pattern","M51.16",
+        rot ? 78 : 65,
+        [
+          flex && `Flexion: Abnormal — ${note(lfs,"lfs_flexion")||"poor hip-lumbar dissociation, early hinge"}`,
+          !ext && "Extension: less affected — directional preference (McKenzie flexion pattern)",
+          rot  && `Rotation: Abnormal — ${note(lfs,"lfs_rot")||"rotational shear on disc"}`,
+          "Flexion-dominant restriction: consistent with lumbar disc pathology",
+        ],
+        "McKenzie MDT; Maitland Vertebral Manip; Cook Clinical Reasoning; MAG Ch.9"
+      );
+    }
+
+    // Facet: extension abnormal, flexion less affected
+    if (ext && !flex) {
+      pushFS("Lumbar","Lumbar Facet / Posterior Joint Pattern","M47.816",
+        lat ? 76 : 62,
+        [
+          ext && `Extension: Abnormal — ${note(lfs,"lfs_extension")||"posterior joint loading"}`,
+          !flex && "Flexion: less affected — non-discogenic directional preference",
+          lat && `Lateral flexion: Abnormal — ipsilateral facet compression`,
+          "Extension-dominant restriction: facet joint / posterior element involvement",
+        ],
+        "Maitland Vertebral Manip; Cyriax Orthopaedic Medicine; MAG Ch.9"
+      );
+    }
+
+    // Multi-directional restriction: all quadrants — stenosis / multi-level
+    if (flex && ext && (rot||lat)) {
+      pushFS("Lumbar","Lumbar Multi-Directional Restriction — Stenosis / Spondylosis","M48.06",
+        74,
+        [
+          flex && "Flexion restricted",
+          ext  && "Extension restricted",
+          rot  && "Rotation restricted",
+          lat  && "Lateral flexion restricted",
+          "All-quadrant restriction: consistent with central stenosis or multi-level spondylosis",
+        ],
+        "Katz 1995 stenosis criteria; Maitland; NICE LBP 2021"
+      );
+    }
+  }
+
+  // ── SHOULDER FUNCTIONAL SCREEN (sfs_data) ─────────────────────────────────
+  const sfs = parseScreen("sfs_data");
+  if (sfs) {
+    const overhead = abn(sfs,"sfs_overhead") || poor(sfs,"sfs_overhead");
+    const push_    = abn(sfs,"sfs_push")     || poor(sfs,"sfs_push");
+    const pull     = abn(sfs,"sfs_pull")     || poor(sfs,"sfs_pull");
+    const ohComp   = comp(sfs,"sfs_overhead");
+
+    // Impingement: overhead abnormal
+    if (overhead) {
+      pushFS("Shoulder","Subacromial Impingement / Rotator Cuff Tendinopathy","M75.1",
+        (overhead&&pull) ? 78 : 65,
+        [
+          overhead && `Overhead: Abnormal — ${note(sfs,"sfs_overhead")||"early scapular elevation, impingement arc"}`,
+          pull     && `Pull: Abnormal — ${note(sfs,"sfs_pull")||"posterior cuff weakness, scapular instability"}`,
+          push_    && `Push: ${abn(sfs,"sfs_push")?"Abnormal":"Compensated"} — anterior instability / pec tightness`,
+          overhead&&pull && "Overhead + pull failure: rotator cuff + scapular stabiliser deficit",
+        ],
+        "Lewis impingement model; Cook FMS shoulder; MAG Ch.5; DUT Ch.17"
+      );
+    }
+
+    // Scapular dyskinesis: push + pull abnormal, overhead compensated
+    if (push_ && pull && !overhead) {
+      pushFS("Shoulder","Scapular Dyskinesis / Stabiliser Deficit","M62.89",
+        68,
+        [
+          push_ && "Push: Abnormal — serratus anterior / pec minor imbalance",
+          pull  && "Pull: Abnormal — mid/lower trapezius and rhomboid weakness",
+          "Push + pull failure with overhead spared: scapular control deficit (Kibler classification)",
+        ],
+        "Kibler scapular dyskinesis; Cook FMS; MAG Ch.5"
+      );
+    }
+  }
+
+  // ── ANKLE/FOOT FUNCTIONAL SCREEN (afs_data) ───────────────────────────────
+  const afs = parseScreen("afs_data");
+  if (afs) {
+    const raise = abn(afs,"afs_raise") || poor(afs,"afs_raise");
+    const lunge = abn(afs,"afs_lunge") || poor(afs,"afs_lunge");
+    const hop   = abn(afs,"afs_hop")   || poor(afs,"afs_hop");
+
+    // Achilles / gastroc-soleus: heel raise failure
+    if (raise) {
+      pushFS("Ankle","Achilles Tendinopathy / Gastroc-Soleus Inhibition","M76.6",
+        (raise&&hop) ? 78 : 62,
+        [
+          raise && `Heel raise: Abnormal — ${note(afs,"afs_raise")||"gastroc/soleus weakness or pain inhibition"}`,
+          hop   && "Single-leg hop: Abnormal — power deficit, reactive strength impaired",
+          raise&&hop && "Raise + hop failure: calf-Achilles unit deficit (VISA-A criteria pattern)",
+        ],
+        "VISA-A; Cook tendinopathy model; MAG Ch.14; Silbernagel 2007"
+      );
+    }
+
+    // Ankle instability / ankle sprain sequelae: lunge + hop
+    if (lunge && hop) {
+      pushFS("Ankle","Chronic Ankle Instability / Proprioceptive Deficit","M25.37",
+        68,
+        [
+          lunge && `Lunge: Abnormal — ${note(afs,"afs_lunge")||"restricted dorsiflexion, ankle stiffness"}`,
+          hop   && `Hop: Abnormal — ${note(afs,"afs_hop")||"lateral instability, landing control deficit"}`,
+          "Lunge + hop failure: dorsiflexion restriction + dynamic stability deficit (Wikstrom CAI criteria)",
+        ],
+        "Wikstrom CAI; Hertel CAI model; MAG Ch.14; DUT Ch.33"
+      );
+    }
+  }
+
+  // ── FMS TOTAL SCORE (sp_fms_*) ────────────────────────────────────────────
+  {
+    const fmsKeys = [
+      "sp_fms_sq","sp_fms_hs_l","sp_fms_hs_r","sp_fms_il_l","sp_fms_il_r",
+      "sp_fms_sm_l","sp_fms_sm_r","sp_fms_aslr_l","sp_fms_aslr_r",
+      "sp_fms_tspu","sp_fms_rs_l","sp_fms_rs_r",
+    ];
+    const filled = fmsKeys.filter(k => data[k] !== undefined && data[k] !== "");
+    if (filled.length >= 6) {
+      const total = fmsKeys.reduce((sum,k)=>sum+(parseFloat(data[k])||0),0);
+      // Asymmetries
+      const asym = [
+        ["sp_fms_hs_l","sp_fms_hs_r","Hurdle Step"],
+        ["sp_fms_il_l","sp_fms_il_r","Inline Lunge"],
+        ["sp_fms_sm_l","sp_fms_sm_r","Shoulder Mob"],
+        ["sp_fms_aslr_l","sp_fms_aslr_r","ASLR"],
+        ["sp_fms_rs_l","sp_fms_rs_r","Rotary Stab"],
+      ].filter(([l,r])=>{
+        const lv=parseFloat(data[l]), rv=parseFloat(data[r]);
+        return !isNaN(lv)&&!isNaN(rv)&&lv!==rv;
+      }).map(([,,name])=>name);
+
+      const zeroPain = fmsKeys.filter(k=>(data[k]||"")==="0");
+
+      if (total < 14) {
+        pushFS("Whole Body","Elevated Injury Risk — FMS Score","Z13.88",
+          total<=10?82:68,
+          [
+            `FMS Total: ${total}/21 — ${total<14?"High":"Moderate"} injury risk (Cook & Burton threshold <14)`,
+            zeroPain.length>0 && `Pain on movement: ${zeroPain.map(k=>k.replace("sp_fms_","").replace(/_/g," ")).join(", ")} — score 0 = movement dysfunction with pain`,
+            asym.length>0 && `Movement asymmetries: ${asym.join(", ")} — asymmetry > threshold predicts injury (Kiesel 2007)`,
+            total<14 && "Score <14: 3.8× higher injury risk (Cook & Burton; Kiesel et al. 2007)",
+          ],
+          "Cook & Burton FMS; Kiesel et al. 2007 NFL study; Chorba et al. 2010"
+        );
+      }
+    }
+  }
+
+  results.sort((a,b)=>b.confidence-a.confidence||b.hits-a.hits);
+  return results;
 }
