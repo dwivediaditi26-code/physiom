@@ -18414,7 +18414,7 @@ function AppInner({ currentUser, onSignOut }) {
               <div className={`pm-bnav-panel${bnavTab==="top"?" open":""}`}>
                 <BnavItem navKey="home"      icon="🏠" label="Home"/>
                 <BnavItem navKey="dashboard" icon="📊" label="Dashboard"/>
-                <button className="pm-bnav-dx" onClick={()=>{ runDx(); setBnavTab(null); }}>▶ Run Diagnosis</button>
+
               </div>
             </>
           );
