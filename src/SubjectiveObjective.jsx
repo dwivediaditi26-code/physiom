@@ -5016,13 +5016,20 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
         return (
           <div style={{ background:PC.surface, borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
-            {/* Header */}
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 14px", borderBottom:`1px solid ${PC.border}` }}>
-              <span style={{ fontSize:"0.78rem", fontWeight:700, color:PC.text }}>📍 Body regions</span>
-              <span style={{ fontSize:"0.68rem", background:PC.s2, border:`1px solid ${PC.border}`, borderRadius:99, padding:"2px 9px", color:PC.muted }}>{totalSlots} / 3</span>
+            {/* Outer header — collapses entire picker */}
+            <div onClick={() => setRegionPickerOpen(o => !o)}
+              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 14px",
+                borderBottom: regionPickerOpen ? `1px solid ${PC.border}` : "none", cursor:"pointer", userSelect:"none" }}>
+              <span style={{ fontSize:"0.78rem", fontWeight:700, color:PC.text }}>📍 Body regions
+                {selectedRegions.length > 0 && <span style={{ marginLeft:6, fontSize:"0.65rem", fontWeight:600, color:PC.accent }}>({selectedRegions.length} selected)</span>}
+              </span>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ fontSize:"0.68rem", background:PC.s2, border:`1px solid ${PC.border}`, borderRadius:99, padding:"2px 9px", color:PC.muted }}>{totalSlots} / 3</span>
+                <span style={{ fontSize:"0.65rem", color:PC.muted, display:"inline-block", transition:"transform 0.18s", transform: regionPickerOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▼</span>
+              </div>
             </div>
 
-            {REGION_GROUPS.map((group, gi) => {
+            {regionPickerOpen && REGION_GROUPS.map((group, gi) => {
               const groupOpen = !!openGroups[group.id];
               const groupCount = group.regions.filter(r => getActiveSide(r.id, r.lr) !== null).length;
               const isLastGroup = gi === REGION_GROUPS.length - 1;
@@ -5090,7 +5097,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             })}
 
             {/* Selected summary */}
-            {selectedRegions.length > 0 && (
+            {regionPickerOpen && selectedRegions.length > 0 && (
               <div style={{ display:"flex", flexWrap:"wrap", gap:5, padding:"7px 14px", borderTop:`1px solid ${PC.border}`, background:PC.s2 }}>
                 {selectedRegions.map(r => (
                   <span key={r} style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:"0.68rem", fontWeight:700, padding:"2px 8px", borderRadius:99,
