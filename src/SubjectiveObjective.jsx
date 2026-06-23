@@ -1,4 +1,4 @@
-// SubjectiveObjective.jsx — Special Tests, Subjective, CPA, KineticChain, FMS, Fascia, Ergo
+// SubjectiveObjective.jsx — Special Tests, Subjective, NKT, KineticChain, FMS, Fascia, Ergo
 import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC } from "./utils.jsx";
 
@@ -895,6 +895,46 @@ const SPECIAL_TESTS_DATA = {
     ]
   },
 
+  outcome_tools:{
+    label:"Validated Outcome Tools", color:"#ffd700", icon:"📊",
+    tests:[
+      { id:"st_ndi_tool", label:"Neck Disability Index (NDI)", structure:"Cervical disability",
+        sensitivity:"N/A", specificity:"N/A",
+        positive:"Score 0–4: none. 5–14: mild. 15–24: moderate. 25–34: severe. >34: complete",
+        negative:"N/A — score all 10 items",
+        how:"10 items (pain intensity, personal care, lifting, reading, headache, concentration, work, driving, sleeping, recreation). Each scored 0–5. Maximum 50. Calculate percentage (score/50 × 100). MCID (minimum clinically important difference) = 7 points.",
+        options:["No disability (0–4)","Mild disability (5–14)","Moderate disability (15–24)","Severe disability (25–34)","Complete disability (35–50)"],
+      },
+      { id:"st_odi_tool", label:"Oswestry Disability Index (ODI)", structure:"Lumbar disability",
+        sensitivity:"N/A", specificity:"N/A",
+        positive:"< 20%: minimal. 20–40%: moderate. 40–60%: severe. >60%: crippled",
+        negative:"N/A",
+        how:"10 sections (pain intensity, personal care, lifting, walking, sitting, standing, sleeping, sex life, social life, travelling). Each scored 0–5. Score/50 × 100 = %. MCID = 10 points (10%). Important for medico-legal and surgical decision-making.",
+        options:["Minimal disability (< 20%)","Moderate disability (20–40%)","Severe disability (40–60%)","Crippling disability (60–80%)","Bed-bound (> 80%)"],
+      },
+      { id:"st_koos_tool", label:"KOOS (Knee injury and OA Outcome Score)", structure:"Knee function",
+        sensitivity:"N/A", specificity:"N/A",
+        positive:"Lower score = worse function",
+        negative:"100 = no symptoms",
+        how:"5 subscales: Symptoms, Pain, ADL, Sport/Recreation, Quality of Life. Each subscale 0–100 (100 = no problems). Calculate each subscale separately. KOOS4 = average of Pain, Symptoms, ADL, Sport. MCID = 8–10 points per subscale.",
+        options:["Score each subscale 0–100","Document all 5 subscale scores","Calculate KOOS4 average","Compare at each reassessment"],
+      },
+      { id:"st_dash_tool", label:"DASH / QuickDASH Score", structure:"Upper limb disability",
+        sensitivity:"N/A", specificity:"N/A",
+        positive:"Higher = more disability. 0 = no disability, 100 = most severe",
+        negative:"Score < 10 = minimal disability",
+        how:"DASH: 30 items about ability to perform activities. QuickDASH: 11 items (faster to administer). Score formula: (sum/n - 1) × 25 = score. Work module (4 items) and Sport/Music module (4 items) optional. MCID = 10–15 points.",
+        options:["Minimal (0–10)","Mild disability (11–30)","Moderate disability (31–50)","Severe disability (51–70)","Extreme disability (> 70)"],
+      },
+      { id:"st_psfs_tool", label:"Patient Specific Functional Scale (PSFS)", structure:"Patient-specific activities",
+        sensitivity:"High responsiveness", specificity:"N/A",
+        positive:"Lower score = worse function",
+        negative:"10/10 = normal function",
+        how:"Patient identifies 3–5 activities they cannot perform due to their problem. Rate each 0–10 (0 = unable to perform, 10 = normal). Average the scores. Reassess at each session. MCID = 2 points for individual activities, 3 points for average score. Excellent for capturing what MATTERS to the patient.",
+        options:["Record 3 activities and scores","Baseline average score","Reassess score at each visit","MCID achieved = 2+ points improvement"],
+      },
+    ]
+  },
 };
 
 // ─── SPECIAL TESTS COMPONENT ──────────────────────────────────────────────────
@@ -905,80 +945,6 @@ if (typeof document !== "undefined" && !document.getElementById("physio-hl-style
   _st.id = "physio-hl-style";
   _st.textContent = "@keyframes physioHL { 0% { box-shadow:0 0 0 0 rgba(147,51,234,0.5);border-color:#9333ea } 50% { box-shadow:0 0 0 8px rgba(147,51,234,0.2);border-color:#c084fc } 100% { box-shadow:0 0 0 0 rgba(147,51,234,0);border-color:transparent } } .physio-highlight { animation:physioHL 1.8s ease-out 2; }";
   document.head.appendChild(_st);
-}
-
-
-// ─── Cloudinary Clinical Image System ─────────────────────────────────────────
-const CLOUDINARY_BASE_SO = "https://res.cloudinary.com/dr15y1pwj/image/upload";
-
-function ImageModal_SO({ src, title, onClose }) {
-  return (
-    <div onClick={onClose}
-      style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:99999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div onClick={e=>e.stopPropagation()} style={{maxWidth:"95vw",maxHeight:"93vh",position:"relative"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{color:"#fff",fontWeight:700,fontSize:"0.88rem"}}>{title}</span>
-          <button onClick={onClose}
-            style={{background:"rgba(255,255,255,0.18)",border:"none",borderRadius:6,color:"#fff",fontWeight:800,cursor:"pointer",padding:"4px 14px",fontSize:"0.75rem",marginLeft:12}}>✕ Close</button>
-        </div>
-        <img src={src} alt={title}
-          style={{maxWidth:"90vw",maxHeight:"84vh",objectFit:"contain",borderRadius:10,display:"block"}}/>
-      </div>
-    </div>
-  );
-}
-
-// ClinicalImageCard — shows Cloudinary image with tap-to-expand, hides silently if not uploaded yet
-function ClinicalImageCard({ id, title, fallbackSvg, C, color }) {
-  const [exists, setExists] = React.useState(true);
-  const [open, setOpen] = React.useState(false);
-  const thumb = `${CLOUDINARY_BASE_SO}/f_auto,q_auto,w_110,h_90,c_fill/${id}`;
-  const full  = `${CLOUDINARY_BASE_SO}/f_auto,q_auto/${id}`;
-  return (
-    <div style={{background:C.s2,borderRadius:8,padding:8,border:`1px solid ${C.border}`,width:124,flexShrink:0,textAlign:"center"}}>
-      {exists ? (
-        <>
-          <img src={thumb} alt={title}
-            onError={()=>setExists(false)}
-            onClick={()=>setOpen(true)}
-            style={{width:108,height:84,objectFit:"cover",borderRadius:6,cursor:"pointer",display:"block",border:"1px solid rgba(124,58,237,0.2)"}}
-          />
-          {open && <ImageModal_SO src={full} title={title} onClose={()=>setOpen(false)}/>}
-          <div style={{fontSize:"0.78rem",color:C.muted,marginTop:3}}>📸 Tap to enlarge</div>
-        </>
-      ) : (
-        <>
-          {fallbackSvg || (
-            <svg viewBox="0 0 120 100" width="108" height="84">
-              <text x="50%" y="40%" textAnchor="middle" fontSize="22" fill={color||"#7c3aed"}>⚕</text>
-              <text x="50%" y="65%" textAnchor="middle" fontSize="9" fill={C?.muted||"#7e6a9a"}>{(title||"").split(" ")[0]}</text>
-            </svg>
-          )}
-          <div style={{fontSize:"0.78rem",color:C.muted,marginTop:3}}>Illustration</div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// SmallClinicalImg — compact inline thumbnail (for tables / rows)
-function SmallClinicalImg({ id, title }) {
-  const [exists, setExists] = React.useState(true);
-  const [open, setOpen] = React.useState(false);
-  if (!exists) return null;
-  const thumb = `${CLOUDINARY_BASE_SO}/f_auto,q_auto,w_48,h_48,c_fill/${id}`;
-  const full  = `${CLOUDINARY_BASE_SO}/f_auto,q_auto/${id}`;
-  return (
-    <>
-      <img src={thumb} alt={title||id}
-        onError={()=>setExists(false)}
-        onClick={e=>{e.stopPropagation();setOpen(true);}}
-        title={`Tap to view: ${title||id}`}
-        style={{width:44,height:44,objectFit:"cover",borderRadius:7,cursor:"pointer",border:"2px solid rgba(124,58,237,0.25)",flexShrink:0,display:"block"}}
-      />
-      {open && <ImageModal_SO src={full} title={title||id} onClose={()=>setOpen(false)}/>}
-    </>
-  );
 }
 
 function SpecialTestsSection({ data, set, navContext={} }) {
@@ -1029,15 +995,9 @@ function SpecialTestsSection({ data, set, navContext={} }) {
   const isPositive = (val) => val && (val.includes("Positive") || val.includes("positive") || val.includes("+ve") || val.includes("Grade") || val.includes("deficit") || val.includes("REFER") || val.includes("rupture") || val.includes("tear") || val.includes("instability") || val.includes("Severe"));
 
   const filteredTests = searchTerm
-    ? Object.entries(SPECIAL_TESTS_DATA).flatMap(([rKey, r]) => {
-        const q = searchTerm.toLowerCase();
-        return r.tests.filter(t =>
-          (t.label||"").toLowerCase().includes(q) ||
-          (t.structure||"").toLowerCase().includes(q) ||
-          (t.positive||"").toLowerCase().includes(q) ||
-          r.label.toLowerCase().includes(q)
-        ).map(t => ({ ...t, regionKey: rKey, regionLabel: r.label, regionColor: r.color }));
-      })
+    ? Object.entries(SPECIAL_TESTS_DATA).flatMap(([rKey, r]) =>
+        r.tests.filter(t => t.label.toLowerCase().includes(searchTerm.toLowerCase()) || t.structure.toLowerCase().includes(searchTerm.toLowerCase())).map(t => ({ ...t, regionKey: rKey, regionLabel: r.label, regionColor: r.color }))
+      )
     : null;
 
   return (
@@ -1055,7 +1015,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
 
       {/* Search */}
       <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-        placeholder="🔍 Search by test name, structure or condition..."
+        placeholder="🔍 Search tests by name or structure..."
         style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"9px 12px", fontSize:"0.82rem", fontFamily:"inherit", outline:"none", marginBottom:12 }} />
 
       {/* Region tabs */}
@@ -1068,8 +1028,8 @@ function SpecialTestsSection({ data, set, navContext={} }) {
               <button key={key} type="button" onClick={() => { setRegion(key); setOpenTest(null); }}
                 style={{ padding:"6px 12px", borderRadius:20, border:`1px solid ${region===key ? r.color : filled>0 ? r.color+"50" : C.border}`, background:region===key ? `${r.color}18` : "transparent", color:region===key ? r.color : C.muted, fontSize:"0.73rem", fontWeight:region===key ? 700 : 500, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
                 {r.icon} {r.label}
-                {positives > 0 && <span style={{ background:C.red, color:"#fff", borderRadius:10, padding:"0 5px", fontSize:"0.8rem", fontWeight:800 }}>⚠{positives}</span>}
-                {filled > 0 && positives === 0 && <span style={{ background:r.color, color:"#000", borderRadius:10, padding:"0 5px", fontSize:"0.8rem", fontWeight:800 }}>{filled}</span>}
+                {positives > 0 && <span style={{ background:C.red, color:"#fff", borderRadius:10, padding:"0 5px", fontSize:"0.6rem", fontWeight:800 }}>⚠{positives}</span>}
+                {filled > 0 && positives === 0 && <span style={{ background:r.color, color:"#000", borderRadius:10, padding:"0 5px", fontSize:"0.6rem", fontWeight:800 }}>{filled}</span>}
               </button>
             );
           })}
@@ -1097,21 +1057,21 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", gap:7, alignItems:"center", marginBottom:3, flexWrap:"wrap" }}>
                     <span style={{ fontSize:"0.75rem", fontWeight:700, color:color }}>{t.label}</span>
-                    {anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(255,77,109,0.2)", color:C.red, fontSize:"0.75rem", fontWeight:700 }}>⚠ POSITIVE</span>}
-                    {anyVal && !anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(0,201,122,0.15)", color:C.green, fontSize:"0.75rem", fontWeight:700 }}>✓ Recorded</span>}
+                    {anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(255,77,109,0.2)", color:C.red, fontSize:"0.65rem", fontWeight:700 }}>⚠ POSITIVE</span>}
+                    {anyVal && !anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(0,201,122,0.15)", color:C.green, fontSize:"0.65rem", fontWeight:700 }}>✓ Recorded</span>}
                   </div>
-                  <div style={{ fontSize:"0.8rem", color:C.muted }}>Structure: {t.structure}</div>
-                  <div style={{ fontSize:"0.78rem", color:C.muted }}>Sens: {t.sensitivity} · Spec: {t.specificity}</div>
+                  <div style={{ fontSize:"0.7rem", color:C.muted }}>Structure: {t.structure}</div>
+                  <div style={{ fontSize:"0.68rem", color:C.muted }}>Sens: {t.sensitivity} · Spec: {t.specificity}</div>
                   {anyVal && (
-                    <div style={{ marginTop:4, fontSize:"0.82rem", color:anyPositive ? C.red : C.green, fontWeight:600 }}>
+                    <div style={{ marginTop:4, fontSize:"0.72rem", color:anyPositive ? C.red : C.green, fontWeight:600 }}>
                       {leftVal && `L: ${leftVal}`}{leftVal && rightVal && " | "}{rightVal && `R: ${rightVal}`}{singleVal && singleVal}
                     </div>
                   )}
                 </div>
                 <div style={{ display:"flex", gap:7, alignItems:"center", flexShrink:0, marginLeft:10 }}>
                   <button type="button" onClick={e => { e.stopPropagation(); setModalTest(t); }}
-                    style={{ padding:"3px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.82rem", fontWeight:700, cursor:"pointer" }}>ℹ</button>
-                  <span style={{ color:C.muted, fontSize:"0.82rem" }}>{isOpen ? "▲" : "▼"}</span>
+                    style={{ padding:"3px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.62rem", fontWeight:700, cursor:"pointer" }}>ℹ</button>
+                  <span style={{ color:C.muted, fontSize:"0.72rem" }}>{isOpen ? "▲" : "▼"}</span>
                 </div>
               </div>
 
@@ -1119,29 +1079,31 @@ function SpecialTestsSection({ data, set, navContext={} }) {
               {isOpen && (
                 <div style={{ padding:"0 14px 14px" }}>
                   <div style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:14, marginBottom:12 }}>
-                    {/* Clinical image — Cloudinary (falls back to SVG if not uploaded) */}
-                    <ClinicalImageCard
-                      id={t.id}
-                      title={t.label}
-                      fallbackSvg={svgEl}
-                      C={C}
-                      color={color}
-                    />
+                    {/* SVG illustration */}
+                    <div style={{ background:C.s2, borderRadius:8, padding:8, border:`1px solid ${C.border}`, width:120, flexShrink:0 }}>
+                      {svgEl || (
+                        <svg viewBox="0 0 120 100" width="120" height="90">
+                          <text x="50%" y="40%" textAnchor="middle" fontSize="22" fill={color}>⚕</text>
+                          <text x="50%" y="65%" textAnchor="middle" fontSize="9" fill={C.muted}>{t.label.split(" ")[0]}</text>
+                        </svg>
+                      )}
+                      <div style={{ fontSize:"0.6rem", color:C.muted, textAlign:"center", marginTop:2 }}>Illustration</div>
+                    </div>
 
                     {/* How to + sensitivity */}
                     <div>
                       <div style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, padding:10, marginBottom:8 }}>
-                        <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>👐 How to Perform</div>
+                        <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>👐 How to Perform</div>
                         <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.7 }}>{t.how}</div>
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                         <div style={{ background:"rgba(0,201,122,0.08)", border:"1px solid rgba(0,201,122,0.25)", borderRadius:7, padding:"6px 9px" }}>
-                          <div style={{ fontSize:"0.8rem", fontWeight:700, color:C.green, marginBottom:2 }}>✓ NEGATIVE means</div>
-                          <div style={{ fontSize:"0.82rem", color:C.text }}>{t.negative}</div>
+                          <div style={{ fontSize:"0.6rem", fontWeight:700, color:C.green, marginBottom:2 }}>✓ NEGATIVE means</div>
+                          <div style={{ fontSize:"0.72rem", color:C.text }}>{t.negative}</div>
                         </div>
                         <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.25)", borderRadius:7, padding:"6px 9px" }}>
-                          <div style={{ fontSize:"0.8rem", fontWeight:700, color:C.red, marginBottom:2 }}>⚠ POSITIVE means</div>
-                          <div style={{ fontSize:"0.82rem", color:C.text }}>{t.positive}</div>
+                          <div style={{ fontSize:"0.6rem", fontWeight:700, color:C.red, marginBottom:2 }}>⚠ POSITIVE means</div>
+                          <div style={{ fontSize:"0.72rem", color:C.text }}>{t.positive}</div>
                         </div>
                       </div>
                     </div>
@@ -1149,7 +1111,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
 
                   {/* Result selection — bilateral where needed */}
                   <div>
-                    <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📊 Record Result</div>
+                    <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📊 Record Result</div>
                     {["cervical","shoulder","elbow_wrist","neural","ankle_foot","knee","hip"].includes(region) || t.id.includes("_l_") || t.id.includes("ultt") || t.id.includes("spurling") || t.id.includes("neer") || t.id.includes("hawkins") || t.id.includes("empty_can") || t.id.includes("full_can") || t.id.includes("lift_off") || t.id.includes("belly") || t.id.includes("bear") || t.id.includes("er_lag") || t.id.includes("hornblower") || t.id.includes("obrien") || t.id.includes("speeds") || t.id.includes("yergason") || t.id.includes("apprehension") || t.id.includes("relocation") || t.id.includes("sulcus") || t.id.includes("cozens") || t.id.includes("mills") || t.id.includes("golfers") || t.id.includes("phalen") || t.id.includes("tinel") || t.id.includes("finkelstein") || t.id.includes("watson") || t.id.includes("grind") || t.id.includes("valgus_stress") || t.id.includes("fadir") || t.id.includes("faber_test") || t.id.includes("hip_scour") || t.id.includes("trendelenburg_test") || t.id.includes("thomas_test") || t.id.includes("ober_test") || t.id.includes("piriformis") || t.id.includes("lachmans") || t.id.includes("anterior_drawer") || t.id.includes("posterior_drawer") || t.id.includes("pivot") || t.id.includes("mcmurray_test") || t.id.includes("apley") || t.id.includes("thessaly") || t.id.includes("clarkes") || t.id.includes("patellar") || t.id.includes("noble") || t.id.includes("ant_drawer_ankle") || t.id.includes("talar_tilt") || t.id.includes("thompson_test") || t.id.includes("windlass") || t.id.includes("navicular") || t.id.includes("tinel_ankle") || t.id.includes("royal_london") || t.id.includes("ultt") || t.id.includes("femoral") || t.id.includes("single_leg") ? (
                       // Bilateral
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
@@ -1158,7 +1120,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                           const sidePos = isPositive(sideVal);
                           return (
                             <div key={side}>
-                              <div style={{ fontSize:"0.75rem", fontWeight:700, color:sidePos ? C.red : C.muted, marginBottom:4 }}>{side.toUpperCase()} {sidePos && "⚠"}</div>
+                              <div style={{ fontSize:"0.65rem", fontWeight:700, color:sidePos ? C.red : C.muted, marginBottom:4 }}>{side.toUpperCase()} {sidePos && "⚠"}</div>
                               <select value={sideVal} onChange={e => setTestResult(t.id, side, e.target.value)}
                                 style={{ width:"100%", background:C.s3, border:`1px solid ${sidePos ? C.red : C.border}`, borderRadius:7, color:C.text, padding:"7px 9px", fontSize:"0.76rem", outline:"none", fontFamily:"inherit" }}>
                                 <option value="">— not tested —</option>
@@ -1191,8 +1153,8 @@ function SpecialTestsSection({ data, set, navContext={} }) {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
               <div>
                 <div style={{ fontWeight:800, color:C.accent, fontSize:"1.05rem" }}>{modalTest.label}</div>
-                <div style={{ fontSize:"0.82rem", color:C.muted, marginTop:3 }}>Structure: {modalTest.structure}</div>
-                <div style={{ fontSize:"0.8rem", color:C.muted }}>Sensitivity: {modalTest.sensitivity} · Specificity: {modalTest.specificity}</div>
+                <div style={{ fontSize:"0.72rem", color:C.muted, marginTop:3 }}>Structure: {modalTest.structure}</div>
+                <div style={{ fontSize:"0.7rem", color:C.muted }}>Sensitivity: {modalTest.sensitivity} · Specificity: {modalTest.specificity}</div>
               </div>
               <button onClick={() => setModalTest(null)} style={{ background:"none", border:`1px solid ${C.border}`, color:C.muted, borderRadius:6, padding:"3px 9px", cursor:"pointer" }}>✕</button>
             </div>
@@ -1211,23 +1173,23 @@ function SpecialTestsSection({ data, set, navContext={} }) {
             </div>
 
             <div style={{ marginBottom:12 }}>
-              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
+              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
               <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8 }}>{modalTest.how}</div>
             </div>
 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
               <div style={{ background:"rgba(0,201,122,0.08)", border:"1px solid rgba(0,201,122,0.25)", borderRadius:8, padding:10 }}>
-                <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.green, textTransform:"uppercase", marginBottom:5 }}>✓ Negative</div>
+                <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.green, textTransform:"uppercase", marginBottom:5 }}>✓ Negative</div>
                 <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.negative}</div>
               </div>
               <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.25)", borderRadius:8, padding:10 }}>
-                <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.red, textTransform:"uppercase", marginBottom:5 }}>⚠ Positive</div>
+                <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.red, textTransform:"uppercase", marginBottom:5 }}>⚠ Positive</div>
                 <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.positive}</div>
               </div>
             </div>
 
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Result Options</div>
+              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Result Options</div>
               {modalTest.options.map((o, i) => (
                 <div key={i} style={{ padding:"6px 10px", borderRadius:7, marginBottom:5, background:C.s2, border:`1px solid ${C.border}`, fontSize:"0.78rem", color:isPositive(o) ? C.red : C.text }}>
                   {isPositive(o) ? "⚠ " : "○ "}{o}
@@ -1720,9 +1682,9 @@ function CyriaxModule({ data, set, navContext={} }) {
   const v = (id) => data[prefix + id] || "";
   const sv = (id, val) => set(prefix + id, val);
 
-  const selectStyle = { width:"100%", background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:8, color:"#1a1025", padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit", WebkitAppearance:"none", appearance:"none" };
-  const labelStyle = { fontSize:"0.82rem", fontWeight:700, color:"#7e6a9a", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.5px" };
-  const boxStyle = { background:"#ffffff", border:"1px solid #d8cce8", borderRadius:10, padding:13, marginBottom:10 };
+  const selectStyle = { width:"100%", background:"#192435", border:`1px solid #1a2d45`, borderRadius:8, color:"#1a1025", padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit" };
+  const labelStyle = { fontSize:"0.72rem", fontWeight:700, color:"#7e6a9a", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.5px" };
+  const boxStyle = { background:"#ffffff", border:`1px solid #1a2d45`, borderRadius:10, padding:13, marginBottom:10 };
   const RESULT_OPTIONS = ["","Strong & Painless","Strong & Painful","Weak & Painless","Weak & Painful"];
   const PAIN_OPTIONS = ["","No pain","Pain on initiation","Pain at mid-range","Pain at end range","Painful arc","Pain throughout range","Referred pain with movement"];
   const LIMITED_OPTIONS = ["","Full range","Mildly limited","Moderately limited","Severely limited","Cannot perform"];
@@ -1737,44 +1699,11 @@ function CyriaxModule({ data, set, navContext={} }) {
 
   const tabStyle = (t) => ({ padding:"8px 16px", cursor:"pointer", fontSize:"0.8rem", fontWeight:tab===t?700:500, color:tab===t?C.accent:C.muted, background:"none", border:"none", borderBottom:`2px solid ${tab===t?C.accent:"transparent"}` });
 
-  const [cyriaxHelpOpen, setCyriaxHelpOpen] = React.useState(() => !localStorage.getItem("pm_stt_seen"));
   return (
     <div>
-      {/* ── STT Framework Explainer ── */}
-      <div style={{border:`1px solid #7c3aed44`,borderRadius:12,overflow:"hidden",marginBottom:14}}>
-        <div onClick={()=>{setCyriaxHelpOpen(o=>!o); localStorage.setItem("pm_stt_seen","1");}}
-          style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",cursor:"pointer",background:"#7c3aed0a"}}>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:"1rem"}}>📚</span>
-            <span style={{fontWeight:700,fontSize:"0.85rem",color:"#7c3aed"}}>What is STT Assessment?</span>
-            <span style={{fontSize:"0.75rem",color:"#7c3aed88",fontStyle:"italic"}}>Tap to {cyriaxHelpOpen?"hide":"show"} guide</span>
-          </div>
-          <span style={{fontSize:"0.75rem",color:"#7c3aed"}}>{cyriaxHelpOpen?"▲":"▼"}</span>
-        </div>
-        {cyriaxHelpOpen && (
-          <div style={{padding:"14px 16px",borderTop:"1px solid #7c3aed22",background:"#faf8ff",fontSize:"0.82rem",color:"#3b2a6a",lineHeight:1.7}}>
-            <p style={{margin:"0 0 10px"}}><strong>Selective Tissue Tension (STT)</strong> is a systematic orthopaedic assessment approach that identifies the source of musculoskeletal pain by classifying structures as <strong>contractile</strong> (muscle, tendon, enthesis) or <strong>inert</strong> (joint capsule, ligament, bursa, nerve, cartilage). Systematic loading of each tissue type isolates the structure at fault.</p>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-              <div style={{background:"#7c3aed0d",borderRadius:8,padding:10}}>
-                <div style={{fontWeight:700,marginBottom:4,color:"#7c3aed"}}>📋 STT Assessment order</div>
-                <div>1. <strong>Active ROM</strong> — patient moves (both structures + neuromuscular)<br/>2. <strong>Passive ROM</strong> — examiner moves (inert structures only)<br/>3. <strong>Resisted tests</strong> — isometric (contractile structures only)</div>
-              </div>
-              <div style={{background:"#059669 0d",borderRadius:8,padding:10}}>
-                <div style={{fontWeight:700,marginBottom:4,color:"#059669"}}>🔍 Interpreting findings</div>
-                <div><strong>Strong &amp; Painless</strong> = normal contractile<br/><strong>Strong &amp; Painful</strong> = minor lesion (tendinopathy)<br/><strong>Weak &amp; Painful</strong> = serious lesion / fracture<br/><strong>Weak &amp; Painless</strong> = neurological / rupture</div>
-              </div>
-            </div>
-            <div style={{background:"#b4530910",borderRadius:8,padding:10,border:"1px solid #b4530925"}}>
-              <strong style={{color:"#b45309"}}>⚠ Capsular vs Non-capsular pattern</strong><br/>
-              Capsular pattern = proportional restriction across a joint (e.g. shoulder: ER &gt; Abd &gt; IR). Suggests arthritis, adhesive capsulitis. Non-capsular = selective restriction, suggests ligament, bursitis, or internal derangement.
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Region selector */}
       <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:12, padding:14, marginBottom:14 }}>
-        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ STT Assessment — Region-Specific</div>
+        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ Cyriax STTT — Region-Specific Assessment</div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
           {Object.entries(CYRIAX_REGIONS_DATA).map(([key, r]) => {
             const hasData = Object.keys(data).some(k => k.startsWith(`cyriax_${key}_`) && data[k]);
@@ -1790,7 +1719,7 @@ function CyriaxModule({ data, set, navContext={} }) {
 
       {/* Anatomy banner */}
       <div style={{ ...boxStyle, borderColor:reg.color+"30" }}>
-        <div style={{ fontSize:"0.75rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>📚 Regional Anatomy</div>
+        <div style={{ fontSize:"0.65rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>📚 Regional Anatomy</div>
         <div style={{ fontSize:"0.76rem", color:C.muted, lineHeight:1.7 }}>{reg.anatomy}</div>
         <div style={{ marginTop:8, padding:"6px 10px", background:`${reg.color}10`, borderRadius:7, fontSize:"0.74rem", color:C.text }}>
           <strong style={{ color:reg.color }}>Capsular Pattern: </strong>{reg.capsularPattern}
@@ -1808,7 +1737,7 @@ function CyriaxModule({ data, set, navContext={} }) {
       {tab === "active" && (
         <div>
           <div style={{ ...boxStyle, borderColor:"rgba(0,229,255,0.2)" }}>
-            <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Active Range of Motion — All Directions</div>
+            <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Active Range of Motion — All Directions</div>
 
             {/* Painful arc */}
             <div style={{ marginBottom:12 }}>
@@ -1821,10 +1750,9 @@ function CyriaxModule({ data, set, navContext={} }) {
 
             {reg.activeROM.map(t => (
               <div key={t.id} data-cy-id={t.id} style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:9, padding:12, marginBottom:9 }}>
-                <div style={{ fontWeight:700, color:C.text, marginBottom:6, fontSize:"0.82rem" }}>{t.label} <span style={{ color:C.muted, fontWeight:400, fontSize:"0.82rem" }}>Normal: {t.normal}</span></div>
-                <div style={{ background:C.s3, borderRadius:7, padding:9, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6, display:"flex", gap:10, alignItems:"flex-start" }}>
-                  <SmallClinicalImg id={t.id} title={t.label} />
-                  <div style={{flex:1}}><strong style={{ color:C.yellow }}>How: </strong>{t.how}</div>
+                <div style={{ fontWeight:700, color:C.text, marginBottom:6, fontSize:"0.82rem" }}>{t.label} <span style={{ color:C.muted, fontWeight:400, fontSize:"0.72rem" }}>Normal: {t.normal}</span></div>
+                <div style={{ background:C.s3, borderRadius:7, padding:9, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6 }}>
+                  <strong style={{ color:C.yellow }}>How: </strong>{t.how}
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:7 }}>
                   <div>
@@ -1853,7 +1781,7 @@ function CyriaxModule({ data, set, navContext={} }) {
 
             {/* Active vs Passive comparison */}
             <div style={{ marginTop:10 }}>
-              <div style={labelStyle}>Active vs Passive Comparison (STTT Key Rule)</div>
+              <div style={labelStyle}>Active vs Passive Comparison (Cyriax Key Rule)</div>
               <select value={v("act_pass_comparison")} onChange={e=>sv("act_pass_comparison",e.target.value)} style={selectStyle}>
                 <option value="">— select —</option>
                 {["Passive ROM greater than active — inert or contractile lesion (both possible)","Passive ROM same as active — capsular/inert lesion (contractile not involved)","Passive ROM less than active — muscular/contractile over-activity","Active more restricted than passive — contractile inhibition or pain avoidance","Both equally restricted — capsular pattern"].map(o=><option key={o} value={o}>{o}</option>)}
@@ -1867,7 +1795,7 @@ function CyriaxModule({ data, set, navContext={} }) {
       {tab === "passive" && (
         <div>
           <div style={{ ...boxStyle, borderColor:"rgba(127,90,240,0.3)" }}>
-            <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a2, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Passive ROM — Inert Tissue Testing</div>
+            <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a2, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Passive ROM — Inert Tissue Testing</div>
 
             {/* Capsular pattern */}
             <div style={{ background:"rgba(127,90,240,0.08)", border:`1px solid ${C.a2}40`, borderRadius:9, padding:12, marginBottom:12 }}>
@@ -1880,7 +1808,7 @@ function CyriaxModule({ data, set, navContext={} }) {
                 <option value="Partial capsular — not all directions limited">Partial capsular pattern — not all directions</option>
               </select>
               {CAPSULAR_PATTERNS[region] && (
-                <div style={{ marginTop:8, padding:"6px 9px", background:C.s3, borderRadius:6, fontSize:"0.82rem", color:C.text }}>
+                <div style={{ marginTop:8, padding:"6px 9px", background:C.s3, borderRadius:6, fontSize:"0.72rem", color:C.text }}>
                   <strong style={{ color:C.a2 }}>Expected pattern: </strong>{CAPSULAR_PATTERNS[region].pattern}
                   <br/><strong style={{ color:C.a2 }}>Suggests: </strong>{CAPSULAR_PATTERNS[region].dx}
                 </div>
@@ -1913,7 +1841,7 @@ function CyriaxModule({ data, set, navContext={} }) {
                     {(t.endfeel_options||Object.keys(ENDFEEL_DATA)).map(o=><option key={o} value={o}>{o}</option>)}
                   </select>
                   {v(`pass_ef_${t.id}`) && ENDFEEL_DATA[v(`pass_ef_${t.id}`)] && (
-                    <div style={{ marginTop:6, padding:"6px 9px", background:C.s3, borderRadius:6, fontSize:"0.82rem", color:C.text, lineHeight:1.5 }}>
+                    <div style={{ marginTop:6, padding:"6px 9px", background:C.s3, borderRadius:6, fontSize:"0.72rem", color:C.text, lineHeight:1.5 }}>
                       <strong style={{ color:ENDFEEL_DATA[v(`pass_ef_${t.id}`)].color }}>Clinical significance: </strong>
                       {ENDFEEL_DATA[v(`pass_ef_${t.id}`)].abnormal}
                       <br/><strong style={{ color:C.a3 }}>Treatment: </strong>{ENDFEEL_DATA[v(`pass_ef_${t.id}`)].tx}
@@ -1931,7 +1859,7 @@ function CyriaxModule({ data, set, navContext={} }) {
 
             {/* Active vs Passive summary */}
             <div style={{ background:"rgba(0,229,255,0.06)", border:`1px solid ${C.accent}25`, borderRadius:9, padding:12 }}>
-              <div style={labelStyle}>STTT A vs P Summary</div>
+              <div style={labelStyle}>Cyriax A vs P Summary</div>
               <div style={{ fontSize:"0.74rem", color:C.muted, marginBottom:6 }}>Key rule: if passive ROM is GREATER than active, the contractile unit is restricting (not the joint). If passive = active, joint/inert structure.</div>
               <textarea value={v("passive_summary")} onChange={e=>sv("passive_summary",e.target.value)}
                 placeholder="Summarise passive findings and active vs passive comparison..."
@@ -1949,13 +1877,13 @@ function CyriaxModule({ data, set, navContext={} }) {
             {Object.entries(CYRIAX_STTT_INTERPRETATION).map(([key, val]) => (
               <div key={key} style={{ background:`${val.color}10`, border:`1px solid ${val.color}40`, borderRadius:9, padding:"8px 11px" }}>
                 <div style={{ fontWeight:700, color:val.color, fontSize:"0.74rem", marginBottom:3 }}>{val.icon} {key}</div>
-                <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.5 }}>{val.tissue}</div>
+                <div style={{ fontSize:"0.68rem", color:C.text, lineHeight:1.5 }}>{val.tissue}</div>
               </div>
             ))}
           </div>
 
           <div style={boxStyle}>
-            <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a4, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Selective Tissue Tension — Resisted Isometric Tests</div>
+            <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a4, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Selective Tissue Tension — Resisted Isometric Tests</div>
 
             {reg.resistedTests.map(t => {
               const res = v(`res_${t.id}`);
@@ -1963,7 +1891,7 @@ function CyriaxModule({ data, set, navContext={} }) {
               return (
                 <div key={t.id} style={{ background:res?`${resColor(res)}10`:C.s2, border:`1px solid ${res?resColor(res)+"50":C.border}`, borderRadius:9, padding:12, marginBottom:9 }}>
                   <div style={{ fontWeight:700, color:C.text, marginBottom:3, fontSize:"0.82rem" }}>{t.label}</div>
-                  <div style={{ fontSize:"0.8rem", color:C.muted, marginBottom:6 }}>🎯 Muscle tested: {t.muscle}</div>
+                  <div style={{ fontSize:"0.7rem", color:C.muted, marginBottom:6 }}>🎯 Muscle tested: {t.muscle}</div>
                   <div style={{ background:C.s3, borderRadius:7, padding:8, marginBottom:8, fontSize:"0.74rem", color:C.muted, lineHeight:1.6 }}>
                     <strong style={{ color:C.yellow }}>How: </strong>{t.how}
                   </div>
@@ -1973,8 +1901,8 @@ function CyriaxModule({ data, set, navContext={} }) {
                   {interp && (
                     <div style={{ marginTop:8, padding:"8px 10px", background:`${interp.color}12`, border:`1px solid ${interp.color}40`, borderRadius:7 }}>
                       <div style={{ fontWeight:700, color:interp.color, fontSize:"0.74rem", marginBottom:3 }}>{interp.icon} {interp.tissue}</div>
-                      <div style={{ fontSize:"0.82rem", color:C.text, lineHeight:1.6, marginBottom:4 }}>{interp.meaning}</div>
-                      <div style={{ fontSize:"0.8rem", color:C.a3 }}><strong>Next step: </strong>{interp.nextStep}</div>
+                      <div style={{ fontSize:"0.72rem", color:C.text, lineHeight:1.6, marginBottom:4 }}>{interp.meaning}</div>
+                      <div style={{ fontSize:"0.7rem", color:C.a3 }}><strong>Next step: </strong>{interp.nextStep}</div>
                     </div>
                   )}
                   <div style={{ marginTop:6 }}>
@@ -1991,7 +1919,7 @@ function CyriaxModule({ data, set, navContext={} }) {
       {tab === "joint_play" && (
         <div>
           <div style={boxStyle}>
-            <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Joint Play / Accessory Motion Assessment</div>
+            <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:12 }}>Joint Play / Accessory Motion Assessment</div>
             <div style={{ background:"rgba(0,201,122,0.06)", border:`1px solid ${C.a3}30`, borderRadius:8, padding:10, marginBottom:12, fontSize:"0.76rem", color:C.text, lineHeight:1.7 }}>
               Joint play tests assess the ACCESSORY MOVEMENTS that accompany physiological motion. Restriction in joint play → restriction in full ROM. Grade using Maitland (I–IV) or Kaltenborn (0–6). Hypomobile = mobilise. Hypermobile = stabilise.
             </div>
@@ -2026,7 +1954,7 @@ function CyriaxModule({ data, set, navContext={} }) {
             {/* Palpation section */}
             <div style={{ ...boxStyle, borderColor:`${reg.color}30` }}>
               <div style={{ fontWeight:700, color:reg.color, marginBottom:8, fontSize:"0.82rem" }}>Palpation — Exact Lesion Localisation</div>
-              <div style={{ fontSize:"0.74rem", color:C.muted, marginBottom:8, lineHeight:1.6 }}>After STTT identifies the tissue type, palpate to find the EXACT site of lesion. This is where DTFM is applied. STTT rule: all treatment must reach the lesion.</div>
+              <div style={{ fontSize:"0.74rem", color:C.muted, marginBottom:8, lineHeight:1.6 }}>After STTT identifies the tissue type, palpate to find the EXACT site of lesion. This is where DTFM is applied. Cyriax rule: all treatment must reach the lesion.</div>
               <div style={{ marginBottom:7 }}>
                 <div style={labelStyle}>Lesion Site (palpation)</div>
                 <input type="text" value={v("palpation_site")} onChange={e=>sv("palpation_site",e.target.value)} placeholder="e.g. Infraspinatus tendon, 2cm proximal to insertion at greater tuberosity" style={selectStyle}/>
@@ -2055,7 +1983,7 @@ function CyriaxModule({ data, set, navContext={} }) {
         <div>
           <button type="button" onClick={runReasoning}
             style={{ width:"100%", padding:"12px", background:`linear-gradient(135deg,${C.accent},${C.a2})`, border:"none", borderRadius:10, color:"#000", fontWeight:800, fontSize:"0.88rem", cursor:"pointer", marginBottom:16 }}>
-            🧠 Generate STTT Clinical Reasoning
+            🧠 Generate Cyriax Clinical Reasoning
           </button>
 
           {reasoning ? (
@@ -2087,8 +2015,8 @@ function CyriaxModule({ data, set, navContext={} }) {
                   {reasoning.diagnoses.map((d,i)=>(
                     <div key={i} style={{ background:C.s3, borderRadius:8, padding:10, marginBottom:7, borderLeft:`3px solid ${i===0?C.accent:i===1?C.a2:C.a3}` }}>
                       <div style={{ fontWeight:700, color:C.text, marginBottom:3 }}>{i+1}. {d.name}</div>
-                      <div style={{ fontSize:"0.8rem", color:C.muted, marginBottom:3 }}>{d.detail}</div>
-                      <span style={{ fontSize:"0.75rem", padding:"1px 7px", borderRadius:8, background:d.confidence==="High"?"rgba(0,201,122,0.15)":"rgba(255,179,0,0.15)", color:d.confidence==="High"?C.green:C.yellow }}>{d.confidence} Confidence</span>
+                      <div style={{ fontSize:"0.7rem", color:C.muted, marginBottom:3 }}>{d.detail}</div>
+                      <span style={{ fontSize:"0.65rem", padding:"1px 7px", borderRadius:8, background:d.confidence==="High"?"rgba(0,201,122,0.15)":"rgba(255,179,0,0.15)", color:d.confidence==="High"?C.green:C.yellow }}>{d.confidence} Confidence</span>
                     </div>
                   ))}
                 </div>
@@ -2098,7 +2026,7 @@ function CyriaxModule({ data, set, navContext={} }) {
               <div style={{ ...boxStyle }}>
                 <div style={labelStyle}>Differential Diagnoses</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                  {reasoning.differentials.map((d,i)=><span key={i} style={{ padding:"3px 9px", borderRadius:10, fontSize:"0.82rem", background:C.s3, color:C.muted, border:`1px solid ${C.border}` }}>{d}</span>)}
+                  {reasoning.differentials.map((d,i)=><span key={i} style={{ padding:"3px 9px", borderRadius:10, fontSize:"0.72rem", background:C.s3, color:C.muted, border:`1px solid ${C.border}` }}>{d}</span>)}
                 </div>
               </div>
 
@@ -2119,7 +2047,7 @@ function CyriaxModule({ data, set, navContext={} }) {
               <div style={{ ...boxStyle }}>
                 <div style={labelStyle}>Suggested Next Assessments</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                  {reasoning.nextTests.map((t,i)=><span key={i} style={{ padding:"3px 9px", borderRadius:10, fontSize:"0.82rem", background:"rgba(0,229,255,0.1)", color:C.accent, border:`1px solid ${C.accent}30` }}>→ {t}</span>)}
+                  {reasoning.nextTests.map((t,i)=><span key={i} style={{ padding:"3px 9px", borderRadius:10, fontSize:"0.72rem", background:"rgba(0,229,255,0.1)", color:C.accent, border:`1px solid ${C.accent}30` }}>→ {t}</span>)}
                 </div>
               </div>
 
@@ -2135,7 +2063,7 @@ function CyriaxModule({ data, set, navContext={} }) {
             <div style={{ textAlign:"center", padding:30, color:C.muted, background:C.s2, borderRadius:12, border:`1px solid ${C.border}` }}>
               <div style={{ fontSize:"2rem", marginBottom:8 }}>⚕</div>
               <div style={{ fontWeight:700, color:C.text, marginBottom:4 }}>Complete Active, Passive, and Resisted tabs</div>
-              <div style={{ fontSize:"0.8rem" }}>Then click Generate to receive STTT clinical reasoning, tissue diagnosis, and treatment direction.</div>
+              <div style={{ fontSize:"0.8rem" }}>Then click Generate to receive Cyriax clinical reasoning, tissue diagnosis, and treatment direction.</div>
             </div>
           )}
         </div>
@@ -2791,12 +2719,12 @@ const needsBPS_S=(d)=>
   /Off work/.test(d.dem_work_status||"");
 
 const needsSleep_S=(d,regions)=>{
-  const poorSleep=/poor|very poor/.test((Array.isArray(d.ls_sleep_quality)?d.ls_sleep_quality.join(', '):(d.ls_sleep_quality||"")).toLowerCase());
+  const poorSleep=/poor|very poor/.test((d.ls_sleep_quality||"").toLowerCase());
   const nightPain=regions.some(r=>{
     const px=REG_MOD_S[r]?.prefix;
     if(!px) return false;
-    const n=(Array.isArray(d[`${px}_night`])?d[`${px}_night`].join(", "):(d[`${px}_night`]||"")).toLowerCase();
-    const p=(Array.isArray(d[`${px}_pattern`])?d[`${px}_pattern`].join(", "):(d[`${px}_pattern`]||"")).toLowerCase();
+    const n=(d[`${px}_night`]||"").toLowerCase();
+    const p=(d[`${px}_pattern`]||"").toLowerCase();
     return /wakes|cannot sleep|night pain|constant night/.test(n)||/night dominant/.test(p);
   });
   return poorSleep||nightPain;
@@ -2814,7 +2742,7 @@ const needsSport_S=(d,regions)=>{
 // ══════════════════════════════════════════════════════════════════════
 
 const needsHypermobility_S=(d)=>{
-  const hm=String(Array.isArray(d.hm_screen)?d.hm_screen.join(", "):(d.hm_screen||"")).toLowerCase();
+  const hm=String(d.hm_screen||"").toLowerCase();
   return /multiple joint|beighton|loose.*since childhood|recurrent disloc/.test(hm);
 };
 // ══════════════════════════════════════════════════════════════════════
@@ -3002,12 +2930,12 @@ function NavActionBtn({ btn, onNav, PC }) {
           style={{ padding:"7px 8px", background:`${btn.col}08`,
             border:`1px solid ${btn.col}20`, borderLeft:"none",
             borderRadius:"0 7px 7px 0", color:PC.muted, cursor:"pointer",
-            fontSize:"0.78rem", fontWeight:800 }}>
+            fontSize:"0.58rem", fontWeight:800 }}>
           ?
         </button>
       </div>
       {showWhy && (
-        <div style={{ fontSize:"0.82rem", color:PC.muted, padding:"5px 8px",
+        <div style={{ fontSize:"0.62rem", color:PC.muted, padding:"5px 8px",
           background:PC.s3, borderRadius:"0 0 6px 6px",
           border:`1px solid ${btn.col}20`, borderTop:"none", lineHeight:1.5 }}>
           {btn.why}
@@ -3030,9 +2958,9 @@ const REGION_NAV = {
     { label:"Slump / ULTT",       icon:"🔬", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },                            col:"#0891b2", why:"Slump test — neural tension screen. ULTT 1-4 differentiates median, radial, ulnar nerve involvement." },
     { label:"Neurological Screen",icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"] }, col:"#dc2626", why:"C5-T1 dermatomes, myotomes, biceps/brachio/triceps reflexes. Localise nerve root level." },
     { label:"Posture Analysis",   icon:"🧍", nav:"posture", ctx:{ region:"Cervical" },                                                                col:"#059669", why:"CVA, forward head, thoracic kyphosis — all increase cervical loading. Assess before treating." },
-    { label:"CPA Assessment",     icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition → SCM/scalene dominance → FHP maintained. CPA identifies the exact inhibitor." },
+    { label:"NKT Assessment",     icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition → SCM/scalene dominance → FHP maintained. NKT identifies the exact inhibitor." },
     { label:"Kinetic Chain",      icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_cervical_thoracic_jct"] }, col:"#7c3aed", why:"Thoracic kyphosis is the primary driver of cervical loading. Address thoracic before cervical." },
-    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_a_rotl","cx_a_rotr","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Selective tissue tension — differentiate contractile vs non-contractile cervical pain source." },
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_a_rotl","cx_a_rotr","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Selective tissue tension — differentiate contractile vs non-contractile cervical pain source." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Cervical fascial lines — skin rolling and passive tension identify SBL and thoracolumbar restriction." },
   ],
   "Lumbar / SI": [
@@ -3043,10 +2971,10 @@ const REGION_NAV = {
     { label:"Slump Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },                           col:"#0891b2", why:"Slump — more sensitive than SLR for disc herniation. Reproduces radicular symptoms in flexed posture." },
     { label:"Kemp's Test",         icon:"🔬", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_kemp" },                                 col:"#0891b2", why:"Kemp's — facet loading test. Positive = ipsilateral facet referral or foraminal stenosis." },
     { label:"Neurological Screen", icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_l4","n_l5","n_s1","n_s2","nt_slr","nt_slump_test"] }, col:"#dc2626", why:"L1-S2 dermatomes, myotomes, patella/achilles reflexes. Localise disc level. Rule out cauda equina." },
-    { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fsRegion:"lumbar" }, col:"#059669", why:"Forward bend — observe hip hinge vs lumbar flexion. Squat — global lower chain. Single-leg — SIJ control." },
+    { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fmaTests:["squat","bend","single_leg"], fmaHighlights:["squat","bend","single_leg"] }, col:"#059669", why:"Forward bend — observe hip hinge vs lumbar flexion. Squat — global lower chain. Single-leg — SIJ control." },
   ],
   "Shoulder (L)": [
-    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Lumbar STTT — disc vs facet differentiation via contractile/non-contractile tissue tension testing." },
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Lumbar Cyriax — disc vs facet differentiation via contractile/non-contractile tissue tension testing." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring","fa_tlf"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia is the primary fascial structure linking lumbar extensors to contralateral shoulder." },
     { label:"Shoulder ROM",         icon:"📐", nav:"rom",    ctx:{ romRegion:"Shoulder", romHighlights:["rom_sabd","rom_ser","rom_sflex","rom_sir","rom_sext","rom_sadd"] }, col:"#9333ea", why:"Painful arc 60-120° = subacromial. Full loss = capsular. Immediate clinical differentiator." },
 
@@ -3054,11 +2982,11 @@ const REGION_NAV = {
 
     { label:"Hawkins-Kennedy",     icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_hawkins" },                            col:"#0891b2", why:"79% sensitivity for subacromial impingement. Most sensitive impingement test. Run first for overhead pain." },
     { label:"Empty Can Test",      icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_empty_can" },                          col:"#0891b2", why:"Supraspinatus integrity — 69% sensitivity. Combine with full can for RC tear screening." },
-    { label:"CPA Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Upper trap/pec minor overactive → lower trap/serratus inhibited. Primary impingement motor pattern." },
-    { label:"Functional Screen",    icon:"🏃", nav:"fma",     ctx:{ fsRegion:"shoulder" }, col:"#059669", why:"Push-up plus — best functional screen for serratus anterior. Scapular winging visible immediately." },
+    { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Upper trap/pec minor overactive → lower trap/serratus inhibited. Primary impingement motor pattern." },
+    { label:"Push-Up Plus FMA",    icon:"🏃", nav:"fma",     ctx:{ fmaTests:["pushup_plus","overhead","upper_reach"], fmaHighlights:["pushup_plus","overhead","upper_reach"] }, col:"#059669", why:"Push-up plus — best functional screen for serratus anterior. Scapular winging visible immediately." },
   ],
   "Shoulder (R)": [
-    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
     { label:"Shoulder ROM",         icon:"📐", nav:"rom",    ctx:{ romRegion:"Shoulder", romHighlights:["rom_sabd","rom_ser","rom_sflex","rom_sir","rom_sext","rom_sadd"] }, col:"#9333ea", why:"Painful arc 60-120° = subacromial. Full loss = capsular. Primary ROM differentiator." },
 
@@ -3066,18 +2994,18 @@ const REGION_NAV = {
     { label:"Serratus Anterior",   icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlight:"mmt_serratus" },                      col:"#7c3aed", why:"Serratus anterior — scapular winging indicates inhibition. Run wall push-up plus." },
     { label:"Hawkins-Kennedy",     icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_hawkins" },                            col:"#0891b2", why:"79% sensitivity for subacromial impingement. Most useful first impingement test." },
     { label:"Empty Can Test",      icon:"🔬", nav:"special", ctx:{ specialRegion:"shoulder", highlightTest:"st_empty_can" },                          col:"#0891b2", why:"Supraspinatus integrity test. Combine with full can for RC tear probability." },
-    { label:"CPA Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Identify pec minor / upper trap inhibiting lower trap / serratus — the impingement motor pattern." },
-    { label:"Functional Screen",    icon:"🏃", nav:"fma",     ctx:{ fsRegion:"shoulder" }, col:"#059669", why:"Push-up plus screens serratus anterior function dynamically." },
+    { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_upper_trap","nkt_pec_minor","nkt_lower_trap","nkt_serratus","nkt_infraspinatus"] }, col:"#d97706", why:"Identify pec minor / upper trap inhibiting lower trap / serratus — the impingement motor pattern." },
+    { label:"Push-Up Plus FMA",    icon:"🏃", nav:"fma",     ctx:{ fmaTests:["pushup_plus","overhead","upper_reach"], fmaHighlights:["pushup_plus","overhead","upper_reach"] }, col:"#059669", why:"Push-up plus screens serratus anterior function dynamically." },
   ],
   "Knee (L)": [
     { label:"Knee ROM",             icon:"📐", nav:"rom",    ctx:{ romRegion:"Knee", romHighlights:["rom_kflex","rom_kext"] },                          col:"#9333ea", why:"Knee flexion loss indicates joint effusion, posterior capsule tightness, or meniscal block. Measure first." },
-    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
     { label:"Knee MMT",             icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Knee", mmtHighlights:["mmt_quad","mmt_gastroc","mmt_poplit"] },           col:"#7c3aed", why:"VMO inhibition is the primary driver of PFJ maltracking. Single most important knee MMT." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmed","mmt_gmax","mmt_tfl","mmt_adduc","mmt_gmin"] }, col:"#7c3aed", why:"Glute med weakness drives dynamic knee valgus — assess proximal before isolating the knee." },
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Best ACL test at 20-30° flexion. Run before pivot shift." },
     { label:"McMurray Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_mcmurray_test" },                          col:"#0891b2", why:"McMurray — meniscal integrity. Medial: valgus + ER. Lateral: varus + IR. Listen for click." },
-    { label:"Step-Down Test",      icon:"🏃", nav:"fma",     ctx:{ fsRegion:"knee" }, col:"#059669", why:"Step-down — highest sensitivity test for PFJ and glute med weakness. Observe dynamic valgus." },
+    { label:"Step-Down Test",      icon:"🏃", nav:"fma",     ctx:{ fmaTests:["step_down","squat","single_leg"], fmaHighlights:["step_down","squat","single_leg"] }, col:"#059669", why:"Step-down — highest sensitivity test for PFJ and glute med weakness. Observe dynamic valgus." },
     { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF restriction and hip abductor weakness both drive knee valgus. Assess chain first." },
   ],
   "Knee (R)": [
@@ -3087,7 +3015,7 @@ const REGION_NAV = {
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmed","mmt_gmax","mmt_tfl","mmt_adduc","mmt_gmin"] }, col:"#7c3aed", why:"Proximal hip abductor weakness drives dynamic valgus — always assess before knee." },
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Gold standard test at 20-30° flexion." },
     { label:"McMurray Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_mcmurray_test" },                          col:"#0891b2", why:"Meniscal integrity — medial and lateral compartment provocation." },
-    { label:"Step-Down Test",      icon:"🏃", nav:"fma",     ctx:{ fsRegion:"knee" }, col:"#059669", why:"Highest sensitivity for PFJ / glute med — observe dynamic valgus under load." },
+    { label:"Step-Down Test",      icon:"🏃", nav:"fma",     ctx:{ fmaTests:["step_down","squat","single_leg"], fmaHighlights:["step_down","squat","single_leg"] }, col:"#059669", why:"Highest sensitivity for PFJ / glute med — observe dynamic valgus under load." },
     { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"knee", kcHighlights:["kc_ankle_df","kc_hip_ir_mob","kc_knee_stability","kc_patellar_mobility","kc_hip_abd_mob"] }, col:"#7c3aed", why:"Ankle DF and hip abductor chain — both drive valgus. Address before isolated knee work." },
   ],
   "Hip / Groin": [
@@ -3096,7 +3024,7 @@ const REGION_NAV = {
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmax","mmt_gmed","mmt_tfl","mmt_adduc","mmt_psoas"] },                                col:"#7c3aed", why:"Glute max — primary hip stabiliser and load transfer muscle. Prone hip extension with knee bent." },
     { label:"FADIR Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_fadir_test" },                              col:"#0891b2", why:"FADIR — hip impingement (FAI) provocation. Flexion + adduction + IR reproduces anterior groin pain." },
     { label:"FABER Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" },                              col:"#0891b2", why:"FABER — hip, SIJ, and adductor provocation. Figure-4 position stresses all three simultaneously." },
-    { label:"Step-Down / SLS",     icon:"🏃", nav:"fma",     ctx:{ fsRegion:"hip" }, col:"#059669", why:"Single-leg stance and step-down — reveal hip strategy and Trendelenburg under functional load." },
+    { label:"Step-Down / SLS",     icon:"🏃", nav:"fma",     ctx:{ fmaTests:["single_leg","step_down","squat"], fmaHighlights:["single_leg","step_down","squat"] }, col:"#059669", why:"Single-leg stance and step-down — reveal hip strategy and Trendelenburg under functional load." },
     { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"hip", kcHighlights:["kc_hip_ir_mob","kc_hip_ext_mob","kc_hip_er_mob","kc_hip_abd_mob","kc_lumbar_stability"] }, col:"#7c3aed", why:"Hip is the stability joint. Restricted ER drives lumbar and knee chain overload." },
   ],
   "Ankle / Foot": [
@@ -3117,16 +3045,16 @@ const REGION_NAV = {
     { label:"Phalen's Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_phalen" },                          col:"#0891b2", why:"Phalen's — carpal tunnel screen. 68% sensitivity. Wrist flexion 60s reproduces median nerve symptoms." },
     { label:"Cervical Screen",     icon:"🔬", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_spurling" },                           col:"#dc2626", why:"Always screen cervical — C5/C6 referral mimics lateral elbow pain. Spurling test before isolating elbow." },
     { label:"ULTT Neural",         icon:"🔬", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_ultt1" },                                col:"#0891b2", why:"ULTT 1-4 — upper limb neural tension. Double crush phenomenon: cervical + peripheral nerve." },
-    { label:"Functional Reach",    icon:"🏃", nav:"fma",     ctx:{ fsRegion:"elbow" }, col:"#059669", why:"Upper limb functional reach — assesses full proximal chain contribution to elbow/wrist loading." },
+    { label:"Functional Reach",    icon:"🏃", nav:"fma",     ctx:{ fmaTests:["upper_reach","pushup_plus"], fmaHighlights:["upper_reach","pushup_plus"] }, col:"#059669", why:"Upper limb functional reach — assesses full proximal chain contribution to elbow/wrist loading." },
   ],
   "Thoracic spine": [
     { label:"Thoracic ROM",          icon:"📐", nav:"rom",   ctx:{ romRegion:"Thoracic", romHighlights:["rom_throtl","rom_throtr","rom_thflex","rom_thext"] },                                  col:"#9333ea", why:"Thoracic rotation — most clinically significant thoracic ROM. <30° bilateral = significant restriction." },
-    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["el_a_flex","el_a_ext","el_r_wext","el_r_wflex","el_r_grip","wr_r_ext","wr_r_flex"] }, col:"#f59e0b", why:"Elbow/wrist STTT — resisted wrist extension = lateral epicondylalgia; resisted grip differentiates tendon pathology." },
+    { label:"Cyriax Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["el_a_flex","el_a_ext","el_r_wext","el_r_wflex","el_r_grip","wr_r_ext","wr_r_flex"] }, col:"#f59e0b", why:"Elbow/wrist Cyriax — resisted wrist extension = lateral epicondylalgia; resisted grip differentiates tendon pathology." },
     { label:"Thoracic MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_trapL","mmt_trapM","mmt_serratus","mmt_trapU","mmt_rhomb"] },                         col:"#7c3aed", why:"Lower trapezius — scapular depression and posterior tilt. Weakness = shoulder and thoracic impingement driver." },
     { label:"Posture Analysis",    icon:"🧍", nav:"posture", ctx:{ region:"Thoracic" },                                                               col:"#059669", why:"Kyphosis angle, scoliotic curve, rib symmetry, scapular position — thoracic posture drives all chains above and below." },
     { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_scapulohumeral_rhythm"] }, col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
-    { label:"CPA Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_pec_minor","nkt_upper_trap","nkt_lower_trap","nkt_serratus","nkt_mid_trap"] }, col:"#d97706", why:"Pec major/minor overactive → lower trap/serratus inhibited → kyphosis maintained. Treat motor pattern." },
-    { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fsRegion:"thoracic" }, col:"#059669", why:"Overhead reach (thoracic extension demand), rotary stability (anti-rotation), push-up plus (scapular chain)." },
+    { label:"NKT Assessment",      icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"shoulder", nktHighlights:["nkt_pec_minor","nkt_upper_trap","nkt_lower_trap","nkt_serratus","nkt_mid_trap"] }, col:"#d97706", why:"Pec major/minor overactive → lower trap/serratus inhibited → kyphosis maintained. Treat motor pattern." },
+    { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fmaTests:["overhead","rotary_stability","pushup_plus"], fmaHighlights:["overhead","rotary_stability","pushup_plus"] }, col:"#059669", why:"Overhead reach (thoracic extension demand), rotary stability (anti-rotation), push-up plus (scapular chain)." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_densification","fa_sbl_hamstring"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia links lumbar extensors to contralateral shoulder girdle." },
   ],
 };
@@ -4120,174 +4048,7 @@ function runEngineV6(data, selectedRegions) {
   const anyUrgent = regionResults.some(r => r.urgentFlag);
   return { regionResults, cross, anyUrgent };
 }
-function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, setActiveSection, setSearchTerm }) {
-  const hasActive = group.keys.includes(activeSection);
-  const groupFilled = group.keys.reduce((n,k)=>n+countFilled(k),0);
-  const [gOpen, setGOpen] = React.useState(hasActive);
-  React.useEffect(()=>{ if(hasActive) setGOpen(true); },[hasActive]);
-  return (
-    <div style={{ border:`1px solid ${hasActive?group.col+"55":PC.border}`, borderRadius:9, overflow:"hidden" }}>
-      <div onClick={()=>setGOpen(o=>!o)}
-        style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          padding:"10px 12px", cursor:"pointer",
-          background: hasActive ? group.col+"0e" : PC.s2 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-          <span style={{ fontSize:"0.88rem", fontWeight:700, textTransform:"uppercase",
-            letterSpacing:"0.7px", color: group.col }}>{group.label}</span>
-          <span style={{ fontSize:"0.84rem", color:PC.muted }}>
-            {group.keys.length} section{group.keys.length>1?"s":""}
-          </span>
-          {groupFilled > 0 && (
-            <span style={{ background:group.col, color:"#fff",
-              fontSize:"0.82rem", padding:"1px 5px", borderRadius:99, fontWeight:700 }}>
-              {groupFilled} filled
-            </span>
-          )}
-        </div>
-        <span style={{ fontSize:"0.75rem", color:PC.muted }}>{gOpen?"▲":"▼"}</span>
-      </div>
-      {gOpen && (
-        <div style={{ display:"flex", gap:6, flexWrap:"wrap", padding:"10px 10px",
-          borderTop:`1px solid ${PC.border}`, background:PC.surface }}>
-          {group.keys.map(key => {
-            const s = sections[key]; if (!s) return null;
-            const filled = countFilled(key);
-            const isAct = key === activeSection;
-            const col = group.col;
-            return (
-              <button key={key} type="button"
-                onClick={() => { setActiveSection(key); setSearchTerm(""); }}
-                style={{
-                  padding:"9px 13px", borderRadius:8, whiteSpace:"nowrap", cursor:"pointer",
-                  border:`1.5px solid ${isAct ? col : PC.border}`,
-                  background: isAct ? col+"18" : PC.s3,
-                  color: isAct ? col : PC.muted,
-                  fontSize:"0.85rem", fontWeight: isAct ? 700 : 500,
-                  display:"flex", alignItems:"center", gap:5, flexShrink:0,
-                  minHeight:40, transition:"all 120ms",
-                }}>
-                <span>{s.icon}</span>
-                <span>{s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}</span>
-                {filled > 0 && (
-                  <span style={{ background: isAct ? col : PC.muted, color:"#fff",
-                    fontSize:"0.82rem", padding:"1px 4px", borderRadius:99, fontWeight:700 }}>
-                    {filled}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
-  const VISIBLE = 6; // always-visible options
-  const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
-  const opts = searchTerm
-    ? f.options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()))
-    : f.options;
-  const hasSelected = selected.length > 0;
-  const [showMore, setShowMore] = React.useState(false);
-
-  // Sort: selected options first, then rest in original order
-  const sortedOpts = [
-    ...opts.filter(o => selected.includes(o)),
-    ...opts.filter(o => !selected.includes(o)),
-  ];
-  const visibleOpts = showMore ? sortedOpts : sortedOpts.slice(0, VISIBLE);
-  const hiddenCount = sortedOpts.length - VISIBLE;
-
-  const PillBtn = ({ opt }) => {
-    const on = selected.includes(opt);
-    const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("⚠");
-    return (
-      <button type="button" onClick={() => toggleMulti(f.id, opt)}
-        style={{
-          padding:"9px 14px", borderRadius:99, cursor:"pointer",
-          border:`1.5px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
-          background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
-          color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
-          fontSize:"0.88rem", fontWeight: on ? 700 : 500,
-          lineHeight:1.4, minHeight:38, transition:"all 110ms",
-        }}>
-        {opt}
-      </button>
-    );
-  };
-
-  return (
-    <div style={{ border:`1px solid ${hasSelected ? PC.accent+"55" : PC.border}`, borderRadius:9, overflow:"hidden" }}>
-      {/* Selected tags summary strip (only when something selected) */}
-      {hasSelected && (
-        <div style={{ display:"flex", alignItems:"center", gap:5, flexWrap:"wrap",
-          padding:"8px 12px 6px", background:PC.accent+"06",
-          borderBottom:`1px solid ${PC.accent}22` }}>
-          {selected.map(s => (
-            <span key={s} style={{ fontSize:"0.75rem", fontWeight:700, padding:"2px 8px",
-              borderRadius:99, background:PC.accent+"18", color:PC.accent,
-              border:`1px solid ${PC.accent}44` }}>{s}</span>
-          ))}
-        </div>
-      )}
-      {/* Always-visible pills */}
-      <div style={{ padding:"10px 12px", display:"flex", flexWrap:"wrap", gap:8, background:PC.surface }}>
-        {visibleOpts.map(opt => <PillBtn key={opt} opt={opt} />)}
-        {!showMore && hiddenCount > 0 && (
-          <button type="button" onClick={() => setShowMore(true)}
-            style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
-              border:`1.5px dashed ${PC.border}`, background:"transparent",
-              color:PC.muted, fontSize:"0.82rem", fontWeight:600,
-              lineHeight:1.4, minHeight:38 }}>
-            +{hiddenCount} more
-          </button>
-        )}
-        {showMore && hiddenCount > 0 && (
-          <button type="button" onClick={() => setShowMore(false)}
-            style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
-              border:`1.5px dashed ${PC.border}`, background:"transparent",
-              color:PC.muted, fontSize:"0.82rem", fontWeight:600,
-              lineHeight:1.4, minHeight:38 }}>
-            Show less ▲
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-
-// ── Field-level clinical help text (shown as ⓘ tooltip) ──────────────────────
-const FIELD_HELP = {
-  // Pain descriptors
-  "grf_irritability": "Irritability = how easily symptoms are provoked AND how long they take to settle. HIGH: minimal activity causes severe prolonged pain. LOW: requires significant load, settles quickly. Guides how aggressively to assess.",
-  "sub_vas": "Visual Analogue Scale 0–10. 0 = no pain. 10 = worst imaginable pain. Ask: 'right now' and 'worst in past 24 hours'. >7 = severe, treat as high irritability.",
-  "cc_vas_now": "VAS 0–10 right now. 0 = no pain, 10 = worst imaginable. Use for baseline comparison across sessions.",
-  // Behaviour
-  "cx_behaviour": "Behaviour describes how symptoms change with movement and time. Mechanical: varies with posture/load. Inflammatory: worse at rest, better with movement. Chemical: constant, unrelated to position.",
-  "lx_behaviour": "Mechanical: varies with load/posture. Inflammatory: morning stiffness >30min, improves with movement. Chemical (tissue irritation): constant pain, little postural relief.",
-  // Neurological
-  "lx_dermatomal": "A dermatome is a skin area supplied by a single spinal nerve root. Dermatomal pain suggests nerve root irritation (radiculopathy). Non-dermatomal referred pain is more likely somatic (joints/muscles).",
-  "lx_rf_cauda": "Cauda Equina Syndrome (CES) = compression of the cauda equina nerve roots. EMERGENCY. Classic presentation: saddle anaesthesia, bilateral leg weakness, bladder/bowel dysfunction. Requires immediate emergency referral.",
-  "lx_neuro_signs": "Neurological signs suggest nerve root or cord involvement. Dermatomal numbness = sensory root. Weakness = motor root. Absent reflex = arc interruption. Bilateral signs elevate concern for central pathology.",
-  // Special questions
-  "lx_bladder_baseline": "ALWAYS establish baseline BEFORE onset. New bladder/bowel dysfunction since pain started = potential cauda equina flag. Pre-existing problems are less clinically significant.",
-  "cx_upper_limb": "Cervical myelopathy (cord compression) can cause upper limb clumsiness, grip weakness, and fine motor difficulty. Ask about: dropping objects, difficulty with buttons, handwriting changes.",
-  "cx_instability": "Clinical instability = ligamentous laxity after trauma (e.g. whiplash, RA). Sharp pain with head movement, 'clunking', feeling head will fall off. Cervical manipulation is CONTRAINDICATED if instability suspected.",
-  // Psychosocial
-  "cx_yellow_flags": "Yellow Flags (Kendall 1997) = psychosocial risk factors for chronic pain. Negative beliefs (pain = harm), passive coping, low job satisfaction, and fear-avoidance predict poor outcome more than physical findings.",
-  "lx_yellow_flags": "Yellow Flags = psychosocial risk factors for chronic disability. Include: belief pain is harmful, depression, anxiety, poor work relationships, compensation issues. Screen with STarT MSK or Örebro tools.",
-  // ROM
-  "cx_rom_active": "Active ROM tests contractile and inert structures + neurodynamics. Note: range (degrees if goniometer), end-feel, and pain response (P1 = onset, P2 = end of range). Compare to contralateral side.",
-  "lx_rom_active": "Active lumbar ROM. Flexion: normally >60°. Extension: 25°. Lateral flexion: 25° each. Rotation: 30° each. Instability flag: painful arc on return from flexion, or 'catch' with extension.",
-  // Sleep
-  "cx_night": "Night pain quality matters. Position-dependent = mechanical. Constant regardless of position = potentially serious (inflammatory, neoplastic). Waking from sleep repeatedly with no relief = red flag.",
-  "lx_night": "Night pain: can patient get comfortable? Positional night pain = mechanical. Constant unable to get comfortable = inflammatory or serious pathology. Bladder waking since onset — compare to pre-pain baseline.",
-};
-
-function SubjectiveModule({ data, set, onNav, onTabChange }) {
+function SubjectiveModule({ data, set, onNav }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#1a1025",
@@ -4295,20 +4056,14 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     isDark:false, inputBg:"#f5f0fb", inputBorder:"#c8b8e0",
   };
 
-  const [activeSection, setActiveSection] = useState("complaint");
-  const sectionTopRef = React.useRef(null);
-  const [selectedRegions, setSelectedRegions] = useState(()=>{
-    try{ return JSON.parse(data.cx_selected_regions||"[]"); }catch{ return []; }
-  });
-  const [insight, setInsight] = useState(()=>{
-    try{ return data.cx_insight?JSON.parse(data.cx_insight):null; }catch{ return null; }
-  });
+  const [activeSection, setActiveSection] = useState("demographics");
+  const [selectedRegions, setSelectedRegions] = useState([]);
+  const [insight, setInsight] = useState(null);
+  const [openGroups, setOpenGroups] = useState({});
+  const [openRegions, setOpenRegions] = useState({});
   const [showInsight, setShowInsight] = useState(true);
-  const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
+  const [activeTab, setActiveTab] = useState("form");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showSummary, setShowSummary] = useState(false);
-  const [showSavedToast, setShowSavedToast] = useState(false);
-  const [regionPickerOpen, setRegionPickerOpen] = useState(false);
 
   // ── Field update helpers ────────────────────────────────────────────
   const setField = useCallback((id, val) => set({ ...data, [id]: val }), [data, set]);
@@ -4321,200 +4076,17 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   // Toggle region selection (max 3)
   const toggleRegion = useCallback((r) => {
     setSelectedRegions(prev => {
-      const next = prev.includes(r)
-        ? prev.filter(x => x !== r)
-        : prev.length >= 3 ? prev : [...prev, r];
-      // Persist to patient data so navigation doesn't lose selection
-      set({ ...data, cx_selected_regions: JSON.stringify(next), cx_insight: null });
-      return next;
+      if (prev.includes(r)) return prev.filter(x => x !== r);
+      if (prev.length >= 3) return prev;
+      return [...prev, r];
     });
     setInsight(null);
-  }, [set, data]);
-
-  // ── AI Parser state ────────────────────────────────────────────────
-  const [aiOpen, setAiOpen] = useState(false);
-  const [aiMode, setAiMode] = useState("text"); // "text" | "voice"
-  const [aiText, setAiText] = useState("");
-  const [aiStatus, setAiStatus] = useState("idle"); // "idle"|"recording"|"processing"|"done"|"error"
-  const [aiResult, setAiResult] = useState(null);
-  const [aiReview, setAiReview] = useState(false);
-
-  const [aiSuccess, setAiSuccess] = useState(null); // { count, fields[] }
-  const aiRecognitionRef = React.useRef(null);
-
-  const stopRecording = React.useCallback(() => {
-    if (aiRecognitionRef.current) { try { aiRecognitionRef.current.stop(); } catch(e){} aiRecognitionRef.current = null; }
-    setAiStatus("idle");
   }, []);
-
-  const startRecording = React.useCallback(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Voice input requires Chrome browser."); return; }
-    setAiText(""); setAiStatus("recording"); setAiMode("voice");
-    const r = new SR();
-    r.continuous = true; r.interimResults = true; r.lang = "en-IN";
-    r.onresult = (e) => {
-      let final = ""; let interim = "";
-      for (let i = 0; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
-        else interim += e.results[i][0].transcript;
-      }
-      setAiText((final + interim).trim());
-    };
-    r.onerror = () => { setAiStatus("error"); };
-    r.onend = () => { setAiStatus(s => s === "recording" ? "idle" : s); };
-    r.start();
-    aiRecognitionRef.current = r;
-  }, []);
-
-  const runParse = React.useCallback(async (textToParse) => {
-    if (!textToParse.trim()) return;
-    stopRecording();
-    setAiStatus("processing");
-
-    try {
-      const res = await fetch("/api/parse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: textToParse.trim() }),
-      });
-      const parsed = await res.json();
-      if (!res.ok) throw new Error(parsed.error || "Server error");
-      setAiResult(parsed);
-      setAiStatus("done");
-      setAiReview(true);
-    } catch (e) {
-      setAiStatus("error");
-      setAiResult({ _errorMsg: e.message });
-      console.error("AI parse error:", e);
-    }
-  }, [stopRecording]);
-
-  const applyAiResult = React.useCallback((result) => {
-    const updates = { ...data };
-    const SEP = "|||";
-
-    // ── Region prefix helper ─────────────────────────────────────────
-    let reg = result.region || "";
-    if (result.laterality === "Left"  && reg === "Shoulder") reg = "Shoulder (L)";
-    if (result.laterality === "Right" && reg === "Shoulder") reg = "Shoulder (R)";
-    if (result.laterality === "Left"  && reg === "Knee")     reg = "Knee (L)";
-    if (result.laterality === "Right" && reg === "Knee")     reg = "Knee (R)";
-    const prefixMap = {
-      "Cervical spine":"cx","Lumbar / SI":"lx","Thoracic spine":"tx",
-      "Shoulder (L)":"shl","Shoulder (R)":"shr",
-      "Knee (L)":"knl","Knee (R)":"knr",
-      "Hip / Groin":"hp","Ankle / Foot":"af","Elbow/Wrist/Hand":"ew",
-    };
-    const pfx = prefixMap[reg] || null;
-
-    // ── Demographics ─────────────────────────────────────────────────
-    if (result.age)        updates.dem_age = String(result.age);
-    if (result.sex)        updates.dem_sex = result.sex;
-    if (result.occupation) updates.dem_occupation = result.occupation;
-
-    // ── Chief Complaint ───────────────────────────────────────────────
-    if (result.onset)    updates.cc_onset    = result.onset;
-    if (result.duration) updates.cc_duration = result.duration;
-    if (result.nrsNow   != null) updates.cc_vas_now   = String(Math.round(result.nrsNow));
-    if (result.nrsWorst != null) updates.cc_vas_worst = String(Math.round(result.nrsWorst));
-    if (result.nrsBest  != null) updates.cc_vas_best  = String(Math.round(result.nrsBest));
-    if (result.painQuality?.length)
-      updates.cc_quality = result.painQuality.join(SEP);
-
-    // ── Region-prefixed fields ─────────────────────────────────────────
-    if (pfx) {
-      // Pain pattern
-      if (result.symptomPattern)
-        updates[pfx + "_pattern"] = result.symptomPattern;
-      if (result.diurnalPattern)
-        updates[pfx + "_24hr"] = result.diurnalPattern;
-
-      // Morning & night symptoms (multicheck)
-      if (result.morningSymptoms?.length)
-        updates[pfx + "_morning"] = result.morningSymptoms.join(SEP);
-      if (result.nightSymptoms?.length)
-        updates[pfx + "_night"] = result.nightSymptoms.join(SEP);
-
-      // Aggravating — write to notes AND worst-aggravator text field
-      const allAgg = [...(result.aggMovements||[]), ...(result.aggActivities||[])];
-      if (allAgg.length) {
-        updates[pfx + "_agg_notes"] = allAgg.join("\n");
-        updates[pfx + "_agg_worst"] = allAgg[0];
-      }
-      // Relieving — write to notes AND best-reliever text field
-      if (result.relMovements?.length) {
-        updates[pfx + "_rel_notes"] = result.relMovements.join("\n");
-        updates[pfx + "_rel_best"] = result.relMovements[0];
-      }
-
-      // Radiation — radiation field is a multicheck; single option value is fine
-      if (result.hasRadiation === false)
-        updates[pfx + "_radiation"] = "No radiation — local only";
-      else if (result.hasRadiation) {
-        if (result.radiationArea)
-          updates[pfx + "_rad_notes"] = result.radiationArea + (result.radiationSide ? " (" + result.radiationSide + ")" : "");
-        // Note: specific radiation destinations should be confirmed by clinician in multicheck
-      }
-
-      // Neurological symptoms
-      if (result.neuroSymptoms?.length) {
-        const neuroField = pfx === "cx" ? "cx_arm_neuro"
-          : pfx === "lx" ? "lx_neuro_quality"
-          : pfx + "_neuro";
-        updates[neuroField] = result.neuroSymptoms.join(SEP);
-      }
-      if (result.hasLegNeuro && pfx === "lx")
-        updates["lx_neuro_present"] = result.hasLegNeuro;
-    }
-
-    // ── Add region to selected regions ───────────────────────────────
-    if (reg) {
-      setSelectedRegions(prev => {
-        if (prev.includes(reg) || prev.length >= 3) return prev;
-        const next = [...prev, reg];
-        updates.cx_selected_regions = JSON.stringify(next);
-        return next;
-      });
-    }
-
-    // ── Count filled fields for success banner ────────────────────────
-    const filled = [];
-    if (result.age) filled.push("Age");
-    if (result.sex) filled.push("Sex");
-    if (result.occupation) filled.push("Occupation");
-    if (result.onset) filled.push("Onset");
-    if (result.duration) filled.push("Duration");
-    if (result.nrsNow != null) filled.push("NRS now");
-    if (result.nrsWorst != null) filled.push("NRS worst");
-    if (result.nrsBest != null) filled.push("NRS best");
-    if (result.painQuality?.length) filled.push("Pain quality (" + result.painQuality.join(", ") + ")");
-    if (result.symptomPattern) filled.push("Pain pattern");
-    if (result.diurnalPattern) filled.push("24hr pattern");
-    if (result.morningSymptoms?.length) filled.push("Morning symptoms");
-    if (result.nightSymptoms?.length) filled.push("Night symptoms");
-    if (result.aggMovements?.length || result.aggActivities?.length) filled.push("Aggravating factors");
-    if (result.relMovements?.length) filled.push("Relieving factors");
-    if (result.hasRadiation != null) filled.push("Radiation");
-    if (result.neuroSymptoms?.length) filled.push("Neuro symptoms");
-    if (result.hasLegNeuro) filled.push("Leg neuro");
-    if (reg) filled.push("Region: " + reg);
-
-    set(updates);
-    setAiOpen(false);
-    setAiReview(false);
-    setAiStatus("idle");
-    setAiText("");
-    setActiveSection("complaint");
-    if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    setAiSuccess({ count: filled.length, fields: filled });
-    setTimeout(() => setAiSuccess(null), 8000);
-  }, [data, set]);
 
   // ── Build active sections ───────────────────────────────────────────
   const sections = useMemo(() => {
     // ORDER:
-    // 1. Chief Complaint (always first)
+    // 1. Demographics + Chief Complaint (always first — core identity)
     // 2. Region-specific modules (the clinical meat — loaded by selection)
     // 3. Trailing universal sections (goals, history, red flags, PMH, lifestyle, paediatric, hypermobility)
     // 4. Conditional: Sleep, Sport (auto-loaded)
@@ -4522,7 +4094,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
     const m = {};
 
-    // ── Step 1: Core opening sections (complaint only) ──
+    // ── Step 1: Core opening sections (demographics + complaint only) ──
+    m.demographics   = UNIV_S.demographics;
     m.complaint      = UNIV_S.complaint;
 
     // ── Step 2: Region-specific modules ───────────────────────────────
@@ -4560,7 +4133,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     return m;
   }, [data, selectedRegions]);
 
-  const sec = sections[activeSection] || sections.complaint;
+  const sec = sections[activeSection] || sections.demographics;
   const secColor = sec.color || PC.accent;
 
   // ── Progress (exclude notes fields) ────────────────────────────────
@@ -4584,34 +4157,46 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     if (selectedRegions.length === 0) return;
     const result = runEngineV6(data, selectedRegions);
     setInsight(result);
-    setActiveTab("results"); onTabChange&&onTabChange("results");
+    setActiveTab("results");
     setShowInsight(true);
-    // Persist insight so it survives navigation to ROM/MMT and back
-    try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
-    // Show saved confirmation toast
-    setShowSavedToast(true);
-    setTimeout(() => setShowSavedToast(false), 3000);
   };
 
   // ── Inline field renderer (app UI style) ───────────────────────────
   const renderField = (f) => {
     const val = data[f.id] || "";
     const inputStyle = {
-      width:"100%", padding:"12px 14px",
-      background: PC.inputBg, border:`1.5px solid ${PC.inputBorder}`,
-      borderRadius:10, color: PC.text, fontFamily:"inherit",
-      fontSize:"0.95rem", outline:"none", boxSizing:"border-box",
-      minHeight:48, lineHeight:1.4,
+      width:"100%", padding:"8px 10px",
+      background: PC.inputBg, border:`1px solid ${PC.inputBorder}`,
+      borderRadius:8, color: PC.text, fontFamily:"inherit",
+      fontSize:"0.82rem", outline:"none", boxSizing:"border-box",
     };
 
     if (f.type === "multicheck") {
+      const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
+      const opts = searchTerm
+        ? f.options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()))
+        : f.options;
       return (
-        <CollapsibleMulticheck
-          f={f} val={val} PC={PC}
-          toggleMulti={toggleMulti}
-          searchTerm={searchTerm}
-          SEP_S={SEP_S}
-        />
+        <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+          {opts.map(opt => {
+            const on = selected.includes(opt);
+            const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("⚠");
+            return (
+              <button key={opt} type="button"
+                onClick={() => toggleMulti(f.id, opt)}
+                style={{
+                  padding:"5px 10px", borderRadius:99, cursor:"pointer",
+                  border:`1px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
+                  background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
+                  color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
+                  fontSize:"0.72rem", fontWeight: on ? 700 : 500,
+                  transition:"all 110ms",
+                }}>
+                {opt}
+              </button>
+            );
+          })}
+        </div>
       );
     }
 
@@ -4628,31 +4213,22 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       return (
         <textarea value={val} onChange={e => setField(f.id, e.target.value)}
           placeholder={f.placeholder || "Clinical notes — patient quotes, specific detail, clinician observations..."}
-          rows={4} style={{ ...inputStyle, resize:"vertical", minHeight:88, lineHeight:1.6 }} />
+          rows={3} style={{ ...inputStyle, resize:"vertical", minHeight:64, lineHeight:1.5 }} />
       );
     }
 
     if (f.type === "range") {
       const num = parseInt(val || 0);
       const col = num >= 7 ? PC.red : num >= 4 ? PC.yellow : PC.green;
-      const colBg = num >= 7 ? PC.red+"18" : num >= 4 ? PC.yellow+"18" : PC.green+"18";
       return (
-        <div style={{ background: colBg, borderRadius:10, padding:"10px 14px", border:`1.5px solid ${col}33` }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:6 }}>
-            <span style={{ fontWeight:900, color: col, fontSize:"1.6rem", minWidth:40, textAlign:"center", lineHeight:1 }}>
-              {num}
-            </span>
-            <span style={{ fontSize:"0.82rem", color: PC.muted }}>/ 10</span>
-            <span style={{ marginLeft:"auto", fontSize:"0.78rem", color: col, fontWeight:700 }}>
-              {num === 0 ? "No pain" : num <= 3 ? "Mild" : num <= 6 ? "Moderate" : num <= 8 ? "Severe" : "Worst"}
-            </span>
-          </div>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <input type="range" min="0" max="10" value={num}
             onChange={e => setField(f.id, e.target.value)}
-            style={{ width:"100%", accentColor: col, height:32, cursor:"pointer" }} />
-          <div style={{ display:"flex", justifyContent:"space-between", fontSize:"0.72rem", color: PC.muted, marginTop:3 }}>
-            <span>0</span><span>5</span><span>10</span>
-          </div>
+            style={{ flex:1, accentColor: col }} />
+          <span style={{ fontWeight:800, color: col, fontSize:"1.2rem", minWidth:30, textAlign:"center" }}>
+            {num}
+          </span>
+          <span style={{ fontSize:"0.65rem", color: PC.muted }}>/ 10</span>
         </div>
       );
     }
@@ -4679,526 +4255,245 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   // ══════════════════════════════════════════════════════════════════
   // RENDER
   // ══════════════════════════════════════════════════════════════════
-  // ── Red flag detection ─────────────────────────────────────────────
-  const SEP = SEP_S || "|||";
-  const getMulti = (id) => (data[id] ? String(data[id]).split(SEP).filter(Boolean) : []);
-  const caudalFlags = getMulti("lx_rf_cauda").filter(v => !v.startsWith("No cauda"));
-  const hasUrgentCauda = caudalFlags.some(v =>
-    v.includes("Saddle") || v.includes("Bladder retention") || v.includes("Bowel incontinence") || v.includes("Bladder incontinence")
-  );
-  const allRedFlags = [
-    ...caudalFlags,
-    ...getMulti("grf_neuro").filter(v => !v.startsWith("No")),
-    ...getMulti("grf_vascular").filter(v => !v.startsWith("No")),
-    ...getMulti("lx_rf_serious").filter(v => !v.startsWith("No")),
-    ...getMulti("lx_rf_inflammatory").filter(v => !v.startsWith("No")),
-    ...getMulti("cx_rf_other").filter(v => !v.startsWith("No")),
-    ...getMulti("shl_rf").filter(v => !v.startsWith("No")),
-    ...getMulti("shr_rf").filter(v => !v.startsWith("No")),
-    ...getMulti("knl_rf").filter(v => !v.startsWith("No")),
-    ...getMulti("knr_rf").filter(v => !v.startsWith("No")),
-    ...getMulti("hp_rf").filter(v => !v.startsWith("No")),
-  ];
-  const hasAnyRedFlag = allRedFlags.length > 0;
-
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14, maxWidth:"100%" }}>
 
-      {/* ── Red Flag Alert Banner ─────────────────────────────────── */}
-      {hasAnyRedFlag && (
-        <div style={{
-          background: hasUrgentCauda ? "rgba(220,38,38,0.1)" : "rgba(180,83,9,0.09)",
-          border: `2px solid ${hasUrgentCauda ? "#dc2626" : "#b45309"}`,
-          borderRadius:12, padding:"12px 16px",
-          animation: hasUrgentCauda ? "rfpulse 1.5s ease-in-out infinite" : undefined,
-        }}>
-          <style>{`@keyframes rfpulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.25)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}`}</style>
-          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-            <span style={{fontSize:"1.2rem",flexShrink:0}}>{hasUrgentCauda ? "🚨" : "⚠️"}</span>
-            <div style={{flex:1}}>
-              <div style={{fontWeight:900,fontSize:"0.92rem",color: hasUrgentCauda ? "#dc2626" : "#b45309",marginBottom:4}}>
-                {hasUrgentCauda
-                  ? "URGENT — Possible Cauda Equina Syndrome"
-                  : `Clinical Red Flag${allRedFlags.length>1?"s":""} Noted`}
-              </div>
-              {hasUrgentCauda && (
-                <div style={{fontSize:"0.82rem",fontWeight:700,color:"#dc2626",marginBottom:6,padding:"6px 10px",background:"rgba(220,38,38,0.08)",borderRadius:8,border:"1px solid rgba(220,38,38,0.3)"}}>
-                  ⛔ Do not continue routine assessment. Consider immediate referral to emergency services. Document findings and time of assessment.
-                </div>
-              )}
-              <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:4}}>
-                {allRedFlags.slice(0,8).map((f,i)=>(
-                  <span key={i} style={{fontSize:"0.75rem",padding:"3px 8px",borderRadius:99,background: hasUrgentCauda ? "rgba(220,38,38,0.12)" : "rgba(180,83,9,0.1)",color: hasUrgentCauda ? "#dc2626" : "#b45309",fontWeight:700,border:`1px solid ${hasUrgentCauda?"rgba(220,38,38,0.3)":"rgba(180,83,9,0.25)"}`}}>
-                    {f.replace(/\(.*?\)/g,"").trim()}
-                  </span>
-                ))}
-                {allRedFlags.length > 8 && <span style={{fontSize:"0.75rem",color:"#b45309",fontWeight:600}}>+{allRedFlags.length-8} more</span>}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── Region selector — two-level collapsible accordion ── */}
+      {(() => {
+        const REGION_GROUPS = [
+          { id:"spine", label:"Spine", icon:"🪴", regions:[
+            { id:"cervical", name:"Cervical spine", lr:false, keys:{ B:"Cervical spine" } },
+            { id:"thoracic", name:"Thoracic spine", lr:false, keys:{ B:"Thoracic spine" } },
+            { id:"lumbar",   name:"Lumbar / SI",    lr:false, keys:{ B:"Lumbar / SI" } },
+          ]},
+          { id:"upper", label:"Upper limb", icon:"💪", regions:[
+            { id:"shoulder", name:"Shoulder", lr:true, keys:{ L:"Shoulder (L)", R:"Shoulder (R)", B_L:"Shoulder (L)", B_R:"Shoulder (R)" } },
+            { id:"elbow",    name:"Elbow / Wrist / Hand", lr:false, keys:{ B:"Elbow/Wrist/Hand" } },
+          ]},
+          { id:"lower", label:"Lower limb", icon:"🦵", regions:[
+            { id:"hip",   name:"Hip / Groin",   lr:false, keys:{ B:"Hip / Groin" } },
+            { id:"knee",  name:"Knee",           lr:true,  keys:{ L:"Knee (L)", R:"Knee (R)", B_L:"Knee (L)", B_R:"Knee (R)" } },
+            { id:"ankle", name:"Ankle / Foot",   lr:false, keys:{ B:"Ankle / Foot" } },
+          ]},
+          { id:"other", label:"Other", icon:"🔵", regions:[
+            { id:"tmj",      name:"TMJ / Jaw",      lr:false, keys:{ B:"TMJ / Jaw" } },
+            { id:"ribs",     name:"Ribs / Thorax",  lr:false, keys:{ B:"Ribs / Thorax" } },
+          ]},
+        ];
 
-      {/* ── AI Smart Parser Strip ─────────────────────────────────── */}
-      <div style={{ background:`linear-gradient(135deg,#ede9fe,#f5f3ff)`, borderRadius:12,
-        border:"1px solid #c4b5fd", padding:"10px 14px" }}>
-        {!aiOpen ? (
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:"0.82rem", fontWeight:700, color:"#5b21b6", flex:1 }}>
-              ✦ AI Smart Parser — speak or type to auto-fill this form
-            </span>
+        // Map: regionId → active side ('L','R','B') or null
+        const getActiveSide = (rid, lrEnabled) => {
+          if (!lrEnabled) {
+            return selectedRegions.some(r => r === REGION_GROUPS.flatMap(g=>g.regions).find(x=>x.id===rid)?.keys?.B) ? 'B' : null;
+          }
+          const reg = REGION_GROUPS.flatMap(g=>g.regions).find(x=>x.id===rid);
+          if (!reg) return null;
+          if (selectedRegions.includes(reg.keys.L) && selectedRegions.includes(reg.keys.R)) return 'B';
+          if (selectedRegions.includes(reg.keys.L)) return 'L';
+          if (selectedRegions.includes(reg.keys.R)) return 'R';
+          return null;
+        };
 
-            <button type="button" onClick={() => { setAiOpen(true); setAiMode("voice"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
-              style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:20,
-                background:"#7c3aed", color:"#fff", border:"none", fontSize:"0.82rem",
-                fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-              🎤 Speak
-            </button>
-            <button type="button" onClick={() => { setAiOpen(true); setAiMode("text"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
-              style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:20,
-                background:"transparent", color:"#7c3aed", border:"1px solid #a78bfa",
-                fontSize:"0.82rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-              ⌨ Type
-            </button>
-          </div>
-        ) : (
-          <div>
+        const handleSidePick = (reg, side) => {
+          setSelectedRegions(prev => {
+            // Remove any existing keys for this region
+            const allKeys = Object.values(reg.keys);
+            let next = prev.filter(r => !allKeys.includes(r));
+            // If same side already active → deselect
+            const currentSide = (() => {
+              if (!reg.lr) return prev.includes(reg.keys.B) ? 'B' : null;
+              if (prev.includes(reg.keys.L) && prev.includes(reg.keys.R)) return 'B';
+              if (prev.includes(reg.keys.L)) return 'L';
+              if (prev.includes(reg.keys.R)) return 'R';
+              return null;
+            })();
+            if (currentSide === side) return next; // deselect
+            // Add new side
+            const toAdd = reg.lr
+              ? (side === 'L' ? [reg.keys.L] : side === 'R' ? [reg.keys.R] : [reg.keys.B_L, reg.keys.B_R])
+              : [reg.keys.B];
+            // Check max (Both adds 2 — count as 1 region slot)
+            const slotsUsed = next.filter((r,i,a) => {
+              // count Knee(L)+Knee(R) as 1 slot each
+              return true;
+            }).length;
+            // Count unique region slots: bilateral pair = 2 strings but 1 "slot"
+            const currentSlots = () => {
+              let slots = 0;
+              REGION_GROUPS.flatMap(g=>g.regions).forEach(r2 => {
+                const keys2 = Object.values(r2.keys);
+                if (next.some(x => keys2.includes(x))) slots++;
+              });
+              return slots;
+            };
+            if (currentSlots() >= 3) return next;
+            return [...next, ...toAdd];
+          });
+          setInsight(null);
+        };
+
+        const countGroupSelected = (group) =>
+          group.regions.filter(r => getActiveSide(r.id, r.lr) !== null).length;
+
+        const totalSlots = (() => {
+          let slots = 0;
+          REGION_GROUPS.flatMap(g=>g.regions).forEach(r => {
+            if (getActiveSide(r.id, r.lr) !== null) slots++;
+          });
+          return slots;
+        })();
+
+        const sideColors = { L:"#3B82F6", R:"#10B981", B:"#534AB7" };
+        const sideLabels = { L:"Left", R:"Right", B:"Both" };
+
+        return (
+          <div style={{ background: PC.surface, borderRadius:12, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
             {/* Header */}
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-              <span style={{ fontSize:"0.78rem", fontWeight:700, color:"#5b21b6" }}>
-                {aiStatus === "recording" ? "🔴 Listening..." : aiStatus === "processing" ? "⏳ Groq reading..." : aiStatus === "done" ? "✓ Done" : aiStatus === "error" ? "⚠ Error" : "✦ AI Parser"}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", borderBottom:`1px solid ${PC.border}` }}>
+              <span style={{ fontSize:"0.75rem", fontWeight:700, color:PC.text }}>📍 Body regions</span>
+              <span style={{ fontSize:"0.68rem", background:PC.s2, border:`1px solid ${PC.border}`, borderRadius:99, padding:"2px 10px", color:PC.muted }}>
+                {totalSlots} / 3
               </span>
-
-            <button type="button" onClick={() => { stopRecording(); setAiOpen(false); setAiStatus("idle"); }}
-                style={{ background:"transparent", border:"none", color:"#7c3aed", fontSize:"1rem", cursor:"pointer" }}>✕</button>
             </div>
 
-            {/* Voice mode */}
-            {aiMode === "voice" && aiStatus !== "done" && (
-              <div>
-                {aiStatus === "idle" || aiStatus === "error" ? (
-                  <button type="button" onClick={startRecording}
-                    style={{ width:"100%", padding:"10px", borderRadius:10, background:"#7c3aed",
-                      color:"#fff", border:"none", fontSize:"0.82rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit", marginBottom:8 }}>
-                    🎤 Tap to start recording
-                  </button>
-                ) : aiStatus === "recording" ? (
-                  <div>
-                    <div style={{ background:"#fee2e2", borderRadius:8, padding:"8px 12px", marginBottom:8,
-                      fontSize:"0.82rem", color:"#b91c1c", display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{ display:"inline-block", width:8, height:8, borderRadius:"50%",
-                        background:"#dc2626", animation:"pulse 1s infinite" }}></span>
-                      Recording — speak naturally, then tap Stop
+            {/* Groups */}
+            {REGION_GROUPS.map((group, gi) => {
+              const groupOpen = !!openGroups[group.id];
+              const groupCount = countGroupSelected(group);
+              const isLastGroup = gi === REGION_GROUPS.length - 1;
+              return (
+                <div key={group.id} style={{ borderBottom: isLastGroup ? "none" : `1px solid ${PC.border}` }}>
+                  {/* Group header */}
+                  <div
+                    onClick={() => setOpenGroups(prev => ({ ...prev, [group.id]: !prev[group.id] }))}
+                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 14px", background:PC.s2, cursor:"pointer", userSelect:"none" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:"0.72rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                      <span>{group.icon}</span>
+                      {group.label}
+                      {groupCount > 0 && (
+                        <span style={{ fontSize:"0.6rem", background:PC.accent, color:"#fff", borderRadius:99, padding:"1px 6px" }}>{groupCount}</span>
+                      )}
                     </div>
-                    {aiText && <div style={{ fontSize:"0.82rem", color:"#5b21b6", background:"#f5f3ff",
-                      borderRadius:8, padding:"8px 10px", marginBottom:8, lineHeight:1.5 }}>{aiText}</div>}
-                    <div style={{ display:"flex", gap:8 }}>
-                      <button type="button" onClick={() => { stopRecording(); if (aiText) runParse(aiText); }}
-                        style={{ flex:1, padding:"8px", borderRadius:10, background:"#dc2626", color:"#fff",
-                          border:"none", fontSize:"0.78rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-                        ⬛ Stop & Parse
-                      </button>
-                      <button type="button" onClick={() => { stopRecording(); setAiMode("text"); }}
-                        style={{ padding:"8px 12px", borderRadius:10, background:"transparent", color:"#7c3aed",
-                          border:"1px solid #a78bfa", fontSize:"0.82rem", cursor:"pointer", fontFamily:"inherit" }}>
-                        Switch to type
-                      </button>
-                    </div>
+                    <span style={{ fontSize:"0.7rem", color:PC.muted, transition:"transform 0.18s", display:"inline-block", transform: groupOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▼</span>
                   </div>
-                ) : aiStatus === "processing" ? (
-                  <div style={{ textAlign:"center", padding:"12px", color:"#92400e", fontSize:"0.78rem" }}>
-                    ⏳ Sending to Groq AI...
-                  </div>
-                ) : null}
-                {aiStatus === "error" && (
-                  <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8,
-                    padding:"8px 12px", fontSize:"0.82rem", color:"#b91c1c", marginTop:6 }}>
-                    {aiResult?._errorMsg || "Parse failed — check internet connection or try typing instead."}
-                  </div>
-                )}
-              </div>
-            )}
 
+                  {/* Group body */}
+                  {groupOpen && (
+                    <div>
+                      {group.regions.map((reg, ri) => {
+                        const regionOpen = !!openRegions[reg.id];
+                        const activeSide = getActiveSide(reg.id, reg.lr);
+                        const isLastRegion = ri === group.regions.length - 1;
+                        return (
+                          <div key={reg.id} style={{ borderTop:`1px solid ${PC.border}` }}>
+                            {/* Region row */}
+                            <div
+                              onClick={() => setOpenRegions(prev => ({ ...prev, [reg.id]: !prev[reg.id] }))}
+                              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 14px 8px 20px", cursor:"pointer", userSelect:"none", background:PC.surface }}>
+                              <span style={{ fontSize:"0.78rem", color:PC.text, flex:1 }}>{reg.name}</span>
+                              <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                                {activeSide && (
+                                  <span style={{ fontSize:"0.65rem", fontWeight:700, padding:"2px 8px", borderRadius:99, background:sideColors[activeSide]+"20", color:sideColors[activeSide], border:`1px solid ${sideColors[activeSide]}40` }}>
+                                    {sideLabels[activeSide]}
+                                  </span>
+                                )}
+                                <span style={{ fontSize:"0.65rem", color:PC.muted, display:"inline-block", transition:"transform 0.18s", transform: regionOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▼</span>
+                              </div>
+                            </div>
 
-
-            {/* Text mode */}
-            {(aiMode === "text" || (aiMode === "voice" && aiStatus === "done" && !aiReview)) && aiStatus !== "processing" && !aiReview && (
-              <div>
-                <textarea
-                  value={aiText}
-                  onChange={e => setAiText(e.target.value)}
-                  placeholder="e.g. 34M LBP 3mo lifting, worse sitting+bending, better walking+heat, 7/10"
-                  style={{ width:"100%", minHeight:64, padding:"8px 10px", borderRadius:8,
-                    border:"1px solid #c4b5fd", background:"#fff", color:"#1a1025",
-                    fontSize:"0.78rem", fontFamily:"monospace", resize:"vertical",
-                    lineHeight:1.5, outline:"none", boxSizing:"border-box", marginBottom:8 }}
-                />
-                <div style={{ display:"flex", gap:8 }}>
-                  <button type="button"
-                    onClick={() => runParse(aiText)}
-                    disabled={!aiText.trim() || aiStatus === "processing"}
-                    style={{ flex:1, padding:"9px", borderRadius:10,
-                      background: aiText.trim() ? "#7c3aed" : "#c4b5fd",
-                      color:"#fff", border:"none", fontSize:"0.8rem", fontWeight:700,
-                      cursor: aiText.trim() ? "pointer" : "not-allowed", fontFamily:"inherit" }}>
-                    {aiStatus === "processing" ? "Parsing..." : "✦ Parse with Groq AI"}
-                  </button>
-                  <button type="button" onClick={() => { setAiMode("voice"); setAiStatus("idle"); }}
-                    style={{ padding:"9px 12px", borderRadius:10, background:"transparent", color:"#7c3aed",
-                      border:"1px solid #a78bfa", fontSize:"0.82rem", cursor:"pointer", fontFamily:"inherit" }}>
-                    🎤
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Review panel */}
-            {aiReview && aiResult && (
-              <div>
-                <div style={{ fontSize:"0.8rem", fontWeight:700, color:"#5b21b6", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                  Review extracted data
-                </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:10, maxHeight:220, overflowY:"auto" }}>
-                  {[
-                    aiResult.age        && { k:"Age",         v: aiResult.age + " yrs" },
-                    aiResult.sex        && { k:"Sex",         v: aiResult.sex },
-                    aiResult.occupation && { k:"Occupation",  v: aiResult.occupation },
-                    aiResult.region     && { k:"Region",      v: aiResult.region + (aiResult.laterality ? ` (${aiResult.laterality})` : "") },
-                    aiResult.onset      && { k:"Onset",       v: aiResult.onset },
-                    aiResult.duration   && { k:"Duration",    v: aiResult.duration },
-                    aiResult.nrsWorst != null && { k:"NRS worst",  v: aiResult.nrsWorst + "/10" },
-                    aiResult.nrsBest  != null && { k:"NRS best",   v: aiResult.nrsBest  + "/10" },
-                    aiResult.nrsNow   != null && { k:"NRS now",    v: aiResult.nrsNow   + "/10" },
-                    aiResult.painQuality?.length && { k:"Pain quality", v: aiResult.painQuality.join(", ") },
-                    aiResult.symptomPattern && { k:"Pattern",      v: aiResult.symptomPattern },
-                    aiResult.diurnalPattern && { k:"24hr pattern", v: aiResult.diurnalPattern },
-                    aiResult.morningSymptoms?.length && { k:"Morning",     v: aiResult.morningSymptoms.join(", ") },
-                    aiResult.nightSymptoms?.length   && { k:"Night",       v: aiResult.nightSymptoms.join(", ") },
-                    (aiResult.aggMovements?.length || aiResult.aggActivities?.length) && { k:"Aggravating", v: [...(aiResult.aggMovements||[]), ...(aiResult.aggActivities||[])].join(", ") },
-                    aiResult.relMovements?.length    && { k:"Relieving",   v: aiResult.relMovements.join(", ") },
-                    aiResult.hasRadiation != null    && { k:"Radiation",   v: aiResult.hasRadiation ? (aiResult.radiationArea || "Yes") : "None" },
-                    aiResult.neuroSymptoms?.length   && { k:"Neuro",       v: aiResult.neuroSymptoms.join(", ") },
-                  ].filter(Boolean).map(({k,v}) => (
-                    <div key={k} style={{ display:"flex", gap:8, alignItems:"flex-start",
-                      background:"#fff", borderRadius:7, padding:"5px 9px",
-                      border:"1px solid #e9d5ff", fontSize:"0.82rem" }}>
-                      <span style={{ color:"#7c6a9a", minWidth:74, flexShrink:0 }}>{k}</span>
-                      <span style={{ color:"#1a1025", fontWeight:500 }}>{v}</span>
+                            {/* Region options panel */}
+                            {regionOpen && (
+                              <div style={{ padding:"8px 14px 10px 20px", background:PC.s2, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                                  {(reg.lr ? ['L','R','B'] : ['B']).map(side => {
+                                    const isActive = activeSide === side;
+                                    const isDisabled = !isActive && totalSlots >= 3;
+                                    const col = sideColors[side];
+                                    return (
+                                      <button key={side} type="button"
+                                        onClick={e => { e.stopPropagation(); if (!isDisabled) handleSidePick(reg, side); }}
+                                        style={{
+                                          fontSize:"0.72rem", fontWeight:600,
+                                          padding:"5px 14px", borderRadius:99,
+                                          border:`1px solid ${isActive ? col : PC.border}`,
+                                          background: isActive ? col : PC.surface,
+                                          color: isActive ? "#fff" : isDisabled ? PC.border : PC.muted,
+                                          cursor: isDisabled ? "not-allowed" : "pointer",
+                                          opacity: isDisabled ? 0.3 : 1,
+                                          transition:"all 0.1s", fontFamily:"inherit",
+                                        }}>
+                                        {reg.lr ? (side === 'B' ? 'Both' : side === 'L' ? 'Left' : 'Right') : 'Select'}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                  {aiResult.flags?.length > 0 && aiResult.flags.map(f => (
-                    <div key={f} style={{ display:"flex", gap:8, background:"#fff7ed",
-                      border:"1px solid #fdba74", borderRadius:7, padding:"5px 9px", fontSize:"0.82rem" }}>
-                      <span style={{ color:"#92400e" }}>⚠ Flag</span>
-                      <span style={{ color:"#92400e", fontWeight:500 }}>{f}</span>
-                    </div>
-                  ))}
+                  )}
                 </div>
-                {/* What still needs physio */}
-                {(() => {
-                  const missing = [];
-                  if (aiResult.hasRadiation == null) missing.push("Radiation / referral");
-                  if (!aiResult.nightSymptoms?.length) missing.push("Night symptoms");
-                  if (!aiResult.morningSymptoms?.length) missing.push("Morning stiffness");
-                  if (aiResult.nrsNow == null) missing.push("NRS now");
-                  if (!aiResult.diurnalPattern) missing.push("24hr pattern");
-                  return missing.length > 0 ? (
-                    <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:7,
-                      padding:"6px 10px", fontSize:"0.8rem", color:"#b91c1c", marginBottom:8 }}>
-                      <strong>Still ask patient:</strong> {missing.join(" · ")}
-                    </div>
-                  ) : null;
-                })()}
-                <div style={{ display:"flex", gap:8 }}>
-                  <button type="button" onClick={() => applyAiResult(aiResult)}
-                    style={{ flex:1, padding:"9px", borderRadius:10, background:"#7c3aed",
-                      color:"#fff", border:"none", fontSize:"0.8rem", fontWeight:700,
-                      cursor:"pointer", fontFamily:"inherit" }}>
-                    ✓ Apply to form
-                  </button>
-                  <button type="button" onClick={() => { setAiReview(false); setAiStatus("idle"); setAiText(""); setAiResult(null); }}
-                    style={{ padding:"9px 12px", borderRadius:10, background:"transparent", color:"#7c3aed",
-                      border:"1px solid #a78bfa", fontSize:"0.82rem", cursor:"pointer", fontFamily:"inherit" }}>
-                    Re-try
-                  </button>
-                </div>
+              );
+            })}
+
+            {/* Selected summary */}
+            {selectedRegions.length > 0 && (
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6, padding:"8px 14px", borderTop:`1px solid ${PC.border}`, background:PC.s2 }}>
+                {selectedRegions.map(r => (
+                  <span key={r} style={{
+                    fontSize:"0.65rem", fontWeight:700, padding:"3px 10px", borderRadius:99,
+                    background:(RC_S[r]||PC.accent)+"15", color: RC_S[r]||PC.accent,
+                    border:`1px solid ${(RC_S[r]||PC.accent)}33`,
+                  }}>📍 {r}</span>
+                ))}
               </div>
             )}
           </div>
-        )}
+        );
+      })()}
+
+      {/* ── Progress bar ── */}
+      <div style={{ background: PC.surface, borderRadius:10, padding:"10px 14px", border:`1px solid ${PC.border}` }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+          <span style={{ fontSize:"0.68rem", color: PC.muted }}>{totalD} / {totalF} clinical fields</span>
+          <span style={{ fontSize:"0.85rem", fontWeight:800, color: PC.accent }}>{pct}%</span>
+        </div>
+        <div style={{ height:5, background: PC.s3, borderRadius:99, overflow:"hidden" }}>
+          <div style={{ width:`${pct}%`, height:"100%", borderRadius:99, transition:"width 300ms",
+            background:`linear-gradient(90deg, ${PC.accent}, ${PC.green})` }} />
+        </div>
       </div>
 
-      {/* ── AI success banner ── */}
-      {aiSuccess && (
-        <div style={{ background:"#f0fdf4", border:"1px solid #86efac", borderRadius:10,
-          padding:"10px 14px", display:"flex", alignItems:"flex-start", gap:10 }}>
-          <span style={{ fontSize:"1.1rem" }}>✅</span>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:"0.75rem", fontWeight:700, color:"#166534", marginBottom:3 }}>
-              {aiSuccess.count} fields auto-filled! Scroll down to review.
-            </div>
-            <div style={{ fontSize:"0.78rem", color:"#166534", lineHeight:1.6 }}>
-              {aiSuccess.fields.join(" · ")}
-            </div>
-            <div style={{ fontSize:"0.75rem", color:"#4ade80", marginTop:4 }}>
-              Check Demographics → Chief Complaint sections below ↓
-            </div>
-          </div>
-          <button type="button" onClick={() => setAiSuccess(null)}
-            style={{ background:"none", border:"none", color:"#166534", cursor:"pointer",
-              fontSize:"1rem", lineHeight:1, padding:0 }}>×</button>
-        </div>
-      )}
-
-      {/* ── Region selector — compact tag + dropdown ── */}
-      {(()=>{
-        const rOpen = regionPickerOpen;
-        return (
-          <div style={{ position:"relative" }}>
-            {/* Trigger row */}
-            <div
-              onClick={() => setRegionPickerOpen(o => !o)}
-              style={{ background: PC.surface, borderRadius:10, padding:"12px 14px",
-                border:`1.5px solid ${rOpen ? PC.accent : PC.border}`,
-                display:"flex", alignItems:"center", gap:8, cursor:"pointer",
-                minHeight:48, flexWrap:"wrap" }}>
-              <span style={{ fontSize:"0.88rem", fontWeight:700, color:PC.muted, whiteSpace:"nowrap" }}>
-                📍 Regions ({selectedRegions.length}/3):
-              </span>
-              {selectedRegions.length === 0 ? (
-                <span style={{ fontSize:"0.88rem", color:PC.muted, fontStyle:"italic" }}>tap to select…</span>
-              ) : (
-                selectedRegions.map(r => (
-                  <span key={r} style={{
-                    display:"inline-flex", alignItems:"center", gap:4,
-                    fontSize:"0.78rem", fontWeight:700, padding:"3px 8px", borderRadius:99,
-                    background:(RC_S[r]||PC.accent)+"18", color:RC_S[r]||PC.accent,
-                    border:`1px solid ${(RC_S[r]||PC.accent)}44`,
-                  }}>
-                    {r}
-                    <span onClick={e=>{e.stopPropagation();toggleRegion(r);}}
-                      style={{ fontSize:"0.75rem", cursor:"pointer", opacity:0.7 }}>×</span>
-                  </span>
-                ))
-              )}
-              <span style={{ marginLeft:"auto", fontSize:"0.75rem", color:PC.muted }}>{rOpen?"▲":"▼"}</span>
-            </div>
-            {/* Dropdown panel */}
-            {rOpen && (
-              <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0, zIndex:50,
-                background: PC.surface, border:`1px solid ${PC.border}`, borderRadius:10,
-                boxShadow:"0 8px 24px rgba(0,0,0,0.12)", padding:"10px 12px", maxHeight:280, overflowY:"auto" }}>
-                <div style={{ fontSize:"0.8rem", fontWeight:700, color:PC.muted, textTransform:"uppercase",
-                  letterSpacing:"0.7px", marginBottom:8 }}>
-                  Select up to 3 regions
-                </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                  {ALL_REGIONS_S.map(r => {
-                    const on = selectedRegions.includes(r);
-                    const col = RC_S[r] || PC.accent;
-                    const disabled = !on && selectedRegions.length >= 3;
-                    return (
-                      <label key={r} style={{
-                        display:"flex", alignItems:"center", gap:8, padding:"5px 8px",
-                        borderRadius:7, cursor: disabled ? "not-allowed" : "pointer",
-                        background: on ? col+"10" : "transparent",
-                        opacity: disabled ? 0.4 : 1,
-                        transition:"background 100ms",
-                      }}>
-                        <input type="checkbox" checked={on} disabled={disabled}
-                          onChange={() => { if (!disabled) toggleRegion(r); }}
-                          style={{ accentColor: col, width:14, height:14, cursor: disabled?"not-allowed":"pointer" }} />
-                        <span style={{ fontSize:"0.82rem", fontWeight: on?700:400,
-                          color: on ? col : PC.text }}>{r}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-                {selectedRegions.length > 0 && (
-                  <button onClick={() => setRegionPickerOpen(false)}
-                    style={{ width:"100%", marginTop:8, padding:"7px", borderRadius:8, border:"none",
-                      background:`linear-gradient(135deg,${PC.accent},${PC.a2})`, color:"#fff",
-                      fontWeight:800, fontSize:"0.8rem", cursor:"pointer", fontFamily:"inherit" }}>
-                    ✓ Done — {selectedRegions.length} region{selectedRegions.length>1?"s":""} selected
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* ── Progress bar — grouped status pills ── */}
-      {(()=>{
-        // Core group: complaint + universal sections
-        const coreKeys = Object.keys(UNIV_S||{});
-        const coreFields = Object.values(UNIV_S||{}).flatMap(s=>s.fields||[]).filter(f=>f.id);
-        const coreDone = coreFields.filter(f=>data[f.id]&&data[f.id]!=="").length;
-        const coreTotal = coreFields.length;
-
-        // Region group: region-specific sections
-        const regFields = Object.values(REG_MOD_S||{}).flatMap(mod=>
-          Object.values(mod.sections||mod||{}).flatMap(s=>s.fields?s.fields:[])
-        ).filter(f=>f&&f.id);
-        const regDone = regFields.filter(f=>data[f.id]&&data[f.id]!=="").length;
-        const regTotal = regFields.length;
-
-        // BPS group
-        const bpsFields = Object.values(BPS_S||{}).flatMap(s=>s.fields||[]).filter(f=>f.id);
-        const bpsDone = bpsFields.filter(f=>data[f.id]&&data[f.id]!=="").length;
-        const bpsTotal = bpsFields.length;
-
-        const hasRegion = selectedRegions.length > 0;
-        const hasBPS = needsBPS_S(data);
-
-        const groups = [
-          { label:"Core", done: coreDone >= Math.round(coreTotal*0.5), pct: Math.round(coreDone/Math.max(coreTotal,1)*100) },
-          hasRegion && { label:"Region", done: regDone > 0 && regDone >= Math.round(regTotal*0.4), pct: Math.round(regDone/Math.max(regTotal,1)*100) },
-          hasBPS && { label:"BPS", done: bpsDone > 0, pct: Math.round(bpsDone/Math.max(bpsTotal,1)*100) },
-        ].filter(Boolean);
-
-        return (
-          <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 2px", flexWrap:"wrap" }}>
-            <div style={{ flex:1, height:4, background: PC.s3, borderRadius:99, overflow:"hidden", minWidth:60 }}>
-              <div style={{ width:`${pct}%`, height:"100%", borderRadius:99, transition:"width 300ms",
-                background:`linear-gradient(90deg, ${PC.accent}, ${PC.green})` }} />
-            </div>
-            {groups.map(g => (
-              <span key={g.label} style={{
-                fontSize:"0.73rem", fontWeight:700, padding:"2px 8px", borderRadius:99,
-                background: g.done ? PC.green+"18" : PC.s3,
-                color: g.done ? PC.green : PC.muted,
-                border: `1px solid ${g.done ? PC.green+"44" : PC.border}`,
-                whiteSpace:"nowrap",
-              }}>
-                {g.done ? "✓ " : ""}{g.label}{!g.done && g.pct > 0 ? ` ${g.pct}%` : ""}
-              </span>
-            ))}
-            {groups.length === 0 && (
-              <span style={{ fontSize:"0.73rem", color: PC.muted }}>{pct}%</span>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* ── Summary modal — shows filled values as readable text ── */}
-      {showSummary && (()=>{
-        const SEP = "|";
-        const v = (k) => data[k]||"";
-        const arr = (k) => v(k)?v(k).split(SEP).filter(Boolean):[];
-        const hasAny = (keys) => keys.some(k=>v(k));
-
-        // Build readable summary rows from actual filled data
-        const rows = [];
-
-        // Demographics
-        const dem = [data.dem_name, data.dem_age&&`${data.dem_age}${data.dem_sex?` ${data.dem_sex}`:""}`, data.dem_occupation].filter(Boolean).join(" · ");
-        if(dem) rows.push({label:"Patient",val:dem,col:"#534AB7"});
-
-        // Chief complaint
-        if(v("cc_main")) rows.push({label:"Complaint",val:v("cc_main"),col:"#dc2626"});
-        const pain=[v("cc_vas_now")&&`Pain now ${v("cc_vas_now")}/10`,v("cc_vas_worst")&&`Worst ${v("cc_vas_worst")}/10`].filter(Boolean).join(" · ");
-        if(pain) rows.push({label:"Pain score",val:pain,col:"#dc2626"});
-
-        // Onset & duration
-        const onset=[v("cc_onset_date")||v("cx_onset_date"),v("cc_duration"),v("cc_mechanism")||v("cc_mech_type")].filter(Boolean).join(" · ");
-        if(onset) rows.push({label:"Onset",val:onset,col:"#d97706"});
-
-        // Location
-        const loc=Object.entries(data).filter(([k,val])=>k.endsWith("_loc")||k.endsWith("_location")).map(([,val])=>val).filter(Boolean).join("; ");
-        if(loc) rows.push({label:"Location",val:loc,col:"#7c3aed"});
-
-        // Aggravating — collect all *_agg* fields
-        const aggKeys=Object.keys(data).filter(k=>k.includes("_agg")&&data[k]);
-        const aggVals=[...new Set(aggKeys.flatMap(k=>arr(k)))].filter(v2=>v2&&v2.length>2).slice(0,6).join(", ");
-        if(aggVals) rows.push({label:"Aggravating",val:aggVals,col:"#dc2626"});
-
-        // Relieving
-        const relKeys=Object.keys(data).filter(k=>k.includes("_rel")&&data[k]);
-        const relVals=[...new Set(relKeys.flatMap(k=>arr(k)))].filter(v2=>v2&&v2.length>2).slice(0,5).join(", ");
-        if(relVals) rows.push({label:"Relieving",val:relVals,col:"#059669"});
-
-        // Symptom pattern / 24hr
-        const patKeys=["cc_24hr","cx_24hr","lx_24hr","kn_24hr","hp_24hr","sh_24hr","af_24hr"];
-        const pat=patKeys.map(k=>v(k)).filter(Boolean)[0];
-        if(pat) rows.push({label:"24-hr pattern",val:pat,col:"#7c3aed"});
-
-        const trajKeys=["cx_trajectory","lx_trajectory","kn_trajectory","hp_trajectory","sh_trajectory"];
-        const traj=trajKeys.map(k=>v(k)).filter(Boolean)[0];
-        if(traj) rows.push({label:"Trajectory",val:traj,col:"#7c3aed"});
-
-        // Radiation
-        const radKeys=Object.keys(data).filter(k=>k.includes("radiation")||k.includes("_rad")&&data[k]);
-        const radVals=[...new Set(radKeys.flatMap(k=>arr(k)))].filter(v2=>v2&&v2.length>2&&!v2.toLowerCase().includes("no rad")).slice(0,4).join(", ");
-        if(radVals) rows.push({label:"Radiation",val:radVals,col:"#f97316"});
-
-        // Red flags
-        const rfAction=v("grf_action");
-        if(rfAction) rows.push({label:"Red flags",val:rfAction,col:rfAction.includes("No red flags")?"#059669":"#dc2626"});
-
-        // Goals
-        const goals=[v("ar_goal_function"),v("ar_goal_pain"),v("ar_goal_return"),v("sub_goals")].filter(Boolean).slice(0,2).join("; ");
-        if(goals) rows.push({label:"Goals",val:goals,col:"#059669"});
-
-        // PMH
-        const pmh=arr("pmh_conditions").filter(v2=>!v2.includes("No significant")).slice(0,3).join(", ");
-        if(pmh) rows.push({label:"Past history",val:pmh,col:"#6b7280"});
-
-        // Medications
-        const meds=arr("med_current").filter(v2=>!v2.includes("None")).slice(0,3).join(", ");
-        if(meds) rows.push({label:"Medications",val:meds,col:"#6b7280"});
-
-        const rfSec=Object.entries(sections).find(([k])=>k==="red_flags");
-        const rfSkipped=rfSec?rfSec[1].fields.filter(f=>!data[f.id]||data[f.id]==="").length:0;
-        const hasBlocker=rfSkipped>0;
-
-        return(
-          <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
-            onClick={()=>setShowSummary(false)}>
-            <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,background:PC.surface,borderRadius:"16px 16px 0 0",padding:"20px 16px 28px",maxHeight:"82vh",overflowY:"auto"}}>
-              <div style={{width:40,height:4,borderRadius:99,background:PC.border,margin:"0 auto 16px"}}/>
-              <div style={{fontSize:15,fontWeight:800,color:PC.text,marginBottom:14}}>What you've documented</div>
-              {rows.length===0?(
-                <div style={{textAlign:"center",padding:"24px 0",color:PC.muted,fontSize:13}}>Nothing filled yet — complete the assessment sections first.</div>
-              ):(
-                <div style={{display:"flex",flexDirection:"column",gap:0,marginBottom:14,borderRadius:12,overflow:"hidden",border:`1px solid ${PC.border}`}}>
-                  {rows.map((r,i)=>(
-                    <div key={i} style={{display:"flex",gap:10,padding:"10px 14px",background:i%2===0?PC.s2:PC.surface,borderBottom:i<rows.length-1?`1px solid ${PC.border}`:"none",alignItems:"flex-start"}}>
-                      <span style={{fontSize:11,fontWeight:700,color:r.col,minWidth:86,flexShrink:0,paddingTop:1,textTransform:"uppercase",letterSpacing:"0.4px"}}>{r.label}</span>
-                      <span style={{fontSize:12.5,color:PC.text,lineHeight:1.55,flex:1}}>{r.val}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {hasBlocker&&(
-                <div style={{padding:"10px 12px",background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:10,marginBottom:12}}>
-                  <div style={{fontSize:11.5,fontWeight:800,color:"#A32D2D",marginBottom:2}}>⚠ Red flag screen incomplete</div>
-                  <div style={{fontSize:10.5,color:"#991B1B"}}>Complete before running the clinical engine</div>
-                </div>
-              )}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                <button onClick={()=>setShowSummary(false)}
-                  style={{padding:"11px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
-                  Continue editing
-                </button>
-                <button onClick={()=>{setShowSummary(false);runInterpretation();}}
-                  disabled={selectedRegions.length===0}
-                  style={{padding:"11px",borderRadius:10,border:"none",
-                    background:selectedRegions.length>0?`linear-gradient(135deg,${PC.accent},${PC.a2})`:PC.s3,
-                    color:selectedRegions.length>0?"#fff":PC.muted,fontWeight:800,fontSize:13,
-                    cursor:selectedRegions.length>0?"pointer":"not-allowed",fontFamily:"inherit"}}>
-                  🧠 Run analysis
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {/* ── Generate button — above tabs for instant access ── */}
+      <button type="button" onClick={runInterpretation}
+        disabled={selectedRegions.length === 0}
+        style={{
+          width:"100%", padding:"11px 16px", borderRadius:10, border:"none",
+          background: selectedRegions.length > 0
+            ? `linear-gradient(135deg, ${PC.accent}, ${PC.a2})`
+            : PC.s3,
+          color: selectedRegions.length > 0 ? "#fff" : PC.muted,
+          fontWeight:800, fontSize:"0.85rem",
+          cursor: selectedRegions.length > 0 ? "pointer" : "not-allowed",
+          boxShadow: selectedRegions.length > 0 ? `0 4px 14px ${PC.accent}33` : "none",
+          fontFamily:"inherit", display:"flex", alignItems:"center",
+          justifyContent:"center", gap:8,
+        }}>
+        🧠 Generate Clinical Interpretation
+        {selectedRegions.length > 0 && (
+          <span style={{ fontSize:"0.65rem", background:"rgba(255,255,255,0.2)",
+            padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
+            {selectedRegions.length} region{selectedRegions.length>1?"s":""}
+          </span>
+        )}
+      </button>
 
       {/* ── Tabs ── */}
       <div style={{ display:"flex", borderBottom:`1px solid ${PC.border}`, gap:0 }}>
-        {[["form","📝 Assessment"],["bodychart","🫁 Body Chart"],["results","🧠 Interpretation"]].map(([t, label]) => (
-          <button key={t} type="button" onClick={() => { setActiveTab(t); onTabChange&&onTabChange(t); }} style={{
+        {[["form","📝 Assessment"],["results","🧠 Interpretation"]].map(([t, label]) => (
+          <button key={t} type="button" onClick={() => setActiveTab(t)} style={{
             padding:"8px 16px", background:"transparent", border:"none", cursor:"pointer",
             borderBottom: activeTab===t ? `2px solid ${PC.accent}` : "2px solid transparent",
             color: activeTab===t ? PC.accent : PC.muted,
@@ -5207,7 +4502,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             {label}
             {t==="results" && insight && (
               <span style={{ marginLeft:5, background: insight.anyUrgent ? PC.red : PC.green,
-                color:"#fff", fontSize:"0.75rem", padding:"1px 6px", borderRadius:99, fontWeight:700 }}>
+                color:"#fff", fontSize:"0.55rem", padding:"1px 6px", borderRadius:99, fontWeight:700 }}>
                 {insight.anyUrgent ? "⚠" : "✓"}
               </span>
             )}
@@ -5220,70 +4515,38 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       ════════════════════════════════════════════════════ */}
       {activeTab === "form" && (
         <>
-          {/* Section nav — grouped by region */}
-          {(() => {
-            // Build groups: core universal keys, then one group per selected region, then trailing universal
-            const CORE_KEYS = ["complaint"];
-            const TRAILING_KEYS = ["goals","history","red_flags","pmh","lifestyle","paediatric","hypermobility"];
-            const SLEEP_KEYS = ["sleep","sleep_pattern","sleep_impact"];
-            const SPORT_KEYS = ["sport","sport_load","sport_return"];
-            const BPS_KEYS = ["bps","bps_social","bps_psycho"];
-
-            const allKeys = Object.keys(sections);
-
-            // Region keys per selected region
-            const regionGroups = selectedRegions.map(r => {
-              const mod = REG_MOD_S[r];
-              if (!mod) return { label: r, col: RC_S[r]||PC.accent, keys: [] };
-              return {
-                label: r,
-                col: RC_S[r] || PC.accent,
-                keys: Object.keys(mod.sections).filter(k => allKeys.includes(k)),
-              };
-            });
-
-            // Gather remaining keys that don't fit above buckets
-            const knownKeys = new Set([
-              ...CORE_KEYS,
-              ...regionGroups.flatMap(g => g.keys),
-              ...TRAILING_KEYS, ...SLEEP_KEYS, ...SPORT_KEYS, ...BPS_KEYS,
-            ]);
-            const trailingPresent = allKeys.filter(k => TRAILING_KEYS.includes(k));
-            const sleepPresent = allKeys.filter(k => SLEEP_KEYS.includes(k));
-            const sportPresent = allKeys.filter(k => SPORT_KEYS.includes(k));
-            const bpsPresent = allKeys.filter(k => BPS_KEYS.includes(k));
-            const extraPresent = allKeys.filter(k => !knownKeys.has(k));
-
-            const groups = [
-              { label:"Core", col: PC.accent, keys: CORE_KEYS.filter(k => allKeys.includes(k)) },
-              ...regionGroups,
-              ...(trailingPresent.length ? [{ label:"General", col:"#6b7280", keys: trailingPresent }] : []),
-              ...(sleepPresent.length ? [{ label:"Sleep", col:"#7c3aed", keys: sleepPresent }] : []),
-              ...(sportPresent.length ? [{ label:"Sport", col:"#16a34a", keys: sportPresent }] : []),
-              ...(bpsPresent.length ? [{ label:"Psychosocial", col:"#d97706", keys: bpsPresent }] : []),
-              ...(extraPresent.length ? [{ label:"Other", col: PC.muted, keys: extraPresent }] : []),
-            ].filter(g => g.keys.length > 0);
-
-            return (
-              <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                {groups.map(group => (
-                  <CollapsibleNavGroup
-                    key={group.label}
-                    group={group}
-                    activeSection={activeSection}
-                    sections={sections}
-                    countFilled={countFilled}
-                    PC={PC}
-                    setActiveSection={setActiveSection}
-                    setSearchTerm={setSearchTerm}
-                  />
-                ))}
-              </div>
-            );
-          })()}
+          {/* Section nav */}
+          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:4 }}>
+            {Object.entries(sections).map(([key, s]) => {
+              const filled = countFilled(key);
+              const isAct = key === activeSection;
+              const col = s.color || PC.accent;
+              return (
+                <button key={key} type="button" onClick={() => { setActiveSection(key); setSearchTerm(""); }}
+                  style={{
+                    padding:"6px 10px", borderRadius:8, whiteSpace:"nowrap", cursor:"pointer",
+                    border:`1px solid ${isAct ? col : PC.border}`,
+                    background: isAct ? col+"15" : PC.s2,
+                    color: isAct ? col : PC.muted,
+                    fontSize:"0.65rem", fontWeight: isAct ? 700 : 500,
+                    display:"flex", alignItems:"center", gap:5, flexShrink:0,
+                    transition:"all 120ms",
+                  }}>
+                  <span>{s.icon}</span>
+                  <span>{s.label}</span>
+                  {filled > 0 && (
+                    <span style={{ background: isAct ? col : PC.muted, color:"#fff",
+                      fontSize:"0.58rem", padding:"1px 5px", borderRadius:99, fontWeight:700 }}>
+                      {filled}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
           {/* No region selected prompt */}
-          {selectedRegions.length === 0 && !["complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
+          {selectedRegions.length === 0 && !["demographics","complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
             <div style={{ background:"#fffbeb", border:`1px solid ${PC.yellow}55`, borderRadius:10,
               padding:"12px 16px", color: PC.yellow, fontSize:"0.78rem" }}>
               ⚠ Select at least one region above to load the region-specific assessment module
@@ -5291,159 +4554,57 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           )}
 
           {/* Active section card */}
-          {sec && (() => {
-            const sectionKeys = Object.keys(sections);
-            const curIdx = sectionKeys.indexOf(activeSection);
-            const prevKey = curIdx > 0 ? sectionKeys[curIdx - 1] : null;
-            const nextKey = curIdx < sectionKeys.length - 1 ? sectionKeys[curIdx + 1] : null;
-            const prevSec = prevKey ? sections[prevKey] : null;
-            const nextSec = nextKey ? sections[nextKey] : null;
-            const goTo = (key) => {
-              setActiveSection(key);
-              setSearchTerm("");
-              // Scroll the section card to top (works inside any scrollable container)
-              setTimeout(() => {
-                if (sectionTopRef.current) {
-                  sectionTopRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
-                }
-              }, 30);
-            };
-            return (
-              <div ref={sectionTopRef} style={{ background: PC.surface, borderRadius:12,
-                border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44`, overflow:"hidden" }}>
+          {sec && (
+            <div style={{ background: PC.surface, borderRadius:12, padding:"16px 18px",
+              border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44` }}>
 
-                {/* Section header */}
-                <div style={{ padding:"16px 18px 12px", borderBottom:`1px solid ${PC.border}`, background: secColor+"06" }}>
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <div style={{ fontSize:"1.05rem", fontWeight:800, color: secColor }}>
-                      {sec.icon} {sec.label}
-                    </div>
-                    <span style={{ fontSize:"0.85rem", color: PC.muted, fontWeight:600,
-                      background: PC.s2, borderRadius:20, padding:"2px 10px" }}>
-                      {curIdx + 1} / {sectionKeys.length}
-                    </span>
+              {/* Section header */}
+              <div style={{ marginBottom:12 }}>
+                <div style={{ fontSize:"0.95rem", fontWeight:800, color: secColor }}>
+                  {sec.icon} {sec.label}
+                </div>
+                {sec.description && (
+                  <div style={{ fontSize:"0.68rem", color: PC.muted, marginTop:3, fontStyle:"italic",
+                    borderLeft:`2px solid ${secColor}44`, paddingLeft:8 }}>
+                    {sec.description}
                   </div>
-                  {sec.description && (
-                    <div style={{ fontSize:"0.82rem", color: PC.muted, marginTop:6, fontStyle:"italic",
-                      borderLeft:`3px solid ${secColor}55`, paddingLeft:10, lineHeight:1.5 }}>
-                      {sec.description}
-                    </div>
-                  )}
-                </div>
-
-                {/* Fields */}
-                <div style={{ padding:"18px 18px" }}>
-                  {/* Search (multicheck sections only) */}
-                  {sec.fields.some(f => f.type === "multicheck") && (
-                    <input type="text" value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                      placeholder="🔎 Filter options..."
-                      style={{ width:"100%", padding:"11px 14px", marginBottom:14,
-                        background: PC.s2, border:`1.5px solid ${PC.inputBorder}`,
-                        borderRadius:10, fontSize:"0.95rem", color: PC.text,
-                        outline:"none", boxSizing:"border-box", minHeight:46 }} />
-                  )}
-
-                  {sec.fields.map(field => {
-                    const helpText = FIELD_HELP[field.id];
-                    return (
-                    <div key={field.id} style={{ marginBottom:20 }}>
-                      <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.93rem", fontWeight:600,
-                        color: PC.text, marginBottom:8, letterSpacing:0.1, flexWrap:"wrap" }}>
-                        <span>{field.label}</span>
-                        {field.type === "textarea" && (
-                          <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:400, fontStyle:"italic" }}>notes</span>
-                        )}
-                        {helpText && (
-                          <span title={helpText} style={{
-                            display:"inline-flex", alignItems:"center", justifyContent:"center",
-                            width:16, height:16, borderRadius:"50%",
-                            background: PC.accent+"22", color: PC.accent,
-                            fontSize:"0.72rem", fontWeight:900, cursor:"help",
-                            border:`1px solid ${PC.accent}44`, flexShrink:0, lineHeight:1,
-                          }}>ⓘ</span>
-                        )}
-                      </label>
-                      {renderField(field)}
-                    </div>
-                    );
-                  })}
-                </div>
-
-                {/* Prev / Next row */}
-                <div style={{ display:"flex", borderTop:`1px solid ${PC.border}` }}>
-                  <button type="button"
-                    onClick={() => prevKey && goTo(prevKey)}
-                    disabled={!prevKey}
-                    style={{
-                      flex:1, padding:"15px 14px", background:"transparent", border:"none",
-                      borderRight:`1px solid ${PC.border}`,
-                      color: prevKey ? PC.muted : PC.border,
-                      fontSize:"0.9rem", fontWeight:500, cursor: prevKey ? "pointer" : "default",
-                      fontFamily:"inherit", textAlign:"left", display:"flex", alignItems:"center", gap:6,
-                    }}>
-                    {prevKey && <span style={{ fontSize:"1rem" }}>←</span>}
-                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      {prevSec ? `${prevSec.icon} ${prevSec.label}` : ""}
-                    </span>
-                  </button>
-                  <button type="button"
-                    onClick={() => nextKey && goTo(nextKey)}
-                    disabled={!nextKey}
-                    style={{
-                      flex:1, padding:"15px 14px",
-                      background: nextKey ? secColor+"14" : "transparent",
-                      border:"none",
-                      color: nextKey ? secColor : PC.border,
-                      fontSize:"0.9rem", fontWeight: nextKey ? 700 : 500,
-                      cursor: nextKey ? "pointer" : "default",
-                      fontFamily:"inherit", textAlign:"right", display:"flex",
-                      alignItems:"center", justifyContent:"flex-end", gap:6,
-                    }}>
-                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      {nextSec ? `${nextSec.icon} ${nextSec.label}` : "All done ✓"}
-                    </span>
-                    {nextKey && <span style={{ fontSize:"1rem" }}>→</span>}
-                  </button>
-                </div>
-
+                )}
               </div>
-            );
-          })()}
 
-          {/* ── Run Analysis — bottom of form ── */}
-          <button type="button" onClick={()=>setShowSummary(true)}
-            disabled={selectedRegions.length === 0}
-            style={{
-              width:"100%", padding:"12px 16px", borderRadius:10, border:"none",
-              background: selectedRegions.length > 0
-                ? `linear-gradient(135deg, ${PC.accent}, ${PC.a2})`
-                : PC.s3,
-              color: selectedRegions.length > 0 ? "#fff" : PC.muted,
-              fontWeight:800, fontSize:"0.85rem",
-              cursor: selectedRegions.length > 0 ? "pointer" : "not-allowed",
-              boxShadow: selectedRegions.length > 0 ? `0 4px 14px ${PC.accent}33` : "none",
-              fontFamily:"inherit", display:"flex", alignItems:"center",
-              justifyContent:"center", gap:8, marginTop:4,
-            }}>
-            🧠 Review &amp; Run Analysis
-            {selectedRegions.length > 0 && (
-              <span style={{ fontSize:"0.75rem", background:"rgba(255,255,255,0.2)",
-                padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
-                {selectedRegions.length} region{selectedRegions.length>1?"s":""}
-              </span>
-            )}
-          </button>
+              {/* Search (multicheck sections only) */}
+              {sec.fields.some(f => f.type === "multicheck") && (
+                <input type="text" value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="🔎 Filter options..."
+                  style={{ width:"100%", padding:"7px 11px", marginBottom:12,
+                    background: PC.s2, border:`1px solid ${PC.inputBorder}`,
+                    borderRadius:8, fontSize:"0.72rem", color: PC.text,
+                    outline:"none", boxSizing:"border-box" }} />
+              )}
+
+              {/* Fields */}
+              {sec.fields.map(field => (
+                <div key={field.id} style={{ marginBottom:14 }}>
+                  <label style={{ display:"block", fontSize:"0.72rem", fontWeight:600,
+                    color: PC.text, marginBottom:5, letterSpacing:0.2 }}>
+                    {field.label}
+                    {field.type === "textarea" && (
+                      <span style={{ fontSize:"0.6rem", color: PC.muted, fontWeight:400,
+                        marginLeft:6, fontStyle:"italic" }}>notes</span>
+                    )}
+                  </label>
+                  {renderField(field)}
+                </div>
+              ))}
+            </div>
+          )}
+
         </>
       )}
 
       {/* ════════════════════════════════════════════════════
           RESULTS TAB
       ════════════════════════════════════════════════════ */}
-      {activeTab === "bodychart" && (
-        <div id="subjective-bodychart-slot" style={{minHeight:200}}/>
-      )}
-
       {activeTab === "results" && !insight && (
         <div style={{ background: PC.surface, borderRadius:12, padding:28,
           border:`1px solid ${PC.border}`, textAlign:"center", color: PC.muted, fontSize:"0.8rem" }}>
@@ -5464,8 +4625,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                 {/* Header */}
                 <div style={{ background:`${regCol}12`, borderBottom:`1px solid ${regCol}22`, padding:"8px 14px", display:"flex", alignItems:"center", gap:8 }}>
                   <div style={{ width:6, height:6, borderRadius:"50%", background:regCol, flexShrink:0 }}/>
-                  <span style={{ fontSize:"0.75rem", fontWeight:800, color:regCol, letterSpacing:"0.5px" }}>{r.region}</span>
-                  <span style={{ fontSize:"0.8rem", color:PC.muted, marginLeft:4 }}>— Guided assessment workflow</span>
+                  <span style={{ fontSize:"0.65rem", fontWeight:800, color:regCol, letterSpacing:"0.5px" }}>{r.region}</span>
+                  <span style={{ fontSize:"0.6rem", color:PC.muted, marginLeft:4 }}>— Guided assessment workflow</span>
                 </div>
                 {/* Action button grid */}
                 <div style={{ padding:"10px 12px", display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
@@ -5488,7 +4649,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                 </div>
                 {insight.regionResults.filter(r=>r.urgentFlag).map((r,i)=>(
                   r.precautions.map((p,j)=>(
-                    <div key={`${i}-${j}`} style={{ fontSize:"0.82rem", color: PC.red, marginBottom:3, lineHeight:1.5 }}>• {p}</div>
+                    <div key={`${i}-${j}`} style={{ fontSize:"0.72rem", color: PC.red, marginBottom:3, lineHeight:1.5 }}>• {p}</div>
                   ))
                 ))}
               </div>
@@ -5525,10 +4686,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             const romPriority = {
               "Cervical spine":    [{mv:"Rotation L + R",imp:"High",why:"Most clinically relevant — C1/C2 restriction (FRT); 90° norm; <60° = significant"},{mv:"Flexion",imp:"High",why:"Discogenic aggravator — centralisation testing; chin to chest norm"},{mv:"Extension + rotation quadrant",imp:"High",why:"Facet loading — reproduces facet / radicular pain"},{mv:"Side flexion L + R",imp:"Moderate",why:"Lateral canal narrowing — radiculopathy screen"}],
               "Thoracic spine":    [{mv:"Rotation (seated)",imp:"High",why:"Most restricted in thoracic dysfunction; norm 35-45 degrees; compare bilaterally"},{mv:"Flexion — forward bend",imp:"High",why:"Thoracic kyphosis angle + rib hump screen (scoliosis); segmental stiffness"},{mv:"Extension",imp:"High",why:"Facet / costovertebral provocation — restricted in hyperkyphosis"},{mv:"Rib cage expansion",imp:"Moderate",why:"Costochondritis / rib fracture — compare inhalation expansion bilaterally (norm >5cm)"}],
-              "Shoulder (L)":      [{mv:"Abduction",imp:"High",why:"Painful arc 60-120 degrees = subacromial; full loss = capsular (STTT)"},{mv:"External Rotation",imp:"High",why:"First to restrict in capsular pattern — compare bilaterally"},{mv:"Hand-behind-back (IR)",imp:"High",why:"Functional IR — reaching / dressing limitation"},{mv:"Horizontal adduction",imp:"Moderate",why:"AC joint reproduction test; posterior capsule tightness (GIRD)"}],
+              "Shoulder (L)":      [{mv:"Abduction",imp:"High",why:"Painful arc 60-120 degrees = subacromial; full loss = capsular (Cyriax)"},{mv:"External Rotation",imp:"High",why:"First to restrict in capsular pattern — compare bilaterally"},{mv:"Hand-behind-back (IR)",imp:"High",why:"Functional IR — reaching / dressing limitation"},{mv:"Horizontal adduction",imp:"Moderate",why:"AC joint reproduction test; posterior capsule tightness (GIRD)"}],
               "Shoulder (R)":      [{mv:"Abduction",imp:"High",why:"Painful arc = subacromial pattern; full loss = capsular"},{mv:"External Rotation",imp:"High",why:"Capsular pattern — first movement restricted; compare bilaterally"},{mv:"Hand-behind-back",imp:"High",why:"Functional IR — ADL impact"},{mv:"Horizontal adduction",imp:"Moderate",why:"AC joint / posterior capsule tightness"}],
               "Lumbar / SI":       [{mv:"Flexion (fingertip to floor)",imp:"High",why:"Discogenic aggravator — centralisation? Repeated movements (McKenzie); lateral shift?"},{mv:"Extension",imp:"High",why:"Facet / stenosis pattern — reproduces symptoms + centralisation testing"},{mv:"Side flexion L + R",imp:"High",why:"Lateral shift screen — disc protrusion pattern; asymmetry = relevant level"},{mv:"Rotation (sitting)",imp:"Moderate",why:"Combined movements — facet quadrant loading"}],
-              "Hip / Groin":       [{mv:"Internal rotation (prone 90 degrees flexion)",imp:"High",why:"MOST restricted in OA capsular pattern (STTT); <35 degrees = LBP risk driver"},{mv:"FADIR combined",imp:"High",why:"FAI / labral provocation — most sensitive combination test"},{mv:"Flexion (hip-lumbar rhythm)",imp:"High",why:"Observe pelvic compensation at end range — hip-lumbar rhythm disruption"},{mv:"Abduction",imp:"Moderate",why:"Gluteus medius / abductor tendinopathy — compare bilaterally"}],
+              "Hip / Groin":       [{mv:"Internal rotation (prone 90 degrees flexion)",imp:"High",why:"MOST restricted in OA capsular pattern (Cyriax); <35 degrees = LBP risk driver"},{mv:"FADIR combined",imp:"High",why:"FAI / labral provocation — most sensitive combination test"},{mv:"Flexion (hip-lumbar rhythm)",imp:"High",why:"Observe pelvic compensation at end range — hip-lumbar rhythm disruption"},{mv:"Abduction",imp:"Moderate",why:"Gluteus medius / abductor tendinopathy — compare bilaterally"}],
               "Knee (L)":          [{mv:"Flexion (passive + active)",imp:"High",why:"Capsular restriction (OA: flexion > extension loss); spring end-feel = meniscal block"},{mv:"Extension — full hyperextension check",imp:"High",why:"Inability = effusion inhibition or mechanical block; hyperextension = PCL / posterior capsule"},{mv:"Tibial rotation at 90 degrees",imp:"Moderate",why:"Restricted IR = LCL / IT band; restricted ER = MCL / medial capsule"}],
               "Knee (R)":          [{mv:"Flexion (passive + active)",imp:"High",why:"Capsular restriction or meniscal block — note end-feel"},{mv:"Extension — full check",imp:"High",why:"Effusion or mechanical block — compare to other side"},{mv:"Tibial rotation at 90 degrees",imp:"Moderate",why:"Ligament restriction — IR vs ER asymmetry"}],
               "Ankle / Foot":      [{mv:"Dorsiflexion — weight-bearing lunge test",imp:"High",why:"<10cm from wall = restricted DF — primary kinetic chain driver; compare bilaterally"},{mv:"Inversion / eversion",imp:"High",why:"Ligament integrity (inversion) + tibialis posterior (eversion)"},{mv:"Plantarflexion",imp:"Moderate",why:"Achilles / posterior impingement — passive overpressure"},{mv:"Subtalar neutral + midfoot mobility",imp:"Moderate",why:"Pronation / supination pattern — functional foot alignment"}],
@@ -5593,7 +4754,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             if (r.region === "Elbow/Wrist/Hand") txDir.push({phase:"Kinetic Chain",detail:"Upper limb kinetic chain: thoracic rotation → shoulder ER / scapular control → elbow → wrist → hand. In throwing / racquet sport, proximal strength deficit drives distal overload (Kibler). Assess cervical and shoulder before isolating elbow/wrist"});
             if (r.region === "Cervical spine") txDir.push({phase:"Motor Control",detail:"Deep cervical flexor (DNF) training using craniocervical flexion test protocol (Jull 2008). Progress: CCFT biofeedback (22-26 mmHg) → functional positions → sustained posture endurance → cervical loading. Address thoracic kyphosis concurrently"});
 
-            // ── CPA / Motor Control ──
+            // ── NKT / Motor Control ──
             const nktMap = {
               "Cervical spine":   {over:["Upper trapezius","Sternocleidomastoid","Suboccipital muscles","Scalenes (accessory breathing)"],under:["Deep cervical flexors (DNF)","Lower trapezius","Serratus anterior","Cervical multifidus (segmental)"]},
               "Thoracic spine":   {over:["Superficial thoracic erectors","Upper trapezius","Scalenes","Pectoralis major / minor"],under:["Thoracic multifidus","Lower trapezius","Serratus anterior","Rhomboids","Diaphragm (stabiliser role)"]},
@@ -5623,7 +4784,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   </div>
                   <div style={{ display:"flex", gap:5, flexWrap:"wrap", justifyContent:"flex-end" }}>
                     {r.tags.slice(0,4).map(t => (
-                      <span key={t} style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 7px",
+                      <span key={t} style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px",
                         borderRadius:99, background:"rgba(255,255,255,0.25)", color:"#fff" }}>{t}</span>
                     ))}
                   </div>
@@ -5634,11 +4795,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   {/* ── PHASE 1: CLINICAL HYPOTHESES ── */}
                   <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px",
                     borderLeft:`4px solid ${regCol}` }}>
-                    <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                    <div style={{ fontSize:"0.6rem", fontWeight:800, textTransform:"uppercase",
                       letterSpacing:1.5, color: regCol, marginBottom:8 }}>
                       Phase 1 — Clinical Hypotheses
                     </div>
-                    <div style={{ fontSize:"0.8rem", color: PC.muted, marginBottom:8, fontStyle:"italic" }}>
+                    <div style={{ fontSize:"0.7rem", color: PC.muted, marginBottom:8, fontStyle:"italic" }}>
                       Presentation suggests — not confirmed diagnosis
                     </div>
                     {r.differentials.length === 0 && (
@@ -5657,14 +4818,14 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             {di===0?"🔵 High probability":di===1?"🟡 Moderate probability":"⚪ Lower probability"}&nbsp;&nbsp;
                             {d.label}
                           </div>
-                          <span style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 7px",
+                          <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px",
                             borderRadius:99, flexShrink:0,
                             background: confBg(d.confidence), color: confColor(d.confidence) }}>
                             {d.confidence}
                           </span>
                         </div>
                         {d.evidence && (
-                          <div style={{ fontSize:"0.73rem", color: PC.muted, lineHeight:1.45 }}>
+                          <div style={{ fontSize:"0.63rem", color: PC.muted, lineHeight:1.45 }}>
                             Findings consistent with: {d.evidence}
                           </div>
                         )}
@@ -5678,7 +4839,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                         {label:"Neural",on:r.radiculopathySig||r.neurodynamicSig,col:"#7c3aed"},
                         {label:"Nociplastic",on:r.nociplasticSig,col:PC.red},
                       ].map(p=>(
-                        <span key={p.label} style={{ fontSize:"0.8rem", fontWeight:700, padding:"3px 9px",
+                        <span key={p.label} style={{ fontSize:"0.6rem", fontWeight:700, padding:"3px 9px",
                           borderRadius:99,
                           background: p.on ? p.col+"15" : PC.s3,
                           color: p.on ? p.col : PC.border,
@@ -5692,17 +4853,17 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   {/* ── PHASE 2: OBSERVATION ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{ fontSize:"0.78rem", fontWeight:800, textTransform:"uppercase",
+                      <span style={{ fontSize:"0.68rem", fontWeight:800, textTransform:"uppercase",
                         letterSpacing:1.2, color: PC.muted }}>Phase 2 — Observation</span>
-                      <span style={{ fontSize:"0.8rem", color: PC.muted, fontStyle:"italic" }}>Observe for:</span>
+                      <span style={{ fontSize:"0.6rem", color: PC.muted, fontStyle:"italic" }}>Observe for:</span>
                     </div>
                     <div style={{ padding:"10px 13px", display:"flex", flexDirection:"column", gap:6 }}>
                       {obsForRegion.map((o, oi)=>(
                         <div key={oi} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
-                          <span style={{ color: regCol, fontWeight:700, fontSize:"0.8rem", flexShrink:0 }}>→</span>
+                          <span style={{ color: regCol, fontWeight:700, fontSize:"0.7rem", flexShrink:0 }}>→</span>
                           <div>
                             <div style={{ fontSize:"0.73rem", fontWeight:600, color: PC.text }}>{o.item}</div>
-                            <div style={{ fontSize:"0.82rem", color: PC.muted, lineHeight:1.4, fontStyle:"italic" }}>{o.why}</div>
+                            <div style={{ fontSize:"0.62rem", color: PC.muted, lineHeight:1.4, fontStyle:"italic" }}>{o.why}</div>
                           </div>
                         </div>
                       ))}
@@ -5714,26 +4875,26 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     {/* ROM */}
                     <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                       <div style={{ background: PC.s3, padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
+                        <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
                           letterSpacing:1, color: PC.muted }}>Phase 3a — ROM</span>
-                        {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start ROM →</button>}
+                        {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start ROM →</button>}
                       </div>
                       <div style={{ padding:"10px 12px" }}>
                         {romForRegion.map((rm, rmi)=>(
                           <div key={rmi} style={{ marginBottom:7, paddingBottom:7,
                             borderBottom: rmi < romForRegion.length-1 ? `1px solid ${PC.border}` : "none" }}>
                             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:2 }}>
-                              <div style={{ fontSize:"0.82rem", fontWeight:700, color: PC.text }}>{rm.mv}</div>
+                              <div style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{rm.mv}</div>
                               <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                                <span style={{ fontSize:"0.75rem", fontWeight:700, padding:"1px 6px", borderRadius:99,
+                                <span style={{ fontSize:"0.55rem", fontWeight:700, padding:"1px 6px", borderRadius:99,
                                   background: rm.imp==="High"?PC.green+"15":PC.yellow+"15",
                                   color: rm.imp==="High"?PC.green:PC.yellow }}>
                                   {rm.imp}
                                 </span>
-                                {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.82rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer" }}>→</button>}
+                                {onNav && <button onClick={()=>onNav("rom")} style={{ fontSize:"0.52rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer" }}>→</button>}
                               </div>
                             </div>
-                            <div style={{ fontSize:"0.8rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{rm.why}</div>
+                            <div style={{ fontSize:"0.6rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{rm.why}</div>
                           </div>
                         ))}
                       </div>
@@ -5741,19 +4902,19 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     {/* MMT */}
                     <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                       <div style={{ background: PC.s3, padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
+                        <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
                           letterSpacing:1, color: PC.muted }}>Phase 3b — MMT</span>
-                        {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start MMT →</button>}
+                        {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start MMT →</button>}
                       </div>
                       <div style={{ padding:"10px 12px" }}>
                         {mmtItems.map((mm, mmi)=>(
                           <div key={mmi} style={{ marginBottom:7, paddingBottom:7,
                             borderBottom: mmi < mmtItems.length-1 ? `1px solid ${PC.border}` : "none" }}>
                             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:2 }}>
-                              <div style={{ fontSize:"0.82rem", fontWeight:700, color: PC.text }}>{mm.m}</div>
-                              {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.82rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer", flexShrink:0 }}>→</button>}
+                              <div style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{mm.m}</div>
+                              {onNav && <button onClick={()=>onNav("mmt")} style={{ fontSize:"0.52rem", fontWeight:800, padding:"1px 7px", background:"transparent", border:`1px solid ${PC.border}`, borderRadius:10, color:PC.muted, cursor:"pointer", flexShrink:0 }}>→</button>}
                             </div>
-                            <div style={{ fontSize:"0.8rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{mm.why}</div>
+                            <div style={{ fontSize:"0.6rem", color: PC.muted, lineHeight:1.35, fontStyle:"italic" }}>{mm.why}</div>
                           </div>
                         ))}
                       </div>
@@ -5763,19 +4924,19 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   {/* ── PHASE 4: FUNCTIONAL ASSESSMENT ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                      <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
+                      <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
                         letterSpacing:1, color: PC.muted }}>Phase 4 — Functional Assessment</span>
-                      {onNav && <button onClick={()=>onNav("fma")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.a2+"22", border:`1px solid ${PC.a2}44`, borderRadius:20, color:PC.a2, cursor:"pointer" }}>Open →</button>}
+                      {onNav && <button onClick={()=>onNav("fma")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a2+"22", border:`1px solid ${PC.a2}44`, borderRadius:20, color:PC.a2, cursor:"pointer" }}>Open →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"flex", flexWrap:"wrap", gap:6 }}>
                       {funcItems.map((fi, fii)=>(
                         onNav ? (
-                          <button key={fii} onClick={()=>onNav("fma")} style={{ fontSize:"0.78rem", padding:"4px 10px", borderRadius:8,
+                          <button key={fii} onClick={()=>onNav("fma")} style={{ fontSize:"0.68rem", padding:"4px 10px", borderRadius:8,
                             background: PC.s2, border:`1px solid ${PC.accent}33`, color: PC.accent, cursor:"pointer", fontWeight:600 }}>
                             {fi} →
                           </button>
                         ) : (
-                          <span key={fii} style={{ fontSize:"0.78rem", padding:"4px 10px", borderRadius:8,
+                          <span key={fii} style={{ fontSize:"0.68rem", padding:"4px 10px", borderRadius:8,
                             background: PC.s2, border:`1px solid ${PC.border}`, color: PC.text }}>
                             {fi}
                           </span>
@@ -5788,17 +4949,17 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <div>
-                        <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
+                        <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
                           letterSpacing:1, color: PC.muted }}>Phase 5 — Special Tests</span>
-                        <span style={{ fontSize:"0.8rem", color: PC.muted, marginLeft:8, fontStyle:"italic" }}>
+                        <span style={{ fontSize:"0.6rem", color: PC.muted, marginLeft:8, fontStyle:"italic" }}>
                           Selected because of clinical suspicion — not random
                         </span>
                       </div>
-                      {onNav && <button onClick={()=>onNav("special")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.a3+"22", border:`1px solid ${PC.a3}44`, borderRadius:20, color:PC.a3, cursor:"pointer", flexShrink:0 }}>Open Tests →</button>}
+                      {onNav && <button onClick={()=>onNav("special")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a3+"22", border:`1px solid ${PC.a3}44`, borderRadius:20, color:PC.a3, cursor:"pointer", flexShrink:0 }}>Open Tests →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"flex", flexDirection:"column", gap:8 }}>
                       {testsByDx.length === 0 && (
-                        <div style={{ fontSize:"0.8rem", color: PC.muted }}>Complete subjective to generate test suggestions</div>
+                        <div style={{ fontSize:"0.7rem", color: PC.muted }}>Complete subjective to generate test suggestions</div>
                       )}
                       {testsByDx.map((td, tdi)=>(
                         <div key={tdi} style={{
@@ -5807,27 +4968,27 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                           borderLeft:`3px solid ${td.suspicion==="HIGH"?PC.green:td.suspicion==="MODERATE"?PC.yellow:PC.muted}`,
                         }}>
                           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
-                            <div style={{ fontSize:"0.8rem", fontWeight:700, color: PC.text }}>{td.label}</div>
-                            <span style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 7px",
+                            <div style={{ fontSize:"0.7rem", fontWeight:700, color: PC.text }}>{td.label}</div>
+                            <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 7px",
                               borderRadius:99,
                               background: confBg(td.suspicion), color: confColor(td.suspicion) }}>
                               {td.suspicion} suspicion
                             </span>
                           </div>
-                          <div style={{ fontSize:"0.82rem", color: PC.muted, marginBottom:5, fontStyle:"italic" }}>
+                          <div style={{ fontSize:"0.62rem", color: PC.muted, marginBottom:5, fontStyle:"italic" }}>
                             Why these tests: {td.why}
                           </div>
                           <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
                             {td.tests.map((t,ti)=>(
                               onNav ? (
-                                <button key={ti} onClick={()=>onNav("special")} style={{ fontSize:"0.82rem", padding:"3px 8px",
+                                <button key={ti} onClick={()=>onNav("special")} style={{ fontSize:"0.62rem", padding:"3px 8px",
                                   borderRadius:6, background: PC.surface,
                                   border:`1px solid ${PC.border}`, color: PC.accent, cursor:"pointer",
                                   fontWeight:600 }}>
                                   {t} →
                                 </button>
                               ) : (
-                                <span key={ti} style={{ fontSize:"0.82rem", padding:"3px 8px",
+                                <span key={ti} style={{ fontSize:"0.62rem", padding:"3px 8px",
                                   borderRadius:6, background: PC.surface,
                                   border:`1px solid ${PC.border}`, color: PC.text }}>
                                   {t}
@@ -5841,12 +5002,12 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                       {r.objTests && r.objTests.filter(Boolean).length > 0 && (
                         <div style={{ background: PC.s2, borderRadius:8, padding:"9px 12px",
                           borderLeft:`3px solid ${regCol}` }}>
-                          <div style={{ fontSize:"0.75rem", fontWeight:700, color: regCol, marginBottom:5 }}>
+                          <div style={{ fontSize:"0.65rem", fontWeight:700, color: regCol, marginBottom:5 }}>
                             Baseline Objective Assessment
                           </div>
                           <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
                             {r.objTests.filter(Boolean).map((t,ti)=>(
-                              <span key={ti} style={{ fontSize:"0.82rem", padding:"3px 8px",
+                              <span key={ti} style={{ fontSize:"0.62rem", padding:"3px 8px",
                                 borderRadius:6, background: PC.surface,
                                 border:`1px solid ${PC.border}`, color: PC.text }}>
                                 {t}
@@ -5858,55 +5019,55 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     </div>
                   </div>
 
-                  {/* ── PHASE 6: CPA / MOTOR CONTROL ── */}
+                  {/* ── PHASE 6: NKT / MOTOR CONTROL ── */}
                   <div style={{ borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                     <div style={{ background: PC.s3, padding:"8px 13px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                      <span style={{ fontSize:"0.75rem", fontWeight:800, textTransform:"uppercase",
-                        letterSpacing:1, color: PC.muted }}>Phase 6 — Motor Control / CPA Assessment</span>
-                      {onNav && <button onClick={()=>onNav("nkt")} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.a4+"22", border:`1px solid ${PC.a4}44`, borderRadius:20, color:PC.a4, cursor:"pointer" }}>Open CPA →</button>}
+                      <span style={{ fontSize:"0.65rem", fontWeight:800, textTransform:"uppercase",
+                        letterSpacing:1, color: PC.muted }}>Phase 6 — Motor Control / NKT Assessment</span>
+                      {onNav && <button onClick={()=>onNav("nkt")} style={{ fontSize:"0.58rem", fontWeight:800, padding:"3px 10px", background:PC.a4+"22", border:`1px solid ${PC.a4}44`, borderRadius:20, color:PC.a4, cursor:"pointer" }}>Open NKT →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
                       <div>
-                        <div style={{ fontSize:"0.82rem", fontWeight:700, color: PC.red,
+                        <div style={{ fontSize:"0.62rem", fontWeight:700, color: PC.red,
                           textTransform:"uppercase", letterSpacing:1, marginBottom:6 }}>
                           Likely Overactive
                         </div>
                         {nkt.over.map((m,mi)=>(
-                          <div key={mi} style={{ fontSize:"0.78rem", color: PC.text, marginBottom:5,
+                          <div key={mi} style={{ fontSize:"0.68rem", color: PC.text, marginBottom:5,
                             paddingLeft:8, borderLeft:`2px solid ${PC.red}55` }}>
                             {m}
                           </div>
                         ))}
                       </div>
                       <div>
-                        <div style={{ fontSize:"0.82rem", fontWeight:700, color: PC.green,
+                        <div style={{ fontSize:"0.62rem", fontWeight:700, color: PC.green,
                           textTransform:"uppercase", letterSpacing:1, marginBottom:6 }}>
                           Likely Underactive
                         </div>
                         {nkt.under.map((m,mi)=>(
-                          <div key={mi} style={{ fontSize:"0.78rem", color: PC.text, marginBottom:5,
+                          <div key={mi} style={{ fontSize:"0.68rem", color: PC.text, marginBottom:5,
                             paddingLeft:8, borderLeft:`2px solid ${PC.green}55` }}>
                             {m}
                           </div>
                         ))}
                       </div>
                     </div>
-                    <div style={{ padding:"0 13px 10px", fontSize:"0.8rem", color: PC.muted, fontStyle:"italic" }}>
-                      Verify with CPA therapy localisation before treating. Overactive → release first, then activate underactive.
+                    <div style={{ padding:"0 13px 10px", fontSize:"0.6rem", color: PC.muted, fontStyle:"italic" }}>
+                      Verify with NKT therapy localisation before treating. Overactive → release first, then activate underactive.
                     </div>
                   </div>
 
                   {/* ── PHASE 7: TREATMENT DIRECTION ── */}
                   <div style={{ background: regCol+"08", borderRadius:10, padding:"12px 14px",
                     border:`1px solid ${regCol}33` }}>
-                    <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                    <div style={{ fontSize:"0.6rem", fontWeight:800, textTransform:"uppercase",
                       letterSpacing:1.5, color: regCol, marginBottom:10 }}>
                       Phase 7 — Rehab Direction
                     </div>
                     {txDir.map((tx, txi)=>(
                       <div key={txi} style={{ marginBottom:8, paddingBottom:8,
                         borderBottom: txi < txDir.length-1 ? `1px solid ${regCol}22` : "none" }}>
-                        <div style={{ fontSize:"0.8rem", fontWeight:700, color: PC.text, marginBottom:3 }}>
+                        <div style={{ fontSize:"0.7rem", fontWeight:700, color: PC.text, marginBottom:3 }}>
                           {txi+1}. {tx.phase}
                         </div>
                         <div style={{ fontSize:"0.66rem", color: PC.muted, lineHeight:1.55 }}>
@@ -5925,7 +5086,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           {insight.cross && insight.cross.length > 0 && (
             <div style={{ background: PC.surface, borderRadius:12, padding:"14px 16px",
               border:`1px solid ${PC.accent}33` }}>
-              <div style={{ fontSize:"0.75rem", fontWeight:700, textTransform:"uppercase",
+              <div style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase",
                 letterSpacing:1.2, color: PC.accent, marginBottom:12 }}>
                 🔗 Kinetic Chain & Cross-Region Analysis — {insight.cross.length} interactions
               </div>
@@ -5933,7 +5094,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                 <div key={i} style={{ marginBottom:12, paddingBottom:12,
                   borderBottom: i < insight.cross.length-1 ? `1px solid ${PC.border}` : "none" }}>
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:5 }}>
-                    <span style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 8px",
+                    <span style={{ fontSize:"0.58rem", fontWeight:700, padding:"2px 8px",
                       borderRadius:99,
                       background: cf.type.includes("flag") ? PC.red+"12" : cf.type==="Differential" ? PC.accent+"12" : PC.s3,
                       color: cf.type.includes("flag") ? PC.red : cf.type==="Differential" ? PC.accent : PC.muted,
@@ -5944,10 +5105,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                       {cf.title}
                     </span>
                   </div>
-                  <div style={{ fontSize:"0.8rem", color: PC.muted, lineHeight:1.55, marginBottom:4 }}>
+                  <div style={{ fontSize:"0.7rem", color: PC.muted, lineHeight:1.55, marginBottom:4 }}>
                     {cf.detail}
                   </div>
-                  <div style={{ fontSize:"0.8rem", color: PC.accent, fontStyle:"italic", opacity:0.7 }}>
+                  <div style={{ fontSize:"0.6rem", color: PC.accent, fontStyle:"italic", opacity:0.7 }}>
                     Ref: {cf.refs}
                   </div>
                 </div>
@@ -5958,7 +5119,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           {/* ── SUMMARY FOOTER ── */}
           <div style={{ background: PC.green+"08", border:`1px solid ${PC.green}33`,
             borderRadius:12, padding:"12px 16px" }}>
-            <div style={{ fontSize:"0.75rem", fontWeight:700, textTransform:"uppercase",
+            <div style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase",
               letterSpacing:1, color: PC.green, marginBottom:8 }}>
               Clinical Summary
             </div>
@@ -5974,28 +5135,12 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               {selectedRegions.length >= 3 &&
                 <span style={{ color: PC.yellow }}>Multi-region — nociplastic screening recommended (CSI ≥40, PCS-13, TSK-11).</span>}
             </div>
-            <div style={{ fontSize:"0.78rem", color: PC.muted, marginTop:8,
+            <div style={{ fontSize:"0.58rem", color: PC.muted, marginTop:8,
               borderTop:`1px solid ${PC.green}22`, paddingTop:6, fontStyle:"italic" }}>
               Engine v6 · 7-Phase Clinical Reasoning · Evidence base:
               Magee(7th) · Petty(5th) · Maitland(8th) · Sahrmann · Butler · McKenzie · Brukner & Khan(5th) · Cook & Purdam · Moseley & Butler · Hides · Richardson & Hodges · NICE NG59 · ASAS · Woolf(IASP 2017)
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ── Saved confirmation toast ── */}
-      {showSavedToast && (
-        <div style={{
-          position:"fixed", bottom:80, left:"50%", transform:"translateX(-50%)",
-          background:"#059669", color:"#fff",
-          padding:"10px 22px", borderRadius:50,
-          fontSize:"0.88rem", fontWeight:700,
-          boxShadow:"0 4px 20px rgba(5,150,105,0.35)",
-          zIndex:9999, display:"flex", alignItems:"center", gap:8,
-          animation:"fadeUp 0.25s ease",
-          pointerEvents:"none",
-        }}>
-          <span style={{fontSize:"1rem"}}>✓</span> Assessment saved
         </div>
       )}
     </div>
@@ -6004,18 +5149,18 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
 
 
-// ─── CPA REGION DATABASE ─────────────────────────────────────────────────────
+// ─── NKT REGION DATABASE ─────────────────────────────────────────────────────
 const NKT_REGIONS = {
   cervical:{
     label:"Cervical / Head & Neck", color:"#00e5ff",
-    intro:"The cervical CPA assessment identifies which muscles the Motor Control Centre (MCC) has inhibited in the neck and head region, and which synergists are compensating. Common compensation: DNF inhibited → SCM/scalenes overactive → forward head posture, headache, TMJ.",
+    intro:"The cervical NKT assessment identifies which muscles the Motor Control Centre (MCC) has inhibited in the neck and head region, and which synergists are compensating. Common compensation: DNF inhibited → SCM/scalenes overactive → forward head posture, headache, TMJ.",
     tests:[
       {
         id:"nkt_dnf", label:"Deep Neck Flexors (DNF)", muscle:"Longus colli / Longus capitis",
         compensator:"SCM, scalenes, suboccipitals",
         how:"Patient supine. Place pressure biofeedback cuff at neck (inflate to 20mmHg baseline). Ask patient to gently nod chin (craniocervical flexion — NOT a chin tuck). Gradually increase target pressure from 22 → 24 → 26 → 28 → 30mmHg holding each 10 seconds. Confirm by touching SCM during test — if SCM fires early or dominates, DNF is inhibited.",
         options:[
-          { val:"Facilitated", color:"#00c97a", meaning:"DNF activates before SCM. Patient can reach 28–30mmHg without SCM firing. Normal motor control. No CPA treatment needed for DNF." },
+          { val:"Facilitated", color:"#00c97a", meaning:"DNF activates before SCM. Patient can reach 28–30mmHg without SCM firing. Normal motor control. No NKT treatment needed for DNF." },
           { val:"Inhibited", color:"#ff4d6d", meaning:"DNF cannot maintain pressure targets. SCM fires early and dominates. MCC has turned off DNF — forward head is maintained by SCM/scalenes. TREAT: release SCM/scalenes → activate DNF immediately." },
           { val:"Overactive", color:"#ffb300", meaning:"Rare. DNF may be overworking due to inhibition elsewhere (e.g. longus colli compensating for atlas instability). Presents as anterior neck pain with no relief from flexion." },
         ],
@@ -6103,7 +5248,7 @@ const NKT_REGIONS = {
 
   shoulder:{
     label:"Shoulder & Scapula", color:"#7f5af0",
-    intro:"Shoulder CPA identifies which rotator cuff and scapular muscles are inhibited, and which are compensating. Classic patterns: lower trap inhibited → upper trap overactive | serratus inhibited → pec minor overactive | RC inhibited → biceps/pec major overactive.",
+    intro:"Shoulder NKT identifies which rotator cuff and scapular muscles are inhibited, and which are compensating. Classic patterns: lower trap inhibited → upper trap overactive | serratus inhibited → pec minor overactive | RC inhibited → biceps/pec major overactive.",
     tests:[
       {
         id:"nkt_lower_trap", label:"Lower Trapezius", muscle:"Lower trapezius",
@@ -6125,7 +5270,7 @@ const NKT_REGIONS = {
           { val:"Facilitated — normal", color:"#00c97a", meaning:"Serratus activates to protract and upwardly rotate scapula. No winging on push-up plus. Scapula hugs thorax throughout arm elevation. Normal scapulohumeral rhythm." },
           { val:"Inhibited — functional winging", color:"#ffb300", meaning:"Serratus inhibited under load but not at rest. Winging appears only with push-up or arm elevation. Pec minor is tight and overactive. Patient has anterior shoulder pain with overhead activities." },
           { val:"Inhibited — resting winging", color:"#ff4d6d", meaning:"Scapular winging visible at rest (medial border away from thorax). Serratus severely inhibited. Pec minor chronically overactive. Long thoracic nerve palsy must be ruled out. TREAT: release pec minor → activate serratus." },
-          { val:"Long thoracic nerve palsy", color:"#7f5af0", meaning:"Complete serratus inhibition with severe winging. No voluntary activation possible. Neurological cause — C5/6/7 long thoracic nerve affected. Refer for nerve conduction study. CPA technique may still help partial cases." },
+          { val:"Long thoracic nerve palsy", color:"#7f5af0", meaning:"Complete serratus inhibition with severe winging. No voluntary activation possible. Neurological cause — C5/6/7 long thoracic nerve affected. Refer for nerve conduction study. NKT technique may still help partial cases." },
         ],
         treatment:"Release: pec minor (supine, firm pressure at coracoid process to 3rd–5th ribs, 90 sec). Activate: serratus punches (supine, arm at 90°, push fist toward ceiling adding protraction), push-up plus. Home: wall protraction holds × 10 reps, serratus activation in quadruped.",
       },
@@ -6135,7 +5280,7 @@ const NKT_REGIONS = {
         how:"Patient seated or sidelying. Elbow at 90°, arm at side. Apply gentle resistance to external rotation. POSITIVE INHIBITION = cannot resist external rotation with adequate force, or posterior deltoid/biceps dominates. Therapy localization: touch posterior deltoid or biceps → re-test IR. If ER suddenly stronger = deltoid/biceps compensating for RC.",
         options:[
           { val:"Facilitated — strong", color:"#00c97a", meaning:"Infraspinatus/teres minor generate adequate ER force at 0° and 90°. No compensation from posterior deltoid. Normal rotator cuff function." },
-          { val:"Inhibited — pain inhibition", color:"#ffb300", meaning:"Inhibited due to pain (strong & painful = minor lesion per STTT). Pain prevents full activation. Address pain first (DTFM, dry needling) then CPA re-test." },
+          { val:"Inhibited — pain inhibition", color:"#ffb300", meaning:"Inhibited due to pain (strong & painful = minor lesion per Cyriax). Pain prevents full activation. Address pain first (DTFM, dry needling) then NKT re-test." },
           { val:"Inhibited — motor control", color:"#ff4d6d", meaning:"ER weak and painless. MCC has inhibited infraspinatus — posterior deltoid compensates for humeral head depression. Patient has shoulder impingement pattern. TREAT: release pec minor/posterior deltoid → activate IR." },
           { val:"Complete inhibition — possible tear", color:"#7f5af0", meaning:"No ER activation possible. Consider structural tear — refer for imaging (MRI/ultrasound). External rotation lag sign likely positive." },
         ],
@@ -6148,7 +5293,7 @@ const NKT_REGIONS = {
         options:[
           { val:"Facilitated — normal", color:"#00c97a", meaning:"Strong IR at 0° and 45°. Can perform lift-off and belly press without compensation. Normal anterior GH stability." },
           { val:"Inhibited — instability pattern", color:"#ffb300", meaning:"IR weak, pec major compensates. Patient has anterior shoulder instability, pain with IR. Apprehension test may be positive. TREAT: release pec major → activate subscapularis." },
-          { val:"Inhibited — post-surgical", color:"#ff4d6d", meaning:"Subscapularis inhibited after shoulder surgery (Bankart, SLAP repair, total shoulder). MCC 'switched off' subscapularis due to surgical trauma. Therapy localization confirms. Progressive CPA activation essential for return to function." },
+          { val:"Inhibited — post-surgical", color:"#ff4d6d", meaning:"Subscapularis inhibited after shoulder surgery (Bankart, SLAP repair, total shoulder). MCC 'switched off' subscapularis due to surgical trauma. Therapy localization confirms. Progressive NKT activation essential for return to function." },
           { val:"Complete inhibition", color:"#7f5af0", meaning:"Cannot perform any IR. Lift-off completely failed. Possible subscapularis tear — refer for imaging. Belly press = wrist flexion to compensate." },
         ],
         treatment:"Release: pec major SMR + anterior deltoid massage. Activate: sidelying IR with theraband, belly press holds, lift-off progression. Home: theraband IR × 20 reps, progress to 90/90 IR.",
@@ -6208,7 +5353,7 @@ const NKT_REGIONS = {
 
   core:{
     label:"Core & Lumbar", color:"#00c97a",
-    intro:"Core CPA identifies which deep stabilisers the MCC has inhibited following injury, poor posture, or prolonged sitting. Classic patterns: TA inhibited → erector spinae overactive | multifidus inhibited → superficial back muscles compensate | diaphragm inhibited → accessory breathers (scalenes, SCM) overactive.",
+    intro:"Core NKT identifies which deep stabilisers the MCC has inhibited following injury, poor posture, or prolonged sitting. Classic patterns: TA inhibited → erector spinae overactive | multifidus inhibited → superficial back muscles compensate | diaphragm inhibited → accessory breathers (scalenes, SCM) overactive.",
     tests:[
       {
         id:"nkt_ta", label:"Transversus Abdominis (TA)", muscle:"Transversus abdominis",
@@ -6230,7 +5375,7 @@ const NKT_REGIONS = {
           { val:"Facilitated — normal", color:"#00c97a", meaning:"Multifidus produces gentle local swelling at palpated level. Segmental stabilisation present. Normal spinal control during limb movements. Rapid re-activation after acute episode." },
           { val:"Inhibited — unilateral", color:"#ffb300", meaning:"Asymmetric multifidus activation. One side inhibited (often side of prior disc herniation or LBP episode). Compensatory erector spinae and QL overactivity on that side. Patient has asymmetric LBP and trunk rotation weakness." },
           { val:"Inhibited — bilateral", color:"#ff4d6d", meaning:"Both sides inhibited. Spinal extensors completely compensating. Patient has chronic, diffuse LBP with poor spinal segmental control. Core exercises targeting global muscles (crunches, deadlifts) worsen the pattern." },
-          { val:"Atrophied (post-injury)", color:"#7f5af0", meaning:"Multifidus atrophied after disc herniation or surgery. Atrophy may be visible on MRI. Slow to recover — requires specific activation. CPA therapy localization confirms which superficial muscles are compensating." },
+          { val:"Atrophied (post-injury)", color:"#7f5af0", meaning:"Multifidus atrophied after disc herniation or surgery. Atrophy may be visible on MRI. Slow to recover — requires specific activation. NKT therapy localization confirms which superficial muscles are compensating." },
         ],
         treatment:"Release: thoracolumbar erector spinae SMR + QL pressure release. Activate: prone multifidus swelling × 10 sec holds × 10 reps, progress to quadruped arm/leg (bird-dog), then standing. Home: seated multifidus activation throughout day.",
       },
@@ -6266,7 +5411,7 @@ const NKT_REGIONS = {
           { val:"Normal length and activation", color:"#00c97a", meaning:"Hip flexes without lumbar extension. Thomas test negative. No groin pain. Psoas activates proportionally and does not pull spine forward. Appropriate hip flexion strength for activity level." },
           { val:"Overactive — anterior pelvic tilt", color:"#ff4d6d", meaning:"Psoas pulls lumbar into extension during hip flexion. Thomas test positive (hip remains elevated). Lumbar lordosis increased. Patient has LBP worsened by sitting and hip flexion. TREAT: release psoas → activate TA + glute max." },
           { val:"Overactive — glute inhibition", color:"#ffb300", meaning:"Psoas overactive because glute max is inhibited — psoas must do both flexion and extension stabilisation. Hip snapping (coxa saltans) may be present. Groin pain and anterior hip impingement symptoms." },
-          { val:"Inhibited (rare)", color:"#7f5af0", meaning:"Psoas truly inhibited — weak hip flexion in fully shortened range. Rare. May indicate L2/3 nerve root involvement or hip flexor avulsion injury. Confirm with STTT resisted test." },
+          { val:"Inhibited (rare)", color:"#7f5af0", meaning:"Psoas truly inhibited — weak hip flexion in fully shortened range. Rare. May indicate L2/3 nerve root involvement or hip flexor avulsion injury. Confirm with Cyriax resisted test." },
         ],
         treatment:"Release: psoas stretch (kneeling lunge, posterior pelvic tilt), SMR quads/hip flexors. Activate: TA drawing-in, glute bridges with focus on not allowing anterior tilt. Never aggressive psoas stretching without core activation.",
       },
@@ -6306,7 +5451,7 @@ const NKT_REGIONS = {
 
   hip:{
     label:"Hip & Pelvis", color:"#f97316",
-    intro:"Hip CPA identifies gluteal inhibition and compensation patterns. The most common global pattern: gluteus maximus inhibited → hamstrings and QL overactive → chronic LBP and hamstring strains. Gluteus medius inhibited → TFL and piriformis overactive → IT band, lateral hip pain, and Trendelenburg gait.",
+    intro:"Hip NKT identifies gluteal inhibition and compensation patterns. The most common global pattern: gluteus maximus inhibited → hamstrings and QL overactive → chronic LBP and hamstring strains. Gluteus medius inhibited → TFL and piriformis overactive → IT band, lateral hip pain, and Trendelenburg gait.",
     tests:[
       {
         id:"nkt_gmax", label:"Gluteus Maximus", muscle:"Gluteus maximus",
@@ -6316,7 +5461,7 @@ const NKT_REGIONS = {
           { val:"Facilitated — fires first", color:"#00c97a", meaning:"Gluteus maximus activates before hamstrings in prone hip extension. Full activation in bridge. No QL firing. Normal hip extension power and lumbar stability. Glute drives force through hip joint appropriately." },
           { val:"Inhibited — hamstring dominant", color:"#ffb300", meaning:"Hamstring fires first or simultaneously with glute. Glute activates late and weakly. Patient often has recurrent hamstring strains and chronic LBP. Hip extension generated by knee flexion (hamstring) not hip joint extension (glute). TREAT: release hamstrings → activate glute max immediately." },
           { val:"Inhibited — QL dominant", color:"#ff4d6d", meaning:"QL fires instead of glute max for hip extension. Patient extends spine (lateral tilt) to create apparent hip extension. Classic LBP pattern. Lateral lumbar pain and poor deadlift/hinge mechanics. TREAT: release QL → activate glute max." },
-          { val:"Inhibited — bilateral, severe", color:"#7f5af0", meaning:"Both glutes inhibited. Patient cannot activate glutes in any position. Hamstrings, QL, and erector spinae all compensating. Patient has bilateral LBP, poor single-leg stability, and hip flexion-dominant movement pattern. Multiple-session CPA approach needed." },
+          { val:"Inhibited — bilateral, severe", color:"#7f5af0", meaning:"Both glutes inhibited. Patient cannot activate glutes in any position. Hamstrings, QL, and erector spinae all compensating. Patient has bilateral LBP, poor single-leg stability, and hip flexion-dominant movement pattern. Multiple-session NKT approach needed." },
         ],
         treatment:"Release: hamstrings SMR (foam roll posterior thigh 90 sec) + QL release (tennis ball lateral lumbar). Activate IMMEDIATELY within 30 seconds: glute bridges × 5 slow reps (focus on feeling glute, not hamstring), clamshells. Home: glute squeeze at top of every step throughout day.",
       },
@@ -6361,7 +5506,7 @@ const NKT_REGIONS = {
 
   knee:{
     label:"Knee & Thigh", color:"#00c97a",
-    intro:"Knee CPA focuses on the VMO vs VL relationship, hamstring-glute co-activation balance, and popliteus as a forgotten stabiliser. Common patterns: VMO inhibited → VL overactive → PFPS | hamstrings overactive (compensating for glute max) → posterior knee pain.",
+    intro:"Knee NKT focuses on the VMO vs VL relationship, hamstring-glute co-activation balance, and popliteus as a forgotten stabiliser. Common patterns: VMO inhibited → VL overactive → PFPS | hamstrings overactive (compensating for glute max) → posterior knee pain.",
     tests:[
       {
         id:"nkt_vmo", label:"Vastus Medialis Oblique (VMO)", muscle:"VMO",
@@ -6370,7 +5515,7 @@ const NKT_REGIONS = {
         options:[
           { val:"VMO facilitated — fires with VL", color:"#00c97a", meaning:"VMO activates with equal or slightly greater force than VL at terminal extension. Patella tracks medially within trochlear groove. No PFPS symptoms with squatting or stairs." },
           { val:"VMO inhibited — VL dominant", color:"#ffb300", meaning:"VL fires before and more strongly than VMO. Patella tracks laterally. Patient has anterior knee pain on stairs, squatting, sitting. IT band and lateral retinaculum tight. TREAT: release VL + IT band → activate VMO (terminal knee extension)." },
-          { val:"VMO inhibited — post knee injury/surgery", color:"#ff4d6d", meaning:"VMO inhibited following ACL reconstruction, meniscectomy, or knee trauma. MCC switched off VMO as protective response. Patient has persistent quad weakness post-operatively despite exercise. CPA approach: release VL → activate VMO before quad sets." },
+          { val:"VMO inhibited — post knee injury/surgery", color:"#ff4d6d", meaning:"VMO inhibited following ACL reconstruction, meniscectomy, or knee trauma. MCC switched off VMO as protective response. Patient has persistent quad weakness post-operatively despite exercise. NKT approach: release VL → activate VMO before quad sets." },
           { val:"VMO inhibited — hip weakness contributor", color:"#7f5af0", meaning:"VMO inhibited as part of valgus chain — glute med inhibited → knee valgus → VMO inhibited. Address glute med first, then VMO. Terminal knee extension + glute med activation simultaneously." },
         ],
         treatment:"Release: VL SMR (foam roll lateral thigh 90 sec) + IT band (roller lateral knee). Activate: terminal knee extension (TKE) with theraband, step-ups focusing on medial knee control. Home: TKE × 20 reps hourly, VMO squeeze at full extension.",
@@ -6381,11 +5526,11 @@ const NKT_REGIONS = {
         how:"Patient prone. Test knee flexion resistance at 90°. Palpate hamstring belly. Overactive hamstrings: fire during activities they shouldn't (hip extension, standing). Test: prone hip extension — if hamstring fires before glute max = overactive compensator. Hamstring cramp during bridge = overactive (normal = glute does the work). Biceps femoris vs medial hamstring: test ER vs IR during knee flexion resistance.",
         options:[
           { val:"Normal — glute max dominant in extension", color:"#00c97a", meaning:"Hamstrings contribute to knee flexion appropriately. Do not dominate hip extension. Do not cramp during bridges. Glute max does the majority of hip extension work. No recurrent hamstring strains." },
-          { val:"Overactive — glute max inhibition", color:"#ff4d6d", meaning:"Hamstrings overactive as hip extensors. Patient has recurrent hamstring strains (the compensator always gets injured, not the root cause). LBP. Hamstring 'tightness' that doesn't resolve with stretching (CPA rule: overactive muscles feel tight but aren't short). TREAT: release hamstrings → activate glute max." },
+          { val:"Overactive — glute max inhibition", color:"#ff4d6d", meaning:"Hamstrings overactive as hip extensors. Patient has recurrent hamstring strains (the compensator always gets injured, not the root cause). LBP. Hamstring 'tightness' that doesn't resolve with stretching (NKT rule: overactive muscles feel tight but aren't short). TREAT: release hamstrings → activate glute max." },
           { val:"Biceps femoris overactive — lateral chain", color:"#ffb300", meaning:"Biceps femoris specifically overactive. Lateral hamstring tightness. External rotation of tibia at knee. IT band and lateral knee pain. Often compensating for weak glute med. TREAT: release biceps femoris → activate glute med." },
           { val:"Medial hamstrings overactive — medial chain", color:"#7f5af0", meaning:"Medial hamstrings overactive. Internal tibial rotation. Compensating for inhibited adductors or popliteus. Medial knee pain. TREAT: release medial hamstrings → activate adductors or glute max." },
         ],
-        treatment:"Release: foam roll hamstrings (posterior thigh, 90 sec). Stretch only AFTER CPA release (stretching alone won't fix overactive hamstrings). Activate: glute max exercises immediately. Home: glute-dominant bridge practice — feel the glute, not the hamstring.",
+        treatment:"Release: foam roll hamstrings (posterior thigh, 90 sec). Stretch only AFTER NKT release (stretching alone won't fix overactive hamstrings). Activate: glute max exercises immediately. Home: glute-dominant bridge practice — feel the glute, not the hamstring.",
       },
       { id:"nkt_adductors", label:"Hip Adductors", muscle:"Adductor magnus / Longus / Brevis / Gracilis",
         compensator:"When overactive: compensating for inhibited glute max or medial hamstrings",
@@ -6432,7 +5577,7 @@ const NKT_REGIONS = {
 
   ankle:{
     label:"Ankle & Foot", color:"#ffb300",
-    intro:"Ankle CPA identifies compensation between tibialis anterior/posterior and the peroneals, and the effect of limited dorsiflexion on the kinetic chain. Classic pattern: tibialis anterior inhibited → peroneals overactive → ankle instability. Tibialis posterior inhibited → peroneals + gastroc overactive → progressive flatfoot.",
+    intro:"Ankle NKT identifies compensation between tibialis anterior/posterior and the peroneals, and the effect of limited dorsiflexion on the kinetic chain. Classic pattern: tibialis anterior inhibited → peroneals overactive → ankle instability. Tibialis posterior inhibited → peroneals + gastroc overactive → progressive flatfoot.",
     tests:[
       {
         id:"nkt_tib_ant", label:"Tibialis Anterior", muscle:"Tibialis anterior",
@@ -6453,7 +5598,7 @@ const NKT_REGIONS = {
         options:[
           { val:"Normal — arch maintained", color:"#00c97a", meaning:"Tibialis posterior supports medial arch. Navicular drop <6mm. Strong plantar inversion resistance. No progressive flatfoot. Arch maintained in single-leg stance." },
           { val:"Inhibited — medial arch collapse", color:"#ffb300", meaning:"Tib post weakened. Medial arch collapses. Navicular drop 6–10mm. Early stage adult-acquired flatfoot. Pronation chain activates: tibial IR, knee valgus, anterior pelvic tilt. TREAT: release peroneals → activate tib post (heel raises in inversion)." },
-          { val:"Inhibited — progressive flatfoot", color:"#ff4d6d", meaning:"Tib post significantly inhibited or partially ruptured. Navicular drop >10mm. 'Too many toes' sign (>2 toes visible behind heel from behind). Pain medial ankle. Refer for ultrasound/MRI. CPA: release peroneals → activate tib post + intrinsics." },
+          { val:"Inhibited — progressive flatfoot", color:"#ff4d6d", meaning:"Tib post significantly inhibited or partially ruptured. Navicular drop >10mm. 'Too many toes' sign (>2 toes visible behind heel from behind). Pain medial ankle. Refer for ultrasound/MRI. NKT: release peroneals → activate tib post + intrinsics." },
           { val:"Severely inhibited — tib post dysfunction", color:"#7f5af0", meaning:"Posterior tibial tendon dysfunction. Cannot perform single-leg heel raise. Progressive collapse of medial arch. Refer to orthopaedic/podiatry. Conservative: orthotics + aggressive tib post strengthening + peroneal release." },
         ],
         treatment:"Release: peroneal SMR + gastroc-soleus stretch. Activate: heel raises in slight inversion (on slightly inverted surface), towel scrunches, short foot exercise. Orthotics if severe. Home: short foot exercise × 20 reps, single-leg balance on slight inversion.",
@@ -6466,7 +5611,7 @@ const NKT_REGIONS = {
           { val:"Normal length and tone", color:"#00c97a", meaning:"Ankle DF normal (20°+). Lunge test: knee reaches wall at 10cm. No calf cramping during activity. Kinetic chain not restricted at ankle. Gastroc-soleus contribute to plantar flexion without restricting dorsiflexion." },
           { val:"Overactive — DF restriction", color:"#ffb300", meaning:"Gastroc overactive and shortened. Restricts ankle DF (<15°). Causes compensatory knee valgus, foot pronation, anterior pelvic tilt during squats. TREAT: gastroc SMR → ankle DF mobilisation → squat correction." },
           { val:"Overactive — glute compensation", color:"#ff4d6d", meaning:"Gastroc overactive as kinetic chain compensator for inhibited glutes. Patient pushes through calf during walking/running (calf dominance) rather than glute-driven propulsion. Calf strains common. TREAT: release gastroc → activate glute max." },
-          { val:"Overactive — Achilles tendinopathy pattern", color:"#7f5af0", meaning:"Gastroc-soleus chronically overloaded. Tendon cannot tolerate load. Achilles tendinopathy developing or established. CPA: release peroneals + glute max activation (reduce calf load). Eccentric Achilles loading as adjunct." },
+          { val:"Overactive — Achilles tendinopathy pattern", color:"#7f5af0", meaning:"Gastroc-soleus chronically overloaded. Tendon cannot tolerate load. Achilles tendinopathy developing or established. NKT: release peroneals + glute max activation (reduce calf load). Eccentric Achilles loading as adjunct." },
         ],
         treatment:"Release: gastroc SMR (foam roll calf from Achilles to popliteal crease, 90 sec). Stretch: straight-leg calf stretch 30 sec × 2. Activate: tib ant + tib post to balance. Home: wall lunge DF stretch × 3 daily, strengthening glutes to reduce calf overload.",
       },
@@ -6505,7 +5650,7 @@ const NKT_REGIONS = {
 
   upper_limb:{
     label:"Elbow, Wrist & Hand", color:"#e879f9",
-    intro:"Upper limb CPA identifies motor control dysfunction from elbow to hand. Common patterns: wrist extensor inhibition → wrist flexors overactive (lateral epicondylalgia), biceps overactive compensating for RC inhibition, grip weakness from cervical radiculopathy or motor control inhibition. Per CPA: the elbow and wrist are frequently affected by DISTANT inhibition (cervical, shoulder).",
+    intro:"Upper limb NKT identifies motor control dysfunction from elbow to hand. Common patterns: wrist extensor inhibition → wrist flexors overactive (lateral epicondylalgia), biceps overactive compensating for RC inhibition, grip weakness from cervical radiculopathy or motor control inhibition. Per NKT: the elbow and wrist are frequently affected by DISTANT inhibition (cervical, shoulder).",
     tests:[
       { id:"nkt_biceps", label:"Biceps Brachii", muscle:"Biceps brachii (long + short head)",
         compensator:"When overactive: compensating for inhibited RC (supraspinatus/subscapularis)",
@@ -6543,7 +5688,7 @@ const NKT_REGIONS = {
         options:[
           { val:"Normal tone", color:"#00c97a", meaning:"Wrist flexors activate for grip and wrist flexion tasks. Not dominant in wrist extension tasks. No medial epicondyle pain at rest." },
           { val:"Overactive — medial epicondylalgia", color:"#ff4d6d", meaning:"Wrist flexors overactive and tender at medial epicondyle. Medial epicondylalgia. TREAT: release wrist flexors (SMR medial forearm) → activate wrist extensors." },
-          { val:"Inhibited — grip weakness", color:"#ffb300", meaning:"Wrist flexors inhibited — grip significantly weak. Rule out C8/T1 radiculopathy, cubital tunnel, or carpal tunnel. CPA: release wrist extensors → activate wrist flexors." },
+          { val:"Inhibited — grip weakness", color:"#ffb300", meaning:"Wrist flexors inhibited — grip significantly weak. Rule out C8/T1 radiculopathy, cubital tunnel, or carpal tunnel. NKT: release wrist extensors → activate wrist flexors." },
         ],
         treatment:"Release: forearm flexor SMR (medial forearm rolling, 60 sec). DTFM to medial epicondyle if golfer's elbow. Activate: eccentric wrist flexion. Home: forearm stretching + grip strengthening progression.",
       },
@@ -6597,10 +5742,10 @@ const KC_REGIONS = {
         options:[
           { val:"Normal — inversion 20° / eversion 10°", color:"#00c97a", meaning:"Subtalar joint mobile and stable. Normal shock absorption. Navicular drop <6mm. Arch height maintained in single-leg stance. No excessive pronation or supination during gait." },
           { val:"Hypomobile — rigid foot", color:"#ffb300", meaning:"Subtalar restricted in both planes. Rigid foot cannot absorb shock — loads transfer to Achilles, plantar fascia, and shin. Patient may have OA, tarsal coalition, or post-fracture stiffness. Poor shock absorption = stress injuries. Mobilise subtalar joint with inversion-eversion glides." },
-          { val:"Hypermobile — excessive pronation", color:"#ff4d6d", meaning:"Subtalar excessively mobile — navicular drop >10mm. Medial arch collapses. Tibialis posterior failing to control pronation (inhibited per CPA). Pronation cascade drives tibial IR → knee valgus → hip IR. Strengthen tib posterior + arch intrinsics. Orthotics if severe." },
+          { val:"Hypermobile — excessive pronation", color:"#ff4d6d", meaning:"Subtalar excessively mobile — navicular drop >10mm. Medial arch collapses. Tibialis posterior failing to control pronation (inhibited per NKT). Pronation cascade drives tibial IR → knee valgus → hip IR. Strengthen tib posterior + arch intrinsics. Orthotics if severe." },
           { val:"Asymmetric — significant L vs R difference", color:"#7f5af0", meaning:"Side-to-side difference >5° = significant asymmetry in kinetic chain input. The more restricted side will drive ipsilateral compensations. The hypermobile side will drive contralateral trunk compensations. Address the restricted side first." },
         ],
-        treatment:"Hypomobile: subtalar mobilisation (inversion-eversion glides, Grade III). Hypermobile: tibialis posterior + FHL + intrinsic foot muscle strengthening, short foot exercise. Orthotics: semi-rigid if navicular drop >10mm. Reassess tib post CPA — almost always inhibited in hypermobile foot.",
+        treatment:"Hypomobile: subtalar mobilisation (inversion-eversion glides, Grade III). Hypermobile: tibialis posterior + FHL + intrinsic foot muscle strengthening, short foot exercise. Orthotics: semi-rigid if navicular drop >10mm. Reassess tib post NKT — almost always inhibited in hypermobile foot.",
         chainEffect:"Rigid foot → poor shock absorption → Achilles overload, shin splints, plantar fasciitis. Hypermobile foot → tibial IR → knee valgus → hip adduction → SI joint asymmetry.",
       },
       {
@@ -6631,9 +5776,9 @@ const KC_REGIONS = {
           { val:"Stable — no valgus in any task", color:"#00c97a", meaning:"Knee maintains alignment through all functional tasks. Kinetic chain above (hip stability) and below (ankle DF, foot position) providing adequate support. No medial knee stress. MCL intact." },
           { val:"Dynamic valgus — functional tasks only", color:"#ffb300", meaning:"Knee collapses inward during squat or single-leg tasks but MCL is structurally intact. Kinetic chain failure: ankle DF limited + glute med inhibited driving valgus. This is the most common pattern in female ACL injuries. TREAT: ankle DF + glute med activation — do NOT focus on knee." },
           { val:"Valgus with hip drop — Trendelenburg pattern", color:"#ff6b35", meaning:"Knee valgus accompanied by contralateral pelvis drop (glute med weakness). Classic kinetic chain valgus from proximal instability. Patient cannot control single-leg stance. Medial compartment overloaded. Strengthen glute med → knee valgus will reduce." },
-          { val:"Structural valgus — MCL laxity", color:"#ff4d6d", meaning:"Valgus present at rest and with valgus stress at 0° + 30°. MCL structurally lax. Medial compartment loaded asymmetrically. Refer if significant. CPA: assess VMO activation as it dynamically supports medial knee." },
+          { val:"Structural valgus — MCL laxity", color:"#ff4d6d", meaning:"Valgus present at rest and with valgus stress at 0° + 30°. MCL structurally lax. Medial compartment loaded asymmetrically. Refer if significant. NKT: assess VMO activation as it dynamically supports medial knee." },
         ],
-        treatment:"Dynamic valgus: ankle DF mobilisation + glute med CPA programme + VMO activation. Jump landing retraining (soft knee, hip back). Structural MCL: bracing, progressive loading, VMO/hamstring strengthening. Kinetic chain correction: address ankle → hip → then knee-specific work.",
+        treatment:"Dynamic valgus: ankle DF mobilisation + glute med NKT programme + VMO activation. Jump landing retraining (soft knee, hip back). Structural MCL: bracing, progressive loading, VMO/hamstring strengthening. Kinetic chain correction: address ankle → hip → then knee-specific work.",
         chainEffect:"Restricted ankle DF (below) + inhibited glute med (above) = KNEE is squeezed into valgus by forces from both directions. Treating only the knee will fail.",
       },
       {
@@ -6642,12 +5787,12 @@ const KC_REGIONS = {
         how:"Patient supine, knee fully extended and relaxed. Grasp patella with thumb and index finger. Glide medially and laterally — normal: 1–2cm in each direction (approximately 1/4 patella width). Also tilt: lift medial edge of patella — lateral retinaculum tight if cannot lift ≥0°. Crepitus during passive patellar glide = PFPS or chondromalacia.",
         options:[
           { val:"Normal — symmetric glide, no crepitus", color:"#00c97a", meaning:"Patellar tracking within trochlear groove. Lateral retinaculum not restricting. No crepitus. Q-angle normal. VL/VMO balance adequate. No PFPS symptoms." },
-          { val:"Laterally biased — tight lateral retinaculum", color:"#ffb300", meaning:"Patella glides less than 1cm medially. Lateral tilt test: cannot lift medial edge. Lateral retinaculum tight — often due to VL overactivity (CPA: VMO inhibited → VL overactive). Patient has PFPS with lateral knee ache, crepitus. TREAT: VL SMR + lateral retinaculum stretching + VMO activation." },
+          { val:"Laterally biased — tight lateral retinaculum", color:"#ffb300", meaning:"Patella glides less than 1cm medially. Lateral tilt test: cannot lift medial edge. Lateral retinaculum tight — often due to VL overactivity (NKT: VMO inhibited → VL overactive). Patient has PFPS with lateral knee ache, crepitus. TREAT: VL SMR + lateral retinaculum stretching + VMO activation." },
           { val:"Hypermobile — excessive lateral glide", color:"#ff4d6d", meaning:"Patella glides >2cm laterally with minimal resistance. Medial stabilisers (MPFL, VMO) insufficient. Risk of patellar subluxation or dislocation. Quad strengthening in safe range (0–30° for patellar stability), VMO focus, patellar taping." },
           { val:"Crepitus with glide", color:"#7f5af0", meaning:"Grinding/crepitus during patellar glide = cartilage change or chondromalacia patella. May be asymptomatic or painful. If painful and progressive — refer for imaging. Conservative: load management, VMO strengthening, step avoidance in acute phase." },
         ],
         treatment:"Lateral bias: VL foam roll + IT band SMR, lateral retinaculum stretch (McConnell tape medially), VMO terminal knee extension. Hypermobile: VMO strengthening (0–30°), MPFL-protecting brace. Kinetic chain: always address ankle DF and glute med before patellar taping.",
-        chainEffect:"VMO inhibited (CPA) → VL overactive → patella laterally displaced → PFPS. ALSO: foot pronation → tibial IR → patella internally rotated → increased lateral patellar stress.",
+        chainEffect:"VMO inhibited (NKT) → VL overactive → patella laterally displaced → PFPS. ALSO: foot pronation → tibial IR → patella internally rotated → increased lateral patellar stress.",
       },
       {
         id:"kc_tibiofemoral_rot", label:"Tibial Rotation Assessment — Screw-Home Mechanism",
@@ -6657,7 +5802,7 @@ const KC_REGIONS = {
           { val:"Normal — screw-home intact, symmetric rotation", color:"#00c97a", meaning:"Tibia normally externally rotates at terminal knee extension (screw-home mechanism). Popliteus and LCL functioning. Symmetric passive tibial rotation bilaterally. Knee locks appropriately in full extension for standing." },
           { val:"Restricted tibial IR — lateral chain tightness", color:"#ffb300", meaning:"Cannot internally rotate tibia adequately. Biceps femoris and IT band restricting IR. Patient toe-out during walking (externally rotated) to avoid tibial IR loading. Lateral knee pain. Release biceps femoris + IT band → improve tibial IR." },
           { val:"Excessive tibial IR — medial chain laxity", color:"#ff6b35", meaning:"Tibia falls into internal rotation easily. Medial structures (MCL, medial capsule) lax. Foot pronation driving tibial IR from below. Glute med weakness allowing hip IR from above. Medial knee overloaded. Strengthen: tib post, VMO, glute med." },
-          { val:"Absent screw-home — popliteus dysfunction", color:"#ff4d6d", meaning:"Tibia does not externally rotate at terminal extension. Knee cannot fully lock in extension. Popliteus inhibited or over-lengthened. Patient stands with slight flexion (can't straighten fully). Unlock test positive. Treat popliteus: soft tissue + CPA activation." },
+          { val:"Absent screw-home — popliteus dysfunction", color:"#ff4d6d", meaning:"Tibia does not externally rotate at terminal extension. Knee cannot fully lock in extension. Popliteus inhibited or over-lengthened. Patient stands with slight flexion (can't straighten fully). Unlock test positive. Treat popliteus: soft tissue + NKT activation." },
         ],
         treatment:"Restricted IR: biceps femoris + IT band SMR, tibial IR mobility drill. Absent screw-home: popliteus activation (resisted tibial IR at 30°), terminal knee extension focus. Always address kinetic chain: foot pronation → tibial IR → biceps femoris reactivity.",
         chainEffect:"Excessive tibial IR (from foot pronation) → medial knee overload → MCL stress → medial compartment OA risk. Restricted tibial ER → knee cannot lock → quadriceps must work harder → PFPS.",
@@ -6679,7 +5824,7 @@ const KC_REGIONS = {
           { val:"Moderately restricted — 20–29°", color:"#ff6b35", meaning:"Moderate hip IR restriction. Lumbar spine rotates excessively to compensate — LBP developing or established. Ipsilateral foot may toe-out during gait (compensatory ER to avoid IR demand). Hip impingement (FAI) or posterior capsule contracture. FADIR test likely positive." },
           { val:"Severely restricted — <20° or significant asymmetry", color:"#ff4d6d", meaning:"Severe hip IR restriction. Classic FAI or hip OA finding. Lumbar spine under enormous rotational stress. Patient cannot squat, run, or rotate without pain. FADIR and hip scour likely positive. Refer for X-ray/MRI. Aggressive hip mobility program + consider orthopaedic referral." },
         ],
-        treatment:"Posterior capsule: 90-90 stretch, pigeon pose, hip IR in prone with passive pressure. Joint mobilisation: posterior hip glide (patient supine, therapist mobilises femoral head posteriorly). Soft tissue: piriformis + gemellus SMR + dry needling. CPA: piriformis release → glute med activation (piriformis often overactive when glute med inhibited).",
+        treatment:"Posterior capsule: 90-90 stretch, pigeon pose, hip IR in prone with passive pressure. Joint mobilisation: posterior hip glide (patient supine, therapist mobilises femoral head posteriorly). Soft tissue: piriformis + gemellus SMR + dry needling. NKT: piriformis release → glute med activation (piriformis often overactive when glute med inhibited).",
         chainEffect:"Restricted hip IR → lumbar spine rotates to compensate → asymmetric disc loading → LBP. Also: restricted hip IR → foot toes out during gait → medial knee stress.",
       },
       {
@@ -6702,10 +5847,10 @@ const KC_REGIONS = {
         options:[
           { val:"Normal — 40–45° bilateral symmetric", color:"#00c97a", meaning:"Adequate hip ER for normal gait, sports, and hip dissociation. Deep gluteal muscles (piriformis, obturators, gemellus) at normal length. No lateral hip impingement. Figure-4 test: knee drops to table or near. SI joint not being stressed by ER restriction." },
           { val:"Restricted — tight external rotators", color:"#ffb300", meaning:"Hip ER < 35°. Deep external rotators tight — piriformis, obturators, quadratus femoris. Patient may have FABER test limitation. May restrict stride length during running. Prone figure-4 position limited. Stretch: lying figure-4, seated hip ER stretch." },
-          { val:"Restricted + deep buttock pain (piriformis syndrome)", color:"#ff4d6d", meaning:"ER restricted with reproduction of deep gluteal pain or sciatic symptoms during ER test. Piriformis compressing sciatic nerve. FAIR test likely positive. CPA: piriformis overactive (compensating for inhibited glute med). TREAT: careful piriformis release → glute med activation." },
+          { val:"Restricted + deep buttock pain (piriformis syndrome)", color:"#ff4d6d", meaning:"ER restricted with reproduction of deep gluteal pain or sciatic symptoms during ER test. Piriformis compressing sciatic nerve. FAIR test likely positive. NKT: piriformis overactive (compensating for inhibited glute med). TREAT: careful piriformis release → glute med activation." },
           { val:"Asymmetric — >15° side difference", color:"#7f5af0", meaning:"Significant asymmetry. The restricted side = more capsular loading on ipsilateral SI joint. Running creates rotational asymmetry. Asymmetric ER restriction often from single-side injury history or sport dominance (kicking leg, golf). Address restricted side first." },
         ],
-        treatment:"Soft tissue: piriformis SMR, deep gluteal foam rolling, figure-4 stretch. Joint mobilisation: posterior hip capsule glide if capsular. CPA: piriformis release → glute med activation (inhibited glute med is usually driving piriformis overactivity). Hip ER stretching: seated, lying, pigeon pose.",
+        treatment:"Soft tissue: piriformis SMR, deep gluteal foam rolling, figure-4 stretch. Joint mobilisation: posterior hip capsule glide if capsular. NKT: piriformis release → glute med activation (inhibited glute med is usually driving piriformis overactivity). Hip ER stretching: seated, lying, pigeon pose.",
         chainEffect:"Restricted hip ER → compensatory lumbar rotation → asymmetric SI joint loading. During gait: hip cannot adequately ER → foot toes in → medial ankle stress.",
       },
       {
@@ -6714,11 +5859,11 @@ const KC_REGIONS = {
         how:"MOBILITY: Patient sidelying, affected side up. Passively abduct hip — normal 45°. Also: Ober's test for IT band/TFL restriction (see TFL). STABILITY: Single-leg stance — Trendelenburg test. Patient stands on one leg 30 seconds. Positive = contralateral pelvis drops. Also: lateral step-down from 20cm box — observe hip drop and trunk lean. Functional: observe running gait for hip drop.",
         options:[
           { val:"Normal mobility and stability", color:"#00c97a", meaning:"Hip abducts to 45°. Trendelenburg negative. Single-leg squat: pelvis level, no hip drop. Running: symmetrical pelvis. Glute med functioning appropriately as primary lateral pelvic stabiliser." },
-          { val:"Restricted mobility — TFL/IT band", color:"#ffb300", meaning:"Ober's test positive — hip cannot adduct past 10° = IT band/TFL restricting abduction. Patient has lateral hip/knee pain. TFL overactive (CPA: compensating for inhibited glute med). TREAT: TFL SMR → glute med activation." },
-          { val:"Stability deficit — Trendelenburg positive", color:"#ff4d6d", meaning:"Pelvis drops contralaterally during single-leg stance. Glute med cannot support pelvis. Patient leans trunk over stance leg to reduce moment arm (gluteus medius lurch/Trendelenburg lurch). All single-leg activities overload medial structures below and lumbar above. CPA: confirm glute med inhibited → TFL/QL compensating." },
+          { val:"Restricted mobility — TFL/IT band", color:"#ffb300", meaning:"Ober's test positive — hip cannot adduct past 10° = IT band/TFL restricting abduction. Patient has lateral hip/knee pain. TFL overactive (NKT: compensating for inhibited glute med). TREAT: TFL SMR → glute med activation." },
+          { val:"Stability deficit — Trendelenburg positive", color:"#ff4d6d", meaning:"Pelvis drops contralaterally during single-leg stance. Glute med cannot support pelvis. Patient leans trunk over stance leg to reduce moment arm (gluteus medius lurch/Trendelenburg lurch). All single-leg activities overload medial structures below and lumbar above. NKT: confirm glute med inhibited → TFL/QL compensating." },
           { val:"Both mobility restricted AND stability deficit", color:"#7f5af0", meaning:"IT band tight + Trendelenburg positive. Classic kinetic chain hip failure. TFL and piriformis are both overactive, glute med severely inhibited. Lateral knee pain, hip pain, and lumbar dysfunction. Multi-session approach: release TFL + piriformis → activate glute med → functional hip loading." },
         ],
-        treatment:"Restricted: TFL SMR + lateral hip stretch + IT band roller. Stability: CPA glute med protocol (release TFL → activate glute med: clamshells → lateral band walks → single-leg holds). Progress: step-ups, lateral lunges, single-leg squat with pelvis level focus. Running: cue hip level during gait.",
+        treatment:"Restricted: TFL SMR + lateral hip stretch + IT band roller. Stability: NKT glute med protocol (release TFL → activate glute med: clamshells → lateral band walks → single-leg holds). Progress: step-ups, lateral lunges, single-leg squat with pelvis level focus. Running: cue hip level during gait.",
         chainEffect:"Glute med failure → pelvis drops → lumbar side-flexes → SI joint asymmetric load → LBP. Below: hip drop → tibial valgus stress → medial knee pain.",
       },
     ]
@@ -6762,7 +5907,7 @@ const KC_REGIONS = {
           { val:"Normal — thoracic dominant rotation", color:"#00c97a", meaning:"Thoracic spine contributes majority of rotation (>45° each side). Lumbar minimally rotates (<5° per side). Ribs and thoracic facets mobile. Thoracic rotation does not increase lumbar disc shear forces. Normal rotational mechanics for golf, tennis, running." },
           { val:"Thoracic stiff — lumbar compensating rotation", color:"#ffb300", meaning:"Thoracic rotation <30° and lumbar overrotates to compensate. Disc at L4/5 or L5/S1 subjected to rotational shear forces. LBP with rotation (golf swing, getting in/out of car). Thoracic mobilisation priority: rotational manipulation, foam roller rotation drill." },
           { val:"Bilateral thoracic stiffness — both sides", color:"#ff6b35", meaning:"Symmetric thoracic restriction — total rotation <60°. Often from prolonged desk posture, rib cage stiffness, or thoracic kyphosis. Lumbar maximally compensating bilaterally. Bilateral risk for disc pathology. Foam roller thoracic extension + rotation essential." },
-          { val:"Asymmetric restriction — one side significantly less", color:"#ff4d6d", meaning:"More restricted on one side. Creates rotational asymmetry — lumbar rotation asymmetrically loaded. Common in golfers, throwers, racquet sport athletes. Address: unilateral thoracic rotation mobility (side-lying open book, seated rotation with dowel). CPA: check contralateral glute med and ipsilateral obliques." },
+          { val:"Asymmetric restriction — one side significantly less", color:"#ff4d6d", meaning:"More restricted on one side. Creates rotational asymmetry — lumbar rotation asymmetrically loaded. Common in golfers, throwers, racquet sport athletes. Address: unilateral thoracic rotation mobility (side-lying open book, seated rotation with dowel). NKT: check contralateral glute med and ipsilateral obliques." },
         ],
         treatment:"Thoracic: foam roller extension + rotation (30 reps daily), side-lying open book stretch, seated thoracic rotation with dowel. Manual therapy: thoracic rotation manipulation (high velocity). Lumbar control: seated rotation awareness training, quadruped anti-rotation.",
         chainEffect:"Stiff thoracic (above) forces lumbar to rotate → disc shear forces → LBP. Below: hip IR restriction also forces lumbar to compensate rotationally.",
@@ -6808,9 +5953,9 @@ const KC_REGIONS = {
           { val:"Normal — symmetric expansion, no rib tenderness", color:"#00c97a", meaning:"Bilateral symmetric rib cage expansion during breathing. No hypomobile ribs on palpation. Costotransverse joints mobile. Thoracic rotation and extension will be full. Breathing pattern diaphragmatic — ribs expanding laterally and posteriorly." },
           { val:"Asymmetric expansion — one side restricted", color:"#ffb300", meaning:"One side of rib cage expands less than other. Often ipsilateral to thoracic rotation restriction. Breathing may be thoracic (accessory muscle dominant). Ipsilateral rib articulations hypomobile. Rib mobilisation (unilateral anterior-posterior rib pressure or manipulation) at restricted level." },
           { val:"Hypomobile ribs — specific levels tender", color:"#ff6b35", meaning:"Specific rib angles tender and stiff on PA pressure. Hypomobile costovertebral/costotransverse joints. Restricts thoracic rotation at that spinal level. Often follows respiratory illness, thoracic trauma, or prolonged poor posture. Manipulate/mobilise specific ribs at stiff levels." },
-          { val:"Upper chest breathing — diaphragm inhibited", color:"#ff4d6d", meaning:"Rib cage rises vertically (upper chest breathing) rather than expanding laterally — diaphragm inhibited (see CPA diaphragm). Scalenes and SCM overactive as primary breathers. Lower ribs do not expand. Retrain: 360° diaphragmatic breathing, crocodile breathing, lateral rib expansion. Treat CPA: scalene release → diaphragm activation." },
+          { val:"Upper chest breathing — diaphragm inhibited", color:"#ff4d6d", meaning:"Rib cage rises vertically (upper chest breathing) rather than expanding laterally — diaphragm inhibited (see NKT diaphragm). Scalenes and SCM overactive as primary breathers. Lower ribs do not expand. Retrain: 360° diaphragmatic breathing, crocodile breathing, lateral rib expansion. Treat NKT: scalene release → diaphragm activation." },
         ],
-        treatment:"Rib mobilisation: Grade III–IV PA pressure on hypomobile rib angles. HVLA: rib manipulation in prone. Breathing: lateral rib expansion training (patient places hands on lower ribs, breathe into hands). Soft tissue: intercostal release. CPA: scalene + SCM release → diaphragm activation if breathing pattern disordered.",
+        treatment:"Rib mobilisation: Grade III–IV PA pressure on hypomobile rib angles. HVLA: rib manipulation in prone. Breathing: lateral rib expansion training (patient places hands on lower ribs, breathe into hands). Soft tissue: intercostal release. NKT: scalene + SCM release → diaphragm activation if breathing pattern disordered.",
         chainEffect:"Hypomobile ribs → restrict thoracic rotation → lumbar overrotation → LBP. Also: restricted breathing pattern → reduced core stability (diaphragm is a core stabiliser) → LBP.",
       },
     ]
@@ -6826,8 +5971,8 @@ const KC_REGIONS = {
         how:"Patient seated or standing. Observe arm elevation in scapular plane (between flexion and abduction). Normal ratio: for every 2° of GH elevation, 1° of scapular upward rotation = 2:1 ratio (total: 120° GH + 60° scapular = 180° total). Observe: (1) Early scapular elevation (shrugging) = upper trap dominant. (2) Winging at any point = serratus inhibited. (3) Painful arc (60–120°) = impingement. (4) Does scapula upwardly rotate or just elevate? Mark inferior angle and medial border with marker for precision.",
         options:[
           { val:"Normal — 2:1 ratio, no shrug, no winging", color:"#00c97a", meaning:"Scapula upwardly rotates smoothly in 2:1 ratio with GH elevation. No early shrugging. No winging. Painful arc absent. Lower trap, serratus, and upper trap balanced. Normal force couple functioning. Overhead activity pain-free." },
-          { val:"Upper trap dominant — early shoulder elevation", color:"#ffb300", meaning:"Shoulder elevates immediately with arm raising (upper trap fires first — CPA: lower trap inhibited). Ratio disrupted — too much scapular elevation, not enough upward rotation. Patient feels tightness across top of shoulder. Impingement risk. TREAT: upper trap release → lower trap activation → retrain arm elevation pattern." },
-          { val:"Serratus deficit — medial winging", color:"#ff6b35", meaning:"Medial border of scapula wings away from thorax during arm elevation. Serratus anterior inhibited (cannot protract/upwardly rotate scapula — CPA: pec minor overactive). Subacromial space decreases → impingement. Full overhead elevation impossible without winging. TREAT: pec minor release → serratus activation." },
+          { val:"Upper trap dominant — early shoulder elevation", color:"#ffb300", meaning:"Shoulder elevates immediately with arm raising (upper trap fires first — NKT: lower trap inhibited). Ratio disrupted — too much scapular elevation, not enough upward rotation. Patient feels tightness across top of shoulder. Impingement risk. TREAT: upper trap release → lower trap activation → retrain arm elevation pattern." },
+          { val:"Serratus deficit — medial winging", color:"#ff6b35", meaning:"Medial border of scapula wings away from thorax during arm elevation. Serratus anterior inhibited (cannot protract/upwardly rotate scapula — NKT: pec minor overactive). Subacromial space decreases → impingement. Full overhead elevation impossible without winging. TREAT: pec minor release → serratus activation." },
           { val:"Combined pattern — both elevation and winging", color:"#ff4d6d", meaning:"Upper trap dominance + serratus inhibition simultaneously. Severe scapular dyskinesis. Multiple muscles dysfunctional. Patient has established shoulder impingement and possible rotator cuff pathology. Multi-system treatment: release upper trap + pec minor → activate lower trap + serratus → retrain arm elevation." },
         ],
         treatment:"Scapular muscle rebalancing: lower trap (prone Y) + serratus (push-up plus, serratus punch). Release: upper trap SMR + pec minor soft tissue. Movement retraining: wall slide with scapular depression cue, elevation drills with resistance band. Avoid overhead loading until rhythm normalised.",
@@ -6843,7 +5988,7 @@ const KC_REGIONS = {
           { val:"Bilateral restriction — posterior capsule tightness", color:"#ff6b35", meaning:"Both shoulders show restricted IR. Non-throwing athlete — indicates global posterior capsule contracture or UCS-related tightness. Pec minor tightness also limiting IR (anterior chain restrictors). Posterior capsule stretching bilaterally + pec minor release." },
           { val:"Severely restricted — frozen shoulder pattern", color:"#ff4d6d", meaning:"IR severely restricted (<30°). All planes restricted (capsular pattern: ER > Abd > IR). Adhesive capsulitis likely. Pain at end-range passive motion. Refer for corticosteroid injection assessment. Grade III–IV GH mobilisation (inferior glide, posterior glide). Night pain = inflammatory phase — not mobilised aggressively." },
         ],
-        treatment:"GIRD: sleeper stretch × 3 × 30 sec daily, posterior capsule joint mobilisation (posterior glide). Frozen shoulder: Maitland Grade I–II in pain → Grade III–IV in stiff phase. End-range stretching program. Joint distension injection if severe. CPA: RC activation after each mobilisation session.",
+        treatment:"GIRD: sleeper stretch × 3 × 30 sec daily, posterior capsule joint mobilisation (posterior glide). Frozen shoulder: Maitland Grade I–II in pain → Grade III–IV in stiff phase. End-range stretching program. Joint distension injection if severe. NKT: RC activation after each mobilisation session.",
         chainEffect:"GH IR restriction → shoulder impingement (posterior capsule pushes humeral head anterosuperiorly → compresses supraspinatus). Also: GH IR loss → thoracic rotation compensates → lumbar overloads.",
       },
       {
@@ -6853,7 +5998,7 @@ const KC_REGIONS = {
         options:[
           { val:"Normal — mobile CT junction", color:"#00c97a", meaning:"CT junction mobile on PA spring test. No significant stiffness at T1–T3. Cervical rotation flows smoothly through CT junction. Brachial plexus exits freely. No referred arm symptoms provoked by CT junction loading." },
           { val:"Hypomobile CT junction — restricted rotation", color:"#ffb300", meaning:"CT junction stiff — PA spring test feels wooden at T1–T3. Reduced cervical rotation, particularly at lower levels. Patient has stiffness at base of neck. Often from forward head posture (chin poke — the CT junction extends to compensate for FHP). Mobilise: PA and rotation mobilisations at C7–T3." },
-          { val:"CT junction hypomobility with arm symptoms", color:"#ff4d6d", meaning:"CT junction restricted AND provokes arm tingling/heaviness with loading. Brachial plexus or first rib elevated at CT junction. First rib elevation test: compare first rib height bilaterally (should be level). Thoracic outlet symptoms. Mobilise CT junction + first rib mobilisation. Scalene release (CPA: scalenes often overactive due to diaphragm inhibition — elevating first rib)." },
+          { val:"CT junction hypomobility with arm symptoms", color:"#ff4d6d", meaning:"CT junction restricted AND provokes arm tingling/heaviness with loading. Brachial plexus or first rib elevated at CT junction. First rib elevation test: compare first rib height bilaterally (should be level). Thoracic outlet symptoms. Mobilise CT junction + first rib mobilisation. Scalene release (NKT: scalenes often overactive due to diaphragm inhibition — elevating first rib)." },
           { val:"Cervicothoracic instability — excessive motion", color:"#7f5af0", meaning:"Hypermobile CT junction — too much motion (often post-whiplash). PA spring has no resistance at C7/T1. May be causing positional headaches and neurological symptoms. Stabilise: deep cervical flexor activation, cervicothoracic stabilisation exercises. Avoid aggressive mobilisation or manipulation at this level." },
         ],
         treatment:"Hypomobile: PA mobilisation at T1–T3 (Maitland Grade III–IV), rotation mobilisation in sitting. First rib: inferior-posterior first rib mobilisation. Soft tissue: levator scapulae + upper trap at CT junction. Postural correction: CT junction extension exercises.",
@@ -6877,7 +6022,7 @@ const KC_REGIONS = {
           { val:"Severely restricted bilateral — consider serious pathology", color:"#ff4d6d", meaning:"Both rotations severely restricted (especially if recent onset, no mechanism, or in older patient). Consider: RA (atlantoaxial instability — Sharp-Purser test FIRST), cervical myelopathy (Babinski/reflexes), infection, tumour. Urgent imaging if no mechanism. Do NOT manipulate until serious pathology ruled out." },
         ],
         treatment:"C1/C2: specific C1/C2 rotation manipulation or HVT (cervicogenic headache protocol). Suboccipital release + DNF activation. Lower cervical: segmental mobilisation at restricted level. Thoracic: always treat thoracic rotation restriction first as it directly improves cervical rotation. Home: cervical rotation active ROM × 10 reps each side daily.",
-        chainEffect:"Restricted cervical rotation → patient rotates thoracic more → thoracic overload. Restricted cervical → SCM overworks → cervicogenic headache. DNF inhibition (CPA) is root cause in most cases.",
+        chainEffect:"Restricted cervical rotation → patient rotates thoracic more → thoracic overload. Restricted cervical → SCM overworks → cervicogenic headache. DNF inhibition (NKT) is root cause in most cases.",
       },
       {
         id:"kc_cervical_flex_ext", label:"Cervical Flexion / Extension Mobility",
@@ -6931,8 +6076,8 @@ function KineticChainSection({ data, set, navContext={} }) {
             ["Wrist","MOBILITY","#00c97a"],
           ].map(([j,r,col])=>(
             <div key={j} style={{ textAlign:"center", padding:"4px 9px", borderRadius:8, border:`1px solid ${col}40`, background:`${col}10` }}>
-              <div style={{ fontSize:"0.78rem", fontWeight:700, color:col }}>{j}</div>
-              <div style={{ fontSize:"0.75rem", color:col, opacity:0.8 }}>{r}</div>
+              <div style={{ fontSize:"0.68rem", fontWeight:700, color:col }}>{j}</div>
+              <div style={{ fontSize:"0.55rem", color:col, opacity:0.8 }}>{r}</div>
             </div>
           ))}
         </div>
@@ -6947,14 +6092,14 @@ function KineticChainSection({ data, set, navContext={} }) {
           <button key={key} type="button" onClick={()=>{ setRegion(key); setOpenTest(null); }}
             style={{ padding:"6px 13px", borderRadius:20, border:`1px solid ${region===key?r.color:C.border}`, background:region===key?`${r.color}15`:"transparent", color:region===key?r.color:C.muted, fontSize:"0.74rem", fontWeight:region===key?700:400, cursor:"pointer" }}>
             {r.label}
-            <span style={{ marginLeft:5, fontSize:"0.8rem", padding:"1px 5px", borderRadius:8, background:`${roleColor(r.role)}20`, color:roleColor(r.role) }}>{r.role}</span>
+            <span style={{ marginLeft:5, fontSize:"0.6rem", padding:"1px 5px", borderRadius:8, background:`${roleColor(r.role)}20`, color:roleColor(r.role) }}>{r.role}</span>
           </button>
         ))}
       </div>
 
       {/* Region intro */}
       <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:10, padding:14, marginBottom:16, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>
-        <span style={{ padding:"2px 8px", borderRadius:8, background:`${roleColor(reg.role)}20`, color:roleColor(reg.role), fontSize:"0.78rem", fontWeight:700, marginRight:8 }}>{reg.role}</span>
+        <span style={{ padding:"2px 8px", borderRadius:8, background:`${roleColor(reg.role)}20`, color:roleColor(reg.role), fontSize:"0.68rem", fontWeight:700, marginRight:8 }}>{reg.role}</span>
         {reg.intro}
       </div>
 
@@ -6971,20 +6116,20 @@ function KineticChainSection({ data, set, navContext={} }) {
               style={{ padding:"12px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}` }}>
               <div style={{ flex:1 }}>
                 <div style={{ display:"flex", gap:7, alignItems:"center", marginBottom:3 }}>
-                  <span style={{ fontSize:"0.8rem", padding:"2px 7px", borderRadius:7, background:`${roleColor(t.role.split(" ")[0])}20`, color:roleColor(t.role.split(" ")[0]), fontWeight:700 }}>{t.role}</span>
-                  <span style={{ fontSize:"0.8rem", color:C.muted }}>Joint: {t.joint}</span>
+                  <span style={{ fontSize:"0.6rem", padding:"2px 7px", borderRadius:7, background:`${roleColor(t.role.split(" ")[0])}20`, color:roleColor(t.role.split(" ")[0]), fontWeight:700 }}>{t.role}</span>
+                  <span style={{ fontSize:"0.6rem", color:C.muted }}>Joint: {t.joint}</span>
                 </div>
                 <div style={{ fontWeight:700, fontSize:"0.88rem", color:C.text }}>{t.label}</div>
                 {currentVal && (
                   <div style={{ marginTop:5, display:"inline-flex", alignItems:"center", gap:6, padding:"2px 8px", borderRadius:8, background:`${currentOption?.color||C.muted}18`, border:`1px solid ${currentOption?.color||C.muted}40` }}>
                     <div style={{ width:7, height:7, borderRadius:"50%", background:currentOption?.color||C.muted }} />
-                    <span style={{ fontSize:"0.78rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
+                    <span style={{ fontSize:"0.68rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
                   </div>
                 )}
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0, marginLeft:10 }}>
                 <button type="button" onClick={e=>{ e.stopPropagation(); setModalTest(t); }}
-                  style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.75rem", fontWeight:700, cursor:"pointer" }}>
+                  style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer" }}>
                   ℹ How to Test
                 </button>
                 <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
@@ -6997,18 +6142,18 @@ function KineticChainSection({ data, set, navContext={} }) {
 
                 {/* How to */}
                 <div style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, padding:12, marginBottom:12 }}>
-                  <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
+                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
                   <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{t.how}</div>
                 </div>
 
                 {/* Options */}
                 <div style={{ marginBottom:12 }}>
-                  <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Select Finding — What Each Result Means</div>
+                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Select Finding — What Each Result Means</div>
                   {t.options.map(opt=>(
                     <div key={opt.val} onClick={()=>set(t.id, currentVal===opt.val?"":opt.val)}
                       style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"10px 12px", borderRadius:9, marginBottom:7, cursor:"pointer", border:`1px solid ${currentVal===opt.val?opt.color:C.border}`, background:currentVal===opt.val?`${opt.color}12`:"transparent", transition:"all 0.15s" }}>
                       <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${opt.color}`, background:currentVal===opt.val?opt.color:"transparent", flexShrink:0, marginTop:2, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.75rem", fontWeight:900 }}>✓</span>}
+                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.55rem", fontWeight:900 }}>✓</span>}
                       </div>
                       <div style={{ flex:1 }}>
                         <div style={{ fontWeight:700, fontSize:"0.8rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -7020,13 +6165,13 @@ function KineticChainSection({ data, set, navContext={} }) {
 
                 {/* Chain Effect */}
                 <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:8, padding:11, marginBottom:10 }}>
-                  <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
+                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
                   <div style={{ fontSize:"0.77rem", color:C.text, lineHeight:1.6 }}>{t.chainEffect}</div>
                 </div>
 
                 {/* Treatment */}
                 <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:8, padding:11 }}>
-                  <div style={{ fontSize:"0.73rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>→ Treatment Protocol</div>
+                  <div style={{ fontSize:"0.63rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>→ Treatment Protocol</div>
                   <div style={{ fontSize:"0.77rem", color:C.text, lineHeight:1.7 }}>{t.treatment}</div>
                 </div>
               </div>
@@ -7042,18 +6187,18 @@ function KineticChainSection({ data, set, navContext={} }) {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
               <div>
                 <div style={{ fontWeight:800, color:reg.color, fontSize:"1rem" }}>{modalTest.label}</div>
-                <div style={{ fontSize:"0.8rem", color:C.muted, marginTop:3 }}>{modalTest.joint} · {modalTest.role}</div>
+                <div style={{ fontSize:"0.7rem", color:C.muted, marginTop:3 }}>{modalTest.joint} · {modalTest.role}</div>
               </div>
               <button onClick={()=>setModalTest(null)} style={{ background:"none", border:`1px solid ${C.border}`, color:C.muted, borderRadius:6, padding:"3px 9px", cursor:"pointer" }}>✕</button>
             </div>
 
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
+              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
               <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8 }}>{modalTest.how}</div>
             </div>
 
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📊 What Each Result Means</div>
+              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>📊 What Each Result Means</div>
               {modalTest.options.map(opt=>(
                 <div key={opt.val} style={{ padding:"8px 12px", borderRadius:8, marginBottom:7, border:`1px solid ${opt.color}30`, background:`${opt.color}08` }}>
                   <div style={{ fontWeight:700, fontSize:"0.78rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -7063,12 +6208,12 @@ function KineticChainSection({ data, set, navContext={} }) {
             </div>
 
             <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:8, padding:12, marginBottom:14 }}>
-              <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
+              <div style={{ fontSize:"0.63rem", fontWeight:700, color:C.accent, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>⛓️ Kinetic Chain Effect</div>
               <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.6 }}>{modalTest.chainEffect}</div>
             </div>
 
             <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:8, padding:12, marginBottom:16 }}>
-              <div style={{ fontSize:"0.73rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>→ Treatment Protocol</div>
+              <div style={{ fontSize:"0.63rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:5 }}>→ Treatment Protocol</div>
               <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.7 }}>{modalTest.treatment}</div>
             </div>
 
@@ -7119,9 +6264,9 @@ const RULES = {
       tight:["IT Band","TFL (Tensor Fascia Latae)","Adductors","Gastrocnemius"],
       deficit:"Stability deficit — hip abductor weakness + ankle mobility",
       kinetic:"Ankle DF restriction → tibial IR → knee collapse. Glute med inhibited → TFL overactive → valgus.",
-      root:"Glute Med inhibition (CPA) + Ankle DF restriction (kinetic chain). Treat ankle first, then activate glute med.",
+      root:"Glute Med inhibition (NKT) + Ankle DF restriction (kinetic chain). Treat ankle first, then activate glute med.",
       risk:["Medial knee ligaments (MCL)","ACL (lateral ground reaction force)","Medial meniscus","Patellofemoral joint"],
-      assess:["Ankle DF lunge test","CPA Glute Med","Trendelenburg test","Ober's test (TFL)","VMO timing during terminal extension"],
+      assess:["Ankle DF lunge test","NKT Glute Med","Trendelenburg test","Ober's test (TFL)","VMO timing during terminal extension"],
       exercises:["Ankle DF mobility: wall lunge drill × 3 min daily","Clamshells (glute med isolation)","Lateral band walks","Terminal knee extension (VMO)","Single-leg squat progression"],
       progression:["Week 1–2: Ankle mobility + clamshells","Week 3–4: Goblet squat with cue","Week 5–6: Single-leg squat","Week 7+: Loaded squat with knee alignment feedback"],
     },
@@ -7152,9 +6297,9 @@ const RULES = {
       tight:["Iliopsoas","Rectus Femoris","Lumbar Extensors"],
       deficit:"Both: hip flexor tightness (mobility) + glute/core weakness (stability)",
       kinetic:"Hip flexors pull ASIS forward → pelvis tilts → lumbar extends → facet loading. Classic LCS pattern.",
-      root:"Lower Crossed Syndrome. Psoas overactive (CPA) + Glute max inhibited. Thomas test will confirm.",
+      root:"Lower Crossed Syndrome. Psoas overactive (NKT) + Glute max inhibited. Thomas test will confirm.",
       risk:["Lumbar facet joints","L4/L5 disc","Anterior hip labrum"],
-      assess:["Thomas test","CPA Gluteus Maximus","LCS postural assessment","Prone instability test"],
+      assess:["Thomas test","NKT Gluteus Maximus","LCS postural assessment","Prone instability test"],
       exercises:["Couch stretch (hip flexors)","TA drawing-in manoeuvre","Glute bridges (glute activation priority)","Dead bug","Hip hinge retraining (waiter's bow)"],
       progression:["Week 1–2: Hip flexor release + glute activation","Week 3–4: Bridge progression","Week 5–6: Hinge pattern (RDL)","Week 7+: Squat with pelvic neutral cue"],
     },
@@ -7174,9 +6319,9 @@ const RULES = {
       tight:["Gastrocnemius","Achilles tendon","Peroneus Brevis"],
       deficit:"Stability deficit (foot) + mobility deficit (ankle) driving compensatory pronation",
       kinetic:"Foot pronates → tibial IR → knee valgus → hip IR → anterior pelvic tilt. Chain from foot to pelvis.",
-      root:"Tibialis posterior inhibited (CPA) + ankle DF restriction → foot collapses medially to gain pseudo-dorsiflexion.",
+      root:"Tibialis posterior inhibited (NKT) + ankle DF restriction → foot collapses medially to gain pseudo-dorsiflexion.",
       risk:["Tibialis posterior tendon","Plantar fascia","Medial ankle ligaments","Medial knee (MCL, medial meniscus)"],
-      assess:["Navicular drop test","CPA Tibialis Posterior","Ankle DF lunge test","Subtalar mobility"],
+      assess:["Navicular drop test","NKT Tibialis Posterior","Ankle DF lunge test","Subtalar mobility"],
       exercises:["Short foot exercise × 20 reps","Heel raise with inversion (tib post)","Ankle DF mobility","Intrinsic foot strengthening"],
       progression:["Week 1: Short foot + tib post","Week 2: Squat with arch awareness","Week 3: Single-leg stance on arch","Week 4+: Functional squat"],
     },
@@ -7211,9 +6356,9 @@ const RULES = {
       tight:["Contralateral QL","Ipsilateral adductors"],
       deficit:"Stability deficit — lateral pelvic stabilisers insufficient for single-leg stance",
       kinetic:"Glute med inhibited → QL elevates pelvis on swing side → lateral trunk lean → medial knee overload on stance side.",
-      root:"Glute Med inhibition (CPA primary finding). Trendelenburg sign positive. TFL overactive as compensator.",
+      root:"Glute Med inhibition (NKT primary finding). Trendelenburg sign positive. TFL overactive as compensator.",
       risk:["Medial knee (stance side)","SIJ (asymmetric loading)","Lumbar discs (lateral shear)","IT band (swing side)"],
-      assess:["Trendelenburg test","CPA Glute Med","Hip abduction firing order","Single-leg stance test"],
+      assess:["Trendelenburg test","NKT Glute Med","Hip abduction firing order","Single-leg stance test"],
       exercises:["Clamshells (glute med — must be in slight extension, not flexion)","Side-lying hip abduction","Lateral band walks","Single-leg stance with level pelvis cue","Step-ups with pelvic level focus"],
       progression:["Week 1: Clamshells + TFL release","Week 2: Side-lying abduction","Week 3: Single-leg stance 30 sec","Week 4: Step-ups","Week 5+: Running with pelvic level cue"],
     },
@@ -7222,9 +6367,9 @@ const RULES = {
       tight:["Gastrocnemius/Soleus","Peroneals (overactive)"],
       deficit:"Stability deficit (foot) — medial arch fails during push-off",
       kinetic:"Foot pronates at push-off → tibia internally rotates → knee valgus → hip adduction → LBP. Per step repetition makes this highly injurious.",
-      root:"Tibialis posterior inhibited (CPA). Overactive peroneals compensating. Gastrocnemius restriction reducing DF → compensatory pronation.",
+      root:"Tibialis posterior inhibited (NKT). Overactive peroneals compensating. Gastrocnemius restriction reducing DF → compensatory pronation.",
       risk:["Tibialis posterior tendon (progressive rupture)","Plantar fascia","Medial knee","Shin splints (tib ant reactive)"],
-      assess:["CPA Tibialis Posterior","Navicular drop","Ankle DF lunge test","Subtalar mobility"],
+      assess:["NKT Tibialis Posterior","Navicular drop","Ankle DF lunge test","Subtalar mobility"],
       exercises:["Short foot exercise integrated into walking","Heel raises with inversion","Ankle DF mobility (reduce compensatory pronation)"],
       progression:["Short foot walking practice","Barefoot training on varied surfaces","Orthotic if navicular drop >10mm","Reduce pronation before increasing gait speed/load"],
     },
@@ -7235,7 +6380,7 @@ const RULES = {
       kinetic:"Glute med weak → patient reduces load on hip abductor by leaning trunk over stance leg (reduces moment arm). Classic gluteus medius lurch.",
       root:"Glute Med weakness/inhibition. Patient self-protecting by reducing mechanical demand on weak muscle. This is a STRATEGY, not a structural problem.",
       risk:["Lumbar spine (repeated lateral bending)","Contralateral SI joint","Ipsilateral IT band"],
-      assess:["Trendelenburg test","CPA Glute Med","Single-leg stance","Hip abduction strength MMT"],
+      assess:["Trendelenburg test","NKT Glute Med","Single-leg stance","Hip abduction strength MMT"],
       exercises:["Glute med activation (clamshells, sidelying abduction)","Single-leg stance with upright trunk constraint (standing near wall)","Lateral step-ups with level pelvis"],
       progression:["Week 1–2: Glute med isolation","Week 3: Single-leg with upright cue","Week 4+: Walking retraining with pelvis level"],
     },
@@ -7272,7 +6417,7 @@ const RULES = {
       kinetic:"Ankle proprioception + glute med + core ALL required for single-leg stability. Failure in any one creates instability.",
       root:"Identify the PRIMARY level of instability: ankle (foot wobbles), knee (knee shakes), hip (pelvis drops), or trunk (trunk sways). Treat the lowest level first.",
       risk:["Ankle (repeated micro-sprains)","Knee (meniscus/ACL stress)","SIJ","Lumbar"],
-      assess:["Single-leg stance with eyes open/closed (Romberg variation)","Star Excursion Balance Test (SEBT)","CPA Glute Med + Tibialis Ant","Ankle anterior drawer"],
+      assess:["Single-leg stance with eyes open/closed (Romberg variation)","Star Excursion Balance Test (SEBT)","NKT Glute Med + Tibialis Ant","Ankle anterior drawer"],
       exercises:["Ankle: single-leg balance on foam pad","Glute med: clamshells → sidelying abduction → SLS","Core: TA activation during SLS","Progress: eyes open → eyes closed → unstable surface"],
       progression:["Week 1: SLS eyes open on floor 30 sec","Week 2: Eyes closed","Week 3: Foam pad","Week 4: Added perturbation","Week 5+: Sport-specific"],
     },
@@ -7281,9 +6426,9 @@ const RULES = {
       tight:["Contralateral QL — compensating for glute med weakness"],
       deficit:"Stability deficit — pure glute med failure",
       kinetic:"Glute med cannot hold pelvis level → contralateral pelvis drops → lateral trunk shift → knee valgus loading. Trendelenburg equivalent.",
-      root:"Glute Med inhibited (CPA). Confirm with palpation during SLS — glute med fires late or minimally. TFL and QL compensating.",
+      root:"Glute Med inhibited (NKT). Confirm with palpation during SLS — glute med fires late or minimally. TFL and QL compensating.",
       risk:["Medial knee","SIJ","Lumbar lateral shear","IT band"],
-      assess:["Trendelenburg test","CPA Glute Med","Hip abduction firing order","MMT Glute Med"],
+      assess:["Trendelenburg test","NKT Glute Med","Hip abduction firing order","MMT Glute Med"],
       exercises:["Clamshells (slight hip extension position)","Lateral band walks","SLS with pelvis level cue","Step-downs with pelvic control focus"],
       progression:["Isolation → functional → sport-specific over 6 weeks"],
     },
@@ -7294,7 +6439,7 @@ const RULES = {
       kinetic:"Same as squat valgus but at higher load (full body weight single leg). ACL injury risk position.",
       root:"Glute Med + VMO both insufficient for single-leg demand. Ankle DF restriction often contributing. Highest injury risk position.",
       risk:["ACL","MCL","Medial meniscus","Patellofemoral joint (high stress)"],
-      assess:["CPA Glute Med","VMO timing","Ankle DF lunge test","Patellofemoral assessment"],
+      assess:["NKT Glute Med","VMO timing","Ankle DF lunge test","Patellofemoral assessment"],
       exercises:["Progress glute med and VMO BEFORE single-leg loading","SLS with band at knee (resist valgus)","Step-down with alignment mirror feedback"],
       progression:["Do NOT load until glute med ≥4/5 and VMO firing correctly"],
     },
@@ -7309,7 +6454,7 @@ const RULES = {
       kinetic:"Lunge places high demand on frontal plane stability. Glute med must eccentrically control pelvic drop AND knee alignment simultaneously.",
       root:"Glute med + VMO insufficient. Check if worse with front or back leg — identifies which side is primary weakness.",
       risk:["Medial knee structures","Patellofemoral joint","ACL risk in sport context"],
-      assess:["Trendelenburg test","CPA Glute Med","VMO assessment","Ankle DF (if heel rises in lunge)"],
+      assess:["Trendelenburg test","NKT Glute Med","VMO assessment","Ankle DF (if heel rises in lunge)"],
       exercises:["Reverse lunge (lower demand than forward lunge)","Split squat with support","Glute med focus before progressing to lunge"],
       progression:["Split squat → reverse lunge → forward lunge → walking lunge → loaded lunge"],
     },
@@ -7320,7 +6465,7 @@ const RULES = {
       kinetic:"Back hip flexor tight → pelvis tips anterior → trunk leans forward → lumbar extends. Front hip must extend from compromised position.",
       root:"Back leg hip flexor (iliopsoas) tight. Thomas test on that side positive. Release hip flexor → lunge trunk position improves.",
       risk:["Back leg: anterior hip capsule","Lumbar facets","Front leg: patellar tendon"],
-      assess:["Thomas test","Hip extension ROM","CPA Psoas","FMS In-Line Lunge"],
+      assess:["Thomas test","Hip extension ROM","NKT Psoas","FMS In-Line Lunge"],
       exercises:["Couch stretch (back leg hip flexor)","Half-kneeling hip flexor stretch","Then lunge with upright trunk cue"],
       progression:["Mobility before lunge loading","Half-kneeling → static lunge → walking lunge"],
     },
@@ -7342,7 +6487,7 @@ const RULES = {
       kinetic:"Back leg hip flexor pulls ASIS forward in lunge → lumbar extends → facet compression. Core must resist this but is insufficient.",
       root:"LCS pattern + core instability. Psoas tight + TA weak. Release psoas → activate TA → lunge position improves.",
       risk:["Lumbar facet joints (extension + compression)","L4/L5 disc"],
-      assess:["Thomas test","Prone instability test","TA activation assessment","CPA Psoas"],
+      assess:["Thomas test","Prone instability test","TA activation assessment","NKT Psoas"],
       exercises:["TA activation before lunge","Hip flexor stretching (back leg)","Half-kneeling lunge with posterior pelvic tilt cue"],
       progression:["Half-kneeling with pelvic neutral → static lunge → dynamic lunge"],
     },
@@ -7366,9 +6511,9 @@ const RULES = {
       tight:["Upper Trapezius","Levator Scapulae"],
       deficit:"Stability deficit — upper trap dominant, lower trap inhibited (UCS pattern)",
       kinetic:"Upper trap fires first → shoulder rises → scapula cannot upwardly rotate properly → impingement zone narrows → pain with overhead.",
-      root:"UCS pattern. CPA: lower trap inhibited → upper trap overactive. Scapulohumeral rhythm disrupted — shoulder rises before arm reaches 90°.",
+      root:"UCS pattern. NKT: lower trap inhibited → upper trap overactive. Scapulohumeral rhythm disrupted — shoulder rises before arm reaches 90°.",
       risk:["Supraspinatus","Biceps long head","AC joint","Subacromial bursa"],
-      assess:["Scapulohumeral rhythm assessment","CPA Lower Trapezius","CPA Serratus Anterior","Scapular dyskinesis classification"],
+      assess:["Scapulohumeral rhythm assessment","NKT Lower Trapezius","NKT Serratus Anterior","Scapular dyskinesis classification"],
       exercises:["Upper trap SMR first","Prone Y-exercise (lower trap)","Serratus punch","Arm elevation pattern retraining (no shrug cue)"],
       progression:["Release → activate → retrain elevation pattern over 4–6 weeks"],
     },
@@ -7377,9 +6522,9 @@ const RULES = {
       tight:["Pectoralis Minor"],
       deficit:"Stability deficit — serratus anterior inhibited (UCS component)",
       kinetic:"Serratus inhibited → scapula cannot protract/upwardly rotate → medial border wings → GH abduction limited → overhead impingement.",
-      root:"Pec minor overactive (CPA) → inhibits serratus anterior. Long thoracic nerve palsy must be excluded (if severe winging at rest).",
+      root:"Pec minor overactive (NKT) → inhibits serratus anterior. Long thoracic nerve palsy must be excluded (if severe winging at rest).",
       risk:["Rotator cuff (impingement due to poor scapular position)","Anterior labrum","Long thoracic nerve"],
-      assess:["Wall push-up plus (serratus test)","CPA Serratus Anterior","CPA Pec Minor","Scapular winging classification"],
+      assess:["Wall push-up plus (serratus test)","NKT Serratus Anterior","NKT Pec Minor","Scapular winging classification"],
       exercises:["Pec minor release (coracoid pressure 90 sec)","Serratus punch","Push-up plus progression","Wall slides with protraction cue"],
       progression:["Isolation → closed chain → open chain overhead"],
     },
@@ -7388,9 +6533,9 @@ const RULES = {
       tight:["SCM","Scalenes","Suboccipitals","Upper Trapezius"],
       deficit:"Stability deficit — DNF inhibited, UCS pattern at cervical spine",
       kinetic:"During overhead reach, cervical spine extends if DNF insufficient → suboccipitals compress → headache. Also: forward head increases shoulder impingement (reduces subacromial space via thoracic link).",
-      root:"DNF inhibited (CPA). Address before overhead loading. Every 2.5cm of forward head = +4.5kg on cervical spine at full overhead load.",
+      root:"DNF inhibited (NKT). Address before overhead loading. Every 2.5cm of forward head = +4.5kg on cervical spine at full overhead load.",
       risk:["Suboccipitals (compression)","C4/C5 disc","Supraspinatus (shoulder link)"],
-      assess:["CCFT (deep neck flexor test)","CPA DNF","Cervical rotation ROM","UCS assessment"],
+      assess:["CCFT (deep neck flexor test)","NKT DNF","Cervical rotation ROM","UCS assessment"],
       exercises:["Chin tuck exercise × 20 reps daily","DNF strengthening before overhead loading","Thoracic extension to reduce forward head"],
       progression:["DNF activation → overhead with neutral neck → loaded overhead"],
     },
@@ -8803,4346 +7948,430 @@ function FMSCameraPanel({onClose}){
       <div style={{position:"relative",aspectRatio:"4/3"}}>
         <video ref={videoRef} style={{width:"100%",height:"100%",objectFit:"cover",transform:"scaleX(-1)"}} playsInline muted autoPlay/>
         <canvas ref={canvasRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",transform:"scaleX(-1)",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",top:8,left:8,padding:"3px 8px",borderRadius:8,background:status==="active"?"rgba(0,201,122,0.85)":status==="loading"?"rgba(255,179,0,0.85)":"rgba(255,77,109,0.85)",fontSize:"0.82rem",color:"#fff",fontWeight:700}}>
+        <div style={{position:"absolute",top:8,left:8,padding:"3px 8px",borderRadius:8,background:status==="active"?"rgba(0,201,122,0.85)":status==="loading"?"rgba(255,179,0,0.85)":"rgba(255,77,109,0.85)",fontSize:"0.62rem",color:"#fff",fontWeight:700}}>
           {status==="active"?"🟢 AI Pose Active":status==="loading"?"⏳ Loading...":status==="cam-only"?"📷 Camera Only":"❌ Error"}
         </div>
         <div style={{position:"absolute",top:8,right:8,display:"flex",gap:6}}>
-          <button type="button" onClick={flipCam} style={{padding:"5px 9px",background:"rgba(0,0,0,0.7)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:7,color:"#fff",fontSize:"0.8rem",cursor:"pointer"}}>🔄</button>
-          <button type="button" onClick={onClose} style={{padding:"5px 9px",background:"rgba(255,77,109,0.8)",border:"none",borderRadius:7,color:"#fff",fontSize:"0.8rem",cursor:"pointer",fontWeight:700}}>✕</button>
+          <button type="button" onClick={flipCam} style={{padding:"5px 9px",background:"rgba(0,0,0,0.7)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:7,color:"#fff",fontSize:"0.7rem",cursor:"pointer"}}>🔄</button>
+          <button type="button" onClick={onClose} style={{padding:"5px 9px",background:"rgba(255,77,109,0.8)",border:"none",borderRadius:7,color:"#fff",fontSize:"0.7rem",cursor:"pointer",fontWeight:700}}>✕</button>
         </div>
       </div>
-      <div style={{padding:"8px 12px",background:"rgba(0,229,255,0.05)",borderTop:"1px solid rgba(0,229,255,0.15)",fontSize:"0.8rem",color:"rgba(0,229,255,0.8)"}}>
+      <div style={{padding:"8px 12px",background:"rgba(0,229,255,0.05)",borderTop:"1px solid rgba(0,229,255,0.15)",fontSize:"0.7rem",color:"rgba(0,229,255,0.8)"}}>
         ⚠ AI camera is assistive only — use it to observe posture. All clinical decisions remain manual.
       </div>
     </div>
   );
 }
 
-
-// ─── LUMBAR FUNCTIONAL SCREEN ─────────────────────────────────────────────────
-
-const LUMBAR_TESTS = [
-  {
-    id:"lfs_sts", icon:"🪑", label:"Sit-to-Stand",
-    subtitle:"Flexion → Extension Strategy",
-    phase:"Hip Hinge / Load Transfer",
-    setup:"Chair at knee height, no armrests. Feet hip-width, just behind knees. Arms crossed on chest. Rise × 3.",
-    normalDesc:"Controlled 30–40° forward trunk lean, hip hinge initiates rise, lumbar stays neutral, symmetric bilateral loading.",
-    svgNormal:(
-      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
-        {/* Normal: forward lean + hip hinge */}
-        <text x="10" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        {/* Seated */}
-        <circle cx="28" cy="22" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="28" y1="29" x2="24" y2="50" stroke="#059669" strokeWidth="2.5"/> {/* trunk angled fwd */}
-        <line x1="24" y1="50" x2="16" y2="65" stroke="#059669" strokeWidth="2.5"/> {/* thigh */}
-        <line x1="16" y1="65" x2="18" y2="82" stroke="#059669" strokeWidth="2.5"/> {/* shin */}
-        <line x1="28" y1="29" x2="34" y2="44" stroke="#059669" strokeWidth="2"/> {/* arm */}
-        <text x="6" y="92" fontSize="6" fill="#059669">Seated</text>
-        {/* Rising - hip hinge */}
-        <circle cx="72" cy="18" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="72" y1="25" x2="68" y2="48" stroke="#059669" strokeWidth="2.5"/> {/* trunk lean fwd */}
-        <line x1="68" y1="48" x2="60" y2="62" stroke="#059669" strokeWidth="2.5"/> {/* hip hinge */}
-        <line x1="60" y1="62" x2="62" y2="82" stroke="#059669" strokeWidth="2.5"/>
-        <path d="M68,48 Q72,40 75,34" stroke="#059669" strokeWidth="1.5" fill="none" strokeDasharray="3,2"/>
-        <text x="52" y="92" fontSize="6" fill="#059669">Hip leads</text>
-        {/* Standing */}
-        <circle cx="108" cy="14" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="108" y1="21" x2="108" y2="55" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="108" y1="55" x2="104" y2="80" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="108" y1="55" x2="112" y2="80" stroke="#059669" strokeWidth="2.5"/>
-        <text x="95" y="92" fontSize="6" fill="#059669">Upright</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">COMPENSATED</text>
-        {/* Lumbar dominant strategy */}
-        <circle cx="60" cy="18" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="60" y1="25" x2="60" y2="55" stroke="#dc2626" strokeWidth="2.5"/> {/* upright trunk */}
-        <line x1="60" y1="55" x2="52" y2="70" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="60" y1="55" x2="68" y2="70" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="52" y1="70" x2="52" y2="88" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="68" y1="70" x2="68" y2="88" stroke="#dc2626" strokeWidth="2.5"/>
-        {/* Lumbar arch highlight */}
-        <path d="M60,35 Q65,42 60,50" stroke="#f97316" strokeWidth="2" fill="none"/>
-        <text x="67" y="44" fontSize="6" fill="#f97316">Lumbar↑</text>
-        {/* Lateral shift arrow */}
-        <path d="M30,55 L48,55" stroke="#dc2626" strokeWidth="1.5" markerEnd="url(#arr)" strokeDasharray="3,2"/>
-        <text x="4" y="65" fontSize="5.5" fill="#dc2626">Shift</text>
-        <text x="4" y="92" fontSize="6" fill="#dc2626">Lumbar dominant</text>
-        <defs><marker id="arr" markerWidth="5" markerHeight="4" refX="3" refY="2" orient="auto"><path d="M0,0 L5,2 L0,4 Z" fill="#dc2626"/></marker></defs>
-      </svg>
-    ),
-    observations:[
-      { id:"lean",  q:"Forward trunk lean before rise",
-        opts:["✓ Adequate (30–40°)","⚠ Excessive (>45°)","✗ Insufficient — upright strategy"],
-        clues:["","Indicates hip flexor tightness or fear of load","Lumbar extension dominant — glute inhibition"] },
-      { id:"hinge", q:"Hip hinge strategy",
-        opts:["✓ Hip hinge initiates","✗ Lumbar extension dominates","✗ Momentum / bounce used"],
-        clues:["","Gluteal inhibition, hip flexor dominance (Janda LCS)","Motor control deficit — screen for pain avoidance"] },
-      { id:"sym",   q:"Weight bearing symmetry",
-        opts:["✓ Equal bilateral","⚠ Mild lateral shift","✗ Significant shift / one leg dominant"],
-        clues:["","Minor SIJ asymmetry — monitor","SIJ dysfunction or hip joint pathology — do FABER test"] },
-      { id:"knee",  q:"Knee tracking",
-        opts:["✓ Tracks over 2nd toe","⚠ Mild valgus","✗ Significant valgus collapse"],
-        clues:["","Glute med weakness — single-leg squat screen","Dynamic valgus — screen glute med / max and foot pronation"] },
-      { id:"pain",  q:"Pain provocation",
-        opts:["✓ No pain","⚠ Pain at initiation","⚠ Pain mid-rise","✗ Pain at full extension"],
-        clues:["","Discogenic / SIJ loading — centralisation test","Hip joint / mid-range disc","Facet joint or hip extension impingement"] },
-    ],
-    grades:["Normal — Hip hinge, symmetric, pain-free","Compensated — Minor strategy fault, no pain","Abnormal — Lumbar dominant / pain / significant asymmetry"],
-  },
-  {
-    id:"lfs_fwd", icon:"🫄", label:"Forward Bend",
-    subtitle:"Lateral Shift + Centralisation Screen",
-    phase:"Lumbar Flexion / Instability Screen",
-    setup:"Patient stands, feet shoulder-width. Bend forward slowly reaching toward toes. Observe from behind (lateral shift) and side (lumbar curve). Repeat 3×.",
-    normalDesc:"Lumbar flexion reversal with progressive hip contribution. No lateral shift. Symptoms centralise or unchanged.",
-    svgNormal:(
-      <svg viewBox="0 0 140 100" style={{width:"100%",maxWidth:140}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL (side view)</text>
-        {/* Standing */}
-        <circle cx="25" cy="18" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
-        <path d="M25,24 Q23,38 22,50" stroke="#059669" strokeWidth="2.5" fill="none"/> {/* lumbar curve */}
-        <line x1="22" y1="50" x2="18" y2="68" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="18" y1="68" x2="20" y2="86" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="22" y1="50" x2="26" y2="68" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="26" y1="68" x2="24" y2="86" stroke="#059669" strokeWidth="2.5"/>
-        <text x="12" y="96" fontSize="5.5" fill="#059669">Start</text>
-        {/* Mid bend — lumbar flattens */}
-        <circle cx="72" cy="22" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
-        <path d="M72,28 Q68,40 62,52" stroke="#059669" strokeWidth="2.5" fill="none"/>
-        <line x1="62" y1="52" x2="60" y2="70" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="60" y1="70" x2="62" y2="86" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="62" y1="52" x2="66" y2="68" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="66" y1="68" x2="64" y2="86" stroke="#059669" strokeWidth="2.5"/>
-        <text x="52" y="96" fontSize="5.5" fill="#059669">Flat lumbar</text>
-        {/* Full bend */}
-        <circle cx="118" cy="38" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
-        <path d="M118,44 Q110,52 104,56" stroke="#059669" strokeWidth="2.5" fill="none"/>
-        <line x1="104" y1="56" x2="102" y2="72" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="102" y1="72" x2="104" y2="86" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="104" y1="56" x2="108" y2="70" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="108" y1="70" x2="106" y2="86" stroke="#059669" strokeWidth="2.5"/>
-        <text x="98" y="96" fontSize="5.5" fill="#059669">Hip hinge</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 140 100" style={{width:"100%",maxWidth:140}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">ABNORMAL (rear view)</text>
-        {/* Lateral shift — posterior view */}
-        <circle cx="70" cy="18" r="6" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="70" y1="24" x2="76" y2="46" stroke="#dc2626" strokeWidth="2.5"/> {/* spine shifts R */}
-        <line x1="76" y1="46" x2="66" y2="62" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="66" y1="62" x2="64" y2="80" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="66" y1="62" x2="78" y2="80" stroke="#dc2626" strokeWidth="2.5"/>
-        {/* Shoulder vs pelvis lines */}
-        <line x1="50" y1="28" x2="90" y2="28" stroke="#6b7280" strokeWidth="1" strokeDasharray="3,2"/>
-        <line x1="54" y1="62" x2="86" y2="62" stroke="#6b7280" strokeWidth="1" strokeDasharray="3,2"/>
-        {/* Shift arrow */}
-        <path d="M70,35 L80,35" stroke="#dc2626" strokeWidth="2" fill="none"/>
-        <polygon points="80,33 84,35 80,37" fill="#dc2626"/>
-        <text x="85" y="38" fontSize="6" fill="#dc2626">Shift R</text>
-        <text x="18" y="96" fontSize="5.5" fill="#dc2626">Lateral shift = SIJ / disc pathology</text>
-      </svg>
-    ),
-    observations:[
-      { id:"shift",  q:"Lateral shift (from behind)?",
-        opts:["✓ No lateral shift","⚠ Minor shift (<2cm)","✗ Clear lateral shift (>2cm)"],
-        clues:["","Monitor — may be postural habit","SIJ dysfunction or disc herniation with lateral nerve root compression"] },
-      { id:"lumbar", q:"Lumbar curve reversal?",
-        opts:["✓ Flattens smoothly","⚠ Limited reversal","✗ Stays lordotic (instability)","✗ Flat throughout (loss of normal motion)"],
-        clues:["","Early lumbar stiffness — extension bias","Lumbar instability or pain inhibition","Multi-segment stiffness or fusion"] },
-      { id:"rhythm",  q:"Hip vs lumbar contribution?",
-        opts:["✓ Equal hip + lumbar","⚠ Lumbar dominant (hip stiff)","⚠ Hip dominant (lumbar avoidance)"],
-        clues:["","Hip flexor tightness or hip joint restriction","Pain-avoidant lumbar flexion restriction — screen for disc"] },
-      { id:"central", q:"Symptom behaviour on bending?",
-        opts:["✓ No change / centralises","⚠ Peripheralises slightly","✗ Clearly peripheralises","✗ Rapid onset peripheralisation"],
-        clues:["","McKenzie principle — flexion may be directional preference","Neural involvement — limit flexion, try extension","Likely disc with neural compression — McKenzie assessment"] },
-      { id:"return",  q:"Return to upright?",
-        opts:["✓ Smooth reverse hip hinge","⚠ Hitches / catches","✗ Lateral deviation on return","✗ Requires hands-on-thighs"],
-        clues:["","Mild instability segment","Segmental instability — Passive instability tests","Significant extensor weakness or instability"] },
-    ],
-    grades:["Normal — Smooth reversal, no shift, no peripheralisation","Compensated — Minor shift or rhythm fault","Abnormal — Lateral shift, peripheralisation, or instability sign"],
-  },
-  {
-    id:"lfs_sls", icon:"🦩", label:"Single Leg Stance",
-    subtitle:"SIJ & Lumbopelvic Control (Trendelenburg)",
-    phase:"Lumbopelvic Stability / Glute Med",
-    setup:"Patient stands facing therapist. Arms folded. Lift one leg to 90° hip/knee flex. Hold 30 seconds each side. Observe from front and behind.",
-    normalDesc:"Pelvis stays level or rises slightly (Hiked) on lifted side. No trunk lean. Glute med visually contracts on standing side.",
-    svgNormal:(
-      <svg viewBox="0 0 100 100" style={{width:"100%",maxWidth:100}}>
-        <text x="8" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        <circle cx="50" cy="18" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="50" y1="25" x2="50" y2="55" stroke="#059669" strokeWidth="2.5"/>
-        {/* Pelvis horizontal */}
-        <line x1="38" y1="55" x2="62" y2="55" stroke="#059669" strokeWidth="3"/>
-        {/* Standing leg */}
-        <line x1="44" y1="55" x2="44" y2="82" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="44" y1="82" x2="44" y2="96" stroke="#059669" strokeWidth="2"/>
-        {/* Raised leg */}
-        <line x1="56" y1="55" x2="62" y2="70" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="62" y1="70" x2="62" y2="58" stroke="#059669" strokeWidth="2"/>
-        {/* Level pelvis marker */}
-        <line x1="30" y1="55" x2="35" y2="55" stroke="#059669" strokeWidth="1.5" strokeDasharray="2,2"/>
-        <line x1="65" y1="55" x2="70" y2="55" stroke="#059669" strokeWidth="1.5" strokeDasharray="2,2"/>
-        <text x="22" y="70" fontSize="5.5" fill="#059669">Pelvis</text>
-        <text x="22" y="76" fontSize="5.5" fill="#059669">level ✓</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 100 100" style={{width:"100%",maxWidth:100}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">TRENDELENBURG</text>
-        <circle cx="52" cy="18" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        {/* Trunk leans to standing side */}
-        <line x1="52" y1="25" x2="46" y2="55" stroke="#dc2626" strokeWidth="2.5"/>
-        {/* Pelvis drops on lifted side */}
-        <line x1="38" y1="52" x2="60" y2="60" stroke="#dc2626" strokeWidth="3"/>
-        {/* Drop arrow */}
-        <path d="M58,54 L60,62" stroke="#dc2626" strokeWidth="1.5" fill="none"/>
-        <polygon points="58,62 60,66 62,62" fill="#dc2626"/>
-        {/* Standing leg */}
-        <line x1="42" y1="52" x2="42" y2="82" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="42" y1="82" x2="42" y2="96" stroke="#dc2626" strokeWidth="2"/>
-        {/* Raised */}
-        <line x1="56" y1="60" x2="62" y2="74" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="62" y1="74" x2="62" y2="62" stroke="#dc2626" strokeWidth="2"/>
-        <text x="4" y="96" fontSize="5.5" fill="#dc2626">Pelvic drop = Glute med weak</text>
-      </svg>
-    ),
-    observations:[
-      { id:"pelvis",  q:"Pelvic level during stance?",
-        opts:["✓ Level or slight hike (normal)","⚠ Mild drop (<2cm) lifted side","✗ Clear Trendelenburg drop","✗ Positive Trendelenburg + trunk lean"],
-        clues:["","Minor glute med fatigue — compare sides","Glute med weakness on stance side — screen hip abd strength","Severe glute med weakness — may indicate THA, hip pathology, L5 motor"] },
-      { id:"trunk",   q:"Trunk position?",
-        opts:["✓ Stays midline","⚠ Slight lean to stance side","✗ Clear lateral lean (compensated Trendelenburg)"],
-        clues:["","Minor balance compensation","Compensated Trendelenburg — trunk shifts to unload weak glute med. Classic pattern."] },
-      { id:"balance", q:"Balance quality?",
-        opts:["✓ Steady 30 sec","⚠ Sways but maintains","⚠ Cannot reach 30 sec","✗ Unable to stand single leg"],
-        clues:["","Minor proprioceptive deficit","Significant stability deficit — cerebellar or proprioceptive screen","Cannot test — note and refer if bilateral"] },
-      { id:"pain",    q:"Pain on single leg loading?",
-        opts:["✓ No pain","⚠ Groin pain","⚠ SIJ/buttock pain","✗ Lumbar pain reproduced"],
-        clues:["","Hip joint pathology — FADDIR screen","SIJ provocation — do SIJ compression/distraction","Lumbar instability or SIJ dysfunction"] },
-      { id:"sym",     q:"Side-to-side difference?",
-        opts:["✓ Symmetric","⚠ Mild difference (5–10 sec)","✗ Marked difference (>10 sec)","✗ One side unable"],
-        clues:["","Monitoring point","Neurological, hip joint, or SIJ asymmetry","Significant unilateral deficit — warrant full hip screen + L5 myotome test"] },
-    ],
-    grades:["Normal — Level pelvis, balanced 30s, no pain","Compensated — Minor sway or mild pelvic drop","Abnormal — Trendelenburg, trunk lean, or pain reproduced"],
-  },
-  {
-    id:"lfs_squat", icon:"🏋️", label:"Squat Pattern",
-    subtitle:"Hip–Lumbar Rhythm & Pelvic Compensation",
-    phase:"Lower Chain Integration / Motor Control",
-    setup:"Feet shoulder-width, toes 10–30° out. Arms forward for balance. Squat to chair height (thighs ~parallel) × 5 reps. Observe side + front views.",
-    normalDesc:"Lumbar neutral throughout, hips descend symmetrically, knees track over 2nd toe, heels stay down, trunk relatively upright.",
-    svgNormal:(
-      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        {/* Standing */}
-        <circle cx="28" cy="16" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="28" y1="22" x2="28" y2="52" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="28" y1="52" x2="22" y2="80" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="28" y1="52" x2="34" y2="80" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="22" y1="80" x2="20" y2="92" stroke="#059669" strokeWidth="2"/>
-        <line x1="34" y1="80" x2="36" y2="92" stroke="#059669" strokeWidth="2"/>
-        <text x="14" y="100" fontSize="5.5" fill="#059669">Start</text>
-        {/* Squat — neutral */}
-        <circle cx="80" cy="26" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="80" y1="32" x2="76" y2="54" stroke="#059669" strokeWidth="2.5"/> {/* slight trunk lean */}
-        <line x1="76" y1="54" x2="66" y2="76" stroke="#059669" strokeWidth="2.5"/> {/* thigh */}
-        <line x1="66" y1="76" x2="64" y2="92" stroke="#059669" strokeWidth="2"/> {/* shin */}
-        <line x1="76" y1="54" x2="86" y2="76" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="86" y1="76" x2="88" y2="92" stroke="#059669" strokeWidth="2"/>
-        {/* Neutral lumbar curve mark */}
-        <path d="M76,36 Q79,44 76,52" stroke="#059669" strokeWidth="1.5" fill="none"/>
-        <text x="82" y="46" fontSize="5.5" fill="#059669">Neutral</text>
-        <text x="62" y="100" fontSize="5.5" fill="#059669">Squat</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">COMPENSATIONS</text>
-        {/* Butt wink */}
-        <circle cx="30" cy="26" r="6" fill="none" stroke="#f97316" strokeWidth="2"/>
-        <line x1="30" y1="32" x2="26" y2="52" stroke="#f97316" strokeWidth="2.5"/>
-        <path d="M26,52 Q22,60 20,68" stroke="#f97316" strokeWidth="2.5" fill="none"/> {/* pelvis tucks */}
-        <line x1="20" y1="68" x2="18" y2="84" stroke="#f97316" strokeWidth="2"/>
-        <line x1="26" y1="52" x2="34" y2="68" stroke="#f97316" strokeWidth="2.5"/>
-        <line x1="34" y1="68" x2="36" y2="84" stroke="#f97316" strokeWidth="2"/>
-        <text x="6" y="96" fontSize="5.5" fill="#f97316">Butt wink</text>
-        {/* Forward lean */}
-        <circle cx="88" cy="24" r="6" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="88" y1="30" x2="78" y2="54" stroke="#dc2626" strokeWidth="2.5"/> {/* excessive forward lean */}
-        <line x1="78" y1="54" x2="72" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="72" y1="76" x2="72" y2="92" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="78" y1="54" x2="88" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="88" y1="76" x2="86" y2="92" stroke="#dc2626" strokeWidth="2"/>
-        {/* Lean arrow */}
-        <path d="M90,34 L98,42" stroke="#dc2626" strokeWidth="1.5" markerEnd="url(#a2)"/>
-        <text x="74" y="100" fontSize="5.5" fill="#dc2626">Fwd lean</text>
-        <defs><marker id="a2" markerWidth="4" markerHeight="3" refX="2" refY="1.5" orient="auto"><path d="M0,0 L4,1.5 L0,3 Z" fill="#dc2626"/></marker></defs>
-      </svg>
-    ),
-    observations:[
-      { id:"lumbar",  q:"Lumbar spine during descent?",
-        opts:["✓ Neutral maintained","⚠ Butt-wink (posterior pelvic tilt)","✗ Excessive anterior tilt (arch increases)","✗ Lateral lumbar shift"],
-        clues:["","Hip flexor tightness / ankle dorsiflexion deficit — assess hip mobility","Lumbar extensor dominance / weak core","SIJ asymmetry or hip joint pathology — check FABER"] },
-      { id:"knees",   q:"Knee tracking?",
-        opts:["✓ Tracks over 2nd toe","⚠ Mild valgus (<2cm medial)","✗ Clear valgus collapse","⚠ Excessive lateral thrust"],
-        clues:["","Minor glute med fatigue","Dynamic valgus = glute med/max weakness + possible foot pronation — priority","Lateral thrust = lateral compartment OA or LCL laxity"] },
-      { id:"trunk",   q:"Trunk lean?",
-        opts:["✓ Slight forward (<45°)","⚠ Excessive forward (>45°)","✗ Trunk collapses forward"],
-        clues:["","Normal","Ankle dorsiflexion deficit or hip flexor tightness","Significant anterior chain weakness or fear-avoidance"] },
-      { id:"heels",   q:"Heel contact maintained?",
-        opts:["✓ Heels down throughout","⚠ Slight heel rise","✗ Heels lift clearly"],
-        clues:["","","Ankle dorsiflexion restriction — assess with knee-to-wall test","Significant ankle restriction — may need orthotic screen"] },
-      { id:"sym",     q:"Bilateral symmetry?",
-        opts:["✓ Equal bilateral","⚠ Minor asymmetry","✗ Clear side-to-side difference"],
-        clues:["","","Unilateral hip, knee or SIJ pathology — compare single-leg squat"] },
-    ],
-    grades:["Normal — Neutral lumbar, knee tracking, symmetric","Compensated — Butt-wink or minor valgus without pain","Abnormal — Pain, significant valgus collapse, or lateral shift"],
-  },
-  {
-    id:"lfs_step", icon:"🪜", label:"Step-Up 20cm",
-    subtitle:"Gluteal Activation & Lumbopelvic Stability",
-    phase:"Single-Leg Load / Glute Power",
-    setup:"20cm step. Patient steps up leading with test leg. Trail leg does not push off. Step up + controlled step down × 5 each side. Observe from front.",
-    normalDesc:"Trunk upright, pelvis level throughout, knee tracks over foot, controlled eccentric return. Equal bilateral performance.",
-    svgNormal:(
-      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        {/* Step platform */}
-        <rect x="10" y="76" width="50" height="16" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.5"/>
-        <text x="18" y="88" fontSize="6" fill="#6b7280">20cm step</text>
-        {/* Figure on step — trunk upright */}
-        <circle cx="78" cy="18" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="78" y1="25" x2="78" y2="55" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="78" y1="55" x2="74" y2="76" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="74" y1="76" x2="72" y2="92" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="78" y1="55" x2="82" y2="76" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="82" y1="76" x2="84" y2="92" stroke="#059669" strokeWidth="2.5"/>
-        {/* Pelvis level */}
-        <line x1="68" y1="55" x2="88" y2="55" stroke="#059669" strokeWidth="2.5"/>
-        <text x="60" y="50" fontSize="5.5" fill="#059669">Level ✓</text>
-        {/* Knee arrow upward */}
-        <path d="M74,76 L74,68" stroke="#059669" strokeWidth="1.5" fill="none"/>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">COMPENSATIONS</text>
-        <rect x="10" y="76" width="50" height="16" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.5"/>
-        {/* Trunk lean + pelvic drop */}
-        <circle cx="74" cy="22" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="74" y1="29" x2="68" y2="55" stroke="#dc2626" strokeWidth="2.5"/> {/* lean L */}
-        {/* Pelvic drop R */}
-        <line x1="58" y1="52" x2="80" y2="60" stroke="#dc2626" strokeWidth="2.5"/>
-        <path d="M78,54 L80,62" stroke="#dc2626" strokeWidth="1.5" fill="none"/>
-        <polygon points="76,62 80,66 84,62" fill="#dc2626"/>
-        <line x1="62" y1="52" x2="60" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="60" y1="76" x2="58" y2="92" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="76" y1="60" x2="80" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="80" y1="76" x2="82" y2="92" stroke="#dc2626" strokeWidth="2"/>
-        {/* Knee valgus arrow */}
-        <path d="M62,68 L66,68" stroke="#f97316" strokeWidth="2" fill="none"/>
-        <text x="4" y="96" fontSize="5.5" fill="#dc2626">Trunk lean + pelvic drop</text>
-      </svg>
-    ),
-    observations:[
-      { id:"pelvis",  q:"Pelvic position during step-up?",
-        opts:["✓ Level throughout","⚠ Mild drop (<2cm) on trail side","✗ Clear pelvic drop","✗ Lateral pelvic hitch"],
-        clues:["","Minor glute med fatigue","Glute med weakness stance side — correlate with SLS test","Tensor fascia lata dominance — screen IT band / hip lateral rotators"] },
-      { id:"trunk",   q:"Trunk alignment?",
-        opts:["✓ Upright throughout","⚠ Slight ipsilateral lean","✗ Clear trunk lean to stepping side","✗ Trunk rotation"],
-        clues:["","Minor compensated Trendelenburg","Compensated Trendelenburg — glute med weakness","Rotational instability — assess transversus abdominis, multifidus"] },
-      { id:"knee",    q:"Knee tracking on step-up?",
-        opts:["✓ Over 2nd toe","⚠ Mild medial drift","✗ Valgus collapse on loading"],
-        clues:["","Mild glute med weakness or foot pronation","Dynamic valgus — priority rehab target. VMO + glute med + arch support"] },
-      { id:"control", q:"Eccentric control on step-down?",
-        opts:["✓ Controlled slow descent","⚠ Quick drop / loses control","✗ Trunk sway on descent","✗ Cannot control — uses rail"],
-        clues:["","Eccentric deficit — grade glute/quad strength","Eccentric weakness — deceleration training needed","Significant weakness — formal MMT quadriceps and glutes"] },
-      { id:"sym",     q:"Side-to-side difference?",
-        opts:["✓ Symmetric","⚠ Minor (<10% difference)","✗ Marked difference","✗ Cannot complete one side"],
-        clues:["","","Unilateral weakness — hip, knee or SIJ pathology likely","Significant deficit — full lower limb neurological + strength screen"] },
-    ],
-    grades:["Normal — Level pelvis, upright trunk, knee tracking, symmetric","Compensated — Minor pelvic drop or lean without pain","Abnormal — Pain, clear Trendelenburg, valgus collapse, or asymmetric"],
-  },
-,
-  // ── FMS: Active Straight Leg Raise ────────────────────────────────────────
-  {
-    id:"fms_aslr", icon:"🦵", label:"Active Straight Leg Raise (FMS)",
-    subtitle:"Hamstring / Hip Flexor Mobility · Core Stability",
-    phase:"Posterior Chain / Core Stability Screen",
-    setup:"Patient supine, legs extended. Place a dowel under the lumbar lordosis (maintains neutral). Patient raises one leg as high as possible, ankle dorsiflexed, knee straight. Observe where the malleolus of raised leg is relative to the opposite leg. Score: 3 = malleolus passes opposite ASIS. 2 = between knee and ASIS. 1 = at or below knee. 0 = pain or lumbar flatten.",
-    normalDesc:"Active SLR to at least 70° (malleolus at or above opposite ASIS). Lumbar lordosis maintained on dowel. Opposite leg stays flat. No trunk rotation or hip hike. Ankle stays dorsiflexed.",
-    observations:[
-      { id:"height", q:"SLR height achieved?",
-        opts:["✓ Malleolus passes opposite ASIS (≥70°)","⚠ Between knee and ASIS (50–70°)","✗ At or below knee level (<50°)","✗ Pain or lumbar flattening"],
-        clues:["","Minor hamstring or posterior capsule restriction — hamstring stretching (supine + active)","Significant hamstring or gastroc restriction. Passive vs active SLR comparison: if passive > active = hamstring strength component. If equal = pure mobility","Lumbar flattening = core stability deficit — lumbar cannot maintain neutral during hip flexion. TA + multifidus activation before SLR loading"] },
-      { id:"opp_leg", q:"Opposite leg stays flat?",
-        opts:["✓ Stays flat and still","⚠ Minor hip flexion drift","✗ Opposite hip flexes clearly","✗ Pelvis rotates / arches up"],
-        clues:["","Minor hip flexor overactivity on opposite side — monitor","Opposite hip flexion = hip flexor dominant strategy. Psoas overactivity lifting the non-tested leg. Cueing + hip flexor release contralateral","Pelvic rotation = lumbar instability. Core stability training priority — TA/multifidus before SLR progression"] },
-      { id:"knee", q:"Knee stays straight during raise?",
-        opts:["✓ Knee fully extended throughout","⚠ Minor knee bend at end range","✗ Knee bends significantly to achieve height","✗ Knee bends throughout — hamstring so tight cannot extend"],
-        clues:["","Minor hamstring tightness — active hamstring stretching at limit of range","Knee bends to achieve height = hamstring tight, substituting with hip flexion. True hamstring ROM must be measured with knee extended","Cannot extend = severe hamstring tightness. Passive stretching first, progress to active. Neural tension screen (slump + ULNT1) if reproduces radicular symptoms"] },
-      { id:"pelvis", q:"Pelvis / lumbar stability?",
-        opts:["✓ Neutral spine maintained","⚠ Minor posterior tilt","✗ Lumbar flattens on dowel","✗ Pelvic hike / rotation"],
-        clues:["","Minor control deficit — TA cueing during SLR","Core stability deficit — TA, multifidus, and deep hip flexors must stabilise lumbar before hamstring stretching is effective","Significant — begin SLR with supported knee (partial range) maintaining neutral. Progress gradually"] },
-      { id:"sym", q:"Symmetry L vs R?",
-        opts:["✓ Symmetric bilateral","⚠ Mild asymmetry (<10°)","✗ Clear asymmetry (≥10°)","✗ Cannot perform one side"],
-        clues:["","Normal — minor dominant limb difference acceptable","Asymmetry ≥10° = treat restricted side. Common after hamstring strain history. Screen for neural tension if unilateral restriction","Cannot perform = pain inhibition or neural tension. Slump test + SLR passive test before treating as mobility deficit"] },
-    ],
-    grades:["Normal (FMS 3) — Malleolus passes ASIS, neutral spine maintained","Compensated (FMS 2) — Malleolus between knee and ASIS, minor compensation","Abnormal (FMS 0–1) — Below knee, lumbar instability, or pain"],
-  },
-  // ── FMS: Trunk Stability Push-Up ──────────────────────────────────────────
-  {
-    id:"fms_tspu", icon:"💪", label:"Trunk Stability Push-Up (FMS)",
-    subtitle:"Anterior Core Stability · Spinal Rigidity Screen",
-    phase:"Anterior Chain / Core Stability Screen",
-    setup:"Patient prone: Men — thumbs at forehead level. Women — thumbs at chin level. Complete ONE push-up maintaining rigid spine — no lag in lumbar or hips. Score: 3 = perfect rigid spine push-up at forehead level (men) / chin (women). 2 = push-up at chin (men) / chest (women). 1 = cannot perform without spinal lag. 0 = pain. Clearing test: passive trunk extension (prone press-up) — pain = 0.",
-    normalDesc:"Single push-up completed with rigid spine — no lumbar extension lead, no hip sag, no scapular winging. Trunk rises as a rigid unit. Clearing test negative (prone press-up pain-free).",
-    observations:[
-      { id:"spine", q:"Spinal rigidity during push-up?",
-        opts:["✓ Rigid spine — rises as one unit","⚠ Minor lumbar lag at peak","✗ Lumbar sags / hips rise first (hip hinge pattern)","✗ Cannot complete even with modification"],
-        clues:["","Minor anterior core weakness — TA/oblique activation in push-up position","Hip sag = anterior core deficit (TA, obliques, TrA). Lower push-up level first — find level where spine stays rigid. Build from there","Cannot complete = significant core instability. Begin with prone plank on elbows, progress to extended arm plank before push-up"] },
-      { id:"scap", q:"Scapular position during push-up?",
-        opts:["✓ Scapulae set — no winging","⚠ Minor protraction drift","✗ Scapular winging visible","✗ Asymmetric — one wing only"],
-        clues:["","Minor serratus anterior weakness — push-up plus (serratus press) before full push-up","Serratus anterior inhibition — dynamic push-up plus × 3×15. Reduce load to wall push-up if winging is significant","Asymmetric winging = unilateral serratus or long thoracic nerve. Assess unilateral serratus anterior strength"] },
-      { id:"hip", q:"Hip position throughout push-up?",
-        opts:["✓ Hips neutral — maintain position","⚠ Minor hip extension increase","✗ Hips rise (jack-knife pattern)","✗ Hips sag below spine level"],
-        clues:["","Minor hip flexor tightness or core substitution","Hip rise = RA dominance over TA. Patient uses spinal extension to push up. Teach dead-bug pattern first","Hip sag = posterior tilt deficit or lumbar extensor weakness. Prone plank training before push-up loading"] },
-      { id:"clear", q:"Clearing test — prone press-up?",
-        opts:["✓ Negative — no pain","✗ Central lumbar pain","✗ Unilateral lumbar / buttock pain","✗ Arm or leg symptoms reproduced"],
-        clues:["","Normal — proceed with score","Central extension pain = lumbar disc or facet. FMS = 0. Extension-biased condition — do not load push-up","Unilateral = facet or SIJ. FMS = 0. Quadrant test + Kemp's before trunk stability loading","Referred symptoms = neural — FMS 0. Neurological screen before loading"] },
-      { id:"sym", q:"Left-right symmetry during push-up?",
-        opts:["✓ Symmetric","⚠ Minor asymmetric drift","✗ Clear trunk rotation during push-up","✗ Arm dominance — pushes from one side"],
-        clues:["","Monitor — minor asymmetry in first rep acceptable","Trunk rotation during push-up = unilateral oblique or serratus weakness. Plank with rotation resistance (Pallof press) + unilateral core training","Arm dominance = unilateral shoulder girdle weakness. Screen rotator cuff and serratus on weaker side"] },
-    ],
-    grades:["Normal (FMS 3) — Rigid spine, no winging, clearing test negative","Compensated (FMS 2) — Push-up with minor lag or lower level","Abnormal (FMS 0–1) — Spinal lag, cannot complete, or pain"],
-  },
-  // ── FMS: Rotary Stability ─────────────────────────────────────────────────
-  {
-    id:"fms_rs", icon:"⚙️", label:"Rotary Stability (FMS)",
-    subtitle:"Multi-Plane Core Control · Hip-Shoulder Coordination",
-    phase:"Multi-Planar Trunk Stability Screen",
-    setup:"Quadruped (hands under shoulders, knees under hips). Extend ipsilateral arm and leg simultaneously (same side — unilateral diagonal). Touch elbow to knee without rotation. Score: 3 = unilateral diagonal without trunk rotation/shift. 2 = diagonal performed with balance loss or can only do contralateral pattern. 1 = cannot complete even contralateral pattern. 0 = pain. Clearing test: child's pose (flexion) — pain = 0.",
-    normalDesc:"Ipsilateral arm-leg extension with no trunk rotation, lateral shift, or hip drop. Touch elbow to knee in mid-line cleanly. Return controlled. No wobble. Clearing test negative.",
-    observations:[
-      { id:"rotation", q:"Trunk rotation during diagonal?",
-        opts:["✓ No rotation — stays square","⚠ Minor rotation corrects itself","✗ Significant trunk rotation","✗ Cannot achieve position at all"],
-        clues:["","Minor oblique or multifidus weakness — quadruped arm-raise then leg-raise before combining","Trunk rotation = oblique sling or contralateral multifidus insufficient. Dead-bug (supine) → quadruped unilateral → combine diagonal","Cannot achieve = major instability. Begin with quadruped arm raise only (all fours, lift one arm, hold 5s)"] },
-      { id:"shift", q:"Lateral hip/trunk shift?",
-        opts:["✓ No shift — stays centred","⚠ Minor lateral drift","✗ Significant lateral shift to support side","✗ Weight shifts so far body nearly falls"],
-        clues:["","Minor — hip abductor or QL weakness on support side","Lateral shift = support-side glute med and QL cannot maintain trunk position. Side plank + glute med activation on support side","Major shift = significant instability. Begin with supported quadruped (stool under chest) to reduce demand"] },
-      { id:"hip", q:"Hip drop on raised leg side?",
-        opts:["✓ Hips level throughout","⚠ Minor hip drop","✗ Clear hip drop — support hip unable to hold","✗ Hip drop + trunk lean combined"],
-        clues:["","Minor support glute med — unilateral hip stability work","Hip drop = support-side glute med failure during ipsilateral diagonal. Target support hip: clamshell, lateral band walk, single-leg holds","Combined hip drop + trunk lean = global instability pattern. Step back to quadruped basics and build progressively"] },
-      { id:"touch", q:"Elbow-to-knee touch quality?",
-        opts:["✓ Clean midline touch","⚠ Near-touch with minor drift","✗ Cannot touch — insufficient mobility or control","✗ Contralateral only (L arm-R leg)"],
-        clues:["","Minor coordination deficit — slow-motion practice of the movement pattern","Cannot touch = either hamstring/hip flexor restriction OR core instability preventing full range. Screen ASLR (flexibility) and dead-bug (stability)","Contralateral only = ipsilateral cannot be controlled. Score 2 — contralateral pattern is acceptable but less stable"] },
-      { id:"clear", q:"Clearing test — child's pose (flexion)?",
-        opts:["✓ Negative — no pain","✗ Lumbar flexion pain","✗ SI joint pain","✗ Posterior thigh / radicular pain"],
-        clues:["","Normal","Lumbar flexion pain = disc or flexion-intolerant condition. FMS = 0. McKenzie extension protocol first","SI joint pain = SIJ involvement. FMS = 0. SIJ stability screen before rotary loading","Radicular symptoms = neural tension or disc. FMS = 0. Neurological screen before loading"] },
-    ],
-    grades:["Normal (FMS 3) — Ipsilateral diagonal, no rotation/shift, clearing test negative","Compensated (FMS 2) — Contralateral pattern only or minor control loss","Abnormal (FMS 0–1) — Cannot complete or pain reproduced"],
-  }
-];
-
-function LumbarFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  // Persist to patient data
-  useEffect(() => {
-    const saved = data["lfs_data"];
-    if (saved && typeof saved === "string") {
-      try {
-        const p = JSON.parse(saved);
-        if (p.findings) setFindings(p.findings);
-        if (p.grades) setGrades(p.grades);
-        if (p.notes) setNotes(p.notes);
-      } catch {}
-    }
-  }, []);
-
-  const save = (f, g, n) => {
-    set("lfs_data", JSON.stringify({ findings: f, grades: g, notes: n }));
-  };
-
-  const setObs = (testId, obsId, val) => {
-    const nf = { ...findings, [`${testId}_${obsId}`]: val };
-    setFindings(nf);
-    save(nf, grades, notes);
-  };
-
-  const setGrade = (testId, val) => {
-    const ng = { ...grades, [testId]: val };
-    setGrades(ng);
-    save(findings, ng, notes);
-  };
-
-  const setNote = (testId, val) => {
-    const nn = { ...notes, [testId]: val };
-    setNotes(nn);
-    save(findings, grades, nn);
-  };
-
-  const completedCount = LUMBAR_TESTS.filter(t => grades[t.id]).length;
-
-  const gradeColor = (g) =>
-    g === 0 ? "#059669" : g === 1 ? "#d97706" : g === 2 ? "#dc2626" : C.muted;
-
-  const gradeLabel = (t, g) => t.grades[g] || "";
-
-  return (
-    <div>
-      {/* Header */}
-      <div style={{ background: "linear-gradient(135deg,rgba(124,58,237,0.08),rgba(59,130,246,0.05))", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-          <span style={{ fontSize: "1.4rem" }}>🦴</span>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: "0.95rem", color: C.text }}>Lumbar Functional Screen</div>
-            <div style={{ fontSize: "0.68rem", color: C.muted }}>5 movement-based tests · Clinical reasoning for students</div>
-          </div>
-          <div style={{ marginLeft: "auto", textAlign: "right" }}>
-            <div style={{ fontSize: "1.2rem", fontWeight: 900, color: C.accent }}>{completedCount}/5</div>
-            <div style={{ fontSize: "0.58rem", color: C.muted }}>graded</div>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-          {LUMBAR_TESTS.map(t => {
-            const g = grades[t.id];
-            const done = g !== undefined;
-            return (
-              <div key={t.id} onClick={() => setActiveTest(activeTest === t.id ? null : t.id)}
-                style={{ padding: "4px 10px", borderRadius: 20, cursor: "pointer", fontSize: "0.68rem", fontWeight: 700,
-                  border: `1px solid ${activeTest === t.id ? C.accent : done ? gradeColor(g) + "60" : C.border}`,
-                  background: activeTest === t.id ? `${C.accent}12` : done ? `${gradeColor(g)}10` : "transparent",
-                  color: activeTest === t.id ? C.accent : done ? gradeColor(g) : C.muted }}>
-                {t.icon} {t.label} {done ? ["✓","⚠","✗"][g] : ""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Test cards */}
-      {LUMBAR_TESTS.map(t => {
-        const isOpen = activeTest === t.id;
-        const g = grades[t.id];
-        const graded = g !== undefined;
-        return (
-          <div key={t.id} style={{ marginBottom: 10, background: C.surface, borderRadius: 14,
-            border: `1.5px solid ${isOpen ? C.accent : graded ? gradeColor(g) + "50" : C.border}`,
-            overflow: "hidden", boxShadow: isOpen ? "0 4px 16px rgba(124,58,237,0.1)" : "0 1px 4px rgba(0,0,0,0.04)" }}>
-
-            {/* Card header */}
-            <div onClick={() => setActiveTest(isOpen ? null : t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", cursor: "pointer",
-                borderLeft: `4px solid ${graded ? gradeColor(g) : C.border}` }}>
-              <span style={{ fontSize: "1.4rem", flexShrink: 0 }}>{t.icon}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: "0.85rem", color: C.text }}>{t.label}</div>
-                <div style={{ fontSize: "0.65rem", color: C.muted }}>{t.subtitle}</div>
-              </div>
-              {graded && (
-                <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: "0.65rem", fontWeight: 800,
-                  background: `${gradeColor(g)}15`, color: gradeColor(g), flexShrink: 0 }}>
-                  {["Normal","Compensated","Abnormal"][g]}
-                </span>
-              )}
-              <span style={{ color: C.muted, fontSize: "0.75rem" }}>{isOpen ? "▲" : "▼"}</span>
-            </div>
-
-            {isOpen && (
-              <div style={{ padding: "0 14px 14px" }}>
-
-                {/* Visual toggle + SVGs */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontSize: "0.68rem", fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.5px" }}>📐 Visual Guide</div>
-                  <button onClick={() => setShowVisual(v => !v)} style={{ fontSize: "0.6rem", padding: "2px 8px", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.muted, cursor: "pointer" }}>
-                    {showVisual ? "Hide" : "Show"}
-                  </button>
-                </div>
-
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Setup */}
-                <div style={{ background: "#F8F7FF", borderRadius: 9, padding: "9px 11px", marginBottom: 12, border: `1px solid ${C.border}` }}>
-                  <div style={{ fontSize: "0.6rem", fontWeight: 800, color: C.accent, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>🎯 Setup & Procedure</div>
-                  <div style={{ fontSize: "0.75rem", color: C.text, lineHeight: 1.6 }}>{t.setup}</div>
-                  <div style={{ marginTop: 6, padding: "4px 8px", background: `${C.accent}08`, borderRadius: 6, border: `1px solid ${C.accent}20` }}>
-                    <div style={{ fontSize: "0.6rem", fontWeight: 700, color: C.accent }}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-
-                {/* Observation checklist */}
-                <div style={{ fontSize: "0.68rem", fontWeight: 800, color: C.text, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>
-                  👁 What To Observe
-                </div>
-                {t.observations.map(obs => {
-                  const val = findings[`${t.id}_${obs.id}`];
-                  const clue = val !== undefined ? obs.clues[val] : null;
-                  return (
-                    <div key={obs.id} style={{ marginBottom: 10 }}>
-                      <div style={{ fontSize: "0.72rem", fontWeight: 700, color: C.text, marginBottom: 5 }}>{obs.q}</div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        {obs.opts.map((opt, idx) => {
-                          const sel = val === idx;
-                          const isNorm = opt.startsWith("✓");
-                          const isWarn = opt.startsWith("⚠");
-                          const isAbn = opt.startsWith("✗");
-                          const col = isNorm ? "#059669" : isWarn ? "#d97706" : isAbn ? "#dc2626" : C.muted;
-                          return (
-                            <div key={idx} onClick={() => setObs(t.id, obs.id, sel ? undefined : idx)}
-                              style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "7px 10px", borderRadius: 8, cursor: "pointer",
-                                border: `1.5px solid ${sel ? col : C.border}`,
-                                background: sel ? `${col}10` : C.s2, transition: "all 0.12s" }}>
-                              <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${sel ? col : C.border}`,
-                                background: sel ? col : "transparent", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                {sel && <span style={{ fontSize: 8, color: "#fff", fontWeight: 900 }}>✓</span>}
-                              </div>
-                              <span style={{ fontSize: "0.72rem", fontWeight: sel ? 700 : 400, color: sel ? col : C.text, lineHeight: 1.35 }}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && (
-                        <div style={{ marginTop: 5, padding: "6px 10px", background: "rgba(124,58,237,0.06)", borderLeft: `3px solid ${C.accent}`, borderRadius: "0 6px 6px 0", fontSize: "0.68rem", color: C.text, lineHeight: 1.5 }}>
-                          <strong>Clinical note:</strong> {clue}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Grade */}
-                <div style={{ fontSize: "0.68rem", fontWeight: 800, color: C.text, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6, marginTop: 4 }}>
-                  📊 Grade This Test
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
-                  {t.grades.map((gLabel, idx) => {
-                    const col = gradeColor(idx);
-                    const sel = g === idx;
-                    return (
-                      <div key={idx} onClick={() => setGrade(t.id, sel ? undefined : idx)}
-                        style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9, cursor: "pointer",
-                          border: `1.5px solid ${sel ? col : C.border}`, background: sel ? `${col}12` : C.s2 }}>
-                        <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${sel ? col : C.border}`,
-                          background: sel ? col : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {sel && <span style={{ fontSize: 9, color: "#fff", fontWeight: 900 }}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{ fontSize: "0.73rem", fontWeight: sel ? 700 : 400, color: sel ? col : C.text }}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Notes */}
-                <div style={{ fontSize: "0.65rem", fontWeight: 700, color: C.muted, marginBottom: 4 }}>Therapist notes</div>
-                <textarea value={notes[t.id] || ""} onChange={e => setNote(t.id, e.target.value)}
-                  placeholder="Clinical observations, patient reports, next steps..."
-                  style={{ width: "100%", background: C.s2, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text,
-                    padding: "8px 10px", fontSize: "0.72rem", fontFamily: "inherit", resize: "vertical", minHeight: 56, outline: "none" }}
-                />
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {/* Summary */}
-      {completedCount > 0 && (
-        <div style={{ background: "#F8F7FF", borderRadius: 14, padding: 14, border: `1px solid ${C.border}`, marginTop: 4 }}>
-          <div style={{ fontWeight: 800, color: C.text, marginBottom: 10 }}>📋 Screen Summary</div>
-          {LUMBAR_TESTS.filter(t => grades[t.id] !== undefined).map(t => {
-            const g = grades[t.id];
-            const col = gradeColor(g);
-            return (
-              <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: `1px solid ${C.border}` }}>
-                <span style={{ fontSize: "1rem" }}>{t.icon}</span>
-                <span style={{ flex: 1, fontSize: "0.75rem", fontWeight: 600, color: C.text }}>{t.label}</span>
-                <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: "0.65rem", fontWeight: 800, background: `${col}15`, color: col }}>
-                  {["Normal","Compensated","Abnormal"][g]}
-                </span>
-              </div>
-            );
-          })}
-          {Object.values(grades).includes(2) && (
-            <div style={{ marginTop: 10, padding: "8px 10px", background: "#FEF2F2", borderRadius: 8, border: "1px solid #FECACA", fontSize: "0.7rem", color: "#dc2626", lineHeight: 1.5 }}>
-              ⚠ <strong>Abnormal findings present.</strong> Consider: SIJ compression/distraction, FABER/FADIR, hip quadrant, L4/5/S1 myotome testing, and McKenzie directional preference assessment.
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-// ─── SHOULDER FUNCTIONAL SCREEN ───────────────────────────────────────────────
-
-const SHOULDER_TESTS = [
-  {
-    id:"sfs_flex", icon:"🙌", label:"Active Flexion (Overhead Reach)",
-    subtitle:"Scapulohumeral Rhythm + Subacromial Screen",
-    phase:"Glenohumeral + Scapular Upward Rotation",
-    setup:"Patient standing, arms at side. Slowly elevate both arms in sagittal plane to maximum. Observe from side and behind. Repeat 3×.",
-    normalDesc:"170–180°, scapular upward rotation begins ~60° GH, smooth rhythm 2:1 GH:scapular, no trunk lateral flex, no humeral head migration.",
-    svgNormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        {/* Body */}
-        <circle cx="55" cy="24" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="55" y1="31" x2="55" y2="65" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="55" y1="65" x2="48" y2="90" stroke="#059669" strokeWidth="2"/>
-        <line x1="55" y1="65" x2="62" y2="90" stroke="#059669" strokeWidth="2"/>
-        {/* Arms fully overhead */}
-        <line x1="55" y1="38" x2="48" y2="15" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="55" y1="38" x2="62" y2="15" stroke="#059669" strokeWidth="2.5"/>
-        {/* Scapula upward rotation mark */}
-        <path d="M44,36 Q38,40 40,48" stroke="#059669" strokeWidth="1.5" fill="none" strokeDasharray="3,2"/>
-        <text x="4" y="50" fontSize="5.5" fill="#059669">Scapula</text>
-        <text x="4" y="56" fontSize="5.5" fill="#059669">upward↑</text>
-        {/* Range arc */}
-        <path d="M55,31 Q72,20 68,12" stroke="#059669" strokeWidth="1" fill="none" strokeDasharray="2,2"/>
-        <text x="70" y="14" fontSize="5.5" fill="#059669">180°</text>
-        <text x="26" y="96" fontSize="6" fill="#059669">Full range, smooth rhythm</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">COMPENSATED</text>
-        {/* Body with trunk lateral flex */}
-        <circle cx="58" cy="24" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="58" y1="31" x2="55" y2="65" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="55" y1="65" x2="48" y2="90" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="55" y1="65" x2="62" y2="90" stroke="#dc2626" strokeWidth="2"/>
-        {/* Arm stopped short + shrug */}
-        <line x1="58" y1="37" x2="52" y2="22" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="58" y1="37" x2="72" y2="30" stroke="#dc2626" strokeWidth="2.5"/> {/* other arm lower */}
-        {/* Upper trap elevation arrow */}
-        <path d="M52,36 L50,28" stroke="#f97316" strokeWidth="2" fill="none"/>
-        <polygon points="48,28 52,24 54,30" fill="#f97316"/>
-        <text x="36" y="24" fontSize="5.5" fill="#f97316">Shrug</text>
-        {/* Trunk lean arrow */}
-        <path d="M64,50 L70,50" stroke="#dc2626" strokeWidth="1.5" fill="none"/>
-        <polygon points="70,48 74,50 70,52" fill="#dc2626"/>
-        <text x="75" y="53" fontSize="5" fill="#dc2626">Lean</text>
-        <text x="4" y="96" fontSize="6" fill="#dc2626">Shrug + trunk lateral flex</text>
-      </svg>
-    ),
-    observations:[
-      { id:"rom",    q:"Range of motion achieved?",
-        opts:["✓ 170–180° full elevation","⚠ 140–169° limited","✗ <140° significantly restricted","✗ Painful before 90°"],
-        clues:["","Possible capsular tightness or subacromial impingement — check arc","Significant restriction — screen capsular pattern (ER most > Abd > IR)","Subacromial/rotator cuff pathology — Hawkins-Kennedy, Neer test"] },
-      { id:"rhythm", q:"Scapulohumeral rhythm?",
-        opts:["✓ Smooth 2:1 (GH:scapular)","⚠ Early scapular elevation (upper trap dominance)","✗ Scapular winging on elevation","✗ Reverse rhythm (scapula before GH)"],
-        clues:["","Upper trap overactive — check lower trap and serratus anterior strength","Serratus anterior weakness — wall push-up plus test","Significant neuromuscular dysfunction — screen long thoracic nerve"] },
-      { id:"arc",    q:"Painful arc during flexion?",
-        opts:["✓ Pain-free throughout","⚠ Pain at 60–90° (early arc)","⚠ Pain at 90–130° (classic subacromial arc)","⚠ Pain at 150–180° (AC joint range)"],
-        clues:["","Likely subacromial pathology — bursa or cuff — do Hawkins + Neer","Classic subacromial impingement arc — do Hawkins-Kennedy, Neer, Empty Can","AC joint pathology — do horizontal adduction (cross-arm) test"] },
-      { id:"trunk",  q:"Trunk compensation?",
-        opts:["✓ Trunk upright throughout","⚠ Slight ipsilateral lean","✗ Clear lateral trunk flex to elevate arm","✗ Trunk extension (lumbar) to achieve height"],
-        clues:["","Minor — monitor bilaterally","Substitution for restricted GH flexion — true ROM less than apparent","Stiff thoracic / restricted GH — thoracic AROM assessment needed"] },
-      { id:"sym",    q:"Bilateral symmetry?",
-        opts:["✓ Symmetric","⚠ Minor difference <20°","✗ >20° side-to-side difference","✗ One side clearly pathological"],
-        clues:["","Monitoring point","Unilateral restriction — capsular pattern or rotator cuff pathology likely","Priority assessment side — proceed to specific shoulder tests"] },
-    ],
-    grades:["Normal — Full range, smooth rhythm, pain-free, symmetric","Compensated — Minor restriction or rhythm fault without pain","Abnormal — Painful arc, significant restriction, or winging"],
-  },
-  {
-    id:"sfs_abd", icon:"✈️", label:"Shoulder Abduction Arc",
-    subtitle:"Painful Arc / Subacromial vs AC Joint Screen",
-    phase:"Subacromial Space / AC Joint Loading",
-    setup:"Patient standing. Abduct arms in coronal plane slowly to 180°. Observe for painful arc zones. Note start and end of pain. Assess bilaterally.",
-    normalDesc:"Full 180° pain-free. Scapular upward rotation and thoracic lateral flex at end range. No painful arc zone.",
-    svgNormal:(
-      <svg viewBox="0 0 140 100" style={{width:"100%",maxWidth:140}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL + ARC ZONES</text>
-        {/* Standing figure */}
-        <circle cx="70" cy="28" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="70" y1="35" x2="70" y2="70" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="70" y1="70" x2="62" y2="92" stroke="#059669" strokeWidth="2"/>
-        <line x1="70" y1="70" x2="78" y2="92" stroke="#059669" strokeWidth="2"/>
-        {/* Full abduction arms */}
-        <line x1="70" y1="42" x2="26" y2="28" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="70" y1="42" x2="114" y2="28" stroke="#059669" strokeWidth="2.5"/>
-        {/* Arc zone labels */}
-        <path d="M40,55 Q28,42 36,30" stroke="#e5e7eb" strokeWidth="1" fill="none" strokeDasharray="2,2"/>
-        <text x="4" y="70" fontSize="5" fill="#6b7280">60–120°</text>
-        <text x="4" y="76" fontSize="5" fill="#f97316">Subacromial</text>
-        <text x="100" y="70" fontSize="5" fill="#6b7280">140–180°</text>
-        <text x="100" y="76" fontSize="5" fill="#dc2626">AC Joint</text>
-        {/* Green = normal */}
-        <text x="38" y="96" fontSize="5.5" fill="#059669">✓ Pain-free full range</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 140 100" style={{width:"100%",maxWidth:140}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">PAINFUL ARC ZONES</text>
-        <circle cx="70" cy="28" r="7" fill="none" stroke="#6b7280" strokeWidth="2"/>
-        <line x1="70" y1="35" x2="70" y2="70" stroke="#6b7280" strokeWidth="2.5"/>
-        <line x1="70" y1="70" x2="62" y2="92" stroke="#6b7280" strokeWidth="2"/>
-        <line x1="70" y1="70" x2="78" y2="92" stroke="#6b7280" strokeWidth="2"/>
-        {/* Arm at 90° */}
-        <line x1="70" y1="42" x2="36" y2="42" stroke="#6b7280" strokeWidth="2.5"/>
-        <line x1="70" y1="42" x2="104" y2="42" stroke="#6b7280" strokeWidth="2.5"/>
-        {/* Painful arc zone 1 — subacromial */}
-        <path d="M42,55 Q30,42 42,30" stroke="#f97316" strokeWidth="3" fill="none" strokeLinecap="round"/>
-        <text x="4" y="62" fontSize="5.5" fill="#f97316" fontWeight="bold">60–120°</text>
-        <text x="4" y="69" fontSize="5" fill="#f97316">Subacromial</text>
-        <text x="4" y="75" fontSize="5" fill="#f97316">(bursa/cuff)</text>
-        {/* Painful arc zone 2 — AC */}
-        <path d="M100,38 Q110,28 104,18" stroke="#dc2626" strokeWidth="3" fill="none" strokeLinecap="round"/>
-        <text x="106" y="40" fontSize="5.5" fill="#dc2626" fontWeight="bold">140–180°</text>
-        <text x="106" y="47" fontSize="5" fill="#dc2626">AC Joint</text>
-        {/* Pain symbol */}
-        <text x="22" y="44" fontSize="8" fill="#f97316">⚡</text>
-        <text x="100" y="24" fontSize="8" fill="#dc2626">⚡</text>
-      </svg>
-    ),
-    observations:[
-      { id:"arc60",  q:"Pain between 60–120° abduction?",
-        opts:["✓ No pain in this range","⚠ Mild discomfort","✗ Clear pain — arc present"],
-        clues:["","Minor subacromial irritation — monitor","Classic subacromial painful arc — suggests subacromial bursitis or supraspinatus pathology. Do Hawkins-Kennedy and Neer impingement tests"] },
-      { id:"arc140", q:"Pain between 140–180° abduction?",
-        opts:["✓ No pain in this range","⚠ Discomfort only","✗ Clear pain — AC arc present"],
-        clues:["","Mild AC joint irritation","AC joint pathology likely — do horizontal adduction test (cross-arm), AC joint palpation, and AC joint stress test"] },
-      { id:"rhythm", q:"Scapular rhythm during abduction?",
-        opts:["✓ 2:1 GH:scapular","⚠ Early scapular elevation (shrug at ~60°)","✗ Scapular winging from behind","✗ Scapular dyskinesis — irregular movement"],
-        clues:["","Upper trap overactive / lower trap weak — screen CPA (Janda)","Serratus anterior weakness — confirm wall push-up plus","Rotator cuff weakness or SICK scapula syndrome — full scapular screen"] },
-      { id:"drop",   q:"Can patient slowly lower from 90°?",
-        opts:["✓ Controlled throughout","⚠ Drop arm at ~90° eccentric","✗ Unable to control — drops arm"],
-        clues:["","Minor cuff fatigue","Drop arm sign — likely supraspinatus tear (if positive on active abd). Do empty can + external rotation lag sign","Full thickness rotator cuff tear likely — MRI referral"] },
-      { id:"sym",    q:"Range vs opposite side?",
-        opts:["✓ Symmetric","⚠ Minor difference <20°","✗ >20° difference","✗ Unable to abduct >60°"],
-        clues:["","Monitor","Unilateral restriction — capsular pattern vs impingement. Check passive range — if equal, muscular inhibition","Severe restriction — adhesive capsulitis if all passive ranges equally restricted"] },
-    ],
-    grades:["Normal — Full range, pain-free, smooth scapular rhythm","Compensated — Minor arc or rhythm fault","Abnormal — Painful arc or significant restriction"],
-  },
-  {
-    id:"sfs_ir",  icon:"🤝", label:"Apley Scratch Lower (IR)",
-    subtitle:"Internal Rotation + Extension Composite",
-    phase:"Posterior Capsule / IR Range",
-    setup:"Standing. Patient reaches hand behind back as high as possible — thumb tip level noted. Compare bilaterally. Note pain vs stiffness.",
-    normalDesc:"Thumb reaches T7–T8 (mid-thoracic). No pain. Restriction = posterior capsule tightness or posterior rotator cuff.",
-    svgNormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        {/* Side view figure */}
-        <circle cx="60" cy="22" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="60" y1="29" x2="60" y2="65" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="60" y1="65" x2="54" y2="88" stroke="#059669" strokeWidth="2"/>
-        <line x1="60" y1="65" x2="66" y2="88" stroke="#059669" strokeWidth="2"/>
-        {/* Arm behind back — reaching mid-thoracic */}
-        <line x1="60" y1="38" x2="52" y2="46" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="52" y1="46" x2="56" y2="52" stroke="#059669" strokeWidth="2.5"/>
-        {/* Hand position indicator */}
-        <circle cx="57" cy="52" r="3" fill="#059669" opacity="0.6"/>
-        <text x="62" y="54" fontSize="5.5" fill="#059669">T7–T8</text>
-        <line x1="62" y1="52" x2="60" y2="50" stroke="#059669" strokeWidth="1"/>
-        {/* Spine landmark */}
-        <line x1="60" y1="35" x2="60" y2="62" stroke="#6b7280" strokeWidth="1" strokeDasharray="2,2" opacity="0.5"/>
-        <text x="26" y="96" fontSize="6" fill="#059669">Reaches mid-thoracic</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">RESTRICTED</text>
-        <circle cx="60" cy="22" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="60" y1="29" x2="60" y2="65" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="60" y1="65" x2="54" y2="88" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="60" y1="65" x2="66" y2="88" stroke="#dc2626" strokeWidth="2"/>
-        {/* Arm stuck low — only reaches lumbar */}
-        <line x1="60" y1="38" x2="52" y2="50" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="52" y1="50" x2="55" y2="65" stroke="#dc2626" strokeWidth="2.5"/>
-        {/* Hand stuck at lumbar */}
-        <circle cx="55" cy="65" r="3" fill="#dc2626" opacity="0.6"/>
-        <text x="40" y="74" fontSize="5.5" fill="#dc2626">Lumbar only</text>
-        {/* Restricted symbol */}
-        <text x="30" y="55" fontSize="8" fill="#dc2626">✗</text>
-        <text x="4" y="96" fontSize="6" fill="#dc2626">Posterior capsule / IR restriction</text>
-      </svg>
-    ),
-    observations:[
-      { id:"level",  q:"Level reached?",
-        opts:["✓ T7–T8 or above (normal)","⚠ T10–T12 (mild restriction)","✗ L1–L5 (moderate restriction)","✗ Below buttock (severe restriction)"],
-        clues:["","Mild posterior capsule tightness or minor cuff restriction — monitor","Posterior capsule tightness — sleeper stretch, posterior joint mobilisation","Significant IR deficit — adhesive capsulitis pattern or massive posterior capsule tightness (GIRD)"] },
-      { id:"type",   q:"Is restriction pain or stiffness?",
-        opts:["✓ Neither","⚠ Stiffness — mechanical","✗ Pain posterior shoulder","✗ Pain anterior shoulder"],
-        clues:["","Posterior capsule restriction — respond to stretching / mobilisation","Posterior cuff or posterior capsule — likely mechanical. PAIVM L5–S1 equivalent (Maitland PA)","Biceps tendon or anterior capsule pain with IR — screen bicipital groove palpation, Speed's test"] },
-      { id:"sym",    q:"Bilateral comparison?",
-        opts:["✓ Symmetric","⚠ 1–2 vertebral levels difference","✗ >3 levels difference","✗ Dominant arm significantly restricted"],
-        clues:["","","GIRD (Glenohumeral Internal Rotation Deficit) likely — common in throwing athletes","GIRD — highest risk for SLAP lesions and posterior-superior impingement. Assess posterior capsule stretch response"] },
-      { id:"scap",   q:"Scapular compensation?",
-        opts:["✓ Scapula stays back","⚠ Mild scapular protraction","✗ Clear scapular protraction to gain range"],
-        clues:["","","Substituting scapular protraction for true GH IR. True GH IR deficit > apparent — clinically stabilise scapula and remeasure"] },
-      { id:"pain",   q:"Overall provocation?",
-        opts:["✓ No pain","⚠ Dull ache end range","✗ Sharp posterior pain","✗ Clicking / clunking"],
-        clues:["","Minor — monitor","Posterior capsule or posterior cuff pathology","Labral involvement possible — O'Brien's active compression test, bicipital groove tests"] },
-    ],
-    grades:["Normal — T7 or above, pain-free, symmetric","Compensated — Mild restriction or 1–2 levels asymmetry","Abnormal — <T12, significant pain, or GIRD pattern"],
-  },
-  {
-    id:"sfs_er",  icon:"🙆", label:"Apley Scratch Upper (ER)",
-    subtitle:"External Rotation + Abduction Composite",
-    phase:"Anterior Capsule / ER + Flexion Range",
-    setup:"Standing. Patient reaches hand behind head and down toward opposite scapula. Note how far hand reaches. Assess pain vs stiffness. Compare bilaterally.",
-    normalDesc:"Fingers reach or pass contralateral scapula (opposite T4–T5). No pain. Limitation = anterior capsule or subscapularis tightness.",
-    svgNormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        <circle cx="60" cy="22" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="60" y1="29" x2="60" y2="65" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="60" y1="65" x2="54" y2="88" stroke="#059669" strokeWidth="2"/>
-        <line x1="60" y1="65" x2="66" y2="88" stroke="#059669" strokeWidth="2"/>
-        {/* Arm behind head + reaching opposite shoulder */}
-        <line x1="60" y1="35" x2="70" y2="24" stroke="#059669" strokeWidth="2.5"/> {/* upper arm up */}
-        <line x1="70" y1="24" x2="60" y2="32" stroke="#059669" strokeWidth="2.5"/> {/* forearm behind head */}
-        <line x1="60" y1="32" x2="52" y2="38" stroke="#059669" strokeWidth="2.5"/> {/* reach contralateral */}
-        <circle cx="50" cy="40" r="3" fill="#059669" opacity="0.6"/>
-        <text x="28" y="40" fontSize="5.5" fill="#059669">Contra</text>
-        <text x="28" y="46" fontSize="5.5" fill="#059669">scapula</text>
-        <text x="22" y="96" fontSize="6" fill="#059669">Reaches opposite shoulder</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">RESTRICTED</text>
-        <circle cx="60" cy="22" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="60" y1="29" x2="60" y2="65" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="60" y1="65" x2="54" y2="88" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="60" y1="65" x2="66" y2="88" stroke="#dc2626" strokeWidth="2"/>
-        {/* Arm can't get behind head — elbow forward */}
-        <line x1="60" y1="35" x2="72" y2="28" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="72" y1="28" x2="66" y2="36" stroke="#dc2626" strokeWidth="2.5"/>
-        {/* Can't reach contralateral — stuck ipsilateral */}
-        <circle cx="68" cy="36" r="3" fill="#dc2626" opacity="0.6"/>
-        <text x="72" y="38" fontSize="5.5" fill="#dc2626">Ipsilateral</text>
-        <text x="72" y="44" fontSize="5.5" fill="#dc2626">only</text>
-        <text x="30" y="62" fontSize="8" fill="#dc2626">✗</text>
-        <text x="4" y="96" fontSize="6" fill="#dc2626">Anterior capsule / subscap tight</text>
-      </svg>
-    ),
-    observations:[
-      { id:"reach",  q:"How far does hand reach?",
-        opts:["✓ Passes contralateral scapula","⚠ Reaches contralateral shoulder tip","⚠ Touches top of head only (can't reach behind)","✗ Cannot get hand behind head"],
-        clues:["","Minor restriction — asymmetry monitor","Anterior capsule tightness or subscapularis restriction — compare passive ER in neutral and 90° abd","Significant ER restriction — screen for adhesive capsulitis (all ranges limited) or traumatic anterior instability"] },
-      { id:"type",   q:"Restriction character?",
-        opts:["✓ No restriction","⚠ Stiffness — no pain","✗ Anterior shoulder pain","✗ Posterior shoulder pain on end range"],
-        clues:["","Capsular restriction — anterior capsule + subscapularis. Respond to anterior capsule stretching and GH anterior glide mobilisation","Anterior capsule / biceps long head — Speeds test, anterior palpation","Posterior capsule stretch pain — combined restriction pattern"] },
-      { id:"sym",    q:"Side-to-side difference?",
-        opts:["✓ Symmetric","⚠ Minor difference (<5cm)","✗ Marked difference (>10cm)","✗ One side cannot complete movement"],
-        clues:["","","Unilateral capsular or subscapularis restriction — assess passive ER at 0° and 90°","Significant — screen for acute pathology (dislocation history, RTC tear) vs chronic capsular pattern"] },
-      { id:"impinge",q:"Clicking or impingement sensation?",
-        opts:["✓ None","⚠ Clicking — no pain","✗ Painful click","✗ Clunk — labral feel"],
-        clues:["","Minor — possibly bicipital tendon","Internal impingement — posterior-superior labral contact in ABER position. O'Brien's test, SLAP screen","Labral tear possible — Crank test, O'Brien's, Speed's test"] },
-      { id:"sub",    q:"Subscapularis substitution (shoulder rises)?",
-        opts:["✓ No compensation","⚠ Mild shoulder rise","✗ Clear shoulder elevation to gain range"],
-        clues:["","","True ER deficit is greater than apparent — stabilise shoulder girdle passively and remeasure ER in 90° abduction"] },
-    ],
-    grades:["Normal — Reaches contralateral scapula, pain-free, symmetric","Compensated — Minor restriction or near-symmetric","Abnormal — Cannot reach contralateral side, pain, or significant asymmetry"],
-  },
-  {
-    id:"sfs_scap", icon:"🧱", label:"Scapular Control (Wall Slide)",
-    subtitle:"Serratus Anterior + Lower Trap Function",
-    phase:"Scapular Stabilisation / Motor Control",
-    setup:"Patient faces wall, hands at shoulder height, elbows slightly bent. Perform push-up plus (protract and then retract scapulae) × 5. Observe scapular borders from behind.",
-    normalDesc:"Scapulae stay flat against ribcage throughout. No medial border or inferior angle lifting. Smooth, equal bilateral movement.",
-    svgNormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL (rear view)</text>
-        {/* Torso from back */}
-        <rect x="30" y="20" width="50" height="65" rx="8" fill="#ECFDF5" stroke="#059669" strokeWidth="1.5"/>
-        {/* Spine */}
-        <line x1="55" y1="20" x2="55" y2="85" stroke="#d1d5db" strokeWidth="1" strokeDasharray="2,2"/>
-        {/* Scapulae flat — no winging */}
-        <path d="M32,30 Q30,45 34,60" stroke="#059669" strokeWidth="2.5" fill="none"/>
-        <path d="M78,30 Q80,45 76,60" stroke="#059669" strokeWidth="2.5" fill="none"/>
-        {/* Flat indicator */}
-        <text x="8" y="48" fontSize="5.5" fill="#059669">Flat ✓</text>
-        <text x="84" y="48" fontSize="5.5" fill="#059669">✓ Flat</text>
-        {/* Arms to wall */}
-        <line x1="30" y1="38" x2="16" y2="38" stroke="#059669" strokeWidth="2"/>
-        <line x1="80" y1="38" x2="94" y2="38" stroke="#059669" strokeWidth="2"/>
-        <text x="22" y="96" fontSize="6" fill="#059669">Scapulae flat — no winging</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">WINGING (rear view)</text>
-        <rect x="30" y="20" width="50" height="65" rx="8" fill="#FEF2F2" stroke="#dc2626" strokeWidth="1.5"/>
-        <line x1="55" y1="20" x2="55" y2="85" stroke="#d1d5db" strokeWidth="1" strokeDasharray="2,2"/>
-        {/* Medial border winging */}
-        <path d="M32,30 Q22,45 28,60" stroke="#dc2626" strokeWidth="2.5" fill="none"/>
-        {/* Wing arrow */}
-        <path d="M26,45 L18,45" stroke="#dc2626" strokeWidth="2" fill="none"/>
-        <polygon points="18,43 14,45 18,47" fill="#dc2626"/>
-        <text x="2" y="42" fontSize="5" fill="#dc2626">Medial</text>
-        <text x="2" y="48" fontSize="5" fill="#dc2626">border</text>
-        <text x="2" y="54" fontSize="5" fill="#dc2626">lifts</text>
-        {/* Serratus label */}
-        <text x="2" y="64" fontSize="4.5" fill="#f97316">= SA weak</text>
-        {/* Inferior angle winging right side */}
-        <path d="M78,30 Q82,48 78,62" stroke="#f97316" strokeWidth="2.5" fill="none"/>
-        <path d="M78,60 L86,65" stroke="#f97316" strokeWidth="2" fill="none"/>
-        <polygon points="86,63 90,67 84,67" fill="#f97316"/>
-        <text x="88" y="60" fontSize="4.5" fill="#f97316">Inf</text>
-        <text x="88" y="66" fontSize="4.5" fill="#f97316">angle</text>
-        <text x="88" y="72" fontSize="4.5" fill="#f97316">=LT weak</text>
-        <text x="8" y="96" fontSize="5.5" fill="#dc2626">Medial=Serratus · Inferior=Lower Trap</text>
-      </svg>
-    ),
-    observations:[
-      { id:"wing",   q:"Scapular winging present?",
-        opts:["✓ No winging — scapulae flat","⚠ Mild medial border lift (serratus)","✗ Clear medial border winging","✗ Inferior angle lifts (lower trap)","✗ Both — global scapular instability"],
-        clues:["","Mild serratus anterior weakness — screen with wall push-up and SA MMT","Serratus anterior weakness — long thoracic nerve screen (check C5/C6 myotome), progress wall push-up for activation","Lower trapezius weakness — screen with prone Y exercise and lower trap MMT","Combined — full scapular muscle screen: SA, LT, MT, rhomboids"] },
-      { id:"timing", q:"When does winging appear?",
-        opts:["✓ No winging","⚠ Only at end range (fatigue)","✗ From start of movement","✗ Winging on return (eccentric)"],
-        clues:["","Endurance deficit — progressive loading needed","Significant motor control deficit — activation phase issue","Eccentric control weakness — priority in overhead athletes"] },
-      { id:"sym",    q:"Bilateral comparison?",
-        opts:["✓ Symmetric","⚠ Minor asymmetry","✗ Clear unilateral winging","✗ Dominant winging — check history"],
-        clues:["","","Unilateral — screen for long thoracic nerve palsy (sudden onset) vs gradual weakness","Long thoracic nerve palsy if acute onset + global serratus weakness"] },
-      { id:"elev",   q:"Resting scapular position?",
-        opts:["✓ Level and neutral","⚠ Elevated (upper trap dominant)","⚠ Internally rotated / tilted","✗ Clearly depressed on one side"],
-        clues:["","Upper trap overactive — screen pec minor + upper trap for tightness (Janda CPA)","SICK scapula pattern — pec minor tightness + CPA dysfunction","Depression may indicate accessory nerve or trapezius pathology"] },
-      { id:"pain",   q:"Pain during scapular movement?",
-        opts:["✓ No pain","⚠ Periscapular ache","✗ Sharp periscapular pain","✗ Referred pain / tingling"],
-        clues:["","Muscle fatigue or trigger points in periscapular muscles — assess rhomboids, mid trap","Active trigger points — screen rhomboids, levator scapulae, mid/lower trap","Neural component — thoracic outlet / long thoracic nerve — do neurological screen"] },
-    ],
-    grades:["Normal — No winging, flat scapulae, symmetric","Compensated — Mild fatigue winging or minor asymmetry","Abnormal — Clear winging, pain, or SICK scapula pattern"],
-  },
-,
-  // ── FMS: Shoulder Mobility ────────────────────────────────────────────────
-  {
-    id:"fms_sm", icon:"🖐️", label:"Shoulder Mobility (FMS)",
-    subtitle:"Combined IR + ER + Adduction Screen",
-    phase:"Shoulder / Thoracic Mobility Screen",
-    setup:"Each hand: make a fist with thumb inside. One arm over shoulder (IR + Adduction, fist down spine), other arm under (ER + Abduction, fist up spine). Measure distance between knuckles. Normal: fists within one hand-length (or touching). Score: 3 = within one hand-length. 2 = within 1.5x hand length. 1 = more than 1.5x hand length. 0 = pain. Clearing test: push-up position — wrist pain = 0.",
-    normalDesc:"Fists within one hand-length on both sides. Symmetric. No pain. Posterior shoulder and thoracic extension flexible. Clearing test negative (no wrist pain in push-up position).",
-    observations:[
-      { id:"reach", q:"Fist distance (knuckle to knuckle)?",
-        opts:["✓ Within one hand-length (≤ hand width)","⚠ 1–1.5x hand-length","✗ >1.5x hand-length (significant restriction)","✗ Pain on movement — score 0"],
-        clues:["","Minor posterior shoulder or pec minor restriction — posterior capsule stretch + pec minor release","Significant restriction — posterior capsule (cross-body stretch), lat tightness (doorway lat stretch), thoracic extension. Target specific muscle from asymmetry pattern","Pain = score 0. Screen for shoulder pathology before mobility work. Apprehension test + rotator cuff assessment"] },
-      { id:"sym", q:"Symmetry — arms over vs under?",
-        opts:["✓ Symmetric both sides","⚠ Mild asymmetry (<1 score difference)","✗ Clear asymmetry (≥1 score difference)","✗ Cannot perform one direction"],
-        clues:["","Minor asymmetry — monitor. May be dominant side slight advantage in ER","Asymmetry ≥1 = increased shoulder injury risk. Tight over-shoulder side = posterior capsule + thoracic. Tight under-shoulder side = pec minor + anterior capsule","Complete failure one direction = significant capsular restriction or pain. Screen rotator cuff and labrum before mobility treatment"] },
-      { id:"ir", q:"Internal rotation reach (arm from below)?",
-        opts:["✓ Full — fist reaches mid-thoracic","⚠ Reaches lower thoracic only","✗ Only reaches lumbar","✗ Cannot achieve IR reach at all"],
-        clues:["","Minor IR restriction — shoulder ER > IR imbalance. Sleeper stretch, SMR infraspinatus","Significant IR restriction — posterior capsule tightness (common in throwers). Sleeper stretch 3×45s + cross-body stretch + horizontal adduction PROM","Cannot achieve = severe posterior capsule. Grade III horizontal adduction mobilisation + sleeper stretch"] },
-      { id:"er", q:"External rotation reach (arm from above)?",
-        opts:["✓ Full — fist reaches mid-thoracic from above","⚠ Fist reaches upper thoracic only","✗ Significant restriction — arm cannot fully internally rotate overhead","✗ Pain on clearing test (push-up position)"],
-        clues:["","Minor ER reach restriction — pec minor or anterior capsule. Pec minor stretch + anterior shoulder mobilisation","Pec minor dominant — upper crossed pattern. Thoracic extension + pec minor release priority","Pain on clearing test = potential shoulder pathology. Subacromial impingement or AC joint. Refer for special tests"] },
-      { id:"clear", q:"Clearing test (wrist/elbow pain in push-up position)?",
-        opts:["✓ Negative — no pain","✗ Wrist pain","✗ Elbow pain","✗ Shoulder pain"],
-        clues:["","Normal — proceed with score","Wrist pain on clearing = TFCC or carpal screen. Wrist FMS score = 0 regardless of reach distance. Screen wrist separately","Elbow pain = screen lateral/medial epicondyle + PLRI. FMS = 0. Elbow assessment priority","Shoulder pain = FMS 0. Screen rotator cuff + labrum. Do not load shoulder mobility until cleared"] },
-    ],
-    grades:["Normal (FMS 3) — Within one hand-length, symmetric, clearing test negative","Compensated (FMS 2) — 1–1.5x hand-length restriction, no pain","Abnormal (FMS 0–1) — >1.5x hand-length, asymmetry ≥1 score, or pain"],
-  },
-  // ── FMS: Trunk Stability Push-Up ──────────────────────────────────────────
-  {
-    id:"fms_tspu", icon:"💪", label:"Trunk Stability Push-Up (FMS)",
-    subtitle:"Anterior Core Stability · Spinal Rigidity Screen",
-    phase:"Anterior Chain / Core Stability Screen",
-    setup:"Patient prone: Men — thumbs at forehead level. Women — thumbs at chin level. Complete ONE push-up maintaining rigid spine — no lag in lumbar or hips. Score: 3 = perfect rigid spine push-up at forehead level (men) / chin (women). 2 = push-up at chin (men) / chest (women). 1 = cannot perform without spinal lag. 0 = pain. Clearing test: passive trunk extension (prone press-up) — pain = 0.",
-    normalDesc:"Single push-up completed with rigid spine — no lumbar extension lead, no hip sag, no scapular winging. Trunk rises as a rigid unit. Clearing test negative (prone press-up pain-free).",
-    observations:[
-      { id:"spine", q:"Spinal rigidity during push-up?",
-        opts:["✓ Rigid spine — rises as one unit","⚠ Minor lumbar lag at peak","✗ Lumbar sags / hips rise first (hip hinge pattern)","✗ Cannot complete even with modification"],
-        clues:["","Minor anterior core weakness — TA/oblique activation in push-up position","Hip sag = anterior core deficit (TA, obliques, TrA). Lower push-up level first — find level where spine stays rigid. Build from there","Cannot complete = significant core instability. Begin with prone plank on elbows, progress to extended arm plank before push-up"] },
-      { id:"scap", q:"Scapular position during push-up?",
-        opts:["✓ Scapulae set — no winging","⚠ Minor protraction drift","✗ Scapular winging visible","✗ Asymmetric — one wing only"],
-        clues:["","Minor serratus anterior weakness — push-up plus (serratus press) before full push-up","Serratus anterior inhibition — dynamic push-up plus × 3×15. Reduce load to wall push-up if winging is significant","Asymmetric winging = unilateral serratus or long thoracic nerve. Assess unilateral serratus anterior strength"] },
-      { id:"hip", q:"Hip position throughout push-up?",
-        opts:["✓ Hips neutral — maintain position","⚠ Minor hip extension increase","✗ Hips rise (jack-knife pattern)","✗ Hips sag below spine level"],
-        clues:["","Minor hip flexor tightness or core substitution","Hip rise = RA dominance over TA. Patient uses spinal extension to push up. Teach dead-bug pattern first","Hip sag = posterior tilt deficit or lumbar extensor weakness. Prone plank training before push-up loading"] },
-      { id:"clear", q:"Clearing test — prone press-up?",
-        opts:["✓ Negative — no pain","✗ Central lumbar pain","✗ Unilateral lumbar / buttock pain","✗ Arm or leg symptoms reproduced"],
-        clues:["","Normal — proceed with score","Central extension pain = lumbar disc or facet. FMS = 0. Extension-biased condition — do not load push-up","Unilateral = facet or SIJ. FMS = 0. Quadrant test + Kemp's before trunk stability loading","Referred symptoms = neural — FMS 0. Neurological screen before loading"] },
-      { id:"sym", q:"Left-right symmetry during push-up?",
-        opts:["✓ Symmetric","⚠ Minor asymmetric drift","✗ Clear trunk rotation during push-up","✗ Arm dominance — pushes from one side"],
-        clues:["","Monitor — minor asymmetry in first rep acceptable","Trunk rotation during push-up = unilateral oblique or serratus weakness. Plank with rotation resistance (Pallof press) + unilateral core training","Arm dominance = unilateral shoulder girdle weakness. Screen rotator cuff and serratus on weaker side"] },
-    ],
-    grades:["Normal (FMS 3) — Rigid spine, no winging, clearing test negative","Compensated (FMS 2) — Push-up with minor lag or lower level","Abnormal (FMS 0–1) — Spinal lag, cannot complete, or pain"],
-  }
-];
-
-function ShoulderFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  useEffect(() => {
-    const saved = data["sfs_data"];
-    if (saved && typeof saved === "string") {
-      try {
-        const p = JSON.parse(saved);
-        if (p.findings) setFindings(p.findings);
-        if (p.grades)   setGrades(p.grades);
-        if (p.notes)    setNotes(p.notes);
-      } catch {}
-    }
-  }, []);
-
-  const save = (f, g, n) => set("sfs_data", JSON.stringify({ findings: f, grades: g, notes: n }));
-
-  const setObs = (testId, obsId, val) => {
-    const nf = { ...findings, [`${testId}_${obsId}`]: val };
-    setFindings(nf); save(nf, grades, notes);
-  };
-  const setGrade = (testId, val) => {
-    const ng = { ...grades, [testId]: val };
-    setGrades(ng); save(findings, ng, notes);
-  };
-  const setNote = (testId, val) => {
-    const nn = { ...notes, [testId]: val };
-    setNotes(nn); save(findings, grades, nn);
-  };
-
-  const completedCount = SHOULDER_TESTS.filter(t => grades[t.id] !== undefined).length;
-  const gradeColor = (g) => g === 0 ? "#059669" : g === 1 ? "#d97706" : g === 2 ? "#dc2626" : C.muted;
-
-  return (
-    <div>
-      {/* Header */}
-      <div style={{ background:"linear-gradient(135deg,rgba(8,145,178,0.08),rgba(59,130,246,0.05))", border:"1px solid rgba(8,145,178,0.22)", borderRadius:14, padding:"14px 16px", marginBottom:14 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
-          <span style={{ fontSize:"1.4rem" }}>🦾</span>
-          <div>
-            <div style={{ fontWeight:800, fontSize:"0.95rem", color:C.text }}>Shoulder Functional Screen</div>
-            <div style={{ fontSize:"0.78rem", color:C.muted }}>5 tests · Scapulohumeral rhythm · Arc + Capsular pattern · Student guide</div>
-          </div>
-          <div style={{ marginLeft:"auto", textAlign:"right" }}>
-            <div style={{ fontSize:"1.2rem", fontWeight:900, color:"#0891b2" }}>{completedCount}/5</div>
-            <div style={{ fontSize:"0.78rem", color:C.muted }}>graded</div>
-          </div>
-        </div>
-        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
-          {SHOULDER_TESTS.map(t => {
-            const g = grades[t.id];
-            const done = g !== undefined;
-            return (
-              <div key={t.id} onClick={() => setActiveTest(activeTest === t.id ? null : t.id)}
-                style={{ padding:"4px 10px", borderRadius:20, cursor:"pointer", fontSize:"0.78rem", fontWeight:700,
-                  border:`1px solid ${activeTest===t.id?"#0891b2":done?gradeColor(g)+"60":C.border}`,
-                  background:activeTest===t.id?"rgba(8,145,178,0.1)":done?`${gradeColor(g)}10`:"transparent",
-                  color:activeTest===t.id?"#0891b2":done?gradeColor(g):C.muted }}>
-                {t.icon} {t.label.split(" ")[0]} {t.label.split(" ")[1]||""} {done?["✓","⚠","✗"][g]:""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Test cards */}
-      {SHOULDER_TESTS.map(t => {
-        const isOpen = activeTest === t.id;
-        const g = grades[t.id];
-        const graded = g !== undefined;
-        return (
-          <div key={t.id} style={{ marginBottom:10, background:C.surface, borderRadius:14,
-            border:`1.5px solid ${isOpen?"#0891b2":graded?gradeColor(g)+"50":C.border}`,
-            overflow:"hidden", boxShadow:isOpen?"0 4px 16px rgba(8,145,178,0.1)":"0 1px 4px rgba(0,0,0,0.04)" }}>
-
-            <div onClick={() => setActiveTest(isOpen ? null : t.id)}
-              style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", cursor:"pointer",
-                borderLeft:`4px solid ${graded?gradeColor(g):C.border}` }}>
-              <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
-                <div style={{ fontSize:"0.75rem", color:C.muted }}>{t.subtitle}</div>
-              </div>
-              {graded && (
-                <span style={{ padding:"3px 10px", borderRadius:20, fontSize:"0.75rem", fontWeight:800,
-                  background:`${gradeColor(g)}15`, color:gradeColor(g), flexShrink:0 }}>
-                  {["Normal","Compensated","Abnormal"][g]}
-                </span>
-              )}
-              <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
-            </div>
-
-            {isOpen && (
-              <div style={{ padding:"0 14px 14px" }}>
-
-                {/* Visuals */}
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                  <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#0891b2", textTransform:"uppercase", letterSpacing:"0.5px" }}>📐 Visual Guide</div>
-                  <button onClick={() => setShowVisual(v=>!v)} style={{ fontSize:"0.8rem", padding:"2px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:"transparent", color:C.muted, cursor:"pointer" }}>
-                    {showVisual?"Hide":"Show"}
-                  </button>
-                </div>
-
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Setup */}
-                <div style={{ background:"#F0F9FF", borderRadius:9, padding:"9px 11px", marginBottom:12, border:"1px solid #BAE6FD" }}>
-                  <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#0891b2", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>🎯 Setup & Procedure</div>
-                  <div style={{ fontSize:"0.75rem", color:C.text, lineHeight:1.6 }}>{t.setup}</div>
-                  <div style={{ marginTop:6, padding:"4px 8px", background:"rgba(8,145,178,0.08)", borderRadius:6, border:"1px solid rgba(8,145,178,0.2)" }}>
-                    <div style={{ fontSize:"0.8rem", fontWeight:700, color:"#0891b2" }}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-
-                {/* Observation checklist */}
-                <div style={{ fontSize:"0.78rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>
-                  👁 What To Observe
-                </div>
-                {t.observations.map(obs => {
-                  const val = findings[`${t.id}_${obs.id}`];
-                  const clue = val !== undefined ? obs.clues[val] : null;
-                  return (
-                    <div key={obs.id} style={{ marginBottom:10 }}>
-                      <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.text, marginBottom:5 }}>{obs.q}</div>
-                      <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                        {obs.opts.map((opt, idx) => {
-                          const sel = val === idx;
-                          const col = opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":opt.startsWith("✗")?"#dc2626":C.muted;
-                          return (
-                            <div key={idx} onClick={() => setObs(t.id, obs.id, sel ? undefined : idx)}
-                              style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"7px 10px", borderRadius:8, cursor:"pointer",
-                                border:`1.5px solid ${sel?col:C.border}`, background:sel?`${col}10`:C.s2, transition:"all 0.12s" }}>
-                              <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${sel?col:C.border}`,
-                                background:sel?col:"transparent", flexShrink:0, marginTop:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                                {sel && <span style={{ fontSize:8, color:"#fff", fontWeight:900 }}>✓</span>}
-                              </div>
-                              <span style={{ fontSize:"0.82rem", fontWeight:sel?700:400, color:sel?col:C.text, lineHeight:1.35 }}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && (
-                        <div style={{ marginTop:5, padding:"6px 10px", background:"rgba(8,145,178,0.06)", borderLeft:"3px solid #0891b2", borderRadius:"0 6px 6px 0", fontSize:"0.78rem", color:C.text, lineHeight:1.5 }}>
-                          <strong>Clinical note:</strong> {clue}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Grade */}
-                <div style={{ fontSize:"0.78rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, marginTop:4 }}>
-                  📊 Grade This Test
-                </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:12 }}>
-                  {t.grades.map((gLabel, idx) => {
-                    const col = gradeColor(idx);
-                    const sel = g === idx;
-                    return (
-                      <div key={idx} onClick={() => setGrade(t.id, sel ? undefined : idx)}
-                        style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderRadius:9, cursor:"pointer",
-                          border:`1.5px solid ${sel?col:C.border}`, background:sel?`${col}12`:C.s2 }}>
-                        <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${sel?col:C.border}`,
-                          background:sel?col:"transparent", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          {sel && <span style={{ fontSize:9, color:"#fff", fontWeight:900 }}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{ fontSize:"0.73rem", fontWeight:sel?700:400, color:sel?col:C.text }}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Notes */}
-                <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.muted, marginBottom:4 }}>Therapist notes</div>
-                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
-                  placeholder="Clinical observations, pattern findings, next assessment steps..."
-                  style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text,
-                    padding:"8px 10px", fontSize:"0.82rem", fontFamily:"inherit", resize:"vertical", minHeight:56, outline:"none" }}
-                />
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {/* Summary */}
-      {completedCount > 0 && (
-        <div style={{ background:"#F0F9FF", borderRadius:14, padding:14, border:"1px solid #BAE6FD", marginTop:4 }}>
-          <div style={{ fontWeight:800, color:C.text, marginBottom:10 }}>📋 Shoulder Screen Summary</div>
-          {SHOULDER_TESTS.filter(t => grades[t.id] !== undefined).map(t => {
-            const g = grades[t.id];
-            const col = gradeColor(g);
-            return (
-              <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
-                <span style={{ fontSize:"1rem" }}>{t.icon}</span>
-                <span style={{ flex:1, fontSize:"0.75rem", fontWeight:600, color:C.text }}>{t.label}</span>
-                <span style={{ padding:"2px 10px", borderRadius:20, fontSize:"0.75rem", fontWeight:800, background:`${col}15`, color:col }}>
-                  {["Normal","Compensated","Abnormal"][g]}
-                </span>
-              </div>
-            );
-          })}
-          {Object.values(grades).includes(2) && (
-            <div style={{ marginTop:10, padding:"8px 10px", background:"#FEF2F2", borderRadius:8, border:"1px solid #FECACA", fontSize:"0.8rem", color:"#dc2626", lineHeight:1.5 }}>
-              ⚠ <strong>Abnormal findings present.</strong> Consider: Hawkins-Kennedy, Neer impingement, Empty Can (supraspinatus), O'Brien's (SLAP), horizontal adduction (AC), posterior capsule stretch test, and CPA (Janda) for motor pattern.
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── HIP FUNCTIONAL SCREEN ────────────────────────────────────────────────────
-
-const HIP_TESTS = [
-  {
-    id:"hfs_sls", icon:"🦵", label:"Single Leg Squat",
-    subtitle:"Glute Med / Dynamic Valgus / Pelvic Control",
-    phase:"Frontal Plane Stability — Primary Hip Screen",
-    setup:"Patient stands on one leg, arms crossed. Slowly squat to ~60° knee flexion, return. × 5 each side. Observe from front and behind.",
-    normalDesc:"Pelvis level or slight contralateral hike, knee tracks over 2nd toe, trunk upright, controlled throughout. No hip drop or valgus.",
-    svgNormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        <circle cx="55" cy="18" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="55" y1="25" x2="55" y2="55" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="42" y1="55" x2="68" y2="55" stroke="#059669" strokeWidth="3"/>
-        <line x1="48" y1="55" x2="44" y2="80" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="44" y1="80" x2="44" y2="95" stroke="#059669" strokeWidth="2"/>
-        <line x1="62" y1="55" x2="66" y2="74" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="66" y1="74" x2="60" y2="60" stroke="#059669" strokeWidth="2"/>
-        <text x="14" y="58" fontSize="5.5" fill="#059669">Level ✓</text>
-        <text x="14" y="96" fontSize="6" fill="#059669">Knee over toe · pelvis level</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">VALGUS COLLAPSE</text>
-        <circle cx="58" cy="18" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="58" y1="25" x2="52" y2="55" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="38" y1="53" x2="64" y2="59" stroke="#dc2626" strokeWidth="3"/>
-        <path d="M36,51 L30,58" stroke="#dc2626" strokeWidth="2" fill="none"/>
-        <polygon points="28,57 30,62 34,58" fill="#dc2626"/>
-        <text x="4" y="56" fontSize="5" fill="#dc2626">Drop</text>
-        <line x1="46" y1="53" x2="54" y2="78" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="54" y1="78" x2="48" y2="95" stroke="#dc2626" strokeWidth="2"/>
-        <path d="M54,70 L62,68" stroke="#f97316" strokeWidth="2" fill="none"/>
-        <polygon points="62,66 66,68 62,70" fill="#f97316"/>
-        <text x="68" y="71" fontSize="5" fill="#f97316">Valgus</text>
-        <text x="4" y="100" fontSize="5.5" fill="#dc2626">Pelvic drop + knee valgus</text>
-      </svg>
-    ),
-    observations:[
-      { id:"pelvis", q:"Pelvic position during squat?",
-        opts:["✓ Level or slight contralateral hike","⚠ Mild ipsilateral drop (<2cm)","✗ Clear Trendelenburg drop","✗ Pelvic rotation (trunk twist)"],
-        clues:["","Minor glute med fatigue — compare sides and endurance","Glute med weakness stance side — confirm with hip abductor MMT at 0° and sidelying","Rotational instability — assess multifidus and oblique activation"] },
-      { id:"knee",   q:"Knee tracking?",
-        opts:["✓ Over 2nd toe throughout","⚠ Mild medial drift at depth","✗ Clear valgus from initiation","✗ Lateral thrust"],
-        clues:["","Minor glute med weakness or foot pronation — monitor bilaterally","Dynamic valgus — priority rehab: glute med, glute max, VMO activation. Assess foot pronation","Lateral compartment OA or LCL laxity possible — do varus stress test"] },
-      { id:"trunk",  q:"Trunk alignment?",
-        opts:["✓ Upright midline","⚠ Ipsilateral trunk lean","✗ Clear compensated Trendelenburg lean","✗ Forward trunk collapse"],
-        clues:["","Minor glute med compensation — common in early weakness","Classic Duchenne — trunk shifts ipsilateral to unload weak glute med","Hip flexor weakness or fear-avoidance — assess hip flexor MMT and pain behaviour"] },
-      { id:"depth",  q:"Depth achieved?",
-        opts:["✓ 60°+ knee flexion controlled","⚠ Limited depth (<45°)","✗ Collapses before depth"],
-        clues:["","Hip flexor tightness, hip joint restriction or pain — FADIR screen","Pain-limited or strength-limited — determine which: if pain stops before strength fails = likely hip joint / labral"] },
-      { id:"pain",   q:"Pain during single leg squat?",
-        opts:["✓ No pain","⚠ Lateral hip / gluteal pain","⚠ Groin / anterior hip pain","✗ Knee medial pain"],
-        clues:["","Greater trochanteric bursitis / glute med tendinopathy — do lateral hip palpation and Ober test","Hip joint pathology / labral tear — do FADIR, FABER, hip quadrant test","Medial knee overload secondary to valgus — screen PF joint + MCL"] },
-    ],
-    grades:["Normal — Level pelvis, knee tracking, controlled to depth","Compensated — Minor pelvic drop or mild valgus without pain","Abnormal — Trendelenburg, valgus collapse, pain, or cannot complete"],
-  },
-  {
-    id:"hfs_hinge", icon:"⚽", label:"Hip Hinge Pattern",
-    subtitle:"Posterior Chain Length + Glute Max Activation",
-    phase:"Sagittal Hip Mobility / Posterior Chain",
-    setup:"Standing, feet hip-width, slight knee bend. Patient hinges at hips pushing glutes back (deadlift start position). Spine neutral. Reach fingertips toward floor. Assess spinal position and depth. × 3.",
-    normalDesc:"Spine neutral throughout, 70–90° hip flexion, hamstring stretch felt, glutes loaded, no lumbar flexion to achieve depth.",
-    svgNormal:(
-      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        <circle cx="28" cy="16" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="28" y1="22" x2="28" y2="52" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="28" y1="52" x2="22" y2="78" stroke="#059669" strokeWidth="2"/>
-        <line x1="28" y1="52" x2="34" y2="78" stroke="#059669" strokeWidth="2"/>
-        <text x="14" y="92" fontSize="5.5" fill="#059669">Standing</text>
-        <circle cx="82" cy="24" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="82" y1="30" x2="70" y2="54" stroke="#059669" strokeWidth="2.5"/>
-        <path d="M70,54 Q66,52 64,48" stroke="#059669" strokeWidth="1.5" fill="none" strokeDasharray="2,2"/>
-        <line x1="70" y1="54" x2="64" y2="76" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="64" y1="76" x2="64" y2="94" stroke="#059669" strokeWidth="2"/>
-        <line x1="70" y1="54" x2="80" y2="76" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="80" y1="76" x2="80" y2="94" stroke="#059669" strokeWidth="2"/>
-        <text x="88" y="42" fontSize="5.5" fill="#059669">Neutral</text>
-        <text x="88" y="48" fontSize="5.5" fill="#059669">spine ✓</text>
-        <path d="M82,30 Q88,38 88,44" stroke="#059669" strokeWidth="1" fill="none" strokeDasharray="2,2"/>
-        <text x="50" y="100" fontSize="5.5" fill="#059669">Hip hinge</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 120 100" style={{width:"100%",maxWidth:120}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">LUMBAR DOMINANT</text>
-        <circle cx="70" cy="24" r="6" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <path d="M70,30 Q62,44 58,54" stroke="#dc2626" strokeWidth="2.5" fill="none"/>
-        <line x1="58" y1="54" x2="54" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="54" y1="76" x2="54" y2="94" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="58" y1="54" x2="68" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="68" y1="76" x2="68" y2="94" stroke="#dc2626" strokeWidth="2"/>
-        <path d="M70,30 Q78,40 76,52" stroke="#f97316" strokeWidth="2" fill="none"/>
-        <text x="78" y="44" fontSize="5.5" fill="#f97316">Lumbar</text>
-        <text x="78" y="50" fontSize="5.5" fill="#f97316">flexes ✗</text>
-        <path d="M44,44 L36,44" stroke="#dc2626" strokeWidth="2" fill="none"/>
-        <polygon points="36,42 32,44 36,46" fill="#dc2626"/>
-        <text x="4" y="44" fontSize="5" fill="#dc2626">Rounds</text>
-        <text x="28" y="100" fontSize="5.5" fill="#dc2626">Lumbar rounds — hip inflexibility</text>
-      </svg>
-    ),
-    observations:[
-      { id:"spine",  q:"Lumbar spine position at depth?",
-        opts:["✓ Neutral throughout","⚠ Slight loss of neutral at full depth","✗ Lumbar flexion throughout","✗ Hyper-extends lumbar (anterior tilt)"],
-        clues:["","Minor hamstring or posterior chain restriction — monitor with flexibility work","Hamstring / posterior chain restriction forcing lumbar flexion substitution. Key disc loading pattern — clinical priority","Lumbar extensor dominance — posterior pelvic tilt mobility exercises needed. Screen for anterior hip tightness"] },
-      { id:"depth",  q:"Hip flexion depth achieved?",
-        opts:["✓ 70°+ (good posterior chain length)","⚠ 45–70° (mild restriction)","✗ <45° (significant restriction)"],
-        clues:["","Moderate hamstring or hip capsule restriction — Thomas test + passive SLR","Significant posterior chain restriction — do SLR, Thomas test, hip joint quadrant test to differentiate hamstring vs capsule"] },
-      { id:"shift",  q:"Weight distribution / lateral shift?",
-        opts:["✓ Symmetric bilateral","⚠ Slight lateral shift","✗ Clear shift to one side"],
-        clues:["","Monitor — possible hip asymmetry","Unilateral hip joint restriction or SIJ dysfunction — compare FABER/FADIR bilaterally"] },
-      { id:"kb",     q:"Knee position throughout?",
-        opts:["✓ Slight flex maintained","⚠ Knees straighten excessively","✗ Valgus during hinge"],
-        clues:["","Hamstring dominant strategy — cueing needed for hip hinge","Dynamic valgus even in hinge position — significant glute med weakness. Priority in rehab"] },
-      { id:"pain",   q:"Pain during hip hinge?",
-        opts:["✓ No pain","⚠ Posterior thigh (hamstring)","⚠ Groin / anterior hip","✗ Lumbar pain"],
-        clues:["","Hamstring tightness or proximal hamstring tendinopathy — palpate ischial tuberosity","Anterior hip impingement during flexion — FAI screen (FADIR), hip quadrant test","Lumbar loading — disc or facet sensitisation. Reduce range and assess centralisation"] },
-    ],
-    grades:["Normal — Neutral spine, 70°+ hip flexion, symmetric","Compensated — Slight loss of neutral at end range only","Abnormal — Lumbar dominant, <45° depth, pain, or lateral shift"],
-  },
-  {
-    id:"hfs_ext", icon:"🏊", label:"Prone Hip Extension",
-    subtitle:"Glute Max Firing Pattern + Lumbar Compensation",
-    phase:"Posterior Chain Motor Control (Janda)",
-    setup:"Patient prone. Hip neutral, knee straight. Slowly lift one leg off table ~10–15cm. Observe firing sequence: Glute max → Hamstring → Contralateral erector. Repeat × 3 each side. Therapist palpates glute max and hamstring.",
-    normalDesc:"Glute max fires FIRST (palpable), then hamstring, then erector. Pelvis stays level. No lumbar rotation to initiate extension.",
-    svgNormal:(
-      <svg viewBox="0 0 130 100" style={{width:"100%",maxWidth:130}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL SEQUENCE</text>
-        <rect x="8" y="52" width="115" height="6" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1"/>
-        <text x="14" y="62" fontSize="5" fill="#6b7280">table</text>
-        <circle cx="28" cy="38" r="6" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="28" y1="44" x2="68" y2="52" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="68" y1="52" x2="110" y2="50" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="110" y1="50" x2="120" y2="38" stroke="#059669" strokeWidth="2.5"/>
-        <circle cx="76" cy="50" r="5" fill="#059669" opacity="0.2" stroke="#059669" strokeWidth="1.5"/>
-        <text x="72" y="48" fontSize="5.5" fill="#059669" fontWeight="bold">1</text>
-        <text x="64" y="44" fontSize="5" fill="#059669">Glute</text>
-        <circle cx="96" cy="50" r="5" fill="#d97706" opacity="0.2" stroke="#d97706" strokeWidth="1.5"/>
-        <text x="92" y="48" fontSize="5.5" fill="#d97706" fontWeight="bold">2</text>
-        <text x="88" y="44" fontSize="5" fill="#d97706">Hamst</text>
-        <text x="50" y="96" fontSize="6" fill="#059669">Glute(1) → Hamstring(2) → Erector(3)</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 130 100" style={{width:"100%",maxWidth:130}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">ABNORMAL — GLUTE INHIBITED</text>
-        <rect x="8" y="52" width="115" height="6" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1"/>
-        <circle cx="28" cy="38" r="6" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="28" y1="44" x2="68" y2="52" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="68" y1="52" x2="110" y2="48" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="110" y1="48" x2="120" y2="36" stroke="#dc2626" strokeWidth="2.5"/>
-        <circle cx="76" cy="51" r="5" fill="#dc2626" opacity="0.2" stroke="#dc2626" strokeWidth="1.5"/>
-        <text x="72" y="49" fontSize="5.5" fill="#dc2626" fontWeight="bold">✗</text>
-        <text x="64" y="44" fontSize="5" fill="#dc2626">No glute</text>
-        <circle cx="92" cy="50" r="5" fill="#f97316" opacity="0.2" stroke="#f97316" strokeWidth="1.5"/>
-        <text x="88" y="48" fontSize="5.5" fill="#f97316" fontWeight="bold">1</text>
-        <text x="84" y="44" fontSize="5" fill="#f97316">Hamst</text>
-        <path d="M28,46 L28,55" stroke="#dc2626" strokeWidth="1.5" strokeDasharray="2,2"/>
-        <text x="4" y="76" fontSize="5.5" fill="#dc2626">Lumbar rotation to initiate</text>
-        <text x="4" y="96" fontSize="5.5" fill="#dc2626">Hamstring dominant = Janda LCS</text>
-      </svg>
-    ),
-    observations:[
-      { id:"seq",    q:"Glute max firing sequence?",
-        opts:["✓ Glute fires first (palpable)","⚠ Glute and hamstring fire simultaneously","✗ Hamstring fires first — glute delayed","✗ No palpable glute max contraction"],
-        clues:["","Minor sequencing issue — monitor under load","Classic Janda Lower Crossed Syndrome pattern. Hamstring overactive, glute max inhibited. Priority: glute max activation (bridging, clamshell)","Significant glute max inhibition — likely pain inhibition or Janda LCS. Check for hip flexor tightness (Thomas test) and lumbar extension pain"] },
-      { id:"lumbar", q:"Lumbar/pelvic movement to initiate?",
-        opts:["✓ Pelvis stays level","⚠ Slight lumbar extension","✗ Clear lumbar rotation","✗ Anterior pelvic tilt / hyperlordosis"],
-        clues:["","Minor — cue neutral spine","Substitution for glute max — reduce range until glute activates","Classic LCS compensation — assess hip flexor length. Tight iliopsoas anteriorly tilts pelvis, inhibits glute max"] },
-      { id:"sym",    q:"Bilateral comparison?",
-        opts:["✓ Symmetric sequence both sides","⚠ Minor asymmetry","✗ Clear unilateral glute inhibition","✗ Unable to complete one side due to pain"],
-        clues:["","Monitor under loading","Unilateral glute inhibition — likely same-side hip flexor tightness or pain inhibition from SIJ/hip joint","Pain-inhibited — assess SIJ and hip joint before loading"] },
-      { id:"strength",q:"Perceived glute contraction strength?",
-        opts:["✓ Strong contraction felt","⚠ Mild contraction — fatigues quickly","✗ Very weak — barely palpable","✗ No contraction detected"],
-        clues:["","Glute endurance deficit — progressive loading needed","Glute max grade 3–4/5 weakness — formal MMT and loading progression","Severe glute max weakness — screen L5/S1 myotome, piriformis, and SIJ"] },
-      { id:"pain",   q:"Pain during prone extension?",
-        opts:["✓ No pain","⚠ Posterior hip / SIJ","⚠ Anterior hip / groin","✗ Lumbar pain"],
-        clues:["","SIJ provocation — do Gillet test, SIJ compression/distraction","Hip joint or anterior labrum — FADIR test","Facet joint or disc sensitisation — reduce range, assess prone instability"] },
-    ],
-    grades:["Normal — Glute first, level pelvis, strong contraction, symmetric","Compensated — Simultaneous or minor delay, no pain","Abnormal — Hamstring dominant, lumbar rotation, pain, or absent glute"],
-  },
-  {
-    id:"hfs_rot", icon:"🔄", label:"Seated Hip Rotation",
-    subtitle:"Hip IR/ER Range — FAI + Capsular Screen",
-    phase:"Hip Joint Mobility / Capsular Pattern",
-    setup:"Patient seated at edge of table, hip at 90°. Let foot swing medially (ER) then laterally (IR). Assess range. Normal IR 30–40°, ER 40–60°. Compare bilaterally.",
-    normalDesc:"IR 30–40°, ER 40–60°. Equal bilateral. No end-range pain. Pain or restriction = capsular pattern or FAI.",
-    svgNormal:(
-      <svg viewBox="0 0 130 100" style={{width:"100%",maxWidth:130}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL RANGES</text>
-        <circle cx="65" cy="28" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="65" y1="35" x2="65" y2="60" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="50" y1="60" x2="80" y2="60" stroke="#059669" strokeWidth="3"/>
-        <line x1="65" y1="60" x2="65" y2="90" stroke="#059669" strokeWidth="2.5"/>
-        <path d="M65,90 Q52,85 48,78" stroke="#059669" strokeWidth="2" fill="none"/>
-        <path d="M65,90 Q78,85 82,78" stroke="#059669" strokeWidth="2" fill="none"/>
-        <text x="24" y="80" fontSize="6" fill="#059669" fontWeight="bold">ER 45°</text>
-        <text x="82" y="80" fontSize="6" fill="#059669" fontWeight="bold">IR 35°</text>
-        <text x="55" y="95" fontSize="5.5" fill="#059669">Normal bilateral</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 130 100" style={{width:"100%",maxWidth:130}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">RESTRICTION PATTERNS</text>
-        <circle cx="65" cy="26" r="7" fill="none" stroke="#6b7280" strokeWidth="2"/>
-        <line x1="65" y1="33" x2="65" y2="55" stroke="#6b7280" strokeWidth="2.5"/>
-        <line x1="50" y1="55" x2="80" y2="55" stroke="#6b7280" strokeWidth="3"/>
-        <line x1="65" y1="55" x2="65" y2="82" stroke="#6b7280" strokeWidth="2.5"/>
-        <path d="M65,82 Q56,78 54,72" stroke="#059669" strokeWidth="2" fill="none"/>
-        <text x="28" y="74" fontSize="5.5" fill="#059669">ER ok</text>
-        <path d="M65,82 Q68,76 68,70" stroke="#dc2626" strokeWidth="2.5" fill="none"/>
-        <text x="70" y="72" fontSize="5.5" fill="#dc2626">IR ✗</text>
-        <text x="4" y="90" fontSize="5" fill="#dc2626">IR loss = posterior capsule / FAI</text>
-        <text x="4" y="100" fontSize="5" fill="#f97316">Bilateral IR loss = OA pattern</text>
-      </svg>
-    ),
-    observations:[
-      { id:"ir",     q:"Internal rotation range?",
-        opts:["✓ 30–40° (normal)","⚠ 20–29° (mildly restricted)","✗ <20° (significant restriction)","✗ Painful before end range"],
-        clues:["","Minor posterior capsule tightness or early FAI — FADIR test","Significant IR restriction: posterior capsule (GIRD equivalent at hip) or FAI. Screen FADIR, hip quadrant. Cam or pincer FAI most restricted in IR","Pain before end-range in IR = FAI or early hip OA — refer for imaging if bilateral"] },
-      { id:"er",     q:"External rotation range?",
-        opts:["✓ 40–60° (normal)","⚠ 30–39° (mildly restricted)","✗ <30° (significant restriction)","✗ Bilateral equal restriction"],
-        clues:["","Minor anterior capsule tightness","Anterior capsule or iliopsoas tightness — do Thomas test + passive ER in supine","Bilateral equal restriction — capsular pattern of hip OA (most loss in IR/flex/abd then ER/ext). Refer for imaging if >50yo"] },
-      { id:"sym",    q:"Side-to-side symmetry?",
-        opts:["✓ Symmetric (within 10°)","⚠ 10–20° asymmetry","✗ >20° clear asymmetry","✗ Unilateral end-range pain"],
-        clues:["","Monitor — may be positional or bony asymmetry","Unilateral restriction suggests joint, labral or capsular pathology on restricted side","Unilateral pain at end-range = labral, FAI or early OA — FADIR provocation test"] },
-      { id:"pain",   q:"Pain provocation during rotation?",
-        opts:["✓ No pain","⚠ Anterior groin pain at end IR","⚠ Posterior hip pain at end ER","✗ Pain and apprehension — instability"],
-        clues:["","Classic FAI / labral impingement sign in IR — do FADIR (flexion, adduction, IR) test next","Posterior capsule or external rotator pain — piriformis / external rotator screen, FABER test","Posterior instability pattern — do posterior hip instability tests"] },
-      { id:"oa",     q:"Quality of end-feel?",
-        opts:["✓ Soft tissue / firm (normal)","⚠ Firm and early","✗ Hard (bony) end-feel","✗ Springy / empty end-feel"],
-        clues:["","","Osteophyte or bony restriction — hip OA likely. Confirm with FABER range and X-ray correlation","Labral or intra-articular — log-roll test, hip quadrant (scouring) test"] },
-    ],
-    grades:["Normal — IR 30–40°, ER 40–60°, symmetric, pain-free","Compensated — Minor restriction without pain, within 10° bilaterally","Abnormal — Pain, >20° asymmetry, bony end-feel, or restricted bilateral"],
-  },
-  {
-    id:"hfs_step", icon:"🪜", label:"Lateral Step Down",
-    subtitle:"Eccentric Glute Med — Frontal Plane Deceleration",
-    phase:"Hip Abductor Eccentric Control",
-    setup:"Patient stands sideways on 20cm step, arms crossed. Slowly lower unsupported leg toward floor (eccentric control × 5). Observe pelvic stability, knee tracking. Both sides.",
-    normalDesc:"Pelvis stays level or rises slightly on lowering side. Knee tracks over 2nd toe. Slow controlled descent. No trunk sway.",
-    svgNormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#059669" fontWeight="bold">NORMAL</text>
-        <rect x="20" y="76" width="70" height="14" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.5"/>
-        <text x="34" y="87" fontSize="5.5" fill="#6b7280">Step (20cm)</text>
-        <circle cx="55" cy="20" r="7" fill="none" stroke="#059669" strokeWidth="2"/>
-        <line x1="55" y1="27" x2="55" y2="57" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="40" y1="57" x2="70" y2="57" stroke="#059669" strokeWidth="3"/>
-        <text x="14" y="60" fontSize="5.5" fill="#059669">Level ✓</text>
-        <line x1="48" y1="57" x2="46" y2="76" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="46" y1="76" x2="46" y2="90" stroke="#059669" strokeWidth="2"/>
-        <line x1="62" y1="57" x2="64" y2="76" stroke="#059669" strokeWidth="2.5"/>
-        <line x1="64" y1="76" x2="72" y2="90" stroke="#059669" strokeWidth="2"/>
-        <text x="12" y="100" fontSize="5.5" fill="#059669">Controlled descent</text>
-      </svg>
-    ),
-    svgAbnormal:(
-      <svg viewBox="0 0 110 100" style={{width:"100%",maxWidth:110}}>
-        <text x="4" y="10" fontSize="7" fill="#dc2626" fontWeight="bold">PELVIC DROP</text>
-        <rect x="20" y="76" width="70" height="14" rx="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.5"/>
-        <circle cx="58" cy="20" r="7" fill="none" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="58" y1="27" x2="52" y2="57" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="36" y1="54" x2="66" y2="62" stroke="#dc2626" strokeWidth="3"/>
-        <path d="M34,56 L30,64" stroke="#dc2626" strokeWidth="2" fill="none"/>
-        <polygon points="28,63 30,68 34,64" fill="#dc2626"/>
-        <text x="4" y="60" fontSize="5" fill="#dc2626">Drop</text>
-        <line x1="44" y1="54" x2="48" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="48" y1="76" x2="42" y2="90" stroke="#dc2626" strokeWidth="2"/>
-        <line x1="62" y1="62" x2="68" y2="76" stroke="#dc2626" strokeWidth="2.5"/>
-        <line x1="68" y1="76" x2="76" y2="90" stroke="#dc2626" strokeWidth="2"/>
-        <path d="M48,68 L54,66" stroke="#f97316" strokeWidth="1.5" fill="none"/>
-        <text x="56" y="68" fontSize="5" fill="#f97316">Valgus</text>
-        <text x="4" y="100" fontSize="5.5" fill="#dc2626">Drop + valgus = glute med deficit</text>
-      </svg>
-    ),
-    observations:[
-      { id:"pelvis", q:"Pelvic control during descent?",
-        opts:["✓ Level throughout descent","⚠ Mild drop at end range only","✗ Drop immediately on loading","✗ Trunk compensates (ipsilateral lean)"],
-        clues:["","Glute med endurance deficit — eccentric strengthening","Significant glute med weakness — priority. Confirm with MMT sidelying hip abduction","Compensated Trendelenburg — trunk offloads hip abductor demand. More severe than apparent. Assess MMT with trunk stabilised"] },
-      { id:"knee",   q:"Knee tracking on step leg?",
-        opts:["✓ Over 2nd toe throughout","⚠ Mild medial drift","✗ Clear valgus collapse","✗ Lateral thrust"],
-        clues:["","Minor glute med / VMO ratio — monitor","Dynamic valgus — foot pronation screen + hip abductor / external rotator MMT","Lateral compartment / LCL — do varus stress test"] },
-      { id:"speed",  q:"Speed of descent control?",
-        opts:["✓ Slow and controlled","⚠ Slightly fast but recovers","✗ Drops uncontrolled","✗ Cannot complete movement"],
-        clues:["","Minor eccentric deficit","Significant eccentric weakness — nordic-type progression for glute med. Assess hip abductor MMT grade","Severe weakness — formal hip abductor + hip extensor MMT, neurological screen L5"] },
-      { id:"sym",    q:"Side-to-side difference?",
-        opts:["✓ Symmetric","⚠ Minor difference","✗ Clear asymmetry","✗ One side unable to control"],
-        clues:["","Monitor","Unilateral deficit — hip pathology or SIJ dysfunction on weaker side","Significant unilateral weakness — screen for L5 myotome weakness, hip OA, or post-surgical inhibition"] },
-      { id:"pain",   q:"Pain during lateral step down?",
-        opts:["✓ No pain","⚠ Lateral hip pain","⚠ Groin / anterior hip","✗ Medial knee pain"],
-        clues:["","Greater trochanteric bursitis or glute med tendinopathy — palpate GT, Ober test","Hip joint loading — FADIR, hip quadrant, labral screen","Medial knee overload from dynamic valgus — PF joint + MCL assessment"] },
-    ],
-    grades:["Normal — Level pelvis, knee tracking, controlled descent","Compensated — Minor drop at depth or mild valgus","Abnormal — Pelvic drop on loading, valgus collapse, pain, or cannot complete"],
-  },
-,
-  // ── FMS: Deep Squat ───────────────────────────────────────────────────────
-  {
-    id:"fms_sq", icon:"🏋️", label:"Deep Squat (FMS)",
-    subtitle:"Global Lower Chain · FMS Standard Test",
-    phase:"Multi-Joint / Kinetic Chain Screen",
-    setup:"Feet shoulder-width, toes out 5–10°. Hold dowel overhead, arms fully extended. Descend as deep as possible, heels flat. Observe from front AND side. Score: 3 = full depth no compensation. 2 = heel rise / arm drop / lean. 1 = unable to achieve depth even with heel lift. 0 = pain.",
-    normalDesc:"Full depth — thighs parallel or below. Torso vertical/parallel to tibia. Knees track over 2nd toe. Dowel remains overhead. Heels flat throughout. No trunk lean or rotation.",
-    observations:[
-      { id:"depth", q:"Squat depth achieved?",
-        opts:["✓ Full depth — thighs parallel or below","⚠ Partial — 3/4 depth only","✗ Cannot achieve parallel","✗ Pain reproduced on squat"],
-        clues:["","Minor hip or ankle restriction — heel lift test to differentiate","Heel lift test: if depth improves with heels raised = ankle DF restriction. No change = hip flexor or thoracic extension. Address primary driver first","Score 0. Screen hip FAI (FADIR), knee OA, or lumbar disc load test before reloading"] },
-      { id:"heel", q:"Heel contact throughout?",
-        opts:["✓ Heels flat throughout","⚠ Mild heel rise at end range","✗ Both heels rise significantly","✗ Asymmetric heel rise (one side)"],
-        clues:["","Minor gastroc/soleus restriction — wall lunge drill + calf stretching","Talocrural DF restriction — talocrural PA mobilisation Grade III–IV + gastroc SMR + wall lunge drill 3 min daily","Asymmetric — treat restricted side. Check unilateral ankle injury or talocrural joint restriction ipsilateral to heel rise"] },
-      { id:"knee", q:"Knee tracking alignment?",
-        opts:["✓ Tracks over 2nd toe bilateral","⚠ Mild valgus tendency","✗ Bilateral knee valgus (collapse)","✗ Unilateral knee valgus"],
-        clues:["","Minor glute med weakness — band cue + clamshells","Glute med + ER weakness, adductor dominance. SMR adductors/TFL → activate glute med clamshell → lateral band walk → squat with band knee-out cue","Unilateral — asymmetric glute med inhibition. Often post-injury. Treat affected side: single-leg clamshell + single-leg glute bridge"] },
-      { id:"trunk", q:"Trunk position in squat?",
-        opts:["✓ Upright — parallel to tibia","⚠ Mild forward lean","✗ Significant trunk lean forward","✗ Lateral trunk shift"],
-        clues:["","Minor ankle DF or hip flexor restriction — screen ankle first with heel lift test","Ankle DF, hip flexor, OR thoracic extension — identify primary driver. Goblet squat (counterbalance) helps reveal true driver","Lateral shift = unilateral hip restriction or lumbar disc (shifts away from pain). Screen hip IR + lumbar quadrant test"] },
-      { id:"arm", q:"Overhead arm position?",
-        opts:["✓ Arms fully extended overhead","⚠ Slight elbow bend at bottom","✗ Arms fall forward significantly","✗ Cannot maintain overhead at all"],
-        clues:["","Minor thoracic restriction or lat tightness — foam roller + lat stretch","Thoracic + lat restriction → arms fall into flexion. Foam roller thoracic extension + lat SMR + overhead wall slide","Significant shoulder flexion / thoracic deficit — screen shoulder ROM and thoracic extension separately before squat loading"] },
-    ],
-    grades:["Normal (FMS 3) — Full depth, heels flat, knees tracking, dowel overhead","Compensated (FMS 2) — Minor compensation: heel rise, arm drop, or forward lean","Abnormal (FMS 0–1) — Cannot achieve depth or pain reproduced"],
-  },
-  // ── FMS: Hurdle Step ──────────────────────────────────────────────────────
-  {
-    id:"fms_hs", icon:"🏃", label:"Hurdle Step (FMS)",
-    subtitle:"Single-Leg Stance Control · Hip Hinge Quality",
-    phase:"Hip Stability / Single-Leg Control Screen",
-    setup:"Patient stands on one leg on a step-box (set at tibial tuberosity height). Step opposite leg over hurdle — clear without touching — return to start. Observe from front and side. Score: 3 = controlled step, pelvis level, no trunk lean. 2 = contact hurdle / pelvis drop / arm movement. 1 = contact step or loss of balance. 0 = pain.",
-    normalDesc:"Stance hip stays stable. Pelvis level throughout step. Trunk stays upright — no lateral lean. Step leg clears hurdle cleanly. Foot dorsiflexed during swing phase. Returns to start with control.",
-    observations:[
-      { id:"pelvis", q:"Pelvic level during stance?",
-        opts:["✓ Pelvis level throughout","⚠ Minor pelvic drop (<2cm)","✗ Contralateral pelvis drops >2cm (Trendelenburg)","✗ Compensatory trunk lean over stance leg"],
-        clues:["","Minor glute med weakness — clamshells, lateral band walk","Trendelenburg positive — glute med cannot support pelvis. Priority: CPA glute med (release TFL/QL → activate glute med → lateral band walk → single-leg stance)","Compensatory lurch = severe glute med weakness. Patient reduces hip abductor demand by leaning trunk. Same protocol as Trendelenburg — treat glute med urgently"] },
-      { id:"trunk", q:"Trunk position during step?",
-        opts:["✓ Upright trunk — no lateral lean","⚠ Mild lean with control","✗ Significant lateral trunk lean","✗ Forward trunk lean + loss of control"],
-        clues:["","Minor hip strategy adjustment — proprioceptive training on balance board","Lateral trunk lean = glute med weakness (reduces moment arm). Treat with glute med activation before progressing to hurdle","Forward lean = hip flexor dominance or lack of hip extension control. Hip flexor stretching + glute max activation"] },
-      { id:"arm", q:"Arm movement to compensate?",
-        opts:["✓ Arms at sides — no movement","⚠ Minor arm swing for balance","✗ Arms move significantly to compensate","✗ Loses balance — touches hurdle or step"],
-        clues:["","Minor balance deficit — proprioceptive training: single-leg stance, BOSU","Compensatory arm swing = lack of hip/ankle stability on stance leg. Multi-level deficit — screen ankle proprioception + hip stability together","Score 1 — significant proprioceptive deficit. Begin with supported single-leg stance, progress to unsupported, then dynamic"] },
-      { id:"df", q:"Swing leg dorsiflexion / hip flexion?",
-        opts:["✓ Foot dorsiflexed, hip fully flexes to clear","⚠ Foot drops / minor toe catch","✗ Foot drop pattern — cannot dorsiflex","✗ Insufficient hip flexion — compensates with trunk lean"],
-        clues:["","Minor tibialis anterior weakness — dorsiflexion strengthening (resistance band)","Foot drop = tibialis anterior inhibition or L4/L5 nerve root. Neurological screen if acute onset. Ankle DF strengthening if chronic","Insufficient hip flexion — hip flexor weakness or hip mobility restriction. Screen Thomas test and psoas strength"] },
-      { id:"sym", q:"Symmetry left vs right?",
-        opts:["✓ Symmetric bilateral","⚠ Mild asymmetry — same pattern","✗ Clear asymmetry — one side worse","✗ Cannot complete one side at all"],
-        clues:["","Monitor — minor side-to-side difference may be normal dominant/non-dominant","Asymmetry >1 score = significant. Side with score ≤ 2 when other side is 3 = increased injury risk. Treat weaker side first","Complete failure one side = acute inhibition. Screen for recent injury, pain inhibition, or neural involvement on that side"] },
-    ],
-    grades:["Normal (FMS 3) — Pelvis level, trunk upright, clean step, no compensation","Compensated (FMS 2) — Minor pelvic drop, arm movement, or hurdle contact","Abnormal (FMS 0–1) — Trendelenburg, loss of balance, or pain"],
-  },
-  // ── FMS: Inline Lunge ─────────────────────────────────────────────────────
-  {
-    id:"fms_il", icon:"🧎", label:"Inline Lunge (FMS)",
-    subtitle:"Sagittal Plane Control · Frontal Stability",
-    phase:"Hip-Knee-Ankle Sagittal Chain Screen",
-    setup:"Patient stands heel-to-toe (stride stance) on a 2×6 board, holding dowel vertically behind spine (touching head, thoracic, and sacrum). Descend to touch back knee to board. Observe from front and side. Score: 3 = controlled descent, torso stays upright, knee touches board. 2 = trunk deviation, loss of balance, or dowel contact lost. 1 = loss of balance. 0 = pain.",
-    normalDesc:"Torso upright and dowel maintains 3-point contact (head, thoracic, sacrum). Lead knee tracks over 2nd toe. Rear knee touches board without collapse. Pelvis level. No trunk rotation or lateral shift.",
-    observations:[
-      { id:"knee_track", q:"Lead knee tracking?",
-        opts:["✓ Tracks over 2nd toe","⚠ Mild medial deviation","✗ Significant valgus — knee collapses in","✗ Lateral deviation (varus)"],
-        clues:["","Minor VMO or glute med weakness — terminal knee extension + clamshells","Medial knee collapse = VMO + glute med insufficient. Band cue above knees during lunge + VMO TKE + glute med protocol","Lateral deviation = IT band/TFL overactivity. IT band SMR + TFL release + adductor activation"] },
-      { id:"trunk", q:"Trunk upright / dowel contact?",
-        opts:["✓ Dowel — 3-point contact maintained","⚠ Minor trunk forward lean","✗ Significant trunk lean — loses dowel contact","✗ Rotation or lateral trunk shift"],
-        clues:["","Hip flexor restriction limiting upright torso — couch stretch + hip flexor activation","Significant hip flexor tightness or ankle DF restriction. Screen with Thomas test and DF lunge test","Rotation = hip mobility asymmetry or thoracic restriction. Assess hip IR/ER bilaterally and thoracic rotation"] },
-      { id:"balance", q:"Overall balance / control during lunge?",
-        opts:["✓ Controlled throughout","⚠ Wobbles but maintains position","✗ Significant balance loss — steps out","✗ Falls or loses position"],
-        clues:["","Minor proprioceptive deficit — lunge with support progressing to unsupported","Significant balance deficit — begin split squat (stable position) with control before progressing to true inline lunge","Score 1 — major motor control deficit. Step-back lunge from stable position, emphasise slow eccentric before adding dynamic"] },
-      { id:"pelvis", q:"Pelvic control during descent?",
-        opts:["✓ Pelvis level and neutral","⚠ Minor anterior tilt","✗ Pelvic drop contralaterally","✗ Anterior pelvic tilt + lumbar extension compensation"],
-        clues:["","Minor TA or gluteal weakness — TA drawing-in + glute bridge before lunge","Lateral pelvic drop during lunge = weak hip abductors on stance side. Trendelenburg equivalent","Anterior tilt + extension = hip flexor dominant, glute max inhibited. Release hip flexors → activate glute max → progress to lunge"] },
-      { id:"sym", q:"Symmetry?",
-        opts:["✓ Symmetric bilateral","⚠ Mild asymmetry","✗ Clear asymmetry one side worse","✗ Cannot complete one side"],
-        clues:["","Monitor — minor asymmetry may relate to dominant leg","Asymmetry = treat weaker side. Common after unilateral lower limb injury. Single-leg work on affected side","Complete failure = pain inhibition or motor control deficit. Screen for pain on that side before continuing"] },
-    ],
-    grades:["Normal (FMS 3) — Upright trunk, knee tracking, controlled throughout","Compensated (FMS 2) — Minor deviation, lean, or balance wobble","Abnormal (FMS 0–1) — Loss of control, significant valgus, or pain"],
-  },
-  // ── FMS: Active Straight Leg Raise ────────────────────────────────────────
-  {
-    id:"fms_aslr", icon:"🦵", label:"Active Straight Leg Raise (FMS)",
-    subtitle:"Hamstring / Hip Flexor Mobility · Core Stability",
-    phase:"Posterior Chain / Core Stability Screen",
-    setup:"Patient supine, legs extended. Place a dowel under the lumbar lordosis (maintains neutral). Patient raises one leg as high as possible, ankle dorsiflexed, knee straight. Observe where the malleolus of raised leg is relative to the opposite leg. Score: 3 = malleolus passes opposite ASIS. 2 = between knee and ASIS. 1 = at or below knee. 0 = pain or lumbar flatten.",
-    normalDesc:"Active SLR to at least 70° (malleolus at or above opposite ASIS). Lumbar lordosis maintained on dowel. Opposite leg stays flat. No trunk rotation or hip hike. Ankle stays dorsiflexed.",
-    observations:[
-      { id:"height", q:"SLR height achieved?",
-        opts:["✓ Malleolus passes opposite ASIS (≥70°)","⚠ Between knee and ASIS (50–70°)","✗ At or below knee level (<50°)","✗ Pain or lumbar flattening"],
-        clues:["","Minor hamstring or posterior capsule restriction — hamstring stretching (supine + active)","Significant hamstring or gastroc restriction. Passive vs active SLR comparison: if passive > active = hamstring strength component. If equal = pure mobility","Lumbar flattening = core stability deficit — lumbar cannot maintain neutral during hip flexion. TA + multifidus activation before SLR loading"] },
-      { id:"opp_leg", q:"Opposite leg stays flat?",
-        opts:["✓ Stays flat and still","⚠ Minor hip flexion drift","✗ Opposite hip flexes clearly","✗ Pelvis rotates / arches up"],
-        clues:["","Minor hip flexor overactivity on opposite side — monitor","Opposite hip flexion = hip flexor dominant strategy. Psoas overactivity lifting the non-tested leg. Cueing + hip flexor release contralateral","Pelvic rotation = lumbar instability. Core stability training priority — TA/multifidus before SLR progression"] },
-      { id:"knee", q:"Knee stays straight during raise?",
-        opts:["✓ Knee fully extended throughout","⚠ Minor knee bend at end range","✗ Knee bends significantly to achieve height","✗ Knee bends throughout — hamstring so tight cannot extend"],
-        clues:["","Minor hamstring tightness — active hamstring stretching at limit of range","Knee bends to achieve height = hamstring tight, substituting with hip flexion. True hamstring ROM must be measured with knee extended","Cannot extend = severe hamstring tightness. Passive stretching first, progress to active. Neural tension screen (slump + ULNT1) if reproduces radicular symptoms"] },
-      { id:"pelvis", q:"Pelvis / lumbar stability?",
-        opts:["✓ Neutral spine maintained","⚠ Minor posterior tilt","✗ Lumbar flattens on dowel","✗ Pelvic hike / rotation"],
-        clues:["","Minor control deficit — TA cueing during SLR","Core stability deficit — TA, multifidus, and deep hip flexors must stabilise lumbar before hamstring stretching is effective","Significant — begin SLR with supported knee (partial range) maintaining neutral. Progress gradually"] },
-      { id:"sym", q:"Symmetry L vs R?",
-        opts:["✓ Symmetric bilateral","⚠ Mild asymmetry (<10°)","✗ Clear asymmetry (≥10°)","✗ Cannot perform one side"],
-        clues:["","Normal — minor dominant limb difference acceptable","Asymmetry ≥10° = treat restricted side. Common after hamstring strain history. Screen for neural tension if unilateral restriction","Cannot perform = pain inhibition or neural tension. Slump test + SLR passive test before treating as mobility deficit"] },
-    ],
-    grades:["Normal (FMS 3) — Malleolus passes ASIS, neutral spine maintained","Compensated (FMS 2) — Malleolus between knee and ASIS, minor compensation","Abnormal (FMS 0–1) — Below knee, lumbar instability, or pain"],
-  }
-];
-
-function HipFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  useEffect(() => {
-    const saved = data["hfs_data"];
-    if (saved && typeof saved === "string") {
-      try {
-        const p = JSON.parse(saved);
-        if (p.findings) setFindings(p.findings);
-        if (p.grades)   setGrades(p.grades);
-        if (p.notes)    setNotes(p.notes);
-      } catch {}
-    }
-  }, []);
-
-  const save = (f, g, n) => set("hfs_data", JSON.stringify({ findings: f, grades: g, notes: n }));
-  const setObs = (tid, oid, val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
-  const setGrade = (tid, val) => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
-  const setNote = (tid, val) => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
-
-  const completedCount = HIP_TESTS.filter(t => grades[t.id] !== undefined).length;
-  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":g===2?"#dc2626":C.muted;
-
-  return (
-    <div>
-      <div style={{ background:"linear-gradient(135deg,rgba(217,70,239,0.08),rgba(124,58,237,0.05))", border:"1px solid rgba(217,70,239,0.22)", borderRadius:14, padding:"14px 16px", marginBottom:14 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
-          <span style={{ fontSize:"1.4rem" }}>🦷</span>
-          <div>
-            <div style={{ fontWeight:800, fontSize:"0.95rem", color:C.text }}>Hip Functional Screen</div>
-            <div style={{ fontSize:"0.78rem", color:C.muted }}>5 tests · Glute med/max · FAI screen · Motor control · Student guide</div>
-          </div>
-          <div style={{ marginLeft:"auto", textAlign:"right" }}>
-            <div style={{ fontSize:"1.2rem", fontWeight:900, color:"#d946ef" }}>{completedCount}/5</div>
-            <div style={{ fontSize:"0.78rem", color:C.muted }}>graded</div>
-          </div>
-        </div>
-        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
-          {HIP_TESTS.map(t => {
-            const g = grades[t.id]; const done = g !== undefined;
-            return (
-              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{ padding:"4px 10px", borderRadius:20, cursor:"pointer", fontSize:"0.78rem", fontWeight:700,
-                  border:`1px solid ${activeTest===t.id?"#d946ef":done?gradeColor(g)+"60":C.border}`,
-                  background:activeTest===t.id?"rgba(217,70,239,0.1)":done?`${gradeColor(g)}10`:"transparent",
-                  color:activeTest===t.id?"#d946ef":done?gradeColor(g):C.muted }}>
-                {t.icon} {t.label.split(" ").slice(0,2).join(" ")} {done?["✓","⚠","✗"][g]:""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {HIP_TESTS.map(t => {
-        const isOpen = activeTest===t.id; const g = grades[t.id]; const graded = g !== undefined;
-        return (
-          <div key={t.id} style={{ marginBottom:10, background:C.surface, borderRadius:14,
-            border:`1.5px solid ${isOpen?"#d946ef":graded?gradeColor(g)+"50":C.border}`,
-            overflow:"hidden", boxShadow:isOpen?"0 4px 16px rgba(217,70,239,0.08)":"0 1px 4px rgba(0,0,0,0.04)" }}>
-
-            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
-              style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", cursor:"pointer", borderLeft:`4px solid ${graded?gradeColor(g):C.border}` }}>
-              <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
-                <div style={{ fontSize:"0.75rem", color:C.muted }}>{t.subtitle}</div>
-              </div>
-              {graded && <span style={{ padding:"3px 10px", borderRadius:20, fontSize:"0.75rem", fontWeight:800, background:`${gradeColor(g)}15`, color:gradeColor(g), flexShrink:0 }}>{["Normal","Compensated","Abnormal"][g]}</span>}
-              <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
-            </div>
-
-            {isOpen && (
-              <div style={{ padding:"0 14px 14px" }}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                  <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#d946ef", textTransform:"uppercase", letterSpacing:"0.5px" }}>📐 Visual Guide</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{ fontSize:"0.8rem", padding:"2px 8px", borderRadius:6, border:`1px solid ${C.border}`, background:"transparent", color:C.muted, cursor:"pointer" }}>{showVisual?"Hide":"Show"}</button>
-                </div>
-
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div style={{ background:"#FDF4FF", borderRadius:9, padding:"9px 11px", marginBottom:12, border:"1px solid #E9D5FF" }}>
-                  <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#d946ef", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>🎯 Setup & Procedure</div>
-                  <div style={{ fontSize:"0.75rem", color:C.text, lineHeight:1.6 }}>{t.setup}</div>
-                  <div style={{ marginTop:6, padding:"4px 8px", background:"rgba(217,70,239,0.08)", borderRadius:6, border:"1px solid rgba(217,70,239,0.2)" }}>
-                    <div style={{ fontSize:"0.8rem", fontWeight:700, color:"#d946ef" }}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-
-                <div style={{ fontSize:"0.78rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>👁 What To Observe</div>
-                {t.observations.map(obs => {
-                  const val = findings[`${t.id}_${obs.id}`]; const clue = val !== undefined ? obs.clues[val] : null;
-                  return (
-                    <div key={obs.id} style={{ marginBottom:10 }}>
-                      <div style={{ fontSize:"0.82rem", fontWeight:700, color:C.text, marginBottom:5 }}>{obs.q}</div>
-                      <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                        {obs.opts.map((opt, idx) => {
-                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":opt.startsWith("✗")?"#dc2626":C.muted;
-                          return (
-                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
-                              style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"7px 10px", borderRadius:8, cursor:"pointer",
-                                border:`1.5px solid ${sel?col:C.border}`, background:sel?`${col}10`:C.s2, transition:"all 0.12s" }}>
-                              <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${sel?col:C.border}`, background:sel?col:"transparent", flexShrink:0, marginTop:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                                {sel && <span style={{ fontSize:8, color:"#fff", fontWeight:900 }}>✓</span>}
-                              </div>
-                              <span style={{ fontSize:"0.82rem", fontWeight:sel?700:400, color:sel?col:C.text, lineHeight:1.35 }}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && <div style={{ marginTop:5, padding:"6px 10px", background:"rgba(217,70,239,0.06)", borderLeft:"3px solid #d946ef", borderRadius:"0 6px 6px 0", fontSize:"0.78rem", color:C.text, lineHeight:1.5 }}><strong>Clinical note:</strong> {clue}</div>}
-                    </div>
-                  );
-                })}
-
-                <div style={{ fontSize:"0.78rem", fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, marginTop:4 }}>📊 Grade This Test</div>
-                <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:12 }}>
-                  {t.grades.map((gLabel, idx) => {
-                    const col=gradeColor(idx); const sel=g===idx;
-                    return (
-                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
-                        style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderRadius:9, cursor:"pointer", border:`1.5px solid ${sel?col:C.border}`, background:sel?`${col}12`:C.s2 }}>
-                        <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${sel?col:C.border}`, background:sel?col:"transparent", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          {sel && <span style={{ fontSize:9, color:"#fff", fontWeight:900 }}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{ fontSize:"0.73rem", fontWeight:sel?700:400, color:sel?col:C.text }}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.muted, marginBottom:4 }}>Therapist notes</div>
-                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
-                  placeholder="Clinical observations, motor pattern notes, next steps..."
-                  style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"8px 10px", fontSize:"0.82rem", fontFamily:"inherit", resize:"vertical", minHeight:56, outline:"none" }}/>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {completedCount > 0 && (
-        <div style={{ background:"#FDF4FF", borderRadius:14, padding:14, border:"1px solid #E9D5FF", marginTop:4 }}>
-          <div style={{ fontWeight:800, color:C.text, marginBottom:10 }}>📋 Hip Screen Summary</div>
-          {HIP_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
-            const g=grades[t.id]; const col=gradeColor(g);
-            return (
-              <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
-                <span style={{ fontSize:"1rem" }}>{t.icon}</span>
-                <span style={{ flex:1, fontSize:"0.75rem", fontWeight:600, color:C.text }}>{t.label}</span>
-                <span style={{ padding:"2px 10px", borderRadius:20, fontSize:"0.75rem", fontWeight:800, background:`${col}15`, color:col }}>{["Normal","Compensated","Abnormal"][g]}</span>
-              </div>
-            );
-          })}
-          {Object.values(grades).includes(2) && (
-            <div style={{ marginTop:10, padding:"8px 10px", background:"#FEF2F2", borderRadius:8, border:"1px solid #FECACA", fontSize:"0.8rem", color:"#dc2626", lineHeight:1.5 }}>
-              ⚠ <strong>Abnormal findings present.</strong> Consider: FADIR, FABER, hip quadrant (scouring), Thomas test, hip abductor MMT, L5/S1 myotome testing, and Janda Lower Crossed Syndrome assessment.
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── KNEE FUNCTIONAL SCREEN ───────────────────────────────────────────────────
-
-const KNEE_TESTS = [
-  {
-    id:"kfs_squat", icon:"🦿", label:"Double Leg Squat",
-    subtitle:"Patellofemoral Loading + Bilateral Valgus Screen",
-    phase:"PF Joint / Basic Knee Mechanics",
-    setup:"Feet shoulder-width, toes slightly out. Arms crossed or overhead. Squat to chair height (thighs parallel) × 5. Observe knee tracking from front and side.",
-    normalDesc:"Knees track over 2nd toe throughout. No valgus. Even bilateral weight distribution. Smooth patellar glide. No anterior knee pain in the arc 30–60°.",
-    observations:[
-      { id:"valgus", q:"Knee valgus during descent?",
-        opts:["✓ Both track over 2nd toe","⚠ Mild bilateral valgus at depth","✗ Clear valgus from initiation","✗ One-sided valgus only"],
-        clues:["","Minor glute med / VMO imbalance — monitor with single-leg squat","Dynamic valgus — glute med, glute max, VMO activation priority. Check foot pronation","Unilateral — asymmetric hip abductor weakness or foot pathology. Compare single-leg squat"] },
-      { id:"pain",   q:"Pain location during squat?",
-        opts:["✓ Pain-free","⚠ Anterior knee (PF joint)","⚠ Medial knee","⚠ Lateral knee (IT band)","✗ Posterior knee"],
-        clues:["","PF joint compression — worse 30–60° arc. Do patellar tilt/glide test, VMO assessment","Medial compartment / MCL — valgus overload. If OA age — weight-bearing X-ray","IT band syndrome — lateral retinaculum tightness. Do Ober test, Noble compression test","Posterior joint — possible PCL, posterior capsule or popliteus pathology"] },
-      { id:"depth",  q:"Depth before symptoms / restriction?",
-        opts:["✓ Full depth pain-free","⚠ Stops at 60° — PF arc","✗ Stops at 30° — early loading pain","✗ Cannot squat at all"],
-        clues:["","PF joint sensitisation at classic compression angle. VMO strengthening + patellar mobilisation","Acute PF or OA sensitivity — reduce load, pool therapy","Significant restriction — screen for effusion (ballottement test), joint space narrowing"] },
-      { id:"heel",   q:"Heel contact maintained?",
-        opts:["✓ Heels flat throughout","⚠ Slight heel rise","✗ Heels lift — forces trunk forward"],
-        clues:["","Ankle dorsiflexion restriction — knee-to-wall test. Tibialis anterior + gastrocnemius","Significant DF restriction — may need heel raise orthotic and ankle joint mobilisation"] },
-      { id:"sym",    q:"Weight bearing symmetry?",
-        opts:["✓ Equal bilateral","⚠ Mild asymmetry","✗ Clearly unilateral load","✗ Cannot weight bear equally"],
-        clues:["","Monitor — possible pain avoidance","Unilateral offloading — pain-inhibited quadriceps. Do quad MMT and effusion screen","Significant asymmetry — post-surgical, ACL, or severe OA pattern"] },
-    ],
-    grades:["Normal — Bilateral tracking, pain-free to depth, symmetric","Compensated — Mild valgus or minor PF discomfort at depth","Abnormal — Pain arc, clear valgus, asymmetric loading"],
-  },
-  {
-    id:"kfs_lunge", icon:"🏃", label:"Forward Lunge",
-    subtitle:"PF Joint + IT Band + Terminal Extension",
-    phase:"Anterior Compartment / Sagittal Knee Load",
-    setup:"Standing. Step forward into lunge — trail knee approaches (not touching) floor. Front shin near vertical, trunk upright. Return. × 5 each leg. Observe from front and side.",
-    normalDesc:"Shin vertical or slight forward lean. Knee stays over foot. Trunk upright. No lateral hip shift. Pain-free through full range. Knee straightens cleanly on return.",
-    observations:[
-      { id:"shin",   q:"Shin angle (tibial inclination)?",
-        opts:["✓ Vertical or slight lean (<10°)","⚠ Excessive forward lean (>15°)","✗ Knee past toes by >5cm"],
-        clues:["","Minor — cue upright shin. Patellar tendon loading increases with forward lean","Significant patellar tendon loading — screen for Osgood-Schlatter (adolescent) or patellar tendinopathy (VISA-P)"] },
-      { id:"pain",   q:"Pain on forward lunge?",
-        opts:["✓ No pain","⚠ Anterior knee at bottom","⚠ Lateral knee (especially step through)","✗ Medial joint line"],
-        clues:["","PF joint compression at lunge depth — patellar taping trial, VMO activation","IT band / lateral retinaculum — worse as knee passes 30° in mid-lunge. Noble compression test","Medial compartment — meniscal or MCL. McMurray and Apley screen"] },
-      { id:"trunk",  q:"Trunk alignment during lunge?",
-        opts:["✓ Upright or neutral lean","⚠ Forward trunk collapse","✗ Lateral trunk lean","✗ Trunk rotation"],
-        clues:["","Hip flexor or quad weakness — step length may need reducing","Contralateral hip abductor weakness or ipsilateral hip joint restriction — single-leg squat comparison","Rotational instability — assess thoracolumbar rotation and hip ER activation"] },
-      { id:"ext",    q:"Full knee extension achieved on return?",
-        opts:["✓ Full extension smooth","⚠ Slight lag at last 5–10°","✗ Clear extension lag (>10°)","✗ Pain at full extension"],
-        clues:["","VMO endurance deficit","Extension lag — VMO weakness (inner range). Terminal extension exercise in sitting + standing","Significant lag — screen for quad weakness, effusion, or post-operative inhibition. MMT in inner range"] },
-      { id:"lateral",q:"Lateral hip shift during lunge?",
-        opts:["✓ Pelvis stays level","⚠ Mild ipsilateral shift","✗ Clear lateral shift"],
-        clues:["","Minor contralateral glute med weakness — compare SLS test","Significant hip abductor weakness driving knee valgus indirectly — glute med / hip ER strengthening before knee loading"] },
-    ],
-    grades:["Normal — Upright trunk, pain-free, full extension on return","Compensated — Forward shin or mild discomfort without restriction","Abnormal — Pain arc, extension lag, lateral shift, or trunk collapse"],
-  },
-  {
-    id:"kfs_step",  icon:"🪜", label:"Lateral Step Down",
-    subtitle:"Eccentric VMO + PF Tracking + Valgus Control",
-    phase:"Eccentric Quad / PF Compression at Speed",
-    setup:"20cm step, sideways. Arms crossed. Lower unsupported leg toward floor slowly (3 sec count) × 5. Observe knee tracking and patellar position from front. Both legs.",
-    normalDesc:"Knee tracks over 2nd toe throughout descent. Patella stays central (no medial or lateral glide). Controlled 3-second descent. No anterior knee pain.",
-    observations:[
-      { id:"track",  q:"Patellar tracking during descent?",
-        opts:["✓ Patella tracks centrally","⚠ Slight medial glide (VMO weak)","✗ Clear medial glide — VMO dominant","✗ Lateral glide — tight lateral retinaculum"],
-        clues:["","Minor VMO underactivation — inner-range quad exercises in terminal extension","VMO underactivation / lateral retinaculum tightness. Patellar taping (McConnell medial glide) + VMO isolation in inner range","Lateral retinaculum tightness — patellar lateral glide assessment, lateral retinaculum stretching, patellar mobilisation"] },
-      { id:"valgus", q:"Knee valgus on loading?",
-        opts:["✓ Tracks over 2nd toe","⚠ Mild medial drift","✗ Clear valgus collapse on step","✗ Rapid uncontrolled collapse"],
-        clues:["","Minor glute med fatigue — compare bilaterally","Dynamic valgus on loading — priority: glute med + hip ER + VMO co-contraction","Severe — functional instability. ACL screen (pivot shift, Lachman). Rule out significant structural deficit"] },
-      { id:"pain",   q:"Anterior knee pain during descent?",
-        opts:["✓ No pain","⚠ Dull ache — PF joint","✗ Sharp pain — PF or patellar tendon","✗ Pain worse on 2nd–5th rep (loading fatigue)"],
-        clues:["","PF joint sensitisation — patellar taping trial, VMO loading","PF or patellar tendon — patellar tilt test, Noble compression, VISA-P score","Reactive tendinopathy pattern — reduce repetitions, monitor load response"] },
-      { id:"speed",  q:"Eccentric control quality?",
-        opts:["✓ Smooth 3-second control","⚠ Slight speed variation","✗ Cannot slow descent — drops","✗ Immediately painful — cannot attempt"],
-        clues:["","Minor eccentric deficit — progressive slow-descent training","Significant eccentric weakness — quad MMT grade 3–4. Nordic hamstring equivalent for quad needed","Pain-limited — establish pain-free range first. Pool therapy, isometrics"] },
-      { id:"sym",    q:"Side-to-side difference?",
-        opts:["✓ Symmetric","⚠ Minor asymmetry","✗ Clear marked difference","✗ One side unable"],
-        clues:["","","Unilateral — prior injury, post-surgical inhibition, or structural asymmetry","Priority — formal quad MMT + neurological screen. Consider post-surgical atrophy"] },
-    ],
-    grades:["Normal — Central tracking, controlled descent, pain-free, symmetric","Compensated — Mild valgus or PF ache without significant restriction","Abnormal — Lateral/medial patellar glide, pain, valgus collapse, or asymmetric"],
-  },
-  {
-    id:"kfs_hop",   icon:"💨", label:"Single Leg Hop & Stick",
-    subtitle:"Dynamic Valgus + Landing Mechanics + ACL Risk",
-    phase:"Neuromuscular Control / ACL Load Screen",
-    setup:"Single leg. Patient hops forward ~30cm and lands on same leg, holds 3 seconds. × 3 each side. Observe knee, hip and trunk on landing. (Caution: skip if acute knee pathology.)",
-    normalDesc:"Soft landing, knee slight flex, tracks over toe. Trunk upright. Pelvis level. Holds stable 3s. No excessive valgus or trunk collapse. Equal bilateral distance.",
-    observations:[
-      { id:"valgus", q:"Knee position on landing?",
-        opts:["✓ Tracks over 2nd toe — stable","⚠ Brief valgus that self-corrects","✗ Clear valgus collapse on landing","✗ Severe — knee caves with trunk shift"],
-        clues:["","Minor — neuromuscular timing — single-leg landing drills","Dynamic valgus — highest ACL risk factor in females. Glute med/max + VMO + hip ER activation. Landing technique training","Significant valgus risk pattern — neuromuscular ACL prevention programme (PEP, FIFA 11+). Do not progress loading until corrected"] },
-      { id:"stable", q:"Landing stability (hold 3s)?",
-        opts:["✓ Holds stable 3 seconds","⚠ Wobbles but stabilises","✗ Cannot hold — hops or takes extra step","✗ Falls or nearly falls"],
-        clues:["","Minor proprioceptive deficit — balance progressions (wobble board, single leg tandem)","Significant instability — screen for effusion (ballottement), ACL laxity (Lachman), meniscal pathology","Significant deficit — formal ligamentous and meniscal screen before progression"] },
-      { id:"sym",    q:"Hop distance symmetry (Limb Symmetry Index)?",
-        opts:["✓ >90% symmetric (LSI normal)","⚠ 80–90% difference","✗ <80% asymmetry (LSI abnormal)","✗ Cannot hop one side"],
-        clues:["","","LSI <90% = return-to-sport criterion not met post-ACL. Requires further quad/hamstring strength and neuromuscular work","Major deficit — post-injury or surgery inhibition. Formal quad/hamstring strength testing before hop testing"] },
-      { id:"trunk",  q:"Trunk position on landing?",
-        opts:["✓ Upright or neutral","⚠ Forward trunk lean","✗ Ipsilateral trunk lean","✗ Trunk rotation"],
-        clues:["","Quad-dominant landing — hip flexion / trunk forward lean increases PF load. Cue hip hinge landing","Trunk shift to unload weak hip abductor — glute med priority. Links to dynamic valgus","Rotational instability — rotational control exercises pre-sport return"] },
-      { id:"sound",  q:"Landing sound quality?",
-        opts:["✓ Soft, quiet landing","⚠ Moderate impact sound","✗ Heavy / loud landing"],
-        clues:["","Minor — cue soft landing technique","Stiff landing — quad-dominant deceleration. Knee flexion on landing too small. Teach hip hinge landing: land on hip-knee-ankle simultaneously"] },
-    ],
-    grades:["Normal — Stable landing, >90% LSI, knee tracking, quiet soft impact","Compensated — Minor valgus correcting or 80–90% LSI","Abnormal — Valgus collapse, <80% LSI, unable to hold, or loud stiff landing"],
-  },
-  {
-    id:"kfs_tke",   icon:"🔲", label:"Wall Slide (PF Tracking)",
-    subtitle:"Patellofemoral Contact at 30 / 60 / 90°",
-    phase:"PF Joint Mechanics / Pain Arc Screen",
-    setup:"Patient back against smooth wall. Slide down to 30°, hold 5s. Then 60°, hold 5s. Then 90°, hold 5s. Note pain onset angle. Observe patellar position and VMO contraction at each angle.",
-    normalDesc:"Pain-free at all angles 30–90°. VMO visible contraction. Patella stays central. PF contact area progressively increases toward 90° with no pain.",
-    observations:[
-      { id:"arc30",  q:"Pain at 30° hold?",
-        opts:["✓ Pain-free at 30°","⚠ Mild discomfort at 30°","✗ Clear pain at 30° — early PF sensitisation"],
-        clues:["","Minor PF irritation — offload with VMO activation in open chain first","Significant early-arc PF pain — reduce load. Patellar taping trial. McConnell medial glide taping"],  },
-      { id:"arc60",  q:"Pain at 60° hold?",
-        opts:["✓ Pain-free at 60°","⚠ Mild discomfort at 60°","✗ Clear pain at 60° — classic PF arc"],
-        clues:["","Classic PF sensitisation range — patellar taping + VMO isolation below 60°","Classic PF compression arc — do patellar tilt/glide, J-sign, VMO MMT inner range"] },
-      { id:"arc90",  q:"Pain at 90° hold?",
-        opts:["✓ Pain-free at 90°","⚠ Mild ache at 90° only","✗ Clear pain at 90°"],
-        clues:["","Greater PF contact area loading — minor sensitisation, avoid sustained 90° holds initially","Deep PF compression pathology — trochlear groove, plica, or patellar baja. Imaging may be needed"] },
-      { id:"vmo",    q:"VMO contraction visible / palpable?",
-        opts:["✓ VMO visible at all angles","⚠ VMO only at 30°","✗ VMO absent — no contraction","✗ VMO fires late (after 60°)"],
-        clues:["","Minor VMO inhibition","Significant VMO inhibition — isolated terminal extension exercise, biofeedback, NMES if available","VMO fires late — patellar instability risk. VMO timing training at inner range before loading"] },
-      { id:"jsign",  q:"Patellar J-sign on descent?",
-        opts:["✓ Smooth central tracking","⚠ Slight lateral deviation at terminal extension","✗ J-sign positive — lateral jump at ~30°"],
-        clues:["","Minor lateral retinaculum tension","J-sign = lateral retinaculum dominance over VMO at terminal extension. Patellar mobility assessment + lateral retinaculum stretching + VMO inner range isolation"] },
-    ],
-    grades:["Normal — Pain-free 30–90°, VMO visible, central patellar tracking","Compensated — Mild ache at 60–90° or VMO only at shallow angles","Abnormal — Pain arc at any angle, VMO absent, or J-sign positive"],
-  },
-,
-  // ── FMS: Deep Squat ───────────────────────────────────────────────────────
-  {
-    id:"fms_sq", icon:"🏋️", label:"Deep Squat (FMS)",
-    subtitle:"Global Lower Chain · FMS Standard Test",
-    phase:"Multi-Joint / Kinetic Chain Screen",
-    setup:"Feet shoulder-width, toes out 5–10°. Hold dowel overhead, arms fully extended. Descend as deep as possible, heels flat. Observe from front AND side. Score: 3 = full depth no compensation. 2 = heel rise / arm drop / lean. 1 = unable to achieve depth even with heel lift. 0 = pain.",
-    normalDesc:"Full depth — thighs parallel or below. Torso vertical/parallel to tibia. Knees track over 2nd toe. Dowel remains overhead. Heels flat throughout. No trunk lean or rotation.",
-    observations:[
-      { id:"depth", q:"Squat depth achieved?",
-        opts:["✓ Full depth — thighs parallel or below","⚠ Partial — 3/4 depth only","✗ Cannot achieve parallel","✗ Pain reproduced on squat"],
-        clues:["","Minor hip or ankle restriction — heel lift test to differentiate","Heel lift test: if depth improves with heels raised = ankle DF restriction. No change = hip flexor or thoracic extension. Address primary driver first","Score 0. Screen hip FAI (FADIR), knee OA, or lumbar disc load test before reloading"] },
-      { id:"heel", q:"Heel contact throughout?",
-        opts:["✓ Heels flat throughout","⚠ Mild heel rise at end range","✗ Both heels rise significantly","✗ Asymmetric heel rise (one side)"],
-        clues:["","Minor gastroc/soleus restriction — wall lunge drill + calf stretching","Talocrural DF restriction — talocrural PA mobilisation Grade III–IV + gastroc SMR + wall lunge drill 3 min daily","Asymmetric — treat restricted side. Check unilateral ankle injury or talocrural joint restriction ipsilateral to heel rise"] },
-      { id:"knee", q:"Knee tracking alignment?",
-        opts:["✓ Tracks over 2nd toe bilateral","⚠ Mild valgus tendency","✗ Bilateral knee valgus (collapse)","✗ Unilateral knee valgus"],
-        clues:["","Minor glute med weakness — band cue + clamshells","Glute med + ER weakness, adductor dominance. SMR adductors/TFL → activate glute med clamshell → lateral band walk → squat with band knee-out cue","Unilateral — asymmetric glute med inhibition. Often post-injury. Treat affected side: single-leg clamshell + single-leg glute bridge"] },
-      { id:"trunk", q:"Trunk position in squat?",
-        opts:["✓ Upright — parallel to tibia","⚠ Mild forward lean","✗ Significant trunk lean forward","✗ Lateral trunk shift"],
-        clues:["","Minor ankle DF or hip flexor restriction — screen ankle first with heel lift test","Ankle DF, hip flexor, OR thoracic extension — identify primary driver. Goblet squat (counterbalance) helps reveal true driver","Lateral shift = unilateral hip restriction or lumbar disc (shifts away from pain). Screen hip IR + lumbar quadrant test"] },
-      { id:"arm", q:"Overhead arm position?",
-        opts:["✓ Arms fully extended overhead","⚠ Slight elbow bend at bottom","✗ Arms fall forward significantly","✗ Cannot maintain overhead at all"],
-        clues:["","Minor thoracic restriction or lat tightness — foam roller + lat stretch","Thoracic + lat restriction → arms fall into flexion. Foam roller thoracic extension + lat SMR + overhead wall slide","Significant shoulder flexion / thoracic deficit — screen shoulder ROM and thoracic extension separately before squat loading"] },
-    ],
-    grades:["Normal (FMS 3) — Full depth, heels flat, knees tracking, dowel overhead","Compensated (FMS 2) — Minor compensation: heel rise, arm drop, or forward lean","Abnormal (FMS 0–1) — Cannot achieve depth or pain reproduced"],
-  },
-  // ── FMS: Hurdle Step ──────────────────────────────────────────────────────
-  {
-    id:"fms_hs", icon:"🏃", label:"Hurdle Step (FMS)",
-    subtitle:"Single-Leg Stance Control · Hip Hinge Quality",
-    phase:"Hip Stability / Single-Leg Control Screen",
-    setup:"Patient stands on one leg on a step-box (set at tibial tuberosity height). Step opposite leg over hurdle — clear without touching — return to start. Observe from front and side. Score: 3 = controlled step, pelvis level, no trunk lean. 2 = contact hurdle / pelvis drop / arm movement. 1 = contact step or loss of balance. 0 = pain.",
-    normalDesc:"Stance hip stays stable. Pelvis level throughout step. Trunk stays upright — no lateral lean. Step leg clears hurdle cleanly. Foot dorsiflexed during swing phase. Returns to start with control.",
-    observations:[
-      { id:"pelvis", q:"Pelvic level during stance?",
-        opts:["✓ Pelvis level throughout","⚠ Minor pelvic drop (<2cm)","✗ Contralateral pelvis drops >2cm (Trendelenburg)","✗ Compensatory trunk lean over stance leg"],
-        clues:["","Minor glute med weakness — clamshells, lateral band walk","Trendelenburg positive — glute med cannot support pelvis. Priority: CPA glute med (release TFL/QL → activate glute med → lateral band walk → single-leg stance)","Compensatory lurch = severe glute med weakness. Patient reduces hip abductor demand by leaning trunk. Same protocol as Trendelenburg — treat glute med urgently"] },
-      { id:"trunk", q:"Trunk position during step?",
-        opts:["✓ Upright trunk — no lateral lean","⚠ Mild lean with control","✗ Significant lateral trunk lean","✗ Forward trunk lean + loss of control"],
-        clues:["","Minor hip strategy adjustment — proprioceptive training on balance board","Lateral trunk lean = glute med weakness (reduces moment arm). Treat with glute med activation before progressing to hurdle","Forward lean = hip flexor dominance or lack of hip extension control. Hip flexor stretching + glute max activation"] },
-      { id:"arm", q:"Arm movement to compensate?",
-        opts:["✓ Arms at sides — no movement","⚠ Minor arm swing for balance","✗ Arms move significantly to compensate","✗ Loses balance — touches hurdle or step"],
-        clues:["","Minor balance deficit — proprioceptive training: single-leg stance, BOSU","Compensatory arm swing = lack of hip/ankle stability on stance leg. Multi-level deficit — screen ankle proprioception + hip stability together","Score 1 — significant proprioceptive deficit. Begin with supported single-leg stance, progress to unsupported, then dynamic"] },
-      { id:"df", q:"Swing leg dorsiflexion / hip flexion?",
-        opts:["✓ Foot dorsiflexed, hip fully flexes to clear","⚠ Foot drops / minor toe catch","✗ Foot drop pattern — cannot dorsiflex","✗ Insufficient hip flexion — compensates with trunk lean"],
-        clues:["","Minor tibialis anterior weakness — dorsiflexion strengthening (resistance band)","Foot drop = tibialis anterior inhibition or L4/L5 nerve root. Neurological screen if acute onset. Ankle DF strengthening if chronic","Insufficient hip flexion — hip flexor weakness or hip mobility restriction. Screen Thomas test and psoas strength"] },
-      { id:"sym", q:"Symmetry left vs right?",
-        opts:["✓ Symmetric bilateral","⚠ Mild asymmetry — same pattern","✗ Clear asymmetry — one side worse","✗ Cannot complete one side at all"],
-        clues:["","Monitor — minor side-to-side difference may be normal dominant/non-dominant","Asymmetry >1 score = significant. Side with score ≤ 2 when other side is 3 = increased injury risk. Treat weaker side first","Complete failure one side = acute inhibition. Screen for recent injury, pain inhibition, or neural involvement on that side"] },
-    ],
-    grades:["Normal (FMS 3) — Pelvis level, trunk upright, clean step, no compensation","Compensated (FMS 2) — Minor pelvic drop, arm movement, or hurdle contact","Abnormal (FMS 0–1) — Trendelenburg, loss of balance, or pain"],
-  },
-  // ── FMS: Inline Lunge ─────────────────────────────────────────────────────
-  {
-    id:"fms_il", icon:"🧎", label:"Inline Lunge (FMS)",
-    subtitle:"Sagittal Plane Control · Frontal Stability",
-    phase:"Hip-Knee-Ankle Sagittal Chain Screen",
-    setup:"Patient stands heel-to-toe (stride stance) on a 2×6 board, holding dowel vertically behind spine (touching head, thoracic, and sacrum). Descend to touch back knee to board. Observe from front and side. Score: 3 = controlled descent, torso stays upright, knee touches board. 2 = trunk deviation, loss of balance, or dowel contact lost. 1 = loss of balance. 0 = pain.",
-    normalDesc:"Torso upright and dowel maintains 3-point contact (head, thoracic, sacrum). Lead knee tracks over 2nd toe. Rear knee touches board without collapse. Pelvis level. No trunk rotation or lateral shift.",
-    observations:[
-      { id:"knee_track", q:"Lead knee tracking?",
-        opts:["✓ Tracks over 2nd toe","⚠ Mild medial deviation","✗ Significant valgus — knee collapses in","✗ Lateral deviation (varus)"],
-        clues:["","Minor VMO or glute med weakness — terminal knee extension + clamshells","Medial knee collapse = VMO + glute med insufficient. Band cue above knees during lunge + VMO TKE + glute med protocol","Lateral deviation = IT band/TFL overactivity. IT band SMR + TFL release + adductor activation"] },
-      { id:"trunk", q:"Trunk upright / dowel contact?",
-        opts:["✓ Dowel — 3-point contact maintained","⚠ Minor trunk forward lean","✗ Significant trunk lean — loses dowel contact","✗ Rotation or lateral trunk shift"],
-        clues:["","Hip flexor restriction limiting upright torso — couch stretch + hip flexor activation","Significant hip flexor tightness or ankle DF restriction. Screen with Thomas test and DF lunge test","Rotation = hip mobility asymmetry or thoracic restriction. Assess hip IR/ER bilaterally and thoracic rotation"] },
-      { id:"balance", q:"Overall balance / control during lunge?",
-        opts:["✓ Controlled throughout","⚠ Wobbles but maintains position","✗ Significant balance loss — steps out","✗ Falls or loses position"],
-        clues:["","Minor proprioceptive deficit — lunge with support progressing to unsupported","Significant balance deficit — begin split squat (stable position) with control before progressing to true inline lunge","Score 1 — major motor control deficit. Step-back lunge from stable position, emphasise slow eccentric before adding dynamic"] },
-      { id:"pelvis", q:"Pelvic control during descent?",
-        opts:["✓ Pelvis level and neutral","⚠ Minor anterior tilt","✗ Pelvic drop contralaterally","✗ Anterior pelvic tilt + lumbar extension compensation"],
-        clues:["","Minor TA or gluteal weakness — TA drawing-in + glute bridge before lunge","Lateral pelvic drop during lunge = weak hip abductors on stance side. Trendelenburg equivalent","Anterior tilt + extension = hip flexor dominant, glute max inhibited. Release hip flexors → activate glute max → progress to lunge"] },
-      { id:"sym", q:"Symmetry?",
-        opts:["✓ Symmetric bilateral","⚠ Mild asymmetry","✗ Clear asymmetry one side worse","✗ Cannot complete one side"],
-        clues:["","Monitor — minor asymmetry may relate to dominant leg","Asymmetry = treat weaker side. Common after unilateral lower limb injury. Single-leg work on affected side","Complete failure = pain inhibition or motor control deficit. Screen for pain on that side before continuing"] },
-    ],
-    grades:["Normal (FMS 3) — Upright trunk, knee tracking, controlled throughout","Compensated (FMS 2) — Minor deviation, lean, or balance wobble","Abnormal (FMS 0–1) — Loss of control, significant valgus, or pain"],
-  }
-];
-
-function KneeFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  useEffect(() => {
-    const saved = data["kfs_data"];
-    if (saved && typeof saved === "string") {
-      try {
-        const p = JSON.parse(saved);
-        if (p.findings) setFindings(p.findings);
-        if (p.grades)   setGrades(p.grades);
-        if (p.notes)    setNotes(p.notes);
-      } catch {}
-    }
-  }, []);
-
-  const save = (f,g,n) => set("kfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
-  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
-  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
-  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
-
-  const completedCount = KNEE_TESTS.filter(t => grades[t.id] !== undefined).length;
-  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
-
-  return (
-    <div>
-      <div style={{background:"linear-gradient(135deg,rgba(234,179,8,0.08),rgba(245,158,11,0.05))",border:"1px solid rgba(234,179,8,0.25)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <span style={{fontSize:"1.4rem"}}>🦿</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Knee Functional Screen</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · PF tracking · VMO · Dynamic valgus · ACL risk · Student guide</div>
-          </div>
-          <div style={{marginLeft:"auto",textAlign:"right"}}>
-            <div style={{fontSize:"1.2rem",fontWeight:900,color:"#d97706"}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-          {KNEE_TESTS.map(t=>{
-            const g=grades[t.id]; const done=g!==undefined;
-            return (
-              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
-                  border:`1px solid ${activeTest===t.id?"#d97706":done?gradeColor(g)+"60":C.border}`,
-                  background:activeTest===t.id?"rgba(234,179,8,0.1)":done?`${gradeColor(g)}10`:"transparent",
-                  color:activeTest===t.id?"#d97706":done?gradeColor(g):C.muted}}>
-                {t.icon} {t.label.split(" ").slice(0,2).join(" ")} {done?["✓","⚠","✗"][g]:""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {KNEE_TESTS.map(t=>{
-        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
-        return (
-          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
-            border:`1.5px solid ${isOpen?"#d97706":graded?gradeColor(g)+"50":C.border}`,
-            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(234,179,8,0.1)":"0 1px 4px rgba(0,0,0,0.04)"}}>
-
-            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
-              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
-              </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
-              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
-            </div>
-
-            {isOpen && (
-              <div style={{padding:"0 14px 14px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.78rem",fontWeight:700,color:"#d97706",textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
-                </div>
-
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div style={{background:"#FFFBEB",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #FDE68A"}}>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#d97706",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
-                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
-                  <div style={{marginTop:6,padding:"4px 8px",background:"rgba(234,179,8,0.08)",borderRadius:6,border:"1px solid rgba(234,179,8,0.25)"}}>
-                    <div style={{fontSize:"0.8rem",fontWeight:700,color:"#d97706"}}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
-                {t.observations.map(obs=>{
-                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
-                  return (
-                    <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                        {obs.opts.map((opt,idx)=>{
-                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
-                          return (
-                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
-                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
-                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
-                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
-                              </div>
-                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:"rgba(234,179,8,0.07)",borderLeft:"3px solid #d97706",borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
-                    </div>
-                  );
-                })}
-
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
-                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
-                  {t.grades.map((gLabel,idx)=>{
-                    const col=gradeColor(idx); const sel=g===idx;
-                    return (
-                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
-                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
-                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
-                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
-                  placeholder="Pain arc, patellar tracking, clinical reasoning..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {completedCount > 0 && (
-        <div style={{background:"#FFFBEB",borderRadius:14,padding:14,border:"1px solid #FDE68A",marginTop:4}}>
-          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Knee Screen Summary</div>
-          {KNEE_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
-            const g=grades[t.id]; const col=gradeColor(g);
-            return (
-              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
-                <span style={{fontSize:"1rem"}}>{t.icon}</span>
-                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
-              </div>
-            );
-          })}
-          {Object.values(grades).includes(2) && (
-            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.8rem",color:"#dc2626",lineHeight:1.5}}>
-              ⚠ <strong>Abnormal findings present.</strong> Consider: patellar tilt/glide test, J-sign, McMurray meniscal test, Lachman / anterior drawer (ACL), valgus/varus stress (MCL/LCL), Noble compression (IT band), ballottement (effusion), and VISA-P (tendinopathy).
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── ANKLE / FOOT FUNCTIONAL SCREEN ──────────────────────────────────────────
-
-const ANKLE_TESTS = [
-  {
-    id:"afs_hr", icon:"👟", label:"Single Leg Heel Raise",
-    subtitle:"Calf Endurance + Tibialis Posterior + Achilles Load",
-    phase:"Plantarflexor Endurance / Posterior Chain",
-    setup:"Patient stands single leg, hands lightly touching wall for balance only. Rise onto toes fully, lower controlled. Count maximum reps with full range. Normal: 25 reps same height both sides. Observe: height achieved, range symmetry, heel inversion at top.",
-    normalDesc:"25+ reps per side, symmetric height, heel inverts at top of each raise (tibialis posterior function), controlled eccentric descent each rep, no lateral ankle wobble.",
-    observations:[
-      { id:"reps",   q:"Reps achieved before form breaks?",
-        opts:["✓ 25+ reps full height","⚠ 15–24 reps (mild deficit)","✗ <15 reps (significant deficit)","✗ Cannot perform — pain or too weak"],
-        clues:["","Minor calf endurance deficit — progressive loading. Monitor bilaterally","Significant soleus/gastroc endurance deficit — key rehab target. Achilles tendinopathy screen (VISA-A), calf raise programme","Severe weakness — screen for Achilles rupture (Thompson test), tibialis posterior rupture, or neurological deficit (S1 myotome)"] },
-      { id:"height", q:"Height of rise — heel above floor?",
-        opts:["✓ Full height, consistent","⚠ Reduces progressively (fatigue)","✗ Never achieves full height","✗ Asymmetric — one side lower"],
-        clues:["","Calf endurance deficit — eccentric loading programme (Alfredson for Achilles)","Structural restriction or severe weakness — assess passive plantarflexion range + Thompson test","Unilateral height deficit — calf atrophy post-injury, Achilles pathology, or tibialis posterior insufficiency on low side"] },
-      { id:"invert", q:"Heel inversion at top of raise?",
-        opts:["✓ Heel inverts at top (tibialis post. ✓)","⚠ Heel stays neutral — no inversion","✗ Heel everts at top — tibialis posterior failure"],
-        clues:["","Minor tibialis posterior fatigue — single leg heel raise with inversion cueing","Classic tibialis posterior dysfunction — too-many-toes sign, navicular drop test, PTTD screen. Medial arch support consideration"] },
-      { id:"wobble", q:"Lateral ankle stability during raises?",
-        opts:["✓ Stable throughout","⚠ Mild wobble at fatigue","✗ Wobbles from start (proprioceptive deficit)","✗ Gives way — instability"],
-        clues:["","Minor proprioceptive fatigue — balance board progression","Chronic ankle instability likely — do anterior drawer and talar tilt test. CAIT questionnaire","Functional instability — ATFL/CFL laxity. Lateral ligament stress testing + balance board rehab"] },
-      { id:"sym",    q:"Side-to-side symmetry?",
-        opts:["✓ Symmetric (within 3 reps)","⚠ 3–6 rep difference","✗ >6 reps asymmetry","✗ One side unable to attempt"],
-        clues:["","Monitor — may be post-activity asymmetry","Significant asymmetry — screen for unilateral Achilles tendinopathy, calf tear, or S1 radiculopathy","Priority assessment — exclude S1 myotome weakness, Achilles rupture (Thompson), tibialis posterior rupture"] },
-    ],
-    grades:["Normal — 25+ reps, full height, heel inverts, symmetric","Compensated — 15–24 reps or height reduces with fatigue","Abnormal — <15 reps, no inversion, instability, or significant asymmetry"],
-  },
-  {
-    id:"afs_df", icon:"📐", label:"Weight-Bearing Dorsiflexion (Knee-to-Wall)",
-    subtitle:"Ankle DF Restriction — Impingement + CAI Screen",
-    phase:"Talocrural Mobility / Posterior Capsule",
-    setup:"Patient in lunge position facing wall. Big toe 10cm from wall. Keep heel flat. Push knee toward wall over big toe. Measure finger-widths from wall to knee tip. Normal ≥10cm (or knee touches wall at 10cm). Compare bilaterally.",
-    normalDesc:"Knee touches wall at 10cm or beyond. Heel stays flat. No pinching at front of ankle. No pain. Side-to-side within 1cm.",
-    observations:[
-      { id:"reach",  q:"Knee-to-wall distance achieved with heel flat?",
-        opts:["✓ ≥10cm (normal dorsiflexion)","⚠ 7–9cm (mild restriction)","✗ <7cm (significant restriction)","✗ Heel rises before wall reached"],
-        clues:["","Minor ankle DF restriction — ankle joint mobilisation (Maitland AP talar glide), gastrocnemius stretching","Significant DF restriction — likely posterior talar capsule restriction or bony block. Do talus AP glide joint mobilisation. Assess squat, lunge, heel rise compensations","Gastrocnemius tightness forcing heel rise. Differentiate: if restriction improves with knee bent = gastrocnemius dominant. If unchanged = capsular/bony"] },
-      { id:"pinch",  q:"Anterior ankle pinching at end range?",
-        opts:["✓ No anterior pain","⚠ Mild anterior pinching","✗ Clear anterior impingement pain","✗ Clicking + pinching"],
-        clues:["","Monitor — minor anterior capsule irritation","Anterior ankle impingement — footballer's ankle (osteophyte). AP talar glide + distraction mobilisation. Imaging if chronic","Osteophyte likely — refer for X-ray. Manual distraction traction may give temporary relief"] },
-      { id:"heel",   q:"Heel contact maintained?",
-        opts:["✓ Heel flat throughout","⚠ Slight heel rise at end range","✗ Heel rises early — before wall"],
-        clues:["","Minor tightness — calf stretching + ankle mobilisation","Gastrocnemius dominant restriction — isolated gastroc stretch (knee straight). If still limited at 10cm with knee bent — talocrural joint restriction"] },
-      { id:"arch",   q:"Medial arch during DF test?",
-        opts:["✓ Arch maintained","⚠ Arch drops slightly","✗ Arch collapses — pronation compensation"],
-        clues:["","Minor midfoot hypermobility","Pronation compensation for DF restriction — foot pronates to gain tibial advancement. True DF deficit is greater than apparent. Orthotics + DF mobility treatment"] },
-      { id:"sym",    q:"Side-to-side difference?",
-        opts:["✓ Within 1cm","⚠ 1–2cm difference","✗ >2cm difference"],
-        clues:["","Monitor — minor asymmetry","Significant DF asymmetry — post-injury capsule restriction or growth plate history (adolescent). AP talar glide mobilisation priority on restricted side"] },
-    ],
-    grades:["Normal — ≥10cm, heel flat, no pinching, symmetric","Compensated — 7–9cm or arch drops without pain","Abnormal — <7cm, anterior impingement, heel rise, or >2cm asymmetry"],
-  },
-  {
-    id:"afs_bal", icon:"🧍", label:"Single Leg Balance",
-    subtitle:"Proprioception + Chronic Ankle Instability Screen",
-    phase:"Ankle Proprioception / Lateral Stability",
-    setup:"Eyes open: stand single leg 30 seconds. Eyes closed: stand single leg 10 seconds. Both legs. Observe: sway strategy, ankle wobble, hip/trunk compensation. SEBT (Star Excursion Balance Test) if available.",
-    normalDesc:"Eyes open: 30s stable, minimal sway. Eyes closed: 10s with only minor ankle strategy correction. No major hip or trunk compensation. Equal bilateral.",
-    observations:[
-      { id:"eo",     q:"Eyes open stability (30 seconds)?",
-        opts:["✓ Stable 30s — minimal sway","⚠ Sways but maintains — ankle strategy","✗ Hip strategy dominant — pelvis moves","✗ Cannot complete 30s"],
-        clues:["","Minor proprioceptive fatigue — balance progressions (unstable surfaces)","Hip strategy = proximal compensation for distal instability. Ankle proprioception deficit — ATFL/CFL involvement likely. CAIT score","Significant proprioceptive deficit — screen for previous ankle sprains, ATFL laxity, peroneal nerve involvement"] },
-      { id:"ec",     q:"Eyes closed stability (10 seconds)?",
-        opts:["✓ 10s with minor corrections","⚠ 5–9s with significant corrections","✗ <5 seconds — fails","✗ Cannot attempt eyes closed"],
-        clues:["","Minor vestibular or proprioceptive fatigue — single-leg eyes-closed balance progression","Significant proprioceptive deficit — likely chronic ankle instability or prior ligament injury. Wobble board + dynamic balance training","Significant deficit — screen for vestibular/cerebellar contribution if bilateral. ATFL grading + wobble board"] },
-      { id:"cai",    q:"History of ankle sprains + current wobble?",
-        opts:["✓ No prior sprains — stable","⚠ Prior sprains — still stable","✗ Prior sprains + instability pattern","✗ Frequent giving way on level ground"],
-        clues:["","Resolved sprain — monitor with progressive loading","Subclinical CAI — CAIT questionnaire. Peroneal activation timing training","Chronic ankle instability — ATFL/CFL grading. Conservative: peroneal strengthening + proprioception. Surgical if grade III laxity + failed conservative"] },
-      { id:"strat",  q:"Primary balance strategy used?",
-        opts:["✓ Ankle strategy (foot/ankle small corrections)","⚠ Knee strategy","✗ Hip strategy (trunk sways)","✗ Steps / hops to recover"],
-        clues:["","Normal","Early proprioceptive deficit — progress ankle instability rehab","Proximal compensation for distal instability — ankle proprioception is impaired. Check ATFL drawer test","Significant instability — consider bracing for sport, peroneal strength MMT, lateral ligament stress testing"] },
-      { id:"sym",    q:"Bilateral symmetry?",
-        opts:["✓ Symmetric both sides","⚠ Minor difference","✗ Clear asymmetry","✗ Unilateral failure"],
-        clues:["","","Unilateral deficit — chronic ankle instability or prior fracture/sprain on affected side","Significant unilateral deficit — ATFL anterior drawer, talar tilt, peroneal MMT, Ottawa ankle rules if acute"] },
-    ],
-    grades:["Normal — 30s eyes open stable, 10s eyes closed, ankle strategy","Compensated — Hip strategy or 5–9s eyes closed with prior sprains","Abnormal — <5s eyes closed, giving way, or significant asymmetry"],
-  },
-  {
-    id:"afs_hop", icon:"🦘", label:"Single Leg Hop Series",
-    subtitle:"Dynamic Ankle Stability + Achilles Load + Limb Symmetry",
-    phase:"Plyometric Load / Return to Sport Criteria",
-    setup:"Mark start line. Single leg hop forward (× 3 consecutive hops), side hop (× 5 lateral), and hop & stick (land and hold 3s). Measure distance on 3-hop. Compare LSI. Observe landing quality each hop.",
-    normalDesc:"3-hop LSI >90% of opposite leg. Quiet soft landings. Ankle stable — no excessive inversion. Controlled stick landing. No pain during or after.",
-    observations:[
-      { id:"lsi",    q:"3-hop distance LSI (% of opposite leg)?",
-        opts:["✓ >90% LSI (return-to-sport criterion)","⚠ 80–90% LSI","✗ <80% LSI (significant deficit)","✗ Unable to complete hops due to pain"],
-        clues:["","","LSI <90% = return-to-sport criterion not met. Continue loading programme — plyometric progression, calf power work","Pain-limited — Achilles tendinopathy VISA-A screen, plantar fascia palpation, stress fracture screen (hop pain)"] },
-      { id:"land",   q:"Landing quality on each hop?",
-        opts:["✓ Soft, controlled landings","⚠ Hard/loud landings","✗ Inverts on landing — ankle gives","✗ Cannot land single leg — hops to other leg"],
-        clues:["","Stiff landing — ankle and knee flexion on landing too small. Landing mechanics coaching — soft heel-toe pattern","Inversion on landing = peroneal reaction time deficit + ATFL laxity. Key rehab: peroneal activation, lateral band exercises, perturbation training","Significant instability — ATFL anterior drawer + talar tilt. Consider ankle bracing for plyometric progression"] },
-      { id:"pain",   q:"Pain provocation during hopping?",
-        opts:["✓ Pain-free throughout","⚠ Posterior heel pain (Achilles)","⚠ Plantar heel pain (fascia)","✗ Lateral ankle pain (ligament)","✗ Anterior ankle (impingement)"],
-        clues:["","Achilles reactive tendinopathy — reduce load, assess VISA-A, Royal London Hospital test, Simmond's palpation","Plantar fasciitis — windlass mechanism test, calcaneal palpation, first step pain pattern","ATFL/CFL loading — lateral ligament stress testing, peroneal assessment","Anterior impingement — AP talar glide deficit. Osteophyte screen if chronic"] },
-      { id:"side",   q:"Side hop stability (5 lateral hops)?",
-        opts:["✓ Controlled throughout","⚠ Progressive wobble on last 2–3","✗ Inversion wobble on each hop","✗ Cannot complete lateral hop"],
-        clues:["","Minor peroneal fatigue — lateral resistance band work","Peroneal reaction time deficit — key CAI indicator. Peroneal eccentric strengthening + perturbation training","Significant lateral instability — ATFL/CFL grading required. Bracing + peroneal programme before lateral sport return"] },
-      { id:"sym",    q:"Overall hop series symmetry?",
-        opts:["✓ Symmetric — feels equal","⚠ Minor avoidance on injured side","✗ Clear asymmetry in distance or control","✗ Significant avoidance — psychological barrier"],
-        clues:["","","Kinesiophobia component possible — TAMPA scale. Physical loading programme + graded exposure","Kinesiophobia likely contributing — combine physical rehab with graded return to confidence. ACL-equivalent psychological readiness criteria for ankle return-to-sport"] },
-    ],
-    grades:["Normal — LSI >90%, soft landings, pain-free, symmetric","Compensated — LSI 80–90% or landing stiffness without pain","Abnormal — LSI <80%, pain on hop, inversion, or significant avoidance"],
-  },
-  {
-    id:"afs_arch", icon:"👣", label:"Dynamic Arch / Navicular Drop",
-    subtitle:"Tibialis Posterior Function + Foot Pronation Screen",
-    phase:"Medial Arch Control / Tibialis Posterior Insufficiency",
-    setup:"Seated: mark navicular tuberosity height from floor. Stand bilateral. Mark again. Navicular drop = seated minus standing height. Normal <10mm. Then observe arch in single leg squat and heel raise. Assess too-many-toes sign from behind.",
-    normalDesc:"Navicular drop <10mm. Medial arch visible in bilateral stance. Arch maintains in single leg. Heel inverts in heel raise. 1–2 toes visible from behind (neutral rearfoot).",
-    observations:[
-      { id:"drop",   q:"Navicular drop measurement?",
-        opts:["✓ <10mm (normal)","⚠ 10–15mm (mild hyperpronation)","✗ >15mm (significant drop)","✗ Unable to palpate — severe flat foot"],
-        clues:["","Monitor — borderline. Assess tibialis posterior strength and footwear","Significant hyperpronation — tibialis posterior strengthening (heel raise with inversion), arch support assessment. Kinetic chain effect on knee and hip","Severe PTTD or flat foot — tibialis posterior MMT, too-many-toes sign, single leg heel raise inversion test. Orthotic referral"] },
-      { id:"tmt",    q:"Too-many-toes sign (from behind)?",
-        opts:["✓ 1–2 toes visible (normal)","⚠ 3 toes visible (mild abduction)","✗ 4–5 toes visible (forefoot abduction)","✗ Unable to assess"],
-        clues:["","","Mild tibialis posterior insufficiency — pes plano valgus. Heel raise inversion test priority","Classic too-many-toes sign — significant tibialis posterior dysfunction or rupture. Grade single leg heel raise — if cannot invert = PTTD grade 2+. Refer for ultrasound"] },
-      { id:"slsq",   q:"Arch in single leg squat?",
-        opts:["✓ Arch maintained","⚠ Arch drops but recovers","✗ Arch collapses under load","✗ Foot fully pronates — arch absent"],
-        clues:["","Minor dynamic hyperpronation — tibialis posterior + peroneus longus activation exercises","Dynamic pronation under load — increases medial knee stress (valgus), tibial torsion. Orthotic + tibialis posterior eccentric training","Severe dynamic flat foot — full kinetic chain assessment. Medial post orthotic, tibialis posterior strengthening"] },
-      { id:"rear",   q:"Rearfoot position in bilateral stance?",
-        opts:["✓ Neutral (slight valgus 0–4°)","⚠ Mild valgus (5–8°)","✗ Significant valgus (>8°)","✗ Varus — supinated foot type"],
-        clues:["","Normal or borderline — monitor under dynamic loading","Rearfoot valgus — pronated foot type. Arch support + tibialis posterior strengthening. Upstream effects on knee and hip","Rearfoot varus — supinated / cavus foot type. High arch, poor shock absorption, lateral ankle instability risk. Lateral wedge + peroneal strengthening"] },
-      { id:"pain",   q:"Medial arch or heel pain?",
-        opts:["✓ No pain","⚠ Medial arch ache under load","⚠ Medial heel / navicular pain","✗ First step plantar heel pain (morning)"],
-        clues:["","Tibialis posterior stress or plantar fascia tension — tibialis posterior strengthening + intrinsic foot exercises","Tibialis posterior tendinopathy / stress on navicular — Spring ligament screen, navicular palpation, ultrasound if persistent","Plantar fasciitis — windlass test, calcaneal tuberosity palpation, first step pain + morning stiffness pattern"] },
-    ],
-    grades:["Normal — Navicular drop <10mm, arch maintained, neutral rearfoot","Compensated — 10–15mm drop or arch drops under single-leg load","Abnormal — >15mm, too-many-toes sign, arch collapse, or pain"],
-  },
-,
-  // ── FMS: Deep Squat ───────────────────────────────────────────────────────
-  {
-    id:"fms_sq", icon:"🏋️", label:"Deep Squat (FMS)",
-    subtitle:"Global Lower Chain · FMS Standard Test",
-    phase:"Multi-Joint / Kinetic Chain Screen",
-    setup:"Feet shoulder-width, toes out 5–10°. Hold dowel overhead, arms fully extended. Descend as deep as possible, heels flat. Observe from front AND side. Score: 3 = full depth no compensation. 2 = heel rise / arm drop / lean. 1 = unable to achieve depth even with heel lift. 0 = pain.",
-    normalDesc:"Full depth — thighs parallel or below. Torso vertical/parallel to tibia. Knees track over 2nd toe. Dowel remains overhead. Heels flat throughout. No trunk lean or rotation.",
-    observations:[
-      { id:"depth", q:"Squat depth achieved?",
-        opts:["✓ Full depth — thighs parallel or below","⚠ Partial — 3/4 depth only","✗ Cannot achieve parallel","✗ Pain reproduced on squat"],
-        clues:["","Minor hip or ankle restriction — heel lift test to differentiate","Heel lift test: if depth improves with heels raised = ankle DF restriction. No change = hip flexor or thoracic extension. Address primary driver first","Score 0. Screen hip FAI (FADIR), knee OA, or lumbar disc load test before reloading"] },
-      { id:"heel", q:"Heel contact throughout?",
-        opts:["✓ Heels flat throughout","⚠ Mild heel rise at end range","✗ Both heels rise significantly","✗ Asymmetric heel rise (one side)"],
-        clues:["","Minor gastroc/soleus restriction — wall lunge drill + calf stretching","Talocrural DF restriction — talocrural PA mobilisation Grade III–IV + gastroc SMR + wall lunge drill 3 min daily","Asymmetric — treat restricted side. Check unilateral ankle injury or talocrural joint restriction ipsilateral to heel rise"] },
-      { id:"knee", q:"Knee tracking alignment?",
-        opts:["✓ Tracks over 2nd toe bilateral","⚠ Mild valgus tendency","✗ Bilateral knee valgus (collapse)","✗ Unilateral knee valgus"],
-        clues:["","Minor glute med weakness — band cue + clamshells","Glute med + ER weakness, adductor dominance. SMR adductors/TFL → activate glute med clamshell → lateral band walk → squat with band knee-out cue","Unilateral — asymmetric glute med inhibition. Often post-injury. Treat affected side: single-leg clamshell + single-leg glute bridge"] },
-      { id:"trunk", q:"Trunk position in squat?",
-        opts:["✓ Upright — parallel to tibia","⚠ Mild forward lean","✗ Significant trunk lean forward","✗ Lateral trunk shift"],
-        clues:["","Minor ankle DF or hip flexor restriction — screen ankle first with heel lift test","Ankle DF, hip flexor, OR thoracic extension — identify primary driver. Goblet squat (counterbalance) helps reveal true driver","Lateral shift = unilateral hip restriction or lumbar disc (shifts away from pain). Screen hip IR + lumbar quadrant test"] },
-      { id:"arm", q:"Overhead arm position?",
-        opts:["✓ Arms fully extended overhead","⚠ Slight elbow bend at bottom","✗ Arms fall forward significantly","✗ Cannot maintain overhead at all"],
-        clues:["","Minor thoracic restriction or lat tightness — foam roller + lat stretch","Thoracic + lat restriction → arms fall into flexion. Foam roller thoracic extension + lat SMR + overhead wall slide","Significant shoulder flexion / thoracic deficit — screen shoulder ROM and thoracic extension separately before squat loading"] },
-    ],
-    grades:["Normal (FMS 3) — Full depth, heels flat, knees tracking, dowel overhead","Compensated (FMS 2) — Minor compensation: heel rise, arm drop, or forward lean","Abnormal (FMS 0–1) — Cannot achieve depth or pain reproduced"],
-  }
-];
-
-function AnkleFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  useEffect(() => {
-    const saved = data["afs_data"];
-    if (saved && typeof saved === "string") {
-      try {
-        const p = JSON.parse(saved);
-        if (p.findings) setFindings(p.findings);
-        if (p.grades)   setGrades(p.grades);
-        if (p.notes)    setNotes(p.notes);
-      } catch {}
-    }
-  }, []);
-
-  const save = (f,g,n) => set("afs_data", JSON.stringify({findings:f,grades:g,notes:n}));
-  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
-  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
-  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
-
-  const completedCount = ANKLE_TESTS.filter(t => grades[t.id] !== undefined).length;
-  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
-
-  return (
-    <div>
-      <div style={{background:"linear-gradient(135deg,rgba(20,184,166,0.08),rgba(6,182,212,0.05))",border:"1px solid rgba(20,184,166,0.25)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <span style={{fontSize:"1.4rem"}}>🦶</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Ankle / Foot Functional Screen</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · Calf endurance · DF mobility · Proprioception · Arch · LSI</div>
-          </div>
-          <div style={{marginLeft:"auto",textAlign:"right"}}>
-            <div style={{fontSize:"1.2rem",fontWeight:900,color:"#0d9488"}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-          {ANKLE_TESTS.map(t=>{
-            const g=grades[t.id]; const done=g!==undefined;
-            return (
-              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
-                  border:`1px solid ${activeTest===t.id?"#0d9488":done?gradeColor(g)+"60":C.border}`,
-                  background:activeTest===t.id?"rgba(20,184,166,0.1)":done?`${gradeColor(g)}10`:"transparent",
-                  color:activeTest===t.id?"#0d9488":done?gradeColor(g):C.muted}}>
-                {t.icon} {t.label.split(" ").slice(0,2).join(" ")} {done?["✓","⚠","✗"][g]:""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {ANKLE_TESTS.map(t=>{
-        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
-        return (
-          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
-            border:`1.5px solid ${isOpen?"#0d9488":graded?gradeColor(g)+"50":C.border}`,
-            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(20,184,166,0.1)":"0 1px 4px rgba(0,0,0,0.04)"}}>
-
-            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
-              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
-              </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
-              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
-            </div>
-
-            {isOpen && (
-              <div style={{padding:"0 14px 14px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.78rem",fontWeight:700,color:"#0d9488",textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
-                </div>
-
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div style={{background:"#F0FDFA",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #99F6E4"}}>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:"#0d9488",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
-                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
-                  <div style={{marginTop:6,padding:"4px 8px",background:"rgba(20,184,166,0.08)",borderRadius:6,border:"1px solid rgba(20,184,166,0.2)"}}>
-                    <div style={{fontSize:"0.8rem",fontWeight:700,color:"#0d9488"}}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
-                {t.observations.map(obs=>{
-                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
-                  return (
-                    <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                        {obs.opts.map((opt,idx)=>{
-                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
-                          return (
-                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
-                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
-                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
-                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
-                              </div>
-                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:"rgba(20,184,166,0.06)",borderLeft:"3px solid #0d9488",borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
-                    </div>
-                  );
-                })}
-
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
-                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
-                  {t.grades.map((gLabel,idx)=>{
-                    const col=gradeColor(idx); const sel=g===idx;
-                    return (
-                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
-                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
-                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
-                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
-                  placeholder="Heel raise count, DF measurement, balance quality, arch findings..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {completedCount > 0 && (
-        <div style={{background:"#F0FDFA",borderRadius:14,padding:14,border:"1px solid #99F6E4",marginTop:4}}>
-          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Ankle / Foot Summary</div>
-          {ANKLE_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
-            const g=grades[t.id]; const col=gradeColor(g);
-            return (
-              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
-                <span style={{fontSize:"1rem"}}>{t.icon}</span>
-                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
-              </div>
-            );
-          })}
-          {Object.values(grades).includes(2) && (
-            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.8rem",color:"#dc2626",lineHeight:1.5}}>
-              ⚠ <strong>Abnormal findings present.</strong> Consider: Thompson test (Achilles), anterior drawer + talar tilt (ATFL/CFL), Ottawa ankle rules, windlass test (plantar fascia), tibialis posterior MMT, CAIT questionnaire, and VISA-A (Achilles tendinopathy).
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── CERVICAL FUNCTIONAL SCREEN ──────────────────────────────────────────────
-
-const CERVICAL_TESTS = [
-  {
-    id:"cfs_arom", icon:"🔄", label:"Cervical AROM Screen",
-    subtitle:"6-Plane ROM + Pain + Combined Movement",
-    phase:"Articular / Capsular / Myofascial Screen",
-    setup:"Patient seated upright, arms relaxed. Assess: Flexion (chin to chest), Extension (look at ceiling), L/R Lateral Flexion (ear to shoulder), L/R Rotation (chin to shoulder). Note range, pain, deviation, and end-feel. Normal values: Flex 45–50°, Ext 45–50°, Lat Flex 45°, Rotation 60–80°.",
-    normalDesc:"Full pain-free range in all planes. Smooth movement. No deviation or arc of pain. Rotation 60–80° bilateral. Lateral flexion 45° bilateral. No referred symptoms.",
-    observations:[
-      { id:"rot",    q:"Cervical rotation — most sensitive restriction?",
-        opts:["✓ 60–80° bilateral, pain-free","⚠ 45–59° or mild pain at end range","✗ <45° one side (significant restriction)","✗ Bilateral equal restriction — capsular pattern"],
-        clues:["","Minor facet/capsular restriction — unilateral or postural. Maitland PA/unilateral PA mobilisation","Significant unilateral restriction — likely C1/C2 (upper cervical) or C4/5/6 facet restriction. Screen with combined movement (rot + ext vs rot + flex)","Bilateral equal loss of rotation — capsular pattern. OA of C1/C2 most likely. Upper cervical screen"] },
-      { id:"flex",   q:"Flexion — chin to chest?",
-        opts:["✓ Chin touches or nears chest","⚠ 2–3 finger widths from chest","✗ >3 finger widths (significant restriction)","✗ Pain/symptom reproduction on flexion"],
-        clues:["","Minor flexion restriction — upper cervical or myofascial. Suboccipital release + DNF activation","Significant flexion restriction — screen for upper cervical instability (Sharp-Purser if flexion reproduces symptoms). Check for cord sign","Symptom reproduction — peripheralisation on flexion = disc or neural tension. Centralisation test (McKenzie cervical). Neurological screen"] },
-      { id:"ext",    q:"Extension — look at ceiling?",
-        opts:["✓ Full extension, pain-free","⚠ Limited or pain at end range","✗ Reproduces headache","✗ Reproduces arm symptoms"],
-        clues:["","Facet joint restriction or myofascial tightness — extension mobilisation if no headache reproduction","Upper cervical facet or C2/3 — cervicogenic headache source. Watson headache approach. Extension mobilisation with caution","Radiculopathy or discogenic — extension + ipsilateral rotation/lateral flex = Spurling test equivalent. Neural screen"] },
-      { id:"latflex",q:"Lateral flexion symmetry?",
-        opts:["✓ 45° bilateral, symmetric","⚠ Asymmetric — tight one side","✗ Pain on lateral flexion (ipsilateral)","✗ Pain + arm symptoms (contralateral)"],
-        clues:["","Ipsilateral scalene/levator tightness — screen CPA (upper trap, levator scapulae)","Ipsilateral facet joint compression pain — unilateral PA mobilisation C3–C6","Contralateral lateral flexion pain = nerve root stretch. Screen with ULNT1. Foraminal compression (Spurling) test"] },
-      { id:"qual",   q:"Quality of movement?",
-        opts:["✓ Smooth, full range","⚠ Hinge point / catches at one level","✗ Deviation during movement","✗ Instability / shake"],
-        clues:["","Segmental restriction — hinge point identifies hypomobile segment. Maitland mobilisation at that level","Segmental restriction with deviation — combined movement restriction (Blake — Maitland) or lateral shift equivalent","Cervical instability — screen Sharp-Purser, transverse ligament test. Refer if positive"] },
-    ],
-    grades:["Normal — Full range all planes, pain-free, smooth movement","Compensated — Minor restriction or end-range pain without symptoms","Abnormal — Restricted rotation, reproduced headache/arm symptoms, or instability"],
-  },
-  {
-    id:"cfs_dnf", icon:"🧠", label:"Deep Neck Flexor Endurance",
-    subtitle:"Cranio-Cervical Flexion — Chin Tuck Hold Test",
-    phase:"DNF Activation / FHP Motor Control",
-    setup:"Patient supine, head on pillow. Perform chin tuck (nod — NOT full flexion lift). Hold chin retracted while breathing. Timer starts. Stop when SCM visibly dominates or chin poke occurs. Normal: 38–40s. Or: Supine chin tuck × 10 without SCM activation — count clean reps.",
-    normalDesc:"Holds 38–40 seconds of chin tuck without SCM dominant strategy. No chin poke. Craniovertebral angle stays maintained. Breathing continues normally throughout.",
-    observations:[
-      { id:"time",   q:"Chin tuck hold duration?",
-        opts:["✓ ≥38 seconds (normal)","⚠ 20–37 seconds (mild deficit)","✗ <20 seconds (significant deficit)","✗ Cannot initiate chin tuck — SCM only"],
-        clues:["","Minor DNF endurance deficit — CCFT programme, staged progression","Significant DNF weakness — classic pattern in cervicogenic headache, FHP, whiplash. Priority: DNF activation at lower pressure levels before endurance training","DNF cannot initiate — severe inhibition. Begin with biofeedback pressure cuff 22mmHg, suboccipital release first. Screen for pain inhibition"] },
-      { id:"scm",    q:"SCM dominance during hold?",
-        opts:["✓ SCM stays relaxed","⚠ SCM activates late (last 10s)","✗ SCM activates immediately at onset","✗ SCM only — no DNF engagement"],
-        clues:["","Minor — acceptable fatigue pattern at end of hold","SCM overactive strategy — upper crossed syndrome pattern (Janda). DNF inhibited. Suboccipital release before activation work","Dominant SCM strategy — classic Janda upper crossed. DNF inhibited by forward head posture. Begin suboccipital release, cranio-cervical nodding biofeedback"] },
-      { id:"chin",   q:"Chin poke during hold?",
-        opts:["✓ Chin stays retracted","⚠ Mild chin drift at fatigue","✗ Chin pokes forward immediately","✗ Cannot retract chin at all"],
-        clues:["","Minor endurance drift — acceptable","Classic forward head posture motor pattern — cannot dissociate cranio-cervical nod from cervicothoracic extension. Priority rehab","Severe FHP pattern — begin with postural correction (chin tuck against wall), suboccipital release, upper thoracic extension mobilisation"] },
-      { id:"breath", q:"Breathing during hold?",
-        opts:["✓ Normal breathing continues","⚠ Breath holds at onset","✗ Breath holds — cannot hold + breathe","✗ Valsalva — strain pattern"],
-        clues:["","Minor breath-hold — cue: breathe normally through the nod","Breath-hold compensation = significant motor control deficit. Begin supine breathing + DNF activation separately before combining","Valsalva pattern — screen for intra-abdominal pressure issues + pain avoidance. Reassure and restart with minimal effort"] },
-      { id:"sym",    q:"Symptom reproduction during test?",
-        opts:["✓ No symptoms","⚠ Mild neck ache","✗ Headache reproduced","✗ Dizziness / vertigo onset"],
-        clues:["","Minor muscle fatigue","Cervicogenic headache — Watson headache approach. Upper cervical (C1/2/3) is likely nociceptive source","Dizziness — cervicogenic or vertebrobasilar. Do Hallpike, smooth pursuit neck torsion test, screen VBI before cervical manipulation"] },
-    ],
-    grades:["Normal — ≥38s, SCM relaxed, chin retracted, pain-free","Compensated — 20–37s or late SCM with controlled form","Abnormal — <20s, SCM dominant from start, chin poke, or symptoms reproduced"],
-  },
-  {
-    id:"cfs_post", icon:"📏", label:"Postural Screen (CVA + FHP)",
-    subtitle:"Craniovertebral Angle + Forward Head Posture",
-    phase:"Postural Assessment / Janda Upper Crossed",
-    setup:"Lateral photograph or direct assessment. Patient standing relaxed in natural posture. Draw (or estimate) angle between: line from tragus of ear to C7 spinous process AND horizontal. CVA normal >50°. Assess: head position relative to shoulder, thoracic kyphosis, scapular position.",
-    normalDesc:"CVA >50° (ear over shoulder). Chin horizontal or level. Thoracic kyphosis mild / normal. Scapulae retracted and level. No shoulder elevation. Earlobe over acromion in lateral view.",
-    observations:[
-      { id:"cva",    q:"Craniovertebral angle (CVA)?",
-        opts:["✓ >50° (normal — ear over shoulder)","⚠ 45–50° (borderline FHP)","✗ <45° (significant FHP)","✗ <35° (severe FHP — clinically significant)"],
-        clues:["","Borderline posture — education, DNF activation, thoracic extension","Significant FHP — each 1° below 50° = 4.5kg increased load on cervical spine. Priority: DNF activation, upper thoracic extension, pec minor / upper trap stretching","Severe FHP — CVA <35° = significantly increased risk of headache, cervical disc loading, shoulder impingement. Full Janda CPA assessment"] },
-      { id:"thor",   q:"Thoracic kyphosis?",
-        opts:["✓ Normal mild kyphosis","⚠ Increased — hyperkyphosis","✗ Significant flexed posture","✗ Flat thoracic (hypolordosis)"],
-        clues:["","Monitor — early kyphosis increase. Thoracic extension mobilisation + prone extension exercise","Hyperkyphosis drives FHP — cannot correct cervical posture without thoracic extension. Foam roller extension + thoracic PA mobilisation priority","Flat thoracic — may indicate ankylosing spondylitis pattern if bilateral. Screen SI joints, hip extension"] },
-      { id:"scap",   q:"Resting scapular position?",
-        opts:["✓ Retracted and level","⚠ Protracted (rounded shoulders)","✗ Elevated + protracted (upper trap dominant)","✗ Asymmetric elevation"],
-        clues:["","Pec minor tightness — classic upper crossed pattern. Pec minor stretch + lower/mid trap activation","Full Janda upper crossed pattern — upper trap + SCM overactive, lower trap + DNF inhibited. CPA assessment priority","Asymmetric elevation — levator scapulae dominant one side. Screen cervical lateral flexion restriction ipsilateral to elevated shoulder"] },
-      { id:"ear",    q:"Earlobe over acromion (lateral view)?",
-        opts:["✓ Earlobe over or near acromion","⚠ Earlobe 2–3cm anterior to acromion","✗ Earlobe clearly anterior (>3cm)"],
-        clues:["","Minor FHP — posture education + targeted activation","Significant FHP — each cm anterior increases cervical load. Quantify with CVA and photograph for baseline + progress monitoring"] },
-      { id:"chin",   q:"Chin position at rest?",
-        opts:["✓ Horizontal chin — neutral","⚠ Chin poke — chin forward and up","✗ Chin depressed — dowager pattern","✗ Head tilted — lateral asymmetry"],
-        clues:["","Classic chin poke = C1/C2 extension + lower cervical flexion. Target with chin tuck exercise (not neck extension)","Dowager hump pattern — C7 prominence with flexed posture. Thoracic extension + upper cervical correction together","Head tilt — screen sternocleidomastoid length asymmetry and C1/C2 rotation restriction"] },
-    ],
-    grades:["Normal — CVA >50°, ear over shoulder, neutral scapulae","Compensated — CVA 45–50° or mild rounding without symptoms","Abnormal — CVA <45°, significant FHP, or full upper crossed pattern"],
-  },
-  {
-    id:"cfs_diz", icon:"😵", label:"Cervicogenic Dizziness Screen",
-    subtitle:"Smooth Pursuit Neck Torsion + VBI Screen",
-    phase:"Vestibular / Proprioceptive / VBI Safety",
-    setup:"STEP 1 — VBI screen (if manual therapy planned): Sustained rotation test 30s each side. STEP 2 — Smooth pursuit neck torsion (SPNT): track moving target eyes only while body turns (dissociation). STEP 3 — Hautant test: arms outstretched, eyes closed, rotate head. Drift = positive. STEP 4 — Head repositioning accuracy: eyes closed, rotate to target, open, measure error. Normal <4.5°.",
-    normalDesc:"VBI screen negative. SPNT — smooth eye tracking without saccades or nystagmus. Hautant — no arm drift. Head repositioning error <4.5° bilateral. No dizziness reproduction with any test.",
-    observations:[
-      { id:"vbi",    q:"Sustained rotation — any symptoms?",
-        opts:["✓ No symptoms 30s each side","⚠ Minor dizziness — settles quickly","✗ Dizziness + nystagmus","✗ Drop attack / diplopia / dysphagia"],
-        clues:["","Possible minor cervicogenic vestibular response — may be proprioceptive not vascular. Monitor, reassess","VBI screen positive — cervical manipulation CONTRAINDICATED. Refer to vestibular physiotherapist. Reassess with positional testing (Dix-Hallpike)","Absolute contraindication to cervical manipulation — 5Ds (Dizziness, Diplopia, Dysarthria, Dysphagia, Drop attack). Emergency referral if acute onset"] },
-      { id:"spnt",   q:"Smooth pursuit neck torsion (SPNT)?",
-        opts:["✓ Smooth tracking — no saccades","⚠ Mild saccades — inconsistent","✗ Clear saccadic eye movement with rotation","✗ Nystagmus present"],
-        clues:["","Minor — may be cervicogenic. Compare sitting vs lying — if worse sitting = cervicogenic component likely","SPNT positive — cervicogenic dizziness likely. Upper cervical proprioceptive dysfunction. Cervical joint position sense training, gaze stability exercises","Nystagmus — vestibular origin (peripheral or central). Dix-Hallpike mandatory before any cervical treatment. Vestibular physiotherapy referral"] },
-      { id:"haut",   q:"Hautant test (arm drift eyes closed + rotation)?",
-        opts:["✓ No arm drift","⚠ Slight drift at end range rotation","✗ Clear bilateral arm drift","✗ Unilateral drift — neurological sign"],
-        clues:["","Minor — possibly normal variation. Reassess with head in neutral","Bilateral drift = vascular or vestibular involvement — VBI screen before treatment. Do not manipulate","Unilateral drift = neurological — screen C5/C6/C7 myotomes and reflexes. Refer if progressive"] },
-      { id:"reposition",q:"Head repositioning accuracy?",
-        opts:["✓ <4.5° error (normal proprioception)","⚠ 4.5–7° error (mild deficit)","✗ >7° error (significant proprioceptive deficit)","✗ Reproduces dizziness on repositioning"],
-        clues:["","Minor cervical proprioceptive deficit — laser pointer training, gaze stability exercises","Significant deficit — typical in chronic WAD and cervicogenic headache. Joint position sense training with laser pointer. Neck muscle endurance + cervical stabilisation","Symptom reproduction = vestibular/proprioceptive overlap — gaze stability + Epley if BPPV suspected + cervical stabilisation"] },
-      { id:"hallpike",q:"Dix-Hallpike result (if performed)?",
-        opts:["✓ Negative — no nystagmus","⚠ Not performed","✗ Positive — torsional nystagmus <60s (BPPV)","✗ Positive — nystagmus >60s or direction-changing (central)"],
-        clues:["","","BPPV — Epley canalith repositioning (posterior canal). Monitor for resolution × 3 Epleys. If no response — anterior or lateral canal or central cause","Direction-changing or prolonged nystagmus = central cause — immediate medical referral. Do not treat cervically"] },
-    ],
-    grades:["Normal — VBI negative, SPNT smooth, no drift, repositioning <4.5°","Compensated — Minor saccades or 4.5–7° repositioning error without symptoms","Abnormal — VBI positive, nystagmus, dizziness reproduced, or Dix-Hallpike positive"],
-  },
-  {
-    id:"cfs_ulnt", icon:"💪", label:"ULNT1 — Upper Limb Neurodynamic",
-    subtitle:"Median Nerve Tension + C6/C7 Radiculopathy Screen",
-    phase:"Neural Tension / Cervical Radiculopathy",
-    setup:"Patient supine. Sequence: (1) Shoulder depression, (2) Shoulder abduction 110°, (3) Wrist/finger extension, (4) Forearm supination, (5) Elbow extension until symptom onset, (6) Cervical lateral flexion away (sensitises) then toward (desensitises). Normal: mild stretch sensation in forearm/hand — bilateral. Positive: reproduces patient symptoms + sensitised by lateral flexion away + desensitised by lateral flexion toward.",
-    normalDesc:"Mild stretch feeling in forearm/cubital fossa bilaterally at elbow extension endpoint. No symptom reproduction. Sensitisation and desensitisation by cervical lateral flexion (normal response). Bilateral equal range.",
-    observations:[
-      { id:"symp",   q:"Symptom reproduction during ULNT1?",
-        opts:["✓ Mild stretch only — bilateral","⚠ Familiar arm/hand symptoms reproduced","✗ Clear neurological symptoms reproduced","✗ Symptoms worse than other side"],
-        clues:["","Normal mechanosensitivity — bilateral mild stretch is expected at end range","Neurodynamic test positive — reproduces patient symptoms. Differentiates nerve from muscle/joint. Neural mobilisation (slider vs tensioner based on irritability)","Positive ULNT1 — bilateral comparison needed. If significantly more symptomatic one side = neural sensitisation. Determine irritability before treatment"] },
-      { id:"diff",   q:"Cervical lateral flexion differentiation?",
-        opts:["✓ Not tested / not applicable","⚠ Sensitises but does not desensitise","✗ Positive — sensitises away AND desensitises toward","✗ No change with lateral flexion — not neural"],
-        clues:["","","Equivocal — may be muscular or myofascial. Repeat with shoulder depression only as first step","Classic neurodynamic positive — sensitisation + desensitisation confirms neural origin. C5/6/7 radiculopathy or peripheral median nerve sensitisation. Butler neural mobilisation approach"] },
-      { id:"level",  q:"Elbow extension deficit (vs other side)?",
-        opts:["✓ Equal bilateral extension","⚠ 5–10° deficit — mildly positive","✗ >10° deficit clearly restricted","✗ Major restriction — barely extends past 90°"],
-        clues:["","Minor — monitor and compare bilaterally","Moderate neurodynamic restriction — neural mobilisation indicated. Determine irritability (slider if high, tensioner if low)","Severe neural tension — high irritability. Begin with cervical pain relief, slider-only neurodynamics. Formal neurological screen C5/C6/C7 myotomes + reflexes"] },
-      { id:"neuro",  q:"Neurological symptoms present?",
-        opts:["✓ Stretch sensation only (non-neurological)","⚠ Tingling / paresthesia in distribution","✗ Numbness in median nerve distribution","✗ Weakness in tested myotome (grip / wrist ext)"],
-        clues:["","Minor neural sensitisation — neural slider mobilisation, cervical decompression position","C6 or C7 radiculopathy pattern — confirm with dermatomal mapping, reflexes (biceps C6, triceps C7), myotome grip strength test","Significant neurological deficit — formal upper limb neurological screen. Refer if progressive weakness. MRI if myelopathy signs present"] },
-      { id:"bilat",  q:"Bilateral comparison?",
-        opts:["✓ Symmetric — equal range and sensation","⚠ Mild asymmetry — same symptoms","✗ Clearly more restricted + symptomatic one side","✗ Bilateral — possible central sensitisation"],
-        clues:["","","Unilateral neural sensitisation — cervical origin on same side most likely. C5/C6/C7 myotome and reflex testing next","Bilateral neural sensitisation — consider central sensitisation (pain catastrophising), thoracic outlet, or double crush syndrome"] },
-    ],
-    grades:["Normal — Mild bilateral stretch, desensitises with lateral flexion","Compensated — Mildly more symptomatic one side without neurological signs","Abnormal — Reproduced symptoms, positive sensitisation, neurological signs, or significant asymmetry"],
-  },
-];
-
-function CervicalFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  useEffect(() => {
-    const saved = data["cfs_data"];
-    if (saved && typeof saved === "string") {
-      try {
-        const p = JSON.parse(saved);
-        if (p.findings) setFindings(p.findings);
-        if (p.grades)   setGrades(p.grades);
-        if (p.notes)    setNotes(p.notes);
-      } catch {}
-    }
-  }, []);
-
-  const save = (f,g,n) => set("cfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
-  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
-  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
-  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
-
-  const completedCount = CERVICAL_TESTS.filter(t => grades[t.id] !== undefined).length;
-  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
-  const accentCol = "#7c3aed";
-
-  return (
-    <div>
-      <div style={{background:"linear-gradient(135deg,rgba(124,58,237,0.08),rgba(139,92,246,0.05))",border:"1px solid rgba(124,58,237,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <span style={{fontSize:"1.4rem"}}>🧠</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Cervical Functional Screen</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM · DNF endurance · CVA posture · Dizziness · ULNT1</div>
-          </div>
-          <div style={{marginLeft:"auto",textAlign:"right"}}>
-            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
-          </div>
-        </div>
-        <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
-          <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:700}}>⚠ Safety first: Complete VBI screen (ULNT test 4) before any cervical manipulation. If 5Ds present — do not manipulate.</div>
-        </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-          {CERVICAL_TESTS.map(t=>{
-            const g=grades[t.id]; const done=g!==undefined;
-            return (
-              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
-                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
-                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
-                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
-                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {CERVICAL_TESTS.map(t=>{
-        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
-        return (
-          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
-            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
-            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(124,58,237,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
-
-            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
-              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
-              </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
-              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
-            </div>
-
-            {isOpen && (
-              <div style={{padding:"0 14px 14px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
-                </div>
-
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div style={{background:"#F5F3FF",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #DDD6FE"}}>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
-                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
-                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
-                {t.observations.map(obs=>{
-                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
-                  return (
-                    <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                        {obs.opts.map((opt,idx)=>{
-                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
-                          return (
-                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
-                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
-                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
-                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
-                              </div>
-                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
-                    </div>
-                  );
-                })}
-
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
-                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
-                  {t.grades.map((gLabel,idx)=>{
-                    const col=gradeColor(idx); const sel=g===idx;
-                    return (
-                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
-                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
-                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
-                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
-                  placeholder="Range values, DNF hold time, CVA measurement, VBI screen result..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {completedCount > 0 && (
-        <div style={{background:"#F5F3FF",borderRadius:14,padding:14,border:"1px solid #DDD6FE",marginTop:4}}>
-          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Cervical Screen Summary</div>
-          {CERVICAL_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
-            const g=grades[t.id]; const col=gradeColor(g);
-            return (
-              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
-                <span style={{fontSize:"1rem"}}>{t.icon}</span>
-                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
-              </div>
-            );
-          })}
-          {Object.values(grades).includes(2) && (
-            <div style={{marginTop:10,padding:"8px 10px",background:"#FEF2F2",borderRadius:8,border:"1px solid #FECACA",fontSize:"0.8rem",color:"#dc2626",lineHeight:1.5}}>
-              ⚠ <strong>Abnormal findings present.</strong> Consider: Sharp-Purser (instability), Spurling (radiculopathy), Watson headache approach (C1/C2/C3), Dix-Hallpike (BPPV), C5/C6/C7 myotomes + reflexes, and formal VBI screen before manual therapy.
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── THORACIC FUNCTIONAL SCREEN ──────────────────────────────────────────────
-
-const THORACIC_TESTS = [
-  {
-    id:"tfs_arom", icon:"🔄", label:"Thoracic AROM",
-    subtitle:"Rotation · Extension · Lateral Flexion",
-    phase:"Articular / Segmental Mobility Screen",
-    setup:"Patient seated cross-armed (hands on opposite shoulders). Assess: rotation L/R (normal 40–45° each), extension (normal 20–25°), lateral flexion L/R (normal 20–30°). Compare symmetry. Note: hinge points (restricted segments), pain arcs, compensatory lumbar movement.",
-    normalDesc:"Rotation 40–45° bilateral symmetric. Smooth extension without hinge. Lateral flexion 20–30° bilateral. No pain. No compensatory lumbar motion. Thoracic kyphosis mild and mobile.",
-    observations:[
-      { id:"rot",    q:"Thoracic rotation symmetry?",
-        opts:["✓ 40–45° bilateral, smooth","⚠ Mild asymmetry (<10° difference)","✗ Significant asymmetry (>10°)","✗ Painful arc during rotation"],
-        clues:["","Minor unilateral restriction — PA mobilisation at restricted segment (Maitland). Rotation SNAG","Significant unilateral restriction — rib head or costovertebral joint. Rib mobilisation + thoracic rotation mobilisation. Dry needling erector spinae if myofascial","Pain arc = segmental facet irritation — unilateral PA at pain level. Anti-inflammatory phase first if acute"] },
-      { id:"ext",    q:"Thoracic extension quality?",
-        opts:["✓ Smooth distributed extension","⚠ Stiff — reduced range uniformly","✗ Hinge point — one level only moves","✗ Pain on extension"],
-        clues:["","Global hypomobility — foam roller extension + thoracic manipulation (HVLA if indicated). Upper crossed postural pattern","Segmental restriction — specific PA mobilisation at hinge level. Rib palpation for costovertebral involvement","Extension pain — facet compression. Extension mobilisation with caution. Flexion bias if pain persists"] },
-      { id:"latflex",q:"Lateral flexion symmetry?",
-        opts:["✓ 20–30° bilateral, symmetric","⚠ Mild asymmetry","✗ Significant asymmetry","✗ Reproduces pain / refers"],
-        clues:["","Unilateral rib / intercostal restriction — rib spring test next. Lateral PA mobilisation","Significant lateral asymmetry — scoliosis screen (Adam's forward bend). Structural vs functional. Cobb angle if structural suspected","Referred pain on lateral flexion — intercostal neuralgia or T4 syndrome (T4 segment). T4 mobilisation + upper thoracic screen"] },
-      { id:"hinge",  q:"Segmental hinge point identified?",
-        opts:["✓ No hinge — even distribution","⚠ Mild preference one area","✗ Clear hinge — one segment dominates","✗ Multiple hinge points"],
-        clues:["","Monitor — targeted mobilisation at stiff area","Segmental hypomobility — PA mobilisation at that level. Confirm with passive intervertebral motion (PIVM) testing","Multiple restriction levels — thoracic manipulation + foam roller extension + seated rotation stretching"] },
-      { id:"comp",   q:"Compensatory lumbar movement?",
-        opts:["✓ Thoracic rotates independently","⚠ Mild lumbar co-rotation","✗ Lumbar rotates instead of thoracic","✗ Patient cannot isolate movement"],
-        clues:["","Minor — cueing and practice. Hands-on to assist isolation","Thoracic restriction compensated by lumbar — thoracic mobilisation priority. Over-rotation through lumbar segment increases L4/L5 disc stress","Motor control deficit — seated rotation against resistance, foam roller, thoracic rotation with lumbar lock"] },
-    ],
-    grades:["Normal — Full symmetric range, smooth quality, no pain","Compensated — Minor restriction or asymmetry without referred symptoms","Abnormal — Hinge point, significant asymmetry, pain, or compensatory lumbar movement"],
-  },
-  {
-    id:"tfs_rib", icon:"🫁", label:"Rib Mobility Screen",
-    subtitle:"Pump Handle · Bucket Handle · Rib Spring",
-    phase:"Costovertebral / Costotransverse Joint Assessment",
-    setup:"Patient prone. Palpate angle of ribs (posterior). Rib spring: apply PA pressure over each rib angle T2–T10. Normal = springy, painless bilateral. Pump handle (upper ribs 1–5): AP movement on respiration. Bucket handle (lower ribs 6–10): lateral movement. Assess during deep breath — restriction = asymmetric excursion.",
-    normalDesc:"Springy, pain-free PA pressure all rib angles. Symmetric rib excursion bilaterally on deep breath. Pump handle movement ribs 1–5, bucket handle 6–10. No reproduction of local or referred pain.",
-    observations:[
-      { id:"spring", q:"Rib spring test (prone PA)?",
-        opts:["✓ Springy, pain-free bilateral","⚠ Stiff one side — reduced spring","✗ Painful — local pain reproduction","✗ Painful — referred pain (chest/intercostal)"],
-        clues:["","Unilateral costovertebral restriction — rib mobilisation (prone PA + rib rotation). Dry needling if myofascial","Local pain = costovertebral joint irritation — gentle rib PA mobilisation, intercostal stretching. Distinguish from pleuritis (reproduce on deep breath)","Referred pain / intercostal = intercostal nerve irritation or T4 syndrome. Unilateral PA to costovertebral junction. Exclude visceral referral (cardiac, pleuritis)"] },
-      { id:"resp",   q:"Rib excursion on deep breath?",
-        opts:["✓ Symmetric bilateral expansion","⚠ Mild asymmetry on deep breath","✗ Clear asymmetric — restricted one side","✗ Paradoxical movement"],
-        clues:["","Minor costovertebral or myofascial restriction — rib mobilisation + lateral costal breathing training","Significant rib restriction — rib manipulation (HVLA if indicated) + diaphragmatic breathing + intercostal stretching","Paradoxical movement — possible flail chest history or intercostal muscle dysfunction. Medical referral if acute"] },
-      { id:"pump",   q:"Upper rib pump handle (ribs 1–5)?",
-        opts:["✓ Bilateral symmetric AP movement","⚠ Reduced one side","✗ Absent — fixed first rib","✗ Painful — first rib syndrome"],
-        clues:["","Upper thoracic / rib 1 restriction — thoracic outlet screen. First rib mobilisation","Fixed first rib — very common in thoracic outlet syndrome, cervical tension headache. First rib mobilisation (supine) mandatory before scalene stretching","First rib pain = first rib syndrome. Thoracic outlet screen (EAST test, Adson, Roos). Cervical rib rule-out on X-ray"] },
-      { id:"bucket", q:"Lower rib bucket handle (6–10)?",
-        opts:["✓ Bilateral symmetric lateral expansion","⚠ Reduced lateral expansion one side","✗ Absent expansion","✗ Pain on expansion"],
-        clues:["","Costovertebral restriction — rib mobilisation + lateral costal breathing exercise","Significant restriction — intercostal stretching + rib manipulation. Diaphragm assessment (may be contributing)","Pain on lateral expansion — intercostal irritation, costochondritis, or referred. Distinguish with palpation of costochondral junction"] },
-      { id:"tender", q:"Costochondral or sternal tenderness?",
-        opts:["✓ No tenderness","⚠ Mild costal margin tenderness","✗ Costochondritis (anterior)","✗ Costo-sternal tenderness (Tietze's)"],
-        clues:["","Minor costal margin tenderness — myofascial or postural. Avoid direct pressure. Thoracic extension + postural correction","Costochondritis — anti-inflammatory approach. Postural correction. Avoid direct mobilisation over inflamed cartilage","Tietze's syndrome — visible + palpable swelling. Differentiate from cardiac. Refer if doubt"] },
-    ],
-    grades:["Normal — Springy PA, symmetric rib excursion, pain-free","Compensated — Minor stiffness or asymmetry without referred symptoms","Abnormal — Pain on spring, asymmetric excursion, fixed first rib, or referred intercostal pain"],
-  },
-  {
-    id:"tfs_ext", icon:"📐", label:"Thoracic Extension Mobility",
-    subtitle:"Foam Roller / Chair Test — Segmental Extension",
-    phase:"Hypomobility / Postural Extension Assessment",
-    setup:"Method 1 (foam roller): Patient supine, foam roller under T4–T8. Arms crossed. Extend over roller 30 sec each level T3 to T9. Assess range, pain, crepitus. Method 2 (chair back): Seated, hands behind head, extend over chair back. Assess level where motion occurs vs where it is blocked.",
-    normalDesc:"Extension distributes evenly T1–T12. Comfortable range over foam roller. Chair extension — movement throughout upper-to-mid thoracic. No segmental block. No pain or clicking.",
-    observations:[
-      { id:"level",  q:"Level of restriction (foam roller)?",
-        opts:["✓ Even throughout T1–T12","⚠ Mild stiffness upper thoracic (T1–T4)","✗ Block mid-thoracic (T4–T8)","✗ Block lower thoracic (T8–T12)"],
-        clues:["","Upper thoracic restriction — very common with FHP. T1/T2/T3 PA mobilisation + chin tuck","Mid-thoracic restriction (T4–T8) — most common site. T4 syndrome suspect if combined with arm symptoms. PA mobilisation T4–T6 + foam roller extension","Lower thoracic — thoracolumbar junction. Screen L1/L2 for compensatory hypermobility. Thoracolumbar PA mobilisation"] },
-      { id:"pain",   q:"Pain on extension over roller?",
-        opts:["✓ Comfortable — mild pressure only","⚠ Mild ache at restriction site","✗ Sharp localised pain","✗ Referred pain (arm, anterior chest)"],
-        clues:["","Muscle guarding — mobilise at adjacent pain-free level first, progress toward restricted segment","Acute facet irritation — PA in neutral before extension loading. Anti-inflammatory positioning (flexion)","Referred anterior chest or arm = T4 syndrome. Unilateral PA at T4. Upper thoracic mobilisation. Exclude cardiac cause"] },
-      { id:"click",  q:"Audible/palpable clicking on extension?",
-        opts:["✓ No clicking","⚠ Clicking with relief (cavitation)","✗ Clicking with pain","✗ Grinding / crepitus"],
-        clues:["","Normal joint cavitation — no concern. Continue mobilisation","Facet irritation — mobilise below pain threshold first. May need traction technique","Crepitus = degenerative change. Reduce range, add muscle control before extension range work"] },
-      { id:"scap",   q:"Scapular movement during thoracic extension?",
-        opts:["✓ Scapulae retract symmetrically","⚠ One scapula lags / protracts","✗ Bilateral scapular protraction — cannot retract","✗ Scapular winging during extension"],
-        clues:["","Serratus anterior / lower trap asymmetry. Scapular setting exercise on that side","Bilateral protraction — Janda upper crossed pattern. Lower/mid trap activation before extension range work","Winging = serratus anterior inhibition. Long thoracic nerve screen. Serratus wall slide + protraction-retraction exercise"] },
-      { id:"breath", q:"Thoracic breathing on extension?",
-        opts:["✓ Ribcage expands on extension","⚠ Breath-holds on extension","✗ Paradoxical pattern — ribcage narrows","✗ Cannot extend and breathe simultaneously"],
-        clues:["","Minor breath-holding — cue to breathe out on extension. Monitor","Breath-hold compensation — diaphragm inhibited on extension. Breathing pattern retraining + thoracic extension mobility separately","Significant — respiratory physiotherapy or pain-avoidance behaviour. Address pain first"] },
-    ],
-    grades:["Normal — Even thoracic extension throughout T1–T12, pain-free","Compensated — Mild segmental restriction without referred symptoms","Abnormal — Segmental block, referred pain, or scapular dysfunction on extension"],
-  },
-  {
-    id:"tfs_t4", icon:"⚡", label:"T4 Syndrome Screen",
-    subtitle:"Upper Thoracic Referred Arm Symptoms",
-    phase:"T4 Syndrome / Sympathetic Nervous System Screen",
-    setup:"T4 syndrome = unilateral or bilateral vague arm symptoms (heaviness, tingling, numbness) with upper thoracic dysfunction. Screen: (1) Unilateral PA on T4 — reproduces arm symptoms? (2) Combined rotation + extension at T3/T4. (3) Upper limb elevation with T4 PA — changes symptoms? (4) Neurological screen C5–T1. T4 commonly co-presents with bilateral glove-like numbness.",
-    normalDesc:"PA on T3–T5 does not reproduce arm symptoms. Arm elevation with thoracic PA does not change symptoms. Neuro screen C5–T1 clear. No bilateral glove tingling. Upper thoracic mobility in normal range.",
-    observations:[
-      { id:"pa",     q:"Unilateral PA T4 — arm symptom reproduction?",
-        opts:["✓ No arm symptoms reproduced","⚠ Minor local thoracic ache only","✗ Arm symptoms reproduced unilaterally","✗ Bilateral arm symptoms with PA"],
-        clues:["","Not T4 syndrome — reassess other sources (cervical, TOS, peripheral)","Positive T4 screen — unilateral upper thoracic mobilisation. Rotation SNAG T3/T4. Monitor for arm symptom change","Classic T4 syndrome — bilateral. Upper thoracic mobilisation T3–T5 priority. Often dramatic symptom relief. Add thoracic extension home programme"] },
-      { id:"arm",    q:"Arm symptom quality?",
-        opts:["✓ No arm symptoms","⚠ Vague heaviness in arm","✗ Glove-like tingling (not dermatomal)","✗ Clear dermatomal pattern"],
-        clues:["","Not T4 syndrome — continue other assessment","T4 syndrome pattern — non-dermatomal vague symptoms typical of sympathetic nervous system involvement at T4","Dermatomal tingling — cervical radiculopathy more likely. ULNT + cervical screen priority. T4 may contribute but not primary"] },
-      { id:"neuro",  q:"Neurological screen C5–T1?",
-        opts:["✓ Myotomes and reflexes intact","⚠ Mild sensory change only","✗ Myotome weakness present","✗ Reflex changes present"],
-        clues:["","Normal — T4 syndrome or functional cause likely","Sensory changes without motor — screen double crush. Cervical + thoracic + peripheral combined","Myotome weakness — cervical radiculopathy or myelopathy. Cervical MRI referral. Not T4 syndrome alone","Reflex changes — myelopathy or radiculopathy. Urgent neurological referral if progressive"] },
-      { id:"bilat",  q:"Are symptoms bilateral?",
-        opts:["✓ Unilateral","⚠ Predominantly one side","✗ Bilateral","✗ Bilateral + trunk symptoms"],
-        clues:["","Unilateral — cervical radiculopathy or peripheral more likely than T4. Thoracic still contributory","Bilateral — T4 syndrome or central sensitisation. T4 mobilisation + pain education","Strong T4 syndrome indicator — bilateral non-dermatomal = autonomic referral pattern. T4 upper thoracic mobilisation","If trunk symptoms also present — screen for myelopathy (Lhermitte, Babinski, hyperreflexia). Urgent referral if myelopathic"] },
-      { id:"posture",q:"Upper thoracic kyphosis at T3/T4?",
-        opts:["✓ Normal kyphosis","⚠ Mild flexion increase","✗ Kyphotic flexion at T3/T4 level","✗ Severe kyphosis + chin poke"],
-        clues:["","Normal — less likely pure T4 mechanism","Kyphosis at T3/T4 — confirms postural T4 syndrome. Thoracic extension + FHP correction core of treatment","Classic T4 posture — foam roller extension + chin tuck + scapular retraction. Upper thoracic PA mobilisation","Severe — Janda upper crossed full pattern + thoracic outlet screen"] },
-    ],
-    grades:["Normal — No arm symptom reproduction, intact neurology, no T4 kyphosis","Compensated — Vague arm symptoms without neurological deficit","Abnormal — Arm symptoms reproduced by T4 PA, bilateral non-dermatomal tingling, or myotome changes"],
-  },
-  {
-    id:"tfs_scap", icon:"🦴", label:"Scapular Stability Screen",
-    subtitle:"Winging · Dyskinesis · Lower Trap / Serratus",
-    phase:"Scapulothoracic Motor Control",
-    setup:"(1) Wall push-up — observe for scapular winging (medial border lifting). (2) Arm elevation — observe scapular rhythm (upward rotation, ER, posterior tilt). Normal: scapula smoothly rotates upward 60° with 120° glenohumeral for full 180°. (3) Scapular assistance test: therapist manually assists scapular upward rotation — does shoulder pain improve? (4) Retraction test: manual scapular retraction — does shoulder/cervical pain change?",
-    normalDesc:"No winging on wall push-up. Smooth scapulothoracic rhythm on elevation. Scapula upward rotates 60° to 120° GH. No excessive elevation. No dyskinesis. Scapular assistance test negative (no improvement = non-scapular cause).",
-    observations:[
-      { id:"wing",   q:"Scapular winging?",
-        opts:["✓ No winging","⚠ Mild medial border lift","✗ Medial winging (serratus anterior)","✗ Lateral winging (trapezius)"],
-        clues:["","Minor serratus fatigue — serratus strengthening (wall push-up plus, dynamic hug)","Serratus anterior inhibition — long thoracic nerve screen (punch test). Wall slide + dynamic hug + push-up plus progression","Trapezius weakness (especially lower trap) — Y/T/W exercises. Screen spinal accessory nerve if severe (trap shrug test)"] },
-      { id:"rhythm", q:"Scapulothoracic rhythm on elevation?",
-        opts:["✓ Smooth upward rotation","⚠ Shrug pattern — early elevation","✗ Dyskinesis — jerky / inconsistent","✗ Scapular lag at initiation"],
-        clues:["","Upper trap dominant — lower trap + serratus activation. Elevation cueing during exercise","Scapular dyskinesis — Kibler Type I/II/III. Identify dominant pattern. Scapular PNF + YTWL progression","Lag at initiation — rotator cuff or serratus inhibition. Reduce load, begin at 90° abduction and progress"] },
-      { id:"assist", q:"Scapular assistance test (SAT)?",
-        opts:["✓ Not applicable","⚠ Tested — no change","✗ Positive — shoulder pain reduced","✗ Positive — range improved"],
-        clues:["","","Scapular assistance negative — shoulder pain from non-scapular source (GHJ, rotator cuff, AC)","SAT positive — scapular dysfunction contributing to shoulder impingement. Scapular stabilisation rehab indicated before rotator cuff isolation","SAT positive with range improvement — scapular-related sub-acromial impingement. Lower trap + serratus priority"] },
-      { id:"retract",q:"Scapular retraction test?",
-        opts:["✓ Not applicable","⚠ Tested — no change","✗ Positive — cervical pain reduced","✗ Positive — arm symptoms changed"],
-        clues:["","","Retraction test negative — non-scapular cervical source","Retraction test positive for cervical pain — forward shoulder posture contributing to cervicogenic symptoms. Scapular retraction + DNF priority","Retraction changes arm symptoms — thoracic outlet or neural tension component. Thoracic outlet screen (Roos, EAST)"] },
-      { id:"sym",    q:"Scapular position at rest (symmetry)?",
-        opts:["✓ Level and symmetric","⚠ Mild protraction bilateral","✗ Unilateral protraction/elevation","✗ Bilateral winging at rest"],
-        clues:["","Bilateral minor protraction — postural. Upper crossed correction","Unilateral — dominant hand preference or cervicothoracic restriction. Screen C4/5 for shoulder elevation coupling","Resting winging — significant serratus or trap inhibition. Formal scapular strength assessment"] },
-    ],
-    grades:["Normal — No winging, smooth rhythm, symmetric resting position","Compensated — Mild dyskinesis or SAT positive without functional limitation","Abnormal — Winging, significant dyskinesis, SAT positive with pain/restriction"],
-  },
-];
-
-function ThoracicFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  useEffect(() => {
-    const saved = data["thfs_data"];
-    if (saved && typeof saved === "string") {
-      try { const p=JSON.parse(saved); if(p.findings)setFindings(p.findings); if(p.grades)setGrades(p.grades); if(p.notes)setNotes(p.notes); } catch {}
-    }
-  }, []);
-
-  const save = (f,g,n) => set("thfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
-  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
-  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
-  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
-
-  const completedCount = THORACIC_TESTS.filter(t => grades[t.id] !== undefined).length;
-  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
-  const accentCol = "#0f766e";
-
-  return (
-    <div>
-      <div style={{background:"linear-gradient(135deg,rgba(15,118,110,0.08),rgba(20,184,166,0.05))",border:"1px solid rgba(15,118,110,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <span style={{fontSize:"1.4rem"}}>🫁</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Thoracic Functional Screen</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM · Rib mobility · Extension · T4 syndrome · Scapular stability</div>
-          </div>
-          <div style={{marginLeft:"auto",textAlign:"right"}}>
-            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-          {THORACIC_TESTS.map(t=>{
-            const g=grades[t.id]; const done=g!==undefined;
-            return (
-              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
-                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
-                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
-                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
-                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {THORACIC_TESTS.map(t=>{
-        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
-        return (
-          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
-            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
-            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(15,118,110,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
-            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
-              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
-              </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
-              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
-            </div>
-            {isOpen && (
-              <div style={{padding:"0 14px 14px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
-                </div>
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div style={{background:"#F0FDFA",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #99F6E4"}}>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
-                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
-                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
-                {t.observations.map(obs=>{
-                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
-                  return (
-                    <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                        {obs.opts.map((opt,idx)=>{
-                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
-                          return (
-                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
-                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
-                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
-                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
-                              </div>
-                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
-                    </div>
-                  );
-                })}
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
-                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
-                  {t.grades.map((gLabel,idx)=>{
-                    const col=gradeColor(idx); const sel=g===idx;
-                    return (
-                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
-                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
-                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
-                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
-                  placeholder="Rotation degrees, rib spring findings, T4 test result, scapular winging..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {completedCount > 0 && (
-        <div style={{background:"#F0FDFA",borderRadius:14,padding:14,border:"1px solid #99F6E4",marginTop:4}}>
-          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Thoracic Screen Summary</div>
-          {THORACIC_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
-            const g=grades[t.id]; const col=gradeColor(g);
-            return (
-              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
-                <span style={{fontSize:"1rem"}}>{t.icon}</span>
-                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── ELBOW FUNCTIONAL SCREEN ─────────────────────────────────────────────────
-
-const ELBOW_TESTS = [
-  {
-    id:"efs_arom", icon:"🔄", label:"Elbow AROM",
-    subtitle:"Flex · Ext · Pronation · Supination",
-    phase:"Articular / Capsular Screen",
-    setup:"Assess all 4 planes: Flexion (normal 145°), Extension (normal 0° — hyperextension common in hypermobility), Pronation (normal 75–85°), Supination (normal 80–90°). Note: carrying angle (normal 5–15° valgus), end-feel (firm/hard/empty), pain arc, crepitus.",
-    normalDesc:"Flexion 145°, extension 0°, pronation 75°, supination 85°. Firm end-feel. No pain arc. No crepitus. Carrying angle 5–15° valgus. Symmetric bilateral.",
-    observations:[
-      { id:"flex",   q:"Elbow flexion?",
-        opts:["✓ 140–145°","⚠ 120–139° — mild restriction","✗ <120° — significant restriction","✗ Pain at end-range flexion"],
-        clues:["","Posterior capsule or posterior impingement. Extension bias in rehab. Posterior compartment screen (olecranon fossa)","Significant — posterior capsular contracture or prior fracture. End-feel: hard = bony block (loose body), firm = capsular","Pain at end flexion = bicipital tendon or anterior capsule involvement. Resisted flexion test next"] },
-      { id:"ext",    q:"Elbow extension?",
-        opts:["✓ Full extension (0°)","⚠ 5–15° extension deficit","✗ >15° extension deficit (flexion contracture)","✗ Hyperextension present"],
-        clues:["","Common after elbow sprain/fracture — posterior capsule mobilisation. Gravity stretch in prone if pain-free","Flexion contracture — significant. Posterior capsule stretching + dynamic splinting if chronic. Screen for loose body (hard end-feel)","Hyperextension — assess UCL and joint stability. Hypermobility screen (Beighton). Avoid terminal extension loading"] },
-      { id:"prosup", q:"Pronation and supination?",
-        opts:["✓ 75° pro / 85° sup bilateral","⚠ Mild restriction pronation or supination","✗ Significant restriction (>30° loss)","✗ Pain on rotation — radiocapitellar"],
-        clues:["","Minor DRUJ or radiocapitellar restriction. Passive rotation mobilisation","Significant — DRUJ instability, Essex-Lopresti (if trauma history), radiocapitellar arthritis","Radiocapitellar pain on rotation = radial head pathology. Radial head mobilisation. Screen for lateral ligament"] },
-      { id:"carry",  q:"Carrying angle?",
-        opts:["✓ 5–15° valgus (normal)","⚠ Cubitus valgus >15°","✗ Cubitus varus (reverse angle)"],
-        clues:["","Increased valgus — increased ulnar nerve stress. UCL / medial compartment screen. Tardy ulnar nerve palsy risk","Cubitus varus — usually prior supracondylar fracture. Assess functional range and medial stability"] },
-      { id:"crepitus",q:"Crepitus during AROM?",
-        opts:["✓ No crepitus","⚠ Fine crepitus — end range","✗ Coarse crepitus mid-range","✗ Locking or clicking"],
-        clues:["","Minor synovial or degenerative — monitor","Degenerative change — modify loading. Avoid impingement positions. Joint protection education","Locking = loose body (osteochondral fragment). Imaging referral. Do not mobilise into locked position"] },
-    ],
-    grades:["Normal — Full pain-free range, no crepitus, normal carrying angle","Compensated — Minor restriction or end-range pain without instability","Abnormal — Flexion contracture, pain arc, crepitus, or abnormal carrying angle"],
-  },
-  {
-    id:"efs_lat", icon:"🎾", label:"Lateral Epicondyle Load Test",
-    subtitle:"Cozen's · Mill's · Maudsley's — Lateral Epicondylalgia",
-    phase:"Extensor Origin Load / Tendinopathy Screen",
-    setup:"(1) Cozen's: patient makes fist, wrist extends, forearm pronated. Therapist resists wrist extension. Positive = pain at lateral epicondyle. (2) Mill's: therapist passively pronates, flexes wrist, extends elbow. Positive = lateral epicondyle pain. (3) Maudsley: resist extension of 3rd digit. (4) Palpate common extensor origin (CEO) — anterior lateral epicondyle.",
-    normalDesc:"No pain on resisted wrist extension, passive stretch, or 3rd digit extension. Lateral epicondyle non-tender on palpation. Grip strength equal bilateral (dynamometer or squeeze).",
-    observations:[
-      { id:"cozen",  q:"Cozen's test (resisted wrist ext)?",
-        opts:["✓ Pain-free","⚠ Mild — pain during sustained","✗ Positive — pain at lateral epicondyle","✗ Pain + immediate weakness"],
-        clues:["","Minor CEO tendinopathy or cervical referral. Repeat with cervical lateral flexion — if changes, cervical component","Classic lateral epicondylalgia. Load management + IASTM + eccentric programme (Tyler twist, wrist curls)","High irritability — reduce load. Isometric wrist extension for analgesia. PEACE + LOVE principles acutely"] },
-      { id:"mills",  q:"Mill's stretch (passive pronation + wrist flex + elbow ext)?",
-        opts:["✓ No pain","⚠ Mild stretch sensation only","✗ Pain at lateral epicondyle","✗ Pain + elbow clicking"],
-        clues:["","Normal — good tissue extensibility","Positive Mill's = tendinopathy + tissue extensibility deficit. Soft tissue mobilisation CEO + wrist extension mobility. Avoid aggressive stretching in high irritability","Pain + click = radio-capitellar or annular ligament. Palpate radial head. Screen lateral ligament"] },
-      { id:"maud",   q:"Maudsley (resist 3rd digit extension)?",
-        opts:["✓ No pain","⚠ Mild ache during","✗ Positive — lateral epicondyle pain","✗ Positive with grip weakness"],
-        clues:["","Normal","Extensor digitorum communis involvement. Forearm extensor massage + EDC strengthening","Grip weakness with Maudsley positive — screen for PIN (posterior interosseous nerve) entrapment. EDC test, digit extension power"] },
-      { id:"tender", q:"CEO palpation (anterior lateral epicondyle)?",
-        opts:["✓ Non-tender","⚠ Mild tenderness on firm palpation","✗ Tender on light touch","✗ Tender + thickened / nodular"],
-        clues:["","Minor — consistent with low-irritability tendinopathy","High irritability — do not directly palpate. Load management, isometrics only phase 1","Nodular tendinopathy — chronic. IASTM or dry needling. Eccentric + isometric programme. Monitor over 6–12 weeks"] },
-      { id:"grip",   q:"Grip strength comparison?",
-        opts:["✓ Equal bilateral","⚠ Mild deficit (<10%)","✗ Moderate deficit (10–30%)","✗ Severe deficit (>30%) or pain-limited"],
-        clues:["","Minor inhibition — isometric grip strengthening","Significant — functional limitation. Graduated grip programme + proximal strengthening (scapular, rotator cuff, wrist)","Pain-limited grip = high irritability. Isometrics first. Wrist extension isometric hold 45° for immediate analgesia"] },
-    ],
-    grades:["Normal — Pain-free CEO, equal grip, no positive tests","Compensated — Mild tenderness or <10% grip deficit without functional impact","Abnormal — Positive Cozen/Mill's/Maudsley, significant grip deficit, or high irritability"],
-  },
-  {
-    id:"efs_med", icon:"🏌️", label:"Medial Elbow / Valgus Screen",
-    subtitle:"UCL Stress · Golfer's Elbow · Ulnar Nerve",
-    phase:"Medial Compartment / Valgus Load",
-    setup:"(1) Medial epicondyle palpation (FCU, FCR, PT origin). (2) Valgus stress test: elbow 20–30° flexion, apply valgus force. Normal = firm endpoint. (3) Moving valgus stress test (MVST): apply sustained valgus, move elbow 70° to 120° flexion. Positive = medial pain in arc (UCL sign). (4) Resisted wrist flexion (flexor-pronator strain). (5) Ulnar nerve: Tinel at cubital tunnel, sensory screen ring/little finger.",
-    normalDesc:"Medial epicondyle non-tender. Firm UCL endpoint on valgus stress. MVST negative. Resisted wrist flexion pain-free. Tinel at cubital tunnel negative. Normal ring/little finger sensation.",
-    observations:[
-      { id:"ucl",    q:"Valgus stress test (UCL)?",
-        opts:["✓ Firm endpoint, pain-free","⚠ Soft endpoint or mild pain","✗ Instability — excessive opening","✗ Instability + reproduction of medial pain"],
-        clues:["","UCL laxity or minor sprain — dynamic stabiliser rehab (FCU + wrist flexor strengthening). Monitor","UCL insufficiency — significant. Throwing athletes: UCL reconstruction risk. Refer orthopaedics if grade II+","UCL insufficiency with pain = Tommy John pattern. Throwing athlete: specialist referral. Non-athletes: conservative flexor-pronator strengthening"] },
-      { id:"mvst",   q:"Moving valgus stress test (MVST)?",
-        opts:["✓ Negative","⚠ Discomfort but not pain","✗ Positive — medial pain 70–120°","✗ Positive with locking sensation"],
-        clues:["","Normal","MVST positive = UCL stress response. Load management + flexor-pronator strengthening + throwing mechanics assessment","Locking sensation = loose body in posterior medial compartment. Posteromedial impingement screen (extend + valgus in end flexion)"] },
-      { id:"fcu",    q:"Resisted wrist flexion / FCU palpation?",
-        opts:["✓ Pain-free, equal bilateral","⚠ Mild medial elbow ache","✗ Pain at medial epicondyle (golfer's elbow)","✗ Pain + weakness"],
-        clues:["","Monitor — minor flexor-pronator strain or cervical referral. Cervical screen","Medial epicondylalgia (golfer's elbow). FCU/FCR origin tendinopathy. Load management + isometric wrist flexion for analgesia + eccentric programme","Weakness with pain — screen for median nerve or C8/T1 cervical referral. Neurological exam"] },
-      { id:"ulnar",  q:"Ulnar nerve screen (Tinel + sensation)?",
-        opts:["✓ Tinel negative, sensation intact","⚠ Tinel positive — no sensory deficit","✗ Sensory deficit ring/little finger","✗ Intrinsic weakness (Froment's / clawing)"],
-        clues:["","Normal","Cubital tunnel syndrome — mild. Avoid elbow flexion >90° at night (elbow pad). Ulnar nerve gliding","Cubital tunnel — moderate. Sensory deficit present. Avoid flexion >90° sustained. Nerve glide programme. EMG/NCS referral if progressive","Intrinsic weakness = severe cubital tunnel. Froment's test for adductor pollicis. Urgent referral if progressive motor loss"] },
-      { id:"med_tender",q:"Medial epicondyle tenderness?",
-        opts:["✓ Non-tender","⚠ Tender on firm palpation","✗ Tender — golfer's elbow pattern","✗ Tender + valgus instability"],
-        clues:["","Normal","Flexor-pronator tendinopathy. FCU/FCR eccentric loading programme. Soft tissue therapy","Combined medial epicondylalgia + UCL laxity — common in overhead athletes. Treat tendinopathy first, assess UCL once irritability settled"] },
-    ],
-    grades:["Normal — Firm UCL, pain-free wrist flexion, Tinel negative","Compensated — Mild tenderness or minor UCL laxity without functional deficit","Abnormal — UCL instability, positive MVST, golfer's elbow, or ulnar neuropathy"],
-  },
-  {
-    id:"efs_stab", icon:"🛡️", label:"Elbow Stability Screen",
-    subtitle:"PLRI · Varus Stress · Posterolateral Rotatory",
-    phase:"Ligamentous / Joint Stability",
-    setup:"(1) Posterolateral rotatory instability (PLRI) — lateral pivot shift: patient supine, arm overhead, apply axial compression + valgus + supination through elbow extension. Positive = apprehension or subluxation. (2) Varus stress at 20° flexion. (3) Posterolateral apprehension (seated or standing — resist resupination). (4) Chair sign: patient pushes up from chair with forearm supinated — apprehension = positive.",
-    normalDesc:"Lateral pivot shift apprehension negative. No varus laxity. Chair sign negative. Posterolateral apprehension negative. Symmetric stability bilateral.",
-    observations:[
-      { id:"plri",   q:"Lateral pivot shift / PLRI apprehension?",
-        opts:["✓ Negative — no apprehension","⚠ Mild discomfort — no subluxation","✗ Apprehension — positive","✗ Subluxation palpable"],
-        clues:["","May be minor lateral ligament sprain. Monitor and protect supination loading","PLRI positive — lateral ulnar collateral ligament (LUCL) insufficiency. Limit supination in loaded positions. Refer if functional impact significant","LUCL instability — surgical consultation if conservative management fails (common in post-radial head excision or prior dislocation)"] },
-      { id:"chair",  q:"Chair sign (supinated push up)?",
-        opts:["✓ Negative — confident push","⚠ Avoidance but no pain","✗ Positive — apprehension with supination","✗ Pain + instability"],
-        clues:["","Normal","Functional test for PLRI. Positive = patient avoids supinated loading. Confirm with lateral pivot shift","High irritability PLRI. Lateral ulnar collateral reconstruction if conservative fails"] },
-      { id:"varus",  q:"Varus stress test (radial collateral)?",
-        opts:["✓ Firm endpoint","⚠ Soft — minor laxity","✗ Instability — significant opening","✗ Instability + pain"],
-        clues:["","Normal","Minor radial collateral laxity — usually well-tolerated. Monitor. Avoid varus loads","Significant lateral instability — LUCL or radial collateral complex. Refer orthopaedics"] },
-      { id:"post",   q:"Posteromedial impingement screen?",
-        opts:["✓ No posteromedial pain","⚠ Discomfort at end-range extension + valgus","✗ Pain posteromedially (osteophyte)","✗ Locking in extension"],
-        clues:["","Normal","Common in throwing athletes — olecranon osteophyte against medial wall. X-ray. Load management and throwing mechanics","Locking = loose body. Imaging referral. Arthroscopic debridement if symptomatic and conservative fails"] },
-      { id:"nerve",  q:"Radial nerve screen (PIN)?",
-        opts:["✓ Full digit extension, no radial pain","⚠ Mild radial tunnel pain on palpation","✗ Radial tunnel syndrome — pain without weakness","✗ PIN palsy — digit drop"],
-        clues:["","Normal","Radial tunnel syndrome — similar to lateral epicondylalgia but more distal (radial tunnel, not CEO). Palpation 3–5 cm distal to epicondyle. Neural decompression position + elbow extension stretching","PIN palsy = posterior interosseous nerve entrapment. Urgent assessment — digit drop. EMG, refer if not resolving"] },
-    ],
-    grades:["Normal — All stability tests negative, intact radial nerve","Compensated — Minor apprehension or discomfort without instability","Abnormal — PLRI positive, chair sign positive, varus laxity, or PIN involvement"],
-  },
-  {
-    id:"efs_neural", icon:"⚡", label:"ULNT2 — Radial/Median Neural Screen",
-    subtitle:"ULNT2a (Median) · ULNT2b (Radial) · Cubital Tunnel",
-    phase:"Neural Tension / Peripheral Nerve Screen",
-    setup:"ULNT2a (median): Shoulder depression + 10° abduction + ER + wrist/finger ext + elbow extension. ULNT2b (radial): Same but IR + wrist flexion (radial nerve bias). Sensitise with cervical lateral flex. Compare bilateral range and symptom reproduction. Also: cubital tunnel Tinel (medial) and resisted elbow flexion (musculocutaneous screen).",
-    normalDesc:"Mild bilateral stretch at elbow extension endpoint. No symptom reproduction. Cervical sensitisation/desensitisation response present bilaterally. No tingling or numbness in any nerve distribution.",
-    observations:[
-      { id:"ulnt2a", q:"ULNT2a — median nerve (ER + wrist ext)?",
-        opts:["✓ Mild bilateral stretch","⚠ Mildly more symptomatic one side","✗ Symptoms reproduced — median distribution","✗ Major restriction — barely extends past 90°"],
-        clues:["","Minor asymmetry — monitor, screen cervical C6/C7","Positive — median nerve sensitisation, pronator syndrome or carpal tunnel component. Neural slider programme (median bias). Screen carpal tunnel","Severe median restriction = high irritability neural tension. Cervical + elbow + wrist combined dysfunction. Slider neurodynamics only until irritability reduces"] },
-      { id:"ulnt2b", q:"ULNT2b — radial nerve (IR + wrist flex)?",
-        opts:["✓ Mild bilateral stretch","⚠ Mildly more symptomatic one side","✗ Symptoms reproduced — radial distribution","✗ Major restriction"],
-        clues:["","Minor — monitor alongside lateral epicondylalgia","Positive radial — radial tunnel, wrist dorsal sensory branch, or cervical C7. Radial nerve slider (wrist flex + elbow ext + IR)","Severe radial restriction — combined cervical, radial tunnel, and lateral epicondylalgia common. Address in sequence"] },
-      { id:"cervdiff",q:"Cervical lateral flex differentiation?",
-        opts:["✓ Sensitises and desensitises","⚠ Sensitises only","✗ No change — not neural","✗ Worsens both ways"],
-        clues:["","Classic neurodynamic positive — confirms neural origin. Butler neural mobilisation approach","Equivocal — may be muscular. Repeat with shoulder depression only","Not neural tension — myofascial or joint. Proceed to local elbow/wrist testing","Central sensitisation — both directions worsen. Pain education + graded exposure"] },
-      { id:"mcut",   q:"Musculocutaneous screen (resisted elbow flex + forearm sensation)?",
-        opts:["✓ Normal power, sensation intact","⚠ Mild weakness biceps","✗ Weakness biceps + lateral forearm numbness","✗ Complete biceps palsy"],
-        clues:["","Normal","Minor biceps inhibition — screen cervical C6. Pain-inhibited or true nerve","Musculocutaneous or C6 involvement — EMG/NCS referral. Cervical C5/6 MRI if radiculopathic pattern","Complete biceps palsy — urgent. Axillary, musculocutaneous, or C5/6 root avulsion. Emergent referral"] },
-      { id:"tinel",  q:"Tinel at cubital tunnel (medial) + olecranon groove?",
-        opts:["✓ Negative","⚠ Positive Tinel without sensory deficit","✗ Positive + ring/little finger tingling","✗ Positive + intrinsic weakness"],
-        clues:["","Normal","Cubital tunnel irritation — avoid elbow flexion at night. Elbow pad. Ulnar nerve glides","Ulnar neuropathy — sensory involvement. Monitor progression. EMG/NCS if not improving in 6–8 weeks","Motor involvement = significant — urgent EMG/NCS. Refer if intrinsic wasting"] },
-    ],
-    grades:["Normal — Mild bilateral stretch, no symptoms, Tinel negative","Compensated — Mild asymmetry or Tinel positive without sensory/motor deficit","Abnormal — Reproduced symptoms, neurological signs, or significant restriction"],
-  },
-];
-
-function ElbowFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  useEffect(() => {
-    const saved = data["elfs_data"];
-    if (saved && typeof saved === "string") {
-      try { const p=JSON.parse(saved); if(p.findings)setFindings(p.findings); if(p.grades)setGrades(p.grades); if(p.notes)setNotes(p.notes); } catch {}
-    }
-  }, []);
-
-  const save = (f,g,n) => set("elfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
-  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
-  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
-  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
-
-  const completedCount = ELBOW_TESTS.filter(t => grades[t.id] !== undefined).length;
-  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
-  const accentCol = "#0369a1";
-
-  return (
-    <div>
-      <div style={{background:"linear-gradient(135deg,rgba(3,105,161,0.08),rgba(14,165,233,0.05))",border:"1px solid rgba(3,105,161,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <span style={{fontSize:"1.4rem"}}>💪</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Elbow Functional Screen</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM · Lateral epicondyle · Medial/UCL · Stability · Neural</div>
-          </div>
-          <div style={{marginLeft:"auto",textAlign:"right"}}>
-            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-          {ELBOW_TESTS.map(t=>{
-            const g=grades[t.id]; const done=g!==undefined;
-            return (
-              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
-                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
-                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
-                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
-                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {ELBOW_TESTS.map(t=>{
-        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
-        return (
-          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
-            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
-            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(3,105,161,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
-            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
-              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
-              </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
-              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
-            </div>
-            {isOpen && (
-              <div style={{padding:"0 14px 14px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
-                </div>
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div style={{background:"#F0F9FF",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #BAE6FD"}}>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
-                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
-                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
-                {t.observations.map(obs=>{
-                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
-                  return (
-                    <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                        {obs.opts.map((opt,idx)=>{
-                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
-                          return (
-                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
-                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
-                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
-                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
-                              </div>
-                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
-                    </div>
-                  );
-                })}
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
-                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
-                  {t.grades.map((gLabel,idx)=>{
-                    const col=gradeColor(idx); const sel=g===idx;
-                    return (
-                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
-                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
-                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
-                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
-                  placeholder="ROM degrees, Cozen's result, UCL stress, neural findings..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {completedCount > 0 && (
-        <div style={{background:"#F0F9FF",borderRadius:14,padding:14,border:"1px solid #BAE6FD",marginTop:4}}>
-          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Elbow Screen Summary</div>
-          {ELBOW_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
-            const g=grades[t.id]; const col=gradeColor(g);
-            return (
-              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
-                <span style={{fontSize:"1rem"}}>{t.icon}</span>
-                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── WRIST / HAND FUNCTIONAL SCREEN ──────────────────────────────────────────
-
-const WRIST_TESTS = [
-  {
-    id:"wfs_arom", icon:"🔄", label:"Wrist AROM + Grip",
-    subtitle:"Flex · Ext · RD · UD · Grip Strength",
-    phase:"Articular / Tendon / Grip Capacity Screen",
-    setup:"Assess: Flexion (normal 80°), Extension (normal 70°), Radial deviation (normal 20°), Ulnar deviation (normal 30°). Grip: isometric dynamometer (3 trials each hand, average). Pinch: lateral pinch. Compare dominant to non-dominant (dominant typically 10% stronger). Note: deformity, swelling, pain arc.",
-    normalDesc:"Flexion 80°, extension 70°, RD 20°, UD 30°. Grip dominant = non-dominant + 10%. No pain arc. No deformity. End-feel firm throughout. No swelling. Equal bilateral tenodesis (passive opening/closing with wrist movement).",
-    observations:[
-      { id:"ext",    q:"Wrist extension range?",
-        opts:["✓ 70°+ pain-free","⚠ 50–69° or mild discomfort","✗ <50° significant restriction","✗ Pain + crepitus"],
-        clues:["","Wrist capsule tightness or prior sprain. Wrist extension mobilisation (PA on carpals, radial glide). Tendon gliding exercises","Significant restriction — carpal coalition, osteoarthritis, or post-fracture. Mobilisation + splint. Imaging if trauma history","Pain + crepitus = DRJ or radiocarpal OA, or scaphoid non-union. Screen scaphoid anatomical snuffbox"] },
-      { id:"flex",   q:"Wrist flexion range?",
-        opts:["✓ 80°+ pain-free","⚠ 60–79° or mild discomfort","✗ <60° significant restriction","✗ Finger flexion pattern changes with wrist movement"],
-        clues:["","Minor capsular restriction — wrist flexion mobilisation. Volar glides","Significant restriction — Dupuytren's contracture screen (palmar cords), OA, or post-Colles","Tenodesis dysfunction — screen extrinsic tendon tightness (flex wrist = fingers should extend; ext wrist = fingers close)"] },
-      { id:"dev",    q:"Radial / ulnar deviation?",
-        opts:["✓ RD 20° / UD 30° bilateral","⚠ Mild restriction RD or UD one side","✗ Pain at extremes of deviation","✗ Ulnar-sided pain on UD"],
-        clues:["","Minor triquetral or intercarpal restriction — carpal mobilisation","Radiocarpal impingement or styloid conflict — X-ray. Reduce end-range loading","Ulnar-sided UD pain = TFCC or ECU. Screen TFCC (ulnar fovea sign)"] },
-      { id:"grip",   q:"Grip strength comparison?",
-        opts:["✓ Equal ±10%","⚠ 10–25% deficit","✗ >25% deficit","✗ Pain-limited grip — cannot squeeze"],
-        clues:["","Minor inhibition — CTS, tennis elbow, or cervical C8. Isometric grip progression","Significant deficit — functional limitation. Progressive grip strengthening + proximal rehab","Pain-limited — identify source first (CTS, TFCC, scaphoid, tendinopathy) before loading"] },
-      { id:"tenod",  q:"Tenodesis pattern (passive flex/ext)?",
-        opts:["✓ Normal — wrist ext = finger flex, wrist flex = finger ext","⚠ Sluggish tenodesis","✗ Absent tenodesis","✗ Reversed tenodesis"],
-        clues:["","Intrinsic / extrinsic tendon tightness — tendon gliding programme","Absent tenodesis = significant extrinsic tendon adhesion or neurological. Passive tendon gliding + blocking exercises","Reversed tenodesis = intrinsic tightness (positive Bunnell-Littler). Intrinsic stretch + MP mobilisation"] },
-    ],
-    grades:["Normal — Full ROM, equal grip ±10%, normal tenodesis","Compensated — Minor restriction or 10–25% grip deficit without functional limitation","Abnormal — Significant restriction, >25% grip deficit, or pain-limited loading"],
-  },
-  {
-    id:"wfs_cts", icon:"🤏", label:"Carpal Tunnel Screen",
-    subtitle:"Phalen's · Tinel's · Compression Test · CTS",
-    phase:"Median Nerve / Carpal Canal Pressure",
-    setup:"(1) Phalen's: wrist sustained maximal flexion 60s — tingling in median distribution? (2) Tinel's: tap over carpal tunnel (wrist crease, central) — tingling digits 1–3? (3) Carpal compression test (Durkan): direct pressure carpal tunnel 30s. (4) Sensation: 2-point discrimination D1/D2/D3 vs D4/D5. (5) Thenar atrophy — inspect. (6) Screen cervical C6 + ULNT1.",
-    normalDesc:"Phalen's negative at 60s. Tinel's negative. No median sensory deficit D1–D3. 2-point discrimination <6mm. No thenar atrophy. Grip and pinch equal bilateral.",
-    observations:[
-      { id:"phalen", q:"Phalen's test (60s wrist flexion)?",
-        opts:["✓ Negative at 60s","⚠ Positive >45s (mild)","✗ Positive <45s (moderate)","✗ Positive <20s (severe/high pressure)"],
-        clues:["","Minor — conservative management. Night splint (neutral wrist). Activity modification","Moderate CTS — splinting priority. Referral to hand therapist + nerve conduction. Consider injection","Severe CTS — urgent nerve conduction. Surgical referral if motor deficit or rapidly progressive. Splint while awaiting"] },
-      { id:"tinel",  q:"Tinel's at carpal tunnel?",
-        opts:["✓ Negative","⚠ Mild tingling distally","✗ Clear median tingling digits 1–3","✗ Sharp pain — highly irritable"],
-        clues:["","Normal","Positive Tinel's = active demyelination at carpal tunnel. NCS + splinting. Median nerve slider neurodynamics once irritability reduces","High irritability — avoid provocative positions. Neutral wrist splint 24/7 initially"] },
-      { id:"sensation",q:"Median nerve sensation D1–D3?",
-        opts:["✓ Intact and symmetric","⚠ Mildly reduced D3/D2","✗ Numbness D1–D3","✗ Constant numbness + thenar weakness"],
-        clues:["","Monitor — early sensory change. Night splint + activity modification","Sensory deficit = moderate–severe CTS. NCS urgent. Surgical evaluation if not responding to conservative in 8–12 weeks","Constant numbness + motor = severe. Thenar atrophy check. Urgent referral — irreversible axonal loss risk"] },
-      { id:"thenar", q:"Thenar eminence bulk?",
-        opts:["✓ Full and symmetric","⚠ Mild volume reduction","✗ Thenar atrophy present","✗ Complete thenar wasting"],
-        clues:["","Monitor — may be dominant/non-dominant difference","Moderate motor involvement — NCS. Assess opponens and abductor pollicis brevis (APB)","Severe — long-standing CTS. Nerve conduction urgently. Surgical release likely indicated. Assess for irreversible motor damage"] },
-      { id:"doublec", q:"Double crush screen (cervical C6)?",
-        opts:["✓ Cervical screen clear","⚠ Mild cervical tenderness — possibly contributing","✗ Cervical C6 restriction + CTS signs","✗ Positive ULNT1 + CTS signs"],
-        clues:["","Normal — isolated CTS likely","Minor cervical contribution — treat both. Cervical mobilisation may improve CTS symptoms","Double crush syndrome — cervical + carpal tunnel combined. Treat both simultaneously for best outcomes","Double crush confirmed — neural slider neurodynamics + cervical mobilisation + CTS splinting. Neural tissue most sensitised at both sites"] },
-    ],
-    grades:["Normal — Phalen/Tinel negative, intact sensation, no thenar atrophy","Compensated — Phalen positive >45s without sensory deficit","Abnormal — Sensory deficit, thenar atrophy, or positive tests <45s"],
-  },
-  {
-    id:"wfs_tfcc", icon:"🔱", label:"TFCC / Ulnar Wrist Screen",
-    subtitle:"Ulnar Fovea Sign · DRUJ Stability · ECU",
-    phase:"Triangular Fibrocartilage Complex",
-    setup:"(1) Ulnar fovea sign: press firm into fovea (between FCU tendon, ulnar styloid, pisiform) — pain = TFCC/ulnar ligament. (2) DRUJ stability: hold distal ulna, translate dorsal/volar — compare to contralateral. (3) ECU tendon (ulnar dorsal): palpate + resisted ulnar deviation/extension. (4) Piano key test: press on distal ulna in pronation — pain/clicking = DRUJ instability. (5) Ulnar deviation load test: axial load + ulnar deviation + supination.",
-    normalDesc:"Fovea sign negative (no tenderness). DRUJ stable — firm dorsal/volar endpoint symmetric. ECU non-tender. Piano key test negative. No clicking on ulnar deviation load. Distal ulna in slight dorsal relation to radius (normal).",
-    observations:[
-      { id:"fovea",  q:"Ulnar fovea sign?",
-        opts:["✓ Non-tender fovea","⚠ Tender fovea — mild","✗ Tender fovea — reproduction of patient pain","✗ Tender + crepitus on forearm rotation"],
-        clues:["","Normal — TFCC likely intact","Positive fovea = TFCC peripheral tear (foveal attachment) or ulnocarpal ligament strain. Load management, DRUJ stabilisation splint","Crepitus with rotation = DRUJ osteoarthritis or TFCC tear. MRI referral for tear assessment. Refer hand surgeon if functional limitation"] },
-      { id:"druj",   q:"DRUJ stability (dorsal/volar translation)?",
-        opts:["✓ Firm symmetric endpoint","⚠ Mild laxity — greater than contralateral","✗ Instability — significant translation","✗ Painful instability"],
-        clues:["","Normal","Minor DRUJ laxity — ECU and pronator quadratus strengthening. Avoid end-range rotation loading","DRUJ instability — Essex-Lopresti if radial head involved. Refer hand surgeon. DRUJ stabilisation programme if conservative","Painful instability = significant TFCC tear. MRI + hand surgeon referral. Do not load in unstable position"] },
-      { id:"ecu",    q:"ECU palpation + resisted testing?",
-        opts:["✓ Non-tender, full power","⚠ Tender ECU groove","✗ ECU tendinopathy — tender + pain on resist","✗ ECU subluxation — snap felt"],
-        clues:["","Normal","ECU tendinopathy — load management. Eccentric ulnar deviation/extension. Reduce forearm rotation loading","ECU tendinopathy — load management + wrist stabilisation brace. Graduated return to aggravating activity","ECU subluxation = ECU subsheath tear. Click on rotation + ulnar deviation. Immobilisation (supinated) then ECU stabilisation sleeve"] },
-      { id:"piano",  q:"Piano key test (distal ulna press)?",
-        opts:["✓ No pain/clicking","⚠ Discomfort but no click","✗ Click or pop on piano key","✗ Marked instability on press"],
-        clues:["","Normal DRUJ","Mild DRUJ irritation — monitor. Forearm stabilisation exercise","DRUJ instability — ECU + PQ strengthening. DRUJ stabilisation brace. Refer if not resolving","Marked DRUJ instability — hand surgeon referral for reconstruction assessment"] },
-      { id:"uldev",  q:"Ulnar deviation load test?",
-        opts:["✓ Pain-free","⚠ Mild discomfort","✗ Ulnar pain — TFCC or triquetral","✗ Click + pain — lunotriquetral"],
-        clues:["","Normal","TFCC or ulnar styloid impaction — ulnar variance check X-ray. Wafer procedure if + ulnar variance","Lunotriquetral ligament tear — LT shear test. MRI. Refer hand surgeon if unstable","LT instability — VISI pattern on lateral X-ray. Referral"] },
-    ],
-    grades:["Normal — Fovea negative, DRUJ stable, ECU pain-free","Compensated — Mild fovea tenderness or minor DRUJ laxity without instability","Abnormal — Positive fovea, DRUJ instability, ECU subluxation, or positive ulnar load test"],
-  },
-  {
-    id:"wfs_scaph", icon:"🦴", label:"Scaphoid / Carpal Screen",
-    subtitle:"Anatomical Snuffbox · Watson · Scaphoid Shift",
-    phase:"Scaphoid Fracture / SL Ligament Screen",
-    setup:"(1) Anatomical snuffbox tenderness (between APL and EPB/EPL — distal to radial styloid). Positive = scaphoid fracture until proven otherwise. (2) Watson (scaphoid shift): thumb on scaphoid tubercle volarly, passive radial deviation. Positive = clunk + pain (SL instability). (3) Scaphoid compression: axial load through thumb. (4) Scaphoid tubercle palpation (volar wrist crease, radial side). (5) Resisted tip pinch (scaphoid load).",
-    normalDesc:"Anatomical snuffbox non-tender. Watson test negative (no clunk, no pain). Scaphoid compression pain-free. Scaphoid tubercle non-tender. Pinch grip equal bilateral.",
-    observations:[
-      { id:"snuff",  q:"Anatomical snuffbox tenderness?",
-        opts:["✓ Non-tender","⚠ Mild discomfort — not reproduced pain","✗ Tender — positive screen (fracture until proven)","✗ Tender + bruising/swelling"],
-        clues:["","Normal","Snuffbox positive = treat as scaphoid fracture until X-ray (and MRI/CT if X-ray normal). Immobilise thumb spica splint. Refer. Do NOT mobilise","Acute — immobilise immediately. Scaphoid fracture non-union risk is high without early treatment. Imaging urgently. Refer orthopedics"] },
-      { id:"watson", q:"Watson test (scaphoid shift)?",
-        opts:["✓ Negative — no clunk","⚠ Discomfort but no clunk","✗ Positive — clunk + pain","✗ Positive bilateral (may be hypermobile)"],
-        clues:["","Normal SL ligament","Minor SL laxity or dorsal impingement — wrist proprioception + scaphoid stabilisation exercise","SL ligament tear — dorsal intercalated segment instability (DISI) on X-ray. Refer hand surgeon. Wrist stabilisation splint","Bilateral positive — may be constitutional hypermobility (Beighton). Compare to contralateral. Assess for pain + functional limitation"] },
-      { id:"compress",q:"Scaphoid compression (axial through thumb)?",
-        opts:["✓ Pain-free","⚠ Mild ache","✗ Pain at scaphoid — positive","✗ Severe pain — refer"],
-        clues:["","Normal","Mild scaphoid or thumb CMC loading pain — further screen. CMC grind test for basal thumb OA","Scaphoid pain — confirm with snuffbox. Immobilise and image if uncertain","Severe pain — scaphoid fracture or AVN. Emergency management"] },
-      { id:"cmc",    q:"Thumb CMC (basal joint) screen — grind test?",
-        opts:["✓ Pain-free grind test","⚠ Mild crepitus without pain","✗ Pain + crepitus — CMC OA","✗ Laxity + pain — UCL / Bennett's"],
-        clues:["","Normal CMC","Minor CMC OA — activity modification. CMC stabilisation orthosis for gripping. Wrist/hand OA programme","CMC OA — FOPQ (force opposition pinch and grasp) modification. Splint during heavy activity. Intraarticular injection if severe","UCL laxity = skier's / gamekeeper's thumb. Ulnar collateral ligament integrity test. Immobilise if acute + refer"] },
-      { id:"dequerv",q:"De Quervain's screen (Finkelstein)?",
-        opts:["✓ Finkelstein negative","⚠ Mild first dorsal compartment tenderness","✗ Positive Finkelstein — reproduction of radial wrist pain","✗ Positive + crepitus / snapping"],
-        clues:["","Normal APL/EPB tendons","Mild first dorsal compartment irritation — load modification. Thumb spica splint during activity","De Quervain's tenosynovitis — thumb spica splint, IASTM or soft tissue therapy, injection if not responding. Graduated return","Crepitus / snapping = intersecting syndrome (APL/ECRB crossing). More proximal. Treat with IASTM + load modification"] },
-    ],
-    grades:["Normal — Snuffbox negative, Watson negative, CMC pain-free","Compensated — Mild tenderness or minor findings without instability","Abnormal — Snuffbox positive (fracture screen), Watson clunk, CMC OA pain, or positive Finkelstein"],
-  },
-  {
-    id:"wfs_fingers", icon:"🖐️", label:"Finger / Digit Screen",
-    subtitle:"PIP/DIP AROM · Tendon Integrity · Collateral Stability",
-    phase:"Digital Joint / Flexor-Extensor Assessment",
-    setup:"(1) MCP/PIP/DIP flexion: full composite fist (fingertips to distal palmar crease). Extension: full digit extension. (2) Intrinsic tightness (Bunnell-Littler): PIP flexion at 0° MCP vs 45° MCP — tighter at 0° = intrinsic tightness. (3) FDP integrity: hold PIP in extension — patient flexes DIP. (4) Extensor zone: mallet, boutonniere, swan neck patterns. (5) Collateral ligament: RCL/UCL stress at PIP/MCP.",
-    normalDesc:"Composite fist: fingertips to distal palmar crease. Full digit extension. Bunnell-Littler negative. FDP intact (active DIP flexion with PIP stabilised). No extensor zone deformity. Collateral ligaments stable.",
-    observations:[
-      { id:"fist",   q:"Composite fist (fingertips to crease)?",
-        opts:["✓ Fingertips touch distal palmar crease","⚠ Fingertip 1–2cm from crease","✗ Fingertip >2cm from crease","✗ One finger significantly restricted"],
-        clues:["","Minor flexor tendon tightness or joint restriction — flexor tendon gliding + blocking exercises","Significant restriction — place and hold exercises + joint mobilisation at restricted PIP/DIP level","Isolated digit restriction — screen for trigger finger (FDP/FDS tendon nodule), volar plate contracture, or post-fracture"] },
-      { id:"ext",    q:"Digit extension (composite)?",
-        opts:["✓ Full extension all digits","⚠ Mild MCP lag one digit","✗ Extensor lag at MCP (ED)","✗ Extensor lag at PIP (boutonniere)"],
-        clues:["","Monitor — minor intrinsic tightness or MCP joint restriction","Sagittal band disruption at MCP — ED subluxation. Dorsal blocking splint. Buddy strap if unstable","Boutonnière deformity — central slip rupture. PIP extension splint, DIP active flexion while PIP extended. Refer if acute complete rupture"] },
-      { id:"mallet", q:"DIP posture / mallet finger?",
-        opts:["✓ DIP fully extends","⚠ Mild DIP extension lag (<20°)","✗ Mallet finger — DIP flexed at rest","✗ Mallet + fracture (bony mallet)"],
-        clues:["","Monitor — minor extensor tendon laxity","Mallet finger — DIP extension splint continuously 6–8 weeks + active flexion at PIP. Patient education critical (never remove splint for 8 weeks)","Bony mallet — >1/3 articular surface or volar subluxation of DIP. Refer hand surgeon. Surgical fixation may be needed"] },
-      { id:"bunnell",q:"Bunnell-Littler test (intrinsic tightness)?",
-        opts:["✓ Negative — equal PIP flex at 0° and 45° MCP","⚠ Mild — slightly tighter at 0° MCP","✗ Positive — significantly tighter at 0° MCP","✗ Positive bilateral — systemic?"],
-        clues:["","Normal","Minor intrinsic tightness — intrinsic stretching (composite flexion with MCP extension)","Positive Bunnell-Littler = intrinsic contracture. Common in RA, compartment syndrome sequelae. Intrinsic stretching + MCP mobilisation","Bilateral = rheumatological screen. RA, psoriatic arthropathy. Refer rheumatology if suspected inflammatory pattern"] },
-      { id:"fdp",    q:"FDP integrity (isolated DIP flexion)?",
-        opts:["✓ Active DIP flexion with PIP stabilised","⚠ Weak but present DIP flexion","✗ No DIP flexion — FDP absent","✗ Trigger on active flexion"],
-        clues:["","Normal","FDP inhibition — pain or adhesion. Active-assisted DIP flexion exercises + blocking","FDP avulsion or rupture — jersey finger. Urgent surgical referral (within days for zone 1). Do not delay","Triggering = stenosing tenosynovitis. A1 pulley thickening. Corticosteroid injection or surgical release if conservative fails"] },
-    ],
-    grades:["Normal — Composite fist, full extension, intact FDP, no deformity","Compensated — Minor flexion deficit or mild intrinsic tightness without instability","Abnormal — Extensor deformity, FDP absence, boutonnière/mallet, or instability"],
-  },
-];
-
-function WristFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  useEffect(() => {
-    const saved = data["wffs_data"];
-    if (saved && typeof saved === "string") {
-      try { const p=JSON.parse(saved); if(p.findings)setFindings(p.findings); if(p.grades)setGrades(p.grades); if(p.notes)setNotes(p.notes); } catch {}
-    }
-  }, []);
-
-  const save = (f,g,n) => set("wffs_data", JSON.stringify({findings:f,grades:g,notes:n}));
-  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
-  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
-  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
-
-  const completedCount = WRIST_TESTS.filter(t => grades[t.id] !== undefined).length;
-  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
-  const accentCol = "#be185d";
-
-  return (
-    <div>
-      <div style={{background:"linear-gradient(135deg,rgba(190,24,93,0.08),rgba(236,72,153,0.05))",border:"1px solid rgba(190,24,93,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <span style={{fontSize:"1.4rem"}}>🖐️</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>Wrist / Hand Functional Screen</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM/grip · Carpal tunnel · TFCC · Scaphoid · Digits</div>
-          </div>
-          <div style={{marginLeft:"auto",textAlign:"right"}}>
-            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
-          </div>
-        </div>
-        <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
-          <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:700}}>⚠ Positive anatomical snuffbox = scaphoid fracture until proven otherwise. Immobilise + refer immediately.</div>
-        </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-          {WRIST_TESTS.map(t=>{
-            const g=grades[t.id]; const done=g!==undefined;
-            return (
-              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
-                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
-                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
-                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
-                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {WRIST_TESTS.map(t=>{
-        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
-        return (
-          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
-            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
-            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(190,24,93,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
-            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
-              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
-              </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
-              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
-            </div>
-            {isOpen && (
-              <div style={{padding:"0 14px 14px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
-                </div>
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div style={{background:"#FDF2F8",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #FBCFE8"}}>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
-                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
-                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
-                {t.observations.map(obs=>{
-                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
-                  return (
-                    <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                        {obs.opts.map((opt,idx)=>{
-                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
-                          return (
-                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
-                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
-                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
-                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
-                              </div>
-                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
-                    </div>
-                  );
-                })}
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
-                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
-                  {t.grades.map((gLabel,idx)=>{
-                    const col=gradeColor(idx); const sel=g===idx;
-                    return (
-                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
-                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
-                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
-                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
-                  placeholder="Grip strength values, Phalen timing, Watson clunk, scaphoid tenderness..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {completedCount > 0 && (
-        <div style={{background:"#FDF2F8",borderRadius:14,padding:14,border:"1px solid #FBCFE8",marginTop:4}}>
-          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 Wrist/Hand Screen Summary</div>
-          {WRIST_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
-            const g=grades[t.id]; const col=gradeColor(g);
-            return (
-              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
-                <span style={{fontSize:"1rem"}}>{t.icon}</span>
-                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── TMJ FUNCTIONAL SCREEN ───────────────────────────────────────────────────
-
-const TMJ_TESTS = [
-  {
-    id:"tmj_arom", icon:"🔄", label:"Jaw AROM Screen",
-    subtitle:"Opening · Lateral Deviation · Protrusion",
-    phase:"TMJ Articular / Disc Displacement Screen",
-    setup:"Patient seated. Assess: (1) Mouth opening — normal 40–55mm (3 finger widths between upper/lower incisors). (2) Lateral excursion L/R — normal 8–12mm each. (3) Protrusion — normal 6–9mm. (4) End-feel on opening: hard = bony block, firm = capsular/disc, soft = muscle. (5) Path of opening: straight = normal, S-curve or C-curve deviation = disc or muscle asymmetry.",
-    normalDesc:"Opening ≥40mm (3 finger widths). Straight path with no deviation. Lateral excursion 8–12mm bilateral symmetric. Protrusion 6–9mm. Firm end-feel. No pain. No clicking.",
-    observations:[
-      { id:"open",   q:"Mouth opening distance?",
-        opts:["✓ ≥40mm (3 finger widths)","⚠ 30–39mm (mild restriction)","✗ <30mm (moderate restriction)","✗ <25mm (severe restriction — cannot eat normally)"],
-        clues:["","Minor capsular or pterygoid restriction — lateral pterygoid stretching + self-mobilisation. Warm pack","Significant — may be acute disc lock (closed lock) if sudden onset. Screen for disc displacement. Manual mobilisation with patient consent","Severe — acute closed lock or capsulitis. Refer TMD specialist / oral surgeon. Do not force opening"] },
-      { id:"path",   q:"Path of opening?",
-        opts:["✓ Straight — no deviation","⚠ Deflection — curves and stays one side","✗ Deviation — curves and returns midline","✗ S-curve bilateral"],
-        clues:["","Normal","Deflection to one side = restricted disc or muscle on that side. Contralateral lateral pterygoid weakness. Lateral excursion to restricted side","Deviation + return midline = disc with reduction. Clicking often accompanies. Monitor — self-care + posture + avoid wide opening","S-curve = bilateral restriction. Bilateral pterygoid muscle guarding or bilateral disc dysfunction"] },
-      { id:"lat",    q:"Lateral excursion symmetry?",
-        opts:["✓ 8–12mm bilateral symmetric","⚠ Mild asymmetry (<3mm difference)","✗ Significant asymmetry (>3mm) or restriction","✗ Contralateral lateral excursion absent"],
-        clues:["","Normal","Minor lateral pterygoid or disc asymmetry — joint mobilisation in restriction direction. Lateral stretching exercise","Significant — ipsilateral disc displacement without reduction, lateral pterygoid hypertonic, or condylar pathology","Absent contralateral excursion = ipsilateral medial pterygoid contracture or condylar ankylosis. Refer"] },
-      { id:"prot",   q:"Protrusion (jaw forward)?",
-        opts:["✓ 6–9mm, pain-free","⚠ Restricted or mildly painful","✗ Pain on protrusion","✗ Cannot protlude (ankylosis / bilateral)"],
-        clues:["","Normal","Posterior capsule or retrodiscal tissue irritation — avoid protrusion loading. Slow return to range","Retrodiscal tissue pain — avoid bruxism + wide opening. Occlusal splint may offload","Bilateral restriction — consult with dentist / oral surgeon for imaging (OPG + MRI TMJ)"] },
-      { id:"endfeel",q:"End-feel on maximum opening?",
-        opts:["✓ Firm — capsular","⚠ Soft — muscle guarding","✗ Hard — bony block","✗ Empty — pain before end range"],
-        clues:["","Normal capsular restriction — mobilisation as appropriate","Muscle guarding — address bruxism, stress, masseter / medial pterygoid hypertension first. Dry needling / trigger point","Bony block — condylar osteophyte, eminence, or fibrous ankylosis. OPG imaging referral","Empty end-feel — acute inflammation or retrodiscal pain. Anti-inflammatory management first"] },
-    ],
-    grades:["Normal — ≥40mm opening, straight path, symmetric lateral excursion","Compensated — 30–39mm or mild deviation without pain at rest","Abnormal — <30mm, disc lock, pain on opening, or absent lateral excursion"],
-  },
-  {
-    id:"tmj_click", icon:"💥", label:"Joint Sound Screen",
-    subtitle:"Clicking · Crepitus · Disc With/Without Reduction",
-    phase:"Disc Displacement Classification",
-    setup:"Palpate bilateral TMJ (lateral pole and posterior) during full opening-closing cycle. Note: (1) Timing of click (early / mid / late on opening), (2) Reciprocal click (opening + closing), (3) Crepitus (fine / coarse), (4) Lock (cannot open or close). Pain vs painless click. Compare bilateral. Auscultation if available.",
-    normalDesc:"Silent opening and closing. No click, no crepitus, no catching. No locking. Palpation: mild condyle translation bilaterally, non-tender.",
-    observations:[
-      { id:"click",  q:"Click on opening?",
-        opts:["✓ No click","⚠ Painless click — no functional limitation","✗ Painful click","✗ Click + limitation of opening"],
-        clues:["","Normal","Disc displacement with reduction (DDwR) — painless click common in general population. Educate: self-care, avoid wide opening, bruxism management. Does not require treatment if painless","Painful DDwR — disc displacement with pain on reduction. TMD physiotherapy: mandibular repositioning, lateral pterygoid strengthening, occlusal splint","DDwR + limited opening — catching disc. Manipulation may reduce. Refer if persistent locked"] },
-      { id:"recip",  q:"Reciprocal click (opening + closing)?",
-        opts:["✓ No click","⚠ Opening click only","✗ Reciprocal click (opening + closing)","✗ Click then lock (intermittent closed lock)"],
-        clues:["","Normal","Disc displacement with reduction during opening only — classic early DDwR. Monitor, self-care","Classic DDwR — disc clicks on in opening, out on closing. Educate + posture + avoid provoking movements. Refer if progressive","Progression to intermittent closed lock — refer TMD specialist. May require manipulation or arthrocentesis"] },
-      { id:"crepit", q:"Crepitus on movement?",
-        opts:["✓ No crepitus","⚠ Fine crepitus end range","✗ Coarse crepitus throughout range","✗ Crepitus + condylar tenderness"],
-        clues:["","Normal","Fine crepitus — degenerative change early stage. Load management, jaw rest phases, soft diet","Coarse crepitus = TMJ OA (degenerative joint disease). OPG imaging. Load management + joint protection education + anti-inflammatory","Condylar tenderness + crepitus — acute OA or condylar resorption. Refer for imaging and dental consultation"] },
-      { id:"lock",   q:"Locking (open or closed)?",
-        opts:["✓ No locking","⚠ Occasional transient catching","✗ Closed lock — cannot open adequately","✗ Open lock — cannot close"],
-        clues:["","Normal","Intermittent catching = transitional disc — self-manipulation technique (lateral chin tuck + gentle manipulation). Education","Closed lock — acute disc displacement without reduction. Urgent referral for manual distraction / arthrocentesis if <2 weeks. If chronic — jaw opening exercises + occlusal splint","Open lock / hypermobility — condyle dislocating anterior to eminence. Avoid wide opening. Occlusal splint. Refer if recurrent"] },
-      { id:"bilat",  q:"Bilateral vs unilateral findings?",
-        opts:["✓ No pathological sounds","⚠ Unilateral only","✗ Bilateral — same type","✗ Bilateral — different type each side"],
-        clues:["","Normal","Unilateral — most common. Address symptomatic side. Monitor asymptomatic","Bilateral same = systemic process (RA, psoriatic, bruxism bilateral). Rheumatological screen. Full TMD assessment","Bilateral different = each side at different stage of disc displacement. Complex TMD. Dental/oral surgery referral recommended"] },
-    ],
-    grades:["Normal — No click, no crepitus, no locking","Compensated — Painless click without functional limitation","Abnormal — Painful click, crepitus, reciprocal click + pain, or locking"],
-  },
-  {
-    id:"tmj_muscle", icon:"💪", label:"Masticatory Muscle Palpation",
-    subtitle:"Masseter · Temporalis · Pterygoids · SCM",
-    phase:"Myofascial / Muscle Guarding Screen",
-    setup:"Bilateral palpation: (1) Masseter (lateral jaw — superficial and deep): 2 finger widths below zygomatic arch. (2) Temporalis (temporal fossa, anterior/middle/posterior fibres). (3) Lateral pterygoid (intraoral — just medial to upper molars, posterior). (4) Medial pterygoid (angle of mandible, medial surface). (5) SCM (refer to temple/eye). (6) Suboccipital muscles. Note: VAS pain 0–10, referral pattern, taut band.",
-    normalDesc:"All muscles non-tender. No taut bands. No referred pain on palpation. Bilateral symmetric. Jaw closes symmetrically. No temporal headache on temporalis palpation.",
-    observations:[
-      { id:"mass",   q:"Masseter tenderness?",
-        opts:["✓ Non-tender","⚠ Mildly tender — pressure required","✗ Tender — patient pain reproduced","✗ Tender + hardened/hypertrophied"],
-        clues:["","Normal","Masseter myalgia — common in bruxism. Dry needling / trigger point massage. Bruxism management (occlusal splint)","Masseter pain reproduction = primary TMD myalgia. High priority muscle in TMD. Dry needling, massage, biofeedback, bruxism guard","Masseter hypertrophy — chronic bruxism. Botox referral if severe. Occlusal splint + stress management"] },
-      { id:"temp",   q:"Temporalis tenderness?",
-        opts:["✓ Non-tender","⚠ Mildly tender","✗ Tender — temporal headache reproduced","✗ Tender + temporal headache at rest"],
-        clues:["","Normal","Minor temporalis myalgia — massage, jaw rest phase, reduce gum chewing","Temporal headache reproduction = temporalis trigger point referring to head. Classic temporal headache + jaw clenching pattern. Dry needling + bruxism management","Temporalis headache at rest = chronic tension-type headache with TMD component. Pain physiology education + combined cervical/TMD treatment"] },
-      { id:"pteryg", q:"Lateral pterygoid provocation?",
-        opts:["✓ No pain on intraoral palpation","⚠ Mildly tender","✗ Pain reproduced on palpation","✗ Pain on palpation + resisted protrusion"],
-        clues:["","Normal","Minor LP involvement — common. Monitor. Opening exercise for LP length","LP tenderness = LP myalgia or retrodiscal strain. Jaw opening in limited range + side-to-side exercise. Avoid wide opening","Pain + resisted protrusion = LP strain / disc dysfunction. Refer if clicking + LP pain — anterior disc displacement mechanism"] },
-      { id:"suboc",  q:"Suboccipital muscles (cervical-TMD link)?",
-        opts:["✓ Non-tender","⚠ Mildly tender","✗ Tender — reproduces headache","✗ Tender + jaw symptoms change with suboccipital release"],
-        clues:["","Normal","Minor suboccipital involvement — cervical posture correction + suboccipital release","Cervicogenic headache component. Watson headache approach. C1/C2/C3 assessment. Upper cervical mobilisation + suboccipital release","Suboccipital release changes TMJ symptoms = strong cervical-TMD link. Treat cervical component alongside TMD. Cervical mobilisation may improve jaw opening"] },
-      { id:"scm_tmj",q:"SCM palpation — referred pain to jaw/face?",
-        opts:["✓ Non-tender","⚠ Tender but no referral","✗ Referral to temple or cheek","✗ Referral to eye / teeth (toothache)"],
-        clues:["","Normal","SCM myalgia — common with FHP. SCM stretching + postural correction","SCM trigger point referring to temple = cervicogenic component of temporal headache. Trigger point release + cervical mobilisation","SCM trigger point referring to eye or simulating toothache — classic SCM referral pattern. Distinguish from dental pathology. Cervical + TMD combined treatment"] },
-    ],
-    grades:["Normal — All muscles non-tender, no referral, no headache reproduction","Compensated — Mild tenderness without referral or functional limitation","Abnormal — Pain reproduction, headache triggered, or significant muscle hypertrophy"],
-  },
-  {
-    id:"tmj_cerv", icon:"🔗", label:"Cervical-TMJ Relationship",
-    subtitle:"CVA · C1/C2 · Watson Headache · Posture Link",
-    phase:"Cervico-Mandibular Screen",
-    setup:"The TMJ and cervical spine are biomechanically linked. Screen: (1) CVA assessment — FHP worsens condylar positioning. (2) Atlanto-axial rotation (C1/C2): cervical rotation test seated. (3) Watson headache test: PA on C2 — reproduces head/jaw symptoms? (4) Does chin tuck change jaw symptoms? (5) Does jaw positioning change neck symptoms? (6) Upper cervical palpation: C0/C1/C2 segmental tenderness.",
-    normalDesc:"CVA >50°. C1/C2 rotation symmetric (80° bilateral). Watson test negative (PA on C2 does not reproduce head or jaw symptoms). Chin tuck does not change jaw pain. No C0/C1/C2 tenderness.",
-    observations:[
-      { id:"cva_tmj",q:"CVA and forward head posture effect on jaw?",
-        opts:["✓ CVA >50° — jaw unaffected","⚠ CVA 45–50° — mild jaw tension","✗ CVA <45° — jaw posture affected","✗ Jaw opens less in erect vs slumped posture"],
-        clues:["","Normal — minimal postural contribution","Minor postural contribution — FHP correction may improve jaw symptoms. DNF activation + postural education","Significant FHP — condylar position changes with head posture. Cervical correction priority. Foam roller + chin tuck before TMD-specific treatment","Postural jaw relationship confirmed — treat posture first then reassess jaw ROM. Highly responsive to cervical correction"] },
-      { id:"watson", q:"Watson headache test (PA on C2) — jaw/head symptom?",
-        opts:["✓ Negative — no symptom change","⚠ Positive — head symptoms reproduced","✗ Positive — jaw symptoms reproduced by C2 PA","✗ Positive — both jaw and head reproduced"],
-        clues:["","Normal — cervical not primary driver of TMD","Cervicogenic headache — C2/3 nociceptive source. Watson headache approach. Upper cervical mobilisation C1/C2/C3","C2 PA reproducing jaw symptoms = strong cervico-mandibular link. Upper cervical mobilisation may directly improve jaw symptoms. Priority: treat C2/3 segment","Combined cervico-TMD — upper cervical + TMD combined treatment most effective. Watson + Rocabado approach"] },
-      { id:"chintu", q:"Does chin tuck change jaw symptoms?",
-        opts:["✓ No change — isolated TMD likely","⚠ Minor improvement","✗ Jaw pain reduces with chin tuck","✗ Jaw opens more with chin tuck"],
-        clues:["","Isolated TMD — treat locally","Minor cervical contribution — teach chin tuck as home exercise","Significant improvement with chin tuck = postural jaw component. DNF activation + postural correction core of treatment","Jaw opens more with chin tuck = upper cervical restriction affecting condylar translation. Upper cervical mobilisation to improve jaw opening"] },
-      { id:"sleep",  q:"Sleep position / bruxism screening?",
-        opts:["✓ No clenching / grinding reported","⚠ Morning jaw stiffness only","✗ Partner reports grinding at night","✗ Toothwear pattern + jaw pain on waking"],
-        clues:["","Normal — assess stress, occlusion","Morning stiffness = parafunctional clenching likely. Occlusal screen + stress management education","Nocturnal bruxism confirmed — refer dentist for hard acrylic occlusal splint. Jaw rest protocol. Stress management","Toothwear + jaw pain = severe bruxism. Dental referral urgent (tooth preservation). Hard splint + physiotherapy combined"] },
-      { id:"occlus", q:"Occlusal / bite concerns?",
-        opts:["✓ No occlusal symptoms reported","⚠ Unilateral chewing preference","✗ Bite feels 'off' or uneven","✗ Recent dental work + new TMD symptoms"],
-        clues:["","Normal","Unilateral chewing = muscular asymmetry or disc displacement preventing comfortable bilateral chewing. Strengthen weaker side, open exercises","Malocclusion contributing — refer dentist for occlusal assessment. Physiotherapy for muscle and disc component","Post-dental TMD — common after extraction, prolonged opening. Refer dentist + mobilise TMJ gently"] },
-    ],
-    grades:["Normal — CVA >50°, Watson negative, no postural jaw link","Compensated — Mild postural contribution without pain or functional limitation","Abnormal — Watson positive, jaw changes with chin tuck, bruxism confirmed, or occlusal complaints"],
-  },
-  {
-    id:"tmj_head", icon:"🤕", label:"Headache Classification Screen",
-    subtitle:"Cervicogenic · Tension-Type · TMD-Related",
-    phase:"Headache Differential Screen",
-    setup:"Classify headache type to guide treatment: (1) Location — unilateral/bilateral, frontal/temporal/occipital/vertex. (2) Quality — pressure/throbbing/stabbing. (3) Duration — episodic (<4h / 4–72h) vs chronic (>15 days/month). (4) Triggers — jaw clenching, posture, stress, weather, food. (5) Associated features — nausea, photophobia, aura (migraine vs non-migraine). (6) Neck involvement — worse with neck movement, relieved by cervical treatment.",
-    normalDesc:"No headache. Or clear migraine classification with neurological features absent. Or cervicogenic — unilateral, neck-movement triggered, relieved by cervical treatment. No red flags.",
-    observations:[
-      { id:"location",q:"Headache location?",
-        opts:["✓ No headache","⚠ Bilateral frontal / band-like (tension-type)","✗ Unilateral — with/without autonomic features","✗ Vertex / parietal / occipital"],
-        clues:["","Normal","Tension-type headache — bilateral pressure band. TMD + cervical components common. Treat both + stress management","Unilateral with autonomic features (lacrimation, nasal congestion) = trigeminal autonomic cephalalgia (TAC) group — refer neurology. Without autonomics = cervicogenic or migraine","Occipital = cervicogenic most likely. Vertex = tension-type or raised ICP (red flag if thunderclap). Watson test for cervicogenic"] },
-      { id:"redflag",q:"Red flag screen?",
-        opts:["✓ No red flags","⚠ New headache — not typical pattern","✗ Worst headache of life / thunderclap","✗ Progressive headache + neurological symptoms"],
-        clues:["","Normal — proceed with treatment","New headache in patient >50 or new pattern — screen red flags carefully. Refer if uncertain","Thunderclap headache = subarachnoid haemorrhage until proven otherwise. EMERGENCY referral immediately","Progressive headache + neuro signs (visual, weakness, confusion) = space-occupying lesion / hydrocephalus. EMERGENCY referral"] },
-      { id:"cerviog",q:"Cervicogenic features?",
-        opts:["✓ No cervicogenic features","⚠ Headache worsens with neck movement","✗ Unilateral headache + restricted cervical rotation","✗ Watson test positive + headache reproduced"],
-        clues:["","Not cervicogenic — focus on local TMD or migraine management","Possible cervicogenic contribution — screen Watson test, upper cervical AROM","Probable cervicogenic headache — Sjaastad criteria: unilateral, side-locked, neck movement triggers, cervical sign positive","Confirmed cervicogenic — upper cervical mobilisation (C1/2/3) + Watson headache technique. Highly responsive to manual therapy"] },
-      { id:"migraine",q:"Migraine features?",
-        opts:["✓ No migraine features","⚠ Migraine without aura — possible","✗ Migraine with aura — typical","✗ Chronic migraine + TMD coexisting"],
-        clues:["","Normal","Monitor — may have cervicogenic + migraine components. Treat cervical component to reduce migraine frequency","Migraine with aura — refer GP for diagnosis + medication management. Physiotherapy for cervical component may reduce frequency. Not primary physiotherapy condition","Chronic migraine + TMD = complex presentation. Multidisciplinary management. Physiotherapy for cervical/TMD component + GP/neurologist for migraine prophylaxis"] },
-      { id:"tmdhea", q:"TMD-related headache features?",
-        opts:["✓ No TMD headache link","⚠ Headache on waking only — bruxism?","✗ Temporal headache + masseter/temporalis pain","✗ Headache worsens with jaw use / eating"],
-        clues:["","Normal","Morning headache = nocturnal bruxism. Occlusal splint + bruxism education + stress management","TMD headache — temporalis trigger point + masseter involvement. Dry needling + occlusal splint + TMD physiotherapy","Headache with jaw use = masticatory myalgia + headache. Jaw rest protocol + soft diet short-term + TMD rehabilitation"] },
-    ],
-    grades:["Normal — No headache or clear non-serious classification","Compensated — Cervicogenic or tension-type without red flags, responsive to treatment","Abnormal — Red flags present, progressive headache, or complex migraine + TMD + cervical combined"],
-  },
-];
-
-function TMJFunctionalScreen({ data, set }) {
-  const [activeTest, setActiveTest] = useState(null);
-  const [findings, setFindings] = useState({});
-  const [grades, setGrades] = useState({});
-  const [notes, setNotes] = useState({});
-  const [showVisual, setShowVisual] = useState(true);
-
-  useEffect(() => {
-    const saved = data["tmjfs_data"];
-    if (saved && typeof saved === "string") {
-      try { const p=JSON.parse(saved); if(p.findings)setFindings(p.findings); if(p.grades)setGrades(p.grades); if(p.notes)setNotes(p.notes); } catch {}
-    }
-  }, []);
-
-  const save = (f,g,n) => set("tmjfs_data", JSON.stringify({findings:f,grades:g,notes:n}));
-  const setObs   = (tid,oid,val) => { const nf={...findings,[`${tid}_${oid}`]:val}; setFindings(nf); save(nf,grades,notes); };
-  const setGrade = (tid,val)     => { const ng={...grades,[tid]:val}; setGrades(ng); save(findings,ng,notes); };
-  const setNote  = (tid,val)     => { const nn={...notes,[tid]:val}; setNotes(nn); save(findings,grades,nn); };
-
-  const completedCount = TMJ_TESTS.filter(t => grades[t.id] !== undefined).length;
-  const gradeColor = (g) => g===0?"#059669":g===1?"#d97706":"#dc2626";
-  const accentCol = "#b45309";
-
-  return (
-    <div>
-      <div style={{background:"linear-gradient(135deg,rgba(180,83,9,0.08),rgba(245,158,11,0.05))",border:"1px solid rgba(180,83,9,0.22)",borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <span style={{fontSize:"1.4rem"}}>🦷</span>
-          <div>
-            <div style={{fontWeight:800,fontSize:"0.95rem",color:C.text}}>TMJ Functional Screen</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>5 tests · AROM · Disc sounds · Muscles · Cervical link · Headache</div>
-          </div>
-          <div style={{marginLeft:"auto",textAlign:"right"}}>
-            <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
-            <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
-          </div>
-        </div>
-        <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
-          <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:700}}>⚠ Screen red-flag headache features before any treatment. Thunderclap or progressive headache = emergency referral.</div>
-        </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-          {TMJ_TESTS.map(t=>{
-            const g=grades[t.id]; const done=g!==undefined;
-            return (
-              <div key={t.id} onClick={()=>setActiveTest(activeTest===t.id?null:t.id)}
-                style={{padding:"4px 10px",borderRadius:20,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
-                  border:`1px solid ${activeTest===t.id?accentCol:done?gradeColor(g)+"60":C.border}`,
-                  background:activeTest===t.id?`${accentCol}12`:done?`${gradeColor(g)}10`:"transparent",
-                  color:activeTest===t.id?accentCol:done?gradeColor(g):C.muted}}>
-                {t.icon} {t.label.split(" ")[0]} {done?["✓","⚠","✗"][g]:""}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {TMJ_TESTS.map(t=>{
-        const isOpen=activeTest===t.id; const g=grades[t.id]; const graded=g!==undefined;
-        return (
-          <div key={t.id} style={{marginBottom:10,background:C.surface,borderRadius:14,
-            border:`1.5px solid ${isOpen?accentCol:graded?gradeColor(g)+"50":C.border}`,
-            overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(180,83,9,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
-            <div onClick={()=>setActiveTest(isOpen?null:t.id)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
-              <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
-                <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
-              </div>
-              {graded && <span style={{padding:"3px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${gradeColor(g)}15`,color:gradeColor(g),flexShrink:0}}>{["Normal","Compensated","Abnormal"][g]}</span>}
-              <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
-            </div>
-            {isOpen && (
-              <div style={{padding:"0 14px 14px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:"0.78rem",fontWeight:700,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Reference</div>
-                  <button onClick={()=>setShowVisual(v=>!v)} style={{fontSize:"0.8rem",padding:"2px 8px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer"}}>{showVisual?"Hide":"Show"}</button>
-                </div>
-                {showVisual && (
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                    <div style={{background:"#ECFDF5",borderRadius:10,padding:"10px 12px",border:"1px solid #A7F3D0"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#059669",marginBottom:6,textTransform:"uppercase"}}>✓ Normal</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a5c40",lineHeight:1.6}}>{t.normalDesc}</div>
-                    </div>
-                    <div style={{background:"#FEF2F2",borderRadius:10,padding:"10px 12px",border:"1px solid #FECACA"}}>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:"#dc2626",marginBottom:6,textTransform:"uppercase"}}>⚠ Watch For</div>
-                      <div style={{fontSize:"0.8rem",color:"#7f1d1d",lineHeight:1.6}}>
-                        {t.observations.flatMap(o=>o.opts.filter(x=>x.startsWith("✗")).map(x=>x.replace(/^✗\s*/,""))).slice(0,5).map((x,i)=>(
-                          <div key={i} style={{marginBottom:2}}>• {x}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div style={{background:"#FFFBEB",borderRadius:9,padding:"9px 11px",marginBottom:12,border:"1px solid #FDE68A"}}>
-                  <div style={{fontSize:"0.8rem",fontWeight:800,color:accentCol,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>🎯 Setup & Procedure</div>
-                  <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6}}>{t.setup}</div>
-                  <div style={{marginTop:6,padding:"4px 8px",background:`${accentCol}08`,borderRadius:6,border:`1px solid ${accentCol}20`}}>
-                    <div style={{fontSize:"0.8rem",fontWeight:700,color:accentCol}}>Phase: {t.phase}</div>
-                  </div>
-                </div>
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>👁 What To Observe</div>
-                {t.observations.map(obs=>{
-                  const val=findings[`${t.id}_${obs.id}`]; const clue=val!==undefined?obs.clues[val]:null;
-                  return (
-                    <div key={obs.id} style={{marginBottom:10}}>
-                      <div style={{fontSize:"0.82rem",fontWeight:700,color:C.text,marginBottom:5}}>{obs.q}</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                        {obs.opts.map((opt,idx)=>{
-                          const sel=val===idx; const col=opt.startsWith("✓")?"#059669":opt.startsWith("⚠")?"#d97706":"#dc2626";
-                          return (
-                            <div key={idx} onClick={()=>setObs(t.id,obs.id,sel?undefined:idx)}
-                              style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 10px",borderRadius:8,cursor:"pointer",
-                                border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}10`:C.s2,transition:"all 0.12s"}}>
-                              <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                {sel && <span style={{fontSize:8,color:"#fff",fontWeight:900}}>✓</span>}
-                              </div>
-                              <span style={{fontSize:"0.82rem",fontWeight:sel?700:400,color:sel?col:C.text,lineHeight:1.35}}>{opt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {clue && <div style={{marginTop:5,padding:"6px 10px",background:`${accentCol}06`,borderLeft:`3px solid ${accentCol}`,borderRadius:"0 6px 6px 0",fontSize:"0.78rem",color:C.text,lineHeight:1.5}}><strong>Clinical note:</strong> {clue}</div>}
-                    </div>
-                  );
-                })}
-                <div style={{fontSize:"0.78rem",fontWeight:800,color:C.text,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,marginTop:4}}>📊 Grade This Test</div>
-                <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:12}}>
-                  {t.grades.map((gLabel,idx)=>{
-                    const col=gradeColor(idx); const sel=g===idx;
-                    return (
-                      <div key={idx} onClick={()=>setGrade(t.id,sel?undefined:idx)}
-                        style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:9,cursor:"pointer",border:`1.5px solid ${sel?col:C.border}`,background:sel?`${col}12`:C.s2}}>
-                        <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?col:C.border}`,background:sel?col:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {sel && <span style={{fontSize:9,color:"#fff",fontWeight:900}}>{["✓","⚠","✗"][idx]}</span>}
-                        </div>
-                        <span style={{fontSize:"0.73rem",fontWeight:sel?700:400,color:sel?col:C.text}}>{gLabel}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,marginBottom:4}}>Therapist notes</div>
-                <textarea value={notes[t.id]||""} onChange={e=>setNote(t.id,e.target.value)}
-                  placeholder="Opening mm, click timing, muscle VAS, Watson result, headache features..."
-                  style={{width:"100%",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,padding:"8px 10px",fontSize:"0.82rem",fontFamily:"inherit",resize:"vertical",minHeight:56,outline:"none"}}/>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {completedCount > 0 && (
-        <div style={{background:"#FFFBEB",borderRadius:14,padding:14,border:"1px solid #FDE68A",marginTop:4}}>
-          <div style={{fontWeight:800,color:C.text,marginBottom:10}}>📋 TMJ Screen Summary</div>
-          {TMJ_TESTS.filter(t=>grades[t.id]!==undefined).map(t=>{
-            const g=grades[t.id]; const col=gradeColor(g);
-            return (
-              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
-                <span style={{fontSize:"1rem"}}>{t.icon}</span>
-                <span style={{flex:1,fontSize:"0.75rem",fontWeight:600,color:C.text}}>{t.label}</span>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,background:`${col}15`,color:col}}>{["Normal","Compensated","Abnormal"][g]}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── FUNCTIONAL SCREEN HUB ───────────────────────────────────────────────────
-
-function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
-  const regions = [
-    { id:"lumbar",   label:"Lumbar",    icon:"🦴", color:"#7c3aed" },
-    { id:"shoulder", label:"Shoulder",  icon:"🦾", color:"#0891b2" },
-    { id:"hip",      label:"Hip",       icon:"🦷", color:"#d946ef" },
-    { id:"knee",     label:"Knee",      icon:"🦿", color:"#d97706" },
-    { id:"ankle",    label:"Ankle",     icon:"🦶", color:"#0d9488" },
-    { id:"cervical", label:"Cervical",  icon:"🧠", color:"#7c3aed" },
-    { id:"thoracic", label:"Thoracic",  icon:"🫁", color:"#0f766e" },
-    { id:"elbow",    label:"Elbow",     icon:"💪", color:"#0369a1" },
-    { id:"wrist",    label:"Wrist/Hand",icon:"🖐️", color:"#be185d" },
-    { id:"tmj",      label:"TMJ",       icon:"🦷", color:"#b45309" },
-  ];
-
-  // All tests across all regions for search
-  const ALL_TESTS = {
-    lumbar:   LUMBAR_TESTS,
-    shoulder: SHOULDER_TESTS,
-    hip:      HIP_TESTS,
-    knee:     KNEE_TESTS,
-    ankle:    ANKLE_TESTS,
-    cervical: CERVICAL_TESTS,
-    thoracic: THORACIC_TESTS,
-    elbow:    ELBOW_TESTS,
-    wrist:    WRIST_TESTS,
-    tmj:      TMJ_TESTS,
-  };
-
-  const initRegion = () => {
-    if (navContext.fsRegion && regions.find(r=>r.id===navContext.fsRegion)) return navContext.fsRegion;
-    return "lumbar";
-  };
-
-  const [region, setRegion] = useState(initRegion);
-  const [search, setSearch] = useState("");
-
-  // Respond to navContext changes (from subjective suggestions)
-  useEffect(()=>{
-    if (navContext.fsRegion && regions.find(r=>r.id===navContext.fsRegion)) {
-      setRegion(navContext.fsRegion);
-      setSearch("");
-    }
-  },[navContext.fsRegion]);
-
-  // Search results: [{regionId, regionLabel, regionIcon, test}]
-  const searchResults = React.useMemo(()=>{
-    if (!search.trim()) return [];
-    const q = search.toLowerCase();
-    const results = [];
-    regions.forEach(r=>{
-      (ALL_TESTS[r.id]||[]).forEach(t=>{
-        if (
-          t.label.toLowerCase().includes(q) ||
-          (t.subtitle||"").toLowerCase().includes(q) ||
-          (t.phase||"").toLowerCase().includes(q) ||
-          r.label.toLowerCase().includes(q)
-        ) {
-          results.push({ regionId:r.id, regionLabel:r.label, regionIcon:r.icon, regionColor:r.color, test:t });
-        }
-      });
-    });
-    return results;
-  },[search]);
-
-  const selR = regions.find(r=>r.id===region)||regions[0];
-
-  return (
-    <div>
-      {/* Search bar */}
-      <div style={{position:"relative",marginBottom:12}}>
-        <input
-          type="text"
-          value={search}
-          onChange={e=>setSearch(e.target.value)}
-          placeholder="🔍  Search tests or regions… (e.g. ASLR, Deep Squat, shoulder)"
-          style={{width:"100%",boxSizing:"border-box",padding:"10px 36px 10px 14px",borderRadius:10,
-            border:`1.5px solid ${search?C.accent:C.border}`,background:C.s2,color:C.text,
-            fontSize:"0.8rem",fontFamily:"inherit",outline:"none"}}
-        />
-        {search && (
-          <button onClick={()=>setSearch("")} type="button"
-            style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",
-              background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"1rem",padding:0}}>
-            ✕
-          </button>
-        )}
-      </div>
-
-      {/* Search results */}
-      {search.trim() && (
-        <div style={{marginBottom:12}}>
-          {searchResults.length === 0 ? (
-            <div style={{textAlign:"center",padding:"18px",color:C.muted,background:C.s2,borderRadius:10,border:`1px solid ${C.border}`,fontSize:"0.8rem"}}>
-              No tests found for "{search}"
-            </div>
-          ) : (
-            <div>
-              <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>
-                {searchResults.length} result{searchResults.length!==1?"s":""}
-              </div>
-              {searchResults.map((r,i)=>(
-                <div key={i} onClick={()=>{setRegion(r.regionId);setSearch("");}}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:6,borderRadius:10,
-                    border:`1px solid ${r.regionColor}40`,background:`${r.regionColor}08`,cursor:"pointer"}}>
-                  <span style={{fontSize:"1.3rem"}}>{r.test.icon}</span>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:"0.8rem",fontWeight:700,color:C.text}}>{r.test.label}</div>
-                    <div style={{fontSize:"0.82rem",color:C.muted}}>{r.test.subtitle}</div>
-                  </div>
-                  <span style={{padding:"2px 8px",borderRadius:20,fontSize:"0.82rem",fontWeight:700,
-                    background:`${r.regionColor}15`,color:r.regionColor,flexShrink:0}}>
-                    {r.regionIcon} {r.regionLabel}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Region picker — 2 rows */}
-      {!search.trim() && (
-        <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:12}}>
-          {regions.map(r=>{
-            const sel = region===r.id;
-            return (
-              <button key={r.id} type="button" onClick={()=>setRegion(r.id)}
-                style={{padding:"7px 10px",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:"0.82rem",fontFamily:"inherit",
-                  border:`1.5px solid ${sel?r.color:C.border}`,
-                  background:sel?`${r.color}12`:"transparent",
-                  color:sel?r.color:C.muted}}>
-                {r.icon} {r.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Active region label */}
-      {!search.trim() && (
-        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10,padding:"7px 12px",
-          borderRadius:9,background:`${selR.color}08`,border:`1px solid ${selR.color}25`}}>
-          <span style={{fontSize:"1.2rem"}}>{selR.icon}</span>
-          <span style={{fontWeight:800,color:selR.color,fontSize:"0.85rem"}}>{selR.label} Functional Screen</span>
-        </div>
-      )}
-
-      {/* Region screens */}
-      {!search.trim() && region==="lumbar"   && <LumbarFunctionalScreen   data={data} set={set}/>}
-      {!search.trim() && region==="shoulder" && <ShoulderFunctionalScreen data={data} set={set}/>}
-      {!search.trim() && region==="hip"      && <HipFunctionalScreen      data={data} set={set}/>}
-      {!search.trim() && region==="knee"     && <KneeFunctionalScreen     data={data} set={set}/>}
-      {!search.trim() && region==="ankle"    && <AnkleFunctionalScreen    data={data} set={set}/>}
-      {!search.trim() && region==="cervical" && <CervicalFunctionalScreen data={data} set={set}/>}
-      {!search.trim() && region==="thoracic" && <ThoracicFunctionalScreen data={data} set={set}/>}
-      {!search.trim() && region==="elbow"    && <ElbowFunctionalScreen    data={data} set={set}/>}
-      {!search.trim() && region==="wrist"    && <WristFunctionalScreen    data={data} set={set}/>}
-      {!search.trim() && region==="tmj"      && <TMJFunctionalScreen      data={data} set={set}/>}
-
-      {/* Quick navigation */}
-      <div style={{display:"flex",gap:8,marginTop:16}}>
-        <button type="button" onClick={()=>navTo("overview")}
-          style={{flex:1,padding:"10px 4px",borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:"0.78rem",fontFamily:"inherit",
-            border:`1px solid ${C.border}`,background:C.s2,color:C.muted}}>
-          👤 Patient Profile
-        </button>
-        <button type="button" onClick={()=>navTo("soap")}
-          style={{flex:1,padding:"10px 4px",borderRadius:10,cursor:"pointer",fontWeight:800,fontSize:"0.78rem",fontFamily:"inherit",
-            border:"none",background:`linear-gradient(135deg,${C.accent},${C.a2})`,color:"#fff"}}>
-          📋 Go to SOAP →
-        </button>
-      </div>
-    </div>
-  );
-}
-
-
 // ─── MAIN FMA SECTION ─────────────────────────────────────────────────────────
 const FMS_STORAGE_KEY2="fms_clinical_v1";
 function loadFMSReport(){try{return JSON.parse(localStorage.getItem(FMS_STORAGE_KEY2)||"{}");}catch{return{};}}
 function saveFMSReport(r){try{localStorage.setItem(FMS_STORAGE_KEY2,JSON.stringify(r));}catch{}}
 
-function FMASection({ navContext={}, data={}, set=()=>{}, navTo=()=>{} }){
-  return (
+function FMASection({ navContext={} }){
+    const [selectedTests,setSelectedTests]=useState(()=>{
+    const saved=loadFMSReport();
+    return Object.keys(saved).length>0?Object.keys(saved):[];
+  });
+  const [report,setReport]=useState(()=>loadFMSReport());
+  const [activeTest,setActiveTest]=useState(null);
+  const [scores,setScores]=useState(()=>{
+    const saved=loadFMSReport();
+    const s={};
+    Object.entries(saved).forEach(([k,v])=>{if(v.score!==undefined)s[k]=v.score;});
+    return s;
+  });
+  const [showCamera,setShowCamera]=useState(false);
+  const [expandedDef,setExpandedDef]=useState(null);
+  const [activeSection,setActiveSection]=useState("select"); // select | test | report
+
+  function toggleTest(id){
+    setSelectedTests(prev=>{
+      const next=prev.includes(id)?prev.filter(x=>x!==id):[...prev,id];
+      return next;
+    });
+    if(!selectedTests.includes(id)&&!activeTest) setActiveTest(id);
+  }
+
+  function getTestDefects(testId){
+    return report[testId]?.defects||[];
+  }
+
+  function toggleDefect(testId,defId){
+    setReport(prev=>{
+      const cur=prev[testId]?.defects||[];
+      const next=cur.includes(defId)?cur.filter(x=>x!==defId):[...cur,defId];
+      const updated={...prev,[testId]:{...(prev[testId]||{}),defects:next}};
+      saveFMSReport(updated);
+      return updated;
+    });
+  }
+
+  function setScore(testId,score){
+    setScores(p=>({...p,[testId]:score}));
+    setReport(prev=>{
+      const updated={...prev,[testId]:{...(prev[testId]||{}),score}};
+      saveFMSReport(updated);
+      return updated;
+    });
+  }
+
+  function clearAll(){
+    setSelectedTests([]); setReport({}); setScores({}); setActiveTest(null);
+    localStorage.removeItem(FMS_STORAGE_KEY2);
+  }
+
+  const totalDefects=Object.values(report).reduce((s,t)=>s+(t.defects?.length||0),0);
+  const sc2col=(s)=>s>=3?C.green:s===2?C.yellow:s===1?C.red:C.muted;
+  const totalScore=Object.entries(scores).reduce((s,[,v])=>s+(v??0),0);
+  const maxScore=selectedTests.length*3;
+
+  React.useEffect(()=>{
+    const targets=navContext.fmaHighlights?navContext.fmaHighlights:navContext.fmaHighlight?[navContext.fmaHighlight]:[];
+    if(!targets.length) return;
+    setTimeout(()=>{
+      let scrolled=false;
+      targets.forEach(id=>{
+        const el=document.querySelector(`[data-fma-id="${id}"]`);
+        if(el){ if(!scrolled){el.scrollIntoView({behavior:"smooth",block:"center"});scrolled=true;}
+          el.classList.add("physio-highlight"); setTimeout(()=>el.classList.remove("physio-highlight"),4000); }
+      });
+    },450);
+  },[navContext.fmaHighlight,navContext.fmaHighlights]);
+
+  return(
     <div>
-      <FunctionalScreenHub data={data} set={set} navTo={navTo} navContext={navContext}/>
+      {/* Header */}
+      <div style={{background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:12,padding:12,marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+          <div>
+            <div style={{fontWeight:800,color:C.accent,marginBottom:3}}>🏃 FMS — Clinical Reasoning Assistant</div>
+            <div style={{fontSize:"0.75rem",color:C.muted}}>Select tests, identify defects manually. AI camera optional. Full clinical interpretation generated per defect.</div>
+          </div>
+          <button type="button" onClick={()=>setShowCamera(p=>!p)} style={{flexShrink:0,padding:"5px 10px",background:showCamera?"rgba(0,229,255,0.15)":"rgba(0,229,255,0.06)",border:`1px solid ${showCamera?C.accent:C.border}`,borderRadius:8,color:showCamera?C.accent:C.muted,fontSize:"0.7rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
+            📷 Camera {showCamera?"ON":"OFF"}
+          </button>
+        </div>
+        {selectedTests.length>0&&(
+          <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap",alignItems:"center"}}>
+            <div style={{fontSize:"0.7rem",color:C.muted}}>{selectedTests.length} test{selectedTests.length!==1?"s":""} selected · {totalDefects} defect{totalDefects!==1?"s":""} identified</div>
+            {selectedTests.length>0&&maxScore>0&&<div style={{fontSize:"0.7rem",color:C.accent,fontWeight:700}}>Score: {totalScore}/{maxScore}</div>}
+            <button type="button" onClick={clearAll} style={{marginLeft:"auto",padding:"2px 8px",background:"transparent",border:`1px solid ${C.red}40`,borderRadius:6,color:C.red,fontSize:"0.65rem",cursor:"pointer"}}>Clear All</button>
+          </div>
+        )}
+      </div>
+
+      {/* Optional AI Camera */}
+      {showCamera&&<FMSCameraPanel onClose={()=>setShowCamera(false)}/>}
+
+      {/* Tab nav */}
+      <div style={{display:"flex",gap:5,marginBottom:12}}>
+        {[["select","🗂 Select Tests"],["test","🔍 Assess"],["report","📋 Report"]].map(([k,l])=>(
+          <button key={k} type="button" onClick={()=>setActiveSection(k)}
+            style={{flex:1,padding:"8px 4px",borderRadius:9,border:`1px solid ${activeSection===k?C.accent:C.border}`,background:activeSection===k?"rgba(0,229,255,0.1)":"transparent",color:activeSection===k?C.accent:C.muted,fontSize:"0.75rem",fontWeight:activeSection===k?700:500,cursor:"pointer"}}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {/* ── SELECT TESTS VIEW ── */}
+      {activeSection==="select"&&(
+        <div>
+          <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:8}}>Select Any Test(s)</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:7}}>
+            {Object.entries(FMS_DB).map(([id,test])=>{
+              const sel=selectedTests.includes(id);
+              const defCount=getTestDefects(id).length;
+              const score=scores[id];
+              return(
+                <div key={id} data-fma-id={id} onClick={()=>toggleTest(id)}
+                  style={{padding:"11px 12px",borderRadius:10,border:`2px solid ${sel?C.accent:C.border}`,background:sel?"rgba(0,229,255,0.08)":C.s2,cursor:"pointer",transition:"all 0.15s",position:"relative"}}>
+                  {sel&&<div style={{position:"absolute",top:6,right:8,width:16,height:16,borderRadius:"50%",background:C.accent,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"#000",fontSize:"0.6rem",fontWeight:900}}>✓</span></div>}
+                  <div style={{fontSize:"1.4rem",marginBottom:4}}>{test.icon}</div>
+                  <div style={{fontSize:"0.78rem",fontWeight:700,color:sel?C.accent:C.text,marginBottom:3}}>{test.label}</div>
+                  {sel&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                    {score!==undefined&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:5,background:`${sc2col(score)}20`,color:sc2col(score),fontWeight:700}}>Score {score}</span>}
+                    {defCount>0&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:5,background:"rgba(255,77,109,0.15)",color:C.red,fontWeight:700}}>⚠{defCount}</span>}
+                  </div>}
+                  {!sel&&<div style={{fontSize:"0.65rem",color:C.muted}}>Tap to add</div>}
+                </div>
+              );
+            })}
+          </div>
+          {selectedTests.length>0&&(
+            <button type="button" onClick={()=>setActiveSection("test")} style={{width:"100%",marginTop:12,padding:"11px",background:`linear-gradient(135deg,${C.accent},${C.a2})`,border:"none",borderRadius:10,color:"#000",fontWeight:700,cursor:"pointer",fontSize:"0.88rem"}}>
+              Assess Selected Tests →
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── ASSESS VIEW ── */}
+      {activeSection==="test"&&(
+        <div>
+          {selectedTests.length===0&&(
+            <div style={{textAlign:"center",padding:"30px 20px",color:C.muted,background:C.s2,borderRadius:12,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:"2rem",marginBottom:8}}>🗂</div>
+              <div style={{fontWeight:700,color:C.text,marginBottom:4}}>No tests selected</div>
+              <button type="button" onClick={()=>setActiveSection("select")} style={{padding:"7px 16px",background:`rgba(0,229,255,0.1)`,border:`1px solid ${C.accent}`,borderRadius:8,color:C.accent,cursor:"pointer",fontSize:"0.8rem"}}>Select Tests</button>
+            </div>
+          )}
+
+          {/* Test tabs */}
+          {selectedTests.length>0&&(
+            <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:12}}>
+              {selectedTests.map(id=>{
+                const test=FMS_DB[id];
+                const defCount=getTestDefects(id).length;
+                const isActive=activeTest===id;
+                return(
+                  <button key={id} type="button" onClick={()=>setActiveTest(id)}
+                    style={{padding:"6px 12px",borderRadius:20,border:`1px solid ${isActive?C.accent:defCount>0?C.red+"60":C.border}`,background:isActive?"rgba(0,229,255,0.12)":defCount>0?"rgba(255,77,109,0.07)":"transparent",color:isActive?C.accent:defCount>0?C.red:C.muted,fontSize:"0.75rem",fontWeight:isActive?700:500,cursor:"pointer"}}>
+                    {test.icon} {test.label}
+                    {defCount>0&&<span style={{marginLeft:4,background:C.red,color:"#fff",borderRadius:8,padding:"0 5px",fontSize:"0.6rem",fontWeight:700}}>{defCount}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {activeTest&&FMS_DB[activeTest]&&(()=>{
+            const test=FMS_DB[activeTest];
+            const selectedDefs=getTestDefects(activeTest);
+            return(
+              <div>
+                {/* Test info */}
+                <div style={{background:C.surface,border:`1px solid ${C.accent}25`,borderRadius:12,padding:13,marginBottom:10}}>
+                  <div style={{fontSize:"1.4rem",marginBottom:4}}>{test.icon}</div>
+                  <div style={{fontWeight:800,color:C.text,fontSize:"1rem",marginBottom:6}}>{test.label}</div>
+
+                  {/* How to perform */}
+                  <div style={{background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:9,padding:"9px 11px",marginBottom:8}}>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:4}}>📋 How to Perform</div>
+                    <div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.6}}>{test.how}</div>
+                  </div>
+
+                  {/* Cues */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(145px,1fr))",gap:5,marginBottom:8}}>
+                    {test.cues.map((c,i)=>(
+                      <div key={i} style={{background:"rgba(0,229,255,0.04)",border:"1px solid rgba(0,229,255,0.12)",borderRadius:7,padding:"6px 9px",fontSize:"0.72rem",color:C.text}}>
+                        <span style={{color:C.accent,fontWeight:700,marginRight:4}}>{i+1}.</span>{c}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Scoring guide */}
+                  <div style={{background:"rgba(127,90,240,0.06)",border:"1px solid rgba(127,90,240,0.2)",borderRadius:8,padding:"7px 10px",marginBottom:8}}>
+                    <div style={{fontSize:"0.6rem",fontWeight:700,color:C.purple,textTransform:"uppercase",letterSpacing:"1px",marginBottom:4}}>📊 Scoring Guide</div>
+                    <div style={{fontSize:"0.72rem",color:C.text,lineHeight:1.6}}>{test.scoring}</div>
+                  </div>
+
+                  {/* Score input */}
+                  <div>
+                    <div style={{fontSize:"0.65rem",color:C.muted,marginBottom:5,fontWeight:600}}>SCORE THIS TEST</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5}}>
+                      {[0,1,2,3].map(s=>(
+                        <button key={s} type="button" onClick={()=>setScore(activeTest,s)}
+                          style={{padding:"9px 4px",borderRadius:8,border:`2px solid ${scores[activeTest]===s?sc2col(s):C.border}`,background:scores[activeTest]===s?`${sc2col(s)}20`:"transparent",color:sc2col(s),fontWeight:700,cursor:"pointer",fontSize:"0.85rem"}}>
+                          {s}
+                          <div style={{fontSize:"0.52rem",color:C.muted,fontWeight:400,marginTop:1}}>{s===0?"Pain":s===1?"Unable":s===2?"Compen.":"Normal"}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Defect selection */}
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:8}}>⚠ Select Observed Defects</div>
+                  <div style={{display:"grid",gap:6}}>
+                    {Object.entries(test.defects).map(([defId,def])=>{
+                      const sel=selectedDefs.includes(defId);
+                      const isExp=expandedDef===`${activeTest}_${defId}`;
+                      return(
+                        <div key={defId} style={{borderRadius:10,border:`1px solid ${sel?C.yellow:C.border}`,background:sel?"rgba(255,179,0,0.05)":C.surface,overflow:"hidden"}}>
+                          {/* Defect header */}
+                          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",cursor:"pointer"}}
+                            onClick={()=>toggleDefect(activeTest,defId)}>
+                            <div style={{width:20,height:20,borderRadius:5,border:`2px solid ${sel?C.yellow:C.border}`,background:sel?C.yellow:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              {sel&&<span style={{color:"#000",fontSize:"0.65rem",fontWeight:900}}>✓</span>}
+                            </div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:"0.8rem",fontWeight:sel?700:500,color:sel?C.yellow:C.text}}>{def.label}</div>
+                              <div style={{fontSize:"0.65rem",color:C.muted,marginTop:1}}>{def.type}</div>
+                            </div>
+                            <button type="button"
+                              onClick={e=>{e.stopPropagation();setExpandedDef(isExp?null:`${activeTest}_${defId}`);}}
+                              style={{flexShrink:0,padding:"3px 8px",background:"rgba(127,90,240,0.12)",border:`1px solid ${C.a2}30`,borderRadius:6,color:C.a2,fontSize:"0.62rem",cursor:"pointer",fontWeight:700}}>
+                              {isExp?"▲ Hide":"▼ Detail"}
+                            </button>
+                          </div>
+
+                          {/* Expanded clinical detail */}
+                          {isExp&&(
+                            <div style={{padding:"0 12px 12px",borderTop:`1px solid ${C.border}`}}>
+                              {/* Meaning */}
+                              <div style={{background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:8,padding:"8px 10px",margin:"8px 0"}}>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>🔍 Clinical Meaning</div>
+                                <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.6}}>{def.meaning}</div>
+                              </div>
+                              {/* Biomech */}
+                              <div style={{background:"rgba(127,90,240,0.06)",border:"1px solid rgba(127,90,240,0.2)",borderRadius:8,padding:"8px 10px",marginBottom:8}}>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.purple,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>⚙️ Biomechanical Reason</div>
+                                <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.6}}>{def.biomech}</div>
+                              </div>
+                              {/* Muscles */}
+                              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:8}}>
+                                <div style={{background:"rgba(255,77,109,0.07)",border:"1px solid rgba(255,77,109,0.2)",borderRadius:8,padding:"8px 10px"}}>
+                                  <div style={{fontSize:"0.58rem",fontWeight:700,color:C.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>🟡 Weak / Underactive</div>
+                                  {def.weak.map((m,i)=><div key={i} style={{fontSize:"0.72rem",color:C.text,padding:"2px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>• {m}</div>)}
+                                </div>
+                                <div style={{background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,padding:"8px 10px"}}>
+                                  <div style={{fontSize:"0.58rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>🔴 Tight / Overactive</div>
+                                  {def.tight.map((m,i)=><div key={i} style={{fontSize:"0.72rem",color:C.text,padding:"2px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>• {m}</div>)}
+                                </div>
+                              </div>
+                              {/* Kinetic chain */}
+                              <div style={{background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:8,padding:"8px 10px",marginBottom:8}}>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>⛓️ Kinetic Chain</div>
+                                <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.6}}>{def.kinetic}</div>
+                              </div>
+                              {/* Compensation */}
+                              <div style={{background:"rgba(255,179,0,0.06)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,padding:"8px 10px",marginBottom:8}}>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>🔄 Compensation Pattern</div>
+                                <div style={{fontSize:"0.76rem",color:C.text,lineHeight:1.6}}>{def.compensation}</div>
+                              </div>
+                              {/* Treatment */}
+                              <div style={{background:"rgba(0,201,122,0.06)",border:"1px solid rgba(0,201,122,0.2)",borderRadius:8,padding:"8px 10px",marginBottom:8}}>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>🩺 Treatment Strategy</div>
+                                {def.treatment.map((t,i)=>(
+                                  <div key={i} style={{display:"flex",gap:6,padding:"3px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                                    <span style={{color:C.green,fontWeight:700,flexShrink:0,fontSize:"0.7rem"}}>{i+1}.</span>
+                                    <span style={{fontSize:"0.74rem",color:C.text,lineHeight:1.5}}>{t}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              {/* Exercises */}
+                              <div style={{background:"rgba(0,201,122,0.04)",border:"1px solid rgba(0,201,122,0.15)",borderRadius:8,padding:"8px 10px"}}>
+                                <div style={{fontSize:"0.6rem",fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>💪 Corrective Exercises</div>
+                                {def.exercises.map((ex,i)=>(
+                                  <div key={i} style={{display:"flex",gap:6,padding:"3px 0",borderBottom:"1px solid rgba(255,255,255,0.03)"}}>
+                                    <span style={{color:C.a3,fontWeight:700,flexShrink:0,fontSize:"0.7rem"}}>{i+1}.</span>
+                                    <span style={{fontSize:"0.74rem",color:C.text,lineHeight:1.5}}>{ex}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ── REPORT VIEW ── */}
+      {activeSection==="report"&&(
+        <div>
+          {Object.keys(report).length===0||Object.values(report).every(t=>!t.defects?.length)?(
+            <div style={{textAlign:"center",padding:"30px 20px",color:C.muted,background:C.s2,borderRadius:12,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:"2rem",marginBottom:8}}>📋</div>
+              <div style={{fontWeight:700,color:C.text,marginBottom:4}}>No defects recorded yet</div>
+              <div style={{fontSize:"0.78rem",marginBottom:12}}>Select tests and identify defects to generate a clinical report</div>
+              <button type="button" onClick={()=>setActiveSection("test")} style={{padding:"7px 16px",background:`rgba(0,229,255,0.1)`,border:`1px solid ${C.accent}`,borderRadius:8,color:C.accent,cursor:"pointer",fontSize:"0.8rem"}}>Go to Assessment →</button>
+            </div>
+          ):(
+            <div>
+              {/* Summary header */}
+              <div style={{background:C.surface,border:`1px solid ${C.accent}30`,borderRadius:12,padding:14,marginBottom:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{fontWeight:800,color:C.accent}}>Clinical Report Summary</div>
+                  <button type="button" onClick={()=>generateFMSReportPDF(report)} style={{padding:"6px 12px",background:`linear-gradient(135deg,${C.accent},${C.a2})`,border:"none",borderRadius:8,color:"#000",fontSize:"0.72rem",fontWeight:700,cursor:"pointer"}}>📄 Export PDF</button>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:6}}>
+                  {selectedTests.filter(id=>report[id]).map(id=>{
+                    const test=FMS_DB[id], sc=scores[id], defs=getTestDefects(id);
+                    return(
+                      <div key={id} style={{background:C.s2,border:`1px solid ${defs.length>0?C.yellow:C.border}`,borderRadius:9,padding:"9px 11px"}}>
+                        <div style={{fontSize:"1rem",marginBottom:3}}>{test.icon}</div>
+                        <div style={{fontSize:"0.72rem",fontWeight:700,color:C.text,marginBottom:2}}>{test.label}</div>
+                        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                          {sc!==undefined&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:4,background:`${sc2col(sc)}15`,color:sc2col(sc),fontWeight:700}}>{sc}/3</span>}
+                          {defs.length>0&&<span style={{fontSize:"0.6rem",padding:"1px 5px",borderRadius:4,background:"rgba(255,179,0,0.15)",color:C.yellow,fontWeight:700}}>⚠{defs.length}</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Per-defect clinical breakdown */}
+              {selectedTests.map(testId=>{
+                const test=FMS_DB[testId];
+                const defs=getTestDefects(testId);
+                if(!defs.length) return null;
+                return(
+                  <div key={testId} style={{marginBottom:14}}>
+                    <div style={{fontSize:"0.65rem",fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:7}}>
+                      {test.icon} {test.label} {scores[testId]!==undefined&&`— Score ${scores[testId]}/3`}
+                    </div>
+                    {defs.map(defId=>{
+                      const def=test.defects[defId]; if(!def) return null;
+                      return(
+                        <div key={defId} style={{background:C.surface,border:`1px solid ${C.yellow}30`,borderRadius:11,padding:14,marginBottom:8}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                            <div style={{fontWeight:700,color:C.yellow,fontSize:"0.85rem"}}>⚠ {def.label}</div>
+                            <span style={{padding:"2px 8px",borderRadius:8,background:`rgba(127,90,240,0.15)`,color:C.purple,fontSize:"0.62rem",fontWeight:700}}>{def.type}</span>
+                          </div>
+
+                          <div style={{fontSize:"0.75rem",color:C.text,lineHeight:1.6,marginBottom:8,padding:"7px 10px",background:"rgba(0,229,255,0.04)",borderRadius:7,borderLeft:`3px solid ${C.accent}`}}>{def.meaning}</div>
+
+                          <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:4}}>Biomechanical Mechanism</div>
+                          <div style={{fontSize:"0.74rem",color:C.text,lineHeight:1.6,marginBottom:8}}>{def.biomech}</div>
+
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:8}}>
+                            <div style={{background:"rgba(255,77,109,0.07)",border:"1px solid rgba(255,77,109,0.2)",borderRadius:7,padding:"7px 9px"}}>
+                              <div style={{fontSize:"0.58rem",fontWeight:700,color:C.red,marginBottom:4}}>🟡 WEAK / UNDERACTIVE</div>
+                              {def.weak.map((m,i)=><div key={i} style={{fontSize:"0.71rem",color:C.text,padding:"2px 0"}}>• {m}</div>)}
+                            </div>
+                            <div style={{background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:7,padding:"7px 9px"}}>
+                              <div style={{fontSize:"0.58rem",fontWeight:700,color:C.yellow,marginBottom:4}}>🔴 TIGHT / OVERACTIVE</div>
+                              {def.tight.map((m,i)=><div key={i} style={{fontSize:"0.71rem",color:C.text,padding:"2px 0"}}>• {m}</div>)}
+                            </div>
+                          </div>
+
+                          <div style={{background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:7,padding:"7px 9px",marginBottom:8}}>
+                            <div style={{fontSize:"0.58rem",fontWeight:700,color:C.accent,marginBottom:3}}>⛓️ KINETIC CHAIN</div>
+                            <div style={{fontSize:"0.73rem",color:C.text,lineHeight:1.6}}>{def.kinetic}</div>
+                          </div>
+
+                          <div style={{background:"rgba(0,201,122,0.05)",border:"1px solid rgba(0,201,122,0.18)",borderRadius:7,padding:"7px 9px"}}>
+                            <div style={{fontSize:"0.58rem",fontWeight:700,color:C.green,marginBottom:5}}>💪 CORRECTIVE EXERCISES</div>
+                            {def.exercises.map((ex,i)=>(
+                              <div key={i} style={{display:"flex",gap:6,padding:"2px 0",borderBottom:"1px solid rgba(255,255,255,0.03)"}}>
+                                <span style={{color:C.green,fontWeight:700,flexShrink:0,fontSize:"0.68rem"}}>{i+1}.</span>
+                                <span style={{fontSize:"0.72rem",color:C.text,lineHeight:1.5}}>{ex}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
 // ─── FASCIA LINE DATA ─────────────────────────────────────────────────────────
 const FASCIA_LINES_DATA = {
   sbl:{ label:"Superficial Back Line", color:"#ff6b35", route:"Plantar fascia → Gastrocnemius → Hamstrings → Sacrotuberous lig → Erector spinae → Suboccipitals → Scalp", restrictions:"Plantar fasciitis, hamstring tightness, thoracolumbar restriction, suboccipital tension, forward head, limited forward bend", compensation:"Plantar restriction pulls entire posterior chain → suboccipital compression → forward head posture" },
@@ -13231,7 +8460,7 @@ const FASCIA_REGIONS_DATA = {
         options:[
           { val:"Normal — symmetric glide, free rotation", color:"#00c97a", meaning:"TLF glides freely in all directions. Oblique tension symmetric. Passive trunk rotation creates symmetric gradual resistance. Skin rolling free. TLF hydrated and mobile. Normal force transmission through TLF." },
           { val:"Unilateral restriction", color:"#ffb300", meaning:"TLF restricted one side — unilateral prolonged loading, sport dominance, or old injury. Oblique tension restricted one diagonal. Ipsilateral hip extension restricted and contralateral shoulder restricted (functional line). TREAT: unilateral TLF release." },
-          { val:"Bilateral restriction — erector spinae dominant", color:"#ff6b35", meaning:"TLF restricted bilaterally. Erector spinae chronically overactive (CPA: TA inhibited). Common in chronic LBP. TREAT: bilateral TLF release + TA activation + glute max activation (both attach to TLF)." },
+          { val:"Bilateral restriction — erector spinae dominant", color:"#ff6b35", meaning:"TLF restricted bilaterally. Erector spinae chronically overactive (NKT: TA inhibited). Common in chronic LBP. TREAT: bilateral TLF release + TA activation + glute max activation (both attach to TLF)." },
           { val:"TLF fibrosis — post-injury / surgery", color:"#ff4d6d", meaning:"TLF fibrotic, thickened, rigid. Post-lumbar surgery, prolonged bed rest, or lumbar trauma. TREAT: IASTM along TLF, sustained MFR 3+ min, dry needling paraspinal at TLF level, progressive movement loading." },
         ],
         treatment:"Unilateral: targeted TLF release 90 sec + IASTM. Bilateral: foam roller thoracolumbar + oblique self-release. Activate: TA + glute max (key TLF tensioners). Movement: cat-cow, thoracolumbar rotation.",
@@ -13258,7 +8487,7 @@ const FASCIA_REGIONS_DATA = {
           { val:"Symmetric — LL balanced", color:"#00c97a", meaning:"Equal lateral bend. LL tension symmetric. Peroneal chain free. No scoliotic deviation. Normal lateral stability." },
           { val:"Restricted one side — lateral chain", color:"#ffb300", meaning:"Lateral bend restricted toward one side. LL on shorter side restricted. Peroneal inversion creates chain pull up through IT band and lateral trunk. TREAT: peroneus → IT band → QL → lateral intercostals → lateral neck." },
           { val:"Restricted with scoliosis", color:"#ff6b35", meaning:"Lateral bend restricted AND scoliotic curve visible. Treat the shortened (concave) side LL — the stretched convex side responds. Never aggressively release the stretched LL." },
-          { val:"LL restriction with hip elevation", color:"#ff4d6d", meaning:"LL restricted AND ipsilateral hip elevated. QL and LL both involved. Functional leg length discrepancy. TREAT: QL release + IT band SMR + lateral rib mobilisation + glute med activation (CPA)." },
+          { val:"LL restriction with hip elevation", color:"#ff4d6d", meaning:"LL restricted AND ipsilateral hip elevated. QL and LL both involved. Functional leg length discrepancy. TREAT: QL release + IT band SMR + lateral rib mobilisation + glute med activation (NKT)." },
         ],
         treatment:"Release: peroneus SMR → IT band foam roll → TFL SMR → QL release → lateral rib mobilisation → lateral neck SMR. Movement: LL dynamic stretch (side bend with arm overhead). Standing lateral swing for LL rehydration.",
       },
@@ -13282,7 +8511,7 @@ const FASCIA_REGIONS_DATA = {
         how:"Patient supine, knees bent. STEP 1 — Breathing: hand on chest + hand on abdomen. Normal: abdomen rises first. STEP 2 — Lateral expansion: hands bilaterally on lower ribs — normal 360° expansion including posterior. STEP 3 — Diaphragm palpation: fingers under lower rib cage margin, breathe in — feel clear descent. STEP 4 — DFL tension: one hand under thoracolumbar (psoas level) + other on anterior lower ribs — breathe — do these two structures move together through DFL? STEP 5 — Psoas connection: Thomas test positive? (psoas and diaphragm share fascial attachment through DFL).",
         options:[
           { val:"Normal — DFL hub free", color:"#00c97a", meaning:"Abdomen rises first. 360° rib expansion. Diaphragm clearly descends. Psoas and diaphragm move together. Thomas test negative. Core IAP managed correctly." },
-          { val:"Thoracic breathing — diaphragm inhibited", color:"#ffb300", meaning:"Chest rises first. Scalenes/SCM visible on normal breathing. Diaphragm barely descends. CPA: diaphragm inhibited → scalenes compensating. Core IAP generation impaired → LBP risk. TREAT: diaphragm activation (crocodile breathing) + scalene release." },
+          { val:"Thoracic breathing — diaphragm inhibited", color:"#ffb300", meaning:"Chest rises first. Scalenes/SCM visible on normal breathing. Diaphragm barely descends. NKT: diaphragm inhibited → scalenes compensating. Core IAP generation impaired → LBP risk. TREAT: diaphragm activation (crocodile breathing) + scalene release." },
           { val:"Diaphragm restricted — fascial adhesion", color:"#ff6b35", meaning:"Breathing partially restricted. DFL tension test: thoracolumbar and rib cage do NOT move together. Often post-abdominal surgery. Diaphragmatic fascial adhesion: manual release under lower rib margin + visceral mobilisation." },
           { val:"Paradoxical breathing — severe DFL disruption", color:"#ff4d6d", meaning:"Abdomen moves IN on inhalation. Diaphragm not descending. Severe DFL disruption. Consider phrenic nerve, chronic anxiety, or post-surgical adhesion. Refer for respiratory physiotherapy." },
         ],
@@ -13312,7 +8541,7 @@ const FASCIA_REGIONS_DATA = {
           { val:"Posterior force closure deficit", color:"#ff6b35", meaning:"Posterior SIJ compression helps. Glute max + biceps femoris + TLF insufficient posteriorly. Common postpartum. TREAT: glute max activation, TLF tensioning, SIJ belt short-term." },
           { val:"Bilateral deficit — severe", color:"#ff4d6d", meaning:"Both anterior and posterior compression help. Severe force closure failure. Multi-system treatment: pelvic physiotherapy + SIJ belt + graded loading program." },
         ],
-        treatment:"Anterior deficit: TA drawing-in + pelvic floor. Posterior deficit: glute max CPA + TLF activation (deadlift pattern). Bilateral: SIJ belt 6–8 weeks + specific stabilisation. TLF: MFR + immediate loading (bridge, deadlift).",
+        treatment:"Anterior deficit: TA drawing-in + pelvic floor. Posterior deficit: glute max NKT + TLF activation (deadlift pattern). Bilateral: SIJ belt 6–8 weeks + specific stabilisation. TLF: MFR + immediate loading (bridge, deadlift).",
       },
       { id:"fa_compensation_map", label:"Fascial Compensation Pattern Mapping", line:"All", type:"Multi-line integration",
         how:"SYSTEMATIC MAPPING: (1) Identify primary complaint: location, movement most affected. (2) Test ALL lines at painful area: which fascial line passes through? (3) Follow line AWAY from pain: does restricting/releasing remote area change local pain? (4) Test ANTAGONIST line: SBL restricted → test SFL. LL → opposite LL. (5) Test FUNCTIONAL CONNECTIONS: check contralateral extremity. (6) Classify: LOCAL (restriction only at pain site) vs CHAIN (one line, multiple areas) vs GLOBAL (multiple lines). (7) PRIMARY RESTRICTION: most densified or oldest point in chain — often matches old injury or surgery site.",
@@ -13352,7 +8581,7 @@ function FasciaBodyMap({ selected, onSelect }) {
   ];
   return (
     <div style={{background:C.s2,borderRadius:12,padding:16,border:`1px solid ${C.border}`,marginBottom:16}}>
-      <div style={{fontSize:"0.8rem",fontWeight:700,color:C.muted,textAlign:"center",marginBottom:10,textTransform:"uppercase",letterSpacing:"1px"}}>Fascial Lines — Tap to Select</div>
+      <div style={{fontSize:"0.7rem",fontWeight:700,color:C.muted,textAlign:"center",marginBottom:10,textTransform:"uppercase",letterSpacing:"1px"}}>Fascial Lines — Tap to Select</div>
       <div style={{display:"flex",gap:16,flexWrap:"wrap",alignItems:"flex-start"}}>
         <svg width="300" height="410" viewBox="0 0 300 410" style={{display:"block",flexShrink:0}}>
           {bodyParts.map((p,i)=>p.t==="ellipse"
@@ -13373,12 +8602,12 @@ function FasciaBodyMap({ selected, onSelect }) {
           })}
         </svg>
         <div style={{flex:1,minWidth:160}}>
-          <div style={{fontSize:"0.75rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Fascial Lines</div>
+          <div style={{fontSize:"0.65rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Fascial Lines</div>
           {Object.entries(FASCIA_LINES_DATA).map(([key,ln])=>(
             <div key={key} onClick={()=>onSelect(selected===key?null:key)}
               style={{background:selected===key?`${ln.color}18`:C.s3,border:`1px solid ${selected===key?ln.color:C.border}`,borderRadius:8,padding:"7px 10px",marginBottom:5,cursor:"pointer",transition:"all 0.2s"}}>
               <div style={{fontWeight:700,fontSize:"0.74rem",color:ln.color}}>{ln.label}</div>
-              {selected===key&&<div style={{fontSize:"0.78rem",color:C.muted,marginTop:3,lineHeight:1.5}}>{ln.restrictions}</div>}
+              {selected===key&&<div style={{fontSize:"0.68rem",color:C.muted,marginTop:3,lineHeight:1.5}}>{ln.restrictions}</div>}
             </div>
           ))}
         </div>
@@ -13386,9 +8615,9 @@ function FasciaBodyMap({ selected, onSelect }) {
       {selected&&FASCIA_LINES_DATA[selected]&&(
         <div style={{background:`${FASCIA_LINES_DATA[selected].color}08`,border:`1px solid ${FASCIA_LINES_DATA[selected].color}30`,borderRadius:9,padding:12,marginTop:12}}>
           <div style={{fontWeight:700,color:FASCIA_LINES_DATA[selected].color,marginBottom:6,fontSize:"0.85rem"}}>{FASCIA_LINES_DATA[selected].label}</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:"0.82rem"}}>
-            <div><div style={{fontWeight:700,color:C.muted,fontSize:"0.8rem",textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>Route</div><div style={{color:C.text,lineHeight:1.6}}>{FASCIA_LINES_DATA[selected].route}</div></div>
-            <div><div style={{fontWeight:700,color:C.muted,fontSize:"0.8rem",textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>Compensation Pattern</div><div style={{color:C.text,lineHeight:1.6}}>{FASCIA_LINES_DATA[selected].compensation}</div></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:"0.72rem"}}>
+            <div><div style={{fontWeight:700,color:C.muted,fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>Route</div><div style={{color:C.text,lineHeight:1.6}}>{FASCIA_LINES_DATA[selected].route}</div></div>
+            <div><div style={{fontWeight:700,color:C.muted,fontSize:"0.6rem",textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>Compensation Pattern</div><div style={{color:C.text,lineHeight:1.6}}>{FASCIA_LINES_DATA[selected].compensation}</div></div>
           </div>
         </div>
       )}
@@ -13448,33 +8677,33 @@ function FasciaSection({ data, set, navContext={} }) {
             <div onClick={()=>setOpenTest(isOpen?null:t.id)} style={{padding:"12px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}`}}>
               <div style={{flex:1}}>
                 <div style={{display:"flex",gap:7,alignItems:"center",marginBottom:3}}>
-                  <span style={{fontSize:"0.8rem",padding:"2px 7px",borderRadius:7,background:`${reg.color}20`,color:reg.color,fontWeight:700}}>{t.type}</span>
-                  <span style={{fontSize:"0.8rem",color:C.muted}}>Line: {t.line}</span>
+                  <span style={{fontSize:"0.6rem",padding:"2px 7px",borderRadius:7,background:`${reg.color}20`,color:reg.color,fontWeight:700}}>{t.type}</span>
+                  <span style={{fontSize:"0.6rem",color:C.muted}}>Line: {t.line}</span>
                 </div>
                 <div style={{fontWeight:700,fontSize:"0.88rem",color:C.text}}>{t.label}</div>
                 {currentVal&&<div style={{marginTop:5,display:"inline-flex",alignItems:"center",gap:6,padding:"2px 8px",borderRadius:8,background:`${currentOption?.color||C.muted}18`,border:`1px solid ${currentOption?.color||C.muted}40`}}>
                   <div style={{width:7,height:7,borderRadius:"50%",background:currentOption?.color||C.muted}}/>
-                  <span style={{fontSize:"0.78rem",fontWeight:700,color:currentOption?.color||C.muted}}>{currentVal}</span>
+                  <span style={{fontSize:"0.68rem",fontWeight:700,color:currentOption?.color||C.muted}}>{currentVal}</span>
                 </div>}
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0,marginLeft:10}}>
-                <button type="button" onClick={e=>{e.stopPropagation();setModalTest(t);}} style={{padding:"3px 10px",background:"rgba(127,90,240,0.15)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>ℹ Info</button>
+                <button type="button" onClick={e=>{e.stopPropagation();setModalTest(t);}} style={{padding:"3px 10px",background:"rgba(127,90,240,0.15)",border:`1px solid ${C.a2}40`,borderRadius:6,color:C.a2,fontSize:"0.65rem",fontWeight:700,cursor:"pointer"}}>ℹ Info</button>
                 <span style={{color:C.muted,fontSize:"0.75rem"}}>{isOpen?"▲":"▼"}</span>
               </div>
             </div>
             {isOpen&&(
               <div style={{padding:"0 14px 14px"}}>
                 <div style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,padding:12,marginBottom:12}}>
-                  <div style={{fontSize:"0.73rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>👐 How to Perform</div>
+                  <div style={{fontSize:"0.63rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>👐 How to Perform</div>
                   <div style={{fontSize:"0.8rem",color:C.text,lineHeight:1.7,whiteSpace:"pre-line"}}>{t.how}</div>
                 </div>
                 <div style={{marginBottom:12}}>
-                  <div style={{fontSize:"0.73rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📊 Select Finding — What Each Result Means</div>
+                  <div style={{fontSize:"0.63rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📊 Select Finding — What Each Result Means</div>
                   {t.options.map(opt=>(
                     <div key={opt.val} onClick={()=>set(t.id,currentVal===opt.val?"":opt.val)}
                       style={{display:"flex",alignItems:"flex-start",gap:12,padding:"10px 12px",borderRadius:9,marginBottom:7,cursor:"pointer",border:`1px solid ${currentVal===opt.val?opt.color:C.border}`,background:currentVal===opt.val?`${opt.color}12`:"transparent",transition:"all 0.15s"}}>
                       <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${opt.color}`,background:currentVal===opt.val?opt.color:"transparent",flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        {currentVal===opt.val&&<span style={{color:"#000",fontSize:"0.75rem",fontWeight:900}}>✓</span>}
+                        {currentVal===opt.val&&<span style={{color:"#000",fontSize:"0.55rem",fontWeight:900}}>✓</span>}
                       </div>
                       <div style={{flex:1}}>
                         <div style={{fontWeight:700,fontSize:"0.8rem",color:opt.color,marginBottom:3}}>{opt.val}</div>
@@ -13484,7 +8713,7 @@ function FasciaSection({ data, set, navContext={} }) {
                   ))}
                 </div>
                 <div style={{background:`${reg.color}08`,border:`1px solid ${reg.color}25`,borderRadius:8,padding:11}}>
-                  <div style={{fontSize:"0.73rem",fontWeight:700,color:reg.color,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>→ Treatment Protocol</div>
+                  <div style={{fontSize:"0.63rem",fontWeight:700,color:reg.color,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>→ Treatment Protocol</div>
                   <div style={{fontSize:"0.77rem",color:C.text,lineHeight:1.7}}>{t.treatment}</div>
                 </div>
               </div>
@@ -13496,15 +8725,15 @@ function FasciaSection({ data, set, navContext={} }) {
         <div onClick={()=>setModalTest(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:C.surface,border:`1px solid ${reg.color}50`,borderRadius:14,padding:24,maxWidth:560,width:"100%",maxHeight:"88vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-              <div><div style={{fontWeight:800,color:reg.color,fontSize:"1rem"}}>{modalTest.label}</div><div style={{fontSize:"0.8rem",color:C.muted,marginTop:3}}>{modalTest.type} · Line: {modalTest.line}</div></div>
+              <div><div style={{fontWeight:800,color:reg.color,fontSize:"1rem"}}>{modalTest.label}</div><div style={{fontSize:"0.7rem",color:C.muted,marginTop:3}}>{modalTest.type} · Line: {modalTest.line}</div></div>
               <button onClick={()=>setModalTest(null)} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:6,padding:"3px 9px",cursor:"pointer"}}>✕</button>
             </div>
             <div style={{marginBottom:14}}>
-              <div style={{fontSize:"0.73rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>👐 How to Perform</div>
+              <div style={{fontSize:"0.63rem",fontWeight:700,color:C.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>👐 How to Perform</div>
               <div style={{background:C.s2,borderRadius:8,padding:14,fontSize:"0.82rem",color:C.text,lineHeight:1.8,whiteSpace:"pre-line"}}>{modalTest.how}</div>
             </div>
             <div style={{marginBottom:14}}>
-              <div style={{fontSize:"0.73rem",fontWeight:700,color:C.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>📊 What Each Result Means</div>
+              <div style={{fontSize:"0.63rem",fontWeight:700,color:C.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>📊 What Each Result Means</div>
               {modalTest.options.map(opt=>(
                 <div key={opt.val} style={{padding:"8px 12px",borderRadius:8,marginBottom:7,border:`1px solid ${opt.color}30`,background:`${opt.color}08`}}>
                   <div style={{fontWeight:700,fontSize:"0.78rem",color:opt.color,marginBottom:3}}>{opt.val}</div>
@@ -13513,7 +8742,7 @@ function FasciaSection({ data, set, navContext={} }) {
               ))}
             </div>
             <div style={{background:`${reg.color}08`,border:`1px solid ${reg.color}25`,borderRadius:8,padding:12,marginBottom:16}}>
-              <div style={{fontSize:"0.73rem",fontWeight:700,color:reg.color,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>→ Treatment Protocol</div>
+              <div style={{fontSize:"0.63rem",fontWeight:700,color:reg.color,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>→ Treatment Protocol</div>
               <div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.7}}>{modalTest.treatment}</div>
             </div>
             <button onClick={()=>setModalTest(null)} style={{width:"100%",padding:"9px",background:C.a2,border:"none",borderRadius:8,color:"#fff",fontWeight:700,cursor:"pointer"}}>Close</button>
@@ -13525,7 +8754,7 @@ function FasciaSection({ data, set, navContext={} }) {
 }
 
 
-// ─── CPA REGION COMPONENT ────────────────────────────────────────────────────
+// ─── NKT REGION COMPONENT ────────────────────────────────────────────────────
 function NKTSection({ data, set, navContext={} }) {
     const [region, setRegion] = useState(navContext.nktRegion||"cervical");
   React.useEffect(()=>{ if(navContext.nktRegion) setRegion(navContext.nktRegion); },[navContext.nktRegion]);
@@ -13545,41 +8774,8 @@ function NKTSection({ data, set, navContext={} }) {
   const [modalTest, setModalTest] = useState(null);
   const reg = NKT_REGIONS[region];
 
-  const [nktHelpOpen, setNktHelpOpen] = React.useState(() => !localStorage.getItem("pm_cpa_seen"));
   return (
     <div>
-      {/* ── CPA Framework Explainer ── */}
-      <div style={{border:"1px solid #0891b244",borderRadius:12,overflow:"hidden",marginBottom:14}}>
-        <div onClick={()=>{setNktHelpOpen(o=>!o); localStorage.setItem("pm_cpa_seen","1");}}
-          style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",cursor:"pointer",background:"#0891b20a"}}>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:"1rem"}}>📚</span>
-            <span style={{fontWeight:700,fontSize:"0.85rem",color:"#0891b2"}}>What is CPA Assessment?</span>
-            <span style={{fontSize:"0.75rem",color:"#0891b288",fontStyle:"italic"}}>Tap to {nktHelpOpen?"hide":"show"} guide</span>
-          </div>
-          <span style={{fontSize:"0.75rem",color:"#0891b2"}}>{nktHelpOpen?"▲":"▼"}</span>
-        </div>
-        {nktHelpOpen && (
-          <div style={{padding:"14px 16px",borderTop:"1px solid #0891b222",background:"#f0faff",fontSize:"0.82rem",color:"#0a3a4a",lineHeight:1.7}}>
-            <p style={{margin:"0 0 10px"}}><strong>Compensation Pattern Analysis (CPA)</strong> is a functional movement assessment approach based on motor control principles. It identifies <strong>compensation patterns</strong> where overactive (facilitated) muscles substitute for inhibited (neurologically underactive) muscles, creating dysfunctional movement and pain.</p>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-              <div style={{background:"#0891b20d",borderRadius:8,padding:10}}>
-                <div style={{fontWeight:700,marginBottom:4,color:"#0891b2"}}>🧠 CPA core principle</div>
-                <div>The nervous system stores movement programmes that can become disrupted after injury or disuse. Injury creates <strong>dysfunctional compensation patterns</strong>: one overactive muscle inhibits its paired antagonist.<br/><br/><strong>Inhibited</strong> = weak, underactive<br/><strong>Facilitated</strong> = overactive, tight</div>
-              </div>
-              <div style={{background:"#05966910",borderRadius:8,padding:10}}>
-                <div style={{fontWeight:700,marginBottom:4,color:"#059669"}}>🔍 Assessment steps</div>
-                <div>1. <strong>Test inhibited muscle</strong> — manual muscle test (MMT) → weak<br/>2. <strong>Treat facilitated muscle</strong> — release (massage, dry needling)<br/>3. <strong>Retest inhibited</strong> — should now test strong<br/>4. If stronger = compensation confirmed</div>
-              </div>
-            </div>
-            <div style={{background:"#7c3aed0d",borderRadius:8,padding:10,border:"1px solid #7c3aed25"}}>
-              <strong style={{color:"#7c3aed"}}>💡 Common patterns</strong><br/>
-              Upper trap facilitating lower trap/serratus (shoulder). SCM facilitating deep cervical flexors (neck pain). Hip flexor facilitating glute max (LBP). Pec minor facilitating lower trap (postural kyphosis).
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Region tabs */}
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
         {Object.entries(NKT_REGIONS).map(([key,r])=>(
@@ -13607,15 +8803,15 @@ function NKTSection({ data, set, navContext={} }) {
               style={{ padding:"12px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", borderLeft:`3px solid ${currentVal?reg.color:"#1a2d45"}` }}>
               <div>
                 <div style={{ fontWeight:700, fontSize:"0.88rem", color:C.text }}>{t.label}</div>
-                <div style={{ fontSize:"0.8rem", color:C.muted, marginTop:2 }}>🎯 Muscle: {t.muscle} &nbsp;|&nbsp; ⚠️ Compensator: {t.compensator}</div>
+                <div style={{ fontSize:"0.7rem", color:C.muted, marginTop:2 }}>🎯 Muscle: {t.muscle} &nbsp;|&nbsp; ⚠️ Compensator: {t.compensator}</div>
                 {currentVal && <div style={{ marginTop:5, display:"inline-flex", alignItems:"center", gap:6, padding:"2px 8px", borderRadius:8, background:`${currentOption?.color||C.muted}18`, border:`1px solid ${currentOption?.color||C.muted}40` }}>
                   <div style={{ width:7, height:7, borderRadius:"50%", background:currentOption?.color||C.muted }} />
-                  <span style={{ fontSize:"0.78rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
+                  <span style={{ fontSize:"0.68rem", fontWeight:700, color:currentOption?.color||C.muted }}>{currentVal}</span>
                 </div>}
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                 <button type="button" onClick={e=>{ e.stopPropagation(); setModalTest(t); }}
-                  style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.75rem", fontWeight:700, cursor:"pointer" }}>
+                  style={{ padding:"3px 10px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer" }}>
                   ℹ How to Perform
                 </button>
                 <span style={{ color:C.muted, fontSize:"0.75rem" }}>{isOpen?"▲":"▼"}</span>
@@ -13627,21 +8823,18 @@ function NKTSection({ data, set, navContext={} }) {
               <div style={{ padding:"0 14px 14px" }}>
                 {/* How to */}
                 <div style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, padding:12, marginBottom:12 }}>
-                  <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
-                  <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                    <SmallClinicalImg id={t.id} title={t.label} />
-                    <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7, flex:1 }}>{t.how}</div>
-                  </div>
+                  <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
+                  <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{t.how}</div>
                 </div>
 
                 {/* Options */}
                 <div style={{ marginBottom:12 }}>
-                  <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Select Finding — What Each Result Means</div>
+                  <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📊 Select Finding — What Each Result Means</div>
                   {t.options.map(opt=>(
                     <div key={opt.val} onClick={()=>set(t.id, currentVal===opt.val?"":opt.val)}
                       style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"10px 12px", borderRadius:9, marginBottom:7, cursor:"pointer", border:`1px solid ${currentVal===opt.val?opt.color:C.border}`, background:currentVal===opt.val?`${opt.color}12`:"transparent", transition:"all 0.15s" }}>
                       <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${opt.color}`, background:currentVal===opt.val?opt.color:"transparent", flexShrink:0, marginTop:2, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.75rem", fontWeight:900 }}>✓</span>}
+                        {currentVal===opt.val && <span style={{ color:"#000", fontSize:"0.55rem", fontWeight:900 }}>✓</span>}
                       </div>
                       <div style={{ flex:1 }}>
                         <div style={{ fontWeight:700, fontSize:"0.8rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -13653,7 +8846,7 @@ function NKTSection({ data, set, navContext={} }) {
 
                 {/* Treatment */}
                 <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:8, padding:12 }}>
-                  <div style={{ fontSize:"0.75rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>→ Treatment Protocol</div>
+                  <div style={{ fontSize:"0.65rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>→ Treatment Protocol</div>
                   <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.7 }}>{t.treatment}</div>
                 </div>
               </div>
@@ -13669,19 +8862,16 @@ function NKTSection({ data, set, navContext={} }) {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
               <div>
                 <div style={{ fontWeight:800, color:reg.color, fontSize:"1rem" }}>{modalTest.label}</div>
-                <div style={{ fontSize:"0.82rem", color:C.muted, marginTop:3 }}>Muscle: {modalTest.muscle}</div>
+                <div style={{ fontSize:"0.72rem", color:C.muted, marginTop:3 }}>Muscle: {modalTest.muscle}</div>
               </div>
               <button onClick={()=>setModalTest(null)} style={{ background:"none", border:`1px solid ${C.border}`, color:C.muted, borderRadius:6, padding:"3px 9px", cursor:"pointer" }}>✕</button>
             </div>
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>👐 Step-by-Step Procedure</div>
-              <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-                <SmallClinicalImg id={modalTest.id} title={modalTest.label} />
-                <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8, flex:1 }}>{modalTest.how}</div>
-              </div>
+              <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>👐 Step-by-Step Procedure</div>
+              <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8 }}>{modalTest.how}</div>
             </div>
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>⚠️ What Each Result Means</div>
+              <div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>⚠️ What Each Result Means</div>
               {modalTest.options.map(opt=>(
                 <div key={opt.val} style={{ padding:"8px 12px", borderRadius:8, marginBottom:6, border:`1px solid ${opt.color}30`, background:`${opt.color}08` }}>
                   <div style={{ fontWeight:700, fontSize:"0.78rem", color:opt.color, marginBottom:3 }}>{opt.val}</div>
@@ -13690,7 +8880,7 @@ function NKTSection({ data, set, navContext={} }) {
               ))}
             </div>
             <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:8, padding:12, marginBottom:14 }}>
-              <div style={{ fontSize:"0.75rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>→ Treatment Protocol</div>
+              <div style={{ fontSize:"0.65rem", fontWeight:700, color:reg.color, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>→ Treatment Protocol</div>
               <div style={{ fontSize:"0.78rem", color:C.text, lineHeight:1.7 }}>{modalTest.treatment}</div>
             </div>
             <button onClick={()=>setModalTest(null)} style={{ width:"100%", padding:"9px", background:C.a2, border:"none", borderRadius:8, color:"#fff", fontWeight:700, cursor:"pointer" }}>Close</button>
@@ -13761,9 +8951,9 @@ function CyriaxRegionTests({ data, set }) {
         <div onClick={()=>setModalT(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
           <div onClick={e=>e.stopPropagation()} style={{ background:C.surface, border:`1px solid ${C.accent}40`, borderRadius:14, padding:24, maxWidth:480, width:"100%", maxHeight:"80vh", overflowY:"auto" }}>
             <div style={{ fontWeight:800, color:C.accent, marginBottom:12 }}>{modalT.label}</div>
-            <div style={{ marginBottom:12 }}><div style={{ fontSize:"0.75rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>How to Perform</div><div style={{ background:C.s2, borderRadius:8, padding:12, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{modalT.how}</div></div>
-            <div style={{ marginBottom:16 }}><div style={{ fontSize:"0.75rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>Clinical Significance</div><div style={{ background:C.s2, borderRadius:8, padding:12, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{modalT.sig}</div></div>
-            <div style={{ marginBottom:14 }}><div style={{ fontSize:"0.75rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>What Each Result Means</div>
+            <div style={{ marginBottom:12 }}><div style={{ fontSize:"0.65rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>How to Perform</div><div style={{ background:C.s2, borderRadius:8, padding:12, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{modalT.how}</div></div>
+            <div style={{ marginBottom:16 }}><div style={{ fontSize:"0.65rem", fontWeight:700, color:C.a3, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>Clinical Significance</div><div style={{ background:C.s2, borderRadius:8, padding:12, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{modalT.sig}</div></div>
+            <div style={{ marginBottom:14 }}><div style={{ fontSize:"0.65rem", fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>What Each Result Means</div>
               {[{val:"Strong & Painless (normal)",col:"#00c97a",m:"No contractile lesion at this muscle. Look elsewhere for the pain source."},
                 {val:"Strong & Painful (minor lesion)",col:"#ffb300",m:"Minor lesion of contractile tissue — tendinopathy or small partial tear. Can generate force but hurts. TREAT: DTFM + eccentric loading."},
                 {val:"Weak & Painless (neurological)",col:"#7f5af0",m:"Neurological deficit — nerve root or peripheral nerve. No lesion in the muscle itself. Check dermatomes + reflexes. Consider imaging."},
@@ -13790,9 +8980,9 @@ function CyriaxRegionTests({ data, set }) {
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:7, gap:8 }}>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:"0.8rem", fontWeight:600, color:C.text }}>{t.label}</div>
-                  <div style={{ fontSize:"0.78rem", color:C.muted, marginTop:1 }}>Muscle: {t.muscle}</div>
+                  <div style={{ fontSize:"0.68rem", color:C.muted, marginTop:1 }}>Muscle: {t.muscle}</div>
                 </div>
-                <button type="button" onClick={()=>setModalT(t)} style={{ padding:"2px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.75rem", fontWeight:700, cursor:"pointer", flexShrink:0 }}>ℹ Info</button>
+                <button type="button" onClick={()=>setModalT(t)} style={{ padding:"2px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.65rem", fontWeight:700, cursor:"pointer", flexShrink:0 }}>ℹ Info</button>
               </div>
               <select value={val} onChange={e=>set(t.id,e.target.value)} style={{...inp, borderColor:isProb?C.red:C.border}}>
                 <option value="">— select result —</option>
@@ -13923,7 +9113,7 @@ function generateDiagnosis(data) {
   if(has("n_ref_jaw_left","Positive")||has("n_ref_jaw_right","Positive"))umnSigns.push("Jaw jerk brisk");
   if(umnSigns.length>0){dx.push({system:"Structural",name:"Upper Motor Neuron / Myelopathy Pattern",confidence:"High",evidence:umnSigns,mechanism:"Pathological reflexes indicate UMN lesion above the segmental level. Possible cervical myelopathy, cord compression, or intracranial pathology.",treatment:["URGENT: No cervical manipulation","MRI cervical + thoracic spine immediately","Neurosurgical / neurological referral","Monitor gait, hand function, and bladder symptoms"]});}
 
-  // CPA from all region tests
+  // NKT from all region tests
   const nktPairs=[];
   ["nkt_dnf","nkt_scm","nkt_suboccip","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_splenius","nkt_semispinalis","nkt_lower_trap","nkt_serratus","nkt_infraspinatus","nkt_subscapularis","nkt_mid_trap","nkt_pec_minor","nkt_ant_deltoid","nkt_post_deltoid","nkt_teres_major","nkt_ta","nkt_multifidus","nkt_diaphragm","nkt_ql","nkt_psoas","nkt_erector_spinae","nkt_obliques","nkt_pelvic_floor","nkt_gmax","nkt_gmed","nkt_piriformis","nkt_hip_flex_fo","nkt_adductors","nkt_tfl","nkt_rectus_fem","nkt_vmo","nkt_hamstrings","nkt_popliteus","nkt_tib_ant","nkt_tib_post","nkt_gastroc","nkt_peroneals","nkt_fhl","nkt_foot_intrinsics","nkt_biceps","nkt_triceps","nkt_wrist_ext","nkt_wrist_flex","nkt_pronator","nkt_grip"].forEach(id=>{
     const val=v(id);
@@ -13934,14 +9124,14 @@ function generateDiagnosis(data) {
     nktPairs.push(`${testLabel}: ${val}`);
   });
   if(nktPairs.length>0){
-    dx.push({system:"CPA",name:"Motor Control Dysfunction (CPA)",confidence:"High",
+    dx.push({system:"NKT",name:"Motor Control Dysfunction (NKT)",confidence:"High",
       evidence:nktPairs,
       mechanism:"The Motor Control Centre (MCC) has stored compensation patterns. Inhibited muscles are substituted by synergists, creating overactive muscles that perpetuate pain and dysfunction cycles.",
       treatment:["STEP 1 — INHIBIT: SMR/foam roll overactive muscles 90 sec (release compensation)","STEP 2 — ACTIVATE: Immediately activate inhibited muscles 3–5 reps within 30 seconds","STEP 3 — INTEGRATE: Functional movement reprogramming with correct motor patterns","STEP 4 — REPROGRAM: Daily home exercises to reinforce new MCC motor programs"]
     });
   }
 
-  // STTT
+  // Cyriax
   const cyriaxLesion=[];
   Object.keys(data).filter(k=>k.startsWith("cy_")&&data[k]).forEach(id=>{
     const val=data[id];
@@ -13952,9 +9142,9 @@ function generateDiagnosis(data) {
   const isCap=has("cy_capsular","Yes");
   if(cyriaxLesion.length>0||isCap){
     const serious=cyriaxLesion.filter(l=>l.type==="serious"),minor=cyriaxLesion.filter(l=>l.type==="minor"),neuro=cyriaxLesion.filter(l=>l.type==="neuro");
-    dx.push({system:"STTT",name:`Tissue Lesion: ${serious.length>0?"Serious Contractile":minor.length>0?"Minor Contractile":isCap?"Inert (Capsular)":"Neurological"} Pathology`,confidence:serious.length>0?"High":minor.length>0?"High":"Moderate",
+    dx.push({system:"Cyriax",name:`Tissue Lesion: ${serious.length>0?"Serious Contractile":minor.length>0?"Minor Contractile":isCap?"Inert (Capsular)":"Neurological"} Pathology`,confidence:serious.length>0?"High":minor.length>0?"High":"Moderate",
       evidence:[...minor.map(l=>l.finding),...serious.map(l=>"⚠️ "+l.finding),...neuro.map(l=>"⚡ "+l.finding),isCap?"Capsular pattern confirmed":null,has("cy_endfeel","Empty")?"Empty end-feel — serious pathology":null].filter(Boolean),
-      mechanism:"STTT STTT systematically differentiates inert vs contractile tissue to identify the exact structure at fault.",
+      mechanism:"Cyriax STTT systematically differentiates inert vs contractile tissue to identify the exact structure at fault.",
       treatment:minor.length>0?["Deep Transverse Friction Massage (DTFM) to exact lesion site","Eccentric loading program for tendinopathy","Relative rest — modify aggravating activities","Progressive loading when pain-free"]:serious.length>0?["Refer for MRI/ultrasound immediately","Protect structure — splinting/bracing","Surgical consultation if rupture confirmed"]:isCap?["Maitland Grade III–IV joint mobilisation","End-range stretching program","Heat before mobilisation, ice after","Corticosteroid injection referral if severe"]:[]
     });
   }
@@ -14112,7 +9302,7 @@ function generateDiagnosis(data) {
   const capsularPattern= erRestricted && abdRestricted && flexRestricted;
   if(capsularPattern){
     dx.push({system:"Structural",name:"Adhesive Capsulitis (Frozen Shoulder)",confidence:"High",
-      evidence:[erRestricted?`ER restricted (<40°): L ${isNaN(shER_l)?"NT":shER_l+"°"} / R ${isNaN(shER_r)?"NT":shER_r+"°"}`:null,abdRestricted?`Abduction restricted (<100°): L ${isNaN(shAbd_l)?"NT":shAbd_l+"°"} / R ${isNaN(shAbd_r)?"NT":shAbd_r+"°"}`:null,flexRestricted?"Flexion restricted (<120°)":null,"STTT capsular pattern: ER > Abd > IR loss — pathognomonic for GH capsular fibrosis (Magee; STTT)"].filter(Boolean),
+      evidence:[erRestricted?`ER restricted (<40°): L ${isNaN(shER_l)?"NT":shER_l+"°"} / R ${isNaN(shER_r)?"NT":shER_r+"°"}`:null,abdRestricted?`Abduction restricted (<100°): L ${isNaN(shAbd_l)?"NT":shAbd_l+"°"} / R ${isNaN(shAbd_r)?"NT":shAbd_r+"°"}`:null,flexRestricted?"Flexion restricted (<120°)":null,"Cyriax capsular pattern: ER > Abd > IR loss — pathognomonic for GH capsular fibrosis (Magee; Cyriax)"].filter(Boolean),
       mechanism:"Fibrosis and contracture of the GH joint capsule (especially the axillary pouch and rotator interval). Insidious onset; 3 phases: painful/freezing → frozen → thawing. Duration 1–3 years without treatment.",
       treatment:["Patient education: natural history (1–3 years), reassurance","Corticosteroid injection (most evidence in freezing phase) — reduces pain, may shorten duration","Capsular stretching: end-range ER, Abd, IR stretching with warmth first","GH inferior and posterior capsule mobilisation (Grade III–IV Maitland when pain allows)","MUA or hydrodilatation if failed conservative treatment >3–6 months","Treat underlying cause: diabetes, thyroid (strong associations)"]});
   }
@@ -14280,7 +9470,7 @@ function generateDiagnosis(data) {
     dx.push({system:"Structural",name:"Hip Flexor Contracture"+(thomasIliopsoas&&thomasRF?" (Iliopsoas + Rectus Femoris)":thomasIliopsoas?" (Iliopsoas)":"(Rectus Femoris)"),confidence:"High",
       evidence:[thomasIliopsoas?"Thomas test — thigh elevated (iliopsoas contracture)":null,thomasRF?"Thomas test — knee extends (rectus femoris contracture)":null,"Thomas test: highly reliable for iliopsoas and RF contracture when thigh cannot remain flat or knee extends >90° (Magee; Kendall, Muscles: Testing and Function)"].filter(Boolean),
       mechanism:thomasIliopsoas?"Iliopsoas (iliacus + psoas major) contracture tilts the pelvis anteriorly and increases lumbar lordosis — a key driver of LCS (Lower Crossed Syndrome)":"Rectus femoris biarticular tightness limits hip extension and increases anterior pelvic tilt and knee loading.",
-      treatment:[thomasIliopsoas?"Iliopsoas stretch: kneeling lunge with posterior pelvic tilt (neutralise lumbar extension compensation)":null,thomasRF?"Rectus femoris stretch: prone knee flexion with stable pelvis":null,"Address Lower Crossed Syndrome: activate glutes + deep abdominals","CPA: check for psoas inhibition of opposite gluteus maximus","Progress to dynamic hip flexor loading (eccentric) once flexibility improves"].filter(Boolean)});
+      treatment:[thomasIliopsoas?"Iliopsoas stretch: kneeling lunge with posterior pelvic tilt (neutralise lumbar extension compensation)":null,thomasRF?"Rectus femoris stretch: prone knee flexion with stable pelvis":null,"Address Lower Crossed Syndrome: activate glutes + deep abdominals","NKT: check for psoas inhibition of opposite gluteus maximus","Progress to dynamic hip flexor loading (eccentric) once flexibility improves"].filter(Boolean)});
   }
 
   // ── Piriformis Syndrome / Sciatic Nerve Compression — Magee ─────────────
@@ -14311,7 +9501,7 @@ function generateDiagnosis(data) {
     dx.push({system:"Structural",name:`Scapular Dyskinesis — ${type}`,confidence:"Moderate",
       evidence:[scapDysk?`Scapular dyskinesis observed: ${type}`:null,kibleSlide?"Kibler lateral slide test positive — scapular asymmetry":null,"Dyskinesis classification guides treatment targets: Type I = serratus; Type II = serratus + lower trap; Type III = upper trap inhibition (Kibler; Magee; Kendall, Muscles: Testing and Function)"].filter(Boolean),
       mechanism:"Altered scapulohumeral rhythm reduces subacromial space, increases rotator cuff and labral load. Upper trap overactivation, serratus anterior inhibition, and lower trap weakness create the classic Type III pattern.",
-      treatment:[has("st_scapular_dyskinesis","Type I")?"Serratus anterior activation: wall slide, push-up plus progression":has("st_scapular_dyskinesis","Type III")?"Upper trap inhibition: scapular depression exercises, lower trap rows":"Lower trap and serratus activation: Y/T/W exercises","Thoracic extension and rotation mobility (restricted thorax amplifies dyskinesis)","Cervicothoracic junction mobilisation (C7–T3)","Integrate scapular control into sport-specific loading","CPA: check serratus anterior inhibition pattern"]});
+      treatment:[has("st_scapular_dyskinesis","Type I")?"Serratus anterior activation: wall slide, push-up plus progression":has("st_scapular_dyskinesis","Type III")?"Upper trap inhibition: scapular depression exercises, lower trap rows":"Lower trap and serratus activation: Y/T/W exercises","Thoracic extension and rotation mobility (restricted thorax amplifies dyskinesis)","Cervicothoracic junction mobilisation (C7–T3)","Integrate scapular control into sport-specific loading","NKT: check serratus anterior inhibition pattern"]});
   }
   // Cervical radiculopathy — genuine Wainner cluster (Cleland, Netter's; Magee)
   const cervDermDeficit=["n_c5","n_c6","n_c7","n_c8"].some(id=>has(id+"_left","Reduced")||has(id+"_right","Reduced")||has(id+"_left","Absent")||has(id+"_right","Absent")||has(id,"Reduced")||has(id,"Absent"));
@@ -14436,8 +9626,8 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
     // Chief complaint
     if (data.cc_main)          sympEvidence.push(`Chief complaint: "${data.cc_main}"`);
     if (_region)               sympEvidence.push(`Primary region: ${_region}`);
-    if (rget("loc_primary"))   sympEvidence.push(`Location: ${(typeof rget("loc_primary")==="string"?rget("loc_primary"):"").split("|||").join(", ")}`);
-    if (rget("loc_radiation")) sympEvidence.push(`Radiation: ${(typeof rget("loc_radiation")==="string"?rget("loc_radiation"):"").split("|||").join(", ")}`);
+    if (rget("loc_primary"))   sympEvidence.push(`Location: ${rget("loc_primary").split("|||").join(", ")}`);
+    if (rget("loc_radiation")) sympEvidence.push(`Radiation: ${rget("loc_radiation").split("|||").join(", ")}`);
     if (data.cc_onset)         sympEvidence.push(`Onset: ${Array.isArray(data.cc_onset)?data.cc_onset.join(", "):data.cc_onset}`);
     if (data.cc_duration)      sympEvidence.push(`Duration: ${Array.isArray(data.cc_duration)?data.cc_duration.join(", "):data.cc_duration}`);
     // Pain
@@ -14446,13 +9636,13 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
     // Aggravating / easing (region-specific)
     const _aggCombined = [rget("agg_movements"),rget("agg_postures"),rget("agg_activities"),rget("agg_other")].filter(Boolean).join("|||");
     const _relCombined = [rget("rel_movements"),rget("rel_postures"),rget("rel_manual"),rget("rel_med")].filter(Boolean).join("|||");
-    if (_aggCombined && typeof _aggCombined==="string") sympEvidence.push(`Aggravated by: ${_aggCombined.split("|||").filter(Boolean).join(", ")}`);
-    if (_relCombined && typeof _relCombined==="string") sympEvidence.push(`Eased by: ${_relCombined.split("|||").filter(Boolean).join(", ")}`);
+    if (_aggCombined) sympEvidence.push(`Aggravated by: ${_aggCombined.split("|||").filter(Boolean).join(", ")}`);
+    if (_relCombined) sympEvidence.push(`Eased by: ${_relCombined.split("|||").filter(Boolean).join(", ")}`);
     // Symptom behaviour
-    if (rget("sb_morning"))    sympEvidence.push(`Morning: ${(typeof rget("sb_morning")==="string"?rget("sb_morning"):"").split("|||").join(", ")}`);
-    if (rget("sb_night"))      sympEvidence.push(`Night: ${(typeof rget("sb_night")==="string"?rget("sb_night"):"").split("|||").join(", ")}`);
+    if (rget("sb_morning"))    sympEvidence.push(`Morning: ${rget("sb_morning").split("|||").join(", ")}`);
+    if (rget("sb_night"))      sympEvidence.push(`Night: ${rget("sb_night").split("|||").join(", ")}`);
     // MOI
-    if (rget("moi_type"))      sympEvidence.push(`Mechanism: ${(typeof rget("moi_type")==="string"?rget("moi_type"):"").split("|||").join(", ")}`);
+    if (rget("moi_type"))      sympEvidence.push(`Mechanism: ${rget("moi_type").split("|||").join(", ")}`);
     // History
     if (data.pmh_relevant)     sympEvidence.push(`PMH: ${Array.isArray(data.pmh_relevant)?data.pmh_relevant.join(", "):data.pmh_relevant}`);
 
@@ -14612,13 +9802,13 @@ function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder
     <div style={{background:C.surface,border:`1px solid ${filled?C.accent+"25":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:6}}>
         <label style={{fontSize:"0.78rem",fontWeight:600,color:filled?C.text:C.muted,lineHeight:1.4,flex:1}}>
-          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.8rem"}}>✓</span>}
+          {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.6rem"}}>✓</span>}
         </label>
-        {unit&&<span style={{fontSize:"0.82rem",color:C.muted,flexShrink:0}}>{unit}</span>}
+        {unit&&<span style={{fontSize:"0.62rem",color:C.muted,flexShrink:0}}>{unit}</span>}
       </div>
-      {note&&<div style={{fontSize:"0.78rem",color:C.muted,marginBottom:6,lineHeight:1.4,fontStyle:"italic"}}>{note}</div>}
+      {note&&<div style={{fontSize:"0.68rem",color:C.muted,marginBottom:6,lineHeight:1.4,fontStyle:"italic"}}>{note}</div>}
       {type==="select"&&<select value={val} onChange={e=>set(id,e.target.value)} style={base}><option value="">— select —</option>{options.map(o=><option key={o} value={o}>{o}</option>)}</select>}
-      {type==="range"&&<div><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:"0.78rem",color:C.muted}}>{min}{unit||""}</span><span style={{fontSize:"0.82rem",fontWeight:700,color:C.accent}}>{val||min}{unit||""}</span><span style={{fontSize:"0.78rem",color:C.muted}}>{max}{unit||""}</span></div><input type="range" min={min} max={max} step={step} value={val||min} onChange={e=>set(id,e.target.value)} style={{width:"100%",accentColor:C.accent,cursor:"pointer"}}/></div>}
+      {type==="range"&&<div><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:"0.68rem",color:C.muted}}>{min}{unit||""}</span><span style={{fontSize:"0.82rem",fontWeight:700,color:C.accent}}>{val||min}{unit||""}</span><span style={{fontSize:"0.68rem",color:C.muted}}>{max}{unit||""}</span></div><input type="range" min={min} max={max} step={step} value={val||min} onChange={e=>set(id,e.target.value)} style={{width:"100%",accentColor:C.accent,cursor:"pointer"}}/></div>}
       {type==="num"&&<input type="number" value={val} onChange={e=>set(id,e.target.value)} placeholder={placeholder} min={min} max={max} style={base}/>}
       {type==="textarea"&&<textarea value={val} onChange={e=>set(id,e.target.value)} placeholder={placeholder} rows={3} style={{...base,resize:"vertical",display:"block"}}/>}
     </div>
@@ -14630,10 +9820,10 @@ function ErgoBadge({ level, label, score, max }) {
   const pct=max>0?Math.round(score/max*100):0;
   return (
     <div style={{background:C.s2,border:`1px solid ${col}40`,borderRadius:10,padding:"10px 12px",flex:1,minWidth:110}}>
-      <div style={{fontSize:"0.78rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:C.muted,marginBottom:4}}>{label}</div>
+      <div style={{fontSize:"0.58rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:C.muted,marginBottom:4}}>{label}</div>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
         <span style={{fontWeight:800,fontSize:"0.95rem",color:col}}>{level}</span>
-        <span style={{fontSize:"0.82rem",color:C.muted}}>{score}/{max}</span>
+        <span style={{fontSize:"0.62rem",color:C.muted}}>{score}/{max}</span>
       </div>
       <div style={{height:4,background:C.s3,borderRadius:2}}><div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:2,transition:"width 0.4s"}}/></div>
     </div>
@@ -14683,15 +9873,15 @@ function ErgoModule({ data, set }) {
 
   const overallCol = risks.overall==="High"?C.red:risks.overall==="Moderate"?C.yellow:C.green;
   const tabs = [{key:"workstation",label:"Workstation",icon:"🪑"},{key:"posture",label:"Posture",icon:"🧍"},{key:"behaviour",label:"Behaviour",icon:"⏱️"},{key:"risks",label:"Risk Engine",icon:"📊"},{key:"plan",label:"Action Plan",icon:"📋"}];
-  const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.82rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
+  const tb = k=>({padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:"0.72rem",fontWeight:tab===k?700:400,border:`1px solid ${tab===k?C.accent:C.border}`,background:tab===k?"rgba(0,229,255,0.1)":"transparent",color:tab===k?C.accent:C.muted,whiteSpace:"nowrap",transition:"all 0.15s"});
 
   const SH = ({id,label,children})=>{
     const isOpen=open[id]!==false;
     return (
       <div style={{marginBottom:14}}>
         <button type="button" onClick={()=>setOpen(p=>({...p,[id]:!isOpen}))} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",background:"transparent",border:"none",cursor:"pointer",padding:"6px 0",marginBottom:isOpen?8:0}}>
-          <div style={{fontSize:"0.73rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
-          <span style={{color:C.muted,fontSize:"0.82rem"}}>{isOpen?"▲":"▼"}</span>
+          <div style={{fontSize:"0.63rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>{label}</div>
+          <span style={{color:C.muted,fontSize:"0.72rem"}}>{isOpen?"▲":"▼"}</span>
         </button>
         {isOpen&&children}
       </div>
@@ -14702,7 +9892,7 @@ function ErgoModule({ data, set }) {
     const cfg=ERGO_RISK_CFG[id]; if(!cfg) return null;
     const val=data[id]||"";
     if(!val||!cfg.bad(val)) return null;
-    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.8rem",color:C.yellow}}><span style={{flexShrink:0}}>⚠</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
+    return <div style={{display:"flex",gap:6,padding:"5px 10px",background:"rgba(255,179,0,0.08)",border:`1px solid ${C.yellow}30`,borderRadius:7,marginBottom:4,fontSize:"0.7rem",color:C.yellow}}><span style={{flexShrink:0}}>⚠</span><span>{ERGO_FAULT_MSGS[id]||"Ergonomic fault identified"}</span></div>;
   };
 
   const WorkstationTab = ()=>(
@@ -14839,14 +10029,14 @@ function ErgoModule({ data, set }) {
         <div style={{background:C.s2,border:`2px solid ${overallCol}50`,borderRadius:14,padding:"16px 18px",marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,flexWrap:"wrap",gap:10}}>
             <div>
-              <div style={{fontSize:"0.8rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.muted,marginBottom:4}}>Overall Ergonomic Risk Score</div>
+              <div style={{fontSize:"0.6rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.muted,marginBottom:4}}>Overall Ergonomic Risk Score</div>
               <div style={{display:"flex",alignItems:"baseline",gap:8}}>
                 <span style={{fontSize:"2.4rem",fontWeight:900,color:overallCol,lineHeight:1}}>{risks.total}</span>
                 <span style={{fontSize:"0.9rem",color:C.muted}}>/ {risks.maxTotal}</span>
                 <span style={{padding:"3px 10px",borderRadius:20,background:`${overallCol}20`,color:overallCol,fontWeight:800,fontSize:"0.8rem",marginLeft:4}}>{risks.overall} Risk</span>
               </div>
             </div>
-            <div style={{fontSize:"0.82rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
+            <div style={{fontSize:"0.72rem",color:C.muted,lineHeight:1.6,maxWidth:220}}>
               {risks.overall==="High"?"⚠️ Significant ergonomic load. Immediate workstation modification required.":risks.overall==="Moderate"?"⚡ Moderate ergonomic exposure. Targeted corrections advised.":"✅ Low ergonomic risk. Maintenance and monitoring."}
             </div>
           </div>
@@ -14861,7 +10051,7 @@ function ErgoModule({ data, set }) {
         {/* Active faults */}
         {faults.length>0&&(
           <div style={{marginBottom:16}}>
-            <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Active Faults ({faults.length})</div>
+            <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Active Faults ({faults.length})</div>
             {faults.map(id=>{
               const cfg=ERGO_RISK_CFG[id];
               const col=cfg.w>=3?C.red:C.yellow;
@@ -14869,14 +10059,14 @@ function ErgoModule({ data, set }) {
                 <div key={id} style={{display:"flex",gap:8,alignItems:"center",padding:"6px 10px",background:C.surface,border:`1px solid ${col}30`,borderRadius:8,marginBottom:4,fontSize:"0.73rem"}}>
                   <span style={{color:col,flexShrink:0}}>{cfg.w>=3?"🔴":"🟡"}</span>
                   <span style={{color:C.text,flex:1}}>{id.replace("ergo_","").replace(/_/g," ")}</span>
-                  <span style={{fontSize:"0.8rem",padding:"1px 6px",borderRadius:6,background:`${col}15`,color:col}}>{ERGO_DOMAIN_LABELS[cfg.domain]}</span>
+                  <span style={{fontSize:"0.6rem",padding:"1px 6px",borderRadius:6,background:`${col}15`,color:col}}>{ERGO_DOMAIN_LABELS[cfg.domain]}</span>
                 </div>
               );
             })}
           </div>
         )}
         {/* Symptom correlation */}
-        <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Body Region — Workstation Correlation</div>
+        <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Body Region — Workstation Correlation</div>
         {correlations.map(c=>{
           const matched=c.drivers.filter(d=>faults.includes(d));
           const pct=matched.length/c.drivers.length;
@@ -14885,20 +10075,20 @@ function ErgoModule({ data, set }) {
             <div key={c.symptom} style={{background:C.surface,border:`1px solid ${matched.length>0?col+"40":C.border}`,borderRadius:10,padding:"9px 12px",marginBottom:6}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:matched.length>0?5:0}}>
                 <span style={{fontWeight:600,fontSize:"0.78rem",color:matched.length>0?C.text:C.muted}}>{c.symptom}</span>
-                <span style={{fontSize:"0.75rem",fontWeight:700,padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col}}>{matched.length}/{c.drivers.length} drivers</span>
+                <span style={{fontSize:"0.65rem",fontWeight:700,padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col}}>{matched.length}/{c.drivers.length} drivers</span>
               </div>
-              {matched.length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{matched.map(f=><span key={f} style={{fontSize:"0.8rem",padding:"2px 7px",borderRadius:6,background:C.s3,color:C.yellow,border:`1px solid ${C.yellow}25`}}>{f.replace("ergo_","").replace(/_/g," ")}</span>)}</div>}
+              {matched.length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{matched.map(f=><span key={f} style={{fontSize:"0.6rem",padding:"2px 7px",borderRadius:6,background:C.s3,color:C.yellow,border:`1px solid ${C.yellow}25`}}>{f.replace("ergo_","").replace(/_/g," ")}</span>)}</div>}
             </div>
           );
         })}
         {/* Future hooks */}
         <div style={{marginTop:16,background:C.s2,border:`1px solid ${C.a2}30`,borderRadius:10,padding:"12px 14px"}}>
-          <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8}}>🔮 Future Integration Hooks</div>
+          <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8}}>🔮 Future Integration Hooks</div>
           {[{icon:"📷",label:"Webcam Posture Analysis",desc:"Real-time AI posture angle measurement"},{icon:"⌚",label:"Wearable Sensor Integration",desc:"IMU / smartwatch postural load import"},{icon:"🤖",label:"AI Posture Tracking",desc:"Continuous scoring with deviation alerts"},{icon:"📈",label:"Longitudinal Risk Tracking",desc:"Session-to-session score comparison"}].map(h=>(
             <div key={h.label} style={{display:"flex",gap:10,alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
               <span style={{fontSize:"1rem",flexShrink:0}}>{h.icon}</span>
               <div style={{flex:1}}><div style={{fontSize:"0.74rem",fontWeight:600,color:C.muted}}>{h.label}</div><div style={{fontSize:"0.66rem",color:C.muted,opacity:0.7}}>{h.desc}</div></div>
-              <span style={{fontSize:"0.8rem",padding:"2px 7px",borderRadius:8,background:"rgba(127,90,240,0.15)",color:C.a2,fontWeight:700}}>Planned</span>
+              <span style={{fontSize:"0.6rem",padding:"2px 7px",borderRadius:8,background:"rgba(127,90,240,0.15)",color:C.a2,fontWeight:700}}>Planned</span>
             </div>
           ))}
         </div>
@@ -14948,12 +10138,12 @@ function ErgoModule({ data, set }) {
           <>
             {highP.length>0&&(
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.red,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.red}}/>🔴 High Priority ({highP.length})</div>
+                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.red,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.red}}/>🔴 High Priority ({highP.length})</div>
                 {highP.map(id=>{const c=CORRECTIONS[id];return c?(
                   <div key={id} style={{background:C.surface,border:`1px solid ${C.red}30`,borderLeft:`3px solid ${C.red}`,borderRadius:10,padding:"10px 13px",marginBottom:7}}>
                     <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-                      <span style={{fontSize:"0.78rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.red}20`,color:C.red,flexShrink:0,marginTop:1}}>{c.area}</span>
-                      <div><div style={{fontSize:"0.8rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
+                      <span style={{fontSize:"0.58rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.red}20`,color:C.red,flexShrink:0,marginTop:1}}>{c.area}</span>
+                      <div><div style={{fontSize:"0.7rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
                     </div>
                   </div>
                 ):null;})}
@@ -14961,12 +10151,12 @@ function ErgoModule({ data, set }) {
             )}
             {medP.length>0&&(
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.yellow,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.yellow}}/>🟡 Medium Priority ({medP.length})</div>
+                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.yellow,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.yellow}}/>🟡 Medium Priority ({medP.length})</div>
                 {medP.map(id=>{const c=CORRECTIONS[id];return c?(
                   <div key={id} style={{background:C.surface,border:`1px solid ${C.yellow}25`,borderLeft:`3px solid ${C.yellow}`,borderRadius:10,padding:"10px 13px",marginBottom:7}}>
                     <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-                      <span style={{fontSize:"0.78rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.yellow}15`,color:C.yellow,flexShrink:0,marginTop:1}}>{c.area}</span>
-                      <div><div style={{fontSize:"0.8rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
+                      <span style={{fontSize:"0.58rem",fontWeight:700,padding:"2px 7px",borderRadius:6,background:`${C.yellow}15`,color:C.yellow,flexShrink:0,marginTop:1}}>{c.area}</span>
+                      <div><div style={{fontSize:"0.7rem",fontWeight:600,color:C.muted,marginBottom:2}}>{id.replace("ergo_","").replace(/_/g," ")}</div><div style={{fontSize:"0.78rem",color:C.text,lineHeight:1.5}}>{c.action}</div></div>
                     </div>
                   </div>
                 ):null;})}
@@ -14974,12 +10164,12 @@ function ErgoModule({ data, set }) {
             )}
             {movPx.length>0&&(
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a3,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a3}}/>🏃 Movement Break Prescription</div>
+                <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a3,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a3}}/>🏃 Movement Break Prescription</div>
                 {movPx.map(mp=>(
                   <div key={mp.label} style={{background:C.surface,border:`1px solid ${C.a3}30`,borderRadius:10,padding:"11px 13px",marginBottom:8}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:C.a3}}>{mp.label}</div>
-                      <span style={{fontSize:"0.82rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
+                      <span style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
                     </div>
                     {mp.ex.map((e,i)=><div key={i} style={{display:"flex",gap:8,padding:"3px 0",fontSize:"0.76rem",color:C.text}}><span style={{color:C.a3,flexShrink:0}}>→</span><span>{e}</span></div>)}
                   </div>
@@ -14987,7 +10177,7 @@ function ErgoModule({ data, set }) {
               </div>
             )}
             <div style={{marginTop:8}}>
-              <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Clinician Notes — Ergonomic</div>
+              <div style={{fontSize:"0.62rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a2}}/>Clinician Notes — Ergonomic</div>
               <EF id="ergo_clinician_notes" label="Notes / employer recommendations" type="textarea" data={data} set={set} placeholder="Workplace recommendations, equipment requests, employer letter notes, review date..."/>
             </div>
           </>
@@ -15004,7 +10194,7 @@ function ErgoModule({ data, set }) {
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {Object.entries(ERGO_DOMAIN_LABELS).map(([d,l])=>{
               const col=risks[d]==="High"?C.red:risks[d]==="Moderate"?C.yellow:null;
-              return col?<span key={d} style={{fontSize:"0.82rem",padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col,fontWeight:700}}>{l}: {risks[d]}</span>:null;
+              return col?<span key={d} style={{fontSize:"0.62rem",padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col,fontWeight:700}}>{l}: {risks[d]}</span>:null;
             })}
           </div>
         </div>
