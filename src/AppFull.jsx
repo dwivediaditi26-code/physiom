@@ -15914,84 +15914,571 @@ function PdfReportsModal({ data, dx, onClose }) {
   };
 
   const buildAssessmentPdf = () => {
-    const cc = val("cc_main"); const ccLoc = arr("cc_location").join(", ") || "--";
-    const vasNow = val("pa_vas_now"); const vasWorst = val("pa_vas_worst"); const vasBest = val("pa_vas_best");
-    const onset = val("cc_onset"); const mechanism = val("cc_mechanism"); const duration = val("cc_duration");
-    const aggravating = val("cc_aggravating"); const easing = val("cc_easing");
-    const phx = val("phx_conditions"); const meds = val("meds_current"); const allergies = val("allergy_drug");
-    const goal = val("ar_goal_function");
-    const dxList = dx?.dx || [];
-    const specialResults = [];
-    Object.keys(d).forEach(k => { if(k.startsWith("st_") && d[k] && d[k].includes("Positive")) specialResults.push(`${k.replace("st_","").replace(/_/g," ")}: ${d[k]}`); });
+    // ── helpers ──────────────────────────────────────────────────────────
+    const v  = (k, fb="") => escHtml(d[k] || fb);
+    const av = (k) => { const x = d[k]; return Array.isArray(x) ? x : (typeof x === "string" ? x : "").split("|||").filter(Boolean); };
+    const hasAny = (...keys) => keys.some(k => d[k] && String(d[k]).trim() !== "");
+    const sec = (icon, title, color, body) => `
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:10px;">
+        <div style="background:${color};padding:6px 12px;display:flex;align-items:center;gap:7px;">
+          <span style="font-size:14px;">${icon}</span>
+          <span style="font-size:11px;font-weight:700;color:#fff;letter-spacing:0.3px;">${title}</span>
+        </div>
+        <div style="padding:10px 12px;background:#fff;">${body}</div>
+      </div>`;
+    const fieldRow = (label, value) => value && value !== "--" ? `
+      <div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid #f1f5f9;">
+        <span style="font-size:9px;font-weight:600;color:#6b7280;min-width:120px;flex-shrink:0;padding-top:1px;">${label}</span>
+        <span style="font-size:10px;color:#1e293b;flex:1;">${value}</span>
+      </div>` : "";
+    const grid2 = (items) => `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${items.join("")}</div>`;
+    const miniField = (label, value) => (!value || value === "--") ? "" : `
+      <div style="background:#f8fafc;border-radius:6px;padding:6px 8px;border:1px solid #e2e8f0;">
+        <div style="font-size:8px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">${label}</div>
+        <div style="font-size:10px;color:#1e293b;font-weight:500;">${value}</div>
+      </div>`;
+    const tagList = (items, color="#dc2626", bg="#fee2e2") => items.length ? items.map(i =>
+      `<span style="display:inline-block;font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:${bg};color:${color};margin:2px 2px 2px 0;">${escHtml(i)}</span>`).join("") : "";
+    const badge = (text, color="#dc2626", bg="#fee2e2") =>
+      `<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:8px;background:${bg};color:${color};white-space:nowrap;">${escHtml(text)}</span>`;
+    const testRow = (name, result) => {
+      const isPos = /positive|abnormal|restricted|present|reduced|elevated|absent|weak|impaired/i.test(result);
+      const isNeg = /negative|normal|full|wn|intact|equal|bilateral/i.test(result);
+      const dot = isPos ? `<span style="color:#dc2626;font-weight:800;margin-right:4px;">+</span>` :
+                  isNeg ? `<span style="color:#059669;font-weight:800;margin-right:4px;">−</span>` :
+                          `<span style="color:#94a3b8;font-weight:800;margin-right:4px;">·</span>`;
+      return `<div style="display:flex;gap:4px;padding:3px 0;border-bottom:1px solid #f1f5f9;font-size:9.5px;">
+        ${dot}
+        <span style="font-weight:600;color:#334155;min-width:130px;">${escHtml(name)}</span>
+        <span style="color:#64748b;flex:1;">${escHtml(result)}</span>
+      </div>`;
+    };
+    const romRow = (movement, left, right, normal, limitedSide) => {
+      if (!left && !right) return "";
+      const statusColor = limitedSide ? "#dc2626" : "#059669";
+      const statusText  = limitedSide ? `↓ ${limitedSide}` : "WNL";
+      return `<tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="font-size:9.5px;padding:4px 6px;color:#334155;">${movement}</td>
+        <td style="font-size:9.5px;padding:4px 6px;text-align:center;color:#1e293b;">${left||"—"}</td>
+        <td style="font-size:9.5px;padding:4px 6px;text-align:center;color:#1e293b;">${right||"—"}</td>
+        <td style="font-size:9.5px;padding:4px 6px;text-align:center;color:#94a3b8;">${normal}</td>
+        <td style="font-size:9.5px;padding:4px 6px;text-align:center;font-weight:700;color:${statusColor};">${statusText}</td>
+      </tr>`;
+    };
+    const mmtRow = (muscle, left, right) => {
+      if (!left && !right) return "";
+      const low = (v) => v && parseFloat(v) < 5;
+      return `<tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="font-size:9.5px;padding:4px 6px;color:#334155;">${muscle}</td>
+        <td style="font-size:9.5px;padding:4px 6px;text-align:center;color:${low(left)?"#dc2626":"#059669"};font-weight:${low(left)?"700":"400"};">${left||"—"}</td>
+        <td style="font-size:9.5px;padding:4px 6px;text-align:center;color:${low(right)?"#dc2626":"#059669"};font-weight:${low(right)?"700":"400"};">${right||"—"}</td>
+      </tr>`;
+    };
 
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Assessment Report - ${escHtml(patName)}</title>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.page{background:#fff;max-width:860px;margin:0 auto;box-shadow:0 4px 40px rgba(0,0,0,0.12);}.body{padding:28px 40px;}table{width:100%;border-collapse:collapse;}th{background:#f1f5f9;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:8px 10px;text-align:left;}td{padding:7px 10px;font-size:10.5px;border-bottom:1px solid #e2e8f0;}@media print{body{background:white;}.page{box-shadow:none;}}</style>
-</head><body><div class="page">
-${pdfHeader("Physiotherapy Assessment Report","Comprehensive Initial Clinical Evaluation","#1a3a5c")}
-<div class="body">
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:20px;padding:14px;background:#f1f5f9;border-radius:10px;border:1px solid #e2e8f0;">
-    ${[["Full Name",escHtml(patName)],["Date of Birth",escHtml(dob)],["Age / Sex",`${escHtml(String(age))} / ${escHtml(sex)}`],["Occupation",escHtml(occ)],["Referring GP",escHtml(gp)],["Referral Source",escHtml(refSource)],["Insurer",escHtml(insurer)],["Policy No.",escHtml(refNo)]].map(([l,v])=>`<div><div style="font-size:8px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;">${l}</div><div style="font-size:10.5px;font-weight:600;color:#1a3a5c;">${v}</div></div>`).join("")}
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 190px;gap:20px;align-items:start;">
-    <div>
-      ${sectionCard("Presenting Complaint","&#128221;",`
-        <div style="background:#2563eb08;border-left:3px solid #2563eb;border-radius:6px;padding:10px 14px;margin-bottom:12px;">
-          <div style="font-size:9px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">Chief Complaint</div>
-          <div style="font-size:11px;font-style:italic;color:#1a3a5c;line-height:1.6;">&ldquo;${cc}&rdquo;</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          ${[["Pain Location",ccLoc],["Onset",escHtml(onset)],["Duration",escHtml(duration)],["Mechanism",escHtml(mechanism)]].map(([l,v])=>`<div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">${l}</div><div style="font-size:10.5px;color:#1a3a5c;font-weight:500;padding:6px 10px;background:#f1f5f9;border-radius:6px;border:1px solid #e2e8f0;">${v}</div></div>`).join("")}
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">Aggravating Factors</div><div style="font-size:10.5px;color:#1a3a5c;padding:6px 10px;background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.15);border-radius:6px;">${aggravating}</div></div>
-          <div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">Easing Factors</div><div style="font-size:10.5px;color:#1a3a5c;padding:6px 10px;background:rgba(5,150,105,0.05);border:1px solid rgba(5,150,105,0.15);border-radius:6px;">${easing}</div></div>
-        </div>
-      `,"#2563eb")}
-      ${sectionCard("Pain Assessment (VAS)","&#128308;",`
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
-          ${[["Current Pain",vasNow,"#dc2626"],["Worst Pain",vasWorst,"#7c3aed"],["Best / Rest",vasBest,"#059669"]].map(([l,v,c])=>`<div style="text-align:center;padding:12px;background:${c}08;border:2px solid ${c}20;border-radius:10px;"><div style="font-size:24px;font-weight:800;color:${c};line-height:1;">${v||"&mdash;"}${v?"/10":""}</div><div style="font-size:8px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-top:4px;">${l}</div></div>`).join("")}
-        </div>
-        ${vasNow?`<div style="background:#f1f5f9;border-radius:6px;height:10px;overflow:hidden;"><div style="height:100%;width:${(parseFloat(vasNow)||0)*10}%;background:linear-gradient(90deg,#059669,#d97706,#dc2626);border-radius:6px;"></div></div><div style="font-size:8px;color:#6b7280;margin-top:4px;">VAS Scale: 0 = No pain &mdash; 10 = Worst imaginable pain</div>`:""}
-      `,"#dc2626")}
-      ${dxList.length>0?sectionCard("Clinical Impression","&#129321;",dxList.slice(0,4).map((item,i)=>`
-        <div style="display:flex;gap:12px;align-items:flex-start;padding:10px;background:${i===0?"#2563eb0a":"#f1f5f9"};border:1px solid ${i===0?"#2563eb30":"#e2e8f0"};border-radius:8px;margin-bottom:8px;">
-          <div style="min-width:28px;height:28px;background:${i===0?"#2563eb":"#94a3b8"};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;">${i+1}</div>
-          <div><div style="font-size:11px;font-weight:700;color:#1a3a5c;">${escHtml(item.label||"")}</div>${item.icd?`<div style="font-size:9px;color:#6b7280;margin-top:2px;">ICD-10: ${escHtml(item.icd)}</div>`:""}</div>
-        </div>`).join(""),"#2563eb"):""}
-      ${sectionCard("Past Medical & Social History","&#128203;",`
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          ${[["Medical History",escHtml(phx)],["Current Medications",escHtml(meds)],["Drug Allergies",escHtml(allergies)],["Precautions",escHtml(d.allergy_other||"None documented")]].map(([l,v])=>`<div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">${l}</div><div style="font-size:10.5px;color:#1a3a5c;font-weight:500;padding:6px 10px;background:#f1f5f9;border-radius:6px;border:1px solid #e2e8f0;">${v}</div></div>`).join("")}
-        </div>
-        ${goal?`<div style="background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.2);border-radius:8px;padding:10px 14px;"><span style="font-size:9px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.8px;">&#127919; Patient Goal: </span><span style="font-size:10.5px;color:#1a3a5c;">${escHtml(goal)}</span></div>`:""}
-      `,"#0891b2")}
-    </div>
-    <div>
-      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:14px;">
-        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;text-align:center;">&#9609; Postural Analysis</div>
-        ${postureSvg()}
-        <div style="margin-top:10px;">
-          ${[[d.post_fhp,"FHP","#dc2626"],[d.post_kyphosis,"Kyphosis","#d97706"],[d.post_lordosis,"Lordosis","#d97706"],[d.post_pelvis,"Pelvis","#7c3aed"],[d.post_sh,"Shoulder","#2563eb"]].filter(([v])=>v&&v!=="--"&&!v.includes("Normal")).map(([v,l,c])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #e2e8f0;"><span style="font-size:9px;color:#6b7280;">${l}</span><span style="font-size:9px;font-weight:700;color:${c};">${escHtml(String(v)).substring(0,22)}</span></div>`).join("")||`<div style="font-size:9px;color:#94a3b8;text-align:center;">No deviations noted</div>`}
-        </div>
+    // ── patient meta ──────────────────────────────────────────────────────
+    const patName   = v("dem_name", patName || "Patient");
+    const dob       = v("dem_dob");
+    const sex       = v("dem_sex");
+    const occ       = v("dem_occupation");
+    const employer  = v("dem_employer");
+    const gp        = v("dem_gp");
+    const referral  = v("dem_referral");
+    const consent   = v("dem_consent");
+    const therapist = v("therapist_name", "___________________");
+    const ahpra     = v("therapist_qual", "___________________");
+    const clinicAddr = d.clinic_address || "PhysioMind Pro";
+
+    // ── region prefix (for agg/eas) ──────────────────────────────────────
+    const regionKey = (() => {
+      const r = (d.cc_body_region || "").toLowerCase();
+      if (r.includes("lumbar") || r.includes("lower back") || r.includes("lx")) return "lx";
+      if (r.includes("cervical") || r.includes("neck") || r.includes("cx")) return "cx";
+      if (r.includes("shoulder")) return "sh";
+      if (r.includes("knee")) return r.includes("right") ? "knr" : "knl";
+      if (r.includes("hip")) return "hip";
+      if (r.includes("ankle")) return "ank";
+      if (r.includes("elbow")) return "elb";
+      if (r.includes("thoracic")) return "tx";
+      if (r.includes("wrist")) return "wr";
+      return "lx"; // default
+    })();
+
+    // ── subjective fields ─────────────────────────────────────────────────
+    const cc        = v("cc_main");
+    const onset     = v("cc_onset");
+    const duration  = v("cc_duration");
+    const mechanism = v("cc_mechanism");
+    const quality   = v("cc_quality");
+    const behaviour = v("cc_24h_pattern") || v("cc_behaviour");
+    const vasNow    = v("cc_vas_now");
+    const vasWorst  = v("cc_vas_worst");
+    const vasBest   = v("cc_vas_best");
+    const bodyRegion = v("cc_body_region");
+
+    // aggravating — try region-specific then generic
+    const aggMov  = av(`${regionKey}_agg_mov`);
+    const aggAct  = av(`${regionKey}_agg_act`);
+    const aggPost = av(`${regionKey}_agg_post`);
+    const aggAll  = [...aggMov, ...aggAct, ...aggPost];
+    const relMov  = av(`${regionKey}_rel_mov`);
+    const relPost = av(`${regionKey}_rel_post`);
+    const relMed  = av(`${regionKey}_rel_med`);
+    const relAll  = [...relMov, ...relPost, ...relMed];
+
+    // red flags
+    const rfFields = ["grf_systemic","grf_cancer","grf_fracture","grf_infection","grf_neuro","grf_vascular",
+                      `${regionKey}_rf_cauda`,`${regionKey}_rf_fracture`,`${regionKey}_rf_inflammatory`,`${regionKey}_rf_serious`];
+    const rfItems = rfFields.flatMap(k => av(k)).filter(x => !/^no /i.test(x) && x.length > 2);
+    const rfAction = v("grf_action") || v(`${regionKey}_rf_notes`);
+    const yfItems = av(`${regionKey}_yf_beliefs`).concat(av(`${regionKey}_yf_emotion`));
+
+    // PMH
+    const pmhConds  = av("pmh_conditions").join(", ") || v("pmh_conditions");
+    const pmhMeds   = v("pmh_medications") || v("med_allergies");
+    const pmhAllerg = v("med_allergies") || v("pmh_allergies");
+    const pmhSurg   = v("pmh_surgical");
+    const pmhFam    = v("pmh_family");
+
+    // goals / lifestyle
+    const goal      = v("ar_goal_function") || v("goal_main");
+    const goalBelief = v("goal_belief") || v("goal_concern");
+    const lsExercise = v("ls_exercise");
+    const lsSleep    = v("ls_sleep_quality");
+    const lsStress   = v("ls_stress");
+    const lsWork     = av("ls_occ_demands").join(", ");
+    const lsNotes    = v("ls_notes");
+
+    // clinician notes
+    const ccNotes  = v("cc_notes");
+    const hxNotes  = v("hx_notes");
+    const goalNotes = v("goal_notes");
+
+    // ── objective fields ──────────────────────────────────────────────────
+    // Observation
+    const obsGait    = v("obs_gait");
+    const obsPosture = v("obs_posture");
+    const obsSwelling = v("obs_swelling");
+    const obsWasting = v("obs_muscle_wasting");
+    const obsOther   = v("obs_other");
+
+    // Palpation
+    const palpTend  = v("palp_tenderness") || v("palp_tender");
+    const palpTone  = v("palp_tone") || v("palp_muscle_tone");
+    const palpSwel  = v("palp_swelling") || v("palp_swelling_notes");
+    const palpOther = v("palp_other") || v("palp_notes");
+
+    // ROM — collect all filled rom_ keys
+    const romEntries = [];
+    const romPairs = [
+      ["Lumbar flexion",   "rom_lx_flex",    "", "lx_flexion",    "", "80°",  ""],
+      ["Lumbar extension", "rom_lx_ext",     "", "lx_extension",  "", "25°",  ""],
+      ["Lumbar lat flex",  "rom_lx_lat_l",   "rom_lx_lat_r",      "", "25°",  ""],
+      ["Cervical flex",    "rom_cx_flex",     "",               "", "50°",  ""],
+      ["Cervical ext",     "rom_cx_ext",      "",               "", "60°",  ""],
+      ["Cervical rot L",   "rom_cx_rot_l",    "rom_cx_rot_r",   "", "80°",  ""],
+      ["Shoulder flex",    "rom_sh_flex_l",   "rom_sh_flex_r",  "", "180°", ""],
+      ["Shoulder abd",     "rom_sh_abd_l",    "rom_sh_abd_r",   "", "180°", ""],
+      ["Shoulder ER",      "rom_sh_er_l",     "rom_sh_er_r",    "", "90°",  ""],
+      ["Shoulder IR",      "rom_sh_ir_l",     "rom_sh_ir_r",    "", "70°",  ""],
+      ["Elbow flex",       "rom_elb_flex_l",  "rom_elb_flex_r", "", "145°", ""],
+      ["Wrist flex",       "rom_wr_flex_l",   "rom_wr_flex_r",  "", "80°",  ""],
+      ["Hip flex",         "rom_hip_flex_l",  "rom_hip_flex_r", "", "120°", ""],
+      ["Hip abd",          "rom_hip_abd_l",   "rom_hip_abd_r",  "", "45°",  ""],
+      ["Knee flex",        "rom_knee_flex_l", "rom_knee_flex_r","", "140°", ""],
+      ["Knee ext",         "rom_knee_ext_l",  "rom_knee_ext_r", "", "0°",   ""],
+      ["Ankle DF",         "rom_ankle_df_l",  "rom_ankle_df_r", "", "20°",  ""],
+      ["Ankle PF",         "rom_ankle_pf_l",  "rom_ankle_pf_r", "", "50°",  ""],
+    ];
+    const romRows = romPairs.map(([name, lk, rk, , norm]) => {
+      const lv = d[lk] || ""; const rv = d[rk] || "";
+      if (!lv && !rv) return "";
+      const limited = (lv && /^[0-9]/.test(lv) && parseFloat(lv) < parseFloat(norm)) ? "L" :
+                      (rv && /^[0-9]/.test(rv) && parseFloat(rv) < parseFloat(norm)) ? "R" :
+                      (lv && /−|lag|limit|restrict/i.test(lv)) ? "L" :
+                      (rv && /−|lag|limit|restrict/i.test(rv)) ? "R" : "";
+      return romRow(name, lv, rv, norm, limited);
+    }).filter(Boolean);
+
+    // MMT
+    const mmtPairs = [
+      ["Quadriceps",        "mmt_quad_l",      "mmt_quad_r"],
+      ["Hamstrings",        "mmt_hams_l",       "mmt_hams_r"],
+      ["Glut maximus",      "mmt_glut_max_l",   "mmt_glut_max_r"],
+      ["Glut medius",       "mmt_glut_med_l",   "mmt_glut_med_r"],
+      ["Hip flexors",       "mmt_hip_flex_l",   "mmt_hip_flex_r"],
+      ["Gastroc/soleus",    "mmt_gastroc_l",    "mmt_gastroc_r"],
+      ["Tib anterior",      "mmt_tib_ant_l",    "mmt_tib_ant_r"],
+      ["EHL (L5)",          "mmt_ehl_l",        "mmt_ehl_r"],
+      ["Deltoid",           "mmt_deltoid_l",    "mmt_deltoid_r"],
+      ["Rotator cuff",      "mmt_rc_l",         "mmt_rc_r"],
+      ["Biceps",            "mmt_biceps_l",     "mmt_biceps_r"],
+      ["Triceps",           "mmt_triceps_l",    "mmt_triceps_r"],
+      ["Wrist ext",         "mmt_wr_ext_l",     "mmt_wr_ext_r"],
+      ["Deep neck flex",    "mmt_dnf_l",        "mmt_dnf_r"],
+    ];
+    const mmtRows = mmtPairs.map(([name, lk, rk]) => mmtRow(name, d[lk]||"", d[rk]||"")).filter(Boolean);
+
+    // Functional screen
+    const fsLabels = {
+      kfs_squat:"Double leg squat", kfs_lunge:"Forward lunge", kfs_step_down:"Step down",
+      kfs_single_leg:"Single leg squat", kfs_hop:"Single leg hop",
+      lfs_flexion:"Lumbar flexion", lfs_extension:"Lumbar extension", lfs_rot:"Lumbar rotation",
+      lfs_lateral:"Lateral bend", lfs_squat:"Squat pattern",
+      sfs_overhead:"Overhead reach", sfs_push:"Push-up", sfs_pull:"Pull pattern",
+      hfs_squat:"Hip single leg squat", hfs_hinge:"Hip hinge", hfs_lunge:"Hip lunge",
+      afs_raise:"Calf raise", afs_lunge:"Ankle lunge", afs_hop:"Hop & stick",
+    };
+    const fsGradeColor = (g) => g >= 2 ? "#dc2626" : g === 1 ? "#d97706" : "#059669";
+    const fsGradeLabel = (g) => g >= 2 ? "Abnormal" : g === 1 ? "Compensated" : "Normal";
+    const fsScreens = ["kfs_data","lfs_data","sfs_data","hfs_data","afs_data"];
+    const fsRows = [];
+    fsScreens.forEach(key => {
+      if (!d[key]) return;
+      try {
+        const parsed = typeof d[key] === "string" ? JSON.parse(d[key]) : d[key];
+        const grades = parsed.grades || {};
+        const notes  = parsed.notes  || {};
+        Object.entries(grades).forEach(([id, g]) => {
+          const gn = parseInt(g) || 0;
+          const label = fsLabels[id] || id.replace(/_/g," ");
+          const note  = notes[id] ? escHtml(notes[id]) : "";
+          fsRows.push(`<tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="font-size:9.5px;padding:4px 6px;color:#334155;">${escHtml(label)}</td>
+            <td style="font-size:9px;padding:4px 6px;text-align:center;">
+              <span style="font-weight:700;color:${fsGradeColor(gn)};">${gn} — ${fsGradeLabel(gn)}</span>
+            </td>
+            <td style="font-size:9px;padding:4px 6px;color:#64748b;">${note}</td>
+          </tr>`);
+        });
+      } catch {}
+    });
+
+    // Special tests
+    const stKeys = Object.keys(d).filter(k => (k.startsWith("st_") || k.startsWith("lx_slr") || k.startsWith("lx_slump") || k.startsWith("lx_kemp")) && d[k] && String(d[k]).trim());
+    const stPos = stKeys.filter(k => /positive|abnormal/i.test(d[k]||""));
+    const stNeg = stKeys.filter(k => /negative|normal/i.test(d[k]||"") && !/positive/i.test(d[k]||""));
+    const stOth = stKeys.filter(k => !stPos.includes(k) && !stNeg.includes(k));
+    const stLabel = (k) => k.replace(/^(st_|lx_)/,"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+
+    // Neurological
+    const neuroFields = [
+      ["L3 sensation", "n_l3_right", "n_l3_left"],
+      ["L4 sensation", "n_l4_right", "n_l4_left"],
+      ["L5 sensation", "n_l5_right", "n_l5_left"],
+      ["S1 sensation", "n_s1_right", "n_s1_left"],
+      ["C5 sensation", "n_c5_right", "n_c5_left"],
+      ["C6 sensation", "n_c6_right", "n_c6_left"],
+      ["C7 sensation", "n_c7_right", "n_c7_left"],
+      ["Patellar reflex",  "n_ref_patella_right",  "n_ref_patella_left"],
+      ["Achilles reflex",  "n_ref_achilles_right", "n_ref_achilles_left"],
+      ["Biceps reflex",    "n_ref_biceps_right",   "n_ref_biceps_left"],
+      ["Triceps reflex",   "n_ref_triceps_right",  "n_ref_triceps_left"],
+      ["Babinski",         "n_babinski_right",      "n_babinski_left"],
+      ["Neural tension",   "n_slr_right",           "n_slr_left"],
+      ["Upper limb tension","n_ultt_right",          "n_ultt_left"],
+    ];
+    const neuroRows = neuroFields.map(([name, rk, lk]) => {
+      const rv = d[rk]||""; const lv = d[lk]||"";
+      if (!rv && !lv) return "";
+      const val = [rv&&`R: ${rv}`, lv&&`L: ${lv}`].filter(Boolean).join(" · ");
+      const abnormal = /reduced|absent|impaired|weak|positive|abnormal/i.test(val);
+      return `<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid #f1f5f9;font-size:9.5px;">
+        <span style="min-width:120px;font-weight:600;color:#334155;flex-shrink:0;">${name}</span>
+        <span style="color:${abnormal?"#dc2626":"#334155"};">${escHtml(val)}</span>
+      </div>`;
+    }).filter(Boolean);
+    // Also check free-text neuro fields
+    const neuroNotes = v("neuro_clinician_notes") || v("n_notes");
+
+    // Gait
+    const gaitObs   = v("gait_observation") || v("obs_gait");
+    const gaitDev   = v("gait_deviations");
+    const gaitTrend = v("gait_trendelenburg");
+    const gaitStep  = v("gait_step_length");
+    const gaitNotes = v("gait_notes");
+
+    // Outcome measures
+    const omOdi    = v("om_odi_score")  || v("om_odi");
+    const omNdi    = v("om_ndi_score")  || v("om_ndi");
+    const omPsfs   = v("om_psfs_score") || v("om_psfs");
+    const omDash   = v("om_dash_score") || v("om_dash");
+    const omLefs   = v("om_lefs_score") || v("om_lefs");
+    const omKoosPain = v("om_koos_pain"); const omKoosSport = v("om_koos_sport"); const omKoosQol = v("om_koos_qol");
+    const omReport = d.om_report?.scores || {};
+
+    // Advanced assessment
+    const kcNotes   = v("kc_notes");
+    const fasc      = v("fa_passive_tension") || v("fa_densification");
+    const fascNotes = v("fa_compensation_map") || v("fa_remote_test");
+    const nktNotes  = v("nkt_notes");
+    const cyriaxNotes = v("cyriax_notes") || v("sttt_notes");
+
+    // Diagnosis
+    const dxMain  = v("soap_a_diagnosis") || v("soap_a");
+    const dxIcd   = v("soap_icd10");
+    const dxAssess = v("soap_assessment");
+    const dxList  = dx?.dx || [];
+
+    // ── CSS ───────────────────────────────────────────────────────────────
+    const css = `
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .page{background:#fff;max-width:860px;margin:0 auto 0;box-shadow:0 4px 40px rgba(0,0,0,0.12);page-break-after:always;}
+      .page:last-child{page-break-after:auto;}
+      .body{padding:22px 32px 28px;}
+      table{width:100%;border-collapse:collapse;}
+      th{background:#f1f5f9;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.7px;padding:6px 6px;text-align:left;border-bottom:1px solid #e2e8f0;}
+      @media print{body{background:white;}.page{box-shadow:none;max-width:100%;}}
+    `;
+
+    // ── PAGE FOOTER ───────────────────────────────────────────────────────
+    const pgFooter = (n, total) => `
+      <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:7px 32px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:8px;color:#94a3b8;">PhysioMind Pro · CONFIDENTIAL · Patient: ${escHtml(patName)}</span>
+        <span style="font-size:8px;color:#94a3b8;">${today} · Page ${n} of ${total}</span>
+      </div>`;
+
+    // ── PAGE 1: DEMOGRAPHICS + SUBJECTIVE ────────────────────────────────
+    const page1 = `<div class="page">
+      ${pdfHeader("Physiotherapy Assessment Report", "Initial Clinical Evaluation", "#1e3a5f")}
+      <div class="body">
+
+        ${sec("👤","Patient details","#334155", `
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px;">
+            ${miniField("Full name", v("dem_name"))}
+            ${miniField("Date of birth / Age", dob + (sex ? " · " + sex : ""))}
+            ${miniField("Occupation", occ)}
+            ${miniField("Referring GP", gp)}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+            ${miniField("Date of assessment", today)}
+            ${miniField("Session type", "Initial assessment")}
+            ${miniField("Clinician", therapist)}
+            ${miniField("AHPRA / Reg no.", ahpra)}
+          </div>
+        `)}
+
+        ${sec("📋","Chief complaint","#1e3a5f", `
+          ${cc && cc !== "--" ? `<div style="border-left:3px solid #1e3a5f;padding:7px 10px;background:#f0f4ff;border-radius:0 6px 6px 0;font-size:10px;font-style:italic;color:#334155;margin-bottom:9px;">"${escHtml(cc)}"</div>` : ""}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            ${miniField("Body region", bodyRegion)}
+            ${miniField("Mechanism / onset", onset)}
+            ${miniField("Duration", duration)}
+            ${miniField("Pain behaviour", behaviour || quality)}
+          </div>
+        `)}
+
+        ${sec("📊","Pain scores (NRS /10)","#991b1b", `
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+            <div style="background:#fef2f2;border-radius:8px;padding:10px;text-align:center;border:1px solid #fecaca;">
+              <div style="font-size:26px;font-weight:700;color:#dc2626;line-height:1;">${vasNow||"—"}</div>
+              <div style="font-size:8.5px;color:#94a3b8;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Current</div>
+            </div>
+            <div style="background:#f5f3ff;border-radius:8px;padding:10px;text-align:center;border:1px solid #ddd6fe;">
+              <div style="font-size:26px;font-weight:700;color:#7c3aed;line-height:1;">${vasWorst||"—"}</div>
+              <div style="font-size:8.5px;color:#94a3b8;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Worst</div>
+            </div>
+            <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;border:1px solid #bbf7d0;">
+              <div style="font-size:26px;font-weight:700;color:#059669;line-height:1;">${vasBest||"—"}</div>
+              <div style="font-size:8.5px;color:#94a3b8;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Best</div>
+            </div>
+          </div>
+        `)}
+
+        ${(aggAll.length > 0 || relAll.length > 0) ? sec("⬆️","Aggravating & easing factors","#78350f", `
+          ${aggAll.length ? `<div style="margin-bottom:8px;"><div style="font-size:8.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Aggravating</div>${tagList(aggAll,"#991b1b","#fee2e2")}</div>` : ""}
+          ${relAll.length ? `<div><div style="font-size:8.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Easing</div>${tagList(relAll,"#166534","#dcfce7")}</div>` : ""}
+        `) : ""}
+
+        ${sec("🚩","Red & yellow flags","#991b1b", `
+          <div style="margin-bottom:6px;">
+            ${rfItems.length > 0
+              ? `<div style="font-size:8.5px;font-weight:700;color:#991b1b;margin-bottom:4px;">Red flags identified:</div>${tagList(rfItems,"#991b1b","#fee2e2")}`
+              : `<span style="font-size:9.5px;color:#059669;font-weight:600;">✓ No red flags identified — safe to proceed</span>`
+            }
+          </div>
+          ${yfItems.length ? `<div><div style="font-size:8.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Yellow flags</div>${tagList(yfItems,"#854d0e","#fef9c3")}</div>` : ""}
+          ${rfAction && rfAction !== "--" ? `<div style="margin-top:6px;font-size:9px;color:#64748b;">${rfAction}</div>` : ""}
+        `)}
+
+        ${sec("🏥","Past medical history & medications","#4c1d95", `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            ${miniField("Medical history", pmhConds)}
+            ${miniField("Current medications", pmhMeds)}
+            ${miniField("Allergies", pmhAllerg)}
+            ${miniField("Previous surgery", pmhSurg)}
+            ${miniField("Family history", pmhFam)}
+            ${miniField("Previous physiotherapy", v("hx_previous_injury") || v("hx_providers"))}
+          </div>
+          ${hxNotes && hxNotes !== "--" ? `<div style="margin-top:6px;font-size:9px;color:#64748b;padding:5px 8px;background:#f8fafc;border-radius:5px;border:1px solid #e2e8f0;">${hxNotes}</div>` : ""}
+        `)}
+
+        ${sec("🎯","Goals & lifestyle","#0f6e56", `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+            ${miniField("Patient goal", goal)}
+            ${miniField("Patient belief / concern", goalBelief)}
+            ${miniField("Exercise", lsExercise)}
+            ${miniField("Sleep quality", lsSleep)}
+            ${miniField("Stress level", lsStress)}
+            ${miniField("Work demands", lsWork)}
+          </div>
+          ${lsNotes && lsNotes !== "--" ? `<div style="font-size:9px;color:#64748b;padding:5px 8px;background:#f0fdf4;border-radius:5px;border:1px solid #bbf7d0;">${lsNotes}</div>` : ""}
+          ${goalNotes && goalNotes !== "--" ? `<div style="font-size:9px;color:#64748b;margin-top:4px;padding:5px 8px;background:#f0fdf4;border-radius:5px;border:1px solid #bbf7d0;">${goalNotes}</div>` : ""}
+        `)}
+
+        ${ccNotes && ccNotes !== "--" ? sec("📝","Clinician notes — subjective","#334155", `<div style="font-size:10px;color:#334155;line-height:1.6;">${ccNotes}</div>`) : ""}
+
       </div>
-      ${specialResults.length>0?`<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;"><div style="font-size:9px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">&#8853; Positive Tests</div>${specialResults.slice(0,6).map(r=>`<div style="font-size:9px;color:#1a3a5c;padding:4px 0;border-bottom:1px solid #e2e8f0;line-height:1.4;">${escHtml(r)}</div>`).join("")}</div>`:""}
-    </div>
-  </div>
-  ${sectionCard("Range of Motion","&#128208;",`<table><thead><tr><th>Movement</th><th style="text-align:center;">Left</th><th style="text-align:center;">Right</th><th style="text-align:center;">Normal</th><th style="text-align:center;">Status</th></tr></thead><tbody>${[
-    ["Shoulder Flexion","rom_sh_flex_left","rom_sh_flex_right",180],["Shoulder Abduction","rom_sh_abd_left","rom_sh_abd_right",180],["Shoulder ER","rom_sh_er_left","rom_sh_er_right",90],["Hip Flexion","rom_hip_flex_left","rom_hip_flex_right",120],["Knee Flexion","rom_kn_flex_left","rom_kn_flex_right",140],["Ankle DF","rom_ank_df_left","rom_ank_df_right",20],["Cervical Flexion","rom_cx_flex","",50],["Cervical Extension","rom_cx_ext","",60],["Lumbar Flexion","rom_lx_flex","",80],["Lumbar Extension","rom_lx_ext","",25],
-  ].filter(([,l,r])=>d[l]||d[r]).map(([region,lk,rk,norm])=>{const lv=d[lk]||"";const rv=d[rk]||"";const lN=parseFloat(lv);const rN=parseFloat(rv);const lCol=lv&&!isNaN(lN)?(lN<norm*0.8?"#dc2626":lN<norm*0.9?"#d97706":"#059669"):"#94a3b8";const rCol=rv&&!isNaN(rN)?(rN<norm*0.8?"#dc2626":rN<norm*0.9?"#d97706":"#059669"):"#94a3b8";const qual=lv||rv?(lN<norm*0.7||rN<norm*0.7?"Significantly Limited":lN<norm*0.9||rN<norm*0.9?"Mildly Limited":"WNL"):"Not Tested";const qCol=qual==="WNL"?"#059669":qual==="Not Tested"?"#94a3b8":qual==="Significantly Limited"?"#dc2626":"#d97706";return `<tr style="border-bottom:1px solid #e2e8f0;"><td style="font-size:10px;font-weight:500;color:#1a3a5c;">${escHtml(region)}</td><td style="text-align:center;font-weight:700;color:${lCol};font-size:10px;">${lv?lv+"&deg;":"&mdash;"}</td><td style="text-align:center;font-weight:700;color:${rCol};font-size:10px;">${rv?rv+"&deg;":rk?"&mdash;":"N/A"}</td><td style="text-align:center;color:#6b7280;font-size:10px;">${norm}&deg;</td><td style="text-align:center;font-size:9px;"><span style="padding:2px 7px;border-radius:4px;font-weight:700;background:${qCol}15;color:${qCol};">${qual}</span></td></tr>`;}).join("")||`<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:16px;font-size:10px;">No ROM measurements recorded</td></tr>`}</tbody></table>`,"#0891b2")}
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-    ${sectionCard("Neurological Findings","&#9889;",`${[["Sensation",d.neuro_sensation],["Reflexes",d.neuro_reflex],["Motor",d.neuro_motor],["Neural Tension",d.neuro_tension]].filter(([,v])=>v).map(([l,v])=>`<div style="display:flex;gap:8px;margin-bottom:7px;align-items:flex-start;"><span style="font-size:8px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;min-width:65px;padding-top:2px;">${l}</span><span style="font-size:10px;color:#1a3a5c;flex:1;">${escHtml(String(v))}</span></div>`).join("")||`<div style="font-size:10px;color:#94a3b8;">No neurological deficits documented</div>`}`,"#7c3aed")}
-    ${sectionCard("Palpation","&#128080;",`${[["Tenderness",d.palp_tenderness],["Tone",d.palp_tone],["Swelling",d.palp_swelling],["Temperature",d.palp_temp],["Crepitus",d.palp_crepitus]].filter(([,v])=>v).map(([l,v])=>`<div style="display:flex;gap:8px;margin-bottom:7px;align-items:flex-start;"><span style="font-size:8px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;min-width:70px;padding-top:2px;">${l}</span><span style="font-size:10px;color:#1a3a5c;flex:1;">${escHtml(String(v))}</span></div>`).join("")||`<div style="font-size:10px;color:#94a3b8;">No palpation findings recorded</div>`}`,"#d97706")}
-  </div>
-  ${sectionCard("Clinical Summary","&#128203;",`<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;"><div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Problem List</div><div style="background:rgba(220,38,38,0.04);border:1px solid rgba(220,38,38,0.15);border-radius:8px;padding:10px 14px;">${dxList.slice(0,3).map((item,i)=>`<div style="font-size:10px;color:#1a3a5c;padding:3px 0;border-bottom:1px solid rgba(220,38,38,0.08);">${i+1}. ${escHtml(item.label||"")}</div>`).join("")||`<div style="font-size:10px;color:#94a3b8;">Pending diagnosis</div>`}</div></div><div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Patient Goals</div><div style="background:rgba(5,150,105,0.04);border:1px solid rgba(5,150,105,0.15);border-radius:8px;padding:10px 14px;">${[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).map(g=>`<div style="font-size:10px;color:#1a3a5c;padding:3px 0;border-bottom:1px solid rgba(5,150,105,0.1);">&#10003; ${escHtml(String(g))}</div>`).join("")||`<div style="font-size:10px;color:#94a3b8;">Goals to be established</div>`}</div></div></div><div style="margin-top:12px;padding:10px 14px;background:#f1f5f9;border-radius:8px;border:1px solid #e2e8f0;"><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">Clinical Notes</div><div style="font-size:10.5px;color:#1a3a5c;line-height:1.6;">${escHtml(d.soap_assessment||d.clinical_notes||"Assessment findings documented above.")}</div></div>`,"#059669")}
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;padding-top:16px;border-top:2px solid #e2e8f0;">
-    <div><div style="font-size:9px;color:#6b7280;margin-bottom:24px;">Physiotherapist Signature:</div><div style="border-bottom:1px solid #1a3a5c;width:80%;margin-bottom:4px;height:24px;"></div><div style="font-size:9px;color:#6b7280;">Name / AHPRA No.: ___________________</div></div>
-    <div><div style="font-size:9px;color:#6b7280;margin-bottom:24px;">Date of Assessment:</div><div style="border-bottom:1px solid #1a3a5c;width:80%;margin-bottom:4px;height:24px;"></div><div style="font-size:9px;color:#6b7280;">Next Review: ___________________</div></div>
-  </div>
-</div>
-${pdfFooter("Physiotherapy Assessment Report")}
-</div></body></html>`;
+      ${pgFooter(1, 2)}
+    </div>`;
+
+    // ── PAGE 2: OBJECTIVE FINDINGS ────────────────────────────────────────
+    const obsHasData = hasAny("obs_gait","obs_posture","obs_swelling","obs_muscle_wasting","obs_other");
+    const palpHasData = hasAny("palp_tenderness","palp_tender","palp_tone","palp_muscle_tone","palp_swelling","palp_notes","palp_other");
+    const romHasData  = romRows.length > 0;
+    const mmtHasData  = mmtRows.length > 0;
+    const fsHasData   = fsRows.length > 0;
+    const stHasData   = stKeys.length > 0;
+    const neuroHasData = neuroRows.length > 0 || neuroNotes !== "--";
+    const gaitHasData = hasAny("gait_observation","obs_gait","gait_deviations","gait_notes");
+    const omHasData   = hasAny("om_odi_score","om_odi","om_ndi_score","om_ndi","om_psfs_score","om_lefs_score","om_koos_pain","om_koos_sport");
+    const advHasData  = hasAny("kc_notes","fa_passive_tension","fa_densification","fa_compensation_map","nkt_notes","cyriax_notes","sttt_notes");
+
+    const page2 = `<div class="page">
+      ${pdfHeader("Objective Findings", "Assessment & Advanced Assessment", "#0f6e56")}
+      <div class="body">
+
+        ${(obsHasData || palpHasData) ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          ${obsHasData ? sec("👁️","Observation","#334155", `
+            ${obsGait    && obsGait    !== "--" ? fieldRow("Gait", obsGait) : ""}
+            ${obsPosture && obsPosture !== "--" ? fieldRow("Posture", obsPosture) : ""}
+            ${obsSwelling && obsSwelling !== "--" ? fieldRow("Swelling", obsSwelling) : ""}
+            ${obsWasting && obsWasting !== "--" ? fieldRow("Muscle wasting", obsWasting) : ""}
+            ${obsOther   && obsOther   !== "--" ? fieldRow("Other", obsOther) : ""}
+          `) : ""}
+          ${palpHasData ? sec("🖐️","Palpation","#334155", `
+            ${palpTend  && palpTend  !== "--" ? fieldRow("Tenderness", palpTend) : ""}
+            ${palpTone  && palpTone  !== "--" ? fieldRow("Muscle tone", palpTone) : ""}
+            ${palpSwel  && palpSwel  !== "--" ? fieldRow("Swelling", palpSwel) : ""}
+            ${palpOther && palpOther !== "--" ? fieldRow("Other", palpOther) : ""}
+          `) : ""}
+        </div>` : ""}
+
+        ${romHasData ? sec("📐","Range of motion","#0f6e56", `
+          <table><thead><tr>
+            <th style="width:35%">Movement</th>
+            <th style="width:15%;text-align:center;">Left</th>
+            <th style="width:15%;text-align:center;">Right</th>
+            <th style="width:15%;text-align:center;">Normal</th>
+            <th style="width:20%;text-align:center;">Status</th>
+          </tr></thead><tbody>${romRows.join("")}</tbody></table>
+        `) : ""}
+
+        ${(mmtHasData || fsHasData) ? `
+        <div style="display:grid;grid-template-columns:${mmtHasData && fsHasData ? "1fr 1fr" : "1fr"};gap:10px;">
+          ${mmtHasData ? sec("💪","Manual muscle testing (MMT)","#1e3a5f", `
+            <table><thead><tr>
+              <th>Muscle</th>
+              <th style="text-align:center;">L</th>
+              <th style="text-align:center;">R</th>
+            </tr></thead><tbody>${mmtRows.join("")}</tbody></table>
+          `) : ""}
+          ${fsHasData ? sec("🏃","Functional movement screen","#14532d", `
+            <table><thead><tr>
+              <th>Test</th>
+              <th style="width:120px;">Grade</th>
+              <th>Notes</th>
+            </tr></thead><tbody>${fsRows.join("")}</tbody></table>
+          `) : ""}
+        </div>` : ""}
+
+        ${stHasData ? sec("🔬","Special tests","#78350f", `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+            <div>
+              ${stPos.length ? `<div style="font-size:8.5px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Positive</div>
+              ${stPos.map(k => testRow(stLabel(k), d[k]||"")).join("")}` : ""}
+              ${stOth.length ? `<div style="font-size:8.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin:6px 0 4px;">Other findings</div>
+              ${stOth.map(k => testRow(stLabel(k), d[k]||"")).join("")}` : ""}
+            </div>
+            <div>
+              ${stNeg.length ? `<div style="font-size:8.5px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Negative</div>
+              ${stNeg.map(k => testRow(stLabel(k), d[k]||"")).join("")}` : ""}
+            </div>
+          </div>
+        `) : ""}
+
+        ${neuroHasData ? sec("⚡","Neurological findings","#312e81", `
+          ${neuroRows.join("")}
+          ${neuroNotes && neuroNotes !== "--" ? `<div style="margin-top:6px;font-size:9px;color:#64748b;padding:5px 8px;background:#eef2ff;border-radius:5px;">${neuroNotes}</div>` : ""}
+        `) : ""}
+
+        ${gaitHasData ? sec("🚶","Gait analysis","#1e3a5f", `
+          ${gaitObs  && gaitObs  !== "--" ? fieldRow("Observation", gaitObs) : ""}
+          ${gaitDev  && gaitDev  !== "--" ? fieldRow("Deviations", gaitDev) : ""}
+          ${gaitTrend && gaitTrend !== "--" ? fieldRow("Trendelenburg", gaitTrend) : ""}
+          ${gaitStep && gaitStep !== "--" ? fieldRow("Step length", gaitStep) : ""}
+          ${gaitNotes && gaitNotes !== "--" ? fieldRow("Notes", gaitNotes) : ""}
+        `) : ""}
+
+        ${omHasData ? sec("📈","Outcome measures","#0f6e56", `
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+            ${omOdi   && omOdi   !== "--" ? `<div style="text-align:center;background:#fef2f2;border-radius:8px;padding:8px 4px;border:1px solid #fecaca;"><div style="font-size:18px;font-weight:700;color:#dc2626;">${omOdi}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">ODI</div></div>` : ""}
+            ${omNdi   && omNdi   !== "--" ? `<div style="text-align:center;background:#fef2f2;border-radius:8px;padding:8px 4px;border:1px solid #fecaca;"><div style="font-size:18px;font-weight:700;color:#dc2626;">${omNdi}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">NDI</div></div>` : ""}
+            ${omLefs  && omLefs  !== "--" ? `<div style="text-align:center;background:#fffbeb;border-radius:8px;padding:8px 4px;border:1px solid #fde68a;"><div style="font-size:18px;font-weight:700;color:#d97706;">${omLefs}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">LEFS</div></div>` : ""}
+            ${omPsfs  && omPsfs  !== "--" ? `<div style="text-align:center;background:#fffbeb;border-radius:8px;padding:8px 4px;border:1px solid #fde68a;"><div style="font-size:18px;font-weight:700;color:#d97706;">${omPsfs}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">PSFS</div></div>` : ""}
+            ${omDash  && omDash  !== "--" ? `<div style="text-align:center;background:#fffbeb;border-radius:8px;padding:8px 4px;border:1px solid #fde68a;"><div style="font-size:18px;font-weight:700;color:#d97706;">${omDash}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">DASH</div></div>` : ""}
+            ${omKoosPain && omKoosPain !== "--" ? `<div style="text-align:center;background:#f0fdf4;border-radius:8px;padding:8px 4px;border:1px solid #bbf7d0;"><div style="font-size:18px;font-weight:700;color:#059669;">${omKoosPain}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">KOOS Pain</div></div>` : ""}
+            ${omKoosSport && omKoosSport !== "--" ? `<div style="text-align:center;background:#f0fdf4;border-radius:8px;padding:8px 4px;border:1px solid #bbf7d0;"><div style="font-size:18px;font-weight:700;color:#059669;">${omKoosSport}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">KOOS Sport</div></div>` : ""}
+            ${omKoosQol && omKoosQol !== "--" ? `<div style="text-align:center;background:#f0fdf4;border-radius:8px;padding:8px 4px;border:1px solid #bbf7d0;"><div style="font-size:18px;font-weight:700;color:#059669;">${omKoosQol}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">KOOS QoL</div></div>` : ""}
+          </div>
+          ${Object.keys(omReport).length ? `<div style="margin-top:8px;font-size:9px;color:#64748b;">${Object.entries(omReport).map(([k,v2])=>`<b>${k.toUpperCase()}</b>: ${v2}`).join(" · ")}</div>` : ""}
+        `) : ""}
+
+        ${advHasData ? sec("🔭","Advanced assessment","#4c1d95", `
+          ${kcNotes && kcNotes !== "--" ? fieldRow("Kinetic chain", kcNotes) : ""}
+          ${fascNotes && fascNotes !== "--" ? fieldRow("Fascia / SBL", fascNotes) : ""}
+          ${nktNotes && nktNotes !== "--" ? fieldRow("CPA / NKT pattern", nktNotes) : ""}
+          ${cyriaxNotes && cyriaxNotes !== "--" ? fieldRow("STTT / Cyriax", cyriaxNotes) : ""}
+        `) : ""}
+
+        ${(dxMain && dxMain !== "--") || dxList.length > 0 ? sec("🩺","Clinical diagnosis","#1e3a5f", `
+          ${dxList.length > 0 ? dxList.slice(0,4).map((dx2, i) => `
+            <div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #f1f5f9;">
+              <div style="width:18px;height:18px;border-radius:50%;background:${["#1e3a5f","#334155","#475569","#64748b"][i]};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;">${i+1}</div>
+              <div>
+                <div style="font-size:10.5px;font-weight:700;color:#1e293b;">${escHtml(dx2.diagnosis||"")}</div>
+                <div style="font-size:8.5px;color:#64748b;margin-top:1px;">${dx2.icd10||""} ${dx2.confidence ? "· Confidence: " + Math.round(dx2.confidence) + "%" : ""}</div>
+              </div>
+            </div>`).join("") : ""}
+          ${dxMain && dxMain !== "--" ? `<div style="margin-top:8px;font-size:10px;color:#334155;line-height:1.6;padding:8px;background:#f0f4ff;border-radius:6px;">${dxMain}</div>` : ""}
+          ${dxIcd  && dxIcd  !== "--" ? `<div style="margin-top:4px;font-size:9px;color:#64748b;">ICD-10: ${dxIcd}</div>` : ""}
+          ${dxAssess && dxAssess !== "--" ? `<div style="margin-top:6px;font-size:9px;color:#334155;line-height:1.6;">${dxAssess}</div>` : ""}
+        `) : ""}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:8px 4px;margin-top:4px;">
+          <div>
+            <div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Physiotherapist signature:</div>
+            <div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div>
+            <div style="font-size:8px;color:#94a3b8;">Name · AHPRA registration no. · Date</div>
+          </div>
+          <div>
+            <div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Next review / follow-up:</div>
+            <div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div>
+            <div style="font-size:8px;color:#94a3b8;">Date · Treating clinician · Location</div>
+          </div>
+        </div>
+
+      </div>
+      ${pgFooter(2, 2)}
+    </div>`;
+
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+      <title>Assessment Report — ${escHtml(patName)}</title>
+      <style>${css}</style>
+    </head><body>${page1}${page2}</body></html>`;
   };
+
 
   const buildTreatmentPdf = () => {
     const exercises = gatherExercises();
