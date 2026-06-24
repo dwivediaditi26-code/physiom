@@ -7897,68 +7897,133 @@ ${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div>
           padding:"12px 14px",
           background:"#fff",
         }}>
-          {/* Section title */}
+          {/* Section header card */}
           <div style={{
             display:"flex", justifyContent:"space-between", alignItems:"center",
+            background:currentSec.col+"12",
+            borderLeft:`3px solid ${currentSec.col}`,
+            borderRadius:"0 8px 8px 0",
+            padding:"7px 10px",
             marginBottom:10,
           }}>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontSize:"0.9rem"}}>{currentSec.icon}</span>
-              <span style={{fontSize:"0.82rem",fontWeight:800,color:currentSec.col,letterSpacing:"0.5px",textTransform:"uppercase"}}>
-                {currentSec.label}
-              </span>
+              <span style={{fontSize:"1rem"}}>{currentSec.icon}</span>
+              <div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:currentSec.col,letterSpacing:"0.4px",textTransform:"uppercase",lineHeight:1.2}}>
+                  {currentSec.label}
+                </div>
+                <div style={{fontSize:"0.68rem",color:currentSec.col+"99",marginTop:1}}>
+                  {tab==="S"?"Patient reported":tab==="O"?"Clinical findings":tab==="A"?"Clinical impression":"Treatment & goals"}
+                </div>
+              </div>
             </div>
-            <div style={{display:"flex",gap:5}}>
-              <button onClick={()=>copySection(currentText)} style={{
-                padding:"3px 8px",background:"transparent",
-                border:`1px solid ${currentSec.col}33`,
-                borderRadius:6,color:currentSec.col,
-                cursor:"pointer",fontSize:"0.78rem",fontWeight:700,
-              }}>
-                {copied===tab ? "✅ Copied" : "📋 Copy"}
-              </button>
-            </div>
+            <button onClick={()=>copySection(currentText)} style={{
+              padding:"3px 8px",background:"transparent",
+              border:`1px solid ${currentSec.col}44`,
+              borderRadius:6,color:currentSec.col,
+              cursor:"pointer",fontSize:"0.72rem",fontWeight:700,
+              flexShrink:0,
+            }}>
+              {copied===tab ? "✓ Copied" : "Copy"}
+            </button>
           </div>
 
-          {/* SOAP text — formatted */}
+          {/* SOAP content — card style */}
           {currentText ? (
-            <div style={{background:"#faf5ff",borderRadius:8,padding:"10px 12px",border:"1px solid rgba(124,58,237,0.1)",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+            <div style={{fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
               {currentText.split("\n").map((line,i)=>{
-                if(!line.trim()) return <div key={i} style={{height:6}}/>;
-                // Section header (e.g. "Range of Motion:", "Special Tests:")
-                if(/^[A-Z][A-Za-z /()]+:$/.test(line.trim())){
-                  return <div key={i} style={{fontSize:10,fontWeight:700,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.07em",marginTop:10,marginBottom:3,borderBottom:"1px solid #E0D9F7",paddingBottom:2}}>{line.trim()}</div>;
+                if(!line.trim()) return <div key={i} style={{height:4}}/>;
+
+                // Subsection header e.g. "Range of Motion:", "Special Tests:"
+                if(/^[A-Z][A-Za-z /()&,]+:$/.test(line.trim())){
+                  return (
+                    <div key={i} style={{
+                      display:"flex",alignItems:"center",gap:6,
+                      background:currentSec.col+"18",
+                      borderLeft:`3px solid ${currentSec.col}`,
+                      padding:"5px 10px",
+                      marginTop:10,marginBottom:4,
+                      borderRadius:"0 6px 6px 0",
+                    }}>
+                      <span style={{fontSize:9.5,fontWeight:800,color:currentSec.col,textTransform:"uppercase",letterSpacing:"0.08em"}}>
+                        {line.trim().replace(/:$/,"")}
+                      </span>
+                    </div>
+                  );
                 }
-                // Indented lines
+
+                // Indented item
                 if(line.startsWith("  ")){
                   const txt=line.trim();
                   const isPos=/positive|\+ve/i.test(txt);
-                  const isNeg=/negative|-ve/i.test(txt);
+                  const isNeg=/negative|-ve|normal|intact/i.test(txt);
                   const isFlag=/⚠|❌|urgent|red flag/i.test(txt);
-                  const color=isPos?"#DC2626":isNeg?"#059669":isFlag?"#D97706":"#374151";
-                  const bg=isPos?"#FEF2F2":isNeg?"#F0FDF4":isFlag?"#FFFBEB":"transparent";
-                  const border=isPos?"#FCA5A5":isNeg?"#A7F3D0":isFlag?"#FDE68A":"#E5E7EB";
-                  return <div key={i} style={{fontSize:11.5,color,background:bg,borderLeft:`2px solid ${border}`,paddingLeft:8,paddingTop:2,paddingBottom:2,marginBottom:2,borderRadius:"0 4px 4px 0",fontWeight:isPos||isFlag?600:400}}>{txt}</div>;
+
+                  if(isPos||isNeg){
+                    // Show as two-column row with pill badge
+                    const dashIdx=txt.search(/\s+[—–-]\s+/);
+                    const name=dashIdx>0 ? txt.slice(0,dashIdx).trim() : txt.replace(/\s*(positive|negative|\+ve|-ve|normal|intact).*/i,"").trim()||txt;
+                    return (
+                      <div key={i} style={{
+                        display:"flex",alignItems:"center",justifyContent:"space-between",
+                        padding:"4px 8px",borderBottom:"1px solid #f1f5f9",fontSize:11.5,
+                      }}>
+                        <span style={{color:"#334155",fontWeight:500,flex:1,marginRight:8}}>{name}</span>
+                        <span style={{
+                          fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:10,flexShrink:0,
+                          background:isPos?"#fee2e2":"#dcfce7",
+                          color:isPos?"#dc2626":"#059669",
+                          letterSpacing:"0.03em",
+                        }}>
+                          {isPos?"+ve":"−ve"}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={i} style={{
+                      display:"flex",alignItems:"flex-start",gap:5,
+                      padding:"3px 8px",fontSize:11.5,
+                      color:isFlag?"#d97706":"#374151",
+                    }}>
+                      <span style={{color:isFlag?"#d97706":currentSec.col,flexShrink:0,fontSize:11,marginTop:1,fontWeight:700}}>·</span>
+                      <span style={{fontWeight:isFlag?600:400,lineHeight:1.45}}>{txt}</span>
+                    </div>
+                  );
                 }
-                // Top-level line
-                return <div key={i} style={{fontSize:12,color:"#1a1025",fontWeight:500,marginTop:4,lineHeight:1.5}}>{line}</div>;
+
+                // Top-level line — bold heading
+                return (
+                  <div key={i} style={{
+                    fontSize:12,fontWeight:700,color:"#1e293b",
+                    marginTop:i===0?0:10,marginBottom:2,lineHeight:1.4,
+                  }}>
+                    {line}
+                  </div>
+                );
               })}
             </div>
           ) : (
             <div style={{
-              textAlign:"center",padding:"24px 12px",
+              textAlign:"center",padding:"28px 12px",
               color:"#7e6a9a",fontSize:"0.78rem",lineHeight:1.6,
             }}>
-              <div style={{fontSize:"1.5rem",marginBottom:8}}>
+              <div style={{
+                width:44,height:44,borderRadius:"50%",
+                background:currentSec.col+"15",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:"1.3rem",margin:"0 auto 10px",
+              }}>
                 {tab==="S"?"💬":tab==="O"?"📊":tab==="A"?"🧠":"📝"}
               </div>
-              <div style={{fontWeight:600,marginBottom:4}}>
+              <div style={{fontWeight:700,marginBottom:4,color:"#5b4a78"}}>
                 {tab==="S" ? "Complete the Subjective Assessment" :
                  tab==="O" ? "Perform assessments to auto-fill Objective" :
                  tab==="A" ? "Assessment generates after findings are entered" :
                  "Plan auto-generates from assessment findings"}
               </div>
-              <div style={{fontSize:"0.82rem",color:"#a09ab8"}}>
+              <div style={{fontSize:"0.75rem",color:"#a09ab8"}}>
                 Fill any assessment tab — this updates automatically
               </div>
             </div>
