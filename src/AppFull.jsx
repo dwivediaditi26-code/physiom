@@ -11152,18 +11152,178 @@ const SEED_PATIENT = {
   }
 };
 
+const SEED_PATIENT_2 = {
+  id: "pt_arjun_kapoor_01",
+  name: "Arjun Kapoor",
+  createdAt: "2026-06-20T09:00:00.000Z",
+  updatedAt: "2026-06-20T11:00:00.000Z",
+  hasRedFlags: false,
+  lastDx: "3 months post ACL reconstruction (BPTB graft) — return-to-sport rehabilitation phase",
+  data: {
+    // ── DEMOGRAPHICS ──
+    dem_name:"Arjun Kapoor", dem_dob:"12/09/2003", dem_sex:"Male", dem_dominant:"Right",
+    dem_occupation:"Student / Footballer", dem_employer:"Mumbai FC Youth Academy", dem_work_status:"Part time",
+    dem_referral:"Orthopaedic surgeon (Dr. Rajan, Hinduja Hospital)", dem_gp:"Dr. Singh, Bandra",
+    dem_consent:"Yes — verbal",
+
+    // ── CHIEF COMPLAINT ──
+    cc_main:"Right knee pain and instability — 3 months post ACL reconstruction (BPTB graft). Unable to return to football training. Concerned about re-injury.",
+    cc_body_region:"Knee Right",
+    cc_onset:"Surgical — ACL reconstruction 3 months ago following non-contact pivot injury during football match",
+    cc_duration:"3 months post-op (injury 5 months ago)",
+    cc_vas_now:"2", cc_vas_worst:"6", cc_vas_best:"0",
+    cc_quality:"Anterior knee ache with activity; sharp pain on stairs descent; intermittent swelling after training",
+    cc_notes:"BPTB graft. Surgeon cleared for physiotherapy-guided RTS protocol. Target: return to full training by month 6. Psychologically anxious about re-injury (high TSK).",
+
+    // ── AGGRAVATING / EASING ──
+    knr_agg_mov:["Stairs descent","Deep squatting","Pivoting / change of direction","Running — cutting movements","Jumping and landing"],
+    knr_agg_act:["Football training drills","Prolonged walking >30 min","Kneeling","Getting up from floor"],
+    knr_agg_worst:"Stairs descent and landing from jump",
+    knr_agg_notes:"Anterior knee pain likely donor site irritation (BPTB). Swelling after >45 min activity. No true instability episodes but perception of giving way.",
+    knr_rel_mov:["Rest","Ice after activity","Elevation"],
+    knr_rel_notes:"Swelling settles within 2 hours with RICE. Morning stiffness <10 minutes.",
+
+    // ── 24H BEHAVIOUR ──
+    knr_morning:"Mild stiffness — settles within 10 minutes",
+    knr_night:"Occasional ache if overdone during day — not waking",
+    cc_24h_pattern:"Intermittent — activity-dependent",
+
+    // ── PMH / HISTORY ──
+    hx_first:"First significant knee injury",
+    hx_previous_injury:"Right knee ACL tear — non-contact pivot injury, Mumbai FC U19 league match, January 2026",
+    hx_surgery:"Right ACL reconstruction with BPTB graft — Hinduja Hospital, March 2026 (Dr. Rajan)",
+    hx_imaging:"MRI pre-op: complete ACL tear, bone bruising medial tibial plateau. Post-op X-ray: satisfactory graft positioning.",
+    hx_imaging_detail:"Tunnel placement confirmed adequate. No meniscal repair required.",
+    hx_providers:"Orthopaedic surgeon, hospital physiotherapist (weeks 0–6)",
+    hx_notes:"Weeks 0–6: hospital physio — range of motion, quadriceps activation, gait retraining. Weeks 6–12: gym-based strengthening. Now week 13 — starting sport-specific rehab phase.",
+    hx_resolve:"Progressing well — achieved 0–120° ROM, able to jog on treadmill",
+
+    // ── MEDICATIONS / PMH ──
+    pmh_conditions:"Nil significant",
+    pmh_medications:"Nil regular. Ibuprofen PRN for post-training swelling (as needed).",
+    pmh_allergies:"NKDA",
+    pmh_notes:"Pre-injury: fit, healthy, playing competitive football 5x/week. No previous knee pathology.",
+
+    // ── GOALS ──
+    ar_goal_function:"Return to full football training and match play",
+    ar_goal_pain:"Pain-free activity and training",
+    ar_goal_return:"Return to competitive football by month 6 (September 2026)",
+    goal_expect:"Expects full recovery — motivated and compliant",
+    goal_belief:"Understands surgical repair was successful; concerned about re-rupture risk",
+    goal_concern:"Fear of re-injury during return to sport",
+    goal_notes:"High athletic motivation. Mild kinesiophobia (TSK elevated). Needs education on graft maturation timeline and graduated RTS criteria.",
+
+    // ── PSYCHOSOCIAL ──
+    tsk_q1:"3", tsk_q2:"2", tsk_q3:"3", tsk_q4:"2", tsk_q5:"3",
+    tsk_q6:"2", tsk_q7:"3", tsk_q8:"2", tsk_q9:"3", tsk_q10:"2", tsk_q11:"3",
+    fabq_pa1:"3", fabq_pa2:"3", fabq_pa3:"2", fabq_pa4:"3",
+    fabq_w5:"1", fabq_w6:"1", fabq_w7:"1", fabq_w9:"1", fabq_w10:"1", fabq_w11:"1", fabq_w15:"1",
+
+    // ── OBSERVATION ──
+    obs_gait:"Mild antalgic gait right side — reduced knee flexion in swing phase. Foot progression angle normal bilateral.",
+    obs_posture:"Slight quadriceps wasting right compared to left. Mild anterior pelvic tilt.",
+    obs_swelling:"Trace effusion right knee — medial parapatellar region. No warmth.",
+    obs_muscle_wasting:"Right quadriceps — approximately 1.5cm circumference deficit vs left at 15cm above patella",
+
+    // ── ROM ──
+    rom_knee_flex_r:"118°", rom_knee_flex_l:"135°",
+    rom_knee_ext_r:"−2° extension lag", rom_knee_ext_l:"0°",
+    rom_hip_flex_r:"115°", rom_hip_flex_l:"120°",
+    rom_ankle_df_r:"14°", rom_ankle_df_l:"18°",
+
+    // ── MMT ──
+    mmt_quad_r:"4/5", mmt_quad_l:"5/5",
+    mmt_hams_r:"4+/5", mmt_hams_l:"5/5",
+    mmt_glut_med_r:"4/5", mmt_glut_med_l:"5/5",
+    mmt_glut_max_r:"4+/5", mmt_glut_max_l:"5/5",
+    mmt_gastroc_r:"5/5", mmt_gastroc_l:"5/5",
+    mmt_hip_flex_r:"4+/5", mmt_hip_flex_l:"5/5",
+
+    // ── SPECIAL TESTS ──
+    st_lachman:"Negative — firm end feel. Grade 0.",
+    st_anterior_drawer:"Negative",
+    st_pivot_shift:"Negative under anaesthetic (intra-op). Not tested — post-op.",
+    st_mcmurray:"Negative bilateral",
+    st_thessaly:"Negative right",
+    st_valgus_stress:"Negative",
+    st_varus_stress:"Negative",
+    st_patellar_grind:"Positive — anterior knee pain with compression and grind (donor site irritation)",
+    st_clarke:"Positive — anterior knee pain (BPTB harvest site)",
+    st_posterior_drawer:"Negative",
+    st_dial:"Negative",
+
+    // ── NEUROLOGICAL ──
+    n_l3_right:"Normal", n_l3_left:"Normal",
+    n_l4_right:"Normal", n_l4_left:"Normal",
+    n_l5_right:"Normal", n_l5_left:"Normal",
+    n_s1_right:"Normal", n_s1_left:"Normal",
+    mmt_l3_r:"5/5", mmt_l4_r:"5/5", mmt_l5_r:"5/5", mmt_s1_r:"5/5",
+    n_ref_patella_right:"Normal 2+", n_ref_patella_left:"Normal 2+",
+    n_ref_achilles_right:"Normal 2+", n_ref_achilles_left:"Normal 2+",
+
+    // ── FUNCTIONAL SCREEN ──
+    kfs_data: JSON.stringify({
+      grades: {
+        kfs_squat: 1,
+        kfs_step_down: 2,
+        kfs_single_leg: 2,
+        kfs_lunge: 1,
+        kfs_hop: 2,
+      },
+      notes: {
+        kfs_squat: "Compensated — reduced depth right, quadriceps dominance pattern",
+        kfs_step_down: "Abnormal — dynamic valgus right knee on descent, Trendelenburg right hip",
+        kfs_single_leg: "Abnormal — excessive trunk lean right, knee medialises past 2nd toe",
+        kfs_lunge: "Compensated — anterior trunk lean, reduced knee flexion range",
+        kfs_hop: "Abnormal — LSI (Limb Symmetry Index) 68% single hop, 71% triple hop — below 90% RTS threshold",
+      }
+    }),
+
+    // ── OUTCOME MEASURES ──
+    om_lefs_score:"52",
+    om_psfs1:"Running and changing direction", om_psfs1_now:"3",
+    om_psfs2:"Stairs descent", om_psfs2_now:"5",
+    om_psfs3:"Single leg squat", om_psfs3_now:"4",
+    om_koos_pain:"72", om_koos_adl:"78", om_koos_sport:"38", om_koos_qol:"31",
+
+    // ── GAIT ANALYSIS ──
+    gait_antalgic:"Right — reduced knee flexion swing phase",
+    gait_trendelenburg:"Positive right — gluteus medius weakness",
+    gait_step_length:"Reduced right stride length",
+    gait_cadence:"Normal",
+    gait_notes:"Compensatory strategies evident — trunk lean right during stance, reduced push-off right. Consistent with quadriceps inhibition pattern post ACL.",
+
+    // ── WORKING DIAGNOSIS / SOAP A ──
+    soap_a_diagnosis:"3 months post right ACL reconstruction (BPTB graft) — return-to-sport rehabilitation",
+    soap_icd10:"M23.619",
+    soap_assessment:"Patient is 13 weeks post right ACL reconstruction. Demonstrates adequate ROM (118° flexion, −2° extension lag) with significant quadriceps inhibition (4/5 MMT, 1.5cm thigh wasting). Functional testing reveals LSI of 68–71% on hop tests — below the 90% threshold required for RTS. Dynamic valgus on step-down and single leg squat indicates hip abductor deficit contributing to ACL stress. Anterior knee pain consistent with BPTB donor site irritation (Patellar grind and Clarke's test positive). Psychosocial screening reveals elevated fear of re-injury (TSK). Prognosis: good for return to full competition at 6 months with targeted strengthening, neuromuscular control, and graduated RTS protocol.",
+    soap_a:"3/12 post R ACL reconstruction (BPTB). Quadriceps inhibition — LSI 68%. Dynamic valgus on loading tasks — hip abductor deficit. BPTB donor site irritation — anterior knee pain. Elevated kinesiophobia (TSK). Not yet cleared for RTS — requires LSI >90% and psychological readiness.",
+
+    // ── TREATMENT ──
+    soap_modalities:"Neuromuscular electrical stimulation (NMES) to right quadriceps, blood flow restriction training (BFR), manual therapy — patellar mobilisation",
+    soap_frequency:"2x per week physiotherapy + daily HEP",
+    tx_techniques:"NMES quadriceps, BFR training, patellar mobilisation grade III–IV, hip abductor/external rotator strengthening",
+    hep_programme:"Quad sets + SLR 3x15, Terminal knee extension with band 3x15, Single leg press 0–60° 3x12, Hip abductor side-lying 3x15, Nordic curl progression 3x8, Balance board single leg 3x45s, Step-down eccentric control 3x12",
+
+    // ── PLAN ──
+    soap_plan:"Phase 3 RTS protocol: (1) Achieve full extension, quadriceps LSI >80% (weeks 13–16). (2) Plyometric loading — box jumps, deceleration drills, lateral cuts (weeks 16–20). (3) Sport-specific drills — ball work, full training if LSI >90% and psychological clearance (weeks 20–24). Review with surgeon at month 6.",
+    soap_goals:"LSI >90% hop tests by week 20. Full training by month 6. Reduce TSK score — graded exposure and education.",
+    soap_review:"2 weeks",
+  }
+};
+
 const DEMO_PATIENTS = [];
 
-const DEMO_VERSION = "v2026-06b"; // bump this when demo patients change
+const DEMO_VERSION = "v2026-06c"; // bump this when demo patients change
 
 function loadPatientDB() {
   try {
     // One-time clear: if user has old demo data from before v2026-06-21, wipe it
-    const cleared = localStorage.getItem("pm_cleared_demo_v4");
+    const cleared = localStorage.getItem("pm_cleared_demo_v5");
     if (!cleared) {
       localStorage.removeItem(DB_KEY);
       localStorage.removeItem(DRAFT_KEY);
-      localStorage.setItem("pm_cleared_demo_v4", "1");
+      localStorage.setItem("pm_cleared_demo_v5", "1");
     }
     const stored = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
     // Remove any old demo patients that were previously seeded
@@ -11171,13 +11331,15 @@ function loadPatientDB() {
     if (real.length !== stored.length) {
       try { localStorage.setItem(DB_KEY, JSON.stringify(real)); } catch {}
     }
-    // Seed Priya Sharma if no patients exist, or data is outdated (< full field count)
-    const priya = real.find(p => p.id === SEED_PATIENT.id);
+    // Seed both demo patients if missing or outdated
+    const priya  = real.find(p => p.id === SEED_PATIENT.id);
+    const arjun  = real.find(p => p.id === SEED_PATIENT_2.id);
     const needsSeed = real.length === 0 ||
-      (priya && Object.keys(priya.data || {}).length < 230);
+      (priya && Object.keys(priya.data || {}).length < 230) ||
+      !arjun;
     if (needsSeed) {
-      const others = real.filter(p => p.id !== SEED_PATIENT.id);
-      const seeded = [SEED_PATIENT, ...others];
+      const others = real.filter(p => p.id !== SEED_PATIENT.id && p.id !== SEED_PATIENT_2.id);
+      const seeded = [SEED_PATIENT, SEED_PATIENT_2, ...others];
       try { localStorage.setItem(DB_KEY, JSON.stringify(seeded)); } catch {}
       try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: SEED_PATIENT.id, data: SEED_PATIENT.data })); } catch {}
       return seeded;
