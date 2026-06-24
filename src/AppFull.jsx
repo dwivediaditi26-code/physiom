@@ -15692,7 +15692,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
 }
 
 
-function PdfReportsModal({ data, dx, onClose }) {
+function PdfReportsModal({ data, dx, onClose, patients=[] }) {
   const [generating, setGenerating] = useState(null);
   const [done, setDone] = useState({});
 
@@ -18275,6 +18275,7 @@ function AppInner({ currentUser, onSignOut }) {
         <PdfReportsModal
           data={data}
           dx={dx}
+          patients={patients}
           onClose={()=>setShowPdfReports(false)}
         />
       )}
