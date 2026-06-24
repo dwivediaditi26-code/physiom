@@ -15976,7 +15976,7 @@ function PdfReportsModal({ data, dx, onClose }) {
     };
 
     // ── patient meta ──────────────────────────────────────────────────────
-    const patName   = v("dem_name", patName || "Patient");
+    const patName   = v("dem_name", "Patient");
     const dob       = v("dem_dob");
     const sex       = v("dem_sex");
     const occ       = v("dem_occupation");
