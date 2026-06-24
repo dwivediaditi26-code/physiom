@@ -7087,7 +7087,10 @@ function KineticChainSection({ data, set, navContext={} }) {
                 {/* How to */}
                 <div style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, padding:12, marginBottom:12 }}>
                   <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
-                  <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>{t.how}</div>
+                  <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                    <SmallClinicalImg id={t.id} title={t.label} />
+                    <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7, flex:1 }}>{t.how}</div>
+                  </div>
                 </div>
 
                 {/* Options */}
@@ -7138,7 +7141,10 @@ function KineticChainSection({ data, set, navContext={} }) {
 
             <div style={{ marginBottom:14 }}>
               <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
-              <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8 }}>{modalTest.how}</div>
+              <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                <SmallClinicalImg id={modalTest.id} title={modalTest.label} />
+                <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8, flex:1 }}>{modalTest.how}</div>
+              </div>
             </div>
 
             <div style={{ marginBottom:14 }}>
