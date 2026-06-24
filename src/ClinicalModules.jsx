@@ -2456,6 +2456,22 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (noteParts.length) S_parts.push(`${r} — Clinical notes: ${noteParts.join(". ")}.`);
   });
 
+  // Global clinician notes from all textarea "Notes" fields in Subjective
+  const ccNotes   = v("cc_notes");
+  const hxNotes   = v("hx_notes");
+  const goalNotes = v("goal_notes");
+  const grfNotes  = v("grf_notes");
+  const pmhNotes  = v("pmh_notes");
+  const lsNotes   = v("ls_notes");
+  const demNotes  = v("dem_notes");
+  if (ccNotes)   S_parts.push(`Clinician note (complaint): ${ccNotes}.`);
+  if (hxNotes)   S_parts.push(`Clinician note (history): ${hxNotes}.`);
+  if (goalNotes) S_parts.push(`Clinician note (goals/beliefs): ${goalNotes}.`);
+  if (grfNotes)  S_parts.push(`Clinician note (red flags): ${grfNotes}.`);
+  if (pmhNotes)  S_parts.push(`Clinician note (PMH): ${pmhNotes}.`);
+  if (lsNotes)   S_parts.push(`Clinician note (lifestyle): ${lsNotes}.`);
+  if (demNotes)  S_parts.push(`Clinician note (demographics): ${demNotes}.`);
+
   if (extraS) S_parts.push(extraS);
 
   // ── O: OBJECTIVE ──────────────────────────────────────────────────────────
@@ -3080,6 +3096,19 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       { key: "tmjfs_data",label: "TMJ Functional Screen" },
       { key: "cfs_data",  label: "Cervical Functional Screen" },
     ];
+    // Human-readable labels for functional screen test IDs
+    const FS_TEST_LABELS = {
+      kfs_squat:"Double Leg Squat", kfs_lunge:"Forward Lunge", kfs_step:"Lateral Step Down",
+      kfs_step_down:"Step Down", kfs_single_leg:"Single Leg Squat", kfs_hop:"Single Leg Hop",
+      lfs_flexion:"Lumbar Flexion", lfs_extension:"Lumbar Extension", lfs_sidebend:"Side Bend",
+      lfs_squat:"Squat Pattern", lfs_rotation:"Lumbar Rotation",
+      sfs_overhead:"Overhead Reach", sfs_scaption:"Scaption", sfs_push_up:"Push Up",
+      sfs_irt:"Internal Rotation", sfs_ert:"External Rotation",
+      hfs_squat:"Single Leg Squat", hfs_bridge:"Hip Bridge", hfs_clam:"Clamshell",
+      hfs_step:"Step Down", hfs_lunge:"Lunge",
+      afs_df:"Dorsiflexion Screen", afs_calf:"Calf Raise", afs_hop:"Hop & Stick", afs_squat:"Squat",
+    };
+    const fsLabel = (id) => FS_TEST_LABELS[id] || id.replace(/^[a-z]+fs_/, "").replace(/_/g, " ").replace(/\w/g, c => c.toUpperCase());
     const gradeLabel = (g) => g === 0 ? "Normal" : g === 1 ? "Compensated" : g === 2 ? "Abnormal" : `Grade ${g}`;
     const gradeFlag  = (g) => g === 0 ? "✅" : g === 1 ? "⚠️" : "🔴";
     FS_REGIONS.forEach(({ key, label }) => {
@@ -3090,32 +3119,28 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       const { findings = {}, grades = {}, notes = {} } = parsed;
       const gradeEntries = Object.entries(grades);
       const findingEntries = Object.entries(findings).filter(([,v]) => v && String(v).trim());
-      // Show if grades OR findings have data
       if (!gradeEntries.length && !findingEntries.length) return;
       const fsLines = [];
-      // Grade summary
       if (gradeEntries.length) {
-        const abnormal    = gradeEntries.filter(([,g]) => g === 2).map(([id]) => id.replace(/_/g, " "));
-        const compensated = gradeEntries.filter(([,g]) => g === 1).map(([id]) => id.replace(/_/g, " "));
-        const normal      = gradeEntries.filter(([,g]) => g === 0).map(([id]) => id.replace(/_/g, " "));
+        const abnormal    = gradeEntries.filter(([,g]) => g === 2).map(([id]) => fsLabel(id));
+        const compensated = gradeEntries.filter(([,g]) => g === 1).map(([id]) => fsLabel(id));
+        const normal      = gradeEntries.filter(([,g]) => g === 0).map(([id]) => fsLabel(id));
         if (abnormal.length)    fsLines.push(`  🔴 Abnormal: ${abnormal.join(", ")}`);
         if (compensated.length) fsLines.push(`  ⚠️  Compensated: ${compensated.join(", ")}`);
         if (normal.length && (abnormal.length || compensated.length))
           fsLines.push(`  ✅ Normal: ${normal.join(", ")}`);
       }
-      // Findings fallback (when grades not set)
       if (!gradeEntries.length && findingEntries.length) {
         const positives = findingEntries.filter(([,v]) => {
           const s = String(v).toLowerCase();
           return s.includes("positive") || s.includes("present") || s.includes("abnormal") || s.includes("impaired") || s.includes("reduced") || s.includes("restricted") || s.includes("yes");
-        }).map(([id,v]) => `${id.replace(/_/g," ")}: ${String(v).slice(0,60)}`);
-        const allFindings = findingEntries.map(([id,v]) => `${id.replace(/_/g," ")}: ${String(v).slice(0,60)}`);
+        }).map(([id,v]) => `${fsLabel(id)}: ${String(v).slice(0,60)}`);
+        const allFindings = findingEntries.map(([id,v]) => `${fsLabel(id)}: ${String(v).slice(0,60)}`);
         const toShow = positives.length ? positives : allFindings.slice(0,6);
         if (toShow.length) fsLines.push(`  Findings: ${toShow.join("; ")}`);
       }
-      // Notes
       const noteEntries = Object.entries(notes).filter(([,n]) => n && String(n).trim());
-      if (noteEntries.length) fsLines.push(`  Notes: ${noteEntries.map(([id,n]) => `${id.replace(/_/g," ")}: ${String(n).slice(0,80)}`).join("; ")}`);
+      if (noteEntries.length) fsLines.push(`  Notes: ${noteEntries.map(([id,n]) => `${fsLabel(id)}: ${String(n).slice(0,80)}`).join("; ")}`);
       if (fsLines.length) O_parts.push(`${label}:\n${fsLines.join("\n")}.`);
     });
   }
