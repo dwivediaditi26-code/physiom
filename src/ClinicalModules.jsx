@@ -2509,6 +2509,42 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (allP.length) O_parts.push(`Observation/Posture:\n  ${allP.join("\n  ")}.`);
   }
 
+  // ── OBSERVATION (ObservationModule obs_* fields) ─────────────────────────
+  {
+    const obsItems = [];
+    if (v("obs_summary")) obsItems.push(`Summary: ${v("obs_summary")}`);
+    const obsGroups = [
+      ["obs_appearance","Appearance"],["obs_build","Build"],["obs_attitude","Attitude"],
+      ["obs_consciousness","Consciousness"],["obs_nutrition","Nutrition"],
+      ["obs_posture_head","Head/Neck"],["obs_posture_shoulders","Shoulders"],
+      ["obs_posture_scapula","Scapula"],["obs_posture_thoracic","Thoracic"],
+      ["obs_posture_lumbar","Lumbar"],["obs_posture_pelvis","Pelvis"],
+      ["obs_posture_lower","Knees"],["obs_posture_feet","Feet"],
+    ];
+    const obsAbnormal = obsGroups.filter(([k]) => {
+      const val = v(k);
+      return val && !/neutral|normal|symmetrical|alert|cooperat|healthy/i.test(val);
+    }).map(([k,label]) => `${label}: ${v(k)}`);
+    if (obsAbnormal.length) obsItems.push(`Postural deviations: ${obsAbnormal.join(", ")}`);
+    if (v("obs_swelling_present")==="Present") {
+      const swInfo = [v("obs_swelling_location"),v("obs_swelling_grade"),v("obs_swelling_type")].filter(Boolean).join(", ");
+      obsItems.push(`Swelling: Present${swInfo ? " — "+swInfo : ""}`);
+    }
+    const skinParts = [
+      v("obs_skin_color") && `Skin colour: ${v("obs_skin_color")}`,
+      v("obs_skin_temp") && `Temp: ${v("obs_skin_temp")}`,
+      v("obs_atrophy") && `Atrophy: ${v("obs_atrophy")}`,
+      v("obs_scar") && `Scar: ${v("obs_scar")}`,
+    ].filter(Boolean);
+    if (skinParts.length) obsItems.push(skinParts.join(", "));
+    if (v("obs_deformity_present")==="Present") obsItems.push(`Deformity: ${v("obs_deformity_description")||"Present"}`);
+    if (v("obs_assistive_device")) obsItems.push(`Assistive device: ${v("obs_assistive_device")}`);
+    if (v("obs_general_notes")) obsItems.push(v("obs_general_notes"));
+    if (v("obs_muscle_bulk") && v("obs_muscle_bulk") !== "Symmetrical")
+      obsItems.push(`Muscle bulk: ${v("obs_muscle_bulk")}${v("obs_muscle_location") ? " — "+v("obs_muscle_location") : ""}`);
+    if (obsItems.length) O_parts.push(`Observation:\n  ${obsItems.join("\n  ")}.`);
+  }
+
   // ── PALPATION ────────────────────────────────────────────────────────────
   {
     const palpRows = [];
@@ -3071,14 +3107,19 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (omRows.length) O_parts.push(`Outcome Measures:\n  ${omRows.join("\n  ")}.`);
   }
 
-  // Gait
-  const gaitObs = v("gait_observation") || v("gait_pattern") || v("gait_notes");
-  const gaitDevs = a("gait_deviations");
-  if (gaitObs || gaitDevs) O_parts.push(`Gait Analysis: ${[gaitObs, gaitDevs && `Deviations: ${gaitDevs}`].filter(Boolean).join(". ")}.`);
-
-  // Functional Movement
-  const fmaObs = v("fma_squat") || v("fma_notes") || v("fma_movement") || v("functional_notes");
-  if (fmaObs) O_parts.push(`Functional Movement: ${fmaObs}.`);
+  // ── GAIT ──────────────────────────────────────────────────────────────────
+  {
+    const gaitParts = [];
+    if (v("gait_pattern"))      gaitParts.push(`Pattern: ${v("gait_pattern")}`);
+    if (v("gait_antalgic"))     gaitParts.push(`Antalgic: ${v("gait_antalgic")}`);
+    if (v("gait_trendelenburg"))gaitParts.push(`Trendelenburg: ${v("gait_trendelenburg")}`);
+    if (v("gait_cadence"))      gaitParts.push(`Cadence: ${v("gait_cadence")}`);
+    const gaitDevs2 = a("gait_deviations");
+    if (gaitDevs2)              gaitParts.push(`Deviations: ${gaitDevs2}`);
+    const gaitNotes2 = v("gait_notes") || v("gait_obs");
+    if (gaitNotes2)             gaitParts.push(gaitNotes2);
+    if (gaitParts.length) O_parts.push(`Gait Analysis:\n  ${gaitParts.join("\n  ")}.`);
+  }
 
 
   // ── ADVANCED FUNCTIONAL SCREENS (v2) (*fs_data fields) ────────────────────────
