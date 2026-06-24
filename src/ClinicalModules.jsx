@@ -2951,18 +2951,26 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       ["kc_cervical_thoracic_jct","CT Junction"],["kc_cervical_rot_mob","Cervical Rotation"],
       ["kc_cervical_flex_ext","Cervical Flex/Ext"],
     ];
-    const kcFail = [], kcPass = [];
+    const kcFail = [], kcHyper = [], kcOther = [], kcPass = [];
+    const FAIL_RE  = /restrict|limit|dysfunc|unstable|abnormal|fail|hypomob|tight|valgus|dominant|positive|absent|crepitus|deviation|aslr|gird|chin.poke|no.ta|no.activation/i;
+    const HYPER_RE = /hyper|lax|excess|cervicothoracic.instab/i;
+    const NORM_RE  = /normal|pass|adequate|full/i;
     KC_IDS.forEach(([id, label]) => {
-      const val = String(data[id]||"").trim().toLowerCase();
-      if (!val) return;
-      if (val.includes("restricted") || val.includes("fail") || val.includes("limited") || val.includes("dysfunc") || val.includes("unstable") || val.includes("abnormal"))
-        kcFail.push(`${label} (${data[id].toString().slice(0,30)})`);
-      else if (val.includes("normal") || val.includes("pass") || val.includes("adequate"))
-        kcPass.push(label);
+      const raw = data[id];
+      if (!raw || !String(raw).trim()) return;
+      const val = String(raw).trim();
+      const lc  = val.toLowerCase();
+      const short = val.slice(0, 35);
+      if (FAIL_RE.test(lc))                        kcFail.push(`${label} (${short})`);
+      else if (HYPER_RE.test(lc))                  kcHyper.push(`${label} (${short})`);
+      else if (NORM_RE.test(lc))                   kcPass.push(label);
+      else                                          kcOther.push(`${label} (${short})`);
     });
     const kcNotes = data["kc_notes"] || data["kc_summary"];
-    if (kcFail.length) kcLines.push(`  Dysfunction identified: ${kcFail.join("; ")}`);
-    if (kcPass.length && kcFail.length) kcLines.push(`  Normal: ${kcPass.slice(0,5).join(", ")}`);
+    if (kcFail.length)  kcLines.push(`  Restricted/Dysfunctional: ${kcFail.join("; ")}`);
+    if (kcHyper.length) kcLines.push(`  Hypermobile/Lax: ${kcHyper.join("; ")}`);
+    if (kcOther.length) kcLines.push(`  Other findings: ${kcOther.join("; ")}`);
+    if (kcPass.length)  kcLines.push(`  Normal: ${kcPass.slice(0,6).join(", ")}${kcPass.length>6?" + more":""}`);
     if (kcNotes) kcLines.push(`  Notes: ${String(kcNotes).slice(0,120)}`);
     if (kcLines.length) O_parts.push(`Kinetic Chain Assessment:\n${kcLines.join("\n")}.`);
   }
@@ -4241,9 +4249,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 ["kc_cervical_thoracic_jct","CT Junction"],["kc_cervical_rot_mob","Cervical Rot"],["kc_cervical_flex_ext","Cervical Flex/Ext"]];
               const items = KC.map(([id,label])=>{const val=v(id);return val?{id,label,val}:null;}).filter(Boolean);
               if(!items.length) return null;
-              const fail=items.filter(({val})=>/restrict|limit|dysfunc|unstable|abnormal|fail|hypomob|tight/i.test(val));
-              const hyper=items.filter(({val})=>/hyper|lax|excess|unstable/i.test(val));
-              const norm=items.filter(({val})=>/normal|pass|adequate|full/i.test(val));
+              const fail=items.filter(({val})=>/restrict|limit|dysfunc|unstable|abnormal|fail|hypomob|tight|valgus|dominant|positive|absent|crepitus|deviation|aslr|gird|chin.poke|no.ta|no.activation/i.test(val));
+              const hyper=items.filter(({val})=>!/restrict|limit|dysfunc|unstable|abnormal|fail|hypomob|tight|valgus|dominant|positive|absent|crepitus|deviation|aslr|gird|chin.poke|no.ta|no.activation/i.test(val)&&/hyper|lax|excess|cervicothoracic.instab/i.test(val));
+              const norm=items.filter(({val})=>!/restrict|limit|dysfunc|unstable|abnormal|fail|hypomob|tight|valgus|dominant|positive|absent|crepitus|deviation|aslr|gird|chin.poke|no.ta|no.activation|hyper|lax|excess|cervicothoracic.instab/i.test(val)&&/normal|pass|adequate|full/i.test(val));
+              const other=items.filter(({val})=>!/restrict|limit|dysfunc|unstable|abnormal|fail|hypomob|tight|valgus|dominant|positive|absent|crepitus|deviation|aslr|gird|chin.poke|no.ta|no.activation|hyper|lax|excess|cervicothoracic.instab|normal|pass|adequate|full/i.test(val));
               return <div style={{marginTop:4}}>
                 {fail.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#B45309",marginBottom:3}}>Restricted / Dysfunctional</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
@@ -4252,6 +4261,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 {hyper.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#7C3AED",marginBottom:3}}>Hypermobile / Lax</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
                     {hyper.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#EDE9FE",color:"#5B21B6",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}
+                  </div></>}
+                {other.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#0369A1",marginBottom:3}}>Other Findings</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                    {other.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#E0F2FE",color:"#0369A1",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}
                   </div></>}
                 {norm.length>0&&<div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Normal: {norm.map(({label})=>label).join(", ")}</div>}
                 {v("kc_notes")&&<div style={{fontSize:11,color:"#374151",marginTop:2}}>Notes: {v("kc_notes")}</div>}
