@@ -2443,18 +2443,23 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   ].filter(Boolean);
   if (bpsParts.length) S_parts.push(`Biopsychosocial factors: ${bpsParts.join(". ")}.`);
 
-  // Region-specific notes
-  _soap_regions.forEach(r => {
-    const px = REG_MOD_S[r]?.prefix || "";
-    if (!px) return;
-    const fnNotes = v(`${px}_fn_notes`) || v(`${px}_fn_psfs`);
-    const sympNotes = v(`${px}_symp_notes`);
-    const locNotes = v(`${px}_loc_notes`);
-    const aggNotes = v(`${px}_agg_notes`);
-    const relNotes = v(`${px}_rel_notes`);
-    const noteParts = [locNotes, aggNotes, relNotes, sympNotes, fnNotes].filter(Boolean);
-    if (noteParts.length) S_parts.push(`${r} — Clinical notes: ${noteParts.join(". ")}.`);
-  });
+  // Region-specific clinician notes — activePrefixes used (REG_MOD_S not in scope here)
+  {
+    const REGION_LABELS = {cx:"Cervical",lx:"Lumbar/SI",shl:"Shoulder L",shr:"Shoulder R",
+      hp:"Hip",knl:"Knee L",knr:"Knee R",af:"Ankle/Foot",ew:"Elbow/Wrist",tx:"Thoracic"};
+    activePrefixes.forEach(px => {
+      const locNotes  = v(`${px}_loc_notes`);
+      const moiNotes  = v(`${px}_moi_notes`);
+      const aggNotes  = v(`${px}_agg_notes`);
+      const relNotes  = v(`${px}_rel_notes`);
+      const sympNotes = v(`${px}_symp_notes`);
+      const fnNotes   = v(`${px}_fn_notes`) || v(`${px}_fn_psfs`);
+      const noteParts = [locNotes, moiNotes, aggNotes, relNotes, sympNotes, fnNotes].filter(Boolean);
+      if (noteParts.length) {
+        S_parts.push(`${REGION_LABELS[px]||px.toUpperCase()} — Clinician notes: ${noteParts.join(". ")}.`);
+      }
+    });
+  }
 
   // Global clinician notes from all textarea "Notes" fields in Subjective
   const ccNotes   = v("cc_notes");
@@ -4007,6 +4012,34 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           </>}
           {goals_ar.length>0&&<><span style={lbl}>Patient goals</span><div style={{marginBottom:8}}>{goals_ar.map((g,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"3px 0",display:"flex",gap:6}}><span style={{color:"#6366F1"}}>→</span>{g}</div>)}</div></>}
           {v("dem_occupation")&&<div style={{fontSize:12,color:"#9CA3AF"}}>{v("dem_occupation")}{v("dem_dominant_hand")?" · "+v("dem_dominant_hand")+" hand":""}</div>}
+          {/* ── Regional clinician notes (loc_notes, moi_notes, agg_notes, rel_notes, symp_notes) ── */}
+          {(()=>{
+            const PFXS=["cx","lx","shl","shr","hp","knl","knr","af","ew","tx"];
+            const PFX_LABELS={cx:"Cervical",lx:"Lumbar/SI",shl:"Shoulder L",shr:"Shoulder R",hp:"Hip",knl:"Knee L",knr:"Knee R",af:"Ankle/Foot",ew:"Elbow/Wrist",tx:"Thoracic"};
+            const noteGroups=PFXS.flatMap(px=>{
+              const parts=[
+                v(`${px}_loc_notes`)  && {label:"Location",  text:v(`${px}_loc_notes`)},
+                v(`${px}_moi_notes`)  && {label:"Mechanism", text:v(`${px}_moi_notes`)},
+                v(`${px}_agg_notes`)  && {label:"Aggravating",text:v(`${px}_agg_notes`)},
+                v(`${px}_rel_notes`)  && {label:"Relieving",  text:v(`${px}_rel_notes`)},
+                v(`${px}_symp_notes`) && {label:"Behaviour",  text:v(`${px}_symp_notes`)},
+              ].filter(Boolean);
+              return parts.length?[{region:PFX_LABELS[px]||px.toUpperCase(),parts}]:[];
+            });
+            if(!noteGroups.length) return null;
+            return <><span style={lbl}>Clinician notes</span>
+              {noteGroups.map(({region,parts},i)=>(
+                <div key={i} style={{marginBottom:6,background:"#F8F7FF",borderRadius:8,padding:"7px 10px",borderLeft:"3px solid #6366F1"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#6366F1",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.07em"}}>{region}</div>
+                  {parts.map(({label,text},j)=>(
+                    <div key={j} style={{fontSize:12,color:"#374151",lineHeight:1.6,marginBottom:2}}>
+                      <span style={{fontWeight:600,color:"#6B7280"}}>{label}: </span>{text}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </>;
+          })()}
           <textarea placeholder="Additional subjective notes..." value={extraS} onChange={e=>setExtraS(e.target.value)} onBlur={()=>set("soap_extra_s",extraS)} style={{...inp,resize:"vertical",minHeight:40,marginTop:8}}/>
         </div>
       </div>
