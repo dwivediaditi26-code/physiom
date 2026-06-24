@@ -15715,65 +15715,56 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
   const arr = (k) => { const v=d[k]; return Array.isArray(v)?v:(typeof v==="string"?v:"").split("|||").filter(Boolean); };
 
   const pdfHeader = (title, subtitle, color) => {
-    const clinicAddr = d.clinic_address || "Suite 100, PhysioMind HQ, 1 Digital Drive, Mumbai 400001";
-    const clinicPhone = d.clinic_phone || "+91 98765 43210";
-    const clinicWeb = d.clinic_web || "www.physiomind.app";
-    const therapistName = d.therapist_name || "Your Physiotherapist";
-    const therapistQual = d.therapist_qual || "MPT | AHPRA Registered";
     const reportNo = d.report_no || ("RPT-" + today.replace(/\s/g,""));
-    return `<div>
-    <div style="background:linear-gradient(135deg,${color} 0%,${color}ee 60%,#1a3358 100%);color:#fff;padding:22px 40px 18px;position:relative;overflow:hidden;">
-      <div style="position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);"></div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1;">
-        <div style="display:flex;gap:14px;align-items:center;">
-          <div style="width:52px;height:52px;background:rgba(255,255,255,0.12);border-radius:14px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.2);flex-shrink:0;">
-            <svg viewBox="0 0 48 48" width="34" height="34" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="24" cy="22" rx="14" ry="12" fill="none" stroke="#e8c96e" stroke-width="1.8"/>
-              <line x1="24" y1="10" x2="24" y2="34" stroke="#e8c96e" stroke-width="1.2" stroke-dasharray="2,2"/>
-              <path d="M14,18 Q11,22 14,26" stroke="#e8c96e" stroke-width="1.4" fill="none"/>
-              <path d="M34,18 Q37,22 34,26" stroke="#e8c96e" stroke-width="1.4" fill="none"/>
-              <line x1="24" y1="34" x2="24" y2="40" stroke="#e8c96e" stroke-width="2" stroke-linecap="round"/>
-              <path d="M17,22 L20,22 L21,19 L23,25 L25,19 L27,25 L28,22 L31,22" stroke="#a78bfa" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    const logoUrl = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/physiomind_logo";
+    return `<div style="background:#fff;border-bottom:1px solid #e2e8f0;">
+      <div style="padding:16px 32px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <img src="${logoUrl}" height="60" style="display:block;"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+          <div style="display:none;align-items:center;gap:10px;">
+            <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="26" cy="26" r="24" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+              <path d="M30,10 C38,12 42,18 42,26 C42,32 38,37 34,39 L34,44 L18,44 L18,39 C13,36 11,30 11,24 C11,15 20,8 28,9 Z" fill="#7c3aed" opacity="0.12"/>
+              <line x1="26" y1="13" x2="26" y2="42" stroke="#7c3aed" stroke-width="1.8" stroke-dasharray="2.5,2"/>
+              <circle cx="21" cy="18" r="2" fill="#7c3aed"/>
+              <circle cx="31" cy="16" r="2" fill="#7c3aed"/>
+              <circle cx="18" cy="25" r="2" fill="#7c3aed"/>
+              <circle cx="34" cy="23" r="2" fill="#7c3aed"/>
+              <circle cx="22" cy="30" r="2" fill="#7c3aed"/>
+              <line x1="21" y1="18" x2="31" y2="16" stroke="#a78bfa" stroke-width="0.9"/>
+              <line x1="21" y1="18" x2="18" y2="25" stroke="#a78bfa" stroke-width="0.9"/>
+              <line x1="31" y1="16" x2="34" y2="23" stroke="#a78bfa" stroke-width="0.9"/>
+              <line x1="18" y1="25" x2="22" y2="30" stroke="#a78bfa" stroke-width="0.9"/>
+              <line x1="34" y1="23" x2="22" y2="30" stroke="#a78bfa" stroke-width="0.9"/>
             </svg>
+            <div>
+              <div style="font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-0.4px;line-height:1.1;">Physio<span style="color:#7c3aed;">Mind</span></div>
+              <div style="font-size:9.5px;color:#94a3b8;margin-top:2px;">AI-Powered Physiotherapy Platform</div>
+            </div>
+          </div>
+          <div style="margin-left:4px;">
+            <div style="font-size:8.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;">${title}</div>
+            <div style="font-size:10px;color:#64748b;margin-top:1px;">${subtitle}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:28px;text-align:right;">
+          <div>
+            <div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:3px;">Patient</div>
+            <div style="font-size:14px;font-weight:700;color:#1e293b;">${escHtml(patName)}</div>
+            <div style="font-size:10px;color:#64748b;">${escHtml(sex)} &middot; ${escHtml(String(age))} yrs &middot; ${escHtml(dob)}</div>
           </div>
           <div>
-            <div style="font-size:9px;color:#e8c96e;letter-spacing:3px;text-transform:uppercase;font-family:Georgia,serif;margin-bottom:2px;">PhysioMind &middot; AI Platform</div>
-            <div style="font-size:20px;font-weight:700;letter-spacing:-0.3px;font-family:Georgia,serif;">PhysioMind</div>
-            <div style="font-size:9px;color:rgba(255,255,255,0.6);letter-spacing:0.8px;margin-top:1px;">AI-Powered Physiotherapy Platform</div>
-          </div>
-        </div>
-        <div style="text-align:right;">
-          <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;border:1px solid rgba(255,255,255,0.12);">
-            <div style="font-size:8px;color:#e8c96e;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">Report No.</div>
-            <div style="font-size:12px;font-weight:700;font-family:Courier New,monospace;">${escHtml(reportNo)}</div>
-            <div style="font-size:8px;color:rgba(255,255,255,0.5);margin-top:5px;border-top:1px solid rgba(255,255,255,0.1);padding-top:5px;">${today}</div>
+            <div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:3px;">Report</div>
+            <div style="font-size:14px;font-weight:700;color:#1e293b;">${escHtml(reportNo)}</div>
+            <div style="font-size:10px;color:#64748b;">${today}</div>
           </div>
         </div>
       </div>
-      <div style="display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;">
-        ${[["&#128205;", clinicAddr], ["&#128222;", clinicPhone], ["&#127760;", clinicWeb]].map(function(pair){
-          return '<div style="display:flex;align-items:center;gap:5px;"><span style="font-size:10px;">'+pair[0]+'</span><span style="color:rgba(255,255,255,0.6);font-size:8.5px;letter-spacing:0.3px;">'+escHtml(pair[1])+'</span></div>';
-        }).join("")}
+      <div style="background:linear-gradient(to right,#3730a3,#7c3aed,#a855f7);padding:6px 32px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:9px;font-weight:700;color:#fff;letter-spacing:1.5px;text-transform:uppercase;">Smarter Assessment &middot; Better Outcomes</span>
+        <span style="font-size:8px;font-weight:600;color:rgba(255,255,255,0.75);letter-spacing:0.8px;text-transform:uppercase;">Confidential Medical Document</span>
       </div>
-    </div>
-    <div style="background:${color};padding:14px 40px;display:flex;align-items:center;gap:14px;border-bottom:3px solid #c9a84c;">
-      <div style="width:38px;height:38px;background:rgba(255,255,255,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;border:1px solid rgba(255,255,255,0.15);">&#128203;</div>
-      <div>
-        <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:-0.2px;font-family:Georgia,serif;">${title}</div>
-        <div style="color:rgba(255,255,255,0.6);font-size:9px;margin-top:1px;letter-spacing:0.4px;">${subtitle}</div>
-      </div>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:7px;">
-        <div style="width:7px;height:7px;border-radius:50%;background:#e8c96e;"></div>
-        <span style="color:#e8c96e;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;">Confidential Medical Document</span>
-      </div>
-    </div>
-    <div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 40px;">
-      <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;">
-        ${[["Patient",escHtml(patName)],["DOB",escHtml(dob)],["Age / Sex",escHtml(String(age))+" yrs"],["Occupation",escHtml(occ)],["Referring GP",escHtml(gp)],["Insurer",escHtml(insurer)],["Therapist",escHtml(therapistName)],["Report Date",today]].map(function(pair){
-          return '<div><div style="font-size:7.5px;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;font-family:Georgia,serif;">'+pair[0]+'</div><div style="font-size:9.5px;font-weight:600;color:#1e293b;">'+pair[1]+'</div></div>';
-        }).join("")}
-      </div>
-    </div>
     </div>`;
   };
 
