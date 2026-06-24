@@ -3832,7 +3832,11 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const row   = { borderBottom:"1px solid #F3F4F6",padding:"8px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,fontSize:13 };
   const chip_ = (bg,cl) => ({ display:"inline-block",padding:"3px 10px",borderRadius:100,background:bg,color:cl,fontSize:11,fontWeight:500,margin:"2px 3px 2px 0" });
   const inp   = { width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"7px 10px",fontSize:"0.78rem",fontFamily:"inherit",outline:"none",color:"#111827",background:"#FAFAFA",marginBottom:4,boxSizing:"border-box" };
-  const subH  = { fontSize:10,fontWeight:600,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.07em",margin:"12px 0 6px",borderTop:"1px solid #F3F4F6",paddingTop:8 };
+  const subH  = (label, col="#334155") => (
+    <div style={{display:"flex",alignItems:"center",gap:6,background:col,padding:"6px 12px",marginTop:12,marginBottom:6,borderRadius:6}}>
+      <span style={{fontSize:10,fontWeight:700,color:"#fff",textTransform:"uppercase",letterSpacing:"0.08em"}}>{label}</span>
+    </div>
+  );
   const na    = { fontSize:12,color:"#9CA3AF",fontStyle:"italic",padding:"4px 0" };
   const thS   = { padding:"5px 8px",fontSize:10,color:"#9CA3AF",textAlign:"left",borderBottom:"1px solid #F3F4F6",fontWeight:500 };
   const tdS   = { padding:"5px 8px",borderBottom:"1px solid #F9FAFB",fontSize:12,color:"#111827",verticalAlign:"top" };
@@ -3999,7 +4003,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             const obsSummary = v("obs_summary");
             if (!hasObs && !hasLegacy && !obsSummary) return null;
             return <>
-              <div style={subH}>Observation &amp; Posture</div>
+              {subH("Observation & Posture","#334155")}
               {obsSummary&&<div style={{fontSize:12,color:"#374151",marginBottom:6,background:"#F9FAFB",padding:"8px 10px",borderRadius:8,lineHeight:1.5}}>{obsSummary}</div>}
               {hasObs&&obsFields.map(([section,fields],si)=>{
                 const filled=fields.filter(([,val])=>val);
@@ -4025,7 +4029,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* AI Posture Analysis */}
           {mods.postureAI&&<>
-            <div style={subH}>AI Postural Analysis</div>
+            {subH("AI Postural Analysis","#334155")}
             {[
               ["CVA",data.cvaAngle,"°","≥ 50°",50,"gte"],
               ["FHP",data.sagFHPCm||data.fhpDevCm,"cm","< 2.5cm",2.5,"lte"],
@@ -4050,13 +4054,13 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* Gait */}
           {mods.gait&&<>
-            <div style={subH}>Gait</div>
+            {subH("Gait","#1e3a5f")}
             {[v("gait_pattern")&&["Pattern",v("gait_pattern")],v("gait_antalgic")&&["Antalgic",v("gait_antalgic")],v("gait_trendelenburg")&&["Trendelenburg",v("gait_trendelenburg")],v("gait_cadence")&&["Cadence",v("gait_cadence")],v("gait_notes")&&["Notes",v("gait_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,fontSize:12,minWidth:90}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
           </>}
 
           {/* Neuro (general — above region) */}
           {v("neuro_dermatomal")&&<>
-            <div style={subH}>Neuro (general)</div>
+            {subH("Neuro (general)","#1e3a5f")}
             <div style={{fontSize:12,color:"#374151",marginBottom:4}}>{[v("neuro_dermatomal"),v("neuro_sensation")].filter(Boolean).join(". ")}</div>
           </>}
 
@@ -4068,21 +4072,21 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* OBSERVATION chips (regional) */}
           {(postDefectList.length>0||obsChips.length>0)&&<>
-            <div style={subH}>Observation</div>
+            {subH("Observation","#334155")}
             {postDefectList.map(([,l],i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{l}</span>)}
             {obsChips.map((o,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{o.text}</span>)}
           </>}
 
           {/* Palpation */}
           {(palpPins.filter(p=>p.tenderness).length>0||palpText.length>0)&&<>
-            <div style={subH}>Palpation — Tender</div>
+            {subH("Palpation — Tender","#334155")}
             {palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{p.label}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — grade {p.tenderness}+</span>)}
             {palpText.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:50}}>{r}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
           </>}
 
           {/* Neurological */}
           {neuroRows.length>0&&<>
-            <div style={subH}>Neurological</div>
+            {subH("Neurological","#1e3a5f")}
             {neuroRows.map((r,i)=>{
               const lc=r.val.toLowerCase();
               const isAbn=lc.includes("reduced")||lc.includes("weak")||lc.includes("absent")||lc.includes("positive");
@@ -4096,7 +4100,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* Range of Motion */}
           {romRows.length>0&&<>
-            <div style={subH}>Range of Motion</div>
+            {subH("Range of Motion","#065F46")}
             {romRows.map((r,i)=>{
               if(!r.bilateral){
                 const p=r.pct;
@@ -4129,50 +4133,59 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* MMT */}
           {mmtRows.length>0&&<>
-            <div style={subH}>Manual Muscle Testing (MMT)</div>
-            {mmtRows.map(([muscle,gr],i)=><div key={i} style={row}>
-              <span style={{color:"#374151",fontSize:12,flex:1,textTransform:"capitalize"}}>{muscle}</span>
-              <span style={{fontSize:12,fontWeight:600,color:"#111827"}}>{gr}</span>
-            </div>)}
+            {subH("Manual Muscle Testing (MMT)","#065F46")}
+            {mmtRows.map(([muscle,gr],i)=>{
+              const g=parseFloat(gr)||0;
+              const gc=g>=5?"#059669":g>=4?"#d97706":g>=3?"#ea580c":"#dc2626";
+              return <div key={i} style={{...row,alignItems:"center"}}>
+                <span style={{color:"#374151",fontSize:12,flex:1,textTransform:"capitalize"}}>{muscle}</span>
+                <span style={{fontSize:13,fontWeight:700,color:gc,minWidth:32,textAlign:"right"}}>{gr}</span>
+              </div>;
+            })}
           </>}
 
           {/* Special Tests */}
           {sttRows.length>0&&<>
-            <div style={subH}>Special Tests</div>
-            {sttRows.filter(t=>{const lc=t.val.toLowerCase();return lc.includes("negative")||lc.includes("-ve");}).length>0&&
-              <div style={{fontSize:12,color:"#374151",marginBottom:6}}>
-                Negative: {sttRows.filter(t=>{const lc=t.val.toLowerCase();return lc.includes("negative")||lc.includes("-ve");}).map(t=>t.name).join(", ")}
-              </div>}
-            {sttRows.filter(t=>{const lc=t.val.toLowerCase();return lc.includes("positive")||lc.includes("+ve");}).map((t,i)=><div key={i} style={row}>
-              <span style={{color:"#374151",fontSize:12,flex:1}}>{t.name}</span>
-              <span style={{fontSize:11,fontWeight:500,color:"#DC2626",padding:"1px 8px",background:"#FEF2F2",borderRadius:100}}>Positive</span>
-              <span style={{fontSize:10,color:"#9CA3AF",marginLeft:6}}>{t.sig}</span>
-            </div>)}
+            {subH("Special Tests","#78350f")}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              {sttRows.map((t,i)=>{
+                const lc=t.val.toLowerCase();
+                const isPos=lc.includes("positive")||lc.includes("+ve");
+                const isNeg=lc.includes("negative")||lc.includes("-ve")||lc.includes("normal");
+                if(!isPos&&!isNeg) return null;
+                return (
+                  <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"5px 8px",background:isPos?"#fef2f2":"#f0fdf4",borderRadius:7,border:`1px solid ${isPos?"#fecaca":"#bbf7d0"}`}}>
+                    <span style={{fontSize:11,color:"#334155",flex:1,marginRight:4,lineHeight:1.3}}>{t.name}</span>
+                    <span style={{fontSize:9,fontWeight:800,padding:"2px 6px",borderRadius:10,flexShrink:0,background:isPos?"#dc2626":"#059669",color:"#fff"}}>{isPos?"+ve":"−ve"}</span>
+                  </div>
+                );
+              })}
+            </div>
           </>}
 
           {/* Functional Limitations */}
           {(flChips.length>0||v("ar_goal_function"))&&<>
-            <div style={subH}>Functional limitations</div>
+            {subH("Functional limitations","#78350f")}
             <div style={{marginBottom:6}}>{flChips.map((x,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{x}</span>)}</div>
             {v("ar_goal_function")&&<div style={{fontSize:12,color:"#374151"}}>{v("ar_goal_function")}</div>}
           </>}
 
           {/* Outcome Measures */}
           {omRows.length>0&&<>
-            <div style={subH}>Outcome Measures</div>
+            {subH("Outcome Measures","#334155")}
             <table style={tbl}><thead><tr><th style={thS}>Scale</th><th style={thS}>Score</th><th style={thS}>Max</th><th style={thS}>Description</th></tr></thead>
             <tbody>{omRows.map((r,i)=><tr key={i}><td style={{...tdS,fontWeight:600}}>{r.name}</td><td style={{...tdS,fontWeight:700,color:"#6366F1"}}>{r.score}</td><td style={{...tdS,color:"#9CA3AF"}}>{r.max||"—"}</td><td style={{...tdS,color:"#6B7280",fontSize:10}}>{r.note}</td></tr>)}</tbody></table>
           </>}
 
           {/* CPA */}
           {mods.cpa&&<>
-            <div style={subH}>Compensation Pattern Analysis (CPA)</div>
+            {subH("Compensation Pattern Analysis (CPA)","#334155")}
             {[v("cpa_pattern"),v("cpa_notes"),...["cx","lx","shr","knl"].map(px=>v(px+"_cpa")).filter(Boolean)].filter(Boolean).map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"2px 0"}}>{x}</div>)}
           </>}
 
           {/* Kinetic Chain */}
           {mods.kinetic&&<>
-            <div style={subH}>Kinetic Chain</div>
+            {subH("Kinetic Chain","#334155")}
             {/* Legacy fields */}
             {[v("kinetic_primary")&&["Primary dysfunction",v("kinetic_primary")],v("kinetic_compensation")&&["Compensation",v("kinetic_compensation")],v("kinetic_notes")&&["Notes",v("kinetic_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:110}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
             {/* kc_* fields from Kinetic Chain module */}
@@ -4207,7 +4220,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* Fascia Integration */}
           {mods.fascia&&<>
-            <div style={subH}>Fascia Integration</div>
+            {subH("Fascia Integration","#334155")}
             {(()=>{
               const FA_NAMES={"fa_skin_roll":"Skin Rolling","fa_passive_tension":"Passive Line Tension","fa_active_line_load":"Active Line Load","fa_densification":"Densification Test","fa_scar":"Scar/Adhesion","fa_sbl_hamstring":"SBL Hamstring","fa_tlf":"TLF Assessment","fa_spiral_rot":"Spiral Rotation","fa_ll_test":"Lateral Line","fa_dfl_arch":"DFL Medial Arch","fa_dfl_breathing":"DFL Diaphragm","fa_remote_test":"Remote Restriction","fa_force_closure":"Force Closure/SIJ","fa_compensation_map":"Compensation Pattern"};
               const faItems=Object.keys(data).filter(k=>(k.startsWith("fa_")||k.startsWith("fascia_"))&&data[k]&&String(data[k]).trim()).map(k=>({label:FA_NAMES[k]||k.replace(/^fa_/,"").replace(/_/g," "),val:String(data[k])}));
@@ -4261,7 +4274,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               </div>;
             }).filter(Boolean);
             if(!rendered.length) return null;
-            return <><div style={subH}>Functional Screens</div>{rendered}</>;
+            return <>{subH("Functional Screens","#065F46")}{rendered}</>;
           })()}
 
           {!mods.posture&&!mods.rom&&!mods.mmt&&!mods.neuro&&!mods.stt&&!mods.palpation&&!mods.gait&&!mods.postureAI&&<div style={na}>No objective findings recorded yet.</div>}
@@ -4439,7 +4452,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {/* ── Problem List / Key Findings ── */}
           {(probList||posFindings.length>0||negFindings.length>0)&&<>
             {(probList||posFindings.length>0)&&<>
-              <div style={subH}>Problem list</div>
+              {subH("Problem list","#334155")}
               <div style={{fontSize:12,color:"#374151",marginBottom:6,lineHeight:1.5}}>{probList||posFindings.slice(0,3).join(". ")}</div>
             </>}
             {(posFindings.length>0||negFindings.length>0)&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
