@@ -3821,11 +3821,11 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
   // ── Styles ──
   const wrap  = { fontFamily:"inherit", fontSize:"0.82rem", paddingBottom:24 };
-  const card  = (border="#E5E7EB") => ({ background:"#fff", border:`1px solid ${border}`, borderRadius:16, marginBottom:12, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.04)" });
+  const card  = (border="#E5E7EB", accent=null) => ({ background:"#fff", border:`1px solid ${border}`, borderRadius:16, marginBottom:12, overflow:"hidden", boxShadow:"0 2px 6px rgba(0,0,0,0.06)", ...(accent?{borderLeft:`3px solid ${accent}`}:{}) });
   const ch    = (bg="#fff") => ({ display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:bg,borderBottom:"1px solid #F3F4F6" });
-  const secIcon = (bg,cl,emoji) => <div style={{width:34,height:34,borderRadius:10,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0,color:cl}}>{emoji}</div>;
-  const secTitle = (t,sub) => <div><div style={{fontSize:14,fontWeight:600,color:"#111827"}}>{t}</div>{sub&&<div style={{fontSize:11,color:"#6B7280"}}>{sub}</div>}</div>;
-  const secBadge = (t) => <div style={{marginLeft:"auto",fontSize:11,color:"#6B7280",background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:20,padding:"2px 10px"}}>{t}</div>;
+  const secIcon = (bg,cl,emoji) => <div style={{width:36,height:36,borderRadius:10,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0,color:cl}}>{emoji}</div>;
+  const secTitle = (t,sub,col="#fff") => <div><div style={{fontSize:13,fontWeight:700,color:col,letterSpacing:"0.1px"}}>{t}</div>{sub&&<div style={{fontSize:10,color:col==="white"||col==="#fff"?"rgba(255,255,255,0.65)":"#6B7280",marginTop:1}}>{sub}</div>}</div>;
+  const secBadge = (t,col="rgba(255,255,255,0.75)",bg="rgba(255,255,255,0.15)",border="rgba(255,255,255,0.25)") => <div style={{marginLeft:"auto",fontSize:10,color:col,background:bg,border:`1px solid ${border}`,borderRadius:20,padding:"2px 10px",flexShrink:0,fontWeight:500}}>{t}</div>;
   const cb    = { padding:"12px 14px" };
   const lbl   = { fontSize:11,color:"#9CA3AF",fontWeight:500,marginBottom:4,display:"block" };
   const val_  = { fontSize:13,color:"#111827",lineHeight:1.5 };
@@ -3929,10 +3929,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── S — SUBJECTIVE ── */}
-      <div id="soap-sec-S" style={card()}>
-        <div style={ch("#FAFAFA")}>
-          {secIcon("#DBEAFE","#1D4ED8","💬")}
-          {secTitle("S · Subjective","Patient reported")}
+      <div id="soap-sec-S" style={card("#DBEAFE","#1D4ED8")}>
+        <div style={{...ch("#1e3a5f"),borderBottom:"none"}}>
+          {secIcon("rgba(255,255,255,0.15)","#fff","💬")}
+          {secTitle("S · Subjective","Patient reported","#fff")}
           {secBadge("Patient reported")}
         </div>
         <div style={cb}>
@@ -3959,10 +3959,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── O — OBJECTIVE ── */}
-      <div id="soap-sec-O" style={card()}>
-        <div style={ch("#FAFAFA")}>
-          {secIcon("#D1FAE5","#065F46","🩺")}
-          {secTitle("O · Objective","Clinical findings")}
+      <div id="soap-sec-O" style={card("#D1FAE5","#065F46")}>
+        <div style={{...ch("#065F46"),borderBottom:"none"}}>
+          {secIcon("rgba(255,255,255,0.15)","#fff","🩺")}
+          {secTitle("O · Objective","Clinical findings","#fff")}
           {secBadge("Clinical findings")}
         </div>
         <div style={cb}>
@@ -4270,10 +4270,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── A — ASSESSMENT ── */}
-      <div id="soap-sec-A" style={card()}>
-        <div style={ch("#FAFAFA")}>
-          {secIcon("#F3F4F6","#374151","📋")}
-          {secTitle("A · Assessment","Clinical impression")}
+      <div id="soap-sec-A" style={card("#EDE9FE","#7c3aed")}>
+        <div style={{...ch("#7c3aed"),borderBottom:"none"}}>
+          {secIcon("rgba(255,255,255,0.15)","#fff","🧠")}
+          {secTitle("A · Assessment","Clinical impression","#fff")}
           {secBadge("Clinical impression")}
         </div>
         <div style={cb}>
@@ -4466,10 +4466,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── P — PLAN ── */}
-      <div id="soap-sec-P" style={card()}>
-        <div style={ch("#FAFAFA")}>
-          {secIcon("#D1FAE5","#065F46","✅")}
-          {secTitle("P · Plan","Treatment & goals")}
+      <div id="soap-sec-P" style={card("#FEF3C7","#92400E")}>
+        <div style={{...ch("#92400E"),borderBottom:"none"}}>
+          {secIcon("rgba(255,255,255,0.15)","#fff","📋")}
+          {secTitle("P · Plan","Treatment & goals","#fff")}
           {secBadge("Treatment & goals")}
         </div>
         <div style={cb}>
