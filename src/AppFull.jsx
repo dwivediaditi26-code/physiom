@@ -11176,11 +11176,11 @@ const SEED_PATIENT_2 = {
     cc_notes:"BPTB graft. Surgeon cleared for physiotherapy-guided RTS protocol. Target: return to full training by month 6. Psychologically anxious about re-injury (high TSK).",
 
     // ── AGGRAVATING / EASING ──
-    knr_agg_mov:["Stairs descent","Deep squatting","Pivoting / change of direction","Running — cutting movements","Jumping and landing"],
-    knr_agg_act:["Football training drills","Prolonged walking >30 min","Kneeling","Getting up from floor"],
+    knr_agg_mov:"Stairs descent|||Deep squatting|||Pivoting / change of direction|||Running — cutting movements|||Jumping and landing",
+    knr_agg_act:"Football training drills|||Prolonged walking >30 min|||Kneeling|||Getting up from floor",
     knr_agg_worst:"Stairs descent and landing from jump",
     knr_agg_notes:"Anterior knee pain likely donor site irritation (BPTB). Swelling after >45 min activity. No true instability episodes but perception of giving way.",
-    knr_rel_mov:["Rest","Ice after activity","Elevation"],
+    knr_rel_mov:"Rest|||Ice after activity|||Elevation",
     knr_rel_notes:"Swelling settles within 2 hours with RICE. Morning stiffness <10 minutes.",
 
     // ── 24H BEHAVIOUR ──
