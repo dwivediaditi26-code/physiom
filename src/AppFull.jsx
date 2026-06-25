@@ -15848,6 +15848,23 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
   };
 
   const gatherExercises = () => {
+    // ── 1. Real data: hep_programme array (Quick Visit / HEP module) ────────
+    const hep = Array.isArray(d.hep_programme) ? d.hep_programme : [];
+    if (hep.length > 0) {
+      return hep.map(ex => ({
+        name:        ex.name || "Unnamed Exercise",
+        sets:        ex.customSets  || ex.sets  || "3",
+        reps:        ex.customReps  || ex.reps  || "10",
+        hold:        ex.customHold  || ex.hold  || "",
+        rest:        ex.customRest  || ex.rest  || "60s",
+        freq:        ex.customFreq  || ex.freq  || "Daily",
+        phase:       ex.phase       || "Phase 1",
+        notes:       ex.notes       || "",
+        target:      ex.target      || ex.muscle || "",
+        progression: ex.progression || "",
+      }));
+    }
+    // ── 2. Manual entries: ex_name_1..12 ────────────────────────────────────
     const exs = [];
     for (let i = 1; i <= 12; i++) {
       const name = d[`ex_name_${i}`] || d[`exercise_${i}_name`] || "";
@@ -15895,6 +15912,38 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
   };
 
   const gatherTechniques = () => {
+    // ── 1. Real data: tx_techniques array (TreatmentTechniquesModule) ───────
+    const txArr = Array.isArray(d.tx_techniques) ? d.tx_techniques : [];
+    if (txArr.length > 0) {
+      return txArr.map(t => {
+        if (t.type === "manual") return {
+          name:      t.technique || "Joint Mobilisation",
+          area:      [t.region, t.laterality].filter(Boolean).join(" — "),
+          duration:  t.dosage || t.duration || "",
+          rationale: [t.grade ? `Grade ${t.grade}` : "", t.response || ""].filter(Boolean).join(". "),
+        };
+        if (t.type === "dn") return {
+          name:      `Dry Needling — ${t.dn_muscle || "Muscle"}`,
+          area:      [t.laterality, t.dn_depth ? `depth ${t.dn_depth}mm` : ""].filter(Boolean).join(", "),
+          duration:  `${t.dn_needles || "1"} needle${t.dn_needles!="1"?"s":""}${t.dn_twitch ? ` · LTR: ${t.dn_twitch}` : ""}`,
+          rationale: t.response || t.notes || "Myofascial trigger point release",
+        };
+        if (t.type === "st") return {
+          name:      t.st_technique || "Soft Tissue Therapy",
+          area:      t.st_region || t.laterality || "",
+          duration:  t.duration || t.dosage || "",
+          rationale: t.response || "",
+        };
+        // fallback for unknown types
+        return {
+          name:      t.technique || t.name || "Manual Technique",
+          area:      t.region || t.area || "",
+          duration:  t.dosage || t.duration || "",
+          rationale: t.rationale || t.response || "",
+        };
+      });
+    }
+    // ── 2. Manual entries: tx_name_1..10 ────────────────────────────────────
     const techs = [];
     for (let i = 1; i <= 10; i++) {
       const name = d[`tx_name_${i}`] || d[`technique_${i}`] || "";
@@ -16485,7 +16534,7 @@ ${pdfHeader("Physiotherapy Treatment Plan","Evidence-Based Clinical Management P
 <div class="body">
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
     <div style="background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.2);border-radius:10px;padding:14px 16px;"><div style="font-size:9px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Patient Details</div>${[["Patient",escHtml(patName)],["DOB / Age",`${escHtml(dob)} / ${escHtml(String(age))}`],["Sex",escHtml(sex)],["Occupation",escHtml(occ)]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(5,150,105,0.1);"><span style="font-size:9px;color:#6b7280;">${l}</span><span style="font-size:10px;font-weight:600;color:#1a3a5c;">${v}</span></div>`).join("")}</div>
-    <div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:14px 16px;"><div style="font-size:9px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Working Diagnosis</div><div style="font-size:13px;font-weight:800;color:#1a3a5c;margin-bottom:8px;line-height:1.3;">${dxLabel}</div>${[["Pain (VAS Now)",val("pa_vas_now")+"/10"],["Treatment Frequency",val("tx_frequency","2&ndash;3x per week")],["Expected Duration",val("tx_duration_plan","6&ndash;8 weeks")]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(37,99,235,0.1);"><span style="font-size:9px;color:#6b7280;">${l}</span><span style="font-size:10px;font-weight:600;color:#1a3a5c;">${v}</span></div>`).join("")}</div>
+    <div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:14px 16px;"><div style="font-size:9px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Working Diagnosis &amp; Plan</div><div style="font-size:13px;font-weight:800;color:#1a3a5c;margin-bottom:8px;line-height:1.3;">${dxLabel}</div>${[["Pain (VAS Now)",(d.pa_vas_now||d.cc_vas_now||"--")+"/10"],["Treatment Frequency",d.tx_frequency||d.soap_frequency||"2&ndash;3x per week"],["Expected Duration",d.tx_duration_plan||d.tx_plan_duration||"6&ndash;8 wks"],["Sessions Planned",d.tx_plan_sessions||d.plan_sessions||"--"],["Sessions Done",String(sessions.length)||"0"],["Plan Start",d.tx_plan_start||"--"]].filter(([,v])=>v&&v!=="--").map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(37,99,235,0.1);"><span style="font-size:9px;color:#6b7280;">${l}</span><span style="font-size:10px;font-weight:600;color:#1a3a5c;">${escHtml(String(v))}</span></div>`).join("")}</div>
   </div>
   ${sectionCard("Treatment Goals","&#127919;",`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">${[
     ["Short-Term (2&ndash;4 wks)","#0891b2",[d.ar_goal_pain||"Pain reduction &ge;30% on VAS",d.ar_goal_function||"Improve functional ROM","Reduce swelling/inflammation"]],
@@ -16495,7 +16544,52 @@ ${pdfHeader("Physiotherapy Treatment Plan","Evidence-Based Clinical Management P
   ${sectionCard("Manual Therapy &amp; Treatment Techniques","&#129330;",`<table><thead><tr><th>Technique</th><th>Target Area</th><th>Duration / Dosage</th><th>Evidence Base</th></tr></thead><tbody>${techniques.length>0?techniques.map(t=>`<tr style="border-bottom:1px solid #e2e8f0;"><td style="font-size:10px;font-weight:600;color:#1a3a5c;">${escHtml(t.name)}</td><td style="font-size:10px;">${escHtml(t.area)}</td><td style="font-size:10px;">${escHtml(t.duration)}</td><td style="font-size:9.5px;color:#6b7280;">${escHtml(t.rationale)}</td></tr>`).join(""):
 [["Soft Tissue Mobilisation","Hypertonic muscles / trigger points","5&ndash;10 min per area","Level 1A &mdash; Cochrane Review"],["Joint Mobilisation (Grade III&ndash;IV)","Restricted articular joint segments","3 sets PA pressure","Level 1B &mdash; RCT evidence"],["Therapeutic Ultrasound","Periarticular / tendon tissue","1MHz, 1.0 W/cm&sup2;, 5 min","Level 2B"],["Dry Needling / IMS","Myofascial trigger points","As clinically indicated","Level 1B &mdash; multiple RCTs"],["Taping (Kinesio / Rigid)","Joint support / proprioception","72 hrs per application","Level 2"],["TENS / Electrotherapy","Pain modulation (gate control)","80Hz, 20 min","Level 2B &mdash; analgesic effect"],].map(([tech,target,dose,ev])=>`<tr style="border-bottom:1px solid #e2e8f0;"><td style="font-size:10px;font-weight:600;color:#1a3a5c;">${tech}</td><td style="font-size:10px;">${target}</td><td style="font-size:10px;">${dose}</td><td style="font-size:9px;color:#6b7280;">${ev}</td></tr>`).join("")}</tbody></table>`,"#d97706")}
   ${Object.entries(groupedExercises).map(([phase,exs])=>{const pColor=phaseColors[phase]||"#2563eb";return sectionCard(`Exercise Prescription &mdash; ${phase}`,"&#127959;",`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;">${exs.map((ex,i)=>{const svgType=svgKeys[i%svgKeys.length];return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;"><div style="background:${pColor}10;border-bottom:1px solid ${pColor}20;padding:8px 12px;display:flex;align-items:center;gap:8px;"><span style="width:22px;height:22px;background:${pColor};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;">${i+1}</span><span style="font-size:11px;font-weight:700;color:#1a3a5c;">${escHtml(ex.name)}</span></div><div style="padding:10px 12px;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">${[["Sets",ex.sets],["Reps",ex.reps],ex.hold?["Hold",ex.hold]:null,["Rest",ex.rest],["Frequency",ex.freq]].filter(Boolean).map(([l,v])=>`<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;text-align:center;"><div style="font-size:7.5px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;">${l}</div><div style="font-size:10px;font-weight:700;color:${pColor};">${escHtml(v)}</div></div>`).join("")}</div>${ex.target?`<div style="font-size:8.5px;color:#0891b2;margin-bottom:4px;"><strong>Target:</strong> ${escHtml(ex.target)}</div>`:""}${ex.notes?`<div style="background:#fff;border-radius:6px;padding:6px 8px;font-size:8.5px;color:#6b7280;line-height:1.5;border:1px solid #e2e8f0;">${escHtml(ex.notes)}</div>`:""}${ex.progression?`<div style="margin-top:5px;font-size:8px;color:#059669;"><strong>&#11014; Progression:</strong> ${escHtml(ex.progression)}</div>`:""}</div></div>`;}).join("")}</div>`,pColor);}).join("")}
-  ${sectionCard("Outcome Measures &amp; Reassessment","&#128200;",`<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;"><div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Baseline &amp; Target</div><table><thead><tr><th>Measure</th><th>Baseline</th><th>Target</th></tr></thead><tbody>${[["VAS Pain Now",val("pa_vas_now"),"&le;"+Math.max(0,(parseFloat(d.pa_vas_now)||5)-3)+"/10"],["VAS Worst",val("pa_vas_worst"),"&le;5/10"],["PSFS Score",val("psfs_score"),"&ge;7/10"],["Patient Goal",val("ar_goal_function"),"Achieved"],].map(([m,b,t])=>`<tr style="border-bottom:1px solid #e2e8f0;"><td style="font-size:9px;">${m}</td><td style="font-size:9px;font-weight:700;color:#dc2626;">${b}</td><td style="font-size:9px;font-weight:700;color:#059669;">${t}</td></tr>`).join("")}</tbody></table></div><div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Reassessment Schedule</div>${[["Sessions 1&ndash;2","Baseline, pain education, motor control"],["Sessions 3&ndash;4","Reassess pain, progress exercises"],["Session 6","Formal re-test, goal review"],["Session 8&ndash;10","Discharge planning"],].map(([s,desc])=>`<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid #e2e8f0;align-items:flex-start;"><span style="font-size:9px;font-weight:700;color:#2563eb;min-width:90px;flex-shrink:0;">${s}</span><span style="font-size:9px;color:#6b7280;">${desc}</span></div>`).join("")}</div></div>`,"#0891b2")}
+  ${(()=>{
+    const vasBaseline = sessions.length>0 ? (parseFloat(sessions[sessions.length-1].vasStart)||0) : (parseFloat(d.pa_vas_now||d.cc_vas_now)||0);
+    const vasNow      = sessions.length>0 ? (parseFloat(sessions[0].vasEnd||sessions[0].vasStart)||0) : vasBaseline;
+    const targetVas   = Math.max(0, vasBaseline-3);
+    const psfsNow     = d.om_psfs1_now||d.psfs_score||"";
+    const psfsGoal    = d.om_psfs1_goal||"7";
+    const vasDiff     = vasBaseline - vasNow;
+    const vasPct      = vasBaseline>0 ? Math.round((vasDiff/vasBaseline)*100) : 0;
+    const progColor   = vasDiff>0?"#059669":vasDiff<0?"#dc2626":"#6b7280";
+    const sessionRows = sessions.length>0
+      ? sessions.slice().reverse().map((s,i)=>{
+          const vs=parseFloat(s.vasStart||"0")||0, ve=parseFloat(s.vasEnd||s.vasStart||"0")||0;
+          const vc=vs-ve, vCol=vc>0?"#059669":vc<0?"#dc2626":"#6b7280";
+          const arrow=vc>0?"&#9660;":vc<0?"&#9650;":"&harr;";
+          const tx=String(s.treatmentGiven||s.treatment||""); const txShort=tx.slice(0,65)+(tx.length>65?"…":"");
+          const resp=String(s.response||""); const respShort=resp.slice(0,60)+(resp.length>60?"…":"");
+          return `<tr style="background:${i%2===0?"#fff":"#f8fafc"};border-bottom:1px solid #e2e8f0;">
+            <td style="font-size:9px;font-weight:700;color:#2563eb;padding:6px 8px;white-space:nowrap;">S${escHtml(String(s.sessionNo||i+1))}</td>
+            <td style="font-size:9px;color:#6b7280;padding:6px 8px;white-space:nowrap;">${escHtml(s.date||"")}</td>
+            <td style="font-size:9px;padding:6px 8px;white-space:nowrap;"><span style="font-weight:700;color:#dc2626;">${vs}/10</span> <span style="color:${vCol};font-weight:700;">${arrow}</span> <span style="font-weight:700;color:${vCol};">${ve}/10</span></td>
+            <td style="font-size:9px;color:#374151;padding:6px 8px;">${escHtml(txShort)}</td>
+            <td style="font-size:8.5px;color:#6b7280;padding:6px 8px;">${escHtml(respShort)}</td>
+          </tr>`;
+        }).join("")
+      : `<tr><td colspan="5" style="text-align:center;padding:16px;font-size:9px;color:#94a3b8;">No sessions logged yet — use Quick Visit to record each treatment session.</td></tr>`;
+    return sectionCard("Outcome Measures &amp; Session Log","&#128200;",`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Baseline &amp; Target</div>
+          <table><thead><tr><th>Measure</th><th>Baseline</th><th>Target</th></tr></thead><tbody>
+            ${[["VAS Pain",vasBaseline?vasBaseline+"/10":"--",vasBaseline?"&le;"+targetVas+"/10":"--"],["VAS Worst",d.pa_vas_worst?d.pa_vas_worst+"/10":"--","&le;5/10"],["PSFS Score",psfsNow?psfsNow+"/10":"--",psfsNow?"&ge;"+psfsGoal+"/10":"--"],["Patient Goal",escHtml(d.ar_goal_function||d.ar_goal_pain||"--"),"Achieved"]].filter(([,b])=>b&&b!=="--").map(([m,b,t])=>`<tr style="border-bottom:1px solid #e2e8f0;"><td style="font-size:9px;padding:5px 6px;">${m}</td><td style="font-size:9px;font-weight:700;color:#dc2626;padding:5px 6px;">${b}</td><td style="font-size:9px;font-weight:700;color:#059669;padding:5px 6px;">${t}</td></tr>`).join("")}
+          </tbody></table>
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Progress Summary</div>
+          <div style="background:#f8fafc;border-radius:8px;padding:10px 12px;border:1px solid #e2e8f0;">
+            ${[["Sessions Completed",String(sessions.length),"#1a3a5c"],["VAS Baseline",vasBaseline?vasBaseline+"/10":"Not recorded","#dc2626"],["VAS Current",vasNow&&sessions.length?vasNow+"/10":"Not recorded",progColor],["Pain Change",sessions.length&&vasBaseline?(vasDiff>=0?"-":"+")+(Math.abs(vasPct))+"%":"--",progColor]].map(([l,v,c])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #e2e8f0;"><span style="font-size:9px;color:#6b7280;">${l}</span><span style="font-size:10px;font-weight:700;color:${c};">${v}</span></div>`).join("")}
+          </div>
+        </div>
+      </div>
+      <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Session History</div>
+      <div style="overflow-x:auto;"><table style="min-width:600px;"><thead><tr><th style="width:40px;">Sess.</th><th style="width:75px;">Date</th><th style="width:110px;">Pain (Start&#8594;End)</th><th>Treatment Given</th><th style="width:160px;">Response</th></tr></thead>
+        <tbody>${sessionRows}</tbody>
+      </table></div>
+    `,"#0891b2");
+  })()}
   <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;"><div><div style="font-size:9px;color:#6b7280;margin-bottom:24px;">Therapist Signature:</div><div style="border-bottom:1px solid #1a3a5c;width:80%;margin-bottom:4px;height:24px;"></div><div style="font-size:9px;color:#6b7280;">Name / AHPRA: ___________________</div></div><div><div style="font-size:9px;color:#6b7280;margin-bottom:24px;">Date:</div><div style="border-bottom:1px solid #1a3a5c;width:80%;margin-bottom:4px;height:24px;"></div><div style="font-size:9px;color:#6b7280;">Review Date: ___________________</div></div></div>
 </div>
 ${pdfFooter("Treatment Plan")}
