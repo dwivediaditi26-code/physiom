@@ -16926,8 +16926,6 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
   const reports = [
     { id:"assessment", icon:"&#129321;", title:"Assessment Report", subtitle:"Initial Clinical Evaluation", desc:"Comprehensive physiotherapy assessment: demographics, pain scores, ROM table, postural analysis with anatomical diagram, special tests, clinical diagnosis, neurological & palpation findings, and signed clinical summary.", color:"#1a3a5c", gradient:"linear-gradient(135deg,#1a3a5c,#2563eb)", tags:["Demographics","VAS Scores","Posture Diagram","ROM Table","Diagnosis","Special Tests","Signature"], pages:"2-3 pages" },
     { id:"treatment", icon:"&#127959;", title:"Treatment Plan", subtitle:"Clinical Management Program", desc:"Evidence-based treatment plan with phased exercise prescription, manual therapy techniques and dosage, SMART goals timeline, outcome measures with baselines, reassessment schedule, and clinical precautions.", color:"#059669", gradient:"linear-gradient(135deg,#065f46,#059669)", tags:["Phased Exercises","Manual Therapy","SMART Goals","Outcome Measures","Precautions","Reassessment"], pages:"2-3 pages" },
-    { id:"hep", icon:"&#127968;", title:"Home Exercise Protocol", subtitle:"Patient Copy -- Daily Program", desc:"Patient-friendly exercise cards with SVG illustrations, step-by-step instructions, dosage parameters, 7-day weekly compliance tracker, pain diary, lifestyle advice, and clinic contact details.", color:"#7c3aed", gradient:"linear-gradient(135deg,#5b21b6,#7c3aed)", tags:["Exercise Cards","SVG Illustrations","Dosage","Weekly Tracker","Pain Diary","Lifestyle Tips"], pages:"3-4 pages" },
-    { id:"posture", icon:"&#129468;", title:"Postural Analysis Report", subtitle:"AI-Assisted Quantitative Posture Assessment", desc:"Full PhysioMind AI posture report: overall score ring, 6 quantitative measurements (CVA, FHP, shoulder angle, kyphosis, lordosis, pelvic tilt), regional defect table with severity & tight muscles, biomechanical correlation, Upper/Lower Crossed Syndrome flags, clinical recommendations, and photo placeholder with landmark overlay.", color:"#0891b2", gradient:"linear-gradient(135deg,#0a1628,#0891b2)", tags:["AI Score","CVA / FHP","Defect Table","Biomechanics","Photo Analysis","Recommendations","Signature"], pages:"2-3 pages" },
   ];
 
   return (
@@ -16938,7 +16936,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
             <div>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
                 <span style={{fontSize:"24px"}}>📄</span>
-                <div><h2 style={{margin:0,fontSize:"1.3rem",fontWeight:800,letterSpacing:"-0.3px"}}>Clinical PDF Reports</h2><p style={{margin:"2px 0 0",fontSize:"0.75rem",opacity:0.8}}>Generate 3 world-class professional documents</p></div>
+                <div><h2 style={{margin:0,fontSize:"1.3rem",fontWeight:800,letterSpacing:"-0.3px"}}>Clinical PDF Reports</h2><p style={{margin:"2px 0 0",fontSize:"0.75rem",opacity:0.8}}>Assessment &amp; Treatment PDF — patient-specific</p></div>
               </div>
               {patName !== "Patient" && <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",background:"rgba(255,255,255,0.12)",borderRadius:8,width:"fit-content"}}><div style={{width:6,height:6,borderRadius:"50%",background:"#34d399"}}/><span style={{fontSize:"0.8rem",fontWeight:600}}>{patName}</span>{age && age !== "--" && <span style={{fontSize:"0.82rem",opacity:0.7}}>&#183; Age {age}</span>}</div>}
             </div>
@@ -16967,7 +16965,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
                   </div>
                   <div style={{display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"18px 20px",borderLeft:"1px solid #e2e8f0",minWidth:130,gap:10}}>
                     {done[report.id] && <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"rgba(5,150,105,0.1)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:8}}><span style={{color:"#059669",fontSize:"0.75rem",fontWeight:700}}>✓ Generated</span></div>}
-                    <button onClick={()=>generatePdf(report.id)} disabled={generating!==null} style={{width:"100%",padding:"12px 16px",background:generating===report.id?"#94a3b8":report.gradient,border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:generating?"not-allowed":"pointer",opacity:generating&&generating!==report.id?0.5:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
+                    <button data-pdf-type={report.id} onClick={()=>generatePdf(report.id)} disabled={generating!==null} style={{width:"100%",padding:"12px 16px",background:generating===report.id?"#94a3b8":report.gradient,border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:generating?"not-allowed":"pointer",opacity:generating&&generating!==report.id?0.5:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
                       {generating===report.id?"⏳ Generating...":"📥 Generate PDF"}
                     </button>
                     <div style={{fontSize:"0.75rem",color:"#94a3b8",textAlign:"center",lineHeight:1.4}}>Opens in new tab<br/>Print → Save as PDF</div>
@@ -16977,7 +16975,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
             ))}
           </div>
           <div style={{marginTop:18,padding:"16px 20px",background:"linear-gradient(135deg,rgba(124,58,237,0.06),rgba(37,99,235,0.04))",border:"1px solid rgba(124,58,237,0.2)",borderRadius:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
-            <div><div style={{fontWeight:700,fontSize:"0.88rem",color:"#1e293b"}}>Generate All 4 Reports</div><div style={{fontSize:"0.82rem",color:"#64748b",marginTop:2}}>Create all documents at once for a complete patient report package</div></div>
+            <div><div style={{fontWeight:700,fontSize:"0.88rem",color:"#1e293b"}}>Generate Both Reports</div><div style={{fontSize:"0.82rem",color:"#64748b",marginTop:2}}>Download Assessment &amp; Treatment PDFs for <strong>{patName}</strong></div></div>
             <button onClick={async()=>{for(const r of reports){await generatePdf(r.id);await new Promise(res=>setTimeout(res,1500));}}} disabled={generating!==null} style={{padding:"12px 22px",background:"linear-gradient(135deg,#1a3a5c,#7c3aed)",border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.8rem",cursor:generating?"not-allowed":"pointer",whiteSpace:"nowrap",flexShrink:0,boxShadow:"0 2px 12px rgba(124,58,237,0.3)"}}>
               📄 Generate All
             </button>
@@ -18224,6 +18222,31 @@ function AppInner({ currentUser, onSignOut }) {
         <button onClick={createNewPatient} style={{width:"100%",padding:"8px 10px",background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.a3}25`,borderRadius:8,color:PC.a3,fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
           ＋ New Patient
         </button>
+
+        {/* ── Active patient + PDF buttons ── */}
+        {data.dem_name && (
+          <div style={{marginTop:8,background:"rgba(37,99,235,0.05)",border:"1px solid rgba(37,99,235,0.18)",borderRadius:9,padding:"8px 10px"}}>
+            {/* Patient name pill */}
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:7}}>
+              <span style={{width:7,height:7,borderRadius:"50%",background:"#22c55e",flexShrink:0,display:"inline-block"}}/>
+              <span style={{fontSize:"0.78rem",fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{data.dem_name}</span>
+              {data.dem_age && <span style={{fontSize:"0.72rem",color:"#64748b",flexShrink:0}}>{data.dem_age}y</span>}
+            </div>
+            {/* PDF download buttons */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+              <button
+                onClick={()=>{ setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="assessment"]'); if(el) el.click(); },300); }}
+                style={{padding:"7px 6px",background:"linear-gradient(135deg,#1a3a5c,#2563eb)",border:"none",borderRadius:7,color:"#fff",fontWeight:700,fontSize:"0.7rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,boxShadow:"0 1px 6px rgba(37,99,235,0.3)"}}>
+                📋 Assessment
+              </button>
+              <button
+                onClick={()=>{ setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="treatment"]'); if(el) el.click(); },300); }}
+                style={{padding:"7px 6px",background:"linear-gradient(135deg,#065f46,#059669)",border:"none",borderRadius:7,color:"#fff",fontWeight:700,fontSize:"0.7rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,boxShadow:"0 1px 6px rgba(5,150,105,0.3)"}}>
+                🗒️ Treatment
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 1. Home */}
@@ -18270,20 +18293,7 @@ function AppInner({ currentUser, onSignOut }) {
         <SidebarItem navKey="ai_assistant" icon="🤖" label="AI Assistant"/>
       </SidebarGroup>
 
-      {/* 7. PDF Reports */}
-      <div style={{margin:"4px 6px"}}>
-        <div onClick={()=>setShowPdfReports(true)} style={{
-          display:"flex",alignItems:"center",gap:8,
-          padding:"9px 14px",cursor:"pointer",borderRadius:9,
-          background:"linear-gradient(135deg,rgba(220,38,38,0.08),rgba(185,28,28,0.05))",
-          border:`1px solid rgba(220,38,38,0.25)`,
-          transition:"all 0.15s",
-        }}>
-          <span style={{fontSize:"0.9rem"}}>📄</span>
-          <div style={{fontSize:"0.76rem",fontWeight:700,color:"#dc2626"}}>Generate PDF Reports</div>
-          <span style={{marginLeft:"auto",fontSize:"0.75rem",padding:"2px 6px",borderRadius:5,background:"rgba(220,38,38,0.15)",color:"#dc2626",fontWeight:800}}>3 PDFs</span>
-        </div>
-      </div>
+
 
     </>
   );
