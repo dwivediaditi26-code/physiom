@@ -7003,48 +7003,72 @@ function KineticChainSection({ data, set, navContext={} }) {
   },[navContext.kcHighlight,navContext.kcHighlights]);
   const [openTest, setOpenTest] = useState(null);
   const [modalTest, setModalTest] = useState(null);
+  const [showTheory, setShowTheory] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
   const reg = KC_REGIONS[region];
 
   const roleColor = (role) => role==="MOBILITY"?"#00c97a":role==="STABILITY"?"#ff4d6d":"#ffb300";
 
   return (
     <div>
-      {/* Theory banner */}
-      <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.2)", borderRadius:12, padding:14, marginBottom:16 }}>
-        <div style={{ fontWeight:800, color:C.accent, marginBottom:8, fontSize:"0.9rem" }}>⛓️ Joint-by-Joint Theory (Cook & Boyle)</div>
-        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
-          {[
-            ["Foot","MOBILITY","#00c97a"],["Ankle","MOBILITY","#00c97a"],["Knee","STABILITY","#ff4d6d"],
-            ["Hip","MOBILITY","#00c97a"],["Lumbar","STABILITY","#ff4d6d"],["Thoracic","MOBILITY","#00e5ff"],
-            ["Scapula","STABILITY","#ff4d6d"],["GH","MOBILITY","#00c97a"],["Elbow","STABILITY","#ff4d6d"],
-            ["Wrist","MOBILITY","#00c97a"],
-          ].map(([j,r,col])=>(
-            <div key={j} style={{ textAlign:"center", padding:"4px 9px", borderRadius:8, border:`1px solid ${col}40`, background:`${col}10` }}>
-              <div style={{ fontSize:"0.78rem", fontWeight:700, color:col }}>{j}</div>
-              <div style={{ fontSize:"0.75rem", color:col, opacity:0.8 }}>{r}</div>
+      {/* Theory banner — collapsible */}
+      <div style={{ border:"1px solid rgba(0,229,255,0.2)", borderRadius:12, marginBottom:12, overflow:"hidden" }}>
+        <div onClick={()=>setShowTheory(p=>!p)}
+          style={{ background:"rgba(0,229,255,0.05)", padding:"10px 14px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <span style={{ fontWeight:800, color:C.accent, fontSize:"0.85rem" }}>⛓️ Joint-by-Joint Theory (Cook &amp; Boyle)</span>
+          <span style={{ color:C.muted, fontSize:"0.8rem", display:"flex", alignItems:"center", gap:6 }}>
+            <span style={{ fontSize:"0.72rem", padding:"2px 8px", borderRadius:6, background:"rgba(0,229,255,0.1)", color:C.accent }}>{showTheory?"hide":"show"}</span>
+            {showTheory?"▲":"▼"}
+          </span>
+        </div>
+        {showTheory && (
+          <div style={{ padding:"12px 14px", background:"rgba(0,229,255,0.03)" }}>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
+              {[
+                ["Foot","MOBILITY","#00c97a"],["Ankle","MOBILITY","#00c97a"],["Knee","STABILITY","#ff4d6d"],
+                ["Hip","MOBILITY","#00c97a"],["Lumbar","STABILITY","#ff4d6d"],["Thoracic","MOBILITY","#00e5ff"],
+                ["Scapula","STABILITY","#ff4d6d"],["GH","MOBILITY","#00c97a"],["Elbow","STABILITY","#ff4d6d"],
+                ["Wrist","MOBILITY","#00c97a"],
+              ].map(([j,r,col])=>(
+                <div key={j} style={{ textAlign:"center", padding:"4px 9px", borderRadius:8, border:`1px solid ${col}40`, background:`${col}10` }}>
+                  <div style={{ fontSize:"0.78rem", fontWeight:700, color:col }}>{j}</div>
+                  <div style={{ fontSize:"0.72rem", color:col, opacity:0.8 }}>{r}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div style={{ fontSize:"0.76rem", color:C.muted, lineHeight:1.6 }}>
-          <strong style={{ color:C.text }}>Key Rule:</strong> When a MOBILE joint loses mobility → the adjacent STABLE joint is forced to become mobile → pain appears at the STABLE joint. <strong style={{ color:C.yellow }}>Always treat the CAUSE (mobile joint) not just the PAIN (stable joint).</strong>
-        </div>
+            <div style={{ fontSize:"0.76rem", color:C.muted, lineHeight:1.6 }}>
+              <strong style={{ color:C.text }}>Key Rule:</strong> When a MOBILE joint loses mobility → the adjacent STABLE joint is forced to become mobile → pain appears at the STABLE joint. <strong style={{ color:C.yellow }}>Always treat the CAUSE (mobile joint) not just the PAIN (stable joint).</strong>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Region tabs */}
-      <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
+      <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
         {Object.entries(KC_REGIONS).map(([key,r])=>(
-          <button key={key} type="button" onClick={()=>{ setRegion(key); setOpenTest(null); }}
-            style={{ padding:"6px 13px", borderRadius:20, border:`1px solid ${region===key?r.color:C.border}`, background:region===key?`${r.color}15`:"transparent", color:region===key?r.color:C.muted, fontSize:"0.74rem", fontWeight:region===key?700:400, cursor:"pointer" }}>
+          <button key={key} type="button" onClick={()=>{ setRegion(key); setOpenTest(null); setShowIntro(false); }}
+            style={{ padding:"5px 11px", borderRadius:20, border:`1px solid ${region===key?r.color:C.border}`, background:region===key?`${r.color}15`:"transparent", color:region===key?r.color:C.muted, fontSize:"0.74rem", fontWeight:region===key?700:400, cursor:"pointer" }}>
             {r.label}
-            <span style={{ marginLeft:5, fontSize:"0.8rem", padding:"1px 5px", borderRadius:8, background:`${roleColor(r.role)}20`, color:roleColor(r.role) }}>{r.role}</span>
+            <span style={{ marginLeft:4, fontSize:"0.72rem", padding:"1px 5px", borderRadius:8, background:`${roleColor(r.role)}20`, color:roleColor(r.role) }}>{r.role}</span>
           </button>
         ))}
       </div>
 
-      {/* Region intro */}
-      <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:10, padding:14, marginBottom:16, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>
-        <span style={{ padding:"2px 8px", borderRadius:8, background:`${roleColor(reg.role)}20`, color:roleColor(reg.role), fontSize:"0.78rem", fontWeight:700, marginRight:8 }}>{reg.role}</span>
-        {reg.intro}
+      {/* Region intro — collapsible */}
+      <div style={{ border:`1px solid ${reg.color}25`, borderRadius:10, marginBottom:14, overflow:"hidden" }}>
+        <div onClick={()=>setShowIntro(p=>!p)}
+          style={{ background:`${reg.color}08`, padding:"8px 12px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ padding:"2px 8px", borderRadius:8, background:`${roleColor(reg.role)}20`, color:roleColor(reg.role), fontSize:"0.75rem", fontWeight:700 }}>{reg.role}</span>
+            <span style={{ fontSize:"0.82rem", fontWeight:700, color:C.text }}>{reg.label} — About this region</span>
+          </div>
+          <span style={{ color:C.muted, fontSize:"0.75rem" }}>{showIntro?"▲":"▼"}</span>
+        </div>
+        {showIntro && (
+          <div style={{ padding:"10px 12px", background:`${reg.color}04`, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>
+            {reg.intro}
+          </div>
+        )}
       </div>
 
       {/* Tests */}
