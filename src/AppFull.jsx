@@ -18973,6 +18973,51 @@ function AppInner({ currentUser, onSignOut }) {
                 <BnavItem navKey="soap"        icon="📋" label="SOAP Notes"/>
                 <BnavItem navKey="ai_assistant" icon="🤖" label="AI Assistant"/>
               </div>
+              <div className={`pm-bnav-panel${bnavTab==="patient"?" open":""}`}>
+                {data.dem_name ? (
+                  <div style={{padding:"4px 2px 8px"}}>
+                    {/* Patient pill */}
+                    <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"rgba(124,58,237,0.07)",borderRadius:10,marginBottom:8,border:"1px solid rgba(124,58,237,0.15)"}}>
+                      <span style={{fontSize:"1.3rem"}}>👤</span>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontWeight:800,fontSize:"0.95rem",color:"#3b1f6b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.dem_name}</div>
+                        {data.dem_age && <div style={{fontSize:"0.72rem",color:"#7c3aed",fontWeight:600}}>Age {data.dem_age}</div>}
+                      </div>
+                    </div>
+                    {/* PDF buttons */}
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                      <button className="pm-bnav-pdf-btn"
+                        onClick={()=>{ setBnavTab(null); setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="assessment"]'); if(el) el.click(); },350); }}>
+                        <span style={{fontSize:"1.1rem"}}>📋</span>
+                        <span>Assessment PDF</span>
+                      </button>
+                      <button className="pm-bnav-pdf-btn"
+                        onClick={()=>{ setBnavTab(null); setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="treatment"]'); if(el) el.click(); },350); }}>
+                        <span style={{fontSize:"1.1rem"}}>🗒️</span>
+                        <span>Treatment PDF</span>
+                      </button>
+                      <button className="pm-bnav-pdf-btn"
+                        onClick={()=>{ setBnavTab(null); setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="hep"]'); if(el) el.click(); },350); }}>
+                        <span style={{fontSize:"1.1rem"}}>🏃</span>
+                        <span>HEP PDF</span>
+                      </button>
+                    </div>
+                    {/* Switch patient */}
+                    <button className="pm-bnav-dx" style={{marginTop:10}}
+                      onClick={()=>{ setBnavTab(null); setShowPatientDb(true); }}>
+                      👥 Switch / Load Patient
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{padding:"6px 2px"}}>
+                    <div style={{textAlign:"center",padding:"16px 12px",color:"#9a82c0",fontSize:"0.85rem",fontWeight:600}}>No patient loaded</div>
+                    <button className="pm-bnav-dx"
+                      onClick={()=>{ setBnavTab(null); setShowPatientDb(true); }}>
+                      👥 Load Patient
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className={`pm-bnav-panel${bnavTab==="top"?" open":""}`}>
                 <BnavItem navKey="home"      icon="🏠" label="Home"/>
                 <BnavItem navKey="dashboard" icon="📊" label="Dashboard"/>
@@ -19005,6 +19050,7 @@ function AppInner({ currentUser, onSignOut }) {
             return (
               <>
                 <TabBtn id="top"           icon="☰"  label="Menu"    matchKeys={topKeys}/>
+                <TabBtn id="patient"       icon="👤" label="Patient" matchKeys={[]}/>
                 <TabBtn id="assessment"    icon="🩺" label="Assess"  matchKeys={assessKeys}/>
                 <TabBtn id="advanced"      icon="🔭" label="Adv."    matchKeys={advKeys}/>
                 <TabBtn id="treatment"     icon="💊" label="Treat"   matchKeys={treatKeys}/>
