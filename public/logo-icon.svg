@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84" width="84" height="84">
+  <circle cx="42" cy="42" r="40" fill="none" stroke="#6d28d9" stroke-width="1.6" opacity="0.65"/>
+  <path d="M42,6 C30,6 22,13 19,22 C16,31 18,40 22,46 C19,50 17,55 19,60 C21,65 26,68 31,69 L31,74 C31,76 33,78 35,78 L49,78 C51,78 53,76 53,74 L53,69 C58,68 63,65 65,60 C67,55 65,50 62,46 C66,40 68,31 65,22 C62,13 54,6 42,6 Z" fill="#3b1d8a" opacity="0.9"/>
+  <rect x="38.5" y="10" width="7" height="4" rx="1.4" fill="white" opacity="0.92"/>
+  <rect x="38.5" y="17" width="7" height="4" rx="1.4" fill="white" opacity="0.92"/>
+  <rect x="38.5" y="24" width="7" height="4" rx="1.4" fill="white" opacity="0.92"/>
+  <rect x="38.5" y="31" width="7" height="4" rx="1.4" fill="white" opacity="0.92"/>
+  <rect x="38.5" y="38" width="7" height="4" rx="1.4" fill="white" opacity="0.92"/>
+  <rect x="38.5" y="45" width="7" height="4" rx="1.4" fill="white" opacity="0.92"/>
+  <rect x="38.5" y="52" width="7" height="4" rx="1.4" fill="white" opacity="0.92"/>
+  <circle cx="24" cy="19" r="2.6" fill="#c4b5fd"/>
+  <circle cx="33" cy="13" r="2.6" fill="#a78bfa"/>
+  <circle cx="19" cy="29" r="2.6" fill="#c4b5fd"/>
+  <circle cx="28" cy="27" r="2.6" fill="#a78bfa"/>
+  <circle cx="22" cy="39" r="2.6" fill="#c4b5fd"/>
+  <circle cx="31" cy="35" r="2.6" fill="#a78bfa"/>
+  <line x1="24" y1="19" x2="33" y2="13" stroke="#c4b5fd" stroke-width="1" opacity="0.75"/>
+  <line x1="24" y1="19" x2="19" y2="29" stroke="#c4b5fd" stroke-width="1" opacity="0.75"/>
+  <line x1="24" y1="19" x2="28" y2="27" stroke="#c4b5fd" stroke-width="1" opacity="0.75"/>
+  <line x1="33" y1="13" x2="28" y2="27" stroke="#c4b5fd" stroke-width="1" opacity="0.75"/>
+  <line x1="19" y1="29" x2="28" y2="27" stroke="#c4b5fd" stroke-width="1" opacity="0.75"/>
+  <line x1="19" y1="29" x2="22" y2="39" stroke="#c4b5fd" stroke-width="1" opacity="0.75"/>
+  <line x1="28" y1="27" x2="31" y2="35" stroke="#c4b5fd" stroke-width="1" opacity="0.75"/>
+  <line x1="22" y1="39" x2="31" y2="35" stroke="#c4b5fd" stroke-width="1" opacity="0.75"/>
+</svg>

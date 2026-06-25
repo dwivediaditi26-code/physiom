@@ -18469,8 +18469,12 @@ function AppInner({ currentUser, onSignOut }) {
         <div className="pm-header-inner" style={{maxWidth:1400,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:60,gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
             <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation">☰</button>
-            {/* Logo image */}
-            <img src="/logo.svg" alt="PhysioMind" style={{height:46,width:"auto",flexShrink:0,display:"block"}} />
+            {/* Logo icon */}
+            <img src="/logo-icon.svg" alt="PhysioMind" style={{height:42,width:42,flexShrink:0,display:"block"}} />
+            <div style={{minWidth:0}}>
+              <div style={{fontWeight:800,fontSize:"clamp(0.85rem,3vw,1.05rem)",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",lineHeight:1.2}}>PhysioMind Pro</div>
+              <div className="pm-logo-sub" style={{fontSize:"0.75rem",color:PC.muted,letterSpacing:"1px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textTransform:"uppercase",fontWeight:600,marginTop:1}}>Clinical Assessment Platform</div>
+            </div>
             {/* Live patient chip */}
             {activePatient&&(
               <div className="pm-live-chip" style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",background:PC.isDark?"rgba(129,140,248,0.08)":"rgba(79,70,229,0.05)",border:`1px solid ${PC.isDark?"rgba(129,140,248,0.2)":"rgba(79,70,229,0.15)"}`,borderRadius:20,cursor:"pointer"}} onClick={()=>setShowPatientDb(true)}>
