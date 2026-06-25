@@ -16523,6 +16523,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
   const buildTreatmentPdf = () => {
     const exercises = gatherExercises();
     const techniques = gatherTechniques();
+    const sessions = Array.isArray(d.tx_sessions) ? [...d.tx_sessions] : [];
     const dxLabel = escHtml(dx?.dx?.[0]?.label || d.cc_main || "Musculoskeletal Dysfunction");
     const phaseColors = {"Phase 1":"#0891b2","Phase 2":"#7c3aed","Phase 3":"#059669","Phase 4":"#d97706","Phase 1 -- Motor Control":"#0891b2","Phase 1 -- Mobility":"#0891b2","Phase 1 -- Activation":"#0891b2","Phase 1 -- Flexibility":"#0891b2","Phase 2 -- Stability":"#7c3aed","Phase 2 -- Strengthening":"#7c3aed","Phase 2 -- Functional":"#7c3aed","Phase 3 -- Functional":"#059669"};
     const groupedExercises = exercises.reduce((acc, ex) => { const p = ex.phase || "Phase 1"; if(!acc[p]) acc[p]=[]; acc[p].push(ex); return acc; }, {});
@@ -16980,60 +16981,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
               📄 Generate All
             </button>
           </div>
-          {/* ── PATIENT LIST ── */}
-          <div style={{marginTop:0}}>
-            {(()=>{
-              const [ptSearch, setPtSearch] = React.useState("");
-              const filteredPts = patients.filter(p=>!ptSearch||(p.name||"").toLowerCase().includes(ptSearch.toLowerCase())||(p.data?.cc_main||"").toLowerCase().includes(ptSearch.toLowerCase())).slice().sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0));
-              return (<div>
-            <div style={{fontSize:15,fontWeight:800,color:"#111827",marginBottom:12,letterSpacing:"-0.3px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span>All Patients ({patients.length})</span>
-              <input value={ptSearch} onChange={e=>setPtSearch(e.target.value)}
-                placeholder="Search…"
-                style={{padding:"7px 14px",borderRadius:20,border:"1px solid #E5E7EB",fontSize:12,outline:"none",width:130,background:"#F9FAFB"}}
-              />
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {filteredPts.map((p,i)=>{
-                const pd = p.data||{};
-                const initials = (p.name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
-                const colors=["#7c3aed","#0891b2","#059669","#d97706","#dc2626","#2563eb"];
-                const col = colors[i%colors.length];
-                const sessCount = Array.isArray(pd.tx_sessions)?pd.tx_sessions.length:0;
-                const nrs = parseFloat(pd.cc_vas_now||pd.pa_vas_now||"0")||0;
-                const dx = pd.cc_main?.slice(0,45)||p.lastDx||"No chief complaint";
-                const hasFlags = p.hasRedFlags;
-                const signed = Array.isArray(pd.soap_signed_notes)?pd.soap_signed_notes.length:0;
-                return (
-                  <div key={p.id} onClick={()=>onProfile&&onProfile(p)}
-                    style={{background:"white",borderRadius:14,padding:"12px 14px",
-                      border:`1px solid ${hasFlags?"#FECACA":"#F1F5F9"}`,
-                      display:"flex",alignItems:"center",gap:12,cursor:"pointer",
-                      boxShadow:"0 1px 4px rgba(0,0,0,0.04)",
-                      transition:"box-shadow 0.15s",
-                    }}>
-                    <div style={{width:42,height:42,borderRadius:12,background:`${col}18`,border:`1.5px solid ${col}30`,
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontSize:13,fontWeight:800,color:col,flexShrink:0,position:"relative"}}>
-                      {initials}
-                      {hasFlags&&<div style={{position:"absolute",top:-3,right:-3,width:10,height:10,background:"#EF4444",borderRadius:"50%",border:"1.5px solid white"}}/>}
-                    </div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:"#111827",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
-                      <div style={{fontSize:11,color:"#6B7280",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{dx}</div>
-                    </div>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
-                      {nrs>0&&<div style={{padding:"2px 8px",background:nrs>=7?"#FEF2F2":nrs>=4?"#FFF7ED":"#ECFDF5",borderRadius:99,fontSize:10,fontWeight:700,color:nrs>=7?"#dc2626":nrs>=4?"#d97706":"#059669"}}>NRS {nrs}</div>}
-                      <div style={{fontSize:10,color:"#9CA3AF"}}>{sessCount} session{sessCount!==1?"s":""}{signed>0?` · ${signed} note${signed!==1?"s":""}`:""}</div>
-                    </div>
-                    <div style={{color:"#9CA3AF",fontSize:16,flexShrink:0}}>›</div>
-                  </div>
-                );
-              })}
-              {filteredPts.length===0&&<div style={{textAlign:"center",padding:"30px 0",color:"#9CA3AF",fontSize:12}}>{ptSearch?"No matches":"No patients yet"}</div>}
-            </div>
-          </div>);})()}
-          </div>
+
 
           <div style={{marginTop:14,padding:"12px 16px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10}}>
             <div style={{fontSize:"0.8rem",fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>💡 Tips for best results</div>
