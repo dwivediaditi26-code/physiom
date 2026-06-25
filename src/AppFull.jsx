@@ -15716,34 +15716,38 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
 
   const pdfHeader = (title, subtitle, color) => {
     const reportNo = d.report_no || ("RPT-" + today.replace(/\s/g,""));
-    const logoUrl = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/physiomind_logo";
+    const inlineLogo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 90" width="176" height="72">
+      <circle cx="45" cy="45" r="42" fill="none" stroke="#6d28d9" stroke-width="1.8" opacity="0.7"/>
+      <path d="M45,7 C56,7 64,12 68,20 C72,28 71,36 68,42 C72,46 73,52 71,58 C69,63 64,66 59,67 L59,72 C59,74 57,76 55,76 L35,76 C33,76 31,74 31,72 L31,67 C26,66 21,63 19,58 C17,52 18,46 22,42 C19,36 18,28 22,20 C26,12 34,7 45,7 Z" fill="#3b1d8a" opacity="0.88"/>
+      <rect x="41.5" y="11" width="7" height="4.5" rx="1.5" fill="white" opacity="0.9"/>
+      <rect x="41.5" y="18" width="7" height="4.5" rx="1.5" fill="white" opacity="0.9"/>
+      <rect x="41.5" y="25" width="7" height="4.5" rx="1.5" fill="white" opacity="0.9"/>
+      <rect x="41.5" y="32" width="7" height="4.5" rx="1.5" fill="white" opacity="0.9"/>
+      <rect x="41.5" y="39" width="7" height="4.5" rx="1.5" fill="white" opacity="0.9"/>
+      <rect x="41.5" y="46" width="7" height="4.5" rx="1.5" fill="white" opacity="0.9"/>
+      <rect x="41.5" y="53" width="7" height="4.5" rx="1.5" fill="white" opacity="0.9"/>
+      <circle cx="26" cy="20" r="2.8" fill="#c4b5fd"/>
+      <circle cx="35" cy="14" r="2.8" fill="#a78bfa"/>
+      <circle cx="20" cy="30" r="2.8" fill="#c4b5fd"/>
+      <circle cx="30" cy="28" r="2.8" fill="#a78bfa"/>
+      <circle cx="23" cy="40" r="2.8" fill="#c4b5fd"/>
+      <circle cx="33" cy="36" r="2.8" fill="#a78bfa"/>
+      <line x1="26" y1="20" x2="35" y2="14" stroke="#c4b5fd" stroke-width="1.1" opacity="0.8"/>
+      <line x1="26" y1="20" x2="20" y2="30" stroke="#c4b5fd" stroke-width="1.1" opacity="0.8"/>
+      <line x1="26" y1="20" x2="30" y2="28" stroke="#c4b5fd" stroke-width="1.1" opacity="0.8"/>
+      <line x1="35" y1="14" x2="30" y2="28" stroke="#c4b5fd" stroke-width="1.1" opacity="0.8"/>
+      <line x1="20" y1="30" x2="30" y2="28" stroke="#c4b5fd" stroke-width="1.1" opacity="0.8"/>
+      <line x1="20" y1="30" x2="23" y2="40" stroke="#c4b5fd" stroke-width="1.1" opacity="0.8"/>
+      <line x1="30" y1="28" x2="33" y2="36" stroke="#c4b5fd" stroke-width="1.1" opacity="0.8"/>
+      <line x1="23" y1="40" x2="33" y2="36" stroke="#c4b5fd" stroke-width="1.1" opacity="0.8"/>
+      <text x="96" y="50" font-family="'Segoe UI',Arial,sans-serif" font-size="30" font-weight="900" letter-spacing="-0.8" fill="#1e1b4b">Physio<tspan fill="#7c3aed">Mind</tspan></text>
+      <text x="97" y="64" font-family="'Segoe UI',Arial,sans-serif" font-size="10" font-weight="600" letter-spacing="1.8" fill="#94a3b8">CLINICAL PLATFORM</text>
+    </svg>`;
     return `<div style="background:#fff;border-bottom:1px solid #e2e8f0;">
-      <div style="padding:16px 32px 14px;display:flex;align-items:center;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:14px;">
-          <img src="${logoUrl}" height="60" style="display:block;"
-            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
-          <div style="display:none;align-items:center;gap:10px;">
-            <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="26" cy="26" r="24" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
-              <path d="M30,10 C38,12 42,18 42,26 C42,32 38,37 34,39 L34,44 L18,44 L18,39 C13,36 11,30 11,24 C11,15 20,8 28,9 Z" fill="#7c3aed" opacity="0.12"/>
-              <line x1="26" y1="13" x2="26" y2="42" stroke="#7c3aed" stroke-width="1.8" stroke-dasharray="2.5,2"/>
-              <circle cx="21" cy="18" r="2" fill="#7c3aed"/>
-              <circle cx="31" cy="16" r="2" fill="#7c3aed"/>
-              <circle cx="18" cy="25" r="2" fill="#7c3aed"/>
-              <circle cx="34" cy="23" r="2" fill="#7c3aed"/>
-              <circle cx="22" cy="30" r="2" fill="#7c3aed"/>
-              <line x1="21" y1="18" x2="31" y2="16" stroke="#a78bfa" stroke-width="0.9"/>
-              <line x1="21" y1="18" x2="18" y2="25" stroke="#a78bfa" stroke-width="0.9"/>
-              <line x1="31" y1="16" x2="34" y2="23" stroke="#a78bfa" stroke-width="0.9"/>
-              <line x1="18" y1="25" x2="22" y2="30" stroke="#a78bfa" stroke-width="0.9"/>
-              <line x1="34" y1="23" x2="22" y2="30" stroke="#a78bfa" stroke-width="0.9"/>
-            </svg>
-            <div>
-              <div style="font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-0.4px;line-height:1.1;">Physio<span style="color:#7c3aed;">Mind</span></div>
-              <div style="font-size:9.5px;color:#94a3b8;margin-top:2px;">AI-Powered Physiotherapy Platform</div>
-            </div>
-          </div>
-          <div style="margin-left:4px;">
+      <div style="padding:14px 32px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:18px;">
+          ${inlineLogo}
+          <div style="border-left:2px solid #e2e8f0;padding-left:18px;margin-left:4px;">
             <div style="font-size:8.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;">${title}</div>
             <div style="font-size:10px;color:#64748b;margin-top:1px;">${subtitle}</div>
           </div>
@@ -18465,12 +18469,8 @@ function AppInner({ currentUser, onSignOut }) {
         <div className="pm-header-inner" style={{maxWidth:1400,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:60,gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
             <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation">☰</button>
-            {/* Logo mark */}
-            <div style={{width:36,height:36,background:`linear-gradient(135deg,${PC.accent}22,${PC.a2}22)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.1rem"}}>⚕</div>
-            <div style={{minWidth:0}}>
-              <div style={{fontWeight:800,fontSize:"clamp(0.85rem,3vw,1.05rem)",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",lineHeight:1.2}}>PhysioMind Pro</div>
-              <div className="pm-logo-sub" style={{fontSize:"0.75rem",color:PC.muted,letterSpacing:"1px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textTransform:"uppercase",fontWeight:600,marginTop:1}}>Clinical Assessment Platform</div>
-            </div>
+            {/* Logo image */}
+            <img src="/logo.svg" alt="PhysioMind" style={{height:46,width:"auto",flexShrink:0,display:"block"}} />
             {/* Live patient chip */}
             {activePatient&&(
               <div className="pm-live-chip" style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",background:PC.isDark?"rgba(129,140,248,0.08)":"rgba(79,70,229,0.05)",border:`1px solid ${PC.isDark?"rgba(129,140,248,0.2)":"rgba(79,70,229,0.15)"}`,borderRadius:20,cursor:"pointer"}} onClick={()=>setShowPatientDb(true)}>
