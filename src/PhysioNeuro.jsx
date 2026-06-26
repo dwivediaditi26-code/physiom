@@ -1922,9 +1922,19 @@ function NeurologicalModule({ data, set, navContext={} }) {
         </div>
       )}
 
-      {/* Tab Bar */}
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:18}}>
-        {tabs.map(t=><button key={t.key} type="button" onClick={()=>setTab(t.key)} style={tabBtnStyle(t.key)}>{t.icon} {t.label}</button>)}
+      {/* Tab Bar — scrollable chip row */}
+      <div className="pm-region-chips-scroll pm-neuro-tabs" style={{marginBottom:14}}>
+        {tabs.map(t=>(
+          <button
+            key={t.key}
+            type="button"
+            onClick={()=>setTab(t.key)}
+            className={"pm-region-chip" + (tab===t.key?" active":"")}
+            style={tab===t.key?{background:"rgba(0,229,255,0.18)",borderColor:C.accent,color:C.accent}:{borderColor:C.border,color:C.muted}}
+          >
+            {t.icon} {t.label}
+          </button>
+        ))}
       </div>
 
       {/* ── DERMATOMES ── */}

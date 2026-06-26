@@ -428,9 +428,9 @@ const MOBILE_CSS = `
   .pm-mobile-hdr { display: none; }
   @media (max-width: 767px) {
     .pm-mobile-hdr {
-      display: flex; align-items: center; gap: 7px;
-      padding: 5px 10px; position: sticky; top: 0; z-index: 101;
-      min-height: 42px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px; position: sticky; top: 0; z-index: 101;
+      min-height: 52px; flex-shrink: 0;
     }
     .pm-mobile-hdr .pm-hamburger { min-height: 32px !important; min-width: 32px !important; padding: 5px 7px !important; }
     /* Hide desktop header and both patient bars on mobile */
@@ -495,12 +495,18 @@ const MOBILE_CSS = `
     .pm-module-title-row { padding: 4px 0 4px !important; margin-bottom: 6px !important; }
     .pm-module-title-row .pm-module-sub { display: none !important; }
 
+    /* Outcome Measures action buttons — always side by side */
+    .pm-outcome-actions { display: flex !important; flex-direction: row !important; }
+    .pm-outcome-actions button { flex: 1 !important; }
+
     /* ROM controls — compact on mobile */
-    .pm-rom-controls { gap: 4px !important; margin-bottom: 6px !important; }
-    .pm-rom-controls button { padding: 4px 10px !important; font-size: 0.72rem !important; min-height: 32px !important; }
-    /* ROM session snapshots — slim on mobile */
-    .pm-rom-snapshots { padding: 6px 10px !important; margin-bottom: 8px !important; border-radius: 8px !important; }
-    .pm-rom-snapshots span { font-size: 0.6rem !important; }
+    .pm-rom-controls { gap: 4px !important; margin-bottom: 6px !important; flex-wrap: nowrap !important; }
+    .pm-rom-controls button { padding: 4px 8px !important; font-size: 0.68rem !important; min-height: 30px !important; }
+    /* ROM session snapshots — single compact row */
+    .pm-rom-snapshots { padding: 5px 10px !important; margin-bottom: 8px !important; border-radius: 8px !important; flex-wrap: nowrap !important; }
+    .pm-rom-snapshots > span { font-size: 0.58rem !important; white-space: nowrap !important; }
+    /* Neuro sub-module chips */
+    .pm-neuro-tabs { margin-bottom: 12px !important; }
   }
 `;
 

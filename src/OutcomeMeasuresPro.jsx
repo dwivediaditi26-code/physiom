@@ -1096,7 +1096,7 @@ export default function OutcomeMeasuresPro({ data, set }) {
               </div>
               {last&&<ScoreBar score={last.score} maxScore={sc.maxScore} color={interp?.color||A}/>}
               {/* Actions */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0,borderTop:`1px solid ${BD}`}}>
+              <div className="pm-outcome-actions" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0,borderTop:`1px solid ${BD}`}}>
                 {[
                   {label:"📄 Blank PDF",color:MU,action:()=>generateBlankPDF(sc.id,data?.name||"")},
                   {label:"▶ Start Assessment",color:A,action:()=>{setActiveScale(sc.id);setView("live");}},

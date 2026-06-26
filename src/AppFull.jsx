@@ -18482,15 +18482,15 @@ function AppInner({ currentUser, onSignOut }) {
       {/* ── MOBILE COMPACT HEADER (≤767px only, replaces pm-header + patient bars) ── */}
       <div className="pm-mobile-hdr" style={{background:PC.isDark?PC.headerBg:"#faf8ff",borderBottom:`1px solid ${PC.border}`}}>
         <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation" style={{minHeight:32,minWidth:32,padding:"5px 7px",fontSize:"1rem"}}>☰</button>
-        <img src="/logo.svg" alt="PhysioMind" style={{height:22,width:"auto",flexShrink:0}} />
+        <img src="/logo.svg" alt="PhysioMind" style={{height:30,width:"auto",flexShrink:0}} />
         <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-          <div style={{fontWeight:800,fontSize:"0.7rem",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind Pro</div>
+          <div style={{fontWeight:800,fontSize:"0.88rem",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind Pro</div>
           {activePatient
-            ? <div style={{fontSize:"0.62rem",color:PC.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            ? <div style={{fontSize:"0.72rem",color:PC.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                 <span style={{color:PC.a3}}>●</span> {activePatient.name.length>18?activePatient.name.slice(0,18)+"…":activePatient.name}
                 {lastSaved && <span style={{color:PC.green}}> · ✓ {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</span>}
               </div>
-            : <div style={{fontSize:"0.6rem",color:PC.muted}}>No patient loaded</div>
+            : <div style={{fontSize:"0.68rem",color:PC.muted}}>No patient loaded</div>
           }
         </div>
         <button onClick={createNewPatient} style={{padding:"3px 8px",minHeight:28,background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.7rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>+ New</button>
