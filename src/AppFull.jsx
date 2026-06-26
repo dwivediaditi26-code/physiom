@@ -18493,27 +18493,8 @@ function AppInner({ currentUser, onSignOut }) {
             : <div style={{fontSize:"0.6rem",color:PC.muted}}>No patient loaded</div>
           }
         </div>
-        <button
-          onClick={()=>setMobileSearchOpen(o=>!o)}
-          style={{width:30,height:30,minHeight:"30px !important",padding:0,background:mobileSearchOpen?`rgba(124,58,237,0.12)`:"transparent",border:`1px solid ${mobileSearchOpen?"rgba(124,58,237,0.4)":PC.border}`,borderRadius:7,color:PC.accent,fontSize:"1rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}
-          aria-label="Search"
-        >🔍</button>
         <button onClick={createNewPatient} style={{padding:"3px 8px",minHeight:28,background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.7rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>+ New</button>
       </div>
-      {/* Mobile search bar — expands below header when 🔍 tapped */}
-      {mobileSearchOpen && (
-        <div className="pm-mobile-search" style={{background:PC.isDark?PC.headerBg:"#faf8ff",borderBottom:`1px solid ${PC.border}`}}>
-          <span style={{fontSize:"0.9rem",flexShrink:0}}>🔍</span>
-          <input
-            autoFocus
-            value={mobileSearchQ}
-            onChange={e=>setMobileSearchQ(e.target.value)}
-            placeholder="Search tests, exercises, notes..."
-            style={{flex:1,background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,padding:"5px 10px",fontSize:"0.82rem",fontFamily:"inherit",color:PC.text,outline:"none",minHeight:34}}
-          />
-          <button className="pm-mobile-search-cancel" onClick={()=>{setMobileSearchOpen(false);setMobileSearchQ("");}} style={{color:PC.accent}}>Cancel</button>
-        </div>
-      )}
 
       {/* ── ACTIVE PATIENT BAR ── */}
       {activePatient && (

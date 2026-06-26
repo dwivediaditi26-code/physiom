@@ -708,7 +708,7 @@ function ROMModule({data,set,navContext={}}){
       ))}
 
       {/* Mode Toggle */}
-      <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+      <div className="pm-rom-controls" style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
         {[["arom","Active ROM"],["prom","Passive ROM"],["resisted","Resisted"]].map(([m,l])=>
           btn(l,mode===m,()=>setMode(m),C.accent)
         )}
@@ -718,7 +718,7 @@ function ROMModule({data,set,navContext={}}){
       </div>
 
       {/* ── ROM SNAPSHOT & TREND ───────────────────────────────────────── */}
-      <div style={{background:"rgba(124,58,237,0.05)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+      <div className="pm-rom-snapshots" style={{background:"rgba(124,58,237,0.05)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
         <span style={{fontSize:"0.65rem",fontWeight:700,color:"#7c3aed",textTransform:"uppercase",letterSpacing:"0.8px"}}>📸 Session Snapshots</span>
         <button onClick={()=>{
           const now = new Date();

@@ -495,6 +495,13 @@ const MOBILE_CSS = `
     /* Compact inline section/module title rows */
     .pm-module-title-row { padding: 4px 0 4px !important; margin-bottom: 6px !important; }
     .pm-module-title-row .pm-module-sub { display: none !important; }
+
+    /* ROM controls — compact on mobile */
+    .pm-rom-controls { gap: 4px !important; margin-bottom: 6px !important; }
+    .pm-rom-controls button { padding: 4px 10px !important; font-size: 0.72rem !important; min-height: 32px !important; }
+    /* ROM session snapshots — slim on mobile */
+    .pm-rom-snapshots { padding: 6px 10px !important; margin-bottom: 8px !important; border-radius: 8px !important; }
+    .pm-rom-snapshots span { font-size: 0.6rem !important; }
   }
 `;
 

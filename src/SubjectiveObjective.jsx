@@ -7057,19 +7057,19 @@ function KineticChainSection({ data, set, navContext={} }) {
         )}
       </div>
 
-      {/* Region tabs */}
-      <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
-        {Object.entries(KC_REGIONS).map(([key,r])=>(
-          <button key={key} type="button" onClick={()=>{ setRegion(key); setOpenTest(null); setShowIntro(false); }}
-            style={{ padding:"5px 11px", borderRadius:20, border:`1px solid ${region===key?r.color:C.border}`, background:region===key?`${r.color}15`:"transparent", color:region===key?r.color:C.muted, fontSize:"0.74rem", fontWeight:region===key?700:400, cursor:"pointer" }}>
-            {r.label}
-            <span style={{ marginLeft:4, fontSize:"0.72rem", padding:"1px 5px", borderRadius:8, background:`${roleColor(r.role)}20`, color:roleColor(r.role) }}>{r.role}</span>
-          </button>
-        ))}
-      </div>
+      {/* Region chips */}
+      <RegionChips
+        regions={Object.entries(KC_REGIONS).map(([key,r])=>({
+          key,
+          label: r.label,
+          filled: Object.keys(data).filter(k=>k.startsWith("kc_"+key+"_")&&data[k]).length,
+        }))}
+        active={region}
+        onSelect={k=>{setRegion(k);setOpenTest(null);setShowIntro(false);}}
+      />
 
-      {/* Region intro — collapsible */}
-      <div style={{ border:`1px solid ${reg.color}25`, borderRadius:10, marginBottom:14, overflow:"hidden" }}>
+      {/* Region intro — collapsible, desktop only */}
+      <div className="pm-desktop-only" style={{ border:`1px solid ${reg.color}25`, borderRadius:10, marginBottom:14, overflow:"hidden" }}>
         <div onClick={()=>setShowIntro(p=>!p)}
           style={{ background:`${reg.color}08`, padding:"8px 12px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -13713,18 +13713,19 @@ function NKTSection({ data, set, navContext={} }) {
         )}
       </div>
 
-      {/* Region tabs */}
-      <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
-        {Object.entries(NKT_REGIONS).map(([key,r])=>(
-          <button key={key} type="button" onClick={()=>{ setRegion(key); setOpenTest(null); }}
-            style={{ padding:"6px 14px", borderRadius:20, border:`1px solid ${region===key?r.color:C.border}`, background:region===key?`${r.color}15`:"transparent", color:region===key?r.color:C.muted, fontSize:"0.76rem", fontWeight:region===key?700:400, cursor:"pointer" }}>
-            {r.label}
-          </button>
-        ))}
-      </div>
+      {/* Region chips */}
+      <RegionChips
+        regions={Object.entries(NKT_REGIONS).map(([key,r])=>({
+          key,
+          label: r.label,
+          filled: r.tests.filter(t=>data[t.id]).length,
+        }))}
+        active={region}
+        onSelect={k=>{setRegion(k);setOpenTest(null);}}
+      />
 
-      {/* Region intro */}
-      <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:10, padding:14, marginBottom:16, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>
+      {/* Region intro — hidden on mobile */}
+      <div className="pm-desktop-only" style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:10, padding:14, marginBottom:16, fontSize:"0.8rem", color:C.text, lineHeight:1.7 }}>
         {reg.intro}
       </div>
 
