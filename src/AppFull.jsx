@@ -18194,15 +18194,15 @@ function AppInner({ currentUser, onSignOut }) {
         <SidebarItem navKey="palpation"     icon="🖐️" label="Palpation"/>
         <SidebarItem navKey="rom"           icon="📐" label="Range of Motion"/>
         <SidebarItem navKey="mmt"           icon="💪" label="MMT"/>
-        <SidebarItem navKey="fma"           icon="🏃" label="Functional Assessment"/>
         <SidebarItem navKey="special"       icon="🔬" label="Special Tests (100+)"/>
         <SidebarItem navKey="neuro"         icon="⚡" label="Neurological"/>
-        <SidebarItem navKey="gait"          icon="🚶" label="Gait Analysis"/>
         <SidebarItem navKey="outcome"       icon="📈" label="Outcome Measures"/>
       </SidebarGroup>
 
       {/* 4. Advanced Clinical Assessment (collapsible) */}
       <SidebarGroup groupKey="advanced" icon="🔭" label="Advanced Assessment" accentColor="#9333ea">
+        <SidebarItem navKey="fma"          icon="🏃" label="Functional Assessment"/>
+        <SidebarItem navKey="gait"         icon="🚶" label="Gait Analysis"/>
         <SidebarItem navKey="cyriax_full"  icon="🦴" label="STTT — Selective Tissue Tension"/>
         <SidebarItem navKey="kinetic"      icon="⛓️" label="Kinetic Chain"/>
         <SidebarItem navKey="nkt"          icon="🧠" label="CPA — Compensation Pattern Analysis"/>
