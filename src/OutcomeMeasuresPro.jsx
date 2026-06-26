@@ -1023,6 +1023,8 @@ export default function OutcomeMeasuresPro({ data, set }) {
   const [activeScale,setActiveScale]=useState(null);
   const [patientMode,setPatientMode]=useState(false);
   const [lastResult,setLastResult]=useState(null);
+  const [omSearch,setOmSearch]=useState("");
+  const [omSearchOpen,setOmSearchOpen]=useState(false);
 
   // Load history from patient data
   const getHistory=(scaleId)=>{
@@ -1061,15 +1063,30 @@ export default function OutcomeMeasuresPro({ data, set }) {
   // Scale list
   return(
     <div style={{fontFamily:"system-ui,sans-serif",color:TX}}>
-      <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+      {/* Header row */}
+      <div style={{marginBottom:omSearchOpen?6:14,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         <div style={{fontWeight:800,fontSize:"0.95rem",flex:1}}>📈 Outcome Measures</div>
-        <span style={{fontSize:"0.68rem",color:MU,background:S2,padding:"3px 10px",borderRadius:20,border:`1px solid ${BD}`}}>
-          {Object.keys(SCALES).length} validated scales
-        </span>
+        {!omSearchOpen && (
+          <span style={{fontSize:"0.68rem",color:MU,background:S2,padding:"3px 10px",borderRadius:20,border:`1px solid ${BD}`}}>
+            {Object.keys(SCALES).length} validated scales
+          </span>
+        )}
+        {omSearchOpen ? (
+          <div style={{display:"flex",alignItems:"center",gap:6,flex:1}}>
+            <input autoFocus type="text" value={omSearch} onChange={e=>setOmSearch(e.target.value)}
+              placeholder="Search scales…"
+              style={{flex:1,padding:"5px 10px",borderRadius:8,border:`1.5px solid ${A}`,background:S2,color:TX,fontSize:"0.8rem",fontFamily:"inherit",outline:"none",minHeight:32}}/>
+            <button type="button" onClick={()=>{setOmSearchOpen(false);setOmSearch("");}}
+              style={{background:"transparent",border:"none",color:MU,cursor:"pointer",fontSize:"1rem",padding:"0 2px",minHeight:32}}>✕</button>
+          </div>
+        ) : (
+          <button type="button" onClick={()=>setOmSearchOpen(true)}
+            style={{background:"transparent",border:"none",padding:"0 2px",cursor:"pointer",color:MU,fontSize:"1.1rem",lineHeight:1,minHeight:28}}>🔍</button>
+        )}
       </div>
 
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {Object.values(SCALES).map(sc=>{
+        {Object.values(SCALES).filter(sc=>!omSearch.trim()||sc.full.toLowerCase().includes(omSearch.toLowerCase())||sc.category.toLowerCase().includes(omSearch.toLowerCase())).map(sc=>{
           const last=getLastScore(sc.id);
           const interp=last?sc.interpret(last.score):null;
           const history=getHistory(sc.id);

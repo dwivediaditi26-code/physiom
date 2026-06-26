@@ -151,7 +151,7 @@ const MOBILE_CSS = `
 
   /* ── Global touch targets — EVERY button/input gets 44px min ── */
   @media (max-width: 767px) {
-    button:not(.pm-bnav-tab):not(.pm-bnav-item):not(.pm-bnav-dx) {
+    button:not(.pm-bnav-tab):not(.pm-bnav-item):not(.pm-bnav-dx):not(.pm-rom-qual-btn):not(.pm-region-chip) {
       min-height: 40px;
     }
     input, select, textarea {
@@ -414,7 +414,7 @@ const MOBILE_CSS = `
 
   /* Touch targets */
   @media (max-width: 767px) {
-    button { min-height: 40px !important; }
+    button:not(.pm-rom-qual-btn) { min-height: 40px !important; }
   }
 
   /* ── Show/hide helpers ── */
@@ -507,6 +507,9 @@ const MOBILE_CSS = `
     .pm-rom-snapshots > span { font-size: 0.58rem !important; white-space: nowrap !important; }
     /* Neuro sub-module chips */
     .pm-neuro-tabs { margin-bottom: 12px !important; }
+
+    /* ROM quality/pain micro-buttons — override min-height */
+    .pm-rom-qual-btn { min-height: 24px !important; padding: 3px 7px !important; font-size: 0.6rem !important; line-height: 1.3 !important; }
 
     /* Pain NRS slider cards — compact on mobile */
     .pm-pain-slider { padding: 6px 10px !important; }

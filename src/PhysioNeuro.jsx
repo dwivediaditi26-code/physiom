@@ -847,14 +847,14 @@ function ROMModule({data,set,navContext={}}){
                 {/* Pain arc toggle */}
                 <div style={{display:"flex",gap:6,marginTop:7,flexWrap:"wrap"}} onClick={e=>e.stopPropagation()}>
                   {["No pain","Painful arc","End-range pain","Throughout"].map(p=>(
-                    <button type="button" key={p}
+                    <button type="button" key={p} className="pm-rom-qual-btn"
                       onClick={()=>set(`${m.id}_pain`,data[`${m.id}_pain`]===p?"":p)}
                       style={{fontSize:"0.6rem",padding:"2px 6px",borderRadius:5,border:`1px solid ${data[`${m.id}_pain`]===p?"#ff4d6d40":C.border}`,background:data[`${m.id}_pain`]===p?"#ff4d6d15":"transparent",color:data[`${m.id}_pain`]===p?"#ff4d6d":C.muted,cursor:"pointer"}}>
                       {p}
                     </button>
                   ))}
                   {["Soft","Firm","Hard","Empty","Springy"].map(ef=>(
-                    <button type="button" key={ef}
+                    <button type="button" key={ef} className="pm-rom-qual-btn"
                       onClick={()=>set(`${m.id}_ef`,data[`${m.id}_ef`]===ef?"":ef)}
                       style={{fontSize:"0.6rem",padding:"2px 6px",borderRadius:5,border:`1px solid ${data[`${m.id}_ef`]===ef?C.accent+"60":C.border}`,background:data[`${m.id}_ef`]===ef?C.accent+"15":"transparent",color:data[`${m.id}_ef`]===ef?C.accent:C.muted,cursor:"pointer"}}>
                       {ef}
