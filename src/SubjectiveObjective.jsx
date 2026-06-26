@@ -1008,6 +1008,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
   },[navContext.highlightTest, region]);
   const [modalTest, setModalTest] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [stSearchOpen, setStSearchOpen] = useState(false);
 
   const reg = SPECIAL_TESTS_DATA[region];
   const allTests = Object.values(SPECIAL_TESTS_DATA).flatMap(r => r.tests);
@@ -1043,7 +1044,8 @@ function SpecialTestsSection({ data, set, navContext={} }) {
   return (
     <div>
       {/* Header stats */}
-      <div className="pm-section-stats" style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:10, padding:14, marginBottom:14 }}>
+      {/* Stats card — desktop only (hidden on mobile) */}
+      <div className="pm-section-stats pm-desktop-only" style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:10, padding:14, marginBottom:14 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
           <div style={{ fontWeight:800, color:C.text }}>🔬 Special Tests Library — {totalCount} Tests</div>
           <span style={{ fontWeight:800, color:C.accent, fontSize:"0.85rem" }}>{completedCount}/{totalCount} completed</span>
@@ -1053,10 +1055,31 @@ function SpecialTestsSection({ data, set, navContext={} }) {
         </div>
       </div>
 
-      {/* Search */}
-      <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-        placeholder="🔍 Search by test name, structure or condition..."
-        style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"9px 12px", fontSize:"0.82rem", fontFamily:"inherit", outline:"none", marginBottom:12 }} />
+      {/* Search — desktop: always visible input. Mobile: magnifying glass toggle */}
+      <div className="pm-desktop-only" style={{ marginBottom:12 }}>
+        <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+          placeholder="🔍 Search by test name, structure or condition..."
+          style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"9px 12px", fontSize:"0.82rem", fontFamily:"inherit", outline:"none" }} />
+      </div>
+      {/* Mobile search toggle */}
+      <div className="pm-mobile-only" style={{ marginBottom: stSearchOpen ? 0 : 6 }}>
+        {!stSearchOpen ? (
+          <button onClick={()=>setStSearchOpen(true)}
+            style={{ display:"flex", alignItems:"center", gap:7, padding:"6px 12px", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.muted, fontSize:"0.82rem", fontFamily:"inherit", cursor:"pointer", width:"100%", minHeight:36 }}>
+            <span style={{fontSize:"1rem"}}>🔍</span>
+            <span style={{color:C.muted, fontSize:"0.8rem"}}>Search tests...</span>
+          </button>
+        ) : (
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
+            <span style={{fontSize:"1rem",flexShrink:0}}>🔍</span>
+            <input autoFocus type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Search by test name or condition..."
+              style={{ flex:1, background:C.s2, border:`1px solid ${C.accent}60`, borderRadius:8, color:C.text, padding:"6px 10px", fontSize:"0.82rem", fontFamily:"inherit", outline:"none", minHeight:36 }} />
+            <button onClick={()=>{ setStSearchOpen(false); setSearchTerm(""); }}
+              style={{ flexShrink:0, padding:"4px 10px", background:"none", border:`1px solid ${C.border}`, borderRadius:7, color:C.accent, fontSize:"0.78rem", fontWeight:700, cursor:"pointer", minHeight:34 }}>✕</button>
+          </div>
+        )}
+      </div>
 
       {/* Region Chips */}
       {!searchTerm && (

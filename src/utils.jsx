@@ -417,6 +417,13 @@ const MOBILE_CSS = `
     button { min-height: 40px !important; }
   }
 
+  /* ── Show/hide helpers ── */
+  .pm-mobile-only { display: none; }
+  @media (max-width: 767px) {
+    .pm-mobile-only { display: block; }
+    .pm-desktop-only { display: none !important; }
+  }
+
   /* ── Mobile-only compact header ── */
   .pm-mobile-hdr { display: none; }
   @media (max-width: 767px) {
