@@ -507,6 +507,14 @@ const MOBILE_CSS = `
     .pm-rom-snapshots > span { font-size: 0.58rem !important; white-space: nowrap !important; }
     /* Neuro sub-module chips */
     .pm-neuro-tabs { margin-bottom: 12px !important; }
+
+    /* Pain NRS slider cards — compact on mobile */
+    .pm-pain-slider { padding: 6px 10px !important; }
+    .pm-pain-num { font-size: 1.1rem !important; min-width: 28px !important; }
+    .pm-pain-slider input[type="range"] { height: 22px !important; }
+
+    /* Group section headings (FULL ROM / MMT / NEURO ASSESSMENT) — hide on mobile */
+    .pm-group-head { display: none !important; }
   }
 `;
 

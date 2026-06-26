@@ -4653,9 +4653,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       const col = num >= 7 ? PC.red : num >= 4 ? PC.yellow : PC.green;
       const colBg = num >= 7 ? PC.red+"18" : num >= 4 ? PC.yellow+"18" : PC.green+"18";
       return (
-        <div style={{ background: colBg, borderRadius:10, padding:"10px 14px", border:`1.5px solid ${col}33` }}>
+        <div className="pm-pain-slider" style={{ background: colBg, borderRadius:10, padding:"10px 14px", border:`1.5px solid ${col}33` }}>
           <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:6 }}>
-            <span style={{ fontWeight:900, color: col, fontSize:"1.6rem", minWidth:40, textAlign:"center", lineHeight:1 }}>
+            <span className="pm-pain-num" style={{ fontWeight:900, color: col, fontSize:"1.6rem", minWidth:40, textAlign:"center", lineHeight:1 }}>
               {num}
             </span>
             <span style={{ fontSize:"0.82rem", color: PC.muted }}>/ 10</span>
@@ -13122,6 +13122,7 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
 
   const [region, setRegion] = useState(initRegion);
   const [search, setSearch] = useState("");
+  const [fmsMobileSearch, setFmsMobileSearch] = useState(false);
 
   // Respond to navContext changes (from subjective suggestions)
   useEffect(()=>{
@@ -13155,8 +13156,8 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
 
   return (
     <div>
-      {/* Search bar */}
-      <div style={{position:"relative",marginBottom:12}}>
+      {/* Search bar — desktop: always visible. Mobile: magnifying glass toggle */}
+      <div className="pm-desktop-only" style={{position:"relative",marginBottom:12}}>
         <input
           type="text"
           value={search}
@@ -13172,6 +13173,24 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
               background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"1rem",padding:0}}>
             ✕
           </button>
+        )}
+      </div>
+      {/* Mobile: icon-only search toggle */}
+      <div className="pm-mobile-only" style={{marginBottom:fmsMobileSearch?0:8}}>
+        {!fmsMobileSearch ? (
+          <button type="button" onClick={()=>setFmsMobileSearch(true)}
+            style={{background:"transparent",border:"none",padding:0,cursor:"pointer",color:C.muted,fontSize:"1.2rem",lineHeight:1,display:"flex",alignItems:"center"}}>
+            🔍
+          </button>
+        ) : (
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+            <span style={{fontSize:"1rem",flexShrink:0}}>🔍</span>
+            <input autoFocus type="text" value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="Search tests or regions…"
+              style={{flex:1,padding:"6px 10px",borderRadius:8,border:`1.5px solid ${C.accent}`,background:C.s2,color:C.text,fontSize:"0.82rem",fontFamily:"inherit",outline:"none",minHeight:34}}/>
+            <button type="button" onClick={()=>{setFmsMobileSearch(false);setSearch("");}}
+              style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"1rem",padding:"0 2px",minHeight:34,flexShrink:0}}>✕</button>
+          </div>
         )}
       </div>
 
@@ -13207,17 +13226,15 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
         </div>
       )}
 
-      {/* Region picker — 2 rows */}
+      {/* Region picker — scrollable chip row */}
       {!search.trim() && (
-        <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:12}}>
+        <div className="pm-region-chips-scroll" style={{marginBottom:10}}>
           {regions.map(r=>{
             const sel = region===r.id;
             return (
               <button key={r.id} type="button" onClick={()=>setRegion(r.id)}
-                style={{padding:"7px 10px",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:"0.82rem",fontFamily:"inherit",
-                  border:`1.5px solid ${sel?r.color:C.border}`,
-                  background:sel?`${r.color}12`:"transparent",
-                  color:sel?r.color:C.muted}}>
+                className={"pm-region-chip"+(sel?" active":"")}
+                style={sel?{background:r.color,borderColor:r.color,color:"#fff"}:{borderColor:C.border,color:C.muted}}>
                 {r.icon} {r.label}
               </button>
             );

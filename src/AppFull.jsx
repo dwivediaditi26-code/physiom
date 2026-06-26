@@ -18675,7 +18675,7 @@ function AppInner({ currentUser, onSignOut }) {
           {/* Groups */}
           {currentSection && Object.entries(currentSection.groups).map(([groupName,tests])=>(
             <div key={groupName} style={{marginBottom:28}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+              <div className="pm-group-head" style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
                 <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.4px",color:PC.a2,whiteSpace:"nowrap"}}>{groupName}</div>
                 <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${PC.border},transparent)`}}/>
               </div>
