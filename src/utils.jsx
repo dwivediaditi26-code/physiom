@@ -429,8 +429,8 @@ const MOBILE_CSS = `
   @media (max-width: 767px) {
     .pm-mobile-hdr {
       display: flex; align-items: center; gap: 9px;
-      padding: 8px 12px; position: sticky; top: 0; z-index: 101;
-      min-height: 56px; flex-shrink: 0;
+      padding: 10px 14px; position: sticky; top: 0; z-index: 101;
+      min-height: 64px; flex-shrink: 0;
     }
     .pm-mobile-hdr .pm-hamburger { min-height: 32px !important; min-width: 32px !important; padding: 5px 7px !important; }
     /* Hide desktop header and both patient bars on mobile */

@@ -18493,12 +18493,8 @@ function AppInner({ currentUser, onSignOut }) {
             border:"none",borderRadius:8,color:PC.accent,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
           ☰
         </button>
-        {/* Logo in accent box */}
-        <div style={{width:38,height:38,background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,borderRadius:10,
-          display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,
-          boxShadow:`0 2px 8px ${PC.accent}40`}}>
-          <img src="/logo.svg" alt="PhysioMind" style={{height:26,width:"auto",filter:"brightness(0) invert(1)"}} />
-        </div>
+        {/* Logo — plain, bigger */}
+        <img src="/logo.svg" alt="PhysioMind" style={{height:40,width:"auto",flexShrink:0}} />
         {/* Text */}
         <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
           <div style={{fontWeight:800,fontSize:"0.92rem",color:PC.isDark?PC.a2:"#4c1d95",letterSpacing:"-0.3px",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind Pro</div>
