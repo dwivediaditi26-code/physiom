@@ -1,6 +1,6 @@
 // PhysioNeuro.jsx — ALL_TESTS, ROM, MMT, Neurological
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { C, getC, RegionPickerButton } from "./utils.jsx";
+import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 
 
 const ALL_TESTS = {
@@ -788,12 +788,10 @@ function ROMModule({data,set,navContext={}}){
           return {key:r,label:r,icon,color,filled};
         });
         return (
-          <RegionPickerButton
+          <RegionChips
             regions={romRegionList}
             active={region}
             onSelect={r=>{setRegion(r);setSelected(null);}}
-            label="Body Region — Range of Motion"
-            accentColor={C.a2}
           />
         );
       })()}
@@ -814,7 +812,7 @@ function ROMModule({data,set,navContext={}}){
                     <ClinicalImage name={m.id} title={`${m.mv} — ${region}`} size={44}/>
                     <div>
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:hasAnyVal?C.text:C.muted}}>{m.mv}</div>
-                      <div style={{fontSize:"0.6rem",color:C.muted,marginTop:1}}>{m.plane} · N={m.normal}{m.unit}</div>
+                      <div className="pm-test-card-sub" style={{fontSize:"0.6rem",color:C.muted,marginTop:1}}>{m.plane} · N={m.normal}{m.unit}</div>
                     </div>
                   </div>
                   {/* Bilateral inputs */}
@@ -1421,12 +1419,10 @@ function MMTModule({data,set,navContext={}}){
           return {key:r,label:r,icon,color,filled};
         });
         return (
-          <RegionPickerButton
+          <RegionChips
             regions={mmtRegionList}
             active={region}
             onSelect={r=>{setRegion(r);setSelected(null);}}
-            label="Body Region — Muscle Testing"
-            accentColor={C.a2}
           />
         );
       })()}
@@ -1445,7 +1441,7 @@ function MMTModule({data,set,navContext={}}){
               <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:"0.82rem",color:hasVal?C.text:C.muted}}>{m.muscle}</div>
-                  <div style={{fontSize:"0.65rem",color:C.muted,marginTop:1}}>{m.nerve} · {m.root}</div>
+                  <div className="pm-test-card-sub" style={{fontSize:"0.65rem",color:C.muted,marginTop:1}}>{m.nerve} · {m.root}</div>
                 </div>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
                   {/* Bilateral Grading */}

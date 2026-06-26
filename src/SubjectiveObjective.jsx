@@ -1,6 +1,6 @@
 // SubjectiveObjective.jsx — Special Tests, Subjective, CPA, KineticChain, FMS, Fascia, Ergo
 import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
-import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton } from "./utils.jsx";
+import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -1043,7 +1043,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
   return (
     <div>
       {/* Header stats */}
-      <div style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:10, padding:14, marginBottom:14 }}>
+      <div className="pm-section-stats" style={{ background:C.s2, border:`1px solid ${C.border}`, borderRadius:10, padding:14, marginBottom:14 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
           <div style={{ fontWeight:800, color:C.text }}>🔬 Special Tests Library — {totalCount} Tests</div>
           <span style={{ fontWeight:800, color:C.accent, fontSize:"0.85rem" }}>{completedCount}/{totalCount} completed</span>
@@ -1058,21 +1058,16 @@ function SpecialTestsSection({ data, set, navContext={} }) {
         placeholder="🔍 Search by test name, structure or condition..."
         style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"9px 12px", fontSize:"0.82rem", fontFamily:"inherit", outline:"none", marginBottom:12 }} />
 
-      {/* Region Picker */}
+      {/* Region Chips */}
       {!searchTerm && (
-        <RegionPickerButton
+        <RegionChips
           regions={Object.entries(SPECIAL_TESTS_DATA).map(([key,r])=>({
             key,
             label: r.label,
-            icon: r.icon,
-            color: r.color,
             filled: r.tests.filter(t=>getTestResult(t.id)).length,
-            positives: r.tests.filter(t=>isPositive(getTestResult(t.id))).length,
           }))}
           active={region}
           onSelect={k=>{setRegion(k);setOpenTest(null);}}
-          label="Body Region — Special Tests"
-          accentColor={C.accent}
         />
       )}
 
@@ -1093,6 +1088,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
             <div key={t.id} ref={el=>{ if(el) stHlRef.current[t.id]=el; }} style={{ background:C.surface, border:`1px solid ${anyPositive ? C.red+"60" : anyVal ? color+"40" : C.border}`, borderRadius:12, marginBottom:9, overflow:"hidden" }}>
               {/* Header row */}
               <div onClick={() => setOpenTest(isOpen ? null : t.id)}
+                className="pm-test-card-hdr"
                 style={{ padding:"11px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"flex-start", borderLeft:`3px solid ${anyPositive ? C.red : anyVal ? color : "#1a2d45"}` }}>
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", gap:7, alignItems:"center", marginBottom:3, flexWrap:"wrap" }}>
@@ -1100,8 +1096,8 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                     {anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(255,77,109,0.2)", color:C.red, fontSize:"0.75rem", fontWeight:700 }}>⚠ POSITIVE</span>}
                     {anyVal && !anyPositive && <span style={{ padding:"1px 7px", borderRadius:8, background:"rgba(0,201,122,0.15)", color:C.green, fontSize:"0.75rem", fontWeight:700 }}>✓ Recorded</span>}
                   </div>
-                  <div style={{ fontSize:"0.8rem", color:C.muted }}>Structure: {t.structure}</div>
-                  <div style={{ fontSize:"0.78rem", color:C.muted }}>Sens: {t.sensitivity} · Spec: {t.specificity}</div>
+                  <div className="pm-test-card-sub" style={{ fontSize:"0.8rem", color:C.muted }}>Structure: {t.structure}</div>
+                  <div className="pm-test-card-sub" style={{ fontSize:"0.78rem", color:C.muted }}>Sens: {t.sensitivity} · Spec: {t.specificity}</div>
                   {anyVal && (
                     <div style={{ marginTop:4, fontSize:"0.82rem", color:anyPositive ? C.red : C.green, fontWeight:600 }}>
                       {leftVal && `L: ${leftVal}`}{leftVal && rightVal && " | "}{rightVal && `R: ${rightVal}`}{singleVal && singleVal}
@@ -1772,19 +1768,15 @@ function CyriaxModule({ data, set, navContext={} }) {
         )}
       </div>
 
-      {/* Region Picker */}
-      <RegionPickerButton
+      {/* Region Chips */}
+      <RegionChips
         regions={Object.entries(CYRIAX_REGIONS_DATA).map(([key,r])=>({
           key,
           label: r.label||key,
-          icon: r.icon,
-          color: r.color,
           filled: Object.keys(data).filter(k=>k.startsWith(`cyriax_${key}_`)&&data[k]).length,
         }))}
         active={region}
         onSelect={k=>{setRegion(k);setTab("active");setReasoning(null);}}
-        label="Body Region — STTT Assessment"
-        accentColor={reg.color}
       />
 
       {/* Anatomy banner */}

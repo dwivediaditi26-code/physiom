@@ -17662,6 +17662,8 @@ function AppInner({ currentUser, onSignOut }) {
   const [navOpen, setNavOpen] = useState(false);
   // bnavHidden removed — bottom nav is now always visible
   const [bnavTab, setBnavTab] = useState(null); // null=no panel open, or "assessment"|"advanced"|"treatment"|"documentation"|"top"
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileSearchQ, setMobileSearchQ] = useState("");
   const [showJsonPanel, setShowJsonPanel] = useState(false);
   const [jsonImportText, setJsonImportText] = useState("");
   const [jsonMsg, setJsonMsg] = useState(null);
@@ -18477,9 +18479,45 @@ function AppInner({ currentUser, onSignOut }) {
         </div>
       </div>
 
+      {/* ── MOBILE COMPACT HEADER (≤767px only, replaces pm-header + patient bars) ── */}
+      <div className="pm-mobile-hdr" style={{background:PC.isDark?PC.headerBg:"#faf8ff",borderBottom:`1px solid ${PC.border}`}}>
+        <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation" style={{minHeight:32,minWidth:32,padding:"5px 7px",fontSize:"1rem"}}>☰</button>
+        <img src="/logo.svg" alt="PhysioMind" style={{height:22,width:"auto",flexShrink:0}} />
+        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+          <div style={{fontWeight:800,fontSize:"0.7rem",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind Pro</div>
+          {activePatient
+            ? <div style={{fontSize:"0.62rem",color:PC.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                <span style={{color:PC.a3}}>●</span> {activePatient.name.length>18?activePatient.name.slice(0,18)+"…":activePatient.name}
+                {lastSaved && <span style={{color:PC.green}}> · ✓ {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</span>}
+              </div>
+            : <div style={{fontSize:"0.6rem",color:PC.muted}}>No patient loaded</div>
+          }
+        </div>
+        <button
+          onClick={()=>setMobileSearchOpen(o=>!o)}
+          style={{width:30,height:30,minHeight:"30px !important",padding:0,background:mobileSearchOpen?`rgba(124,58,237,0.12)`:"transparent",border:`1px solid ${mobileSearchOpen?"rgba(124,58,237,0.4)":PC.border}`,borderRadius:7,color:PC.accent,fontSize:"1rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}
+          aria-label="Search"
+        >🔍</button>
+        <button onClick={createNewPatient} style={{padding:"3px 8px",minHeight:28,background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.7rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>+ New</button>
+      </div>
+      {/* Mobile search bar — expands below header when 🔍 tapped */}
+      {mobileSearchOpen && (
+        <div className="pm-mobile-search" style={{background:PC.isDark?PC.headerBg:"#faf8ff",borderBottom:`1px solid ${PC.border}`}}>
+          <span style={{fontSize:"0.9rem",flexShrink:0}}>🔍</span>
+          <input
+            autoFocus
+            value={mobileSearchQ}
+            onChange={e=>setMobileSearchQ(e.target.value)}
+            placeholder="Search tests, exercises, notes..."
+            style={{flex:1,background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,padding:"5px 10px",fontSize:"0.82rem",fontFamily:"inherit",color:PC.text,outline:"none",minHeight:34}}
+          />
+          <button className="pm-mobile-search-cancel" onClick={()=>{setMobileSearchOpen(false);setMobileSearchQ("");}} style={{color:PC.accent}}>Cancel</button>
+        </div>
+      )}
+
       {/* ── ACTIVE PATIENT BAR ── */}
       {activePatient && (
-        <div style={{background:PC.isDark?"rgba(129,140,248,0.05)":"rgba(79,70,229,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"6px 16px",display:"flex",flexDirection:"column",gap:4}}>
+        <div className="pm-patient-bar" style={{background:PC.isDark?"rgba(129,140,248,0.05)":"rgba(79,70,229,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"6px 16px",display:"flex",flexDirection:"column",gap:4}}>
           {/* Row 1: dot + name + age/gender */}
           <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
             <div style={{width:7,height:7,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 6px ${PC.a3}`,flexShrink:0}}/>
@@ -18508,7 +18546,7 @@ function AppInner({ currentUser, onSignOut }) {
         </div>
       )}
       {!activePatient && (
-        <div style={{background:PC.isDark?"rgba(56,189,248,0.03)":"rgba(3,105,161,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"9px 24px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+        <div className="pm-patient-bar" style={{background:PC.isDark?"rgba(56,189,248,0.03)":"rgba(3,105,161,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"9px 24px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
           <span style={{fontSize:"0.8rem",color:PC.muted,fontWeight:500}}>No active patient — create or load a patient record to save assessments</span>
           <button onClick={createNewPatient} style={{padding:"5px 14px",background:`linear-gradient(135deg,${PC.accent}18,${PC.a2}12)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:7,color:PC.accent,fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>＋ New Patient</button>
           <button onClick={()=>setShowPatientDb(true)} style={{padding:"5px 14px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.a2,fontSize:"0.78rem",fontWeight:600,cursor:"pointer"}}>Load Patient</button>
@@ -18530,16 +18568,16 @@ function AppInner({ currentUser, onSignOut }) {
             const d2 = data;
             const oKeys = ["rom","mmt","special","neuro","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
             const wfSteps = [
-              { key:"demographics", label:"Demographics", short:"Demographics", nav:"demographics", done:!!(d2.dem_name&&d2.dem_age), active:active==="demographics" },
-              { key:"subjective",   label:"Subjective",   short:"Subjective",   nav:"subjective",   done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
-              { key:"objective",    label:"Objective",    short:"Objective",    nav:"rom",           done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:oKeys.includes(active) },
-              { key:"treatment",    label:"Treatment",    short:"Treatment",    nav:"treatment",     done:!!(d2.soap_modalities||d2.soap_frequency||d2.hep_programme||d2.tx_techniques), active:active==="treatment"||active==="exercise" },
-              { key:"soap",         label:"SOAP",         short:"SOAP",         nav:"soap",          done:!!(d2.soap_a_diagnosis||d2.soap_icd10||d2.soap_a), active:active==="soap" },
+              { key:"demographics", label:"Demographics", short:"Demo",  nav:"demographics", done:!!(d2.dem_name&&d2.dem_age), active:active==="demographics" },
+              { key:"subjective",   label:"Subjective",   short:"Sub",   nav:"subjective",   done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
+              { key:"objective",    label:"Objective",    short:"Obj",   nav:"rom",           done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:oKeys.includes(active) },
+              { key:"treatment",    label:"Treatment",    short:"Treat", nav:"treatment",     done:!!(d2.soap_modalities||d2.soap_frequency||d2.hep_programme||d2.tx_techniques), active:active==="treatment"||active==="exercise" },
+              { key:"soap",         label:"SOAP",         short:"SOAP",  nav:"soap",          done:!!(d2.soap_a_diagnosis||d2.soap_icd10||d2.soap_a), active:active==="soap" },
             ];
             const doneCount = wfSteps.filter(s => s.done).length;
             const pct = Math.round((doneCount / wfSteps.length) * 100);
             return (
-              <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"10px 16px 8px",marginBottom:18}}>
+              <div className="pm-stepper-wrap" style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"10px 16px 8px",marginBottom:18}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                   <span style={{fontSize:10,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Clinical Workflow</span>
                   <span style={{fontSize:10,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length} complete</span>
@@ -18550,10 +18588,10 @@ function AppInner({ currentUser, onSignOut }) {
                     return (
                       <React.Fragment key={step.key}>
                         <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto",minWidth:0}}>
-                          <div style={{width:30,height:30,borderRadius:"50%",background:step.done?"#6D28D9":step.active?"#EDE9FE":PC.s2,border:`2px solid ${step.done?"#6D28D9":step.active?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,boxShadow:step.active?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s",flexShrink:0}}>
+                          <div className="pm-stepper-dot" style={{width:30,height:30,borderRadius:"50%",background:step.done?"#6D28D9":step.active?"#EDE9FE":PC.s2,border:`2px solid ${step.done?"#6D28D9":step.active?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,boxShadow:step.active?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s",flexShrink:0}}>
                             {step.done ? <span style={{fontSize:13,color:"#fff",fontWeight:900}}>✓</span> : <span style={{fontSize:11,color:step.active?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
                           </div>
-                          <div style={{fontSize:9,fontWeight:step.active?800:step.done?700:500,color:step.done?"#6D28D9":step.active?"#6D28D9":PC.muted,marginTop:4,textAlign:"center",whiteSpace:"nowrap",letterSpacing:"0.1px"}}>{step.short}</div>
+                          <div className="pm-stepper-label" style={{fontSize:9,fontWeight:step.active?800:step.done?700:500,color:step.done?"#6D28D9":step.active?"#6D28D9":PC.muted,marginTop:4,textAlign:"center",whiteSpace:"nowrap",letterSpacing:"0.1px"}}>{step.short}</div>
                         </div>
                         {!isLast && <div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:6,transition:"background 0.3s"}}/>}
                       </React.Fragment>

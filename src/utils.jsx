@@ -416,6 +416,79 @@ const MOBILE_CSS = `
   @media (max-width: 767px) {
     button { min-height: 40px !important; }
   }
+
+  /* ── Mobile-only compact header ── */
+  .pm-mobile-hdr { display: none; }
+  @media (max-width: 767px) {
+    .pm-mobile-hdr {
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 10px; position: sticky; top: 0; z-index: 101;
+      min-height: 42px; flex-shrink: 0;
+    }
+    .pm-mobile-hdr .pm-hamburger { min-height: 32px !important; min-width: 32px !important; padding: 5px 7px !important; }
+    /* Hide desktop header and both patient bars on mobile */
+    .pm-header { display: none !important; }
+    .pm-patient-bar { display: none !important; }
+  }
+
+  /* ── Mobile inline search bar ── */
+  .pm-mobile-search {
+    display: none;
+  }
+  @media (max-width: 767px) {
+    .pm-mobile-search {
+      display: flex; align-items: center; gap: 7px;
+      padding: 4px 10px; position: sticky; top: 42px; z-index: 100;
+      border-bottom: 1px solid #e8dff8;
+    }
+    .pm-mobile-search input {
+      min-height: 34px !important; padding: 5px 10px !important;
+      font-size: 0.82rem !important; border-radius: 7px !important;
+      font-size: 16px !important;
+    }
+    .pm-mobile-search-cancel {
+      font-size: 0.78rem; font-weight: 700; background: none; border: none;
+      cursor: pointer; padding: 0 2px; min-height: 32px !important; white-space: nowrap;
+    }
+  }
+
+  /* ── Region chips (scrollable pill row) ── */
+  .pm-region-chips-scroll {
+    display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none;
+    padding: 4px 0; -webkit-overflow-scrolling: touch; margin-bottom: 8px;
+  }
+  .pm-region-chips-scroll::-webkit-scrollbar { display: none; }
+  .pm-region-chip {
+    flex-shrink: 0; border-radius: 99px; padding: 4px 11px;
+    font-size: 0.72rem; font-weight: 600; cursor: pointer;
+    border: 1px solid #d8cce8; background: transparent; color: #6b5b95;
+    white-space: nowrap; font-family: inherit; min-height: 28px !important;
+    display: flex; align-items: center; gap: 4px; transition: all 0.15s;
+  }
+  .pm-region-chip.active {
+    background: #7c3aed; border-color: #7c3aed; color: #fff;
+  }
+  .pm-region-chip-count {
+    font-size: 0.62rem; font-weight: 700;
+    background: rgba(124,58,237,0.15); color: #7c3aed;
+    border-radius: 99px; padding: 0 5px; min-width: 16px; text-align: center;
+  }
+  .pm-region-chip.active .pm-region-chip-count {
+    background: rgba(255,255,255,0.25); color: #fff;
+  }
+
+  /* ── Compact test cards on mobile ── */
+  @media (max-width: 767px) {
+    .pm-test-card-sub { display: none !important; }
+    .pm-test-card-hdr { padding: 8px 10px !important; }
+    .pm-stepper-wrap { padding: 7px 10px 5px !important; margin-bottom: 10px !important; border-radius: 10px !important; }
+    .pm-stepper-dot { width: 22px !important; height: 22px !important; font-size: 9px !important; }
+    .pm-stepper-label { font-size: 7px !important; margin-top: 3px !important; letter-spacing: 0 !important; }
+    .pm-section-stats { padding: 8px 10px !important; margin-bottom: 8px !important; }
+    /* Compact inline section/module title rows */
+    .pm-module-title-row { padding: 4px 0 4px !important; margin-bottom: 6px !important; }
+    .pm-module-title-row .pm-module-sub { display: none !important; }
+  }
 `;
 
 function MobileStyleInjector() {
@@ -612,6 +685,27 @@ function RegionPickerButton({ regions, active, onSelect, label="Body Region", ac
   );
 }
 
-export { TabLoader, LazyBoundary, LazyTab, ErrorBoundary, MobileStyleInjector, MOBILE_CSS, RegionPickerButton };
+
+// ── RegionChips: horizontal scrollable chip row for region selection ──
+function RegionChips({ regions, active, onSelect }) {
+  return (
+    <div className="pm-region-chips-scroll">
+      {regions.map(r => (
+        <button
+          key={r.key}
+          className={"pm-region-chip" + (active === r.key ? " active" : "")}
+          onClick={() => onSelect(r.key)}
+        >
+          {r.label}
+          {r.filled > 0 && (
+            <span className="pm-region-chip-count">{r.filled}</span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export { TabLoader, LazyBoundary, LazyTab, ErrorBoundary, MobileStyleInjector, MOBILE_CSS, RegionPickerButton, RegionChips };
 export { THEMES, getC, setTheme, useTheme, C };
 export { mid, vis, px, r1, r2, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg };
