@@ -374,6 +374,48 @@ const MOBILE_CSS = `
 
   /* ── Light mode SVG text ── */
   [data-theme="light"] svg text { fill: #374151; }
+
+  /* ════════════════════════════════════════════════════
+     RESPONSIVE GRID OVERRIDES
+     !important overrides React inline styles globally
+     across all components — no per-file edits needed.
+  ════════════════════════════════════════════════════ */
+
+  /* 3/4-col explicit grids → 2-col at ≤480px */
+  @media (max-width: 480px) {
+    [style*="1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
+    [style*="repeat(3,"] { grid-template-columns: 1fr 1fr !important; }
+    [style*="repeat(4,"] { grid-template-columns: 1fr 1fr !important; }
+    [style*="80px 1fr"]  { grid-template-columns: 44px 1fr 1fr !important; }
+    [style*="90px 1fr"]  { grid-template-columns: 44px 1fr 1fr !important; }
+  }
+
+  /* All multi-col fr grids → 1-col at ≤400px */
+  @media (max-width: 400px) {
+    [style*="1fr 1fr"]   { grid-template-columns: 1fr !important; }
+    [style*="repeat(2,"] { grid-template-columns: 1fr !important; }
+    [style*="repeat(3,"] { grid-template-columns: 1fr !important; }
+    [style*="repeat(4,"] { grid-template-columns: 1fr !important; }
+    [style*="80px 1fr"]  { grid-template-columns: 1fr !important; }
+    [style*="90px 1fr"]  { grid-template-columns: 1fr !important; }
+  }
+
+  /* Action bars (space-between) → wrap on tiny screens */
+  @media (max-width: 380px) {
+    [style*="space-between"] { flex-wrap: wrap !important; gap: 8px !important; }
+  }
+
+  /* Stepper row — horizontal scroll */
+  .pm-stepper-row {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; padding-bottom: 4px;
+  }
+  .pm-stepper-row::-webkit-scrollbar { display: none; }
+
+  /* Touch targets */
+  @media (max-width: 767px) {
+    button { min-height: 40px !important; }
+  }
 `;
 
 function MobileStyleInjector() {
