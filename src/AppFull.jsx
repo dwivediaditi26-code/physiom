@@ -18962,8 +18962,8 @@ function AppInner({ currentUser, onSignOut }) {
 
         {/* ── Expandable sub-panel ── */}
         {(()=>{
-          const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
-          const advKeys=["cyriax_full","kinetic","nkt","fascia"];
+          const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","special","neuro","outcome"];
+          const advKeys=["fma","gait","cyriax_full","kinetic","nkt","fascia"];
           const treatKeys=["treatment","exercise","tx_techniques"];
           const docKeys=["tx_sessions","soap"];
 
@@ -19068,8 +19068,8 @@ function AppInner({ currentUser, onSignOut }) {
         {/* ── Tab strip ── */}
         <div className="pm-bnav-tabs">
           {(()=>{
-            const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","fma","special","neuro","gait","outcome"];
-            const advKeys=["cyriax_full","kinetic","nkt","fascia"];
+            const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","special","neuro","outcome"];
+            const advKeys=["fma","gait","cyriax_full","kinetic","nkt","fascia"];
             const treatKeys=["treatment","exercise","tx_techniques"];
             const docKeys=["tx_sessions","soap"];
             const topKeys=["home","dashboard"];
