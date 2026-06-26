@@ -18991,13 +18991,13 @@ function AppInner({ currentUser, onSignOut }) {
                 <BnavItem navKey="palpation"   icon="🖐️" label="Palpation"/>
                 <BnavItem navKey="rom"         icon="📐" label="Range of Motion"/>
                 <BnavItem navKey="mmt"         icon="💪" label="MMT"/>
-                <BnavItem navKey="fma"         icon="🏃" label="Functional Assessment"/>
                 <BnavItem navKey="special"     icon="🔬" label="Special Tests (100+)"/>
                 <BnavItem navKey="neuro"       icon="⚡" label="Neurological"/>
-                <BnavItem navKey="gait"        icon="🚶" label="Gait Analysis"/>
                 <BnavItem navKey="outcome"     icon="📈" label="Outcome Measures"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="advanced"?" open":""}`}>
+                <BnavItem navKey="fma"         icon="🏃" label="Functional Assessment"/>
+                <BnavItem navKey="gait"        icon="🚶" label="Gait Analysis"/>
                 <BnavItem navKey="cyriax_full" icon="🦴" label="STTT"/>
                 <BnavItem navKey="kinetic"     icon="⛓️" label="Kinetic Chain"/>
                 <BnavItem navKey="nkt"         icon="🧠" label="CPA"/>
