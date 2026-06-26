@@ -486,7 +486,6 @@ const MOBILE_CSS = `
 
   /* ── Compact test cards on mobile ── */
   @media (max-width: 767px) {
-    .pm-test-card-sub { display: none !important; }
     .pm-test-card-hdr { padding: 8px 10px !important; }
     .pm-stepper-wrap { padding: 7px 10px 5px !important; margin-bottom: 10px !important; border-radius: 10px !important; }
     .pm-stepper-dot { width: 22px !important; height: 22px !important; font-size: 9px !important; }
