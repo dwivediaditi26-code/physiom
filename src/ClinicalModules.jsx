@@ -1,7 +1,7 @@
 // ClinicalModules.jsx — Gait, Outcomes, SOAP, Exercise, Palpation, Treatment, SessionLog
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { getTopDiagnoses, getTopDiagnosesEnhanced, ALL_DIAGNOSES } from "./DiagnosisEngine.js";
-import { C, getC } from "./utils.jsx";
+import { C, getC, RegionPickerButton } from "./utils.jsx";
 
 function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder="", data, set, note }) {
   const base={width:"100%",background:C.s3,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
@@ -8332,18 +8332,19 @@ function ObservationModule({ data, set }) {
 
   return (
     <div>
-      {/* Body region selector */}
-      <div style={{display:"flex",gap:5,overflowX:"auto",padding:"0 0 10px",scrollbarWidth:"none"}}>
-        {OBS_BODY_REGIONS.map(r=>(
-          <button key={r.id} onClick={()=>setRegion(r.id)}
-            style={{flexShrink:0,padding:"6px 14px",borderRadius:99,fontWeight:region===r.id?800:500,
-              fontSize:"0.78rem",border:`1px solid ${region===r.id?PC.accent:PC.border}`,
-              background:region===r.id?`${PC.accent}18`:PC.s2,
-              color:region===r.id?PC.accent:PC.muted,cursor:"pointer"}}>
-            {r.label}
-          </button>
-        ))}
-      </div>
+      {/* Region Picker */}
+      <RegionPickerButton
+        regions={OBS_BODY_REGIONS.map(r=>{
+          const icons={"all":["🧍","#7c3aed"],"cx":["🔵","#0891b2"],"sh":["💪","#9333ea"],"el":["🫀","#db2777"],"wh":["🤚","#16a34a"],"th":["🟠","#d97706"],"lx":["🟠","#ea580c"],"hp":["🦵","#16a34a"],"kn":["🦿","#ca8a04"],"af":["🦶","#0284c7"]};
+          const [icon,color]=icons[r.id]||["📍","#7c3aed"];
+          const filled=Object.keys(data).filter(k=>k.startsWith(`obs_${r.id==="all"?"":r.id+"_"}`)&&data[k]).length;
+          return {key:r.id,label:r.label,icon,color,filled};
+        })}
+        active={region}
+        onSelect={setRegion}
+        label="Body Region — Observation"
+        accentColor={PC.accent}
+      />
 
       {/* Date / save row */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>

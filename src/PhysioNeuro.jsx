@@ -1,6 +1,6 @@
 // PhysioNeuro.jsx — ALL_TESTS, ROM, MMT, Neurological
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { C, getC } from "./utils.jsx";
+import { C, getC, RegionPickerButton } from "./utils.jsx";
 
 
 const ALL_TESTS = {
@@ -768,10 +768,35 @@ function ROMModule({data,set,navContext={}}){
         </div>
       )}
 
-      {/* Region Tabs */}
-      <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:12}}>
-        {ROM_REGIONS.map(r=>btn(r,region===r,()=>{setRegion(r);setSelected(null);},C.a2))}
-      </div>
+      {/* Region Picker */}
+      {(()=>{
+        const ROM_ICONS={
+          "Cervical":["🔵","#0891b2"],"Thoracic":["🟠","#d97706"],"Lumbar":["🟠","#ea580c"],
+          "Shoulder":["💪","#9333ea"],"Elbow":["🫀","#db2777"],"Wrist":["🤚","#16a34a"],
+          "Hand & Fingers":["✋","#059669"],"Hip":["🦵","#16a34a"],"Knee":["🦿","#ca8a04"],
+          "Ankle":["🦶","#0284c7"],"Foot":["🦶","#0369a1"],"TMJ":["🦷","#9f1239"],
+          "Shoulder & Scapula":["💪","#9333ea"],"Elbow & Forearm":["🫀","#db2777"],
+          "Wrist & Hand":["🤚","#16a34a"],"Spine & Core":["🪴","#78716c"],
+          "Hip & Pelvis":["🦵","#16a34a"],"Ankle & Foot":["🦶","#0284c7"],"TMJ & Facial":["🦷","#9f1239"]
+        };
+        const romRegionList = ROM_REGIONS.map(r=>{
+          const [icon,color]=ROM_ICONS[r]||["📍",C.a2];
+          const filled=ROM_DATA[r]?ROM_DATA[r].filter(m=>{
+            const sides=m.bilateral?["_L","_R"]:[""];
+            return sides.some(s=>data[`${m.id}${s}_arom`]||data[`${m.id}${s}_prom`]||data[`${m.id}${s}`]);
+          }).length:0;
+          return {key:r,label:r,icon,color,filled};
+        });
+        return (
+          <RegionPickerButton
+            regions={romRegionList}
+            active={region}
+            onSelect={r=>{setRegion(r);setSelected(null);}}
+            label="Body Region — Range of Motion"
+            accentColor={C.a2}
+          />
+        );
+      })()}
 
       {/* Movement Cards */}
       <div style={{display:"grid",gap:8}}>
@@ -1380,10 +1405,31 @@ function MMTModule({data,set,navContext={}}){
         </div>
       </div>
 
-      {/* Region Tabs */}
-      <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:12}}>
-        {MMT_REGIONS.map(r=>btn(r,region===r,()=>{setRegion(r);setSelected(null)},C.a2))}
-      </div>
+      {/* Region Picker */}
+      {(()=>{
+        const MMT_ICONS={
+          "Cervical":["🔵","#0891b2"],"Shoulder & Scapula":["💪","#9333ea"],
+          "Elbow & Forearm":["🫀","#db2777"],"Wrist & Hand":["🤚","#16a34a"],
+          "Spine & Core":["🪴","#78716c"],"Hip & Pelvis":["🦵","#16a34a"],
+          "Knee":["🦿","#ca8a04"],"Ankle & Foot":["🦶","#0284c7"],"TMJ & Facial":["🦷","#9f1239"]
+        };
+        const mmtRegionList = MMT_REGIONS.map(r=>{
+          const [icon,color]=MMT_ICONS[r]||["📍",C.a2];
+          const filled=MMT_DATA[r]?MMT_DATA[r].filter(m=>{
+            return data[`mmt_${m.id}_L`]||data[`mmt_${m.id}_R`];
+          }).length:0;
+          return {key:r,label:r,icon,color,filled};
+        });
+        return (
+          <RegionPickerButton
+            regions={mmtRegionList}
+            active={region}
+            onSelect={r=>{setRegion(r);setSelected(null);}}
+            label="Body Region — Muscle Testing"
+            accentColor={C.a2}
+          />
+        );
+      })()}
 
       {/* Muscle Cards */}
       <div style={{display:"grid",gap:8}}>

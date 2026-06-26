@@ -496,6 +496,122 @@ function useTheme() {
 
 const C = getC();
 
-export { TabLoader, LazyBoundary, LazyTab, ErrorBoundary, MobileStyleInjector, MOBILE_CSS };
+
+/* ══════════════════════════════════════════════════════════
+   RegionPickerButton — shared collapsible region selector
+   Used by: ROM, MMT, Special Tests, Cyriax/STTT
+   ══════════════════════════════════════════════════════════ */
+function RegionPickerButton({ regions, active, onSelect, label="Body Region", accentColor }) {
+  const [open, setOpen] = React.useState(false);
+  const C = getC();
+  const acc = accentColor || C.accent;
+
+  // Find active region object (supports {key,label,icon,color} or just string)
+  const activeObj = regions.find(r => (typeof r === "string" ? r : r.key) === active);
+  const activeLabel = activeObj ? (typeof activeObj === "string" ? activeObj : (activeObj.label || activeObj.key)) : (active || "Select");
+  const activeIcon  = activeObj && typeof activeObj !== "string" ? (activeObj.icon || "📍") : "📍";
+  const activeColor = activeObj && typeof activeObj !== "string" ? (activeObj.color || acc) : acc;
+
+  // Count filled for each region if provided
+  return (
+    <div style={{ marginBottom: 14, borderRadius: 14, overflow: "hidden", border: `1.5px solid ${open ? activeColor+"55" : C.border}`, background: C.surface, boxShadow: open ? `0 4px 24px ${activeColor}18` : "0 1px 4px rgba(0,0,0,0.04)", transition: "box-shadow 0.2s, border-color 0.2s" }}>
+      {/* ── Trigger button ── */}
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", border: "none", background: open
+            ? `linear-gradient(135deg, ${activeColor}18 0%, ${activeColor}08 100%)`
+            : C.s2,
+          cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
+          padding: "13px 16px", fontFamily: "inherit", transition: "background 0.2s",
+        }}>
+        {/* Region icon badge */}
+        <div style={{
+          width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+          background: `linear-gradient(135deg, ${activeColor}30, ${activeColor}18)`,
+          border: `1.5px solid ${activeColor}40`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "1.15rem", transition: "all 0.2s",
+        }}>
+          {activeIcon}
+        </div>
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+          <div style={{ fontSize: "0.62rem", fontWeight: 700, color: activeColor, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: 2 }}>
+            {open ? "Choose Region" : label}
+          </div>
+          <div style={{ fontSize: "0.95rem", fontWeight: 800, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {activeLabel}
+          </div>
+        </div>
+        {/* Filled badge + chevron */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {activeObj && activeObj.filled > 0 && (
+            <span style={{ background: activeColor, color: "#fff", borderRadius: 99, padding: "2px 8px", fontSize: "0.72rem", fontWeight: 800 }}>
+              {activeObj.filled}
+            </span>
+          )}
+          {activeObj && activeObj.positives > 0 && (
+            <span style={{ background: "#ef4444", color: "#fff", borderRadius: 99, padding: "2px 8px", fontSize: "0.72rem", fontWeight: 800 }}>
+              ⚠{activeObj.positives}
+            </span>
+          )}
+          <div style={{
+            width: 28, height: 28, borderRadius: 8, background: open ? `${activeColor}20` : C.s3,
+            border: `1px solid ${open ? activeColor+"40" : C.border}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: open ? activeColor : C.muted, fontSize: "0.75rem", transition: "all 0.2s",
+          }}>
+            {open ? "▲" : "▼"}
+          </div>
+        </div>
+      </button>
+
+      {/* ── Region grid ── */}
+      {open && (
+        <div style={{ padding: "10px 12px 12px", borderTop: `1px solid ${C.border}`, background: C.s2 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+            {regions.map((r, i) => {
+              const key   = typeof r === "string" ? r : r.key;
+              const lbl   = typeof r === "string" ? r : (r.label || r.key);
+              const icon  = typeof r === "string" ? "📍" : (r.icon || "📍");
+              const color = typeof r === "string" ? acc : (r.color || acc);
+              const filled = r.filled || 0;
+              const positives = r.positives || 0;
+              const isAct = key === active;
+              return (
+                <button key={i} type="button"
+                  onClick={() => { onSelect(key); setOpen(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 7,
+                    padding: "9px 14px", borderRadius: 10, cursor: "pointer",
+                    border: `1.5px solid ${isAct ? color : (filled > 0 ? color+"50" : C.border)}`,
+                    background: isAct ? `${color}18` : C.surface,
+                    color: isAct ? color : (filled > 0 ? color : C.muted),
+                    fontFamily: "inherit", fontWeight: isAct ? 700 : 500,
+                    fontSize: "0.82rem", transition: "all 0.13s",
+                    boxShadow: isAct ? `0 0 0 2px ${color}30` : "none",
+                    minHeight: 44,
+                  }}>
+                  <span style={{ fontSize: "1rem" }}>{icon}</span>
+                  <span>{lbl}</span>
+                  {positives > 0 && (
+                    <span style={{ background: "#ef4444", color: "#fff", borderRadius: 99, padding: "1px 6px", fontSize: "0.7rem", fontWeight: 800, marginLeft: 2 }}>⚠{positives}</span>
+                  )}
+                  {filled > 0 && positives === 0 && (
+                    <span style={{ background: color, color: "#fff", borderRadius: 99, padding: "1px 6px", fontSize: "0.7rem", fontWeight: 800, marginLeft: 2 }}>{filled}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export { TabLoader, LazyBoundary, LazyTab, ErrorBoundary, MobileStyleInjector, MOBILE_CSS, RegionPickerButton };
 export { THEMES, getC, setTheme, useTheme, C };
 export { mid, vis, px, r1, r2, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg };

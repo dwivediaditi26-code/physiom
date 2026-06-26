@@ -1,6 +1,6 @@
 // SubjectiveObjective.jsx — Special Tests, Subjective, CPA, KineticChain, FMS, Fascia, Ergo
 import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
-import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC } from "./utils.jsx";
+import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton } from "./utils.jsx";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -1058,22 +1058,22 @@ function SpecialTestsSection({ data, set, navContext={} }) {
         placeholder="🔍 Search by test name, structure or condition..."
         style={{ width:"100%", background:C.s2, border:`1px solid ${C.border}`, borderRadius:8, color:C.text, padding:"9px 12px", fontSize:"0.82rem", fontFamily:"inherit", outline:"none", marginBottom:12 }} />
 
-      {/* Region tabs */}
+      {/* Region Picker */}
       {!searchTerm && (
-        <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:14 }}>
-          {Object.entries(SPECIAL_TESTS_DATA).map(([key, r]) => {
-            const filled = r.tests.filter(t => getTestResult(t.id)).length;
-            const positives = r.tests.filter(t => isPositive(getTestResult(t.id))).length;
-            return (
-              <button key={key} type="button" onClick={() => { setRegion(key); setOpenTest(null); }}
-                style={{ padding:"6px 12px", borderRadius:20, border:`1px solid ${region===key ? r.color : filled>0 ? r.color+"50" : C.border}`, background:region===key ? `${r.color}18` : "transparent", color:region===key ? r.color : C.muted, fontSize:"0.73rem", fontWeight:region===key ? 700 : 500, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
-                {r.icon} {r.label}
-                {positives > 0 && <span style={{ background:C.red, color:"#fff", borderRadius:10, padding:"0 5px", fontSize:"0.8rem", fontWeight:800 }}>⚠{positives}</span>}
-                {filled > 0 && positives === 0 && <span style={{ background:r.color, color:"#000", borderRadius:10, padding:"0 5px", fontSize:"0.8rem", fontWeight:800 }}>{filled}</span>}
-              </button>
-            );
-          })}
-        </div>
+        <RegionPickerButton
+          regions={Object.entries(SPECIAL_TESTS_DATA).map(([key,r])=>({
+            key,
+            label: r.label,
+            icon: r.icon,
+            color: r.color,
+            filled: r.tests.filter(t=>getTestResult(t.id)).length,
+            positives: r.tests.filter(t=>isPositive(getTestResult(t.id))).length,
+          }))}
+          active={region}
+          onSelect={k=>{setRegion(k);setOpenTest(null);}}
+          label="Body Region — Special Tests"
+          accentColor={C.accent}
+        />
       )}
 
       {/* Render tests */}
@@ -1772,21 +1772,20 @@ function CyriaxModule({ data, set, navContext={} }) {
         )}
       </div>
 
-      {/* Region selector */}
-      <div style={{ background:`${reg.color}08`, border:`1px solid ${reg.color}25`, borderRadius:12, padding:14, marginBottom:14 }}>
-        <div style={{ fontWeight:800, color:reg.color, fontSize:"0.95rem", marginBottom:10 }}>⚕ STT Assessment — Region-Specific</div>
-        <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-          {Object.entries(CYRIAX_REGIONS_DATA).map(([key, r]) => {
-            const hasData = Object.keys(data).some(k => k.startsWith(`cyriax_${key}_`) && data[k]);
-            return (
-              <button key={key} type="button" onClick={() => { setRegion(key); setTab("active"); setReasoning(null); }}
-                style={{ padding:"6px 14px", borderRadius:20, border:`1px solid ${region===key?r.color:hasData?r.color+"50":C.border}`, background:region===key?`${r.color}18`:"transparent", color:region===key?r.color:hasData?r.color:C.muted, fontSize:"0.75rem", fontWeight:region===key?700:500, cursor:"pointer" }}>
-                {r.icon} {r.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Region Picker */}
+      <RegionPickerButton
+        regions={Object.entries(CYRIAX_REGIONS_DATA).map(([key,r])=>({
+          key,
+          label: r.label||key,
+          icon: r.icon,
+          color: r.color,
+          filled: Object.keys(data).filter(k=>k.startsWith(`cyriax_${key}_`)&&data[k]).length,
+        }))}
+        active={region}
+        onSelect={k=>{setRegion(k);setTab("active");setReasoning(null);}}
+        label="Body Region — STTT Assessment"
+        accentColor={reg.color}
+      />
 
       {/* Anatomy banner */}
       <div style={{ ...boxStyle, borderColor:reg.color+"30" }}>
