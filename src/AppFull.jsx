@@ -18480,11 +18480,28 @@ function AppInner({ currentUser, onSignOut }) {
       </div>
 
       {/* ── MOBILE COMPACT HEADER (≤767px only, replaces pm-header + patient bars) ── */}
-      <div className="pm-mobile-hdr" style={{background:PC.isDark?PC.headerBg:"#faf8ff",borderBottom:`1px solid ${PC.border}`}}>
-        <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation" style={{minHeight:32,minWidth:32,padding:"5px 7px",fontSize:"1rem"}}>☰</button>
-        <img src="/logo.svg" alt="PhysioMind" style={{height:30,width:"auto",flexShrink:0}} />
+      {/* ── MOBILE HEADER — Option B: gradient accent bar ── */}
+      <div className="pm-mobile-hdr" style={{
+        background: PC.isDark ? PC.headerBg : "linear-gradient(90deg,#f5edff 0%,#faf8ff 100%)",
+        borderBottom: `1px solid ${PC.isDark?PC.border:"#d8cce8"}`,
+        borderLeft: `3.5px solid ${PC.accent}`,
+      }}>
+        {/* Hamburger */}
+        <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation"
+          style={{minHeight:34,minWidth:34,padding:"6px 8px",fontSize:"1.05rem",
+            background: PC.isDark?"rgba(124,58,237,0.15)":"rgba(124,58,237,0.08)",
+            border:"none",borderRadius:8,color:PC.accent,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          ☰
+        </button>
+        {/* Logo in accent box */}
+        <div style={{width:38,height:38,background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,borderRadius:10,
+          display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,
+          boxShadow:`0 2px 8px ${PC.accent}40`}}>
+          <img src="/logo.svg" alt="PhysioMind" style={{height:26,width:"auto",filter:"brightness(0) invert(1)"}} />
+        </div>
+        {/* Text */}
         <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-          <div style={{fontWeight:800,fontSize:"0.88rem",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind Pro</div>
+          <div style={{fontWeight:800,fontSize:"0.92rem",color:PC.isDark?PC.a2:"#4c1d95",letterSpacing:"-0.3px",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind Pro</div>
           {activePatient
             ? <div style={{fontSize:"0.72rem",color:PC.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                 <span style={{color:PC.a3}}>●</span> {activePatient.name.length>18?activePatient.name.slice(0,18)+"…":activePatient.name}
@@ -18493,7 +18510,13 @@ function AppInner({ currentUser, onSignOut }) {
             : <div style={{fontSize:"0.68rem",color:PC.muted}}>No patient loaded</div>
           }
         </div>
-        <button onClick={createNewPatient} style={{padding:"3px 8px",minHeight:28,background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.7rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>+ New</button>
+        {/* + New — solid accent */}
+        <button onClick={createNewPatient}
+          style={{padding:"5px 12px",minHeight:30,background:PC.accent,border:"none",borderRadius:7,
+            color:"#fff",fontSize:"0.72rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",
+            boxShadow:`0 2px 6px ${PC.accent}50`}}>
+          + New
+        </button>
       </div>
 
       {/* ── ACTIVE PATIENT BAR ── */}
