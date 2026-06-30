@@ -2957,6 +2957,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       <div style={{textAlign:"center",padding:"14px 0",color:C.muted,fontSize:12}}>No protocol yet — build it in Quick Visit or Exercise Prescription.</div>
                     )}
                     {prog.map((e,i2)=>{
+                      const hepDose=e2=>{const st=e2.customSets||e2.sets,rp=e2.customReps||e2.reps,hd=e2.customHold||e2.hold,fq=e2.customFreq||e2.freq;return `${st}×${rp}${hd?` · hold ${hd}s`:""}${fq?` · ${fq}`:""}`};
                       const b=badge(e);
                       return(
                         <div key={e.id||i2} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:i2%2===0?"#F9FAFB":"#fff",borderRadius:8}}>
