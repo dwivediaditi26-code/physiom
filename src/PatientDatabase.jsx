@@ -2300,10 +2300,17 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     d.obs_muscle_bulk&&d.obs_muscle_bulk!=="Symmetrical"&&{l:"Muscle bulk",v:`${d.obs_muscle_bulk}${d.obs_muscle_location?" · "+d.obs_muscle_location:""}`,col:"#92400E",bg:"#FEF3C7",bdr:"#EF9F27"},
                     d.obs_deformity&&d.obs_deformity!=="None"&&{l:"Deformity",v:`${d.obs_deformity}${d.obs_deformity_location?" · "+d.obs_deformity_location:""}`,col:"#A32D2D",bg:"#FEF2F2",bdr:"#E24B4A"},
                     d.obs_skin&&d.obs_skin!=="Normal"&&{l:"Skin",v:`${d.obs_skin}${d.obs_skin_location?" · "+d.obs_skin_location:""}`,col:"#085041",bg:"#ECFDF5",bdr:"#1D9E75"},
-                    d.obs_posture_head&&d.obs_posture_head!=="Neutral"&&{l:"Head/neck",v:d.obs_posture_head,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_posture_head&&d.obs_posture_head!=="Neutral"&&{l:"Head/Neck",v:d.obs_posture_head,col:C.muted,bg:"#F3F4F6",bdr:C.border},
                     d.obs_posture_shoulders&&d.obs_posture_shoulders!=="Symmetrical"&&{l:"Shoulders",v:d.obs_posture_shoulders,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_posture_scapula&&d.obs_posture_scapula!=="Normal"&&{l:"Scapula",v:d.obs_posture_scapula,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_posture_thoracic&&d.obs_posture_thoracic!=="Normal"&&{l:"Thoracic",v:d.obs_posture_thoracic,col:C.muted,bg:"#F3F4F6",bdr:C.border},
                     d.obs_posture_lumbar&&d.obs_posture_lumbar!=="Normal"&&{l:"Lumbar",v:d.obs_posture_lumbar,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_posture_pelvis&&d.obs_posture_pelvis!=="Neutral"&&{l:"Pelvis",v:d.obs_posture_pelvis,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_posture_lower&&d.obs_posture_lower!=="Normal"&&{l:"Knees",v:d.obs_posture_lower,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_posture_feet&&d.obs_posture_feet!=="Neutral"&&{l:"Feet",v:d.obs_posture_feet,col:C.muted,bg:"#F3F4F6",bdr:C.border},
                     d.obs_assistive&&d.obs_assistive!=="None"&&{l:"Assistive device",v:d.obs_assistive,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_gait&&d.obs_gait!=="Normal"&&{l:"Gait",v:d.obs_gait,col:"#92400E",bg:"#FEF3C7",bdr:"#EF9F27"},
+                    d.obs_posture_notes&&{l:"Notes",v:d.obs_posture_notes,col:C.text,bg:"#F9FAFB",bdr:C.border},
                   ].filter(Boolean).map((r2,i2)=>(
                     <div key={i2} style={{padding:"7px 10px",background:r2.bg,borderLeft:`3px solid ${r2.bdr}`,borderRadius:"0 8px 8px 0"}}>
                       <span style={{fontSize:10.5,fontWeight:700,color:r2.col,marginRight:6}}>{r2.l}</span>
@@ -2732,9 +2739,10 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     const rendered=FS_REGIONS.map(({key,label,nav})=>{
                       const raw=d[key]; if(!raw) return null;
                       let parsed; try{parsed=typeof raw==="string"?JSON.parse(raw):raw;}catch{return null;}
-                      const{grades={}}=parsed;
+                      const{grades={},findings={}}=parsed;
                       const ge=Object.entries(grades);
-                      if(!ge.length) return null;
+                      const fe=Object.entries(findings).filter(([,v])=>v);
+                      if(!ge.length && !fe.length) return null;
                       const abnormal=ge.filter(([,g])=>g===2).map(([id])=>fsLbl(id));
                       const compensated=ge.filter(([,g])=>g===1).map(([id])=>fsLbl(id));
                       const normal=ge.filter(([,g])=>g===0).map(([id])=>fsLbl(id));
