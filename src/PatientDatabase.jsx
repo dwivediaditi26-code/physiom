@@ -2747,9 +2747,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       const ge=Object.entries(grades);
                       const fe=Object.entries(findings).filter(([,v])=>v);
                       if(!ge.length && !fe.length) return null;
-                      const abnormal=ge.filter(([,g])=>g===2).map(([id])=>fsLbl(id));
-                      const compensated=ge.filter(([,g])=>g===1).map(([id])=>fsLbl(id));
-                      const normal=ge.filter(([,g])=>g===0).map(([id])=>fsLbl(id));
+                      const abnormal=ge.filter(([,g])=>Number(g)===2).map(([id])=>fsLbl(id));
+                      const compensated=ge.filter(([,g])=>Number(g)===1).map(([id])=>fsLbl(id));
+                      const normal=ge.filter(([,g])=>Number(g)===0).map(([id])=>fsLbl(id));
                       return(
                         <div key={key} style={{marginBottom:6}}>
                           <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>{label}</div>
@@ -2761,8 +2761,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                             <span style={{fontSize:10,fontWeight:700,color:"#92400E",marginRight:2}}>⚠️</span>
                             {compensated.map((t,i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:700}}>{t}</span>)}
                           </div>}
-                          {normal.length>0&&(abnormal.length+compensated.length)>0&&(
-                            <div style={{fontSize:10.5,color:C.muted}}>✅ Normal: {normal.join(", ")}</div>
+                          {normal.length>0&&(
+                            <div style={{fontSize:10.5,color:C.green}}>✅ Normal: {normal.join(", ")}</div>
                           )}
                         </div>
                       );
