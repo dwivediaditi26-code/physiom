@@ -2690,7 +2690,10 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       const raw = String(data[k]||"").trim();
       if (!raw) return;
       const num = parseFloat(raw);
-      const label = MMT_LABELS[k] || k.replace("mmt_","").replace(/_/g," ");
+      const sideMatch = k.match(/_([LR])$/);
+      const side = sideMatch ? " ("+sideMatch[1]+")" : "";
+      const base = k.replace(/_[LR]$/, "");
+      const label = MMT_LABELS[k] || (MMT_LABELS[base] ? MMT_LABELS[base]+side : base.replace("mmt_","").replace(/_/g," ")+side);
       if (!isNaN(num)) {
         if (num < 5) mmtDeficit.push(`${label} ${num}/5${num <= 2 ? " ❌" : num <= 3 ? " ⚠" : ""}`);
         else mmtNormal.push(label);
@@ -3654,8 +3657,44 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
   // MMT rows
   const mmtRows = useMemo(() => {
-    const fields = Object.entries(data).filter(([k,v2])=>k.startsWith("muscle_")||k.startsWith("mmt_"))
-      .map(([k,v2])=>[k.replace(/^(muscle_|mmt_)/,"").replace(/_/g," "),String(v2||"")]).filter(([,v2])=>v2);
+    const MMT_LBL = {
+      mmt_scm:"Sternocleidomastoid",mmt_dnf:"Deep Neck Flexors",
+      mmt_trap_u:"Upper Trapezius",mmt_trap_m:"Mid Trapezius",mmt_trap_l:"Lower Trapezius",
+      mmt_trapU:"Upper Trap",mmt_trapM:"Mid Trap",mmt_trapL:"Lower Trap",
+      mmt_levsc:"Levator Scapulae",mmt_scalenes:"Scalenes",
+      mmt_deltA:"Ant Deltoid",mmt_deltM:"Mid Deltoid",mmt_deltP:"Post Deltoid",
+      mmt_supra:"Supraspinatus",mmt_infra:"Infraspinatus",mmt_subscap:"Subscapularis",
+      mmt_tmin:"Teres Minor",mmt_tmaj:"Teres Major",mmt_lat:"Latissimus Dorsi",
+      mmt_pec_maj_c:"Pec Maj (Clavicular)",mmt_pec_maj_s:"Pec Maj (Sternal)",mmt_pec_min:"Pec Minor",
+      mmt_serrant:"Serratus Anterior",mmt_bicep:"Biceps",mmt_brach:"Brachialis",
+      mmt_brachio:"Brachioradialis",mmt_tricep:"Triceps",
+      mmt_pron_ter:"Pronator Teres",mmt_sup:"Supinator",
+      mmt_fcr:"Wrist Flex (FCR)",mmt_ecrl:"Wrist Ext (ECRL)",
+      mmt_ecrb:"Wrist Ext (ECRB)",mmt_ecu:"Wrist Ext (ECU)",mmt_fcu:"Wrist Flex (FCU)",
+      mmt_edc:"Finger Ext",mmt_fdp:"Finger Flex",mmt_fds:"FDS",
+      mmt_apbrev:"Abductor Pollicis Brevis",mmt_adpoll:"Adductor Pollicis",mmt_oppoll:"Opponens Pollicis",
+      mmt_diaphragm:"Diaphragm",mmt_ta:"Tibialis Anterior",
+      mmt_ra:"Rectus Abdominis",mmt_eo:"Ext Oblique",mmt_ia:"Int Oblique",
+      mmt_multif:"Multifidus",mmt_es:"Erector Spinae",
+      mmt_ql:"Quadratus Lumborum",mmt_psoas:"Iliopsoas",mmt_piri:"Piriformis",
+      mmt_gmax:"Gluteus Maximus",mmt_gmed:"Gluteus Medius",mmt_gmin:"Gluteus Minimus",
+      mmt_tfl:"TFL",mmt_adduc:"Adductors",mmt_rectfem:"Rectus Femoris",
+      mmt_quad:"Quadriceps",mmt_hamst:"Hamstrings",mmt_semit:"Semitendinosus",
+      mmt_gastroc:"Gastrocnemius",mmt_soleus:"Soleus",
+      mmt_tib_ant:"Tibialis Anterior",mmt_tp:"Tibialis Posterior",
+      mmt_peronls:"Peroneals",mmt_ehl:"EHL",mmt_edl:"EDL",mmt_abdhal:"Abductor Hallucis",
+    };
+    const fields = Object.entries(data)
+      .filter(([k])=>k.startsWith("muscle_")||k.startsWith("mmt_"))
+      .map(([k,v2])=>{
+        const raw = String(v2||"");
+        const sideMatch = k.match(/_([LR])$/);
+        const side = sideMatch ? " ("+sideMatch[1]+")" : "";
+        const base = k.replace(/_[LR]$/, "");
+        const label = MMT_LBL[base] || MMT_LBL[k] || base.replace(/^(muscle_|mmt_)/,"").replace(/_/g," ");
+        return [label+side, raw];
+      })
+      .filter(([,v2])=>v2);
     const neuroWeak = v("neuro_weakness");
     if(neuroWeak) fields.push(["Neurological weakness",neuroWeak]);
     return fields.slice(0,10);
@@ -4187,13 +4226,13 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               if(!r.bilateral){
                 const p=r.pct;
                 const col=romStatusColor(p);
-                return <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
-                  <div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px"}}>
-                    <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label}</div>
-                    <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.single}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
-                  </div>
-                  <div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <span style={{fontSize:13,fontWeight:600,color:col}}>{p!=null?p+"%":"—"}</span>
+                return <div key={i} style={{marginBottom:6}}>
+                  <div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div>
+                      <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label}</div>
+                      <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.single}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
+                    </div>
+                    {col&&<span style={{fontSize:10,fontWeight:700,color:col,padding:"2px 8px",borderRadius:99,background:col+"22"}}>{p!=null&&p>115?"Hypermobile":p!=null&&p>=85?"WNL":p!=null&&p>=65?"Mild":p!=null&&p>=40?"Moderate":p!=null?"Severe":""}</span>}
                   </div>
                 </div>;
               } else {
@@ -4201,12 +4240,12 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                   {r.l&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px"}}>
                     <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label} (L)</div>
                     <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.l}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
-                    {romPct(r.l,r.norm)!=null&&<div style={{fontSize:11,color:romStatusColor(romPct(r.l,r.norm)),fontWeight:500,marginTop:2}}>{romPct(r.l,r.norm)}%</div>}
+
                   </div>}
                   {r.r&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px"}}>
                     <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label} (R)</div>
                     <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.r}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
-                    {romPct(r.r,r.norm)!=null&&<div style={{fontSize:11,color:romStatusColor(romPct(r.r,r.norm)),fontWeight:500,marginTop:2}}>{romPct(r.r,r.norm)}%</div>}
+
                   </div>}
                 </div>;
               }
@@ -4220,7 +4259,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const g=parseFloat(gr)||0;
               const gc=g>=5?"#059669":g>=4?"#d97706":g>=3?"#ea580c":"#dc2626";
               return <div key={i} style={{...row,alignItems:"center"}}>
-                <span style={{color:"#374151",fontSize:12,flex:1,textTransform:"capitalize"}}>{muscle}</span>
+                <span style={{color:"#374151",fontSize:12,flex:1}}>{muscle}</span>
                 <span style={{fontSize:13,fontWeight:700,color:gc,minWidth:32,textAlign:"right"}}>{gr}</span>
               </div>;
             })}

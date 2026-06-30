@@ -575,6 +575,7 @@ const ROM_REGIONS=Object.keys(ROM_DATA);
 const RESTRICTION_GRADE=(measured,normal)=>{
   if(!measured||!normal) return null;
   const pct=(measured/normal)*100;
+  if(pct>115) return{label:"Hypermobile",color:"#7c3aed",pct};
   if(pct>=85) return{label:"WNL",color:"#00c97a",pct};
   if(pct>=65) return{label:"Mild",color:"#ffb300",pct};
   if(pct>=40) return{label:"Moderate",color:"#ff8c42",pct};

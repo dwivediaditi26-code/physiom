@@ -5479,7 +5479,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     onClick={() => prevKey && goTo(prevKey)}
                     disabled={!prevKey}
                     style={{
-                      flex:1, padding:"15px 14px", background:"transparent", border:"none",
+                      flex:1, minWidth:0, padding:"15px 14px", background:"transparent", border:"none",
                       borderRight:`1px solid ${PC.border}`,
                       color: prevKey ? PC.muted : PC.border,
                       fontSize:"0.9rem", fontWeight:500, cursor: prevKey ? "pointer" : "default",
@@ -5494,7 +5494,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     onClick={() => nextKey && goTo(nextKey)}
                     disabled={!nextKey}
                     style={{
-                      flex:1, padding:"15px 14px",
+                      flex:1, minWidth:0, padding:"15px 14px",
                       background: nextKey ? secColor+"14" : "transparent",
                       border:"none",
                       color: nextKey ? secColor : PC.border,
@@ -13175,15 +13175,10 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
           </button>
         )}
       </div>
-      {/* Mobile: icon-only search toggle */}
-      <div className="pm-mobile-only" style={{marginBottom:fmsMobileSearch?0:8}}>
-        {!fmsMobileSearch ? (
-          <button type="button" onClick={()=>setFmsMobileSearch(true)}
-            style={{background:"transparent",border:"none",padding:0,cursor:"pointer",color:C.muted,fontSize:"1.2rem",lineHeight:1,display:"flex",alignItems:"center"}}>
-            🔍
-          </button>
-        ) : (
-          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+      {/* Mobile: expanded search bar (only when active) */}
+      {fmsMobileSearch && (
+        <div className="pm-mobile-only" style={{marginBottom:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
             <span style={{fontSize:"1rem",flexShrink:0}}>🔍</span>
             <input autoFocus type="text" value={search} onChange={e=>setSearch(e.target.value)}
               placeholder="Search tests or regions…"
@@ -13191,8 +13186,8 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
             <button type="button" onClick={()=>{setFmsMobileSearch(false);setSearch("");}}
               style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"1rem",padding:"0 2px",minHeight:34,flexShrink:0}}>✕</button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Search results */}
       {search.trim() && (
@@ -13239,6 +13234,13 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
               </button>
             );
           })}
+          {!fmsMobileSearch && (
+            <button type="button" onClick={()=>setFmsMobileSearch(true)}
+              className="pm-mobile-only pm-region-chip"
+              style={{borderColor:C.border,color:C.muted,flexShrink:0,fontSize:"1.1rem",padding:"5px 10px"}}>
+              🔍
+            </button>
+          )}
         </div>
       )}
 
