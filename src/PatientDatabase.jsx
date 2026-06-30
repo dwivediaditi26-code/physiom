@@ -2374,6 +2374,10 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 </div>
               );
 
+              // Neuro label helpers — defined here since PhysioNeuro doesn't export them
+              const DERMATOMES=typeof window!=="undefined"&&window._DERMATOMES||[];
+              const MYOTOMES=typeof window!=="undefined"&&window._MYOTOMES||[];
+              const REFLEXES=typeof window!=="undefined"&&window._REFLEXES||[];
               const romKeys = Object.keys(d).filter(k=>k.startsWith("rom_")&&k!=="rom_snapshots"&&d[k]);
               const mmtKeys = Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]&&!k.endsWith("_pain")&&!k.endsWith("_ef"));
               // Special tests: st_* AND regional keys (cx_spurling, lx_slr_*, shr_stt_*, knl_stt_*, af_stt_*)
@@ -2547,17 +2551,17 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         let group,label,sub="";
                         if(base.startsWith("n_ref_")){
                           group="Reflexes";
-                          const rf=REFLEXES.find(r=>r.id===base);
+                          const rf=(REFLEXES||[]).find(r=>r.id===base);
                           label=rf?rf.label:base.replace(/^n_ref_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
                           sub=rf?rf.level:"";
                         } else if(base.startsWith("myo_")){
                           group="Myotomes";
-                          const my=MYOTOMES.find(m=>("myo_"+m.level.replace(/[^a-zA-Z0-9]/g,"_").toLowerCase())===base);
+                          const my=(MYOTOMES||[]).find(m=>("myo_"+m.level.replace(/[^a-zA-Z0-9]/g,"_").toLowerCase())===base);
                           label=my?`${my.level} — ${my.action}`:base.replace(/^myo_/,"").replace(/_/g,"–").toUpperCase();
                           sub=my?my.test:"";
                         } else {
                           group="Dermatomes";
-                          const de=DERMATOMES.find(dd=>dd.id===base);
+                          const de=(DERMATOMES||[]).find(dd=>dd.id===base);
                           label=de?`${de.level} — ${de.region}`:base.replace(/^n_/,"").replace(/_/g," ").toUpperCase();
                           sub=de&&de.disc&&de.disc!=="—"?`Disc ${de.disc}`:"";
                         }
