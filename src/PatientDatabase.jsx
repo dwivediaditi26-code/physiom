@@ -4,6 +4,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { createPortal } from "react-dom";
 import { supabase } from "./supabase.js";
 import { getC } from "./utils.jsx";
+import { DERMATOMES, MYOTOMES, REFLEXES } from "./PhysioNeuro.jsx";
 import BodyChartPro from "./BodyChartPro.jsx";
 const DB_KEY = "physio_patient_db_v1";
 const DRAFT_KEY = "physio_draft_v1";
@@ -2374,10 +2375,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 </div>
               );
 
-              // Neuro label helpers — defined here since PhysioNeuro doesn't export them
-              const DERMATOMES=typeof window!=="undefined"&&window._DERMATOMES||[];
-              const MYOTOMES=typeof window!=="undefined"&&window._MYOTOMES||[];
-              const REFLEXES=typeof window!=="undefined"&&window._REFLEXES||[];
+              // Neuro label helpers — imported from PhysioNeuro.jsx
               const romKeys = Object.keys(d).filter(k=>k.startsWith("rom_")&&k!=="rom_snapshots"&&d[k]);
               const mmtKeys = Object.keys(d).filter(k=>k.startsWith("mmt_")&&d[k]&&!k.endsWith("_pain")&&!k.endsWith("_ef"));
               // Special tests: st_* AND regional keys (cx_spurling, lx_slr_*, shr_stt_*, knl_stt_*, af_stt_*)
