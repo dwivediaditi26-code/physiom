@@ -1185,7 +1185,39 @@ export function getTopDiagnosesEnhanced(data, n=4) {
     return true;
   });
 
-  return deduped.slice(0, n);
+  // Filter by detected region — don't show knee/shoulder diagnoses for lumbar patients
+  const loc = String(data.s_location||data.dem_body_part||data.soap_region||"").toLowerCase();
+  const REGION_MAP = {
+    lumbar:   ["lumbar","lx","low back","lumb","spine","sacr","sij","disc"],
+    cervical: ["cerv","neck","cx"],
+    shoulder: ["shou","rotator","glenohumeral"],
+    knee:     ["knee","patell","patellar","meniscal","acl","pcl"],
+    hip:      ["hip","pelv","trochant","groin"],
+    ankle:    ["ankle","foot","plantar","achilles","peroneal"],
+    elbow:    ["elbow","epicondyl","lateral epi","medial epi"],
+    wrist:    ["wrist","hand","carpal","thumb"],
+  };
+  const DIAGNOSIS_REGION = {
+    "Lumbar":   "lumbar","Cervical":"cervical","Shoulder":"shoulder",
+    "Knee":     "knee","Hip":"hip","Ankle":"ankle","Foot":"ankle",
+    "Elbow":    "elbow","Wrist":"wrist","General":"general","Neuro":"general",
+  };
+  // Detect active region from loc string
+  let activeRegion = null;
+  for (const [reg, keywords] of Object.entries(REGION_MAP)) {
+    if (keywords.some(kw => loc.includes(kw))) { activeRegion = reg; break; }
+  }
+  // If region detected, filter out diagnoses from unrelated regions
+  const regionFiltered = activeRegion
+    ? deduped.filter(r => {
+        const diagReg = DIAGNOSIS_REGION[r.region] || "general";
+        return diagReg === activeRegion || diagReg === "general";
+      })
+    : deduped;
+
+  // Fallback: if filter removed everything, return unfiltered
+  const final = regionFiltered.length > 0 ? regionFiltered : deduped;
+  return final.slice(0, n);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
