@@ -2693,7 +2693,10 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       const sideMatch = k.match(/_([LR])$/);
       const side = sideMatch ? " ("+sideMatch[1]+")" : "";
       const base = k.replace(/_[LR]$/, "");
-      const label = MMT_LABELS[k] || (MMT_LABELS[base] ? MMT_LABELS[base]+side : base.replace("mmt_","").replace(/_/g," ")+side);
+      // Handle double-prefix keys like mmt_mmt_ta_L
+      const strippedBase2 = base.startsWith("mmt_mmt_") ? base.replace("mmt_mmt_","mmt_") : base;
+      const label = MMT_LABELS[k] || MMT_LABELS[base] ||
+        (MMT_LABELS[strippedBase2] ? MMT_LABELS[strippedBase2]+side : strippedBase2.replace(/^mmt_/,"").replace(/_/g," ")+side);
       if (!isNaN(num)) {
         if (num < 5) mmtDeficit.push(`${label} ${num}/5${num <= 2 ? " ❌" : num <= 3 ? " ⚠" : ""}`);
         else mmtNormal.push(label);
@@ -3159,6 +3162,10 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       kfs_step_down:"Step Down", kfs_single_leg:"Single Leg Squat", kfs_hop:"Single Leg Hop",
       lfs_flexion:"Lumbar Flexion", lfs_extension:"Lumbar Extension", lfs_sidebend:"Side Bend",
       lfs_squat:"Squat Pattern", lfs_rotation:"Lumbar Rotation",
+      lfs_sts:"Sit-to-Stand", lfs_fwd:"Forward Bend", lfs_sls:"Single Leg Stance", lfs_step:"Step-Up",
+      fms_sq:"Deep Squat", fms_hs:"Hurdle Step", fms_il:"Inline Lunge",
+      fms_sm:"Shoulder Mobility", fms_aslr:"Active SLR", fms_tspu:"Trunk Stability Push-Up",
+      fms_rs:"Rotary Stability",
       sfs_overhead:"Overhead Reach", sfs_scaption:"Scaption", sfs_push_up:"Push Up",
       sfs_irt:"Internal Rotation", sfs_ert:"External Rotation",
       hfs_squat:"Single Leg Squat", hfs_bridge:"Hip Bridge", hfs_clam:"Clamshell",
@@ -3691,7 +3698,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
         const sideMatch = k.match(/_([LR])$/);
         const side = sideMatch ? " ("+sideMatch[1]+")" : "";
         const base = k.replace(/_[LR]$/, "");
-        const label = MMT_LBL[base] || MMT_LBL[k] || base.replace(/^(muscle_|mmt_)/,"").replace(/_/g," ");
+        // Handle double-prefix keys like mmt_mmt_ta_L (from PhysioNeuro storing mmt_${id}_${side} where id already has mmt_)
+        const strippedBase = base.startsWith("mmt_mmt_") ? base.replace("mmt_mmt_","mmt_") : base;
+        const label = MMT_LBL[base] || MMT_LBL[strippedBase] || MMT_LBL[k] || strippedBase.replace(/^(muscle_|mmt_)/,"").replace(/_/g," ");
         return [label+side, raw];
       })
       .filter(([,v2])=>v2);
@@ -4381,9 +4390,19 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const{grades={},notes={}}=parsed;
               const ge=Object.entries(grades);
               if(!ge.length) return null;
-              const abnormal=ge.filter(([,g])=>g===2).map(([id])=>id.replace(/_/g," "));
-              const compensated=ge.filter(([,g])=>g===1).map(([id])=>id.replace(/_/g," "));
-              const normal=ge.filter(([,g])=>g===0).map(([id])=>id.replace(/_/g," "));
+              const FS_DISP_LBL={
+                lfs_sts:"Sit-to-Stand",lfs_fwd:"Forward Bend",lfs_sls:"Single Leg Stance",lfs_squat:"Squat Pattern",lfs_step:"Step-Up",
+                fms_sq:"Deep Squat",fms_hs:"Hurdle Step",fms_il:"Inline Lunge",fms_sm:"Shoulder Mob",
+                fms_aslr:"ASLR",fms_tspu:"Trunk Stab Push-Up",fms_rs:"Rotary Stability",
+                kfs_squat:"Dbl Leg Squat",kfs_lunge:"Forward Lunge",kfs_step:"Step Down",kfs_single_leg:"SL Squat",kfs_hop:"SL Hop",
+                sfs_overhead:"Overhead Reach",sfs_push_up:"Push-Up",sfs_irt:"Int Rotation",sfs_ert:"Ext Rotation",
+                hfs_squat:"SL Squat",hfs_bridge:"Hip Bridge",hfs_clam:"Clamshell",hfs_step:"Step Down",hfs_lunge:"Lunge",
+                afs_df:"Dorsiflexion",afs_calf:"Calf Raise",afs_hop:"Hop & Stick",afs_squat:"Squat",
+              };
+              const fsDisp=id=>FS_DISP_LBL[id]||id.replace(/^[a-z]+fs_/,"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+              const abnormal=ge.filter(([,g])=>g===2).map(([id])=>fsDisp(id));
+              const compensated=ge.filter(([,g])=>g===1).map(([id])=>fsDisp(id));
+              const normal=ge.filter(([,g])=>g===0).map(([id])=>fsDisp(id));
               const noteEntries=Object.entries(notes).filter(([,n])=>n&&String(n).trim());
               return <div key={key} style={{marginBottom:8,padding:"8px 10px",background:"#F9FAFB",borderRadius:8,border:"1px solid #E5E7EB"}}>
                 <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:4}}>{label}</div>

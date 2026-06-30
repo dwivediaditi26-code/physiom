@@ -2706,6 +2706,64 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     </Sec>
                   )}
 
+                  {/* ── Functional Screens ── */}
+                  {(()=>{
+                    const FS_REGIONS=[
+                      {key:"lfs_data",label:"Lumbar Functional Screen",nav:"lumbar_screen"},
+                      {key:"kfs_data",label:"Knee Functional Screen",nav:"knee_screen"},
+                      {key:"sfs_data",label:"Shoulder Functional Screen",nav:"shoulder_screen"},
+                      {key:"hfs_data",label:"Hip Functional Screen",nav:"hip_screen"},
+                      {key:"afs_data",label:"Ankle Functional Screen",nav:"ankle_screen"},
+                      {key:"thfs_data",label:"Thoracic Functional Screen",nav:"thoracic_screen"},
+                      {key:"elfs_data",label:"Elbow Functional Screen",nav:"elbow_screen"},
+                      {key:"cfs_data",label:"Cervical Functional Screen",nav:"cervical_screen"},
+                    ];
+                    const FS_LBL={
+                      lfs_sts:"Sit-to-Stand",lfs_fwd:"Forward Bend",lfs_sls:"Single Leg Stance",
+                      lfs_squat:"Squat Pattern",lfs_step:"Step-Up",
+                      fms_sq:"Deep Squat",fms_hs:"Hurdle Step",fms_il:"Inline Lunge",
+                      fms_sm:"Shoulder Mob",fms_aslr:"ASLR",fms_tspu:"Trunk Stab Push-Up",fms_rs:"Rotary Stability",
+                      kfs_squat:"Dbl Leg Squat",kfs_lunge:"Lunge",kfs_step:"Step Down",kfs_single_leg:"SL Squat",
+                      sfs_overhead:"Overhead Reach",sfs_push_up:"Push-Up",sfs_irt:"Int Rotation",sfs_ert:"Ext Rotation",
+                      hfs_squat:"SL Squat",hfs_bridge:"Hip Bridge",hfs_clam:"Clamshell",hfs_step:"Step Down",
+                      afs_df:"Dorsiflexion",afs_calf:"Calf Raise",afs_hop:"Hop & Stick",
+                    };
+                    const fsLbl=id=>FS_LBL[id]||id.replace(/^[a-z]+fs_/,"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+                    const rendered=FS_REGIONS.map(({key,label,nav})=>{
+                      const raw=d[key]; if(!raw) return null;
+                      let parsed; try{parsed=typeof raw==="string"?JSON.parse(raw):raw;}catch{return null;}
+                      const{grades={}}=parsed;
+                      const ge=Object.entries(grades);
+                      if(!ge.length) return null;
+                      const abnormal=ge.filter(([,g])=>g===2).map(([id])=>fsLbl(id));
+                      const compensated=ge.filter(([,g])=>g===1).map(([id])=>fsLbl(id));
+                      const normal=ge.filter(([,g])=>g===0).map(([id])=>fsLbl(id));
+                      return(
+                        <div key={key} style={{marginBottom:6}}>
+                          <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>{label}</div>
+                          {abnormal.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:3}}>
+                            <span style={{fontSize:10,fontWeight:700,color:"#dc2626",marginRight:2}}>🔴</span>
+                            {abnormal.map((t,i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF2F2",color:"#dc2626",fontSize:11,fontWeight:700}}>{t}</span>)}
+                          </div>}
+                          {compensated.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:3}}>
+                            <span style={{fontSize:10,fontWeight:700,color:"#92400E",marginRight:2}}>⚠️</span>
+                            {compensated.map((t,i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:700}}>{t}</span>)}
+                          </div>}
+                          {normal.length>0&&(abnormal.length+compensated.length)>0&&(
+                            <div style={{fontSize:10.5,color:C.muted}}>✅ Normal: {normal.join(", ")}</div>
+                          )}
+                        </div>
+                      );
+                    }).filter(Boolean);
+                    if(!rendered.length) return null;
+                    const hasAny=FS_REGIONS.some(({key})=>d[key]);
+                    return(
+                      <Sec icon="🏃" title="Functional Screens" navKey="functional" hasData={true}>
+                        <div>{rendered}</div>
+                      </Sec>
+                    );
+                  })()}
+
                   {/* ── STTT ── */}
                   {nktKeys.length>0&&(()=>{
                     const nktRows=nktKeys.map(k=>({k,label:k.replace("nkt_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase()),val:d[k]}));
@@ -2907,7 +2965,19 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:12,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",border:`1px solid ${C.border}`}}>
                     <div style={{fontSize:13.5,fontWeight:800,color:C.text,marginBottom:8}}>🏥 In-clinic treatment {lastS&&<span style={{fontSize:10,color:C.muted,fontWeight:500}}>· latest S{lastS.sessionNo||sess.length}</span>}</div>
                     {txChips.length===0?(
-                      <div style={{fontSize:11.5,color:C.muted}}>No sessions logged yet.</div>
+                      prog.length>0?(
+                        <div>
+                          <div style={{fontSize:10.5,color:C.muted,marginBottom:5}}>No visits logged yet — current exercise plan:</div>
+                          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                            {prog.slice(0,5).map((e,i2)=>(
+                              <span key={i2} style={{padding:"3px 11px",borderRadius:99,fontSize:11,fontWeight:700,background:"#F0FDF4",color:"#047857"}}>{e.name}</span>
+                            ))}
+                            {prog.length>5&&<span style={{padding:"3px 11px",borderRadius:99,fontSize:11,fontWeight:700,background:"#F3F4F6",color:C.muted}}>+{prog.length-5} more</span>}
+                          </div>
+                        </div>
+                      ):(
+                        <div style={{fontSize:11.5,color:C.muted}}>No sessions logged yet — log the first visit in Quick Visit.</div>
+                      )
                     ):(
                       <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                         {txChips.map((t2,i2)=>(
