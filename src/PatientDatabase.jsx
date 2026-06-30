@@ -3266,13 +3266,13 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         )}
         {tab==="treatment" && (
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <button style={{width:"100%",padding:"13px",borderRadius:12,border:"none",
+            <button onClick={()=>{onNav&&onNav("tx_sessions");}} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",
               background:`linear-gradient(135deg,${C.primary},${C.secondary})`,
               color:"white",fontSize:13,fontWeight:800,cursor:"pointer",
               boxShadow:`0 4px 16px rgba(109,40,217,0.3)`}}>
               Update Treatment Plan
             </button>
-            <button style={{width:"100%",padding:"12px",borderRadius:12,
+            <button onClick={()=>{onNav&&onNav("exercise");}} style={{width:"100%",padding:"12px",borderRadius:12,
               border:`1.5px solid ${C.primary}`,background:"white",
               color:C.primary,fontSize:13,fontWeight:700,cursor:"pointer"}}>
               Add New Exercise
