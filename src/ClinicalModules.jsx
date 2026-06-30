@@ -2672,6 +2672,23 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   {
     // MMT label map for clean display
     const MMT_LABELS = {
+      // Short-form aliases used by AppModules/PatientDatabase MMT table
+      mmt_quad:"Quadriceps",mmt_quad_l:"Quadriceps",mmt_quad_r:"Quadriceps",
+      mmt_hams:"Hamstrings",mmt_hams_l:"Hamstrings",mmt_hams_r:"Hamstrings",
+      mmt_hamstr:"Hamstrings",mmt_hamst:"Hamstrings",
+      mmt_glut_max:"Gluteus Maximus",mmt_glut_max_l:"Gluteus Maximus",mmt_glut_max_r:"Gluteus Maximus",
+      mmt_glut_med:"Gluteus Medius",mmt_glut_med_l:"Gluteus Medius",mmt_glut_med_r:"Gluteus Medius",
+      mmt_hip_flex:"Hip Flexors",mmt_hip_flex_l:"Hip Flexors",mmt_hip_flex_r:"Hip Flexors",
+      mmt_gastroc:"Gastrocnemius",mmt_gastroc_l:"Gastrocnemius",mmt_gastroc_r:"Gastrocnemius",
+      mmt_tib_ant:"Tibialis Anterior",mmt_tib_ant_l:"Tibialis Anterior",mmt_tib_ant_r:"Tibialis Anterior",
+      mmt_ehl:"Ext Hallucis Longus",mmt_ehl_l:"Ext Hallucis Longus",mmt_ehl_r:"Ext Hallucis Longus",
+      mmt_deltoid:"Deltoid",mmt_deltoid_l:"Deltoid",mmt_deltoid_r:"Deltoid",
+      mmt_rc:"Rotator Cuff",mmt_rc_l:"Rotator Cuff",mmt_rc_r:"Rotator Cuff",
+      mmt_biceps:"Biceps Brachii",mmt_biceps_l:"Biceps Brachii",mmt_biceps_r:"Biceps Brachii",
+      mmt_triceps:"Triceps Brachii",mmt_triceps_l:"Triceps Brachii",mmt_triceps_r:"Triceps Brachii",
+      mmt_wr_ext:"Wrist Extensors",mmt_wr_ext_l:"Wrist Extensors",mmt_wr_ext_r:"Wrist Extensors",
+      mmt_dnf:"Deep Neck Flexors",mmt_dnf_l:"Deep Neck Flexors",mmt_dnf_r:"Deep Neck Flexors",
+      // Full-form originals
       mmt_dnf:"Deep Neck Flexors",mmt_supra:"Supraspinatus",mmt_infra:"Infraspinatus",
       mmt_subscap:"Subscapularis",mmt_serratus:"Serratus Anterior",mmt_trapL:"Lower Trap",
       mmt_trapM:"Mid Trap",mmt_trapU:"Upper Trap",mmt_deltA:"Ant Deltoid",mmt_deltM:"Mid Deltoid",
@@ -2690,9 +2707,9 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       const raw = String(data[k]||"").trim();
       if (!raw) return;
       const num = parseFloat(raw);
-      const sideMatch = k.match(/_([LR])$/);
-      const side = sideMatch ? " ("+sideMatch[1]+")" : "";
-      const base = k.replace(/_[LR]$/, "");
+      const sideMatch = k.match(/_([LRlr])$/);
+      const side = sideMatch ? " ("+sideMatch[1].toUpperCase()+")" : "";
+      const base = k.replace(/_[LRlr]$/, "");
       // Handle double-prefix keys like mmt_mmt_ta_L
       const strippedBase2 = base.startsWith("mmt_mmt_") ? base.replace("mmt_mmt_","mmt_") : base;
       const label = MMT_LABELS[k] || MMT_LABELS[base] ||
@@ -3665,48 +3682,81 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   // MMT rows
   const mmtRows = useMemo(() => {
     const MMT_LBL = {
-      mmt_scm:"Sternocleidomastoid",mmt_dnf:"Deep Neck Flexors",
+      // Trunk / Core
+      mmt_ra:"Rectus Abdominis",mmt_eo:"External Oblique",mmt_ia:"Internal Oblique",
+      mmt_multif:"Multifidus",mmt_es:"Erector Spinae",mmt_ql:"Quadratus Lumborum",
+      mmt_diaphragm:"Diaphragm",
+      // Neck
+      mmt_scm:"Sternocleidomastoid",mmt_dnf:"Deep Neck Flexors",mmt_scalenes:"Scalenes",
+      mmt_dnf_l:"Deep Neck Flexors",mmt_dnf_r:"Deep Neck Flexors",
+      // Scapular / Shoulder
       mmt_trap_u:"Upper Trapezius",mmt_trap_m:"Mid Trapezius",mmt_trap_l:"Lower Trapezius",
-      mmt_trapU:"Upper Trap",mmt_trapM:"Mid Trap",mmt_trapL:"Lower Trap",
-      mmt_levsc:"Levator Scapulae",mmt_scalenes:"Scalenes",
-      mmt_deltA:"Ant Deltoid",mmt_deltM:"Mid Deltoid",mmt_deltP:"Post Deltoid",
+      mmt_trapU:"Upper Trapezius",mmt_trapM:"Mid Trapezius",mmt_trapL:"Lower Trapezius",
+      mmt_levsc:"Levator Scapulae",mmt_serrant:"Serratus Anterior",
+      mmt_rhomb:"Rhomboids",mmt_pec_min:"Pectoralis Minor",
+      mmt_pec_maj_c:"Pec Maj (Clavicular)",mmt_pec_maj_s:"Pec Maj (Sternal)",
+      mmt_deltA:"Anterior Deltoid",mmt_deltM:"Middle Deltoid",mmt_deltP:"Posterior Deltoid",
+      mmt_deltoid:"Deltoid",mmt_deltoid_l:"Deltoid",mmt_deltoid_r:"Deltoid",
+      mmt_rc:"Rotator Cuff",mmt_rc_l:"Rotator Cuff",mmt_rc_r:"Rotator Cuff",
       mmt_supra:"Supraspinatus",mmt_infra:"Infraspinatus",mmt_subscap:"Subscapularis",
       mmt_tmin:"Teres Minor",mmt_tmaj:"Teres Major",mmt_lat:"Latissimus Dorsi",
-      mmt_pec_maj_c:"Pec Maj (Clavicular)",mmt_pec_maj_s:"Pec Maj (Sternal)",mmt_pec_min:"Pec Minor",
-      mmt_serrant:"Serratus Anterior",mmt_bicep:"Biceps",mmt_brach:"Brachialis",
-      mmt_brachio:"Brachioradialis",mmt_tricep:"Triceps",
-      mmt_pron_ter:"Pronator Teres",mmt_sup:"Supinator",
-      mmt_fcr:"Wrist Flex (FCR)",mmt_ecrl:"Wrist Ext (ECRL)",
-      mmt_ecrb:"Wrist Ext (ECRB)",mmt_ecu:"Wrist Ext (ECU)",mmt_fcu:"Wrist Flex (FCU)",
-      mmt_edc:"Finger Ext",mmt_fdp:"Finger Flex",mmt_fds:"FDS",
+      mmt_corbrach:"Coracobrachialis",
+      // Elbow / Forearm
+      mmt_bicep:"Biceps Brachii",mmt_biceps:"Biceps Brachii",
+      mmt_biceps_l:"Biceps Brachii",mmt_biceps_r:"Biceps Brachii",
+      mmt_brach:"Brachialis",mmt_brachio:"Brachioradialis",
+      mmt_tricep:"Triceps Brachii",mmt_triceps:"Triceps Brachii",
+      mmt_triceps_l:"Triceps Brachii",mmt_triceps_r:"Triceps Brachii",
+      mmt_supinator:"Supinator",mmt_sup:"Supinator",mmt_pt:"Pronator Teres",mmt_pron_ter:"Pronator Teres",
+      // Wrist / Hand
+      mmt_fcr:"Wrist Flex (FCR)",mmt_fcu:"Wrist Flex (FCU)",
+      mmt_ecrl:"Wrist Ext (ECRL)",mmt_ecrb:"Wrist Ext (ECRB)",mmt_ecu:"Wrist Ext (ECU)",
+      mmt_wr_ext:"Wrist Extensors",mmt_wr_ext_l:"Wrist Extensors",mmt_wr_ext_r:"Wrist Extensors",
+      mmt_edc:"Finger Extensors",mmt_fdp:"FDP",mmt_fds:"FDS",
       mmt_apbrev:"Abductor Pollicis Brevis",mmt_adpoll:"Adductor Pollicis",mmt_oppoll:"Opponens Pollicis",
-      mmt_diaphragm:"Diaphragm",mmt_ta:"Tibialis Anterior",
-      mmt_ra:"Rectus Abdominis",mmt_eo:"Ext Oblique",mmt_ia:"Int Oblique",
-      mmt_multif:"Multifidus",mmt_es:"Erector Spinae",
-      mmt_ql:"Quadratus Lumborum",mmt_psoas:"Iliopsoas",mmt_piri:"Piriformis",
-      mmt_gmax:"Gluteus Maximus",mmt_gmed:"Gluteus Medius",mmt_gmin:"Gluteus Minimus",
-      mmt_tfl:"TFL",mmt_adduc:"Adductors",mmt_rectfem:"Rectus Femoris",
-      mmt_quad:"Quadriceps",mmt_hamst:"Hamstrings",mmt_semit:"Semitendinosus",
-      mmt_gastroc:"Gastrocnemius",mmt_soleus:"Soleus",
-      mmt_tib_ant:"Tibialis Anterior",mmt_tp:"Tibialis Posterior",
-      mmt_peronls:"Peroneals",mmt_ehl:"EHL",mmt_edl:"EDL",mmt_abdhal:"Abductor Hallucis",
+      mmt_lumb:"Lumbricals",mmt_interos:"Interossei",
+      // Hip / Pelvis
+      mmt_iliop:"Iliopsoas",mmt_psoas:"Iliopsoas",mmt_piri:"Piriformis",
+      mmt_hip_flex:"Hip Flexors",mmt_hip_flex_l:"Hip Flexors",mmt_hip_flex_r:"Hip Flexors",
+      mmt_gmax:"Gluteus Maximus",mmt_glut_max:"Gluteus Maximus",
+      mmt_glut_max_l:"Gluteus Maximus",mmt_glut_max_r:"Gluteus Maximus",
+      mmt_gmed:"Gluteus Medius",mmt_glut_med:"Gluteus Medius",
+      mmt_glut_med_l:"Gluteus Medius",mmt_glut_med_r:"Gluteus Medius",
+      mmt_gmin:"Gluteus Minimus",mmt_tfl:"TFL",
+      mmt_adduc:"Hip Adductors",
+      // Knee / Thigh
+      mmt_rectfem:"Rectus Femoris",
+      mmt_quad:"Quadriceps",mmt_quad_l:"Quadriceps",mmt_quad_r:"Quadriceps",
+      mmt_hamst:"Hamstrings",mmt_hamstr:"Hamstrings",
+      mmt_hams:"Hamstrings",mmt_hams_l:"Hamstrings",mmt_hams_r:"Hamstrings",
+      mmt_semit:"Semitendinosus",
+      // Ankle / Foot
+      mmt_ta:"Tibialis Anterior",mmt_tib_ant:"Tibialis Anterior",
+      mmt_tib_ant_l:"Tibialis Anterior",mmt_tib_ant_r:"Tibialis Anterior",
+      mmt_gastroc:"Gastrocnemius",mmt_gastroc_l:"Gastrocnemius",mmt_gastroc_r:"Gastrocnemius",
+      mmt_soleus:"Soleus",mmt_tp:"Tibialis Posterior",
+      mmt_peronls:"Peroneals",mmt_ehl:"Ext Hallucis Longus (L5)",
+      mmt_ehl_l:"Ext Hallucis Longus (L5)",mmt_ehl_r:"Ext Hallucis Longus (L5)",
+      mmt_edl:"EDL",mmt_abdhal:"Abductor Hallucis",mmt_fdl:"FDL/FHL",
     };
+    const MMT_GRADE_LBL = {"5":"Normal","5/5":"Normal","4+":"Good+","4+/5":"Good+","4":"Good","4/5":"Good","3+":"Fair+","3+/5":"Fair+","3":"Fair","3/5":"Fair","2":"Poor","2/5":"Poor","1":"Trace","1/5":"Trace","0":"Zero","0/5":"Zero"};
     const fields = Object.entries(data)
       .filter(([k])=>k.startsWith("muscle_")||k.startsWith("mmt_"))
       .map(([k,v2])=>{
         const raw = String(v2||"");
-        const sideMatch = k.match(/_([LR])$/);
-        const side = sideMatch ? " ("+sideMatch[1]+")" : "";
-        const base = k.replace(/_[LR]$/, "");
-        // Handle double-prefix keys like mmt_mmt_ta_L (from PhysioNeuro storing mmt_${id}_${side} where id already has mmt_)
+        // Match both uppercase (L/R) and lowercase (l/r) side suffixes
+        const sideMatch = k.match(/_([LRlr])$/);
+        const side = sideMatch ? " ("+sideMatch[1].toUpperCase()+")" : "";
+        const base = k.replace(/_[LRlr]$/, "");
+        // Handle double-prefix keys (mmt_mmt_ta_L)
         const strippedBase = base.startsWith("mmt_mmt_") ? base.replace("mmt_mmt_","mmt_") : base;
-        const label = MMT_LBL[base] || MMT_LBL[strippedBase] || MMT_LBL[k] || strippedBase.replace(/^(muscle_|mmt_)/,"").replace(/_/g," ");
-        return [label+side, raw];
+        const label = MMT_LBL[k] || MMT_LBL[base] || MMT_LBL[strippedBase] || strippedBase.replace(/^(muscle_|mmt_)/,"").replace(/_/g," ");
+        return [label, side, raw, MMT_GRADE_LBL[raw.trim()]||""];
       })
-      .filter(([,v2])=>v2);
+      .filter(([,,v2])=>v2);
     const neuroWeak = v("neuro_weakness");
-    if(neuroWeak) fields.push(["Neurological weakness",neuroWeak]);
-    return fields.slice(0,10);
+    if(neuroWeak) fields.push(["Neurological Weakness","","(see neuro section)","—"]);
+    return fields.slice(0,12);
   }, [data]);
 
   // STT rows
@@ -4264,14 +4314,24 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {/* MMT */}
           {mmtRows.length>0&&<>
             {subH("Manual Muscle Testing (MMT)","#065F46")}
-            {mmtRows.map(([muscle,gr],i)=>{
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+            {mmtRows.map(([muscle,side,gr,desc],i)=>{
               const g=parseFloat(gr)||0;
               const gc=g>=5?"#059669":g>=4?"#d97706":g>=3?"#ea580c":"#dc2626";
-              return <div key={i} style={{...row,alignItems:"center"}}>
-                <span style={{color:"#374151",fontSize:12,flex:1}}>{muscle}</span>
-                <span style={{fontSize:13,fontWeight:700,color:gc,minWidth:32,textAlign:"right"}}>{gr}</span>
+              const bg=g>=5?"#f0fdf4":g>=4?"#fffbeb":g>=3?"#fff7ed":"#fef2f2";
+              const bdr=g>=5?"#bbf7d0":g>=4?"#fde68a":g>=3?"#fed7aa":"#fecaca";
+              return <div key={i} style={{display:"flex",flexDirection:"column",padding:"7px 10px",borderRadius:8,border:`1px solid ${bdr}`,background:bg}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2}}>
+                  <span style={{fontSize:11,fontWeight:700,color:"#1f2937",flex:1,lineHeight:1.2}}>{muscle}</span>
+                  {side&&<span style={{fontSize:9,fontWeight:800,padding:"1px 6px",borderRadius:99,background:"#e0e7ff",color:"#3730a3",marginLeft:4,flexShrink:0}}>{side.trim().replace(/[()]/g,"")}</span>}
+                </div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <span style={{fontSize:10,color:"#6b7280"}}>{desc||""}</span>
+                  <span style={{fontSize:14,fontWeight:800,color:gc}}>{gr}</span>
+                </div>
               </div>;
             })}
+            </div>
           </>}
 
           {/* Special Tests */}
