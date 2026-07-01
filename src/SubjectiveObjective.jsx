@@ -4623,24 +4623,70 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
     if (f.type === "range") {
       const num = parseInt(val || 0);
-      const col = num >= 7 ? PC.red : num >= 4 ? PC.yellow : PC.green;
-      const colBg = num >= 7 ? PC.red+"18" : num >= 4 ? PC.yellow+"18" : PC.green+"18";
+      const dotCol = (n) => n >= 7 ? "#ef4444" : n >= 4 ? "#f59e0b" : "#22c55e";
+      const col = dotCol(num);
+      const severity = num === 0 ? "No pain" : num <= 3 ? "Mild" : num <= 6 ? "Moderate" : num <= 8 ? "Severe" : "Worst possible";
+      const sevEmoji = num === 0 ? "😊" : num <= 3 ? "🙂" : num <= 6 ? "😐" : num <= 8 ? "😣" : "😭";
       return (
-        <div className="pm-pain-slider" style={{ background: colBg, borderRadius:10, padding:"10px 14px", border:`1.5px solid ${col}33` }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:6 }}>
-            <span className="pm-pain-num" style={{ fontWeight:900, color: col, fontSize:"1.6rem", minWidth:40, textAlign:"center", lineHeight:1 }}>
-              {num}
-            </span>
-            <span style={{ fontSize:"0.82rem", color: PC.muted }}>/ 10</span>
-            <span style={{ marginLeft:"auto", fontSize:"0.78rem", color: col, fontWeight:700 }}>
-              {num === 0 ? "No pain" : num <= 3 ? "Mild" : num <= 6 ? "Moderate" : num <= 8 ? "Severe" : "Worst"}
-            </span>
+        <div style={{
+          background:"#fff",
+          borderRadius:14,
+          padding:"14px 14px 12px",
+          border:`1.5px solid ${col}33`,
+          boxShadow:`0 2px 12px ${col}18, 0 1px 3px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)`
+        }}>
+          {/* Score display row */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+            <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
+              <span style={{ fontWeight:900, color:col, fontSize:"2.2rem", lineHeight:1, fontVariantNumeric:"tabular-nums" }}>{num}</span>
+              <span style={{ fontSize:"0.75rem", color:PC.muted, fontWeight:500 }}>/10</span>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:6,
+              background:col+"15", borderRadius:20, padding:"5px 12px",
+              border:`1px solid ${col}30` }}>
+              <span style={{ fontSize:"1rem" }}>{sevEmoji}</span>
+              <span style={{ fontSize:"0.75rem", fontWeight:700, color:col }}>{severity}</span>
+            </div>
           </div>
-          <input type="range" min="0" max="10" value={num}
-            onChange={e => setField(f.id, e.target.value)}
-            style={{ width:"100%", accentColor: col, height:32, cursor:"pointer" }} />
-          <div style={{ display:"flex", justifyContent:"space-between", fontSize:"0.72rem", color: PC.muted, marginTop:3 }}>
-            <span>0</span><span>5</span><span>10</span>
+
+          {/* Tap-to-select dot row */}
+          <div style={{ display:"flex", gap:3, alignItems:"center", justifyContent:"space-between" }}>
+            {[0,1,2,3,4,5,6,7,8,9,10].map(n => {
+              const dc = dotCol(n);
+              const isSelected = n === num;
+              const isPast = n < num;
+              return (
+                <button key={n} type="button"
+                  onClick={() => setField(f.id, String(n))}
+                  style={{
+                    flex:1, aspectRatio:"1",
+                    borderRadius:"50%",
+                    border: isSelected ? `2px solid ${dc}` : isPast ? `1.5px solid ${dc}60` : `1.5px solid #E0E0E2`,
+                    background: isSelected
+                      ? dc
+                      : isPast ? dc+"30" : "#F7F7F8",
+                    color: isSelected ? "#fff" : isPast ? dc : "#9B9B9B",
+                    fontSize: isSelected ? "0.72rem" : "0.65rem",
+                    fontWeight: isSelected ? 800 : 500,
+                    cursor:"pointer",
+                    fontFamily:"inherit",
+                    transition:"all 120ms",
+                    boxShadow: isSelected ? `0 2px 8px ${dc}50` : "none",
+                    transform: isSelected ? "scale(1.18)" : "scale(1)",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    padding:0, minWidth:0,
+                  }}>
+                  {n}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Track labels */}
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, paddingLeft:2, paddingRight:2 }}>
+            <span style={{ fontSize:"0.6rem", color:"#22c55e", fontWeight:600 }}>No pain</span>
+            <span style={{ fontSize:"0.6rem", color:"#f59e0b", fontWeight:600 }}>Moderate</span>
+            <span style={{ fontSize:"0.6rem", color:"#ef4444", fontWeight:600 }}>Worst</span>
           </div>
         </div>
       );
