@@ -1688,9 +1688,9 @@ function PostureCameraModule({ activePatient, set }) {
 
 // ─── Colours ─────────────────────────────────────────────────────────────────
 const PC = {
-  bg:"#faf8fc", surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6",
-  border:"#d8cce8", accent:"#7c3aed", a2:"#9333ea", a3:"#059669",
-  text:"#1a1025", muted:"#7e6a9a", red:"#dc2626", yellow:"#b45309",
+  bg:"#F2F2F4", surface:"#ffffff", s2:"#FFFFFF", s3:"#FFFFFF",
+  border:"#E0E0E2", accent:"#7c3aed", a2:"#9333ea", a3:"#059669",
+  text:"#0D0D0D", muted:"#6B6B6B", red:"#dc2626", yellow:"#b45309",
   green:"#059669", purple:"#9333ea", orange:"#f97316",
 };
 
