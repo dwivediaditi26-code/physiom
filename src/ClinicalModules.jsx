@@ -2938,8 +2938,8 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       ["sp_fms_aslr_l","ASLR L"],["sp_fms_aslr_r","ASLR R"],
       ["sp_fms_tspu","TSPU"],["sp_fms_rs_l","Rotary Stab L"],["sp_fms_rs_r","Rotary Stab R"],
     ];
-    // Also pull from FMA localStorage report (FMASection stores separately)
-    const fmaReport = data.fma_report || (()=>{try{return JSON.parse(localStorage.getItem("fms_clinical_v1")||"{}");}catch{return{};}})();
+    // FMA report — scoped to this patient's own record only (no cross-patient global fallback)
+    const fmaReport = data.fma_report || {};
     FMA_MOVEMENTS.forEach(([id, label]) => {
       const rpt = fmaReport[id] || {};
       const comp = data[`fma_compensation_${id}`] || data[`fma_${id}`] || (rpt.defects?.length ? rpt.defects.map(d=>String(d).replace(/_/g," ")).join(", ") : "");
@@ -3532,19 +3532,11 @@ function detectModulesV2(data) {
 }
 
 function SOAPNoteModule({ data, set, onNav, initialTab }) {
-  useEffect(() => {
-    try {
-      const fmaStored = JSON.parse(localStorage.getItem("fms_clinical_v1") || "{}");
-      if (Object.keys(fmaStored).length > 0 && !data.fma_report) set("fma_report", fmaStored);
-    } catch {}
-    try {
-      const omSessions = JSON.parse(localStorage.getItem("physio_om_sessions") || "[]");
-      if (omSessions.length > 0) {
-        const latest = omSessions[omSessions.length - 1];
-        if (latest?.scores && !data.om_report) set("om_report", { scores: latest.scores, date: latest.date });
-      }
-    } catch {}
-  }, []);
+  // Note: fma_report / om_report are read directly from this patient's own scoped
+  // record only. A previous version seeded these from global (non-patient-scoped)
+  // localStorage keys as a fallback, which could leak one patient's functional-movement
+  // or outcome-measure data into another patient's SOAP notes on the same browser.
+  // That fallback has been removed.
 
   const [clinician, setClinician] = useState(data.soap_clinician || "");
   const [clinic,    setClinic]    = useState(data.soap_clinic    || "");
@@ -4266,7 +4258,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* Neurological */}
           {neuroRows.length>0&&<>
-            {subH("Neurological","#1e3a5f")}
+            {subH("Neurological","#312e81")}
             {neuroRows.map((r,i)=>{
               const lc=r.val.toLowerCase();
               const isAbn=lc.includes("reduced")||lc.includes("weak")||lc.includes("absent")||lc.includes("positive");
@@ -4313,7 +4305,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* MMT */}
           {mmtRows.length>0&&<>
-            {subH("Manual Muscle Testing (MMT)","#065F46")}
+            {subH("Manual Muscle Testing (MMT)","#1e3a5f")}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
             {mmtRows.map(([muscle,side,gr,desc],i)=>{
               const g=parseFloat(gr)||0;
@@ -4584,7 +4576,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             return <>
               {/* ═══ 1. PROVISIONAL DIAGNOSIS ═══ */}
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#1E40AF",marginBottom:8,borderBottom:"2px solid #C7D2FE",paddingBottom:6}}>Provisional Diagnosis</div>
+                {subH("Provisional Diagnosis","#1E40AF")}
 
                 {/* AI suggestions */}
                 {(()=>{
@@ -4632,7 +4624,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
               {/* ═══ 2. DIFFERENTIAL DIAGNOSIS ═══ */}
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#374151",marginBottom:8,borderBottom:"2px solid #E5E7EB",paddingBottom:6}}>Differential Diagnosis</div>
+                {subH("Differential Diagnosis","#4c1d95")}
 
                 {selectedDiffs.length>0&&<div style={{marginBottom:10,padding:"10px 12px",background:"#F5F3FF",border:"2px solid #8B5CF6",borderRadius:12}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Selected Differentials</div>
