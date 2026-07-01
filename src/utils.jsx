@@ -744,11 +744,3 @@ function RegionChips({ regions, active, onSelect }) {
 export { TabLoader, LazyBoundary, LazyTab, ErrorBoundary, MobileStyleInjector, MOBILE_CSS, RegionPickerButton, RegionChips };
 export { THEMES, getC, setTheme, useTheme, C };
 export { mid, vis, px, r1, r2, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg };
-  /* ── 3D card elevation — all white surface blocks ── */
-  .pm-shell .pm-card,
-  .pm-shell [class*="card"],
-  .pm-shell [class*="block"],
-  .pm-shell [class*="section"] {
-    box-shadow: 0 8px 28px rgba(0,0,0,0.13), 0 3px 8px rgba(0,0,0,0.09) !important;
-  }
-
