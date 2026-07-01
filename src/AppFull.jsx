@@ -860,9 +860,9 @@ function AppInner({ currentUser, onSignOut }) {
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{background:"#0e1118",border:"1px solid rgba(255,179,0,0.3)",borderRadius:14,padding:24,maxWidth:380,width:"100%"}}>
             <div style={{fontSize:"1.2rem",marginBottom:8}}>⚠️</div>
-            <div style={{fontWeight:800,color:"#1a1025",fontSize:"0.92rem",marginBottom:6}}>Unsaved Changes</div>
+            <div style={{fontWeight:800,color:"#0D0D0D",fontSize:"0.92rem",marginBottom:6}}>Unsaved Changes</div>
             <div style={{fontSize:"0.78rem",color:"#5a7090",marginBottom:20,lineHeight:1.6}}>
-              You have unsaved changes for <strong style={{color:"#1a1025"}}>{activePatient?.name || "this patient"}</strong>. What would you like to do?
+              You have unsaved changes for <strong style={{color:"#0D0D0D"}}>{activePatient?.name || "this patient"}</strong>. What would you like to do?
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               <button onClick={()=>confirmSwitchPatient(true)} style={{padding:"11px",background:"linear-gradient(135deg,#00e5ff,#7f5af0)",border:"none",borderRadius:9,color:"#000",fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>
@@ -1034,7 +1034,7 @@ function AppInner({ currentUser, onSignOut }) {
       {/* ── MOBILE COMPACT HEADER (≤767px only, replaces pm-header + patient bars) ── */}
       {/* ── MOBILE HEADER — Option B: gradient accent bar ── */}
       <div className="pm-mobile-hdr" style={{
-        background: PC.isDark ? PC.headerBg : "linear-gradient(90deg,#f5edff 0%,#faf8ff 100%)",
+        background: PC.isDark ? PC.headerBg : "linear-gradient(90deg,#F2F2F4 0%,#FFFFFF 100%)",
         borderBottom: `1px solid ${PC.isDark?PC.border:"#d8cce8"}`,
         borderLeft: `3.5px solid ${PC.accent}`,
       }}>
@@ -1570,7 +1570,7 @@ function AppInner({ currentUser, onSignOut }) {
                     <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"rgba(124,58,237,0.07)",borderRadius:10,marginBottom:8,border:"1px solid rgba(124,58,237,0.15)"}}>
                       <span style={{fontSize:"1.3rem"}}>👤</span>
                       <div style={{minWidth:0}}>
-                        <div style={{fontWeight:800,fontSize:"0.95rem",color:"#3b1f6b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.dem_name}</div>
+                        <div style={{fontWeight:800,fontSize:"0.95rem",color:"#0D0D0D",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.dem_name}</div>
                         {data.dem_age && <div style={{fontSize:"0.72rem",color:"#7c3aed",fontWeight:600}}>Age {data.dem_age}</div>}
                       </div>
                     </div>

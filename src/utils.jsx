@@ -532,7 +532,7 @@ function MobileStyleInjector() {
     try {
       const t = localStorage.getItem("physio_theme") || "light";
       document.documentElement.setAttribute("data-theme", t);
-      document.body.style.background = "#faf8fc";
+      document.body.style.background = "#F2F2F4";
     } catch {}
     return () => { const s = document.getElementById(id); if (s) s.remove(); };
   }, []);
@@ -545,12 +545,12 @@ function MobileStyleInjector() {
 const THEMES = {
   dark: {
     // Mauve & White — elegant clinical
-    bg:"#faf8fc",      surface:"#ffffff",  s2:"#f5f0fb",  s3:"#ede7f6",
+    bg:"#F2F2F4",      surface:"#ffffff",  s2:"#EBEBED",  s3:"#E4E4E6",
     border:"#d8cce8",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
-    a4:"#b45309",      a5:"#dc2626",      text:"#1a1025", muted:"#7e6a9a",
+    a4:"#b45309",      a5:"#dc2626",      text:"#0D0D0D", muted:"#7e6a9a",
     red:"#dc2626",     green:"#059669",   yellow:"#b45309", purple:"#7c3aed",
-    card:"#ffffff",    inputBg:"#f5f0fb", inputBorder:"#c8b8e0",
-    navBg:"#f5f0fb",   headerBg:"#ffffff",
+    card:"#ffffff",    inputBg:"#EBEBED", inputBorder:"#c8b8e0",
+    navBg:"#FFFFFF",   headerBg:"#ffffff",
     shadow:"rgba(90,40,130,0.10)", isDark:false,
     accentSoft:"rgba(124,58,237,0.08)", accentBorder:"rgba(124,58,237,0.22)",
     successSoft:"rgba(5,150,105,0.07)", warnSoft:"rgba(180,83,9,0.07)",
@@ -559,12 +559,12 @@ const THEMES = {
   },
   light: {
     // Same mauve/white palette
-    bg:"#faf8fc",      surface:"#ffffff",  s2:"#f5f0fb",  s3:"#ede7f6",
+    bg:"#F2F2F4",      surface:"#ffffff",  s2:"#EBEBED",  s3:"#E4E4E6",
     border:"#d8cce8",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
-    a4:"#b45309",      a5:"#dc2626",      text:"#1a1025", muted:"#7e6a9a",
+    a4:"#b45309",      a5:"#dc2626",      text:"#0D0D0D", muted:"#7e6a9a",
     red:"#dc2626",     green:"#059669",   yellow:"#b45309", purple:"#7c3aed",
-    card:"#ffffff",    inputBg:"#f5f0fb", inputBorder:"#c8b8e0",
-    navBg:"#f5f0fb",   headerBg:"#ffffff",
+    card:"#ffffff",    inputBg:"#EBEBED", inputBorder:"#c8b8e0",
+    navBg:"#FFFFFF",   headerBg:"#ffffff",
     shadow:"rgba(90,40,130,0.10)", isDark:false,
     accentSoft:"rgba(124,58,237,0.08)", accentBorder:"rgba(124,58,237,0.22)",
     successSoft:"rgba(5,150,105,0.07)", warnSoft:"rgba(180,83,9,0.07)",
