@@ -145,8 +145,13 @@ const MOBILE_CSS = `
   .pm-body { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: hidden; }
 
   /* ── Cards ── */
-  .pm-card { padding: 14px 14px !important; border-radius: 12px !important; background: #ffffff !important; border: 1px solid #E0E0E0 !important; box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05) !important; }
+  .pm-card { padding: 14px 14px !important; border-radius: 12px !important; background: #ffffff !important; border: 1px solid #E0E0E0 !important; box-shadow: 0 8px 28px rgba(0,0,0,0.13), 0 3px 8px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.05) !important; }
   @media (min-width: 480px) { .pm-card { padding: 18px 20px !important; } }
+  /* Global 3D card elevation for all white surface blocks */
+  [data-theme="light"] .pm-shell div[style*="background: rgb(255, 255, 255)"],
+  [data-theme="light"] .pm-shell div[style*='background:"#FFFFFF"'] {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.06);
+  }
   @media (min-width: 640px) { .pm-card { padding: 22px 24px !important; } }
 
   /* ── Global touch targets — EVERY button/input gets 44px min ── */
@@ -739,3 +744,11 @@ function RegionChips({ regions, active, onSelect }) {
 export { TabLoader, LazyBoundary, LazyTab, ErrorBoundary, MobileStyleInjector, MOBILE_CSS, RegionPickerButton, RegionChips };
 export { THEMES, getC, setTheme, useTheme, C };
 export { mid, vis, px, r1, r2, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg };
+  /* ── 3D card elevation — all white surface blocks ── */
+  .pm-shell .pm-card,
+  .pm-shell [class*="card"],
+  .pm-shell [class*="block"],
+  .pm-shell [class*="section"] {
+    box-shadow: 0 8px 28px rgba(0,0,0,0.13), 0 3px 8px rgba(0,0,0,0.09) !important;
+  }
+
