@@ -1034,7 +1034,7 @@ function AppInner({ currentUser, onSignOut }) {
       {/* ── MOBILE COMPACT HEADER (≤767px only, replaces pm-header + patient bars) ── */}
       {/* ── MOBILE HEADER — Option B: gradient accent bar ── */}
       <div className="pm-mobile-hdr" style={{
-        background: PC.isDark ? PC.headerBg : "linear-gradient(90deg,#F2F2F4 0%,#FFFFFF 100%)",
+        background: "#FFFFFF",
         borderBottom: `1px solid ${PC.isDark?PC.border:"#E0E0E2"}`,
         borderLeft: `3.5px solid ${PC.accent}`,
       }}>
