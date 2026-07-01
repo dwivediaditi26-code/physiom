@@ -4137,56 +4137,99 @@ function runEngineV6(data, selectedRegions) {
 function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, setActiveSection, setSearchTerm }) {
   const hasActive = group.keys.includes(activeSection);
   const groupFilled = group.keys.reduce((n,k)=>n+countFilled(k),0);
+  const allDone = groupFilled > 0 && group.keys.every(k=>countFilled(k)>0);
   const [gOpen, setGOpen] = React.useState(hasActive);
   React.useEffect(()=>{ if(hasActive) setGOpen(true); },[hasActive]);
+
   return (
-    <div style={{ border:`1px solid ${hasActive?group.col+"55":PC.border}`, borderRadius:9, overflow:"hidden" }}>
-      <div onClick={()=>setGOpen(o=>!o)}
-        style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          padding:"10px 12px", cursor:"pointer",
-          background: hasActive ? group.col+"0e" : PC.s2 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-          <span style={{ fontSize:"0.88rem", fontWeight:700, textTransform:"uppercase",
-            letterSpacing:"0.7px", color: group.col }}>{group.label}</span>
-          <span style={{ fontSize:"0.84rem", color:PC.muted }}>
-            {group.keys.length} section{group.keys.length>1?"s":""}
-          </span>
-          {groupFilled > 0 && (
-            <span style={{ background:group.col, color:"#fff",
-              fontSize:"0.82rem", padding:"1px 5px", borderRadius:99, fontWeight:700 }}>
-              {groupFilled} filled
-            </span>
-          )}
+    <div style={{
+      background:"#fff", borderRadius:14, overflow:"hidden",
+      border:`1.5px solid ${hasActive ? group.col+"55" : "rgba(0,0,0,0.06)"}`,
+      boxShadow: hasActive
+        ? `0 4px 20px ${group.col}18, 0 1px 4px rgba(0,0,0,0.06)`
+        : "0 2px 10px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04)",
+      marginBottom:8, transition:"box-shadow 0.2s",
+    }}>
+      {/* Group header */}
+      <div onClick={()=>setGOpen(o=>!o)} style={{
+        display:"flex", alignItems:"center", gap:10, padding:"12px 14px",
+        cursor:"pointer", background: hasActive ? group.col+"08" : "#fff",
+        borderBottom: gOpen ? `1px solid rgba(0,0,0,0.06)` : "none",
+      }}>
+        {/* Status circle */}
+        <div style={{
+          width:30, height:30, borderRadius:"50%", flexShrink:0,
+          background: allDone ? group.col : hasActive ? group.col+"18" : "#F3F4F6",
+          border:`2px solid ${allDone ? group.col : hasActive ? group.col : "#E0E0E2"}`,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontSize:"0.72rem", fontWeight:800,
+          color: allDone ? "#fff" : hasActive ? group.col : "#9CA3AF",
+          boxShadow: hasActive ? `0 2px 8px ${group.col}30` : "none",
+        }}>
+          {allDone ? "✓" : group.label.charAt(0)}
         </div>
-        <span style={{ fontSize:"0.75rem", color:PC.muted }}>{gOpen?"▲":"▼"}</span>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:"0.82rem", fontWeight:700,
+            color: hasActive ? group.col : "#0D0D0D",
+            textTransform:"uppercase", letterSpacing:"0.5px" }}>{group.label}</div>
+          <div style={{ fontSize:"0.72rem", color:PC.muted, marginTop:1 }}>
+            {group.keys.length} section{group.keys.length>1?"s":""}
+            {groupFilled > 0 ? ` · ${groupFilled} filled` : ""}
+          </div>
+        </div>
+        {groupFilled > 0 && (
+          <span style={{
+            background: allDone ? group.col+"15" : "#F3F4F6",
+            color: allDone ? group.col : PC.muted,
+            fontSize:"0.7rem", fontWeight:700, padding:"3px 9px", borderRadius:99,
+            border:`1px solid ${allDone ? group.col+"44" : "#E0E0E2"}`,
+            flexShrink:0,
+          }}>
+            {allDone ? "✓ Done" : `${groupFilled} filled`}
+          </span>
+        )}
+        <span style={{ fontSize:"0.68rem", color:PC.muted, flexShrink:0 }}>{gOpen?"▲":"▼"}</span>
       </div>
+
+      {/* Section rows */}
       {gOpen && (
-        <div style={{ display:"flex", gap:6, flexWrap:"wrap", padding:"10px 10px",
-          borderTop:`1px solid ${PC.border}`, background:PC.surface }}>
+        <div style={{ padding:"8px 10px", display:"flex", flexDirection:"column", gap:5 }}>
           {group.keys.map(key => {
             const s = sections[key]; if (!s) return null;
             const filled = countFilled(key);
             const isAct = key === activeSection;
             const col = group.col;
+            const isDone = filled > 0;
             return (
               <button key={key} type="button"
                 onClick={() => { setActiveSection(key); setSearchTerm(""); }}
                 style={{
-                  padding:"9px 13px", borderRadius:8, whiteSpace:"nowrap", cursor:"pointer",
-                  border:`1.5px solid ${isAct ? col : PC.border}`,
-                  background: isAct ? col+"18" : PC.s3,
-                  color: isAct ? col : PC.muted,
-                  fontSize:"0.85rem", fontWeight: isAct ? 700 : 500,
-                  display:"flex", alignItems:"center", gap:5, flexShrink:0,
-                  minHeight:40, transition:"all 120ms",
+                  width:"100%", display:"flex", alignItems:"center", gap:10,
+                  padding:"10px 12px", borderRadius:10, cursor:"pointer", fontFamily:"inherit",
+                  border:`1.5px solid ${isAct ? col : isDone ? col+"33" : "#EBEBEB"}`,
+                  background: isAct ? col+"0f" : "#fff",
+                  boxShadow: isAct
+                    ? `0 2px 10px ${col}25, inset 0 1px 0 rgba(255,255,255,0.9)`
+                    : "0 1px 3px rgba(0,0,0,0.04)",
+                  transition:"all 120ms", textAlign:"left",
                 }}>
-                <span>{s.icon}</span>
-                <span>{s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}</span>
-                {filled > 0 && (
-                  <span style={{ background: isAct ? col : PC.muted, color:"#fff",
-                    fontSize:"0.82rem", padding:"1px 4px", borderRadius:99, fontWeight:700 }}>
-                    {filled}
+                <span style={{ fontSize:"1.05rem", flexShrink:0 }}>{s.icon}</span>
+                <span style={{ flex:1, fontSize:"0.82rem", fontWeight: isAct ? 700 : 500,
+                  color: isAct ? col : "#0D0D0D",
+                  whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                  {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
+                </span>
+                {isDone ? (
+                  <span style={{
+                    background: isAct ? col : col+"18",
+                    color: isAct ? "#fff" : col,
+                    fontSize:"0.68rem", fontWeight:700, padding:"2px 8px", borderRadius:99,
+                    border:`1px solid ${col}33`, flexShrink:0,
+                  }}>
+                    {filled} ✓
                   </span>
+                ) : (
+                  <span style={{ fontSize:"0.68rem", color:"#C4C4CC", flexShrink:0 }}>empty</span>
                 )}
               </button>
             );
@@ -4196,7 +4239,6 @@ function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, 
     </div>
   );
 }
-
 function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
   const VISIBLE = 6; // always-visible options
   const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
@@ -5368,6 +5410,45 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             ].filter(g => g.keys.length > 0);
 
             return (
+              <>
+              {/* ── Mini stepper ── */}
+              <div style={{ display:"flex", alignItems:"center", padding:"4px 2px 10px", overflowX:"auto" }}>
+                {groups.map((g, i) => {
+                  const gDone = g.keys.every(k=>countFilled(k)>0) && g.keys.some(k=>countFilled(k)>0);
+                  const gActive = g.keys.includes(activeSection);
+                  return (
+                    <React.Fragment key={g.label}>
+                      {i > 0 && (
+                        <div style={{ flex:"1 0 12px", height:2, minWidth:8,
+                          background: gDone || groups.slice(0,i).every(gg=>gg.keys.every(k=>countFilled(k)>0))
+                            ? g.col : "#E0E0E2" }} />
+                      )}
+                      <button type="button"
+                        onClick={()=>{ setActiveSection(g.keys[0]); setSearchTerm(""); }}
+                        style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2,
+                          background:"none", border:"none", cursor:"pointer", padding:"0 4px", flexShrink:0 }}>
+                        <div style={{
+                          width:24, height:24, borderRadius:"50%",
+                          background: gDone ? g.col : gActive ? g.col+"18" : "#F0F0F0",
+                          border:`2px solid ${gDone||gActive ? g.col : "#D0D0D8"}`,
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                          fontSize:"0.62rem", fontWeight:800,
+                          color: gDone ? "#fff" : gActive ? g.col : "#A0A0A8",
+                          boxShadow: gActive ? `0 2px 8px ${g.col}40` : "none",
+                          transition:"all 150ms",
+                        }}>
+                          {gDone ? "✓" : i+1}
+                        </div>
+                        <span style={{ fontSize:"0.55rem", fontWeight: gActive?700:500,
+                          color: gActive ? g.col : "#9CA3AF",
+                          textTransform:"uppercase", letterSpacing:"0.3px", whiteSpace:"nowrap" }}>
+                          {g.label}
+                        </span>
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
               <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
                 {groups.map(group => (
                   <CollapsibleNavGroup
@@ -5382,6 +5463,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   />
                 ))}
               </div>
+              </>
             );
           })()}
 
