@@ -148,17 +148,17 @@ function PostureDefectDetail({ defectId, onClose }) {
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:900,display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={onClose}>
       <div onClick={e=>e.stopPropagation()}
-        style={{width:"100%",maxWidth:560,background:"#ffffff",borderRadius:"16px 16px 0 0",border:"1px solid #d8cce8",padding:"20px 18px 32px",maxHeight:"85vh",overflowY:"auto"}}>
+        style={{width:"100%",maxWidth:560,background:"#ffffff",borderRadius:"16px 16px 0 0",border:"1px solid #E0E0E2",padding:"20px 18px 32px",maxHeight:"85vh",overflowY:"auto"}}>
         {/* Handle bar */}
         <div style={{width:36,height:4,background:"#2a3f58",borderRadius:2,margin:"0 auto 16px"}}/>
         {/* Header */}
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
           <span style={{fontSize:"1.8rem"}}>{d.icon}</span>
           <div style={{flex:1}}>
-            <div style={{fontSize:"1rem",fontWeight:800,color:"#1a1025"}}>{d.label}</div>
+            <div style={{fontSize:"1rem",fontWeight:800,color:"#0D0D0D"}}>{d.label}</div>
             <span style={{fontSize:"0.75rem",padding:"2px 8px",borderRadius:6,background:"rgba(0,229,255,0.12)",color:"#00e5ff",fontWeight:700}}>{d.region}</span>
           </div>
-          <button onClick={onClose} style={{background:"none",border:"1px solid #d8cce8",borderRadius:8,color:"#7e6a9a",cursor:"pointer",padding:"5px 10px",fontSize:"0.75rem"}}>✕</button>
+          <button onClick={onClose} style={{background:"none",border:"1px solid #E0E0E2",borderRadius:8,color:"#6B6B6B",cursor:"pointer",padding:"5px 10px",fontSize:"0.75rem"}}>✕</button>
         </div>
         {/* Description */}
         <div style={{padding:"10px 13px",background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:10,fontSize:"0.76rem",color:"#a0c8e8",lineHeight:1.6,marginBottom:14}}>
@@ -168,17 +168,17 @@ function PostureDefectDetail({ defectId, onClose }) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
           <div style={{background:"rgba(255,77,109,0.06)",border:"1px solid rgba(255,77,109,0.2)",borderRadius:10,padding:"10px 12px"}}>
             <div style={{fontSize:"0.8rem",fontWeight:800,color:"#ff4d6d",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:7}}>🔴 Tight / Overactive</div>
-            {d.tight_muscles.map((m,i)=><div key={i} style={{fontSize:"0.78rem",color:"#1a1025",padding:"2px 0",borderBottom:"1px solid rgba(255,77,109,0.08)",lineHeight:1.4}}>{m}</div>)}
+            {d.tight_muscles.map((m,i)=><div key={i} style={{fontSize:"0.78rem",color:"#0D0D0D",padding:"2px 0",borderBottom:"1px solid rgba(255,77,109,0.08)",lineHeight:1.4}}>{m}</div>)}
           </div>
           <div style={{background:"rgba(0,201,122,0.06)",border:"1px solid rgba(0,201,122,0.2)",borderRadius:10,padding:"10px 12px"}}>
             <div style={{fontSize:"0.8rem",fontWeight:800,color:"#00c97a",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:7}}>🟢 Weak / Inhibited</div>
-            {d.weak_muscles.map((m,i)=><div key={i} style={{fontSize:"0.78rem",color:"#1a1025",padding:"2px 0",borderBottom:"1px solid rgba(0,201,122,0.08)",lineHeight:1.4}}>{m}</div>)}
+            {d.weak_muscles.map((m,i)=><div key={i} style={{fontSize:"0.78rem",color:"#0D0D0D",padding:"2px 0",borderBottom:"1px solid rgba(0,201,122,0.08)",lineHeight:1.4}}>{m}</div>)}
           </div>
         </div>
         {/* Kinetic chain */}
         <div style={{background:"rgba(127,90,240,0.07)",border:"1px solid rgba(127,90,240,0.2)",borderRadius:10,padding:"10px 13px",marginBottom:14}}>
           <div style={{fontSize:"0.8rem",fontWeight:800,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>🔗 Kinetic Chain</div>
-          <div style={{fontSize:"0.82rem",color:"#1a1025",lineHeight:1.6,fontStyle:"italic"}}>{d.kinetic_chain}</div>
+          <div style={{fontSize:"0.82rem",color:"#0D0D0D",lineHeight:1.6,fontStyle:"italic"}}>{d.kinetic_chain}</div>
         </div>
         {/* Exercises */}
         {d.exercises?.length > 0 && (
@@ -188,7 +188,7 @@ function PostureDefectDetail({ defectId, onClose }) {
               {d.exercises.map((ex,i)=>(
                 <div key={i} style={{display:"flex",gap:8,padding:"6px 10px",background:"rgba(0,229,255,0.05)",border:"1px solid rgba(0,229,255,0.12)",borderRadius:8,alignItems:"center"}}>
                   <span style={{color:"#00e5ff",fontWeight:800,fontSize:"0.8rem",flexShrink:0}}>{i+1}.</span>
-                  <span style={{fontSize:"0.82rem",color:"#1a1025"}}>{ex}</span>
+                  <span style={{fontSize:"0.82rem",color:"#0D0D0D"}}>{ex}</span>
                 </div>
               ))}
             </div>
@@ -250,8 +250,8 @@ function PostureDefectModule() {
   const filtered = Object.values(POSTURE_DEFECTS).filter(d => regionFilter === "All" || d.region === regionFilter);
 
   const inputStyle = {
-    width:"100%", background:"#f5f0fb", border:"1px solid #d8cce8",
-    borderRadius:8, color:"#1a1025", fontFamily:"inherit",
+    width:"100%", background:"#EBEBED", border:"1px solid #E0E0E2",
+    borderRadius:8, color:"#0D0D0D", fontFamily:"inherit",
     outline:"none", padding:"8px 10px", fontSize:"0.78rem",
   };
 
@@ -275,7 +275,7 @@ function PostureDefectModule() {
     <div>
       {/* ── STEP 1: View guidance ── */}
       <div style={{marginBottom:16}}>
-        <div style={{fontSize:"0.82rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:9}}>📋 Assessment Views — Position patient accordingly</div>
+        <div style={{fontSize:"0.82rem",fontWeight:700,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:9}}>📋 Assessment Views — Position patient accordingly</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
           {PLAN_VIEWS.map(v => (
             <div key={v.key} style={{background:"rgba(0,229,255,0.04)",border:"1px solid rgba(0,229,255,0.14)",borderRadius:10,padding:"9px 11px"}}>
@@ -286,7 +286,7 @@ function PostureDefectModule() {
                   <span style={{marginLeft:"auto",padding:"1px 6px",borderRadius:6,background:"rgba(0,229,255,0.15)",color:"#00e5ff",fontSize:"0.56rem",fontWeight:800}}>{defectsByView[v.key].length}</span>
                 )}
               </div>
-              <div style={{fontSize:"0.73rem",color:"#7e6a9a",lineHeight:1.4}}>{v.tip}</div>
+              <div style={{fontSize:"0.73rem",color:"#6B6B6B",lineHeight:1.4}}>{v.tip}</div>
               {defectsByView[v.key]?.length > 0 && (
                 <div style={{marginTop:6,display:"flex",flexWrap:"wrap",gap:3}}>
                   {defectsByView[v.key].map(id => (
@@ -303,7 +303,7 @@ function PostureDefectModule() {
 
       {/* ── STEP 2: Defect selector ── */}
       <div style={{marginBottom:14}}>
-        <div style={{fontSize:"0.82rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
+        <div style={{fontSize:"0.82rem",fontWeight:700,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
           🔍 Select Observed Defects
           {selectedDefects.length > 0 && <span style={{marginLeft:8,padding:"1px 7px",borderRadius:8,background:"rgba(255,77,109,0.15)",color:"#ff4d6d",fontSize:"0.78rem",fontWeight:800}}>{selectedDefects.length} selected</span>}
         </div>
@@ -337,7 +337,7 @@ function PostureDefectModule() {
       {/* ── STEP 3: Selected findings with severity + tap-to-expand ── */}
       {selectedDefects.length > 0 && (
         <div style={{marginBottom:14}}>
-          <div style={{fontSize:"0.82rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"1.2px",marginBottom:8}}>
             📌 Findings — tap card to view full clinical detail
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:7}}>
@@ -352,12 +352,12 @@ function PostureDefectModule() {
                   <div onClick={() => setOpenDefect(id)} style={{padding:"10px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:9}}>
                     <span style={{fontSize:"1.1rem"}}>{d.icon}</span>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:"0.76rem",fontWeight:700,color:"#1a1025",lineHeight:1.3}}>{d.label}</div>
-                      <div style={{fontSize:"0.8rem",color:"#7e6a9a",marginTop:1}}>{d.region}</div>
+                      <div style={{fontSize:"0.76rem",fontWeight:700,color:"#0D0D0D",lineHeight:1.3}}>{d.label}</div>
+                      <div style={{fontSize:"0.8rem",color:"#6B6B6B",marginTop:1}}>{d.region}</div>
                     </div>
                     <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
                       <span style={{fontSize:"0.82rem",color:"#00e5ff",fontWeight:700}}>📋 Detail →</span>
-                      <button onClick={e=>{e.stopPropagation();setSelectedDefects(p=>p.filter(s=>s!==id));}} style={{background:"none",border:"1px solid #d8cce8",borderRadius:5,color:"#7e6a9a",cursor:"pointer",fontSize:"0.8rem",padding:"1px 6px",lineHeight:1.4}}>✕</button>
+                      <button onClick={e=>{e.stopPropagation();setSelectedDefects(p=>p.filter(s=>s!==id));}} style={{background:"none",border:"1px solid #E0E0E2",borderRadius:5,color:"#6B6B6B",cursor:"pointer",fontSize:"0.8rem",padding:"1px 6px",lineHeight:1.4}}>✕</button>
                     </div>
                   </div>
 
@@ -372,18 +372,18 @@ function PostureDefectModule() {
                   </div>
 
                   {/* Quick summary row */}
-                  <div style={{padding:"8px 13px",background:"rgba(6,9,15,0.5)",borderTop:"1px solid #d8cce8",display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <div style={{padding:"8px 13px",background:"rgba(6,9,15,0.5)",borderTop:"1px solid #E0E0E2",display:"flex",gap:8,flexWrap:"wrap"}}>
                     <div style={{flex:"1 1 120px"}}>
                       <div style={{fontSize:"0.75rem",fontWeight:700,color:"#ff4d6d",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🔴 Tight</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a1025",lineHeight:1.4}}>{d.tight_muscles.slice(0,2).join(", ")}{d.tight_muscles.length>2?` +${d.tight_muscles.length-2} more`:""}</div>
+                      <div style={{fontSize:"0.82rem",color:"#0D0D0D",lineHeight:1.4}}>{d.tight_muscles.slice(0,2).join(", ")}{d.tight_muscles.length>2?` +${d.tight_muscles.length-2} more`:""}</div>
                     </div>
                     <div style={{flex:"1 1 120px"}}>
                       <div style={{fontSize:"0.75rem",fontWeight:700,color:"#00c97a",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🟢 Weak</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a1025",lineHeight:1.4}}>{d.weak_muscles.slice(0,2).join(", ")}{d.weak_muscles.length>2?` +${d.weak_muscles.length-2} more`:""}</div>
+                      <div style={{fontSize:"0.82rem",color:"#0D0D0D",lineHeight:1.4}}>{d.weak_muscles.slice(0,2).join(", ")}{d.weak_muscles.length>2?` +${d.weak_muscles.length-2} more`:""}</div>
                     </div>
                     <div style={{flex:"1 1 120px"}}>
                       <div style={{fontSize:"0.75rem",fontWeight:700,color:"#7f5af0",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:3}}>🔗 Chain</div>
-                      <div style={{fontSize:"0.82rem",color:"#1a1025",lineHeight:1.4,fontStyle:"italic"}}>{d.kinetic_chain.split("→")[0].trim()} →…</div>
+                      <div style={{fontSize:"0.82rem",color:"#0D0D0D",lineHeight:1.4,fontStyle:"italic"}}>{d.kinetic_chain.split("→")[0].trim()} →…</div>
                     </div>
                   </div>
                 </div>
@@ -405,15 +405,15 @@ function PostureDefectModule() {
             <div style={{background:"#ffffff",border:"1px solid rgba(0,201,122,0.3)",borderRadius:12,padding:"13px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{fontSize:"0.82rem",fontWeight:800,color:"#00c97a"}}>📄 PDF Report Details</div>
-                <button onClick={() => setShowExport(false)} style={{background:"none",border:"1px solid #d8cce8",borderRadius:6,color:"#7e6a9a",cursor:"pointer",padding:"3px 8px",fontSize:"0.75rem"}}>✕</button>
+                <button onClick={() => setShowExport(false)} style={{background:"none",border:"1px solid #E0E0E2",borderRadius:6,color:"#6B6B6B",cursor:"pointer",padding:"3px 8px",fontSize:"0.75rem"}}>✕</button>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
                 <div>
-                  <label style={{fontSize:"0.8rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:4}}>Patient Name</label>
+                  <label style={{fontSize:"0.8rem",fontWeight:700,color:"#6B6B6B",display:"block",marginBottom:4}}>Patient Name</label>
                   <input value={patientName} onChange={e=>setPatientName(e.target.value)} placeholder="Patient name" style={inputStyle}/>
                 </div>
                 <div>
-                  <label style={{fontSize:"0.8rem",fontWeight:700,color:"#7e6a9a",display:"block",marginBottom:4}}>Clinician</label>
+                  <label style={{fontSize:"0.8rem",fontWeight:700,color:"#6B6B6B",display:"block",marginBottom:4}}>Clinician</label>
                   <input value={clinicianName} onChange={e=>setClinicianName(e.target.value)} placeholder="Your name" style={inputStyle}/>
                 </div>
               </div>
@@ -429,7 +429,7 @@ function PostureDefectModule() {
       {/* Defect detail modal */}
       {openDefect && <PostureDefectDetail defectId={openDefect} onClose={() => setOpenDefect(null)}/>}
 
-      <div style={{padding:"7px 11px",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,fontSize:"0.8rem",color:"#7e6a9a",lineHeight:1.5}}>
+      <div style={{padding:"7px 11px",background:"#EBEBED",border:"1px solid #E0E0E2",borderRadius:8,fontSize:"0.8rem",color:"#6B6B6B",lineHeight:1.5}}>
         ⚠ Manual observational assessment. Select all defects observed across each view. Tap any finding card for full clinical detail, muscles, kinetic chain, and exercise programme.
       </div>
     </div>
@@ -493,35 +493,35 @@ function HomeModule({ onNav }) {
           {num:"AI",label:"SOAP Generation",icon:"🤖"},
           {num:"PDF",label:"Report Export",icon:"📄"},
         ].map((s,i)=>(
-          <div key={i} style={{background:"#fff",border:"1px solid #d8cce8",borderRadius:14,padding:"18px 16px",textAlign:"center",boxShadow:"0 2px 12px rgba(124,58,237,0.07)"}}>
+          <div key={i} style={{background:"#fff",border:"1px solid #E0E0E2",borderRadius:14,padding:"18px 16px",textAlign:"center",boxShadow:"0 2px 12px rgba(124,58,237,0.07)"}}>
             <div style={{fontSize:"1.5rem",marginBottom:6}}>{s.icon}</div>
             <div style={{fontSize:"1.6rem",fontWeight:900,color:"#7c3aed",lineHeight:1}}>{s.num}</div>
-            <div style={{fontSize:"0.75rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"0.5px",marginTop:4}}>{s.label}</div>
+            <div style={{fontSize:"0.75rem",fontWeight:700,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.5px",marginTop:4}}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Features grid */}
       <div style={{marginBottom:16}}>
-        <h2 style={{fontSize:"clamp(1rem,3vw,1.25rem)",fontWeight:800,color:"#1a1025",margin:"0 0 6px",letterSpacing:"-0.3px"}}>Clinical Features</h2>
-        <p style={{fontSize:"0.82rem",color:"#7e6a9a",margin:"0 0 20px"}}>Tap any feature to navigate directly to that assessment tool.</p>
+        <h2 style={{fontSize:"clamp(1rem,3vw,1.25rem)",fontWeight:800,color:"#0D0D0D",margin:"0 0 6px",letterSpacing:"-0.3px"}}>Clinical Features</h2>
+        <p style={{fontSize:"0.82rem",color:"#6B6B6B",margin:"0 0 20px"}}>Tap any feature to navigate directly to that assessment tool.</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12}}>
           {features.map((f,i)=>(
             <button key={i} onClick={()=>onNav(f.nav)} style={{
-              background:"#fff",border:`1px solid #d8cce8`,borderRadius:14,padding:"18px 16px",
+              background:"#fff",border:`1px solid #E0E0E2`,borderRadius:14,padding:"18px 16px",
               textAlign:"left",cursor:"pointer",transition:"all 0.18s",
               boxShadow:"0 2px 10px rgba(124,58,237,0.06)",
             }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=f.color;e.currentTarget.style.boxShadow=`0 4px 20px rgba(124,58,237,0.14)`;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="#d8cce8";e.currentTarget.style.boxShadow="0 2px 10px rgba(124,58,237,0.06)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0E0E2";e.currentTarget.style.boxShadow="0 2px 10px rgba(124,58,237,0.06)";}}
             >
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
                 <div style={{width:36,height:36,background:`${f.color}14`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>
                   {f.icon}
                 </div>
-                <div style={{fontSize:"0.85rem",fontWeight:700,color:"#1a1025",lineHeight:1.2}}>{f.title}</div>
+                <div style={{fontSize:"0.85rem",fontWeight:700,color:"#0D0D0D",lineHeight:1.2}}>{f.title}</div>
               </div>
-              <div style={{fontSize:"0.75rem",color:"#7e6a9a",lineHeight:1.55}}>{f.desc}</div>
+              <div style={{fontSize:"0.75rem",color:"#6B6B6B",lineHeight:1.55}}>{f.desc}</div>
               <div style={{marginTop:10,fontSize:"0.78rem",fontWeight:700,color:f.color}}>Open →</div>
             </button>
           ))}
@@ -529,7 +529,7 @@ function HomeModule({ onNav }) {
       </div>
 
       {/* Workflow guide */}
-      <div style={{background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:16,padding:"22px 20px",marginTop:24}}>
+      <div style={{background:"#EBEBED",border:"1px solid #E0E0E2",borderRadius:16,padding:"22px 20px",marginTop:24}}>
         <h3 style={{fontSize:"0.88rem",fontWeight:800,color:"#7c3aed",margin:"0 0 14px",letterSpacing:"-0.2px"}}>📋 Recommended Assessment Workflow</h3>
         <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
           {[
@@ -538,8 +538,8 @@ function HomeModule({ onNav }) {
             "10. Treatment Plan","11. SOAP + AI"
           ].map((step,i)=>(
             <div key={i} style={{
-              padding:"5px 12px",background:"#fff",border:"1px solid #d8cce8",
-              borderRadius:8,fontSize:"0.82rem",fontWeight:600,color:"#1a1025"
+              padding:"5px 12px",background:"#fff",border:"1px solid #E0E0E2",
+              borderRadius:8,fontSize:"0.82rem",fontWeight:600,color:"#0D0D0D"
             }}>{step}</div>
           ))}
         </div>
@@ -858,8 +858,8 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
               </div>
             )}
             <button onClick={onSignOut}
-              style={{padding:"6px 12px",borderRadius:9,border:"1px solid #d8cce8",
-                background:"transparent",color:"#7e6a9a",fontSize:"0.8rem",
+              style={{padding:"6px 12px",borderRadius:9,border:"1px solid #E0E0E2",
+                background:"transparent",color:"#6B6B6B",fontSize:"0.8rem",
                 fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
               Sign out
             </button>

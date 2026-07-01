@@ -1148,7 +1148,7 @@ const OUTCOME_DB = {
     },
     maxScore:null,
     interpret:(s)=>{
-      if(!s||typeof s==="number") return {label:"—",color:"#7e6a9a",text:"Complete both subscales."};
+      if(!s||typeof s==="number") return {label:"—",color:"#6B6B6B",text:"Complete both subscales."};
       const paHigh=s.pa>15, wHigh=s.w>34;
       if(paHigh&&wHigh) return {label:"High risk (both)",color:"#ff4d6d",text:`PA: ${s.pa}/24 (HIGH) | Work: ${s.w}/42 (HIGH). Strong predictor of chronic pain and work disability. Pain neuroscience education + graded exposure + occupational rehab.`};
       if(wHigh) return {label:"High work fear",color:"#ff8c00",text:`PA: ${s.pa}/24 | Work: ${s.w}/42 (HIGH). Occupational rehabilitation and work hardening indicated.`};
@@ -1210,16 +1210,16 @@ function OMSlider({id, min=0, max=10, step=1, value, onChange, showVal=true}){
   const col  = pct<=30?"#00c97a":pct<=60?"#ffb300":"#ff4d6d";
   return(
     <div style={{display:"flex",alignItems:"center",gap:10}}>
-      <span style={{fontSize:"0.75rem",color:"#7e6a9a",minWidth:14}}>{min}</span>
+      <span style={{fontSize:"0.75rem",color:"#6B6B6B",minWidth:14}}>{min}</span>
       <div style={{flex:1,position:"relative",height:24,display:"flex",alignItems:"center"}}>
-        <div style={{position:"absolute",width:"100%",height:4,background:"#ede7f6",borderRadius:2}}/>
+        <div style={{position:"absolute",width:"100%",height:4,background:"#E4E4E6",borderRadius:2}}/>
         <div style={{position:"absolute",width:`${pct}%`,height:4,background:col,borderRadius:2,transition:"width 0.15s"}}/>
         <input type="range" min={min} max={max} step={step} value={value??min}
           onChange={e=>onChange(e.target.value)}
           style={{position:"absolute",width:"100%",opacity:0,height:24,cursor:"pointer",zIndex:2}}/>
-        <div style={{position:"absolute",left:`${pct}%`,transform:"translateX(-50%)",width:16,height:16,borderRadius:"50%",background:col,border:"2px solid #d8cce8",transition:"left 0.15s",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",left:`${pct}%`,transform:"translateX(-50%)",width:16,height:16,borderRadius:"50%",background:col,border:"2px solid #E0E0E2",transition:"left 0.15s",pointerEvents:"none"}}/>
       </div>
-      <span style={{fontSize:"0.75rem",color:"#7e6a9a",minWidth:14,textAlign:"right"}}>{max}</span>
+      <span style={{fontSize:"0.75rem",color:"#6B6B6B",minWidth:14,textAlign:"right"}}>{max}</span>
       {showVal&&<span style={{minWidth:28,fontSize:"0.78rem",fontWeight:800,color:col,textAlign:"right"}}>{value??"-"}</span>}
     </div>
   );
@@ -1253,10 +1253,10 @@ function ScoreGauge({ score, maxScore, color, label, mcid }) {
   return (
     <div style={{ marginBottom: 6 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
-        <span style={{ fontSize:"0.82rem", color:"#7e6a9a" }}>{label}</span>
-        <span style={{ fontSize:"1rem", fontWeight:900, color, fontFamily:"monospace" }}>{score}<span style={{ fontSize:"0.8rem", color:"#7e6a9a", fontWeight:400 }}>/{maxScore}</span></span>
+        <span style={{ fontSize:"0.82rem", color:"#6B6B6B" }}>{label}</span>
+        <span style={{ fontSize:"1rem", fontWeight:900, color, fontFamily:"monospace" }}>{score}<span style={{ fontSize:"0.8rem", color:"#6B6B6B", fontWeight:400 }}>/{maxScore}</span></span>
       </div>
-      <div style={{ height:8, background:"#ede7f6", borderRadius:4, overflow:"hidden", position:"relative" }}>
+      <div style={{ height:8, background:"#E4E4E6", borderRadius:4, overflow:"hidden", position:"relative" }}>
         <div style={{ height:"100%", width:`${pct}%`, background:`linear-gradient(90deg,${color}99,${color})`, borderRadius:4, transition:"width 0.6s cubic-bezier(0.34,1.56,0.64,1)" }}/>
         {mcid && maxScore && (
           <div style={{ position:"absolute", top:0, left:`${Math.min(100,(mcid/maxScore)*100)}%`, width:2, height:"100%", background:"rgba(255,255,255,0.3)" }} title={`MCID: ${mcid}`}/>
@@ -1392,7 +1392,7 @@ function OutcomeMeasuresModule() {
   const renderField = (m, f) => {
     const val = (answers[m.id] || {})[f.id];
     const upd = (v) => setField(m.id, f.id, v);
-    const base = { width:"100%", background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:8, color:"#1a1025", fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.76rem" };
+    const base = { width:"100%", background:"#EBEBED", border:"1px solid #E0E0E2", borderRadius:8, color:"#0D0D0D", fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.76rem" };
     if (f.type === "slider") return <OMSlider id={f.id} min={f.min} max={f.max} step={f.step} value={val} onChange={upd}/>;
     if (f.type === "text")   return <input value={val||""} onChange={e=>upd(e.target.value)} placeholder={f.placeholder} style={base}/>;
     if (f.type === "select5")    return <select value={val||""} onChange={e=>upd(e.target.value)} style={base}><option value="">— select —</option>{DASH_OPTS.map(o=><option key={o} value={o.split(" — ")[0]}>{o}</option>)}</select>;
@@ -1416,20 +1416,20 @@ function OutcomeMeasuresModule() {
 
       {/* ── Summary bar ── */}
       <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
-        <div style={{ flex:1, background:"#ffffff", border:"1px solid #d8cce8", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:12 }}>
+        <div style={{ flex:1, background:"#ffffff", border:"1px solid #E0E0E2", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:12 }}>
           <div>
             <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#00e5ff", fontFamily:"monospace", lineHeight:1 }}>{completedCount}</div>
-            <div style={{ fontSize:"0.75rem", color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px" }}>Completed</div>
+            <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"1px" }}>Completed</div>
           </div>
-          <div style={{ width:1, height:32, background:"#ede7f6" }}/>
+          <div style={{ width:1, height:32, background:"#E4E4E6" }}/>
           <div>
             <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#7f5af0", fontFamily:"monospace", lineHeight:1 }}>{sessions.length}</div>
-            <div style={{ fontSize:"0.75rem", color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px" }}>Sessions</div>
+            <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"1px" }}>Sessions</div>
           </div>
-          <div style={{ width:1, height:32, background:"#ede7f6" }}/>
+          <div style={{ width:1, height:32, background:"#E4E4E6" }}/>
           <div>
             <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#ffb300", fontFamily:"monospace", lineHeight:1 }}>{Object.keys(OUTCOME_DB).length}</div>
-            <div style={{ fontSize:"0.75rem", color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px" }}>Available</div>
+            <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"1px" }}>Available</div>
           </div>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
@@ -1460,11 +1460,11 @@ function OutcomeMeasuresModule() {
               const latest = vals[vals.length - 1];
               const interp = m.interpret(latest);
               return (
-                <div key={id} style={{ background:"#f5f0fb", border:`1px solid ${col}25`, borderRadius:10, padding:"10px 12px", marginBottom:8 }}>
+                <div key={id} style={{ background:"#EBEBED", border:`1px solid ${col}25`, borderRadius:10, padding:"10px 12px", marginBottom:8 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
                     <span style={{ fontSize:"1rem" }}>{m.icon}</span>
                     <div style={{ flex:1 }}>
-                      <div style={{ fontSize:"0.82rem", fontWeight:700, color:"#1a1025" }}>{m.label.split(" — ")[0]}</div>
+                      <div style={{ fontSize:"0.82rem", fontWeight:700, color:"#0D0D0D" }}>{m.label.split(" — ")[0]}</div>
                       {interp && <div style={{ fontSize:"0.8rem", color: interp.color, fontWeight:700, marginTop:1 }}>{interp.label}</div>}
                     </div>
                     <div style={{ textAlign:"right", flexShrink:0 }}>
@@ -1488,7 +1488,7 @@ function OutcomeMeasuresModule() {
                       {/* Session dots */}
                       <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginTop:6 }}>
                         {vals.map((v, i) => (
-                          <span key={i} style={{ fontSize:"0.75rem", padding:"1px 5px", background:"#ede7f6", borderRadius:4, color:"#7e6a9a" }}>S{i + 1}: {v}{m.unit}</span>
+                          <span key={i} style={{ fontSize:"0.75rem", padding:"1px 5px", background:"#E4E4E6", borderRadius:4, color:"#6B6B6B" }}>S{i + 1}: {v}{m.unit}</span>
                         ))}
                       </div>
                     </div>
@@ -1499,7 +1499,7 @@ function OutcomeMeasuresModule() {
           </div>
         )}
         {showHistory && sessions.length === 0 && (
-          <div style={{ padding:"16px", background:"#ffffff", border:"1px solid #d8cce8", borderRadius:10, textAlign:"center", color:"#7e6a9a", fontSize:"0.75rem" }}>
+          <div style={{ padding:"16px", background:"#ffffff", border:"1px solid #E0E0E2", borderRadius:10, textAlign:"center", color:"#6B6B6B", fontSize:"0.75rem" }}>
             No sessions saved yet — complete measures and tap 💾 Save Session
           </div>
         )}
@@ -1546,12 +1546,12 @@ function OutcomeMeasuresModule() {
                 )}
                 {score !== null && typeof score === "object" && (
                   <div style={{ textAlign:"right" }}>
-                    <div style={{ fontSize:"0.8rem", color:"#7e6a9a" }}>PA: <b style={{ color: score.pa>15?"#ff4d6d":"#00c97a" }}>{score.pa}</b></div>
-                    <div style={{ fontSize:"0.8rem", color:"#7e6a9a" }}>W: <b style={{ color: score.w>34?"#ff4d6d":"#00c97a" }}>{score.w}</b></div>
+                    <div style={{ fontSize:"0.8rem", color:"#6B6B6B" }}>PA: <b style={{ color: score.pa>15?"#ff4d6d":"#00c97a" }}>{score.pa}</b></div>
+                    <div style={{ fontSize:"0.8rem", color:"#6B6B6B" }}>W: <b style={{ color: score.w>34?"#ff4d6d":"#00c97a" }}>{score.w}</b></div>
                   </div>
                 )}
               </div>
-              <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#1a1025", lineHeight:1.3, marginBottom:4 }}>{m.label.split(" — ")[0]}</div>
+              <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#0D0D0D", lineHeight:1.3, marginBottom:4 }}>{m.label.split(" — ")[0]}</div>
               <div style={{ fontSize:"0.75rem", padding:"1px 6px", borderRadius:5, background:`${col}18`, color:col, display:"inline-block", marginBottom:5 }}>{m.category}</div>
               {/* Severity badge */}
               {interp && (
@@ -1562,7 +1562,7 @@ function OutcomeMeasuresModule() {
               )}
               {/* Score gauge */}
               {score !== null && typeof score !== "object" && m.maxScore && (
-                <div style={{ height:4, background:"#ede7f6", borderRadius:2, overflow:"hidden", marginBottom:4 }}>
+                <div style={{ height:4, background:"#E4E4E6", borderRadius:2, overflow:"hidden", marginBottom:4 }}>
                   <div style={{ height:"100%", width:`${Math.min(100,(score/m.maxScore)*100)}%`, background: interp?.color||col, borderRadius:2, transition:"width 0.5s" }}/>
                 </div>
               )}
@@ -1593,14 +1593,14 @@ function OutcomeMeasuresModule() {
             <div style={{ display:"flex", gap:10, alignItems:"flex-start", marginBottom:14 }}>
               <span style={{ fontSize:"1.6rem" }}>{activeMeasure.icon}</span>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize:"0.9rem", fontWeight:800, color:"#1a1025", lineHeight:1.2 }}>{activeMeasure.label}</div>
+                <div style={{ fontSize:"0.9rem", fontWeight:800, color:"#0D0D0D", lineHeight:1.2 }}>{activeMeasure.label}</div>
                 <div style={{ fontSize:"0.82rem", color:col, marginTop:2 }}>{activeMeasure.category}</div>
-                <div style={{ fontSize:"0.75rem", color:"#7e6a9a", marginTop:5, lineHeight:1.55 }}>{activeMeasure.description}</div>
+                <div style={{ fontSize:"0.75rem", color:"#6B6B6B", marginTop:5, lineHeight:1.55 }}>{activeMeasure.description}</div>
               </div>
               {score !== null && typeof score !== "object" && (
                 <div style={{ flexShrink:0, textAlign:"center" }}>
                   <ScoreRing score={score} maxScore={activeMeasure.maxScore} color={interp?.color||col} size={72}/>
-                  <div style={{ fontSize:"0.82rem", color:"#7e6a9a", marginTop:2 }}>{activeMeasure.unit}</div>
+                  <div style={{ fontSize:"0.82rem", color:"#6B6B6B", marginTop:2 }}>{activeMeasure.unit}</div>
                 </div>
               )}
             </div>
@@ -1620,9 +1620,9 @@ function OutcomeMeasuresModule() {
                   <div style={{ fontSize:"0.82rem", fontWeight:900, color:interp.color }}>{interp.label}</div>
                   <div style={{ marginLeft:"auto", fontSize:"0.75rem", fontWeight:700, color:interp.color, background:`${interp.color}18`, padding:"2px 8px", borderRadius:6 }}>{score}{activeMeasure.unit}</div>
                 </div>
-                <div style={{ fontSize:"0.74rem", color:"#1a1025", lineHeight:1.65 }}>{interp.text}</div>
+                <div style={{ fontSize:"0.74rem", color:"#0D0D0D", lineHeight:1.65 }}>{interp.text}</div>
                 {activeMeasure.mcid && (
-                  <div style={{ marginTop:7, fontSize:"0.82rem", color:"#7e6a9a", display:"flex", alignItems:"center", gap:5 }}>
+                  <div style={{ marginTop:7, fontSize:"0.82rem", color:"#6B6B6B", display:"flex", alignItems:"center", gap:5 }}>
                     <span>📏 MCID = {activeMeasure.mcid}{activeMeasure.unit}</span>
                     <span style={{ color:"#3a5070" }}>— minimum change needed to be clinically meaningful</span>
                   </div>
@@ -1632,7 +1632,7 @@ function OutcomeMeasuresModule() {
 
             {/* Normal values reference */}
             {activeMeasure.normalRange && (
-              <div style={{ padding:"8px 12px", background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.15)", borderRadius:8, marginBottom:12, fontSize:"0.75rem", color:"#7e6a9a" }}>
+              <div style={{ padding:"8px 12px", background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.15)", borderRadius:8, marginBottom:12, fontSize:"0.75rem", color:"#6B6B6B" }}>
                 📊 <span style={{ color:"#00e5ff", fontWeight:700 }}>Normal / Asymptomatic:</span> {activeMeasure.normalRange}
               </div>
             )}
@@ -1646,7 +1646,7 @@ function OutcomeMeasuresModule() {
                     <div style={{ fontSize:"1.3rem", fontWeight:900, color: isImproved(activeMeasure.id,change)?"#00c97a":"#ff4d6d", fontFamily:"monospace" }}>
                       {change > 0 ? "+" : ""}{Math.round(change * 10) / 10}{activeMeasure.unit}
                     </div>
-                    <div style={{ fontSize:"0.78rem", color:"#7e6a9a" }}>S{sessions.length}: {prev}{activeMeasure.unit} → now: {score}{activeMeasure.unit}</div>
+                    <div style={{ fontSize:"0.78rem", color:"#6B6B6B" }}>S{sessions.length}: {prev}{activeMeasure.unit} → now: {score}{activeMeasure.unit}</div>
                   </div>
                   <div style={{ flex:1, padding:"6px 10px", background: Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"rgba(0,201,122,0.1)":"rgba(255,77,109,0.1)"):"rgba(255,179,0,0.08)", border:`1px solid ${Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"rgba(0,201,122,0.3)":"rgba(255,77,109,0.3)"):"rgba(255,179,0,0.25)"}`, borderRadius:8, fontSize:"0.75rem", color:Math.abs(change)>=mcid?(isImproved(activeMeasure.id,change)?"#00c97a":"#ff4d6d"):"#ffb300", fontWeight:700 }}>
                     {Math.abs(change) >= mcid
@@ -1665,10 +1665,10 @@ function OutcomeMeasuresModule() {
             {/* Fields */}
             <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
               {activeMeasure.fields.map((f, fi) => (
-                <div key={f.id} style={{ background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:10, padding:"10px 12px" }}>
+                <div key={f.id} style={{ background:"#EBEBED", border:"1px solid #E0E0E2", borderRadius:10, padding:"10px 12px" }}>
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:7 }}>
                     <span style={{ fontSize:"0.78rem", fontWeight:800, color:col, background:`${col}18`, padding:"1px 6px", borderRadius:4, flexShrink:0 }}>Q{fi+1}</span>
-                    <div style={{ fontSize:"0.82rem", fontWeight:600, color:"#1a1025", lineHeight:1.4 }}>{f.label}</div>
+                    <div style={{ fontSize:"0.82rem", fontWeight:600, color:"#0D0D0D", lineHeight:1.4 }}>{f.label}</div>
                   </div>
                   {renderField(activeMeasure, f)}
                 </div>
@@ -1682,7 +1682,7 @@ function OutcomeMeasuresModule() {
         );
       })()}
 
-      <div style={{ padding:"8px 12px", background:"#f5f0fb", border:"1px solid #d8cce8", borderRadius:8, fontSize:"0.8rem", color:"#7e6a9a", lineHeight:1.6 }}>
+      <div style={{ padding:"8px 12px", background:"#EBEBED", border:"1px solid #E0E0E2", borderRadius:8, fontSize:"0.8rem", color:"#6B6B6B", lineHeight:1.6 }}>
         ⚠ Scores calculated per original validated questionnaire criteria. MCID = Minimum Clinically Important Difference per published literature. Session history persists across browser sessions via localStorage. Use 💾 Save Session after each clinical appointment.
       </div>
     </div>
@@ -5919,8 +5919,8 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
           <button key={p.id} onClick={() => { setOpenId(openId === p.id ? null : p.id); setOpenTx(null); }}
             style={{ padding:"6px 13px", borderRadius:20, fontSize:"0.75rem", fontWeight:700,
               background: openId === p.id ? `${p.color}18` : "transparent",
-              border: `1px solid ${openId === p.id ? p.color : "#d8cce8"}`,
-              color: openId === p.id ? p.color : "#7e6a9a", cursor:"pointer" }}>
+              border: `1px solid ${openId === p.id ? p.color : "#E0E0E2"}`,
+              color: openId === p.id ? p.color : "#6B6B6B", cursor:"pointer" }}>
             {p.icon} {p.label}
           </button>
         ))}
@@ -5935,15 +5935,15 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
               borderRadius:6, border:`1px solid ${p.color}30` }}>📚 {p.evidence}</div>
             <div style={{ display:"flex", gap:6, marginBottom:12 }}>
               <button onClick={() => setOpenTx(null)} style={{ flex:1, padding:"8px", borderRadius:8,
-                border:`1px solid ${openTx !== "tx" ? p.color : "#d8cce8"}`,
+                border:`1px solid ${openTx !== "tx" ? p.color : "#E0E0E2"}`,
                 background: openTx !== "tx" ? `${p.color}15` : "transparent",
-                color: openTx !== "tx" ? p.color : "#7e6a9a", fontSize:"0.75rem", fontWeight:800, cursor:"pointer" }}>
+                color: openTx !== "tx" ? p.color : "#6B6B6B", fontSize:"0.75rem", fontWeight:800, cursor:"pointer" }}>
                 💪 Exercise Protocol
               </button>
               <button onClick={() => setOpenTx("tx")} style={{ flex:1, padding:"8px", borderRadius:8,
-                border:`1px solid ${openTx === "tx" ? p.color : "#d8cce8"}`,
+                border:`1px solid ${openTx === "tx" ? p.color : "#E0E0E2"}`,
                 background: openTx === "tx" ? `${p.color}15` : "transparent",
-                color: openTx === "tx" ? p.color : "#7e6a9a", fontSize:"0.75rem", fontWeight:800, cursor:"pointer" }}>
+                color: openTx === "tx" ? p.color : "#6B6B6B", fontSize:"0.75rem", fontWeight:800, cursor:"pointer" }}>
                 🏥 Treatment Techniques
               </button>
             </div>
@@ -5953,20 +5953,20 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
                   style={{ padding:"10px 12px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", background:`${ph.color}10` }}>
                   <div style={{ fontWeight:800, fontSize:"0.82rem", color:ph.color }}>{ph.phase}</div>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    <span style={{ fontSize:"0.8rem", color:"#7e6a9a" }}>{ph.exercises.length} exercises</span>
+                    <span style={{ fontSize:"0.8rem", color:"#6B6B6B" }}>{ph.exercises.length} exercises</span>
                     <span style={{ color:ph.color, fontSize:"0.8rem" }}>{openPhase[`${p.id}_${pi}`] ? "▲" : "▼"}</span>
                   </div>
                 </div>
                 {openPhase[`${p.id}_${pi}`] && (
                   <div style={{ padding:"10px 12px" }}>
                     {ph.exercises.map((ex, ei) => (
-                      <div key={ei} style={{ background:"#f9f7ff", border:"1px solid #d8cce8", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
-                        <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#1a1025", marginBottom:4 }}>{ex.name}</div>
+                      <div key={ei} style={{ background:"#f9f7ff", border:"1px solid #E0E0E2", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
+                        <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#0D0D0D", marginBottom:4 }}>{ex.name}</div>
                         <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:7 }}>
                           {[["Sets",ex.sets],["Reps",ex.reps],["Hold",ex.hold+"s"],["Freq",ex.freq]].map(([l,v]) => (
                             <div key={l} style={{ background:`${ph.color}12`, border:`1px solid ${ph.color}30`, borderRadius:6, padding:"3px 8px", textAlign:"center" }}>
                               <div style={{ fontSize:"0.82rem", fontWeight:900, color:ph.color }}>{v}</div>
-                              <div style={{ fontSize:"0.82rem", color:"#7e6a9a", textTransform:"uppercase" }}>{l}</div>
+                              <div style={{ fontSize:"0.82rem", color:"#6B6B6B", textTransform:"uppercase" }}>{l}</div>
                             </div>
                           ))}
                         </div>
@@ -6022,7 +6022,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
   const togglePhase = (key) => setOpenPhase(p => ({ ...p, [key]: !p[key] }));
 
   const TABS = [
-    { id:"quick",    label:"⚡ Quick",    color:"#7e6a9a" },
+    { id:"quick",    label:"⚡ Quick",    color:"#6B6B6B" },
     { id:"knee",     label:"🦵 Knee",     color:"#ff4d6d" },
     { id:"shoulder", label:"💪 Shoulder", color:"#7f5af0" },
     { id:"elbow",    label:"🦾 Elbow",    color:"#ffb300" },
@@ -6031,26 +6031,26 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
   ];
 
   return (
-    <div style={{ background:"#ffffff", border:"1px solid #d8cce8", borderRadius:12, marginBottom:10, overflow:"hidden" }}>
+    <div style={{ background:"#ffffff", border:"1px solid #E0E0E2", borderRadius:12, marginBottom:10, overflow:"hidden" }}>
       <div onClick={() => setOpen(o => !o)}
         style={{ padding:"11px 14px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <span style={{ fontSize:"0.85rem" }}>📋</span>
           <span style={{ fontSize:"0.82rem", fontWeight:800, color:"#7c3aed" }}>Protocols &amp; Templates</span>
-          <span style={{ fontSize:"0.78rem", color:"#7e6a9a" }}>Quick-load evidence-based programmes</span>
+          <span style={{ fontSize:"0.78rem", color:"#6B6B6B" }}>Quick-load evidence-based programmes</span>
         </div>
-        <span style={{ color:"#7e6a9a", fontSize:"0.8rem" }}>{open ? "▲" : "▼"}</span>
+        <span style={{ color:"#6B6B6B", fontSize:"0.8rem" }}>{open ? "▲" : "▼"}</span>
       </div>
 
       {open && (
         <div style={{ borderTop:"1px solid #e8e0f4" }}>
-          <div style={{ display:"flex", gap:3, padding:"7px 10px", overflowX:"auto", borderBottom:"1px solid #e8e0f4", background:"#faf8ff" }}>
+          <div style={{ display:"flex", gap:3, padding:"7px 10px", overflowX:"auto", borderBottom:"1px solid #e8e0f4", background:"#F2F2F4" }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => { setActiveTab(t.id); setOpenId(null); setOpenTpl(null); }}
                 style={{ padding:"4px 10px", borderRadius:7, fontSize:"0.8rem", fontWeight:activeTab===t.id?800:500, flexShrink:0,
-                  border:`1px solid ${activeTab===t.id?t.color+"60":"#d8cce8"}`,
+                  border:`1px solid ${activeTab===t.id?t.color+"60":"#E0E0E2"}`,
                   background: activeTab===t.id?`${t.color}12`:"transparent",
-                  color: activeTab===t.id?t.color:"#7e6a9a", cursor:"pointer" }}>
+                  color: activeTab===t.id?t.color:"#6B6B6B", cursor:"pointer" }}>
                 {t.label}
               </button>
             ))}
@@ -6073,7 +6073,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                 </div>
                 {openId && (
                   <div style={{ background:"rgba(127,90,240,0.05)", border:"1px solid rgba(127,90,240,0.15)", borderRadius:8, padding:"9px 11px" }}>
-                    <div style={{ fontSize:"0.57rem", fontWeight:700, color:"#7e6a9a", marginBottom:7, textTransform:"uppercase", letterSpacing:"0.8px" }}>{openId} Templates</div>
+                    <div style={{ fontSize:"0.57rem", fontWeight:700, color:"#6B6B6B", marginBottom:7, textTransform:"uppercase", letterSpacing:"0.8px" }}>{openId} Templates</div>
                     <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
                       {(REGION_TEMPLATE_MAP[openId] || []).map(key => (
                         <button key={key} onClick={() => appendTemplate ? appendTemplate(key) : applyTemplate(key)}
@@ -6097,8 +6097,8 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                       <button key={kp.id} onClick={() => { setOpenId(openId===kp.id?null:kp.id); setOpenTx(null); }}
                         style={{ padding:"5px 12px", borderRadius:20, fontSize:"0.61rem", fontWeight:600,
                           background: openId===kp.id?`${kp.color}18`:"transparent",
-                          border:`1px solid ${openId===kp.id?kp.color:"#d8cce8"}`,
-                          color: openId===kp.id?kp.color:"#7e6a9a", cursor:"pointer" }}>
+                          border:`1px solid ${openId===kp.id?kp.color:"#E0E0E2"}`,
+                          color: openId===kp.id?kp.color:"#6B6B6B", cursor:"pointer" }}>
                         {kp.icon} {kp.label}
                       </button>
                     ))}
@@ -6110,15 +6110,15 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                       <div style={{ background:`${kp.color}06`, border:`1px solid ${kp.color}30`, borderRadius:9, padding:"10px" }}>
                         <div style={{ fontSize:"0.57rem", color:kp.color, fontWeight:700, marginBottom:8, background:`${kp.color}12`, display:"inline-block", padding:"2px 9px", borderRadius:5, border:`1px solid ${kp.color}30` }}>📚 {kp.evidence}</div>
                         <div style={{ display:"flex", gap:5, marginBottom:9 }}>
-                          <button onClick={() => setOpenTx(null)} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx!=="tx"?kp.color:"#d8cce8"}`, background:openTx!=="tx"?`${kp.color}15`:"transparent", color:openTx!=="tx"?kp.color:"#7e6a9a", fontSize:"0.8rem", fontWeight:800, cursor:"pointer" }}>💪 Exercises</button>
-                          <button onClick={() => setOpenTx("tx")} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx==="tx"?kp.color:"#d8cce8"}`, background:openTx==="tx"?`${kp.color}15`:"transparent", color:openTx==="tx"?kp.color:"#7e6a9a", fontSize:"0.8rem", fontWeight:800, cursor:"pointer" }}>🏥 Treatment</button>
+                          <button onClick={() => setOpenTx(null)} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx!=="tx"?kp.color:"#E0E0E2"}`, background:openTx!=="tx"?`${kp.color}15`:"transparent", color:openTx!=="tx"?kp.color:"#6B6B6B", fontSize:"0.8rem", fontWeight:800, cursor:"pointer" }}>💪 Exercises</button>
+                          <button onClick={() => setOpenTx("tx")} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx==="tx"?kp.color:"#E0E0E2"}`, background:openTx==="tx"?`${kp.color}15`:"transparent", color:openTx==="tx"?kp.color:"#6B6B6B", fontSize:"0.8rem", fontWeight:800, cursor:"pointer" }}>🏥 Treatment</button>
                         </div>
                         {openTx !== "tx" && kp.phases.map((ph, pi) => (
                           <div key={pi} style={{ marginBottom:6, border:`1px solid ${ph.color}30`, borderRadius:7, overflow:"hidden" }}>
                             <div onClick={() => togglePhase(`${kp.id}_${pi}`)} style={{ padding:"7px 10px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", background:`${ph.color}10` }}>
                               <div style={{ fontWeight:800, fontSize:"0.75rem", color:ph.color }}>{ph.phase}</div>
                               <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                                <span style={{ fontSize:"0.57rem", color:"#7e6a9a" }}>{ph.exercises.length} ex</span>
+                                <span style={{ fontSize:"0.57rem", color:"#6B6B6B" }}>{ph.exercises.length} ex</span>
                                 <span style={{ color:ph.color, fontSize:"0.73rem" }}>{openPhase[`${kp.id}_${pi}`]?"▲":"▼"}</span>
                               </div>
                             </div>
@@ -6128,16 +6128,16 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                                   const exId = "proto_" + ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_");
                                   const inProg = programme?.find(e=>e.id===exId);
                                   return (
-                                  <div key={ei} style={{ background:"#f9f7ff", border:`1px solid ${inProg?"rgba(0,201,122,0.4)":"#d8cce8"}`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
+                                  <div key={ei} style={{ background:"#f9f7ff", border:`1px solid ${inProg?"rgba(0,201,122,0.4)":"#E0E0E2"}`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
                                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:3 }}>
-                                      <div style={{ fontWeight:800, fontSize:"0.71rem", color:"#1a1025" }}>{ex.name}</div>
+                                      <div style={{ fontWeight:800, fontSize:"0.71rem", color:"#0D0D0D" }}>{ex.name}</div>
                                       {onAdd && <button onClick={()=>onAdd({...ex,id:exId,phase:ph.phase,target:ex.cues?.slice(0,40)||ex.name})} disabled={!!inProg} style={{ padding:"2px 9px", borderRadius:6, fontSize:"0.57rem", fontWeight:800, border:`1px solid ${inProg?"rgba(0,201,122,0.5)":"rgba(0,201,122,0.35)"}`, background:inProg?"rgba(0,201,122,0.15)":"rgba(0,201,122,0.08)", color:"#00c97a", cursor:inProg?"default":"pointer", flexShrink:0, marginLeft:7 }}>{inProg?"✓":"+ Add"}</button>}
                                     </div>
                                     <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:5 }}>
                                       {[["Sets",ex.sets],["Reps",ex.reps],["Hold",ex.hold+"s"],["Freq",ex.freq]].map(([l,v])=>(
                                         <div key={l} style={{ background:`${ph.color}12`, border:`1px solid ${ph.color}30`, borderRadius:5, padding:"2px 7px", textAlign:"center" }}>
                                           <div style={{ fontSize:"0.66rem", fontWeight:900, color:ph.color }}>{v}</div>
-                                          <div style={{ fontSize:"0.49rem", color:"#7e6a9a", textTransform:"uppercase" }}>{l}</div>
+                                          <div style={{ fontSize:"0.49rem", color:"#6B6B6B", textTransform:"uppercase" }}>{l}</div>
                                         </div>
                                       ))}
                                     </div>
@@ -6180,7 +6180,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
             {activeTab === "all" && (
               <div>
                 <input value={tSearch} onChange={e=>setTSearch(e.target.value)} placeholder="Search condition… hip OA, ACL, frozen shoulder"
-                  style={{ width:"100%", padding:"6px 10px", borderRadius:8, border:"1px solid #d8cce8", marginBottom:8, fontSize:"0.66rem", fontFamily:"inherit", outline:"none", background:"#f5f0fb", color:"#1a1025" }}/>
+                  style={{ width:"100%", padding:"6px 10px", borderRadius:8, border:"1px solid #E0E0E2", marginBottom:8, fontSize:"0.66rem", fontFamily:"inherit", outline:"none", background:"#EBEBED", color:"#0D0D0D" }}/>
                 {Object.entries(PROGRAMME_TEMPLATES)
                   .filter(([k,t]) => !tSearch || t.label.toLowerCase().includes(tSearch.toLowerCase()))
                   .map(([key,t]) => {
@@ -6189,10 +6189,10 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                     const added = t.exercises.filter(id => programme?.find(p=>p.id===id)).length;
                     return (
                       <div key={key} style={{ marginBottom:4 }}>
-                        <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"rgba(124,58,237,0.06)":"#f9f7ff", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#d8cce8"}` }}>
+                        <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"rgba(124,58,237,0.06)":"#f9f7ff", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
                           <div style={{ flex:1 }}>
-                            <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#1a1025" }}>{t.label}</div>
-                            <div style={{ fontSize:"0.75rem", color:"#7e6a9a" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
+                            <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{t.label}</div>
+                            <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
                           </div>
                           <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
                         </div>
@@ -6203,7 +6203,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                             </button>
                             {tx&&(tx.manual||[]).length>0&&(
                               <div style={{ marginBottom:5 }}>
-                                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🤲 Manual therapy</div>
+                                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🤲 Manual therapy</div>
                                 <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
                                   {tx.manual.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(124,58,237,0.3)", background:"transparent", color:"#7c3aed", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
                                 </div>
@@ -6211,7 +6211,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                             )}
                             {tx&&(tx.machine||[]).length>0&&(
                               <div>
-                                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>⚡ Modality</div>
+                                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>⚡ Modality</div>
                                 <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
                                   {tx.machine.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(0,229,255,0.3)", background:"transparent", color:"#00c97a", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
                                 </div>
@@ -6293,7 +6293,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
     downloadPDFFromHTML(html, `HEP_${data?.dem_name || "Patient"}_${Date.now()}.pdf`);
   };
 
-  const inp={width:"100%",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,color:"#1a1025",fontFamily:"inherit",outline:"none",padding:"7px 10px",fontSize:"0.75rem"};
+  const inp={width:"100%",background:"#EBEBED",border:"1px solid #E0E0E2",borderRadius:8,color:"#0D0D0D",fontFamily:"inherit",outline:"none",padding:"7px 10px",fontSize:"0.75rem"};
 
   return(
     <div>
@@ -6302,11 +6302,11 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
 
       {/* Region selector */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-        <label style={{fontSize:"0.75rem",fontWeight:700,color:"#7e6a9a",whiteSpace:"nowrap"}}>📍 Region:</label>
+        <label style={{fontSize:"0.75rem",fontWeight:700,color:"#6B6B6B",whiteSpace:"nowrap"}}>📍 Region:</label>
         <select
           value={activeRegion}
           onChange={e=>setActiveRegion(e.target.value)}
-          style={{flex:1,padding:"6px 10px",borderRadius:8,border:"1px solid #d8cce8",background:"#f5f0fb",color:"#1a1025",fontSize:"0.8rem",fontFamily:"inherit",fontWeight:600,cursor:"pointer",outline:"none"}}
+          style={{flex:1,padding:"6px 10px",borderRadius:8,border:"1px solid #E0E0E2",background:"#EBEBED",color:"#0D0D0D",fontSize:"0.8rem",fontFamily:"inherit",fontWeight:600,cursor:"pointer",outline:"none"}}
         >
           {Object.entries(EXERCISE_DB).map(([key,r])=>(
             <option key={key} value={key}>{r.icon} {r.label}</option>
@@ -6321,14 +6321,14 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
             <button key={p} onClick={()=>setActivePhase(p)} style={{padding:"4px 9px",borderRadius:7,fontSize:"0.8rem",fontWeight:activePhase===p?800:500,border:`1px solid ${activePhase===p?(phaseColor[p]||"rgba(0,229,255,0.4)"):"#1a2d45"}`,background:activePhase===p?`${phaseColor[p]||"rgba(0,229,255,0.18)"}18`:"transparent",color:activePhase===p?(phaseColor[p]||"#00e5ff"):"#6b8399",cursor:"pointer"}}>{p}</button>
           ))}
         </div>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search exercises or muscles..." style={{flex:1,minWidth:120,background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,color:"#1a1025",fontFamily:"inherit",outline:"none",padding:"5px 10px",fontSize:"0.82rem"}}/>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search exercises or muscles..." style={{flex:1,minWidth:120,background:"#EBEBED",border:"1px solid #E0E0E2",borderRadius:8,color:"#0D0D0D",fontFamily:"inherit",outline:"none",padding:"5px 10px",fontSize:"0.82rem"}}/>
       </div>
 
       {/* Exercise library */}
       <div style={{marginBottom:14}}>
         {Object.entries(filteredCategories).map(([cat,exs])=>(
           <div key={cat} style={{marginBottom:12}}>
-            <div style={{fontSize:"0.8rem",fontWeight:700,color:"#7e6a9a",textTransform:"uppercase",letterSpacing:"1px",marginBottom:7,display:"flex",alignItems:"center",gap:7}}>
+            <div style={{fontSize:"0.8rem",fontWeight:700,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"1px",marginBottom:7,display:"flex",alignItems:"center",gap:7}}>
               <div style={{height:1,width:8,background:region.color,borderRadius:1}}/>{cat}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:5}}>
@@ -6340,28 +6340,28 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
                     <div onClick={()=>setOpenEx(isOpen?null:ex.id)} style={{padding:"9px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:9}}>
                       <div style={{flex:1}}>
                         <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
-                          <span style={{fontSize:"0.75rem",fontWeight:700,color:"#1a1025"}}>{ex.name}</span>
+                          <span style={{fontSize:"0.75rem",fontWeight:700,color:"#0D0D0D"}}>{ex.name}</span>
                           <span style={{fontSize:"0.75rem",padding:"1px 6px",borderRadius:5,background:`${phaseColor[ex.phase]||"#1a2d45"}18`,color:phaseColor[ex.phase]||"#6b8399",border:`1px solid ${phaseColor[ex.phase]||"#1a2d45"}40`,fontWeight:700}}>{ex.phase}</span>
                           <span style={{fontSize:"0.75rem",color:"#ffb300",fontWeight:700}}>⭐ {ex.evidence?.split(" — ")[0]}</span>
                         </div>
-                        <div style={{fontSize:"0.73rem",color:"#7e6a9a",marginTop:2}}>{ex.target}</div>
+                        <div style={{fontSize:"0.73rem",color:"#6B6B6B",marginTop:2}}>{ex.target}</div>
                       </div>
                       <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0}}>
-                        <span style={{fontSize:"0.8rem",color:"#7e6a9a"}}>{isOpen?"▲":"▼"}</span>
+                        <span style={{fontSize:"0.8rem",color:"#6B6B6B"}}>{isOpen?"▲":"▼"}</span>
                         <button onClick={e=>{e.stopPropagation();inProg?removeEx(ex.id):addEx(ex);}} style={{padding:"4px 10px",borderRadius:7,fontSize:"0.82rem",fontWeight:800,border:`1px solid ${inProg?"rgba(255,77,109,0.4)":"rgba(0,201,122,0.4)"}`,background:inProg?"rgba(255,77,109,0.12)":"rgba(0,201,122,0.12)",color:inProg?"#ff4d6d":"#00c97a",cursor:"pointer"}}>{inProg?"✕ Remove":"+ Add"}</button>
                       </div>
                     </div>
                     {isOpen&&(
-                      <div style={{padding:"0 12px 12px",borderTop:"1px solid #d8cce8"}}>
+                      <div style={{padding:"0 12px 12px",borderTop:"1px solid #E0E0E2"}}>
                         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,margin:"10px 0"}}>
                           {[["Sets",ex.sets],["Reps",ex.reps],["Hold",`${ex.hold}s`],["Freq",ex.freq]].map(([l,v])=>(
-                            <div key={l} style={{background:"#f5f0fb",borderRadius:8,padding:"7px",textAlign:"center"}}>
+                            <div key={l} style={{background:"#EBEBED",borderRadius:8,padding:"7px",textAlign:"center"}}>
                               <div style={{fontSize:"0.85rem",fontWeight:900,color:region.color}}>{v}</div>
-                              <div style={{fontSize:"0.75rem",color:"#7e6a9a",textTransform:"uppercase"}}>{l}</div>
+                              <div style={{fontSize:"0.75rem",color:"#6B6B6B",textTransform:"uppercase"}}>{l}</div>
                             </div>
                           ))}
                         </div>
-                        <div style={{fontSize:"0.73rem",color:"#1a1025",lineHeight:1.6,marginBottom:7}}>{ex.desc}</div>
+                        <div style={{fontSize:"0.73rem",color:"#0D0D0D",lineHeight:1.6,marginBottom:7}}>{ex.desc}</div>
                         <div style={{padding:"7px 10px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.8rem",color:"#ffb300",marginBottom:7}}>💡 {ex.cues}</div>
                         <div style={{fontSize:"0.75rem",color:"#00c97a",marginBottom:4}}>📈 Progression: {ex.progression}</div>
                         <div style={{fontSize:"0.82rem",color:"#7f5af0"}}>📚 Evidence: {ex.evidence}</div>
@@ -6377,7 +6377,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
 
 
 
-      <div style={{padding:"7px 11px",background:"#f5f0fb",border:"1px solid #d8cce8",borderRadius:8,fontSize:"0.8rem",color:"#7e6a9a",lineHeight:1.5}}>
+      <div style={{padding:"7px 11px",background:"#EBEBED",border:"1px solid #E0E0E2",borderRadius:8,fontSize:"0.8rem",color:"#6B6B6B",lineHeight:1.5}}>
         ⚠ Exercise prescriptions are clinical suggestions. Modify sets/reps/frequency based on individual patient capacity, irritability, and response. Evidence ratings reflect current literature.
       </div>
     </div>
@@ -8095,7 +8095,7 @@ ${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div>
               transition:"all 0.15s",
             }}>
               <span style={{fontSize:"0.8rem"}}>{sec.icon}</span>
-              <span style={{fontSize:"0.8rem",fontWeight:active?800:600,color:active?sec.col:"#7e6a9a"}}>{key}</span>
+              <span style={{fontSize:"0.8rem",fontWeight:active?800:600,color:active?sec.col:"#6B6B6B"}}>{key}</span>
               {count > 0 && (
                 <span style={{
                   fontSize:"0.5rem",fontWeight:800,
@@ -8225,7 +8225,7 @@ ${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div>
           ) : (
             <div style={{
               textAlign:"center",padding:"28px 12px",
-              color:"#7e6a9a",fontSize:"0.78rem",lineHeight:1.6,
+              color:"#6B6B6B",fontSize:"0.78rem",lineHeight:1.6,
             }}>
               <div style={{
                 width:44,height:44,borderRadius:"50%",
@@ -8363,9 +8363,9 @@ const OBS_REGION_PRIORITY = {
 
 function ObservationModule({ data, set }) {
   const PC = typeof getC === "function" ? getC() : {
-    surface:"#fff", s2:"#f5f0fb", s3:"#ede7f6", border:"#d8cce8",
-    accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#1a1025",
-    muted:"#7e6a9a", red:"#dc2626", yellow:"#b45309", green:"#059669",
+    surface:"#fff", s2:"#EBEBED", s3:"#E4E4E6", border:"#E0E0E2",
+    accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#0D0D0D",
+    muted:"#6B6B6B", red:"#dc2626", yellow:"#b45309", green:"#059669",
   };
 
   const [region, setRegion] = React.useState("all");

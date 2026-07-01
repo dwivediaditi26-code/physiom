@@ -1035,7 +1035,7 @@ function AppInner({ currentUser, onSignOut }) {
       {/* ── MOBILE HEADER — Option B: gradient accent bar ── */}
       <div className="pm-mobile-hdr" style={{
         background: PC.isDark ? PC.headerBg : "linear-gradient(90deg,#F2F2F4 0%,#FFFFFF 100%)",
-        borderBottom: `1px solid ${PC.isDark?PC.border:"#d8cce8"}`,
+        borderBottom: `1px solid ${PC.isDark?PC.border:"#E0E0E2"}`,
         borderLeft: `3.5px solid ${PC.accent}`,
       }}>
         {/* Hamburger */}
@@ -1600,7 +1600,7 @@ function AppInner({ currentUser, onSignOut }) {
                   </div>
                 ) : (
                   <div style={{padding:"6px 2px"}}>
-                    <div style={{textAlign:"center",padding:"16px 12px",color:"#9a82c0",fontSize:"0.85rem",fontWeight:600}}>No patient loaded</div>
+                    <div style={{textAlign:"center",padding:"16px 12px",color:"#6B6B6B",fontSize:"0.85rem",fontWeight:600}}>No patient loaded</div>
                     <button className="pm-bnav-dx"
                       onClick={()=>{ setBnavTab(null); setShowPatientDb(true); }}>
                       👥 Load Patient

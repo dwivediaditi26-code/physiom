@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getC } from "./utils.jsx";
 
-const A="#7c3aed",S2="#f5f0fb",BD="#d8cce8",TX="#1a1025",MU="#7e6a9a";
+const A="#7c3aed",S2="#EBEBED",BD="#E0E0E2",TX="#0D0D0D",MU="#6B6B6B";
 
 // ─── HINDI TRANSLATIONS ───────────────────────────────────────────────────────
 const HI = {
@@ -154,7 +154,7 @@ function generateBlankPDF(scaleId, patientName="", clinicName="PhysioMind Clinic
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px;max-width:700px;margin:0 auto}
-h1{font-size:16px;font-weight:700;color:#1a1025;margin-bottom:2px}
+h1{font-size:16px;font-weight:700;color:#0D0D0D;margin-bottom:2px}
 .subtitle{font-size:10px;color:#6b7280;margin-bottom:16px}
 .header{display:flex;justify-content:space-between;border-bottom:2px solid #7c3aed;padding-bottom:10px;margin-bottom:16px}
 .clinic{font-size:12px;font-weight:700;color:#7c3aed}
@@ -272,19 +272,19 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
   const pct=Math.round((Object.keys(answers).length/total)*100);
 
   const questionsUI=(
-    <div style={{minHeight:"100vh",background:patientMode?"#0d0d1a":"#faf8fc",
+    <div style={{minHeight:"100vh",background:patientMode?"#0d0d1a":"#F2F2F4",
       display:"flex",flexDirection:"column",fontFamily:"system-ui,sans-serif"}}>
       {/* Header */}
       <div style={{background:patientMode?"#111":"#fff",padding:"12px 16px",
-        borderBottom:"1px solid #d8cce8",display:"flex",alignItems:"center",gap:10}}>
+        borderBottom:"1px solid #E0E0E2",display:"flex",alignItems:"center",gap:10}}>
         <button onClick={onBack} style={{background:"none",border:"none",
-          color:patientMode?"#9ca3af":"#7e6a9a",fontSize:"1.1rem",cursor:"pointer",padding:"4px 8px"}}>←</button>
+          color:patientMode?"#9ca3af":"#6B6B6B",fontSize:"1.1rem",cursor:"pointer",padding:"4px 8px"}}>←</button>
         <div style={{flex:1}}>
           <div style={{fontWeight:700,fontSize:"0.82rem",color:patientMode?"#e2e8f0":TX}}>{sc.full}</div>
           <div style={{fontSize:"0.65rem",color:patientMode?"#6b7280":MU}}>{patientName} · Q{qIdx+1}/{total}</div>
         </div>
         <button onClick={()=>setLang(l=>l==="en"?"hi":"en")}
-          style={{padding:"4px 10px",borderRadius:20,border:"1px solid #d8cce8",
+          style={{padding:"4px 10px",borderRadius:20,border:"1px solid #E0E0E2",
             background:lang==="hi"?"#ede9fe":"transparent",
             color:lang==="hi"?A:MU,fontSize:"0.68rem",cursor:"pointer",fontWeight:600}}>
           {lang==="en"?"अ Hindi":"A English"}
@@ -292,7 +292,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
       </div>
 
       {/* Progress */}
-      <div style={{background:patientMode?"#161625":"#f5f0fb",padding:"8px 16px"}}>
+      <div style={{background:patientMode?"#161625":"#EBEBED",padding:"8px 16px"}}>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.65rem",
           color:patientMode?"#6b7280":MU,marginBottom:4}}>
           <span>Progress</span><span>{pct}%</span>
@@ -436,7 +436,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
     const interp=previewScore!=null?sc.interpret(previewScore):null;
 
     return(
-      <div style={{minHeight:"100vh",background:patientMode?"#0d0d1a":"#faf8fc",
+      <div style={{minHeight:"100vh",background:patientMode?"#0d0d1a":"#F2F2F4",
         fontFamily:"system-ui,sans-serif",color:patientMode?"#e2e8f0":TX}}>
         {/* Header */}
         <div style={{background:patientMode?"#111":"#fff",padding:"12px 16px",
@@ -607,7 +607,7 @@ function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
   const [answers,setAnswers]=useState({});
   const [stage,setStage]=useState("grid"); // grid | review
   const [showGuide,setShowGuide]=useState(false);
-  const bg=patientMode?"#0d0d1a":"#faf8fc";
+  const bg=patientMode?"#0d0d1a":"#F2F2F4";
   const card=patientMode?"#161625":"#fff";
   const border=patientMode?"#1e2a3a":BD;
   const txt=patientMode?"#e2e8f0":TX;
