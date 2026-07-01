@@ -4138,7 +4138,7 @@ function CollapsibleNavGroup({ group, activeSection, sections, countFilled, PC, 
   const hasActive = group.keys.includes(activeSection);
   const groupFilled = group.keys.reduce((n,k)=>n+countFilled(k),0);
   const allDone = groupFilled > 0 && group.keys.every(k=>countFilled(k)>0);
-  const [gOpen, setGOpen] = React.useState(hasActive);
+  const [gOpen, setGOpen] = React.useState(true);
   React.useEffect(()=>{ if(hasActive) setGOpen(true); },[hasActive]);
 
   return (
