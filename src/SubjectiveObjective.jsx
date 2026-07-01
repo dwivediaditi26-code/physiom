@@ -2804,10 +2804,21 @@ const needsBPS_S=(d)=>
   parseFloat(d.cc_vas_worst)>=7||
   /Off work/.test(d.dem_work_status||"");
 
+const REG_KEY_MAP={
+  "Cervical (L)":"Cervical spine","Cervical (R)":"Cervical spine",
+  "Thoracic (L)":"Thoracic spine","Thoracic (R)":"Thoracic spine",
+  "Lumbar/SI (L)":"Lumbar / SI","Lumbar/SI (R)":"Lumbar / SI",
+  "Elbow (L)":"Elbow/Wrist/Hand","Elbow (R)":"Elbow/Wrist/Hand",
+  "Wrist/Hand (L)":"Elbow/Wrist/Hand","Wrist/Hand (R)":"Elbow/Wrist/Hand",
+  "Hip/Groin (L)":"Hip / Groin","Hip/Groin (R)":"Hip / Groin",
+  "Ankle/Foot (L)":"Ankle / Foot","Ankle/Foot (R)":"Ankle / Foot",
+};
+const resolveRegMod=(r)=>REG_MOD_S[REG_KEY_MAP[r]||r];
+
 const needsSleep_S=(d,regions)=>{
   const poorSleep=/poor|very poor/.test((Array.isArray(d.ls_sleep_quality)?d.ls_sleep_quality.join(', '):(d.ls_sleep_quality||"")).toLowerCase());
   const nightPain=regions.some(r=>{
-    const px=REG_MOD_S[r]?.prefix;
+    const px=resolveRegMod(r)?.prefix;
     if(!px) return false;
     const n=(Array.isArray(d[`${px}_night`])?d[`${px}_night`].join(", "):(d[`${px}_night`]||"")).toLowerCase();
     const p=(Array.isArray(d[`${px}_pattern`])?d[`${px}_pattern`].join(", "):(d[`${px}_pattern`]||"")).toLowerCase();
@@ -2819,7 +2830,7 @@ const needsSleep_S=(d,regions)=>{
 const needsSport_S=(d,regions)=>{
   const onset=(Array.isArray(d.cc_onset)?d.cc_onset.join(" "):(d.cc_onset||"")).toLowerCase();
   const isSport=onset.includes("sport");
-  const sportRegs=["Knee (L)","Knee (R)","Ankle / Foot","Hip / Groin","Shoulder (L)","Shoulder (R)","Lumbar / SI"];
+  const sportRegs=["Knee (L)","Knee (R)","Ankle/Foot (L)","Ankle/Foot (R)","Ankle / Foot","Hip/Groin (L)","Hip/Groin (R)","Hip / Groin","Shoulder (L)","Shoulder (R)","Lumbar/SI (L)","Lumbar/SI (R)","Lumbar / SI"];
   return isSport||sportRegs.some(r=>regions.includes(r));
 };
 
@@ -3202,8 +3213,17 @@ function runEngineV6(data, selectedRegions) {
   // ══════════════════════════════════════════════════════════════════
   // PER-REGION ANALYSIS
   // ══════════════════════════════════════════════════════════════════
+  const _RKEY2 = {
+    "Cervical (L)":"Cervical spine","Cervical (R)":"Cervical spine",
+    "Thoracic (L)":"Thoracic spine","Thoracic (R)":"Thoracic spine",
+    "Lumbar/SI (L)":"Lumbar / SI","Lumbar/SI (R)":"Lumbar / SI",
+    "Elbow (L)":"Elbow/Wrist/Hand","Elbow (R)":"Elbow/Wrist/Hand",
+    "Wrist/Hand (L)":"Elbow/Wrist/Hand","Wrist/Hand (R)":"Elbow/Wrist/Hand",
+    "Hip/Groin (L)":"Hip / Groin","Hip/Groin (R)":"Hip / Groin",
+    "Ankle/Foot (L)":"Ankle / Foot","Ankle/Foot (R)":"Ankle / Foot",
+  };
   const regionResults = selectedRegions.map(region => {
-    const mod = REG_MOD_S[region];
+    const mod = REG_MOD_S[_RKEY2[region]||region];
     if (!mod) return null;
     const px = mod.prefix;
     const rf = (suf) => av(`${px}_${suf}`);
@@ -4482,8 +4502,21 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     m.complaint      = UNIV_S.complaint;
 
     // ── Step 2: Region-specific modules ───────────────────────────────
+    const _RKEY = {
+      "Cervical (L)":"Cervical spine","Cervical (R)":"Cervical spine",
+      "Thoracic (L)":"Thoracic spine","Thoracic (R)":"Thoracic spine",
+      "Lumbar/SI (L)":"Lumbar / SI","Lumbar/SI (R)":"Lumbar / SI",
+      "Elbow (L)":"Elbow/Wrist/Hand","Elbow (R)":"Elbow/Wrist/Hand",
+      "Wrist/Hand (L)":"Elbow/Wrist/Hand","Wrist/Hand (R)":"Elbow/Wrist/Hand",
+      "Hip/Groin (L)":"Hip / Groin","Hip/Groin (R)":"Hip / Groin",
+      "Ankle/Foot (L)":"Ankle / Foot","Ankle/Foot (R)":"Ankle / Foot",
+    };
+    const _seenMods = new Set();
     selectedRegions.forEach(r => {
-      const mod = REG_MOD_S[r];
+      const modKey = _RKEY[r] || r;
+      if (_seenMods.has(modKey)) return;
+      _seenMods.add(modKey);
+      const mod = REG_MOD_S[modKey];
       if (!mod) return;
       Object.entries(mod.sections).forEach(([k, s]) => { m[k] = s; });
     });
