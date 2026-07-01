@@ -113,7 +113,7 @@ const MOBILE_CSS = `
   .pm-nav-drawer {
     position: fixed; left: 0; top: 0; bottom: 0; width: 260px; max-width: 82vw;
     background: #ffffff; border-right: 1px solid #E0E0E2;
-    z-index: 160; overflow-y: auto; padding: 60px 0 24px;
+    z-index: 160; overflow-y: auto; padding: 0 0 24px;
     transform: translateX(-100%); transition: transform 0.25s ease;
     box-shadow: 4px 0 24px rgba(0,0,0,0.12);
   }

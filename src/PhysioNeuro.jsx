@@ -79,6 +79,38 @@ function ClinicalImage({ name, title, size=52 }) {
   );
 }
 
+// Small badge for muscle-card headers: shows an uploaded Cloudinary photo (named by
+// the muscle id, e.g. "mmt_adduc") if one exists, falling back to the region emoji.
+function MovementIcon({ size=20, color="#7c3aed" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+      strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12.5" cy="5" r="2"/>
+      <line x1="12" y1="7.2" x2="11.3" y2="13.5"/>
+      <line x1="11.6" y1="9" x2="7.5" y2="11.5"/>
+      <line x1="11.9" y1="9.3" x2="16.5" y2="10.5"/>
+      <line x1="11.3" y1="13.5" x2="8" y2="19.5"/>
+      <line x1="11.3" y1="13.5" x2="15.5" y2="18.5"/>
+    </svg>
+  );
+}
+
+// Badge for muscle-card headers: shows an uploaded Cloudinary photo (named by the
+// muscle id, e.g. "mmt_adduc") if one exists, falling back to a simple movement icon.
+function MuscleBadge({ id, size=40 }) {
+  const [imgOk, setImgOk] = React.useState(true);
+  const thumb = `${CLOUDINARY_BASE}/f_auto,q_auto,w_${size*2},h_${size*2},c_fill/${id}`;
+  return (
+    <div style={{width:size,height:size,borderRadius:11,background:`${C.accent}14`,
+      display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+      {imgOk
+        ? <img src={thumb} alt="" onError={()=>setImgOk(false)}
+            style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+        : <MovementIcon size={size*0.5} color={C.accent}/>}
+    </div>
+  );
+}
+
 const ROM_DATA={
   "Cervical":[
     {id:"rom_cflex",mv:"Flexion",bilateral:false,normal:45,unit:"°",plane:"Sagittal",axis:"Frontal (coronal)",
@@ -1273,6 +1305,18 @@ const MMT_DATA={
 
 const MMT_GRADE_OPTIONS=["5","4+","4","4-","3+","3","3-","2+","2","2-","1","0","NT"];
 const MMT_REGIONS=Object.keys(MMT_DATA);
+const MMT_ICONS={
+  "Cervical":["🔵","#0891b2"],"Shoulder & Scapula":["💪","#9333ea"],
+  "Elbow & Forearm":["🫀","#db2777"],"Wrist & Hand":["🤚","#16a34a"],
+  "Spine & Core":["🪴","#78716c"],"Hip & Pelvis":["🦵","#16a34a"],
+  "Knee":["🦿","#ca8a04"],"Ankle & Foot":["🦶","#0284c7"],"TMJ & Facial":["🦷","#9f1239"]
+};
+function parseMuscleName(name){
+  const match = name.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  if(!match) return { title:name, sub:null };
+  const sub = match[2].split(/[\/+]/).map(s=>s.trim()).filter(Boolean).join(" \u00b7 ");
+  return { title:match[1].trim(), sub };
+}
 
 const RED_FLAGS_MMT=[
   {pattern:(r)=>Object.values(r).some(v=>v&&["1","0"].includes(v.split("_")[0])),msg:"Grade 0–1 detected — consider neurological workup and urgent referral if acute onset.",color:"#ff4d6d"},
@@ -1439,26 +1483,34 @@ function MMTModule({data,set,navContext={}}){
           return(
             <div key={m.id} ref={el=>{ if(el) mmtHlRef.current[m.id]=el; }} style={{background:C.surface,border:`1px solid ${hasVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
               {/* Header */}
-              <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
-                  <ClinicalImage name={m.id} title={m.muscle} size={40}/>
-                  <div>
-                    <div style={{fontWeight:700,fontSize:"0.82rem",color:hasVal?C.text:C.muted}}>{m.muscle}</div>
-                    <div className="pm-test-card-sub" style={{fontSize:"0.65rem",color:C.muted,marginTop:1}}>{m.nerve} · {m.root}</div>
+              <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"14px 16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
+                <div style={{display:"flex",gap:12,alignItems:"flex-start",flex:"1 1 160px",minWidth:0}}>
+                  <MuscleBadge id={m.id}/>
+                  <div style={{minWidth:0,paddingTop:1}}>
+                    {(()=>{ const {title,sub}=parseMuscleName(m.muscle); return (
+                      <>
+                        <div style={{fontWeight:700,fontSize:"0.94rem",color:C.text,overflowWrap:"break-word"}}>{title}</div>
+                        {sub && <div style={{fontSize:"0.76rem",color:C.muted,marginTop:2,overflowWrap:"break-word"}}>{sub}</div>}
+                      </>
+                    );})()}
+                    <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
+                      <span style={{fontSize:"0.72rem",color:"#5F5E5A",background:"#F1EFE8",padding:"3px 10px",borderRadius:20}}>{m.nerve}</span>
+                      <span style={{fontSize:"0.72rem",color:"#5F5E5A",background:"#F1EFE8",padding:"3px 10px",borderRadius:20}}>{m.root}</span>
+                    </div>
                   </div>
                 </div>
-                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
                   {/* Bilateral Grading */}
                   {["L","R"].map(side=>{
                     const val=data[`mmt_${m.id}_${side}`];
                     return(
                       <div key={side} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                        <span style={{fontSize:"0.55rem",color:C.muted,fontWeight:600}}>{side}</span>
+                        <span style={{fontSize:"0.68rem",color:C.muted,fontWeight:600,marginBottom:2}}>{side}</span>
                         <select
                           value={val||""}
                           onChange={e=>{e.stopPropagation();set(`mmt_${m.id}_${side}`,e.target.value);}}
                           onClick={e=>e.stopPropagation()}
-                          style={{fontSize:"0.68rem",padding:"2px 4px",borderRadius:5,border:`1px solid ${val?gradeColor(val):C.border}`,background:val?`${gradeColor(val)}18`:C.s2,color:val?gradeColor(val):C.muted,fontWeight:700,cursor:"pointer",width:46}}
+                          style={{fontSize:"0.78rem",padding:"6px 4px",borderRadius:8,border:`1px solid ${val?gradeColor(val):C.border}`,background:val?`${gradeColor(val)}18`:"#fff",color:val?gradeColor(val):C.muted,fontWeight:700,cursor:"pointer",width:56}}
                         >
                           <option value="">--</option>
                           {MMT_GRADE_OPTIONS.map(g=><option key={g} value={g}>{g}</option>)}

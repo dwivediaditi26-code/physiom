@@ -683,11 +683,16 @@ function AppInner({ currentUser, onSignOut }) {
     );
   };
 
+  const doctorInitials = (currentUser?.user_metadata?.full_name || currentUser?.email || "Dr")
+    .replace(/@.*/,"").trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
+
   const SidebarItems = ({ onNav }) => (
     <>
       {/* Greeting */}
-      <div style={{padding:"10px 12px 8px",display:"flex",alignItems:"center",gap:8}}>
-        <span style={{fontSize:"1.05rem"}}>👋</span>
+      <div style={{padding:"10px 12px 8px",display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:"#fff",fontWeight:800,fontSize:"0.82rem"}}>
+          {doctorInitials}
+        </div>
         <div>
           <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.text,lineHeight:1.2}}>Hello, Dr {currentUser?.user_metadata?.full_name?.split(" ")[0]||currentUser?.email?.split("@")[0]||"Doctor"}</div>
           <div style={{fontSize:"0.78rem",color:PC.muted}}>{new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</div>
@@ -987,6 +992,13 @@ function AppInner({ currentUser, onSignOut }) {
 
       {/* Mobile nav drawer */}
       <div className={`pm-nav-drawer${navOpen?" open":""}`}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"max(18px, env(safe-area-inset-top)) 14px 14px",borderBottom:`1px solid ${PC.border}`,marginBottom:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+            <img src="/logo.svg" alt="PhysioMind" style={{height:26,width:"auto",flexShrink:0,display:"block"}}/>
+            <div style={{fontWeight:800,fontSize:"0.88rem",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap"}}>PhysioMind Pro</div>
+          </div>
+          <button onClick={()=>setNavOpen(false)} aria-label="Close navigation" style={{width:30,height:30,borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.muted,fontSize:"0.9rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✕</button>
+        </div>
         <div style={{padding:"0 8px"}}>
           <SidebarItems onNav={navTo}/>
         </div>
