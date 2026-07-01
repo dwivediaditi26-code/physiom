@@ -145,7 +145,17 @@ const MOBILE_CSS = `
   .pm-body { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: hidden; }
 
   /* ── Cards ── */
-  .pm-card { padding: 14px 14px !important; border-radius: 12px !important; background: #ffffff !important; border: 1px solid #E0E0E0 !important; box-shadow: 0 8px 28px rgba(0,0,0,0.13), 0 3px 8px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.05) !important; }
+  .pm-card {
+    padding: 14px 14px !important;
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0,0,0,0.07) !important;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.04),
+      0 4px 12px rgba(0,0,0,0.08),
+      0 16px 40px rgba(0,0,0,0.10),
+      inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  }
   @media (min-width: 480px) { .pm-card { padding: 18px 20px !important; } }
   /* Global 3D card elevation for all white surface blocks */
   [data-theme="light"] .pm-shell div[style*="background: rgb(255, 255, 255)"],

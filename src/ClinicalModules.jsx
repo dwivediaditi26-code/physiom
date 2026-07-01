@@ -8,7 +8,7 @@ function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder
   const val=data[id]||"";
   const filled=val!=="";
   return (
-    <div style={{background:C.surface,border:`1px solid ${filled?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"10px 12px",marginBottom:8}}>
+    <div style={{background:C.surface,border:`1px solid ${filled?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"10px 12px",marginBottom:8}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:6}}>
         <label style={{fontSize:"0.78rem",fontWeight:600,color:filled?C.text:C.muted,lineHeight:1.4,flex:1}}>
           {label}{filled&&<span style={{color:C.green,marginLeft:5,fontSize:"0.8rem"}}>✓</span>}
@@ -281,7 +281,7 @@ function ErgoModule({ data, set }) {
           const pct=matched.length/c.drivers.length;
           const col=pct>=0.5?C.red:pct>=0.25?C.yellow:C.green;
           return (
-            <div key={c.symptom} style={{background:C.surface,border:`1px solid ${matched.length>0?col+"40":C.border}`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"9px 12px",marginBottom:6}}>
+            <div key={c.symptom} style={{background:C.surface,border:`1px solid ${matched.length>0?col+"40":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"9px 12px",marginBottom:6}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:matched.length>0?5:0}}>
                 <span style={{fontWeight:600,fontSize:"0.78rem",color:matched.length>0?C.text:C.muted}}>{c.symptom}</span>
                 <span style={{fontSize:"0.75rem",fontWeight:700,padding:"2px 7px",borderRadius:8,background:`${col}15`,color:col}}>{matched.length}/{c.drivers.length} drivers</span>
@@ -375,7 +375,7 @@ function ErgoModule({ data, set }) {
               <div style={{marginBottom:16}}>
                 <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.5px",color:C.a3,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><div style={{height:1,width:10,background:C.a3}}/>🏃 Movement Break Prescription</div>
                 {movPx.map(mp=>(
-                  <div key={mp.label} style={{background:C.surface,border:`1px solid ${C.a3}30`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"11px 13px",marginBottom:8}}>
+                  <div key={mp.label} style={{background:C.surface,border:`1px solid ${C.a3}30`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"11px 13px",marginBottom:8}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:C.a3}}>{mp.label}</div>
                       <span style={{fontSize:"0.82rem",padding:"2px 7px",borderRadius:8,background:`${C.a3}15`,color:C.a3}}>⏱ {mp.freq}</span>
@@ -477,7 +477,7 @@ function GaitModule({ data, set }) {
   const row = (label, id, type="text", opts=null, note=null)=>{
     const val=data[id]||"";
     return(
-      <div style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"9px 12px",marginBottom:7}}>
+      <div style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"9px 12px",marginBottom:7}}>
         <div style={{fontSize:"0.76rem",fontWeight:600,color:val?C.text:C.muted,marginBottom:5}}>{label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.8rem"}}>✓</span>}</div>
         {note&&<div style={{fontSize:"0.67rem",color:C.muted,marginBottom:5,fontStyle:"italic"}}>{note}</div>}
         {type==="select"&&<select value={val} onChange={e=>set(id,e.target.value)} style={inp}><option value="">— select —</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>}
@@ -523,7 +523,7 @@ function GaitModule({ data, set }) {
   return (
     <div>
       {/* ── Quick Gait Form ── */}
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"12px 14px",marginBottom:14}}>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"12px 14px",marginBottom:14}}>
         <div style={{fontWeight:800,fontSize:"0.78rem",color:C.text,marginBottom:10}}>🚶 Quick Gait Summary</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
           {quickFields.map(f=>{
@@ -634,7 +634,7 @@ function GaitModule({ data, set }) {
               const note=data[p.id+"_note"]||"";
               const hasDeviation=dev&&dev!=="None";
               return(
-                <div key={p.id} style={{background:C.surface,border:`1px solid ${hasDeviation?C.yellow+"50":C.border}`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"10px 12px",marginBottom:7}}>
+                <div key={p.id} style={{background:C.surface,border:`1px solid ${hasDeviation?C.yellow+"50":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"10px 12px",marginBottom:7}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7,gap:8}}>
                     <div>
                       <span style={{fontWeight:700,color:hasDeviation?C.yellow:C.text,fontSize:"0.83rem"}}>{p.phase}</span>
@@ -672,7 +672,7 @@ function GaitModule({ data, set }) {
         ].map(p=>{
           const val=data[p.id]||"";
           return(
-            <div key={p.id} style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"10px 12px",marginBottom:7}}>
+            <div key={p.id} style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"10px 12px",marginBottom:7}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
                 <span style={{fontSize:"0.78rem",fontWeight:600,color:val?C.text:C.muted}}>{p.label}{val&&<span style={{color:C.green,marginLeft:5,fontSize:"0.8rem"}}>✓</span>}</span>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
@@ -701,7 +701,7 @@ function GaitModule({ data, set }) {
           const isTUG=t.id==="g_tug";
           const flagged=isTUG&&parseFloat(val)>=13.5;
           return(
-            <div key={t.id} style={{background:C.surface,border:`1px solid ${flagged?C.red+"50":val?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"10px 12px",marginBottom:8}}>
+            <div key={t.id} style={{background:C.surface,border:`1px solid ${flagged?C.red+"50":val?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"10px 12px",marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:8}}>
                 <div>
                   <div style={{fontSize:"0.8rem",fontWeight:700,color:flagged?C.red:val?C.text:C.muted}}>{t.label}{flagged&&" ⚠️"}</div>
@@ -724,7 +724,7 @@ function GaitModule({ data, set }) {
         {GAIT_SCALES.map(s=>{
           const val=data[s.id]||"";
           return(
-            <div key={s.id} style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"10px 12px",marginBottom:8}}>
+            <div key={s.id} style={{background:C.surface,border:`1px solid ${val?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"10px 12px",marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5,gap:8}}>
                 <div>
                   <div style={{fontWeight:700,fontSize:"0.85rem",color:val?C.text:C.muted}}>{s.label} <span style={{fontWeight:400,fontSize:"0.82rem",color:C.muted}}>({s.full})</span></div>
@@ -748,7 +748,7 @@ function GaitModule({ data, set }) {
           const val=data[g.id]||"";
           const present=val==="Present";
           return(
-            <div key={g.id} style={{background:C.surface,border:`1.5px solid ${present?C.yellow+"60":C.border}`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"11px 13px",marginBottom:8,transition:"all 0.15s"}}>
+            <div key={g.id} style={{background:C.surface,border:`1.5px solid ${present?C.yellow+"60":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"11px 13px",marginBottom:8,transition:"all 0.15s"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:"0.85rem",color:present?C.yellow:C.text,marginBottom:3}}>{g.label}</div>
@@ -783,7 +783,7 @@ function GaitModule({ data, set }) {
           {id:"g_tight",         label:"Tight / Stiff Structures",  note:"Muscles or capsules limiting joint ROM"},
           {id:"g_joint_involved",label:"Joints Involved",           note:"Hip / Knee / Ankle / Spine / SI / Foot"},
         ].map(f=>(
-          <div key={f.id} style={{background:C.surface,border:`1px solid ${data[f.id]?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.08)",padding:"10px 12px",marginBottom:8}}>
+          <div key={f.id} style={{background:C.surface,border:`1px solid ${data[f.id]?C.accent+"25":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"10px 12px",marginBottom:8}}>
             <div style={{fontSize:"0.78rem",fontWeight:600,color:data[f.id]?C.text:C.muted,marginBottom:3}}>{f.label}</div>
             <div style={{fontSize:"0.67rem",color:C.muted,marginBottom:6,fontStyle:"italic"}}>{f.note}</div>
             <textarea value={data[f.id]||""} onChange={e=>set(f.id,e.target.value)} rows={2} placeholder="Describe..." style={{...inp,resize:"vertical",display:"block"}}/>
