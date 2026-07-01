@@ -1041,7 +1041,7 @@ function AppInner({ currentUser, onSignOut }) {
         {/* Hamburger */}
         <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation"
           style={{minHeight:34,minWidth:34,padding:"6px 8px",fontSize:"1.05rem",
-            background: PC.isDark?"rgba(124,58,237,0.15)":"rgba(124,58,237,0.08)",
+            background: PC.isDark?"rgba(124,58,237,0.15)":"rgba(0,0,0,0.03)",
             border:"none",borderRadius:8,color:PC.accent,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
           ☰
         </button>

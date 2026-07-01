@@ -5960,7 +5960,7 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
                 {openPhase[`${p.id}_${pi}`] && (
                   <div style={{ padding:"10px 12px" }}>
                     {ph.exercises.map((ex, ei) => (
-                      <div key={ei} style={{ background:"#f9f7ff", border:"1px solid #E0E0E2", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
+                      <div key={ei} style={{ background:"#F9F9F9", border:"1px solid #E0E0E2", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
                         <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#0D0D0D", marginBottom:4 }}>{ex.name}</div>
                         <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:7 }}>
                           {[["Sets",ex.sets],["Reps",ex.reps],["Hold",ex.hold+"s"],["Freq",ex.freq]].map(([l,v]) => (
@@ -5982,7 +5982,7 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
             {openTx === "tx" && (
               <div>
                 {p.treatment.map((tx, ti) => (
-                  <div key={ti} style={{ background:"#f9f7ff", border:`1px solid ${p.color}25`, borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
+                  <div key={ti} style={{ background:"#F9F9F9", border:`1px solid ${p.color}25`, borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
                     <div style={{ fontWeight:800, fontSize:"0.76rem", color:p.color, marginBottom:5 }}>🏥 {tx.name}</div>
                     <div style={{ fontSize:"0.73rem", color:"#334155", lineHeight:1.6, marginBottom:6 }}>{tx.desc}</div>
                     <div style={{ fontSize:"0.82rem", color:"#7f5af0" }}>📚 {tx.evidence}</div>
@@ -6128,7 +6128,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                                   const exId = "proto_" + ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_");
                                   const inProg = programme?.find(e=>e.id===exId);
                                   return (
-                                  <div key={ei} style={{ background:"#f9f7ff", border:`1px solid ${inProg?"rgba(0,201,122,0.4)":"#E0E0E2"}`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
+                                  <div key={ei} style={{ background:"#F9F9F9", border:`1px solid ${inProg?"rgba(0,201,122,0.4)":"#E0E0E2"}`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
                                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:3 }}>
                                       <div style={{ fontWeight:800, fontSize:"0.71rem", color:"#0D0D0D" }}>{ex.name}</div>
                                       {onAdd && <button onClick={()=>onAdd({...ex,id:exId,phase:ph.phase,target:ex.cues?.slice(0,40)||ex.name})} disabled={!!inProg} style={{ padding:"2px 9px", borderRadius:6, fontSize:"0.57rem", fontWeight:800, border:`1px solid ${inProg?"rgba(0,201,122,0.5)":"rgba(0,201,122,0.35)"}`, background:inProg?"rgba(0,201,122,0.15)":"rgba(0,201,122,0.08)", color:"#00c97a", cursor:inProg?"default":"pointer", flexShrink:0, marginLeft:7 }}>{inProg?"✓":"+ Add"}</button>}
@@ -6152,7 +6152,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                           </div>
                         ))}
                         {openTx === "tx" && kp.treatment.map((tx,ti) => (
-                          <div key={ti} style={{ background:"#f9f7ff", border:`1px solid ${kp.color}25`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
+                          <div key={ti} style={{ background:"#F9F9F9", border:`1px solid ${kp.color}25`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
                             <div style={{ fontWeight:800, fontSize:"0.69rem", color:kp.color, marginBottom:3 }}>🏥 {tx.name}</div>
                             <div style={{ fontSize:"0.66rem", color:"#334155", lineHeight:1.5, marginBottom:3 }}>{tx.desc}</div>
                             <div style={{ fontSize:"0.57rem", color:"#7f5af0" }}>📚 {tx.evidence}</div>
@@ -6189,7 +6189,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                     const added = t.exercises.filter(id => programme?.find(p=>p.id===id)).length;
                     return (
                       <div key={key} style={{ marginBottom:4 }}>
-                        <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"rgba(124,58,237,0.06)":"#f9f7ff", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
+                        <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"rgba(0,0,0,0.02)":"#F9F9F9", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
                           <div style={{ flex:1 }}>
                             <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{t.label}</div>
                             <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
@@ -6197,7 +6197,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                           <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
                         </div>
                         {isOpen && (
-                          <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"rgba(124,58,237,0.03)" }}>
+                          <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"rgba(0,0,0,0.01)" }}>
                             <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:6 }}>
                               ＋ Add {t.exercises.filter(id=>!programme?.find(p=>p.id===id)).length} new exercises
                             </button>
@@ -8256,7 +8256,7 @@ ${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div>
                 [["💊","Treatment","treatment"],["🏃","Exercise","exercise"]]
               ).map(([icon,label,key]) => (
                 <button key={key} onClick={()=>{ onNavigate(key); setOpen(false); }} style={{
-                  padding:"4px 10px",background:"rgba(124,58,237,0.06)",
+                  padding:"4px 10px",background:"rgba(0,0,0,0.02)",
                   border:"1px solid rgba(124,58,237,0.2)",borderRadius:20,
                   color:"#7c3aed",cursor:"pointer",fontSize:"0.82rem",fontWeight:700,
                 }}>
@@ -8299,7 +8299,7 @@ ${soap.P}` : "";
           copySection(full);
         }} style={{
           flex:1,padding:"7px 10px",
-          background:"rgba(124,58,237,0.08)",
+          background:"rgba(0,0,0,0.03)",
           border:"1px solid rgba(124,58,237,0.2)",
           borderRadius:8,color:"#7c3aed",
           cursor:"pointer",fontSize:"0.75rem",fontWeight:800,

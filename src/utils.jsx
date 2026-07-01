@@ -256,7 +256,7 @@ const MOBILE_CSS = `
     transition: background 0.15s, border-color 0.15s;
     min-height: 52px;
   }
-  .pm-bnav-tab.active { background: rgba(124,58,237,0.06); border-top-color: #7c3aed; }
+  .pm-bnav-tab.active { background: rgba(0,0,0,0.02); border-top-color: #7c3aed; }
   .pm-bnav-tab-icon { font-size: 1.2rem; line-height: 1; }
   .pm-bnav-tab-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2px; color: #6B6B6B; white-space: nowrap; text-transform: uppercase; }
   .pm-bnav-tab.active .pm-bnav-tab-label { color: #7c3aed; }
@@ -291,7 +291,7 @@ const MOBILE_CSS = `
     display: flex; align-items: center; gap: 10px;
     padding: 14px 16px; border-radius: 10px; cursor: pointer;
     border: 1px solid rgba(124,58,237,0.2); transition: all 0.13s;
-    background: rgba(124,58,237,0.06); width: 100%; text-align: left;
+    background: rgba(0,0,0,0.02); width: 100%; text-align: left;
     min-height: 52px; font-family: inherit; font-size: 0.92rem; font-weight: 700;
     color: #5b21b6;
   }
@@ -353,7 +353,7 @@ const MOBILE_CSS = `
 
   /* ── Light mode overrides ── */
   [data-theme="light"] .pm-bnav { background: #ffffff !important; border-top: 1px solid #E0E0E2 !important; }
-  [data-theme="light"] .pm-bnav-tab.active { background: rgba(124,58,237,0.08) !important; }
+  [data-theme="light"] .pm-bnav-tab.active { background: rgba(0,0,0,0.03) !important; }
   [data-theme="light"] .pm-bnav-tab-label { color: #6B6B6B !important; }
   [data-theme="light"] .pm-bnav-tab.active .pm-bnav-tab-label { color: #7c3aed !important; }
   [data-theme="light"] .pm-bnav-handle { background: #ffffff !important; border-color: #E0E0E2 !important; }
@@ -552,7 +552,7 @@ const THEMES = {
     card:"#ffffff",    inputBg:"#EBEBED", inputBorder:"#E0E0E2",
     navBg:"#FFFFFF",   headerBg:"#ffffff",
     shadow:"rgba(90,40,130,0.10)", isDark:false,
-    accentSoft:"rgba(124,58,237,0.08)", accentBorder:"rgba(124,58,237,0.22)",
+    accentSoft:"rgba(0,0,0,0.03)", accentBorder:"rgba(124,58,237,0.22)",
     successSoft:"rgba(5,150,105,0.07)", warnSoft:"rgba(180,83,9,0.07)",
     dangerSoft:"rgba(220,38,38,0.07)",
     blue:"#7c3aed",
@@ -566,7 +566,7 @@ const THEMES = {
     card:"#ffffff",    inputBg:"#EBEBED", inputBorder:"#E0E0E2",
     navBg:"#FFFFFF",   headerBg:"#ffffff",
     shadow:"rgba(90,40,130,0.10)", isDark:false,
-    accentSoft:"rgba(124,58,237,0.08)", accentBorder:"rgba(124,58,237,0.22)",
+    accentSoft:"rgba(0,0,0,0.03)", accentBorder:"rgba(124,58,237,0.22)",
     successSoft:"rgba(5,150,105,0.07)", warnSoft:"rgba(180,83,9,0.07)",
     dangerSoft:"rgba(220,38,38,0.07)",
     blue:"#7c3aed",
