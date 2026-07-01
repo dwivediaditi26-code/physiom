@@ -1,6 +1,6 @@
 // PhysioNeuro.jsx — ALL_TESTS, ROM, MMT, Neurological
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
+import { C, getC, RegionPickerButton, RegionChips, PatientPhotoUpload } from "./utils.jsx";
 
 
 const ALL_TESTS = {
@@ -811,6 +811,7 @@ function ROMModule({data,set,navContext={}}){
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                   <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
                     <ClinicalImage name={m.id} title={`${m.mv} — ${region}`} size={44}/>
+                    <PatientPhotoUpload itemId={m.id} label={`${m.mv} — ${region}`} data={data} set={set} size={44}/>
                     <div>
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:hasAnyVal?C.text:C.muted}}>{m.mv}</div>
                       <div className="pm-test-card-sub" style={{fontSize:"0.6rem",color:C.muted,marginTop:1}}>{m.plane} · N={m.normal}{m.unit}</div>
@@ -1440,9 +1441,12 @@ function MMTModule({data,set,navContext={}}){
             <div key={m.id} ref={el=>{ if(el) mmtHlRef.current[m.id]=el; }} style={{background:C.surface,border:`1px solid ${hasVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
               {/* Header */}
               <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:"0.82rem",color:hasVal?C.text:C.muted}}>{m.muscle}</div>
-                  <div className="pm-test-card-sub" style={{fontSize:"0.65rem",color:C.muted,marginTop:1}}>{m.nerve} · {m.root}</div>
+                <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
+                  <PatientPhotoUpload itemId={`mmt_${m.id}`} label={m.muscle} data={data} set={set} size={40}/>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:"0.82rem",color:hasVal?C.text:C.muted}}>{m.muscle}</div>
+                    <div className="pm-test-card-sub" style={{fontSize:"0.65rem",color:C.muted,marginTop:1}}>{m.nerve} · {m.root}</div>
+                  </div>
                 </div>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
                   {/* Bilateral Grading */}
@@ -1997,6 +2001,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8,flexWrap:"wrap"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <ClinicalImage name={d.id} title={`${d.level} — ${d.region}`} size={40}/>
+                    <PatientPhotoUpload itemId={d.id} label={`${d.level} — ${d.region}`} data={data} set={set} size={40}/>
                     <div>
                       <span style={{fontWeight:800,color:abnormal?C.red:C.accent,marginRight:8}}>{d.level}</span>
                       <span style={{fontSize:"0.76rem",color:C.text}}>{d.region}</span>
@@ -2049,7 +2054,8 @@ function NeurologicalModule({ data, set, navContext={} }) {
             return(
               <div key={d.id} style={{background:C.surface,border:`1px solid ${abnormal?(isCauda?C.red:C.red+"50"):C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8,flexWrap:"wrap"}}>
-                  <div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <PatientPhotoUpload itemId={d.id} label={`${d.level} — ${d.region}`} data={data} set={set} size={40}/>
                     <span style={{fontWeight:800,color:abnormal?(isCauda?C.red:C.yellow):C.a3,marginRight:8}}>{d.level}</span>
                     <span style={{fontSize:"0.76rem",color:C.text}}>{d.region}</span>
                     {isCauda&&<span style={{marginLeft:8,padding:"1px 7px",borderRadius:8,background:"rgba(255,77,109,0.2)",color:C.red,fontSize:"0.62rem",fontWeight:700}}>CAUDA EQUINA</span>}
@@ -2136,9 +2142,12 @@ function NeurologicalModule({ data, set, navContext={} }) {
             return(
               <div key={m.level} style={{background:C.surface,border:`1px solid ${abnormal?C.yellow+"60":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,gap:8}}>
-                  <div>
-                    <span style={{fontWeight:800,color:abnormal?C.yellow:C.text,fontSize:"0.88rem",marginRight:8}}>{m.level}</span>
-                    <span style={{fontSize:"0.78rem",color:C.text}}>{m.action}</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <PatientPhotoUpload itemId={safeId} label={`${m.level} — ${m.action}`} data={data} set={set} size={36}/>
+                    <div>
+                      <span style={{fontWeight:800,color:abnormal?C.yellow:C.text,fontSize:"0.88rem",marginRight:8}}>{m.level}</span>
+                      <span style={{fontSize:"0.78rem",color:C.text}}>{m.action}</span>
+                    </div>
                   </div>
                   <button type="button" onClick={()=>setExpandedLevel(expandedLevel===safeId?null:safeId)}
                     style={{padding:"2px 9px",background:"rgba(0,229,255,0.1)",border:`1px solid ${C.accent}40`,borderRadius:6,color:C.accent,fontSize:"0.62rem",fontWeight:700,cursor:"pointer",flexShrink:0}}>
@@ -2275,6 +2284,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
                         <div style={{flex:1}}>
                           <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:2}}>
                             <ClinicalImage name={r.id} title={r.label} size={36}/>
+                            <PatientPhotoUpload itemId={r.id} label={r.label} data={data} set={set} size={36}/>
                           <span style={{fontWeight:700,color:urgent?groupMeta.color:abnormal?groupMeta.color:C.text,fontSize:"0.84rem"}}>{r.label}</span>
                             {(r.umnSign)&&<span style={{padding:"1px 6px",borderRadius:8,background:"rgba(255,77,109,0.2)",color:C.red,fontSize:"0.58rem",fontWeight:700}}>UMN SIGN</span>}
                             {(grp==="Clonus")&&<span style={{padding:"1px 6px",borderRadius:8,background:"rgba(127,90,240,0.2)",color:C.purple,fontSize:"0.58rem",fontWeight:700}}>CLONUS</span>}

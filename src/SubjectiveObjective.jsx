@@ -1,6 +1,6 @@
 // SubjectiveObjective.jsx — Special Tests, Subjective, CPA, KineticChain, FMS, Fascia, Ergo
 import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
-import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
+import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips, PatientPhotoUpload } from "./utils.jsx";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -1139,13 +1139,16 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                 <div style={{ padding:"0 14px 14px" }}>
                   <div style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:14, marginBottom:12 }}>
                     {/* Clinical image — Cloudinary (falls back to SVG if not uploaded) */}
-                    <ClinicalImageCard
-                      id={t.id}
-                      title={t.label}
-                      fallbackSvg={svgEl}
-                      C={C}
-                      color={color}
-                    />
+                    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+                      <ClinicalImageCard
+                        id={t.id}
+                        title={t.label}
+                        fallbackSvg={svgEl}
+                        C={C}
+                        color={color}
+                      />
+                      <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={90}/>
+                    </div>
 
                     {/* How to + sensitivity */}
                     <div>
@@ -7222,6 +7225,7 @@ function KineticChainSection({ data, set, navContext={} }) {
                   <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
                   <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                     <SmallClinicalImg id={t.id} title={t.label} />
+                    <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={40}/>
                     <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7, flex:1 }}>{t.how}</div>
                   </div>
                 </div>
@@ -7276,6 +7280,7 @@ function KineticChainSection({ data, set, navContext={} }) {
               <div style={{ fontSize:"0.73rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:7 }}>👐 How to Perform</div>
               <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                 <SmallClinicalImg id={modalTest.id} title={modalTest.label} />
+                <PatientPhotoUpload itemId={modalTest.id} label={modalTest.label} data={data} set={set} size={40}/>
                 <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8, flex:1 }}>{modalTest.how}</div>
               </div>
             </div>
@@ -9574,6 +9579,7 @@ function LumbarFunctionalScreen({ data, set }) {
               style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", cursor: "pointer",
                 borderLeft: `4px solid ${graded ? gradeColor(g) : C.border}` }}>
               <span style={{ fontSize: "1.4rem", flexShrink: 0 }}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 800, fontSize: "0.85rem", color: C.text }}>{t.label}</div>
                 <div style={{ fontSize: "0.65rem", color: C.muted }}>{t.subtitle}</div>
@@ -10199,6 +10205,7 @@ function ShoulderFunctionalScreen({ data, set }) {
               style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", cursor:"pointer",
                 borderLeft:`4px solid ${graded?gradeColor(g):C.border}` }}>
               <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
                 <div style={{ fontSize:"0.75rem", color:C.muted }}>{t.subtitle}</div>
@@ -10821,6 +10828,7 @@ function HipFunctionalScreen({ data, set }) {
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", cursor:"pointer", borderLeft:`4px solid ${graded?gradeColor(g):C.border}` }}>
               <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
                 <div style={{ fontSize:"0.75rem", color:C.muted }}>{t.subtitle}</div>
@@ -11213,6 +11221,7 @@ function KneeFunctionalScreen({ data, set }) {
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
                 <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
@@ -11553,6 +11562,7 @@ function AnkleFunctionalScreen({ data, set }) {
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
                 <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
@@ -11870,6 +11880,7 @@ function CervicalFunctionalScreen({ data, set }) {
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
                 <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
@@ -12178,6 +12189,7 @@ function ThoracicFunctionalScreen({ data, set }) {
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
                 <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
@@ -12475,6 +12487,7 @@ function ElbowFunctionalScreen({ data, set }) {
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
                 <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
@@ -12775,6 +12788,7 @@ function WristFunctionalScreen({ data, set }) {
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
                 <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
@@ -13075,6 +13089,7 @@ function TMJFunctionalScreen({ data, set }) {
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
+              <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={36}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
                 <div style={{fontSize:"0.75rem",color:C.muted}}>{t.subtitle}</div>
@@ -13878,6 +13893,7 @@ function NKTSection({ data, set, navContext={} }) {
                   <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>👐 How to Perform</div>
                   <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                     <SmallClinicalImg id={t.id} title={t.label} />
+                    <PatientPhotoUpload itemId={t.id} label={t.label} data={data} set={set} size={40}/>
                     <div style={{ fontSize:"0.8rem", color:C.text, lineHeight:1.7, flex:1 }}>{t.how}</div>
                   </div>
                 </div>
@@ -13925,6 +13941,7 @@ function NKTSection({ data, set, navContext={} }) {
               <div style={{ fontSize:"0.75rem", fontWeight:700, color:C.yellow, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>👐 Step-by-Step Procedure</div>
               <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
                 <SmallClinicalImg id={modalTest.id} title={modalTest.label} />
+                <PatientPhotoUpload itemId={modalTest.id} label={modalTest.label} data={data} set={set} size={40}/>
                 <div style={{ background:C.s2, borderRadius:8, padding:14, fontSize:"0.82rem", color:C.text, lineHeight:1.8, flex:1 }}>{modalTest.how}</div>
               </div>
             </div>
