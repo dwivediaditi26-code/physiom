@@ -4991,22 +4991,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
         const sideColors = { L:"#3B82F6", R:"#10B981", B:"#7c3aed" };
         const sideLabels = { L:"Left", R:"Right", B:"Both" };
 
-        return (
-          <div style={{ background:PC.surface, borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
-            {/* Outer header — collapses entire picker */}
-            <div onClick={() => setRegionPickerOpen(o => !o)}
-              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 14px",
-                borderBottom: regionPickerOpen ? `1px solid ${PC.border}` : "none", cursor:"pointer", userSelect:"none" }}>
-              <span style={{ fontSize:"0.78rem", fontWeight:700, color:PC.text }}>📍 Body regions
-                {selectedRegions.length > 0 && <span style={{ marginLeft:6, fontSize:"0.65rem", fontWeight:600, color:PC.accent }}>({selectedRegions.length} selected)</span>}
-              </span>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <span style={{ fontSize:"0.68rem", background:PC.s2, border:`1px solid ${PC.border}`, borderRadius:99, padding:"2px 9px", color:PC.muted }}>{totalSlots} / 3</span>
-                <span style={{ fontSize:"0.65rem", color:PC.muted, display:"inline-block", transition:"transform 0.18s", transform: regionPickerOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▼</span>
-              </div>
-            </div>
+        return regionPickerOpen ? (
+          <div style={{ background:PC.surface, borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden",
+            boxShadow:"0 4px 16px rgba(0,0,0,0.08)" }}>
 
-            {regionPickerOpen && REGION_GROUPS.map((group, gi) => {
+            {REGION_GROUPS.map((group, gi) => {
               const groupOpen = !!openGroups[group.id];
               const groupCount = group.regions.filter(r => getActiveSide(r.id, r.lr) !== null).length;
               const isLastGroup = gi === REGION_GROUPS.length - 1;
@@ -5074,7 +5063,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             })}
 
             {/* Selected summary */}
-            {regionPickerOpen && selectedRegions.length > 0 && (
+            {selectedRegions.length > 0 && (
               <div style={{ display:"flex", flexWrap:"wrap", gap:5, padding:"7px 14px", borderTop:`1px solid ${PC.border}`, background:PC.s2 }}>
                 {selectedRegions.map(r => (
                   <span key={r} style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:"0.68rem", fontWeight:700, padding:"2px 8px", borderRadius:99,
@@ -5086,7 +5075,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               </div>
             )}
           </div>
-        );
+        ) : null;
       })()}
 
       {/* ── Progress bar — grouped status pills ── */}
@@ -5293,14 +5282,32 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             const allKeys = Object.keys(sections);
 
             // Region keys per selected region
-            const regionGroups = selectedRegions.map(r => {
-              const mod = REG_MOD_S[r];
-              if (!mod) return { label: r, col: RC_S[r]||PC.accent, keys: [] };
-              return {
-                label: r,
-                col: RC_S[r] || PC.accent,
-                keys: Object.keys(mod.sections).filter(k => allKeys.includes(k)),
-              };
+            // Map picker region keys → REG_MOD_S canonical keys
+            const REGION_MOD_KEY = {
+              "Cervical (L)":"Cervical spine","Cervical (R)":"Cervical spine",
+              "Thoracic (L)":"Thoracic spine","Thoracic (R)":"Thoracic spine",
+              "Lumbar/SI (L)":"Lumbar / SI","Lumbar/SI (R)":"Lumbar / SI",
+              "Elbow (L)":"Elbow/Wrist/Hand","Elbow (R)":"Elbow/Wrist/Hand",
+              "Wrist/Hand (L)":"Elbow/Wrist/Hand","Wrist/Hand (R)":"Elbow/Wrist/Hand",
+              "Hip/Groin (L)":"Hip / Groin","Hip/Groin (R)":"Hip / Groin",
+              "Ankle/Foot (L)":"Ankle / Foot","Ankle/Foot (R)":"Ankle / Foot",
+            };
+            const seenModKeys = new Map();
+            const regionGroups = [];
+            selectedRegions.forEach(r => {
+              const modKey = REGION_MOD_KEY[r] || r;
+              const mod = REG_MOD_S[modKey];
+              if (!mod) { regionGroups.push({ label: r, col: RC_S[r]||PC.accent, keys: [] }); return; }
+              if (seenModKeys.has(modKey)) {
+                // Already have this group — append side label if needed
+                const g = seenModKeys.get(modKey);
+                const side = r.match(/\([LR]\)/)?.[0];
+                if (side && !g.label.includes(side)) g.label = g.label.replace(/ \([LR]\)/,"") + " (L+R)";
+                return;
+              }
+              const group = { label: r, col: RC_S[r]||PC.accent, keys: Object.keys(mod.sections).filter(k => allKeys.includes(k)) };
+              seenModKeys.set(modKey, group);
+              regionGroups.push(group);
             });
 
             // Gather remaining keys that don't fit above buckets
