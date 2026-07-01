@@ -1489,7 +1489,7 @@ function MMTModule({data,set,navContext={}}){
                   <div style={{minWidth:0,paddingTop:1}}>
                     {(()=>{ const {title,sub}=parseMuscleName(m.muscle); return (
                       <>
-                        <div style={{fontWeight:700,fontSize:"0.94rem",color:hasVal?C.text:C.muted,overflowWrap:"break-word"}}>{title}</div>
+                        <div style={{fontWeight:700,fontSize:"0.94rem",color:C.text,overflowWrap:"break-word"}}>{title}</div>
                         {sub && <div style={{fontSize:"0.76rem",color:C.muted,marginTop:2,overflowWrap:"break-word"}}>{sub}</div>}
                       </>
                     );})()}
