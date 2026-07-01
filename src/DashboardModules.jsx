@@ -510,10 +510,10 @@ function HomeModule({ onNav }) {
             <button key={i} onClick={()=>onNav(f.nav)} style={{
               background:"#fff",border:`1px solid #E0E0E2`,borderRadius:14,padding:"18px 16px",
               textAlign:"left",cursor:"pointer",transition:"all 0.18s",
-              boxShadow:"0 2px 10px rgba(0,0,0,0.02)",
+              boxShadow:"0 2px 10px transparent",
             }}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=f.color;e.currentTarget.style.boxShadow=`0 4px 20px rgba(124,58,237,0.14)`;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0E0E2";e.currentTarget.style.boxShadow="0 2px 10px rgba(0,0,0,0.02)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0E0E2";e.currentTarget.style.boxShadow="0 2px 10px transparent";}}
             >
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
                 <div style={{width:36,height:36,background:`${f.color}14`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>

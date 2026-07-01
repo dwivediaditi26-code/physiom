@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getC } from "./utils.jsx";
 
-const A="#7c3aed",S2="#EBEBED",BD="#E0E0E2",TX="#0D0D0D",MU="#6B6B6B";
+const A="#7c3aed",S2="#FFFFFF",BD="#E0E0E2",TX="#0D0D0D",MU="#6B6B6B";
 
 // ─── HINDI TRANSLATIONS ───────────────────────────────────────────────────────
 const HI = {
@@ -292,7 +292,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
       </div>
 
       {/* Progress */}
-      <div style={{background:patientMode?"#161625":"#EBEBED",padding:"8px 16px"}}>
+      <div style={{background:patientMode?"#161625":"#FFFFFF",padding:"8px 16px"}}>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.65rem",
           color:patientMode?"#6b7280":MU,marginBottom:4}}>
           <span>Progress</span><span>{pct}%</span>

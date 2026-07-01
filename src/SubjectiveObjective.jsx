@@ -7,7 +7,7 @@ const TEST_SVG = {
   neer: (
     <svg viewBox="0 0 120 140" width="100%" height="100">
       <rect x="45" y="0" width="20" height="50" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
-      <ellipse cx="55" cy="55" rx="18" ry="18" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <ellipse cx="55" cy="55" rx="18" ry="18" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="38" y="68" width="14" height="55" rx="6" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5"/>
       <path d="M55,55 L30,30" stroke="#ff4d6d" strokeWidth="2" strokeDasharray="4,2"/>
       <text x="5" y="28" fontSize="9" fill="#ff4d6d">Force</text>
@@ -20,7 +20,7 @@ const TEST_SVG = {
   hawkins: (
     <svg viewBox="0 0 120 140" width="100%" height="100">
       <rect x="45" y="0" width="20" height="45" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
-      <ellipse cx="55" cy="50" rx="18" ry="18" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <ellipse cx="55" cy="50" rx="18" ry="18" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="25" y="52" width="55" height="12" rx="6" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5"/>
       <rect x="18" y="60" width="12" height="50" rx="6" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5"/>
       <path d="M80,58 Q90,58 90,68 Q90,78 80,78" stroke="#ff4d6d" strokeWidth="2" fill="none"/>
@@ -31,7 +31,7 @@ const TEST_SVG = {
   empty_can: (
     <svg viewBox="0 0 120 140" width="100%" height="100">
       <rect x="45" y="0" width="18" height="42" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
-      <ellipse cx="54" cy="47" rx="17" ry="17" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <ellipse cx="54" cy="47" rx="17" ry="17" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="22" y="46" width="60" height="11" rx="5" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(-30,54,47)"/>
       <rect x="15" y="63" width="11" height="50" rx="5" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(-30,54,47)"/>
       <path d="M70,35 L85,28" stroke="#ff4d6d" strokeWidth="2.5" markerEnd="url(#arr)"/>
@@ -43,7 +43,7 @@ const TEST_SVG = {
     <svg viewBox="0 0 140 130" width="100%" height="100">
       <rect x="10" y="20" width="50" height="22" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
       <rect x="70" y="20" width="55" height="22" rx="8" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5"/>
-      <ellipse cx="65" cy="31" rx="14" ry="14" fill="#E4E4E6" stroke="#b45309" strokeWidth="1.5"/>
+      <ellipse cx="65" cy="31" rx="14" ry="14" fill="#FFFFFF" stroke="#b45309" strokeWidth="1.5"/>
       <path d="M58,25 L72,38" stroke="#ff4d6d" strokeWidth="1.5"/>
       <path d="M90,65 L90,55" stroke="#00e5ff" strokeWidth="3" markerEnd="url(#arr)"/>
       <text x="92" y="62" fontSize="9" fill="#00e5ff">Ant</text>
@@ -59,8 +59,8 @@ const TEST_SVG = {
   ),
   slr: (
     <svg viewBox="0 0 140 130" width="100%" height="100">
-      <rect x="5" y="55" width="130" height="20" rx="6" fill="#E4E4E6" stroke="#E0E0E2"/>
-      <ellipse cx="20" cy="62" rx="14" ry="10" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <rect x="5" y="55" width="130" height="20" rx="6" fill="#FFFFFF" stroke="#E0E0E2"/>
+      <ellipse cx="20" cy="62" rx="14" ry="10" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="28" y="48" width="18" height="55" rx="7" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5" transform="rotate(-45,37,62)"/>
       <rect x="28" y="65" width="18" height="55" rx="7" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5"/>
       <path d="M42,22 L42,10" stroke="#ff4d6d" strokeWidth="2" markerEnd="url(#arr)"/>
@@ -71,7 +71,7 @@ const TEST_SVG = {
   ),
   spurling: (
     <svg viewBox="0 0 120 140" width="100%" height="100">
-      <ellipse cx="60" cy="30" rx="22" ry="25" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <ellipse cx="60" cy="30" rx="22" ry="25" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="50" y="53" width="20" height="30" rx="6" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5"/>
       <path d="M30,15 Q25,30 35,45" stroke="#ff4d6d" strokeWidth="1.5" strokeDasharray="3,2" fill="none"/>
       <path d="M60,0 L60,12" stroke="#ff4d6d" strokeWidth="3" markerEnd="url(#arr)"/>
@@ -84,7 +84,7 @@ const TEST_SVG = {
   mcmurray: (
     <svg viewBox="0 0 140 130" width="100%" height="100">
       <rect x="15" y="5" width="22" height="55" rx="9" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
-      <ellipse cx="26" cy="62" rx="16" ry="16" fill="#E4E4E6" stroke="#b45309" strokeWidth="1.5"/>
+      <ellipse cx="26" cy="62" rx="16" ry="16" fill="#FFFFFF" stroke="#b45309" strokeWidth="1.5"/>
       <rect x="14" y="76" width="22" height="50" rx="9" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(50,26,62)"/>
       <path d="M42,62 Q55,50 55,65 Q55,80 42,80" stroke="#ff4d6d" strokeWidth="2" fill="none"/>
       <text x="58" y="65" fontSize="9" fill="#ff4d6d">ER+</text>
@@ -95,8 +95,8 @@ const TEST_SVG = {
   ),
   thomas_test: (
     <svg viewBox="0 0 140 130" width="100%" height="100">
-      <rect x="5" y="60" width="130" height="20" rx="4" fill="#E4E4E6" stroke="#E0E0E2"/>
-      <ellipse cx="20" cy="65" rx="14" ry="11" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <rect x="5" y="60" width="130" height="20" rx="4" fill="#FFFFFF" stroke="#E0E0E2"/>
+      <ellipse cx="20" cy="65" rx="14" ry="11" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="28" y="55" width="18" height="22" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5" transform="rotate(-80,37,65)"/>
       <rect x="50" y="55" width="18" height="55" rx="8" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(20,59,65)"/>
       <path d="M70,52 L82,45" stroke="#ff4d6d" strokeWidth="2"/>
@@ -107,9 +107,9 @@ const TEST_SVG = {
   ),
   slump: (
     <svg viewBox="0 0 120 140" width="100%" height="100">
-      <ellipse cx="60" cy="20" rx="18" ry="18" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <ellipse cx="60" cy="20" rx="18" ry="18" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <path d="M60,36 Q40,55 42,90" stroke="#7f5af0" strokeWidth="4" fill="none" strokeLinecap="round"/>
-      <rect x="30" y="90" width="60" height="15" rx="5" fill="#E4E4E6" stroke="#E0E0E2"/>
+      <rect x="30" y="90" width="60" height="15" rx="5" fill="#FFFFFF" stroke="#E0E0E2"/>
       <rect x="40" y="100" width="15" height="35" rx="6" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
       <rect x="65" y="100" width="15" height="35" rx="6" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5"/>
       <path d="M55,130 L55,118" stroke="#ff4d6d" strokeWidth="2"/>
@@ -120,7 +120,7 @@ const TEST_SVG = {
   ),
   trendelenburg: (
     <svg viewBox="0 0 120 140" width="100%" height="100">
-      <ellipse cx="55" cy="18" rx="18" ry="18" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <ellipse cx="55" cy="18" rx="18" ry="18" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="40" y="34" width="28" height="35" rx="8" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5"/>
       <rect x="25" y="65" width="22" height="45" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
       <rect x="65" y="75" width="22" height="35" rx="8" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(15,76,85)"/>
@@ -133,7 +133,7 @@ const TEST_SVG = {
   apprehension: (
     <svg viewBox="0 0 120 140" width="100%" height="100">
       <rect x="42" y="0" width="22" height="45" rx="9" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
-      <ellipse cx="53" cy="50" rx="18" ry="18" fill="#E4E4E6" stroke="#b45309" strokeWidth="1.5"/>
+      <ellipse cx="53" cy="50" rx="18" ry="18" fill="#FFFFFF" stroke="#b45309" strokeWidth="1.5"/>
       <rect x="30" y="52" width="55" height="13" rx="6" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(-35,53,50)"/>
       <rect x="18" y="65" width="13" height="50" rx="6" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(-35,53,50)"/>
       <path d="M45,42 L28,30" stroke="#ff4d6d" strokeWidth="2.5" markerEnd="url(#arr)"/>
@@ -155,9 +155,9 @@ const TEST_SVG = {
   ),
   thompson: (
     <svg viewBox="0 0 140 130" width="100%" height="100">
-      <rect x="5" y="5" width="130" height="20" rx="5" fill="#E4E4E6" stroke="#E0E0E2"/>
+      <rect x="5" y="5" width="130" height="20" rx="5" fill="#FFFFFF" stroke="#E0E0E2"/>
       <rect x="45" y="22" width="50" height="70" rx="12" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
-      <ellipse cx="70" cy="92" rx="22" ry="10" fill="#E4E4E6" stroke="#9333ea" strokeWidth="1.5"/>
+      <ellipse cx="70" cy="92" rx="22" ry="10" fill="#FFFFFF" stroke="#9333ea" strokeWidth="1.5"/>
       <path d="M35,55 Q40,55 40,65 Q40,70 35,70" stroke="#ff4d6d" strokeWidth="2.5" fill="none"/>
       <text x="5" y="65" fontSize="9" fill="#ff4d6d">Squeeze</text>
       <path d="M100,92 Q115,92 115,105" stroke="#00e5ff" strokeWidth="2" fill="none" strokeDasharray="3,2"/>
@@ -168,18 +168,18 @@ const TEST_SVG = {
   windlass: (
     <svg viewBox="0 0 140 120" width="100%" height="100">
       <rect x="10" y="55" width="120" height="18" rx="5" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5"/>
-      <ellipse cx="20" cy="63" rx="14" ry="9" fill="#E4E4E6" stroke="#9333ea" strokeWidth="1.5"/>
+      <ellipse cx="20" cy="63" rx="14" ry="9" fill="#FFFFFF" stroke="#9333ea" strokeWidth="1.5"/>
       <rect x="28" y="55" width="70" height="12" rx="4" fill="#192435" stroke="#ffb300" strokeWidth="1"/>
       <path d="M95,55 Q105,45 110,35" stroke="#ff4d6d" strokeWidth="2.5" fill="none"/>
-      <circle cx="110" cy="32" r="8" fill="#E4E4E6" stroke="#dc2626" strokeWidth="1.5"/>
+      <circle cx="110" cy="32" r="8" fill="#FFFFFF" stroke="#dc2626" strokeWidth="1.5"/>
       <text x="5" y="102" fontSize="8" fill="#94a3b8">Great toe extension</text>
       <text x="5" y="112" fontSize="8" fill="#ff4d6d">+ve = plantar fascia pain</text>
     </svg>
   ),
   ober: (
     <svg viewBox="0 0 140 130" width="100%" height="100">
-      <rect x="5" y="55" width="130" height="20" rx="5" fill="#E4E4E6" stroke="#E0E0E2"/>
-      <ellipse cx="22" cy="62" rx="16" ry="12" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <rect x="5" y="55" width="130" height="20" rx="5" fill="#FFFFFF" stroke="#E0E0E2"/>
+      <ellipse cx="22" cy="62" rx="16" ry="12" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="32" y="48" width="20" height="60" rx="8" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(20,42,62)"/>
       <rect x="52" y="48" width="20" height="60" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5" transform="rotate(-10,62,62)"/>
       <path d="M62,30 L62,18" stroke="#ff4d6d" strokeWidth="2" markerEnd="url(#arr)"/>
@@ -191,8 +191,8 @@ const TEST_SVG = {
   ),
   fadir: (
     <svg viewBox="0 0 140 130" width="100%" height="100">
-      <rect x="5" y="60" width="130" height="20" rx="6" fill="#E4E4E6" stroke="#E0E0E2"/>
-      <ellipse cx="20" cy="67" rx="14" ry="11" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <rect x="5" y="60" width="130" height="20" rx="6" fill="#FFFFFF" stroke="#E0E0E2"/>
+      <ellipse cx="20" cy="67" rx="14" ry="11" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="28" y="42" width="20" height="55" rx="8" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(-50,38,67)"/>
       <rect x="15" y="58" width="20" height="45" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5" transform="rotate(-80,25,67)"/>
       <text x="65" y="45" fontSize="8" fill="#ff4d6d">Flex+Add+IR</text>
@@ -203,8 +203,8 @@ const TEST_SVG = {
   ),
   faber: (
     <svg viewBox="0 0 140 130" width="100%" height="100">
-      <rect x="5" y="60" width="130" height="20" rx="6" fill="#E4E4E6" stroke="#E0E0E2"/>
-      <ellipse cx="20" cy="67" rx="14" ry="11" fill="#E4E4E6" stroke="#7c3aed" strokeWidth="1.5"/>
+      <rect x="5" y="60" width="130" height="20" rx="6" fill="#FFFFFF" stroke="#E0E0E2"/>
+      <ellipse cx="20" cy="67" rx="14" ry="11" fill="#FFFFFF" stroke="#7c3aed" strokeWidth="1.5"/>
       <rect x="28" y="50" width="18" height="50" rx="8" fill="#1a2d45" stroke="#7f5af0" strokeWidth="1.5" transform="rotate(-45,37,67)"/>
       <rect x="18" y="65" width="18" height="45" rx="8" fill="#1a2d45" stroke="#00e5ff" strokeWidth="1.5" transform="rotate(-80,27,67)"/>
       <path d="M30,40 Q50,35 60,45" stroke="#ffb300" strokeWidth="1.5" fill="none"/>
@@ -1739,7 +1739,7 @@ function CyriaxModule({ data, set, navContext={} }) {
   const v = (id) => data[prefix + id] || "";
   const sv = (id, val) => set(prefix + id, val);
 
-  const selectStyle = { width:"100%", background:"#EBEBED", border:"1px solid #E0E0E2", borderRadius:8, color:"#0D0D0D", padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit", WebkitAppearance:"none", appearance:"none" };
+  const selectStyle = { width:"100%", background:"#FFFFFF", border:"1px solid #E0E0E2", borderRadius:8, color:"#0D0D0D", padding:"7px 10px", fontSize:"0.78rem", outline:"none", fontFamily:"inherit", WebkitAppearance:"none", appearance:"none" };
   const labelStyle = { fontSize:"0.82rem", fontWeight:700, color:"#6B6B6B", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.5px" };
   const boxStyle = { background:"#ffffff", border:"1px solid #E0E0E2", borderRadius:10, padding:13, marginBottom:10 };
   const RESULT_OPTIONS = ["","Strong & Painless","Strong & Painful","Weak & Painless","Weak & Painful"];
@@ -4303,10 +4303,10 @@ const FIELD_HELP = {
 
 function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const PC = typeof getC === "function" ? getC() : {
-    surface:"#ffffff", s2:"#EBEBED", s3:"#E4E4E6", border:"#E0E0E2",
+    surface:"#ffffff", s2:"#FFFFFF", s3:"#FFFFFF", border:"#E0E0E2",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#0D0D0D",
     muted:"#6B6B6B", red:"#dc2626", yellow:"#b45309", green:"#059669",
-    isDark:false, inputBg:"#EBEBED", inputBorder:"#E0E0E2",
+    isDark:false, inputBg:"#FFFFFF", inputBorder:"#E0E0E2",
   };
 
   const [activeSection, setActiveSection] = useState("complaint");
@@ -8932,7 +8932,7 @@ function FMSCameraPanel({onClose}){
   function flipCam(){cleanup();setCamFacing(f=>f==="user"?"environment":"user");setTimeout(initCam,300);}
 
   return(
-    <div style={{background:"#EBEBED",borderRadius:12,overflow:"hidden",marginBottom:12,position:"relative"}}>
+    <div style={{background:"#FFFFFF",borderRadius:12,overflow:"hidden",marginBottom:12,position:"relative"}}>
       <div style={{position:"relative",aspectRatio:"4/3"}}>
         <video ref={videoRef} style={{width:"100%",height:"100%",objectFit:"cover",transform:"scaleX(-1)"}} playsInline muted autoPlay/>
         <canvas ref={canvasRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",transform:"scaleX(-1)",pointerEvents:"none"}}/>
@@ -13508,8 +13508,8 @@ function FasciaBodyMap({ selected, onSelect }) {
       <div style={{display:"flex",gap:16,flexWrap:"wrap",alignItems:"flex-start"}}>
         <svg width="300" height="410" viewBox="0 0 300 410" style={{display:"block",flexShrink:0}}>
           {bodyParts.map((p,i)=>p.t==="ellipse"
-            ?<ellipse key={i} cx={p.cx} cy={p.cy} rx={p.rx} ry={p.ry} fill="#E4E4E6" stroke="#E0E0E2" strokeWidth="1.5"/>
-            :<rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} rx={p.rx||0} fill="#E4E4E6" stroke="#E0E0E2" strokeWidth="1.5"/>
+            ?<ellipse key={i} cx={p.cx} cy={p.cy} rx={p.rx} ry={p.ry} fill="#FFFFFF" stroke="#E0E0E2" strokeWidth="1.5"/>
+            :<rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} rx={p.rx||0} fill="#FFFFFF" stroke="#E0E0E2" strokeWidth="1.5"/>
           )}
           {Object.entries(lines).map(([key,ln])=>(
             <g key={key} style={{cursor:"pointer"}} onClick={()=>onSelect(selected===key?null:key)}>

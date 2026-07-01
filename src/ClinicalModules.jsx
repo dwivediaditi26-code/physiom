@@ -1212,7 +1212,7 @@ function OMSlider({id, min=0, max=10, step=1, value, onChange, showVal=true}){
     <div style={{display:"flex",alignItems:"center",gap:10}}>
       <span style={{fontSize:"0.75rem",color:"#6B6B6B",minWidth:14}}>{min}</span>
       <div style={{flex:1,position:"relative",height:24,display:"flex",alignItems:"center"}}>
-        <div style={{position:"absolute",width:"100%",height:4,background:"#E4E4E6",borderRadius:2}}/>
+        <div style={{position:"absolute",width:"100%",height:4,background:"#FFFFFF",borderRadius:2}}/>
         <div style={{position:"absolute",width:`${pct}%`,height:4,background:col,borderRadius:2,transition:"width 0.15s"}}/>
         <input type="range" min={min} max={max} step={step} value={value??min}
           onChange={e=>onChange(e.target.value)}
@@ -1256,7 +1256,7 @@ function ScoreGauge({ score, maxScore, color, label, mcid }) {
         <span style={{ fontSize:"0.82rem", color:"#6B6B6B" }}>{label}</span>
         <span style={{ fontSize:"1rem", fontWeight:900, color, fontFamily:"monospace" }}>{score}<span style={{ fontSize:"0.8rem", color:"#6B6B6B", fontWeight:400 }}>/{maxScore}</span></span>
       </div>
-      <div style={{ height:8, background:"#E4E4E6", borderRadius:4, overflow:"hidden", position:"relative" }}>
+      <div style={{ height:8, background:"#FFFFFF", borderRadius:4, overflow:"hidden", position:"relative" }}>
         <div style={{ height:"100%", width:`${pct}%`, background:`linear-gradient(90deg,${color}99,${color})`, borderRadius:4, transition:"width 0.6s cubic-bezier(0.34,1.56,0.64,1)" }}/>
         {mcid && maxScore && (
           <div style={{ position:"absolute", top:0, left:`${Math.min(100,(mcid/maxScore)*100)}%`, width:2, height:"100%", background:"rgba(255,255,255,0.3)" }} title={`MCID: ${mcid}`}/>
@@ -1421,12 +1421,12 @@ function OutcomeMeasuresModule() {
             <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#00e5ff", fontFamily:"monospace", lineHeight:1 }}>{completedCount}</div>
             <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"1px" }}>Completed</div>
           </div>
-          <div style={{ width:1, height:32, background:"#E4E4E6" }}/>
+          <div style={{ width:1, height:32, background:"#FFFFFF" }}/>
           <div>
             <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#7f5af0", fontFamily:"monospace", lineHeight:1 }}>{sessions.length}</div>
             <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"1px" }}>Sessions</div>
           </div>
-          <div style={{ width:1, height:32, background:"#E4E4E6" }}/>
+          <div style={{ width:1, height:32, background:"#FFFFFF" }}/>
           <div>
             <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#ffb300", fontFamily:"monospace", lineHeight:1 }}>{Object.keys(OUTCOME_DB).length}</div>
             <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"1px" }}>Available</div>
@@ -1488,7 +1488,7 @@ function OutcomeMeasuresModule() {
                       {/* Session dots */}
                       <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginTop:6 }}>
                         {vals.map((v, i) => (
-                          <span key={i} style={{ fontSize:"0.75rem", padding:"1px 5px", background:"#E4E4E6", borderRadius:4, color:"#6B6B6B" }}>S{i + 1}: {v}{m.unit}</span>
+                          <span key={i} style={{ fontSize:"0.75rem", padding:"1px 5px", background:"#FFFFFF", borderRadius:4, color:"#6B6B6B" }}>S{i + 1}: {v}{m.unit}</span>
                         ))}
                       </div>
                     </div>
@@ -1562,7 +1562,7 @@ function OutcomeMeasuresModule() {
               )}
               {/* Score gauge */}
               {score !== null && typeof score !== "object" && m.maxScore && (
-                <div style={{ height:4, background:"#E4E4E6", borderRadius:2, overflow:"hidden", marginBottom:4 }}>
+                <div style={{ height:4, background:"#FFFFFF", borderRadius:2, overflow:"hidden", marginBottom:4 }}>
                   <div style={{ height:"100%", width:`${Math.min(100,(score/m.maxScore)*100)}%`, background: interp?.color||col, borderRadius:2, transition:"width 0.5s" }}/>
                 </div>
               )}
@@ -5960,7 +5960,7 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
                 {openPhase[`${p.id}_${pi}`] && (
                   <div style={{ padding:"10px 12px" }}>
                     {ph.exercises.map((ex, ei) => (
-                      <div key={ei} style={{ background:"#F9F9F9", border:"1px solid #E0E0E2", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
+                      <div key={ei} style={{ background:"#FFFFFF", border:"1px solid #E0E0E2", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
                         <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#0D0D0D", marginBottom:4 }}>{ex.name}</div>
                         <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:7 }}>
                           {[["Sets",ex.sets],["Reps",ex.reps],["Hold",ex.hold+"s"],["Freq",ex.freq]].map(([l,v]) => (
@@ -5982,7 +5982,7 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
             {openTx === "tx" && (
               <div>
                 {p.treatment.map((tx, ti) => (
-                  <div key={ti} style={{ background:"#F9F9F9", border:`1px solid ${p.color}25`, borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
+                  <div key={ti} style={{ background:"#FFFFFF", border:`1px solid ${p.color}25`, borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
                     <div style={{ fontWeight:800, fontSize:"0.76rem", color:p.color, marginBottom:5 }}>🏥 {tx.name}</div>
                     <div style={{ fontSize:"0.73rem", color:"#334155", lineHeight:1.6, marginBottom:6 }}>{tx.desc}</div>
                     <div style={{ fontSize:"0.82rem", color:"#7f5af0" }}>📚 {tx.evidence}</div>
@@ -6128,7 +6128,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                                   const exId = "proto_" + ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_");
                                   const inProg = programme?.find(e=>e.id===exId);
                                   return (
-                                  <div key={ei} style={{ background:"#F9F9F9", border:`1px solid ${inProg?"rgba(0,201,122,0.4)":"#E0E0E2"}`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
+                                  <div key={ei} style={{ background:"#FFFFFF", border:`1px solid ${inProg?"rgba(0,201,122,0.4)":"#E0E0E2"}`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
                                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:3 }}>
                                       <div style={{ fontWeight:800, fontSize:"0.71rem", color:"#0D0D0D" }}>{ex.name}</div>
                                       {onAdd && <button onClick={()=>onAdd({...ex,id:exId,phase:ph.phase,target:ex.cues?.slice(0,40)||ex.name})} disabled={!!inProg} style={{ padding:"2px 9px", borderRadius:6, fontSize:"0.57rem", fontWeight:800, border:`1px solid ${inProg?"rgba(0,201,122,0.5)":"rgba(0,201,122,0.35)"}`, background:inProg?"rgba(0,201,122,0.15)":"rgba(0,201,122,0.08)", color:"#00c97a", cursor:inProg?"default":"pointer", flexShrink:0, marginLeft:7 }}>{inProg?"✓":"+ Add"}</button>}
@@ -6152,7 +6152,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                           </div>
                         ))}
                         {openTx === "tx" && kp.treatment.map((tx,ti) => (
-                          <div key={ti} style={{ background:"#F9F9F9", border:`1px solid ${kp.color}25`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
+                          <div key={ti} style={{ background:"#FFFFFF", border:`1px solid ${kp.color}25`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
                             <div style={{ fontWeight:800, fontSize:"0.69rem", color:kp.color, marginBottom:3 }}>🏥 {tx.name}</div>
                             <div style={{ fontSize:"0.66rem", color:"#334155", lineHeight:1.5, marginBottom:3 }}>{tx.desc}</div>
                             <div style={{ fontSize:"0.57rem", color:"#7f5af0" }}>📚 {tx.evidence}</div>
@@ -6189,7 +6189,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                     const added = t.exercises.filter(id => programme?.find(p=>p.id===id)).length;
                     return (
                       <div key={key} style={{ marginBottom:4 }}>
-                        <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"rgba(0,0,0,0.02)":"#F9F9F9", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
+                        <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
                           <div style={{ flex:1 }}>
                             <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{t.label}</div>
                             <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
@@ -6197,7 +6197,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                           <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
                         </div>
                         {isOpen && (
-                          <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"rgba(0,0,0,0.01)" }}>
+                          <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"transparent" }}>
                             <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:6 }}>
                               ＋ Add {t.exercises.filter(id=>!programme?.find(p=>p.id===id)).length} new exercises
                             </button>
@@ -8256,7 +8256,7 @@ ${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div>
                 [["💊","Treatment","treatment"],["🏃","Exercise","exercise"]]
               ).map(([icon,label,key]) => (
                 <button key={key} onClick={()=>{ onNavigate(key); setOpen(false); }} style={{
-                  padding:"4px 10px",background:"rgba(0,0,0,0.02)",
+                  padding:"4px 10px",background:"transparent",
                   border:"1px solid rgba(124,58,237,0.2)",borderRadius:20,
                   color:"#7c3aed",cursor:"pointer",fontSize:"0.82rem",fontWeight:700,
                 }}>
@@ -8299,7 +8299,7 @@ ${soap.P}` : "";
           copySection(full);
         }} style={{
           flex:1,padding:"7px 10px",
-          background:"rgba(0,0,0,0.03)",
+          background:"transparent",
           border:"1px solid rgba(124,58,237,0.2)",
           borderRadius:8,color:"#7c3aed",
           cursor:"pointer",fontSize:"0.75rem",fontWeight:800,
@@ -8363,7 +8363,7 @@ const OBS_REGION_PRIORITY = {
 
 function ObservationModule({ data, set }) {
   const PC = typeof getC === "function" ? getC() : {
-    surface:"#fff", s2:"#FFFFFF", s3:"#E4E4E6", border:"#E0E0E2",
+    surface:"#fff", s2:"#FFFFFF", s3:"#FFFFFF", border:"#E0E0E2",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#0D0D0D",
     muted:"#6B6B6B", red:"#dc2626", yellow:"#b45309", green:"#059669",
   };
