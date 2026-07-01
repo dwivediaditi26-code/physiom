@@ -9484,6 +9484,7 @@ function LumbarFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   // Persist to patient data
   useEffect(() => {
@@ -9541,8 +9542,10 @@ function LumbarFunctionalScreen({ data, set }) {
             <div style={{ fontSize: "1.2rem", fontWeight: 900, color: C.accent }}>{completedCount}/5</div>
             <div style={{ fontSize: "0.58rem", color: C.muted }}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        {hdrOpen && (
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
           {LUMBAR_TESTS.map(t => {
             const g = grades[t.id];
             const done = g !== undefined;
@@ -9557,6 +9560,7 @@ function LumbarFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {/* Test cards */}
@@ -10122,6 +10126,7 @@ function ShoulderFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   useEffect(() => {
     const saved = data["sfs_data"];
@@ -10167,8 +10172,10 @@ function ShoulderFunctionalScreen({ data, set }) {
             <div style={{ fontSize:"1.2rem", fontWeight:900, color:"#0891b2" }}>{completedCount}/5</div>
             <div style={{ fontSize:"0.78rem", color:C.muted }}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
-        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+        {hdrOpen && (
+            <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
           {SHOULDER_TESTS.map(t => {
             const g = grades[t.id];
             const done = g !== undefined;
@@ -10183,6 +10190,7 @@ function ShoulderFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {/* Test cards */}
@@ -10760,6 +10768,7 @@ function HipFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   useEffect(() => {
     const saved = data["hfs_data"];
@@ -10794,8 +10803,10 @@ function HipFunctionalScreen({ data, set }) {
             <div style={{ fontSize:"1.2rem", fontWeight:900, color:"#d946ef" }}>{completedCount}/5</div>
             <div style={{ fontSize:"0.78rem", color:C.muted }}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
-        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+        {hdrOpen && (
+            <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
           {HIP_TESTS.map(t => {
             const g = grades[t.id]; const done = g !== undefined;
             return (
@@ -10809,6 +10820,7 @@ function HipFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {HIP_TESTS.map(t => {
@@ -11152,6 +11164,7 @@ function KneeFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   useEffect(() => {
     const saved = data["kfs_data"];
@@ -11186,8 +11199,10 @@ function KneeFunctionalScreen({ data, set }) {
             <div style={{fontSize:"1.2rem",fontWeight:900,color:"#d97706"}}>{completedCount}/5</div>
             <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        {hdrOpen && (
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {KNEE_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
@@ -11201,6 +11216,7 @@ function KneeFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {KNEE_TESTS.map(t=>{
@@ -11492,6 +11508,7 @@ function AnkleFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   useEffect(() => {
     const saved = data["afs_data"];
@@ -11526,8 +11543,10 @@ function AnkleFunctionalScreen({ data, set }) {
             <div style={{fontSize:"1.2rem",fontWeight:900,color:"#0d9488"}}>{completedCount}/5</div>
             <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        {hdrOpen && (
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {ANKLE_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
@@ -11541,6 +11560,7 @@ function AnkleFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {ANKLE_TESTS.map(t=>{
@@ -11805,6 +11825,7 @@ function CervicalFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   useEffect(() => {
     const saved = data["cfs_data"];
@@ -11840,11 +11861,13 @@ function CervicalFunctionalScreen({ data, set }) {
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
             <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
         <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
           <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:700}}>⚠ Safety first: Complete VBI screen (ULNT test 4) before any cervical manipulation. If 5Ds present — do not manipulate.</div>
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        {hdrOpen && (
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {CERVICAL_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
@@ -11858,6 +11881,7 @@ function CervicalFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {CERVICAL_TESTS.map(t=>{
@@ -12122,6 +12146,7 @@ function ThoracicFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   useEffect(() => {
     const saved = data["thfs_data"];
@@ -12152,8 +12177,10 @@ function ThoracicFunctionalScreen({ data, set }) {
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
             <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        {hdrOpen && (
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {THORACIC_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
@@ -12167,6 +12194,7 @@ function ThoracicFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {THORACIC_TESTS.map(t=>{
@@ -12419,6 +12447,7 @@ function ElbowFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   useEffect(() => {
     const saved = data["elfs_data"];
@@ -12449,8 +12478,10 @@ function ElbowFunctionalScreen({ data, set }) {
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
             <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        {hdrOpen && (
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {ELBOW_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
@@ -12464,6 +12495,7 @@ function ElbowFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {ELBOW_TESTS.map(t=>{
@@ -12716,6 +12748,7 @@ function WristFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   useEffect(() => {
     const saved = data["wffs_data"];
@@ -12746,11 +12779,13 @@ function WristFunctionalScreen({ data, set }) {
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
             <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
         <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
           <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:700}}>⚠ Positive anatomical snuffbox = scaphoid fracture until proven otherwise. Immobilise + refer immediately.</div>
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        {hdrOpen && (
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {WRIST_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
@@ -12764,6 +12799,7 @@ function WristFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {WRIST_TESTS.map(t=>{
@@ -13016,6 +13052,7 @@ function TMJFunctionalScreen({ data, set }) {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [showVisual, setShowVisual] = useState(true);
+  const [hdrOpen, setHdrOpen] = useState(true);
 
   useEffect(() => {
     const saved = data["tmjfs_data"];
@@ -13046,11 +13083,13 @@ function TMJFunctionalScreen({ data, set }) {
             <div style={{fontSize:"1.2rem",fontWeight:900,color:accentCol}}>{completedCount}/5</div>
             <div style={{fontSize:"0.78rem",color:C.muted}}>graded</div>
           </div>
+            <button type="button" onClick={()=>setHdrOpen(o=>!o)} style={{marginLeft:8,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 9px",fontSize:"0.8rem",color:C.muted,cursor:"pointer",flexShrink:0,alignSelf:"center"}}>{hdrOpen?"▲":"▼"}</button>
         </div>
         <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"6px 10px",marginBottom:8}}>
           <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:700}}>⚠ Screen red-flag headache features before any treatment. Thunderclap or progressive headache = emergency referral.</div>
         </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        {hdrOpen && (
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
           {TMJ_TESTS.map(t=>{
             const g=grades[t.id]; const done=g!==undefined;
             return (
@@ -13064,6 +13103,7 @@ function TMJFunctionalScreen({ data, set }) {
             );
           })}
         </div>
+          )}
       </div>
 
       {TMJ_TESTS.map(t=>{
@@ -13316,6 +13356,18 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
         </div>
       )}
 
+      {/* Mobile search toggle — its own row above the region tabs so it's always visible
+          instead of buried at the end of the scrollable chip row */}
+      {!search.trim() && !fmsMobileSearch && (
+        <div className="pm-mobile-only" style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+          <button type="button" onClick={()=>setFmsMobileSearch(true)}
+            style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",borderRadius:20,
+              border:`1px solid ${C.border}`,background:C.s2,color:C.muted,fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
+            🔍 Search
+          </button>
+        </div>
+      )}
+
       {/* Region picker — scrollable chip row */}
       {!search.trim() && (
         <div className="pm-region-chips-scroll" style={{marginBottom:10}}>
@@ -13329,13 +13381,6 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
               </button>
             );
           })}
-          {!fmsMobileSearch && (
-            <button type="button" onClick={()=>setFmsMobileSearch(true)}
-              className="pm-mobile-only pm-region-chip"
-              style={{borderColor:C.border,color:C.muted,flexShrink:0,fontSize:"1.1rem",padding:"5px 10px"}}>
-              🔍
-            </button>
-          )}
         </div>
       )}
 
