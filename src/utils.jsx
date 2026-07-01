@@ -145,7 +145,7 @@ const MOBILE_CSS = `
   .pm-body { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: hidden; }
 
   /* ── Cards ── */
-  .pm-card { padding: 14px 14px !important; border-radius: 12px !important; }
+  .pm-card { padding: 14px 14px !important; border-radius: 12px !important; background: #ffffff !important; border: 1px solid #E0E0E0 !important; box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05) !important; }
   @media (min-width: 480px) { .pm-card { padding: 18px 20px !important; } }
   @media (min-width: 640px) { .pm-card { padding: 22px 24px !important; } }
 
@@ -545,11 +545,11 @@ function MobileStyleInjector() {
 const THEMES = {
   dark: {
     // Mauve & White — elegant clinical
-    bg:"#F2F2F4",      surface:"#ffffff",  s2:"#EBEBED",  s3:"#E4E4E6",
+    bg:"#F2F2F4",      surface:"#ffffff",  s2:"#FFFFFF",  s3:"#F0F0F0",
     border:"#E0E0E2",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
     a4:"#b45309",      a5:"#dc2626",      text:"#0D0D0D", muted:"#6B6B6B",
     red:"#dc2626",     green:"#059669",   yellow:"#b45309", purple:"#7c3aed",
-    card:"#ffffff",    inputBg:"#EBEBED", inputBorder:"#E0E0E2",
+    card:"#ffffff",    inputBg:"#F0F0F0", inputBorder:"#E0E0E2",
     navBg:"#FFFFFF",   headerBg:"#ffffff",
     shadow:"rgba(90,40,130,0.10)", isDark:false,
     accentSoft:"rgba(0,0,0,0.03)", accentBorder:"rgba(124,58,237,0.22)",
@@ -559,11 +559,11 @@ const THEMES = {
   },
   light: {
     // Same mauve/white palette
-    bg:"#F2F2F4",      surface:"#ffffff",  s2:"#EBEBED",  s3:"#E4E4E6",
+    bg:"#F2F2F4",      surface:"#ffffff",  s2:"#FFFFFF",  s3:"#F0F0F0",
     border:"#E0E0E2",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
     a4:"#b45309",      a5:"#dc2626",      text:"#0D0D0D", muted:"#6B6B6B",
     red:"#dc2626",     green:"#059669",   yellow:"#b45309", purple:"#7c3aed",
-    card:"#ffffff",    inputBg:"#EBEBED", inputBorder:"#E0E0E2",
+    card:"#ffffff",    inputBg:"#F0F0F0", inputBorder:"#E0E0E2",
     navBg:"#FFFFFF",   headerBg:"#ffffff",
     shadow:"rgba(90,40,130,0.10)", isDark:false,
     accentSoft:"rgba(0,0,0,0.03)", accentBorder:"rgba(124,58,237,0.22)",
