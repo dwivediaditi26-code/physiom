@@ -1392,7 +1392,7 @@ function OutcomeMeasuresModule() {
   const renderField = (m, f) => {
     const val = (answers[m.id] || {})[f.id];
     const upd = (v) => setField(m.id, f.id, v);
-    const base = { width:"100%", background:#FFFFFF, border:"1px solid #E0E0E2", borderRadius:8, color:"#0D0D0D", fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.76rem" };
+    const base = { width:"100%", background:"#FFFFFF", border:"1px solid #E0E0E2", borderRadius:8, color:"#0D0D0D", fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.76rem" };
     if (f.type === "slider") return <OMSlider id={f.id} min={f.min} max={f.max} step={f.step} value={val} onChange={upd}/>;
     if (f.type === "text")   return <input value={val||""} onChange={e=>upd(e.target.value)} placeholder={f.placeholder} style={base}/>;
     if (f.type === "select5")    return <select value={val||""} onChange={e=>upd(e.target.value)} style={base}><option value="">— select —</option>{DASH_OPTS.map(o=><option key={o} value={o.split(" — ")[0]}>{o}</option>)}</select>;
@@ -1460,7 +1460,7 @@ function OutcomeMeasuresModule() {
               const latest = vals[vals.length - 1];
               const interp = m.interpret(latest);
               return (
-                <div key={id} style={{ background:#FFFFFF, border:`1px solid ${col}25`, borderRadius:10, padding:"10px 12px", marginBottom:8 }}>
+                <div key={id} style={{ background:"#FFFFFF", border:`1px solid ${col}25`, borderRadius:10, padding:"10px 12px", marginBottom:8 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
                     <span style={{ fontSize:"1rem" }}>{m.icon}</span>
                     <div style={{ flex:1 }}>
@@ -1665,7 +1665,7 @@ function OutcomeMeasuresModule() {
             {/* Fields */}
             <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
               {activeMeasure.fields.map((f, fi) => (
-                <div key={f.id} style={{ background:#FFFFFF, border:"1px solid #E0E0E2", borderRadius:10, padding:"10px 12px" }}>
+                <div key={f.id} style={{ background:"#FFFFFF", border:"1px solid #E0E0E2", borderRadius:10, padding:"10px 12px" }}>
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:7 }}>
                     <span style={{ fontSize:"0.78rem", fontWeight:800, color:col, background:`${col}18`, padding:"1px 6px", borderRadius:4, flexShrink:0 }}>Q{fi+1}</span>
                     <div style={{ fontSize:"0.82rem", fontWeight:600, color:"#0D0D0D", lineHeight:1.4 }}>{f.label}</div>
@@ -1682,7 +1682,7 @@ function OutcomeMeasuresModule() {
         );
       })()}
 
-      <div style={{ padding:"8px 12px", background:#FFFFFF, border:"1px solid #E0E0E2", borderRadius:8, fontSize:"0.8rem", color:"#6B6B6B", lineHeight:1.6 }}>
+      <div style={{ padding:"8px 12px", background:"#FFFFFF", border:"1px solid #E0E0E2", borderRadius:8, fontSize:"0.8rem", color:"#6B6B6B", lineHeight:1.6 }}>
         ⚠ Scores calculated per original validated questionnaire criteria. MCID = Minimum Clinically Important Difference per published literature. Session history persists across browser sessions via localStorage. Use 💾 Save Session after each clinical appointment.
       </div>
     </div>
@@ -6180,7 +6180,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
             {activeTab === "all" && (
               <div>
                 <input value={tSearch} onChange={e=>setTSearch(e.target.value)} placeholder="Search condition… hip OA, ACL, frozen shoulder"
-                  style={{ width:"100%", padding:"6px 10px", borderRadius:8, border:"1px solid #E0E0E2", marginBottom:8, fontSize:"0.66rem", fontFamily:"inherit", outline:"none", background:#FFFFFF, color:"#0D0D0D" }}/>
+                  style={{ width:"100%", padding:"6px 10px", borderRadius:8, border:"1px solid #E0E0E2", marginBottom:8, fontSize:"0.66rem", fontFamily:"inherit", outline:"none", background:"#FFFFFF", color:"#0D0D0D" }}/>
                 {Object.entries(PROGRAMME_TEMPLATES)
                   .filter(([k,t]) => !tSearch || t.label.toLowerCase().includes(tSearch.toLowerCase()))
                   .map(([key,t]) => {
@@ -6293,7 +6293,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
     downloadPDFFromHTML(html, `HEP_${data?.dem_name || "Patient"}_${Date.now()}.pdf`);
   };
 
-  const inp={width:"100%",background:#FFFFFF,border:"1px solid #E0E0E2",borderRadius:8,color:"#0D0D0D",fontFamily:"inherit",outline:"none",padding:"7px 10px",fontSize:"0.75rem"};
+  const inp={width:"100%",background:"#FFFFFF",border:"1px solid #E0E0E2",borderRadius:8,color:"#0D0D0D",fontFamily:"inherit",outline:"none",padding:"7px 10px",fontSize:"0.75rem"};
 
   return(
     <div>
@@ -6306,7 +6306,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
         <select
           value={activeRegion}
           onChange={e=>setActiveRegion(e.target.value)}
-          style={{flex:1,padding:"6px 10px",borderRadius:8,border:"1px solid #E0E0E2",background:#FFFFFF,color:"#0D0D0D",fontSize:"0.8rem",fontFamily:"inherit",fontWeight:600,cursor:"pointer",outline:"none"}}
+          style={{flex:1,padding:"6px 10px",borderRadius:8,border:"1px solid #E0E0E2",background:"#FFFFFF",color:"#0D0D0D",fontSize:"0.8rem",fontFamily:"inherit",fontWeight:600,cursor:"pointer",outline:"none"}}
         >
           {Object.entries(EXERCISE_DB).map(([key,r])=>(
             <option key={key} value={key}>{r.icon} {r.label}</option>
@@ -6321,7 +6321,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
             <button key={p} onClick={()=>setActivePhase(p)} style={{padding:"4px 9px",borderRadius:7,fontSize:"0.8rem",fontWeight:activePhase===p?800:500,border:`1px solid ${activePhase===p?(phaseColor[p]||"rgba(0,229,255,0.4)"):"#1a2d45"}`,background:activePhase===p?`${phaseColor[p]||"rgba(0,229,255,0.18)"}18`:"transparent",color:activePhase===p?(phaseColor[p]||"#00e5ff"):"#6b8399",cursor:"pointer"}}>{p}</button>
           ))}
         </div>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search exercises or muscles..." style={{flex:1,minWidth:120,background:#FFFFFF,border:"1px solid #E0E0E2",borderRadius:8,color:"#0D0D0D",fontFamily:"inherit",outline:"none",padding:"5px 10px",fontSize:"0.82rem"}}/>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search exercises or muscles..." style={{flex:1,minWidth:120,background:"#FFFFFF",border:"1px solid #E0E0E2",borderRadius:8,color:"#0D0D0D",fontFamily:"inherit",outline:"none",padding:"5px 10px",fontSize:"0.82rem"}}/>
       </div>
 
       {/* Exercise library */}
@@ -6355,7 +6355,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
                       <div style={{padding:"0 12px 12px",borderTop:"1px solid #E0E0E2"}}>
                         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,margin:"10px 0"}}>
                           {[["Sets",ex.sets],["Reps",ex.reps],["Hold",`${ex.hold}s`],["Freq",ex.freq]].map(([l,v])=>(
-                            <div key={l} style={{background:#FFFFFF,borderRadius:8,padding:"7px",textAlign:"center"}}>
+                            <div key={l} style={{background:"#FFFFFF",borderRadius:8,padding:"7px",textAlign:"center"}}>
                               <div style={{fontSize:"0.85rem",fontWeight:900,color:region.color}}>{v}</div>
                               <div style={{fontSize:"0.75rem",color:"#6B6B6B",textTransform:"uppercase"}}>{l}</div>
                             </div>
@@ -6377,7 +6377,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
 
 
 
-      <div style={{padding:"7px 11px",background:#FFFFFF,border:"1px solid #E0E0E2",borderRadius:8,fontSize:"0.8rem",color:"#6B6B6B",lineHeight:1.5}}>
+      <div style={{padding:"7px 11px",background:"#FFFFFF",border:"1px solid #E0E0E2",borderRadius:8,fontSize:"0.8rem",color:"#6B6B6B",lineHeight:1.5}}>
         ⚠ Exercise prescriptions are clinical suggestions. Modify sets/reps/frequency based on individual patient capacity, irritability, and response. Evidence ratings reflect current literature.
       </div>
     </div>
@@ -8363,7 +8363,7 @@ const OBS_REGION_PRIORITY = {
 
 function ObservationModule({ data, set }) {
   const PC = typeof getC === "function" ? getC() : {
-    surface:"#fff", s2:#FFFFFF, s3:"#E4E4E6", border:"#E0E0E2",
+    surface:"#fff", s2:"#FFFFFF", s3:"#E4E4E6", border:"#E0E0E2",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#0D0D0D",
     muted:"#6B6B6B", red:"#dc2626", yellow:"#b45309", green:"#059669",
   };

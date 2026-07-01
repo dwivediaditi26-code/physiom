@@ -250,7 +250,7 @@ function PostureDefectModule() {
   const filtered = Object.values(POSTURE_DEFECTS).filter(d => regionFilter === "All" || d.region === regionFilter);
 
   const inputStyle = {
-    width:"100%", background:#FFFFFF, border:"1px solid #E0E0E2",
+    width:"100%", background:"#FFFFFF", border:"1px solid #E0E0E2",
     borderRadius:8, color:"#0D0D0D", fontFamily:"inherit",
     outline:"none", padding:"8px 10px", fontSize:"0.78rem",
   };
@@ -429,7 +429,7 @@ function PostureDefectModule() {
       {/* Defect detail modal */}
       {openDefect && <PostureDefectDetail defectId={openDefect} onClose={() => setOpenDefect(null)}/>}
 
-      <div style={{padding:"7px 11px",background:#FFFFFF,border:"1px solid #E0E0E2",borderRadius:8,fontSize:"0.8rem",color:"#6B6B6B",lineHeight:1.5}}>
+      <div style={{padding:"7px 11px",background:"#FFFFFF",border:"1px solid #E0E0E2",borderRadius:8,fontSize:"0.8rem",color:"#6B6B6B",lineHeight:1.5}}>
         ⚠ Manual observational assessment. Select all defects observed across each view. Tap any finding card for full clinical detail, muscles, kinetic chain, and exercise programme.
       </div>
     </div>
@@ -529,7 +529,7 @@ function HomeModule({ onNav }) {
       </div>
 
       {/* Workflow guide */}
-      <div style={{background:#FFFFFF,border:"1px solid #E0E0E2",borderRadius:16,padding:"22px 20px",marginTop:24}}>
+      <div style={{background:"#FFFFFF",border:"1px solid #E0E0E2",borderRadius:16,padding:"22px 20px",marginTop:24}}>
         <h3 style={{fontSize:"0.88rem",fontWeight:800,color:"#7c3aed",margin:"0 0 14px",letterSpacing:"-0.2px"}}>📋 Recommended Assessment Workflow</h3>
         <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
           {[
