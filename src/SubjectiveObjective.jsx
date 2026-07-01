@@ -5309,71 +5309,114 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
             // Find active group
             const activeGroup = groups.find(g => g.keys.includes(activeSection)) || groups[0];
+            const agCol = activeGroup ? activeGroup.col : PC.accent;
 
             return (
-              <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(0,0,0,0.07)",
-                boxShadow:"0 2px 10px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
+              <div style={{ background:"#fff", borderRadius:14, overflow:"hidden",
+                border:"1px solid rgba(0,0,0,0.07)",
+                boxShadow:"0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9)" }}>
 
-                {/* ── Row 1: Group chips ── */}
-                <div style={{ display:"flex", overflowX:"auto", gap:0, borderBottom:"1px solid rgba(0,0,0,0.06)",
-                  scrollbarWidth:"none", WebkitOverflowScrolling:"touch" }}>
+                {/* ── Row 1: Group tabs ── */}
+                <div style={{ display:"flex", overflowX:"auto", scrollbarWidth:"none",
+                  WebkitOverflowScrolling:"touch", borderBottom:`1px solid rgba(0,0,0,0.06)` }}>
                   {groups.map((g) => {
                     const isAct = activeGroup && g.label === activeGroup.label;
                     const gDone = g.keys.length > 0 && g.keys.every(k=>countFilled(k)>0);
+                    const filledCount = g.keys.filter(k=>countFilled(k)>0).length;
                     return (
                       <button key={g.label} type="button"
                         onClick={()=>{ setActiveSection(g.keys[0]); setSearchTerm(""); }}
-                        style={{ display:"flex", alignItems:"center", gap:5, padding:"9px 12px",
-                          background: isAct ? g.col+"10" : "transparent",
-                          borderBottom: isAct ? `2px solid ${g.col}` : "2px solid transparent",
+                        style={{
+                          display:"flex", alignItems:"center", gap:5,
+                          padding:"10px 14px 9px",
+                          background: isAct ? g.col+"0c" : "transparent",
+                          borderBottom: isAct ? `2.5px solid ${g.col}` : "2.5px solid transparent",
                           border:"none", borderRadius:0, cursor:"pointer", fontFamily:"inherit",
-                          flexShrink:0, whiteSpace:"nowrap", transition:"all 120ms" }}>
-                        {gDone
-                          ? <span style={{ fontSize:"0.6rem", background:g.col, color:"#fff",
-                              borderRadius:"50%", width:14, height:14, display:"flex",
-                              alignItems:"center", justifyContent:"center", fontWeight:800 }}>✓</span>
-                          : <span style={{ width:6, height:6, borderRadius:"50%", background: isAct ? g.col : "#D0D0D8",
-                              display:"inline-block", flexShrink:0 }} />
-                        }
-                        <span style={{ fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
-                          color: isAct ? g.col : "#6B6B6B" }}>{g.label}</span>
+                          flexShrink:0, whiteSpace:"nowrap", transition:"all 150ms",
+                          marginBottom: isAct ? 0 : 0,
+                        }}>
+                        {/* Status indicator */}
+                        {gDone ? (
+                          <span style={{
+                            width:16, height:16, borderRadius:"50%", flexShrink:0,
+                            background: g.col, display:"flex", alignItems:"center",
+                            justifyContent:"center", fontSize:"0.55rem", fontWeight:900, color:"#fff",
+                            boxShadow:`0 1px 4px ${g.col}55`
+                          }}>✓</span>
+                        ) : filledCount > 0 ? (
+                          <span style={{
+                            width:16, height:16, borderRadius:"50%", flexShrink:0,
+                            background: isAct ? g.col : "#F0F0F0",
+                            border:`2px solid ${g.col}`,
+                            display:"flex", alignItems:"center",
+                            justifyContent:"center", fontSize:"0.48rem", fontWeight:900,
+                            color: isAct ? "#fff" : g.col,
+                          }}>{filledCount}</span>
+                        ) : (
+                          <span style={{
+                            width:7, height:7, borderRadius:"50%", flexShrink:0,
+                            background: isAct ? g.col : "#D8D8D8",
+                            boxShadow: isAct ? `0 0 0 2px ${g.col}33` : "none",
+                            transition:"all 150ms",
+                          }} />
+                        )}
+                        <span style={{
+                          fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
+                          color: isAct ? g.col : "#777",
+                          letterSpacing: isAct ? "0.2px" : 0,
+                        }}>{g.label}</span>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* ── Row 2: Section chips for active group ── */}
+                {/* ── Row 2: Section pills — colored top strip ── */}
                 {activeGroup && (
-                  <div style={{ display:"flex", overflowX:"auto", gap:6, padding:"8px 10px",
-                    scrollbarWidth:"none", WebkitOverflowScrolling:"touch", flexWrap:"nowrap" }}>
-                    {activeGroup.keys.map(key => {
-                      const s = sections[key]; if (!s) return null;
-                      const isAct = key === activeSection;
-                      const filled = countFilled(key);
-                      const col = activeGroup.col;
-                      return (
-                        <button key={key} type="button"
-                          onClick={()=>{ setActiveSection(key); setSearchTerm(""); }}
-                          style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 11px",
-                            borderRadius:20, border:`1.5px solid ${isAct ? col : filled>0 ? col+"44" : "#E0E0E2"}`,
-                            background: isAct ? col : filled>0 ? col+"0d" : "#F8F8F8",
-                            cursor:"pointer", fontFamily:"inherit", flexShrink:0,
-                            transition:"all 120ms", whiteSpace:"nowrap" }}>
-                          <span style={{ fontSize:"0.9rem", lineHeight:1 }}>{s.icon}</span>
-                          <span style={{ fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
-                            color: isAct ? "#fff" : filled>0 ? col : "#6B6B6B" }}>
-                            {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
-                          </span>
-                          {filled > 0 && !isAct && (
-                            <span style={{ fontSize:"0.6rem", background:col, color:"#fff",
-                              borderRadius:"50%", width:14, height:14, display:"flex",
-                              alignItems:"center", justifyContent:"center", fontWeight:800,
-                              flexShrink:0 }}>✓</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <>
+                    <div style={{ height:3, background:`linear-gradient(90deg, ${agCol}, ${agCol}88)`, opacity:0.7 }} />
+                    <div style={{ display:"flex", overflowX:"auto", gap:6, padding:"9px 10px 9px",
+                      scrollbarWidth:"none", WebkitOverflowScrolling:"touch", flexWrap:"nowrap",
+                      background: agCol+"04" }}>
+                      {activeGroup.keys.map(key => {
+                        const s = sections[key]; if (!s) return null;
+                        const isAct = key === activeSection;
+                        const filled = countFilled(key);
+                        const col = agCol;
+                        return (
+                          <button key={key} type="button"
+                            onClick={()=>{ setActiveSection(key); setSearchTerm(""); }}
+                            style={{
+                              display:"flex", alignItems:"center", gap:4,
+                              padding: isAct ? "6px 12px" : "5px 10px",
+                              borderRadius:20, cursor:"pointer", fontFamily:"inherit",
+                              flexShrink:0, whiteSpace:"nowrap", transition:"all 130ms",
+                              border:`1.5px solid ${isAct ? col : filled>0 ? col+"50" : "#E4E4E4"}`,
+                              background: isAct
+                                ? `linear-gradient(135deg, ${col}, ${col}cc)`
+                                : filled>0 ? col+"0e" : "#F9F9F9",
+                              boxShadow: isAct ? `0 2px 8px ${col}40` : "none",
+                            }}>
+                            <span style={{ fontSize:"0.82rem", lineHeight:1, flexShrink:0 }}>{s.icon}</span>
+                            <span style={{
+                              fontSize:"0.7rem", fontWeight: isAct ? 700 : 500,
+                              color: isAct ? "#fff" : filled>0 ? col : "#555",
+                            }}>
+                              {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
+                            </span>
+                            {filled > 0 && !isAct && (
+                              <span style={{
+                                width:13, height:13, borderRadius:"50%", flexShrink:0,
+                                background: col, color:"#fff",
+                                display:"flex", alignItems:"center", justifyContent:"center",
+                                fontSize:"0.5rem", fontWeight:900,
+                                boxShadow:`0 1px 3px ${col}44`,
+                              }}>✓</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </div>
             );
