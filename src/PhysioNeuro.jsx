@@ -1440,9 +1440,12 @@ function MMTModule({data,set,navContext={}}){
             <div key={m.id} ref={el=>{ if(el) mmtHlRef.current[m.id]=el; }} style={{background:C.surface,border:`1px solid ${hasVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
               {/* Header */}
               <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:"0.82rem",color:hasVal?C.text:C.muted}}>{m.muscle}</div>
-                  <div className="pm-test-card-sub" style={{fontSize:"0.65rem",color:C.muted,marginTop:1}}>{m.nerve} · {m.root}</div>
+                <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
+                  <ClinicalImage name={m.id} title={m.muscle} size={40}/>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:"0.82rem",color:hasVal?C.text:C.muted}}>{m.muscle}</div>
+                    <div className="pm-test-card-sub" style={{fontSize:"0.65rem",color:C.muted,marginTop:1}}>{m.nerve} · {m.root}</div>
+                  </div>
                 </div>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
                   {/* Bilateral Grading */}
@@ -2136,9 +2139,12 @@ function NeurologicalModule({ data, set, navContext={} }) {
             return(
               <div key={m.level} style={{background:C.surface,border:`1px solid ${abnormal?C.yellow+"60":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,gap:8}}>
-                  <div>
-                    <span style={{fontWeight:800,color:abnormal?C.yellow:C.text,fontSize:"0.88rem",marginRight:8}}>{m.level}</span>
-                    <span style={{fontSize:"0.78rem",color:C.text}}>{m.action}</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <ClinicalImage name={safeId} title={`${m.level} — ${m.action}`} size={36}/>
+                    <div>
+                      <span style={{fontWeight:800,color:abnormal?C.yellow:C.text,fontSize:"0.88rem",marginRight:8}}>{m.level}</span>
+                      <span style={{fontSize:"0.78rem",color:C.text}}>{m.action}</span>
+                    </div>
                   </div>
                   <button type="button" onClick={()=>setExpandedLevel(expandedLevel===safeId?null:safeId)}
                     style={{padding:"2px 9px",background:"rgba(0,229,255,0.1)",border:`1px solid ${C.accent}40`,borderRadius:6,color:C.accent,fontSize:"0.62rem",fontWeight:700,cursor:"pointer",flexShrink:0}}>

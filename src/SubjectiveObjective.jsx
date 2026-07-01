@@ -9573,6 +9573,7 @@ function LumbarFunctionalScreen({ data, set }) {
             <div onClick={() => setActiveTest(isOpen ? null : t.id)}
               style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", cursor: "pointer",
                 borderLeft: `4px solid ${graded ? gradeColor(g) : C.border}` }}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{ fontSize: "1.4rem", flexShrink: 0 }}>{t.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 800, fontSize: "0.85rem", color: C.text }}>{t.label}</div>
@@ -10198,6 +10199,7 @@ function ShoulderFunctionalScreen({ data, set }) {
             <div onClick={() => setActiveTest(isOpen ? null : t.id)}
               style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", cursor:"pointer",
                 borderLeft:`4px solid ${graded?gradeColor(g):C.border}` }}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
@@ -10820,6 +10822,7 @@ function HipFunctionalScreen({ data, set }) {
 
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", cursor:"pointer", borderLeft:`4px solid ${graded?gradeColor(g):C.border}` }}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{ fontSize:"1.4rem", flexShrink:0 }}>{t.icon}</span>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:800, fontSize:"0.85rem", color:C.text }}>{t.label}</div>
@@ -11212,6 +11215,7 @@ function KneeFunctionalScreen({ data, set }) {
 
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
@@ -11552,6 +11556,7 @@ function AnkleFunctionalScreen({ data, set }) {
 
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
@@ -11869,6 +11874,7 @@ function CervicalFunctionalScreen({ data, set }) {
 
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
@@ -12177,6 +12183,7 @@ function ThoracicFunctionalScreen({ data, set }) {
             overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(15,118,110,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
@@ -12474,6 +12481,7 @@ function ElbowFunctionalScreen({ data, set }) {
             overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(3,105,161,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
@@ -12774,6 +12782,7 @@ function WristFunctionalScreen({ data, set }) {
             overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(190,24,93,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
@@ -13074,6 +13083,7 @@ function TMJFunctionalScreen({ data, set }) {
             overflow:"hidden",boxShadow:isOpen?"0 4px 16px rgba(180,83,9,0.09)":"0 1px 4px rgba(0,0,0,0.04)"}}>
             <div onClick={()=>setActiveTest(isOpen?null:t.id)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",borderLeft:`4px solid ${graded?gradeColor(g):C.border}`}}>
+              <SmallClinicalImg id={t.id} title={t.label} />
               <span style={{fontSize:"1.4rem",flexShrink:0}}>{t.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:800,fontSize:"0.85rem",color:C.text}}>{t.label}</div>
