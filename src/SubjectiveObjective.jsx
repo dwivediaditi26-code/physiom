@@ -5418,109 +5418,63 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             return (
               <div style={{ background:"#fff", borderRadius:14, overflow:"hidden",
                 border:"1px solid rgba(0,0,0,0.07)",
-                boxShadow:"0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9)" }}>
+                boxShadow:"0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)" }}>
 
-                {/* ── Row 1: Group tabs ── */}
+                {/* ── Row 1: Group tabs — plain text, purple underline ── */}
                 <div style={{ display:"flex", overflowX:"auto", scrollbarWidth:"none",
-                  WebkitOverflowScrolling:"touch", borderBottom:`1px solid rgba(0,0,0,0.06)` }}>
+                  WebkitOverflowScrolling:"touch", borderBottom:"1px solid #F0F0F0",
+                  padding:"0 4px" }}>
                   {groups.map((g) => {
                     const isAct = activeGroup && g.label === activeGroup.label;
-                    const gDone = g.keys.length > 0 && g.keys.every(k=>countFilled(k)>0);
-                    const filledCount = g.keys.filter(k=>countFilled(k)>0).length;
                     return (
                       <button key={g.label} type="button"
                         onClick={()=>{ setActiveSection(g.keys[0]); setSearchTerm(""); }}
                         style={{
-                          display:"flex", alignItems:"center", gap:5,
-                          padding:"10px 14px 9px",
-                          background: isAct ? g.col+"0c" : "transparent",
+                          padding:"10px 12px 8px",
+                          background:"transparent",
                           borderBottom: isAct ? `2.5px solid ${g.col}` : "2.5px solid transparent",
                           border:"none", borderRadius:0, cursor:"pointer", fontFamily:"inherit",
-                          flexShrink:0, whiteSpace:"nowrap", transition:"all 150ms",
-                          marginBottom: isAct ? 0 : 0,
+                          flexShrink:0, whiteSpace:"nowrap", transition:"color 120ms",
                         }}>
-                        {/* Status indicator */}
-                        {gDone ? (
-                          <span style={{
-                            width:16, height:16, borderRadius:"50%", flexShrink:0,
-                            background: g.col, display:"flex", alignItems:"center",
-                            justifyContent:"center", fontSize:"0.55rem", fontWeight:900, color:"#fff",
-                            boxShadow:`0 1px 4px ${g.col}55`
-                          }}>✓</span>
-                        ) : filledCount > 0 ? (
-                          <span style={{
-                            width:16, height:16, borderRadius:"50%", flexShrink:0,
-                            background: isAct ? g.col : "#F0F0F0",
-                            border:`2px solid ${g.col}`,
-                            display:"flex", alignItems:"center",
-                            justifyContent:"center", fontSize:"0.48rem", fontWeight:900,
-                            color: isAct ? "#fff" : g.col,
-                          }}>{filledCount}</span>
-                        ) : (
-                          <span style={{
-                            width:7, height:7, borderRadius:"50%", flexShrink:0,
-                            background: isAct ? g.col : "#D8D8D8",
-                            boxShadow: isAct ? `0 0 0 2px ${g.col}33` : "none",
-                            transition:"all 150ms",
-                          }} />
-                        )}
                         <span style={{
-                          fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
-                          color: isAct ? g.col : "#777",
-                          letterSpacing: isAct ? "0.2px" : 0,
+                          fontSize:"0.75rem", fontWeight: isAct ? 700 : 500,
+                          color: isAct ? g.col : "#888",
                         }}>{g.label}</span>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* ── Row 2: Section pills — colored top strip ── */}
+                {/* ── Row 2: Section pills ── */}
                 {activeGroup && (
-                  <>
-                    <div style={{ height:3, background:`linear-gradient(90deg, ${agCol}, ${agCol}88)`, opacity:0.7 }} />
-                    <div style={{ display:"flex", overflowX:"auto", gap:6, padding:"9px 10px 9px",
-                      scrollbarWidth:"none", WebkitOverflowScrolling:"touch", flexWrap:"nowrap",
-                      background: agCol+"04" }}>
-                      {activeGroup.keys.map(key => {
-                        const s = sections[key]; if (!s) return null;
-                        const isAct = key === activeSection;
-                        const filled = countFilled(key);
-                        const col = agCol;
-                        return (
-                          <button key={key} type="button"
-                            onClick={()=>{ setActiveSection(key); setSearchTerm(""); }}
-                            style={{
-                              display:"flex", alignItems:"center", gap:4,
-                              padding: isAct ? "6px 12px" : "5px 10px",
-                              borderRadius:20, cursor:"pointer", fontFamily:"inherit",
-                              flexShrink:0, whiteSpace:"nowrap", transition:"all 130ms",
-                              border:`1.5px solid ${isAct ? col : filled>0 ? col+"50" : "#E4E4E4"}`,
-                              background: isAct
-                                ? `linear-gradient(135deg, ${col}, ${col}cc)`
-                                : filled>0 ? col+"0e" : "#F9F9F9",
-                              boxShadow: isAct ? `0 2px 8px ${col}40` : "none",
-                            }}>
-                            <span style={{ fontSize:"0.82rem", lineHeight:1, flexShrink:0 }}>{s.icon}</span>
-                            <span style={{
-                              fontSize:"0.7rem", fontWeight: isAct ? 700 : 500,
-                              color: isAct ? "#fff" : filled>0 ? col : "#555",
-                            }}>
-                              {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
-                            </span>
-                            {filled > 0 && !isAct && (
-                              <span style={{
-                                width:13, height:13, borderRadius:"50%", flexShrink:0,
-                                background: col, color:"#fff",
-                                display:"flex", alignItems:"center", justifyContent:"center",
-                                fontSize:"0.5rem", fontWeight:900,
-                                boxShadow:`0 1px 3px ${col}44`,
-                              }}>✓</span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
+                  <div style={{ display:"flex", overflowX:"auto", gap:6, padding:"8px 10px",
+                    scrollbarWidth:"none", WebkitOverflowScrolling:"touch", flexWrap:"nowrap" }}>
+                    {activeGroup.keys.map(key => {
+                      const s = sections[key]; if (!s) return null;
+                      const isAct = key === activeSection;
+                      return (
+                        <button key={key} type="button"
+                          onClick={()=>{ setActiveSection(key); setSearchTerm(""); }}
+                          style={{
+                            display:"flex", alignItems:"center", gap:5,
+                            padding:"6px 13px",
+                            borderRadius:99, cursor:"pointer", fontFamily:"inherit",
+                            flexShrink:0, whiteSpace:"nowrap", transition:"all 120ms",
+                            border: isAct ? "none" : "1.5px solid #E8E8E8",
+                            background: isAct ? agCol : "#F5F5F5",
+                            boxShadow: isAct ? `0 2px 8px ${agCol}40` : "none",
+                          }}>
+                          <span style={{ fontSize:"0.8rem", lineHeight:1 }}>{s.icon}</span>
+                          <span style={{
+                            fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
+                            color: isAct ? "#fff" : "#555",
+                          }}>
+                            {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             );
