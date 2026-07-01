@@ -79,6 +79,23 @@ function ClinicalImage({ name, title, size=52 }) {
   );
 }
 
+// Small badge for muscle-card headers: shows an uploaded Cloudinary photo (named by
+// the muscle id, e.g. "mmt_adduc") if one exists, falling back to the region emoji.
+function MuscleBadge({ id, region, size=34 }) {
+  const [imgOk, setImgOk] = React.useState(true);
+  const [icon] = MMT_ICONS[region] || ["📍", C.a2];
+  const thumb = `${CLOUDINARY_BASE}/f_auto,q_auto,w_${size*2},h_${size*2},c_fill/${id}`;
+  return (
+    <div style={{width:size,height:size,borderRadius:10,background:`${C.accent}14`,
+      display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+      {imgOk
+        ? <img src={thumb} alt="" onError={()=>setImgOk(false)}
+            style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+        : <span style={{fontSize:size*0.5}}>{icon}</span>}
+    </div>
+  );
+}
+
 const ROM_DATA={
   "Cervical":[
     {id:"rom_cflex",mv:"Flexion",bilateral:false,normal:45,unit:"°",plane:"Sagittal",axis:"Frontal (coronal)",
@@ -1273,6 +1290,18 @@ const MMT_DATA={
 
 const MMT_GRADE_OPTIONS=["5","4+","4","4-","3+","3","3-","2+","2","2-","1","0","NT"];
 const MMT_REGIONS=Object.keys(MMT_DATA);
+const MMT_ICONS={
+  "Cervical":["🔵","#0891b2"],"Shoulder & Scapula":["💪","#9333ea"],
+  "Elbow & Forearm":["🫀","#db2777"],"Wrist & Hand":["🤚","#16a34a"],
+  "Spine & Core":["🪴","#78716c"],"Hip & Pelvis":["🦵","#16a34a"],
+  "Knee":["🦿","#ca8a04"],"Ankle & Foot":["🦶","#0284c7"],"TMJ & Facial":["🦷","#9f1239"]
+};
+function parseMuscleName(name){
+  const match = name.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  if(!match) return { title:name, sub:null };
+  const sub = match[2].split(/[\/+]/).map(s=>s.trim()).filter(Boolean).join(" \u00b7 ");
+  return { title:match[1].trim(), sub };
+}
 
 const RED_FLAGS_MMT=[
   {pattern:(r)=>Object.values(r).some(v=>v&&["1","0"].includes(v.split("_")[0])),msg:"Grade 0–1 detected — consider neurological workup and urgent referral if acute onset.",color:"#ff4d6d"},
@@ -1439,12 +1468,23 @@ function MMTModule({data,set,navContext={}}){
           return(
             <div key={m.id} ref={el=>{ if(el) mmtHlRef.current[m.id]=el; }} style={{background:C.surface,border:`1px solid ${hasVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
               {/* Header */}
-              <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:"0.82rem",color:hasVal?C.text:C.muted}}>{m.muscle}</div>
-                  <div className="pm-test-card-sub" style={{fontSize:"0.65rem",color:C.muted,marginTop:1}}>{m.nerve} · {m.root}</div>
+              <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,flexWrap:"wrap"}}>
+                <div style={{display:"flex",gap:10,alignItems:"flex-start",flex:"1 1 160px",minWidth:0}}>
+                  <MuscleBadge id={m.id} region={region}/>
+                  <div style={{minWidth:0,paddingTop:1}}>
+                    {(()=>{ const {title,sub}=parseMuscleName(m.muscle); return (
+                      <>
+                        <div style={{fontWeight:700,fontSize:"0.82rem",color:hasVal?C.text:C.muted,overflowWrap:"break-word"}}>{title}</div>
+                        {sub && <div style={{fontSize:"0.68rem",color:C.muted,marginTop:1,overflowWrap:"break-word"}}>{sub}</div>}
+                      </>
+                    );})()}
+                    <div style={{display:"flex",gap:4,marginTop:5,flexWrap:"wrap"}}>
+                      <span style={{fontSize:"0.62rem",color:C.muted,background:C.s2,padding:"2px 7px",borderRadius:6}}>{m.nerve}</span>
+                      <span style={{fontSize:"0.62rem",color:C.muted,background:C.s2,padding:"2px 7px",borderRadius:6}}>{m.root}</span>
+                    </div>
+                  </div>
                 </div>
-                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
                   {/* Bilateral Grading */}
                   {["L","R"].map(side=>{
                     const val=data[`mmt_${m.id}_${side}`];
