@@ -4695,44 +4695,106 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
         </div>
       )}
 
-      {/* ── AI Smart Parser Strip ─────────────────────────────────── */}
-      <div style={{ background:`linear-gradient(135deg,#ede9fe,#f5f3ff)`, borderRadius:12,
-        border:"1px solid #c4b5fd", padding:"10px 14px" }}>
-        {!aiOpen ? (
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:"0.82rem", fontWeight:700, color:"#5b21b6", flex:1 }}>
-              ✦ AI Smart Parser — speak or type to auto-fill this form
-            </span>
+      {/* ── Hero Header — Subjective + AI + Regions ────────────────── */}
+      <div style={{ borderRadius:14, overflow:"hidden",
+        background:"linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%)",
+        boxShadow:"0 4px 18px rgba(124,58,237,0.28), 0 1px 4px rgba(0,0,0,0.1)" }}>
 
-            <button type="button" onClick={() => { setAiOpen(true); setAiMode("voice"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
-              style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:20,
-                background:"#7c3aed", color:"#fff", border:"none", fontSize:"0.82rem",
-                fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-              🎤 Speak
-            </button>
-            <button type="button" onClick={() => { setAiOpen(true); setAiMode("text"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
-              style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:20,
-                background:"transparent", color:"#7c3aed", border:"1px solid #a78bfa",
-                fontSize:"0.82rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-              ⌨ Type
-            </button>
+        {/* Row 1: Title + AI / Mic buttons */}
+        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px 10px" }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.55)",
+              letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:2 }}>Step 2</div>
+            <div style={{ fontSize:"1rem", fontWeight:800, color:"#fff", lineHeight:1.15 }}>📝 Subjective</div>
+            <div style={{ fontSize:"0.6rem", color:"rgba(255,255,255,0.5)", letterSpacing:"0.05em",
+              textTransform:"uppercase", marginTop:1 }}>History &amp; Complaint</div>
           </div>
-        ) : (
-          <div>
-            {/* Header */}
+
+          {/* ✦ AI button — white 3D block */}
+          <button type="button"
+            onClick={() => { setAiOpen(true); setAiMode("text"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
+            style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px",
+              borderRadius:10, border:"none", cursor:"pointer", fontFamily:"inherit",
+              background:"#ffffff",
+              boxShadow:"0 3px 0 rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
+              transform:"translateY(0)", transition:"all 100ms",
+            }}
+            onMouseDown={e=>e.currentTarget.style.transform="translateY(2px)"}
+            onMouseUp={e=>e.currentTarget.style.transform="translateY(0)"}
+          >
+            <span style={{ fontSize:"0.85rem" }}>✦</span>
+            <span style={{ fontSize:"0.72rem", fontWeight:700, color:"#7c3aed" }}>AI</span>
+          </button>
+
+          {/* 🎤 Mic button — white 3D block */}
+          <button type="button"
+            onClick={() => { setAiOpen(true); setAiMode("voice"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
+            style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px",
+              borderRadius:10, border:"none", cursor:"pointer", fontFamily:"inherit",
+              background:"#ffffff",
+              boxShadow:"0 3px 0 rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
+              transform:"translateY(0)", transition:"all 100ms",
+            }}
+            onMouseDown={e=>e.currentTarget.style.transform="translateY(2px)"}
+            onMouseUp={e=>e.currentTarget.style.transform="translateY(0)"}
+          >
+            <span style={{ fontSize:"0.85rem" }}>🎤</span>
+          </button>
+        </div>
+
+        {/* Row 2: Body region chips — white 3D blocks */}
+        <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 14px 12px",
+          overflowX:"auto", scrollbarWidth:"none", WebkitOverflowScrolling:"touch" }}>
+          <span style={{ fontSize:"0.7rem", color:"rgba(255,255,255,0.6)", flexShrink:0 }}>📍</span>
+          {selectedRegions.length === 0 ? (
+            <button type="button" onClick={() => setRegionPickerOpen(true)}
+              style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 11px",
+                borderRadius:8, border:"1.5px dashed rgba(255,255,255,0.4)",
+                background:"rgba(255,255,255,0.1)", cursor:"pointer", fontFamily:"inherit",
+                color:"rgba(255,255,255,0.7)", fontSize:"0.7rem", fontWeight:600 }}>
+              + Add body region
+            </button>
+          ) : (
+            <>
+              {selectedRegions.map(r => (
+                <button key={r} type="button" onClick={() => setRegionPickerOpen(o => !o)}
+                  style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 11px",
+                    borderRadius:8, border:"none", cursor:"pointer", fontFamily:"inherit", flexShrink:0,
+                    background:"#ffffff",
+                    boxShadow:"0 3px 0 rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95)",
+                  }}>
+                  <span style={{ width:7, height:7, borderRadius:"50%", flexShrink:0,
+                    background:RC_S[r]||"#7c3aed", display:"inline-block" }}/>
+                  <span style={{ fontSize:"0.68rem", fontWeight:700, color:"#0D0D0D", whiteSpace:"nowrap" }}>{r}</span>
+                </button>
+              ))}
+              <button type="button" onClick={() => setRegionPickerOpen(o => !o)}
+                style={{ display:"inline-flex", alignItems:"center", padding:"5px 9px",
+                  borderRadius:8, border:"1.5px dashed rgba(255,255,255,0.4)",
+                  background:"rgba(255,255,255,0.12)", cursor:"pointer", fontFamily:"inherit", flexShrink:0,
+                  color:"rgba(255,255,255,0.75)", fontSize:"0.7rem", fontWeight:600 }}>
+                {regionPickerOpen ? "▲" : "+ Edit"}
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Expanded AI panel — slides in below hero when aiOpen */}
+        {aiOpen && (
+          <div style={{ background:"#fff", borderTop:"1px solid rgba(255,255,255,0.15)", padding:"12px 14px" }}>
+            {/* Header row */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
               <span style={{ fontSize:"0.78rem", fontWeight:700, color:"#5b21b6" }}>
                 {aiStatus === "recording" ? "🔴 Listening..." : aiStatus === "processing" ? "⏳ Groq reading..." : aiStatus === "done" ? "✓ Done" : aiStatus === "error" ? "⚠ Error" : "✦ AI Parser"}
               </span>
-
-            <button type="button" onClick={() => { stopRecording(); setAiOpen(false); setAiStatus("idle"); }}
+              <button type="button" onClick={() => { stopRecording(); setAiOpen(false); setAiStatus("idle"); }}
                 style={{ background:"transparent", border:"none", color:"#7c3aed", fontSize:"1rem", cursor:"pointer" }}>✕</button>
             </div>
 
             {/* Voice mode */}
             {aiMode === "voice" && aiStatus !== "done" && (
               <div>
-                {aiStatus === "idle" || aiStatus === "error" ? (
+                {(aiStatus === "idle" || aiStatus === "error") ? (
                   <button type="button" onClick={startRecording}
                     style={{ width:"100%", padding:"10px", borderRadius:10, background:"#7c3aed",
                       color:"#fff", border:"none", fontSize:"0.82rem", fontWeight:700, cursor:"pointer", fontFamily:"inherit", marginBottom:8 }}>
@@ -4775,8 +4837,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               </div>
             )}
 
-
-
             {/* Text mode */}
             {(aiMode === "text" || (aiMode === "voice" && aiStatus === "done" && !aiReview)) && aiStatus !== "processing" && !aiReview && (
               <div>
@@ -4809,62 +4869,20 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             )}
 
             {/* Review panel */}
-            {aiReview && aiResult && (
+            {aiReview && aiResult && !aiResult._errorMsg && (
               <div>
-                <div style={{ fontSize:"0.8rem", fontWeight:700, color:"#5b21b6", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                  Review extracted data
+                <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#166534", marginBottom:8,
+                  padding:"6px 10px", background:"#f0fdf4", borderRadius:8, border:"1px solid #86efac" }}>
+                  ✓ {Object.keys(aiResult).filter(k=>!k.startsWith("_")).length} fields extracted
                 </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:5, marginBottom:10, maxHeight:220, overflowY:"auto" }}>
-                  {[
-                    aiResult.age        && { k:"Age",         v: aiResult.age + " yrs" },
-                    aiResult.sex        && { k:"Sex",         v: aiResult.sex },
-                    aiResult.occupation && { k:"Occupation",  v: aiResult.occupation },
-                    aiResult.region     && { k:"Region",      v: aiResult.region + (aiResult.laterality ? ` (${aiResult.laterality})` : "") },
-                    aiResult.onset      && { k:"Onset",       v: aiResult.onset },
-                    aiResult.duration   && { k:"Duration",    v: aiResult.duration },
-                    aiResult.nrsWorst != null && { k:"NRS worst",  v: aiResult.nrsWorst + "/10" },
-                    aiResult.nrsBest  != null && { k:"NRS best",   v: aiResult.nrsBest  + "/10" },
-                    aiResult.nrsNow   != null && { k:"NRS now",    v: aiResult.nrsNow   + "/10" },
-                    aiResult.painQuality?.length && { k:"Pain quality", v: aiResult.painQuality.join(", ") },
-                    aiResult.symptomPattern && { k:"Pattern",      v: aiResult.symptomPattern },
-                    aiResult.diurnalPattern && { k:"24hr pattern", v: aiResult.diurnalPattern },
-                    aiResult.morningSymptoms?.length && { k:"Morning",     v: aiResult.morningSymptoms.join(", ") },
-                    aiResult.nightSymptoms?.length   && { k:"Night",       v: aiResult.nightSymptoms.join(", ") },
-                    (aiResult.aggMovements?.length || aiResult.aggActivities?.length) && { k:"Aggravating", v: [...(aiResult.aggMovements||[]), ...(aiResult.aggActivities||[])].join(", ") },
-                    aiResult.relMovements?.length    && { k:"Relieving",   v: aiResult.relMovements.join(", ") },
-                    aiResult.hasRadiation != null    && { k:"Radiation",   v: aiResult.hasRadiation ? (aiResult.radiationArea || "Yes") : "None" },
-                    aiResult.neuroSymptoms?.length   && { k:"Neuro",       v: aiResult.neuroSymptoms.join(", ") },
-                  ].filter(Boolean).map(({k,v}) => (
-                    <div key={k} style={{ display:"flex", gap:8, alignItems:"flex-start",
-                      background:"#fff", borderRadius:7, padding:"5px 9px",
-                      border:"1px solid #e9d5ff", fontSize:"0.82rem" }}>
-                      <span style={{ color:"#7c6a9a", minWidth:74, flexShrink:0 }}>{k}</span>
-                      <span style={{ color:"#0D0D0D", fontWeight:500 }}>{v}</span>
-                    </div>
-                  ))}
-                  {aiResult.flags?.length > 0 && aiResult.flags.map(f => (
-                    <div key={f} style={{ display:"flex", gap:8, background:"#fff7ed",
-                      border:"1px solid #fdba74", borderRadius:7, padding:"5px 9px", fontSize:"0.82rem" }}>
-                      <span style={{ color:"#92400e" }}>⚠ Flag</span>
-                      <span style={{ color:"#92400e", fontWeight:500 }}>{f}</span>
-                    </div>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:8 }}>
+                  {Object.entries(aiResult).filter(([k])=>!k.startsWith("_")&&aiResult[k]!=null).slice(0,8).map(([k,v])=>(
+                    <span key={k} style={{ fontSize:"0.68rem", padding:"2px 7px", borderRadius:99,
+                      background:"#f5f3ff", color:"#5b21b6", border:"1px solid #c4b5fd" }}>
+                      {k}: {String(v).substring(0,20)}
+                    </span>
                   ))}
                 </div>
-                {/* What still needs physio */}
-                {(() => {
-                  const missing = [];
-                  if (aiResult.hasRadiation == null) missing.push("Radiation / referral");
-                  if (!aiResult.nightSymptoms?.length) missing.push("Night symptoms");
-                  if (!aiResult.morningSymptoms?.length) missing.push("Morning stiffness");
-                  if (aiResult.nrsNow == null) missing.push("NRS now");
-                  if (!aiResult.diurnalPattern) missing.push("24hr pattern");
-                  return missing.length > 0 ? (
-                    <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:7,
-                      padding:"6px 10px", fontSize:"0.8rem", color:"#b91c1c", marginBottom:8 }}>
-                      <strong>Still ask patient:</strong> {missing.join(" · ")}
-                    </div>
-                  ) : null;
-                })()}
                 <div style={{ display:"flex", gap:8 }}>
                   <button type="button" onClick={() => applyAiResult(aiResult)}
                     style={{ flex:1, padding:"9px", borderRadius:10, background:"#7c3aed",
