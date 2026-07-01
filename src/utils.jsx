@@ -39,7 +39,7 @@ function TabLoader() {
         borderTop:"3px solid #7c3aed",
         animation:"spin 0.8s linear infinite",
       }}/>
-      <div style={{fontSize:"0.75rem", color:"#6B7280", fontWeight:500}}>
+      <div style={{fontSize:"0.75rem", color:"#7e6a9a", fontWeight:500}}>
         Loading module...
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -112,7 +112,7 @@ const MOBILE_CSS = `
   .pm-nav-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 150; }
   .pm-nav-drawer {
     position: fixed; left: 0; top: 0; bottom: 0; width: 260px; max-width: 82vw;
-    background: #ffffff; border-right: 1px solid #E5E7EB;
+    background: #ffffff; border-right: 1px solid #d8cce8;
     z-index: 160; overflow-y: auto; padding: 60px 0 24px;
     transform: translateX(-100%); transition: transform 0.25s ease;
     box-shadow: 4px 0 24px rgba(0,0,0,0.12);
@@ -122,14 +122,14 @@ const MOBILE_CSS = `
   /* ── Sidebar (desktop only) ── */
   .pm-sidebar {
     width: 195px; min-width: 195px; display: flex; flex-direction: column;
-    border-right: 1px solid #E5E7EB; background: #F3E8FF;
+    border-right: 1px solid #d8cce8; background: #f5f0fb;
     position: sticky; top: 54px; height: calc(100vh - 54px); overflow-y: auto;
   }
   @media (max-width: 767px) { .pm-sidebar { display: none !important; } }
 
   /* ── Hamburger ── */
   .pm-hamburger {
-    display: none; background: transparent; border: 1px solid #E5E7EB;
+    display: none; background: transparent; border: 1px solid #d8cce8;
     border-radius: 8px; color: #7c3aed; padding: 8px 11px; cursor: pointer;
     font-size: 1.1rem; line-height: 1; flex-shrink: 0; min-height: 40px; min-width: 40px;
     align-items: center; justify-content: center;
@@ -186,7 +186,7 @@ const MOBILE_CSS = `
   /* ── Camera ── */
   .pm-camera-wrap { width: 100%; max-width: 100%; overflow: hidden; height: 100%; }
   .pm-camera-wrap video, .pm-camera-wrap canvas { width: 100% !important; max-width: 100% !important; height: 100% !important; object-fit: cover !important; }
-  .pm-cam-aspect { position: relative; width: 100%; background: #F3E8FF; border-radius: 14px; overflow: hidden; aspect-ratio: unset; height: 70vh; max-height: 70vh; }
+  .pm-cam-aspect { position: relative; width: 100%; background: #f5f0fb; border-radius: 14px; overflow: hidden; aspect-ratio: unset; height: 70vh; max-height: 70vh; }
   @media (max-width: 480px) { .pm-cam-aspect { height: 60vh; max-height: 60vh; border-radius: 10px; } }
   @media (orientation: landscape) and (max-width: 900px) { .pm-cam-aspect { height: 85vh; max-height: 85vh; } }
 
@@ -227,7 +227,7 @@ const MOBILE_CSS = `
   .pm-bnav {
     display: none; position: fixed; bottom: 0; left: 0; right: 0;
     z-index: 140; flex-direction: column;
-    background: #ffffff; border-top: 2px solid #EDE9FE;
+    background: #ffffff; border-top: 2px solid #ede9f8;
     box-shadow: 0 -4px 20px rgba(124,58,237,0.10);
     max-height: 75vh;
   }
@@ -243,9 +243,9 @@ const MOBILE_CSS = `
   /* ── Tab strip ── */
   .pm-bnav-tabs {
     display: flex; overflow-x: auto; scrollbar-width: none;
-    border-top: 1px solid #EDE9FE; flex-shrink: 0;
+    border-top: 1px solid #ede9f8; flex-shrink: 0;
     padding-bottom: env(safe-area-inset-bottom);
-    background: #F6F7FB;
+    background: #faf8ff;
   }
   .pm-bnav-tabs::-webkit-scrollbar { display: none; }
   .pm-bnav-tab {
@@ -258,7 +258,7 @@ const MOBILE_CSS = `
   }
   .pm-bnav-tab.active { background: rgba(124,58,237,0.06); border-top-color: #7c3aed; }
   .pm-bnav-tab-icon { font-size: 1.2rem; line-height: 1; }
-  .pm-bnav-tab-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2px; color: #6B7280; white-space: nowrap; text-transform: uppercase; }
+  .pm-bnav-tab-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2px; color: #9a82c0; white-space: nowrap; text-transform: uppercase; }
   .pm-bnav-tab.active .pm-bnav-tab-label { color: #7c3aed; }
 
   /* ── Sub-nav panel ── */
@@ -281,9 +281,9 @@ const MOBILE_CSS = `
   .pm-bnav-item:active { background: rgba(124,58,237,0.15); }
   .pm-bnav-item-icon { font-size: 1.2rem; flex-shrink: 0; opacity: 0.8; }
   .pm-bnav-item.active .pm-bnav-item-icon { opacity: 1; }
-  .pm-bnav-item-label { font-size: 0.92rem; font-weight: 600; color: #111827; flex: 1; }
+  .pm-bnav-item-label { font-size: 0.92rem; font-weight: 600; color: #3b1f6b; flex: 1; }
   .pm-bnav-item.active .pm-bnav-item-label { color: #7c3aed; font-weight: 700; }
-  .pm-bnav-item-pct { font-size: 0.6rem; font-weight: 700; color: #6B7280; background: #EDE9FE; padding: 2px 7px; border-radius: 5px; }
+  .pm-bnav-item-pct { font-size: 0.6rem; font-weight: 700; color: #9a82c0; background: #f0ebff; padding: 2px 7px; border-radius: 5px; }
   .pm-bnav-item-done { font-size: 0.7rem; color: #059669; font-weight: 800; }
 
   /* ── Patient panel PDF buttons ── */
@@ -352,12 +352,12 @@ const MOBILE_CSS = `
   svg *, canvas, .no-transition, input[type=range] { transition: none !important; }
 
   /* ── Light mode overrides ── */
-  [data-theme="light"] .pm-bnav { background: #ffffff !important; border-top: 1px solid #E5E7EB !important; }
+  [data-theme="light"] .pm-bnav { background: #ffffff !important; border-top: 1px solid #d8cce8 !important; }
   [data-theme="light"] .pm-bnav-tab.active { background: rgba(124,58,237,0.08) !important; }
-  [data-theme="light"] .pm-bnav-tab-label { color: #6B7280 !important; }
+  [data-theme="light"] .pm-bnav-tab-label { color: #7e6a9a !important; }
   [data-theme="light"] .pm-bnav-tab.active .pm-bnav-tab-label { color: #7c3aed !important; }
-  [data-theme="light"] .pm-bnav-handle { background: #ffffff !important; border-color: #E5E7EB !important; }
-  [data-theme="light"] .pm-bnav-item-label { color: #111827 !important; }
+  [data-theme="light"] .pm-bnav-handle { background: #ffffff !important; border-color: #d8cce8 !important; }
+  [data-theme="light"] .pm-bnav-item-label { color: #3b1f6b !important; }
   [data-theme="light"] .pm-bnav-item.active .pm-bnav-item-label { color: #7c3aed !important; }
   [data-theme="light"] .pm-nav-overlay { background: rgba(90,40,130,0.35) !important; }
   [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea { color-scheme: light; }
@@ -365,12 +365,12 @@ const MOBILE_CSS = `
 
   /* ── Scrollbar ── */
   ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #F3E8FF; }
-  ::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: #f5f0fb; }
+  ::-webkit-scrollbar-thumb { background: #d8cce8; border-radius: 4px; }
 
   [data-theme="dark"] ::-webkit-scrollbar { width: 6px; }
-  [data-theme="dark"] ::-webkit-scrollbar-track { background: #F3E8FF; }
-  [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 4px; }
+  [data-theme="dark"] ::-webkit-scrollbar-track { background: #f5f0fb; }
+  [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #d8cce8; border-radius: 4px; }
 
   /* ── Light mode SVG text ── */
   [data-theme="light"] svg text { fill: #374151; }
@@ -468,7 +468,7 @@ const MOBILE_CSS = `
   .pm-region-chip {
     flex-shrink: 0; border-radius: 99px; padding: 4px 11px;
     font-size: 0.72rem; font-weight: 600; cursor: pointer;
-    border: 1px solid #E5E7EB; background: transparent; color: #6B7280;
+    border: 1px solid #d8cce8; background: transparent; color: #6b5b95;
     white-space: nowrap; font-family: inherit; min-height: 28px !important;
     display: flex; align-items: center; gap: 4px; transition: all 0.15s;
   }
@@ -532,7 +532,7 @@ function MobileStyleInjector() {
     try {
       const t = localStorage.getItem("physio_theme") || "light";
       document.documentElement.setAttribute("data-theme", t);
-      document.body.style.background = "#F6F7FB";
+      document.body.style.background = "#faf8fc";
     } catch {}
     return () => { const s = document.getElementById(id); if (s) s.remove(); };
   }, []);
@@ -545,28 +545,28 @@ function MobileStyleInjector() {
 const THEMES = {
   dark: {
     // Mauve & White — elegant clinical
-    bg:"#F6F7FB",      surface:"#ffffff",  s2:"#F3E8FF",  s3:"#EDE9FE",
-    border:"#E5E7EB",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
-    a4:"#b45309",      a5:"#dc2626",      text:"#111827", muted:"#6B7280",
+    bg:"#faf8fc",      surface:"#ffffff",  s2:"#f5f0fb",  s3:"#ede7f6",
+    border:"#d8cce8",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
+    a4:"#b45309",      a5:"#dc2626",      text:"#1a1025", muted:"#7e6a9a",
     red:"#dc2626",     green:"#059669",   yellow:"#b45309", purple:"#7c3aed",
-    card:"#ffffff",    inputBg:"#F3E8FF", inputBorder:"#E5E7EB",
-    navBg:"#F6F7FB",   headerBg:"#ffffff",
-    shadow:"rgba(0,0,0,0.06)", isDark:false,
-    accentSoft:"rgba(124,58,237,0.08)", accentBorder:"rgba(124,58,237,0.18)",
+    card:"#ffffff",    inputBg:"#f5f0fb", inputBorder:"#c8b8e0",
+    navBg:"#f5f0fb",   headerBg:"#ffffff",
+    shadow:"rgba(90,40,130,0.10)", isDark:false,
+    accentSoft:"rgba(124,58,237,0.08)", accentBorder:"rgba(124,58,237,0.22)",
     successSoft:"rgba(5,150,105,0.07)", warnSoft:"rgba(180,83,9,0.07)",
     dangerSoft:"rgba(220,38,38,0.07)",
     blue:"#7c3aed",
   },
   light: {
     // Same mauve/white palette
-    bg:"#F6F7FB",      surface:"#ffffff",  s2:"#F3E8FF",  s3:"#EDE9FE",
-    border:"#E5E7EB",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
-    a4:"#b45309",      a5:"#dc2626",      text:"#111827", muted:"#6B7280",
+    bg:"#faf8fc",      surface:"#ffffff",  s2:"#f5f0fb",  s3:"#ede7f6",
+    border:"#d8cce8",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
+    a4:"#b45309",      a5:"#dc2626",      text:"#1a1025", muted:"#7e6a9a",
     red:"#dc2626",     green:"#059669",   yellow:"#b45309", purple:"#7c3aed",
-    card:"#ffffff",    inputBg:"#F3E8FF", inputBorder:"#E5E7EB",
-    navBg:"#F6F7FB",   headerBg:"#ffffff",
-    shadow:"rgba(0,0,0,0.06)", isDark:false,
-    accentSoft:"rgba(124,58,237,0.08)", accentBorder:"rgba(124,58,237,0.18)",
+    card:"#ffffff",    inputBg:"#f5f0fb", inputBorder:"#c8b8e0",
+    navBg:"#f5f0fb",   headerBg:"#ffffff",
+    shadow:"rgba(90,40,130,0.10)", isDark:false,
+    accentSoft:"rgba(124,58,237,0.08)", accentBorder:"rgba(124,58,237,0.22)",
     successSoft:"rgba(5,150,105,0.07)", warnSoft:"rgba(180,83,9,0.07)",
     dangerSoft:"rgba(220,38,38,0.07)",
     blue:"#7c3aed",
