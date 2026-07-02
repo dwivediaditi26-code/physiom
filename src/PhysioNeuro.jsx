@@ -97,17 +97,24 @@ function MovementIcon({ size=20, color="#7c3aed" }) {
 
 // Badge for muscle-card headers: shows an uploaded Cloudinary photo (named by the
 // muscle id, e.g. "mmt_adduc") if one exists, falling back to a simple movement icon.
-function MuscleBadge({ id, size=40 }) {
+function MuscleBadge({ id, title, size=40 }) {
   const [imgOk, setImgOk] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
   const thumb = `${CLOUDINARY_BASE}/f_auto,q_auto,w_${size*2},h_${size*2},c_fill/${id}`;
+  const full  = `${CLOUDINARY_BASE}/f_auto,q_auto/${id}`;
   return (
-    <div style={{width:size,height:size,borderRadius:11,background:`${C.accent}14`,
-      display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
-      {imgOk
-        ? <img src={thumb} alt="" onError={()=>setImgOk(false)}
-            style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
-        : <MovementIcon size={size*0.5} color={C.accent}/>}
-    </div>
+    <>
+      <div onClick={imgOk?(e=>{e.stopPropagation();setOpen(true);}):undefined}
+        style={{width:size,height:size,borderRadius:11,background:`${C.accent}14`,
+        display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",
+        cursor:imgOk?"pointer":"default"}}>
+        {imgOk
+          ? <img src={thumb} alt="" onError={()=>setImgOk(false)}
+              style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+          : <MovementIcon size={size*0.5} color={C.accent}/>}
+      </div>
+      {open && <ImageModal src={full} title={title||id} onClose={()=>setOpen(false)}/>}
+    </>
   );
 }
 
@@ -1437,19 +1444,19 @@ function MMTModule({data,set,navContext={}}){
         </div>
       )}
 
-      {/* MMT Grade Legend — collapsed by default to save space on mobile */}
-      <div style={{marginBottom:12,padding:"8px 10px",background:C.s2,borderRadius:8,border:`1px solid ${C.border}`}}>
-        <div onClick={()=>setShowMMTScale(o=>!o)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",gap:8}}>
-          <div style={{fontSize:"0.6rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>MMT Scale</div>
+      {/* MMT Grade Legend — minimal slim strip, collapsed by default */}
+      <div style={{marginBottom:8}}>
+        <div onClick={()=>setShowMMTScale(o=>!o)} style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",padding:"2px 2px"}}>
+          <span style={{fontSize:"0.55rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",flexShrink:0}}>MMT Scale</span>
           {!showMMTScale && (
-            <div style={{fontSize:"0.6rem",color:C.muted,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+            <span style={{fontSize:"0.58rem",color:C.muted,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
               5 Normal → 0 Zero
-            </div>
+            </span>
           )}
-          <span style={{color:C.muted,fontSize:"0.65rem",flexShrink:0}}>{showMMTScale?"▲":"▼"}</span>
+          <span style={{color:C.muted,fontSize:"0.6rem",flexShrink:0}}>{showMMTScale?"▲":"▼"}</span>
         </div>
         {showMMTScale && (
-          <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>
+          <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:5,padding:"6px 8px",background:C.s2,borderRadius:7,border:`1px solid ${C.border}`}}>
             {MMT_GRADES.map(g=>(
               <span key={g.g} style={{fontSize:"0.62rem",padding:"2px 6px",borderRadius:5,background:`${g.color}20`,color:g.color,fontWeight:700,border:`1px solid ${g.color}30`}} title={g.desc}>
                 {g.g} {g.label}
@@ -1496,7 +1503,7 @@ function MMTModule({data,set,navContext={}}){
               {/* Header */}
               <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"14px 16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
                 <div style={{display:"flex",gap:12,alignItems:"flex-start",flex:"1 1 160px",minWidth:0}}>
-                  <MuscleBadge id={m.id}/>
+                  <MuscleBadge id={m.id} title={m.muscle}/>
                   <div style={{minWidth:0,paddingTop:1}}>
                     {(()=>{ const {title,sub}=parseMuscleName(m.muscle); return (
                       <>
