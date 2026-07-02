@@ -1568,7 +1568,13 @@ function AppInner({ currentUser, onSignOut }) {
                 <BnavItem navKey="fascia"      icon="🕸️" label="Fascia Integration"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="treatment"?" open":""}`}>
-                <BnavItem navKey="treatment"    icon="💊" label="Treatment"/>
+                <BnavItem navKey="exercise"      icon="🏋" label="Exercise Prescription"/>
+                <BnavItem navKey="tx_techniques" icon="🤲" label="Tx Techniques"/>
+                <button className={`pm-bnav-item${active==="treatment"&&txTab==="hep"?" active":""}`}
+                  onClick={()=>{ navTo("treatment"); setTxTab("hep"); setBnavTab(null); }}>
+                  <span className="pm-bnav-item-icon">🏠</span>
+                  <span className="pm-bnav-item-label">Home Protocol</span>
+                </button>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="documentation"?" open":""}`}>
                 <BnavItem navKey="tx_sessions" icon="⚡" label="Quick Visit"/>
