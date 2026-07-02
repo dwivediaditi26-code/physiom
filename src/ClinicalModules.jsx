@@ -6013,7 +6013,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
 
   const togglePhase = (key) => setOpenPhase(p => ({ ...p, [key]: !p[key] }));
 
-  const TAB_REGION_MAP = { knee:"Knee", shoulder:"Shoulder", elbow:"Elbow", hip:"Hip" };
+  const TAB_REGION_MAP = { knee:"Knee", shoulder:"Shoulder", elbow:"Elbow", hip:"Hip", lumbar:"Lumbar", cervical:"Cervical", posture:"Posture" };
 
   const TemplateCard = ({ templateKey:key, t }) => {
     const tx = TEMPLATE_TX[key];
@@ -6073,10 +6073,13 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
 
   const TABS = [
     { id:"quick",    label:"⚡ Quick",    color:"#6B6B6B" },
+    { id:"lumbar",   label:"🦴 Lumbar",   color:"#0f766e" },
+    { id:"cervical", label:"🧠 Cervical", color:"#9333ea" },
     { id:"knee",     label:"🦵 Knee",     color:"#ff4d6d" },
     { id:"shoulder", label:"💪 Shoulder", color:"#7f5af0" },
     { id:"elbow",    label:"🦾 Elbow",    color:"#ffb300" },
     { id:"hip",      label:"🍑 Hip",      color:"#ff7043" },
+    { id:"posture",  label:"🧍 Posture",  color:"#0891b2" },
     { id:"all",      label:`📦 All (${otherTemplateCount})`, color:"#00c97a" },
   ];
 
@@ -6137,6 +6140,14 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                   </div>
                 )}
               </div>
+            )}
+
+            {activeTab === "lumbar" && (
+              <QuickTemplatesForRegion regionName="Lumbar"/>
+            )}
+
+            {activeTab === "cervical" && (
+              <QuickTemplatesForRegion regionName="Cervical"/>
             )}
 
             {activeTab === "knee" && (() => {
@@ -6235,6 +6246,10 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                 <ProtocolPanel protocols={HIP_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
                 <QuickTemplatesForRegion regionName="Hip"/>
               </>
+            )}
+
+            {activeTab === "posture" && (
+              <QuickTemplatesForRegion regionName="Posture"/>
             )}
 
             {activeTab === "all" && (
