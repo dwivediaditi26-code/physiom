@@ -5226,60 +5226,60 @@ const TEMPLATE_TX = {
 };
 const PROGRAMME_TEMPLATES = {
   // Lumbar
-  acute_lbp:      { label:"Acute LBP",                  exercises:["lb_tva","lb_prone_lying","lb_press_up","lb_cat_camel","lb_glute_bridge","lb_pelvic_tilt"] },
-  chronic_lbp:    { label:"Chronic LBP",                 exercises:["lb_dead_bug","lb_bird_dog","lb_plank","lb_side_plank","lb_hip_hinge","pc_pallof","lb_stir_pot"] },
-  disc_ext:       { label:"Disc — Extension Bias",       exercises:["lb_prone_lying","lb_press_up","lb_standing_ext","lb_tva","lb_glute_bridge"] },
-  disc_flex:      { label:"Disc — Flexion Bias",         exercises:["lb_knee_chest","lb_cat_camel","lb_rotation_stretch","lb_piriformis","lb_tva"] },
+  acute_lbp:      { region:"Lumbar", label:"Acute LBP",                  exercises:["lb_tva","lb_prone_lying","lb_press_up","lb_cat_camel","lb_glute_bridge","lb_pelvic_tilt"] },
+  chronic_lbp:    { region:"Lumbar", label:"Chronic LBP",                 exercises:["lb_dead_bug","lb_bird_dog","lb_plank","lb_side_plank","lb_hip_hinge","pc_pallof","lb_stir_pot"] },
+  disc_ext:       { region:"Lumbar", label:"Disc — Extension Bias",       exercises:["lb_prone_lying","lb_press_up","lb_standing_ext","lb_tva","lb_glute_bridge"] },
+  disc_flex:      { region:"Lumbar", label:"Disc — Flexion Bias",         exercises:["lb_knee_chest","lb_cat_camel","lb_rotation_stretch","lb_piriformis","lb_tva"] },
   // Hip
-  hip_oa:         { label:"Hip Osteoarthritis",          exercises:["hp_clam","hp_standing_abd","hp_hip_thrust","hp_90_90","hp_adductor_stretch","hp_thomas"] },
-  hip_bursitis:   { label:"Greater Trochanteric Bursitis", exercises:["hp_clam","hp_lat_walk","hp_monster_walk","hp_ober_stretch","hp_standing_abd"] },
-  groin_strain:   { label:"Groin / Adductor Strain",    exercises:["lb_copenhagen","hp_adductor_stretch","hp_side_step_squat","hp_hip_flex_raise","hp_hip_thrust"] },
+  hip_oa:         { region:"Hip", label:"Hip Osteoarthritis",          exercises:["hp_clam","hp_standing_abd","hp_hip_thrust","hp_90_90","hp_adductor_stretch","hp_thomas"] },
+  hip_bursitis:   { region:"Hip", label:"Greater Trochanteric Bursitis", exercises:["hp_clam","hp_lat_walk","hp_monster_walk","hp_ober_stretch","hp_standing_abd"] },
+  groin_strain:   { region:"Hip", label:"Groin / Adductor Strain",    exercises:["lb_copenhagen","hp_adductor_stretch","hp_side_step_squat","hp_hip_flex_raise","hp_hip_thrust"] },
   // Knee
-  pfps:           { label:"Patellofemoral Pain",         exercises:["kn_tqe","kn_vmo_squat","kn_step_down","hp_clam","hp_lat_walk","lb_glute_bridge"] },
-  patella_tend:   { label:"Patellar Tendinopathy",       exercises:["kn_isometric_wall","kn_slow_squat","kn_decline_squat","hp_hip_thrust","kn_rdl"] },
-  acl_early:      { label:"ACL Rehab — Early Phase",     exercises:["kn_quad_set","kn_straight_leg","kn_tqe","lb_glute_bridge","kn_acl_balance"] },
-  acl_late:       { label:"ACL Rehab — Return to Sport", exercises:["kn_vmo_squat","kn_step_down","kn_drop_jump","sp_plyometric","sp_agility","sp_nordics"] },
-  knee_oa:        { label:"Knee Osteoarthritis",         exercises:["kn_quad_set","kn_straight_leg","kn_sit_to_stand","kn_leg_press","lb_glute_bridge","ank_calf_raise"] },
-  hamstring_str:  { label:"Hamstring Strain Rehab",      exercises:["kn_hamstring_str","kn_rdl","sp_hip_ext_hamstring","kn_nordic","sp_nordics","sp_sprinting"] },
+  pfps:           { region:"Knee", label:"Patellofemoral Pain",         exercises:["kn_tqe","kn_vmo_squat","kn_step_down","hp_clam","hp_lat_walk","lb_glute_bridge"] },
+  patella_tend:   { region:"Knee", label:"Patellar Tendinopathy",       exercises:["kn_isometric_wall","kn_slow_squat","kn_decline_squat","hp_hip_thrust","kn_rdl"] },
+  acl_early:      { region:"Knee", label:"ACL Rehab — Early Phase",     exercises:["kn_quad_set","kn_straight_leg","kn_tqe","lb_glute_bridge","kn_acl_balance"] },
+  acl_late:       { region:"Knee", label:"ACL Rehab — Return to Sport", exercises:["kn_vmo_squat","kn_step_down","kn_drop_jump","sp_plyometric","sp_agility","sp_nordics"] },
+  knee_oa:        { region:"Knee", label:"Knee Osteoarthritis",         exercises:["kn_quad_set","kn_straight_leg","kn_sit_to_stand","kn_leg_press","lb_glute_bridge","ank_calf_raise"] },
+  hamstring_str:  { region:"Knee", label:"Hamstring Strain Rehab",      exercises:["kn_hamstring_str","kn_rdl","sp_hip_ext_hamstring","kn_nordic","sp_nordics","sp_sprinting"] },
   // Ankle & Foot
-  ankle_sprain:   { label:"Ankle Sprain Rehab",          exercises:["ank_single_leg","ank_peroneal","ank_calf_raise","ank_tibialis_ant","ank_reach_sebt","ank_lateral_hops"] },
-  achilles:       { label:"Achilles Tendinopathy",       exercises:["ank_isometric_calf","ank_ec_drop","ank_heavy_slow_calf","ank_single_leg","ank_calf_raise"] },
-  plantar_fascia: { label:"Plantar Fasciitis",           exercises:["ank_pf_stretch","ank_calf_stretch","ank_short_foot","ank_marble_pickup","ank_single_leg"] },
+  ankle_sprain:   { region:"Ankle & Foot", label:"Ankle Sprain Rehab",          exercises:["ank_single_leg","ank_peroneal","ank_calf_raise","ank_tibialis_ant","ank_reach_sebt","ank_lateral_hops"] },
+  achilles:       { region:"Ankle & Foot", label:"Achilles Tendinopathy",       exercises:["ank_isometric_calf","ank_ec_drop","ank_heavy_slow_calf","ank_single_leg","ank_calf_raise"] },
+  plantar_fascia: { region:"Ankle & Foot", label:"Plantar Fasciitis",           exercises:["ank_pf_stretch","ank_calf_stretch","ank_short_foot","ank_marble_pickup","ank_single_leg"] },
   // Shoulder
-  shoulder_imp:   { label:"Shoulder Impingement",        exercises:["sh_wall_slide","sh_prone_ytw","sh_face_pull","sh_er_band","sh_pec_stretch","sh_ir_stretch"] },
-  frozen_shoulder:{ label:"Frozen Shoulder",             exercises:["sh_pendulum","sh_pully","sh_capsule_stretch","sh_ir_stretch","sh_er_band"] },
-  rct_tear:       { label:"Rotator Cuff Tear Rehab",     exercises:["sh_pendulum","sh_er_band","sh_sidelying_ir","sh_prone_ytw","sh_rhythmic_stab"] },
+  shoulder_imp:   { region:"Shoulder", label:"Shoulder Impingement",        exercises:["sh_wall_slide","sh_prone_ytw","sh_face_pull","sh_er_band","sh_pec_stretch","sh_ir_stretch"] },
+  frozen_shoulder:{ region:"Shoulder", label:"Frozen Shoulder",             exercises:["sh_pendulum","sh_pully","sh_capsule_stretch","sh_ir_stretch","sh_er_band"] },
+  rct_tear:       { region:"Shoulder", label:"Rotator Cuff Tear Rehab",     exercises:["sh_pendulum","sh_er_band","sh_sidelying_ir","sh_prone_ytw","sh_rhythmic_stab"] },
   // Elbow
-  tennis_elbow:   { label:"Tennis Elbow",                exercises:["el_isometric_ext","el_tyler_twist","el_wrist_ext_isoton","el_grip_strength"] },
-  golfers_elbow:  { label:"Golfer's Elbow",              exercises:["el_wrist_flex_iso","el_wrist_flex_eccen","el_forearm_stretch","el_pron_sup"] },
+  tennis_elbow:   { region:"Elbow", label:"Tennis Elbow",                exercises:["el_isometric_ext","el_tyler_twist","el_wrist_ext_isoton","el_grip_strength"] },
+  golfers_elbow:  { region:"Elbow", label:"Golfer's Elbow",              exercises:["el_wrist_flex_iso","el_wrist_flex_eccen","el_forearm_stretch","el_pron_sup"] },
   // Cervical
-  cervicogenic_ha:{ label:"Cervicogenic Headache",       exercises:["cx_dnf","cx_chin_tuck","cx_scap_ret","pc_ucs_chin","cx_suboccip_release","cx_isometric"] },
-  cervical_rad:   { label:"Cervical Radiculopathy",      exercises:["cx_chin_tuck","cx_neural_slider","cx_neural_ulnar","cx_neural_radial","cx_dnf","cx_isometric"] },
+  cervicogenic_ha:{ region:"Cervical", label:"Cervicogenic Headache",       exercises:["cx_dnf","cx_chin_tuck","cx_scap_ret","pc_ucs_chin","cx_suboccip_release","cx_isometric"] },
+  cervical_rad:   { region:"Cervical", label:"Cervical Radiculopathy",      exercises:["cx_chin_tuck","cx_neural_slider","cx_neural_ulnar","cx_neural_radial","cx_dnf","cx_isometric"] },
   // Posture
-  ucs:            { label:"Upper Crossed Syndrome",      exercises:["cx_chin_tuck","pc_ucs_chin","pc_band_pullap","pc_pec_foam","sh_wall_slide","sh_prone_ytw","pc_wall_angel"] },
-  lcs:            { label:"Lower Crossed Syndrome",      exercises:["pc_lcs_bridge","pc_hip_flex_str","lb_tva","lb_bird_dog","lb_hip_flexor","lb_glute_bridge","pc_pallof"] },
+  ucs:            { region:"Posture", label:"Upper Crossed Syndrome",      exercises:["cx_chin_tuck","pc_ucs_chin","pc_band_pullap","pc_pec_foam","sh_wall_slide","sh_prone_ytw","pc_wall_angel"] },
+  lcs:            { region:"Posture", label:"Lower Crossed Syndrome",      exercises:["pc_lcs_bridge","pc_hip_flex_str","lb_tva","lb_bird_dog","lb_hip_flexor","lb_glute_bridge","pc_pallof"] },
   // Thoracic
-  thoracic_mob:   { label:"Thoracic Stiffness",          exercises:["tx_foam_ext","tx_book_open","tx_quadruped_rot","tx_thread_needle","tx_prone_cobra","tx_seated_row"] },
+  thoracic_mob:   { region:"Thoracic", label:"Thoracic Stiffness",          exercises:["tx_foam_ext","tx_book_open","tx_quadruped_rot","tx_thread_needle","tx_prone_cobra","tx_seated_row"] },
   // Pelvic floor
-  stress_incont:  { label:"Stress Incontinence",         exercises:["pf_kegel","pf_quick_flick","pf_functional","lb_glute_bridge","hp_clam"] },
-  pelvic_pain:    { label:"Pelvic Girdle Pain",          exercises:["pf_sij_bridge","pf_abductor_iso","pf_kegel","lb_bird_dog","lb_tva"] },
+  stress_incont:  { region:"Pelvic floor", label:"Stress Incontinence",         exercises:["pf_kegel","pf_quick_flick","pf_functional","lb_glute_bridge","hp_clam"] },
+  pelvic_pain:    { region:"Pelvic floor", label:"Pelvic Girdle Pain",          exercises:["pf_sij_bridge","pf_abductor_iso","pf_kegel","lb_bird_dog","lb_tva"] },
   // Respiratory
-  copd:           { label:"COPD Breathing",              exercises:["resp_pursed_lip","resp_diaphragm","resp_lateral_costal","resp_imst","card_walk_prog"] },
+  copd:           { region:"Respiratory", label:"COPD Breathing",              exercises:["resp_pursed_lip","resp_diaphragm","resp_lateral_costal","resp_imst","card_walk_prog"] },
   // Older adult
-  falls_prev:     { label:"Falls Prevention",            exercises:["oa_otago_ankle","oa_otago_knee","oa_stepping","oa_tug","oa_otago_walk","neuro_foam_balance"] },
-  frailty:        { label:"Frailty / Sarcopenia",        exercises:["oa_resistance","oa_power_training","oa_otago_ankle","kn_sit_to_stand","lb_glute_bridge"] },
+  falls_prev:     { region:"Older adult", label:"Falls Prevention",            exercises:["oa_otago_ankle","oa_otago_knee","oa_stepping","oa_tug","oa_otago_walk","neuro_foam_balance"] },
+  frailty:        { region:"Older adult", label:"Frailty / Sarcopenia",        exercises:["oa_resistance","oa_power_training","oa_otago_ankle","kn_sit_to_stand","lb_glute_bridge"] },
   // Sports
-  return_run:     { label:"Return to Running",           exercises:["sp_run_walk","sp_plyometric","sp_agility","sp_sprinting","kn_drop_jump","kn_rdl"] },
-  throwing_rts:   { label:"Return to Throwing",          exercises:["sp_ir_er_ratio","sp_throw_prog","sp_decel_training","sh_prone_ytw","sh_rhythmic_stab"] },
+  return_run:     { region:"Sports", label:"Return to Running",           exercises:["sp_run_walk","sp_plyometric","sp_agility","sp_sprinting","kn_drop_jump","kn_rdl"] },
+  throwing_rts:   { region:"Sports", label:"Return to Throwing",          exercises:["sp_ir_er_ratio","sp_throw_prog","sp_decel_training","sh_prone_ytw","sh_rhythmic_stab"] },
   // Pilates / Yoga
-  clinical_pilates:{ label:"Clinical Pilates Core",      exercises:["pil_imprint","pil_hundred","pil_single_leg_str","pil_swimming","lb_bird_dog","pil_roll_up"] },
-  yoga_back:      { label:"Yoga for Back Pain",          exercises:["yoga_cat_cow","yoga_child_pose","yoga_bridge_yoga","yoga_downdog","lb_piriformis","lb_rotation_stretch"] },
+  clinical_pilates:{ region:"Pilates / Yoga", label:"Clinical Pilates Core",      exercises:["pil_imprint","pil_hundred","pil_single_leg_str","pil_swimming","lb_bird_dog","pil_roll_up"] },
+  yoga_back:      { region:"Pilates / Yoga", label:"Yoga for Back Pain",          exercises:["yoga_cat_cow","yoga_child_pose","yoga_bridge_yoga","yoga_downdog","lb_piriformis","lb_rotation_stretch"] },
   // Neuro
-  neuro_balance:  { label:"Neurological Balance",        exercises:["neuro_tandem","neuro_romberg","neuro_foam_balance","neuro_dual_task","oa_stepping"] },
+  neuro_balance:  { region:"Neuro", label:"Neurological Balance",        exercises:["neuro_tandem","neuro_romberg","neuro_foam_balance","neuro_dual_task","oa_stepping"] },
   // Cardiac
-  cardiac_phase2: { label:"Cardiac Rehab Phase 2",       exercises:["card_walk_prog","card_resistance","card_stretching","resp_diaphragm"] },
+  cardiac_phase2: { region:"Cardiac", label:"Cardiac Rehab Phase 2",       exercises:["card_walk_prog","card_resistance","card_stretching","resp_diaphragm"] },
   // Hydrotherapy
-  aquatic_rehab:  { label:"Aquatic Rehabilitation",      exercises:["hydro_walk","hydro_squat","hydro_balance","hydro_run","hydro_kick"] },
+  aquatic_rehab:  { region:"Hydrotherapy", label:"Aquatic Rehabilitation",      exercises:["hydro_walk","hydro_squat","hydro_balance","hydro_run","hydro_kick"] },
 };
 
 const ALL_EXERCISES = Object.values(EXERCISE_DB).flatMap(region =>
@@ -6173,47 +6173,59 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
               <div>
                 <input value={tSearch} onChange={e=>setTSearch(e.target.value)} placeholder="Search condition… hip OA, ACL, frozen shoulder"
                   style={{ width:"100%", padding:"6px 10px", borderRadius:8, border:"1px solid #E0E0E2", marginBottom:8, fontSize:"0.66rem", fontFamily:"inherit", outline:"none", background:"#FFFFFF", color:"#0D0D0D" }}/>
-                {Object.entries(PROGRAMME_TEMPLATES)
-                  .filter(([k,t]) => !tSearch || t.label.toLowerCase().includes(tSearch.toLowerCase()))
-                  .map(([key,t]) => {
-                    const tx = TEMPLATE_TX[key];
-                    const isOpen = openTpl === key;
-                    const added = t.exercises.filter(id => programme?.find(p=>p.id===id)).length;
-                    return (
-                      <div key={key} style={{ marginBottom:4 }}>
-                        <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
-                          <div style={{ flex:1 }}>
-                            <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{t.label}</div>
-                            <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
-                          </div>
-                          <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
-                        </div>
-                        {isOpen && (
-                          <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"transparent" }}>
-                            <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:6 }}>
-                              ＋ Add {t.exercises.filter(id=>!programme?.find(p=>p.id===id)).length} new exercises
-                            </button>
-                            {tx&&(tx.manual||[]).length>0&&(
-                              <div style={{ marginBottom:5 }}>
-                                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🤲 Manual therapy</div>
-                                <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
-                                  {tx.manual.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(124,58,237,0.3)", background:"transparent", color:"#7c3aed", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
-                                </div>
+                {(()=>{
+                  const filtered = Object.entries(PROGRAMME_TEMPLATES)
+                    .filter(([k,t]) => !tSearch || t.label.toLowerCase().includes(tSearch.toLowerCase()));
+                  const byRegion = {};
+                  filtered.forEach(([key,t]) => {
+                    const r = t.region || "Other";
+                    (byRegion[r] = byRegion[r] || []).push([key,t]);
+                  });
+                  return Object.entries(byRegion).map(([regionName, entries]) => (
+                    <div key={regionName} style={{ marginBottom:10 }}>
+                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", margin:"6px 2px" }}>{regionName}</div>
+                      {entries.map(([key,t]) => {
+                        const tx = TEMPLATE_TX[key];
+                        const isOpen = openTpl === key;
+                        const added = t.exercises.filter(id => programme?.find(p=>p.id===id)).length;
+                        return (
+                          <div key={key} style={{ marginBottom:4 }}>
+                            <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
+                              <div style={{ flex:1 }}>
+                                <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{t.label}</div>
+                                <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
+                              </div>
+                              <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
+                            </div>
+                            {isOpen && (
+                              <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"transparent" }}>
+                                <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:6 }}>
+                                  ＋ Add {t.exercises.filter(id=>!programme?.find(p=>p.id===id)).length} new exercises
+                                </button>
+                                {tx&&(tx.manual||[]).length>0&&(
+                                  <div style={{ marginBottom:5 }}>
+                                    <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🤲 Manual therapy</div>
+                                    <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
+                                      {tx.manual.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(124,58,237,0.3)", background:"transparent", color:"#7c3aed", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
+                                    </div>
+                                  </div>
+                                )}
+                                {tx&&(tx.machine||[]).length>0&&(
+                                  <div>
+                                    <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>⚡ Modality</div>
+                                    <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
+                                      {tx.machine.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(0,229,255,0.3)", background:"transparent", color:"#00c97a", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
-                            {tx&&(tx.machine||[]).length>0&&(
-                              <div>
-                                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>⚡ Modality</div>
-                                <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
-                                  {tx.machine.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(0,229,255,0.3)", background:"transparent", color:"#00c97a", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
-                                </div>
-                              </div>
-                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  ));
+                })()}
               </div>
             )}
 
@@ -6295,15 +6307,20 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
       {/* Region selector */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
         <label style={{fontSize:"0.75rem",fontWeight:700,color:"#6B6B6B",whiteSpace:"nowrap"}}>📍 Region:</label>
-        <select
-          value={activeRegion}
-          onChange={e=>setActiveRegion(e.target.value)}
-          style={{flex:1,padding:"6px 10px",borderRadius:8,border:"1px solid #E0E0E2",background:"#FFFFFF",color:"#0D0D0D",fontSize:"0.8rem",fontFamily:"inherit",fontWeight:600,cursor:"pointer",outline:"none"}}
-        >
-          {Object.entries(EXERCISE_DB).map(([key,r])=>(
-            <option key={key} value={key}>{r.icon} {r.label}</option>
-          ))}
-        </select>
+        <div style={{position:"relative",flex:1,minWidth:0}}>
+          <select
+            value={activeRegion}
+            onChange={e=>setActiveRegion(e.target.value)}
+            style={{width:"100%",boxSizing:"border-box",appearance:"none",WebkitAppearance:"none",MozAppearance:"none",
+              padding:"9px 34px 9px 12px",borderRadius:10,border:"1.5px solid #7c3aed",background:"rgba(124,58,237,0.06)",
+              color:"#7c3aed",fontSize:"0.8rem",fontFamily:"inherit",fontWeight:700,cursor:"pointer",outline:"none"}}
+          >
+            {Object.entries(EXERCISE_DB).map(([key,r])=>(
+              <option key={key} value={key}>{r.icon} {r.label}</option>
+            ))}
+          </select>
+          <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:"#7c3aed",fontSize:"0.7rem"}}>▾</span>
+        </div>
       </div>
 
       {/* Phase + Search */}
