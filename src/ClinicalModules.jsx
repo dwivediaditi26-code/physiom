@@ -5990,8 +5990,56 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
 }
 
 // ─── REGION TEMPLATE MAP ──────────────────────────────────────────────────────
+// ─── Reusable rich exercise card (same layout as the main Exercise Library) ──
+function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, accentColor="#7c3aed" }) {
+  const [open, setOpen] = React.useState(false);
+  const phaseColors = { "Phase 1":"#00c97a", "Phase 2":"#ffb300", "Phase 3":"#ff4d6d" };
+  return (
+    <div style={{ background:"#ffffff", border:`1px solid ${inProg?accentColor+"50":"#E0E0E2"}`, borderRadius:10, overflow:"hidden", marginBottom:6 }}>
+      <div onClick={()=>setOpen(o=>!o)} style={{ padding:"9px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:9 }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
+            <span style={{ fontSize:"0.75rem", fontWeight:700, color:"#0D0D0D" }}>{ex.name}</span>
+            {ex.phase && <span style={{ fontSize:"0.75rem", padding:"1px 6px", borderRadius:5, background:`${phaseColors[ex.phase]||"#6B6B6B"}18`, color:phaseColors[ex.phase]||"#6B6B6B", border:`1px solid ${phaseColors[ex.phase]||"#6B6B6B"}40`, fontWeight:700 }}>{ex.phase}</span>}
+            {ex.evidence && <span style={{ fontSize:"0.75rem", color:"#ffb300", fontWeight:700 }}>⭐ {ex.evidence.split(" — ")[0]}</span>}
+          </div>
+          {ex.target && <div style={{ fontSize:"0.73rem", color:"#6B6B6B", marginTop:2 }}>{ex.target}</div>}
+        </div>
+        <div style={{ display:"flex", gap:5, alignItems:"center", flexShrink:0 }}>
+          <span style={{ fontSize:"0.8rem", color:"#6B6B6B" }}>{open?"▲":"▼"}</span>
+          {(onAdd||onRemove) && (
+            <button onClick={e=>{ e.stopPropagation(); inProg ? (onRemove&&onRemove()) : (onAdd&&onAdd()); }}
+              style={{ padding:"4px 10px", borderRadius:7, fontSize:"0.82rem", fontWeight:800,
+                border:`1px solid ${inProg?"rgba(255,77,109,0.4)":"rgba(0,201,122,0.4)"}`,
+                background:inProg?"rgba(255,77,109,0.12)":"rgba(0,201,122,0.12)",
+                color:inProg?"#ff4d6d":"#00c97a", cursor:"pointer" }}>
+              {inProg?"✕ Remove":"+ Add"}
+            </button>
+          )}
+        </div>
+      </div>
+      {open && (
+        <div style={{ padding:"0 12px 12px", borderTop:"1px solid #E0E0E2" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:5, margin:"10px 0" }}>
+            {[["Sets",ex.sets],["Reps",ex.reps],["Hold",`${ex.hold}s`],["Freq",ex.freq]].map(([l,v])=>(
+              <div key={l} style={{ background:"#FAFAFA", borderRadius:8, padding:"7px", textAlign:"center" }}>
+                <div style={{ fontSize:"0.85rem", fontWeight:900, color:accentColor }}>{v}</div>
+                <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase" }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          {ex.desc && <div style={{ fontSize:"0.73rem", color:"#0D0D0D", lineHeight:1.6, marginBottom:7 }}>{ex.desc}</div>}
+          {ex.cues && <div style={{ padding:"7px 10px", background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:8, fontSize:"0.8rem", color:"#ffb300", marginBottom:7 }}>💡 {ex.cues}</div>}
+          {ex.progression && <div style={{ fontSize:"0.75rem", color:"#00c97a", marginBottom:4 }}>📈 Progression: {ex.progression}</div>}
+          {ex.evidence && <div style={{ fontSize:"0.82rem", color:"#7f5af0" }}>📚 Evidence: {ex.evidence}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── QUICK TEMPLATES PANEL ────────────────────────────────────────────────────
-function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, programme }) {
+function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, onRemove, programme }) {
   const [open,       setOpen]       = useState(false);
   const [activeTab,  setActiveTab]  = useState("quick");
   const [openId,     setOpenId]     = useState(null);
@@ -6030,18 +6078,19 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
             </button>
             <div style={{ marginBottom:6 }}>
               <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>💪 Exercises in this template</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                {t.exercises.map(id => {
-                  const ex = ALL_EXERCISES.find(e=>e.id===id);
-                  const already = programme?.find(p=>p.id===id);
-                  return (
-                    <div key={id} style={{ fontSize:"0.7rem", color:"#0D0D0D", padding:"5px 9px", background:"#FAFAFA", border:"1px solid #E0E0E2", borderRadius:6, display:"flex", justifyContent:"space-between", alignItems:"center", gap:6 }}>
-                      <span>{ex ? ex.name : id.replace(/_/g," ")}</span>
-                      {already && <span style={{ fontSize:"0.58rem", color:"#00c97a", fontWeight:700, flexShrink:0 }}>✓ added</span>}
-                    </div>
-                  );
-                })}
-              </div>
+              {t.exercises.map(id => {
+                const ex = ALL_EXERCISES.find(e=>e.id===id);
+                const already = !!programme?.find(p=>p.id===id);
+                if (!ex) return (
+                  <div key={id} style={{ fontSize:"0.7rem", color:"#6B6B6B", padding:"5px 9px", background:"#FAFAFA", border:"1px solid #E0E0E2", borderRadius:6, marginBottom:4 }}>
+                    {id.replace(/_/g," ")}
+                  </div>
+                );
+                return (
+                  <ExerciseDetailCard key={id} ex={ex} inProg={already}
+                    onAdd={()=>onAdd&&onAdd(ex)} onRemove={()=>onRemove&&onRemove(ex.id)}/>
+                );
+              })}
             </div>
             {tx&&(tx.manual||[]).length>0&&(
               <div style={{ marginBottom:5 }}>
@@ -6349,7 +6398,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
   return(
     <div>
       {/* ── QUICK TEMPLATES + KNEE PROTOCOLS ── */}
-      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} onAdd={addEx} programme={programme} />
+      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} onAdd={addEx} onRemove={removeEx} programme={programme} />
 
       {/* Region selector */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
