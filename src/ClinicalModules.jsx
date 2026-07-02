@@ -6033,6 +6033,21 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
             <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:6 }}>
               ＋ Add {t.exercises.filter(id=>!programme?.find(p=>p.id===id)).length} new exercises
             </button>
+            <div style={{ marginBottom:6 }}>
+              <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>💪 Exercises in this template</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                {t.exercises.map(id => {
+                  const ex = ALL_EXERCISES.find(e=>e.id===id);
+                  const already = programme?.find(p=>p.id===id);
+                  return (
+                    <div key={id} style={{ fontSize:"0.7rem", color:"#0D0D0D", padding:"5px 9px", background:"#FAFAFA", border:"1px solid #E0E0E2", borderRadius:6, display:"flex", justifyContent:"space-between", alignItems:"center", gap:6 }}>
+                      <span>{ex ? ex.name : id.replace(/_/g," ")}</span>
+                      {already && <span style={{ fontSize:"0.58rem", color:"#00c97a", fontWeight:700, flexShrink:0 }}>✓ added</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             {tx&&(tx.manual||[]).length>0&&(
               <div style={{ marginBottom:5 }}>
                 <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🤲 Manual therapy</div>
