@@ -5282,6 +5282,14 @@ const PROGRAMME_TEMPLATES = {
   aquatic_rehab:  { region:"Hydrotherapy", label:"Aquatic Rehabilitation",      exercises:["hydro_walk","hydro_squat","hydro_balance","hydro_run","hydro_kick"] },
 };
 
+const PROGRAMME_REGION_TO_LIBRARY = {
+  "Lumbar":"lumbar", "Cervical":"cervical", "Thoracic":"thoracic", "Shoulder":"shoulder",
+  "Elbow":"elbow", "Hip":"hip", "Knee":"knee", "Ankle & Foot":"ankle", "Posture":"posture_correction",
+  "Pelvic floor":"pelvic_floor", "Respiratory":"respiratory", "Older adult":"older_adult",
+  "Sports":"sports", "Pilates / Yoga":"pilates_yoga", "Neuro":"neurological",
+  "Cardiac":"cardiac", "Hydrotherapy":"hydrotherapy",
+};
+
 const ALL_EXERCISES = Object.values(EXERCISE_DB).flatMap(region =>
   Object.values(region.categories).flatMap(cat => cat)
 );
@@ -6039,7 +6047,7 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, accentColor="#7c3aed"
 }
 
 // ─── QUICK TEMPLATES PANEL ────────────────────────────────────────────────────
-function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, onRemove, programme }) {
+function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, onRemove, onLoadTemplate, programme }) {
   const [open,       setOpen]       = useState(false);
   const [activeTab,  setActiveTab]  = useState("quick");
   const [openId,     setOpenId]     = useState(null);
@@ -6073,24 +6081,21 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, onRe
         </div>
         {isOpen && (
           <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"transparent" }}>
-            <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:6 }}>
-              ＋ Add {t.exercises.filter(id=>!programme?.find(p=>p.id===id)).length} new exercises
+            <button onClick={()=>{onLoadTemplate&&onLoadTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"9px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:8 }}>
+              → View & add {t.exercises.length} exercises in Exercise Library
             </button>
             <div style={{ marginBottom:6 }}>
-              <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>💪 Exercises in this template</div>
-              {t.exercises.map(id => {
-                const ex = ALL_EXERCISES.find(e=>e.id===id);
-                const already = !!programme?.find(p=>p.id===id);
-                if (!ex) return (
-                  <div key={id} style={{ fontSize:"0.7rem", color:"#6B6B6B", padding:"5px 9px", background:"#FAFAFA", border:"1px solid #E0E0E2", borderRadius:6, marginBottom:4 }}>
-                    {id.replace(/_/g," ")}
-                  </div>
-                );
-                return (
-                  <ExerciseDetailCard key={id} ex={ex} inProg={already}
-                    onAdd={()=>onAdd&&onAdd(ex)} onRemove={()=>onRemove&&onRemove(ex.id)}/>
-                );
-              })}
+              <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>💪 Included exercises</div>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                {t.exercises.map(id => {
+                  const ex = ALL_EXERCISES.find(e=>e.id===id);
+                  return (
+                    <span key={id} style={{ fontSize:"0.68rem", color:"#0D0D0D", padding:"3px 8px", background:"#FAFAFA", border:"1px solid #E0E0E2", borderRadius:20 }}>
+                      {ex ? ex.name : id.replace(/_/g," ")}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
             {tx&&(tx.manual||[]).length>0&&(
               <div style={{ marginBottom:5 }}>
@@ -6342,6 +6347,8 @@ function ExercisePrescriptionModule({ data, set }) {
   const [openEx,       setOpenEx]       = useState(null);
   const [clinician,    setClinician]    = useState("");
   const [reviewDate,   setReviewDate]   = useState("");
+  const [templateFilter, setTemplateFilter] = useState(null);
+  const libraryRef = React.useRef(null);
 
   const phases = ["All","Phase 1","Phase 2","Phase 3"];
   const phaseColor = {"Phase 1":"#00c97a","Phase 2":"#ffb300","Phase 3":"#ff4d6d"};
@@ -6372,6 +6379,15 @@ function ExercisePrescriptionModule({ data, set }) {
   const updateEx = (id,field,val) => syncProgramme(programme.map(e=>e.id===id?{...e,[field]:val}:e));
   const applyTemplate = (key) => { const t=PROGRAMME_TEMPLATES[key]; const exs=t.exercises.map(id=>ALL_EXERCISES.find(e=>e.id===id)).filter(Boolean); syncProgramme(exs.map(ex=>({...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:""}))); };
 
+  const onLoadTemplate = (key) => {
+    const t = PROGRAMME_TEMPLATES[key]; if(!t) return;
+    const libRegion = PROGRAMME_REGION_TO_LIBRARY[t.region];
+    if (libRegion && EXERCISE_DB[libRegion]) setActiveRegion(libRegion);
+    setActivePhase("All"); setSearch("");
+    setTemplateFilter({ key, label:t.label, ids:t.exercises });
+    setTimeout(()=>{ libraryRef.current?.scrollIntoView({ behavior:"smooth", block:"start" }); }, 60);
+  };
+
   const region = EXERCISE_DB[activeRegion];
   const filteredCategories = region ? Object.entries(region.categories).reduce((acc,[cat,exs])=>{
     const filtered=exs.filter(e=>(activePhase==="All"||e.phase===activePhase)&&(!search||e.name.toLowerCase().includes(search.toLowerCase())||e.target.toLowerCase().includes(search.toLowerCase())));
@@ -6398,7 +6414,25 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
   return(
     <div>
       {/* ── QUICK TEMPLATES + KNEE PROTOCOLS ── */}
-      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} onAdd={addEx} onRemove={removeEx} programme={programme} />
+      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} onAdd={addEx} onRemove={removeEx} onLoadTemplate={onLoadTemplate} programme={programme} />
+
+      <div ref={libraryRef}/>
+
+      {templateFilter && (
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",padding:"10px 12px",background:"rgba(124,58,237,0.06)",border:"1px solid rgba(124,58,237,0.25)",borderRadius:10,marginBottom:10}}>
+          <div style={{fontSize:"0.8rem",fontWeight:700,color:"#7c3aed"}}>📋 Loaded: {templateFilter.label} ({templateFilter.ids.length} exercises)</div>
+          <div style={{display:"flex",gap:6,flexShrink:0}}>
+            <button onClick={()=>{ templateFilter.ids.forEach(id=>{ const ex=ALL_EXERCISES.find(e=>e.id===id); if(ex) addEx(ex); }); }}
+              style={{padding:"5px 10px",borderRadius:7,border:"none",background:"linear-gradient(135deg,#7c3aed,#9333ea)",color:"#fff",fontWeight:800,fontSize:"0.72rem",cursor:"pointer"}}>
+              + Add all
+            </button>
+            <button onClick={()=>setTemplateFilter(null)}
+              style={{padding:"5px 10px",borderRadius:7,border:"1px solid #E0E0E2",background:"#fff",color:"#6B6B6B",fontWeight:700,fontSize:"0.72rem",cursor:"pointer"}}>
+              ✕ Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Region selector */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
@@ -6431,53 +6465,32 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
 
       {/* Exercise library */}
       <div style={{marginBottom:14}}>
-        {Object.entries(filteredCategories).map(([cat,exs])=>(
-          <div key={cat} style={{marginBottom:12}}>
-            <div style={{fontSize:"0.8rem",fontWeight:700,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"1px",marginBottom:7,display:"flex",alignItems:"center",gap:7}}>
-              <div style={{height:1,width:8,background:region.color,borderRadius:1}}/>{cat}
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:5}}>
+        {templateFilter ? (
+          templateFilter.ids.map(id=>{
+            const ex = ALL_EXERCISES.find(e=>e.id===id);
+            if(!ex) return null;
+            const inProg = !!programme.find(p=>p.id===id);
+            return (
+              <ExerciseDetailCard key={id} ex={ex} inProg={inProg}
+                onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} accentColor="#7c3aed"/>
+            );
+          })
+        ) : (
+          Object.entries(filteredCategories).map(([cat,exs])=>(
+            <div key={cat} style={{marginBottom:12}}>
+              <div style={{fontSize:"0.8rem",fontWeight:700,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"1px",marginBottom:7,display:"flex",alignItems:"center",gap:7}}>
+                <div style={{height:1,width:8,background:region.color,borderRadius:1}}/>{cat}
+              </div>
               {exs.map(ex=>{
-                const inProg=programme.find(p=>p.id===ex.id);
-                const isOpen=openEx===ex.id;
-                return(
-                  <div key={ex.id} style={{background:"#ffffff",border:`1px solid ${inProg?region.color+"50":"#1a2d45"}`,borderRadius:10,overflow:"hidden"}}>
-                    <div onClick={()=>setOpenEx(isOpen?null:ex.id)} style={{padding:"9px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:9}}>
-                      <div style={{flex:1}}>
-                        <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
-                          <span style={{fontSize:"0.75rem",fontWeight:700,color:"#0D0D0D"}}>{ex.name}</span>
-                          <span style={{fontSize:"0.75rem",padding:"1px 6px",borderRadius:5,background:`${phaseColor[ex.phase]||"#1a2d45"}18`,color:phaseColor[ex.phase]||"#6b8399",border:`1px solid ${phaseColor[ex.phase]||"#1a2d45"}40`,fontWeight:700}}>{ex.phase}</span>
-                          <span style={{fontSize:"0.75rem",color:"#ffb300",fontWeight:700}}>⭐ {ex.evidence?.split(" — ")[0]}</span>
-                        </div>
-                        <div style={{fontSize:"0.73rem",color:"#6B6B6B",marginTop:2}}>{ex.target}</div>
-                      </div>
-                      <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0}}>
-                        <span style={{fontSize:"0.8rem",color:"#6B6B6B"}}>{isOpen?"▲":"▼"}</span>
-                        <button onClick={e=>{e.stopPropagation();inProg?removeEx(ex.id):addEx(ex);}} style={{padding:"4px 10px",borderRadius:7,fontSize:"0.82rem",fontWeight:800,border:`1px solid ${inProg?"rgba(255,77,109,0.4)":"rgba(0,201,122,0.4)"}`,background:inProg?"rgba(255,77,109,0.12)":"rgba(0,201,122,0.12)",color:inProg?"#ff4d6d":"#00c97a",cursor:"pointer"}}>{inProg?"✕ Remove":"+ Add"}</button>
-                      </div>
-                    </div>
-                    {isOpen&&(
-                      <div style={{padding:"0 12px 12px",borderTop:"1px solid #E0E0E2"}}>
-                        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,margin:"10px 0"}}>
-                          {[["Sets",ex.sets],["Reps",ex.reps],["Hold",`${ex.hold}s`],["Freq",ex.freq]].map(([l,v])=>(
-                            <div key={l} style={{background:"#FFFFFF",borderRadius:8,padding:"7px",textAlign:"center"}}>
-                              <div style={{fontSize:"0.85rem",fontWeight:900,color:region.color}}>{v}</div>
-                              <div style={{fontSize:"0.75rem",color:"#6B6B6B",textTransform:"uppercase"}}>{l}</div>
-                            </div>
-                          ))}
-                        </div>
-                        <div style={{fontSize:"0.73rem",color:"#0D0D0D",lineHeight:1.6,marginBottom:7}}>{ex.desc}</div>
-                        <div style={{padding:"7px 10px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.8rem",color:"#ffb300",marginBottom:7}}>💡 {ex.cues}</div>
-                        <div style={{fontSize:"0.75rem",color:"#00c97a",marginBottom:4}}>📈 Progression: {ex.progression}</div>
-                        <div style={{fontSize:"0.82rem",color:"#7f5af0"}}>📚 Evidence: {ex.evidence}</div>
-                      </div>
-                    )}
-                  </div>
+                const inProg = !!programme.find(p=>p.id===ex.id);
+                return (
+                  <ExerciseDetailCard key={ex.id} ex={ex} inProg={inProg}
+                    onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} accentColor={region.color}/>
                 );
               })}
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
 
