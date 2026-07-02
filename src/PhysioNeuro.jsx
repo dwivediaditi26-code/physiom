@@ -1364,6 +1364,7 @@ function MMTModule({data,set,navContext={}}){
   },[navContext.mmtHighlight, navContext.mmtHighlights]);
   const [selected,setSelected]=useState(null);
   const [showInterp,setShowInterp]=useState(false);
+  const [showMMTScale,setShowMMTScale]=useState(false);
 
   const muscles=MMT_DATA[region]||[];
   const gradeColor=(g)=>MMT_GRADES.find(x=>x.g===g)?.color||C.muted;
@@ -1436,16 +1437,26 @@ function MMTModule({data,set,navContext={}}){
         </div>
       )}
 
-      {/* MMT Grade Legend */}
+      {/* MMT Grade Legend — collapsed by default to save space on mobile */}
       <div style={{marginBottom:12,padding:"8px 10px",background:C.s2,borderRadius:8,border:`1px solid ${C.border}`}}>
-        <div style={{fontSize:"0.6rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>MMT Scale</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-          {MMT_GRADES.map(g=>(
-            <span key={g.g} style={{fontSize:"0.62rem",padding:"2px 6px",borderRadius:5,background:`${g.color}20`,color:g.color,fontWeight:700,border:`1px solid ${g.color}30`}} title={g.desc}>
-              {g.g} {g.label}
-            </span>
-          ))}
+        <div onClick={()=>setShowMMTScale(o=>!o)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",gap:8}}>
+          <div style={{fontSize:"0.6rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>MMT Scale</div>
+          {!showMMTScale && (
+            <div style={{fontSize:"0.6rem",color:C.muted,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+              5 Normal → 0 Zero
+            </div>
+          )}
+          <span style={{color:C.muted,fontSize:"0.65rem",flexShrink:0}}>{showMMTScale?"▲":"▼"}</span>
         </div>
+        {showMMTScale && (
+          <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>
+            {MMT_GRADES.map(g=>(
+              <span key={g.g} style={{fontSize:"0.62rem",padding:"2px 6px",borderRadius:5,background:`${g.color}20`,color:g.color,fontWeight:700,border:`1px solid ${g.color}30`}} title={g.desc}>
+                {g.g} {g.label}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Region Picker */}
