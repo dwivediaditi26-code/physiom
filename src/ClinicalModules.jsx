@@ -6003,21 +6003,20 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, accentColor="#7c3aed"
   const [open, setOpen] = React.useState(false);
   const phaseColors = { "Phase 1":"#00c97a", "Phase 2":"#ffb300", "Phase 3":"#ff4d6d" };
   return (
-    <div style={{ background:"#ffffff", border:`1px solid ${inProg?accentColor+"50":"#E0E0E2"}`, borderRadius:10, overflow:"hidden", marginBottom:6 }}>
-      <div onClick={()=>setOpen(o=>!o)} style={{ padding:"9px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:9 }}>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
-            <span style={{ fontSize:"0.75rem", fontWeight:700, color:"#0D0D0D" }}>{ex.name}</span>
-            {ex.phase && <span style={{ fontSize:"0.75rem", padding:"1px 6px", borderRadius:5, background:`${phaseColors[ex.phase]||"#6B6B6B"}18`, color:phaseColors[ex.phase]||"#6B6B6B", border:`1px solid ${phaseColors[ex.phase]||"#6B6B6B"}40`, fontWeight:700 }}>{ex.phase}</span>}
-            {ex.evidence && <span style={{ fontSize:"0.75rem", color:"#ffb300", fontWeight:700 }}>⭐ {ex.evidence.split(" — ")[0]}</span>}
+    <div style={{ background:"#ffffff", border:`1px solid ${inProg?accentColor+"50":"#E0E0E2"}`, borderRadius:12, overflow:"hidden", marginBottom:10 }}>
+      <div onClick={()=>setOpen(o=>!o)} style={{ padding:"14px", cursor:"pointer" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:"0.94rem", fontWeight:700, color:"#0D0D0D", marginBottom:6 }}>{ex.name}</div>
+            <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginBottom:6 }}>
+              {ex.phase && <span style={{ fontSize:"0.69rem", fontWeight:700, padding:"2px 8px", borderRadius:6, background:`${phaseColors[ex.phase]||"#6B6B6B"}25`, color:phaseColors[ex.phase]||"#6B6B6B", border:`1px solid ${phaseColors[ex.phase]||"#6B6B6B"}40` }}>{ex.phase}</span>}
+              {ex.evidence && <span style={{ fontSize:"0.69rem", fontWeight:700, color:"#b45309" }}>⭐ {ex.evidence.split(" — ")[0]}</span>}
+            </div>
+            {ex.target && <div style={{ fontSize:"0.78rem", color:"#6B6B6B" }}>{ex.target}</div>}
           </div>
-          {ex.target && <div style={{ fontSize:"0.73rem", color:"#6B6B6B", marginTop:2 }}>{ex.target}</div>}
-        </div>
-        <div style={{ display:"flex", gap:5, alignItems:"center", flexShrink:0 }}>
-          <span style={{ fontSize:"0.8rem", color:"#6B6B6B" }}>{open?"▲":"▼"}</span>
           {(onAdd||onRemove) && (
             <button onClick={e=>{ e.stopPropagation(); inProg ? (onRemove&&onRemove()) : (onAdd&&onAdd()); }}
-              style={{ padding:"4px 10px", borderRadius:7, fontSize:"0.82rem", fontWeight:800,
+              style={{ flexShrink:0, padding:"7px 14px", borderRadius:8, fontSize:"0.78rem", fontWeight:800,
                 border:`1px solid ${inProg?"rgba(255,77,109,0.4)":"rgba(0,201,122,0.4)"}`,
                 background:inProg?"rgba(255,77,109,0.12)":"rgba(0,201,122,0.12)",
                 color:inProg?"#ff4d6d":"#00c97a", cursor:"pointer" }}>
@@ -6025,6 +6024,11 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, accentColor="#7c3aed"
             </button>
           )}
         </div>
+        {!open && (
+          <div style={{ display:"flex", justifyContent:"center", marginTop:10, paddingTop:10, borderTop:"1px solid #F1EFE8" }}>
+            <span style={{ color:"#B4B2A9", fontSize:"0.75rem" }}>▾ tap for sets, reps, cues</span>
+          </div>
+        )}
       </div>
       {open && (
         <div style={{ padding:"0 12px 12px", borderTop:"1px solid #E0E0E2" }}>
@@ -6453,14 +6457,24 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
         </div>
       </div>
 
-      {/* Phase + Search */}
-      <div style={{display:"flex",gap:7,marginBottom:10,flexWrap:"wrap"}}>
-        <div style={{display:"flex",gap:4}}>
-          {phases.map(p=>(
-            <button key={p} onClick={()=>setActivePhase(p)} style={{padding:"4px 9px",borderRadius:7,fontSize:"0.8rem",fontWeight:activePhase===p?800:500,border:`1px solid ${activePhase===p?(phaseColor[p]||"rgba(0,229,255,0.4)"):"#1a2d45"}`,background:activePhase===p?`${phaseColor[p]||"rgba(0,229,255,0.18)"}18`:"transparent",color:activePhase===p?(phaseColor[p]||"#00e5ff"):"#6b8399",cursor:"pointer"}}>{p}</button>
-          ))}
-        </div>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search exercises or muscles..." style={{flex:1,minWidth:120,background:"#FFFFFF",border:"1px solid #E0E0E2",borderRadius:8,color:"#0D0D0D",fontFamily:"inherit",outline:"none",padding:"5px 10px",fontSize:"0.82rem"}}/>
+      {/* Phase filter — own scrollable row */}
+      <div style={{display:"flex",gap:6,marginBottom:8,overflowX:"auto",paddingBottom:2}}>
+        {phases.map(p=>(
+          <button key={p} onClick={()=>setActivePhase(p)}
+            style={{flexShrink:0,padding:"6px 14px",borderRadius:20,fontSize:"0.75rem",fontWeight:700,
+              border:`1px solid ${activePhase===p?(phaseColor[p]||"#7c3aed"):"#E0E0E2"}`,
+              background:activePhase===p?`${phaseColor[p]||"#7c3aed"}18`:"#FFFFFF",
+              color:activePhase===p?(phaseColor[p]||"#7c3aed"):"#6B6B6B",cursor:"pointer"}}>
+            {p}
+          </button>
+        ))}
+      </div>
+
+      {/* Search — own full-width row */}
+      <div style={{display:"flex",alignItems:"center",gap:8,background:"#FFFFFF",border:"1px solid #E0E0E2",borderRadius:10,padding:"9px 12px",marginBottom:16}}>
+        <span style={{color:"#6B6B6B",fontSize:"0.85rem"}}>🔍</span>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search exercises or muscles…"
+          style={{flex:1,minWidth:0,background:"transparent",border:"none",color:"#0D0D0D",fontFamily:"inherit",outline:"none",fontSize:"0.82rem"}}/>
       </div>
 
       {/* Exercise library */}
@@ -6477,9 +6491,9 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
           })
         ) : (
           Object.entries(filteredCategories).map(([cat,exs])=>(
-            <div key={cat} style={{marginBottom:12}}>
-              <div style={{fontSize:"0.8rem",fontWeight:700,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"1px",marginBottom:7,display:"flex",alignItems:"center",gap:7}}>
-                <div style={{height:1,width:8,background:region.color,borderRadius:1}}/>{cat}
+            <div key={cat} style={{marginBottom:14}}>
+              <div style={{fontSize:"0.75rem",fontWeight:700,color:region.color,letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+                <div style={{width:4,height:14,background:region.color,borderRadius:2}}/>{cat}
               </div>
               {exs.map(ex=>{
                 const inProg = !!programme.find(p=>p.id===ex.id);
@@ -6495,8 +6509,11 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
 
 
 
-      <div style={{padding:"7px 11px",background:"#FFFFFF",border:"1px solid #E0E0E2",borderRadius:8,fontSize:"0.8rem",color:"#6B6B6B",lineHeight:1.5}}>
-        ⚠ Exercise prescriptions are clinical suggestions. Modify sets/reps/frequency based on individual patient capacity, irritability, and response. Evidence ratings reflect current literature.
+      <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"12px 14px",background:"rgba(255,179,0,0.08)",border:"1px solid rgba(255,179,0,0.25)",borderRadius:10,marginBottom:24}}>
+        <span style={{fontSize:"0.95rem",flexShrink:0}}>⚠️</span>
+        <span style={{fontSize:"0.78rem",color:"#854F0B",lineHeight:1.5}}>
+          Exercise prescriptions are clinical suggestions. Modify sets, reps and frequency based on individual patient capacity, irritability and response. Evidence ratings reflect current literature.
+        </span>
       </div>
     </div>
   );
