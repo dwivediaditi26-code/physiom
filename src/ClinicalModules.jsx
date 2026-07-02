@@ -6051,7 +6051,7 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, accentColor="#7c3aed"
 }
 
 // ─── QUICK TEMPLATES PANEL ────────────────────────────────────────────────────
-function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, onRemove, onLoadTemplate, programme }) {
+function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[], onAdd, onRemove, onLoadTemplate, programme }) {
   const [open,       setOpen]       = useState(false);
   const [activeTab,  setActiveTab]  = useState("quick");
   const [openId,     setOpenId]     = useState(null);
@@ -6105,7 +6105,9 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, onRe
               <div style={{ marginBottom:5 }}>
                 <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🤲 Manual therapy</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
-                  {tx.manual.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(124,58,237,0.3)", background:"transparent", color:"#7c3aed", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
+                  {tx.manual.map(m=>{ const added=addedTx.includes(m); return (
+                    <button key={m} onClick={()=>addTx&&addTx(m)} disabled={added} style={{ padding:"2px 8px", borderRadius:99, border:`1px solid ${added?"rgba(0,201,122,0.4)":"rgba(124,58,237,0.3)"}`, background:added?"rgba(0,201,122,0.1)":"transparent", color:added?"#00c97a":"#7c3aed", fontWeight:700, fontSize:"0.56rem", cursor:added?"default":"pointer" }}>{added?"✓ ":""}{m}</button>
+                  );})}
                 </div>
               </div>
             )}
@@ -6113,7 +6115,9 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, onRe
               <div>
                 <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>⚡ Modality</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
-                  {tx.machine.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(0,229,255,0.3)", background:"transparent", color:"#00c97a", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
+                  {tx.machine.map(m=>{ const added=addedTx.includes(m); return (
+                    <button key={m} onClick={()=>addTx&&addTx(m)} disabled={added} style={{ padding:"2px 8px", borderRadius:99, border:`1px solid ${added?"rgba(0,201,122,0.4)":"rgba(0,229,255,0.3)"}`, background:added?"rgba(0,201,122,0.1)":"transparent", color:added?"#00c97a":"#00c97a", fontWeight:700, fontSize:"0.56rem", cursor:added?"default":"pointer" }}>{added?"✓ ":""}{m}</button>
+                  );})}
                 </div>
               </div>
             )}
@@ -6373,11 +6377,17 @@ function ExercisePrescriptionModule({ data, set }) {
     _hepLog(`＋ ${t.label} template (${exs.length} ex${exs.length!==1?"s":""})`);
   };
 
-  // Add treatment text (manual/machine) — stored in data.tx_quick for display
+  // Add a quick technique chip (manual therapy / modality) as a real entry in
+  // data.tx_techniques — the same array the Techniques tab reads and displays.
+  // Previously this wrote to data.tx_quick, a field nothing in the app ever showed.
+  const techniquesList = Array.isArray(data?.tx_techniques) ? data.tx_techniques : [];
+  const addedTechniqueLabels = techniquesList.map(t=>t.technique).filter(Boolean);
   const addTxChip = (chip) => {
     if(!set) return;
-    const cur=String(data?.tx_quick||"");
-    if(!cur.includes(chip)) set("tx_quick",cur?(cur+", "+chip):chip);
+    if(addedTechniqueLabels.includes(chip)) return;
+    const entry = { id:Math.random().toString(36).slice(2,9), type:"manual", technique:chip,
+      region:"", grade:"", laterality:"", dosage:"", duration:"", response:"", notes:"" };
+    set("tx_techniques", [...techniquesList, entry]);
   };
   const removeEx = (id) => { const ex=programme.find(e=>e.id===id); syncProgramme(programme.filter(e=>e.id!==id)); if(ex) _hepLog(`− ${ex.name}`); };
   const updateEx = (id,field,val) => syncProgramme(programme.map(e=>e.id===id?{...e,[field]:val}:e));
@@ -6418,7 +6428,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
   return(
     <div>
       {/* ── QUICK TEMPLATES + KNEE PROTOCOLS ── */}
-      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} onAdd={addEx} onRemove={removeEx} onLoadTemplate={onLoadTemplate} programme={programme} />
+      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} addedTx={addedTechniqueLabels} onAdd={addEx} onRemove={removeEx} onLoadTemplate={onLoadTemplate} programme={programme} />
 
       <div ref={libraryRef}/>
 
