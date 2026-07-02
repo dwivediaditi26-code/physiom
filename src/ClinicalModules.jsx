@@ -4718,9 +4718,23 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           </>}
 
           {/* Prescription */}
-          {v("tx_techniques")&&<>
+          {Array.isArray(data.tx_techniques)&&data.tx_techniques.length>0&&<>
             <span style={lbl}>Clinic exercises / Treatment this session</span>
-            {v("tx_techniques").split("|||").filter(Boolean).map((t,i)=><div key={i} style={{padding:"5px 0",borderBottom:"1px solid #F3F4F6",fontSize:12,color:"#374151",display:"flex",gap:6}}><span style={{width:20,height:20,borderRadius:"50%",background:"#DBEAFE",color:"#1E40AF",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>{t}</div>)}
+            {data.tx_techniques.map((t,i)=>{
+              const label = t.type==="manual" ? `${t.technique||"Joint mob"}${t.grade?` Grade ${t.grade}`:""}${t.region?` — ${t.region}`:""}`
+                : t.type==="dn" ? `Dry Needling — ${t.dn_muscle||"unknown muscle"}`
+                : t.type==="st" ? `${t.st_technique||"Soft tissue"}${t.st_region?` — ${t.st_region}`:""}`
+                : t.type==="taping" ? `${t.tape_type||"Taping"}`
+                : t.type==="us" ? `Ultrasound${t.us_freq?` — ${t.us_freq}`:""}`
+                : t.type==="electro" ? `${t.electro_type||"Electrotherapy"}`
+                : (t.technique || "Technique");
+              return (
+                <div key={t.id||i} style={{padding:"5px 0",borderBottom:"1px solid #F3F4F6",fontSize:12,color:"#374151",display:"flex",gap:6}}>
+                  <span style={{width:20,height:20,borderRadius:"50%",background:"#DBEAFE",color:"#1E40AF",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
+                  {label}
+                </div>
+              );
+            })}
           </>}
 
           {/* Plan inputs */}
@@ -6385,7 +6399,7 @@ function ExercisePrescriptionModule({ data, set }) {
   const addTxChip = (chip) => {
     if(!set) return;
     if(addedTechniqueLabels.includes(chip)) return;
-    const entry = { id:Math.random().toString(36).slice(2,9), type:"manual", technique:chip,
+    const entry = { id:Math.random().toString(36).slice(2,9), type:"quick", technique:chip,
       region:"", grade:"", laterality:"", dosage:"", duration:"", response:"", notes:"" };
     set("tx_techniques", [...techniquesList, entry]);
   };
