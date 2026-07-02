@@ -5990,17 +5990,6 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
 }
 
 // ─── REGION TEMPLATE MAP ──────────────────────────────────────────────────────
-const REGION_TEMPLATE_MAP = {
-  "Lumbar":       ["lbp_acute","lbp_core","lbp_radicular"],
-  "Cervical":     ["neck_acute","posture_correction"],
-  "Shoulder":     ["shoulder_rotator","shoulder_instability"],
-  "Hip":          ["hip_oa","hip_glute"],
-  "Knee":         ["knee_oa_template","knee_pfps_template","knee_acl_template"],
-  "Ankle":        ["ankle_sprain","achilles"],
-  "Posture":      ["posture_correction","upper_cross"],
-  "Pelvic Floor": ["pf_incontinence","pf_prolapse"],
-};
-
 // ─── QUICK TEMPLATES PANEL ────────────────────────────────────────────────────
 function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, programme }) {
   const [open,       setOpen]       = useState(false);
@@ -6013,7 +6002,13 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
 
   const togglePhase = (key) => setOpenPhase(p => ({ ...p, [key]: !p[key] }));
 
-  const TAB_REGION_MAP = { knee:"Knee", shoulder:"Shoulder", elbow:"Elbow", hip:"Hip", lumbar:"Lumbar", cervical:"Cervical", posture:"Posture" };
+  const TAB_REGION_MAP = {
+    knee:"Knee", shoulder:"Shoulder", elbow:"Elbow", hip:"Hip",
+    lumbar:"Lumbar", cervical:"Cervical", posture:"Posture",
+    ankle:"Ankle & Foot", thoracic:"Thoracic", pelvic:"Pelvic floor",
+    respiratory:"Respiratory", older:"Older adult", sports:"Sports",
+    pilates:"Pilates / Yoga", neuro:"Neuro", cardiac:"Cardiac", hydro:"Hydrotherapy",
+  };
 
   const TemplateCard = ({ templateKey:key, t }) => {
     const tx = TEMPLATE_TX[key];
@@ -6083,19 +6078,24 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
     );
   };
 
-  const otherTemplateCount = Object.values(PROGRAMME_TEMPLATES)
-    .filter(t => !Object.values(TAB_REGION_MAP).includes(t.region)).length;
-
   const TABS = [
-    { id:"quick",    label:"⚡ Quick",    color:"#6B6B6B" },
-    { id:"lumbar",   label:"🦴 Lumbar",   color:"#0f766e" },
-    { id:"cervical", label:"🧠 Cervical", color:"#9333ea" },
-    { id:"knee",     label:"🦵 Knee",     color:"#ff4d6d" },
-    { id:"shoulder", label:"💪 Shoulder", color:"#7f5af0" },
-    { id:"elbow",    label:"🦾 Elbow",    color:"#ffb300" },
-    { id:"hip",      label:"🍑 Hip",      color:"#ff7043" },
-    { id:"posture",  label:"🧍 Posture",  color:"#0891b2" },
-    { id:"all",      label:`📦 All (${otherTemplateCount})`, color:"#00c97a" },
+    { id:"lumbar",      label:"🦴 Lumbar",      color:"#0f766e" },
+    { id:"cervical",    label:"🧠 Cervical",    color:"#9333ea" },
+    { id:"thoracic",    label:"🫁 Thoracic",    color:"#059669" },
+    { id:"shoulder",    label:"💪 Shoulder",    color:"#7f5af0" },
+    { id:"elbow",       label:"🦾 Elbow",       color:"#ffb300" },
+    { id:"hip",         label:"🍑 Hip",         color:"#ff7043" },
+    { id:"knee",        label:"🦵 Knee",        color:"#ff4d6d" },
+    { id:"ankle",       label:"🦶 Ankle & Foot",color:"#0d9488" },
+    { id:"posture",     label:"🧍 Posture",     color:"#0891b2" },
+    { id:"pelvic",      label:"🌸 Pelvic Floor",color:"#db2777" },
+    { id:"respiratory", label:"🌬️ Respiratory", color:"#0284c7" },
+    { id:"older",       label:"👵 Older Adult", color:"#78716c" },
+    { id:"sports",      label:"🏃 Sports",      color:"#ea580c" },
+    { id:"pilates",     label:"🧘 Pilates/Yoga",color:"#8b5cf6" },
+    { id:"neuro",       label:"⚡ Neuro",       color:"#4338ca" },
+    { id:"cardiac",     label:"❤️ Cardiac",     color:"#e11d48" },
+    { id:"hydro",       label:"💧 Hydrotherapy",color:"#0ea5e9" },
   ];
 
   return (
@@ -6125,37 +6125,6 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
           </div>
 
           <div style={{ padding:"10px 12px 12px" }}>
-
-            {activeTab === "quick" && (
-              <div>
-                <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:8 }}>
-                  {Object.keys(REGION_TEMPLATE_MAP).map(region => (
-                    <button key={region} onClick={() => setOpenId(openId === region ? null : region)}
-                      style={{ padding:"4px 11px", borderRadius:20, fontSize:"0.61rem", fontWeight:600,
-                        background: openId===region ? "rgba(127,90,240,0.14)" : "rgba(0,229,255,0.05)",
-                        border: `1px solid ${openId===region ? "rgba(127,90,240,0.4)" : "rgba(0,229,255,0.2)"}`,
-                        color: openId===region ? "#7f5af0" : "#00e5ff", cursor:"pointer" }}>
-                      {region}
-                    </button>
-                  ))}
-                </div>
-                {openId && (
-                  <div style={{ background:"rgba(127,90,240,0.05)", border:"1px solid rgba(127,90,240,0.15)", borderRadius:8, padding:"9px 11px" }}>
-                    <div style={{ fontSize:"0.57rem", fontWeight:700, color:"#6B6B6B", marginBottom:7, textTransform:"uppercase", letterSpacing:"0.8px" }}>{openId} Templates</div>
-                    <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
-                      {(REGION_TEMPLATE_MAP[openId] || []).map(key => (
-                        <button key={key} onClick={() => appendTemplate ? appendTemplate(key) : applyTemplate(key)}
-                          style={{ padding:"5px 12px", borderRadius:7, fontSize:"0.61rem", fontWeight:700,
-                            background:"rgba(0,229,255,0.08)", border:"1px solid rgba(0,229,255,0.25)",
-                            color:"#00e5ff", cursor:"pointer" }}>
-                          {key.replace(/_/g," ").replace(/\b\w/g, l => l.toUpperCase())}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
             {activeTab === "lumbar" && (
               <QuickTemplatesForRegion regionName="Lumbar"/>
@@ -6267,33 +6236,44 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
               <QuickTemplatesForRegion regionName="Posture"/>
             )}
 
-            {activeTab === "all" && (
-              <div>
-                <input value={tSearch} onChange={e=>setTSearch(e.target.value)} placeholder="Search condition… hip OA, ACL, frozen shoulder"
-                  style={{ width:"100%", padding:"6px 10px", borderRadius:8, border:"1px solid #E0E0E2", marginBottom:8, fontSize:"0.66rem", fontFamily:"inherit", outline:"none", background:"#FFFFFF", color:"#0D0D0D" }}/>
-                {(()=>{
-                  const coveredRegions = Object.values(TAB_REGION_MAP);
-                  const filtered = Object.entries(PROGRAMME_TEMPLATES)
-                    .filter(([k,t]) => !coveredRegions.includes(t.region))
-                    .filter(([k,t]) => !tSearch || t.label.toLowerCase().includes(tSearch.toLowerCase()));
-                  const byRegion = {};
-                  filtered.forEach(([key,t]) => {
-                    const r = t.region || "Other";
-                    (byRegion[r] = byRegion[r] || []).push([key,t]);
-                  });
-                  if (!filtered.length) return (
-                    <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textAlign:"center", padding:"14px 0" }}>
-                      No matches — Knee, Shoulder, Elbow and Hip templates now live under their own tabs above.
-                    </div>
-                  );
-                  return Object.entries(byRegion).map(([regionName, entries]) => (
-                    <div key={regionName} style={{ marginBottom:10 }}>
-                      <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", margin:"6px 2px" }}>{regionName}</div>
-                      {entries.map(([key,t]) => <TemplateCard key={key} templateKey={key} t={t}/>)}
-                    </div>
-                  ));
-                })()}
-              </div>
+            {activeTab === "ankle" && (
+              <QuickTemplatesForRegion regionName="Ankle & Foot"/>
+            )}
+
+            {activeTab === "thoracic" && (
+              <QuickTemplatesForRegion regionName="Thoracic"/>
+            )}
+
+            {activeTab === "pelvic" && (
+              <QuickTemplatesForRegion regionName="Pelvic floor"/>
+            )}
+
+            {activeTab === "respiratory" && (
+              <QuickTemplatesForRegion regionName="Respiratory"/>
+            )}
+
+            {activeTab === "older" && (
+              <QuickTemplatesForRegion regionName="Older adult"/>
+            )}
+
+            {activeTab === "sports" && (
+              <QuickTemplatesForRegion regionName="Sports"/>
+            )}
+
+            {activeTab === "pilates" && (
+              <QuickTemplatesForRegion regionName="Pilates / Yoga"/>
+            )}
+
+            {activeTab === "neuro" && (
+              <QuickTemplatesForRegion regionName="Neuro"/>
+            )}
+
+            {activeTab === "cardiac" && (
+              <QuickTemplatesForRegion regionName="Cardiac"/>
+            )}
+
+            {activeTab === "hydro" && (
+              <QuickTemplatesForRegion regionName="Hydrotherapy"/>
             )}
 
           </div>
