@@ -6013,13 +6013,71 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
 
   const togglePhase = (key) => setOpenPhase(p => ({ ...p, [key]: !p[key] }));
 
+  const TAB_REGION_MAP = { knee:"Knee", shoulder:"Shoulder", elbow:"Elbow", hip:"Hip" };
+
+  const TemplateCard = ({ templateKey:key, t }) => {
+    const tx = TEMPLATE_TX[key];
+    const isOpen = openTpl === key;
+    const added = t.exercises.filter(id => programme?.find(p=>p.id===id)).length;
+    return (
+      <div key={key} style={{ marginBottom:4 }}>
+        <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{t.label}</div>
+            <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
+          </div>
+          <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
+        </div>
+        {isOpen && (
+          <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"transparent" }}>
+            <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:6 }}>
+              ＋ Add {t.exercises.filter(id=>!programme?.find(p=>p.id===id)).length} new exercises
+            </button>
+            {tx&&(tx.manual||[]).length>0&&(
+              <div style={{ marginBottom:5 }}>
+                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🤲 Manual therapy</div>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
+                  {tx.manual.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(124,58,237,0.3)", background:"transparent", color:"#7c3aed", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
+                </div>
+              </div>
+            )}
+            {tx&&(tx.machine||[]).length>0&&(
+              <div>
+                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>⚡ Modality</div>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
+                  {tx.machine.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(0,229,255,0.3)", background:"transparent", color:"#00c97a", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const QuickTemplatesForRegion = ({ regionName }) => {
+    const entries = Object.entries(PROGRAMME_TEMPLATES).filter(([k,t]) => t.region === regionName);
+    if (!entries.length) return null;
+    return (
+      <div style={{ marginTop:14, paddingTop:12, borderTop:"1px dashed #E0E0E2" }}>
+        <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>
+          ⚡ Quick templates — {regionName}
+        </div>
+        {entries.map(([key,t]) => <TemplateCard key={key} templateKey={key} t={t}/>)}
+      </div>
+    );
+  };
+
+  const otherTemplateCount = Object.values(PROGRAMME_TEMPLATES)
+    .filter(t => !Object.values(TAB_REGION_MAP).includes(t.region)).length;
+
   const TABS = [
     { id:"quick",    label:"⚡ Quick",    color:"#6B6B6B" },
     { id:"knee",     label:"🦵 Knee",     color:"#ff4d6d" },
     { id:"shoulder", label:"💪 Shoulder", color:"#7f5af0" },
     { id:"elbow",    label:"🦾 Elbow",    color:"#ffb300" },
     { id:"hip",      label:"🍑 Hip",      color:"#ff7043" },
-    { id:"all",      label:"📦 All (38)", color:"#00c97a" },
+    { id:"all",      label:`📦 All (${otherTemplateCount})`, color:"#00c97a" },
   ];
 
   return (
@@ -6153,20 +6211,30 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                       </div>
                     );
                   })()}
+                  <QuickTemplatesForRegion regionName="Knee"/>
                 </div>
               );
             })()}
 
             {activeTab === "shoulder" && (
-              <ProtocolPanel protocols={SHOULDER_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
+              <>
+                <ProtocolPanel protocols={SHOULDER_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
+                <QuickTemplatesForRegion regionName="Shoulder"/>
+              </>
             )}
 
             {activeTab === "elbow" && (
-              <ProtocolPanel protocols={ELBOW_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
+              <>
+                <ProtocolPanel protocols={ELBOW_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
+                <QuickTemplatesForRegion regionName="Elbow"/>
+              </>
             )}
 
             {activeTab === "hip" && (
-              <ProtocolPanel protocols={HIP_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
+              <>
+                <ProtocolPanel protocols={HIP_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
+                <QuickTemplatesForRegion regionName="Hip"/>
+              </>
             )}
 
             {activeTab === "all" && (
@@ -6174,55 +6242,24 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, onAdd, prog
                 <input value={tSearch} onChange={e=>setTSearch(e.target.value)} placeholder="Search condition… hip OA, ACL, frozen shoulder"
                   style={{ width:"100%", padding:"6px 10px", borderRadius:8, border:"1px solid #E0E0E2", marginBottom:8, fontSize:"0.66rem", fontFamily:"inherit", outline:"none", background:"#FFFFFF", color:"#0D0D0D" }}/>
                 {(()=>{
+                  const coveredRegions = Object.values(TAB_REGION_MAP);
                   const filtered = Object.entries(PROGRAMME_TEMPLATES)
+                    .filter(([k,t]) => !coveredRegions.includes(t.region))
                     .filter(([k,t]) => !tSearch || t.label.toLowerCase().includes(tSearch.toLowerCase()));
                   const byRegion = {};
                   filtered.forEach(([key,t]) => {
                     const r = t.region || "Other";
                     (byRegion[r] = byRegion[r] || []).push([key,t]);
                   });
+                  if (!filtered.length) return (
+                    <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textAlign:"center", padding:"14px 0" }}>
+                      No matches — Knee, Shoulder, Elbow and Hip templates now live under their own tabs above.
+                    </div>
+                  );
                   return Object.entries(byRegion).map(([regionName, entries]) => (
                     <div key={regionName} style={{ marginBottom:10 }}>
                       <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", margin:"6px 2px" }}>{regionName}</div>
-                      {entries.map(([key,t]) => {
-                        const tx = TEMPLATE_TX[key];
-                        const isOpen = openTpl === key;
-                        const added = t.exercises.filter(id => programme?.find(p=>p.id===id)).length;
-                        return (
-                          <div key={key} style={{ marginBottom:4 }}>
-                            <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
-                              <div style={{ flex:1 }}>
-                                <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{t.label}</div>
-                                <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
-                              </div>
-                              <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
-                            </div>
-                            {isOpen && (
-                              <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"transparent" }}>
-                                <button onClick={()=>{appendTemplate&&appendTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"7px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:6 }}>
-                                  ＋ Add {t.exercises.filter(id=>!programme?.find(p=>p.id===id)).length} new exercises
-                                </button>
-                                {tx&&(tx.manual||[]).length>0&&(
-                                  <div style={{ marginBottom:5 }}>
-                                    <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🤲 Manual therapy</div>
-                                    <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
-                                      {tx.manual.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(124,58,237,0.3)", background:"transparent", color:"#7c3aed", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
-                                    </div>
-                                  </div>
-                                )}
-                                {tx&&(tx.machine||[]).length>0&&(
-                                  <div>
-                                    <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>⚡ Modality</div>
-                                    <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
-                                      {tx.machine.map(m=><button key={m} onClick={()=>addTx&&addTx(m)} style={{ padding:"2px 8px", borderRadius:99, border:"1px solid rgba(0,229,255,0.3)", background:"transparent", color:"#00c97a", fontWeight:700, fontSize:"0.56rem", cursor:"pointer" }}>{m}</button>)}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {entries.map(([key,t]) => <TemplateCard key={key} templateKey={key} t={t}/>)}
                     </div>
                   ));
                 })()}
