@@ -1568,13 +1568,13 @@ function AppInner({ currentUser, onSignOut }) {
                 <BnavItem navKey="fascia"      icon="🕸️" label="Fascia Integration"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="treatment"?" open":""}`}>
-                <BnavItem navKey="exercise"      icon="🏋" label="Exercise Prescription"/>
-                <BnavItem navKey="tx_techniques" icon="🤲" label="Tx Techniques"/>
-                <button className={`pm-bnav-item${active==="treatment"&&txTab==="hep"?" active":""}`}
-                  onClick={()=>{ navTo("treatment"); setTxTab("hep"); setBnavTab(null); }}>
-                  <span className="pm-bnav-item-icon">🏠</span>
-                  <span className="pm-bnav-item-label">Home Protocol</span>
-                </button>
+                {[["exercise","🏋","Exercise Prescription"],["tx","🤲","Tx Techniques"],["hep","🏠","Home Protocol"]].map(([key,icon,label])=>(
+                  <button key={key} className={`pm-bnav-item${active==="treatment"&&txTab===key?" active":""}`}
+                    onClick={()=>{ navTo("treatment"); setTxTab(key); setBnavTab(null); }}>
+                    <span className="pm-bnav-item-icon">{icon}</span>
+                    <span className="pm-bnav-item-label">{label}</span>
+                  </button>
+                ))}
               </div>
               <div className={`pm-bnav-panel${bnavTab==="documentation"?" open":""}`}>
                 <BnavItem navKey="tx_sessions" icon="⚡" label="Quick Visit"/>
