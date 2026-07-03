@@ -103,24 +103,39 @@ function plumbDeviation(landmark_x, ankle_x, bh_norm, viewSign) {
   return Math.round(dx / bh_norm * 1000) / 10; // % body height
 }
 
+// Landmark x/y are stored as fractions of image WIDTH and HEIGHT respectively
+// (from the tap/drag handlers), which are almost never equal for a standing
+// posture photo (typically portrait, taller than wide). Any formula that mixes
+// dx and dy together — atan2, Pythagorean distance, dot products — must first
+// convert both into the SAME real-world scale (pixels), or the angle/ratio is
+// silently distorted by the photo's own aspect ratio. This distortion is what
+// was causing CVA to compute an implausible angle and get rejected as N/A even
+// with both landmarks correctly placed.
+function toPx(pt, imgSize) {
+  if (!pt || !imgSize) return null;
+  return { x: pt.x * (imgSize.w || 1), y: pt.y * (imgSize.h || 1) };
+}
+
 // CVA: angle between ear-acromion vector and horizontal (°)
 // Reference: Yip 2008 — tragus to C7/acromion vs horizontal
-function calcCVA(ear, acromion) {
+function calcCVA(ear, acromion, imgSize) {
   if (!ear || !acromion) return null;
-  const dx = Math.abs(ear.x - acromion.x);
-  const dy = Math.abs(ear.y - acromion.y);
-  if (dy < 0.01) return null;
+  const a = toPx(ear, imgSize), b = toPx(acromion, imgSize);
+  const dx = Math.abs(a.x - b.x);
+  const dy = Math.abs(a.y - b.y);
+  if (dy < 1) return null;
   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
   if (angle < 25 || angle > 80) return null; // physiologic range check
   return Math.round(angle * 10) / 10;
 }
 
 // CVA with C7 (more accurate)
-function calcCVA_C7(ear, c7) {
+function calcCVA_C7(ear, c7, imgSize) {
   if (!ear || !c7) return null;
-  const dx = Math.abs(ear.x - c7.x);
-  const dy = Math.abs(ear.y - c7.y);
-  if (dy < 0.01) return null;
+  const a = toPx(ear, imgSize), b = toPx(c7, imgSize);
+  const dx = Math.abs(a.x - b.x);
+  const dy = Math.abs(a.y - b.y);
+  if (dy < 1) return null;
   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
   if (angle < 25 || angle > 80) return null;
   return Math.round(angle * 10) / 10;
@@ -137,7 +152,7 @@ function calcEarAcrDist(ear, acromion, bh_norm) {
 // Metric 1 (50%): acromion-hip horizontal offset (% BH)
 // Metric 2 (30%): acromion-plumb offset (% BH)
 // Metric 3 (20%): shoulder translation angle (°) — atan2(acrHipX, acrHipY)
-function calcRoundedShoulder(lm, bh_norm, viewSign) {
+function calcRoundedShoulder(lm, bh_norm, viewSign, imgSize) {
   const acr = lm.acromion, hip = lm.hip, ankle = lm.ankle;
   if (!acr || !hip || !ankle || !bh_norm) return null;
 
@@ -147,8 +162,9 @@ function calcRoundedShoulder(lm, bh_norm, viewSign) {
   const acrPlumbDx = (acr.x - ankle.x) * viewSign;
   const m2 = pctBodyHeight(Math.abs(acrPlumbDx), bh_norm) ?? 0;
 
-  const acrHipDy = Math.abs(acr.y - hip.y);
-  const m3 = acrHipDy > 0.01 ? Math.round(Math.atan2(Math.abs(acrHipDx), acrHipDy) * 180 / Math.PI * 10) / 10 : 0;
+  const acrPx = toPx(acr, imgSize), hipPx = toPx(hip, imgSize);
+  const acrHipDxPx = Math.abs(acrPx.x - hipPx.x), acrHipDyPx = Math.abs(acrPx.y - hipPx.y);
+  const m3 = acrHipDyPx > 1 ? Math.round(Math.atan2(acrHipDxPx, acrHipDyPx) * 180 / Math.PI * 10) / 10 : 0;
 
   // Normalise each metric to 0–3
   const n1 = Math.min(3, m1 / 2);
@@ -163,10 +179,11 @@ function calcRoundedShoulder(lm, bh_norm, viewSign) {
 }
 
 // Knee angle: hip-knee-ankle (°). 180 = neutral, <170 = flexed, >185 = recurvatum
-function calcKneeAngle(hip, knee, ankle) {
+function calcKneeAngle(hip, knee, ankle, imgSize) {
   if (!hip || !knee || !ankle) return null;
-  const ab = { x:hip.x-knee.x, y:hip.y-knee.y };
-  const cb = { x:ankle.x-knee.x, y:ankle.y-knee.y };
+  const h = toPx(hip, imgSize), k = toPx(knee, imgSize), a = toPx(ankle, imgSize);
+  const ab = { x:h.x-k.x, y:h.y-k.y };
+  const cb = { x:a.x-k.x, y:a.y-k.y };
   const dot = ab.x*cb.x + ab.y*cb.y;
   const mag = Math.sqrt((ab.x**2+ab.y**2)*(cb.x**2+cb.y**2));
   if (mag === 0) return null;
@@ -179,25 +196,27 @@ function calcKneeAngle(hip, knee, ankle) {
 // TCI = (thoracicDepth / chordLength) × 100
 // thoracicDepth = horizontal distance from apexT to C7-T12 chord line
 // chordLength   = Euclidean distance C7 → T12
-function calcTCI(c7, t12, apexT) {
+function calcTCI(c7, t12, apexT, imgSize) {
   if (!c7 || !t12 || !apexT) return null;
-  const chordLen = Math.sqrt((t12.x-c7.x)**2 + (t12.y-c7.y)**2);
-  if (chordLen < 0.02) return null;
+  const a = toPx(c7, imgSize), b = toPx(t12, imgSize), c = toPx(apexT, imgSize);
+  const chordLen = Math.sqrt((b.x-a.x)**2 + (b.y-a.y)**2);
+  if (chordLen < 2) return null;
   // Perpendicular distance from apexT to chord line C7→T12
-  const dx = t12.x - c7.x, dy = t12.y - c7.y;
-  const depth = Math.abs(dy*(apexT.x-c7.x) - dx*(apexT.y-c7.y)) / chordLen;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const depth = Math.abs(dy*(c.x-a.x) - dx*(c.y-a.y)) / chordLen;
   const tci = Math.round((depth / chordLen) * 100 * 10) / 10;
   if (tci > 40) return null; // outlier rejection (Rule 7)
   return { tci, depth: Math.round(depth*1000)/10, chordLen: Math.round(chordLen*1000)/10 };
 }
 
 // LCI: requires T12, S2, and apexL (maximum lumbar concavity point)
-function calcLCI(t12, s2, apexL) {
+function calcLCI(t12, s2, apexL, imgSize) {
   if (!t12 || !s2 || !apexL) return null;
-  const chordLen = Math.sqrt((s2.x-t12.x)**2 + (s2.y-t12.y)**2);
-  if (chordLen < 0.02) return null;
-  const dx = s2.x - t12.x, dy = s2.y - t12.y;
-  const depth = Math.abs(dy*(apexL.x-t12.x) - dx*(apexL.y-t12.y)) / chordLen;
+  const a = toPx(t12, imgSize), b = toPx(s2, imgSize), c = toPx(apexL, imgSize);
+  const chordLen = Math.sqrt((b.x-a.x)**2 + (b.y-a.y)**2);
+  if (chordLen < 2) return null;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const depth = Math.abs(dy*(c.x-a.x) - dx*(c.y-a.y)) / chordLen;
   const lci = Math.round((depth / chordLen) * 100 * 10) / 10;
   if (lci > 40) return null; // outlier rejection
   return { lci, depth: Math.round(depth*1000)/10, chordLen: Math.round(chordLen*1000)/10 };
@@ -205,11 +224,12 @@ function calcLCI(t12, s2, apexL) {
 
 // Pelvic tilt: requires ASIS and PSIS
 // Positive = anterior (ASIS lower than PSIS in image; Y increases downward)
-function calcPelvicTilt(asis, psis) {
+function calcPelvicTilt(asis, psis, imgSize) {
   if (!asis || !psis) return null;
-  const dx = Math.abs(asis.x - psis.x);
-  const dy = Math.abs(asis.y - psis.y);
-  if (dx < 0.005 && dy < 0.005) return null;
+  const a = toPx(asis, imgSize), b = toPx(psis, imgSize);
+  const dx = Math.abs(a.x - b.x);
+  const dy = Math.abs(a.y - b.y);
+  if (dx < 0.5 && dy < 0.5) return null;
   const angle = Math.round(Math.atan2(dy, dx) * 180 / Math.PI * 10) / 10;
   if (angle > 30) return null; // outlier rejection
   const isAnterior = asis.y > psis.y; // ASIS lower = anterior tilt
@@ -491,8 +511,8 @@ export default function HybridKendall({
 
     const toPlumb = (x) => plumbDeviation(x, ankleX, bh, vs);
 
-    const cvaC7  = calcCVA_C7(lm.ear, lm.c7);
-    const cvaAcr = calcCVA(lm.ear, lm.acromion);
+    const cvaC7  = calcCVA_C7(lm.ear, lm.c7, imgSize);
+    const cvaAcr = calcCVA(lm.ear, lm.acromion, imgSize);
     const cva    = cvaC7 ?? cvaAcr;
 
     return {
@@ -505,13 +525,13 @@ export default function HybridKendall({
       hipPlumb:  toPlumb(lm.hip?.x),
       kneePlumb: toPlumb(lm.knee?.x),
       earAcr:    calcEarAcrDist(lm.ear, lm.acromion, bh),
-      shoulder:  calcRoundedShoulder(lm, bh, vs),
-      knee:      calcKneeAngle(lm.hip, lm.knee, lm.ankle),
-      tci:       calcTCI(lm.c7, lm.t12, lm.apexT),
-      lci:       calcLCI(lm.t12, lm.s2, lm.apexL),
-      pelvis:    calcPelvicTilt(lm.asis, lm.psis),
+      shoulder:  calcRoundedShoulder(lm, bh, vs, imgSize),
+      knee:      calcKneeAngle(lm.hip, lm.knee, lm.ankle, imgSize),
+      tci:       calcTCI(lm.c7, lm.t12, lm.apexT, imgSize),
+      lci:       calcLCI(lm.t12, lm.s2, lm.apexL, imgSize),
+      pelvis:    calcPelvicTilt(lm.asis, lm.psis, imgSize),
     };
-  }, [lm]);
+  }, [lm, imgSize]);
 
   // ── Emit findings when measurements change (only after confirmed) ───────────
   useEffect(() => {
