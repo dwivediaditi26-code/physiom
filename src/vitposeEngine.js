@@ -237,12 +237,15 @@ export async function runViTPoseLateral(imgEl) {
     const keypoints = decodeHeatmaps(heatmapData);
     const landmarks = cocoToMediaPipe(keypoints);
 
-    // Sanity check: at least shoulders and hips must be detected
+    // Sanity check: at least ONE shoulder and ONE hip must be detected.
+    // This is a lateral photo by definition — the far-side shoulder/hip is
+    // expected to be occluded by the body and legitimately low-confidence.
+    // Requiring BOTH sides (as before) rejected almost every genuine profile
+    // shot, since a clean side-on photo is exactly the case where the far
+    // side is hidden. Near-side-only visibility is what actually matters.
     const hasBody = (
-      landmarks[11].visibility > 0.3 &&  // left_shoulder
-      landmarks[12].visibility > 0.3 &&  // right_shoulder
-      landmarks[23].visibility > 0.3 &&  // left_hip
-      landmarks[24].visibility > 0.3     // right_hip
+      Math.max(landmarks[11].visibility, landmarks[12].visibility) > 0.3 &&  // either shoulder
+      Math.max(landmarks[23].visibility, landmarks[24].visibility) > 0.3     // either hip
     );
     if (!hasBody) {
       console.warn("ViTPose: low confidence on key lateral landmarks — will fallback to MediaPipe");
