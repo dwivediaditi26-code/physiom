@@ -7366,9 +7366,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             </button>
           </div>
 
-          {/* Panel content */}
+          {/* Panel content — both kept mounted (toggled via display) rather than
+              conditionally unmounted, so switching tabs never wipes HybridKendall's
+              in-progress landmark placement/confirmation state on the Camera panel. */}
           <div style={{flex:1,overflowY:"auto"}}>
-            {mobilePanel==="camera" ? leftPanel : (mvReportPanel || tabContent)}
+            <div style={{display: mobilePanel==="camera" ? "block" : "none"}}>{leftPanel}</div>
+            <div style={{display: mobilePanel==="results" ? "block" : "none"}}>{mvReportPanel || tabContent}</div>
           </div>
         </div>
       )}

@@ -699,8 +699,8 @@ export default function HybridKendall({
               <g>
                 <line x1={plumbX} y1="0" x2={plumbX} y2="1"
                   stroke="rgba(124,58,237,0.85)" strokeWidth="0.004" strokeDasharray="0.015,0.008"/>
-                <rect x={plumbX+0.008} y="0.026" width="0.09" height="0.02" rx="0.003" fill="rgba(0,0,0,0.7)"/>
-                <text x={plumbX+0.013} y="0.041" fontSize="0.018" fontWeight="bold" fill="#c4b5fd" fontFamily="system-ui">PLUMB</text>
+                <rect x={plumbX+0.008} y="0.026" width="0.09" height="0.02" rx="0.003" fill="rgba(255,255,255,0.94)" stroke="#7c3aed" strokeWidth="0.001"/>
+                <text x={plumbX+0.013} y="0.041" fontSize="0.018" fontWeight="bold" fill="#5b21b6" fontFamily="system-ui">PLUMB</text>
               </g>
             )}
 
