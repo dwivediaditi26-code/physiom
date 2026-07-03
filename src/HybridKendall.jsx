@@ -25,22 +25,25 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 // color: used for button/panel UI on the app's light background (needs to be dark
 // enough to read as text on white). bright: used for dots/labels drawn on top of
 // the uploaded photo itself, over a dark translucent badge (needs to be light).
+// hint: short plain-language location shown on the button itself, so the
+// clinician can see where to tap without first entering placement mode.
+// desc: fuller anatomical/palpation guidance shown in the tap-to-place hint.
 export const PRIMARY_LANDMARKS = [
-  { id:"ear",      label:"Ear",      desc:"Ear tragus",               color:"#0891b2", bright:"#22d3ee", mpIdx:[7,8]    },
-  { id:"acromion", label:"Acromion", desc:"Tip of acromion process",  color:"#7c3aed", bright:"#c4b5fd", mpIdx:[11,12]  },
-  { id:"hip",      label:"Hip (GT)", desc:"Greater trochanter tip",   color:"#c2760c", bright:"#fbbf24", mpIdx:[23,24]  },
-  { id:"knee",     label:"Knee",     desc:"Lateral femoral condyle",  color:"#15803d", bright:"#4ade80", mpIdx:[25,26]  },
-  { id:"ankle",    label:"Ankle",    desc:"Lateral malleolus tip",    color:"#dc2626", bright:"#f87171", mpIdx:[27,28]  },
+  { id:"ear",      label:"Ear",      hint:"front of ear canal",      desc:"Tragus — the small firm flap right in front of the ear canal opening",              color:"#0891b2", bright:"#22d3ee", mpIdx:[7,8]    },
+  { id:"acromion", label:"Acromion", hint:"tip of shoulder",         desc:"Tip of the acromion — the bony point at the very top/outer edge of the shoulder", color:"#7c3aed", bright:"#c4b5fd", mpIdx:[11,12]  },
+  { id:"hip",      label:"Hip (GT)", hint:"side of hip bone",        desc:"Greater trochanter — the bony bump felt on the outside of the hip/upper thigh",    color:"#c2760c", bright:"#fbbf24", mpIdx:[23,24]  },
+  { id:"knee",     label:"Knee",     hint:"outer knee bone",         desc:"Lateral femoral condyle — the bony bulge on the outside of the knee joint",        color:"#15803d", bright:"#4ade80", mpIdx:[25,26]  },
+  { id:"ankle",    label:"Ankle",    hint:"outer ankle bone",        desc:"Lateral malleolus — the bony bump on the outside of the ankle",                    color:"#dc2626", bright:"#f87171", mpIdx:[27,28]  },
 ];
 
 export const ADVANCED_LANDMARKS = [
-  { id:"c7",    label:"C7",    desc:"C7 spinous process (base of neck)",     color:"#b45309", bright:"#fbbf24", group:"spinal"  },
-  { id:"t12",   label:"T12",   desc:"T12 (thoracolumbar junction)",          color:"#db2777", bright:"#fb7185", group:"spinal"  },
-  { id:"s2",    label:"S2",    desc:"S2 (posterior sacrum midpoint)",        color:"#9333ea", bright:"#c084fc", group:"spinal"  },
-  { id:"apexT", label:"T-Apex",desc:"Maximum thoracic convexity point",     color:"#ea580c", bright:"#fdba74", group:"spinal"  },
-  { id:"apexL", label:"L-Apex",desc:"Maximum lumbar concavity point",       color:"#16a34a", bright:"#86efac", group:"spinal"  },
-  { id:"asis",  label:"ASIS",  desc:"Anterior superior iliac spine",        color:"#0284c7", bright:"#7dd3fc", group:"pelvis"  },
-  { id:"psis",  label:"PSIS",  desc:"Posterior superior iliac spine",       color:"#2563eb", bright:"#93c5fd", group:"pelvis"  },
+  { id:"c7",    label:"C7",    hint:"base of neck bump",      desc:"Tip your patient's chin down — C7 is the most prominent bony bump that pops out at the base of the neck, where it meets the upper back",             color:"#b45309", bright:"#fbbf24", group:"spinal"  },
+  { id:"t12",   label:"T12",   hint:"bottom of ribcage",      desc:"Follow the spine down to where the ribcage ends — T12 is the last thoracic vertebra, at the thoracolumbar junction, roughly level with the lowest rib", color:"#db2777", bright:"#fb7185", group:"spinal"  },
+  { id:"s2",    label:"S2",    hint:"between the dimples",    desc:"Level with the two small dimples at the base of the spine (the PSIS dimples) — S2 sits roughly midway between them, at the top of the sacrum",         color:"#9333ea", bright:"#c084fc", group:"spinal"  },
+  { id:"apexT", label:"T-Apex",hint:"peak of upper-back curve", desc:"The single point where the upper back curves outward the most — usually mid-shoulder-blade level on a rounded/hunched back",                        color:"#ea580c", bright:"#fdba74", group:"spinal"  },
+  { id:"apexL", label:"L-Apex",hint:"peak of lower-back curve", desc:"The single point where the lower back curves inward the most — usually just above the belt line on an arched lower back",                          color:"#16a34a", bright:"#86efac", group:"spinal"  },
+  { id:"asis",  label:"ASIS",  hint:"front hip bone",         desc:"Anterior superior iliac spine — the bony point you feel at the very front of the pelvis, just below the waistline on each side",                       color:"#0284c7", bright:"#7dd3fc", group:"pelvis"  },
+  { id:"psis",  label:"PSIS",  hint:"back hip dimple",        desc:"Posterior superior iliac spine — the small dimple felt at the back of the pelvis, level with S2, just above the buttock",                              color:"#2563eb", bright:"#93c5fd", group:"pelvis"  },
 ];
 
 // Severity thresholds — all sourced from clinical literature
@@ -636,7 +639,7 @@ export default function HybridKendall({
                 borderRadius:9,border:`1.5px solid ${isActive?def.color:placed?def.color+"70":isNext?C.accent:C.border}`,background:isActive?`${def.color}22`:placed?`${def.color}14`:isNext?`${C.accent}0d`:"transparent",color:isActive?def.color:placed?def.color:isNext?C.accent:C.muted,fontSize: isWide?"0.6rem":"0.65rem",fontWeight:700,cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
               <div style={{fontSize: isWide?"0.85rem":"0.95rem",marginBottom:2}}>{placed?"✅":isNext?"👆":"📍"}</div>
               <div style={{fontWeight:800,fontSize: isWide?"0.6rem":"0.65rem",whiteSpace:"nowrap"}}>{def.label}</div>
-              <div style={{fontSize: isWide?"0.5rem":"0.55rem",marginTop:1,opacity:0.75,whiteSpace:"nowrap"}}>{isActive?"tap photo ↓":placed?"✓ placed":isNext?"← next":def.desc.split(" ")[0]}</div>
+              <div style={{fontSize: isWide?"0.5rem":"0.55rem",marginTop:1,opacity:0.75,lineHeight:1.25,whiteSpace:isActive||placed||isNext?"nowrap":"normal"}}>{isActive?"tap photo ↓":placed?"✓ placed":isNext?"← next":def.hint}</div>
             </button>);
           })}
         </div>
@@ -684,11 +687,11 @@ export default function HybridKendall({
               return (
                 <button key={def.id}
                   onClick={()=>setActivePlace(isActive ? null : def.id)}
-                  style={{padding: isWide?"6px 4px":"7px 6px", minWidth: isWide?0:70, flexShrink: isWide?undefined:0, minHeight:44,
+                  style={{padding: isWide?"6px 5px":"7px 6px", minWidth: isWide?0:88, flexShrink: isWide?undefined:0, minHeight:52,
                     borderRadius:7,border:`1.5px solid ${isActive?def.color:placed?def.color+"60":C.border}`,background:isActive?`${def.color}20`:placed?`${def.color}10`:"transparent",color:isActive?def.color:placed?def.color:C.muted,fontSize: isWide?"0.55rem":"0.6rem",fontWeight:700,cursor:"pointer",textAlign:"center"}}>
                   <div>{placed?"✅":"📍"}</div>
                   <div style={{fontWeight:800,fontSize: isWide?"0.57rem":"0.62rem",whiteSpace:"nowrap"}}>{def.label}</div>
-                  {placed && <div style={{fontSize: isWide?"0.48rem":"0.52rem",opacity:0.7,whiteSpace:"nowrap"}}>{def.desc.split(" ")[0]}</div>}
+                  <div style={{fontSize: isWide?"0.47rem":"0.5rem",opacity:0.75,lineHeight:1.2,marginTop:1}}>{isActive?"tap photo ↓":def.hint}</div>
                   {placed && <button onClick={e=>{e.stopPropagation();setLm(p=>{const n={...p};delete n[def.id];return n;});}} style={{marginTop:2,width:"100%",border:"none",background:"#FCEBEB",color:C.red,borderRadius:4,fontSize: isWide?"0.48rem":"0.55rem",fontWeight:700,cursor:"pointer",minHeight:20}}>✕</button>}
                 </button>
               );
