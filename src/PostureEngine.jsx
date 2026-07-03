@@ -4477,6 +4477,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
   const videoRef=useRef(null);
   const overlayRef=useRef(null);
+  const captureAreaRef=useRef(null); // scrollable Camera/Upload area — reset to top on each new photo
   const poseRef=useRef(null);
   const streamRef=useRef(null);
   const rafRef=useRef(null);
@@ -4488,6 +4489,15 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   const manualImgSize=useRef({w:800,h:1000});
 
   useEffect(()=>{viewRef.current=view;},[view]);
+
+  // A full-body portrait photo rendered at 100% width is usually taller than the
+  // visible screen, so the capture area scrolls. Whatever scroll position it was
+  // last left at (e.g. from reviewing a previous photo) otherwise persists into
+  // the newly analysed photo, which can land the user on the middle/bottom of the
+  // image (legs) instead of the top (head) with no indication there's more above.
+  useEffect(()=>{
+    if(captureAreaRef.current) captureAreaRef.current.scrollTop = 0;
+  },[rawUploadedImg]);
 
   // ── Warm up ViTPose (lateral-view pose model) as soon as a sagittal view is
   // selected, so the model is already loaded by the time a photo is analysed. ─
@@ -6292,7 +6302,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       {mvThumbnailStrip}
 
       {/* Camera / Upload area */}
-      <div style={{flex:1,overflowY:"auto"}}>
+      <div ref={captureAreaRef} style={{flex:1,overflowY:"auto"}}>
         {isLive?(
           <div>
             {!camReady?(
