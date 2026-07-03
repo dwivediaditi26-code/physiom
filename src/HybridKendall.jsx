@@ -22,22 +22,25 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 // Landmark definitions
 // color: dot colour on overlay
 // mpIdx: which MediaPipe landmark index ViTPose maps to (for auto-placement)
+// color: used for button/panel UI on the app's light background (needs to be dark
+// enough to read as text on white). bright: used for dots/labels drawn on top of
+// the uploaded photo itself, over a dark translucent badge (needs to be light).
 export const PRIMARY_LANDMARKS = [
-  { id:"ear",      label:"Ear",      desc:"Ear tragus",               color:"#0891b2", mpIdx:[7,8]    },
-  { id:"acromion", label:"Acromion", desc:"Tip of acromion process",  color:"#7c3aed", mpIdx:[11,12]  },
-  { id:"hip",      label:"Hip (GT)", desc:"Greater trochanter tip",   color:"#c2760c", mpIdx:[23,24]  },
-  { id:"knee",     label:"Knee",     desc:"Lateral femoral condyle",  color:"#15803d", mpIdx:[25,26]  },
-  { id:"ankle",    label:"Ankle",    desc:"Lateral malleolus tip",    color:"#dc2626", mpIdx:[27,28]  },
+  { id:"ear",      label:"Ear",      desc:"Ear tragus",               color:"#0891b2", bright:"#22d3ee", mpIdx:[7,8]    },
+  { id:"acromion", label:"Acromion", desc:"Tip of acromion process",  color:"#7c3aed", bright:"#c4b5fd", mpIdx:[11,12]  },
+  { id:"hip",      label:"Hip (GT)", desc:"Greater trochanter tip",   color:"#c2760c", bright:"#fbbf24", mpIdx:[23,24]  },
+  { id:"knee",     label:"Knee",     desc:"Lateral femoral condyle",  color:"#15803d", bright:"#4ade80", mpIdx:[25,26]  },
+  { id:"ankle",    label:"Ankle",    desc:"Lateral malleolus tip",    color:"#dc2626", bright:"#f87171", mpIdx:[27,28]  },
 ];
 
 export const ADVANCED_LANDMARKS = [
-  { id:"c7",    label:"C7",    desc:"C7 spinous process (base of neck)",     color:"#b45309", group:"spinal"  },
-  { id:"t12",   label:"T12",   desc:"T12 (thoracolumbar junction)",          color:"#db2777", group:"spinal"  },
-  { id:"s2",    label:"S2",    desc:"S2 (posterior sacrum midpoint)",        color:"#9333ea", group:"spinal"  },
-  { id:"apexT", label:"T-Apex",desc:"Maximum thoracic convexity point",     color:"#ea580c", group:"spinal"  },
-  { id:"apexL", label:"L-Apex",desc:"Maximum lumbar concavity point",       color:"#16a34a", group:"spinal"  },
-  { id:"asis",  label:"ASIS",  desc:"Anterior superior iliac spine",        color:"#0284c7", group:"pelvis"  },
-  { id:"psis",  label:"PSIS",  desc:"Posterior superior iliac spine",       color:"#2563eb", group:"pelvis"  },
+  { id:"c7",    label:"C7",    desc:"C7 spinous process (base of neck)",     color:"#b45309", bright:"#fbbf24", group:"spinal"  },
+  { id:"t12",   label:"T12",   desc:"T12 (thoracolumbar junction)",          color:"#db2777", bright:"#fb7185", group:"spinal"  },
+  { id:"s2",    label:"S2",    desc:"S2 (posterior sacrum midpoint)",        color:"#9333ea", bright:"#c084fc", group:"spinal"  },
+  { id:"apexT", label:"T-Apex",desc:"Maximum thoracic convexity point",     color:"#ea580c", bright:"#fdba74", group:"spinal"  },
+  { id:"apexL", label:"L-Apex",desc:"Maximum lumbar concavity point",       color:"#16a34a", bright:"#86efac", group:"spinal"  },
+  { id:"asis",  label:"ASIS",  desc:"Anterior superior iliac spine",        color:"#0284c7", bright:"#7dd3fc", group:"pelvis"  },
+  { id:"psis",  label:"PSIS",  desc:"Posterior superior iliac spine",       color:"#2563eb", bright:"#93c5fd", group:"pelvis"  },
 ];
 
 // Severity thresholds — all sourced from clinical literature
@@ -703,10 +706,10 @@ export default function HybridKendall({
 
             {/* ── Measurement lines (landmark → plumb) ── */}
             {confirmed && plumbX !== null && [
-              { id:"ear",      pct:m.earPlumb,  color:"#0891b2" },
-              { id:"acromion", pct:m.acrPlumb,  color:"#7c3aed" },
-              { id:"hip",      pct:m.hipPlumb,  color:"#c2760c" },
-              { id:"knee",     pct:m.kneePlumb, color:"#15803d" },
+              { id:"ear",      pct:m.earPlumb,  color:"#22d3ee" },
+              { id:"acromion", pct:m.acrPlumb,  color:"#c4b5fd" },
+              { id:"hip",      pct:m.hipPlumb,  color:"#fbbf24" },
+              { id:"knee",     pct:m.kneePlumb, color:"#4ade80" },
             ].map(seg => {
               const p = lm[seg.id]; if (!p || seg.pct === null) return null;
               const lbl = `${seg.pct > 0 ? "+" : ""}${seg.pct}%`;
@@ -728,11 +731,11 @@ export default function HybridKendall({
               return (
                 <g>
                   <line x1={lm.ear.x} y1={lm.ear.y} x2={target.x} y2={target.y}
-                    stroke="#0891b2" strokeWidth="0.004" opacity="0.9"/>
+                    stroke="#22d3ee" strokeWidth="0.004" opacity="0.9"/>
                   <rect x={lm.ear.x+(target.x-lm.ear.x)*0.4-0.018} y={lm.ear.y+(target.y-lm.ear.y)*0.4+0.004}
                     width="0.072" height="0.015" rx="0.002" fill="rgba(0,0,0,0.78)"/>
                   <text x={lm.ear.x+(target.x-lm.ear.x)*0.4-0.014} y={lm.ear.y+(target.y-lm.ear.y)*0.4+0.014}
-                    fontSize="0.012" fill="#0891b2" fontWeight="bold" fontFamily="system-ui">CVA {m.cva}°</text>
+                    fontSize="0.012" fill="#22d3ee" fontWeight="bold" fontFamily="system-ui">CVA {m.cva}°</text>
                 </g>
               );
             })()}
@@ -740,15 +743,15 @@ export default function HybridKendall({
             {/* ── TCI / LCI chord lines ── */}
             {advancedMode && lm.c7 && lm.t12 && (
               <line x1={lm.c7.x} y1={lm.c7.y} x2={lm.t12.x} y2={lm.t12.y}
-                stroke="#b45309" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+                stroke="#fbbf24" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
             )}
             {advancedMode && lm.t12 && lm.s2 && (
               <line x1={lm.t12.x} y1={lm.t12.y} x2={lm.s2.x} y2={lm.s2.y}
-                stroke="#db2777" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+                stroke="#fb7185" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
             )}
             {advancedMode && lm.asis && lm.psis && (
               <line x1={lm.asis.x} y1={lm.asis.y} x2={lm.psis.x} y2={lm.psis.y}
-                stroke="#0284c7" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+                stroke="#7dd3fc" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
             )}
 
             {/* ── Landmark dots (draggable) ── */}
@@ -763,11 +766,11 @@ export default function HybridKendall({
                   {/* Hit area (invisible, larger for easy touch) */}
                   <circle cx={p.x} cy={p.y} r={r+0.012} fill="transparent"/>
                   <circle cx={p.x} cy={p.y} r={r+0.003} fill="rgba(0,0,0,0.5)"/>
-                  <circle cx={p.x} cy={p.y} r={r} fill={def.color} stroke="white" strokeWidth="0.004"
+                  <circle cx={p.x} cy={p.y} r={r} fill={def.bright||def.color} stroke="white" strokeWidth="0.004"
                     opacity={confirmed?1:0.9}/>
                   {/* Label — right of dot, small */}
                   <rect x={p.x+r+0.003} y={p.y-0.013} width="0.068" height="0.016" rx="0.002" fill="rgba(0,0,0,0.72)"/>
-                  <text x={p.x+r+0.005} y={p.y-0.001} fontSize="0.012" fill={def.color} fontWeight="bold" fontFamily="system-ui">{def.label}</text>
+                  <text x={p.x+r+0.005} y={p.y-0.001} fontSize="0.012" fill={def.bright||def.color} fontWeight="bold" fontFamily="system-ui">{def.label}</text>
                 </g>
               );
             })}
