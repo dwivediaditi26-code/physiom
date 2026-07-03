@@ -3602,6 +3602,9 @@ function PostureSessionsView({ d, C, onNav }) {
   const [lightboxImg, setLightboxImg] = useState(null);
   let postureSessions = [];
   try { postureSessions = JSON.parse(d.posture_sessions||"[]"); } catch {}
+  let compositeReports = [];
+  try { compositeReports = JSON.parse(d.posture_composite_reports||"[]"); } catch {}
+  const VLABELS_MV = {anterior:"Frontal",posterior:"Back",left:"Sag L",right:"Sag R"};
   const defects = Object.keys(d).filter(k=>k.startsWith("posture_defect_")&&d[k]);
   const VLABELS = {anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
   const viewCount = {};
@@ -3630,6 +3633,51 @@ function PostureSessionsView({ d, C, onNav }) {
           color:C.primary,fontWeight:800,fontSize:12,cursor:"pointer"}}>
         📷 New Posture Analysis
       </button>
+      {compositeReports.length>0&&(
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>
+            Composite Assessments ({compositeReports.length}) <span style={{fontWeight:400,color:C.muted,fontSize:10.5}}>— merged across multiple views</span>
+          </div>
+          {[...compositeReports].reverse().map((cr,i)=>{
+            const col=(cr.compositeScore||0)>=74?C.green:(cr.compositeScore||0)>=58?C.orange:"#dc2626";
+            const dt=new Date(cr.generatedAt||"");
+            const dateStr=isNaN(dt.getTime())?"":dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+            const confirmedCount=(cr.mergedFindings||[]).filter(f=>f.confirmed).length;
+            const topFindings=(cr.mergedFindings||[]).slice(0,6);
+            return(
+              <div key={i} style={{background:C.white,borderRadius:12,marginBottom:10,
+                boxShadow:"0 1px 6px rgba(0,0,0,0.06)",border:`1.5px solid ${C.primary}35`,overflow:"hidden"}}>
+                <div style={{padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:`${C.primary}08`}}>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:800,color:C.primary}}>⬡ Composite — {(cr.views||[]).map(v=>VLABELS_MV[v]||v).join(" + ")}</div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:1}}>{dateStr} · {cr.compositeBand}{confirmedCount>0?` · ${confirmedCount} confirmed across views`:""}</div>
+                  </div>
+                  {cr.compositeScore!=null&&<div style={{fontSize:18,fontWeight:900,color:col,lineHeight:1,flexShrink:0,marginLeft:6}}>{cr.compositeScore}<span style={{fontSize:8,color:C.muted,fontWeight:400}}>/100</span></div>}
+                </div>
+                {cr.thumbnails&&Object.keys(cr.thumbnails).length>0&&(
+                  <div style={{display:"flex",gap:2,padding:"6px 12px 0"}}>
+                    {Object.entries(cr.thumbnails).map(([vk,img])=>img&&(
+                      <img key={vk} src={img} alt={VLABELS_MV[vk]||vk} onClick={()=>setLightboxImg(img)}
+                        style={{width:44,height:44,objectFit:"cover",borderRadius:6,cursor:"zoom-in",border:`1px solid ${C.border}`}}/>
+                    ))}
+                  </div>
+                )}
+                {topFindings.length>0&&(
+                  <div style={{padding:"8px 12px 10px"}}>
+                    {topFindings.map((f,fi)=>{
+                      const isH=f.severity==="high"; const isM=f.severity==="moderate"||f.severity==="medium";
+                      return(<div key={fi} style={{display:"flex",alignItems:"flex-start",gap:5,marginBottom:3,fontSize:10.5,color:isH?"#dc2626":isM?C.orange:"#374151",lineHeight:1.45}}>
+                        <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,marginTop:3,background:isH?"#dc2626":isM?C.orange:"#9CA3AF"}}/>
+                        <span>{f.text||f.findingName||f.plain||f.region} {f.confirmed&&<span style={{fontWeight:700,color:C.primary}}>· confirmed ({(f.sourceViews||[]).join("+")})</span>}</span>
+                      </div>);
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
       {sessions.length>0?(
         <div>
           <div style={{fontSize:12,fontWeight:800,color:C.text,marginBottom:10}}>Saved captures ({sessions.length})</div>

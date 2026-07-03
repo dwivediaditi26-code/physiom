@@ -6035,6 +6035,24 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
     const composite = mergeViewResults(Object.values(mvResults));
     setMvComposite(composite);
     setMvTab("report");
+    // Persist the composite (not just individual per-view sessions) to the
+    // patient record so it's visible from the Patient Profile's Posture tab,
+    // not only inside this live screen.
+    if (composite && activePatient && setPatientField) {
+      try {
+        const existing = JSON.parse(activePatient.data?.posture_composite_reports || "[]");
+        const entry = {
+          generatedAt: new Date().toISOString(),
+          views: Object.keys(mvResults),
+          compositeScore: composite.compositeScore,
+          compositeBand: composite.compositeBand,
+          mergedFindings: composite.mergedFindings || [],
+          coverage: composite.coverage,
+          thumbnails: Object.fromEntries(Object.entries(mvResults).map(([vk,r])=>[vk, r.img])),
+        };
+        setPatientField("posture_composite_reports", JSON.stringify([...existing, entry]));
+      } catch(e){ console.warn("Could not save composite report to patient record:", e); }
+    }
   }
   function handleClearMv() { setMvResults({}); setMvComposite(null); setMvTab("capture"); }
 
