@@ -435,6 +435,7 @@ export default function HybridKendall({
   imgSrc,           // source URL of the lateral photo
   vitposeLandmarks, // raw ViTPose lm array (auto-placement seed)
   vitposeLoading,   // true while ViTPose auto-placement is running in the background
+  vitposeError,     // set if AI auto-placement failed/declined — shown instead of failing silently
   view,             // "left" | "right"
   patientSex,       // "Female" | "Male"
   onFindingsChange, // callback(findings, measurements, segmentStatus)
@@ -764,6 +765,13 @@ export default function HybridKendall({
               </text>
             ))}
           </svg>
+
+          {/* AI auto-placement failed/declined banner */}
+          {!vitposeLoading && vitposeError && Object.keys(lm).length===0 && (
+            <div style={{position:"absolute",top:8,left:8,right:8,background:"rgba(0,0,0,0.85)",color:"#fbbf24",padding:"7px 12px",borderRadius:10,fontSize:"0.65rem",fontWeight:700,lineHeight:1.4,zIndex:10}}>
+              ⚠ {vitposeError}
+            </div>
+          )}
 
           {/* AI auto-placement loading banner */}
           {vitposeLoading && Object.keys(lm).length===0 && (

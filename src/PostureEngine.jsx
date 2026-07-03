@@ -4422,6 +4422,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   const [manualSpinal,setManualSpinal]=useState({}); // {c7Y, t12Y, s2Y, asis, psis}
   const [hybridSeedLandmarks,setHybridSeedLandmarks]=useState(null); // raw ViTPose lm for HybridKendall
   const [vitposeLoading,setVitposeLoading]=useState(false); // true while ViTPose auto-placement is running
+  const [vitposeError,setVitposeError]=useState(null); // set if AI auto-placement fails, so the UI can say why instead of silently sitting in manual mode
   // spinalLevelMode: which vertebral level is being tapped next
   const [spinalLevelMode,setSpinalLevelMode]=useState(null); // null | 'c7' | 't12'
   // Helper: get shoulder and hip Y (normalised 0-1) from current landmarks or manual placement
@@ -4793,11 +4794,15 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         imgEl.onload=async()=>{
           // ViTPose: auto-seed HybridKendall's 5 landmark points so the clinician
           // doesn't have to place them manually — same treatment as Frontal's auto-AI.
-          setVitposeLoading(true);
+          setVitposeLoading(true); setVitposeError(null);
           try {
-            const vitLm = await runViTPoseLateral(imgEl).catch(()=>null);
+            const vitLm = await runViTPoseLateral(imgEl).catch(e=>{ throw e; });
             if(vitLm) setHybridSeedLandmarks(vitLm);
-          } catch(e){ console.warn("ViTPose (handleFile):", e); }
+            else setVitposeError("AI could not confidently locate landmarks in this photo — place the 5 points manually below.");
+          } catch(e){
+            console.warn("ViTPose (handleFile):", e);
+            setVitposeError(`AI auto-placement unavailable (${e?.message||"load failed"}) — place the 5 points manually below.`);
+          }
           finally { setVitposeLoading(false); }
 
           if (typeof analyzeSagittalContour!=="function") return;
@@ -4955,8 +4960,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         processLandmarks(result.lm,currentView,H);
         if(currentView==="left"||currentView==="right"){
           setHybridSeedLandmarks(null); // clear stale seed from any previous capture
-          setVitposeLoading(true);
-          runViTPoseLateral(fc).then(vitLm=>{ if(vitLm) setHybridSeedLandmarks(vitLm); }).catch(()=>{}).finally(()=>setVitposeLoading(false));
+          setVitposeLoading(true); setVitposeError(null);
+          runViTPoseLateral(fc)
+            .then(vitLm=>{
+              if(vitLm) setHybridSeedLandmarks(vitLm);
+              else setVitposeError("AI could not confidently locate landmarks in this photo — place the 5 points manually below.");
+            })
+            .catch(e=>{ console.warn("ViTPose (capturePhoto):", e); setVitposeError(`AI auto-placement unavailable (${e?.message||"load failed"}) — place the 5 points manually below.`); })
+            .finally(()=>setVitposeLoading(false));
         }
         if(assessMode==="multi"){
           const m=measureLandmarks(result.lm,calib,currentView);
@@ -6592,6 +6603,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 imgSrc={rawUploadedImg||uploadedImg}
                 vitposeLandmarks={hybridSeedLandmarks}
                 vitposeLoading={vitposeLoading}
+                vitposeError={vitposeError}
                 view={view}
                 patientSex={patientInfo?.sex||"Female"}
                 onFindingsChange={handleKendallFindings}
