@@ -4385,13 +4385,31 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   const [kendallFindings,setKendallFindings]=useState(null);
   const [kendallMeasurements,setKendallMeasurements]=useState(null);
   const [kendallSegmentStatus,setKendallSegmentStatus]=useState(null);
+  // HybridKendall's own finding categories (e.g. "Forward Head Posture",
+  // "Shoulder Posterior Position") don't match the region keys the Exercise
+  // Plan (EXERCISE_MAP) and Special Tests (SPECIAL_TESTS_MAP) engines look up
+  // against (e.g. "Cervical / CVA", "Shoulder Girdle") — so sagittal findings
+  // from the manual/Hybrid Kendall workflow never matched anything and the
+  // Plan/Tests tabs stayed empty even when real findings were present. Map
+  // each Kendall category to the closest existing region key so they connect
+  // to the same exercise/test recommendation engine Frontal already uses.
+  const KENDALL_CATEGORY_TO_REGION = {
+    "Forward Head Posture": "Cervical / CVA",
+    "Shoulder Anterior Position": "Shoulder Girdle",
+    "Shoulder Posterior Position": "Shoulder Girdle",
+    "Thoracic Curvature Index": "Thoracic Kyphosis (Trunk Lean Est.)",
+    "Lumbar Curvature Index": "Pelvis / Lumbar",
+    "Pelvic Tilt": "Pelvis / Lumbar",
+    "Knee Position": "Knee (Sagittal)",
+  };
   const handleKendallFindings = (findings, measurements, segmentStatus) => {
     setKendallFindings(findings);
     setKendallMeasurements(measurements);
     setKendallSegmentStatus(segmentStatus);
+    const mapRegion = (category) => KENDALL_CATEGORY_TO_REGION[category] || category;
     // Convert to the app's finding format for display in the results panel
     const converted = findings.filter(f=>f.severity&&f.severity!=="Info"&&f.severity!=="Normal").map(f=>({
-      region: f.category,
+      region: mapRegion(f.category),
       text: f.label,
       severity: (f.severity||"moderate").toLowerCase(),
       plain: f.label,
@@ -4402,7 +4420,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       _kendall: true,
     }));
     if (converted.length > 0 || findings.some(f=>f.id==="kendall_pattern")) {
-      setFindings(findings.map(f=>({...f, region:f.category, text:f.label})));
+      setFindings(findings.map(f=>({...f, region:mapRegion(f.category), text:f.label})));
     }
   };
   // photoOrientation: "selfie" = mirrored (front camera, x-axis is flipped — MediaPipe default)
