@@ -434,6 +434,7 @@ export function buildKendallFindings(measurements, patientSex = "Female") {
 export default function HybridKendall({
   imgSrc,           // source URL of the lateral photo
   vitposeLandmarks, // raw ViTPose lm array (auto-placement seed)
+  vitposeLoading,   // true while ViTPose auto-placement is running in the background
   view,             // "left" | "right"
   patientSex,       // "Female" | "Male"
   onFindingsChange, // callback(findings, measurements, segmentStatus)
@@ -451,6 +452,9 @@ export default function HybridKendall({
   const imgRef = useRef(null);
 
   // ── Auto-place from ViTPose on mount / when landmarks change ────────────────
+  // When ViTPose confidently detects all 5 primary points, auto-confirm too —
+  // same automatic experience as the Frontal AI pipeline. The clinician can
+  // still hit "Re-adjust landmarks" afterward to review/correct any point.
   useEffect(() => {
     if (!vitposeLandmarks || vitposeLandmarks.length < 29) return;
     const vl = vitposeLandmarks;
@@ -466,12 +470,13 @@ export default function HybridKendall({
       knee:     pick([25,26]),
       ankle:    pick([27,28]),
     };
-    setLm(prev => {
-      // Only auto-place if user hasn't manually adjusted yet
-      if (Object.keys(prev).length > 0) return prev;
-      return Object.fromEntries(Object.entries(initial).filter(([,v])=>v!==null));
-    });
-    setConfirmed(false);
+    const allPlaced = Object.values(initial).every(v => v !== null);
+    // Only touch state if the user hasn't already started placing/adjusting
+    // points themselves — never silently override a clinician's manual work.
+    const isFreshPlacement = Object.keys(lm).length === 0;
+    if (!isFreshPlacement) return;
+    setLm(Object.fromEntries(Object.entries(initial).filter(([,v])=>v!==null)));
+    if (allPlaced) setConfirmed(true);
   }, [vitposeLandmarks]);
 
   // ── Derived measurements (recomputed on every lm change) ───────────────────
@@ -759,6 +764,15 @@ export default function HybridKendall({
               </text>
             ))}
           </svg>
+
+          {/* AI auto-placement loading banner */}
+          {vitposeLoading && Object.keys(lm).length===0 && (
+            <div style={{position:"absolute",top:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.85)",color:"#a78bfa",padding:"6px 16px",borderRadius:20,fontSize:"0.68rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:10,display:"flex",alignItems:"center",gap:6}}>
+              <span style={{display:"inline-block",width:10,height:10,border:"2px solid #a78bfa",borderTopColor:"transparent",borderRadius:"50%",animation:"hk-spin 0.7s linear infinite"}}/>
+              AI locating landmarks…
+              <style>{"@keyframes hk-spin{to{transform:rotate(360deg)}}"}</style>
+            </div>
+          )}
 
           {/* Tap hint */}
           {activePlace && (() => {

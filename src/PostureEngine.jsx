@@ -4421,6 +4421,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   // {patientSex}: "Male" | "Female"
   const [manualSpinal,setManualSpinal]=useState({}); // {c7Y, t12Y, s2Y, asis, psis}
   const [hybridSeedLandmarks,setHybridSeedLandmarks]=useState(null); // raw ViTPose lm for HybridKendall
+  const [vitposeLoading,setVitposeLoading]=useState(false); // true while ViTPose auto-placement is running
   // spinalLevelMode: which vertebral level is being tapped next
   const [spinalLevelMode,setSpinalLevelMode]=useState(null); // null | 'c7' | 't12'
   // Helper: get shoulder and hip Y (normalised 0-1) from current landmarks or manual placement
@@ -4792,10 +4793,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         imgEl.onload=async()=>{
           // ViTPose: auto-seed HybridKendall's 5 landmark points so the clinician
           // doesn't have to place them manually — same treatment as Frontal's auto-AI.
+          setVitposeLoading(true);
           try {
             const vitLm = await runViTPoseLateral(imgEl).catch(()=>null);
             if(vitLm) setHybridSeedLandmarks(vitLm);
           } catch(e){ console.warn("ViTPose (handleFile):", e); }
+          finally { setVitposeLoading(false); }
 
           if (typeof analyzeSagittalContour!=="function") return;
           try {
@@ -4952,7 +4955,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         processLandmarks(result.lm,currentView,H);
         if(currentView==="left"||currentView==="right"){
           setHybridSeedLandmarks(null); // clear stale seed from any previous capture
-          runViTPoseLateral(fc).then(vitLm=>{ if(vitLm) setHybridSeedLandmarks(vitLm); }).catch(()=>{});
+          setVitposeLoading(true);
+          runViTPoseLateral(fc).then(vitLm=>{ if(vitLm) setHybridSeedLandmarks(vitLm); }).catch(()=>{}).finally(()=>setVitposeLoading(false));
         }
         if(assessMode==="multi"){
           const m=measureLandmarks(result.lm,calib,currentView);
@@ -6587,6 +6591,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 key={(rawUploadedImg||uploadedImg)+"|"+view}
                 imgSrc={rawUploadedImg||uploadedImg}
                 vitposeLandmarks={hybridSeedLandmarks}
+                vitposeLoading={vitposeLoading}
                 view={view}
                 patientSex={patientInfo?.sex||"Female"}
                 onFindingsChange={handleKendallFindings}
