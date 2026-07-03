@@ -2455,6 +2455,26 @@ function scorePosture(m, findings, reliability) {
 // ─── Multi-View Merge Engine ──────────────────────────────────────────────────
 const VIEW_PLANE = { anterior:"frontal", posterior:"frontal", left:"sagittal", right:"sagittal" };
 
+// The SAME clinical concept gets a DIFFERENT region string depending on
+// whether buildFindings' primary detector fired or its fallback synthesiser
+// fired instead (the fallback only runs when the primary path found nothing).
+// Frontal and Back/Posterior share this same code, so if one view's primary
+// detector fires and the other view's fallback fires for the identical
+// underlying metric, they end up in different byRegion buckets and never
+// cross-validate into a "confirmed" (2+ view) finding — even though they're
+// describing the same thing. This map is used ONLY to decide which bucket a
+// finding's votes go into; the finding's own displayed `region` (used
+// elsewhere for Exercise Plan / Special Tests lookups) is left untouched.
+const REGION_MERGE_SYNONYMS = {
+  "Shoulder Level": "Shoulder Girdle",
+  "Pelvic Obliquity": "Pelvis",
+  "Head Lateral Tilt": "Head / Cervical",
+  "Trunk Lateral Shift": "Lateral Trunk Deviation Screen",
+  "Leg Length Discrepancy": "Leg Length",
+  "Knee Alignment": "Knee Alignment Tendency",
+};
+const canonicalMergeRegion = (region) => REGION_MERGE_SYNONYMS[region] || region;
+
 function mergeViewResults(viewResults) {
   if (!viewResults || viewResults.length === 0) return null;
   const capturedViews = viewResults.map(r => r.view);
@@ -2466,8 +2486,9 @@ function mergeViewResults(viewResults) {
   const byRegion = {};
   viewResults.forEach(({ view, findings }) => {
     (findings || []).forEach(f => {
-      if (!byRegion[f.region]) byRegion[f.region] = [];
-      byRegion[f.region].push({ ...f, sourceView: view });
+      const key = canonicalMergeRegion(f.region);
+      if (!byRegion[key]) byRegion[key] = [];
+      byRegion[key].push({ ...f, sourceView: view });
     });
   });
 
