@@ -867,22 +867,39 @@ function measureLandmarks(lm, calibration, view="anterior") {
 }
 
 // ─── Reliability Engine ───────────────────────────────────────────────────────
-function calcReliability(lm) {
+function calcReliability(lm, view) {
   if(!lm||lm.length<33) return {score:0,status:"No Pose",blocked:true,warnings:[{icon:"❌",text:"No pose detected",color:PC.red}],icc:null,confidence:{}};
+  const isLateral = view==="left"||view==="right";
   const KEY=[0,2,5,7,8,11,12,23,24,25,26,27,28,29,30,31,32];
   const NAMES={0:"Head",2:"L.Eye",5:"R.Eye",7:"L.Ear",8:"R.Ear",11:"L.Shoulder",12:"R.Shoulder",
     23:"L.Hip",24:"R.Hip",25:"L.Knee",26:"R.Knee",27:"L.Ankle",28:"R.Ankle",
     29:"L.Heel",30:"R.Heel",31:"L.Toe",32:"R.Toe"};
   const confidence={};
   KEY.forEach(i=>{confidence[i]={name:NAMES[i],value:Math.round((lm[i]?.visibility||0)*100)};});
-  const visVals=KEY.map(i=>(lm[i]?.visibility||0));
-  const avg=visVals.reduce((a,b)=>a+b,0)/KEY.length;
+  // In a true lateral (side-on) photo, only the near-side landmark of each
+  // bilateral pair is anatomically expected to be visible — the far side is
+  // legitimately occluded by the body. Scoring/gating must judge lateral photos
+  // by their near-side (higher-visibility) landmark of each pair, not penalise
+  // them for the far side being invisible, which is normal and correct.
+  const nearVis = (a,b) => Math.max(lm[a]?.visibility||0, lm[b]?.visibility||0);
+  let avg, blocked, failedCritical, bothShLow, bothHipLow;
+  if (isLateral) {
+    const parts=[(lm[0]?.visibility||0), nearVis(7,8), nearVis(11,12), nearVis(23,24), nearVis(25,26), nearVis(27,28), nearVis(29,30), nearVis(31,32)];
+    avg=parts.reduce((a,b)=>a+b,0)/parts.length;
+    const shVis=nearVis(11,12)>=MIN_VIS, hipVis=nearVis(23,24)>=MIN_VIS, headVis=(lm[0]?.visibility||0)>=MIN_VIS;
+    failedCritical=[!headVis&&{idx:0,name:"Head"},!shVis&&{idx:11,name:"Shoulder"},!hipVis&&{idx:23,name:"Hip"}].filter(Boolean);
+    bothShLow=!shVis; bothHipLow=!hipVis;
+    blocked=avg<0.40||!shVis||!hipVis;
+  } else {
+    const visVals=KEY.map(i=>(lm[i]?.visibility||0));
+    avg=visVals.reduce((a,b)=>a+b,0)/KEY.length;
+    const critical=[{idx:11,name:"L.Shoulder"},{idx:12,name:"R.Shoulder"},{idx:23,name:"L.Hip"},{idx:24,name:"R.Hip"},{idx:0,name:"Head"}];
+    failedCritical=critical.filter(c=>(lm[c.idx]?.visibility||0)<MIN_VIS);
+    bothShLow=(lm[11]?.visibility||0)<MIN_VIS&&(lm[12]?.visibility||0)<MIN_VIS;
+    bothHipLow=(lm[23]?.visibility||0)<MIN_VIS&&(lm[24]?.visibility||0)<MIN_VIS;
+    blocked=avg<0.40||failedCritical.length>1||bothShLow||bothHipLow;
+  }
   const score=Math.round(clamp(avg*100,0,100));
-  const critical=[{idx:11,name:"L.Shoulder"},{idx:12,name:"R.Shoulder"},{idx:23,name:"L.Hip"},{idx:24,name:"R.Hip"},{idx:0,name:"Head"}];
-  const failedCritical=critical.filter(c=>(lm[c.idx]?.visibility||0)<MIN_VIS);
-  const bothShLow=(lm[11]?.visibility||0)<MIN_VIS&&(lm[12]?.visibility||0)<MIN_VIS;
-  const bothHipLow=(lm[23]?.visibility||0)<MIN_VIS&&(lm[24]?.visibility||0)<MIN_VIS;
-  const blocked=avg<0.40||failedCritical.length>1||bothShLow||bothHipLow;
   const warnings=[];
   if(blocked){
     warnings.push({icon:"✕",text:"Image quality insufficient — improve lighting, ensure full body visible",color:PC.red,priority:6});
@@ -891,12 +908,14 @@ function calcReliability(lm) {
   } else if(avg<0.70){
     warnings.push({icon:"○",text:"Partial tracking — some measurements limited. Ensure full body in frame",color:PC.yellow,priority:3});
   }
-  const low=KEY.filter(i=>(lm[i]?.visibility||0)<MIN_VIS);
-  if(!blocked&&low.length>5) warnings.push({icon:"◉",text:`${low.length} landmarks low confidence — affected measurements unreliable`,color:PC.yellow,priority:4});
-  if(!blocked&&Math.abs((lm[11]?.visibility||0)-(lm[12]?.visibility||0))>0.40)
-    warnings.push({icon:"↔",text:"Asymmetric shoulder visibility — bilateral measurements may be inaccurate",color:PC.yellow,priority:3});
-  if(!blocked&&((lm[23]?.visibility||0)<MIN_VIS||(lm[24]?.visibility||0)<MIN_VIS))
-    warnings.push({icon:"⊖",text:"Hip partially occluded — pelvic measurements flagged unreliable",color:PC.yellow,priority:3});
+  if (!isLateral) {
+    const low=KEY.filter(i=>(lm[i]?.visibility||0)<MIN_VIS);
+    if(!blocked&&low.length>5) warnings.push({icon:"◉",text:`${low.length} landmarks low confidence — affected measurements unreliable`,color:PC.yellow,priority:4});
+    if(!blocked&&Math.abs((lm[11]?.visibility||0)-(lm[12]?.visibility||0))>0.40)
+      warnings.push({icon:"↔",text:"Asymmetric shoulder visibility — bilateral measurements may be inaccurate",color:PC.yellow,priority:3});
+    if(!blocked&&((lm[23]?.visibility||0)<MIN_VIS||(lm[24]?.visibility||0)<MIN_VIS))
+      warnings.push({icon:"⊖",text:"Hip partially occluded — pelvic measurements flagged unreliable",color:PC.yellow,priority:3});
+  }
   if((lm[7]?.visibility||0)<MIN_VIS&&(lm[8]?.visibility||0)<MIN_VIS)
     warnings.push({icon:"☉",text:"Ears not detected — CVA and forward head posture cannot be assessed",color:PC.yellow,priority:2});
   if((lm[31]?.visibility||0)<0.35&&(lm[32]?.visibility||0)<0.35)
@@ -2243,8 +2262,9 @@ function buildFindings(lm, view, m) {
     {
       const iHip = view==="right"?24:23, iKnee = view==="right"?26:25, iAnk = view==="right"?28:27;
       const sideName = view==="right"?"Right":"Left";
-      if (Vb(iHip,iKnee,iAnk)) {
-        const hp=g(iHip), kp=g(iKnee), ap=g(iAnk);
+      const recurvatumVis = [iHip,iKnee,iAnk].every(i => (lm[i]?.visibility||0) >= MIN_VIS);
+      if (recurvatumVis) {
+        const hp=lm[iHip], kp=lm[iKnee], ap=lm[iAnk];
         const v1x=hp.x-kp.x, v1y=hp.y-kp.y, v2x=ap.x-kp.x, v2y=ap.y-kp.y;
         const dot=v1x*v2x+v1y*v2y;
         const mag=Math.sqrt(v1x**2+v1y**2)*Math.sqrt(v2x**2+v2y**2);
@@ -4449,6 +4469,16 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
   useEffect(()=>{viewRef.current=view;},[view]);
 
+  // ── Warm up ViTPose (lateral-view pose model) as soon as a sagittal view is
+  // selected, so the model is already loaded by the time a photo is analysed. ─
+  const vitWarmedRef = useRef(false);
+  useEffect(()=>{
+    if((view==="left"||view==="right") && !vitWarmedRef.current){
+      vitWarmedRef.current = true;
+      warmupViTPose().catch(()=>{});
+    }
+  },[view]);
+
   // ── Load MediaPipe (singleton-backed, safe under StrictMode/HMR + retry) ─────
   const loadMediaPipe=useCallback(async()=>{
     if(poseRef.current){ setMpStatus("ready"); return; }
@@ -4478,7 +4508,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
     try { m=measureLandmarks(lm,calib,v)||{}; }
     catch(e){ console.warn("measureLandmarks error:",e); }
     let r={score:0,status:"Error",blocked:false,warnings:[],icc:null,confidence:{}};
-    try { r=calcReliability(lm); }
+    try { r=calcReliability(lm,v); }
     catch(e){ console.warn("calcReliability error:",e); }
 
     let f=[];
@@ -4746,7 +4776,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       if(result.annotated) setUploadedImg(result.annotated);
       if(assessMode==="multi"){
         const m=measureLandmarks(result.lm,null,view);
-        const r=calcReliability(result.lm);
+        const r=calcReliability(result.lm,view);
         const f=r.blocked?[]:buildFindings(result.lm,view,m);
         const s=scorePosture(m,f,r);
         saveMvResult(view,m,f,s,r,result.annotated||url);
@@ -4755,10 +4785,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         setTab("findings");
         if(isMobile) setMobilePanel("results");
       }
-      // ── Async contour analysis for lateral views (augments processLandmarks findings) ──
-      if ((view==="left"||view==="right") && typeof analyzeSagittalContour==="function") {
+      // ── Async contour + ViTPose analysis for lateral views ──────────────────────
+      if ((view==="left"||view==="right")) {
+        setHybridSeedLandmarks(null); // clear stale seed from any previous photo
         const imgEl=new Image(); imgEl.src=url;
         imgEl.onload=async()=>{
+          // ViTPose: auto-seed HybridKendall's 5 landmark points so the clinician
+          // doesn't have to place them manually — same treatment as Frontal's auto-AI.
+          try {
+            const vitLm = await runViTPoseLateral(imgEl).catch(()=>null);
+            if(vitLm) setHybridSeedLandmarks(vitLm);
+          } catch(e){ console.warn("ViTPose (handleFile):", e); }
+
+          if (typeof analyzeSagittalContour!=="function") return;
           try {
             const mLocal=measureLandmarks(result.lm,null,view)||{};
             const cr=await analyzeSagittalContour(imgEl,result.lm,view).catch(()=>null);
@@ -4911,9 +4950,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         setCapturedImg(annotated);
         const calib=computeCalibration(result.lm,patientHeightCm,H);
         processLandmarks(result.lm,currentView,H);
+        if(currentView==="left"||currentView==="right"){
+          setHybridSeedLandmarks(null); // clear stale seed from any previous capture
+          runViTPoseLateral(fc).then(vitLm=>{ if(vitLm) setHybridSeedLandmarks(vitLm); }).catch(()=>{});
+        }
         if(assessMode==="multi"){
           const m=measureLandmarks(result.lm,calib,currentView);
-          const r=calcReliability(result.lm);
+          const r=calcReliability(result.lm,currentView);
           const f=r.blocked?[]:buildFindings(result.lm,currentView,m);
           const s=scorePosture(m,f,r);
           saveMvResult(currentView,m,f,s,r,annotated);
@@ -6541,6 +6584,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             {/* ── Hybrid Kendall Mode — lateral views ── */}
             {(view==="left"||view==="right") && (uploadedImg||rawUploadedImg) && (
               <HybridKendall
+                key={(rawUploadedImg||uploadedImg)+"|"+view}
                 imgSrc={rawUploadedImg||uploadedImg}
                 vitposeLandmarks={hybridSeedLandmarks}
                 view={view}
