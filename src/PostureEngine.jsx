@@ -16,556 +16,6 @@ const POSE_CONNECTIONS = [
   [23,25],[25,27],[27,29],[29,31],[27,31],   // left leg
   [24,26],[26,28],[28,30],[30,32],[28,32],   // right leg
 ];
-const KEY_JOINTS = { 0:"Nose",11:"L.Shoulder",12:"R.Shoulder",13:"L.Elbow",14:"R.Elbow",15:"L.Wrist",16:"R.Wrist",23:"L.Hip",24:"R.Hip",25:"L.Knee",26:"R.Knee",27:"L.Ankle",28:"R.Ankle",31:"L.Foot",32:"R.Foot" };
-const TRACKING_STATES = { IDLE:"idle", LOADING:"loading", CALIBRATING:"calibrating", DETECTING:"detecting", STABLE:"stable", LOST:"lost" };
-
-// ─── TrackingQualityEngine ────────────────────────────────────────────────────
-function computeQuality(lm) {
-  if (!lm) return { score: 0, warnings: [], ready: false, distanceHint: null };
-  const v = (i) => lm[i] && lm[i].visibility > 0.5;
-  const vis = (i) => lm[i]?.visibility || 0;
-  const avgBody = lm.slice(11, 33).reduce((s, l) => s + (l?.visibility || 0), 0) / 22;
-  const warnings = [];
-
-  // Centering check
-  const noseX = vis(0) > 0.3 ? lm[0].x : null;
-  if (noseX !== null && (noseX < 0.3 || noseX > 0.7)) warnings.push({ text: "Center your body in frame", icon: "↔", color: "#ffb300", priority: 2 });
-
-  // Distance via shoulder span
-  let distanceHint = null;
-  if (v(11) && v(12)) {
-    const span = Math.abs(lm[11].x - lm[12].x);
-    if (span > 0.5) { warnings.push({ text: "Too close — step back", icon: "⬅", color: "#ff4d6d", priority: 1 }); distanceHint = "back"; }
-    else if (span < 0.1) { warnings.push({ text: "Too far — step closer", icon: "➡", color: "#ffb300", priority: 2 }); distanceHint = "closer"; }
-    else if (lm[11].y < 0.08 || lm[12].y < 0.08) warnings.push({ text: "Lower camera to hip height", icon: "⬇", color: "#ffb300", priority: 3 });
-  }
-
-  // Visibility checks
-  if (avgBody < 0.35) warnings.push({ text: "Low confidence — improve lighting", icon: "💡", color: "#ff4d6d", priority: 1 });
-  if (!v(0)) warnings.push({ text: "Head not visible", icon: "👤", color: "#ff4d6d", priority: 1 });
-  if (!v(11) || !v(12)) warnings.push({ text: "Shoulders not detected", icon: "🦴", color: "#ffb300", priority: 2 });
-  if (!v(23) && !v(24)) warnings.push({ text: "Hips/ASIS not visible — step back", icon: "🦴", color: "#ff4d6d", priority: 1 });
-  if (!v(7) && !v(8)) warnings.push({ text: "Ears not detected — check head angle", icon: "👂", color: "#ffb300", priority: 2 });
-  if (!v(31) && !v(32)) warnings.push({ text: "Feet not visible — move camera back", icon: "👣", color: "#ffb300", priority: 2 });
-  else if (!v(27) && !v(28)) warnings.push({ text: "Ankles out of frame", icon: "📏", color: "#ffb300", priority: 3 });
-
-  const ready = v(0) && v(11) && v(12) && v(23) && v(24) && (v(27) || v(28)) && avgBody > 0.5;
-  warnings.sort((a, b) => a.priority - b.priority);
-  return { score: avgBody, warnings: warnings.slice(0, 3), ready, distanceHint };
-}
-
-// ─── AdaptiveSmoother — confidence-weighted EMA ───────────────────────────────
-function createSmoother() {
-  const buf = {};
-  return (raw) => {
-    if (!raw) return null;
-    return raw.map((lm, i) => {
-      if (!lm) return lm;
-      const alpha = 0.2 + lm.visibility * 0.25; // high-confidence = faster response
-      const prev = buf[i];
-      if (!prev) { buf[i] = { ...lm }; return { ...lm }; }
-      const s = { x: prev.x*(1-alpha)+lm.x*alpha, y: prev.y*(1-alpha)+lm.y*alpha, z: prev.z*(1-alpha)+lm.z*alpha, visibility: lm.visibility };
-      buf[i] = s; return s;
-    });
-  };
-}
-
-// ─── CalibrationSystem ────────────────────────────────────────────────────────
-function CalibrationSystem({ state, countdown, quality }) {
-  if (state !== TRACKING_STATES.CALIBRATING && state !== TRACKING_STATES.DETECTING) return null;
-  const isCalib = state === TRACKING_STATES.CALIBRATING;
-  return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 10 }}>
-      {isCalib ? (
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 80, height: 80, borderRadius: "50%", border: "3px solid #00e5ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", fontWeight: 900, color: "#00e5ff", background: "rgba(6,9,15,0.75)", margin: "0 auto 10px", boxShadow: "0 0 24px rgba(0,229,255,0.4)" }}>{countdown}</div>
-          <div style={{ fontSize: "0.78rem", color: "#00e5ff", fontWeight: 700, background: "rgba(6,9,15,0.7)", padding: "4px 14px", borderRadius: 20 }}>Stand still — calibrating…</div>
-        </div>
-      ) : (
-        quality.ready ? null : (
-          <div style={{ background: "rgba(6,9,15,0.78)", border: "1px solid rgba(0,229,255,0.25)", borderRadius: 12, padding: "10px 16px", textAlign: "center" }}>
-            <div style={{ fontSize: "0.76rem", color: "#6b8399", fontWeight: 600 }}>Position yourself in frame</div>
-          </div>
-        )
-      )}
-    </div>
-  );
-}
-
-// ─── SkeletonRenderer — Full analysis overlay (head, ASIS, pelvis, lumbar, PSIS) ──
-function SkeletonRenderer({ canvasRef, landmarks, videoSize, trackingState, activeView }) {
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !videoSize) return;
-    const ctx = canvas.getContext("2d");
-    const { w, h } = videoSize;
-    if (canvas.width !== w) canvas.width = w;
-    if (canvas.height !== h) canvas.height = h;
-    ctx.clearRect(0, 0, w, h);
-    if (!landmarks || trackingState === TRACKING_STATES.LOST) return;
-
-    // Use the full renderPostureOverlay for comprehensive landmark display:
-    // head circle, eye level, C-spine, T-spine, L-spine, ASIS rings,
-    // pelvis/PSIS in all views, lumbar label, heatmap, skeleton, grid, plumb line
-    try {
-      const measurements = (() => {
-        try { return AdvancedMeasurementEngine(landmarks, null); } catch { return {}; }
-      })();
-      ctx.save();
-      ctx.globalAlpha = trackingState === TRACKING_STATES.STABLE ? 1 : 0.6;
-      renderPostureOverlay({
-        ctx,
-        W: w,
-        H: h,
-        lm: landmarks,
-        measurements,
-        showHeatmap: trackingState === TRACKING_STATES.STABLE,
-        showLabels: true,
-        showGrid: true,
-        view: activeView || "anterior",
-      });
-      ctx.restore();
-    } catch(e) {
-      // Fallback: basic skeleton if renderPostureOverlay not yet available
-      console.warn("SkeletonRenderer fallback:", e);
-    }
-    ctx.shadowBlur = 0;
-  }, [landmarks, videoSize, trackingState, activeView, canvasRef]);
-  return null;
-}
-
-// ─── BodyAlignmentGuide — Professional physiotherapy overlay ──────────────────
-function BodyAlignmentGuide({ show, ready }) {
-  if (!show) return null;
-  const op = ready ? 0.18 : 0.42;
-  return (
-    <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }} viewBox="0 0 100 150" preserveAspectRatio="xMidYMid meet">
-      {/* Background grid — alignment reference */}
-      {[16.6,33.3,50,66.6,83.3].map(x=><line key={x} x1={x} y1="0" x2={x} y2="150" stroke="#00e5ff" strokeWidth="0.18" strokeDasharray="2,4" opacity={op*0.5}/>)}
-      {[18.75,37.5,56.25,75,93.75].map(y=><line key={y} x1="0" y1={y} x2="100" y2={y} stroke="#00e5ff" strokeWidth="0.18" strokeDasharray="2,4" opacity={op*0.5}/>)}
-
-      {/* Vertical plumb line */}
-      <line x1="50" y1="3" x2="50" y2="147" stroke="#00e5ff" strokeWidth="0.7" strokeDasharray="3,2.5" opacity={op*1.4}/>
-
-      {/* Head silhouette */}
-      <ellipse cx="50" cy="13" rx="7.5" ry="9" fill="none" stroke="#00e5ff" strokeWidth="0.8" opacity={op*1.5}/>
-
-      {/* Shoulder symmetry bar */}
-      <line x1="26" y1="27" x2="74" y2="27" stroke="#7f5af0" strokeWidth="0.7" opacity={op*1.4}/>
-      <circle cx="26" cy="27" r="1.2" fill="#7f5af0" opacity={op*1.4}/>
-      <circle cx="74" cy="27" r="1.2" fill="#7f5af0" opacity={op*1.4}/>
-
-      {/* Torso outline */}
-      <path d="M32,27 L28,70 L36,70 L38,95 M68,27 L72,70 L64,70 L62,95" fill="none" stroke="#7f5af040" strokeWidth="0.5" opacity={op}/>
-
-      {/* Hip symmetry bar */}
-      <line x1="34" y1="70" x2="66" y2="70" stroke="#00c97a" strokeWidth="0.7" opacity={op*1.4}/>
-      <circle cx="34" cy="70" r="1.2" fill="#00c97a" opacity={op*1.4}/>
-      <circle cx="66" cy="70" r="1.2" fill="#00c97a" opacity={op*1.4}/>
-
-      {/* Knee level bar */}
-      <line x1="36" y1="102" x2="64" y2="102" stroke="#ffb300" strokeWidth="0.5" strokeDasharray="2,2" opacity={op}/>
-
-      {/* Ankle level bar */}
-      <line x1="37" y1="126" x2="63" y2="126" stroke="#ffb300" strokeWidth="0.5" strokeDasharray="2,2" opacity={op}/>
-
-      {/* Foot stand-here ellipses */}
-      <ellipse cx="38" cy="140" rx="8" ry="3.5" fill="rgba(0,201,122,0.07)" stroke="#00c97a" strokeWidth="0.9" opacity={op*1.2}/>
-      <ellipse cx="62" cy="140" rx="8" ry="3.5" fill="rgba(0,201,122,0.07)" stroke="#00c97a" strokeWidth="0.9" opacity={op*1.2}/>
-
-      {/* "STAND HERE" label */}
-      {!ready && <text x="50" y="148" textAnchor="middle" fontSize="4.2" fill="#00c97a" fontWeight="bold" opacity={op*1.6}>STAND HERE</text>}
-
-      {/* Corner crosshair markers */}
-      {[[10,10],[90,10],[10,140],[90,140]].map(([cx,cy],i)=>(
-        <g key={i} opacity={op}>
-          <line x1={cx-4} y1={cy} x2={cx+4} y2={cy} stroke="#00e5ff" strokeWidth="0.6"/>
-          <line x1={cx} y1={cy-4} x2={cx} y2={cy+4} stroke="#00e5ff" strokeWidth="0.6"/>
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-// ─── TrackingStateBar ─────────────────────────────────────────────────────────
-function TrackingStateBar({ state, quality }) {
-  const cfg = {
-    [TRACKING_STATES.IDLE]:       { label:"Camera Ready",      color:"#7e6a9a", pulse:false },
-    [TRACKING_STATES.LOADING]:    { label:"Loading Model…",    color:"#7f5af0", pulse:true  },
-    [TRACKING_STATES.CALIBRATING]:{ label:"Calibrating",       color:"#ffb300", pulse:true  },
-    [TRACKING_STATES.DETECTING]:  { label:"Detecting Body…",   color:"#ffb300", pulse:true  },
-    [TRACKING_STATES.STABLE]:     { label:"Tracking Stable",   color:"#00c97a", pulse:false },
-    [TRACKING_STATES.LOST]:       { label:"Tracking Lost",     color:"#ff4d6d", pulse:true  },
-  }[state] || { label:"—", color:"#7e6a9a", pulse:false };
-
-  const qLabel = quality === null ? "" : quality > 0.75 ? "Excellent" : quality > 0.5 ? "Good" : quality > 0.3 ? "Fair" : "Poor";
-  const qColor = quality === null ? "" : quality > 0.75 ? "#00c97a" : quality > 0.5 ? "#ffb300" : "#ff4d6d";
-
-  return (
-    <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-        <span style={{ width:9, height:9, borderRadius:"50%", background:cfg.color, display:"inline-block", boxShadow:`0 0 ${cfg.pulse?8:4}px ${cfg.color}`, animation:cfg.pulse?"pcPulse 1.3s infinite":"none" }}/>
-        <span style={{ fontSize:"0.76rem", fontWeight:700, color:cfg.color }}>{cfg.label}</span>
-      </div>
-      {quality !== null && (
-        <span style={{ fontSize:"0.67rem", padding:"2px 9px", borderRadius:10, background:`${qColor}18`, color:qColor, fontWeight:700, border:`1px solid ${qColor}30` }}>Signal: {qLabel}</span>
-      )}
-      {state === TRACKING_STATES.STABLE && (
-        <span style={{ fontSize:"0.67rem", padding:"2px 9px", borderRadius:10, background:"rgba(0,201,122,0.12)", color:"#00c97a", fontWeight:700, border:"1px solid rgba(0,201,122,0.25)", display:"flex", alignItems:"center", gap:5 }}>
-          <span style={{ width:6, height:6, borderRadius:"50%", background:"#00c97a", display:"inline-block", animation:"pcPulse 1.3s infinite" }}/> LIVE
-        </span>
-      )}
-    </div>
-  );
-}
-
-// ─── CameraView — Professional full-screen responsive camera preview ──────────
-function CameraView({ videoRef, canvasRef, isActive, facingMode, children, onTapFocus, zoom }) {
-  const flip = facingMode === "user" ? "scaleX(-1)" : "none";
-  const [tapFlash, setTapFlash] = useState(null);
-
-  const handleTap = useCallback((e) => {
-    if (!isActive || !onTapFocus) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    setTapFlash({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    setTimeout(() => setTapFlash(null), 700);
-    onTapFocus(x, y);
-  }, [isActive, onTapFocus]);
-
-  return (
-    <div
-      className="pm-cam-aspect pm-camera-wrap"
-      onClick={handleTap}
-      style={{ position:"relative", width:"100%", background:"#f5f0fb", borderRadius:14, overflow:"hidden", aspectRatio:"3/4", maxHeight:"65vh", cursor: isActive ? "crosshair" : "default", touchAction:"manipulation" }}
-    >
-      {!isActive && (
-        <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10 }}>
-          <div style={{ fontSize:"2.8rem" }}>📷</div>
-          <div style={{ fontSize:"0.8rem", color:"#7e6a9a", textAlign:"center", padding:"0 20px", lineHeight:1.5 }}>Tap Start Camera to begin<br/>physiotherapy assessment</div>
-        </div>
-      )}
-      <video
-        ref={videoRef}
-        autoPlay playsInline muted
-        style={{ width:"100%", height:"100%", objectFit:"contain", display:isActive?"block":"none",
-          transform:`${flip} scale(${zoom||1})`, transformOrigin:"center center", transition:"transform 0.2s ease" }}
-      />
-      <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", transform:flip, objectFit:"contain" }}/>
-      {/* Tap-to-focus flash ring */}
-      {tapFlash && (
-        <div style={{ position:"absolute", left:tapFlash.x-20, top:tapFlash.y-20, width:40, height:40, borderRadius:"50%", border:"2px solid #ffb300", pointerEvents:"none", animation:"tapFocus 0.6s ease-out forwards", zIndex:30 }}/>
-      )}
-      {children}
-    </div>
-  );
-}
-
-// ─── CameraControls — Professional touch-friendly physiotherapy controls ──────
-function CameraControls({ isActive, isLoading, onStart, onStop, onFlip, onRecalibrate, facingMode, canRecalibrate, zoom, onZoom, countdownSecs, onCountdownChange, burstMode, onBurstToggle, activeView, onViewChange, onUploadPhoto }) {
-  const views = ["anterior","posterior","left","right","photo"];
-  const uploadRef = React.useRef(null);
-  const Btn = ({ onClick, label, bg, disabled, sm }) => (
-    <button onClick={onClick} disabled={disabled} style={{
-      padding: sm ? "8px 12px" : "10px 16px",
-      background: disabled ? "#1a2d45" : `linear-gradient(135deg,${bg},${bg}cc)`,
-      border: "none", borderRadius: 10,
-      color: disabled ? "#6b8399" : "#000", fontWeight: 800,
-      fontSize: sm ? "0.68rem" : "0.77rem",
-      cursor: disabled ? "not-allowed" : "pointer",
-      flex: 1, minWidth: sm ? 70 : 90, transition: "opacity 0.2s", whiteSpace:"nowrap"
-    }}>{label}</button>
-  );
-  return (
-    <div style={{ marginTop:10 }}>
-      {/* ── UPLOAD PHOTO BUTTON — Always visible at top ── */}
-      <input
-        ref={uploadRef}
-        type="file"
-        accept="image/*"
-        style={{ display:"none" }}
-        onChange={e => {
-          const file = e.target.files?.[0];
-          if (file && onUploadPhoto) onUploadPhoto(file);
-          e.target.value = "";
-        }}
-      />
-      <button
-        onClick={() => uploadRef.current?.click()}
-        style={{
-          width:"100%", marginBottom:10,
-          padding:"13px 16px",
-          background: activeView==="photo"
-            ? "linear-gradient(135deg,#7f5af0,#00e5ff)"
-            : "transparent",
-          border: activeView==="photo"
-            ? "none"
-            : "2px dashed rgba(127,90,240,0.55)",
-          borderRadius:12,
-          color: activeView==="photo" ? "#000" : "#7f5af0",
-          fontWeight:800, fontSize:"0.82rem",
-          cursor:"pointer",
-          display:"flex", alignItems:"center", justifyContent:"center", gap:9,
-          boxShadow: activeView==="photo" ? "0 4px 16px rgba(127,90,240,0.35)" : "none",
-          transition:"all 0.2s"
-        }}
-      >
-        <span style={{fontSize:"1.2rem"}}>📷</span>
-        Upload Patient Photo
-        <span style={{fontSize:"0.75rem",opacity:0.75,fontWeight:600}}>JPG / PNG</span>
-      </button>
-      {/* Front / Back camera toggle — always visible */}
-      <div style={{ marginBottom:10 }}>
-        <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📷 Camera</div>
-        <div style={{ display:"flex", gap:6, marginBottom:8 }}>
-          {/* Front camera */}
-          <button
-            onClick={() => { if(isActive && facingMode!=="user") onFlip(); else if(!isActive) onStart("user"); }}
-            style={{
-              flex:1, padding:"11px 8px", borderRadius:11, cursor:"pointer", fontWeight:800,
-              fontSize:"0.75rem", display:"flex", flexDirection:"column", alignItems:"center", gap:4,
-              background: facingMode==="user" && isActive
-                ? "linear-gradient(135deg,#00e5ff,#7f5af0)"
-                : "rgba(0,229,255,0.08)",
-              color: facingMode==="user" && isActive ? "#000" : "#00e5ff",
-              border: facingMode==="user" && isActive ? "none" : "1px solid rgba(0,229,255,0.25)",
-              boxShadow: facingMode==="user" && isActive ? "0 0 14px rgba(0,229,255,0.3)" : "none",
-              transition:"all 0.2s"
-            }}>
-            <span style={{fontSize:"1.3rem"}}>🤳</span>
-            <span>Front</span>
-            {facingMode==="user" && isActive && <span style={{fontSize:"0.75rem",opacity:0.8}}>● ACTIVE</span>}
-          </button>
-          {/* Back camera */}
-          <button
-            onClick={() => { if(isActive && facingMode!=="environment") onFlip(); else if(!isActive) onStart("environment"); }}
-            style={{
-              flex:1, padding:"11px 8px", borderRadius:11, cursor:"pointer", fontWeight:800,
-              fontSize:"0.75rem", display:"flex", flexDirection:"column", alignItems:"center", gap:4,
-              background: facingMode==="environment" && isActive
-                ? "linear-gradient(135deg,#7f5af0,#00e5ff)"
-                : "rgba(127,90,240,0.08)",
-              color: facingMode==="environment" && isActive ? "#000" : "#7f5af0",
-              border: facingMode==="environment" && isActive ? "none" : "1px solid rgba(127,90,240,0.25)",
-              boxShadow: facingMode==="environment" && isActive ? "0 0 14px rgba(127,90,240,0.3)" : "none",
-              transition:"all 0.2s"
-            }}>
-            <span style={{fontSize:"1.3rem"}}>📷</span>
-            <span>Back</span>
-            {facingMode==="environment" && isActive && <span style={{fontSize:"0.75rem",opacity:0.8}}>● ACTIVE</span>}
-          </button>
-          {/* Stop button */}
-          {isActive && (
-            <button onClick={onStop} style={{
-              flex:"0 0 54px", padding:"11px 6px", borderRadius:11,
-              background:"rgba(255,77,109,0.12)", border:"1px solid rgba(255,77,109,0.3)",
-              color:"#ff4d6d", fontWeight:800, fontSize:"0.8rem", cursor:"pointer",
-              display:"flex", flexDirection:"column", alignItems:"center", gap:4
-            }}>
-              <span style={{fontSize:"1.1rem"}}>⏹</span>
-              <span>Stop</span>
-            </button>
-          )}
-        </div>
-        {/* Start button when not active */}
-        {!isActive && (
-          <button onClick={()=>onStart(facingMode)} disabled={isLoading} style={{
-            width:"100%", padding:"12px", borderRadius:11, border:"none", cursor:isLoading?"not-allowed":"pointer",
-            background:isLoading?"#1a2d45":"linear-gradient(135deg,#00e5ff,#7f5af0)",
-            color:isLoading?"#6b8399":"#000", fontWeight:800, fontSize:"0.8rem"
-          }}>{isLoading?"⏳ Loading camera…":"▶ Start Camera"}</button>
-        )}
-        {canRecalibrate && <button onClick={onRecalibrate} style={{width:"100%",marginTop:6,padding:"8px",borderRadius:9,border:"1px solid rgba(255,179,0,0.3)",background:"rgba(255,179,0,0.08)",color:"#ffb300",fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>⟳ Recalibrate</button>}
-      </div>
-
-      {/* ── VIEW SELECTOR — always visible (Front/Back/Left/Right) ── */}
-      <div style={{ marginBottom:10 }}>
-        <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>📐 Posture View — select before capturing</div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:6 }}>
-          {[
-            { v:"anterior",  icon:"⬆", label:"Front",  color:"#00e5ff" },
-            { v:"posterior", icon:"⬇", label:"Back",   color:"#7f5af0" },
-            { v:"left",      icon:"◀", label:"Left",   color:"#00c97a" },
-            { v:"right",     icon:"▶", label:"Right",  color:"#ffb300" },
-          ].map(({ v, icon, label, color }) => {
-            const active = activeView === v;
-            return (
-              <button key={v} onClick={() => onViewChange && onViewChange(v)} style={{
-                padding:"10px 4px", borderRadius:11, cursor:"pointer", fontWeight:800,
-                fontSize:"0.82rem", display:"flex", flexDirection:"column", alignItems:"center", gap:3,
-                background: active ? `linear-gradient(135deg,${color},${color}aa)` : `${color}12`,
-                color: active ? "#000" : color,
-                border: active ? "none" : `1px solid ${color}40`,
-                boxShadow: active ? `0 0 14px ${color}55` : "none",
-                transition:"all 0.2s"
-              }}>
-                <span style={{ fontSize:"1rem" }}>{icon}</span>
-                <span>{label}</span>
-                {active && <span style={{ fontSize:"0.5rem", opacity:0.85 }}>● SELECTED</span>}
-              </button>
-            );
-          })}
-        </div>
-        {/* Grid line notice */}
-        <div style={{ marginTop:6, padding:"5px 9px", background:"rgba(0,229,255,0.07)", border:"1px solid rgba(0,229,255,0.18)", borderRadius:8, fontSize:"0.82rem", color:"#7e6a9a", fontStyle:"italic" }}>
-          🔲 Posture grid lines will appear on captured photo for the selected view
-        </div>
-      </div>
-
-      {/* Advanced controls row */}
-      {isActive && (
-        <div style={{ display:"flex", gap:7, flexWrap:"wrap", alignItems:"center" }}>
-          {/* Zoom */}
-          <div style={{ display:"flex", alignItems:"center", gap:5, background:"#ffffff", border:"1px solid #d8cce8", borderRadius:9, padding:"5px 10px", flex:"1 1 auto" }}>
-            <span style={{ fontSize:"0.75rem", color:"#7e6a9a", whiteSpace:"nowrap" }}>🔍 Zoom</span>
-            <input type="range" min="1" max="2.5" step="0.1" value={zoom||1} onChange={e=>onZoom&&onZoom(Number(e.target.value))}
-              style={{ flex:1, accentColor:"#00e5ff", cursor:"pointer", minWidth:60 }}/>
-            <span style={{ fontSize:"0.75rem", color:"#00e5ff", minWidth:26, fontWeight:700 }}>{(zoom||1).toFixed(1)}×</span>
-          </div>
-
-          {/* Countdown timer */}
-          <div style={{ display:"flex", alignItems:"center", gap:5, background:"#ffffff", border:"1px solid #d8cce8", borderRadius:9, padding:"5px 10px" }}>
-            <span style={{ fontSize:"0.75rem", color:"#7e6a9a" }}>⏱</span>
-            {[3,5,10].map(s => (
-              <button key={s} onClick={() => onCountdownChange&&onCountdownChange(s)} style={{
-                padding:"3px 7px", borderRadius:6, fontSize:"0.82rem", fontWeight:700, border:"none", cursor:"pointer",
-                background: countdownSecs===s ? "#00e5ff" : "#192435", color: countdownSecs===s ? "#000" : "#6b8399"
-              }}>{s}s</button>
-            ))}
-          </div>
-
-          {/* Burst mode */}
-          <button onClick={onBurstToggle} style={{
-            padding:"6px 11px", borderRadius:9, fontSize:"0.75rem", fontWeight:700, border:"none", cursor:"pointer",
-            background: burstMode ? "rgba(255,179,0,0.2)" : "#1a2d45",
-            color: burstMode ? "#ffb300" : "#6b8399"
-          }}>💥 {burstMode ? "Burst ON" : "Burst"}</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── CameraPositionGuide — Professional clinical setup ───────────────────────
-function CameraPositionGuide() {
-  return (
-    <div style={{ background:"rgba(0,229,255,0.05)", border:"1px solid rgba(0,229,255,0.18)", borderRadius:12, padding:14, marginBottom:12 }}>
-      <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#00e5ff", textTransform:"uppercase", letterSpacing:"1px", marginBottom:9 }}>📐 Clinical Setup Guide</div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))", gap:7 }}>
-        {[
-          ["📏","2m camera distance"],["🧍","Full body in frame"],
-          ["💡","Even, bright lighting"],["📱","Camera at hip/pelvis height"],
-          ["👕","Form-fitting clothing"],["🦶","Feet fully visible"],
-          ["🔲","Use alignment grid overlay"],["🧘","Patient stands on foot guides"],
-        ].map(([ic, tx], i) => (
-          <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:7, fontSize:"0.74rem", color:"#1a1025" }}>
-            <span style={{ flexShrink:0 }}>{ic}</span><span style={{ lineHeight:1.4 }}>{tx}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop:10, padding:"7px 10px", background:"rgba(127,90,240,0.08)", borderRadius:8, fontSize:"0.78rem", color:"#7f5af0", border:"1px solid rgba(127,90,240,0.2)" }}>
-        💡 Tip: Tap anywhere on camera to focus · Use zoom for closer inspection · Select a view for guided workflow
-      </div>
-    </div>
-  );
-}
-
-// ─── PoseTracker (MediaPipe engine) ──────────────────────────────────────────
-function PoseTracker({ videoRef, active, onLandmarks }) {
-  const poseRef = useRef(null);
-  const rafRef  = useRef(null);
-  const alive   = useRef(true);
-
-  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-
-  useEffect(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    if (!active) { onLandmarks(null); return; }
-    let gone = false;
-
-    (async () => {
-      try {
-        if (!window.Pose) await new Promise((res, rej) => {
-          const s = document.createElement("script");
-          s.src = "https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js";
-          s.onload = res; s.onerror = rej; document.head.appendChild(s);
-        });
-        if (gone || !alive.current) return;
-
-        const pose = new window.Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}` });
-        pose.setOptions({ modelComplexity:1, smoothLandmarks:true, enableSegmentation:false, minDetectionConfidence:0.55, minTrackingConfidence:0.55 });
-        pose.onResults(r => { if (alive.current && !gone) onLandmarks(r.poseLandmarks||null); });
-        await pose.initialize();
-        if (gone || !alive.current) return;
-        poseRef.current = pose;
-
-        const loop = async () => {
-          if (gone || !alive.current) return;
-          const v = videoRef.current;
-          if (v && v.readyState >= 2 && poseRef.current) { try { await poseRef.current.send({ image:v }); } catch(_){} }
-          rafRef.current = requestAnimationFrame(loop);
-        };
-        loop();
-      } catch(e) { console.error("PoseTracker:", e); }
-    })();
-
-    return () => { gone = true; if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [active]);
-
-  return null;
-}
-
-// ─── UploadedPhotoOverlay — renders uploaded image with full analysis grid ─────
-function UploadedPhotoOverlay({ photoUrl, landmarks, view }) {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !photoUrl) return;
-    let cancelled = false;
-    const drawOnCanvas = (imgEl) => {
-      if (cancelled) return;
-      const W = imgEl.naturalWidth  || imgEl.width  || 640;
-      const H = imgEl.naturalHeight || imgEl.height || 480;
-      canvas.width  = W;
-      canvas.height = H;
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, W, H);
-      ctx.drawImage(imgEl, 0, 0, W, H);
-      if (landmarks && landmarks.length > 0) {
-        try {
-          const m = (() => { try { return AdvancedMeasurementEngine(landmarks, null); } catch { return {}; } })();
-          renderPostureOverlay({ ctx, W, H, lm: landmarks, measurements: m,
-            showHeatmap: true, showLabels: true, showGrid: true, view: view || "anterior" });
-        } catch(e) { console.error("UploadedPhotoOverlay overlay:", e); }
-      }
-    };
-    // Load without crossOrigin first (blob URLs work best without it)
-    const img = new Image();
-    img.onload = () => drawOnCanvas(img);
-    img.onerror = () => {
-      // Retry with crossOrigin as fallback for http URLs
-      const img2 = new Image();
-      img2.crossOrigin = "anonymous";
-      img2.onload = () => drawOnCanvas(img2);
-      img2.onerror = () => console.error("UploadedPhotoOverlay: failed to load photo");
-      img2.src = photoUrl;
-    };
-    // Set src AFTER onload — critical for already-cached blob URLs
-    img.src = photoUrl;
-    return () => { cancelled = true; };
-  }, [photoUrl, landmarks, view]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{ width:"100%", display:"block", maxHeight:500, background:"#0a0a14" }}
-    />
-  );
-}
-
-
 // ─── CanvasOverlayOnImage — draws analysis overlay directly on top of img ─────
 // Fallback approach: instead of baking into canvas (fails on mobile with large images),
 // overlay a transparent canvas positioned absolutely on top of the photo
@@ -598,9 +48,11 @@ function CanvasOverlayOnImage({ photoUrl, landmarks, view, measurements: propMea
       };
       const mappedView = viewMap[String(view || "anterior").toLowerCase()] || "anterior";
 
-      // Use provided measurements, or compute fresh from landmarks (same as AI mode)
+      // Use provided measurements, or compute fresh from landmarks via the
+      // single live engine (measureLandmarks) — never the retired dead engine,
+      // so overlays and findings always come from the same source.
       const m = propMeasurements
-        || (() => { try { return AdvancedMeasurementEngine(landmarks, null); } catch { return {}; } })();
+        || (() => { try { return measureLandmarks(landmarks, null, mappedView); } catch { return {}; } })();
 
       try {
         drawOverlay({ ctx, W, H, lm: landmarks, view: mappedView, showGrid: true, measurements: m, clearFirst: true });
@@ -632,1046 +84,6 @@ function CanvasOverlayOnImage({ photoUrl, landmarks, view, measurements: propMea
   );
 }
 
-// ─── Main PostureCameraModule — New Live Camera + Capture → Analysis ───────────
-
-function PostureCameraModule({ activePatient, set }) {
-  // ── refs ──────────────────────────────────────────────────────────────────
-  const videoRef    = useRef(null);
-  const canvasRef   = useRef(null);  // skeleton overlay during live
-  const streamRef   = useRef(null);
-  const smoother    = useRef(createSmoother());
-  const lostTimer   = useRef(null);
-
-  // ── camera state ──────────────────────────────────────────────────────────
-  const [camState,   setCamState]   = useState("idle");   // idle | loading | live | error
-  const [facingMode, setFacingMode] = useState("environment");
-  const [camError,   setCamError]   = useState(null);
-  const [videoSize,  setVideoSize]  = useState(null);
-  const [poseActive, setPoseActive] = useState(false);
-  const [landmarks,  setLandmarks]  = useState(null);
-  const [quality,    setQuality]    = useState({ score:0, warnings:[], ready:false });
-  const [activeView, setActiveView] = useState("anterior");
-  // ── Stability detection (camera only) ─────────────────────────────────────
-  const [stabilityCount, setStabilityCount] = useState(0);  // frames stable
-  const [isStable,       setIsStable]       = useState(false);
-  const [lightingWarn,   setLightingWarn]   = useState(null); // null | "dark" | "bright"
-  const [rotationWarn,   setRotationWarn]   = useState(false); // patient rotated
-  const prevLmRef = useRef(null);
-  const [zoom,       setZoom]       = useState(1);
-  const [cdSecs,     setCdSecs]     = useState(3);
-  const [cdCount,    setCdCount]    = useState(null);   // null = not running
-
-  // ── captured photo + analysis state ──────────────────────────────────────
-  const [capturedImg,  setCapturedImg]  = useState(null);   // base64 still
-  const [capturedLm,   setCapturedLm]   = useState(null);   // landmarks from capture
-  const [devMode,      setDevMode]      = useState(false); // developer validation mode (Ctrl+Shift+D)
-  // Developer validation mode toggle: Ctrl+Shift+D
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "D") {
-        setDevMode(v => !v);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-  const [capturedView, setCapturedView] = useState(null);
-  const [analysing,    setAnalysing]    = useState(false);
-  const [analysis,     setAnalysis]     = useState(null);   // { measurements, findings, scoreData }
-  const [analyseError, setAnalyseError] = useState(null);
-
-  // ── upload photo ──────────────────────────────────────────────────────────
-  const uploadRef    = useRef(null);
-  const uploadObjRef = useRef(null);
-  const [uploadImg,   setUploadImg]   = useState(null);
-  const [uploadLm,    setUploadLm]    = useState(null);
-  const [uploadView,  setUploadView]  = useState("anterior");
-  const [uploadBusy,  setUploadBusy]  = useState(false);
-  const [uploadError, setUploadError] = useState(null);
-  const [uploadAnal,  setUploadAnal]  = useState(null);
-  const [validationMode,    setValidationMode]    = useState(false);
-  const [contourResult,     setContourResult]     = useState(null);
-  const [clinicianVerified, setClinicianVerified] = useState(false);
-
-  // ── multi-view bank ───────────────────────────────────────────────────────
-  const [viewBank, setViewBank] = useState({ anterior:null, posterior:null, left:null, right:null });
-
-  // Auto-fill patient name
-  const [reportPatient, setReportPatient] = useState("");
-  useEffect(() => {
-    if (activePatient?.data?.dem_name) setReportPatient(activePatient.data.dem_name);
-    else if (activePatient?.name && activePatient.name !== "New Patient") setReportPatient(activePatient.name);
-  }, [activePatient?.id]);
-
-  // Pre-load ViTPose model on mount so lateral analysis is instant
-  useEffect(() => { warmupViTPose(); warmupContourEngine(); }, []);
-
-  // ── Start Camera ──────────────────────────────────────────────────────────
-  const startCamera = async (mode) => {
-    const fm = mode || facingMode;
-    setCamError(null); setCamState("loading");
-    try {
-      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video:{ facingMode:fm, width:{ideal:1920}, height:{ideal:1080}, frameRate:{ideal:30,max:60} }, audio:false
-        });
-      } catch {
-        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:fm }, audio:false });
-      }
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await new Promise(res => { videoRef.current.onloadedmetadata = res; });
-        setVideoSize({ w: videoRef.current.videoWidth, h: videoRef.current.videoHeight });
-      }
-      setFacingMode(fm);
-      setCamState("live");
-      setPoseActive(true);
-    } catch(err) {
-      setCamState("error");
-      setCamError(
-        err.name === "NotAllowedError" ? "Camera permission denied — allow access in browser settings." :
-        err.name === "NotFoundError"   ? "No camera found on this device." :
-        `Camera error: ${err.message}`
-      );
-    }
-  };
-
-  // ── Stop Camera ───────────────────────────────────────────────────────────
-  const stopCamera = () => {
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
-    setPoseActive(false);
-    setLandmarks(null);
-    setCamState("idle");
-    setCdCount(null);
-    if (lostTimer.current) clearTimeout(lostTimer.current);
-  };
-
-  // ── Flip Camera ───────────────────────────────────────────────────────────
-  const flipCamera = () => {
-    const next = facingMode === "user" ? "environment" : "user";
-    stopCamera();
-    setTimeout(() => startCamera(next), 150);
-  };
-
-  // ── Landmark handler ───────────────────────────────────────────────────────
-  const handleLandmarks = useCallback((raw) => {
-    const sm = smoother.current(raw);
-    setLandmarks(sm);
-    if (!sm) {
-      if (!lostTimer.current) lostTimer.current = setTimeout(() => {
-        setLandmarks(null); lostTimer.current = null;
-      }, 1000);
-      setStabilityCount(0); setIsStable(false); prevLmRef.current = null;
-      return;
-    }
-    if (lostTimer.current) { clearTimeout(lostTimer.current); lostTimer.current = null; }
-    setQuality(computeQuality(sm));
-
-    // ── Stability check: measure landmark drift from previous frame ──────────
-    // If nose (0) + shoulder midpoint barely moved → patient is stable
-    if (prevLmRef.current && sm[0] && prevLmRef.current[0]) {
-      const drift = Math.abs((sm[0].x||0) - (prevLmRef.current[0].x||0)) * 200
-                  + Math.abs((sm[0].y||0) - (prevLmRef.current[0].y||0)) * 200;
-      setStabilityCount(c => {
-        const next = drift < 1.5 ? Math.min(c + 1, 20) : 0;
-        setIsStable(next >= 12);
-        return next;
-      });
-    }
-    prevLmRef.current = sm;
-
-    // ── Rotation detection: frontal views only ────────────────────────────────
-    // If shoulders have significant Z difference → patient rotated → measurements unreliable
-    const isLateral = activeView === "left" || activeView === "right";
-    if (!isLateral && sm[11] && sm[12]) {
-      const zDiff = Math.abs((sm[11].z||0) - (sm[12].z||0));
-      setRotationWarn(zDiff > 0.08);
-    } else {
-      setRotationWarn(false);
-    }
-  }, [activeView]);
-
-  // ── Tap-to-focus ──────────────────────────────────────────────────────────
-  const handleTapFocus = useCallback((x, y) => {
-    const v = videoRef.current;
-    if (!v) return;
-    const track = streamRef.current?.getVideoTracks()[0];
-    try {
-      const caps = track?.getCapabilities?.();
-      if (caps?.focusMode?.includes("manual")) {
-        track.applyConstraints({ advanced:[{ pointOfInterest:{x,y}, focusMode:"manual" }] }).catch(()=>{});
-      }
-    } catch {}
-  }, []);
-
-  // ── Resize ────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (camState !== "live") return;
-    const up = () => {
-      const v = videoRef.current;
-      if (v && v.videoWidth) setVideoSize({ w: v.videoWidth, h: v.videoHeight });
-    };
-    window.addEventListener("resize", up);
-    screen.orientation?.addEventListener?.("change", up);
-    return () => { window.removeEventListener("resize", up); screen.orientation?.removeEventListener?.("change", up); };
-  }, [camState]);
-
-  useEffect(() => { return () => stopCamera(); }, []);
-
-  // ── Lighting check for live camera ───────────────────────────────────────
-  // Samples a 32×32 thumbnail of the video every 3s to detect poor lighting.
-  // Too dark (lum < 55) → MediaPipe misplaces landmarks.
-  // Overexposed (lum > 225) → landmark visibility scores inflated / unreliable.
-  useEffect(() => {
-    if (camState !== "live") { setLightingWarn(null); return; }
-    const check = () => {
-      const v = videoRef.current; if (!v || v.readyState < 2) return;
-      const c = document.createElement("canvas"); c.width = 32; c.height = 32;
-      const ctx = c.getContext("2d"); ctx.drawImage(v, 0, 0, 32, 32);
-      const d = ctx.getImageData(0, 0, 32, 32).data;
-      let lum = 0;
-      for (let i = 0; i < d.length; i += 4) lum += 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-      lum /= d.length / 4;
-      setLightingWarn(lum < 55 ? "dark" : lum > 225 ? "bright" : null);
-    };
-    check();
-    const t = setInterval(check, 3000);
-    return () => clearInterval(t);
-  }, [camState]);
-
-  // ── Choose pose engine based on view ──────────────────────────────────
-  // lateral (left / right) → ViTPose ONNX  |  frontal → MediaPipe
-  const runPoseForView = async (imgEl, view) => {
-    if (view === "left" || view === "right") {
-      const lm = await runViTPoseLateral(imgEl);
-      if (lm) return lm;
-      console.warn("ViTPose fallback → MediaPipe");
-    }
-    return runMediaPipe(imgEl);
-  };
-  // ── Run MediaPipe on image (still frame or upload) ────────────────────────
-  const runMediaPipe = async (imgEl) => {
-    if (!window.Pose) {
-      await new Promise((res, rej) => {
-        const s = document.createElement("script");
-        s.src = "https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js";
-        s.onload = res; s.onerror = () => rej(new Error("MediaPipe load failed"));
-        document.head.appendChild(s);
-      });
-    }
-    return new Promise((resolve) => {
-      const pose = new window.Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}` });
-      pose.setOptions({ modelComplexity:2, smoothLandmarks:false, enableSegmentation:false, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
-      pose.onResults(r => resolve(r.poseLandmarks || null));
-      pose.initialize().then(() => pose.send({ image: imgEl })).catch(() => resolve(null));
-    });
-  };
-
-  // ── Capture from live camera ───────────────────────────────────────────────
-  const doCapture = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video || !videoSize) return;
-    const { w, h } = videoSize;
-
-    // Freeze frame to canvas
-    const cap = document.createElement("canvas");
-    cap.width = w; cap.height = h;
-    const ctx = cap.getContext("2d");
-    if (facingMode === "user") { ctx.translate(w,0); ctx.scale(-1,1); }
-    ctx.drawImage(video, 0, 0, w, h);
-    if (facingMode === "user") ctx.setTransform(1,0,0,1,0,0);
-    // Timestamp + view label
-    const time = new Date().toLocaleString();
-    ctx.font = "bold 14px system-ui";
-    const label = `${activeView.toUpperCase()} · ${time}`;
-    const tw = ctx.measureText(label).width;
-    ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(8, h-34, tw+16, 26);
-    ctx.fillStyle = "#00e5ff"; ctx.fillText(label, 14, h-14);
-    const imgUrl = cap.toDataURL("image/jpeg", 0.93);
-
-    setCapturedImg(imgUrl);
-    setCapturedView(activeView);
-    setCapturedLm(null);
-    setAnalysis(null);
-    setAnalyseError(null);
-    setAnalysing(true);
-    stopCamera();   // stop stream while analysing
-
-    // Run MediaPipe on the frozen frame
-    try {
-      const img = new Image();
-      img.src = imgUrl;
-      await new Promise(res => { img.onload = res; });
-      const lm = await runPoseForView(img, activeView);
-      setCapturedLm(lm);
-      if (lm) {
-        const m = AdvancedMeasurementEngine(lm, null);
-        let f, cr = null;
-        if (activeView === "left" || activeView === "right") {
-          cr = await analyzeSagittalContour(img, lm, activeView).catch(() => null);
-          setContourResult(cr);
-          const sagittal = buildSagittalFindings(lm, activeView, m, cr, clinicianVerified, sagManualLandmarks);
-          if (activeView === "left" || activeView === "right") {
-            setHybridSeedLandmarks(lm);
-          }
-          const legacy   = ClinicalFindingsEngine(lm, activeView, m) || [];
-          const filtered = legacy.filter(fi => !isDeprecatedLateralFinding(fi));
-          f = [...sagittal, ...filtered];
-        } else {
-          f = ClinicalFindingsEngine(lm, activeView, m);
-          setContourResult(null);
-        }
-        const rel = ReliabilityEngine(lm);
-        const s = PostureScoreEngine(m, f, rel);
-        setAnalysis({ measurements:m, findings:f, scoreData:s });
-        // Save to view bank
-        setViewBank(prev => ({
-          ...prev,
-          [activeView]: { img:imgUrl, lm, measurements:m, findings:f, scoreData:s, time, view:activeView }
-        }));
-      } else {
-        setAnalyseError("Pose landmarks not detected — ensure full body is visible, lighting is good, and try again.");
-      }
-    } catch(e) {
-      setAnalyseError(`Analysis failed: ${e.message}`);
-    } finally {
-      setAnalysing(false);
-    }
-  }, [videoRef, videoSize, facingMode, activeView]);
-
-  // ── Countdown Capture ─────────────────────────────────────────────────────
-  const triggerCapture = useCallback((delay = cdSecs) => {
-    if (cdCount !== null) return;
-    if (delay === 0) { doCapture(); return; }
-    let c = delay;
-    setCdCount(c);
-    const t = setInterval(() => {
-      c--;
-      setCdCount(c);
-      if (c <= 0) { clearInterval(t); setCdCount(null); doCapture(); }
-    }, 1000);
-  }, [cdCount, cdSecs, doCapture]);
-
-  // ── Upload Photo → MediaPipe Analysis ────────────────────────────────────
-  const handleUploadFile = useCallback(async (file) => {
-    if (!file) return;
-    if (uploadObjRef.current) URL.revokeObjectURL(uploadObjRef.current);
-    const url = URL.createObjectURL(file);
-    uploadObjRef.current = url;
-    setUploadImg(url); setUploadLm(null); setUploadAnal(null);
-    setUploadError(null); setUploadBusy(true);
-    try {
-      const img = new Image();
-      img.src = url;
-      await new Promise(res => { img.onload = res; });
-
-      // ── Brightness check for uploaded photo ─────────────────────────────
-      // Sample 32×32 thumbnail to detect unusable lighting before running MediaPipe.
-      const brightnessOK = await (async () => {
-        try {
-          const bc = document.createElement("canvas"); bc.width = 32; bc.height = 32;
-          const bctx = bc.getContext("2d"); bctx.drawImage(img, 0, 0, 32, 32);
-          const bd = bctx.getImageData(0, 0, 32, 32).data;
-          let lum = 0;
-          for (let i = 0; i < bd.length; i += 4) lum += 0.299*bd[i] + 0.587*bd[i+1] + 0.114*bd[i+2];
-          lum /= bd.length / 4;
-          if (lum < 55) { setUploadError("⚠ Photo too dark — retake in better lighting. MediaPipe landmark accuracy is severely reduced in low light."); return false; }
-          if (lum > 230) { setUploadError("⚠ Photo overexposed — retake away from direct light source. Bright backgrounds inflate confidence scores."); return false; }
-          return true;
-        } catch { return true; } // don't block on check failure
-      })();
-      if (!brightnessOK) { setUploadBusy(false); return; }
-
-      const lm = await runPoseForView(img, uploadView);
-      setUploadLm(lm);
-
-      // ── Rotation detection for frontal uploads ───────────────────────────
-      // If patient is rotated, frontal measurements are systematically wrong.
-      // Gate: if shoulder Z difference > 0.08, warn and block clinical findings.
-      const isFrontalView = uploadView === "anterior" || uploadView === "posterior";
-      if (lm && isFrontalView && lm[11] && lm[12]) {
-        const zDiff = Math.abs((lm[11].z||0) - (lm[12].z||0));
-        if (zDiff > 0.08) {
-          setRotationWarn(true);
-          setUploadError("⚠ Patient appears rotated in this photo — shoulder depth asymmetry detected. Frontal measurements will be inaccurate. Retake with patient facing camera squarely, feet parallel.");
-          setUploadBusy(false); return;
-        } else {
-          setRotationWarn(false);
-        }
-      }
-      if (lm) {
-        const m = AdvancedMeasurementEngine(lm, null);
-        let f, cr = null;
-        if (uploadView === "left" || uploadView === "right") {
-          cr = await analyzeSagittalContour(img, lm, uploadView).catch(() => null);
-          setContourResult(cr);
-          const sagittal = buildSagittalFindings(lm, uploadView, m, cr, clinicianVerified, sagManualLandmarks);
-          // Seed HybridKendall with ViTPose landmarks (lateral views)
-          if (uploadView === "left" || uploadView === "right") {
-            setHybridSeedLandmarks(lm);
-            // Clear kendall findings so user starts fresh with new photo
-            setKendallFindings(null);
-            setKendallMeasurements(null);
-            setKendallSegmentStatus(null);
-          }
-          const legacy   = ClinicalFindingsEngine(lm, uploadView, m) || [];
-          const filtered = legacy.filter(fi => !isDeprecatedLateralFinding(fi));
-          f = [...sagittal, ...filtered];
-        } else {
-          f = ClinicalFindingsEngine(lm, uploadView, m);
-          setContourResult(null);
-        }
-        const rel = ReliabilityEngine(lm);
-        const s = PostureScoreEngine(m, f, rel);
-        setUploadAnal({ measurements:m, findings:f, scoreData:s });
-      } else {
-        setUploadError("Pose not detected — ensure full body, good lighting, form-fitting clothing.");
-      }
-    } catch(e) {
-      setUploadError(`Upload analysis failed: ${e.message}`);
-    } finally {
-      setUploadBusy(false);
-    }
-  }, [uploadView]);
-
-  const isLive  = camState === "live";
-  const isIdle  = camState === "idle";
-  const isError = camState === "error";
-  const isLoad  = camState === "loading";
-
-  const VIEWS = [
-    { v:"anterior",  icon:"⬆", label:"Front",  col:"#00e5ff" },
-    { v:"posterior", icon:"⬇", label:"Back",   col:"#7f5af0" },
-    { v:"left",      icon:"◀", label:"Left",   col:"#00c97a" },
-    { v:"right",     icon:"▶", label:"Right",  col:"#ffb300" },
-  ];
-
-  return (
-    <div>
-      <style>{`
-        @keyframes cdPop{0%{transform:scale(1.5);opacity:0}100%{transform:scale(1);opacity:1}}
-        @keyframes tapFocus{0%{transform:scale(1);opacity:1}100%{transform:scale(2.5);opacity:0}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-        select,option{background:#f5f0fb!important;color:#1a1025!important;-webkit-appearance:none;appearance:none;}
-        select:focus{outline:none;border-color:#7c3aed!important;}
-        input[type=number],input[type=text],input[type=email],textarea{background:#f5f0fb!important;color:#1a1025!important;}
-        input[type=number]::-webkit-inner-spin-button{opacity:1;}
-      `}</style>
-
-      {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
-      <div style={{ background:"linear-gradient(135deg,rgba(0,229,255,0.07),rgba(127,90,240,0.07))",
-        border:"1px solid rgba(0,229,255,0.18)", borderRadius:14, padding:"13px 16px", marginBottom:12 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg,#00e5ff22,#7f5af022)",
-            border:"1px solid rgba(0,229,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.3rem" }}>🎥</div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontWeight:800, fontSize:"0.93rem", color:"#00e5ff" }}>Posture Assessment Camera</div>
-            <div style={{ fontSize:"0.82rem", color:"#7e6a9a" }}>Live Capture → MediaPipe Pose Analysis · Physiotherapy Grade</div>
-          </div>
-          {isLive && videoSize && (
-            <div style={{ fontSize:"0.78rem", padding:"2px 8px", borderRadius:7,
-              background:"rgba(0,229,255,0.08)", color:"#00e5ff", border:"1px solid rgba(0,229,255,0.2)", fontWeight:700 }}>
-              {videoSize.w}×{videoSize.h}
-            </div>
-          )}
-        </div>
-        {/* Status bar */}
-        <div style={{ marginTop:8, display:"flex", alignItems:"center", gap:7 }}>
-          <div style={{ width:8, height:8, borderRadius:"50%",
-            background: isLive ? (isStable && !lightingWarn && !rotationWarn ? "#00c97a" : "#ffb300") : isLoad ? "#ffb300" : isError ? "#ff4d6d" : "#3d3d5c",
-            boxShadow: isLive && isStable ? "0 0 8px #00c97a88" : "none" }}/>
-          <span style={{ fontSize:"0.78rem", fontWeight:700, color: isLive ? (isStable && !lightingWarn && !rotationWarn ? "#00c97a" : "#ffb300") : isError ? "#ff4d6d" : "#7e6a9a" }}>
-            {isLoad ? "Starting camera…"
-              : isLive ? (
-                  !quality.ready ? "Waiting for full body in frame…"
-                  : lightingWarn === "dark" ? "⚠ Too dark — improve lighting before capture"
-                  : lightingWarn === "bright" ? "⚠ Overexposed — move away from direct light"
-                  : rotationWarn ? "⚠ Patient rotated — face camera squarely"
-                  : !isStable ? `Stabilising… (${stabilityCount}/12 frames)`
-                  : "✓ Stable — ready to capture"
-              )
-              : isError ? camError : "Camera off"}
-          </span>
-        </div>
-      </div>
-
-      {/* ══ VIEW SELECTOR ═══════════════════════════════════════════════════ */}
-      <div style={{ marginBottom:12 }}>
-        <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#7e6a9a", textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
-          📐 Select Posture View
-        </div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:6 }}>
-          {VIEWS.map(({ v, icon, label, col }) => {
-            const act = activeView === v;
-            return (
-              <button key={v} onClick={() => setActiveView(v)} style={{
-                padding:"10px 4px", borderRadius:11, cursor:"pointer", fontWeight:800,
-                fontSize:"0.82rem", display:"flex", flexDirection:"column", alignItems:"center", gap:3,
-                background: act ? `linear-gradient(135deg,${col},${col}aa)` : `${col}12`,
-                color: act ? "#000" : col,
-                border: act ? "none" : `1px solid ${col}40`,
-                boxShadow: act ? `0 0 14px ${col}55` : "none",
-                transition:"all 0.2s"
-              }}>
-                <span style={{ fontSize:"1rem" }}>{icon}</span>
-                <span>{label}</span>
-                {act && <span style={{ fontSize:"0.5rem", opacity:0.85 }}>● SELECTED</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ══ UPLOAD PHOTO BUTTON ══════════════════════════════════════════════ */}
-      <input ref={uploadRef} type="file" accept="image/*" style={{ display:"none" }}
-        onChange={e => { const f = e.target.files?.[0]; if(f) handleUploadFile(f); e.target.value=""; }}/>
-      <button onClick={() => uploadRef.current?.click()} style={{
-        width:"100%", marginBottom:12, padding:"12px 16px",
-        background:"transparent", border:"2px dashed rgba(127,90,240,0.5)",
-        borderRadius:12, color:"#7f5af0", fontWeight:800, fontSize:"0.8rem",
-        cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:9
-      }}>
-        <span style={{ fontSize:"1.1rem" }}>📷</span> Upload Patient Photo for Analysis
-        <span style={{ fontSize:"0.82rem", opacity:0.7, fontWeight:600 }}>JPG / PNG</span>
-      </button>
-
-      {/* ══ CAMERA PANEL ════════════════════════════════════════════════════ */}
-      {/* Pre-camera setup guide */}
-      {isIdle && (
-        <div style={{ background:"rgba(0,229,255,0.04)", border:"1px solid rgba(0,229,255,0.16)", borderRadius:12, padding:14, marginBottom:12 }}>
-          <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#00e5ff", textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>📐 Setup Guide</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
-            {[["📏","2m camera distance"],["🧍","Full body in frame"],["💡","Even bright lighting"],["📱","Camera at hip height"],
-              ["👕","Form-fitting clothing"],["🦶","Feet fully visible"]].map(([ic,tx],i) => (
-              <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:6, fontSize:"0.8rem", color:"#1a1025" }}>
-                <span>{ic}</span><span style={{ lineHeight:1.4 }}>{tx}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Permission error */}
-      {isError && (
-        <div style={{ background:"rgba(255,77,109,0.08)", border:"1px solid rgba(255,77,109,0.3)",
-          borderRadius:10, padding:"11px 14px", marginBottom:10, fontSize:"0.77rem", color:"#ff4d6d" }}>
-          🚫 {camError}
-        </div>
-      )}
-
-      {/* Live camera view */}
-      {(isLive || isLoad) && (
-        <div style={{ position:"relative", width:"100%", borderRadius:14, overflow:"hidden",
-          aspectRatio:"3/4", maxHeight:"65vh", background:"#0d0d1a", marginBottom:10 }}>
-
-          <video ref={videoRef} autoPlay playsInline muted
-            style={{ width:"100%", height:"100%", objectFit:"contain", display:"block",
-              transform:`${facingMode==="user"?"scaleX(-1)":"none"} scale(${zoom})`,
-              transformOrigin:"center center", transition:"transform 0.2s" }}
-            onClick={e => {
-              const r = e.currentTarget.getBoundingClientRect();
-              handleTapFocus((e.clientX-r.left)/r.width, (e.clientY-r.top)/r.height);
-            }}
-          />
-          <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%",
-            pointerEvents:"none", transform: facingMode==="user"?"scaleX(-1)":"none" }}/>
-
-          {/* View badge */}
-          <div style={{ position:"absolute", top:10, left:10, background:"rgba(6,9,15,0.82)",
-            borderRadius:9, padding:"4px 9px", fontSize:"0.82rem", fontWeight:700,
-            color:"#7f5af0", border:"1px solid rgba(127,90,240,0.35)", zIndex:15, textTransform:"capitalize" }}>
-            {activeView} View
-          </div>
-
-          {/* Body alignment guide when no pose */}
-          {!quality.ready && (
-            <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:8 }}>
-              <svg style={{ width:"100%", height:"100%", position:"absolute", inset:0 }} viewBox="0 0 100 133" preserveAspectRatio="xMidYMid meet">
-                <ellipse cx="50" cy="10" rx="8" ry="10" fill="none" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
-                <line x1="50" y1="20" x2="50" y2="65" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
-                <line x1="32" y1="33" x2="68" y2="33" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
-                <line x1="50" y1="65" x2="38" y2="100" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
-                <line x1="50" y1="65" x2="62" y2="100" stroke="rgba(0,229,255,0.3)" strokeWidth="0.8" strokeDasharray="3,2"/>
-                <line x1="50" y1="0" x2="50" y2="133" stroke="rgba(0,229,255,0.18)" strokeWidth="0.5" strokeDasharray="4,3"/>
-              </svg>
-            </div>
-          )}
-
-          {/* Countdown overlay */}
-          {cdCount !== null && (
-            <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center",
-              justifyContent:"center", background:"rgba(6,9,15,0.45)", zIndex:25 }}>
-              <div style={{ width:90, height:90, borderRadius:"50%", border:"3px solid #00e5ff",
-                background:"rgba(6,9,15,0.85)", display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:"2.8rem", fontWeight:900, color:"#00e5ff",
-                boxShadow:"0 0 30px rgba(0,229,255,0.5)", animation:"cdPop 0.3s ease-out" }}>
-                {cdCount || "📸"}
-              </div>
-            </div>
-          )}
-
-          {/* Quality warnings */}
-          {quality.warnings.length > 0 && (
-            <div style={{ position:"absolute", bottom:90, left:10, right:10, zIndex:20 }}>
-              {quality.warnings.slice(0,2).map((w,i) => (
-                <div key={i} style={{ background:"rgba(6,9,15,0.82)", border:`1px solid ${w.color}55`,
-                  borderRadius:8, padding:"5px 10px", fontSize:"0.75rem", fontWeight:700,
-                  color:w.color, marginBottom:4, display:"flex", gap:7, alignItems:"center" }}>
-                  <span>{w.icon}</span> {w.text}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Capture button */}
-          <div style={{ position:"absolute", bottom:16, left:0, right:0, display:"flex",
-            justifyContent:"center", alignItems:"center", gap:14, zIndex:22 }}>
-            {/* Instant capture — only enabled when stable and no quality warnings */}
-            {(() => {
-              const blocked = !isStable || !!lightingWarn || rotationWarn || !quality.ready;
-              return (
-                <button onClick={() => !blocked && triggerCapture(0)} disabled={cdCount!==null||blocked}
-                  title={blocked ? (!quality.ready?"Body not detected":lightingWarn?"Fix lighting":rotationWarn?"Patient rotated":!isStable?"Wait for stability":""):"Capture now"}
-                  style={{ width:56, height:56, borderRadius:"50%",
-                    background: blocked ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.18)",
-                    border:`2px solid ${blocked?"rgba(255,100,100,0.4)":"rgba(255,255,255,0.4)"}`,
-                    cursor:blocked||cdCount!==null?"not-allowed":"pointer",
-                    fontSize:"0.8rem", fontWeight:800, color: blocked?"rgba(255,100,100,0.7)":"#fff",
-                    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:1 }}>
-                  {blocked ? "🔒" : "⚡"}<span>{blocked?"Wait":"Now"}</span>
-                </button>
-              );
-            })()}
-
-            {/* Main capture button — gated the same way */}
-            {(() => {
-              const blocked = !isStable || !!lightingWarn || rotationWarn || !quality.ready;
-              const readyColor = "linear-gradient(135deg,#00e5ff,#7f5af0)";
-              const blockedColor = "rgba(100,100,120,0.5)";
-              return (
-                <button onClick={() => !blocked && triggerCapture(cdSecs)} disabled={cdCount!==null||blocked}
-                  title={blocked ? (!quality.ready?"Body not detected":lightingWarn?"Fix lighting first":rotationWarn?"Patient rotated — face camera squarely":!isStable?"Hold still…":""):"Capture with countdown"}
-                  style={{ width:72, height:72, borderRadius:"50%",
-                    background: cdCount!==null ? "rgba(0,229,255,0.3)" : blocked ? blockedColor : readyColor,
-                    border:`4px solid ${blocked?"rgba(255,100,100,0.3)":"rgba(255,255,255,0.3)"}`,
-                    cursor:cdCount!==null||blocked?"not-allowed":"pointer",
-                    fontSize:"1.6rem", display:"flex", alignItems:"center", justifyContent:"center",
-                    boxShadow: blocked?"none":"0 4px 22px rgba(0,229,255,0.45)", zIndex:22,
-                    transition:"all 0.3s" }}>
-                  {cdCount !== null ? (
-                    <span style={{ fontSize:"2rem", fontWeight:900, color:"#000" }}>{cdCount}</span>
-                  ) : blocked ? "🔒" : "📸"}
-                </button>
-              );
-            })()}
-
-            {/* Flip camera */}
-            <button onClick={flipCamera}
-              style={{ width:56, height:56, borderRadius:"50%",
-                background:"rgba(255,255,255,0.18)", border:"2px solid rgba(255,255,255,0.4)",
-                cursor:"pointer", fontSize:"1.2rem", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              🔄
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* PoseTracker (live skeleton while camera is on) */}
-      {isLive && <PoseTracker videoRef={videoRef} active={poseActive} onLandmarks={handleLandmarks}/>}
-      {isLive && <SkeletonRenderer canvasRef={canvasRef} landmarks={landmarks} videoSize={videoSize} trackingState={quality.ready?"stable":"detecting"} activeView={activeView}/>}
-
-      {/* ── Camera start / controls ── */}
-      <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-        {!isLive && !isLoad && (
-          <>
-            <button onClick={() => startCamera("user")} style={{
-              flex:1, padding:"12px 8px", borderRadius:11, cursor:"pointer", fontWeight:800,
-              fontSize:"0.75rem", display:"flex", flexDirection:"column", alignItems:"center", gap:4,
-              background:"rgba(0,229,255,0.08)", color:"#00e5ff", border:"1px solid rgba(0,229,255,0.25)"
-            }}><span style={{fontSize:"1.3rem"}}>🤳</span><span>Front Camera</span></button>
-            <button onClick={() => startCamera("environment")} style={{
-              flex:1, padding:"12px 8px", borderRadius:11, cursor:"pointer", fontWeight:800,
-              fontSize:"0.75rem", display:"flex", flexDirection:"column", alignItems:"center", gap:4,
-              background:"rgba(127,90,240,0.08)", color:"#7f5af0", border:"1px solid rgba(127,90,240,0.25)"
-            }}><span style={{fontSize:"1.3rem"}}>📷</span><span>Back Camera</span></button>
-          </>
-        )}
-        {isLoad && (
-          <div style={{ flex:1, padding:"12px", borderRadius:11, background:"#1a2d45",
-            color:"#6b8399", fontWeight:700, fontSize:"0.78rem", textAlign:"center" }}>
-            ⏳ Starting camera…
-          </div>
-        )}
-        {isLive && (
-          <>
-            {/* Zoom */}
-            <div style={{ flex:2, display:"flex", alignItems:"center", gap:6, background:"#ffffff",
-              border:"1px solid #d8cce8", borderRadius:10, padding:"6px 12px" }}>
-              <span style={{ fontSize:"0.75rem", color:"#7e6a9a" }}>🔍</span>
-              <input type="range" min="1" max="2.5" step="0.1" value={zoom} onChange={e=>setZoom(Number(e.target.value))}
-                style={{ flex:1, accentColor:"#00e5ff", cursor:"pointer" }}/>
-              <span style={{ fontSize:"0.75rem", color:"#00e5ff", fontWeight:700, minWidth:28 }}>{zoom.toFixed(1)}×</span>
-            </div>
-            {/* Countdown selector */}
-            <div style={{ display:"flex", alignItems:"center", gap:4, background:"#ffffff",
-              border:"1px solid #d8cce8", borderRadius:10, padding:"6px 10px" }}>
-              <span style={{ fontSize:"0.8rem", color:"#7e6a9a" }}>⏱</span>
-              {[0,3,5,10].map(s => (
-                <button key={s} onClick={() => setCdSecs(s)} style={{
-                  padding:"3px 6px", borderRadius:6, fontSize:"0.8rem", fontWeight:700,
-                  border:"none", cursor:"pointer",
-                  background: cdSecs===s ? "#00e5ff" : "#192435",
-                  color: cdSecs===s ? "#000" : "#6b8399"
-                }}>{s===0?"0s":`${s}s`}</button>
-              ))}
-            </div>
-            {/* Stop */}
-            <button onClick={stopCamera} style={{
-              padding:"8px 12px", borderRadius:10, cursor:"pointer", fontWeight:800,
-              background:"rgba(255,77,109,0.1)", border:"1px solid rgba(255,77,109,0.3)",
-              color:"#ff4d6d", fontSize:"0.82rem", display:"flex", flexDirection:"column",
-              alignItems:"center", gap:2
-            }}><span>⏹</span><span>Stop</span></button>
-          </>
-        )}
-      </div>
-
-      {/* ══ CAPTURED PHOTO + ANALYSIS ════════════════════════════════════════ */}
-      {capturedImg && (
-        <div style={{ background:"#0d0d1a", border:"1px solid rgba(0,229,255,0.25)",
-          borderRadius:14, overflow:"hidden", marginBottom:12, animation:"fadeIn 0.3s ease" }}>
-          {/* Header */}
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-            padding:"9px 13px", borderBottom:"1px solid rgba(0,229,255,0.15)",
-            background:"rgba(0,229,255,0.04)" }}>
-            <div style={{ fontSize:"0.75rem", fontWeight:800, color:"#00e5ff" }}>
-              📸 Captured — {capturedView?.charAt(0).toUpperCase()+capturedView?.slice(1)} View
-              {analysing ? " — Analysing…" : capturedLm ? " — Pose Grid Applied ✓" : analyseError ? " — Detection Failed" : ""}
-            </div>
-            <div style={{ display:"flex", gap:6 }}>
-              {!analysing && (
-                <button onClick={() => startCamera(facingMode)} style={{
-                  padding:"4px 10px", background:"rgba(0,229,255,0.1)", border:"1px solid rgba(0,229,255,0.25)",
-                  borderRadius:7, color:"#00e5ff", fontSize:"0.82rem", fontWeight:700, cursor:"pointer"
-                }}>📷 Retake</button>
-              )}
-              <button onClick={() => { setCapturedImg(null); setCapturedLm(null); setAnalysis(null); setAnalyseError(null); }} style={{
-                padding:"4px 10px", background:"rgba(255,77,109,0.1)", border:"1px solid rgba(255,77,109,0.25)",
-                borderRadius:7, color:"#ff4d6d", fontSize:"0.82rem", fontWeight:700, cursor:"pointer"
-              }}>✕ Clear</button>
-            </div>
-          </div>
-
-          {/* Photo + overlay */}
-          <div style={{ position:"relative", width:"100%", background:"#0d0d1a" }}>
-            <img src={capturedImg} alt="Captured posture"
-              style={{ width:"100%", display:"block", maxHeight:520, objectFit:"contain" }}/>
-            {capturedLm && (
-              <CanvasOverlayOnImage photoUrl={capturedImg} landmarks={capturedLm} view={capturedView}/>
-            )}
-            {/* Analysing spinner */}
-            {analysing && (
-              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column",
-                alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.6)", gap:10 }}>
-                <div style={{ width:44, height:44, border:"3px solid rgba(0,229,255,0.2)",
-                  borderTop:"3px solid #00e5ff", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
-                <div style={{ fontSize:"0.75rem", color:"#00e5ff", fontWeight:700 }}>Running MediaPipe analysis…</div>
-                <div style={{ fontSize:"0.82rem", color:"#7e6a9a" }}>Detecting 33 landmarks · Calculating deviations</div>
-              </div>
-            )}
-          </div>
-
-          {/* Detection error */}
-          {analyseError && !analysing && (
-            <div style={{ padding:"12px 14px", background:"rgba(255,77,109,0.08)",
-              borderTop:"1px solid rgba(255,77,109,0.2)" }}>
-              <div style={{ fontSize:"0.82rem", color:"#ff4d6d", fontWeight:700, marginBottom:4 }}>
-                ⚠ {analyseError}
-              </div>
-              <div style={{ fontSize:"0.75rem", color:"#c9b8e8" }}>
-                Tips: ensure full body visible from head to feet, bright even lighting, form-fitting clothing, camera 2m away.
-              </div>
-            </div>
-          )}
-
-          {/* Analysis results */}
-          {analysis && !analysing && (
-            <div style={{ padding:"12px 14px" }}>
-              {/* Score */}
-              <div style={{ display:"flex", gap:10, marginBottom:12, alignItems:"center" }}>
-                <div style={{ width:56, height:56, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center",
-                  flexShrink:0, flexDirection:"column",
-                  background: (analysis.scoreData?.score||0)>=78?"rgba(0,201,122,0.12)":(analysis.scoreData?.score||0)>=62?"rgba(255,179,0,0.12)":"rgba(255,77,109,0.12)",
-                  border:`2px solid ${(analysis.scoreData?.score||0)>=78?"#00c97a":(analysis.scoreData?.score||0)>=62?"#ffb300":"#ff4d6d"}` }}>
-                  <div style={{ fontSize:"1.3rem", fontWeight:900,
-                    color:(analysis.scoreData?.score||0)>=78?"#00c97a":(analysis.scoreData?.score||0)>=62?"#ffb300":"#ff4d6d" }}>
-                    {analysis.scoreData?.score ?? "--"}
-                  </div>
-                  <div style={{ fontSize:"0.48rem", color:"#7e6a9a", fontWeight:700 }}>SCORE</div>
-                </div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#00e5ff", marginBottom:3 }}>
-                    {analysis.scoreData?.category || "Assessment Complete"}
-                  </div>
-                  <div style={{ fontSize:"0.75rem", color:"#7e6a9a", lineHeight:1.4 }}>
-                    {analysis.findings.filter(f=>f.severity==="high").length} high priority ·{" "}
-                    {analysis.findings.filter(f=>f.severity!=="high").length} moderate findings
-                  </div>
-                </div>
-              </div>
-
-              {/* Findings list */}
-              {analysis.findings.length > 0 ? (
-                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                  {analysis.findings.map((f, i) => (
-                    <div key={i} style={{
-                      padding:"8px 11px", borderRadius:9,
-                      background: f.severity==="high" ? "rgba(255,77,109,0.08)" : "rgba(255,179,0,0.07)",
-                      borderLeft:`3px solid ${f.severity==="high"?"#ff4d6d":"#ffb300"}`,
-                      fontSize:"0.8rem", color:"#e2d9f3", lineHeight:1.5
-                    }}>
-                      <span style={{ fontWeight:700, color: f.severity==="high"?"#ff4d6d":"#ffb300", marginRight:6 }}>
-                        {f.severity==="high"?"🔴":"🟡"} {f.title || f.label}
-                      </span>
-                      {f.detail || f.description || ""}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ padding:"10px 12px", background:"rgba(0,201,122,0.08)",
-                  borderRadius:9, fontSize:"0.82rem", color:"#00c97a", fontWeight:700, textAlign:"center" }}>
-                  ✅ No significant postural findings detected for {capturedView} view
-                </div>
-              )}
-
-              {/* Save to record */}
-              {activePatient && (
-                <button onClick={() => {
-                  const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
-                  const vLabel=VLABELS[capturedView]||capturedView;
-                  try {
-                    const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
-                    const sameView=existing.filter(s=>s.view===capturedView).length+1;
-                    const entry={
-                      view:capturedView, viewLabel:vLabel, sessionNo:sameView,
-                      sessionLabel:`${vLabel} Session ${sameView}`,
-                      img:capturedImg, score:analysis.scoreData?.score,
-                      band:analysis.scoreData?.category||"",
-                      findings:analysis.findings||[],
-                      kineticChain:analysis.measurements?.kineticChain||"",
-                      source:"camera", capturedAt:new Date().toISOString()
-                    };
-                    set?.("posture_sessions",JSON.stringify([...existing,entry]));
-                  } catch(e){}
-                }} style={{
-                  width:"100%", marginTop:10, padding:"10px", borderRadius:10, cursor:"pointer",
-                  background:"linear-gradient(135deg,#00c97a,#059669)",
-                  border:"none", color:"#fff", fontWeight:800, fontSize:"0.78rem"
-                }}>
-                  💾 Save to Patient Record
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══ UPLOADED PHOTO + ANALYSIS ════════════════════════════════════════ */}
-      {uploadImg && (
-        <div style={{ background:"#1a1a2e", border:"1px solid rgba(127,90,240,0.3)",
-          borderRadius:14, overflow:"hidden", marginBottom:12, animation:"fadeIn 0.3s ease" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-            padding:"9px 13px", borderBottom:"1px solid rgba(127,90,240,0.2)",
-            background:"rgba(127,90,240,0.04)" }}>
-            <div style={{ fontSize:"0.75rem", fontWeight:800, color:"#7f5af0" }}>
-              📷 Uploaded Photo — {uploadView?.charAt(0).toUpperCase()+uploadView?.slice(1)} View
-              {uploadBusy ? " — Analysing…" : uploadLm ? " — Pose Grid Applied ✓" : uploadError ? " — Detection Failed" : ""}
-            </div>
-            <div style={{ display:"flex", gap:6 }}>
-              {/* View switch for upload */}
-              {["anterior","posterior","left","right"].map(v => (
-                <button key={v} onClick={() => setUploadView(v)} style={{
-                  padding:"2px 6px", borderRadius:5, fontSize:"0.75rem", fontWeight:700,
-                  border:"none", cursor:"pointer",
-                  background: uploadView===v ? "#7f5af0" : "#1a2d45",
-                  color: uploadView===v ? "#fff" : "#6b8399"
-                }}>{v[0].toUpperCase()}</button>
-              ))}
-              <button onClick={() => {
-                setUploadImg(null); setUploadLm(null); setUploadAnal(null); setUploadError(null);
-                if(uploadObjRef.current){URL.revokeObjectURL(uploadObjRef.current);uploadObjRef.current=null;}
-              }} style={{ padding:"4px 9px", background:"rgba(255,77,109,0.1)",
-                border:"1px solid rgba(255,77,109,0.25)", borderRadius:7,
-                color:"#ff4d6d", fontSize:"0.82rem", fontWeight:700, cursor:"pointer" }}>✕</button>
-            </div>
-          </div>
-
-          <div style={{ position:"relative", width:"100%", background:"#1a1a2e" }}>
-            <img src={uploadImg} alt="Uploaded posture"
-              style={{ width:"100%", display:"block", maxHeight:520, objectFit:"contain" }}/>
-            {uploadLm && (
-              <CanvasOverlayOnImage photoUrl={uploadImg} landmarks={uploadLm} view={uploadView}/>
-            )}
-            {uploadBusy && (
-              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column",
-                alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.6)", gap:10 }}>
-                <div style={{ width:44, height:44, border:"3px solid rgba(127,90,240,0.2)",
-                  borderTop:"3px solid #7f5af0", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
-                <div style={{ fontSize:"0.75rem", color:"#7f5af0", fontWeight:700 }}>Analysing pose…</div>
-              </div>
-            )}
-          </div>
-
-          {uploadError && !uploadBusy && (
-            <div style={{ padding:"12px 14px", background:"rgba(255,77,109,0.08)", borderTop:"1px solid rgba(255,77,109,0.2)" }}>
-              <div style={{ fontSize:"0.82rem", color:"#ff4d6d", fontWeight:700 }}>⚠ {uploadError}</div>
-            </div>
-          )}
-
-          {uploadAnal && !uploadBusy && (
-            <div style={{ padding:"12px 14px" }}>
-              <div style={{ display:"flex", gap:10, marginBottom:10, alignItems:"center" }}>
-                <div style={{ width:52, height:52, borderRadius:"50%", display:"flex", alignItems:"center",
-                  justifyContent:"center", flexDirection:"column", flexShrink:0,
-                  background:(uploadAnal.scoreData?.score||0)>=78?"rgba(0,201,122,0.12)":"rgba(255,179,0,0.12)",
-                  border:`2px solid ${(uploadAnal.scoreData?.score||0)>=78?"#00c97a":"#ffb300"}` }}>
-                  <div style={{ fontSize:"1.2rem", fontWeight:900,
-                    color:(uploadAnal.scoreData?.score||0)>=78?"#00c97a":"#ffb300" }}>
-                    {uploadAnal.scoreData?.score ?? "--"}
-                  </div>
-                  <div style={{ fontSize:"0.48rem", color:"#7e6a9a" }}>SCORE</div>
-                </div>
-                <div>
-                  <div style={{ fontSize:"0.78rem", fontWeight:800, color:"#7f5af0", marginBottom:3 }}>
-                    {uploadAnal.scoreData?.category || "Assessment Complete"}
-                  </div>
-                  <div style={{ fontSize:"0.73rem", color:"#7e6a9a" }}>
-                    {uploadAnal.findings.filter(f=>f.severity==="high").length} high · {uploadAnal.findings.filter(f=>f.severity!=="high").length} moderate
-                  </div>
-                </div>
-              </div>
-              {uploadAnal.findings.map((f,i) => (
-                <div key={i} style={{ padding:"7px 10px", borderRadius:8, marginBottom:5,
-                  background:f.severity==="high"?"rgba(255,77,109,0.08)":"rgba(255,179,0,0.07)",
-                  borderLeft:`3px solid ${f.severity==="high"?"#ff4d6d":"#ffb300"}`,
-                  fontSize:"0.78rem", color:"#e2d9f3", lineHeight:1.5 }}>
-                  <span style={{ fontWeight:700, color:f.severity==="high"?"#ff4d6d":"#ffb300", marginRight:5 }}>
-                    {f.severity==="high"?"🔴":"🟡"} {f.title||f.label}
-                  </span>
-                  {f.detail||f.description||""}
-                </div>
-              ))}
-              {/* Re-analyse with different view */}
-              <div style={{ marginTop:8, display:"flex", gap:6, flexWrap:"wrap" }}>
-                {["anterior","posterior","left","right"].map(v => (
-                  <button key={v} onClick={() => { setUploadView(v); if(uploadImg){ handleUploadFile({name:"rerun"}); } }} style={{
-                    padding:"4px 10px", borderRadius:7, fontSize:"0.82rem", fontWeight:700,
-                    border:"none", cursor:"pointer",
-                    background: uploadView===v ? "#7f5af0" : "#1a2d45",
-                    color: uploadView===v ? "#fff" : "#6b8399"
-                  }}>{v.charAt(0).toUpperCase()+v.slice(1)}</button>
-                ))}
-              </div>
-              {/* Save upload to patient record */}
-              {activePatient && (
-                <button onClick={() => {
-                  const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
-                  const vLabel=VLABELS[uploadView]||uploadView;
-                  try {
-                    const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
-                    const sameView=existing.filter(s=>s.view===uploadView).length+1;
-                    const entry={
-                      view:uploadView, viewLabel:vLabel, sessionNo:sameView,
-                      sessionLabel:`${vLabel} Session ${sameView}`,
-                      img:uploadImg, score:uploadAnal.scoreData?.score,
-                      band:uploadAnal.scoreData?.category||"",
-                      findings:uploadAnal.findings||[],
-                      kineticChain:"", source:"upload",
-                      capturedAt:new Date().toISOString()
-                    };
-                    set?.("posture_sessions",JSON.stringify([...existing,entry]));
-                  } catch(e){}
-                }} style={{
-                  width:"100%", marginTop:10, padding:"10px", borderRadius:10, cursor:"pointer",
-                  background:"linear-gradient(135deg,#7f5af0,#9333ea)",
-                  border:"none", color:"#fff", fontWeight:800, fontSize:"0.78rem"
-                }}>
-                  💾 Save Upload to Patient Record
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══ MULTI-VIEW BANK ═══════════════════════════════════════════════════ */}
-      {Object.values(viewBank).some(v => v !== null) && (
-        <div style={{ background:"#0a0a14", border:"1px solid rgba(0,229,255,0.18)",
-          borderRadius:12, overflow:"hidden", marginBottom:12 }}>
-          <div style={{ padding:"8px 12px", borderBottom:"1px solid rgba(0,229,255,0.12)",
-            background:"rgba(0,229,255,0.03)", fontSize:"0.82rem", fontWeight:800, color:"#00e5ff" }}>
-            📸 View Bank — {Object.values(viewBank).filter(Boolean).length}/4 Captured
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, background:"rgba(0,229,255,0.04)" }}>
-            {["anterior","posterior","left","right"].map(v => {
-              const cap = viewBank[v];
-              const labels = {anterior:"Front",posterior:"Back",left:"L Side",right:"R Side"};
-              const icons  = {anterior:"⬆",posterior:"⬇",left:"◀",right:"▶"};
-              const col = cap?.scoreData?.score >= 78 ? "#00c97a" : cap?.scoreData?.score >= 62 ? "#ffb300" : "#ff4d6d";
-              return (
-                <div key={v} style={{ position:"relative", background:"#0d0d1a", minHeight:80 }}>
-                  {cap ? (
-                    <>
-                      <img src={cap.img} alt={v} style={{ width:"100%", display:"block", maxHeight:140, objectFit:"cover" }}/>
-                      <div style={{ position:"absolute", top:0, left:0, right:0, padding:"3px 6px",
-                        background:"rgba(0,0,0,0.6)", display:"flex", justifyContent:"space-between" }}>
-                        <span style={{ fontSize:"0.78rem", fontWeight:800, color:"#00e5ff" }}>{icons[v]} {labels[v]}</span>
-                        {cap.scoreData?.score && <span style={{ fontSize:"0.82rem", fontWeight:900, color:col }}>{cap.scoreData.score}</span>}
-                      </div>
-                      <div style={{ padding:"3px 6px", borderTop:"1px solid rgba(0,229,255,0.08)",
-                        display:"flex", gap:4, flexWrap:"wrap" }}>
-                        <span style={{ fontSize:"0.82rem", padding:"1px 5px", borderRadius:4,
-                          background:"rgba(255,77,109,0.15)", color:"#ff4d6d", fontWeight:700 }}>
-                          🔴 {cap.findings.filter(f=>f.severity==="high").length}
-                        </span>
-                        <span style={{ fontSize:"0.82rem", padding:"1px 5px", borderRadius:4,
-                          background:"rgba(255,179,0,0.15)", color:"#ffb300", fontWeight:700 }}>
-                          🟡 {cap.findings.filter(f=>f.severity!=="high").length}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ display:"flex", flexDirection:"column", alignItems:"center",
-                      justifyContent:"center", height:80, gap:3, opacity:0.35 }}>
-                      <span style={{ fontSize:"1.3rem" }}>{icons[v]}</span>
-                      <span style={{ fontSize:"0.78rem", color:"#6b8399" }}>{labels[v]}</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <button onClick={() => setViewBank({anterior:null,posterior:null,left:null,right:null})} style={{
-            width:"100%", padding:"8px", background:"rgba(255,77,109,0.06)",
-            border:"none", borderTop:"1px solid rgba(255,77,109,0.12)",
-            color:"#ff4d6d", fontSize:"0.75rem", fontWeight:700, cursor:"pointer"
-          }}>✕ Clear All Views</button>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div style={{ marginTop:8, fontSize:"0.82rem", color:"#7e6a9a", padding:"7px 11px",
-        background:"#ffffff", borderRadius:8, lineHeight:1.5, border:"1px solid #d8cce8" }}>
-        <strong style={{ color:"#1a1025" }}>Privacy:</strong> All processing runs locally in your browser. No video or photos are uploaded to any server.
-      </div>
-    </div>
-  );
-}
 
 
 // ════════════════════════════════════════════════════════════════════════
@@ -1688,9 +100,9 @@ function PostureCameraModule({ activePatient, set }) {
 
 // ─── Colours ─────────────────────────────────────────────────────────────────
 const PC = {
-  bg:"#F7F7F8", surface:"#ffffff", s2:"#FFFFFF", s3:"#FFFFFF",
-  border:"#E0E0E2", accent:"#7c3aed", a2:"#9333ea", a3:"#059669",
-  text:"#0D0D0D", muted:"#6B6B6B", red:"#dc2626", yellow:"#b45309",
+  bg:"#faf8fc", surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6",
+  border:"#d8cce8", accent:"#7c3aed", a2:"#9333ea", a3:"#059669",
+  text:"#1a1025", muted:"#7e6a9a", red:"#dc2626", yellow:"#b45309",
   green:"#059669", purple:"#9333ea", orange:"#f97316",
 };
 
@@ -1715,1129 +127,6 @@ const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
 // 15=L_wrist, 16=R_wrist, 23=L_hip, 24=R_hip
 // 25=L_knee, 26=R_knee, 27=L_ankle, 28=R_ankle
 // 29=L_heel, 30=R_heel, 31=L_foot_index, 32=R_foot_index
-
-// ─── ADVANCED MEASUREMENT ENGINE ─────────────────────────────────────────────
-// Clinical norms based on: Kendall et al. (2005), Yip et al. (2008),
-// Levangie & Norkin (2011), Magee (2014), Singla & Veqar (2014)
-// ─────────────────────────────────────────────────────────────────────────────
-const CLINICAL_NORMS = {
-  cvaAngle:          { normal:[55,90],   mild:[49,55],   severe:[0,49],   unit:"°", label:"CVA (Craniovertebral Angle)", ref:"Yip et al. (2008): >55° normal. 49–55° mild FHP. <49° pathological — cervicogenic headache risk." },
-  thoracicAngle:     { normal:[20,45],   mild:[45,55],   severe:[55,90],  unit:"°", label:"Thoracic Posture Proxy", ref:"Surface landmark estimate only — NOT a Cobb angle. Requires radiographic confirmation.", _hideFromReport:true },
-  lordosisAngle:     { normal:[40,60],   mild:[60,70],   severe:[70,90],  unit:"°", label:"Lumbar Posture Proxy",       ref:"Surface landmark estimate only — NOT a radiographic lordosis measurement.", _hideFromReport:true },
-  shoulderAngle:     { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"°", label:"Shoulder Height Asymmetry (bilateral)", ref:"<3° within normal variation. 3–7° mild asymmetry. >7° refer for lateral curvature screen and clinical assessment." },
-  pelvisAngle:       { normal:[0,3],     mild:[3,7],     severe:[7,30],   unit:"°", label:"Pelvic Obliquity (observation only)",          ref:"<3° normal variation. >7° — clinical assessment recommended. Possible contributors: pelvic asymmetry, habitual loading, hip asymmetry. Clinical examination required to determine cause." },
-  kneeValgus:        { normal:[0,5],     mild:[5,10],    severe:[10,30],  unit:"°", label:"Knee Valgus/Varus",         ref:"<5° normal Q-angle variation. >10° — glute med inhibition, foot pronation driver." },
-  cobbEstimate:      { normal:[0,5],     mild:[5,10],    severe:[10,90],  unit:"°", label:"Lateral Curvature Screen (shoulder-pelvis differential — observation only)", ref:"<5° normal variation. 5–10°: clinical assessment recommended. >10°: refer for standing AP X-ray (true Cobb). Cannot diagnose scoliosis from photo." },
-  weightBearingShift:{ normal:[0,3],     mild:[3,6],     severe:[6,30],   unit:"%", label:"Weight-Bearing Asymmetry (observation only)",  ref:"<3% normal variation. >6% — clinical assessment recommended. Possible contributors: pain-avoidance pattern, pelvic asymmetry, habitual loading. Clinical examination required." },
-  cogDeviation:      { normal:[0,4],     mild:[4,7],     severe:[7,30],   unit:"%", label:"Centre of Gravity Deviation", ref:"<4% normal. >7% global postural collapse — multi-system retraining needed." },
-  leftKneeDev:       { normal:[-5,5],    mild:[-12,-5],  severe:[-30,-12],unit:"°", label:"Knee Hyperextension (Genu Recurvatum)", ref:">5° increases posterior capsule & ACL load. >10° — Beighton hypermobility score." },
-  rightKneeDev:      { normal:[-5,5],    mild:[-12,-5],  severe:[-30,-12],unit:"°", label:"Knee Hyperextension (Genu Recurvatum)", ref:">5° increases posterior capsule & ACL load. >10° — Beighton hypermobility score." },
-};
-
-// Cervical compressive load (estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula) model: 4.5kg neutral + ~2.7kg/2.5cm FHP)
-const CERVICAL_LOAD_KG = (fhpCm) => fhpCm !== null && fhpCm > 0 ? r1(4.5 + fhpCm * 1.08) : null;
-
-// ── LANDMARK CONFIDENCE GUARD ─────────────────────────────────────────────────
-// Returns null for any measurement where key landmarks are below the
-// minimum confidence threshold. This prevents false findings from poor images.
-// MIN_VIS = 0.45 (defined at top of file)
-
-// ─── ASIS correction helper ─────────────────────────────────────────────────
-// MediaPipe lm[23]/lm[24] = hip joint (femoral head). ASIS is superior.
-// Returns corrected {x, y} normalised coords for left (idx=23) and right (idx=24) ASIS.
-function getASISNorm(lm, idx) {
-  if (!lm || !lm[idx] || (lm[idx].visibility||0) < 0.3) return null;
-  const hip = lm[idx];
-  const shIdx = idx === 23 ? 11 : 12; // ipsilateral shoulder
-  const sh = lm[shIdx];
-  const torsoH = (sh && (sh.visibility||0) >= 0.3) ? Math.abs(hip.y - sh.y) : 0.28;
-  // Move upward (subtract from y since y increases downward)
-  const asisY = hip.y - torsoH * 0.18;
-  // ASIS is slightly lateral to hip joint
-  // idx 23 = left hip → ASIS is to patient's left → appears more to the RIGHT in frontal image
-  // idx 24 = right hip → ASIS is to patient's right → appears more to the LEFT in frontal image
-  const lateralOffset = torsoH * 0.03;
-  const asisX = hip.x + (idx === 23 ? lateralOffset : -lateralOffset);
-  return { x: asisX, y: asisY, visibility: hip.visibility };
-}
-
-function AdvancedMeasurementEngine(lm, calibration=null) {
-  // calibration: { pixPerCm, frameHeightPx, patientHeightCm }
-  if (!lm || lm.length < 33) return {};
-  const g    = i => lm[i];
-  // Strict visibility threshold — landmark must be >= MIN_VIS to be used
-  const V    = i => (lm[i]?.visibility||0) >= MIN_VIS;
-  // Confidence-weighted value: returns value only if BOTH landmarks meet threshold
-  const Vboth = (...idxs) => idxs.every(i => V(i));
-  const toCm = (normDelta) => calibration?.pixPerCm && calibration?.frameHeightPx
-    ? r1((normDelta * calibration.frameHeightPx) / calibration.pixPerCm) : null;
-
-  // ── Confidence-gated landmark midpoints ───────────────────────────────────
-  // Only compute midpoints when BOTH landmarks are above threshold
-  const shMid    = Vboth(11,12) ? mid(g(11), g(12)) : null;
-  const hipMid   = Vboth(23,24) ? mid(g(23), g(24)) : null;
-  const kneeMid  = Vboth(25,26) ? mid(g(25), g(26)) : null;
-  const ankleMid = Vboth(27,28) ? mid(g(27), g(28)) : null;
-  const footMid  = Vboth(31,32) ? mid(g(31), g(32)) : null;
-  const heelMid  = Vboth(29,30) ? mid(g(29), g(30)) : null;
-  const earMid   = Vboth(7,8)   ? mid(g(7),  g(8))  : null;
-  const eyeMid   = Vboth(2,5)   ? mid(g(2),  g(5))  : null;
-
-  // ── Z-depth availability ───────────────────────────────────────────────────
-  // MediaPipe provides normalised Z relative to hip midpoint.
-  // Only trust Z when the delta is meaningful (> 0.002 avoids noise near zero).
-  const hasZ  = V(7) && V(11) && Math.abs((g(7).z||0)-(g(11).z||0)) > 0.002;
-  const earZ  = hasZ && V(7)  && V(8)  ? ((g(7).z||0)+(g(8).z||0))/2  : null;
-  const shZ   = hasZ && V(11) && V(12) ? ((g(11).z||0)+(g(12).z||0))/2 : null;
-  const hipZ  = hasZ && V(23) && V(24) ? ((g(23).z||0)+(g(24).z||0))/2 : null;
-  const kneeZ = hasZ && V(25) && V(26) ? ((g(25).z||0)+(g(26).z||0))/2 : null;
-
-  // ── FRONTAL PLANE MEASUREMENTS ────────────────────────────────────────────
-  // Shoulder tilt: angle of line connecting L shoulder to R shoulder from horizontal
-  const shoulderAngle = Vboth(11,12) ? calcAngleDeg(g(12), g(11)) : null;
-  // Pelvic obliquity: use anatomically corrected ASIS positions (18% above hip joint)
-  const pelvisAngle = (() => {
-    if (!Vboth(23,24)) return null;
-    const torsoHL23 = Vboth(11,23) ? Math.abs(g(23).y - g(11).y) : 0.28;
-    const torsoHR24 = Vboth(12,24) ? Math.abs(g(24).y - g(12).y) : 0.28;
-    const asisL = { x: g(23).x + torsoHL23 * 0.03, y: g(23).y - torsoHL23 * 0.18 };
-    const asisR = { x: g(24).x - torsoHR24 * 0.03, y: g(24).y - torsoHR24 * 0.18 };
-    return calcAngleDeg(asisR, asisL);
-  })();
-  const kneeAngle     = Vboth(25,26) ? calcAngleDeg(g(26), g(25)) : null;
-  const ankleAngle    = Vboth(27,28) ? calcAngleDeg(g(28), g(27)) : null;
-  const eyeLevelAngle = Vboth(2,5)   ? calcAngleDeg(g(5),  g(2))  : null;
-
-  // Head lateral offset: nose X minus shoulder midpoint X (normalised to frame width)
-  // Expressed as % of frame width — more stable than absolute pixels
-  const headLateralOffset = shMid && V(0) ? r1((g(0).x - shMid.x)*100) : null;
-  // Trunk lateral shift: shoulder midpoint minus hip midpoint (% of frame width)
-  // Trunk lateral shift: shoulders vs ankle midpoint (Kendall plumb line reference)
-  // ankMid is the plumb baseline — same as visual plumb line in overlay
-  const _ankMid = Vboth(27,28) ? mid(g(27),g(28)) : null;
-  const trunkLateralShift = shMid && (_ankMid || hipMid)
-    ? r1((shMid.x - (_ankMid || hipMid).x)*100) : null;
-  const pelvicObliquity   = hipMid && kneeMid ? r1((hipMid.x - kneeMid.x)*100) : null;
-  // Weight-bearing shift: hip midpoint vs foot midpoint (% of frame width)
-  const weightBearingShift = hipMid && footMid ? r1((hipMid.x - footMid.x)*100) : null;
-  const spinalDeviation    = V(0) && hipMid ? r1((g(0).x - hipMid.x)*100) : null;
-
-  const shoulderWidth      = Vboth(11,12) ? Math.abs(g(11).x-g(12).x) : null;
-  const hipWidth           = Vboth(23,24) ? Math.abs(g(23).x-g(24).x) : null;
-  const trunkRotationProxy = shoulderWidth && hipWidth && hipWidth > 0.01
-    ? r1((shoulderWidth/hipWidth - 1)*100) : null;
-
-  // ── MODULE F10 — ASIS HEIGHT DIFFERENCE ──────────────────────────────────
-  // Uses landmarks 23 (L.Hip/ASIS) and 24 (R.Hip/ASIS) Y-coordinates.
-  // In normalised image space Y increases downward, so a lower Y = higher anatomical position.
-  // Difference expressed as % of frame height — more stable than raw normalised units.
-  // Conservative thresholds calibrated to reduce false positives from minor landmark jitter.
-  //
-  // Severity classification (% frame height difference):
-  //   Normal      : < 0.8%   (within expected MediaPipe measurement noise)
-  //   Mild        : 0.8–2.0% (screen-only; re-confirm clinically)
-  //   Moderate    : 2.0–4.0% (clinically meaningful asymmetry; warrants assessment)
-  //   Significant : > 4.0%   (high asymmetry; prioritise clinical confirmation)
-  //
-  // Confidence scoring:
-  //   Base: mean visibility of lm[23] & lm[24]
-  //   Penalised by: camera angle proxy (shoulder tilt), z-depth asymmetry (rotation)
-  //   Minimum to report: both landmarks >= MIN_VIS AND confidence >= 0.55
-  const f10 = (() => {
-    if (!Vboth(23,24)) return null;
-    const lVis = lm[23].visibility || 0;
-    const rVis = lm[24].visibility || 0;
-    const baseConf = (lVis + rVis) / 2; // 0–1
-
-    // Rotation penalty: if shoulder width << hip width, patient may be rotated
-    // Z-depth penalty: large difference in lm[23].z vs lm[24].z = patient rotated
-    const zDiff = hasZ ? Math.abs((lm[23].z||0) - (lm[24].z||0)) : 0;
-    const rotPenalty = Math.min(0.25, zDiff * 3.0); // max 0.25 deduction
-
-    // Camera tilt proxy: if shoulders strongly tilted, pelvis measurement less reliable
-    const camTiltPenalty = shoulderAngle !== null ? Math.min(0.15, Math.abs(shoulderAngle) / 60) : 0;
-
-    const confidence = Math.max(0, Math.min(1, baseConf - rotPenalty - camTiltPenalty));
-
-    // Do not report if confidence below clinical threshold
-    if (confidence < 0.55) return { suppressed: true, reason: "Insufficient landmark confidence for pelvic assessment", confidence: r1(confidence * 100) };
-
-    // Y difference using anatomically corrected ASIS position (18% above hip joint)
-    const shLy = Vboth(11,23) ? g(11).y : null;
-    const shRy = Vboth(12,24) ? g(12).y : null;
-    const torsoHL = shLy !== null ? Math.abs(g(23).y - shLy) : 0.28;
-    const torsoHR = shRy !== null ? Math.abs(g(24).y - shRy) : 0.28;
-    const lY = g(23).y - torsoHL * 0.18;
-    const rY = g(24).y - torsoHR * 0.18;
-    const rawDiff = (rY - lY) * 100; // % frame height; +ve = right ASIS higher (lower Y), left lower
-
-    // In image space: lower Y = anatomically higher.
-    // rawDiff > 0 → right ASIS has lower Y → right ASIS anatomically higher → right elevated
-    // rawDiff < 0 → left ASIS has lower Y  → left ASIS anatomically higher  → left elevated
-    const absDiff = Math.abs(rawDiff);
-    // rawDiff = (lm24.y - lm23.y)*100; right elevated → lm24.y smaller → rawDiff negative → Right elevated
-    const elevatedSide = rawDiff < 0 ? "Right" : "Left";
-    const depressedSide = rawDiff < 0 ? "Left" : "Right";
-
-    // Severity
-    let severity, severityCode;
-    if      (absDiff < 0.8)  { severity = "Normal";      severityCode = 0; }
-    else if (absDiff < 2.0)  { severity = "Mild";        severityCode = 1; }
-    else if (absDiff < 4.0)  { severity = "Moderate";    severityCode = 2; }
-    else                     { severity = "Significant";  severityCode = 3; }
-
-    // Measurements
-    const leftAsisHeight  = r2(lY * 100);  // % from top of frame
-    const rightAsisHeight = r2(rY * 100);
-    const diffPct         = r2(absDiff);
-
-    return {
-      suppressed: false,
-      leftAsisHeight,
-      rightAsisHeight,
-      diffPct,
-      rawDiff: r2(rawDiff),
-      elevatedSide,
-      depressedSide,
-      severity,
-      severityCode,
-      confidence: r1(confidence * 100),
-      // Clinical output fields
-      finding: severityCode === 0
-        ? "ASIS heights appear symmetrical within measurement tolerance"
-        : `${elevatedSide} ASIS appears elevated relative to ${depressedSide} side (${diffPct.toFixed(1)}% frame height difference)`,
-      clinicalCorrelation: severityCode === 0
-        ? "No clinically meaningful ASIS height asymmetry detected"
-        : `Findings may indicate pelvic asymmetry. This should be confirmed with hands-on pelvic landmark palpation. Results may be associated with altered weight distribution or functional compensatory patterns.`,
-      functionalRelevance: severityCode === 0
-        ? null
-        : severityCode === 1
-          ? "Mild asymmetry — may be within functional range; re-screen under load (single-leg stance)"
-          : severityCode === 2
-            ? "Moderate asymmetry — may be associated with altered weight distribution or compensatory gait mechanics"
-            : "Significant asymmetry — may be associated with functional compensation; prioritise clinical confirmation",
-      suggestedNext: severityCode === 0
-        ? ["Reassess under dynamic load if clinically indicated"]
-        : [
-            "Pelvic landmark palpation (ASIS, PSIS, iliac crest bilateral)",
-            "Leg length assessment (true vs apparent)",
-            "Weight distribution assessment (single-leg stance observation)",
-            severityCode >= 2 ? "Gait analysis" : null,
-            severityCode >= 2 ? "Functional squat assessment" : null,
-          ].filter(Boolean),
-      measurements: {
-        leftAsisY:  `${leftAsisHeight.toFixed(1)}% from frame top`,
-        rightAsisY: `${rightAsisHeight.toFixed(1)}% from frame top`,
-        heightDiff: `${diffPct.toFixed(1)}% frame height`,
-        elevatedSide,
-        confidence:  `${r1(confidence * 100)}%`,
-      },
-    };
-  })();
-
-  // ── MODULE F11 — PELVIC OBLIQUITY ─────────────────────────────────────────
-  // Calculates the angle of the ASIS-to-ASIS line from true horizontal.
-  // Uses atan2 on the normalised coordinate difference (corrected for image Y-inversion).
-  // pelvisAngle (already computed above) uses calcAngleDeg which returns signed degrees.
-  //
-  // Convention (consistent with shoulderAngle):
-  //   +ve pelvisAngle → left ASIS higher than right → left pelvic elevation tendency
-  //   -ve pelvisAngle → right ASIS higher than left → right pelvic elevation tendency
-  //   0              → level pelvis (horizontal ASIS line)
-  //
-  // Severity thresholds (degrees):
-  //   Normal      : < 2°    (within measurement noise + normal biological variation)
-  //   Mild        : 2–5°    (screen only; re-confirm)
-  //   Moderate    : 5–8°    (clinically meaningful; warrants full pelvic assessment)
-  //   Significant : > 8°    (marked asymmetry)
-  //
-  // Asymmetry index: compares magnitude against shoulder obliquity to distinguish
-  //   compensatory (coupled with shoulder tilt) from isolated pelvic obliquity.
-  const f11 = (() => {
-    if (!Vboth(23,24)) return null;
-    const lVis = lm[23].visibility || 0;
-    const rVis = lm[24].visibility || 0;
-    const baseConf = (lVis + rVis) / 2;
-
-    // Same penalties as F10
-    const zDiff = hasZ ? Math.abs((lm[23].z||0) - (lm[24].z||0)) : 0;
-    const rotPenalty = Math.min(0.25, zDiff * 3.0);
-    const camTiltPenalty = shoulderAngle !== null ? Math.min(0.10, Math.abs(shoulderAngle) / 90) : 0;
-    const confidence = Math.max(0, Math.min(1, baseConf - rotPenalty - camTiltPenalty));
-
-    if (confidence < 0.55) return { suppressed: true, reason: "Insufficient landmark confidence for pelvic obliquity", confidence: r1(confidence * 100) };
-
-    // pelvisAngle already computed: calcAngleDeg(g(24), g(23))
-    // calcAngleDeg(A, B) = atan2(-(B.y - A.y), B.x - A.x) * 180/π
-    // With A=lm[24](Right), B=lm[23](Left):
-    //   if left ASIS has smaller y (higher anatomically), B.y < A.y, so -(B.y-A.y) > 0 → positive angle
-    //   → positive pelvisAngle = left elevated. Confirmed with convention above.
-    if (pelvisAngle === null) return null;
-
-    const absAngle = Math.abs(pelvisAngle);
-    // Direct Y comparison: view-independent (lower y = higher anatomically).
-    // g(23)=patient left hip, g(24)=patient right hip; works in both anterior and posterior views.
-    const elevationSide = g(23).y < g(24).y ? "Left" : g(23).y > g(24).y ? "Right" : null;
-    const depressionSide = g(23).y < g(24).y ? "Right" : g(23).y > g(24).y ? "Left" : null;
-
-    let severity, severityCode;
-    if      (absAngle < 2.0)  { severity = "Normal";      severityCode = 0; }
-    else if (absAngle < 5.0)  { severity = "Mild";        severityCode = 1; }
-    else if (absAngle < 8.0)  { severity = "Moderate";    severityCode = 2; }
-    else                      { severity = "Significant";  severityCode = 3; }
-
-    // Asymmetry index: degree to which pelvic obliquity is isolated vs coupled
-    // Isolated: large pelvis angle with small/absent shoulder tilt (index near 1.0)
-    // Coupled:  pelvis and shoulder angle similar direction and magnitude (compensatory)
-    let asymmetryIndex = null;
-    let obliquityPattern = "isolated";
-    if (shoulderAngle !== null && absAngle > 0) {
-      const shAbs = Math.abs(shoulderAngle);
-      asymmetryIndex = r2(absAngle / Math.max(shAbs, 0.5)); // ratio; >1 = more pelvic than shoulder
-      // pelvis>0=Right elevated; shoulder>0=Left elevated → opposite sign = coupled physical direction
-      const sameDir = (pelvisAngle > 0 && shoulderAngle < 0) || (pelvisAngle < 0 && shoulderAngle > 0);
-      if (sameDir && shAbs > 2 && absAngle > 2) {
-        obliquityPattern = Math.abs(asymmetryIndex - 1) < 0.4 ? "coupled" : "partial";
-      } else if (!sameDir && shAbs > 2) {
-        obliquityPattern = "compensatory"; // opposite directions = possible spinal compensation
-      }
-    }
-
-    const tiltAngle    = r2(pelvisAngle);
-    const obliquityDir = elevationSide
-      ? `${elevationSide} pelvic elevation tendency`
-      : "Level — no obliquity direction";
-
-    return {
-      suppressed: false,
-      tiltAngle,
-      absAngle: r2(absAngle),
-      obliquityDirection: obliquityDir,
-      elevationSide,
-      depressionSide,
-      obliquityPattern,
-      asymmetryIndex,
-      severity,
-      severityCode,
-      confidence: r1(confidence * 100),
-      finding: severityCode === 0
-        ? "Pelvic obliquity within normal variation — ASIS line approximates horizontal"
-        : `${obliquityDir} observed (${absAngle.toFixed(1)}° from horizontal) — ${severity.toLowerCase()} pelvic obliquity`,
-      clinicalCorrelation: severityCode === 0
-        ? "No clinically meaningful pelvic obliquity detected on screen"
-        : obliquityPattern === "compensatory"
-          ? `Opposite-direction shoulder and pelvic tilt may indicate a compensatory spinal pattern. Findings should be confirmed clinically. May be associated with altered weight distribution or functional compensation above or below the pelvis.`
-          : obliquityPattern === "coupled"
-            ? `Shoulder and pelvic tilt in similar direction — may represent a regional postural adaptation. Findings should be confirmed clinically with pelvic landmark palpation and functional testing.`
-            : `${elevationSide ? elevationSide + " pelvic elevation tendency" : "Pelvic asymmetry"} detected. Findings may indicate pelvic asymmetry. Findings should be confirmed clinically. May be associated with altered weight distribution, functional adaptation, or compensatory mechanics.`,
-      functionalRelevance: severityCode === 0
-        ? null
-        : severityCode === 1
-          ? "Mild obliquity — may be within functional range; re-assess under load"
-          : severityCode === 2
-            ? `${elevationSide || "Pelvic"} elevation may be associated with altered weight distribution and asymmetric lower limb loading during gait`
-            : `Marked pelvic obliquity may be associated with significant asymmetric loading; functional gait and squat assessment recommended`,
-      suggestedNext: severityCode === 0
-        ? ["Reassess under single-leg stance if clinically indicated"]
-        : [
-            "Pelvic landmark palpation (ASIS, PSIS, iliac crest, greater trochanter)",
-            "Leg length assessment (true and apparent)",
-            "Gait analysis",
-            "Weight distribution assessment",
-            severityCode >= 2 ? "Functional squat assessment" : null,
-            severityCode >= 2 ? "Lumbar spine assessment" : null,
-          ].filter(Boolean),
-      measurements: {
-        tiltAngle:       `${tiltAngle > 0 ? "+" : ""}${tiltAngle.toFixed(1)}°`,
-        obliquityDir,
-        obliquityPattern,
-        asymmetryIndex:  asymmetryIndex !== null ? r2(asymmetryIndex).toFixed(2) : "N/A",
-        confidence:      `${r1(confidence * 100)}%`,
-        shoulderAngle:   shoulderAngle !== null ? `${shoulderAngle.toFixed(1)}°` : "N/A",
-      },
-    };
-  })();
-
-  // Hip-knee-ankle frontal alignment — perpendicular knee deviation from hip-ankle line
-  // Reference: Norkin & White (2009), Magee Orthopedic Physical Assessment 6th ed.
-  // Method: project knee onto the hip-ankle line; measure perpendicular lateral deviation.
-  // Sign: POSITIVE = medial/valgus tendency; NEGATIVE = lateral/varus tendency.
-  // For LEFT leg (patient's left = image right): medial = knee.x < lineX → (lineX - knee.x)
-  // For RIGHT leg (patient's right = image left): medial = knee.x > lineX → (knee.x - lineX)
-  const _kneeFrontalDev = (hip, knee, ankle, isLeft) => {
-    if (!hip || !knee || !ankle) return null;
-    if (Math.abs(ankle.y - hip.y) < 0.01) return null; // degenerate
-    const t = (knee.y - hip.y) / (ankle.y - hip.y);
-    const lineX = hip.x + t * (ankle.x - hip.x);
-    const devX = isLeft ? (lineX - knee.x) : (knee.x - lineX);
-    // Convert to degrees using leg length as reference
-    const legLen = Math.sqrt(Math.pow(ankle.x - hip.x, 2) + Math.pow(ankle.y - hip.y, 2)) || 0.01;
-    const angleDeg = Math.atan2(Math.abs(devX), legLen) * 180 / Math.PI;
-    return r1(devX >= 0 ? angleDeg : -angleDeg);
-  };
-  const leftKneeFrontal  = Vboth(23,25,27) ? _kneeFrontalDev(g(23),g(25),g(27),true)  : null;
-  const rightKneeFrontal = Vboth(24,26,28) ? _kneeFrontalDev(g(24),g(26),g(28),false) : null;
-
-  // ── CVA: Craniovertebral Angle (Yip et al. 2008) ─────────────────────────
-  // Gold standard: lateral photo, line from tragus to C7 spinous process vs horizontal.
-  // MediaPipe proxy: angle of ear-to-shoulder vector from vertical.
-  // Valid ONLY in lateral view (left or right). Frontal view CVA = null.
-  // Using 2D only (X and Y) — Z-based CVA was producing unreliable values.
-  let cvaAngle = null;
-  if (earMid && shMid) {
-    const dx = Math.abs((earMid.x||0)-(shMid.x||0));
-    const dy = Math.abs((earMid.y||0)-(shMid.y||0));
-    // Only calculate when there is meaningful vertical separation (ear above shoulder)
-    // and the landmarks are reliably detected (both ears must be visible for earMid)
-    if (dy > 0.04 && earMid.visibility >= 0.35) {
-      // CVA = arctan(dy/dx) converted to degrees from vertical
-      // When head is directly above shoulder: dx ≈ 0, CVA ≈ 90° (ideal)
-      // As head moves forward: dx increases, CVA decreases
-      const rawCVA = Math.atan2(dy, dx) * 180 / Math.PI;
-      cvaAngle = r1(clamp(rawCVA, 20, 88));
-    }
-  }
-
-  // ── FORWARD HEAD POSTURE ───────────────────────────────────────────────────
-  // Measured as horizontal offset of ear from shoulder midpoint.
-  // In lateral view: ear should be directly over shoulder (offset = 0).
-  // Expressed in normalised units (% of frame width); converted to cm if calibrated.
-  const fhpNorm = shMid && earMid ? r1((earMid.x - shMid.x)*100) : null;
-  // When calibration is available, express in real mm (more clinically meaningful)
-  const forwardHeadCm = calibration && fhpNorm !== null
-    ? toCm(Math.abs(fhpNorm / 100)) : null;
-  // Primary measurement: real mm if available, normalised % if not
-  const forwardHeadMm = forwardHeadCm !== null ? r1(forwardHeadCm * 10) : fhpNorm;
-  // Cervical compressive load (estimated cervical load proxy model, only if real cm measurement available)
-  const cervicalLoadKg = CERVICAL_LOAD_KG(forwardHeadCm);
-
-  // ── THORACIC KYPHOSIS — REMOVED invalid trunk-lean proxy ─────────────────
-  // thoracicAngle = 32 + rawAngle × 1.8 DELETED.
-  // Shoulder-Hip inclination ≠ thoracic curvature. Replaced by TCI in sagittalFindings.js.
-  const thoracicAngle = null; // intentionally null — use TCI from contour instead
-
-  // ── LUMBAR / LORDOSIS — REMOVED invalid hip-knee proxy ───────────────────
-  // lordosisAngle = 50 + (wHip−wKnee)×1.8 DELETED.
-  // Hip-knee z-depth ≠ lumbar lordosis. Replaced by LCI in sagittalFindings.js.
-  const lordosisAngle = null; // intentionally null — use LCI from contour instead
-
-  // World Z retained for plumb chain but NOT used for angle synthesis
-  const wHip   = sagHip?._wz ?? null;
-  const wSh    = sagSh?._wz  ?? null;
-  const wKnee  = sagKnee?._wz ?? null;
-  const wAnkle = sagAnkle?._wz ?? null;
-  const wEar   = sagEar?._wz  ?? null;
-
-  // Lumbar proxy: retained for sway-back pattern detection (plumb-based, not angle)
-  let lumbarProxy = null;
-  if (hipMid && kneeMid && heelMid) {
-    const kneeHeelMidX = (kneeMid.x + heelMid.x) / 2;
-    lumbarProxy = r1((hipMid.x - kneeHeelMidX) * 100);
-  }
-
-  // ── PELVIC TILT — requires ASIS + PSIS; not available from MediaPipe ──────
-  // pelvicTiltSagittal REMOVED. ASIS and PSIS are not detected by MediaPipe.
-  // Hip-knee-heel proxy ≠ pelvic tilt angle.
-  // Set to null — downstream gates must check for ASIS/PSIS from manual placement.
-  const pelvicTiltSagittal    = null; // requires manual ASIS/PSIS landmarks
-  const anteriorPelvicTiltDeg = null; // requires manual ASIS/PSIS landmarks
-
-  // Hip plumb line deviation (lateral view)
-  const hipExtensionProxy = hipMid && ankleMid ? r1((hipMid.x - ankleMid.x)*100) : null;
-
-  // ── KNEE ANGLES ────────────────────────────────────────────────────────────
-  // vec3Angle computes the interior angle at the middle point (knee)
-  // using hip-knee-ankle triangle. 180° = fully extended (neutral).
-  // < 180° = flexed; > 180° not geometrically possible in 2D — treated as 180°.
-  // Deviation from 180° in hyperextension direction requires lateral view context.
-  const leftKneeAngle  = Vboth(23,25,27) ? vec3Angle(g(23),g(25),g(27)) : null;
-  const rightKneeAngle = Vboth(24,26,28) ? vec3Angle(g(24),g(26),g(28)) : null;
-  const leftKneeDev    = leftKneeAngle  !== null ? r1(leftKneeAngle  - 180) : null; // -ve = hyperext
-  const rightKneeDev   = rightKneeAngle !== null ? r1(rightKneeAngle - 180) : null;
-
-  // Ankle dorsiflexion (lateral view)
-  const leftAnkleAngle  = Vboth(25,27,31) ? vec3Angle(g(25),g(27),g(31)) : null;
-  const rightAnkleAngle = Vboth(26,28,32) ? vec3Angle(g(26),g(28),g(32)) : null;
-
-  // ── BILATERAL SYMMETRY ─────────────────────────────────────────────────────
-  // Expressed as Y-coordinate difference × 100 (normalised to frame height)
-  const shoulderSymmetry = Vboth(11,12) ? { left:g(11).y, right:g(12).y, diff:r1((g(11).y-g(12).y)*100) } : null;
-  const hipSymmetry      = Vboth(23,24) ? { left:g(23).y, right:g(24).y, diff:r1((g(23).y-g(24).y)*100) } : null;
-  const kneeSymmetry     = Vboth(25,26) ? { left:g(25).y, right:g(26).y, diff:r1((g(25).y-g(26).y)*100) } : null;
-  const ankleSymmetry    = Vboth(27,28) ? { left:g(27).y, right:g(28).y, diff:r1((g(27).y-g(28).y)*100) } : null;
-
-  // Leg length discrepancy proxy (Woerman indirect method — knee height asymmetry)
-  // Clinical note: >5mm LLD is clinically significant; proxy only — confirm with tape measure
-  const lldProxy = kneeSymmetry ? r1(Math.abs(kneeSymmetry.diff)*1.8) : null;
-  const lldSide  = kneeSymmetry ? (kneeSymmetry.diff > 0 ? "Left" : "Right") : null;
-
-  // ── SCAPULAR METRICS ───────────────────────────────────────────────────────
-  const scapularAsymm    = Vboth(11,12) ? r1(Math.abs((g(11).y||0)-(g(12).y||0))*100) : null;
-  const scapularAbduction= shoulderWidth && hipWidth ? r1((shoulderWidth-hipWidth)*100) : null;
-
-  // ── FOOT PROGRESSION ANGLES ────────────────────────────────────────────────
-  // Angle of foot vector (ankle to toe) from vertical — normal: 0–15° toe-out
-  const leftFootAngle  = Vboth(31,27) ? r1(Math.atan2(g(31).y-g(27).y, g(31).x-g(27).x)*180/Math.PI) : null;
-  const rightFootAngle = Vboth(32,28) ? r1(Math.atan2(g(32).y-g(28).y, g(32).x-g(28).x)*180/Math.PI) : null;
-
-  // ── SCOLIOSIS SCREEN (posterior view only) ────────────────────────────────
-  // Cobb estimate from shoulder-pelvis angle discrepancy.
-  // IMPORTANT: This is a SCREEN only. True Cobb requires standing AP X-ray.
-  // Only report when both shoulder and pelvis angles are available and reliable.
-  const cobbEstimate = shoulderAngle !== null && pelvisAngle !== null
-    ? r1(Math.abs(shoulderAngle - pelvisAngle)) : null;
-  const c7PlumbDev   = V(0) && hipMid ? r1((g(0).x - hipMid.x)*100) : null;
-
-  // ── CENTRE OF GRAVITY ─────────────────────────────────────────────────────
-  // Weighted average of key body segment centres (head, shoulder, hip, foot)
-  // Normal: within ±4% of frame centre (0.5)
-  const cogParts    = [V(0)?g(0):null, shMid, hipMid, footMid].filter(Boolean);
-  const cogX        = cogParts.length >= 2 ? cogParts.reduce((s,p)=>s+(p.x||0),0)/cogParts.length : null;
-  const cogDeviation= cogX !== null ? r1((cogX - 0.5)*100) : null;
-
-  // ── POSTURAL LOAD INDEX (PLI) ─────────────────────────────────────────────
-  // Composite measure of multi-system postural burden.
-  // Each component is normalised to its clinical threshold (1.0 = at threshold).
-  // Weights reflect relative contribution to clinical load (Reinecke & Hazard adapted).
-  // FIXED: using clinically-grounded normal thresholds to prevent inflation.
-  // A PLI of 0 = perfect posture, 100 = maximum clinically observed load.
-  const PLI_components = [
-    // [measured_value, normal_threshold, severity_threshold, weight]
-    [Math.abs(shoulderAngle||0),    3,  7,  1.0],  // shoulder tilt
-    [Math.abs(pelvisAngle||0),      3,  7,  1.2],  // pelvic obliquity
-    [Math.abs(headLateralOffset||0),3,  7,  0.8],  // head lateral shift
-    [Math.abs(trunkLateralShift||0),4,  8,  1.0],  // trunk shift
-    [Math.abs(fhpNorm||0),          3,  8,  1.5],  // forward head (% frame)
-    [Math.abs(cobbEstimate||0),     5, 10,  1.3],  // lateral curvature screen (observation only)
-    [Math.abs(cogDeviation||0),     4,  8,  1.0],  // COG deviation
-    [Math.abs(lumbarProxy||0),      4,  9,  1.2],  // lumbar/pelvic tilt
-  ].filter(([v]) => v !== null && !isNaN(v));
-
-  // Normalised score: 0 if within normal, linear up to 1.0 at severity threshold
-  const pliSum = PLI_components.reduce((s, [v, norm, sev, w]) => {
-    const normalised = v <= norm ? 0 : Math.min(1, (v - norm) / (sev - norm));
-    return s + normalised * w;
-  }, 0);
-  const pliMaxPossible = PLI_components.reduce((s, [,,, w]) => s + w, 0);
-  const posturalLoadIndex = pliMaxPossible > 0
-    ? r1(clamp((pliSum / pliMaxPossible) * 100, 0, 100)) : null;
-
-  // ── UCS / LCS SYNDROME INDICES (Janda) ────────────────────────────────────
-  const ucsIndex = r1(
-    (Math.abs(headLateralOffset||0)/5)*0.3 +
-    (Math.abs(shoulderAngle||0)/5)*0.2 +
-    ((thoracicAngle||40)-40 > 0 ? ((thoracicAngle||40)-40)/15 : 0)*0.3 +
-    (cvaAngle !== null && cvaAngle < 55 ? (55-cvaAngle)/15 : 0)*0.4
-  );
-  const lcsIndex = r1(
-    (Math.abs(pelvicTiltSagittal||0)/6)*0.5 +
-    (Math.abs(lumbarProxy||0)/8)*0.4 +
-    (Math.abs(weightBearingShift||0)/5)*0.1
-  );
-
-  return {
-    // Frontal
-    shoulderAngle, pelvisAngle, kneeAngle, ankleAngle, eyeLevelAngle,
-    headLateralOffset, trunkLateralShift, pelvicObliquity, weightBearingShift,
-    spinalDeviation, trunkRotationProxy, leftKneeFrontal, rightKneeFrontal,
-    // Sagittal
-    forwardHeadMm, forwardHeadCm, cvaAngle, cervicalLoadKg,
-    thoracicAngle, lumbarProxy, lordosisAngle, pelvicTiltSagittal,
-    anteriorPelvicTiltDeg, hipExtensionProxy,
-    leftKneeAngle, rightKneeAngle, leftKneeDev, rightKneeDev,
-    leftAnkleAngle, rightAnkleAngle,
-    // Bilateral symmetry + LLD
-    shoulderSymmetry, hipSymmetry, kneeSymmetry, ankleSymmetry, lldProxy, lldSide,
-    // Regional
-    scapularAsymm, scapularAbduction, leftFootAngle, rightFootAngle,
-    // Composite
-    cobbEstimate, c7PlumbDev, cogDeviation, posturalLoadIndex, ucsIndex, lcsIndex,
-    hasZ,
-    f4, f7,
-    // Pelvic modules F10 / F11
-    f10, f11,
-  };
-}
-
-// ─── RELIABILITY ENGINE ───────────────────────────────────────────────────────
-// Assesses MediaPipe landmark confidence and returns:
-//   score: 0–100 overall confidence
-//   status: Excellent / Good / Fair / Poor / Insufficient
-//   blocked: true if image quality is too low to produce any findings
-//   warnings: clinician-facing messages
-//   icc: intraclass correlation coefficient estimate (proxy)
-function ReliabilityEngine(lm) {
-  if (!lm) return { score:0, status:"Insufficient", blocked:true, warnings:[], confidence:{} };
-
-  // Key clinical landmarks required for a valid posture assessment
-  const KEY   = [0,2,5,7,8,11,12,23,24,25,26,27,28,29,30,31,32];
-  const NAMES = {0:"Nose/Head",2:"L.Eye",5:"R.Eye",7:"L.Ear",8:"R.Ear",
-    11:"L.Shoulder",12:"R.Shoulder",23:"L.Hip/ASIS",24:"R.Hip/ASIS",
-    25:"L.Knee",26:"R.Knee",27:"L.Ankle",28:"R.Ankle",
-    29:"L.Heel",30:"R.Heel",31:"L.FootToe",32:"R.FootToe"};
-
-  const confidence = {};
-  KEY.forEach(i => { confidence[i] = { name:NAMES[i], value:Math.round((lm[i]?.visibility||0)*100) }; });
-  const visValues = KEY.map(i => lm[i]?.visibility||0);
-  const mean = visValues.reduce((s,v)=>s+v,0)/KEY.length;
-
-  // CRITICAL landmarks — if these are below threshold, the analysis is unreliable
-  const criticalLandmarks = [
-    { idx:11, name:"L.Shoulder" }, { idx:12, name:"R.Shoulder" },
-    { idx:23, name:"L.Hip/ASIS" }, { idx:24, name:"R.Hip/ASIS" },
-    { idx:0,  name:"Head/Nose"  },
-  ];
-  const failedCritical = criticalLandmarks.filter(c => (lm[c.idx]?.visibility||0) < 0.45);
-
-  // Block analysis entirely if:
-  // (a) mean confidence < 0.40 (poor overall detection)
-  // (b) more than 1 critical landmark below threshold
-  // (c) both shoulders OR both hips below threshold simultaneously
-  const bothShouldersLow = (lm[11]?.visibility||0) < 0.45 && (lm[12]?.visibility||0) < 0.45;
-  const bothHipsLow = (lm[23]?.visibility||0) < 0.45 && (lm[24]?.visibility||0) < 0.45;
-  const blocked = mean < 0.40 || failedCritical.length > 1 || bothShouldersLow || bothHipsLow;
-
-  const warnings = [];
-
-  if (blocked) {
-    warnings.push({ icon:"🚫", text:"Image quality insufficient for reliable analysis — improve lighting, ensure full body visible, use form-fitting clothing", color:PC.red, priority:6 });
-  } else if (mean < 0.55) {
-    warnings.push({ icon:"⚠", text:"Low confidence — findings may be inaccurate. Improve lighting and camera distance", color:PC.red, priority:5 });
-  } else if (mean < 0.70) {
-    warnings.push({ icon:"○", text:"Partial tracking — some measurements limited. Ensure full body in frame", color:PC.yellow, priority:3 });
-  }
-
-  const lowVis = KEY.filter(i => (lm[i]?.visibility||0) < 0.45);
-  if (!blocked && lowVis.length > 5)
-    warnings.push({ icon:"👁", text:`${lowVis.length} landmarks low confidence — affected measurements marked unreliable`, color:PC.yellow, priority:4 });
-
-  const lShVis = lm[11]?.visibility||0, rShVis = lm[12]?.visibility||0;
-  if (!blocked && Math.abs(lShVis-rShVis) > 0.40)
-    warnings.push({ icon:"↔", text:"Asymmetric shoulder visibility — bilateral shoulder measurements may be inaccurate", color:PC.yellow, priority:3 });
-
-  if (!blocked && (lm[23]?.visibility||0) < 0.45 || (lm[24]?.visibility||0) < 0.45)
-    warnings.push({ icon:"⊖", text:"Hip/ASIS partially occluded — pelvic measurements flagged unreliable", color:PC.yellow, priority:3 });
-
-  if ((lm[7]?.visibility||0) < 0.45 && (lm[8]?.visibility||0) < 0.45)
-    warnings.push({ icon:"👂", text:"Ears not detected — CVA and forward head posture cannot be assessed", color:PC.yellow, priority:2 });
-
-  if ((lm[31]?.visibility||0) < 0.35 && (lm[32]?.visibility||0) < 0.35)
-    warnings.push({ icon:"🦶", text:"Feet not visible — move camera back or lower for full-body capture", color:PC.yellow, priority:2 });
-
-  const hasZ = lm[7] && lm[11] && Math.abs((lm[7].z||0)-(lm[11].z||0)) > 0.002;
-  if (!hasZ && !blocked)
-    warnings.push({ icon:"📐", text:"Sagittal depth data limited — use lateral view for kyphosis/CVA assessment", color:PC.muted, priority:1 });
-
-  warnings.sort((a,b) => (b.priority||0)-(a.priority||0));
-
-  const status = blocked ? "Insufficient" : mean > 0.80 ? "Excellent" : mean > 0.65 ? "Good" : mean > 0.50 ? "Fair" : "Poor";
-  // ICC proxy (0.40 base + confidence-scaled; represents approximate test-retest reliability)
-  const icc = r1(Math.min(0.95, 0.35 + mean * 0.60));
-
-  return { score:Math.round(mean*100), status, blocked, warnings, confidence, icc };
-}
-
-// ─── CLINICAL FINDINGS ENGINE ─────────────────────────────────────────────────
-// Thresholds: Kendall (2005), Magee (2014), Levangie & Norkin (2011),
-// Sahrmann (2002), Comerford & Mottram (2012), estimated cervical load proxy (2014)
-function ClinicalFindingsEngine(lm, view, measurements) {
-  if (!lm || !measurements) return [];
-  const findings = [];
-  const {
-    shoulderAngle, pelvisAngle, kneeAngle, ankleAngle, eyeLevelAngle,
-    headLateralOffset, trunkLateralShift, spinalDeviation, trunkRotationProxy,
-    forwardHeadMm, forwardHeadCm, cvaAngle, cervicalLoadKg,
-    thoracicAngle, lordosisAngle, pelvicTiltSagittal, anteriorPelvicTiltDeg,
-    leftKneeDev, rightKneeDev, leftAnkleAngle, rightAnkleAngle,
-    leftKneeFrontal, rightKneeFrontal, hipExtensionProxy,
-    cobbEstimate, c7PlumbDev, cogDeviation, weightBearingShift,
-    scapularAsymm, leftFootAngle, rightFootAngle,
-    lldProxy, lldSide, ucsIndex, lcsIndex, posturalLoadIndex, lumbarProxy,
-  } = measurements;
-
-  // ── TWO-TIER CONFIDENCE GATE ──────────────────────────────────────────────
-  // CLINICAL_MIN_VIS = 0.65: only generate a clinical finding when ALL key
-  // landmarks for that finding meet this threshold.
-  // MIN_VIS = 0.45 is still used for overlay drawing (show the dot on screen)
-  // but at 0.46–0.64 we do NOT generate clinical text — too unreliable.
-  const VC = i => (lm[i]?.visibility||0) >= CLINICAL_MIN_VIS;
-  const VCboth = (...idxs) => idxs.every(i => VC(i));
-
-  // ── PLAUSIBILITY CAPS ─────────────────────────────────────────────────────
-  // Any frontal finding beyond these limits is almost certainly a detection
-  // error — no real clinical asymmetry is this large without being obvious.
-  // Cap to prevent hallucinated extreme findings.
-  const PLAUS = {
-    shoulderAngle: 12,   // >12° is implausible from photo alone — stop camera artifact
-    pelvisAngle:   10,   // >10° would be clinically obvious
-    cobb:          20,   // >20° requires X-ray, not a photo screening tool
-    trunk:         8,    // >8% body height trunk shift — almost always error
-  };
-
-  // Helper: returns null if the value is above plausibility cap
-  const plaus = (val, cap) => val !== null && Math.abs(val) < cap ? val : null;
-
-  const add = (region, text, severity, correction, icd="M99.0", icon="●", detail="", norm="", value=null) =>
-    findings.push({ region, text, severity, correction, icd, icon, detail, norm, value });
-
-  // ── ANTERIOR VIEW ─────────────────────────────────────────────────────────
-  if (view === "anterior") {
-
-    // Eye level tilt
-    if (eyeLevelAngle !== null && Math.abs(eyeLevelAngle) > 2) {
-      const side = eyeLevelAngle > 0 ? "Left" : "Right"; const abs = Math.abs(eyeLevelAngle);
-      add("Cranial / Cervical", `Eye level tilted — ${side} eye lower (${abs.toFixed(1)}°)`, abs > 5 ? "high" : "moderate",
-        `Check ocular righting reflex. Cervical lateral flexion mobility assessment. Consider vestibular/visual dominance contributing to head tilt. Refer optometry if >5° and consistent.`,
-        "H53.9", "👁", `Ocular reflex drives cervical compensation — rule out visual asymmetry before treating neck.`, "Normal: <2°", abs);
-    }
-
-    // Shoulder elevation
-    // Shoulder — requires CLINICAL_MIN_VIS on both acromions + plausibility cap
-    if (VCboth(11,12) && shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
-      const safeAngle = plaus(shoulderAngle, PLAUS.shoulderAngle);
-      if (safeAngle !== null) {
-        const abs = Math.abs(safeAngle);
-        const side = (g(11)&&g(12)) ? (g(11).y < g(12).y ? "Left" : "Right") : (safeAngle > 0 ? "Left" : "Right");
-        add("Shoulder Girdle", `${side} shoulder elevated (~${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
-          `Release: upper trapezius sustained pressure 90s + levator scapulae stretch 30s × 3. Activate: lower trapezius Y-T-W × 15. CPA: check ipsilateral QL — QL overactivity commonly drives ipsilateral shoulder elevation via thoracic chain. Reassess cervical rotation after release.`,
-          "M54.2", "⇑", `Common drivers: ipsilateral QL, pain guarding, thoracic dysfunction, scoliosis. Confirmed at clinical confidence (both acromions ≥0.65 visibility).`, "Normal: <2.5° / <1.5cm (Magee)", abs);
-      }
-    } else if (!VCboth(11,12) && shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
-      // Landmark confidence too low — show as low-confidence observation only
-      add("Shoulder Girdle", `Possible shoulder asymmetry (${Math.abs(shoulderAngle).toFixed(1)}°) — LOW CONFIDENCE. Retake with better lighting / form-fitting clothing.`, "low",
-        `Landmark visibility below clinical threshold (0.65). Repeat assessment with improved image quality before acting on this finding.`,
-        "M54.2", "⇑", `Landmark visibility insufficient for reliable measurement. Do not treat based on this alone.`, "Normal: <2.5°", Math.abs(shoulderAngle));
-    }
-
-    // Head lateral offset
-    if (headLateralOffset !== null && Math.abs(headLateralOffset) > 2.5) {
-      const abs = Math.abs(headLateralOffset); const side = headLateralOffset > 0 ? "left" : "right";
-      add("Cervical", `Head laterally shifted ${side} (${abs.toFixed(1)}%)`, abs > 5 ? "high" : "moderate",
-        `Cervical lateral flexion mobilisation contralateral. SCM and scalene release ipsilateral. Assess ocular/vestibular contributions. Pillow height review.`,
-        "M54.2", "↔", `Persistent shift: C2–C4 facet dysfunction, alar ligament laxity, or habitual visual dominance.`, "Normal: <2.5%", abs);
-    }
-
-    // ── F10 — ASIS Height Difference finding ──────────────────────────────
-    if (f10 && !f10.suppressed && f10.severityCode > 0) {
-      const sev = f10.severityCode >= 3 ? "high" : f10.severityCode >= 2 ? "moderate" : "low";
-      add(
-        "Pelvis",
-        f10.finding,
-        sev,
-        // Conservative: no treatment, no diagnosis — only suggest next assessment
-        `${f10.clinicalCorrelation} ${f10.functionalRelevance || ""} Suggested next: ${(f10.suggestedNext||[]).join("; ")}.`,
-        "M62.89", "⊖",
-        `ASIS height difference: ${f10.diffPct.toFixed(1)}% frame height. Elevated side: ${f10.elevatedSide}. Confidence: ${f10.confidence}%. Findings should be confirmed clinically.`,
-        "Normal: <0.8% frame height",
-        f10.diffPct
-      );
-    }
-
-    // ── F11 — Pelvic Obliquity finding ────────────────────────────────────
-    if (f11 && !f11.suppressed && f11.severityCode > 0) {
-      const sev = f11.severityCode >= 3 ? "high" : f11.severityCode >= 2 ? "moderate" : "low";
-      add(
-        "Pelvis",
-        f11.finding,
-        sev,
-        `${f11.clinicalCorrelation} ${f11.functionalRelevance || ""} Suggested next: ${(f11.suggestedNext||[]).join("; ")}.`,
-        "M62.89", "⊖",
-        `Pelvic obliquity angle: ${f11.tiltAngle > 0 ? "+" : ""}${f11.tiltAngle.toFixed(1)}°. ${f11.obliquityDirection}. Pattern: ${f11.obliquityPattern}. Confidence: ${f11.confidence}%. Findings should be confirmed clinically.`,
-        "Normal: <2°",
-        f11.absAngle
-      );
-    }
-
-    // Trunk lateral shift — requires shoulders + hips both at clinical confidence
-    if (VCboth(11,12,23,24) && trunkLateralShift !== null) {
-      const safeTrunk = plaus(trunkLateralShift, PLAUS.trunk);
-      if (safeTrunk !== null && Math.abs(safeTrunk) > 3.5) {
-        const abs = Math.abs(safeTrunk);
-        // Positive = shoulders right of ankles in image = patient LEFT (anterior view: image right = patient left)
-        const side = safeTrunk > 0 ? "left" : "right";
-        add("Thoracic", `Trunk laterally shifted to the ${side} (${abs.toFixed(1)}% from plumb line)`, abs > 7 ? "high" : "moderate",
-          `Assess antalgic lean (disc/radiculopathy — trunk shifts AWAY from herniation in paracentral disc, TOWARD in lateral disc). Lateral trunk stretch contralateral. Rib mobilisation. Mirror feedback.`,
-          "M54.5", "⇒", `Lateral trunk shift highly associated with L4/L5 disc herniation. All 4 landmarks confirmed ≥0.65 visibility.`, "Normal: <3.5%", abs);
-      }
-    }
-
-    // Scoliosis / spinal deviation
-    if (spinalDeviation !== null && Math.abs(spinalDeviation) > 4) {
-      const abs = Math.abs(spinalDeviation);
-      add("Spine — Lateral Deviation Tendency", `OBSERVATION: Head-to-pelvis alignment offset (${abs.toFixed(1)}%) — may indicate lateral trunk deviation. Cannot diagnose scoliosis from photograph.`, abs > 8 ? "moderate" : "low",
-        `Possible contributors: habitual asymmetrical loading, pelvic asymmetry, pain-avoidance pattern, or structural lateral spinal curvature. Recommended confirmation: Adam's forward bend test (rib hump screen), posterior view assessment, trunk lateral shift assessment. Clinical assessment required before conclusions.`,
-        "M99.0", "〜", `OBSERVATION ONLY. A photograph cannot diagnose scoliosis. Lateral deviation requires Adam's forward bend test and standing AP X-ray (Cobb measurement) for structural assessment. Functional vs structural distinction requires clinical examination.`, "Normal: <4% lateral offset", abs);
-    }
-
-    if (cobbEstimate !== null && cobbEstimate > 5) {
-      add("Lateral Spinal Curvature Screen", `OBSERVATION: Shoulder-pelvis differential (${cobbEstimate.toFixed(0)}°) — may indicate lateral spinal curvature tendency. Adam's forward bend test required to confirm.`, cobbEstimate > 10 ? "moderate" : "low",
-        `Possible contributors: functional lateral deviation, pelvic asymmetry, habitual loading pattern, or structural spinal curvature. Recommended confirmation: Adam's forward bend test (rib hump screen), posterior view photo, standing AP X-ray if clinically indicated. This screen value alone does not confirm scoliosis.`,
-        "M99.0", "〜", `OBSERVATION ONLY. Shoulder (${shoulderAngle?.toFixed(1)}°) vs pelvis (${pelvisAngle?.toFixed(1)}°) differential is a screening proxy only. Standing AP X-ray with true Cobb measurement is required to confirm scoliosis. Do not communicate a scoliosis diagnosis based on this finding alone.`, "Normal: <5° shoulder-pelvis differential", cobbEstimate);
-    }
-
-    // Knee alignment frontal plane — merge bilateral into one finding
-    {
-      const lv = leftKneeFrontal, rv = rightKneeFrontal;
-      const lAbs = lv !== null ? Math.abs(lv) : 0;
-      const rAbs = rv !== null ? Math.abs(rv) : 0;
-      const lSig = lv !== null && lAbs > 5;
-      const rSig = rv !== null && rAbs > 5;
-      if (lSig || rSig) {
-        const bilateral = lSig && rSig;
-        const lPattern = lv < 0 ? "valgus" : "varus";
-        const rPattern = rv < 0 ? "valgus" : "varus";
-        // Standardise to deviation angle format (positive = valgus, negative = varus)
-        const lDev = lv !== null ? -lv : null; // flip sign: negative kf = valgus
-        const rDev = rv !== null ? -rv : null;
-        let text, severity, correction;
-        if (bilateral) {
-          const worseAbs = Math.max(lAbs, rAbs);
-          const worseSide = lAbs >= rAbs ? "L" : "R";
-          // Determine direction: lv>0 = medial/valgus, lv<0 = lateral/varus
-          const lDir = lv !== null ? (lv >= 0 ? "medial" : "lateral") : "medial";
-          const rDir = rv !== null ? (rv >= 0 ? "medial" : "lateral") : "medial";
-          const bothMedial = lDir === "medial" && rDir === "medial";
-          const bothLateral = lDir === "lateral" && rDir === "lateral";
-          const dirLabel = bothMedial ? "medial tendency (valgus)" : bothLateral ? "lateral tendency (varus)" : "asymmetric alignment";
-          text = `OBSERVATION: Bilateral knee ${dirLabel} — ${worseSide} worse (L:${lAbs.toFixed(1)}° R:${rAbs.toFixed(1)}°). Clinical confirmation required.`;
-          severity = worseAbs > 10 ? "moderate" : "low";
-          correction = bothMedial
-            ? `Possible contributors: hip abductor capacity, foot pronation, femoral anteversion, or dynamic loading pattern. Recommended confirmation: single-leg squat assessment (dynamic valgus), hip abductor strength test (side-lying), foot posture index, Trendelenburg test.`
-            : `Possible contributors: hip external rotator dominance, ITB/TFL tightness, tibial torsion, foot supination. Recommended confirmation: Ober test (ITB length), hip ER strength, subtalar neutral assessment.`;
-        } else if (lSig) {
-          text = lv < 0
-            ? `OBSERVATION: Left knee medial tendency — hip-knee-ankle alignment (${lAbs.toFixed(1)}°). Clinical confirmation required.`
-            : `OBSERVATION: Left knee lateral tendency — hip-knee-ankle alignment (${lAbs.toFixed(1)}°). Clinical confirmation required.`;
-          severity = lAbs > 10 ? "moderate" : "low";
-          correction = lv < 0
-            ? `Possible contributors: hip abductor capacity, foot pronation, femoral anteversion. Recommended confirmation: single-leg squat, hip abductor strength, foot posture index.`
-            : `Possible contributors: hip external rotator dominance, tibial torsion, foot supination. Recommended confirmation: Ober test (ITB/TFL length), hip ER strength assessment, subtalar assessment.`;
-        } else {
-          text = rv < 0
-            ? `OBSERVATION: Right knee medial tendency — hip-knee-ankle alignment (${rAbs.toFixed(1)}°). Clinical confirmation required.`
-            : `OBSERVATION: Right knee lateral tendency — hip-knee-ankle alignment (${rAbs.toFixed(1)}°). Clinical confirmation required.`;
-          severity = rAbs > 10 ? "moderate" : "low";
-          correction = rv < 0
-            ? `Possible contributors: hip abductor capacity, foot pronation, femoral anteversion. Recommended confirmation: single-leg squat, hip abductor strength, foot posture index.`
-            : `Possible contributors: hip external rotator dominance, tibial torsion, foot supination. Recommended confirmation: Ober test (ITB/TFL length), hip ER strength assessment, subtalar assessment.`;
-        }
-        add("Knee Alignment Tendency", text, severity, correction,
-          "M99.0", "⊾",
-          `OBSERVATION ONLY. Hip-knee-ankle static alignment tendency observed. Cannot diagnose Genu valgum or Genu varum from a photograph — dynamic assessment (single-leg squat, functional movement screen) is required. Possible contributors: hip abductor capacity, foot pronation, tibial torsion, motor control pattern.`,
-          "Normal: <5° hip-knee-ankle deviation", Math.max(lAbs, rAbs));
-      }
-    }
-
-    // Weight-bearing asymmetry
-    if (weightBearingShift !== null && Math.abs(weightBearingShift) > 4) {
-      const abs = Math.abs(weightBearingShift); const side = weightBearingShift > 0 ? "left" : "right";
-      add("Balance / Loading", `Weight-bearing asymmetry — loading toward ${side} (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
-        `Mirror biofeedback bilateral stance. Scales under each foot if available. Retrain equal loading. Identify driver: pain avoidance, LLD, or habit.`,
-        "M62.9", "⊖", `Asymmetric loading >6% associated with increased ipsilateral knee/hip OA progression.`, "Normal: <4%", abs);
-    }
-
-    // Foot progression angles
-    [[leftFootAngle,"Left"],[rightFootAngle,"Right"]].forEach(([angle,side])=>{
-      if (angle === null || Math.abs(angle) <= 20) return;
-      const abs = Math.abs(angle);
-      add("Foot / Ankle", `${side} foot ${angle > 0 ? "externally" : "internally"} rotated (${abs.toFixed(0)}°)`, abs > 30 ? "high" : "moderate",
-        angle > 0
-          ? `Check tibial external torsion, hip ER contracture, glute med/TFL balance. Gait retraining feet-parallel.`
-          : `Check tibial internal torsion, hip IR dominance, in-toeing gait. Refer podiatry if structural torsion.`,
-        "M21.6", "↻", `Normal foot progression angle 7–10° external rotation (range 0–20°) per Magee p.863.`, "Normal: 7–10° external (Magee)", abs);
-    });
-
-    // COG deviation
-    if (cogDeviation !== null && Math.abs(cogDeviation) > 5) {
-      const abs = Math.abs(cogDeviation);
-      add("Global Posture", `COG shifted ${cogDeviation > 0 ? "left" : "right"} (${abs.toFixed(1)}%)`, abs > 9 ? "high" : "moderate",
-        `Global postural reset: proprioceptive training single-leg stance, mirror biofeedback, perturbation training. Identify structural driver before retraining.`,
-        "M62.9", "⊕", "", "Normal: <5%", abs);
-    }
-
-    // OBSERVATION: Possible upper crossed pattern tendency (NOT a diagnosis)
-    if (ucsIndex !== null && ucsIndex > 0.6) {
-      add("Upper Crossed Pattern Tendency", `OBSERVATION: Upper-chain posture findings (index ${ucsIndex.toFixed(1)}) — may indicate upper crossed pattern characteristics. Clinical confirmation required.`, ucsIndex > 1.0 ? "moderate" : "low",
-        `Possible contributors: suboccipital/upper trap overactivity, reduced deep cervical flexor contribution, pectoralis minor shortening. Confirm with: deep neck flexor endurance test, lower trap strength (prone Y), pec minor length test. Clinical muscle testing required before treatment.`,
-        "M62.9", "○", `OBSERVATION ONLY. Posture photo cannot diagnose Upper Crossed Syndrome. Possible contributors include habitual loading patterns, respiratory dysfunction, or occupational postures. Manual muscle testing required to confirm (Janda 1979).`, "UCS Index: <0.4 normal (observation only)", ucsIndex);
-    }
-
-    // OBSERVATION: Possible lower crossed pattern tendency (NOT a diagnosis)
-    if (lcsIndex !== null && lcsIndex > 0.5) {
-      add("Lower Crossed Pattern Tendency", `OBSERVATION: Lower-chain posture findings (index ${lcsIndex.toFixed(1)}) — may indicate lower crossed pattern characteristics. Clinical confirmation required.`, lcsIndex > 1.0 ? "moderate" : "low",
-        `Possible contributors: habitual anterior pelvic loading, hip flexor adaptations, reduced gluteal contribution. Confirm with: Thomas test (hip flexor length), Trendelenburg test (glute med), glute max activation timing. Clinical assessment required before treatment.`,
-        "M62.9", "○", `OBSERVATION ONLY. Posture photo cannot diagnose Lower Crossed Syndrome. Possible contributors include prolonged sitting, hip flexor adaptations, or motor control patterns. Manual muscle testing required to confirm (Janda).`, "LCS Index: <0.4 normal (observation only)", lcsIndex);
-    }
-  }
-
-  // ── POSTERIOR VIEW ────────────────────────────────────────────────────────
-  if (view === "posterior") {
-
-    if (shoulderAngle !== null && Math.abs(shoulderAngle) > 3) {
-      const abs = Math.abs(shoulderAngle);
-      // Magee/Kendall: direct Y-comparison is definitive — lower Y = higher shoulder in image
-      // g(11)=L acromion, g(12)=R acromion; lower Y value = higher = elevated side
-      const side = (g(11)&&g(12)) ? (g(11).y < g(12).y ? "Left" : "Right") : (shoulderAngle > 0 ? "Left" : "Right");
-      add("Shoulder Girdle", `${side} shoulder elevated — posterior view (${abs.toFixed(1)}°)`, abs > 7 ? "high" : "moderate",
-        `Upper trapezius and levator scapulae release ipsilateral. Lower trapezius facilitation. Confirm anterior view finding.`,
-        "M54.2", "⇑", "", "Normal: <2.5° / <1.5cm (Magee)", abs);
-    }
-
-    if (cobbEstimate !== null && cobbEstimate > 5) {
-      add("Lateral Spinal Curvature Screen", `OBSERVATION: Shoulder-pelvis differential (${cobbEstimate.toFixed(0)}°) from posterior view — may indicate lateral spinal curvature tendency. Clinical assessment required.`, cobbEstimate > 10 ? "moderate" : "low",
-        `Possible contributors: functional lateral deviation, pelvic asymmetry, habitual loading, or structural spinal curvature. Recommended confirmation tests: Adam's forward bend test (rib hump screen), standing AP X-ray if clinically indicated, pelvic landmark palpation. This observation alone does not confirm scoliosis.`,
-        "M99.0", "〜", `OBSERVATION ONLY. C7 plumb: ${c7PlumbDev !== null ? Math.abs(c7PlumbDev).toFixed(1)+"% from sacral midpoint" : "not calculated"}. Shoulder ${shoulderAngle?.toFixed(1)}° vs pelvis ${pelvisAngle?.toFixed(1)}°. Standing AP X-ray with Cobb measurement required to confirm lateral curvature. Do not communicate a scoliosis diagnosis based on this finding.`, "Normal: <5° shoulder-pelvis differential", cobbEstimate);
-    }
-
-    if (c7PlumbDev !== null && Math.abs(c7PlumbDev) > 4) {
-      const abs = Math.abs(c7PlumbDev);
-      add("Spine — C7 Plumb Deviation", `OBSERVATION: C7 coronal balance — head shifted ${c7PlumbDev > 0 ? "right" : "left"} of sacral midpoint (${abs.toFixed(1)}%). Clinical assessment required.`, abs > 8 ? "moderate" : "low",
-        `Possible contributors: functional lateral trunk deviation, pelvic asymmetry, pain-avoidance pattern, or structural spinal curvature. Recommended confirmation: posterior view plumb line assessment, Adam's forward bend test, orthopaedic spine referral if structural deviation clinically suspected.`,
-        "M99.0", "〜", `OBSERVATION ONLY. C7 plumb line deviation does not confirm a diagnosis. Structural vs functional lateral deviation requires clinical examination and imaging.`, "Normal: <4% lateral offset", abs);
-    }
-
-    if (f11 && !f11.suppressed && f11.severityCode > 0) {
-      const sev = f11.severityCode >= 3 ? "high" : f11.severityCode >= 2 ? "moderate" : "low";
-      add(
-        "Pelvis",
-        `${f11.finding} — posterior view`,
-        sev,
-        `${f11.clinicalCorrelation} ${f11.functionalRelevance || ""} Suggested next: ${(f11.suggestedNext||[]).join("; ")}.`,
-        "M62.89", "⊖",
-        `Pelvic obliquity: ${f11.tiltAngle > 0 ? "+" : ""}${f11.tiltAngle.toFixed(1)}°. ${f11.obliquityDirection}. Confidence: ${f11.confidence}%. Findings should be confirmed clinically.`,
-        "Normal: <2°",
-        f11.absAngle
-      );
-    } else if (pelvisAngle !== null && Math.abs(pelvisAngle) > 3 && (!f11 || f11.suppressed)) {
-      // Fallback when F11 suppressed due to low confidence — report with explicit uncertainty
-      const abs = Math.abs(pelvisAngle);
-      add("Pelvis", `Possible pelvic obliquity — low confidence (${abs.toFixed(1)}°)`, "low",
-        `Landmark confidence insufficient for reliable pelvic assessment. Findings should be confirmed clinically with hands-on pelvic landmark palpation.`,
-        "M62.89", "⊖", `Low-confidence screen only. Repeat with improved image quality.`, "Normal: <2°", abs);
-    }
-
-    // Only fire scapular/shoulder height if shoulderAngle hasn't already captured the same asymmetry
-    if (scapularAsymm !== null && scapularAsymm > 2.5 && (shoulderAngle === null || Math.abs(shoulderAngle) < 2.5)) {
-      add("Shoulder Girdle", `Shoulder/acromion height asymmetry — posterior view (${scapularAsymm.toFixed(1)}% differential). Note: true scapular winging/asymmetry requires clinical assessment — MediaPipe provides no dedicated scapular landmarks.`, scapularAsymm > 5 ? "high" : "moderate",
-        `CPA screen: serratus anterior vs pec minor. Lower trap Y-T-W ×15. Wall push-up plus (serratus). Thoracic extension mobility. If winging visible: test serratus (wall push-up — medial border lifting = Type II dyskinesis).`,
-        "M89.8", "⇑", `Acromion/shoulder height asymmetry from posterior view. True scapular assessment (Kibler types I-III) requires manual examination — inferior angle, medial border, superior elevation cannot be reliably identified from this photo. Recommend clinical scapular assessment.`, "Normal: <2.5°", scapularAsymm);
-    }
-
-    if (trunkRotationProxy !== null && Math.abs(trunkRotationProxy) > 8) {
-      add("Thoracic", `Trunk rotation asymmetry (shoulder-to-hip width ratio ${Math.abs(trunkRotationProxy).toFixed(0)}%)`, Math.abs(trunkRotationProxy) > 15 ? "high" : "moderate",
-        `Thoracic rotation PA mobilisation bilateral. Foam roller thoracic rotation stretch. Assess axial rotation restriction.`,
-        "M99.0", "↻", "", "Normal: <8%", Math.abs(trunkRotationProxy));
-    }
-
-    if (weightBearingShift !== null && Math.abs(weightBearingShift) > 4) {
-      const abs = Math.abs(weightBearingShift);
-      add("Balance / Loading", `Weight-bearing asymmetry posterior — shifted ${weightBearingShift > 0 ? "right" : "left"} (${abs.toFixed(1)}%)`, abs > 8 ? "high" : "moderate",
-        `Quantify with scales. Mirror biofeedback. Treat driver: pain, LLD, or proprioceptive deficit.`,
-        "M62.9", "⊖", "", "Normal: <4%", abs);
-    }
-
-    // ── HEAD LATERAL TILT ─────────────────────────────────────────────────
-    // Formula: atan2(ear_R_Y - ear_L_Y, ear_R_X - ear_L_X) — Kendall 5th ed. Ch.5
-    // Normal: <2° lateral tilt. >3° = C-spine lateral flexion pattern
-    if (m.headTiltAngle !== null && m.headTiltAngle !== undefined && Math.abs(m.headTiltAngle) > 3) {
-      const absH = Math.abs(m.headTiltAngle);
-      const tilSide = m.headTiltAngle > 0 ? "Left" : "Right";
-      add("Head / Cervical", `Head lateral tilt — ${tilSide} (${absH.toFixed(1)}°, normal <2°)`,
-        absH > 6 ? "high" : "moderate",
-        `Contralateral SCM stretch. Ipsilateral scalene and upper trap release. Assess C1/C2 lateral flexion restriction. Screen for torticollis (infantile/acquired) if persistent.`,
-        "M43.6", "↗",
-        `Head tilt: atan2(R_ear_Y − L_ear_Y, R_ear_X − L_ear_X) = ${absH.toFixed(1)}°. Reference: Kendall et al. 5th ed. Ch.5. >3° considered clinically significant lateral flexion.`,
-        "Normal: <2° lateral tilt (Kendall)", absH);
-    }
-
-    // ── LLD PROXY from popliteal crease / knee height difference ─────────
-    // Formula: (L_knee_Y − R_knee_Y) / BH × 100 (%) — Woerman 1984, Magee Ch.13
-    // Normal: <0.5% BH difference. >0.8% = clinical LLD screen positive
-    if (lm && lm[25] && lm[26] && (lm[25].visibility||0) >= 0.45 && (lm[26].visibility||0) >= 0.45) {
-      const imgH = 1; // normalised
-      const kneeHeightDiff = Math.abs(lm[25].y - lm[26].y);
-      const lldPct = kneeHeightDiff * 100; // as % of image height (proxy for BH)
-      if (lldPct > 1.5) {
-        const higherSide = lm[25].y > lm[26].y ? "Right" : "Left";
-        const sev = lldPct > 4 ? "moderate" : "low";
-        add("Leg Length Discrepancy", `Popliteal crease height asymmetry — ${higherSide} knee higher (${lldPct.toFixed(1)}% image height, screen positive)`,
-          sev,
-          `Confirm with supine tape measure (ASIS to medial malleolus — Woerman 1984). Standing block test for functional vs structural LLD. True LLD >5mm: consider heel lift. >2cm: orthopaedic referral.`,
-          "M21.0", "⇕",
-          `Popliteal crease differential: |L_knee_Y − R_knee_Y| × 100 = ${lldPct.toFixed(1)}% image height. Proxy for LLD — requires clinical confirmation. Woerman 1984 reference: ASIS-to-MM tape measure (supine), standing block test. Note: knee flexion or pelvic tilt can cause false positive — confirm clinically.`,
-          "Normal: <1.5% image height differential (proxy — confirm clinically)", lldPct);
-      }
-    }
-
-    // ── KNEE VALGUS / VARUS — frontal plane ──────────────────────────────
-    // Formula: perpendicular deviation of knee from hip-ankle line
-    // Genu valgum: knee medial to line (knock-knee). Genu varum: knee lateral (bow-leg)
-    // Magee Ch.13, Norkin & White: normal Q-angle <18° female, <13° male
-    const lkDev = m.leftKneeFrontal; const rkDev = m.rightKneeFrontal;
-    if (lkDev !== null && lkDev !== undefined && Math.abs(lkDev) > 3) {
-      const sev = Math.abs(lkDev) > 7 ? "high" : "moderate";
-      const type = lkDev < 0 ? "Valgum (knock-knee)" : "Varum (bow-leg)";
-      add("Knee — Left", `Left genu ${type} — ${Math.abs(lkDev).toFixed(1)}% BH deviation from hip-ankle line (normal <3%)`,
-        sev,
-        `Hip abductor strengthening (genu valgum). IT band release + hip abductor stretch (genu varum). Foot orthotic assessment (overpronation contributes to valgum). Patellofemoral assessment.`,
-        "M21.0", "↙",
-        `Left knee perpendicular deviation from hip(L)-ankle(L) line: ${lkDev.toFixed(1)}% BH. Negative = medial (valgum), positive = lateral (varum). Magee Orthopedic Physical Assessment Ch.13. Normal Q-angle <18° female / <13° male.`,
-        "Normal: knee within 3% BH of hip-ankle line (Magee Ch.13)", Math.abs(lkDev));
-    }
-    if (rkDev !== null && rkDev !== undefined && Math.abs(rkDev) > 3) {
-      const sev = Math.abs(rkDev) > 7 ? "high" : "moderate";
-      const type = rkDev < 0 ? "Valgum (knock-knee)" : "Varum (bow-leg)";
-      add("Knee — Right", `Right genu ${type} — ${Math.abs(rkDev).toFixed(1)}% BH deviation from hip-ankle line (normal <3%)`,
-        sev,
-        `Hip abductor strengthening (genu valgum). IT band release + hip abductor stretch (genu varum). Foot orthotic assessment. Patellofemoral assessment.`,
-        "M21.0", "↘",
-        `Right knee perpendicular deviation from hip(R)-ankle(R) line: ${rkDev.toFixed(1)}% BH. Negative = medial (valgum), positive = lateral (varum). Magee Ch.13.`,
-        "Normal: knee within 3% BH of hip-ankle line (Magee Ch.13)", Math.abs(rkDev));
-    }
-
-    // ── SCAPULAR HEIGHT / WINGING SCREEN ─────────────────────────────────
-    // Already handled above via scapularAsymm and shoulderAngle.
-    // If both are within normal (<2.5°), add informational note about what
-    // cannot be assessed from photo (Kibler types require hands-on exam).
-
-  }
-
-  // ── LATERAL VIEW ─────────────────────────────────────────────────────────
-  if (view === "left" || view === "right") {
-
-    // CVA — primary lateral finding
-    if (cvaAngle !== null && cvaAngle < 55) {
-      const sev = cvaAngle < 42 ? "high" : "moderate";
-      const loadStr = cervicalLoadKg !== null ? ` Est. cervical load: ${cervicalLoadKg}kg (neutral=4.5kg).` : "";
-      add("Cervical — Forward Head", `Forward head posture — CVA ${cvaAngle.toFixed(0)}° (normal >55°)${forwardHeadCm !== null ? ` / ${forwardHeadCm.toFixed(1)}cm anterior` : ""}`, sev,
-        `IMMEDIATE: supine chin nod (NOT chin tuck) ×10 ×3 sets, 10s hold. Thoracic extension foam roller T4–T8 ×2min daily. Suboccipital release 90s. Ergonomic: raise monitor 5–10cm, keyboard at elbow height. CPA: SCM+scalenes overactive → inhibit → activate DNF within 30s. Home cue: tongue to roof of mouth.`,
-        "M43.6", "⇒", `CVA ${cvaAngle.toFixed(0)}° (Yip 2008).${loadStr} Each 2.5cm FHP adds ~2.7kg to estimated cervical extensor load (proxy model) (estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula)).`, "Normal: >55°", cvaAngle);
-    } else if (cvaAngle === null && forwardHeadMm !== null && Math.abs(forwardHeadMm) > 3) {
-      const abs = Math.abs(forwardHeadMm);
-      add("Cervical — Forward Head", `Forward head posture — ear anterior to acromion (${abs.toFixed(1)}% offset)`, abs > 7 ? "high" : "moderate",
-        `Deep cervical flexor activation. Thoracic extension foam roller. Ergonomic review. Take true lateral photo for CVA measurement.`,
-        "M43.6", "⇒", "Obtain lateral photo for CVA measurement — more accurate than frontal view proxy.", "Normal: ear over acromion", abs);
-    }
-
-    // ── THORACIC KYPHOSIS FINDING — removed (trunk-lean proxy deleted) ─────────
-    // Replaced by TCI (ThoracicCurvatureIndex) in sagittalFindings.js via contour.
-
-    // ── PELVIC TILT FINDING — removed (hip-knee proxy deleted) ───────────────
-    // Pelvic tilt requires ASIS + PSIS landmarks (not available from MediaPipe).
-    // Gate enforced in sagittalFindings.js: fires ONLY when manualPelvis is placed.
-    // When ASIS/PSIS absent: displays "Pelvic Tilt Not Directly Measured".
-
-    // ── LUMBAR LORDOSIS FINDING — removed (z-depth proxy deleted) ────────────
-    // Replaced by LCI (LumbarCurvatureIndex) in sagittalFindings.js via contour.
-
-    // ── SWAY-BACK ─────────────────────────────────────────────────────────────
-    // Retained as plumb-chain pattern (hip plumb + shoulder plumb), NOT angle-based.
-    const hipBehindPlumb    = hipExtensionProxy !== null && hipExtensionProxy < -4;
-    const hasReducedLordosis = lumbarProxy !== null && lumbarProxy < -3;
-    if (hipBehindPlumb && hasReducedLordosis) {
-      add("Plumb Chain Pattern — Sway-Back Tendency",
-        `Plumb chain: hips posterior to ankle plumb, reduced hip-knee-heel alignment`,
-        "moderate",
-        `Plumb chain observation only. Activate hip flexors. Shift hips forward over ankle. Confirm with contour analysis.`,
-        "M40.3", "⟲",
-        `Hips behind plumb + lumbar chain reduced. This is a PLUMB LINE OBSERVATION — not an angle measurement. Sway-back classification requires TCI + LCI + pelvic tilt confirmation.`,
-        "Ideal: hip over ankle plumb", null);
-    }
-
-    // ── PATTERN CLASSIFICATION — gate: all segments must be available ─────────
-    // Pattern label only fires when TCI + LCI + pelvic + shoulder are all resolved.
-    // These come from sagittalFindings.js (contour + manual). Here we fire a
-    // placeholder if contour is not yet available.
-    // Full pattern classification is in sagittalFindings.js buildKendallClassification.
-
-    // Knee genu recurvatum
-    // In lateral views (left/right), only the camera-facing knee is reliably visible.
-    // Use the view label to correctly name which knee is being assessed.
-    const isLateralView = view === "left" || view === "right";
-    const lateralKneeSideLabel = view === "left" ? "Left" : view === "right" ? "Right" : null;
-
-    [[leftKneeDev,"Left"],[rightKneeDev,"Right"]].forEach(([dev,side])=>{
-      if (dev === null) return;
-      // In lateral views: skip the non-camera-facing knee reading (unreliable)
-      // and relabel the visible knee with the correct side from the view selection
-      if (isLateralView) {
-        // Only process the knee that MediaPipe would most reliably see in this view
-        // Right lateral → right-side landmarks visible → rightKneeDev is reliable
-        // Left lateral → left-side landmarks visible → leftKneeDev is reliable
-        const expectedSide = view === "right" ? "Right" : "Left";
-        if (side !== expectedSide) return; // skip the occluded knee
-        // Relabel: in a right lateral photo, the visible knee is the RIGHT knee
-        side = lateralKneeSideLabel;
-      }
-      if (dev < -5) {
-        const abs = Math.abs(dev);
-        add("Knee — Genu Recurvatum", `${side} knee hyperextension (genu recurvatum) — ${abs.toFixed(0)}° past neutral`, abs > 12 ? "high" : "moderate",
-          `Hamstring eccentric: nordic curls, RDL. Calf eccentric: heel drops. Proprioception: SL stance with slight knee flexion cue. Avoid terminal knee locking. Lachman + anterior drawer. Check posterior capsule laxity.`,
-          "M21.1", "⌣", `>5° increases posterior capsule strain and ACL load. >10° — Beighton score for hypermobility.`, "Normal: 0–5°", abs);
-      } else if (dev > 10) {
-        add("Knee — Flexion Stance", `${side} knee flexion in stance — ${dev.toFixed(0)}° (antalgic / contracture)`, dev > 20 ? "high" : "moderate",
-          `Hamstring 90/90 test. Thomas test hip flexor. Treat pain source if antalgic. Terminal knee extension drills. Gait conscious extension cue.`,
-          "M21.9", "⌣", "", "Normal: 0–5° flexion", dev);
-      }
-    });
-
-    // Hip extension proxy
-    if (hipExtensionProxy !== null && hipExtensionProxy > 8) {
-      add("Hip / Lumbar", `Hip anterior to ankle plumb — hip flexion pattern in stance (${hipExtensionProxy.toFixed(1)}%)`, hipExtensionProxy > 15 ? "high" : "moderate",
-        `Thomas test: confirm hip flexor contracture. Couch stretch ×90s. Hip extension: prone hip extension, RDL, glute bridge. Assess lumbar compensation.`,
-        "M24.1", "⇒", "Hip anterior to ankle plumb suggests hip flexor tightness or hip flexion movement pattern.", "Normal: hip over ankle", hipExtensionProxy);
-    }
-
-    // Ankle dorsiflexion
-    [[leftAnkleAngle,"Left"],[rightAnkleAngle,"Right"]].forEach(([angle,side])=>{
-      if (angle === null || angle >= 80) return;
-      add("Ankle — Dorsiflexion", `${side} ankle dorsiflexion restriction (~${angle.toFixed(0)}°, normal >80°)`, angle < 60 ? "high" : "moderate",
-        `Gastrocnemius: straight-knee wall lean 60s ×3. Soleus: bent-knee wall lean 60s ×3. Talar anterior glide mobilisation (knee-to-wall >10cm target). SL heel raise full ROM. Assess talocrural vs subtalar restriction.`,
-        "M24.2", "↕", `Ankle DF <80° → compensatory foot pronation, knee valgus, APT in squat. Primary ACL injury risk factor.`, "Normal: >80° (knee-to-wall ≥10cm)", angle);
-    });
-  }
-
-  // ── GLOBAL — all views ────────────────────────────────────────────────────
-  if (posturalLoadIndex !== null && posturalLoadIndex > 55) {
-    // Plain-language contributor list — what is actually elevated and by how much
-    const pliContributors = [];
-    if (Math.abs(shoulderAngle||0) > 3)
-      pliContributors.push({ label:"Uneven shoulders", value:`${Math.abs(shoulderAngle).toFixed(1)}°`, normal:"<3°" });
-    if (Math.abs(pelvisAngle||0) > 3)
-      pliContributors.push({ label:"Uneven pelvis/hips", value:`${Math.abs(pelvisAngle).toFixed(1)}°`, normal:"<3°" });
-    if (Math.abs(fhpNorm||0) > 3)
-      pliContributors.push({ label:"Head too far forward", value:`${Math.abs(fhpNorm).toFixed(1)}%`, normal:"<3%" });
-    if (Math.abs(trunkLateralShift||0) > 4)
-      pliContributors.push({ label:"Body leaning to one side", value:`${Math.abs(trunkLateralShift).toFixed(1)}%`, normal:"<4%" });
-    if (Math.abs(cobbEstimate||0) > 5)
-      pliContributors.push({ label:"Spinal curve (scoliosis screen)", value:`${Math.abs(cobbEstimate).toFixed(1)}°`, normal:"<5°" });
-    if (Math.abs(cogDeviation||0) > 4)
-      pliContributors.push({ label:"Body weight off-centre", value:`${Math.abs(cogDeviation).toFixed(1)}%`, normal:"<4%" });
-    if (Math.abs(lumbarProxy||0) > 4)
-      pliContributors.push({ label:"Pelvic tilt / lower back curve", value:`${Math.abs(lumbarProxy).toFixed(1)}%`, normal:"<4%" });
-
-    // Simple plain-English severity label
-    const pliLabel = posturalLoadIndex > 80
-      ? "Very High — multiple areas need attention"
-      : posturalLoadIndex > 65
-      ? "High — several postural areas are stressed"
-      : "Elevated — more than one area is affected";
-
-    // Build simple detail string (no jargon)
-    const pliDetail = pliContributors.length > 0
-      ? `What is contributing to this score:\n${pliContributors.map(c=>`• ${c.label}: ${c.value} (normal ${c.normal})`).join("\n")}\n\nThis does not mean all these things are painful or dangerous — it means the body is working harder than it should to stay balanced. Each problem adds up and increases strain on muscles and joints over time.`
-      : "Multiple small postural deviations are adding up across different body areas, increasing overall strain.";
-
-    const severity = posturalLoadIndex > 75 ? "high" : "moderate";
-    add("Global — Body Load Summary",
-      `Body working harder than normal — ${pliLabel}`,
-      severity,
-      `Start with the highest-priority finding above. Fixing one problem often reduces the overall load score automatically. Aim for: 1 targeted exercise per problem area, 10–15 min daily. Re-assess in 4–6 weeks.`,
-      "M62.9", "⚑", pliDetail, "Target: <35/100", posturalLoadIndex);
-  }
-
-  return findings;
-}
 
 // ─── POSTURE SCORING ENGINE ───────────────────────────────────────────────────
 // Score = 100 minus weighted penalties from clinical measurements + findings.
@@ -3249,7 +538,7 @@ function measureLandmarks(lm, calibration, view="anterior") {
   // Composite of 8 weighted, normalised-to-threshold components (0=perfect, 100=max)
   const PLI_comps = [
     [Math.abs(shoulderAngle||0),    3,  7,  1.0],
-    [Math.abs(pelvisAngle||0),      3,  7,  1.2],
+    [Math.abs(pelvisAngle||0),      4,  10, 1.2],  // P0-1: normal <4° (healthy-population norm)
     [Math.abs(headLateralOffset||0),3,  7,  0.8],
     [Math.abs(trunkLateralShift||0),4,  8,  1.0],
     [Math.abs(fhpNorm||0),          3,  8,  1.5],
@@ -3373,10 +662,13 @@ function measureLandmarks(lm, calibration, view="anterior") {
     const angleDeg4 = dx4 > 0.01 ? r2(Math.atan(dy4/dx4)*180/Math.PI) : 0;
     const heightDiffPct4 = r2(dy4*100);
     const elevatedSide4 = g(11).y < g(12).y ? "Left" : g(12).y < g(11).y ? "Right" : null;
+    // P0-1: bands raised (Normal <3°, Mild 3–5, Moderate 5–7, Significant >7)
+    // so slight shoulder asymmetry (normal per photographic-posture evidence) is
+    // not reported as a finding.
     let sev4, sevCode4;
-    if      (angleDeg4 < 2.0) { sev4="Normal";      sevCode4=0; }
-    else if (angleDeg4 < 4.0) { sev4="Mild";        sevCode4=1; }
-    else if (angleDeg4 < 6.0) { sev4="Moderate";    sevCode4=2; }
+    if      (angleDeg4 < 3.0) { sev4="Normal";      sevCode4=0; }
+    else if (angleDeg4 < 5.0) { sev4="Mild";        sevCode4=1; }
+    else if (angleDeg4 < 7.0) { sev4="Moderate";    sevCode4=2; }
     else                      { sev4="Significant";  sevCode4=3; }
     const conf4 = r1(confidence4*100);
     const rel4 = conf4>=90?"Excellent":conf4>=75?"Good":conf4>=60?"Fair":"Low reliability";
@@ -3504,11 +796,14 @@ function measureLandmarks(lm, calibration, view="anterior") {
     if (confidence11 < 0.45) return { suppressed:true, confidence:r1(confidence11*100) };
     const absAngle11 = Math.abs(pelvisAngle);
     const elevationSide11 = pelvisAngle>0?"Right":pelvisAngle<0?"Left":null;
+    // P0-1: bands raised (Normal <4°, Mild 4–7, Moderate 7–10, Significant >10).
+    // Healthy population reaches 5.6° obliquity (median ~2.0°, PMC10229507), so
+    // physiological obliquity is no longer reported as a clinical finding.
     let sevCode11;
-    if      (absAngle11 < 2.0) sevCode11=0;
-    else if (absAngle11 < 5.0) sevCode11=1;
-    else if (absAngle11 < 8.0) sevCode11=2;
-    else                       sevCode11=3;
+    if      (absAngle11 < 4.0)  sevCode11=0;
+    else if (absAngle11 < 7.0)  sevCode11=1;
+    else if (absAngle11 < 10.0) sevCode11=2;
+    else                        sevCode11=3;
     const shAbs11 = Math.abs(shoulderAngle||0);
     const sameDir11 = shoulderAngle!==null&&absAngle11>0
       ? (pelvisAngle>0&&shoulderAngle<0)||(pelvisAngle<0&&shoulderAngle>0) : false;
@@ -3645,12 +940,15 @@ function calcManualReliability(placedCount, totalPoints) {
 //   Kendall 5th ed. (plumb line deviations)
 const POSTURE_THRESHOLDS = {
   // FRONTAL ─────────────────────────────────────────────────────────────────
-  // Shoulder: Magee p.597 — >1.5cm clinically significant.
-  // At 40cm shoulder width: 1.5cm ≈ 2.1°. Use 2.5° mild to include measurement noise.
-  shoulderAngle:       { mild:2.5, moderate:5,  severe:8   }, // degrees (Magee)
-  // Pelvis: Magee p.598 — >1cm asymmetry meaningful.
-  // At 25cm inter-ASIS width: 1cm ≈ 2.3°. Use 2° mild.
-  pelvisAngle:         { mild:2,   moderate:5,  severe:8   }, // degrees (Magee)
+  // Shoulder: Magee p.597 — >1.5cm clinically significant (~2.1° at 40cm width).
+  // Photographic-posture evidence shows slight asymmetry is normal, so mild fires
+  // at 3° (above measurement noise + normal variation) to avoid flagging healthy
+  // shoulders. (P0-1 recalibration)
+  shoulderAngle:       { mild:3,   moderate:5,  severe:7   }, // degrees (Magee + healthy-norm)
+  // Pelvis: healthy population shows obliquity 0–5.6°, median ~2.0° (Sci Rep /
+  // PMC10229507) — slight obliquity is NORMAL. mild raised to 4° so the screen
+  // flags only clearly-above-normal obliquity, not physiological asymmetry. (P0-1)
+  pelvisAngle:         { mild:4,   moderate:7,  severe:10  }, // degrees (healthy-population norm)
   // Head tilt: Lee & Nussbaum 2013 — normal variation up to 4–5°.
   headTilt:            { mild:4,   moderate:7,  severe:10  }, // degrees (Lee & Nussbaum 2013)
   // Trunk shift: Magee — >4cm lateral shift associated with disc pathology
@@ -3772,22 +1070,30 @@ function classifyKendallPostureType(m) {
     const pelAbs = Math.abs(pelAngle ?? 0);
     const trunkAbs = Math.abs(trunkShift ?? 0);
 
-    if (shAbs > 4 && pelAbs > 3 && m.lldProxy > 5) {
+    if (shAbs > 5 && pelAbs > 4 && m.lldProxy > 5) {
       return { type:"Pelvic Obliquity Pattern", description:"Shoulder and pelvic height asymmetry with possible leg length discrepancy. May be structural or functional — confirm with standing AP X-ray.", confidence:70, keyFindings:["Shoulder asymmetry","Pelvic obliquity","Possible LLD"], tight:["QL (elevated side)","Hip Abductors"], weak:["Hip Abductors (low side)","QL (depressed side)"], icd:"M99.0", colour:"#F97316" };
     }
-    if (shAbs > 4 && pelAbs > 3) {
+    if (shAbs > 5 && pelAbs > 4) {
       return { type:"Lateral Asymmetry Pattern", description:"Bilateral shoulder and pelvic height asymmetry. Screen for scoliosis with Adam's forward bend test and rib hump observation.", confidence:72, keyFindings:["Shoulder elevation","Pelvic obliquity"], tight:["QL","Lateral Trunk Muscles (high side)"], weak:["Hip Abductors","QL (low side)"], icd:"M41.9", colour:"#EF4444" };
     }
     if (trunkAbs > 4) {
-      return { type:"Lateral Trunk Shift", description:"Significant lateral trunk displacement. May indicate disc herniation, scoliosis, or functional avoidance pattern. Needs clinical correlation.", confidence:68, keyFindings:["Trunk lateral shift"], tight:["QL","Lateral Abdominals"], weak:["Contralateral Hip Abductors"], icd:"M99.0", colour:"#F97316" };
+      return { type:"Lateral Trunk Shift", description:"Noticeable side-to-side trunk lean. May reflect a habitual posture or trunk asymmetry — a qualified professional can assess the cause.", confidence:68, keyFindings:["Trunk lateral shift"], tight:["QL","Lateral Abdominals"], weak:["Contralateral Hip Abductors"], icd:"M99.0", colour:"#F97316" };
     }
-    if (shAbs < 2.5 && pelAbs < 2 && trunkAbs < 3) {
+    if (shAbs < 3 && pelAbs < 4 && trunkAbs < 3) {
       return { type:"Frontal Alignment — Within Normal Limits", description:"Frontal plane alignment within Kendall normal ranges. Bilateral symmetry maintained.", confidence:75, keyFindings:[], tight:[], weak:[], icd:"Z00.0", colour:"#10B981" };
     }
     return null;
   }
 
-  const th = thoracic ?? 32;
+  // Sagittal (degree-based) Kendall classification requires a real thoracic
+  // angle. In the live pipeline thoracic curvature is measured by the contour
+  // engine (TCI, a depth-chord index) — NOT by measureLandmarks — so rather than
+  // fabricating a placeholder thoracic value (previously 32°, which silently made
+  // Sway-back/Kyphosis/Military/Flat-back patterns unreachable and falsely
+  // reported thoracic status), defer to the TCI-based classifier
+  // (buildKendallClassification / HybridKendall) when thoracic is unmeasured.
+  if (thoracic === null) return null;
+  const th = thoracic;
   const pc = pelvicCm ?? 0;
   const fhp = cva !== null ? cva < 52 : false;
 
@@ -4231,6 +1537,14 @@ function buildFindings(lm, view, m) {
       confidenceScore: 70, clinicalSignificance: "moderate" });
   };
 
+  // ── Clinical firing gate (single source of truth) ──────────────────────────
+  // Two-tier visibility model (as documented at CLINICAL_MIN_VIS): MIN_VIS (0.45)
+  // is enough to DRAW a landmark, but a frontal-plane clinical finding only FIRES
+  // when every key landmark for it meets the higher CLINICAL_MIN_VIS (0.65) bar.
+  // Sagittal findings keep their own relaxed gates because far-side landmarks are
+  // inherently low-visibility in a true lateral view.
+  const clinVis = (...idx) => idx.every(i => (lm[i]?.visibility || 0) >= CLINICAL_MIN_VIS);
+
   // ══════════════════════════════════════════════════════════════════════════
   // FRONTAL VIEW FINDINGS
   // ══════════════════════════════════════════════════════════════════════════
@@ -4239,7 +1553,7 @@ function buildFindings(lm, view, m) {
     // ── MODULE F4: Shoulder Height Asymmetry ────────────────────────────────
     {
       const f4 = m.f4;
-      if (f4 && !f4.suppressed && f4.severityCode > 0) {
+      if (f4 && !f4.suppressed && f4.severityCode > 0 && clinVis(11,12)) {
         const sevMap = ["mild","mild","moderate","high"];
         add({
           region: "Shoulder Girdle",
@@ -4259,7 +1573,7 @@ function buildFindings(lm, view, m) {
         if (m.shoulderAngle !== null) {
           const abs = Math.abs(m.shoulderAngle);
           const sev = classifySeverity(abs, POSTURE_THRESHOLDS.shoulderAngle);
-          const rel = checkLandmarkReliability(lm, LANDMARK_GROUPS.shoulder);
+          const rel = checkLandmarkReliability(lm, LANDMARK_GROUPS.shoulder, CLINICAL_MIN_VIS);
           const conf = getLandmarkConfidence(lm, LANDMARK_GROUPS.shoulder);
           if (sev && rel.reliable) {
             // Use direct Y-comparison for consistency (Magee/Kendall standard)
@@ -4280,14 +1594,14 @@ function buildFindings(lm, view, m) {
     }
 
     // ── MODULE F10 — ASIS Height Difference + F11 — Pelvic Obliquity ──────────
-    // Uses pre-computed F10/F11 results from AdvancedMeasurementEngine.
+    // Uses pre-computed F10/F11 results from measureLandmarks.
     // Conservative wording — no SIJ/LLD/scoliosis diagnosis, no treatment.
     {
       const f10 = m.f10;
       const f11 = m.f11;
 
       // F10: ASIS Height Difference
-      if (f10 && !f10.suppressed && f10.severityCode > 0) {
+      if (f10 && !f10.suppressed && f10.severityCode > 0 && clinVis(23,24)) {
         const sevMap = ["mild","mild","moderate","high"]; // severityCode 1=Mild,2=Moderate,3=High
         add({
           region: "Pelvis",
@@ -4314,12 +1628,12 @@ function buildFindings(lm, view, m) {
             `Suggested next assessment: ${(f10.suggestedNext||[]).join("; ")}. ` +
             `Findings should be confirmed clinically before management decisions.`,
           icd: "M62.89",
-          norm: "<0.8% frame height ASIS difference",
+          norm: "<0.8% frame height ASIS difference (uncalibrated % of frame — not cm; camera-distance dependent)",
         });
       }
 
       // F11: Pelvic Obliquity
-      if (f11 && !f11.suppressed && f11.severityCode > 0) {
+      if (f11 && !f11.suppressed && f11.severityCode > 0 && clinVis(23,24)) {
         const sevMap = ["mild","mild","moderate","high"]; // severityCode 1=Mild,2=Moderate,3=High
         add({
           region: "Pelvis",
@@ -4378,7 +1692,7 @@ function buildFindings(lm, view, m) {
     if (m.headTiltAngle !== null) {
       const abs = Math.abs(m.headTiltAngle);
       const sev = classifySeverity(abs, POSTURE_THRESHOLDS.headTilt);
-      const rel = checkLandmarkReliability(lm, [7, 8, 0]);
+      const rel = checkLandmarkReliability(lm, [7, 8, 0], CLINICAL_MIN_VIS);
       const conf = getLandmarkConfidence(lm, [7, 8, 0]);
       if (sev && rel.reliable) {
         const side = m.headTiltSide || "";
@@ -4402,7 +1716,7 @@ function buildFindings(lm, view, m) {
     // ── MODULE F7: Trunk Shift ───────────────────────────────────────────────
     {
       const f7 = m.f7;
-      if (f7 && !f7.suppressed && f7.severityCode > 0) {
+      if (f7 && !f7.suppressed && f7.severityCode > 0 && clinVis(11,12,23,24)) {
         const sevMap = ["mild","mild","moderate","high"];
         add({
           region: "Thoracic",
@@ -4422,7 +1736,7 @@ function buildFindings(lm, view, m) {
         if (m.trunkLateralShift !== null) {
           const abs = Math.abs(m.trunkLateralShift);
           const sev = classifySeverity(abs, POSTURE_THRESHOLDS.trunkLateralShift);
-          const rel = checkLandmarkReliability(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
+          const rel = checkLandmarkReliability(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip], CLINICAL_MIN_VIS);
           const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.shoulder, ...LANDMARK_GROUPS.hip]);
           if (sev && rel.reliable) {
             // In anterior view, positive = image right = patient LEFT
@@ -4444,7 +1758,7 @@ function buildFindings(lm, view, m) {
 
     // ── Knee frontal plane (valgus/varus) ────────────────────────────────────
     const kneeLandmarks = [23, 24, 25, 26, 27, 28];
-    const kneeRel = checkLandmarkReliability(lm, kneeLandmarks);
+    const kneeRel = checkLandmarkReliability(lm, kneeLandmarks, CLINICAL_MIN_VIS);
     const kneeConf = getLandmarkConfidence(lm, kneeLandmarks);
     if (kneeRel.reliable) {
       const lv = m.leftKneeFrontal, rv = m.rightKneeFrontal;
@@ -4469,7 +1783,7 @@ function buildFindings(lm, view, m) {
             musclePattern: MUSCLE_PATTERNS.kneeFrontal,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.kneeFrontal,
             objectiveAssessments: OBJECTIVE_ASSESSMENTS.kneeFrontal,
-            correction: "Glute med: clamshells ×15, lateral band walks ×20m. VMO: terminal knee extensions ×15. Single-leg squat with mirror correction. Foot tripod activation.",
+            correction: "General activities some find helpful (discuss with a professional first): glute-med work (e.g. clamshells, lateral band walks), quadriceps/VMO strengthening, single-leg balance with mirror feedback, and foot-arch activation.",
             icd: "M21.0", norm: "<6° knee frontal deviation",
             _derivedFrom: ["Hip (lm23/24)", "Knee (lm25/26)", "Ankle (lm27/28)"],
           });
@@ -4521,7 +1835,7 @@ function buildFindings(lm, view, m) {
           musclePattern: MUSCLE_PATTERNS.ucs,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.ucs,
-          correction: "INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep neck flexors, lower trap Y-T-W, serratus. MOBILISE: thoracic extension T4–T8.",
+          correction: "General activities often linked to this pattern (not a prescription — discuss with a professional first): easing tension in the upper trapezius, SCM and pec minor; gentle deep-neck-flexor, lower-trapezius and serratus work; and mid-back (thoracic) extension mobility.",
           icd: "M62.9", norm: "UCS index <0.6",
         });
       }
@@ -4639,7 +1953,7 @@ function buildFindings(lm, view, m) {
           findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55° (Yip et al. 2008))`,
           severity: sev, confidenceScore: cvaConf,
           clinicalSignificance: sev,
-          interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this.${loadStr}`,
+          interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this.${loadStr} (Screen note: CVA here is a 2D photo proxy using ear→acromion; the validated clinical method measures tragus→C7 spinous process — confirm with goniometry.)`,
           possibleMusclePatterns: {
             tight: ["Suboccipital extensors", "Cervical extensors (semispinalis, splenius)","Sternocleidomastoid","Pectoralis minor"],
             weak:  ["Deep cervical flexors (longus colli, longus capitis)","Lower trapezius","Serratus anterior"],
@@ -4651,7 +1965,7 @@ function buildFindings(lm, view, m) {
             "Cervical AROM — flexion/extension bilateral",
             "Upper cervical passive accessory movement testing (C0–C2)",
           ],
-          correction: `DNF chin nod ×10 ×3 daily. Thoracic extension foam roller T4–T8. Pec minor stretch doorframe 30s×3. Ergonomic screen height review.${loadStr}`,
+          correction: `General activities some find helpful (discuss with a professional first): gentle chin-nod (deep-neck-flexor) movements, mid-back extension mobility over a foam roller, pec-minor stretching, and reviewing screen/monitor height for ergonomics.${loadStr}`,
           icd: "M43.1", norm: "CVA >52°",
         });
 
@@ -4669,7 +1983,7 @@ function buildFindings(lm, view, m) {
             possibleMusclePatterns: MUSCLE_PATTERNS.ucs,
             functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
             recommendedObjectiveAssessment: OBJECTIVE_ASSESSMENTS.ucs,
-            correction: "CPA Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: DNF (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
+            correction: "General activities often linked to this pattern (not a prescription — discuss with a professional first): easing tension in the upper trapezius, SCM and pec minor; gentle deep-neck-flexor, lower-trapezius and serratus work; and mid-back (thoracic) extension mobility.",
             icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
           });
         }
@@ -4700,7 +2014,7 @@ function buildFindings(lm, view, m) {
           "Serratus anterior strength (push-up plus)",
           "Shoulder passive range of motion — horizontal adduction",
         ],
-        correction: "Pec minor stretch (corner/doorframe) 30s×3. Serratus anterior: wall slide progression ×15. Lower trap Y-T-W ×15.",
+        correction: "General activities some find helpful (discuss with a professional first): gentle pec-minor stretching (corner/doorframe), serratus-anterior wall slides, and lower-trapezius work.",
         icd: "M79.2", norm: "Acromion within 2cm of plumb line",
       });
     }
@@ -4727,7 +2041,7 @@ function buildFindings(lm, view, m) {
           possibleMusclePatterns: MUSCLE_PATTERNS.kyphosis,
           functionalCorrelation: "May reduce thoracic extension mobility and alter rib cage mechanics during breathing. May contribute to impingement risk during overhead tasks.",
           recommendedObjectiveAssessment: OBJECTIVE_ASSESSMENTS.kyphosis,
-          correction: "Thoracic extension foam roller T4–T8 ×2min. Pec stretch bilateral. Lower trap activation Y-T-W ×15. Postural cueing.",
+          correction: "General activities some find helpful (discuss with a professional first): gentle mid-back (thoracic) extension mobility (e.g. over a foam roller), pec stretching, lower-trapezius work, and posture awareness.",
           icd: "M40.0", norm: "Thoracic kyphosis 20–45°",
         });
       }
@@ -4805,7 +2119,7 @@ function buildFindings(lm, view, m) {
           possibleMusclePatterns:{ tight:["Hip Flexors (Iliopsoas)","Lumbar Extensors","TFL"], weak:["Gluteus Maximus","Deep Abdominals (TrA)","Hamstrings"] },
           functionalCorrelation:"Increased lumbar compressive load; reduced hip extension mobility; may predispose to lumbar facet irritation.",
           objectiveAssessments:["Thomas test — hip flexor length","Modified Thomas (TFL)","Prone hip extension assessment"],
-          correction:"Hip flexor stretch ×30s bilateral. Glute bridges ×20. Abdominal hollowing. Posterior pelvic tilt exercise.",
+          correction:"General activities some find helpful (discuss with a professional first): gentle hip-flexor stretching, glute bridges, and core/pelvic-tilt awareness.",
           icd:"M40.4", norm:"Hip within 2cm of plumb (Kendall)"
         });
       }
@@ -4825,7 +2139,7 @@ function buildFindings(lm, view, m) {
         musclePattern: MUSCLE_PATTERNS.ucs,
         functionalCorrelation: FUNCTIONAL_CORRELATIONS.ucs,
         objectiveAssessments: OBJECTIVE_ASSESSMENTS.ucs,
-        correction: "CPA Protocol — INHIBIT: upper trap, SCM, pec minor ×90s. ACTIVATE: deep cervical flexors (chin nod), lower trap (prone Y), serratus (wall slide). CORRECT: thoracic extension T4–T8.",
+        correction: "General activities often linked to this pattern (not a prescription — discuss with a professional first): easing tension in the upper trapezius, SCM and pec minor; gentle deep-cervical-flexor, lower-trapezius and serratus work; and mid-back (thoracic) extension mobility.",
         icd: "M62.8", norm: "CVA >52° + thoracic kyphosis 20–45°",
       });
     }
@@ -4844,7 +2158,7 @@ function buildFindings(lm, view, m) {
         musclePattern: MUSCLE_PATTERNS.lcs,
         functionalCorrelation: FUNCTIONAL_CORRELATIONS.lcs,
         objectiveAssessments: OBJECTIVE_ASSESSMENTS.lcs,
-        correction: "CPA Protocol — INHIBIT: iliopsoas, rectus femoris, TFL. ACTIVATE: glute max (bridges), glute med (clamshells), TVA (dead bug). Thomas test to confirm hip flexor length.",
+        correction: "General activities often linked to this pattern (not a prescription — discuss with a professional first): easing tension in the hip flexors (iliopsoas, rectus femoris) and TFL; and gentle glute (bridges, clamshells) and deep-core work.",
         icd: "M62.8", norm: "Anterior pelvic tilt <5% + thoracic kyphosis <42°",
       });
     }
@@ -4942,9 +2256,9 @@ function buildFindings(lm, view, m) {
             region:"Knee — Sagittal",
             findingName:`OBSERVATION: ${sideName} knee hyperextension tendency (${abs.toFixed(1)}°) — genu recurvatum screen positive. Clinical confirmation required.`,
             severity:sev, confidenceScore:Math.min(sagConf,75), clinicalSignificance:sev,
-            interpretation:"OBSERVATION ONLY. Static knee hyperextension tendency. Cannot confirm structural genu recurvatum from photograph alone. >5° increases posterior capsule and ACL load; >10° — assess Beighton hypermobility score.",
-            objectiveAssessments:["Weight-bearing knee alignment assessment","Posterior capsule laxity test","Beighton hypermobility score (if >10°)","Single-leg stance observation"],
-            correction:"Possible contributors: posterior capsule laxity, quadriceps inhibition, habitual weight-shift. Recommended: terminal knee extension (TKE) strengthening, VMO activation, gait re-education.",
+            interpretation:"OBSERVATION ONLY. The knees appear to sit in an extended/locked position. A photo cannot confirm this — a qualified professional can assess knee alignment and joint flexibility.",
+            objectiveAssessments:["Weight-bearing knee alignment assessment","Knee flexibility assessment","Single-leg stance observation"],
+            correction:"Commonly linked to a habit of locking the knees and to quadriceps control. General activities some find helpful (discuss with a professional first): gentle quadriceps/terminal-knee-extension work, and standing with the knees softly bent.",
             icd:"M21.9", norm:"<5° knee hyperextension in standing",
             _derivedFrom:[`Hip (lm${iHip})`,`Knee (lm${iKnee})`,`Ankle (lm${iAnk})`],
           });
@@ -5078,13 +2392,16 @@ function scorePosture(m, findings, reliability) {
   let penalty=0;
   const P=(val,t1,t2,p1,p2)=>{if(val<=0)return;const n=Math.min(1,(val)/(Math.max(0.01,t2-t1)));penalty+=p1+(p2-p1)*n;};
   P(Math.abs(m.shoulderAngle||0),3,7,3,8);
-  P(Math.abs(m.pelvisAngle||0),3,7,4,10);
+  P(Math.abs(m.pelvisAngle||0),4,10,4,10); // P0-1: pelvic obliquity normal <4° (healthy-norm)
   P(Math.abs(m.trunkLateralShift||0),3.5,7,4,9);
   P(Math.abs(m.headLateralOffset||0),2.5,6,3,7);
   P(Math.abs(m.scapularAsymm||0),2.5,5,2,5);
   P(Math.abs(m.cogDeviation||0),4,8,3,8);
   P(m.cvaAngle!==null?Math.max(0,55-m.cvaAngle):0,6,14,5,13);
-  P((m.thoracicAngle||32)>45?(m.thoracicAngle||32)-45:0,8,18,4,10);
+  // Thoracic curvature is only penalised when actually measured. It is not
+  // computed by measureLandmarks (see TCI in the contour engine), so no phantom
+  // 32° default — an unmeasured thoracic contributes 0 penalty, not a fake value.
+  P(m.thoracicAngle!=null && m.thoracicAngle>45 ? m.thoracicAngle-45 : 0,8,18,4,10);
   P(Math.abs(m.lumbarProxy||0),4,9,3,8);
   P(Math.abs(m.leftKneeFrontal||0),5,10,3,7);
   P(Math.abs(m.rightKneeFrontal||0),5,10,3,7);
@@ -5105,7 +2422,9 @@ function scorePosture(m, findings, reliability) {
   const subScores={
     cervical: clamp(100-(m.cvaAngle!==null?Math.max(0,55-m.cvaAngle)*2.2:0)-Math.abs(m.headLateralOffset||0)*2.5,0,100),
     shoulder: clamp(100-Math.abs(m.shoulderAngle||0)*5-(m.scapularAsymm||0)*4,0,100),
-    thoracic: clamp(100-Math.max(0,(m.thoracicAngle||32)-45)*2-Math.abs(m.trunkLateralShift||0)*3.5,0,100),
+    // null = thoracic curvature not measured in this pipeline (see contour TCI findings),
+    // rendered as omitted rather than a fabricated score.
+    thoracic: m.thoracicAngle!=null ? clamp(100-Math.max(0,m.thoracicAngle-45)*2-Math.abs(m.trunkLateralShift||0)*3.5,0,100) : null,
     lumbar:   clamp(100-Math.abs(m.lumbarProxy||0)*4.5-Math.abs(m.pelvisAngle||0)*4.5,0,100),
     knee:     clamp(100-Math.abs(m.leftKneeFrontal||0)*3.5-Math.abs(m.rightKneeFrontal||0)*3.5-Math.max(0,-(m.leftKneeDev||0)-5)*2.5-Math.max(0,-(m.rightKneeDev||0)-5)*2.5,0,100),
     global:   clamp(100-Math.abs(m.cogDeviation||0)*4.5-Math.abs(m.weightBearingShift||0)*3.5,0,100),
@@ -5242,18 +2561,18 @@ function mergeViewResults(viewResults) {
     // Knee combined risk: frontal valgus + sagittal recurvatum
     if (hasKneeValgus && hasKneeRecurv) {
       crossPlaneFindings.push({
-        region:"◈ Cross-Plane — Knee Risk",
-        findingName:"Combined knee risk: valgus tendency (frontal) + hyperextension tendency (sagittal) — combined MCL + posterior capsule loading pattern. Magee p.759/760: significantly elevated PFPS and ACL injury risk.",
+        region:"◈ Cross-Plane — Knee Observation",
+        findingName:"Combined observation: knee valgus tendency (front view) plus hyperextension tendency (side view). This combination is worth discussing with a qualified professional.",
         severity:"moderate", confidenceScore:78, clinicalSignificance:"high", confirmed:true,
-        correction:"Priority: VMO strengthening, hip abductor activation, gait re-education. Consider orthopaedic screen if pain or instability symptoms. Avoid deep squats until alignment improved.",
+        correction:"General activities some find helpful (discuss with a professional first): quadriceps and hip strengthening, and being mindful of alignment during squatting. See a professional if you have knee pain or instability.",
         _derivedFrom:["Knee Alignment Tendency (frontal)","Knee — Sagittal (lateral)"],
       });
     }
     // UCS cross-plane confirmation
     if (hasUCS_sag && hasShoulderEl) {
       crossPlaneFindings.push({
-        region:"◈ Cross-Plane — UCS Confirmed",
-        findingName:"Upper Crossed Syndrome confirmed across planes: sagittal FHP/rounded shoulder pattern + frontal shoulder elevation — Janda's UCS requires both sagittal (FHP, protraction) and coronal (asymmetry) components. Both planes positive.",
+        region:"◈ Cross-Plane — Upper-Body Pattern",
+        findingName:"Upper-body posture pattern seen in both views: forward-head/rounded-shoulder tendency (side) plus shoulder-height asymmetry (front). This is an observation only — a qualified professional can assess whether it is meaningful.",
         severity:"moderate", confidenceScore:80, clinicalSignificance:"moderate", confirmed:true,
         correction:"Janda protocol: inhibit upper trapezius/levator scapulae (soft tissue) + activate deep neck flexors and lower trapezius/serratus anterior. Address ipsilateral scalene tightness if head tilt present.",
         _derivedFrom:["Sagittal chain (lateral)","Shoulder Girdle (frontal)"],
@@ -6007,6 +3326,34 @@ function loadScript(src){
 }
 const MP_CDN="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404";
 
+// ── MediaPipe Pose singleton ─────────────────────────────────────────────────
+// The MediaPipe Pose (0.5 solution API) uses a single shared Emscripten WASM
+// module and CANNOT be created/initialised twice in one page — a second attempt
+// throws `Aborted(Module.arguments has been replaced…)`. React StrictMode and
+// Vite HMR both double-invoke effects, which is exactly what produced the
+// intermittent "AI Error". We therefore load pose.js once and initialise exactly
+// once, caching the promise on `window` so it survives HMR module re-evaluation.
+// A rejected attempt clears the cache so an explicit retry can start fresh.
+function getMediaPipePose(){
+  if(typeof window==="undefined") return Promise.reject(new Error("no window"));
+  if(window.__mpPosePromise) return window.__mpPosePromise;
+  const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error("MediaPipe init timeout")),ms))]);
+  const p=(async()=>{
+    if(typeof window.Pose!=="function"){
+      await loadScript(`${MP_CDN}/pose.js`);
+      await loadScript(`${MP_CDN}/pose_solution_simd_wasm_bin.js`);
+    }
+    if(typeof window.Pose!=="function") throw new Error("Pose global not available");
+    const pose=new window.Pose({locateFile:f=>`${MP_CDN}/${f}`});
+    pose.setOptions({modelComplexity:2,smoothLandmarks:true,smoothSegmentation:false,enableSegmentation:false,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
+    await withTimeout(pose.initialize(),25000);
+    return pose;
+  })();
+  window.__mpPosePromise=p;
+  p.catch(()=>{ window.__mpPosePromise=null; }); // allow a clean retry after failure
+  return p;
+}
+
 // ─── View config ──────────────────────────────────────────────────────────────
 const VIEWS={
   anterior:{label:"Frontal",short:"Frontal",badge:"+ Frontal plumb",colour:PC.accent,icon:"⬆",
@@ -6096,10 +3443,14 @@ function FindingsDisplay({ findings, PC }) {
 
   return (
     <div style={{ marginTop: 4 }}>
+      {/* Path A screening disclaimer — shown above every result set */}
+      <div style={{ marginBottom:12, padding:"9px 12px", borderRadius:10, background:"rgba(180,83,9,0.08)", border:"1px solid rgba(180,83,9,0.25)", fontSize:"0.74rem", color:PC.muted, lineHeight:1.5 }}>
+        ⓘ <strong>Screening &amp; education only.</strong> These are automated observations from a 2D photo and may be inaccurate — <strong>not a medical diagnosis</strong>. This tool is not a medical device and does not provide medical advice. Consult a qualified healthcare professional.
+      </div>
       {/* Summary bar */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
         <div style={{ fontSize:"0.82rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"1px" }}>
-          Clinical Findings
+          Screening Observations
         </div>
         <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           {confirmed.length > 0 && (
@@ -6168,7 +3519,7 @@ function FindingCardV2({ f, col, isConfirmed, isLowConf, PC }) {
             {f.text}
           </div>
           <div style={{ fontSize:"0.8rem", color:PC.muted, marginTop:2 }}>
-            {f.region} · {f.icd}
+            {f.region}
           </div>
         </div>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3, flexShrink:0 }}>
@@ -6685,8 +4036,8 @@ function MuscleImbalanceCard({ findings, isWide }) {
       <div style={{padding:"11px 14px",background:`linear-gradient(135deg,rgba(220,38,38,0.08),rgba(37,99,235,0.08))`,borderBottom:`1px solid ${PC.border}`,display:"flex",alignItems:"center",gap:8}}>
         <span style={{fontSize:"1rem"}}>⚡</span>
         <div>
-          <div style={{fontWeight:800,fontSize:"0.78rem",color:PC.text}}>Muscle Imbalance Table</div>
-          <div style={{fontSize:"0.8rem",color:PC.muted}}>Derived from findings — confirm clinically</div>
+          <div style={{fontWeight:800,fontSize:"0.78rem",color:PC.text}}>Commonly-associated muscle patterns</div>
+          <div style={{fontSize:"0.8rem",color:PC.muted}}>Educational — patterns often linked to these observations. Not a diagnosis; a professional can assess.</div>
         </div>
       </div>
       {/* Two columns */}
@@ -6735,8 +4086,8 @@ function SpecialTestsCard({ findings, isWide }) {
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:"1rem"}}>⚕</span>
           <div>
-            <div style={{fontWeight:800,fontSize:"0.78rem",color:PC.text}}>Suggested Special Tests</div>
-            <div style={{fontSize:"0.8rem",color:PC.muted}}>{tests.length} tests indicated by findings</div>
+            <div style={{fontWeight:800,fontSize:"0.78rem",color:PC.text}}>Areas a professional might assess</div>
+            <div style={{fontSize:"0.8rem",color:PC.muted}}>{tests.length} topics to raise with a qualified professional — informational only</div>
           </div>
         </div>
         {tests.length > (isWide ? 6 : 4) && (
@@ -6799,14 +4150,15 @@ function ExercisePlanTab({ findings, isWide }) {
   return (
     <div style={{padding:isWide?"20px 24px":"14px 16px"}}>
       {/* Programme header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
         <div>
-          <div style={{fontWeight:900,fontSize:isWide?"0.95rem":"0.85rem",color:PC.text}}>▶ Exercise Programme</div>
-          <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:2}}>{totalCount} exercises in 3 phases · Based on {findings.length} findings</div>
+          <div style={{fontWeight:900,fontSize:isWide?"0.95rem":"0.85rem",color:PC.text}}>▶ General Movement Suggestions</div>
+          <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:2}}>{totalCount} example activities · linked to {findings.length} observations</div>
         </div>
-        <div style={{padding:"4px 10px",borderRadius:8,background:`${PC.accent}12`,border:`1px solid ${PC.accent}25`,fontSize:"0.8rem",fontWeight:700,color:PC.accent}}>
-          10–15 min/day
-        </div>
+      </div>
+      {/* Educational disclaimer — Path A (not a prescription) */}
+      <div style={{marginBottom:14,padding:"9px 12px",borderRadius:10,background:"rgba(180,83,9,0.08)",border:"1px solid rgba(180,83,9,0.25)",fontSize:"0.76rem",color:PC.muted,lineHeight:1.5}}>
+        ⓘ These are <strong>general educational examples</strong>, not a prescription or treatment plan. They may not be suitable for you. Talk to a qualified healthcare or fitness professional before starting any exercise. <strong>Not medical advice.</strong>
       </div>
 
       {/* Phases */}
@@ -6937,7 +4289,7 @@ function useHistory(){
   return {sessions,save,clear};
 }
 
-// ─── usePostureHistory — alias used by PostureLiveAnalysis / PhotoUploadAnalyzer ─
+// ─── usePostureHistory — posture session history hook ─
 function usePostureHistory(){
   const [sessions,setSessions]=useState([]);
   const saveSession=useCallback((s)=>setSessions(prev=>[...prev.slice(-19),s]),[]);
@@ -7097,31 +4449,23 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
 
   useEffect(()=>{viewRef.current=view;},[view]);
 
-  // ── Load MediaPipe ──────────────────────────────────────────────────────────
-  useEffect(()=>{
-    let cancelled=false;
-    (async()=>{
-      try{
-        await loadScript(`${MP_CDN}/pose.js`);
-        await loadScript(`${MP_CDN}/pose_solution_simd_wasm_bin.js`);
-        if(cancelled) return;
-        const pose=new window.Pose({locateFile:f=>`${MP_CDN}/${f}`});
-        pose.setOptions({modelComplexity:2,smoothLandmarks:true,smoothSegmentation:false,enableSegmentation:false,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
-        await pose.initialize();
-        if(!cancelled){
-          poseRef.current=pose;
-          setMpStatus("ready");
-          // If camera was started before AI loaded, connect the handler now
-          if(liveHandlerRef.current){
-            try{ pose.onResults(liveHandlerRef.current); }catch(_){}
-          }
-        }
-      }catch(e){
-        if(!cancelled) setMpStatus("error");
-      }
-    })();
-    return()=>{cancelled=true;};
+  // ── Load MediaPipe (singleton-backed, safe under StrictMode/HMR + retry) ─────
+  const loadMediaPipe=useCallback(async()=>{
+    if(poseRef.current){ setMpStatus("ready"); return; }
+    setMpStatus("loading");
+    try{
+      const pose=await getMediaPipePose();
+      poseRef.current=pose;
+      setMpStatus("ready");
+      // If camera was started before AI loaded, connect the handler now
+      if(liveHandlerRef.current){ try{ pose.onResults(liveHandlerRef.current); }catch(_){} }
+    }catch(e){
+      console.warn("MediaPipe init failed:",e?.message||e);
+      setMpStatus("error");
+    }
   },[]);
+
+  useEffect(()=>{ loadMediaPipe(); },[loadMediaPipe]);
 
   // ── Process landmarks ───────────────────────────────────────────────────────
   const processLandmarks=useCallback((lm,v,imgH)=>{
@@ -7169,7 +4513,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       // Do NOT fire when shoulder is posterior (sway-back pattern)
       const shIsAnterior = m.sagShoulderShift != null && m.sagShoulderShift > 1.0;
       if (!fb.some(x=>x.region==="Shoulder / Rounded Tendency") && m.thoracicAngle!=null&&m.thoracicAngle>46 && shIsAnterior) {
-        fb.push({region:"Shoulder / Rounded Tendency",text:"Rounded shoulder tendency — associated with increased thoracic curvature",plain:"Rounded shoulders",severity:"moderate",confidenceScore:62,clinicalSignificance:"moderate",correction:"Pec minor stretch, scapular retraction ×15, lower trap Y-T-W.",icd:"M62.9",norm:"Neutral scapular position"});
+        fb.push({region:"Shoulder / Rounded Tendency",text:"Rounded shoulder tendency — associated with increased thoracic curvature",plain:"Rounded shoulders",severity:"moderate",confidenceScore:62,clinicalSignificance:"moderate",correction:"General activities some find helpful (discuss with a professional first): gentle pec-minor stretching, shoulder-blade retraction, and lower-trapezius work.",icd:"M62.9",norm:"Neutral scapular position"});
       }
       // ── SWAY-BACK PATTERN detection (Kendall D) ────────────────────────────────
       // Pattern: shoulder POSTERIOR to plumb + ear AND/OR hip ANTERIOR to plumb
@@ -7185,7 +4529,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           severity: "moderate",
           confidenceScore: 65,
           clinicalSignificance: "moderate",
-          correction: "Activate hip flexors (standing hip flexion ×15). Shift hips forward over ankles. Lumbar extension mobilisation. Reduce hamstring/abdominal over-bracing. McKenzie lumbar extension.",
+          correction: "General activities some find helpful (discuss with a professional first): gentle hip-flexor activation, bringing the hips forward over the ankles, easing off over-bracing of the abdominals/hamstrings, and gentle lower-back extension mobility.",
           interpretation: "Sway-back: upper trunk leans posterior, hips thrust anterior, lumbar lordosis reduced. Kendall D pattern. Hamstring and abdominal overactivity common. Assess hip flexor inhibition.",
           icd: "M40.3",
           norm: "Shoulder at plumb, hip within 2cm of plumb (Kendall)"
@@ -7208,7 +4552,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           plain:"Kyphosis-lordosis pattern",
           severity:kSev, confidenceScore:65, clinicalSignificance:kSev,
           interpretation:"Forward head posture with anterior shoulder position indicates upper thoracic kyphosis tendency. The rounded upper back causes pec minor shortening (scapular protraction) and suboccipital overactivation to maintain horizontal gaze. Confirm with thoracic extension mobility assessment.",
-          correction:"Thoracic extension foam roller T4–T8 ×2min. Pec minor stretch ×30s bilateral. Lower trap Y-T-W ×15. Chin tuck + thoracic extension combined.",
+          correction:"General activities some find helpful (discuss with a professional first): gentle mid-back (thoracic) extension mobility over a foam roller, pec-minor stretching, lower-trapezius work, and gentle chin-tuck movements.",
           icd:"M40.0", norm:"Acromion at plumb, CVA >55° (Kendall/Yip 2008)"
         });
       }
@@ -7217,22 +4561,26 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         const sev=abs>6?"high":abs>4?"moderate":"mild";
         const label=isAPT?`Hip anterior displacement — ~${abs.toFixed(1)}cm anterior to plumb (confirm pelvic tilt clinically)`:`Hip posterior displacement — ~${abs.toFixed(1)}cm posterior to plumb (flat-back tendency)`;
         fb.push({region:"Pelvis / Lumbar",text:label,plain:isAPT?"Anterior pelvic tilt":"Posterior pelvic tilt",severity:sev,confidenceScore:68,clinicalSignificance:sev,
-        correction:isAPT?"Hip flexor stretch (Thomas test 30s×3), glute bridges ×20, transversus abdominis activation.":"Hamstring stretch, hip flexor activation, lumbar extension mobility.",
+        correction:isAPT?"General activities some find helpful (discuss with a professional first): gentle hip-flexor stretching, glute bridges, and deep-core activation.":"General activities some find helpful (discuss with a professional first): gentle hamstring stretching, hip-flexor activation, and lower-back extension mobility.",
         icd:isAPT?"M40.4":"M40.3",norm:"Hip within 2cm of plumb (Kendall)"}); }
       }
 
       // ── FRONTAL / POSTERIOR findings ─────────────────────────────────────────
       if (isFrontFallback) {
-        if (m.shoulderAngle!=null&&Math.abs(m.shoulderAngle)>2.5) { const abs=Math.abs(m.shoulderAngle); const side=m.shoulderAngle>0?"Right":"Left"; const sev=abs>6?"high":abs>4?"moderate":"mild"; fb.push({region:"Shoulder Level",text:`${side} shoulder elevated — ${abs.toFixed(1)}° asymmetry (normal <2.5°)`,plain:`${side} shoulder higher ${abs.toFixed(1)}°`,severity:sev,confidenceScore:78,clinicalSignificance:sev,correction:"Check for cervical muscle tightness, scapular stabilisation, check LLD.",icd:"M99.0",norm:"<2.5° shoulder height difference (Magee)"}); }
-        if (m.pelvisAngle!=null&&Math.abs(m.pelvisAngle)>2) { const abs=Math.abs(m.pelvisAngle); const side=m.pelvisAngle>0?"Right":"Left"; const sev=abs>5?"high":abs>3?"moderate":"mild"; fb.push({region:"Pelvic Obliquity",text:`${side} iliac crest elevated — ${abs.toFixed(1)}° obliquity (normal <2°)`,plain:`Pelvic obliquity ${abs.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Check hip abductor strength, LLD, QL tightness. Thomas test bilaterally.",icd:"M99.0",norm:"<2° pelvic obliquity (Magee)"}); }
-        if (m.headLateralOffset!=null&&Math.abs(m.headLateralOffset)>2.5) { const abs=Math.abs(m.headLateralOffset); const side=m.headLateralOffset>0?"Right":"Left"; fb.push({region:"Head Lateral Tilt",text:`Head tilted ${abs.toFixed(1)}% toward ${side} (normal <2.5%)`,plain:`Head lateral tilt ${abs.toFixed(1)}%`,severity:abs>5?"moderate":"mild",confidenceScore:70,clinicalSignificance:"moderate",correction:"Cervical lateral flexion stretch, SCM/scalene release, check atlanto-axial rotation.",icd:"M99.0",norm:"Head centred within 2.5% of midline"}); }
-        if (m.trunkLateralShift!=null&&Math.abs(m.trunkLateralShift)>3.5) { const abs=Math.abs(m.trunkLateralShift); const dir=m.trunkLateralShift>0?"Right":"Left"; const sev=abs>6?"high":abs>4?"moderate":"mild"; fb.push({region:"Trunk Lateral Shift",text:`Trunk shifted ${dir} — ${abs.toFixed(1)}% of frame width (normal <3.5%)`,plain:`Trunk shift ${dir} ${abs.toFixed(1)}%`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"QL stretch, lateral trunk stabilisation, check for disc pathology if >4cm.",icd:"M99.0",norm:"<3.5% lateral trunk shift (Magee)"}); }
-        if (m.lldProxy!=null&&m.lldProxy>5) { const sev=m.lldProxy>20?"high":m.lldProxy>10?"moderate":"mild"; fb.push({region:"Leg Length Discrepancy",text:`Possible LLD — knee height difference ~${m.lldProxy.toFixed(0)}mm (screen only)`,plain:`LLD screen ${m.lldProxy.toFixed(0)}mm`,severity:sev,confidenceScore:60,clinicalSignificance:sev,correction:"Confirm with X-ray or standing heel raise test. Orthotic if structural LLD confirmed.",icd:"M21.7",norm:"<5mm functional LLD (Magee)"}); }
-        if (m.leftKneeFrontal!=null&&m.rightKneeFrontal!=null) {
+        // Same clinical firing gate as buildFindings: a frontal fallback finding
+        // only fires when its key landmarks meet CLINICAL_MIN_VIS (0.65), so the
+        // relaxed fallback path cannot bypass the two-tier visibility model.
+        const cv = (...idx) => idx.every(i => (lm[i]?.visibility || 0) >= CLINICAL_MIN_VIS);
+        if (cv(11,12)&&m.shoulderAngle!=null&&Math.abs(m.shoulderAngle)>3) { const abs=Math.abs(m.shoulderAngle); const side=m.shoulderAngle>0?"Right":"Left"; const sev=abs>7?"high":abs>5?"moderate":"mild"; fb.push({region:"Shoulder Level",text:`${side} shoulder elevated — ${abs.toFixed(1)}° asymmetry (normal <3°)`,plain:`${side} shoulder higher ${abs.toFixed(1)}°`,severity:sev,confidenceScore:78,clinicalSignificance:sev,correction:"Check for cervical muscle tightness, scapular stabilisation, check LLD.",icd:"M99.0",norm:"<3° shoulder height difference (Magee + healthy-norm)"}); }
+        if (cv(23,24)&&m.pelvisAngle!=null&&Math.abs(m.pelvisAngle)>4) { const abs=Math.abs(m.pelvisAngle); const side=m.pelvisAngle>0?"Right":"Left"; const sev=abs>10?"high":abs>7?"moderate":"mild"; fb.push({region:"Pelvic Obliquity",text:`${side} iliac crest elevated — ${abs.toFixed(1)}° obliquity (normal <4°)`,plain:`Pelvic obliquity ${abs.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Check hip abductor strength, LLD, QL tightness. Thomas test bilaterally.",icd:"M99.0",norm:"<4° pelvic obliquity (healthy-population norm, PMC10229507)"}); }
+        if (cv(0,11,12)&&m.headLateralOffset!=null&&Math.abs(m.headLateralOffset)>2.5) { const abs=Math.abs(m.headLateralOffset); const side=m.headLateralOffset>0?"Right":"Left"; fb.push({region:"Head Lateral Tilt",text:`Head tilted ${abs.toFixed(1)}% toward ${side} (normal <2.5%)`,plain:`Head lateral tilt ${abs.toFixed(1)}%`,severity:abs>5?"moderate":"mild",confidenceScore:70,clinicalSignificance:"moderate",correction:"Cervical lateral flexion stretch, SCM/scalene release, check atlanto-axial rotation.",icd:"M99.0",norm:"Head centred within 2.5% of midline"}); }
+        if (cv(11,12,23,24)&&m.trunkLateralShift!=null&&Math.abs(m.trunkLateralShift)>3.5) { const abs=Math.abs(m.trunkLateralShift); const dir=m.trunkLateralShift>0?"Right":"Left"; const sev=abs>6?"high":abs>4?"moderate":"mild"; fb.push({region:"Trunk Lateral Shift",text:`Trunk shifted ${dir} — ${abs.toFixed(1)}% of frame width (normal <3.5%)`,plain:`Trunk shift ${dir} ${abs.toFixed(1)}%`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"General core and trunk mobility/stability activities may help. Consider a professional assessment if the lean is pronounced.",icd:"M99.0",norm:"<3.5% lateral trunk shift (Magee)"}); }
+        if (cv(25,26)&&m.lldProxy!=null&&m.lldProxy>5) { const sev=m.lldProxy>20?"high":m.lldProxy>10?"moderate":"mild"; fb.push({region:"Leg Length Discrepancy",text:`Possible LLD — knee height difference ~${m.lldProxy.toFixed(0)}mm (screen only)`,plain:`LLD screen ${m.lldProxy.toFixed(0)}mm`,severity:sev,confidenceScore:60,clinicalSignificance:sev,correction:"Confirm with X-ray or standing heel raise test. Orthotic if structural LLD confirmed.",icd:"M21.7",norm:"<5mm functional LLD (Magee)"}); }
+        if (cv(23,24,25,26,27,28)&&m.leftKneeFrontal!=null&&m.rightKneeFrontal!=null) {
           const lk=Math.abs(m.leftKneeFrontal), rk=Math.abs(m.rightKneeFrontal);
           if(lk>6||rk>6){ const side=lk>rk?"Left":"Right"; const val=Math.max(lk,rk); const pattern=m.leftKneeFrontal<0||m.rightKneeFrontal<0?"Valgus tendency":"Varus tendency"; fb.push({region:"Knee Alignment",text:`${side} knee ${pattern} — ${val.toFixed(1)}° from mechanical axis (normal <6°)`,plain:`Knee ${pattern} ${val.toFixed(1)}°`,severity:val>10?"high":"moderate",confidenceScore:65,clinicalSignificance:"moderate",correction:"Hip abductor/external rotator strengthening, foot orthotic evaluation, patellar taping.",icd:"M21.0",norm:"<6° HKA deviation (Magee)"}); }
         }
-        if (m.spinalDeviation!=null&&Math.abs(m.spinalDeviation)>4) { const abs=Math.abs(m.spinalDeviation); fb.push({region:"Spinal Deviation Screen",text:`Spinal deviation screen positive — head/trunk offset ${abs.toFixed(1)}% (Adam's forward bend test recommended)`,plain:`Spinal deviation ${abs.toFixed(1)}%`,severity:abs>8?"moderate":"mild",confidenceScore:55,clinicalSignificance:"moderate",correction:"Adam's forward bend test. Refer for X-ray Cobb angle if rib hump present.",icd:"M41.9",norm:"Head centred over pelvis"}); }
+        if (cv(0,23,24)&&m.spinalDeviation!=null&&Math.abs(m.spinalDeviation)>4) { const abs=Math.abs(m.spinalDeviation); fb.push({region:"Spinal Deviation Screen",text:`Spinal deviation screen positive — head/trunk offset ${abs.toFixed(1)}% (Adam's forward bend test recommended)`,plain:`Spinal deviation ${abs.toFixed(1)}%`,severity:abs>8?"moderate":"mild",confidenceScore:55,clinicalSignificance:"moderate",correction:"Adam's forward bend test. Refer for X-ray Cobb angle if rib hump present.",icd:"M41.9",norm:"Head centred over pelvis"}); }
       }
 
       if (fb.length > 0) f = fb;
@@ -7601,7 +4949,20 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   const manualTotal = manualPointDefs.length;
   const manualPct = manualPlacedCount / manualTotal;
   const manualCanAnalyse = manualPct >= 0.6;
+  const manualMinPoints = Math.ceil(manualTotal * 0.6);
   const nextManualIdx = manualPointDefs.findIndex(def => !manualPlaced[def.id]);
+
+  // Auto-analyse in manual mode once every point is placed — no extra tap needed.
+  // Fires once (guarded by manualAnalysed); undo/reset re-arms it. The explicit
+  // "Analyse Now" button still handles the case where the user places only the
+  // essential points (≥60%) without completing all of them.
+  useEffect(() => {
+    if (inputMode === "manual" && manualPlacedCount > 0
+        && manualPlacedCount === manualTotal && !manualAnalysed) {
+      analyseManualPoints();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manualPlacedCount, manualTotal, inputMode, manualAnalysed]);
 
   function handleManualImageClick(e) {
     if (inputMode !== "manual" || !uploadedImg) return;
@@ -7661,43 +5022,43 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         const shAng = m.shoulderAngle; const pelAng = m.pelvisAngle; const cobb = m.cobbEstimate;
         const trunkShift = m.trunkLateralShift; const lld = m.lldProxy;
 
-        // Shoulder level (Kendall 5th ed. Ch.5 — normal <2.5°)
+        // Shoulder level (P0-1: normal <3° — Magee + healthy-norm, slight asymmetry is normal)
         if (shAng !== null && shAng !== undefined) {
           const absS = Math.abs(shAng);
-          const sev = absS > 7 ? "high" : absS > 3 ? "moderate" : "low";
+          const sev = absS > 7 ? "high" : absS > 5 ? "moderate" : "low";
           const side = shAng > 0 ? "Left" : "Right";
           pb.push({
             region: "Shoulder Level",
-            text: absS <= 2.5
-              ? `Shoulder height — within normal limits (${absS.toFixed(1)}° asymmetry, normal <2.5°)`
-              : `${side} shoulder elevated — ${absS.toFixed(1)}° (normal <2.5° — Kendall 5th ed. Ch.5)`,
-            plain: absS <= 2.5 ? "Shoulders level ✓" : `${side} shoulder elevated ${absS.toFixed(1)}°`,
+            text: absS <= 3
+              ? `Shoulder height — within normal limits (${absS.toFixed(1)}° asymmetry, normal <3°)`
+              : `${side} shoulder elevated — ${absS.toFixed(1)}° (normal <3° — Magee + healthy-norm)`,
+            plain: absS <= 3 ? "Shoulders level ✓" : `${side} shoulder elevated ${absS.toFixed(1)}°`,
             severity: sev,
             confidenceScore: 72,
             clinicalSignificance: sev,
-            correction: absS <= 2.5 ? "Maintain symmetry — no intervention required." : "Upper trap/levator scapulae release ipsilateral. Lower trap activation. Confirm with anterior view.",
-            icd: absS <= 2.5 ? "Z00.0" : "M54.2",
-            norm: "Normal: <2.5° (Kendall) / <1.5cm height difference (Magee p.597)"
+            correction: absS <= 3 ? "Maintain symmetry — no intervention required." : "Upper trap/levator scapulae release ipsilateral. Lower trap activation. Confirm with anterior view.",
+            icd: absS <= 3 ? "Z00.0" : "M54.2",
+            norm: "Normal: <3° (slight asymmetry is normal) / <1.5cm height difference (Magee p.597)"
           });
         }
 
-        // Pelvic obliquity (Magee p.598 — normal <2°)
+        // Pelvic obliquity (P0-1: normal <4° — healthy population reaches 5.6°, median ~2.0°, PMC10229507)
         if (pelAng !== null && pelAng !== undefined) {
           const absP = Math.abs(pelAng);
-          const sev = absP > 7 ? "high" : absP > 3 ? "moderate" : "low";
+          const sev = absP > 10 ? "high" : absP > 7 ? "moderate" : "low";
           const side = pelAng > 0 ? "Left" : "Right";
           pb.push({
             region: "Pelvic Level",
-            text: absP <= 2
-              ? `Pelvic level — within normal limits (${absP.toFixed(1)}° obliquity, normal <2°)`
-              : `${side} pelvis elevated — ${absP.toFixed(1)}° obliquity (Magee p.598, normal <2°)`,
-            plain: absP <= 2 ? "Pelvis level ✓" : `${side} pelvic elevation ${absP.toFixed(1)}°`,
+            text: absP <= 4
+              ? `Pelvic level — within normal limits (${absP.toFixed(1)}° obliquity, normal <4°)`
+              : `${side} pelvis elevated — ${absP.toFixed(1)}° obliquity (normal <4° — healthy-population norm)`,
+            plain: absP <= 4 ? "Pelvis level ✓" : `${side} pelvic elevation ${absP.toFixed(1)}°`,
             severity: sev,
             confidenceScore: 68,
             clinicalSignificance: sev,
-            correction: absP <= 2 ? "No intervention required." : "QL release elevated side. Hip abductor assessment. Screen for LLD with heel lifts.",
-            icd: absP <= 2 ? "Z00.0" : "M62.89",
-            norm: "Normal: <2° pelvic obliquity (Magee Orthopedic Physical Assessment p.598)"
+            correction: absP <= 4 ? "No intervention required." : "QL release elevated side. Hip abductor assessment. Screen for LLD with heel lifts.",
+            icd: absP <= 4 ? "Z00.0" : "M62.89",
+            norm: "Normal: <4° pelvic obliquity (healthy population reaches 5.6°, median 2.0° — PMC10229507)"
           });
         }
 
@@ -7734,7 +5095,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
               severity: sev,
               confidenceScore: 65,
               clinicalSignificance: sev,
-              correction: "Pain-avoidance correction. Lateral shift correction exercise. Screen for disc herniation if acute.",
+              correction: "General trunk-alignment activities may help. If you have pain, see a qualified professional promptly.",
               icd: "M99.0",
               norm: "Normal: shoulder midpoint within 2% BH of hip midpoint (Kendall 5th ed.)"
             });
@@ -8028,6 +5389,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 {isWide&&scoreData?.subScores&&(
                   <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:10}}>
                     {Object.entries(scoreData.subScores).map(([region,val])=>{
+                      if(val==null) return null; // region not measured — omit chip
                       const col=val>=74?PC.green:val>=55?PC.yellow:PC.red;
                       return(
                         <div key={region} style={{display:"flex",alignItems:"center",gap:5,padding:"3px 9px",borderRadius:20,background:`${col}12`,border:`1px solid ${col}30`}}>
@@ -8434,6 +5796,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             <>
               <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Regional Sub-scores</div>
               {Object.entries(scoreData.subScores).map(([region,val])=>{
+                if(val==null) return null; // region not measured — omit row
                 const col=val>=74?PC.green:val>=55?PC.yellow:PC.red;
                 return(
                   <div key={region} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${PC.border}`}}>
@@ -8988,12 +6351,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                     );
                   })}
                 </div>
-                {manualCanAnalyse&&(
-                  <button onClick={analyseManualPoints}
-                    style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer"}}>
-                    ✋ Analyse Now — {manualPlacedCount}/{manualTotal} points
-                  </button>
-                )}
+                <button onClick={analyseManualPoints} disabled={!manualCanAnalyse}
+                  style={{width:"100%",padding:"14px",borderRadius:12,border:"none",
+                    background: manualCanAnalyse ? `linear-gradient(135deg,${PC.accent},${PC.a2})` : PC.s3,
+                    color: manualCanAnalyse ? "#fff" : PC.muted,
+                    fontWeight:800,fontSize: isWide?"0.9rem":"0.82rem",
+                    cursor: manualCanAnalyse ? "pointer" : "not-allowed",
+                    opacity: manualCanAnalyse ? 1 : 0.75}}>
+                  {manualCanAnalyse
+                    ? (manualAnalysed ? `↻ Re-analyse — ${manualPlacedCount}/${manualTotal} points` : `✋ Analyse Now — ${manualPlacedCount}/${manualTotal} points`)
+                    : `Place at least ${manualMinPoints} points to analyse (${manualPlacedCount}/${manualTotal})`}
+                </button>
 
                 {/* ── C7 / T12 Spinal Levels (Manual mode) ── */}
                 {isLat && uploadedImg && (
@@ -9324,12 +6692,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       </div>`;
     const footer = (page,total,type) => `
       <div style="position:absolute;bottom:0;left:0;right:0;border-top:1px solid ${C.border};padding:8px 32px;display:flex;justify-content:space-between;background:#f8fafc;">
-        <div style="font-size:0.55rem;color:${C.muted}">⚠ All findings are OBSERVATIONS ONLY — not diagnoses. Confirm all measurements with clinical examination (Magee 6th ed. standards). Not a substitute for clinical assessment.</div>
+        <div style="font-size:0.55rem;color:${C.muted}">⚠ Screening & education only — NOT a medical diagnosis. Automated estimates from a 2D photo; may be inaccurate. This tool is not a medical device and does not provide medical advice. Consult a qualified healthcare professional.</div>
         <div style="font-size:0.55rem;color:${C.muted};white-space:nowrap;margin-left:8px">${type} · ${d.clinician.date} · Page ${page}/${total}</div>
       </div>`;
     const hdr = (title,sub) => `
       <div style="background:${C.primary};padding:18px 32px;display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-family:Fraunces;font-size:1.3rem;font-weight:900;color:#fff">PostureAI</div><div style="font-size:0.65rem;color:rgba(255,255,255,.5);margin-top:2px">Clinical Biomechanical Assessment</div></div>
+        <div><div style="font-family:Fraunces;font-size:1.3rem;font-weight:900;color:#fff">PostureAI</div><div style="font-size:0.65rem;color:rgba(255,255,255,.5);margin-top:2px">Posture Screening & Education · Not a medical diagnosis</div></div>
         <div style="text-align:right"><div style="font-family:Fraunces;font-size:0.95rem;font-weight:700;color:${C.accent}">${title}</div><div style="font-size:0.6rem;color:rgba(255,255,255,.5);margin-top:2px">${sub} · Session ${d.clinician.session}</div></div>
       </div>`;
 
@@ -9565,7 +6933,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       </div>
 
       <div class="page">
-        ${hdr("Clinical Findings","Detailed Analysis")}
+        ${hdr("Screening Observations","Detailed Analysis")}
         <div style="padding:18px 32px 80px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
             <div style="width:3px;height:14px;border-radius:2px;background:${C.accent}"></div>
@@ -9584,7 +6952,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 <div style="display:flex;gap:6px;align-items:center">
                   <span style="font-size:0.55rem;font-weight:700;color:${(f.confidence||70)>=80?"#059669":(f.confidence||70)>=60?"#d97706":"#dc2626"};padding:2px 7px;border-radius:4px;border:1px solid ${(f.confidence||70)>=80?"#6ee7b7":(f.confidence||70)>=60?"#fde68a":"#fca5a5"};background:#fff">${f.confidence||70}% conf</span>
                   <span style="font-size:0.57rem;font-weight:700;color:${sevCol(f.severity)};padding:2px 8px;border-radius:4px;border:1px solid ${sevCol(f.severity)}40;background:#fff">${(f.severity||"").toUpperCase()}</span>
-                  <span style="font-size:0.57rem;color:${C.muted}">${f.icd}</span>
                 </div>
               </div>
               <div style="padding:11px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
@@ -9859,11 +7226,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             <div style={{fontWeight:900,fontSize:isWide?"1.1rem":"0.95rem",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
               Posture Analysis
             </div>
-            <div style={{fontSize:isWide?"0.68rem":"0.6rem",color:PC.muted,marginTop:1}}>Clinical-grade biomechanical assessment</div>
+            <div style={{fontSize:isWide?"0.68rem":"0.6rem",color:PC.muted,marginTop:1}}>Posture screening &amp; education · not a medical diagnosis</div>
           </div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <div style={{padding:isWide?"5px 12px":"3px 9px",borderRadius:20,fontSize:isWide?"0.65rem":"0.58rem",fontWeight:700,
+          <div onClick={mpStatus==="error"?loadMediaPipe:undefined}
+            title={mpStatus==="error"?"Tap to retry loading the AI model":undefined}
+            style={{padding:isWide?"5px 12px":"3px 9px",borderRadius:20,fontSize:isWide?"0.65rem":"0.58rem",fontWeight:700,
+            cursor:mpStatus==="error"?"pointer":"default",userSelect:"none",
             background:mpStatus==="ready"?"rgba(5,150,105,0.12)":mpStatus==="loading"?"rgba(180,83,9,0.12)":"rgba(220,38,38,0.12)",
             color:mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red,
             border:`1px solid ${mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red}40`}}>
@@ -10000,248 +7370,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   );
 }
 
-
-function PostureLiveAnalysis({ landmarks, canvasRef, videoSize }) {
-  const [view, setView]         = useState("anterior");
-  const [tab, setTab]           = useState("findings");
-  const [showHeatmap, setHeat]  = useState(true);
-  const [showLabels, setLbls]   = useState(false);
-
-  const m  = useMemo(() => landmarks ? AdvancedMeasurementEngine(landmarks) : null, [landmarks]);
-  const f  = useMemo(() => landmarks && m ? ClinicalFindingsEngine(landmarks, view, m) : [], [landmarks, view, m]);
-  const r  = useMemo(() => landmarks ? ReliabilityEngine(landmarks) : null, [landmarks]);
-  const s  = useMemo(() => m && f && r ? PostureScoreEngine(m, f, r) : null, [m, f, r]);
-  const { sessions, saveSession, clearHistory } = usePostureHistory();
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !landmarks || !videoSize || !m) return;
-    const { w, h } = videoSize;
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    renderPostureOverlay({ ctx, W:w, H:h, lm:landmarks, measurements:m, showHeatmap, showLabels, showGrid:true, view });
-  }, [landmarks, videoSize, view, showHeatmap, showLabels, m, canvasRef]);
-
-  if (!landmarks || !m) return null;
-  const highF = f.filter(x => x.severity === "high");
-  const C2 = { surface:"#ffffff", s2:"#f5f0fb", border:"#d8cce8", accent:"#7c3aed", a2:"#9333ea", text:"#1a1025", muted:"#7e6a9a", red:"#dc2626", yellow:"#b45309", green:"#059669" };
-
-  return (
-    <div style={{ background:C2.surface, border:"1px solid #d8cce8", borderRadius:14, overflow:"hidden", marginTop:10 }}>
-      <div style={{ padding:"10px 14px", borderBottom:"1px solid #d8cce8", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:7 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          {s && <ScoreRingNew score={s.score} band={s.band} colour={s.colour} size={58}/>}
-          <div>
-            <div style={{ fontWeight:800, color:C2.accent, fontSize:"0.83rem" }}>📐 Live Analysis</div>
-            <div style={{ fontSize:"0.8rem", color:C2.muted, marginTop:1 }}>
-              {highF.length > 0 ? `🔴 ${highF.length} priority · ` : ""}Findings: {f.length} · {r?.status}
-            </div>
-          </div>
-        </div>
-        <div style={{ display:"flex", gap:5 }}>
-          {[["🌡",showHeatmap,setHeat],["🏷",showLabels,setLbls]].map(([lbl,val,setter],i)=>(
-            <button key={i} onClick={()=>setter(v=>!v)} style={{ padding:"3px 8px", borderRadius:6, border:`1px solid ${val?C2.accent:C2.border}`, background:val?"rgba(0,229,255,0.1)":"transparent", color:val?C2.accent:C2.muted, fontSize:"0.8rem", cursor:"pointer" }}>{lbl}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* View selector */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:4, padding:"8px 10px", background:C2.s2, borderBottom:"1px solid #d8cce8" }}>
-        {Object.entries(PHOTO_VIEW_META_NEW).map(([key,meta])=>{
-          const act=view===key;
-          return <button key={key} onClick={()=>setView(key)} style={{ padding:"5px 2px", borderRadius:7, border:`1px solid ${act?meta.colour:C2.border}`, background:act?`${meta.colour}18`:"transparent", cursor:"pointer", textAlign:"center" }}>
-            <div style={{ fontSize:"0.75rem" }}>{meta.icon}</div>
-            <div style={{ fontSize:"0.56rem", fontWeight:800, color:act?meta.colour:C2.muted }}>{meta.short}</div>
-          </button>;
-        })}
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display:"flex", borderBottom:"1px solid #d8cce8" }}>
-        {[["findings",`🔍 Findings (${f.length})`],["metrics","📐 Metrics"],["bilateral","⚖ Balance"],["actions","💊 Actions"]].map(([t,lbl])=>(
-          <button key={t} onClick={()=>setTab(t)} style={{ flex:1, padding:"8px 2px", border:"none", borderBottom:`2px solid ${tab===t?C2.accent:"transparent"}`, background:"transparent", color:tab===t?C2.accent:C2.muted, fontWeight:tab===t?800:500, fontSize:"0.78rem", cursor:"pointer", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{lbl}</button>
-        ))}
-      </div>
-
-      <div style={{ padding:"10px 12px" }}>
-        {tab==="findings" && (
-          f.length===0
-            ? <div style={{ padding:"12px", textAlign:"center", background:"rgba(0,201,122,0.07)", border:`1px solid ${C2.green}30`, borderRadius:9 }}><div style={{ fontWeight:700, color:C2.green, fontSize:"0.78rem" }}>✅ No significant deviations</div></div>
-            : <div>{f.map((fi,i)=><FindingCardNew key={i} f={fi} defaultOpen={i===0&&fi.severity==="high"}/>)}</div>
-        )}
-        {tab==="metrics" && (
-          <div>
-            {[
-              ["Shoulder",m.shoulderAngle,"°",[3,7]],["Pelvis",m.pelvisAngle,"°",[3,7]],
-              ["Head Lat.",m.headLateralOffset,"%",[2,5]],["Trunk Shift",m.trunkLateralShift,"%",[3,7]],
-              ["Forward Head",m.forwardHeadMm,"%",[3,7]],["Cobb Est.",m.cobbEstimate,"°",[5,10]],
-            ].map(([label,val,unit,t],i)=>{
-              if(val===null||val===undefined) return null;
-              const abs=Math.abs(val),col=abs<t[0]?"#00c97a":abs<t[1]?"#ffb300":"#ff4d6d";
-              return(
-                <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 10px", background:`${col}09`, border:`1px solid ${col}22`, borderRadius:7, marginBottom:4 }}>
-                  <span style={{ fontSize:"0.78rem", color:C2.muted }}>{label}</span>
-                  <span style={{ fontSize:"0.82rem", fontWeight:800, color:col }}>{val>0?"+":""}{Math.round(val*10)/10}{unit}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {tab==="bilateral" && (
-          <div>
-            {[["Shoulders",m.shoulderSymmetry],["Hips",m.hipSymmetry],["Knees",m.kneeSymmetry],["Ankles",m.ankleSymmetry]].map(([label,sym])=>{
-              if(!sym) return null;
-              const diff=Math.abs(sym.diff||0),col=diff<2?"#00c97a":diff<5?"#ffb300":"#ff4d6d";
-              const lPct=Math.max(10,Math.min(90,50+((sym.diff||0)*5)));
-              return(
-                <div key={label} style={{ marginBottom:9 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-                    <span style={{ fontSize:"0.82rem", fontWeight:700, color:col }}>{label}</span>
-                    <span style={{ fontSize:"0.82rem", color:C2.muted }}>Δ{sym.diff>0?"+":""}{sym.diff}%</span>
-                  </div>
-                  <div style={{ display:"flex", height:8, borderRadius:4, overflow:"hidden", background:C2.s2 }}>
-                    <div style={{ width:`${lPct}%`, background:sym.diff>0?col:"#1a2d45", borderRadius:"4px 0 0 4px" }}/>
-                    <div style={{ width:2, background:C2.accent, flexShrink:0 }}/>
-                    <div style={{ flex:1, background:sym.diff<0?col:"#1a2d45", borderRadius:"0 4px 4px 0" }}/>
-                  </div>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginTop:2 }}>
-                    <span style={{ fontSize:"0.82rem", color:C2.muted }}>L</span><span style={{ fontSize:"0.82rem", color:C2.muted }}>R</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {tab==="actions" && (
-          f.length===0
-            ? <div style={{ textAlign:"center", color:C2.muted, fontSize:"0.82rem", padding:14 }}>No specific actions needed</div>
-            : f.map((fi,i)=>(
-              <div key={i} style={{ marginBottom:8, padding:"9px 11px", background:C2.s2, border:`1px solid ${fi.severity==="high"?C2.red:C2.yellow}28`, borderRadius:9 }}>
-                <div style={{ fontWeight:700, fontSize:"0.82rem", color:fi.severity==="high"?C2.red:C2.yellow, marginBottom:4 }}>{fi.icon} {fi.text}</div>
-                <div style={{ fontSize:"0.78rem", color:C2.text, lineHeight:1.6, padding:"6px 9px", background:`${fi.severity==="high"?C2.red:C2.yellow}08`, borderRadius:7 }}>{fi.correction}</div>
-              </div>
-            ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── FindingCardNew — Three-Layer Clinical Display (OBSERVATION / CONTRIBUTORS / TESTS) ──
-function FindingCardNew({ f, defaultOpen = false }) {
-  const [open, setOpen] = useState(defaultOpen);
-  const col = f.severity === "high" ? "#ff4d6d" : f.severity === "moderate" ? "#ffb300" : "#00c97a";
-  const isObs = f.findingName && f.findingName.startsWith("OBSERVATION:");
-  const conf = f.confidenceScore || f.confidence || 70;
-  const confColor = conf >= 80 ? "#00c97a" : conf >= 60 ? "#ffb300" : "#ff4d6d";
-  const confLabel = conf >= 80 ? "High" : conf >= 60 ? "Moderate" : "Low";
-  const needsConfirmation = conf < 80;
-  const possibleContributors = f.possibleContributors || (f.correction ? f.correction.split(/Possible contributors:/i)[1]?.split(/Recommended/i)[0]?.trim() : null);
-  const recommendedTests = f.recommendedObjectiveAssessment || f.objectiveAssessments || [];
-  const observationText = isObs
-    ? f.findingName.replace(/^OBSERVATION:\s*/i, "").split(/\..*Clinical confirmation/i)[0].trim()
-    : (f.findingName || f.text || "");
-
-  return (
-    <div onClick={() => setOpen(o => !o)}
-      style={{ border: `1px solid ${col}30`, borderRadius: 10, padding: "10px 12px",
-        marginBottom: 7, background: `${col}07`, cursor: "pointer" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: col, marginTop: 5, flexShrink: 0 }} />
-        <div style={{ flex: 1 }}>
-          {/* Layer 1: Observation */}
-          <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#1a1025", lineHeight: 1.3 }}>
-            {observationText}
-          </div>
-          <div style={{ fontSize: "0.58rem", color: "#7e6a9a", marginTop: 2 }}>
-            {f.region} · Confidence:{" "}
-            {f._boosted && f._origConf ? (
-              <span>
-                <span style={{ color: "#7e6a9a", textDecoration: "line-through", marginRight: 3 }}>{f._origConf}%</span>
-                <span style={{ color: confColor, fontWeight: 700 }}>{conf}% ✓</span>
-                <span style={{ color: "#059669", fontWeight: 600, marginLeft: 3, fontSize: "0.56rem" }}>+{conf - f._origConf}% verified</span>
-              </span>
-            ) : (
-              <span style={{ color: confColor, fontWeight: 700 }}>{conf}% ({confLabel})</span>
-            )}
-          </div>
-          {needsConfirmation && (
-            <div style={{ fontSize: "0.58rem", color: "#ffb300", fontWeight: 600, marginTop: 2 }}>
-              ⚡ Clinical confirmation recommended (confidence &lt;80%)
-            </div>
-          )}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
-          <span style={{ fontSize: "0.6rem", color: col, fontWeight: 700 }}>
-            {f.severity?.toUpperCase()}
-          </span>
-          <span style={{ fontSize: "0.55rem", color: "#7e6a9a" }}>{open ? "▲" : "▼"}</span>
-        </div>
-      </div>
-      {open && (
-        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${col}20`, fontSize: "0.65rem", lineHeight: 1.6 }}>
-          {/* Layer 1 expanded: full observation */}
-          <div style={{ marginBottom: 8, padding: "7px 10px", background: "rgba(124,58,237,0.06)", borderRadius: 7, border: "1px solid rgba(124,58,237,0.15)" }}>
-            <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 3 }}>
-              Layer 1 — Observable Alignment Finding
-            </div>
-            <div style={{ color: "#1a1025", fontWeight: 600 }}>{observationText}</div>
-            {f.norm && <div style={{ fontSize: "0.58rem", color: "#7e6a9a", marginTop: 3, fontStyle: "italic" }}>Reference: {f.norm}</div>}
-          </div>
-          {/* Layer 2: Possible Contributors */}
-          {(f.interpretation || possibleContributors) && (
-            <div style={{ marginBottom: 8, padding: "7px 10px", background: "rgba(255,179,0,0.06)", borderRadius: 7, border: "1px solid rgba(255,179,0,0.2)" }}>
-              <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "#b45309", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 3 }}>
-                Layer 2 — Possible Contributors (Not Diagnoses)
-              </div>
-              <div style={{ color: "#1a1025" }}>
-                {f.interpretation || possibleContributors}
-              </div>
-            </div>
-          )}
-          {/* Layer 3: Recommended Confirmation Tests */}
-          {recommendedTests.length > 0 && (
-            <div style={{ padding: "7px 10px", background: "rgba(0,201,122,0.05)", borderRadius: 7, border: "1px solid rgba(0,201,122,0.2)" }}>
-              <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "#059669", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 4 }}>
-                Layer 3 — Recommended Confirmation Tests
-              </div>
-              {recommendedTests.map((t, i) => (
-                <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-start", marginBottom: 2 }}>
-                  <span style={{ color: "#059669", fontSize: "0.65rem", marginTop: 1 }}>▸</span>
-                  <span style={{ color: "#1a1025" }}>{t}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {needsConfirmation && (
-            <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 6,
-              background: "rgba(255,179,0,0.12)", color: "#b45309", fontSize: "0.6rem", fontWeight: 600 }}>
-              ⚡ Confidence {conf}% — clinical confirmation recommended before treatment decisions.
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-// ─── VERIFIED LANDMARK MAP ────────────────────────────────────────────────────
-const VERIFIED_LANDMARK_MAP = {
-  'l_asis':     { mpIdx: 23, label: 'Left ASIS',              priority: 1, affects: ['pelvisAngle', 'asisHeightDiff'] },
-  'r_asis':     { mpIdx: 24, label: 'Right ASIS',             priority: 1, affects: ['pelvisAngle', 'asisHeightDiff'] },
-  'c7':         { mpIdx: null, label: 'C7',                   priority: 1, affects: ['cervicalAngle'] },
-  's1':         { mpIdx: null, label: 'S1',                   priority: 1, affects: ['lumbarLordosis'] },
-  'l_iliac':    { mpIdx: null, label: 'L Iliac Crest',        priority: 2, affects: ['pelvisAngle'] },
-  'r_iliac':    { mpIdx: null, label: 'R Iliac Crest',        priority: 2, affects: ['pelvisAngle'] },
-  'l_acromion': { mpIdx: 11,   label: 'L Acromion',           priority: 2, affects: ['shoulderAngle'] },
-  'r_acromion': { mpIdx: 12,   label: 'R Acromion',           priority: 2, affects: ['shoulderAngle'] },
-  'l_gt':       { mpIdx: 23,   label: 'L Greater Trochanter', priority: 3, affects: ['hipAlignment'] },
-  'r_gt':       { mpIdx: 24,   label: 'R Greater Trochanter', priority: 3, affects: ['hipAlignment'] },
-  'l_psis':     { mpIdx: null, label: 'L PSIS',               priority: 3, affects: ['sacralBase'] },
-  'r_psis':     { mpIdx: null, label: 'R PSIS',               priority: 3, affects: ['sacralBase'] },
-};
-
 // Confidence boost by priority level
 const LANDMARK_CONF_BOOST = { 1: 20, 2: 12, 3: 8 };
 
@@ -10295,586 +7423,4 @@ function useVerifiedLandmarks() {
   return { verified, setVerified, clearVerified, mergeWithMediaPipe, boostFindingConfidence };
 }
 
-// ─── FindingTracePanel ───────────────────────────────────────────────────────
-function FindingTracePanel({ findings }) {
-  const [open, setOpen] = useState(false);
-  const traceable = (findings || []).filter(f => f._derivedFrom);
-  if (!traceable.length) return null;
-  const C = { accent:"#7c3aed", border:"#d8cce8", surface:"#fff", text:"#1a1025", muted:"#7e6a9a", s2:"#f5f0fb" };
-  return (
-    <div style={{marginTop:10,borderRadius:10,border:`1px solid ${C.border}`,overflow:"hidden"}}>
-      <div onClick={()=>setOpen(o=>!o)} style={{padding:"8px 13px",background:C.s2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontSize:"0.82rem",fontWeight:700,color:C.accent}}>🔍 Finding Derivation Trace ({traceable.length})</span>
-        <span style={{fontSize:"0.75rem",color:C.muted}}>{open?"▲ Hide":"▼ Show"} clinical audit trail</span>
-      </div>
-      {open && (
-        <div style={{padding:"10px 13px",background:C.surface}}>
-          {traceable.map((f,i) => (
-            <div key={i} style={{marginBottom:8,padding:"7px 10px",borderRadius:8,background:C.s2,border:`1px solid ${C.border}`}}>
-              <div style={{fontSize:"0.78rem",fontWeight:700,color:C.text,marginBottom:3}}>
-                Finding: {(f.findingName||f.text||'').replace(/^OBSERVATION:\s*/i,'')}
-              </div>
-              <div style={{fontSize:"0.8rem",color:C.muted}}>
-                Derived from: {f._derivedFrom.join(' → ')}
-              </div>
-              {f._requiresVerification && (
-                <div style={{fontSize:"0.78rem",color:"#b45309",fontWeight:600,marginTop:2}}>
-                  ⚠ Dedicated tibial landmarks (Tibial Tuberosity, Mid-Shaft, Malleoli) required for clinical confirmation
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── LandmarkVerificationPanel ────────────────────────────────────────────────
-function LandmarkVerificationPanel({ verified, activeLandmark, setActiveLandmark, onClear }) {
-  const C = { accent:"#7c3aed", a2:"#9333ea", border:"#d8cce8", s2:"#f5f0fb", muted:"#7e6a9a", text:"#1a1025", green:"#059669", yellow:"#b45309" };
-  const verifiedCount = Object.keys(verified).length;
-
-  const PRIORITIES = [
-    { level: 1, label: "Priority 1 — Spinal & Pelvic Core", color: "#dc2626", keys: ["l_asis","r_asis","c7","s1"] },
-    { level: 2, label: "Priority 2 — Iliac Crest & Shoulder", color: "#b45309", keys: ["l_iliac","r_iliac","l_acromion","r_acromion"] },
-    { level: 3, label: "Priority 3 — Trochanter & PSIS", color: "#059669", keys: ["l_gt","r_gt","l_psis","r_psis"] },
-  ];
-
-  return (
-    <div style={{background:C.s2,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginTop:12}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-        <div>
-          <div style={{fontWeight:800,fontSize:"0.82rem",color:C.accent}}>📍 Clinical Landmark Verification</div>
-          <div style={{fontSize:"0.82rem",color:C.muted,marginTop:2}}>Tap a landmark → click on the image to place it. Verified points override AI estimates.</div>
-        </div>
-        {verifiedCount > 0 && (
-          <span style={{padding:"2px 9px",borderRadius:8,background:"rgba(5,150,105,0.12)",border:"1px solid rgba(5,150,105,0.35)",color:C.green,fontSize:"0.82rem",fontWeight:700}}>{verifiedCount} verified</span>
-        )}
-      </div>
-      {PRIORITIES.map(({ level, label, color, keys }) => (
-        <div key={level} style={{marginBottom:10}}>
-          <div style={{fontSize:"0.78rem",fontWeight:700,color:color,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:5}}>{label}</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:5}}>
-            {keys.map(key => {
-              const def = VERIFIED_LANDMARK_MAP[key];
-              const isVerified = !!verified[key];
-              const isActive = activeLandmark === key;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setActiveLandmark(isActive ? null : key)}
-                  style={{
-                    padding:"7px 9px",borderRadius:8,textAlign:"left",cursor:"pointer",
-                    border:`1px solid ${isActive ? "#7c3aed" : isVerified ? "#059669" : C.border}`,
-                    background:isActive ? "rgba(124,58,237,0.1)" : isVerified ? "rgba(5,150,105,0.08)" : "white",
-                    display:"flex",alignItems:"center",gap:7
-                  }}>
-                  <span style={{fontSize:"0.75rem"}}>{isVerified ? "✅" : isActive ? "🎯" : "☐"}</span>
-                  <span style={{fontSize:"0.75rem",fontWeight:isActive||isVerified?700:500,color:isActive?"#7c3aed":isVerified?"#059669":C.text,flex:1,lineHeight:1.3}}>{def.label}</span>
-                  {isVerified && (
-                    <span onClick={e=>{e.stopPropagation();onClear(key);}} style={{fontSize:"0.78rem",color:C.muted,cursor:"pointer",padding:"1px 4px",borderRadius:4,background:"rgba(0,0,0,0.05)"}} title="Remove">✕</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-      {activeLandmark && (
-        <div style={{marginTop:6,padding:"7px 11px",background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.25)",borderRadius:8,fontSize:"0.78rem",color:"#7c3aed",fontWeight:700,textAlign:"center"}}>
-          🎯 Click anywhere on the image to place <strong>{VERIFIED_LANDMARK_MAP[activeLandmark]?.label}</strong>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── PhotoUploadAnalyzer — uses new advanced engine ──────────────────────────
-function PhotoUploadAnalyzer() {
-  const [image, setImage]         = useState(null);
-  const [analysisResult, setResult] = useState(null);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState(null);
-  const [mpReady, setMpReady]     = useState(false);
-  const [selectedView, setView]   = useState("anterior");
-  const [tab, setTab]             = useState("upload");
-  const [showHeatmap, setHeatmap] = useState(true);
-  const [showLabels, setLabels]   = useState(true);
-  const [activeLandmark, setActiveLandmark] = useState(null);
-  const { verified, setVerified, clearVerified, mergeWithMediaPipe, boostFindingConfidence } = useVerifiedLandmarks();
-  const canvasRef  = useRef(null);
-  const imgRef     = useRef(null);
-  const poseRef    = useRef(null);
-  const fileRef    = useRef(null);
-  const urlRef     = useRef(null);
-  const viewRef    = useRef(selectedView);
-  const { sessions, saveSession, clearHistory } = usePostureHistory();
-  const [showHistory, setShowHistory] = useState(false);
-  useEffect(()=>{ viewRef.current = selectedView; },[selectedView]);
-  useEffect(()=>()=>{ if(urlRef.current) URL.revokeObjectURL(urlRef.current); },[]);
-
-  useEffect(()=>{
-    (async()=>{
-      try{
-        const loadScript = src => new Promise((res,rej)=>{
-          if(document.querySelector(`script[src="${src}"]`)){res();return;}
-          const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);
-        });
-        const CDN="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404";
-        await loadScript(`${CDN}/pose.js`);
-        const pose=new window.Pose({locateFile:f=>`${CDN}/${f}`});
-        pose.setOptions({modelComplexity:2,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
-        pose.onResults(results=>{
-          setLoading(false);
-          if(results.poseLandmarks?.length>0){
-            setError(null);
-            const lm=results.poseLandmarks;
-            const m=AdvancedMeasurementEngine(lm);
-            const f=ClinicalFindingsEngine(lm,viewRef.current,m);
-            const r=ReliabilityEngine(lm);
-            const s=PostureScoreEngine(m,f,r);
-            const report={lm,measurements:m,findings:f,reliability:r,scoreData:s,view:viewRef.current,capturedAt:new Date().toISOString()};
-            setResult(report);
-            const postureEntry={view:viewRef.current,score:s.score,band:s.band,findingsCount:f.length,highCount:f.filter(x=>x.severity==="high").length,capturedAt:new Date().toISOString(),img:urlRef?.current||null,findings:f||[]};
-            saveSession(postureEntry);
-            // NOTE: No auto-save — user taps Save to Patient Record manually
-            // Draw overlay
-            const canvas=canvasRef.current,img=imgRef.current;
-            if(canvas&&img){
-              const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
-              canvas.width=w;canvas.height=h;
-              const ctx=canvas.getContext("2d");
-              renderPostureOverlay({ctx,W:w,H:h,lm,measurements:m,showHeatmap:true,showLabels:true,showGrid:true,view:viewRef.current});
-            }
-            setTab("results");
-          } else {
-            setError("No body landmarks detected. Ensure full body is visible in photo.");
-          }
-        });
-        await pose.initialize();
-        poseRef.current=pose; setMpReady(true);
-      }catch(e){setError("Could not load AI. Check internet connection."); setLoading(false);}
-    })();
-  },[]);
-
-  // Re-render overlay when view/settings change
-  useEffect(()=>{
-    if(!analysisResult) return;
-    const canvas=canvasRef.current,img=imgRef.current;
-    if(!canvas||!img) return;
-    const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
-    canvas.width=w;canvas.height=h;
-    const ctx=canvas.getContext("2d");
-    renderPostureOverlay({ctx,W:w,H:h,lm:analysisResult.lm,measurements:analysisResult.measurements,showHeatmap,showLabels,showGrid:true,view:selectedView});
-  },[selectedView,showHeatmap,showLabels,analysisResult]);
-
-  const handleFile = async e => {
-    const file=e.target.files?.[0]; if(!file) return;
-    setError(null);setResult(null);setTab("upload");
-    if(urlRef.current) URL.revokeObjectURL(urlRef.current);
-    const url=URL.createObjectURL(file); urlRef.current=url; setImage(url);
-    const img=new Image();
-    img.onload=async()=>{
-      if(!poseRef.current){setError("AI not ready. Wait and retry.");return;}
-      setLoading(true);
-      try{ await poseRef.current.send({image:img}); }
-      catch{ setLoading(false); setError("Analysis failed. Ensure body is fully visible."); }
-    };
-    img.onerror=()=>setError("Could not load image.");
-    img.src=url;
-  };
-
-  // Handle click on image for landmark placement
-  const handleImageClick = (e) => {
-    if (!activeLandmark || !imgRef.current) return;
-    const rect = imgRef.current.getBoundingClientRect();
-    const xPct = (e.clientX - rect.left) / rect.width;
-    const yPct = (e.clientY - rect.top)  / rect.height;
-    setVerified(activeLandmark, xPct, yPct);
-    setActiveLandmark(null);
-    // Re-run analysis with merged landmarks
-    if (analysisResult?.lm) {
-      const mergedLm = mergeWithMediaPipe(analysisResult.lm);
-      const m2 = AdvancedMeasurementEngine(mergedLm);
-      const f2 = ClinicalFindingsEngine(mergedLm, analysisResult.view, m2);
-      const r2 = ReliabilityEngine(mergedLm);
-      const s2 = PostureScoreEngine(m2, f2, r2);
-      setResult(prev => ({ ...prev, lm: mergedLm, measurements: m2, findings: f2, reliability: r2, scoreData: s2 }));
-    }
-  };
-
-  const C2={surface:"#ffffff",s2:"#f5f0fb",border:"#d8cce8",accent:"#7c3aed",a2:"#9333ea",a3:"#059669",text:"#1a1025",muted:"#7e6a9a",red:"#dc2626",yellow:"#b45309",green:"#059669"};
-  const vm=PHOTO_VIEW_META_NEW[selectedView]||PHOTO_VIEW_META_NEW.anterior;
-  const { measurements, reliability, scoreData } = analysisResult||{};
-  const verifiedCount = Object.keys(verified).length;
-  const isClinicianVerified = verifiedCount > 0;
-  const rawFindings = analysisResult?.findings || [];
-  const findings = boostFindingConfidence(rawFindings);
-  const highF=(findings||[]).filter(f=>f.severity==="high");
-  const otherF=(findings||[]).filter(f=>f.severity!=="high");
-
-  return(
-    <div style={{background:C2.surface,border:`1px solid ${C2.border}`,borderRadius:14,overflow:"hidden",marginBottom:12}}>
-      {/* Header */}
-      <div style={{padding:"11px 14px",borderBottom:`1px solid ${C2.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:7}}>
-        <div>
-          <div style={{fontWeight:800,fontSize:"0.9rem",color:C2.accent}}>📷 Photo Upload Analysis</div>
-          <div style={{fontSize:"0.75rem",color:C2.muted,marginTop:2}}>{mpReady?"✅ AI Ready — Advanced Biomechanical Engine":"⏳ Loading AI engine…"}</div>
-        </div>
-        <div style={{display:"flex",gap:6}}>
-          <button onClick={()=>setShowHistory(true)} style={{padding:"4px 10px",background:`${C2.a2}15`,border:`1px solid ${C2.a2}30`,borderRadius:7,color:C2.a2,fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>📁 History</button>
-          {["upload","results"].map(t=>(
-            <button key={t} onClick={()=>setTab(t)} style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${tab===t?C2.accent:C2.border}`,background:tab===t?"rgba(0,229,255,0.1)":"transparent",color:tab===t?C2.accent:C2.muted,fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>
-              {t==="upload"?"📤 Upload":"📊 Results"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* View selector */}
-      <div style={{padding:"10px 14px",background:C2.s2,borderBottom:`1px solid ${C2.border}`}}>
-        <div style={{fontSize:"0.78rem",fontWeight:700,color:C2.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>
-          📐 Select View — choose <em>before</em> uploading
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:8}}>
-          {Object.entries(PHOTO_VIEW_META_NEW).map(([key,meta])=>{
-            const act=selectedView===key;
-            return(
-              <button key={key} onClick={()=>setView(key)} style={{padding:"8px 4px",borderRadius:9,border:`1px solid ${act?meta.colour:C2.border}`,background:act?`${meta.colour}18`:"transparent",cursor:"pointer",textAlign:"center"}}>
-                <div style={{fontSize:"0.85rem"}}>{meta.icon}</div>
-                <div style={{fontSize:"0.8rem",fontWeight:800,color:act?meta.colour:C2.muted}}>{meta.short}</div>
-              </button>
-            );
-          })}
-        </div>
-        <div style={{fontSize:"0.78rem",color:C2.muted,lineHeight:1.6,padding:"6px 10px",background:`${vm.colour}08`,border:`1px solid ${vm.colour}20`,borderRadius:8}}>
-          <span style={{color:vm.colour,fontWeight:700}}>{vm.short}: </span>{vm.helper}
-        </div>
-        <div style={{marginTop:6,padding:"5px 9px",background:"rgba(124,58,237,0.06)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:8,fontSize:"0.82rem",color:C2.muted,fontStyle:"italic"}}>
-          🔲 Posture grid lines will be drawn on the photo for the selected view — select view first, then upload
-        </div>
-      </div>
-
-      {/* Upload tab */}
-      {tab==="upload"&&(
-        <div style={{padding:"14px"}}>
-          <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{display:"none"}}/>
-          {!image?(
-            <div onClick={()=>fileRef.current?.click()} style={{border:`2px dashed ${vm.colour}40`,borderRadius:14,padding:"32px 20px",textAlign:"center",cursor:"pointer",background:`${vm.colour}05`}}>
-              <div style={{fontSize:"2.5rem",marginBottom:10}}>📸</div>
-              <div style={{fontWeight:800,color:vm.colour,fontSize:"0.88rem",marginBottom:6}}>Select Patient Photo</div>
-              <div style={{fontSize:"0.82rem",color:C2.muted,lineHeight:1.6}}>Tap to upload from gallery.<br/>Full body visible for best results.</div>
-            </div>
-          ):(
-            <div>
-              <div style={{position:"relative",borderRadius:12,overflow:"hidden",background:"#f5f0fb",marginBottom:9,cursor:activeLandmark?"crosshair":"default"}} onClick={handleImageClick}>
-                <img ref={imgRef} src={image} alt="Upload" style={{width:"100%",display:"block",maxHeight:360,objectFit:"contain"}}/>
-                <canvas ref={canvasRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-                {loading&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{color:C2.accent,fontSize:"1.1rem",fontWeight:700}}>⏳ Analysing…</div><div style={{fontSize:"0.8rem",color:C2.muted}}>Running AI pose detection</div></div>}
-                {scoreData&&!loading&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingNew score={scoreData?.score} band={scoreData?.band} colour={scoreData?.colour} size={72}/></div>}
-                {activeLandmark&&!loading&&<div style={{position:"absolute",inset:0,border:"3px solid #7c3aed",borderRadius:12,pointerEvents:"none",animation:"pulse 1s infinite"}}/>}
-                {Object.entries(verified).map(([key,coords])=>(
-                  <div key={key} style={{position:"absolute",left:`calc(${coords.x*100}% - 8px)`,top:`calc(${coords.y*100}% - 8px)`,width:16,height:16,borderRadius:"50%",background:"#059669",border:"2px solid white",boxShadow:"0 0 4px rgba(0,0,0,0.5)",pointerEvents:"none",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <div style={{width:4,height:4,borderRadius:"50%",background:"white"}}/>
-                  </div>
-                ))}
-              </div>
-              {/* Overlay controls */}
-              <div style={{display:"flex",gap:7,marginBottom:9,flexWrap:"wrap"}}>
-                {[["showHeatmap","🌡 Heat",showHeatmap,setHeatmap],["showLabels","🏷 Labels",showLabels,setLabels]].map(([k,lbl,val,setter])=>(
-                  <button key={k} onClick={()=>setter(v=>!v)} style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${val?C2.accent:C2.border}`,background:val?"rgba(0,229,255,0.1)":"transparent",color:val?C2.accent:C2.muted,fontSize:"0.75rem",fontWeight:600,cursor:"pointer"}}>{lbl}</button>
-                ))}
-                <button onClick={()=>fileRef.current?.click()} style={{marginLeft:"auto",padding:"4px 10px",background:`${vm.colour}15`,border:`1px solid ${vm.colour}30`,borderRadius:7,color:vm.colour,fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>📤 New Photo</button>
-              </div>
-              {detectedViewNotice&&<div style={{padding:"7px 11px",background:"rgba(0,229,255,0.1)",border:"1px solid rgba(0,229,255,0.35)",borderRadius:8,fontSize:"0.82rem",color:"#00e5ff",fontWeight:600,marginBottom:8}}>{detectedViewNotice}</div>}
-              {error&&<div style={{padding:"8px 11px",background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.3)",borderRadius:8,fontSize:"0.74rem",color:C2.red,marginBottom:8}}>{error}</div>}
-              {scoreData&&(
-                <button onClick={()=>setTab("results")} style={{width:"100%",padding:"11px",background:`linear-gradient(135deg,${C2.accent},${C2.a2})`,border:"none",borderRadius:10,color:"#1a1025",fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>View Full Analysis →</button>
-              )}
-              {/* Developer Validation Mode Panel — toggle with Ctrl+Shift+D */}
-              {devMode && scoreData && measurements && (
-                <div style={{marginTop:10,padding:"10px 13px",background:"rgba(0,229,255,0.07)",border:"1px solid rgba(0,229,255,0.3)",borderRadius:10,fontFamily:"monospace"}}>
-                  <div style={{fontSize:"0.75rem",fontWeight:800,color:"#00e5ff",marginBottom:7}}>🔧 DEV MODE — Raw Measurements (Ctrl+Shift+D to hide)</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,fontSize:"0.8rem",color:"#7e6a9a"}}>
-                    {[
-                      ["Shoulder Angle", measurements?.shoulderAngle?.toFixed(2)+"°"],
-                      ["Pelvic Angle", measurements?.pelvisAngle?.toFixed(2)+"°"],
-                      ["Trunk Shift %", measurements?.trunkLateralShift?.toFixed(2)+"%"],
-                      ["L Knee", measurements?.leftKneeFrontal?.toFixed(2)+"°"],
-                      ["R Knee", measurements?.rightKneeFrontal?.toFixed(2)+"°"],
-                      ["Head Lat.", measurements?.headLateralOffset?.toFixed(2)+"%"],
-                      ["CVA", measurements?.cvaAngle?.toFixed(1)+"°"],
-                      ["Cobb Est.", measurements?.cobbEstimate?.toFixed(1)+"°"],
-                      ["Thoracic", measurements?.thoracicAngle?.toFixed(1)+"°"],
-                      ["Lumbar Proxy", measurements?.lumbarProxy?.toFixed(2)+"%"],
-                      ["PLI", measurements?.posturalLoadIndex?.toFixed(0)+"/100"],
-                      ["Score", scoreData?.score+"/100"],
-                    ].map(([label, val]) => (
-                      <div key={label} style={{padding:"3px 6px",background:"rgba(0,0,0,0.3)",borderRadius:4}}>
-                        <span style={{color:"#7e6a9a"}}>{label}: </span>
-                        <span style={{color:"#00e5ff",fontWeight:700}}>{val ?? "—"}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          {/* Landmark Verification Panel — always visible when image loaded */}
-          {image && (
-            <LandmarkVerificationPanel
-              verified={verified}
-              activeLandmark={activeLandmark}
-              setActiveLandmark={setActiveLandmark}
-              onClear={clearVerified}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Results tab */}
-      {tab==="results"&&analysisResult&&(
-        <div style={{padding:"13px 14px"}}>
-          {/* Score row */}
-          <div style={{display:"flex",gap:12,alignItems:"center",padding:"11px 13px",background:`${scoreData?.colour||C2.accent}09`,border:`1px solid ${scoreData?.colour||C2.accent}25`,borderRadius:12,marginBottom:12}}>
-            <ScoreRingNew score={scoreData?.score||0} band={scoreData?.band||"—"} colour={scoreData?.colour||C2.muted} size={68}/>
-            <div style={{flex:1}}>
-              <div style={{fontSize:"0.78rem",color:C2.muted,marginBottom:5}}>
-                {analysisResult.view && (
-                  <span style={{padding:"1px 7px",borderRadius:5,background:`${vm.colour}15`,color:vm.colour,fontWeight:700,marginRight:6,fontSize:"0.82rem"}}>
-                    {({anterior:"⬆ Anterior",posterior:"⬇ Posterior",left:"◀ Left Lateral",right:"▶ Right Lateral"})[analysisResult.view]||analysisResult.view} View
-                  </span>
-                )}
-                {new Date(analysisResult.capturedAt).toLocaleTimeString()}
-              </div>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                <span style={{fontSize:"0.82rem",padding:"2px 8px",borderRadius:7,background:"rgba(0,229,255,0.1)",color:C2.accent}}>Reliability: {reliability?.status}</span>
-                <span style={{fontSize:"0.82rem",padding:"2px 8px",borderRadius:7,background:"rgba(255,77,109,0.1)",color:C2.red}}>Priority: {highF.length}</span>
-                <span style={{fontSize:"0.82rem",padding:"2px 8px",borderRadius:7,background:"rgba(255,179,0,0.1)",color:C2.yellow}}>Findings: {findings?.length||0}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Mode badge */}
-          <div style={{marginBottom:10}}>
-            {isClinicianVerified ? (
-              <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,background:"rgba(5,150,105,0.12)",border:"1px solid rgba(5,150,105,0.35)",color:"#059669",fontSize:"0.78rem",fontWeight:800}}>
-                ✅ Clinician Verified Analysis
-                <span style={{fontWeight:400,color:"#059669",opacity:0.8}}>({verifiedCount} landmark{verifiedCount!==1?"s":""} verified)</span>
-              </div>
-            ) : (
-              <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,background:"rgba(120,120,120,0.08)",border:"1px solid rgba(120,120,120,0.2)",color:C2.muted,fontSize:"0.78rem",fontWeight:800}}>
-                🤖 AI Estimated Analysis
-                <span style={{fontWeight:400,opacity:0.7}}>— verify landmarks below to boost confidence</span>
-              </div>
-            )}
-          </div>
-
-          {/* Findings */}
-          {findings?.length===0?(
-            <div style={{padding:"14px",textAlign:"center",background:"rgba(0,201,122,0.07)",border:`1px solid ${C2.green}30`,borderRadius:10,marginBottom:10}}>
-              <div style={{fontSize:"1.2rem",marginBottom:6}}>✅</div>
-              <div style={{fontWeight:700,color:C2.green,fontSize:"0.82rem"}}>No significant deviations detected</div>
-            </div>
-          ):(
-            <div style={{marginBottom:12}}>
-              {highF.length>0&&(
-                <div style={{marginBottom:8}}>
-                  <div style={{fontSize:"0.8rem",fontWeight:700,color:C2.red,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>🔴 Priority ({highF.length})</div>
-                  {highF.map((f,i)=><FindingCardNew key={i} f={f} defaultOpen={i===0}/>)}
-                </div>
-              )}
-              {otherF.length>0&&(
-                <div>
-                  <div style={{fontSize:"0.8rem",fontWeight:700,color:C2.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>🟡 Notable ({otherF.length})</div>
-                  {otherF.map((f,i)=><FindingCardNew key={i} f={f}/>)}
-                </div>
-              )}
-            </div>
-          )}
-
-
-
-          {/* Clinical Metrics Dashboard */}
-          {measurements&&(
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:"0.8rem",fontWeight:700,color:C2.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📐 Clinical Metrics</div>
-
-              {/* Sub-scores radar row */}
-              {scoreData?.subScores&&(
-                <div style={{marginBottom:10}}>
-                  <div style={{fontSize:"0.78rem",color:C2.muted,marginBottom:5,fontWeight:600}}>Regional Scores</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5}}>
-                    {Object.entries(scoreData?.subScores).map(([region,val])=>{
-                      const col=val>=80?"#00c97a":val>=60?"#ffb300":"#ff4d6d";
-                      const label={cervical:"Cervical",shoulder:"Shoulder",thoracic:"Thoracic",lumbar:"Lumbar",knee:"Knee",global:"Global"}[region]||region;
-                      return(
-                        <div key={region} style={{padding:"6px 8px",background:`${col}10`,border:`1px solid ${col}25`,borderRadius:8,textAlign:"center"}}>
-                          <div style={{fontSize:"1rem",fontWeight:900,color:col}}>{Math.round(val)}</div>
-                          <div style={{fontSize:"0.56rem",color:C2.muted,fontWeight:600}}>{label}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Reliability + ICC */}
-              {reliability&&(
-                <div style={{display:"flex",gap:6,marginBottom:8}}>
-                  <div style={{flex:1,padding:"5px 9px",background:"rgba(0,229,255,0.06)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:8}}>
-                    <div style={{fontSize:"0.78rem",color:C2.muted}}>Tracking Quality</div>
-                    <div style={{fontSize:"0.8rem",fontWeight:800,color:C2.accent}}>{reliability.status} · {reliability.score}%</div>
-                  </div>
-                  {reliability.icc&&(
-                    <div style={{flex:1,padding:"5px 9px",background:"rgba(0,229,255,0.06)",border:"1px solid rgba(0,229,255,0.2)",borderRadius:8}}>
-                      <div style={{fontSize:"0.78rem",color:C2.muted}}>ICC Proxy</div>
-                      <div style={{fontSize:"0.8rem",fontWeight:800,color:C2.accent}}>{reliability.icc}</div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Full metric rows */}
-              {[
-                // Sagittal — highest clinical priority
-                {label:"CVA (Forward Head)",    value:measurements.cvaAngle,        unit:"°",  t:[49,55], norm:">55° normal",  invert:true},
-                {label:"Cervical Load Est.",    value:measurements.cervicalLoadKg,   unit:"kg", t:[6,10],  norm:"Neutral: 4.5kg"},
-                {label:"Thoracic Kyphosis (Trunk Lean Est.)",     value:measurements.thoracicAngle,    unit:"°",  t:[45,55], norm:"20–45° normal"},
-                {label:"Lumbar Lordosis (Z-proxy — unreliable)",  value:measurements.lordosisAngle,    unit:"°",  t:[60,70], norm:"40–60° normal"},
-                {label:"Ant. Pelvic Tilt",      value:measurements.anteriorPelvicTiltDeg, unit:"°", t:[12,20], norm:"♀≤12° ♂≤7°"},
-                // Frontal
-                {label:"Shoulder Tilt",         value:measurements.shoulderAngle,    unit:"°",  t:[3,7],   norm:"<3° normal"},
-                {label:"Pelvic Obliquity",      value:measurements.pelvisAngle,      unit:"°",  t:[3,7],   norm:"<3° normal"},
-                {label:"Trunk Lateral Shift",   value:measurements.trunkLateralShift,unit:"%",  t:[3.5,7], norm:"<3.5% normal"},
-                {label:"Scoliosis (Cobb est.)", value:measurements.cobbEstimate,     unit:"°",  t:[5,10],  norm:"<5° normal"},
-                {label:"C7 Plumb Deviation",    value:measurements.c7PlumbDev,       unit:"%",  t:[4,8],   norm:"<4% normal"},
-                // Knees
-                {label:"L Knee Valgus/Varus",   value:measurements.leftKneeFrontal,  unit:"°",  t:[5,10],  norm:"<5° normal"},
-                {label:"R Knee Valgus/Varus",   value:measurements.rightKneeFrontal, unit:"°",  t:[5,10],  norm:"<5° normal"},
-                {label:"L Knee Hyperext.",       value:measurements.leftKneeDev,      unit:"°",  t:[-5,-12],norm:"0 to -5° normal", invert:true},
-                {label:"R Knee Hyperext.",       value:measurements.rightKneeDev,     unit:"°",  t:[-5,-12],norm:"0 to -5° normal", invert:true},
-                // Balance
-                {label:"WB Asymmetry",          value:measurements.weightBearingShift,unit:"%", t:[4,8],   norm:"<4% normal"},
-                {label:"COG Deviation",         value:measurements.cogDeviation,     unit:"%",  t:[4,8],   norm:"<4% normal"},
-                {label:"LLD Proxy",             value:measurements.lldProxy,         unit:"mm", t:[5,10],  norm:"<5mm acceptable", side:measurements.lldSide},
-                // Syndrome indices
-                {label:"UCS Index (Janda)",     value:measurements.ucsIndex,         unit:"",   t:[0.6,1.0],norm:"<0.4 normal"},
-                {label:"LCS Index (Janda)",     value:measurements.lcsIndex,         unit:"",   t:[0.5,1.0],norm:"<0.4 normal"},
-                {label:"Postural Load Index",   value:measurements.posturalLoadIndex,unit:"/100",t:[35,55], norm:"<35 optimal"},
-              ].map((m,i)=>{
-                if(m.value===null||m.value===undefined||isNaN(m.value)) return null;
-                const abs=Math.abs(m.value);
-                let col;
-                if(m.invert) {
-                  col = abs < Math.abs(m.t[0]) ? "#00c97a" : abs < Math.abs(m.t[1]) ? "#ffb300" : "#ff4d6d";
-                } else {
-                  col = abs < m.t[0] ? "#00c97a" : abs < m.t[1] ? "#ffb300" : "#ff4d6d";
-                }
-                const display = m.invert
-                  ? `${m.value.toFixed(1)}${m.unit}`
-                  : `${m.value>0?"+":""}${m.value.toFixed(1)}${m.unit}`;
-                return(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:`${col}08`,border:`1px solid ${col}20`,borderRadius:8,marginBottom:4}}>
-                    <div>
-                      <div style={{fontSize:"0.8rem",color:C2.text,fontWeight:600}}>{m.label}{m.side?` (${m.side} short)`:""}</div>
-                      {m.norm&&<div style={{fontSize:"0.57rem",color:C2.muted}}>{m.norm}</div>}
-                    </div>
-                    <span style={{fontSize:"0.9rem",fontWeight:900,color:col,flexShrink:0,marginLeft:8}}>{display}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <div style={{fontSize:"0.82rem",color:C2.muted,padding:"7px 10px",background:C2.s2,borderRadius:7,lineHeight:1.6,marginBottom:10}}>⚠ Observational AI analysis — not a clinical diagnosis. All findings require clinical correlation and manual assessment.</div>
-
-          {/* ── Manual Save to Patient Record ── */}
-          {activePatient&&(
-            <button onClick={()=>{
-              const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
-              const vLabel=VLABELS[analysisResult.view]||analysisResult.view;
-              try{
-                const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
-                const sameView=existing.filter(s=>s.view===analysisResult.view).length+1;
-                const entry={
-                  view:analysisResult.view, viewLabel:vLabel, sessionNo:sameView,
-                  sessionLabel:`${vLabel} Session ${sameView}`,
-                  img:(()=>{try{
-                    const ov=canvasRef.current, im=imgRef.current;
-                    const baseW=im?.naturalWidth||ov?.width||0, baseH=im?.naturalHeight||ov?.height||0;
-                    if(baseW>0){
-                      const sc=Math.min(1,900/Math.max(baseW,baseH));
-                      const W=Math.max(1,Math.round(baseW*sc)),H=Math.max(1,Math.round(baseH*sc));
-                      const oc=document.createElement("canvas");oc.width=W;oc.height=H;
-                      const c2=oc.getContext("2d");
-                      if(im) c2.drawImage(im,0,0,W,H);
-                      if(ov&&ov.width>0) c2.drawImage(ov,0,0,W,H);
-                      return oc.toDataURL("image/jpeg",0.8);
-                    }
-                  }catch(e){} return null;})(),
-                  score:scoreData?.score, band:scoreData?.band||"",
-                  findings:findings||[],
-                  kineticChain:measurements?.kineticChain||"",
-                  source:"upload", capturedAt:analysisResult.capturedAt||new Date().toISOString()
-                };
-                setPatientField&&setPatientField("posture_sessions",JSON.stringify([...existing,entry]));
-                alert(`✅ Saved as "${entry.sessionLabel}" to ${activePatient.name}`);
-              }catch(e){alert("Save failed: "+e.message);}
-            }} style={{width:"100%",padding:"11px",borderRadius:10,border:"none",cursor:"pointer",
-              background:"linear-gradient(135deg,#7c3aed,#9333ea)",
-              color:"#fff",fontWeight:800,fontSize:"0.82rem"}}>
-              💾 Save to Patient Record — {activePatient.name}
-            </button>
-          )}
-          {!activePatient&&(
-            <div style={{padding:"9px 12px",background:"#FFF7ED",borderRadius:9,border:"1px solid #FDE68A",fontSize:"0.82rem",color:"#92400E",textAlign:"center"}}>
-              Load a patient first to save this analysis to their record
-            </div>
-          )}
-
-        </div>
-      )}
-
-      {/* History modal */}
-      {showHistory&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div style={{background:C2.surface,border:`1px solid ${C2.border}`,borderRadius:16,width:"100%",maxWidth:480,maxHeight:"88vh",overflowY:"auto",padding:18}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-              <div style={{fontWeight:800,color:C2.accent,fontSize:"0.9rem"}}>📁 Photo Analysis History</div>
-              <div style={{display:"flex",gap:7}}>
-                <button onClick={clearHistory} style={{padding:"4px 10px",background:"rgba(255,77,109,0.1)",border:`1px solid rgba(255,77,109,0.3)`,borderRadius:7,color:C2.red,fontSize:"0.75rem",cursor:"pointer"}}>Clear</button>
-                <button onClick={()=>setShowHistory(false)} style={{padding:"4px 10px",background:C2.s2,border:`1px solid ${C2.border}`,borderRadius:7,color:C2.muted,fontSize:"0.75rem",cursor:"pointer"}}>Close</button>
-              </div>
-            </div>
-            {sessions.length===0?<div style={{textAlign:"center",color:C2.muted,padding:24,fontSize:"0.78rem"}}>No sessions yet</div>:(
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {[...sessions].reverse().map((s,i)=>{
-                  const col=(s.score||0)>=78?"#00c97a":(s.score||0)>=62?"#ffb300":"#ff4d6d";
-                  return(
-                    <div key={i} style={{background:C2.s2,border:`1px solid ${C2.border}`,borderRadius:10,padding:"10px 12px"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <div style={{fontWeight:700,color:C2.text,fontSize:"0.78rem"}}>{(s.view||"").toUpperCase()} · {s.band||"—"}</div>
-                        <div style={{fontSize:"1.2rem",fontWeight:900,color:col}}>{s.score}</div>
-                      </div>
-                      <div style={{fontSize:"0.8rem",color:C2.muted,marginBottom:5}}>{new Date(s.capturedAt).toLocaleString()}</div>
-                      <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                        <span style={{fontSize:"0.78rem",padding:"1px 7px",borderRadius:6,background:"rgba(255,77,109,0.1)",color:C2.red}}>Priority: {s.highCount||0}</span>
-                        <span style={{fontSize:"0.78rem",padding:"1px 7px",borderRadius:6,background:"rgba(255,179,0,0.1)",color:C2.yellow}}>Findings: {s.findingsCount||0}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-
-// ── Exports for AppFull.jsx ──────────────────────────────────────────────────
 export { PostureAnalysisModule, PC };
