@@ -8609,16 +8609,6 @@ function ObservationModule({ data, set }) {
 
   return (
     <div>
-      {/* Region Chips */}
-      <RegionChips
-        regions={OBS_BODY_REGIONS.map(r=>{
-          const filled=Object.keys(data).filter(k=>k.startsWith(`obs_${r.id==="all"?"":r.id+"_"}`)&&data[k]).length;
-          return {key:r.id,label:r.label,filled};
-        })}
-        active={region}
-        onSelect={setRegion}
-      />
-
       {/* Date / save row */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
         <span style={{fontSize:"0.75rem",color:PC.muted,flex:1}}>📅 {new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</span>
@@ -8629,6 +8619,16 @@ function ObservationModule({ data, set }) {
           borderRadius:99,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.muted,
           fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>📂 {snaps.length} entries</button>}
       </div>
+
+      {/* Region Chips */}
+      <RegionChips
+        regions={OBS_BODY_REGIONS.map(r=>{
+          const filled=Object.keys(data).filter(k=>k.startsWith(`obs_${r.id==="all"?"":r.id+"_"}`)&&data[k]).length;
+          return {key:r.id,label:r.label,filled};
+        })}
+        active={region}
+        onSelect={setRegion}
+      />
 
       {/* History panel */}
       {showHistory&&snaps.length>0&&(

@@ -1501,43 +1501,47 @@ function MMTModule({data,set,navContext={}}){
           return(
             <div key={m.id} ref={el=>{ if(el) mmtHlRef.current[m.id]=el; }} style={{background:C.surface,border:`1px solid ${hasVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
               {/* Header */}
-              <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"14px 16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
-                <div style={{display:"flex",gap:12,alignItems:"flex-start",flex:"1 1 160px",minWidth:0}}>
+              <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"14px 16px",cursor:"pointer"}}>
+                <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                   <MuscleBadge id={m.id} title={m.muscle}/>
-                  <div style={{minWidth:0,paddingTop:1}}>
-                    {(()=>{ const {title,sub}=parseMuscleName(m.muscle); return (
-                      <>
-                        <div style={{fontWeight:700,fontSize:"0.94rem",color:C.text,overflowWrap:"break-word"}}>{title}</div>
-                        {sub && <div style={{fontSize:"0.76rem",color:C.muted,marginTop:2,overflowWrap:"break-word"}}>{sub}</div>}
-                      </>
-                    );})()}
+                  <div style={{minWidth:0,flex:1,paddingTop:1}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+                      <div style={{minWidth:0,flex:1}}>
+                        {(()=>{ const {title,sub}=parseMuscleName(m.muscle); return (
+                          <>
+                            <div style={{fontWeight:700,fontSize:"0.94rem",color:C.text,overflowWrap:"break-word"}}>{title}</div>
+                            {sub && <div style={{fontSize:"0.76rem",color:C.muted,marginTop:2,overflowWrap:"break-word"}}>{sub}</div>}
+                          </>
+                        );})()}
+                      </div>
+                      <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0}}>
+                        {/* Bilateral Grading — compact, beside muscle name */}
+                        {["L","R"].map(side=>{
+                          const val=data[`mmt_${m.id}_${side}`];
+                          return(
+                            <div key={side} style={{display:"flex",alignItems:"center",gap:2}}>
+                              <span style={{fontSize:"0.58rem",color:C.muted,fontWeight:600}}>{side}</span>
+                              <select
+                                value={val||""}
+                                onChange={e=>{e.stopPropagation();set(`mmt_${m.id}_${side}`,e.target.value);}}
+                                onClick={e=>e.stopPropagation()}
+                                title={val?gradeLabel(val):""}
+                                style={{fontSize:"0.72rem",padding:"4px 2px",borderRadius:7,border:`1px solid ${val?gradeColor(val):C.border}`,background:val?`${gradeColor(val)}18`:"#fff",color:val?gradeColor(val):C.muted,fontWeight:700,cursor:"pointer",width:40}}
+                              >
+                                <option value="">--</option>
+                                {MMT_GRADE_OPTIONS.map(g=><option key={g} value={g}>{g}</option>)}
+                              </select>
+                            </div>
+                          );
+                        })}
+                        <span style={{color:C.muted,fontSize:"0.65rem"}}>{isOpen?"▲":"▼"}</span>
+                      </div>
+                    </div>
                     <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
                       <span style={{fontSize:"0.72rem",color:"#5F5E5A",background:"#F1EFE8",padding:"3px 10px",borderRadius:20}}>{m.nerve}</span>
                       <span style={{fontSize:"0.72rem",color:"#5F5E5A",background:"#F1EFE8",padding:"3px 10px",borderRadius:20}}>{m.root}</span>
                     </div>
                   </div>
-                </div>
-                <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
-                  {/* Bilateral Grading */}
-                  {["L","R"].map(side=>{
-                    const val=data[`mmt_${m.id}_${side}`];
-                    return(
-                      <div key={side} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                        <span style={{fontSize:"0.68rem",color:C.muted,fontWeight:600,marginBottom:2}}>{side}</span>
-                        <select
-                          value={val||""}
-                          onChange={e=>{e.stopPropagation();set(`mmt_${m.id}_${side}`,e.target.value);}}
-                          onClick={e=>e.stopPropagation()}
-                          style={{fontSize:"0.78rem",padding:"6px 4px",borderRadius:8,border:`1px solid ${val?gradeColor(val):C.border}`,background:val?`${gradeColor(val)}18`:"#fff",color:val?gradeColor(val):C.muted,fontWeight:700,cursor:"pointer",width:56}}
-                        >
-                          <option value="">--</option>
-                          {MMT_GRADE_OPTIONS.map(g=><option key={g} value={g}>{g}</option>)}
-                        </select>
-                        {val&&<span style={{fontSize:"0.55rem",color:gradeColor(val),fontWeight:600}}>{gradeLabel(val)}</span>}
-                      </div>
-                    );
-                  })}
-                  <span style={{color:C.muted,fontSize:"0.7rem",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
                 </div>
               </div>
 

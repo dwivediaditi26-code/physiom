@@ -4649,38 +4649,16 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             </div>
           </div>
 
-          {/* Tap-to-select dot row */}
-          <div style={{ display:"flex", gap:3, alignItems:"center", justifyContent:"space-between" }}>
-            {[0,1,2,3,4,5,6,7,8,9,10].map(n => {
-              const dc = dotCol(n);
-              const isSelected = n === num;
-              const isPast = n < num;
-              return (
-                <button key={n} type="button"
-                  onClick={() => setField(f.id, String(n))}
-                  style={{
-                    flex:1, aspectRatio:"1",
-                    borderRadius:"50%",
-                    border: isSelected ? `2px solid ${dc}` : isPast ? `1.5px solid ${dc}60` : `1.5px solid #E0E0E2`,
-                    background: isSelected
-                      ? dc
-                      : isPast ? dc+"30" : "#F7F7F8",
-                    color: isSelected ? "#fff" : isPast ? dc : "#9B9B9B",
-                    fontSize: isSelected ? "0.72rem" : "0.65rem",
-                    fontWeight: isSelected ? 800 : 500,
-                    cursor:"pointer",
-                    fontFamily:"inherit",
-                    transition:"all 120ms",
-                    boxShadow: isSelected ? `0 2px 8px ${dc}50` : "none",
-                    transform: isSelected ? "scale(1.18)" : "scale(1)",
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    padding:0, minWidth:0,
-                  }}>
-                  {n}
-                </button>
-              );
-            })}
-          </div>
+          {/* Drag slider */}
+          <input
+            type="range" min={0} max={10} step={1}
+            value={num}
+            onChange={e => setField(f.id, e.target.value)}
+            style={{
+              width:"100%", height:8, margin:"6px 0 2px",
+              accentColor: col, cursor:"pointer",
+            }}
+          />
 
           {/* Track labels */}
           <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, paddingLeft:2, paddingRight:2 }}>
@@ -5531,8 +5509,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
                 {/* Fields */}
                 <div style={{ padding:"18px 18px" }}>
-                  {/* Search (multicheck sections only) */}
-                  {sec.fields.some(f => f.type === "multicheck") && (
+                  {/* Search (multicheck sections only, excluding Chief Complaint) */}
+                  {activeSection !== "complaint" && sec.fields.some(f => f.type === "multicheck") && (
                     <input type="text" value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
                       placeholder="🔎 Filter options..."
