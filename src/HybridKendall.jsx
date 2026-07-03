@@ -441,10 +441,18 @@ export function buildKendallFindings(measurements, patientSex = "Female") {
     const isFlat = lci.lci < THRESHOLDS.lci.reduced;
     const isFHP  = segmentStatus.forwardHead !== "Normal";
     let pattern = "Near-Ideal Alignment";
+    // "Flat-back" means BOTH curves are reduced/flattened — it must NOT fire just
+    // because the lumbar curve alone is flat while the thoracic curve is actually
+    // increased (that's a distinct mixed pattern, not flat back). The previous
+    // ordering checked isFlat before isKyph, so a case like severe increased
+    // thoracic curvature + flat lumbar was silently mislabelled "Flat-back",
+    // even though the code below already had unreachable logic meant to catch
+    // pure "Kyphotic" — it just never ran because isFlat matched first.
     if (isKyph && isLord && isFHP)       pattern = "Kyphotic-Lordotic (Kendall A)";
     else if (isKyph && isLord)           pattern = "Kyphotic-Lordotic (Kendall A)";
-    else if (isFlat)                     pattern = "Flat-back (Kendall B)";
+    else if (isKyph && isFlat)           pattern = "Increased Thoracic Kyphosis with Flat Lumbar (mixed)";
     else if (isKyph && !isLord)          pattern = "Kyphotic";
+    else if (isFlat)                     pattern = "Flat-back (Kendall B)";
     else if (isLord && !isKyph)          pattern = "Lordotic";
     findings.push({
       id:"kendall_pattern",
