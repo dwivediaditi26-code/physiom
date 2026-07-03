@@ -4903,6 +4903,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       URL.revokeObjectURL(blobUrl);
       setAnalysing(false);
       if(result){
+        setError(null);
         const oc=document.createElement("canvas"); oc.width=W; oc.height=H;
         const octx=oc.getContext("2d"); octx.drawImage(fc,0,0,W,H);
         drawOverlay({ctx:octx,W,H,lm:result.lm,view:currentView,showGrid:true,measurements:result.measurements,clearFirst:false});
@@ -4923,11 +4924,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
           saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:annotated});
         }
       } else {
+        setError(`Could not detect a full body pose in this ${VIEWS[currentView]?.label||"view"} photo — step back so your full body (head to feet) is in frame, improve lighting, and try again.`);
         if(landmarks){ const oc2=document.createElement("canvas"); oc2.width=W; oc2.height=H; const octx2=oc2.getContext("2d"); octx2.drawImage(fc,0,0,W,H); drawOverlay({ctx:octx2,W,H,lm:landmarks,view:currentView,showGrid:true,measurements,clearFirst:false}); setCapturedImg(oc2.toDataURL("image/jpeg",0.92)); }
         if(measurements&&findings&&scoreData) saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
       }
     } else {
       URL.revokeObjectURL(blobUrl||""); setAnalysing(false);
+      setError(mpStatus!=="ready" ? "AI model is still loading — wait a moment and try again." : "Camera capture failed — please try again.");
       if(landmarks){ const oc3=document.createElement("canvas"); oc3.width=W; oc3.height=H; const octx3=oc3.getContext("2d"); octx3.drawImage(fc,0,0,W,H); drawOverlay({ctx:octx3,W,H,lm:landmarks,view:currentView,showGrid:true,measurements,clearFirst:false}); setCapturedImg(oc3.toDataURL("image/jpeg",0.92)); }
       if(measurements&&findings&&scoreData) saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
     }
@@ -5230,10 +5233,18 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
       {/* Findings tab — no measurements yet */}
       {tab==="findings"&&!measurements&&(
         <div style={{padding:isWide?"20px 24px":"14px 16px"}}>
-          <div style={{textAlign:"center",color:PC.muted,fontSize:"0.78rem",paddingTop:20,paddingBottom:12}}>
-            Analyse a photo to generate findings.
+          <div style={{textAlign:"center",color: error?PC.red:PC.muted,fontSize:"0.78rem",paddingTop:20,paddingBottom:12,fontWeight:error?600:400}}>
+            {error || "Analyse a photo to generate findings."}
           </div>
-
+          {error && (
+            <div style={{textAlign:"center"}}>
+              <button type="button" onClick={()=>{setError(null);setTab("capture");}}
+                style={{marginTop:4,padding:"8px 18px",borderRadius:8,border:"none",
+                  background:PC.accent,color:"#fff",fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>
+                Retake photo
+              </button>
+            </div>
+          )}
         </div>
       )}
 
