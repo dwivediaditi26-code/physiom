@@ -128,7 +128,7 @@ export default function AuthScreen({onAuth}){
         <div style={{textAlign:"center",marginBottom:32}}>
           <div style={{width:56,height:56,borderRadius:16,margin:"0 auto 14px",background:`linear-gradient(135deg,${A},#9333ea)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.6rem",boxShadow:`0 8px 24px ${A}35`}}>🫁</div>
           <div style={{fontWeight:800,fontSize:"1.5rem",color:TX,letterSpacing:"-0.5px"}}>PhysioMind</div>
-          <div style={{fontSize:"0.7rem",color:MU,marginTop:3,letterSpacing:"1px",textTransform:"uppercase",fontWeight:600}}>Clinical Assessment Platform</div>
+          <div style={{fontSize:"0.7rem",color:MU,marginTop:3,letterSpacing:"1px",textTransform:"uppercase",fontWeight:600}}>Posture Screening & Education</div>
         </div>
         {/* Card */}
         <div style={{background:SUR,borderRadius:20,padding:"28px 28px 24px",border:`1px solid ${BD}`,boxShadow:`0 4px 32px rgba(124,58,237,0.08)`}}>

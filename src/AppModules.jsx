@@ -1149,7 +1149,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
     return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Posture Analysis Report - PhysioMind</title>"
       + "<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.page{background:#fff;max-width:860px;margin:0 auto;box-shadow:0 4px 40px rgba(0,0,0,0.12);}.body{padding:28px 40px;}table{width:100%;border-collapse:collapse;}th{background:#f1f5f9;font-size:8.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:7px 9px;text-align:left;}td{padding:6px 9px;font-size:10px;border-bottom:1px solid #e2e8f0;}@media print{body{background:white;}.page{box-shadow:none;}}</style>"
       + "</head><body><div class=\"page\">"
-      + pdfHeader("Postural Analysis Report","AI-Assisted Quantitative Postural Assessment &middot; PhysioMind Platform","#0a1628")
+      + pdfHeader("Posture Screening Report","AI-Assisted Posture Screening &middot; Education only, not a medical diagnosis &middot; PhysioMind","#0a1628")
       + "<div class=\"body\">"
       + "<div style=\"display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;padding:13px;background:#f1f5f9;border-radius:10px;border:1px solid #e2e8f0;\">" + patientCells + "</div>"
       + "<div style=\"background:linear-gradient(135deg,#0a1628,#1a3358);border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;gap:14px;align-items:center;border:1px solid #1a3358;\">"
@@ -1667,7 +1667,7 @@ function IntakeForm({ PC, onCancel, onSubmit }) {
 
 function OnboardingModal({ PC, onDismiss }) {
   const STEPS = [
-    { icon:"🩺", title:"Welcome to PhysioMind Pro", desc:"Your complete clinical assessment platform. AI-powered SOAP notes, posture analysis, outcome measures, and exercise prescription — all in one place.", color:"#7c3aed" },
+    { icon:"🩺", title:"Welcome to PhysioMind Pro", desc:"A posture screening & education tool. AI-assisted posture screening, notes, outcome trackers, and general movement suggestions. For education only — not a medical device, and not medical advice.", color:"#7c3aed" },
     { icon:"👤", title:"Start with a Patient",        desc:'Tap "New Patient" on the dashboard to create a record. Fill in the name and chief complaint — everything else can be added as you go.',           color:"#0891b2" },
     { icon:"📋", title:"Assess Step by Step",          desc:"Work through the left-hand menu: Subjective → Posture → ROM → Special Tests → SOAP. Each module saves automatically as you type.",             color:"#059669" },
     { icon:"✨", title:"Generate SOAP & Send HEP",     desc:"Once assessed, use the SOAP module to generate an AI clinical note, then build a Home Exercise Programme and send it via WhatsApp or PDF.",   color:"#d97706" },

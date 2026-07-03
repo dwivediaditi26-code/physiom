@@ -9,7 +9,7 @@ const ALL_TESTS = {
   demographics:{ label:"Demographics", icon:"👤", desc:"Patient Information", groups:{ "Demographic Data":"DEMOGRAPHICS_MODULE" }},
   subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
   palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
-  posture:{ label:"Posture Analysis", icon:"🧍", desc:"AI Postural Analysis", groups:{}},
+  posture:{ label:"Posture Analysis", icon:"🧍", desc:"AI Posture Screening", groups:{}},
   observation:{ label:"Observation", icon:"👁️", desc:"Visual Inspection — Magee's", groups:{
     "Clinical Observation":"OBSERVATION_MODULE",
   }},
