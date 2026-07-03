@@ -561,15 +561,15 @@ export default function HybridKendall({
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
 
       {/* ── Header bar ── */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",background:C.s2,borderRadius:10,border:`1px solid ${C.border}`}}>
-        <div>
-          <span style={{fontSize:"0.72rem",fontWeight:800,color:C.accent}}>⚕ Hybrid Kendall Mode</span>
-          {confirmed && <span style={{marginLeft:8,fontSize:"0.62rem",fontWeight:700,color:C.green,background:`${C.green}15`,padding:"2px 8px",borderRadius:10}}>✓ MANUALLY VERIFIED</span>}
-          {!confirmed && allPrimary && <span style={{marginLeft:8,fontSize:"0.62rem",color:C.yellow}}>Review landmarks → Confirm</span>}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 12px",background:C.s2,borderRadius:10,border:`1px solid ${C.border}`,flexWrap:isWide?"nowrap":"wrap"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",minWidth:0}}>
+          <span style={{fontSize:"0.72rem",fontWeight:800,color:C.accent,whiteSpace:"nowrap"}}>⚕ Hybrid Kendall Mode</span>
+          {confirmed && <span style={{fontSize:"0.62rem",fontWeight:700,color:C.green,background:`${C.green}15`,padding:"2px 8px",borderRadius:10,whiteSpace:"nowrap"}}>✓ MANUALLY VERIFIED</span>}
+          {!confirmed && allPrimary && <span style={{fontSize:"0.62rem",color:C.yellow,whiteSpace:"nowrap"}}>Review landmarks → Confirm</span>}
         </div>
-        <div style={{display:"flex",gap:6}}>
+        <div style={{display:"flex",gap:6,flexShrink:0}}>
           <button onClick={()=>setShowGrid(v=>!v)} style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${showGrid?C.accent:C.border}`,background:showGrid?`${C.accent}20`:"transparent",color:showGrid?C.accent:C.muted,fontSize:"0.6rem",fontWeight:700,cursor:"pointer"}}>Grid</button>
-          <button onClick={()=>setAdvancedMode(v=>!v)} style={{padding:"5px 12px",borderRadius:8,border:`2px solid ${advancedMode?"#34d399":"rgba(52,211,153,0.5)"}`,background:advancedMode?"rgba(52,211,153,0.15)":"rgba(52,211,153,0.06)",color:advancedMode?"#34d399":"rgba(52,211,153,0.9)",fontSize:"0.65rem",fontWeight:800,cursor:"pointer"}}>
+          <button onClick={()=>setAdvancedMode(v=>!v)} style={{padding:"5px 12px",borderRadius:8,border:`2px solid ${advancedMode?"#34d399":"rgba(52,211,153,0.5)"}`,background:advancedMode?"rgba(52,211,153,0.15)":"rgba(52,211,153,0.06)",color:advancedMode?"#34d399":"rgba(52,211,153,0.9)",fontSize:"0.65rem",fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
             🔬 {advancedMode?"Advanced ON":"Advanced Mode"}
           </button>
         </div>
@@ -584,15 +584,22 @@ export default function HybridKendall({
           </div>
           {!confirmed&&<span style={{fontSize:"0.55rem",color:C.muted}}>Tap button → tap photo below</span>}
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:5,marginBottom:8}}>
+        <div style={{
+            display: isWide ? "grid" : "flex",
+            gridTemplateColumns: isWide ? "repeat(5,1fr)" : undefined,
+            overflowX: isWide ? "visible" : "auto",
+            WebkitOverflowScrolling: "touch",
+            gap:6, marginBottom:8, paddingBottom: isWide?0:2,
+          }}>
           {PRIMARY_LANDMARKS.map(def=>{
             const placed=!!lm[def.id],isActive=activePlace===def.id;
             const isNext=!isActive&&!placed&&PRIMARY_LANDMARKS.filter(p=>!lm[p.id])[0]?.id===def.id;
             return(<button key={def.id} onClick={()=>setActivePlace(isActive?null:def.id)}
-              style={{padding:"7px 4px",borderRadius:9,border:`1.5px solid ${isActive?def.color:placed?def.color+"70":isNext?"rgba(255,255,255,0.3)":C.border}`,background:isActive?`${def.color}25`:placed?`${def.color}12`:isNext?"rgba(255,255,255,0.04)":"transparent",color:isActive?def.color:placed?def.color:isNext?"rgba(255,255,255,0.85)":C.muted,fontSize:"0.6rem",fontWeight:700,cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
-              <div style={{fontSize:"0.85rem",marginBottom:2}}>{placed?"✅":isNext?"👆":"📍"}</div>
-              <div style={{fontWeight:800,fontSize:"0.6rem"}}>{def.label}</div>
-              <div style={{fontSize:"0.5rem",marginTop:1,opacity:0.75}}>{isActive?"tap photo ↓":placed?"✓ placed":isNext?"← next":def.desc.split(" ")[0]}</div>
+              style={{padding: isWide?"7px 4px":"8px 6px", minWidth: isWide?0:76, flexShrink: isWide?undefined:0, minHeight:44,
+                borderRadius:9,border:`1.5px solid ${isActive?def.color:placed?def.color+"70":isNext?"rgba(255,255,255,0.3)":C.border}`,background:isActive?`${def.color}25`:placed?`${def.color}12`:isNext?"rgba(255,255,255,0.04)":"transparent",color:isActive?def.color:placed?def.color:isNext?"rgba(255,255,255,0.85)":C.muted,fontSize: isWide?"0.6rem":"0.65rem",fontWeight:700,cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
+              <div style={{fontSize: isWide?"0.85rem":"0.95rem",marginBottom:2}}>{placed?"✅":isNext?"👆":"📍"}</div>
+              <div style={{fontWeight:800,fontSize: isWide?"0.6rem":"0.65rem",whiteSpace:"nowrap"}}>{def.label}</div>
+              <div style={{fontSize: isWide?"0.5rem":"0.55rem",marginTop:1,opacity:0.75,whiteSpace:"nowrap"}}>{isActive?"tap photo ↓":placed?"✓ placed":isNext?"← next":def.desc.split(" ")[0]}</div>
             </button>);
           })}
         </div>
@@ -627,18 +634,25 @@ export default function HybridKendall({
           <div style={{fontSize:"0.6rem",fontWeight:800,color:C.green,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>
             Advanced Landmarks — unlocks TCI · LCI · Pelvic Tilt
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5}}>
+          <div style={{
+              display: isWide ? "grid" : "flex",
+              gridTemplateColumns: isWide ? "repeat(4,1fr)" : undefined,
+              overflowX: isWide ? "visible" : "auto",
+              WebkitOverflowScrolling: "touch",
+              gap:6, paddingBottom: isWide?0:2,
+            }}>
             {ADVANCED_LANDMARKS.map(def=>{
               const placed = !!lm[def.id];
               const isActive = activePlace === def.id;
               return (
                 <button key={def.id}
                   onClick={()=>setActivePlace(isActive ? null : def.id)}
-                  style={{padding:"6px 4px",borderRadius:7,border:`1.5px solid ${isActive?def.color:placed?def.color+"60":C.border}`,background:isActive?`${def.color}20`:placed?`${def.color}10`:"transparent",color:isActive?def.color:placed?def.color:C.muted,fontSize:"0.55rem",fontWeight:700,cursor:"pointer",textAlign:"center"}}>
+                  style={{padding: isWide?"6px 4px":"7px 6px", minWidth: isWide?0:70, flexShrink: isWide?undefined:0, minHeight:44,
+                    borderRadius:7,border:`1.5px solid ${isActive?def.color:placed?def.color+"60":C.border}`,background:isActive?`${def.color}20`:placed?`${def.color}10`:"transparent",color:isActive?def.color:placed?def.color:C.muted,fontSize: isWide?"0.55rem":"0.6rem",fontWeight:700,cursor:"pointer",textAlign:"center"}}>
                   <div>{placed?"✅":"📍"}</div>
-                  <div style={{fontWeight:800,fontSize:"0.57rem"}}>{def.label}</div>
-                  {placed && <div style={{fontSize:"0.48rem",opacity:0.7}}>{def.desc.split(" ")[0]}</div>}
-                  {placed && <button onClick={e=>{e.stopPropagation();setLm(p=>{const n={...p};delete n[def.id];return n;});}} style={{marginTop:2,width:"100%",border:"none",background:"rgba(255,77,109,0.15)",color:"#ff4d6d",borderRadius:4,fontSize:"0.48rem",fontWeight:700,cursor:"pointer"}}>✕</button>}
+                  <div style={{fontWeight:800,fontSize: isWide?"0.57rem":"0.62rem",whiteSpace:"nowrap"}}>{def.label}</div>
+                  {placed && <div style={{fontSize: isWide?"0.48rem":"0.52rem",opacity:0.7,whiteSpace:"nowrap"}}>{def.desc.split(" ")[0]}</div>}
+                  {placed && <button onClick={e=>{e.stopPropagation();setLm(p=>{const n={...p};delete n[def.id];return n;});}} style={{marginTop:2,width:"100%",border:"none",background:"rgba(255,77,109,0.15)",color:"#ff4d6d",borderRadius:4,fontSize: isWide?"0.48rem":"0.55rem",fontWeight:700,cursor:"pointer",minHeight:20}}>✕</button>}
                 </button>
               );
             })}
