@@ -6604,7 +6604,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                 key={(rawUploadedImg||uploadedImg)+"|"+view}
                 imgSrc={rawUploadedImg||uploadedImg}
                 vitposeLandmarks={hybridSeedLandmarks}
-                vitposeLoading={vitposeLoading}
+                vitposeLoading={analysing||vitposeLoading}
                 vitposeError={vitposeError}
                 view={view}
                 patientSex={patientInfo?.sex||"Female"}
