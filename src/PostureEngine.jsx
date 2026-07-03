@@ -6360,11 +6360,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
             ):(
               <div>
                 <div style={{position:"relative",background:"#111",width:"100%",overflow:"hidden",borderRadius:0}}>
-                  {/* Video — NO scaleX flip; front camera CSS-flipped only when user-facing */}
+                  {/* Video — NO scaleX flip; front camera CSS-flipped only when user-facing.
+                      A full-body standing posture photo needs a TALL portrait frame, but this
+                      was previously capped at 55vw (~55% of screen WIDTH, only ~200px tall on
+                      most phones) with objectFit:cover cropping it further — forcing the patient
+                      to stand much further back than necessary just so the small cropped preview
+                      showed enough of them, with no reliable way to confirm full-body framing
+                      before capturing. Now uses most of the vertical viewport on mobile instead. */}
                   <video ref={videoRef} playsInline webkit-playsinline="true" muted autoPlay
                     style={{width:"100%",display:"block",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
-                      maxHeight: isMobile?"55vw":"45vh",
+                      maxHeight: isMobile?"72vh":"65vh",
                       objectFit:"cover",background:"#111"}}/>
                   {/* Canvas overlay — matches video flip */}
                   <canvas ref={overlayRef}
@@ -6379,6 +6385,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:PC.a3}}>— {patientHeightCm}cm</div>
                   </div>
                   {scoreData&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
+                  {/* Top-priority framing guidance (e.g. "Feet not visible — move camera back")
+                      was already computed by calcReliability but never actually shown during
+                      live tracking — only a bare confidence percentage was visible, giving the
+                      operator no actionable hint for WHY it was low or what to fix. */}
+                  {hasData && reliability?.warnings?.[0] && countdown===null && (
+                    <div style={{position:"absolute",bottom:8,left:8,right:8,padding:"7px 12px",borderRadius:10,
+                      background:"rgba(0,0,0,0.78)",color:reliability.warnings[0].color||PC.yellow,
+                      fontSize:"0.8rem",fontWeight:700,textAlign:"center",lineHeight:1.4}}>
+                      {reliability.warnings[0].icon} {reliability.warnings[0].text}
+                    </div>
+                  )}
                   {countdown!==null&&(
                     <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)"}}>
                       <div style={{fontSize:"6rem",fontWeight:900,color:"#fff"}}>{countdown}</div>
