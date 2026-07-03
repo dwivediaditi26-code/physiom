@@ -4787,22 +4787,24 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         setTab("findings");
         if(isMobile) setMobilePanel("results");
       }
-      // ── Async contour + ViTPose analysis for lateral views ──────────────────────
+      // ── Auto-seed HybridKendall + ViTPose enhancement + contour analysis (lateral) ──
       if ((view==="left"||view==="right")) {
-        setHybridSeedLandmarks(null); // clear stale seed from any previous photo
+        // Seed HybridKendall's 5 points from the same MediaPipe detection that just
+        // powered the standard findings above — it already succeeded on this photo,
+        // so use it immediately rather than waiting on (or depending on) ViTPose.
+        setHybridSeedLandmarks(result.lm);
+        setVitposeError(null);
         const imgEl=new Image(); imgEl.src=url;
         imgEl.onload=async()=>{
-          // ViTPose: auto-seed HybridKendall's 5 landmark points so the clinician
-          // doesn't have to place them manually — same treatment as Frontal's auto-AI.
-          setVitposeLoading(true); setVitposeError(null);
+          // ViTPose: opportunistic accuracy upgrade — a model trained specifically
+          // for lateral views. HybridKendall only accepts a new seed while its own
+          // points are still unplaced, so this can only help (refine before the
+          // clinician starts reviewing) and never yanks already-placed points around.
+          setVitposeLoading(true);
           try {
-            const vitLm = await runViTPoseLateral(imgEl).catch(e=>{ throw e; });
+            const vitLm = await runViTPoseLateral(imgEl);
             if(vitLm) setHybridSeedLandmarks(vitLm);
-            else setVitposeError("AI could not confidently locate landmarks in this photo — place the 5 points manually below.");
-          } catch(e){
-            console.warn("ViTPose (handleFile):", e);
-            setVitposeError(`AI auto-placement unavailable (${e?.message||"load failed"}) — place the 5 points manually below.`);
-          }
+          } catch(e){ console.warn("ViTPose (handleFile):", e); }
           finally { setVitposeLoading(false); }
 
           if (typeof analyzeSagittalContour!=="function") return;
@@ -4959,14 +4961,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
         const calib=computeCalibration(result.lm,patientHeightCm,H);
         processLandmarks(result.lm,currentView,H);
         if(currentView==="left"||currentView==="right"){
-          setHybridSeedLandmarks(null); // clear stale seed from any previous capture
-          setVitposeLoading(true); setVitposeError(null);
+          // Seed immediately from the MediaPipe detection that just succeeded above,
+          // same as the upload path — don't leave the clinician waiting on (or
+          // depending on) the separate ViTPose model for a usable starting point.
+          setHybridSeedLandmarks(result.lm);
+          setVitposeLoading(true);
           runViTPoseLateral(fc)
-            .then(vitLm=>{
-              if(vitLm) setHybridSeedLandmarks(vitLm);
-              else setVitposeError("AI could not confidently locate landmarks in this photo — place the 5 points manually below.");
-            })
-            .catch(e=>{ console.warn("ViTPose (capturePhoto):", e); setVitposeError(`AI auto-placement unavailable (${e?.message||"load failed"}) — place the 5 points manually below.`); })
+            .then(vitLm=>{ if(vitLm) setHybridSeedLandmarks(vitLm); })
+            .catch(e=>{ console.warn("ViTPose (capturePhoto):", e); })
             .finally(()=>setVitposeLoading(false));
         }
         if(assessMode==="multi"){
