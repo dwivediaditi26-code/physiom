@@ -706,10 +706,10 @@ export default function HybridKendall({
 
             {/* ── Measurement lines (landmark → plumb) ── */}
             {confirmed && plumbX !== null && [
-              { id:"ear",      pct:m.earPlumb,  color:"#22d3ee" },
-              { id:"acromion", pct:m.acrPlumb,  color:"#c4b5fd" },
-              { id:"hip",      pct:m.hipPlumb,  color:"#fbbf24" },
-              { id:"knee",     pct:m.kneePlumb, color:"#4ade80" },
+              { id:"ear",      pct:m.earPlumb,  color:"#22d3ee", dark:"#0891b2" },
+              { id:"acromion", pct:m.acrPlumb,  color:"#c4b5fd", dark:"#7c3aed" },
+              { id:"hip",      pct:m.hipPlumb,  color:"#fbbf24", dark:"#c2760c" },
+              { id:"knee",     pct:m.kneePlumb, color:"#4ade80", dark:"#15803d" },
             ].map(seg => {
               const p = lm[seg.id]; if (!p || seg.pct === null) return null;
               const lbl = `${seg.pct > 0 ? "+" : ""}${seg.pct}%`;
@@ -719,8 +719,8 @@ export default function HybridKendall({
                 <g key={seg.id}>
                   <line x1={p.x} y1={p.y} x2={plumbX} y2={p.y}
                     stroke={seg.color} strokeWidth="0.002" strokeDasharray="0.008,0.005" opacity="0.75"/>
-                  <rect x={labelX-0.002} y={p.y-0.013} width="0.052" height="0.015" rx="0.002" fill="rgba(0,0,0,0.72)"/>
-                  <text x={labelX} y={p.y-0.003} fontSize="0.012" fill={seg.color} fontWeight="bold" fontFamily="system-ui">{lbl}</text>
+                  <rect x={labelX-0.002} y={p.y-0.013} width="0.052" height="0.015" rx="0.002" fill="rgba(255,255,255,0.94)" stroke={seg.dark} strokeWidth="0.0008"/>
+                  <text x={labelX} y={p.y-0.003} fontSize="0.012" fill={seg.dark} fontWeight="bold" fontFamily="system-ui">{lbl}</text>
                 </g>
               );
             })}
@@ -733,9 +733,9 @@ export default function HybridKendall({
                   <line x1={lm.ear.x} y1={lm.ear.y} x2={target.x} y2={target.y}
                     stroke="#22d3ee" strokeWidth="0.004" opacity="0.9"/>
                   <rect x={lm.ear.x+(target.x-lm.ear.x)*0.4-0.018} y={lm.ear.y+(target.y-lm.ear.y)*0.4+0.004}
-                    width="0.072" height="0.015" rx="0.002" fill="rgba(0,0,0,0.78)"/>
+                    width="0.072" height="0.015" rx="0.002" fill="rgba(255,255,255,0.94)" stroke="#0891b2" strokeWidth="0.0008"/>
                   <text x={lm.ear.x+(target.x-lm.ear.x)*0.4-0.014} y={lm.ear.y+(target.y-lm.ear.y)*0.4+0.014}
-                    fontSize="0.012" fill="#22d3ee" fontWeight="bold" fontFamily="system-ui">CVA {m.cva}°</text>
+                    fontSize="0.012" fill="#0891b2" fontWeight="bold" fontFamily="system-ui">CVA {m.cva}°</text>
                 </g>
               );
             })()}
@@ -765,12 +765,12 @@ export default function HybridKendall({
                   onTouchStart={e=>{e.stopPropagation();setDragging(def.id);setConfirmed(false);}}>
                   {/* Hit area (invisible, larger for easy touch) */}
                   <circle cx={p.x} cy={p.y} r={r+0.012} fill="transparent"/>
-                  <circle cx={p.x} cy={p.y} r={r+0.003} fill="rgba(0,0,0,0.5)"/>
+                  <circle cx={p.x} cy={p.y} r={r+0.003} fill="rgba(255,255,255,0.85)"/>
                   <circle cx={p.x} cy={p.y} r={r} fill={def.bright||def.color} stroke="white" strokeWidth="0.004"
                     opacity={confirmed?1:0.9}/>
                   {/* Label — right of dot, small */}
-                  <rect x={p.x+r+0.003} y={p.y-0.013} width="0.068" height="0.016" rx="0.002" fill="rgba(0,0,0,0.72)"/>
-                  <text x={p.x+r+0.005} y={p.y-0.001} fontSize="0.012" fill={def.bright||def.color} fontWeight="bold" fontFamily="system-ui">{def.label}</text>
+                  <rect x={p.x+r+0.003} y={p.y-0.013} width="0.068" height="0.016" rx="0.002" fill="rgba(255,255,255,0.94)" stroke={def.color} strokeWidth="0.0008"/>
+                  <text x={p.x+r+0.005} y={p.y-0.001} fontSize="0.012" fill={def.color} fontWeight="bold" fontFamily="system-ui">{def.label}</text>
                 </g>
               );
             })}
@@ -786,15 +786,15 @@ export default function HybridKendall({
 
           {/* AI auto-placement failed/declined banner */}
           {!vitposeLoading && vitposeError && Object.keys(lm).length===0 && (
-            <div style={{position:"absolute",top:8,left:8,right:8,background:"rgba(0,0,0,0.85)",color:"#fbbf24",padding:"7px 12px",borderRadius:10,fontSize:"0.65rem",fontWeight:700,lineHeight:1.4,zIndex:10}}>
+            <div style={{position:"absolute",top:8,left:8,right:8,background:"rgba(255,255,255,0.96)",border:"1px solid #FAC775",color:"#854F0B",padding:"7px 12px",borderRadius:10,fontSize:"0.65rem",fontWeight:700,lineHeight:1.4,zIndex:10}}>
               ⚠ {vitposeError}
             </div>
           )}
 
           {/* AI auto-placement loading banner */}
           {vitposeLoading && Object.keys(lm).length===0 && (
-            <div style={{position:"absolute",top:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.85)",color:"#a78bfa",padding:"6px 16px",borderRadius:20,fontSize:"0.68rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:10,display:"flex",alignItems:"center",gap:6}}>
-              <span style={{display:"inline-block",width:10,height:10,border:"2px solid #a78bfa",borderTopColor:"transparent",borderRadius:"50%",animation:"hk-spin 0.7s linear infinite"}}/>
+            <div style={{position:"absolute",top:8,left:"50%",transform:"translateX(-50%)",background:"rgba(255,255,255,0.96)",border:"1px solid #AFA9EC",color:"#3C3489",padding:"6px 16px",borderRadius:20,fontSize:"0.68rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:10,display:"flex",alignItems:"center",gap:6}}>
+              <span style={{display:"inline-block",width:10,height:10,border:"2px solid #7c3aed",borderTopColor:"transparent",borderRadius:"50%",animation:"hk-spin 0.7s linear infinite"}}/>
               AI locating landmarks…
               <style>{"@keyframes hk-spin{to{transform:rotate(360deg)}}"}</style>
             </div>
@@ -804,7 +804,7 @@ export default function HybridKendall({
           {activePlace && (() => {
             const def = LM_ALL.find(d=>d.id===activePlace);
             return (
-              <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.85)",color:def?.color||C.yellow,padding:"5px 14px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:10}}>
+              <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(255,255,255,0.96)",border:`1px solid ${def?.color||C.yellow}`,color:def?.color||C.yellow,padding:"5px 14px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:10}}>
                 👆 Tap photo to place {def?.label} — {def?.desc}
               </div>
             );
