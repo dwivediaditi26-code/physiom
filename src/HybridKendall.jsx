@@ -323,9 +323,15 @@ export function buildKendallFindings(measurements, patientSex = "Female") {
       : composite < THRESHOLDS.shoulder.moderate ? "Moderate" : "Severe";
     segmentStatus.roundedShoulder = severity;
     if (severity !== "Normal") {
+      // Composite is 50% Acromion-Hip offset, 30% Acromion-Plumb, 20% shoulder angle —
+      // name whichever metric is actually driving the score so this isn't opaque
+      // (e.g. acromion can look plumb-aligned in the photo while still being offset
+      // from the hip, which is the larger-weighted contributor).
+      const weighted = [["Acromion-Hip offset", m1*0.50],["Acromion-Plumb offset", m2*0.30],["Shoulder angle", m3*0.20]];
+      const driver = weighted.reduce((a,b)=>b[1]>a[1]?b:a)[0];
       findings.push({
         id:"shoulder", category:`Shoulder ${direction === "anterior" ? "Anterior" : "Posterior"} Position`,
-        severity, label:`${severity} shoulder ${direction} displacement — composite ${composite}`,
+        severity, label:`${severity} shoulder ${direction} displacement — composite ${composite} (driven mainly by ${driver})`,
         metrics: { composite, m1_AcrHip:m1, m2_AcrPlumb:m2, m3_ShAngle:m3 },
         _debug:{ formula:"0.50×norm(AcrHip)+0.30×norm(AcrPlumb)+0.20×norm(ShAngle)", thresholds:THRESHOLDS.shoulder, ruleTriggered:severity },
       });
@@ -744,6 +750,26 @@ export default function HybridKendall({
                 </g>
               );
             })}
+
+            {/* ── Acromion → Hip line — this is the DOMINANT metric (50% weight) behind
+                the "shoulder anterior/posterior displacement" finding, but was previously
+                invisible on the photo (only the Acromion→Plumb line, a 30%-weight metric,
+                was shown) — causing the acromion to look plumb-aligned while the finding
+                still flagged displacement driven mainly by its offset from the hip. ── */}
+            {confirmed && lm.acromion && lm.hip && m.shoulder !== null && (() => {
+              const a = lm.acromion, h = lm.hip;
+              const pct = m.shoulder.m1 * (a.x > h.x ? 1 : -1) * m.viewSign;
+              const lbl = `Acr→Hip ${pct > 0 ? "+" : ""}${Math.round(pct*10)/10}%`;
+              const midX = (a.x+h.x)/2, midY = (a.y+h.y)/2;
+              return (
+                <g>
+                  <line x1={a.x} y1={a.y} x2={h.x} y2={h.y}
+                    stroke="#94a3b8" strokeWidth="0.0022" strokeDasharray="0.006,0.006" opacity="0.85"/>
+                  <rect x={midX-0.052} y={midY-0.026} width="0.104" height="0.016" rx="0.002" fill="rgba(255,255,255,0.94)" stroke="#475569" strokeWidth="0.0008"/>
+                  <text x={midX-0.047} y={midY-0.014} fontSize="0.012" fill="#475569" fontWeight="bold" fontFamily="system-ui">{lbl}</text>
+                </g>
+              );
+            })()}
 
             {/* ── CVA arc line (ear → acromion, when confirmed) ── */}
             {confirmed && lm.ear && (lm.c7 || lm.acromion) && m.cva !== null && (() => {

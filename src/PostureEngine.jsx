@@ -5417,7 +5417,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                         CVA {measurements.cvaAngle.toFixed(1)}° {measurements.cvaAngle>=55?"✓":`(normal >55°)`}
                       </span>
                     )}
-                    {measurements.fhpCm!=null&&(
+                    {/* FHP-cm / Sh diff / Pelvis diff / Trunk shift are all bilateral
+                        (left-vs-right) frontal-plane metrics. In a lateral/sagittal photo
+                        both shoulders sit nearly on top of each other in the image, so the
+                        bilateral-width denominator these formulas divide by collapses to
+                        near-zero, producing meaningless blown-up values (e.g. "FHP 91.2cm").
+                        Sagittal FHP is already shown correctly above via CVA. */}
+                    {!isLat && measurements.fhpCm!=null&&(
                       <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
                         background:measurements.fhpCm>3.5?"rgba(220,38,38,0.1)":measurements.fhpCm>2?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
                         color:measurements.fhpCm>3.5?PC.red:measurements.fhpCm>2?PC.yellow:PC.green,
@@ -5425,7 +5431,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                         FHP {measurements.fhpCm}cm
                       </span>
                     )}
-                    {measurements.shoulderDiffCm!=null&&measurements.shoulderDiffCm>0.3&&(
+                    {!isLat && measurements.shoulderDiffCm!=null&&measurements.shoulderDiffCm>0.3&&(
                       <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
                         background:measurements.shoulderDiffCm>1.5?"rgba(220,38,38,0.1)":"rgba(180,83,9,0.1)",
                         color:measurements.shoulderDiffCm>1.5?PC.red:PC.yellow,
@@ -5433,7 +5439,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                         Sh diff {measurements.shoulderDiffCm}cm
                       </span>
                     )}
-                    {measurements.pelvisDiffCm!=null&&measurements.pelvisDiffCm>0.3&&(
+                    {!isLat && measurements.pelvisDiffCm!=null&&measurements.pelvisDiffCm>0.3&&(
                       <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
                         background:measurements.pelvisDiffCm>1.5?"rgba(220,38,38,0.1)":"rgba(180,83,9,0.1)",
                         color:measurements.pelvisDiffCm>1.5?PC.red:PC.yellow,
@@ -5441,7 +5447,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
                         Pelvis diff {measurements.pelvisDiffCm}cm
                       </span>
                     )}
-                    {measurements.trunkShiftCm!=null&&measurements.trunkShiftCm>0.5&&(
+                    {!isLat && measurements.trunkShiftCm!=null&&measurements.trunkShiftCm>0.5&&(
                       <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
                         background:measurements.trunkShiftCm>5?"rgba(156,163,175,0.15)":"rgba(180,83,9,0.1)",
                         color:measurements.trunkShiftCm>5?PC.muted:PC.yellow,
