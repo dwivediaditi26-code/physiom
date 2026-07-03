@@ -760,18 +760,51 @@ export default function HybridKendall({
               );
             })()}
 
-            {/* ── TCI / LCI chord lines ── */}
+            {/* ── TCI / LCI / Pelvic Tilt chord lines + value badges ── */}
             {advancedMode && lm.c7 && lm.t12 && (
-              <line x1={lm.c7.x} y1={lm.c7.y} x2={lm.t12.x} y2={lm.t12.y}
-                stroke="#fbbf24" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+              <g>
+                <line x1={lm.c7.x} y1={lm.c7.y} x2={lm.t12.x} y2={lm.t12.y}
+                  stroke="#fbbf24" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+                {confirmed && m.tci !== null && (() => {
+                  const mx = (lm.c7.x+lm.t12.x)/2, my = (lm.c7.y+lm.t12.y)/2;
+                  return (
+                    <g>
+                      <rect x={mx+0.014} y={my-0.009} width="0.072" height="0.017" rx="0.002" fill="rgba(255,255,255,0.94)" stroke="#b45309" strokeWidth="0.0008"/>
+                      <text x={mx+0.019} y={my+0.003} fontSize="0.013" fill="#b45309" fontWeight="bold" fontFamily="system-ui">TCI {m.tci.tci}%</text>
+                    </g>
+                  );
+                })()}
+              </g>
             )}
             {advancedMode && lm.t12 && lm.s2 && (
-              <line x1={lm.t12.x} y1={lm.t12.y} x2={lm.s2.x} y2={lm.s2.y}
-                stroke="#fb7185" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+              <g>
+                <line x1={lm.t12.x} y1={lm.t12.y} x2={lm.s2.x} y2={lm.s2.y}
+                  stroke="#fb7185" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+                {confirmed && m.lci !== null && (() => {
+                  const mx = (lm.t12.x+lm.s2.x)/2, my = (lm.t12.y+lm.s2.y)/2;
+                  return (
+                    <g>
+                      <rect x={mx+0.014} y={my-0.009} width="0.068" height="0.017" rx="0.002" fill="rgba(255,255,255,0.94)" stroke="#db2777" strokeWidth="0.0008"/>
+                      <text x={mx+0.019} y={my+0.003} fontSize="0.013" fill="#db2777" fontWeight="bold" fontFamily="system-ui">LCI {m.lci.lci}%</text>
+                    </g>
+                  );
+                })()}
+              </g>
             )}
             {advancedMode && lm.asis && lm.psis && (
-              <line x1={lm.asis.x} y1={lm.asis.y} x2={lm.psis.x} y2={lm.psis.y}
-                stroke="#7dd3fc" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+              <g>
+                <line x1={lm.asis.x} y1={lm.asis.y} x2={lm.psis.x} y2={lm.psis.y}
+                  stroke="#7dd3fc" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+                {confirmed && m.pelvis !== null && (() => {
+                  const mx = (lm.asis.x+lm.psis.x)/2, my = (lm.asis.y+lm.psis.y)/2;
+                  return (
+                    <g>
+                      <rect x={mx-0.048} y={my+0.012} width="0.096" height="0.017" rx="0.002" fill="rgba(255,255,255,0.94)" stroke="#0284c7" strokeWidth="0.0008"/>
+                      <text x={mx-0.043} y={my+0.024} fontSize="0.013" fill="#0284c7" fontWeight="bold" fontFamily="system-ui">Pelvis {m.pelvis.angle}° {m.pelvis.direction}</text>
+                    </g>
+                  );
+                })()}
+              </g>
             )}
 
             {/* ── Landmark dots (draggable) ── */}
