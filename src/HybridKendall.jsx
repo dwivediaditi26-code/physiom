@@ -23,21 +23,21 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 // color: dot colour on overlay
 // mpIdx: which MediaPipe landmark index ViTPose maps to (for auto-placement)
 export const PRIMARY_LANDMARKS = [
-  { id:"ear",      label:"Ear",      desc:"Ear tragus",               color:"#00e5ff", mpIdx:[7,8]    },
-  { id:"acromion", label:"Acromion", desc:"Tip of acromion process",  color:"#a78bfa", mpIdx:[11,12]  },
-  { id:"hip",      label:"Hip (GT)", desc:"Greater trochanter tip",   color:"#f59e0b", mpIdx:[23,24]  },
-  { id:"knee",     label:"Knee",     desc:"Lateral femoral condyle",  color:"#34d399", mpIdx:[25,26]  },
-  { id:"ankle",    label:"Ankle",    desc:"Lateral malleolus tip",    color:"#f87171", mpIdx:[27,28]  },
+  { id:"ear",      label:"Ear",      desc:"Ear tragus",               color:"#0891b2", mpIdx:[7,8]    },
+  { id:"acromion", label:"Acromion", desc:"Tip of acromion process",  color:"#7c3aed", mpIdx:[11,12]  },
+  { id:"hip",      label:"Hip (GT)", desc:"Greater trochanter tip",   color:"#c2760c", mpIdx:[23,24]  },
+  { id:"knee",     label:"Knee",     desc:"Lateral femoral condyle",  color:"#15803d", mpIdx:[25,26]  },
+  { id:"ankle",    label:"Ankle",    desc:"Lateral malleolus tip",    color:"#dc2626", mpIdx:[27,28]  },
 ];
 
 export const ADVANCED_LANDMARKS = [
-  { id:"c7",    label:"C7",    desc:"C7 spinous process (base of neck)",     color:"#fbbf24", group:"spinal"  },
-  { id:"t12",   label:"T12",   desc:"T12 (thoracolumbar junction)",          color:"#fb7185", group:"spinal"  },
-  { id:"s2",    label:"S2",    desc:"S2 (posterior sacrum midpoint)",        color:"#c084fc", group:"spinal"  },
-  { id:"apexT", label:"T-Apex",desc:"Maximum thoracic convexity point",     color:"#fdba74", group:"spinal"  },
-  { id:"apexL", label:"L-Apex",desc:"Maximum lumbar concavity point",       color:"#86efac", group:"spinal"  },
-  { id:"asis",  label:"ASIS",  desc:"Anterior superior iliac spine",        color:"#7dd3fc", group:"pelvis"  },
-  { id:"psis",  label:"PSIS",  desc:"Posterior superior iliac spine",       color:"#93c5fd", group:"pelvis"  },
+  { id:"c7",    label:"C7",    desc:"C7 spinous process (base of neck)",     color:"#b45309", group:"spinal"  },
+  { id:"t12",   label:"T12",   desc:"T12 (thoracolumbar junction)",          color:"#db2777", group:"spinal"  },
+  { id:"s2",    label:"S2",    desc:"S2 (posterior sacrum midpoint)",        color:"#9333ea", group:"spinal"  },
+  { id:"apexT", label:"T-Apex",desc:"Maximum thoracic convexity point",     color:"#ea580c", group:"spinal"  },
+  { id:"apexL", label:"L-Apex",desc:"Maximum lumbar concavity point",       color:"#16a34a", group:"spinal"  },
+  { id:"asis",  label:"ASIS",  desc:"Anterior superior iliac spine",        color:"#0284c7", group:"pelvis"  },
+  { id:"psis",  label:"PSIS",  desc:"Posterior superior iliac spine",       color:"#2563eb", group:"pelvis"  },
 ];
 
 // Severity thresholds — all sourced from clinical literature
@@ -545,10 +545,10 @@ export default function HybridKendall({
   }, [dragging, activePlace]);
 
   // ── Render helpers ──────────────────────────────────────────────────────────
-  const C = { // colour palette
-    bg:"#0a0d1a", s2:"#111827", s3:"#1e2a3a", border:"#1e2a3a",
-    text:"#e2e8f0", muted:"#64748b", accent:"#a78bfa",
-    green:"#34d399", red:"#ff4d6d", yellow:"#fbbf24",
+  const C = { // colour palette — matches the app's light theme
+    bg:"#F7F7F8", s2:"#ffffff", s3:"#F7F7F8", border:"#E0E0E2",
+    text:"#0D0D0D", muted:"#6B6B6B", accent:"#7c3aed",
+    green:"#16a34a", red:"#dc2626", yellow:"#b45309",
   };
   const allPrimary = PRIMARY_LANDMARKS.every(p => lm[p.id]);
   const plumbX = lm.ankle?.x ?? null;
@@ -569,7 +569,7 @@ export default function HybridKendall({
         </div>
         <div style={{display:"flex",gap:6,flexShrink:0}}>
           <button onClick={()=>setShowGrid(v=>!v)} style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${showGrid?C.accent:C.border}`,background:showGrid?`${C.accent}20`:"transparent",color:showGrid?C.accent:C.muted,fontSize:"0.6rem",fontWeight:700,cursor:"pointer"}}>Grid</button>
-          <button onClick={()=>setAdvancedMode(v=>!v)} style={{padding:"5px 12px",borderRadius:8,border:`2px solid ${advancedMode?"#34d399":"rgba(52,211,153,0.5)"}`,background:advancedMode?"rgba(52,211,153,0.15)":"rgba(52,211,153,0.06)",color:advancedMode?"#34d399":"rgba(52,211,153,0.9)",fontSize:"0.65rem",fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
+          <button onClick={()=>setAdvancedMode(v=>!v)} style={{padding:"5px 12px",borderRadius:8,border:`2px solid ${advancedMode?C.green:"#B4DDB2"}`,background:advancedMode?"#EAF3DE":"#F4F8EE",color:advancedMode?C.green:"#3B6D11",fontSize:"0.65rem",fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
             🔬 {advancedMode?"Advanced ON":"Advanced Mode"}
           </button>
         </div>
@@ -596,7 +596,7 @@ export default function HybridKendall({
             const isNext=!isActive&&!placed&&PRIMARY_LANDMARKS.filter(p=>!lm[p.id])[0]?.id===def.id;
             return(<button key={def.id} onClick={()=>setActivePlace(isActive?null:def.id)}
               style={{padding: isWide?"7px 4px":"8px 6px", minWidth: isWide?0:76, flexShrink: isWide?undefined:0, minHeight:44,
-                borderRadius:9,border:`1.5px solid ${isActive?def.color:placed?def.color+"70":isNext?"rgba(255,255,255,0.3)":C.border}`,background:isActive?`${def.color}25`:placed?`${def.color}12`:isNext?"rgba(255,255,255,0.04)":"transparent",color:isActive?def.color:placed?def.color:isNext?"rgba(255,255,255,0.85)":C.muted,fontSize: isWide?"0.6rem":"0.65rem",fontWeight:700,cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
+                borderRadius:9,border:`1.5px solid ${isActive?def.color:placed?def.color+"70":isNext?C.accent:C.border}`,background:isActive?`${def.color}22`:placed?`${def.color}14`:isNext?`${C.accent}0d`:"transparent",color:isActive?def.color:placed?def.color:isNext?C.accent:C.muted,fontSize: isWide?"0.6rem":"0.65rem",fontWeight:700,cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
               <div style={{fontSize: isWide?"0.85rem":"0.95rem",marginBottom:2}}>{placed?"✅":isNext?"👆":"📍"}</div>
               <div style={{fontWeight:800,fontSize: isWide?"0.6rem":"0.65rem",whiteSpace:"nowrap"}}>{def.label}</div>
               <div style={{fontSize: isWide?"0.5rem":"0.55rem",marginTop:1,opacity:0.75,whiteSpace:"nowrap"}}>{isActive?"tap photo ↓":placed?"✓ placed":isNext?"← next":def.desc.split(" ")[0]}</div>
@@ -618,13 +618,13 @@ export default function HybridKendall({
       </div>
 
       {!advancedMode&&(
-        <button onClick={()=>setAdvancedMode(true)} style={{width:"100%",padding:"11px 14px",borderRadius:10,border:"2px dashed rgba(52,211,153,0.4)",background:"rgba(52,211,153,0.04)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={()=>setAdvancedMode(true)} style={{width:"100%",padding:"11px 14px",borderRadius:10,border:"2px dashed #97C459",background:"#F4F8EE",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:"1.3rem"}}>🔬</span>
           <div>
-            <div style={{fontSize:"0.72rem",fontWeight:800,color:"#34d399",marginBottom:2}}>Enable Advanced Mode</div>
-            <div style={{fontSize:"0.6rem",color:"#64748b",lineHeight:1.5}}>Place C7 · T12 · S2 for TCI/LCI · ASIS + PSIS for Pelvic Tilt · Enables full Kendall Pattern Classification</div>
+            <div style={{fontSize:"0.72rem",fontWeight:800,color:C.green,marginBottom:2}}>Enable Advanced Mode</div>
+            <div style={{fontSize:"0.6rem",color:C.muted,lineHeight:1.5}}>Place C7 · T12 · S2 for TCI/LCI · ASIS + PSIS for Pelvic Tilt · Enables full Kendall Pattern Classification</div>
           </div>
-          <span style={{marginLeft:"auto",fontSize:"0.65rem",fontWeight:800,color:"#34d399",whiteSpace:"nowrap",flexShrink:0}}>Tap →</span>
+          <span style={{marginLeft:"auto",fontSize:"0.65rem",fontWeight:800,color:C.green,whiteSpace:"nowrap",flexShrink:0}}>Tap →</span>
         </button>
       )}
 
@@ -652,7 +652,7 @@ export default function HybridKendall({
                   <div>{placed?"✅":"📍"}</div>
                   <div style={{fontWeight:800,fontSize: isWide?"0.57rem":"0.62rem",whiteSpace:"nowrap"}}>{def.label}</div>
                   {placed && <div style={{fontSize: isWide?"0.48rem":"0.52rem",opacity:0.7,whiteSpace:"nowrap"}}>{def.desc.split(" ")[0]}</div>}
-                  {placed && <button onClick={e=>{e.stopPropagation();setLm(p=>{const n={...p};delete n[def.id];return n;});}} style={{marginTop:2,width:"100%",border:"none",background:"rgba(255,77,109,0.15)",color:"#ff4d6d",borderRadius:4,fontSize: isWide?"0.48rem":"0.55rem",fontWeight:700,cursor:"pointer",minHeight:20}}>✕</button>}
+                  {placed && <button onClick={e=>{e.stopPropagation();setLm(p=>{const n={...p};delete n[def.id];return n;});}} style={{marginTop:2,width:"100%",border:"none",background:"#FCEBEB",color:C.red,borderRadius:4,fontSize: isWide?"0.48rem":"0.55rem",fontWeight:700,cursor:"pointer",minHeight:20}}>✕</button>}
                 </button>
               );
             })}
@@ -695,17 +695,18 @@ export default function HybridKendall({
             {plumbX !== null && (
               <g>
                 <line x1={plumbX} y1="0" x2={plumbX} y2="1"
-                  stroke="rgba(127,90,240,0.9)" strokeWidth="0.004" strokeDasharray="0.015,0.008"/>
-                <text x={plumbX+0.01} y="0.04" fontSize="0.022" fontWeight="bold" fill="rgba(167,139,250,0.9)" fontFamily="system-ui">PLUMB</text>
+                  stroke="rgba(124,58,237,0.85)" strokeWidth="0.004" strokeDasharray="0.015,0.008"/>
+                <rect x={plumbX+0.008} y="0.026" width="0.09" height="0.02" rx="0.003" fill="rgba(0,0,0,0.7)"/>
+                <text x={plumbX+0.013} y="0.041" fontSize="0.018" fontWeight="bold" fill="#c4b5fd" fontFamily="system-ui">PLUMB</text>
               </g>
             )}
 
             {/* ── Measurement lines (landmark → plumb) ── */}
             {confirmed && plumbX !== null && [
-              { id:"ear",      pct:m.earPlumb,  color:"#00e5ff" },
-              { id:"acromion", pct:m.acrPlumb,  color:"#a78bfa" },
-              { id:"hip",      pct:m.hipPlumb,  color:"#f59e0b" },
-              { id:"knee",     pct:m.kneePlumb, color:"#34d399" },
+              { id:"ear",      pct:m.earPlumb,  color:"#0891b2" },
+              { id:"acromion", pct:m.acrPlumb,  color:"#7c3aed" },
+              { id:"hip",      pct:m.hipPlumb,  color:"#c2760c" },
+              { id:"knee",     pct:m.kneePlumb, color:"#15803d" },
             ].map(seg => {
               const p = lm[seg.id]; if (!p || seg.pct === null) return null;
               const lbl = `${seg.pct > 0 ? "+" : ""}${seg.pct}%`;
@@ -727,11 +728,11 @@ export default function HybridKendall({
               return (
                 <g>
                   <line x1={lm.ear.x} y1={lm.ear.y} x2={target.x} y2={target.y}
-                    stroke="#00e5ff" strokeWidth="0.004" opacity="0.9"/>
+                    stroke="#0891b2" strokeWidth="0.004" opacity="0.9"/>
                   <rect x={lm.ear.x+(target.x-lm.ear.x)*0.4-0.018} y={lm.ear.y+(target.y-lm.ear.y)*0.4+0.004}
                     width="0.072" height="0.015" rx="0.002" fill="rgba(0,0,0,0.78)"/>
                   <text x={lm.ear.x+(target.x-lm.ear.x)*0.4-0.014} y={lm.ear.y+(target.y-lm.ear.y)*0.4+0.014}
-                    fontSize="0.012" fill="#00e5ff" fontWeight="bold" fontFamily="system-ui">CVA {m.cva}°</text>
+                    fontSize="0.012" fill="#0891b2" fontWeight="bold" fontFamily="system-ui">CVA {m.cva}°</text>
                 </g>
               );
             })()}
@@ -739,15 +740,15 @@ export default function HybridKendall({
             {/* ── TCI / LCI chord lines ── */}
             {advancedMode && lm.c7 && lm.t12 && (
               <line x1={lm.c7.x} y1={lm.c7.y} x2={lm.t12.x} y2={lm.t12.y}
-                stroke="#fbbf24" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+                stroke="#b45309" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
             )}
             {advancedMode && lm.t12 && lm.s2 && (
               <line x1={lm.t12.x} y1={lm.t12.y} x2={lm.s2.x} y2={lm.s2.y}
-                stroke="#fb7185" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+                stroke="#db2777" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
             )}
             {advancedMode && lm.asis && lm.psis && (
               <line x1={lm.asis.x} y1={lm.asis.y} x2={lm.psis.x} y2={lm.psis.y}
-                stroke="#7dd3fc" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
+                stroke="#0284c7" strokeWidth="0.003" strokeDasharray="0.012,0.007" opacity="0.7"/>
             )}
 
             {/* ── Landmark dots (draggable) ── */}
@@ -814,20 +815,20 @@ export default function HybridKendall({
           <div style={{fontSize:"0.6rem",fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Measurements</div>
           <div style={{display:"grid",gap:4}}>
             {[
-              { label:"CVA",                val: m.cva !== null ? `${m.cva}° (${m.cvaSource})` : "—",       status: m.cva !== null ? classifyCVA(m.cva) : "Not Measured", color:"#00e5ff" },
-              { label:"Ear → Plumb",        val: m.earPlumb  !== null ? `${m.earPlumb}% BH`  : "—",       status: m.earPlumb  !== null ? classifyPlumb(m.earPlumb,"ear")      : "Not Measured", color:"#00e5ff" },
-              { label:"Acromion → Plumb",   val: m.acrPlumb  !== null ? `${m.acrPlumb}% BH`  : "—",       status: m.acrPlumb  !== null ? classifyPlumb(m.acrPlumb,"acromion")  : "Not Measured", color:"#a78bfa" },
-              { label:"Hip (GT) → Plumb",   val: m.hipPlumb  !== null ? `${m.hipPlumb}% BH`  : "—",       status: m.hipPlumb  !== null ? classifyPlumb(m.hipPlumb,"hip")       : "Not Measured", color:"#f59e0b" },
-              { label:"Knee → Plumb",       val: m.kneePlumb !== null ? `${m.kneePlumb}% BH` : "—",       status: m.kneePlumb !== null ? classifyPlumb(m.kneePlumb,"knee")     : "Not Measured", color:"#34d399" },
-              { label:"Hip-Knee-Ankle °",   val: m.knee !== null ? `${m.knee}°` : "—",                    status: classifyKnee(m.knee) ?? "Not Measured",                                       color:"#34d399" },
-              { label:"TCI",                val: m.tci  !== null ? `${m.tci.tci}%` : "—",                 status: m.tci  ? classifyTCI(m.tci.tci)  : "Place C7, T12, T-Apex", color:"#fbbf24" },
-              { label:"LCI",                val: m.lci  !== null ? `${m.lci.lci}%` : "—",                 status: m.lci  ? classifyLCI(m.lci.lci)  : "Place T12, S2, L-Apex", color:"#fb7185" },
-              { label:"Pelvic Tilt",        val: m.pelvis !== null ? `${m.pelvis.angle}° ${m.pelvis.direction}` : "—", status: m.pelvis ? `${m.pelvis.direction}` : "Place ASIS + PSIS", color:"#7dd3fc" },
+              { label:"CVA",                val: m.cva !== null ? `${m.cva}° (${m.cvaSource})` : "—",       status: m.cva !== null ? classifyCVA(m.cva) : "Not Measured", color:"#0891b2" },
+              { label:"Ear → Plumb",        val: m.earPlumb  !== null ? `${m.earPlumb}% BH`  : "—",       status: m.earPlumb  !== null ? classifyPlumb(m.earPlumb,"ear")      : "Not Measured", color:"#0891b2" },
+              { label:"Acromion → Plumb",   val: m.acrPlumb  !== null ? `${m.acrPlumb}% BH`  : "—",       status: m.acrPlumb  !== null ? classifyPlumb(m.acrPlumb,"acromion")  : "Not Measured", color:"#7c3aed" },
+              { label:"Hip (GT) → Plumb",   val: m.hipPlumb  !== null ? `${m.hipPlumb}% BH`  : "—",       status: m.hipPlumb  !== null ? classifyPlumb(m.hipPlumb,"hip")       : "Not Measured", color:"#c2760c" },
+              { label:"Knee → Plumb",       val: m.kneePlumb !== null ? `${m.kneePlumb}% BH` : "—",       status: m.kneePlumb !== null ? classifyPlumb(m.kneePlumb,"knee")     : "Not Measured", color:"#15803d" },
+              { label:"Hip-Knee-Ankle °",   val: m.knee !== null ? `${m.knee}°` : "—",                    status: classifyKnee(m.knee) ?? "Not Measured",                                       color:"#15803d" },
+              { label:"TCI",                val: m.tci  !== null ? `${m.tci.tci}%` : "—",                 status: m.tci  ? classifyTCI(m.tci.tci)  : "Place C7, T12, T-Apex", color:"#b45309" },
+              { label:"LCI",                val: m.lci  !== null ? `${m.lci.lci}%` : "—",                 status: m.lci  ? classifyLCI(m.lci.lci)  : "Place T12, S2, L-Apex", color:"#db2777" },
+              { label:"Pelvic Tilt",        val: m.pelvis !== null ? `${m.pelvis.angle}° ${m.pelvis.direction}` : "—", status: m.pelvis ? `${m.pelvis.direction}` : "Place ASIS + PSIS", color:"#0284c7" },
             ].map(row=>(
-              <div key={row.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 8px",background:C.s3,borderRadius:6}}>
+              <div key={row.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 8px",background:C.s3,borderRadius:6,border:`1px solid ${C.border}`}}>
                 <span style={{fontSize:"0.62rem",color:C.muted,minWidth:120}}>{row.label}</span>
                 <span style={{fontSize:"0.65rem",fontWeight:700,color:row.color}}>{row.val}</span>
-                <span style={{fontSize:"0.58rem",color:row.status.includes("Not")||row.status.includes("Place")?"#475569":row.status==="Normal"?C.green:"#f59e0b",fontStyle:"italic",maxWidth:130,textAlign:"right"}}>{row.status}</span>
+                <span style={{fontSize:"0.58rem",color:row.status.includes("Not")||row.status.includes("Place")?C.muted:row.status==="Normal"?C.green:"#b45309",fontStyle:"italic",maxWidth:130,textAlign:"right"}}>{row.status}</span>
               </div>
             ))}
           </div>
