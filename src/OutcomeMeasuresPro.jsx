@@ -1085,50 +1085,66 @@ export default function OutcomeMeasuresPro({ data, set }) {
         )}
       </div>
 
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {Object.values(SCALES).filter(sc=>!omSearch.trim()||sc.full.toLowerCase().includes(omSearch.toLowerCase())||sc.category.toLowerCase().includes(omSearch.toLowerCase())).map(sc=>{
-          const last=getLastScore(sc.id);
-          const interp=last?sc.interpret(last.score):null;
-          const history=getHistory(sc.id);
-          return(
-            <div key={sc.id} style={{background:"#fff",borderRadius:12,
-              border:`1px solid ${BD}`,overflow:"hidden"}}>
-              {/* Scale header */}
-              <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontSize:"1.3rem"}}>{sc.icon}</span>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:"0.85rem",color:TX}}>{sc.full}</div>
-                  <div style={{fontSize:"0.65rem",color:MU,marginTop:1}}>
-                    {sc.category} · MCID {sc.mcid}{sc.unit}
-                    {last&&<span style={{marginLeft:8,color:interp?.color,fontWeight:600}}>
-                      Last: {last.score}{sc.unit} — {interp?.label}
-                    </span>}
-                  </div>
-                </div>
-                {history.length>1&&<MiniTrend history={history}/>}
-                {last&&<div style={{textAlign:"right"}}>
-                  <div style={{fontSize:"1.2rem",fontWeight:800,color:interp?.color}}>{last.score}</div>
-                  <div style={{fontSize:"0.6rem",color:MU}}>{sc.unit}</div>
-                </div>}
+      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+        {(()=>{
+          const filtered=Object.values(SCALES).filter(sc=>!omSearch.trim()||sc.full.toLowerCase().includes(omSearch.toLowerCase())||sc.category.toLowerCase().includes(omSearch.toLowerCase()));
+          const groups={}; const order=[];
+          filtered.forEach(sc=>{ if(!groups[sc.category]){groups[sc.category]=[];order.push(sc.category);} groups[sc.category].push(sc); });
+          return order.map(cat=>(
+            <div key={cat} style={{marginBottom:6}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,margin:"12px 2px 8px"}}>
+                <span style={{fontSize:"0.72rem",fontWeight:800,color:A,textTransform:"uppercase",letterSpacing:"0.6px",whiteSpace:"nowrap"}}>{cat}</span>
+                <span style={{flex:1,height:1,background:BD}}/>
+                <span style={{fontSize:"0.62rem",color:MU,fontWeight:700,background:S2,border:`1px solid ${BD}`,borderRadius:20,padding:"1px 8px"}}>{groups[cat].length}</span>
               </div>
-              {last&&<ScoreBar score={last.score} maxScore={sc.maxScore} color={interp?.color||A}/>}
-              {/* Actions */}
-              <div className="pm-outcome-actions" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0,borderTop:`1px solid ${BD}`}}>
-                {[
-                  {label:"📄 Blank PDF",color:MU,action:()=>generateBlankPDF(sc.id,data?.name||"")},
-                  {label:"▶ Start Assessment",color:A,action:()=>{setActiveScale(sc.id);setView("live");}},
-                ].map((btn,i)=>(
-                  <button key={i} onClick={btn.action}
-                    style={{padding:"9px 4px",border:"none",borderRight:i<1?`1px solid ${BD}`:"none",
-                      background:"transparent",color:btn.color,fontSize:"0.68rem",fontWeight:700,
-                      cursor:"pointer",fontFamily:"inherit"}}>
-                    {btn.label}
-                  </button>
-                ))}
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {groups[cat].map(sc=>{
+                  const last=getLastScore(sc.id);
+                  const interp=last?sc.interpret(last.score):null;
+                  const history=getHistory(sc.id);
+                  return(
+                    <div key={sc.id} style={{background:"#fff",borderRadius:12,
+                      border:`1px solid ${BD}`,overflow:"hidden"}}>
+                      {/* Scale header */}
+                      <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
+                        <span style={{fontSize:"1.3rem"}}>{sc.icon}</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontWeight:700,fontSize:"0.85rem",color:TX}}>{sc.full}</div>
+                          <div style={{fontSize:"0.65rem",color:MU,marginTop:1}}>
+                            {sc.category} · MCID {sc.mcid}{sc.unit}
+                            {last&&<span style={{marginLeft:8,color:interp?.color,fontWeight:600}}>
+                              Last: {last.score}{sc.unit} — {interp?.label}
+                            </span>}
+                          </div>
+                        </div>
+                        {history.length>1&&<MiniTrend history={history}/>}
+                        {last&&<div style={{textAlign:"right"}}>
+                          <div style={{fontSize:"1.2rem",fontWeight:800,color:interp?.color}}>{last.score}</div>
+                          <div style={{fontSize:"0.6rem",color:MU}}>{sc.unit}</div>
+                        </div>}
+                      </div>
+                      {last&&<ScoreBar score={last.score} maxScore={sc.maxScore} color={interp?.color||A}/>}
+                      {/* Actions */}
+                      <div className="pm-outcome-actions" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0,borderTop:`1px solid ${BD}`}}>
+                        {[
+                          {label:"📄 Blank PDF",color:MU,action:()=>generateBlankPDF(sc.id,data?.name||"")},
+                          {label:"▶ Start Assessment",color:A,action:()=>{setActiveScale(sc.id);setView("live");}},
+                        ].map((btn,i)=>(
+                          <button key={i} onClick={btn.action}
+                            style={{padding:"9px 4px",border:"none",borderRight:i<1?`1px solid ${BD}`:"none",
+                              background:"transparent",color:btn.color,fontSize:"0.68rem",fontWeight:700,
+                              cursor:"pointer",fontFamily:"inherit"}}>
+                            {btn.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          );
-        })}
+          ));
+        })()}
       </div>
       <div style={{marginTop:12,padding:"10px 12px",borderRadius:8,background:S2,
         border:`1px solid ${BD}`,fontSize:"0.65rem",color:MU,lineHeight:1.6}}>
@@ -1555,4 +1571,128 @@ Object.assign(HI, {
   rmdq_22:["22. सामान्य से ज्यादा चिड़चिड़ा हूँ", "0 — नहीं", "1 — हाँ"],
   rmdq_23:["23. सीढ़ियाँ सामान्य से धीमे चढ़ता हूँ", "0 — नहीं", "1 — हाँ"],
   rmdq_24:["24. ज्यादातर समय बिस्तर पर रहता हूँ", "0 — नहीं", "1 — हाँ"],
+});
+
+// ── STROKE + TBI SCALE ADDITIONS ───────────────────────────────────────────────
+// NIHSS, Modified Ashworth Scale, Fugl-Meyer (Screening) — category "Stroke"
+// Rancho Los Amigos, GOAT, Barthel Index — category "TBI"
+Object.assign(SCALES, {
+
+  nihss:{id:"nihss",label:"NIHSS",full:"NIH Stroke Scale",icon:"🧠",category:"Stroke",
+    maxScore:42,unit:"/42",mcid:2,
+    interpret:(s)=>s===0?{label:"No stroke symptoms",color:"#16a34a"}:s<=4?{label:"Minor stroke",color:"#65a30d"}:s<=15?{label:"Moderate stroke",color:"#d97706"}:s<=20?{label:"Moderate-severe stroke",color:"#ea580c"}:{label:"Severe stroke",color:"#dc2626"},
+    fields:[
+      {id:"nihss_1a",label:"1a. Level of Consciousness (LOC)",options:["0 — Alert, keenly responsive","1 — Not alert, arousable by minor stimulation","2 — Not alert, requires repeated stimulation or obtunded","3 — Unresponsive, or only reflex motor/autonomic responses"]},
+      {id:"nihss_1b",label:"1b. LOC Questions (ask month, age)",options:["0 — Answers both correctly","1 — Answers one correctly","2 — Answers neither correctly"]},
+      {id:"nihss_1c",label:"1c. LOC Commands (open/close eyes, grip/release)",options:["0 — Performs both correctly","1 — Performs one correctly","2 — Performs neither correctly"]},
+      {id:"nihss_2",label:"2. Best Gaze",options:["0 — Normal","1 — Partial gaze palsy","2 — Forced deviation or total gaze paresis"]},
+      {id:"nihss_3",label:"3. Visual Fields",options:["0 — No visual loss","1 — Partial hemianopia","2 — Complete hemianopia","3 — Bilateral hemianopia (including cortical blindness)"]},
+      {id:"nihss_4",label:"4. Facial Palsy",options:["0 — Normal symmetrical movement","1 — Minor paralysis (flattened nasolabial fold)","2 — Partial paralysis (near-total lower face paralysis)","3 — Complete paralysis of upper + lower face, one or both sides"]},
+      {id:"nihss_5a",label:"5a. Motor Arm — Left (hold 90°/45° x10sec)",options:["0 — No drift","1 — Drift, doesn't hit bed","2 — Some effort against gravity, drifts to bed","3 — No effort against gravity, limb falls","4 — No movement"]},
+      {id:"nihss_5b",label:"5b. Motor Arm — Right (hold 90°/45° x10sec)",options:["0 — No drift","1 — Drift, doesn't hit bed","2 — Some effort against gravity, drifts to bed","3 — No effort against gravity, limb falls","4 — No movement"]},
+      {id:"nihss_6a",label:"6a. Motor Leg — Left (hold 30° x5sec)",options:["0 — No drift","1 — Drift, doesn't hit bed","2 — Some effort against gravity","3 — No effort against gravity, falls immediately","4 — No movement"]},
+      {id:"nihss_6b",label:"6b. Motor Leg — Right (hold 30° x5sec)",options:["0 — No drift","1 — Drift, doesn't hit bed","2 — Some effort against gravity","3 — No effort against gravity, falls immediately","4 — No movement"]},
+      {id:"nihss_7",label:"7. Limb Ataxia (finger-nose, heel-shin)",options:["0 — Absent","1 — Present in one limb","2 — Present in two limbs"]},
+      {id:"nihss_8",label:"8. Sensory (pinprick, withdrawal to pain)",options:["0 — Normal, no sensory loss","1 — Mild-moderate sensory loss","2 — Severe to total sensory loss"]},
+      {id:"nihss_9",label:"9. Best Language",options:["0 — No aphasia","1 — Mild-moderate aphasia","2 — Severe aphasia","3 — Mute, global aphasia"]},
+      {id:"nihss_10",label:"10. Dysarthria",options:["0 — Normal articulation","1 — Mild-moderate dysarthria, slurring but understandable","2 — Severe dysarthria, unintelligible or anarthric"]},
+      {id:"nihss_11",label:"11. Extinction / Inattention (neglect)",options:["0 — No abnormality","1 — Mild — inattention/extinction to one modality","2 — Severe — hemi-inattention to more than one modality"]},
+    ],
+    score:(v)=>{const ids=["nihss_1a","nihss_1b","nihss_1c","nihss_2","nihss_3","nihss_4","nihss_5a","nihss_5b","nihss_6a","nihss_6b","nihss_7","nihss_8","nihss_9","nihss_10","nihss_11"];const s=ids.map(id=>v[id]?+v[id].split(" — ")[0]:null).filter(x=>x!==null);return s.length?s.reduce((a,b)=>a+b,0):null;}
+  },
+
+  mas:{id:"mas",label:"MAS",full:"Modified Ashworth Scale — Spasticity (more-affected side)",icon:"💪",category:"Stroke",
+    maxScore:4,unit:"/4",mcid:1,
+    interpret:(s)=>s===0?{label:"Normal tone",color:"#16a34a"}:s<1.5?{label:"Mild spasticity",color:"#65a30d"}:s<2.5?{label:"Moderate spasticity",color:"#d97706"}:s<3.5?{label:"Considerable spasticity",color:"#ea580c"}:{label:"Severe rigidity",color:"#dc2626"},
+    fields:[
+      {id:"mas_elbow_flex",label:"Elbow Flexors",options:["0 — No increase in muscle tone","1 — Slight increase: catch and release at end of ROM","1.5 — Slight increase: catch + minimal resistance through <50% ROM (documented as 1+)","2 — Marked increase through most of ROM, easily moved","3 — Considerable increase, passive movement difficult","4 — Rigid in flexion or extension"]},
+      {id:"mas_elbow_ext",label:"Elbow Extensors",options:["0 — No increase in muscle tone","1 — Slight increase: catch and release at end of ROM","1.5 — Slight increase: catch + minimal resistance through <50% ROM (documented as 1+)","2 — Marked increase through most of ROM, easily moved","3 — Considerable increase, passive movement difficult","4 — Rigid in flexion or extension"]},
+      {id:"mas_wrist_flex",label:"Wrist Flexors",options:["0 — No increase in muscle tone","1 — Slight increase: catch and release at end of ROM","1.5 — Slight increase: catch + minimal resistance through <50% ROM (documented as 1+)","2 — Marked increase through most of ROM, easily moved","3 — Considerable increase, passive movement difficult","4 — Rigid in flexion or extension"]},
+      {id:"mas_finger_flex",label:"Finger Flexors",options:["0 — No increase in muscle tone","1 — Slight increase: catch and release at end of ROM","1.5 — Slight increase: catch + minimal resistance through <50% ROM (documented as 1+)","2 — Marked increase through most of ROM, easily moved","3 — Considerable increase, passive movement difficult","4 — Rigid in flexion or extension"]},
+      {id:"mas_hip_add",label:"Hip Adductors",options:["0 — No increase in muscle tone","1 — Slight increase: catch and release at end of ROM","1.5 — Slight increase: catch + minimal resistance through <50% ROM (documented as 1+)","2 — Marked increase through most of ROM, easily moved","3 — Considerable increase, passive movement difficult","4 — Rigid in flexion or extension"]},
+      {id:"mas_knee_ext",label:"Knee Extensors",options:["0 — No increase in muscle tone","1 — Slight increase: catch and release at end of ROM","1.5 — Slight increase: catch + minimal resistance through <50% ROM (documented as 1+)","2 — Marked increase through most of ROM, easily moved","3 — Considerable increase, passive movement difficult","4 — Rigid in flexion or extension"]},
+      {id:"mas_knee_flex",label:"Knee Flexors",options:["0 — No increase in muscle tone","1 — Slight increase: catch and release at end of ROM","1.5 — Slight increase: catch + minimal resistance through <50% ROM (documented as 1+)","2 — Marked increase through most of ROM, easily moved","3 — Considerable increase, passive movement difficult","4 — Rigid in flexion or extension"]},
+      {id:"mas_ankle_pf",label:"Ankle Plantarflexors",options:["0 — No increase in muscle tone","1 — Slight increase: catch and release at end of ROM","1.5 — Slight increase: catch + minimal resistance through <50% ROM (documented as 1+)","2 — Marked increase through most of ROM, easily moved","3 — Considerable increase, passive movement difficult","4 — Rigid in flexion or extension"]},
+    ],
+    score:(v)=>{const ids=["mas_elbow_flex","mas_elbow_ext","mas_wrist_flex","mas_finger_flex","mas_hip_add","mas_knee_ext","mas_knee_flex","mas_ankle_pf"];const s=ids.map(id=>v[id]?parseFloat(v[id].split(" — ")[0]):null).filter(x=>x!==null&&!isNaN(x));return s.length?Math.round((s.reduce((a,b)=>a+b,0)/s.length)*10)/10:null;}
+  },
+
+  fma:{id:"fma",label:"FMA",full:"Fugl-Meyer Assessment — Motor (Screening, 16 key items — abbreviated proxy for the full 50-item/100-point instrument; use the official form for research-grade scoring)",icon:"🎯",category:"Stroke",
+    maxScore:32,unit:"/32",mcid:4,
+    interpret:(s)=>s>=29?{label:"Minimal motor impairment",color:"#16a34a"}:s>=19?{label:"Moderate-good recovery",color:"#0891b2"}:s>=10?{label:"Marked impairment",color:"#d97706"}:{label:"Severe impairment",color:"#dc2626"},
+    fields:[
+      {id:"fma_ue_reflex",label:"UE Reflex Activity (biceps, triceps)",options:["0 — Neither reflex can be elicited","1 — One of the two reflexes can be elicited","2 — Both reflexes can be elicited"]},
+      {id:"fma_ue_flexsyn",label:"UE Flexor Synergy (shoulder retraction/elevation/abduction ≥90°, elbow flexion, forearm supination)",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_ue_extsyn",label:"UE Extensor Synergy (shoulder adduction/IR, elbow extension, forearm pronation)",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_ue_combsyn",label:"UE Movement Combining Synergies (hand to lumbar spine / shoulder flexion 0–90° with elbow at 0°)",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_ue_outsyn",label:"UE Movement Out of Synergy (shoulder abduction 90°, elbow at 0°, forearm pronation-supination)",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_ue_normreflex",label:"UE Normal Reflex Activity (hyperreflexia check — biceps, triceps)",options:["0 — Both reflexes markedly hyperactive","1 — One reflex markedly hyperactive, or both mildly lively","2 — Neither reflex hyperactive"]},
+      {id:"fma_ue_wrist",label:"Wrist Stability & Movement",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_ue_hand",label:"Hand — Mass Grasp / Finger Movement",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_ue_coord",label:"UE Coordination & Speed (finger-to-nose — tremor, dysmetria, time)",options:["0 — Marked tremor/dysmetria or >6s slower than uninvolved side","1 — Slight tremor/dysmetria or 2–5s slower","2 — No tremor, <2s difference"]},
+      {id:"fma_le_reflex",label:"LE Reflex Activity (patellar, Achilles)",options:["0 — Neither reflex can be elicited","1 — One of the two reflexes can be elicited","2 — Both reflexes can be elicited"]},
+      {id:"fma_le_flexsyn",label:"LE Flexor Synergy — supine (hip flexion, knee flexion, ankle dorsiflexion)",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_le_extsyn",label:"LE Extensor Synergy — supine (hip extension/adduction, knee extension, ankle plantarflexion)",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_le_combsyn",label:"LE Movement Combining Synergies (sitting, knee flexion beyond 90°)",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_le_outsyn",label:"LE Movement Out of Synergy (standing hip flexion with knee extended / ankle dorsiflexion)",options:["0 — Cannot perform at all","1 — Performs partially","2 — Performs faultlessly"]},
+      {id:"fma_le_normreflex",label:"LE Normal Reflex Activity (hyperreflexia check — patellar, Achilles)",options:["0 — Both reflexes markedly hyperactive","1 — One reflex markedly hyperactive, or both mildly lively","2 — Neither reflex hyperactive"]},
+      {id:"fma_le_coord",label:"LE Coordination & Speed (heel-to-shin — tremor, dysmetria, time)",options:["0 — Marked tremor/dysmetria or >6s slower than uninvolved side","1 — Slight tremor/dysmetria or 2–5s slower","2 — No tremor, <2s difference"]},
+    ],
+    score:(v)=>{const ids=["fma_ue_reflex","fma_ue_flexsyn","fma_ue_extsyn","fma_ue_combsyn","fma_ue_outsyn","fma_ue_normreflex","fma_ue_wrist","fma_ue_hand","fma_ue_coord","fma_le_reflex","fma_le_flexsyn","fma_le_extsyn","fma_le_combsyn","fma_le_outsyn","fma_le_normreflex","fma_le_coord"];const s=ids.map(id=>v[id]?+v[id].split(" — ")[0]:null).filter(x=>x!==null);return s.length?s.reduce((a,b)=>a+b,0):null;}
+  },
+
+  rancho:{id:"rancho",label:"Rancho",full:"Rancho Los Amigos Scale — Levels of Cognitive Functioning",icon:"🧩",category:"TBI",
+    maxScore:8,unit:"/8",mcid:1,
+    interpret:(s)=>s<=3?{label:"Low level of function",color:"#dc2626"}:s<=5?{label:"Confused / agitated or inappropriate",color:"#ea580c"}:s===6?{label:"Confused but appropriate",color:"#d97706"}:{label:"Automatic-to-purposeful — good recovery",color:"#16a34a"},
+    fields:[
+      {id:"rancho_level",label:"Select current cognitive/behavioural level",options:[
+        "1 — I. No Response: Total Assistance",
+        "2 — II. Generalized Response: Total Assistance",
+        "3 — III. Localized Response: Total Assistance",
+        "4 — IV. Confused / Agitated: Maximal Assistance",
+        "5 — V. Confused, Inappropriate, Non-Agitated: Maximal Assistance",
+        "6 — VI. Confused, Appropriate: Moderate Assistance",
+        "7 — VII. Automatic, Appropriate: Minimal Assistance for Daily Living Skills",
+        "8 — VIII. Purposeful, Appropriate: Stand-By Assistance",
+      ]},
+    ],
+    score:(v)=>v.rancho_level?+v.rancho_level.split(" — ")[0]:null
+  },
+
+  goat:{id:"goat",label:"GOAT",full:"Galveston Orientation & Amnesia Test (equal-weighted 10-item adaptation — refer to the original Levin et al. form for exact standardised point deductions)",icon:"🗓️",category:"TBI",
+    maxScore:100,unit:"/100",mcid:10,
+    interpret:(s)=>s>75?{label:"Normal orientation — no PTA",color:"#16a34a"}:s>=66?{label:"Borderline",color:"#d97706"}:{label:"Impaired — post-traumatic amnesia (PTA) present",color:"#dc2626"},
+    fields:[
+      {id:"goat_name",label:"States own name correctly",options:["10 — Correct","0 — Incorrect / unable"]},
+      {id:"goat_agedob",label:"States age and date of birth correctly",options:["10 — Correct","0 — Incorrect / unable"]},
+      {id:"goat_place",label:"States current location (city + building/facility) correctly",options:["10 — Correct","0 — Incorrect / unable"]},
+      {id:"goat_arrival",label:"Describes how they arrived at this facility",options:["10 — Correct","0 — Incorrect / unable"]},
+      {id:"goat_admission",label:"States date/time of admission correctly",options:["10 — Correct","0 — Incorrect / unable"]},
+      {id:"goat_firstmemory",label:"Recalls the first event after the injury",options:["10 — Correct","0 — Incorrect / unable"]},
+      {id:"goat_firstmemorydetail",label:"Describes details (date/time/companions) of that first post-injury memory",options:["10 — Correct","0 — Incorrect / unable"]},
+      {id:"goat_lastmemory",label:"Recalls the last event before the accident/injury",options:["10 — Correct","0 — Incorrect / unable"]},
+      {id:"goat_date",label:"States today's date (day, month, year) correctly",options:["10 — Correct","0 — Incorrect / unable"]},
+      {id:"goat_time",label:"States the current time correctly (within 1 hour)",options:["10 — Correct","0 — Incorrect / unable"]},
+    ],
+    score:(v)=>{const ids=["goat_name","goat_agedob","goat_place","goat_arrival","goat_admission","goat_firstmemory","goat_firstmemorydetail","goat_lastmemory","goat_date","goat_time"];const s=ids.map(id=>v[id]!==undefined?+v[id].split(" — ")[0]:null).filter(x=>x!==null);return s.length?s.reduce((a,b)=>a+b,0):null;}
+  },
+
+  barthel:{id:"barthel",label:"Barthel",full:"Barthel Index — Activities of Daily Living",icon:"🛁",category:"TBI",
+    maxScore:100,unit:"/100",mcid:10,
+    interpret:(s)=>s>=100?{label:"Independent",color:"#16a34a"}:s>=91?{label:"Slight dependence",color:"#65a30d"}:s>=61?{label:"Moderate dependence",color:"#d97706"}:s>=21?{label:"Severe dependence",color:"#ea580c"}:{label:"Total dependence",color:"#dc2626"},
+    fields:[
+      {id:"barthel_feeding",label:"Feeding",options:["10 — Independent","5 — Needs help (e.g. cutting, spreading butter)","0 — Unable"]},
+      {id:"barthel_bathing",label:"Bathing",options:["5 — Independent (or in shower)","0 — Dependent"]},
+      {id:"barthel_grooming",label:"Grooming",options:["5 — Independent (face/hair/teeth/shaving)","0 — Needs help"]},
+      {id:"barthel_dressing",label:"Dressing",options:["10 — Independent (buttons, zips, laces)","5 — Needs help but does about half unaided","0 — Dependent"]},
+      {id:"barthel_bowels",label:"Bowels",options:["10 — Continent","5 — Occasional accident","0 — Incontinent (or needs enemas)"]},
+      {id:"barthel_bladder",label:"Bladder",options:["10 — Continent","5 — Occasional accident","0 — Incontinent, or catheterised and unable to manage"]},
+      {id:"barthel_toilet",label:"Toilet Use",options:["10 — Independent","5 — Needs some help","0 — Dependent"]},
+      {id:"barthel_transfer",label:"Transfers (bed to chair)",options:["15 — Independent","10 — Minor help needed (verbal or physical)","5 — Major help needed (one strong/able person), can sit","0 — Unable, no sitting balance"]},
+      {id:"barthel_mobility",label:"Mobility (on level surfaces, 50m)",options:["15 — Independent (may use aid)","10 — Walks with help of one person","5 — Wheelchair independent, including corners","0 — Immobile"]},
+      {id:"barthel_stairs",label:"Stairs",options:["10 — Independent","5 — Needs help (verbal, physical, carrying aid)","0 — Unable"]},
+    ],
+    score:(v)=>{const ids=["barthel_feeding","barthel_bathing","barthel_grooming","barthel_dressing","barthel_bowels","barthel_bladder","barthel_toilet","barthel_transfer","barthel_mobility","barthel_stairs"];const s=ids.map(id=>v[id]!==undefined?+v[id].split(" — ")[0]:null).filter(x=>x!==null);return s.length?s.reduce((a,b)=>a+b,0):null;}
+  },
+
 });
