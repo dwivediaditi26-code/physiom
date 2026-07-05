@@ -124,23 +124,31 @@ describe("Kendall postural pattern classification", () => {
   });
 
   it("uses the male pelvic-tilt norm (7 deg) instead of the female norm (12 deg) when patientSex is Male", () => {
-    const m = baseMeasurements({ pelvis: { angle: 12, isAnterior: true, direction: "Anterior" } });
+    // angle 20 vs male norm 7 -> deviation 13 -> Moderate (not Normal against
+    // the female norm of 12, where deviation would only be 8 -> Mild) —
+    // proves the gender-specific norm is actually being applied.
+    const m = baseMeasurements({ pelvis: { angle: 20, isAnterior: true, direction: "Anterior" } });
     const { findings } = buildKendallFindings(m, "Male");
     const pelvisFinding = findings.find((f) => f.id === "pelvis");
-    // angle 12 vs male norm 7 -> deviation 5, exactly at THRESHOLDS.pelvis.range (5) -> Normal
-    expect(pelvisFinding.severity).toBe("Normal");
+    expect(pelvisFinding.severity).toBe("Moderate");
   });
 
-  // FINDING (not a fix — flagging for review): every other segment (forward
-  // head, shoulder, knee) only pushes a finding when severity !== "Normal".
-  // Pelvic Tilt has no such gate — it pushes a finding unconditionally, so a
-  // perfectly normal pelvis still shows up as a "Normal ... Pelvic Tilt"
-  // finding in the list, unlike every other segment. This test documents the
-  // current (likely unintended) behavior so it's visible rather than silent.
-  it("documents that Pelvic Tilt findings are pushed even when severity is Normal (unlike other segments)", () => {
+  // FIX VERIFICATION: every other segment (forward head, shoulder, knee)
+  // only pushes a finding when severity !== "Normal". Pelvic Tilt used to
+  // have no such gate, so a perfectly normal pelvis still showed up as a
+  // "Normal ... Pelvic Tilt" finding, inconsistent with every other segment.
+  // Now gated the same way as the rest.
+  it("does not push a Pelvic Tilt finding when severity is Normal (consistent with other segments)", () => {
     const { findings } = buildKendallFindings(baseMeasurements(), "Female"); // pelvis angle=12=female norm, Normal
     const pelvisFinding = findings.find((f) => f.id === "pelvis");
+    expect(pelvisFinding).toBeUndefined();
+  });
+
+  it("still pushes a Pelvic Tilt finding when severity is not Normal", () => {
+    const m = baseMeasurements({ pelvis: { angle: 25, isAnterior: true, direction: "Anterior" } }); // deviation 13 from female norm 12
+    const { findings } = buildKendallFindings(m, "Female");
+    const pelvisFinding = findings.find((f) => f.id === "pelvis");
     expect(pelvisFinding).toBeTruthy();
-    expect(pelvisFinding.severity).toBe("Normal");
+    expect(pelvisFinding.severity).toBe("Moderate");
   });
 });

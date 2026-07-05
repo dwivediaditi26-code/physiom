@@ -182,7 +182,15 @@ export function calcRoundedShoulder(lm, bh_norm, viewSign, imgSize) {
 }
 
 // Knee angle: hip-knee-ankle (°). 180 = neutral, <170 = flexed, >185 = recurvatum
-export function calcKneeAngle(hip, knee, ankle, imgSize) {
+// Math.acos always returns 0-180°, so the raw interior angle alone can never
+// exceed 180 and can't distinguish a knee bowing forward (flexion) from one
+// bowing backward (hyperextension/recurvatum) — both produce the same
+// magnitude. Fix: determine which side of the straight hip-ankle line the
+// knee falls on (anterior vs posterior, using viewSign for facing direction),
+// and represent a posterior (recurvatum) deviation as a reflex angle above
+// 180 so the existing classifyKnee thresholds ([170,185] / >185 / <170)
+// actually work as originally designed.
+export function calcKneeAngle(hip, knee, ankle, imgSize, viewSign = 1) {
   if (!hip || !knee || !ankle) return null;
   const h = toPx(hip, imgSize), k = toPx(knee, imgSize), a = toPx(ankle, imgSize);
   const ab = { x:h.x-k.x, y:h.y-k.y };
@@ -190,7 +198,16 @@ export function calcKneeAngle(hip, knee, ankle, imgSize) {
   const dot = ab.x*cb.x + ab.y*cb.y;
   const mag = Math.sqrt((ab.x**2+ab.y**2)*(cb.x**2+cb.y**2));
   if (mag === 0) return null;
-  const angle = Math.acos(Math.max(-1,Math.min(1,dot/mag))) * 180 / Math.PI;
+  const rawAngle = Math.acos(Math.max(-1,Math.min(1,dot/mag))) * 180 / Math.PI;
+
+  let direction = "aligned";
+  if (ankle.y !== hip.y) {
+    const lineXAtKneeY = hip.x + (ankle.x - hip.x) * (knee.y - hip.y) / (ankle.y - hip.y);
+    const offset = (knee.x - lineXAtKneeY) * viewSign; // +ve = knee anterior to the line
+    direction = offset > 0.002 ? "anterior" : offset < -0.002 ? "posterior" : "aligned";
+  }
+
+  const angle = direction === "posterior" ? 360 - rawAngle : rawAngle;
   if (angle > 200 || angle < 100) return null; // physiologic range check
   return Math.round(angle * 10) / 10;
 }
@@ -209,7 +226,7 @@ export function calcTCI(c7, t12, apexT, imgSize) {
   const depth = Math.abs(dy*(c.x-a.x) - dx*(c.y-a.y)) / chordLen;
   const tci = Math.round((depth / chordLen) * 100 * 10) / 10;
   if (tci > 40) return null; // outlier rejection (Rule 7)
-  return { tci, depth: Math.round(depth*1000)/10, chordLen: Math.round(chordLen*1000)/10 };
+  return { tci, depth: Math.round(depth*10)/10, chordLen: Math.round(chordLen*10)/10 };
 }
 
 // LCI: requires T12, S2, and apexL (maximum lumbar concavity point)
@@ -222,7 +239,7 @@ export function calcLCI(t12, s2, apexL, imgSize) {
   const depth = Math.abs(dy*(c.x-a.x) - dx*(c.y-a.y)) / chordLen;
   const lci = Math.round((depth / chordLen) * 100 * 10) / 10;
   if (lci > 40) return null; // outlier rejection
-  return { lci, depth: Math.round(depth*1000)/10, chordLen: Math.round(chordLen*1000)/10 };
+  return { lci, depth: Math.round(depth*10)/10, chordLen: Math.round(chordLen*10)/10 };
 }
 
 // Pelvic tilt: requires ASIS and PSIS
@@ -389,12 +406,14 @@ export function buildKendallFindings(measurements, patientSex = "Female") {
       : Math.abs(deviation) <= 10 ? "Mild"
       : Math.abs(deviation) <= 15 ? "Moderate" : "Severe";
     segmentStatus.pelvicTilt = `${direction} — ${angle}°`;
-    findings.push({
-      id:"pelvis", category:"Pelvic Tilt",
-      severity, label:`${severity} ${direction} Pelvic Tilt — ${angle}° (norm ${genderNorm}°)`,
-      metrics: { angle, deviation, genderNorm, direction },
-      _debug:{ formula:"atan2(|ASIS_Y−PSIS_Y|,|ASIS_X−PSIS_X|)", thresholds:THRESHOLDS.pelvis, ruleTriggered:`${direction} ${severity}` },
-    });
+    if (severity !== "Normal") {
+      findings.push({
+        id:"pelvis", category:"Pelvic Tilt",
+        severity, label:`${severity} ${direction} Pelvic Tilt — ${angle}° (norm ${genderNorm}°)`,
+        metrics: { angle, deviation, genderNorm, direction },
+        _debug:{ formula:"atan2(|ASIS_Y−PSIS_Y|,|ASIS_X−PSIS_X|)", thresholds:THRESHOLDS.pelvis, ruleTriggered:`${direction} ${severity}` },
+      });
+    }
   } else {
     segmentStatus.pelvicTilt = "Not Measured — place ASIS and PSIS";
   }
@@ -543,7 +562,7 @@ export default function HybridKendall({
       kneePlumb: toPlumb(lm.knee?.x),
       earAcr:    calcEarAcrDist(lm.ear, lm.acromion, bh),
       shoulder:  calcRoundedShoulder(lm, bh, vs, imgSize),
-      knee:      calcKneeAngle(lm.hip, lm.knee, lm.ankle, imgSize),
+      knee:      calcKneeAngle(lm.hip, lm.knee, lm.ankle, imgSize, vs),
       tci:       calcTCI(lm.c7, lm.t12, lm.apexT, imgSize),
       lci:       calcLCI(lm.t12, lm.s2, lm.apexL, imgSize),
       pelvis:    calcPelvicTilt(lm.asis, lm.psis, imgSize),

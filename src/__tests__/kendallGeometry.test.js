@@ -61,45 +61,48 @@ describe("classifyCVA threshold boundaries", () => {
 
 describe("calcKneeAngle", () => {
   const imgSize = { w: 1000, h: 1000 };
+  const hip = { x: 0.5, y: 0.3 };
+  const ankle = { x: 0.5, y: 0.7 };
 
   it("returns 180 for a perfectly straight hip-knee-ankle line", () => {
-    const hip = { x: 0.5, y: 0.3 };
     const knee = { x: 0.5, y: 0.5 };
-    const ankle = { x: 0.5, y: 0.7 };
     expect(calcKneeAngle(hip, knee, ankle, imgSize)).toBeCloseTo(180, 0);
   });
 
-  it("detects flexed knee (<170 deg) when knee is displaced off the hip-ankle line", () => {
-    const hip = { x: 0.5, y: 0.3 };
-    const knee = { x: 0.55, y: 0.5 };
-    const ankle = { x: 0.5, y: 0.7 };
-    const angle = calcKneeAngle(hip, knee, ankle, imgSize);
+  it("classifies a large ANTERIOR knee deviation as Knee Flexion in Stance", () => {
+    const knee = { x: 0.55, y: 0.5 }; // anterior of the hip-ankle line (viewSign=1)
+    const angle = calcKneeAngle(hip, knee, ankle, imgSize, 1);
     expect(angle).toBeLessThan(170);
     expect(classifyKnee(angle)).toBe("Knee Flexion in Stance");
   });
 
-  // IMPORTANT FINDING (not a fix — flagging for review):
-  // calcKneeAngle derives its result from Math.acos(), whose range is
-  // mathematically limited to [0, 180] degrees. THRESHOLDS.knee.recurvatum
-  // is 185 and classifyKnee() only returns "Genu Recurvatum" when
-  // angle > 185 — a value calcKneeAngle can never produce. The `angle > 200`
-  // outlier-rejection check has the same problem. In practice this means
-  // Genu Recurvatum can never be auto-detected from calcKneeAngle's output,
-  // regardless of how far back the knee actually bows in the photo.
-  it("documents that calcKneeAngle's output can never exceed 180 degrees (Math.acos range)", () => {
-    // Mirror-image displacement of the same magnitude as the flexion case
-    // above, tried in both horizontal directions — neither can cross 180.
-    const hip = { x: 0.5, y: 0.3 };
-    const ankle = { x: 0.5, y: 0.7 };
-    const kneeLeft = { x: 0.45, y: 0.5 };
-    const kneeRight = { x: 0.55, y: 0.5 };
-    const angleLeft = calcKneeAngle(hip, kneeLeft, ankle, imgSize);
-    const angleRight = calcKneeAngle(hip, kneeRight, ankle, imgSize);
-    expect(angleLeft).toBeLessThanOrEqual(180);
-    expect(angleRight).toBeLessThanOrEqual(180);
-    // Therefore classifyKnee can never return "Genu Recurvatum" via this path:
-    expect(classifyKnee(angleLeft)).not.toBe("Genu Recurvatum");
-    expect(classifyKnee(angleRight)).not.toBe("Genu Recurvatum");
+  // FIX VERIFICATION: Math.acos() alone can never exceed 180 degrees, so
+  // magnitude by itself can't distinguish a knee bowing forward (flexion)
+  // from one bowing backward (hyperextension/recurvatum) — both produce the
+  // same magnitude. calcKneeAngle now determines which side of the straight
+  // hip-ankle line the knee falls on (anterior vs posterior, adjusted for
+  // viewSign) and represents a posterior deviation as a reflex angle above
+  // 180, so classifyKnee's existing >185 recurvatum threshold is reachable.
+  it("classifies a small POSTERIOR knee deviation as Genu Recurvatum", () => {
+    const knee = { x: 0.49, y: 0.5 }; // posterior of the hip-ankle line (viewSign=1)
+    const angle = calcKneeAngle(hip, knee, ankle, imgSize, 1);
+    expect(angle).toBeGreaterThan(185);
+    expect(classifyKnee(angle)).toBe("Genu Recurvatum");
+  });
+
+  it("still rejects an implausibly large posterior deviation as an outlier (angle > 200)", () => {
+    // Same magnitude as the anterior flexion case above, but posterior —
+    // a real photo showing the knee bowed this far back would be an
+    // implausible landmark placement, not true recurvatum.
+    const knee = { x: 0.45, y: 0.5 };
+    const angle = calcKneeAngle(hip, knee, ankle, imgSize, 1);
+    expect(angle).toBeNull();
+  });
+
+  it("flips the anterior/posterior interpretation when viewSign is -1 (patient facing the other way)", () => {
+    const knee = { x: 0.49, y: 0.5 }; // posterior (recurvatum) when viewSign=1, tested above
+    const angleFlipped = calcKneeAngle(hip, knee, ankle, imgSize, -1); // now reads as anterior
+    expect(classifyKnee(angleFlipped)).toBe("Normal");
   });
 });
 
@@ -118,25 +121,19 @@ describe("calcTCI / calcLCI — depth/chord formula", () => {
     expect(classifyTCI(result.tci)).toBe("Mild Increased Thoracic Curvature");
   });
 
-  // FINDING (not a fix — flagging for review): the tci percentage above is
-  // correct, but the `depth`/`chordLen` fields calcTCI returns for display
-  // (e.g. in a debug panel or the finding's `metrics`) use
-  // `Math.round(x*1000)/10`, which is x*100 rounded — not the 1-decimal
-  // pixel value the surrounding code (calcCVA, calcKneeAngle, calcPelvicTilt)
-  // returns via `Math.round(x*10)/10`. So a real chord of 600px is reported
-  // as 60000, and a real depth of 60px is reported as 6000 — 100x inflated.
-  // calcLCI has the identical pattern (same likely copy-paste origin). This
-  // doesn't affect any severity/pattern classification (those only use the
-  // correctly-computed `tci`/`lci` ratio), but any UI or debug output
-  // surfacing `depth`/`chordLen` directly would show wrong numbers.
-  it("documents that calcTCI's returned depth/chordLen fields are 100x inflated from the true pixel values", () => {
+  // FIX VERIFICATION: calcTCI/calcLCI used to return depth/chordLen display
+  // fields via `Math.round(x*1000)/10` (net x*100 — 100x too large) instead
+  // of the `Math.round(x*10)/10` (1-decimal) pattern used everywhere else in
+  // this file. The tci/lci percentage itself was never affected (severity
+  // classification was always correct); only the raw px values shown in
+  // metrics/debug output were wrong. Now fixed to match true pixel geometry.
+  it("returns depth/chordLen at their true pixel scale (not 100x inflated)", () => {
     const c7 = { x: 0.5, y: 0.3 };
     const t12 = { x: 0.5, y: 0.6 };
     const apexT = { x: 0.5 + 60 / 1000, y: 0.45 };
     const result = calcTCI(c7, t12, apexT, imgSize);
-    // True pixel values: chordLen=600, depth=60. Actual returned values:
-    expect(result.chordLen).toBeCloseTo(60000, 0);
-    expect(result.depth).toBeCloseTo(6000, 0);
+    expect(result.chordLen).toBeCloseTo(600, 0);
+    expect(result.depth).toBeCloseTo(60, 0);
   });
 
   it("classifies a small apex offset as Normal thoracic curvature", () => {
