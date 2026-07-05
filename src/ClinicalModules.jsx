@@ -3213,12 +3213,43 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   }
 
   // ── GAIT ──────────────────────────────────────────────────────────────────
+  // FINDING (severe — fixed): most of this only checked flat field names
+  // ("gait_trendelenburg", "gait_cadence", "gait_deviations", "gait_obs")
+  // that GaitModule never actually writes. Verified directly against
+  // GaitModule's real data() calls: abnormal gait patterns are stored as
+  // "<ABNORMAL_GAITS id>" (e.g. "ag_trend") + "<id>_note", phase deviations
+  // as "<GAIT_PHASES id>_dev" (e.g. "g_ms_dev"), and gait scale scores as
+  // "<GAIT_SCALES id>" (e.g. "g_fac"). Only "gait_pattern" genuinely
+  // overlapped with what the quick-entry form actually saves. This meant
+  // Trendelenburg sign, phase-specific deviations, and every gait scale
+  // score (FAC, DGI, FGA, Berg, Tinetti, Wisconsin) never reached the SOAP
+  // note or Live SOAP regardless of what a clinician recorded.
   {
     const gaitParts = [];
-    if (v("gait_pattern"))      gaitParts.push(`Pattern: ${v("gait_pattern")}`);
-    if (v("gait_antalgic"))     gaitParts.push(`Antalgic: ${v("gait_antalgic")}`);
-    if (v("gait_trendelenburg"))gaitParts.push(`Trendelenburg: ${v("gait_trendelenburg")}`);
-    if (v("gait_cadence"))      gaitParts.push(`Cadence: ${v("gait_cadence")}`);
+    if (v("gait_pattern")) gaitParts.push(`Pattern: ${v("gait_pattern")}`);
+    if (v("ag_antalgic") && v("ag_antalgic") !== "None") gaitParts.push(`Antalgic: ${v("ag_antalgic")}`);
+    if (v("ag_cadence"))   gaitParts.push(`Cadence: ${v("ag_cadence")}`);
+    if (v("g_oga_step_sym") && v("g_oga_step_sym") !== "Symmetrical") gaitParts.push(`Step symmetry: ${v("g_oga_step_sym")}`);
+    if (v("g_timed_tug"))    gaitParts.push(`TUG: ${v("g_timed_tug")}s`);
+    if (v("g_timed_10mwt"))  gaitParts.push(`10m Walk: ${v("g_timed_10mwt")}s`);
+    // Abnormal gait patterns (Trendelenburg, antalgic, steppage, etc.)
+    const abnormalGaits = ABNORMAL_GAITS.filter(g => v(g.id) === "Present");
+    if (abnormalGaits.length) {
+      gaitParts.push(`Abnormal patterns: ${abnormalGaits.map(g => {
+        const note = v(`${g.id}_note`);
+        return `${g.label}${note ? ` (${note})` : ""}`;
+      }).join(", ")}`);
+    }
+    // Phase-specific deviations
+    const phaseDevs = GAIT_PHASES.filter(p => v(`${p.id}_dev`) && v(`${p.id}_dev`) !== "None");
+    if (phaseDevs.length) {
+      gaitParts.push(`Phase deviations: ${phaseDevs.map(p => `${p.phase} — ${v(`${p.id}_dev`)}`).join("; ")}`);
+    }
+    // Gait/balance scale scores
+    const gaitScales = GAIT_SCALES.filter(s => v(s.id));
+    if (gaitScales.length) {
+      gaitParts.push(`Scales: ${gaitScales.map(s => `${s.label} ${v(s.id)}${s.range}`).join(", ")}`);
+    }
     const gaitDevs2 = a("gait_deviations");
     if (gaitDevs2)              gaitParts.push(`Deviations: ${gaitDevs2}`);
     const gaitNotes2 = v("gait_notes") || v("gait_obs");
@@ -3604,7 +3635,10 @@ function detectModulesV2(data) {
     // reflex or myotome findings recorded would have been reported as
     // "neuro not touched" even though real data existed.
     neuro: hasPrefix("neuro_","n_c","n_l","n_s","n_t","n_ref","myo_","nt_"),
-    gait: hasPrefix("gait_"),
+    // Was only "gait_" — missed the real structured fields GaitModule
+    // actually writes (ag_* abnormal patterns, g_*_dev phase deviations,
+    // g_fac/g_dgi/etc scale scores), same class of gap as the SOAP text fix.
+    gait: hasPrefix("gait_","ag_","g_ic","g_lr","g_ms","g_ts","g_ps","g_isw","g_msw","g_tsw","g_fac","g_dgi","g_fga","g_berg","g_tinetti","g_wgs","g_timed","g_oga"),
     kinetic: hasPrefix("kc_","kinetic_"),
     cpa: hasPrefix("nkt_") || has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes"]),
     fascia: hasPrefix("fa_","fascia_"),
