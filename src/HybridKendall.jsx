@@ -81,26 +81,26 @@ export const THRESHOLDS = {
 // ─── Measurement Engine ───────────────────────────────────────────────────────
 
 // Body height proxy: ankle.y − ear.y (normalised image fraction)
-function bodyHeightNorm(lm) {
+export function bodyHeightNorm(lm) {
   if (!lm.ankle || !lm.ear) return null;
   const h = lm.ankle.y - lm.ear.y;
   return h > 0.1 ? h : null;
 }
 
 // Convert normalised x-deviation from plumb to % body height
-function pctBodyHeight(dx_norm, bh_norm) {
+export function pctBodyHeight(dx_norm, bh_norm) {
   if (!bh_norm || bh_norm === 0) return null;
   return Math.round((dx_norm / bh_norm) * 1000) / 10; // 1 decimal
 }
 
 // viewSign: +1 = person faces right (nose > shoulder x), -1 = faces left
-function getViewSign(lm) {
+export function getViewSign(lm) {
   if (lm.ear && lm.acromion) return lm.ear.x > lm.acromion.x ? 1 : -1;
   return 1;
 }
 
 // Plumb deviation: positive = anterior to plumb
-function plumbDeviation(landmark_x, ankle_x, bh_norm, viewSign) {
+export function plumbDeviation(landmark_x, ankle_x, bh_norm, viewSign) {
   if (landmark_x === null || landmark_x === undefined || !bh_norm) return null;
   const dx = (landmark_x - ankle_x) * viewSign;
   return Math.round(dx / bh_norm * 1000) / 10; // % body height
@@ -114,14 +114,14 @@ function plumbDeviation(landmark_x, ankle_x, bh_norm, viewSign) {
 // silently distorted by the photo's own aspect ratio. This distortion is what
 // was causing CVA to compute an implausible angle and get rejected as N/A even
 // with both landmarks correctly placed.
-function toPx(pt, imgSize) {
+export function toPx(pt, imgSize) {
   if (!pt || !imgSize) return null;
   return { x: pt.x * (imgSize.w || 1), y: pt.y * (imgSize.h || 1) };
 }
 
 // CVA: angle between ear-acromion vector and horizontal (°)
 // Reference: Yip 2008 — tragus to C7/acromion vs horizontal
-function calcCVA(ear, acromion, imgSize) {
+export function calcCVA(ear, acromion, imgSize) {
   if (!ear || !acromion) return null;
   const a = toPx(ear, imgSize), b = toPx(acromion, imgSize);
   const dx = Math.abs(a.x - b.x);
@@ -133,7 +133,7 @@ function calcCVA(ear, acromion, imgSize) {
 }
 
 // CVA with C7 (more accurate)
-function calcCVA_C7(ear, c7, imgSize) {
+export function calcCVA_C7(ear, c7, imgSize) {
   if (!ear || !c7) return null;
   const a = toPx(ear, imgSize), b = toPx(c7, imgSize);
   const dx = Math.abs(a.x - b.x);
@@ -145,7 +145,7 @@ function calcCVA_C7(ear, c7, imgSize) {
 }
 
 // Ear-acromion distance (% body height)
-function calcEarAcrDist(ear, acromion, bh_norm) {
+export function calcEarAcrDist(ear, acromion, bh_norm) {
   if (!ear || !acromion || !bh_norm) return null;
   const d = Math.sqrt((ear.x-acromion.x)**2 + (ear.y-acromion.y)**2);
   return Math.round(d / bh_norm * 1000) / 10;
@@ -155,7 +155,7 @@ function calcEarAcrDist(ear, acromion, bh_norm) {
 // Metric 1 (50%): acromion-hip horizontal offset (% BH)
 // Metric 2 (30%): acromion-plumb offset (% BH)
 // Metric 3 (20%): shoulder translation angle (°) — atan2(acrHipX, acrHipY)
-function calcRoundedShoulder(lm, bh_norm, viewSign, imgSize) {
+export function calcRoundedShoulder(lm, bh_norm, viewSign, imgSize) {
   const acr = lm.acromion, hip = lm.hip, ankle = lm.ankle;
   if (!acr || !hip || !ankle || !bh_norm) return null;
 
@@ -182,7 +182,7 @@ function calcRoundedShoulder(lm, bh_norm, viewSign, imgSize) {
 }
 
 // Knee angle: hip-knee-ankle (°). 180 = neutral, <170 = flexed, >185 = recurvatum
-function calcKneeAngle(hip, knee, ankle, imgSize) {
+export function calcKneeAngle(hip, knee, ankle, imgSize) {
   if (!hip || !knee || !ankle) return null;
   const h = toPx(hip, imgSize), k = toPx(knee, imgSize), a = toPx(ankle, imgSize);
   const ab = { x:h.x-k.x, y:h.y-k.y };
@@ -199,7 +199,7 @@ function calcKneeAngle(hip, knee, ankle, imgSize) {
 // TCI = (thoracicDepth / chordLength) × 100
 // thoracicDepth = horizontal distance from apexT to C7-T12 chord line
 // chordLength   = Euclidean distance C7 → T12
-function calcTCI(c7, t12, apexT, imgSize) {
+export function calcTCI(c7, t12, apexT, imgSize) {
   if (!c7 || !t12 || !apexT) return null;
   const a = toPx(c7, imgSize), b = toPx(t12, imgSize), c = toPx(apexT, imgSize);
   const chordLen = Math.sqrt((b.x-a.x)**2 + (b.y-a.y)**2);
@@ -213,7 +213,7 @@ function calcTCI(c7, t12, apexT, imgSize) {
 }
 
 // LCI: requires T12, S2, and apexL (maximum lumbar concavity point)
-function calcLCI(t12, s2, apexL, imgSize) {
+export function calcLCI(t12, s2, apexL, imgSize) {
   if (!t12 || !s2 || !apexL) return null;
   const a = toPx(t12, imgSize), b = toPx(s2, imgSize), c = toPx(apexL, imgSize);
   const chordLen = Math.sqrt((b.x-a.x)**2 + (b.y-a.y)**2);
@@ -227,7 +227,7 @@ function calcLCI(t12, s2, apexL, imgSize) {
 
 // Pelvic tilt: requires ASIS and PSIS
 // Positive = anterior (ASIS lower than PSIS in image; Y increases downward)
-function calcPelvicTilt(asis, psis, imgSize) {
+export function calcPelvicTilt(asis, psis, imgSize) {
   if (!asis || !psis) return null;
   const a = toPx(asis, imgSize), b = toPx(psis, imgSize);
   const dx = Math.abs(a.x - b.x);
@@ -240,7 +240,7 @@ function calcPelvicTilt(asis, psis, imgSize) {
 }
 
 // ─── Severity classifiers ─────────────────────────────────────────────────────
-function classifyCVA(cva) {
+export function classifyCVA(cva) {
   if (cva === null) return null;
   if (cva >= THRESHOLDS.cva.normal)     return "Normal";
   if (cva >= THRESHOLDS.cva.borderline) return "Borderline";
@@ -248,21 +248,21 @@ function classifyCVA(cva) {
   if (cva >= THRESHOLDS.cva.moderate)   return "Moderate FHP";
   return "Marked FHP";
 }
-function classifyPlumb(pct, segment) {
+export function classifyPlumb(pct, segment) {
   const t = THRESHOLDS.plumb[segment] || THRESHOLDS.plumb.acromion;
   if (Math.abs(pct) <= t.normal)   return "Normal";
   if (Math.abs(pct) <= t.mild)     return "Mild";
   if (Math.abs(pct) <= t.moderate) return "Moderate";
   return "Marked";
 }
-function classifyTCI(tci) {
+export function classifyTCI(tci) {
   const t = THRESHOLDS.tci;
   if (tci < t.normal)   return "Normal Thoracic Curvature";
   if (tci < t.mild)     return "Mild Increased Thoracic Curvature";
   if (tci < t.moderate) return "Moderate Increased Thoracic Curvature";
   return "Severe Increased Thoracic Curvature";
 }
-function classifyLCI(lci) {
+export function classifyLCI(lci) {
   const t = THRESHOLDS.lci;
   if (lci < t.reduced)  return "Reduced Lumbar Curvature";
   if (lci < t.normal)   return "Normal Lumbar Curvature";
@@ -270,7 +270,7 @@ function classifyLCI(lci) {
   if (lci < t.moderate) return "Moderate Increased Lumbar Curvature";
   return "Severe Increased Lumbar Curvature";
 }
-function classifyKnee(angle) {
+export function classifyKnee(angle) {
   if (!angle) return null;
   const t = THRESHOLDS.knee;
   if (angle >= t.normal[0] && angle <= t.normal[1]) return "Normal";
