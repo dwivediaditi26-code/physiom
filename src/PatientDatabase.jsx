@@ -6,8 +6,18 @@ import { supabase } from "./supabase.js";
 import { getC } from "./utils.jsx";
 import { DERMATOMES, MYOTOMES, REFLEXES } from "./PhysioNeuro.jsx";
 import BodyChartPro from "./BodyChartPro.jsx";
-const DB_KEY = "physio_patient_db_v1";
-const DRAFT_KEY = "physio_draft_v1";
+// These used to be flat constants shared by every user of a device. Now
+// they're per-user: two students sharing one browser/tablet each get their
+// own slot, so signing in as student B can never inherit student A's
+// still-cached local records (which, before this fix, could even get
+// re-uploaded to Supabase mistagged under student B's account — see
+// syncPatientsToSupabase below).
+const dbKey = (userId) => `physio_patient_db_v1_${userId || "anon"}`;
+const draftKey = (userId) => `physio_draft_v1_${userId || "anon"}`;
+// Back-compat plain constants (pre-multi-user, unscoped) — kept only so an
+// old cache from before this change can be migrated, never written to again.
+const DB_KEY_LEGACY = "physio_patient_db_v1";
+const DRAFT_KEY_LEGACY = "physio_draft_v1";
 
 const SEED_PATIENT = {
   id: "pt_priya_sharma_01",
@@ -403,13 +413,15 @@ const DEMO_PATIENTS = [];
 
 const DEMO_VERSION = "v2026-06c"; // bump this when demo patients change
 
-function loadPatientDB() {
+function loadPatientDB(userId) {
+  const DB_KEY = dbKey(userId);
+  const DRAFT_KEY = draftKey(userId);
   try {
     // One-time clear: if user has old demo data from before v2026-06-21, wipe it
     const cleared = localStorage.getItem("pm_cleared_demo_v5");
     if (!cleared) {
-      localStorage.removeItem(DB_KEY);
-      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(DB_KEY_LEGACY);
+      localStorage.removeItem(DRAFT_KEY_LEGACY);
       localStorage.setItem("pm_cleared_demo_v5", "1");
     }
     const stored = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
@@ -434,13 +446,17 @@ function loadPatientDB() {
     return real;
   } catch { return []; }
 }
-async function syncPatientsToSupabase(patients) {
+// userId is passed explicitly by the caller (rather than this function calling
+// supabase.auth.getUser() itself) so a save that was already in flight can't
+// get re-tagged to whichever account happens to be logged in by the time the
+// network request actually completes — it's always tagged with the user who
+// was active when the save was *initiated*.
+async function syncPatientsToSupabase(patients, userId) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return; // not logged in — don't sync
+    if (!userId) return; // not logged in — don't sync
     const rows = patients.map(p => ({
       id: p.id,
-      user_id: user.id,
+      user_id: userId,
       name: p.name || "Unknown",
       data: p.data || {},
       created_at: p.createdAt || new Date().toISOString(),
@@ -449,12 +465,12 @@ async function syncPatientsToSupabase(patients) {
       last_dx: p.lastDx || "",
     }));
     const { error } = await supabase.from("patients").upsert(rows, { onConflict: "id" });
-    if (error) console.warn("[Supabase sync]", error.message);
-  } catch (e) { console.warn("[Supabase sync error]", e); }
+    if (error) { console.warn("[Supabase sync]", error.message); throw error; }
+  } catch (e) { console.warn("[Supabase sync error]", e); throw e; }
 }
-function savePatientDB(patients) {
-  try { localStorage.setItem(DB_KEY, JSON.stringify(patients)); } catch {}
-  syncPatientsToSupabase(patients);
+function savePatientDB(patients, userId) {
+  try { localStorage.setItem(dbKey(userId), JSON.stringify(patients)); } catch {}
+  return syncPatientsToSupabase(patients, userId); // returns a promise — callers that want a save-status indicator can await/.then/.catch this
 }
 const TASK_KEY = 'physio_task_db_v1';
 function loadTaskDB() {
@@ -3764,7 +3780,7 @@ function PostureSessionsView({ d, C, onNav }) {
 }
 // ── Exports for AppFull.jsx ──────────────────────────────────────────────────
 export {
-  DB_KEY, DRAFT_KEY,
+  dbKey, draftKey,
   loadPatientDB, savePatientDB,
   loadTaskDB, saveTaskDB,
   genId,

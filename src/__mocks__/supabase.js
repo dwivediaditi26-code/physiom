@@ -17,11 +17,17 @@ function chainable(result = { data: [], error: null }) {
   return chain;
 }
 
+// vi.fn() wrappers (not plain functions) so individual tests can override
+// return values per-test with vi.mocked(supabase.auth.getSession).mockResolvedValueOnce(...)
+// — e.g. to simulate a logged-in session without ever touching real Supabase.
+import { vi } from "vitest";
+
 export const supabase = {
-  from: () => chainable(),
+  from: vi.fn(() => chainable()),
   auth: {
-    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-    getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+    getSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
+    getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+    onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe() {} } } })),
+    signOut: vi.fn(() => Promise.resolve({ error: null })),
   },
 };

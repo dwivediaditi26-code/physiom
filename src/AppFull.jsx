@@ -21,7 +21,7 @@ import HomeProtocolTab from "./HomeProtocolTab.jsx";
 
 import { PostureAnalysisModule, PC } from "./PostureEngine.jsx";
 import {
-  DB_KEY, DRAFT_KEY,
+  dbKey, draftKey,
   loadPatientDB, savePatientDB,
   loadTaskDB, saveTaskDB,
   genId,
@@ -59,6 +59,12 @@ const TabFallback = () => (
 // MULTI-PATIENT DATABASE
 // ═══════════════════════════════════════════════════════════════════════════
 function AppInner({ currentUser, onSignOut }) {
+  // Per-user storage keys — see PatientDatabase.jsx's dbKey()/draftKey() for
+  // why this matters: without this, two students sharing one browser/device
+  // would silently read and overwrite each other's local patient cache.
+  const DB_KEY = dbKey(currentUser?.id);
+  const DRAFT_KEY = draftKey(currentUser?.id);
+
   const { theme, toggle: toggleTheme, C: TC } = useTheme();
 
   // Apply theme to document root for CSS var support
@@ -77,6 +83,10 @@ function AppInner({ currentUser, onSignOut }) {
   const [navContext, setNavContext] = useState({});
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('pm_onboarded'));
   const [lastSaved, setLastSaved] = useState(null);
+  // 'idle' | 'saving' | 'saved' | 'error' — reflects whether the active
+  // patient's data has actually reached Supabase (the real record), not just
+  // whether it's cached in this browser's local storage.
+  const [cloudSaveStatus, setCloudSaveStatus] = useState("idle");
 
   // ── Deferred mounting: heavy tabs only render after first visit ──────────
   // This cuts initial render time dramatically
@@ -223,7 +233,7 @@ function AppInner({ currentUser, onSignOut }) {
   const importRef = useRef(null);
 
   // ── Multi-Patient Database ─────────────────────────────────────────────
-  const [patients, setPatients] = useState(() => loadPatientDB());
+  const [patients, setPatients] = useState(() => loadPatientDB(currentUser?.id));
   const [taskDB, setTaskDB] = useState(() => loadTaskDB());
 
   // ── Supabase: load patients on mount and merge with localStorage ──────────
@@ -273,6 +283,31 @@ function AppInner({ currentUser, onSignOut }) {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: pid || null, data }));
         setLastSaved(new Date());
       } catch {}
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auto-save to the CLOUD (debounced, ~2s after typing stops) ────────────
+  // This is what makes Supabase the real source of truth instead of local
+  // storage: every change to the active patient gets pushed up here, not
+  // just cached on this device. Same TDZ-avoidance reason as above for why
+  // activePatientId/currentUser are captured via closure, not in deps.
+  useEffect(() => {
+    if (!data || Object.keys(data).length === 0) return;
+    if (!activePatientId || !currentUser?.id) return;
+    const pid = activePatientId;
+    const uid = currentUser.id;
+    const timer = setTimeout(() => {
+      setCloudSaveStatus("saving");
+      setPatients(prev => {
+        const updated = prev.map(p => p.id === pid
+          ? { ...p, data, name: data["dem_name"] || p.name, updatedAt: new Date().toISOString() }
+          : p);
+        savePatientDB(updated, uid)
+          .then(() => { setCloudSaveStatus("saved"); setLastSaved(new Date()); })
+          .catch(() => setCloudSaveStatus("error")); // network/RLS failure — will retry on the next edit
+        return updated;
+      });
     }, 2000);
     return () => clearTimeout(timer);
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -350,7 +385,7 @@ function AppInner({ currentUser, onSignOut }) {
           return oldHit || grfHit || regionRfHit;
         })()
       } : p);
-      savePatientDB(updated);
+      savePatientDB(updated, currentUser?.id);
       return updated;
     });
   }, [data, activePatientId]);
@@ -365,7 +400,7 @@ function AppInner({ currentUser, onSignOut }) {
     const newP = { id: genId(), name, data: intake, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: intake.cc_main||"" };
     const updated = [newP, ...patients];
     setPatients(updated);
-    savePatientDB(updated);
+    savePatientDB(updated, currentUser?.id);
     setData(intake);
     setActivePatientId(newP.id);
     setShowIntake(false);
@@ -401,7 +436,7 @@ function AppInner({ currentUser, onSignOut }) {
     if (save && activePatientId) {
       setPatients(prev => {
         const updated = prev.map(p => p.id === activePatientId ? { ...p, data, name: data["dem_name"] || p.name, updatedAt: new Date().toISOString() } : p);
-        savePatientDB(updated);
+        savePatientDB(updated, currentUser?.id);
         return updated;
       });
     }
@@ -418,7 +453,7 @@ function AppInner({ currentUser, onSignOut }) {
     if (!window.confirm("Delete this patient? This cannot be undone.")) return;
     const updated = patients.filter(p => p.id !== id);
     setPatients(updated);
-    savePatientDB(updated);
+    savePatientDB(updated, currentUser?.id);
     if (activePatientId === id) { setData({}); setActivePatientId(null); }
     setJsonMsg({ type:"success", text:"Patient deleted" });
     setTimeout(() => setJsonMsg(null), 2000);
@@ -429,7 +464,7 @@ function AppInner({ currentUser, onSignOut }) {
     const newP = { id: genId(), name: parsed.patientName || parsed.data?.dem_name || "Imported Patient", data: parsed.data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: parsed.lastDx || "" };
     const updated = [newP, ...patients];
     setPatients(updated);
-    savePatientDB(updated);
+    savePatientDB(updated, currentUser?.id);
     setData(newP.data);
     setActivePatientId(newP.id);
     setShowPatientDb(false);
@@ -490,7 +525,7 @@ function AppInner({ currentUser, onSignOut }) {
     if (activePatientId && dx) {
       setPatients(prev => {
         const updated = prev.map(p => p.id === activePatientId ? {...p, lastDx: dx.dx?.[0]?.label || ""} : p);
-        savePatientDB(updated);
+        savePatientDB(updated, currentUser?.id);
         return updated;
       });
     }
@@ -1066,7 +1101,9 @@ function AppInner({ currentUser, onSignOut }) {
           {activePatient
             ? <div style={{fontSize:"0.72rem",color:PC.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                 <span style={{color:PC.a3}}>●</span> {activePatient.name.length>18?activePatient.name.slice(0,18)+"…":activePatient.name}
-                {lastSaved && <span style={{color:PC.green}}> · ✓ {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</span>}
+                {cloudSaveStatus === "saving" && <span style={{color:PC.muted}}> · Saving…</span>}
+                {cloudSaveStatus === "saved" && lastSaved && <span style={{color:PC.green}}> · ✓ Saved {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</span>}
+                {cloudSaveStatus === "error" && <span style={{color:"#dc2626"}}> · ⚠ Offline — will retry</span>}
               </div>
             : <div style={{fontSize:"0.68rem",color:PC.muted}}>No patient loaded</div>
           }
@@ -1100,10 +1137,15 @@ function AppInner({ currentUser, onSignOut }) {
           </div>
           {/* Row 2: saved time + buttons */}
           <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap"}}>
-            <span style={{fontSize:"0.78rem",color:PC.green,fontWeight:600,flex:1,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
-              {lastSaved
-                ? <>✓ Saved {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</>
-                : <>● {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</>}
+            <span style={{fontSize:"0.78rem",fontWeight:600,flex:1,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4,
+              color: cloudSaveStatus==="error" ? "#dc2626" : cloudSaveStatus==="saving" ? PC.muted : PC.green}}>
+              {cloudSaveStatus === "saving" && <>⏳ Saving…</>}
+              {cloudSaveStatus === "error" && <>⚠ Offline — will retry on next edit</>}
+              {cloudSaveStatus !== "saving" && cloudSaveStatus !== "error" && (
+                lastSaved
+                  ? <>✓ Saved to cloud {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</>
+                  : <>● {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</>
+              )}
             </span>
             <button onClick={createNewPatient} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>＋ New</button>
             <button onClick={()=>setShowPatientDb(true)} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.a2,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Switch Patient</button>
@@ -1327,7 +1369,7 @@ function AppInner({ currentUser, onSignOut }) {
                           onClick={()=>{
                             if(!data.dem_name?.trim()) return;
                             const newP={id:genId(),name:data.dem_name,data,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),hasRedFlags:false,lastDx:data.cc_main||""};
-                            setPatients(prev=>{const updated=[newP,...prev];savePatientDB(updated);return updated;});
+                            setPatients(prev=>{const updated=[newP,...prev];savePatientDB(updated, currentUser?.id);return updated;});
                             setActivePatientId(newP.id);
                             setJsonMsg({type:"success",text:`✅ Patient saved: ${data.dem_name}`});
                             setTimeout(()=>setJsonMsg(null),2500);
@@ -1689,11 +1731,43 @@ function LandingAndAuth({ onAuth }) {
 }
 
 export default function App() {
-  // ── AUTH DISABLED FOR TESTING — to re-enable, restore the full auth flow ──
-  const devUser = { id: "dev", email: "dev@physiomind.app", user_metadata: { full_name: "Dr. Demo" } };
+  // `undefined` = still checking for an existing session, `null` = signed out,
+  // an object = signed in. Kept as three distinct states so we never flash the
+  // login screen for a split second while Supabase is still resolving the
+  // session on page load.
+  const [session, setSession] = useState(undefined);
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (active) setSession(data.session ?? null);
+    });
+    // Keeps `session` in sync with sign-in, sign-out, and token refresh —
+    // this is what actually drives the app in/out of AppInner, not just the
+    // one-time getSession() check above.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess);
+    });
+    return () => { active = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  if (session === undefined) {
+    return (
+      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F7F7F8"}}>
+        <TabLoader />
+      </div>
+    );
+  }
+
+  if (!session) {
+    // AuthScreen's onAuth is largely redundant with onAuthStateChange above
+    // (Supabase fires SIGNED_IN either way) but harmless to pass through.
+    return <AuthScreen onAuth={() => {}} />;
+  }
+
   return (
     <ErrorBoundary>
-      <AppInner currentUser={devUser} onSignOut={()=>{}}/>
+      <AppInner currentUser={session.user} onSignOut={() => supabase.auth.signOut()} />
       <InstallPrompt />
     </ErrorBoundary>
   );
