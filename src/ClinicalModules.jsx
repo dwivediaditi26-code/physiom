@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { getTopDiagnoses, getTopDiagnosesEnhanced, ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
-import { MMT_DATA, ROM_DATA } from "./PhysioNeuro.jsx";
+import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION } from "./PhysioNeuro.jsx";
 import { SPECIAL_TESTS_DATA } from "./SubjectiveObjective.jsx";
 import { SCALES } from "./OutcomeMeasuresPro.jsx";
 
@@ -2766,48 +2766,70 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   }
 
   // ── NEUROLOGICAL ────────────────────────────────────────────────────────
+  // FINDING (severe — fixed): dermatomes, myotomes, reflexes, and neural
+  // tension were all reading from field keys that don't match what
+  // NeurologicalModule actually writes. Verified directly against the real
+  // data + set() calls in PhysioNeuro.jsx:
+  //   - Dermatomes: hardcoded 15-level list was missing S3/S4-5 (real data
+  //     has 16 levels) and included a phantom "t2" that doesn't exist.
+  //   - Myotomes: real keys are "myo_<slug>_left/right" (e.g. "myo_c5_left")
+  //     but this read bare "n_c5" with no prefix and no side suffix at all —
+  //     could never match real data, meaning myotome findings never
+  //     appeared in the SOAP note or Live SOAP regardless of what a
+  //     clinician recorded.
+  //   - Reflexes: real keys are "<REFLEXES id>_left/right" (e.g.
+  //     "n_ref_bicep_left") but this read "n_biceps" (wrong prefix, wrong
+  //     spelling, no side suffix) — same complete miss.
+  //   - Neural tension: the 6 real tests were correctly listed, but real
+  //     keys need a "_left"/"_right" suffix ("nt_slr_left") which this
+  //     never added.
+  // Fixed by deriving all four from the real DERMATOMES/MYOTOMES/REFLEXES/
+  // NEURAL_TENSION arrays (the same source NeurologicalModule's own UI
+  // uses), with the exact key conventions verified above.
   {
     const neuroLines = [];
-    // Dermatomes (n_c3–n_s2, n_c3_left/_right etc)
-    const dermatomes = ["c3","c4","c5","c6","c7","c8","t1","t2","l1","l2","l3","l4","l5","s1","s2"];
+    // Dermatomes
     const dermAbnormal = [];
-    dermatomes.forEach(level => {
-      const left = v(`n_${level}_left`)||v(`n_${level}`), right = v(`n_${level}_right`);
+    DERMATOMES.forEach(d => {
+      const left = v(`${d.id}_left`), right = v(`${d.id}_right`);
       const abnL = left && !left.toLowerCase().includes("normal") && !left.toLowerCase().includes("intact");
       const abnR = right && !right.toLowerCase().includes("normal") && !right.toLowerCase().includes("intact");
       if (abnL || abnR) {
-        if (left && right) dermAbnormal.push(`${level.toUpperCase()}: L=${left} R=${right}`);
-        else if (left) dermAbnormal.push(`${level.toUpperCase()}: ${left}`);
+        if (left && right) dermAbnormal.push(`${d.level}: L=${left} R=${right}`);
+        else if (left) dermAbnormal.push(`${d.level}: ${left}`);
+        else if (right) dermAbnormal.push(`${d.level}: R=${right}`);
       }
     });
     if (dermAbnormal.length) neuroLines.push(`  Dermatomal: ${dermAbnormal.join("; ")}`);
-    // Myotomes  
-    const myoKeys = ["n_c5","n_c6","n_c7","n_c8","n_t1","n_l3","n_l4","n_l5","n_s1","n_s2"];
+    // Myotomes — key is "myo_<slug>_left/right", slug derived the same way
+    // NeurologicalModule itself derives it from m.level.
     const myoAbn = [];
-    myoKeys.forEach(k => {
-      const val = v(k);
-      if (val && val.match(/[1-4]\/5|weak|reduced/i)) myoAbn.push(`${k.replace("n_","").toUpperCase()}: ${val}`);
+    MYOTOMES.forEach(m => {
+      const slug = "myo_" + m.level.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+      const left = v(`${slug}_left`), right = v(`${slug}_right`);
+      [["L", left], ["R", right]].forEach(([side, val]) => {
+        if (val && val.match(/[0-4](\+|-)?\/5|weak|reduced/i)) myoAbn.push(`${m.level} ${side}: ${val}`);
+      });
     });
     if (myoAbn.length) neuroLines.push(`  Myotomes: ${myoAbn.join("; ")}`);
-    // Reflexes  
-    const refKeys = [["n_biceps","Biceps (C5/6)"],["n_brachio","Brachio (C6)"],["n_triceps","Triceps (C7)"],
-                     ["n_patella","Patella (L3/4)"],["n_achilles","Achilles (S1)"],["n_babinski","Babinski"]];
+    // Reflexes
     const refAbn = [];
-    refKeys.forEach(([k,label]) => {
-      const val = v(k);
-      if (val && (val.includes("+") || val.toLowerCase().includes("abn") || val.toLowerCase().includes("hyper") || val.toLowerCase().includes("absent")))
-        refAbn.push(`${label}: ${val}`);
+    REFLEXES.forEach(r => {
+      const left = v(`${r.id}_left`), right = v(`${r.id}_right`) || v(r.id);
+      [["L", left], ["R", right]].forEach(([side, val]) => {
+        if (val && (val.includes("+") || /abn|hyper|absent|brisk|clonus|positive/i.test(val)))
+          refAbn.push(`${r.label} ${side}: ${val}`);
+      });
     });
     if (refAbn.length) neuroLines.push(`  Reflexes: ${refAbn.join("; ")}`);
-    // Neural tension tests
-    const ntTests = [["nt_slump","Slump"],["nt_slr","SLR"],["nt_ultt1","ULTT1"],
-                     ["nt_ultt2","ULTT2"],["nt_ultt3","ULTT3"],["nt_femoral","Femoral stretch"]];
+    // Neural tension tests — real keys need the _left/_right suffix
     const ntPos = [], ntNeg = [];
-    ntTests.forEach(([k,label]) => {
-      const val = v(k);
-      if (!val) return;
-      if (val.toLowerCase().includes("positive") || val.toLowerCase().includes("pos ")) ntPos.push(`${label} (${val.slice(0,40)})`);
-      else if (val.toLowerCase().includes("negative") || val.toLowerCase().includes("neg ")) ntNeg.push(label);
+    NEURAL_TENSION.forEach(nt => {
+      [["L", v(`${nt.id}_left`)], ["R", v(`${nt.id}_right`)]].forEach(([side, val]) => {
+        if (!val) return;
+        if (val.toLowerCase().includes("positive") || val.toLowerCase().includes("pos ")) ntPos.push(`${nt.label} ${side} (${val.slice(0,40)})`);
+        else if (val.toLowerCase().includes("negative") || val.toLowerCase().includes("neg ")) ntNeg.push(`${nt.label} ${side}`);
+      });
     });
     if (ntPos.length) neuroLines.push(`  Neural Tension +ve: ${ntPos.join("; ")}`);
     if (ntNeg.length) neuroLines.push(`  Neural Tension -ve: ${ntNeg.join(", ")}`);
@@ -3577,7 +3599,11 @@ function detectModulesV2(data) {
     outcomes: hasPrefix("om_") || has(["ndi_score","psfs_score","koos_score","dash_score","lefs_score","om_odi_score"]),
     stt: hasPrefix("st_","cyriax_","cy_") || has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can"]),
     functional: has(["fl_work","fl_mobility","fl_self_care","fl_domestic","ar_goal_function"]),
-    neuro: hasPrefix("neuro_","n_c","n_l","n_s","n_t"),
+    // Was missing myotomes ("myo_...") and reflexes ("n_ref_...", which
+    // doesn't match "n_c"/"n_l"/"n_s"/"n_t") entirely — a patient with only
+    // reflex or myotome findings recorded would have been reported as
+    // "neuro not touched" even though real data existed.
+    neuro: hasPrefix("neuro_","n_c","n_l","n_s","n_t","n_ref","myo_","nt_"),
     gait: hasPrefix("gait_"),
     kinetic: hasPrefix("kc_","kinetic_"),
     cpa: hasPrefix("nkt_") || has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes"]),
@@ -3926,32 +3952,41 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
     if(v("neuro_babinski"))   rows.push({label:"Babinski",val:v("neuro_babinski")});
     if(v("cx_ultt_a")||v("ultt_a")) rows.push({label:"UL tension test A",val:v("cx_ultt_a")||v("ultt_a")});
     if(v("cx_ultt_b")||v("ultt_b")) rows.push({label:"UL tension test B",val:v("cx_ultt_b")||v("ultt_b")});
-    // Actual dermatome fields (n_c3–n_s2, bilateral)
-    const DERM_LEVELS = ["c3","c4","c5","c6","c7","c8","t1","t2","l1","l2","l3","l4","l5","s1","s2"];
-    DERM_LEVELS.forEach(lvl => {
-      const left  = v(`n_${lvl}_left`)  || v(`n_${lvl}`);
-      const right = v(`n_${lvl}_right`);
-      if (left && right && left !== right) rows.push({label:`Dermatome ${lvl.toUpperCase()}`,val:`L: ${left} / R: ${right}`});
-      else if (left)  rows.push({label:`Dermatome ${lvl.toUpperCase()}`,val:left});
-      else if (right) rows.push({label:`Dermatome ${lvl.toUpperCase()} (R)`,val:right});
+    // Dermatomes — was a hardcoded 15-level list missing S3/S4-5 and
+    // including a phantom "t2" that doesn't exist; now derived from the
+    // real DERMATOMES data (16 real levels).
+    DERMATOMES.forEach(d => {
+      const left  = v(`${d.id}_left`);
+      const right = v(`${d.id}_right`);
+      if (left && right && left !== right) rows.push({label:`Dermatome ${d.level}`,val:`L: ${left} / R: ${right}`});
+      else if (left)  rows.push({label:`Dermatome ${d.level}`,val:left});
+      else if (right) rows.push({label:`Dermatome ${d.level} (R)`,val:right});
     });
-    // Myotomes (n_c5–n_s2 motor)
-    ["c5","c6","c7","c8","t1","l3","l4","l5","s1"].forEach(lvl => {
-      const val = v(`n_${lvl}_motor`) || v(`n_myo_${lvl}`);
-      if (val) rows.push({label:`Myotome ${lvl.toUpperCase()}`,val});
+    // Myotomes — was reading "n_<lvl>_motor" / "n_myo_<lvl>", neither of
+    // which matches what NeurologicalModule actually writes
+    // ("myo_<slug>_left/right") — could never have shown real data. Now
+    // derived from MYOTOMES with the same slug NeurologicalModule uses.
+    MYOTOMES.forEach(m => {
+      const slug = "myo_" + m.level.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+      const left = v(`${slug}_left`), right = v(`${slug}_right`);
+      if (left && right && left !== right) rows.push({label:`Myotome ${m.level}`,val:`L: ${left} / R: ${right}`});
+      else if (left)  rows.push({label:`Myotome ${m.level}`,val:left});
+      else if (right) rows.push({label:`Myotome ${m.level} (R)`,val:right});
     });
-    // Reflexes from neuro module
-    [["n_biceps","Biceps reflex (C5/6)"],["n_brachio","Brachioradialis (C6)"],
-     ["n_triceps","Triceps reflex (C7)"],["n_patella","Patellar reflex (L3/4)"],
-     ["n_achilles","Achilles reflex (S1)"],["n_babinski","Babinski"]].forEach(([k,label]) => {
-      const val = v(k);
-      if (val) rows.push({label, val});
+    // Reflexes — was reading "n_biceps" etc (wrong prefix/spelling, no side
+    // suffix) instead of the real "<REFLEXES id>_left/right" — same
+    // complete-miss bug as myotomes. Now derived from REFLEXES.
+    REFLEXES.forEach(r => {
+      const left = v(`${r.id}_left`), right = v(`${r.id}_right`) || v(r.id);
+      if (left) rows.push({label:`${r.label} (L)`, val:left});
+      if (right) rows.push({label:`${r.label} (R)`, val:right});
     });
-    // Neural tension tests
-    [["nt_slump","Slump test"],["nt_slr","SLR"],["nt_ultt1","ULTT1"],
-     ["nt_ultt2","ULTT2"],["nt_ultt3","ULTT3"],["nt_femoral","Femoral stretch"]].forEach(([k,label]) => {
-      const val = v(k);
-      if (val) rows.push({label, val});
+    // Neural tension tests — real keys need the _left/_right suffix, which
+    // this never added before.
+    NEURAL_TENSION.forEach(nt => {
+      const left = v(`${nt.id}_left`), right = v(`${nt.id}_right`);
+      if (left) rows.push({label:`${nt.label} (L)`, val:left});
+      if (right) rows.push({label:`${nt.label} (R)`, val:right});
     });
     if(v("neuro_clinician_notes")) rows.push({label:"Clinical notes",val:v("neuro_clinician_notes")});
     return rows;
