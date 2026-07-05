@@ -1017,6 +1017,7 @@ function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
 }
 
 // ─── MAIN MODULE ──────────────────────────────────────────────────────────────
+export { SCALES };
 export default function OutcomeMeasuresPro({ data, set }) {
   const PC=getC();
   const [view,setView]=useState("list"); // list | live | result | patient

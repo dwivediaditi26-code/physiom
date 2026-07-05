@@ -4,6 +4,21 @@ import { getTopDiagnoses, getTopDiagnosesEnhanced, ALL_DIAGNOSES } from "./Diagn
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA } from "./PhysioNeuro.jsx";
 import { SPECIAL_TESTS_DATA } from "./SubjectiveObjective.jsx";
+import { SCALES } from "./OutcomeMeasuresPro.jsx";
+
+// Auto-derived from SCALES (the same source OutcomeMeasuresPro's own UI
+// uses) instead of a hand-copied list — 10 of 26 real outcome scales were
+// missing from SCALE_LABELS, including every Stroke/TBI scale added last
+// session (NIHSS, Fugl-Meyer, GOAT, Rancho, Barthel, Modified Ashworth) plus
+// Berg-adjacent gait/balance scales (DGI, FAC, TUG, 10m Walk Test). Lower
+// severity than MMT/ROM/Special Tests: the SOAP builder already scans every
+// om_history_<scaleId> entry regardless of this map, and scaleId.toUpperCase()
+// as a fallback happens to already read fine for most of these (NIHSS, GOAT,
+// RANCHO, MAS, FMA, TUG, DGI, FAC are all legitimate clinical abbreviations)
+// — but "MWT10" reads worse than the real "10MWT", so still worth fixing.
+const SCALE_DATA_LABELS = Object.fromEntries(
+  Object.values(SCALES).map(s => [s.id, s.label])
+);
 
 // Auto-derived from SPECIAL_TESTS_DATA (the same source SpecialTestsSection's
 // own UI uses) instead of two separately hand-maintained label maps —
@@ -3125,6 +3140,11 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     const omRows = [];
     const addedScales = new Set();
     const SCALE_LABELS = {
+      // Full coverage of every real scale (see SCALE_DATA_LABELS above) —
+      // spread first so hand-curated entries below (some deliberately
+      // fuller, e.g. "Berg Balance" instead of the raw "BBS") still win
+      // where they already exist.
+      ...SCALE_DATA_LABELS,
       ndi:"NDI",odi:"ODI",dash:"DASH",lefs:"LEFS",psfs:"PSFS",
       koos:"KOOS",hoos:"HOOS",bbs:"Berg Balance",vas:"VAS Pain",
       tsk:"TSK-11",fabq:"FABQ",pcs:"PCS",rmdq:"RMDQ",spadi:"SPADI",
