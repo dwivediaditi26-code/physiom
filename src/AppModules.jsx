@@ -1549,10 +1549,41 @@ function QuickVisitForm({ PC, data, set, navTo }) {
   );
 }
 
-function IntakeForm({ PC, onCancel, onSubmit }) {
-  const [fd, setFd] = useState({});
+function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
+  // Fills the "nothing saves until you finish the whole intake form" gap:
+  // before a patient record exists there's nowhere in Supabase to attach
+  // this data to yet, and saving it to the cloud before the student has even
+  // reached the Consent tab's "I consent to storage of my data" checkbox
+  // would undercut the consent flow itself — so this is a local-only,
+  // short-lived draft (namespaced per signed-in user, same reasoning as the
+  // per-user patient DB) that just survives an accidental reload/crash/tab
+  // close mid-intake. It's deleted the moment the form is submitted or
+  // cancelled — it's scratch space, not a permanent record.
+  const draftKey = `physio_intake_draft_v1_${currentUser?.id || "anon"}`;
+  const [restoredDraft] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(draftKey) || "null");
+      return !!(raw && typeof raw === "object" && Object.keys(raw).length > 0);
+    } catch { return false; }
+  });
+  const [fd, setFd] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(draftKey) || "null");
+      return raw && typeof raw === "object" ? raw : {};
+    } catch { return {}; }
+  });
   const [tab, setTab] = React.useState("essential");
   const set = (k,v) => setFd(p=>({...p,[k]:v}));
+
+  React.useEffect(() => {
+    if (Object.keys(fd).length === 0) return;
+    const timer = setTimeout(() => {
+      try { localStorage.setItem(draftKey, JSON.stringify(fd)); } catch {}
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [fd, draftKey]);
+
+  const clearDraft = () => { try { localStorage.removeItem(draftKey); } catch {} };
   const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.82rem",marginBottom:0};
   const lbl = {fontSize:"0.78rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
   const field = (label, node) => (
@@ -1576,6 +1607,11 @@ function IntakeForm({ PC, onCancel, onSubmit }) {
   const canSubmit = fd.dem_name?.trim() && fd.consent_treat;
   return (
     <div>
+      {restoredDraft && (
+        <div style={{padding:"7px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,fontSize:"0.75rem",color:PC.muted,marginBottom:14}}>
+          ↺ Restored what you'd already typed before this got interrupted.
+        </div>
+      )}
       {/* Tabs */}
       <div style={{display:"flex",gap:6,marginBottom:18,flexWrap:"wrap"}}>
         {tabs.map(t=><button key={t.id} style={tabStyle(t.id)} onClick={()=>setTab(t.id)}>{t.label}</button>)}
@@ -1656,8 +1692,8 @@ function IntakeForm({ PC, onCancel, onSubmit }) {
       )}
 
       <div style={{display:"flex",gap:10,marginTop:20}}>
-        <button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.82rem"}}>Cancel</button>
-        <button disabled={!canSubmit} onClick={()=>onSubmit(fd)} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:canSubmit?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:canSubmit?"pointer":"not-allowed",fontSize:"0.82rem"}}>
+        <button onClick={()=>{clearDraft();onCancel();}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.82rem"}}>Cancel</button>
+        <button disabled={!canSubmit} onClick={()=>{clearDraft();onSubmit(fd);}} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:canSubmit?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:canSubmit?"pointer":"not-allowed",fontSize:"0.82rem"}}>
           {canSubmit ? "Start Assessment →" : "Complete Consent tab first"}
         </button>
       </div>

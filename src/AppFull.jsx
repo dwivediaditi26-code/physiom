@@ -881,7 +881,7 @@ function AppInner({ currentUser, onSignOut }) {
           <div style={{width:"100%",maxWidth:420,maxHeight:"90vh",overflowY:"auto",background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)",WebkitOverflowScrolling:"touch"}}>
             <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New patient</div>
             <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:20}}>Fill the basics — you can add more detail later</div>
-            <IntakeForm PC={PC} onCancel={()=>setShowIntake(false)} onSubmit={finaliseNewPatient}/>
+            <IntakeForm PC={PC} currentUser={currentUser} onCancel={()=>setShowIntake(false)} onSubmit={finaliseNewPatient}/>
           </div>
         </div>
       )}
