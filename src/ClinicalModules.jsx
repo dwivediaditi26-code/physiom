@@ -2,7 +2,27 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { getTopDiagnoses, getTopDiagnosesEnhanced, ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
-import { MMT_DATA } from "./PhysioNeuro.jsx";
+import { MMT_DATA, ROM_DATA } from "./PhysioNeuro.jsx";
+
+// Auto-derived from ROM_DATA (the same source ROMModule's own UI uses)
+// instead of a hand-copied [label, key, norm] list — verified against every
+// real movement: 16 of 56 real ROM movements were missing entirely from the
+// old list (MCP/PIP/DIP finger flexion, thumb opposition/abduction, 1st MTP
+// flexion/extension, TMJ mouth opening/deviation/protrusion, wrist radial/
+// ulnar deviation, thoracic lateral flexion). This wasn't just a labeling
+// gap like MMT's — those measurements didn't appear in the SOAP note or
+// Live SOAP at all if recorded, since the old code only ever looked at
+// movements in its fixed list. Deriving from ROM_DATA means every movement
+// ROMModule can record is guaranteed to have a matching SOAP entry.
+const ROM_DERIVED = Object.entries(ROM_DATA).flatMap(([region, movements]) =>
+  movements.map(m => ({
+    label: `${region} ${m.mv}`,
+    key: m.id,
+    norm: typeof m.normal === "number" ? m.normal : null,
+    unit: m.unit || "°",
+    bilateral: !!m.bilateral,
+  }))
+);
 
 // Auto-derived from MMT_DATA (the same source MMTModule's own UI uses) instead
 // of a second, separately hand-maintained list — verified against every real
@@ -2606,51 +2626,21 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (palpRows.length) O_parts.push(`Palpation:\n${palpRows.join("\n")}.`);
   }
 
-  // ── ROM — correct field IDs from ROM_DATA ───────────────────────────────
+  // ── ROM — derived from ROM_DATA, see ROM_DERIVED above ──────────────────
   {
     const romRows = [];
-    // Unilateral movements (single value)
-    const uniPairs = [
-      // Cervical
-      ["Cervical Flexion","rom_cflex",45],["Cervical Extension","rom_cext",45],
-      ["Cervical Lateral Flexion L","rom_clatl",45],["Cervical Lateral Flexion R","rom_clatr",45],
-      ["Cervical Rotation L","rom_crotl",60],["Cervical Rotation R","rom_crotr",60],
-      // Thoracic
-      ["Thoracic Flexion","rom_thflex",50],["Thoracic Extension","rom_thext",25],
-      ["Thoracic Rotation L","rom_throtl",35],["Thoracic Rotation R","rom_throtr",35],
-      // Lumbar
-      ["Lumbar Flexion","rom_lflex",60],["Lumbar Extension","rom_lext",25],
-      ["Lumbar Lateral Flexion L","rom_llfl",25],["Lumbar Lateral Flexion R","rom_llfr",25],
-      ["Lumbar Rotation L","rom_lrotl",5],["Lumbar Rotation R","rom_lrotr",5],
-    ];
-    // Bilateral movements (left and right stored as romKey_left / romKey_right)
-    const bilaPairs = [
-      // Shoulder
-      ["Shoulder Flexion","rom_sflex",180],["Shoulder Extension","rom_sext",60],
-      ["Shoulder Abduction","rom_sabd",180],["Shoulder Adduction","rom_sadd",30],
-      ["Shoulder External Rotation","rom_ser",90],["Shoulder Internal Rotation","rom_sir",70],
-      // Elbow
-      ["Elbow Flexion","rom_eflex",145],["Elbow Extension","rom_eext",0],
-      ["Forearm Supination","rom_esup",90],["Forearm Pronation","rom_epro",90],
-      // Wrist
-      ["Wrist Flexion","rom_wflex",80],["Wrist Extension","rom_wext",70],
-      // Hip
-      ["Hip Flexion","rom_hflex",120],["Hip Extension","rom_hext",20],
-      ["Hip Abduction","rom_habd",45],["Hip Adduction","rom_hadd",30],
-      ["Hip External Rotation","rom_her",45],["Hip Internal Rotation","rom_hir",45],
-      // Knee
-      ["Knee Flexion","rom_kflex",140],["Knee Extension","rom_kext",0],
-      // Ankle
-      ["Ankle Dorsiflexion","rom_adf",20],["Ankle Plantarflexion","rom_apf",50],
-      ["Ankle Inversion","rom_ainv",35],["Ankle Eversion","rom_aev",15],
-    ];
-    // Helper to format single value with norm comparison
-    const fmtVal = (val, norm) => {
+    const uniPairs = ROM_DERIVED.filter(m => !m.bilateral).map(m => [m.label, m.key, m.norm, m.unit]);
+    const bilaPairs = ROM_DERIVED.filter(m => m.bilateral).map(m => [m.label, m.key, m.norm, m.unit]);
+    // Helper to format single value with norm comparison. norm can be null
+    // for qualitative movements (e.g. Thumb Opposition has no degree norm);
+    // unit defaults to "°" but some movements (TMJ) are measured in mm.
+    const fmtVal = (val, norm, unit="°") => {
       if (!val) return null;
+      if (norm === null || typeof norm !== "number") return `${val}${unit}`;
       const num = parseFloat(val);
       const pct = norm > 0 ? Math.round((num/norm)*100) : null;
       const flag = pct !== null && pct < 75 ? " ⚠" : pct !== null && pct < 50 ? " ❌" : "";
-      return `${val}° (norm ${norm}°${flag})`;
+      return `${val}${unit} (norm ${norm}${unit}${flag})`;
     };
     // Try both old (no suffix) and new (_arom) field name formats
     const rv = (key) => v(key+"_arom") || v(key) || "";
@@ -2658,19 +2648,19 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       const s = side === "L" ? ["_L_arom","_left","_L"] : ["_R_arom","_right","_R"];
       return s.map(sfx => v(key+sfx)).find(x=>x) || "";
     };
-    uniPairs.forEach(([label, key, norm]) => {
+    uniPairs.forEach(([label, key, norm, unit]) => {
       const val = rv(key);
       if (val) {
-        const fmt = fmtVal(val, norm);
+        const fmt = fmtVal(val, norm, unit);
         const pain = v(key+"_pain") || v(key+"_arom_pain");
         romRows.push(`  ${label}: ${fmt}${pain ? " — "+pain : ""}`);
       }
     });
-    bilaPairs.forEach(([label, key, norm]) => {
+    bilaPairs.forEach(([label, key, norm, unit]) => {
       const vL = rvLR(key,"L"), vR = rvLR(key,"R");
       if (vL || vR) {
-        const fL = vL ? fmtVal(vL, norm) : "—";
-        const fR = vR ? fmtVal(vR, norm) : "—";
+        const fL = vL ? fmtVal(vL, norm, unit) : "—";
+        const fR = vR ? fmtVal(vR, norm, unit) : "—";
         const pain = v(key+"_pain_left")||v(key+"_pain_right")||v(key+"_L_arom_pain")||v(key+"_R_arom_pain");
         romRows.push(`  ${label}: L ${fL} / R ${fR}${pain ? " — "+pain : ""}`);
       }
@@ -3684,16 +3674,22 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       }
       return "";
     };
+    // Was a short (~22 movement) hardcoded list, same class of gap as the
+    // plain-text SOAP builder had — widened to every movement ROM_DATA
+    // actually defines (see ROM_DERIVED above), so this table can't silently
+    // omit a recorded movement either. `key` here is the short id without
+    // the "rom_" prefix, since rv()/rvS() above add that themselves.
     const rows = [];
-    [["Cervical flexion","cflex",45],["Cervical extension","cext",45],["Cervical rotation R","crotr",60],
-     ["Cervical rotation L","crotl",60],["Cervical lateral R","clatr",45],["Cervical lateral L","clatl",45],
-     ["Lumbar flexion","lflex",80],["Lumbar extension","lext",25],["Lumbar rotation R","lrotr",5],["Lumbar rotation L","lrotl",5],
-     ["Thoracic flexion","thflex",50],["Thoracic extension","thext",25],
-    ].forEach(([label,key,norm]) => { const val=rv(key); if(val){ const p=romPct(val,norm); rows.push({label,single:val,norm,pct:p,bilateral:false}); }});
-    [["Shoulder Flexion","sflex",180],["Shoulder Abduction","sabd",180],["Shoulder Ext Rotation","ser",90],["Shoulder Int Rotation","sir",70],
-     ["Hip Flexion","hflex",120],["Knee Flexion","kflex",140],["Ankle Dorsiflexion","adf",20],["Ankle Plantarflexion","apf",50],
-     ["Elbow Flexion","eflex",145],["Wrist Flexion","wflex",80],["Hip Abduction","habd",45],["Hip Int Rotation","hir",45],
-    ].forEach(([label,key,norm]) => { const vl=rvS(key,"L"),vr=rvS(key,"R"); if(vl||vr){ rows.push({label,l:vl,r:vr,norm,bilateral:true}); }});
+    ROM_DERIVED.filter(m => !m.bilateral).forEach(({label, key, norm}) => {
+      const shortKey = key.replace(/^rom_/, "");
+      const val = rv(shortKey);
+      if (val) { const p = romPct(val, norm); rows.push({label, single: val, norm, pct: p, bilateral: false}); }
+    });
+    ROM_DERIVED.filter(m => m.bilateral).forEach(({label, key, norm}) => {
+      const shortKey = key.replace(/^rom_/, "");
+      const vl = rvS(shortKey, "L"), vr = rvS(shortKey, "R");
+      if (vl || vr) { rows.push({label, l: vl, r: vr, norm, bilateral: true}); }
+    });
     return rows;
   }, [data]);
 
