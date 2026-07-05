@@ -2,6 +2,19 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { getTopDiagnoses, getTopDiagnosesEnhanced, ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
+import { MMT_DATA } from "./PhysioNeuro.jsx";
+
+// Auto-derived from MMT_DATA (the same source MMTModule's own UI uses) instead
+// of a second, separately hand-maintained list — verified against every real
+// muscle ID: 38 of 72 real MMT muscles had NO entry in the old hand-written
+// MMT_LABELS map (e.g. "mmt_scm", "mmt_trap_u", "mmt_iliop", "mmt_pirif" all
+// fell through to a raw key-derived label instead of a proper name), which is
+// exactly the readable-label gap the advanced-assessment modules (NKT/Kinetic
+// Chain, verified 47/47 and 21/21 complete) didn't have. Deriving straight
+// from MMT_DATA means this can never go stale the way a hand-copied list can.
+const MMT_DATA_LABELS = Object.fromEntries(
+  Object.values(MMT_DATA).flat().map(m => [m.id, m.muscle])
+);
 
 function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder="", data, set, note }) {
   const base={width:"100%",background:C.s3,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
@@ -2672,6 +2685,11 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   {
     // MMT label map for clean display
     const MMT_LABELS = {
+      // Full coverage of every real MMT_DATA muscle (see MMT_DATA_LABELS
+      // above) — spread first so the manually-curated entries below can
+      // still override a specific label if needed, without losing coverage
+      // for anything not explicitly listed by hand.
+      ...MMT_DATA_LABELS,
       // Short-form aliases used by AppModules/PatientDatabase MMT table
       mmt_quad:"Quadriceps",mmt_quad_l:"Quadriceps",mmt_quad_r:"Quadriceps",
       mmt_hams:"Hamstrings",mmt_hams_l:"Hamstrings",mmt_hams_r:"Hamstrings",
@@ -3682,6 +3700,12 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   // MMT rows
   const mmtRows = useMemo(() => {
     const MMT_LBL = {
+      // Same staleness problem as MMT_LABELS above (this is a second,
+      // separately hand-maintained MMT label map used for the table-row view
+      // instead of the plain-text SOAP paragraph) — same fix: derive full
+      // coverage from MMT_DATA first, hand-written entries below still take
+      // precedence if they overlap.
+      ...MMT_DATA_LABELS,
       // Trunk / Core
       mmt_ra:"Rectus Abdominis",mmt_eo:"External Oblique",mmt_ia:"Internal Oblique",
       mmt_multif:"Multifidus",mmt_es:"Erector Spinae",mmt_ql:"Quadratus Lumborum",
