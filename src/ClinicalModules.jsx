@@ -3,6 +3,20 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { getTopDiagnoses, getTopDiagnosesEnhanced, ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA } from "./PhysioNeuro.jsx";
+import { SPECIAL_TESTS_DATA } from "./SubjectiveObjective.jsx";
+
+// Auto-derived from SPECIAL_TESTS_DATA (the same source SpecialTestsSection's
+// own UI uses) instead of two separately hand-maintained label maps —
+// verified against every real test: ST_LABEL_MAP (used in buildRealtimeSOAP,
+// i.e. the actual SOAP paragraph + Live SOAP) was missing 57 of 89 real
+// special tests; ST_NAMES (SOAPNoteModule's table view) was missing 10 of
+// 89. Special Tests has a reasonable auto-format fallback already (unlike
+// ROM's silent-drop bug), so a missing entry still showed up, just with a
+// less clean label (e.g. "Fadir Test" instead of "FADIR Test") — lower
+// severity than the ROM gap, but the same underlying staleness problem.
+const ST_DATA_LABELS = Object.fromEntries(
+  Object.values(SPECIAL_TESTS_DATA).flatMap(region => region.tests.map(t => [t.id, t.label]))
+);
 
 // Auto-derived from ROM_DATA (the same source ROMModule's own UI uses)
 // instead of a hand-copied [label, key, norm] list — verified against every
@@ -2803,6 +2817,11 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   // Special Tests — with proper clinical labels
   {
     const ST_LABEL_MAP = {
+      // Full coverage of every real special test (see ST_DATA_LABELS above)
+      // — spread first so hand-curated entries below still override where
+      // they already exist, without losing coverage for the 57 (of 89) real
+      // tests this map was previously missing entirely.
+      ...ST_DATA_LABELS,
       // Lumbar / Neural
       "st_slr":"Straight Leg Raise","st_slr_test":"Straight Leg Raise","st_slr_left":"SLR (Left)","st_slr_right":"SLR (Right)",
       "st_crossed_slr":"Crossed SLR","st_well_leg_raise":"Well Leg Raise","st_slump":"Slump Test",
@@ -3784,6 +3803,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
     const rows = [];
     // Comprehensive label map: short-form, long-form, lx_* aliases all included
     const ST_NAMES = {
+      // Same fix as ST_LABEL_MAP above — full coverage from ST_DATA_LABELS,
+      // hand-curated entries below still take precedence where present.
+      ...ST_DATA_LABELS,
       // Lumbar / Neural
       "st_slr":"Straight Leg Raise","st_slr_test":"Straight Leg Raise",
       "st_crossed_slr":"Crossed SLR","st_well_leg_raise":"Well Leg Raise",
