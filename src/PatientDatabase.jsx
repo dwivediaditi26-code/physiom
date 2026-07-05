@@ -1416,21 +1416,28 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   const [exDone,     setExDone]     = useState({});
   const [mounted,    setMounted]    = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [uploadedDocs, setUploadedDocs] = useState(() => {
-    try {
-      const key = `physio_docs_${patient?.id||"demo"}`;
-      return JSON.parse(localStorage.getItem(key) || "[]");
-    } catch { return []; }
-  });
+  // Was: a completely separate localStorage-only array
+  // ("physio_docs_<patientId>"), never part of the patient's synced `data` —
+  // so uploaded documents never reached Supabase at all and wouldn't follow
+  // a student to a different device, unlike everything else in this app.
+  // Now stored as data.uploaded_docs and saved through onSaveField, the same
+  // local+cloud path as every other field.
+  // NOTE for later: these are stored as base64 data URLs directly inside the
+  // patient's jsonb record. Fine at small scale, but for real production
+  // volume (many students, many attached files) this would be better moved
+  // to actual Supabase Storage (separate file objects + a URL reference)
+  // rather than growing the jsonb blob that gets re-uploaded on every
+  // autosave — flagging this rather than silently picking that heavier
+  // change here.
+  const uploadedDocs = patient?.data?.uploaded_docs || [];
+  const setUploadedDocs = (docs) => {
+    if (typeof onSaveField === "function" && patient?.id) onSaveField(patient.id, { uploaded_docs: docs });
+  };
   const [uploading, setUploading] = useState(false);
   const [assessSub, setAssessSub] = useState("subjective");
   const fileInputRef = React.useRef(null);
 
-  const saveDocs = (docs) => {
-    try {
-      localStorage.setItem(`physio_docs_${patient?.id||"demo"}`, JSON.stringify(docs));
-    } catch { alert("Storage full — file too large"); }
-  };
+  const saveDocs = (docs) => setUploadedDocs(docs); // kept as an alias — callers below already read as saveDocs(updated)
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -1458,8 +1465,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         uploadedAt: new Date().toISOString(),
       };
       const updated = [newDoc, ...uploadedDocs];
-      setUploadedDocs(updated);
-      saveDocs(updated);
+      setUploadedDocs(updated); // now persists directly (see note above) — saveDocs() is just an alias
       setUploading(false);
     };
     reader.onerror = () => { setUploading(false); alert("Failed to read file."); };
@@ -1470,7 +1476,6 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   const handleDeleteDoc = (id) => {
     const updated = uploadedDocs.filter(d => d.id !== id);
     setUploadedDocs(updated);
-    saveDocs(updated);
   };
 
   const handleDownloadDoc = (doc) => {

@@ -3505,28 +3505,36 @@ function romStatusColor(pct) {
   if (pct < 75) return "#b45309";
   return "#059669";
 }
+// Was: mostly hardcoded lists of "example" field names per module (e.g. MMT
+// checked only for "mmt_deltoid"/"mmt_biceps", which don't even match what
+// MMTModule actually writes — it uses "mmt_<muscleId>_<side>" for whichever
+// specific muscles get tested, e.g. "mmt_deltM_L"). A clinician who only
+// tested muscles/movements NOT in that specific example list would have this
+// silently report the module as untouched, even though real data was saved —
+// which could make the SOAP note's "No objective findings recorded yet"
+// placeholder appear even when e.g. MMT was actually fully documented.
+// Fixed to scan every field by its actual prefix instead of a fixed example
+// list, matching how the real SOAP-text builders elsewhere in this file
+// already do it (see the `mmt_` scans in the Objective-section generator).
 function detectModulesV2(data) {
   const has = (keys) => keys.some(k => data[k] && String(data[k]).trim() && String(data[k]).trim() !== "[]");
+  const hasPrefix = (...prefixes) => Object.keys(data).some(k =>
+    prefixes.some(p => k.startsWith(p)) && data[k] && String(data[k]).trim() && String(data[k]).trim() !== "[]");
   return {
     subjective: has(["cc_main","dem_name"]),
-    rom: has(["rom_cflex","rom_lflex","rom_sflex_L","rom_sflex_R","rom_kflex_L","rom_kflex_R","rom_adf_L","rom_adf_R","rom_cext","rom_lext","rom_lx_flex","rom_lx_ext","rom_lx_rot_l","rom_lx_rot_r","rom_cx_flex","rom_cx_ext","rom_shr_flex","rom_knl_flex"]),
-    mmt: has(["muscle_sh_r_abductors","muscle_kn_l_quads","neuro_weakness","mmt_deltoid","mmt_biceps","mmt_wext"]),
+    rom: hasPrefix("rom_"),
+    mmt: hasPrefix("mmt_","muscle_"),
     posture: has(["post_fhp","post_kyphosis","post_lordosis","post_pelvis","post_sh","post_scoliosis","post_notes",...Object.keys(data).filter(k=>k.startsWith("posture_defect_")&&data[k])]),
     postureAI: has(["sagFHPCm","cvaAngle","sagThorKyph","sagLumLord","fhpDevCm"]),
     palpation: has(["palp_pins","cx_palpation","lx_palpation","shr_palpation","knl_palpation","af_palpation"]),
-    outcomes: has(["om_report","ndi_score","psfs_score","koos_score","dash_score","lefs_score",
-      "om_psfs_1_activity","om_ndi_1","om_koos_pain","om_dash_1","om_lefs_1","om_odi_score",
-      "om_ndi_score","om_dash_score","om_lefs_score"]),
-    stt: Object.keys(data).some(k=>(k.startsWith("st_")||k.startsWith("cyriax_")||k.startsWith("cy_"))&&data[k]&&String(data[k]).trim()) || has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can"]),
+    outcomes: hasPrefix("om_") || has(["ndi_score","psfs_score","koos_score","dash_score","lefs_score","om_odi_score"]),
+    stt: hasPrefix("st_","cyriax_","cy_") || has(["cx_spurling","cx_distraction","lx_slr_l","lx_slr_r","shr_stt_empty_can"]),
     functional: has(["fl_work","fl_mobility","fl_self_care","fl_domestic","ar_goal_function"]),
-    neuro: has(["neuro_dermatomal","neuro_reflex_biceps","neuro_sensation","neuro_weakness","neuro_reflex_ankle",
-      "n_c4","n_c5","n_c6","n_c7","n_l4","n_l5","n_s1",
-      "n_c4_left","n_c5_left","n_l4_left","n_l5_left","n_s1_left"]),
-    gait: has(["gait_pattern","gait_cadence","gait_antalgic","gait_trendelenburg","gait_notes"]),
-    kinetic: Object.keys(data).some(k=>(k.startsWith("kc_")||k==="kinetic_primary"||k==="kinetic_compensation"||k==="kinetic_notes")&&data[k]&&String(data[k]).trim()),
-    cpa: has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes",
-      "nkt_dnf","nkt_scm","nkt_upper_trap","nkt_gmax","nkt_gmed","nkt_psoas","nkt_ta"]),
-    fascia: Object.keys(data).some(k=>(k.startsWith("fa_")||k.startsWith("fascia_"))&&data[k]&&String(data[k]).trim()),
+    neuro: hasPrefix("neuro_","n_c","n_l","n_s","n_t"),
+    gait: hasPrefix("gait_"),
+    kinetic: hasPrefix("kc_","kinetic_"),
+    cpa: hasPrefix("nkt_") || has(["cx_cpa","lx_cpa","shr_cpa","knl_cpa","cpa_pattern","cpa_notes"]),
+    fascia: hasPrefix("fa_","fascia_"),
     observation: Object.keys(data).some(k=>(k.startsWith("obs_")||k.includes("_observation"))&&data[k]&&String(data[k]).trim()),
   };
 }
@@ -8489,7 +8497,7 @@ ${soap.P}` : "";
 
 export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP,
   SOAPNoteModule, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX, ExercisePrescriptionModule, PalpationModule,
-  TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel, ObservationModule };
+  TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel, ObservationModule, detectModulesV2 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // OBSERVATION MODULE — Magee's Orthopedic Physical Assessment (Inspection Only)

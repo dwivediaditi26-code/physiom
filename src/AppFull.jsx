@@ -868,7 +868,17 @@ function AppInner({ currentUser, onSignOut }) {
           onClose={()=>{ setProfilePatient(null); setProfileTab(null); }}
           onLoadAssessment={(p)=>{ selectPatient(p); setProfilePatient(null); }}
           onSaveField={(id,newData)=>{
-            setPatients(prev=>prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p));
+            // BUG FIX: this used to only update in-memory `patients` state and
+            // never actually persisted — Quick Notes / Clinical Impression
+            // entries saved from the Patient Profile modal could silently be
+            // lost on refresh, since neither localStorage nor Supabase ever
+            // saw them. Now routed through the same savePatientDB() path
+            // (local cache + cloud) everything else uses.
+            setPatients(prev=>{
+              const updated = prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p);
+              savePatientDB(updated, currentUser?.id);
+              return updated;
+            });
           }}
           onNav={(key)=>{ if(key==="demographics"){ setProfileTab("demographics"); } else { setProfilePatient(null); setProfileTab(null); navTo(key); } }}
           initialTab={profileTab||undefined}
