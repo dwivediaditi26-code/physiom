@@ -4512,6 +4512,45 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             </div>
           </>}
 
+          {/* STTT / Cyriax — this whole section did not exist in the visual
+              SOAP screen at all before, even though it was already correctly
+              built into the plain-text SOAP builder used by Live SOAP and
+              Copy note. A clinician completing a full Cyriax/Selective
+              Tissue Tension assessment would never see it reflected here.
+              Reuses the same comprehensive cy_/cyriax_ prefix scan + region
+              parsing already validated for the text version, rather than a
+              hand-copied per-test label list that could go stale. */}
+          {(()=>{
+            const SKIP_EXACT = new Set(["cy_contractile","cy_non_contractile","cy_capsular_pattern","cy_capsular","cy_endfeel","cy_notes"]);
+            const REGION_LABEL = { cervical:"Cervical", shoulder:"Shoulder", elbow:"Elbow", wrist_hand:"Wrist/Hand", hip:"Hip", knee:"Knee", ankle_foot:"Ankle/Foot", lumbar:"Lumbar", thoracic:"Thoracic", tmj:"TMJ" };
+            const cyKeys = Object.keys(data).filter(k => (k.startsWith("cy_")||k.startsWith("cyriax_")) && data[k] && String(data[k]).trim() && !SKIP_EXACT.has(k));
+            if (!cyKeys.length && !v("cy_contractile") && !v("cy_non_contractile") && !v("cy_capsular_pattern") && !v("cy_notes")) return null;
+            const groups = { active:[], passive:[], resisted:[], other:[] };
+            cyKeys.forEach(k => {
+              const val = String(data[k]).trim();
+              let region = "", moveLabel = k;
+              const m = k.match(/^cyriax_([a-z_]+?)_([a-z_]+(?:_[a-z0-9]+)*)$/);
+              if (m) { region = REGION_LABEL[m[1]] || m[1].replace(/_/g," "); moveLabel = m[2].replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()); }
+              else moveLabel = k.replace(/^cy_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+              const entry = `${region?`[${region}] `:""}${moveLabel}: ${val}`;
+              if (k.includes("_r_")) groups.resisted.push(entry);
+              else if (k.includes("_a_")) groups.active.push(entry);
+              else if (k.includes("_p_")) groups.passive.push(entry);
+              else groups.other.push(entry);
+            });
+            return <>
+              {subH("STTT / Selective Tissue Tension","#78350f")}
+              {groups.active.length>0&&<div style={{marginBottom:5}}><div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:2}}>Active movements</div>{groups.active.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}</div>}
+              {groups.passive.length>0&&<div style={{marginBottom:5}}><div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:2}}>Passive movements</div>{groups.passive.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}</div>}
+              {groups.resisted.length>0&&<div style={{marginBottom:5}}><div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:2}}>Resisted tests</div>{groups.resisted.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}</div>}
+              {groups.other.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}
+              {v("cy_contractile")&&<div style={{fontSize:12,color:"#374151",marginTop:2}}>Contractile: {v("cy_contractile")}</div>}
+              {v("cy_non_contractile")&&<div style={{fontSize:12,color:"#374151"}}>Non-contractile: {v("cy_non_contractile")}</div>}
+              {(v("cy_capsular_pattern")||v("cy_capsular"))&&<div style={{fontSize:12,color:"#374151"}}>Capsular pattern: {v("cy_capsular_pattern")||v("cy_capsular")}</div>}
+              {v("cy_notes")&&<div style={{fontSize:12,color:"#374151"}}>Notes: {v("cy_notes")}</div>}
+            </>;
+          })()}
+
           {/* Functional Limitations */}
           {(flChips.length>0||v("ar_goal_function"))&&<>
             {subH("Functional limitations","#78350f")}
@@ -4526,10 +4565,62 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             <tbody>{omRows.map((r,i)=><tr key={i}><td style={{...tdS,fontWeight:600}}>{r.name}</td><td style={{...tdS,fontWeight:700,color:"#6366F1"}}>{r.score}</td><td style={{...tdS,color:"#9CA3AF"}}>{r.max||"—"}</td><td style={{...tdS,color:"#6B7280",fontSize:10}}>{r.note}</td></tr>)}</tbody></table>
           </>}
 
-          {/* CPA */}
+          {/* CPA — was reading unused legacy fields (cpa_pattern, cx_cpa,
+              etc.) that the real CPA/NKT assessment module never writes to.
+              Real data lives in nkt_<muscle> fields (verified against
+              NKTSection's actual set() calls, same 47-muscle list already
+              confirmed complete for the Live SOAP/copy text builder) — the
+              section header was showing even when this content was
+              silently blank. Fixed to scan the real fields. */}
           {mods.cpa&&<>
             {subH("Compensation Pattern Analysis (CPA)","#334155")}
-            {[v("cpa_pattern"),v("cpa_notes"),...["cx","lx","shr","knl"].map(px=>v(px+"_cpa")).filter(Boolean)].filter(Boolean).map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"2px 0"}}>{x}</div>)}
+            {(()=>{
+              const NKT_IDS = [
+                ["nkt_dnf","Deep Neck Flexors"],["nkt_scm","SCM"],["nkt_suboccip","Suboccipitals"],
+                ["nkt_upper_trap","Upper Trap"],["nkt_scalenes","Scalenes"],["nkt_levator_scap","Levator Scapulae"],
+                ["nkt_splenius","Splenius"],["nkt_semispinalis","Semispinalis"],["nkt_lower_trap","Lower Trap"],
+                ["nkt_serratus","Serratus Anterior"],["nkt_infraspinatus","Infraspinatus/Teres Minor"],
+                ["nkt_subscapularis","Subscapularis"],["nkt_mid_trap","Mid Trap/Rhomboids"],
+                ["nkt_pec_minor","Pec Minor"],["nkt_ant_deltoid","Ant Deltoid"],["nkt_post_deltoid","Post Deltoid"],
+                ["nkt_teres_major","Teres Major"],["nkt_ta","Transversus Abdominis"],
+                ["nkt_multifidus","Multifidus"],["nkt_diaphragm","Diaphragm"],["nkt_ql","Quadratus Lumborum"],
+                ["nkt_psoas","Iliopsoas"],["nkt_erector_spinae","Erector Spinae"],["nkt_obliques","Obliques"],
+                ["nkt_pelvic_floor","Pelvic Floor"],["nkt_gmax","Glute Max"],["nkt_gmed","Glute Med"],
+                ["nkt_piriformis","Piriformis"],["nkt_hip_flex_fo","Hip Ext Firing Order"],["nkt_vmo","VMO"],
+                ["nkt_hamstrings","Hamstrings"],["nkt_adductors","Adductors"],["nkt_tfl","TFL"],
+                ["nkt_rectus_fem","Rectus Femoris"],["nkt_popliteus","Popliteus"],["nkt_tib_ant","Tib Anterior"],
+                ["nkt_tib_post","Tib Posterior"],["nkt_gastroc","Gastroc/Soleus"],["nkt_peroneals","Peroneals"],
+                ["nkt_fhl","FHL"],["nkt_foot_intrinsics","Foot Intrinsics"],["nkt_biceps","Biceps"],
+                ["nkt_triceps","Triceps"],["nkt_wrist_ext","Wrist Ext"],["nkt_wrist_flex","Wrist Flex"],
+                ["nkt_pronator","Pronator Teres"],["nkt_grip","Grip/Intrinsics"],
+              ];
+              const inh=[],over=[],fac=[],norm=[];
+              NKT_IDS.forEach(([id,label])=>{
+                const val=String(data[id]||"").trim();
+                if(!val) return;
+                if(/inhibited|complete inhibition/i.test(val)) inh.push({label,val});
+                else if(/overactive/i.test(val)) over.push({label,val});
+                else if(/facilitated/i.test(val)) fac.push({label,val});
+                else if(/normal/i.test(val)) norm.push({label,val});
+              });
+              if(!inh.length&&!over.length&&!fac.length&&!norm.length&&!v("nkt_notes")) return <div style={na}>No CPA findings recorded yet.</div>;
+              return <div style={{marginTop:4}}>
+                {inh.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#B45309",marginBottom:3}}>Inhibited</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                    {inh.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:500}}>{label}</span>)}
+                  </div></>}
+                {over.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#DC2626",marginBottom:3}}>Overactive / Facilitated</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                    {over.map(({label},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEE2E2",color:"#991B1B",fontSize:11,fontWeight:500}}>{label}</span>)}
+                  </div></>}
+                {fac.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#0369A1",marginBottom:3}}>Facilitated (normal)</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                    {fac.map(({label},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#E0F2FE",color:"#0369A1",fontSize:11,fontWeight:500}}>{label}</span>)}
+                  </div></>}
+                {norm.length>0&&<div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Normal: {norm.map(({label})=>label).join(", ")}</div>}
+                {v("nkt_notes")&&<div style={{fontSize:11,color:"#374151",marginTop:2}}>Notes: {v("nkt_notes")}</div>}
+              </div>;
+            })()}
           </>}
 
           {/* Kinetic Chain */}
