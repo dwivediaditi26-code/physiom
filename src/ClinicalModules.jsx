@@ -8446,7 +8446,7 @@ ${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div>
 
           {/* SOAP content — card style */}
           {currentText ? (
-            <div style={{fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+            <div style={{fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif"}}>
               {currentText.split("\n").map((line,i)=>{
                 if(!line.trim()) return <div key={i} style={{height:4}}/>;
 

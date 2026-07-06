@@ -825,7 +825,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
   ];
 
   return (
-    <div style={{fontFamily:"'DM Sans','Helvetica Neue',sans-serif",background:"#F8FAFC",minHeight:"100vh",padding:"0 0 24px"}}>
+    <div style={{fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",background:"#F8FAFC",minHeight:"100vh",padding:"0 0 24px"}}>
       <style>{`
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes slideOut{from{opacity:1;transform:translateX(0) scaleY(1);max-height:200px}to{opacity:0;transform:translateX(60px) scaleY(0);max-height:0;margin:0;padding:0}}

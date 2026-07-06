@@ -1727,7 +1727,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     <div style={{
       position:"fixed",inset:0,zIndex:9000,background:C.bg,
       display:"flex",flexDirection:"column",
-      fontFamily:"'DM Sans','Helvetica Neue',sans-serif",
+      fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",
       overflowY:"auto",
       animation:mounted?"none":"fadeUp 0.3s ease",
     }}>
