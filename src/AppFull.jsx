@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection,
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
-  ErgoModule, CyriaxModule, CyriaxRegionTests, generateDiagnosis,
+  ErgoModule, CyriaxModule, CyriaxRegionTests,
   PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
 import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule, LiveSOAPPanel,
   PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
@@ -218,10 +218,7 @@ function AppInner({ currentUser, onSignOut }) {
       return !!(draft && Object.keys(draft).length > 5);
     } catch { return false; }
   });
-  const [showDx, setShowDx] = useState(false);
-  const [dx, setDx] = useState(null);
   const [infoModal, setInfoModal] = useState(null);
-  const [expandedDx, setExpandedDx] = useState({});
   const [navOpen, setNavOpen] = useState(false);
   // bnavHidden removed — bottom nav is now always visible
   const [bnavTab, setBnavTab] = useState(null); // null=no panel open, or "assessment"|"advanced"|"treatment"|"documentation"|"top"
@@ -521,14 +518,6 @@ function AppInner({ currentUser, onSignOut }) {
     a.download = `assessment_${(data["dem_name"]||"patient").replace(/\s+/g,"_")}_${new Date().toLocaleDateString("en-GB").replace(/\//g,"-")}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    // Also update lastDx on patient record
-    if (activePatientId && dx) {
-      setPatients(prev => {
-        const updated = prev.map(p => p.id === activePatientId ? {...p, lastDx: dx.dx?.[0]?.label || ""} : p);
-        savePatientDB(updated, currentUser?.id);
-        return updated;
-      });
-    }
     setJsonMsg({type:"success", text:"✅ Assessment exported successfully!"});
     setTimeout(()=>setJsonMsg(null), 3000);
   };
@@ -555,7 +544,6 @@ function AppInner({ currentUser, onSignOut }) {
     reader.readAsText(file);
   };
 
-  const runDx = () => { setDx(generateDiagnosis(data)); setShowDx(true); };
   const navTo = useCallback((key, ctx = {}) => {
     setActive(key);
     setNavContext(ctx);
@@ -617,7 +605,6 @@ function AppInner({ currentUser, onSignOut }) {
     return(<input type={t.type||"text"} value={val} onChange={e=>set(t.id,e.target.value)} placeholder={t.placeholder||""} style={base}/>);
   },[data,set]);
 
-  const sysColors={CPA:C.blue,STTT:PC.yellow,FMS:PC.green,Posture:PC.purple,"Kinetic Chain":PC.accent,Fascia:"#f97316","Muscle Activation":PC.purple,Structural:PC.red};
 
   // shared sidebar list renderer used by both desktop sidebar and mobile drawer
   // ── Collapsible sidebar state ──
@@ -900,7 +887,6 @@ function AppInner({ currentUser, onSignOut }) {
       {showPdfReports && (
         <PdfReportsModal
           data={data}
-          dx={dx}
           patients={patients}
           onClose={()=>setShowPdfReports(false)}
         />
@@ -1222,65 +1208,6 @@ function AppInner({ currentUser, onSignOut }) {
             );
           })()}
 
-          {/* Diagnosis Panel */}
-          {showDx&&dx&&(
-            <div style={{background:PC.surface,border:`1px solid ${PC.accent}30`,borderRadius:14,padding:20,marginBottom:20}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                <div style={{fontSize:"1.05rem",fontWeight:800,color:PC.accent}}>📋 Multi-System Diagnosis Report</div>
-                <div style={{display:"flex",gap:8}}>
-                  <span style={{fontSize:"0.75rem",padding:"2px 8px",borderRadius:10,background:"rgba(0,229,255,0.1)",color:PC.accent}}>{completedCount} fields · {dx.dx.length} diagnoses</span>
-                  <button onClick={()=>setShowDx(false)} style={{background:"none",border:`1px solid ${PC.border}`,color:PC.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:"0.82rem"}}>✕</button>
-                </div>
-              </div>
-              {dx.redFlags.length>0&&(
-                <div style={{background:"rgba(255,77,109,0.1)",border:`1px solid ${PC.red}40`,borderRadius:10,padding:14,marginBottom:14}}>
-                  <div style={{fontWeight:800,color:PC.red,marginBottom:8}}>🚨 RED FLAGS</div>
-                  {dx.redFlags.map((rf,i)=><div key={i} style={{padding:"5px 10px",background:"rgba(255,77,109,0.07)",borderRadius:6,marginBottom:4,fontSize:"0.76rem",color:rf.severity==="urgent"?PC.red:PC.yellow,fontWeight:600}}>{rf.severity==="urgent"?"🔴 URGENT: ":"🟡 REFER: "}{rf.label}</div>)}
-                </div>
-              )}
-              {dx.dx.length===0?(
-                <div style={{textAlign:"center",padding:30,color:PC.muted}}><div style={{fontSize:"2rem",marginBottom:8}}>📝</div><div>Enter patient data above to refine diagnosis.</div></div>
-              ):(
-                <>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-                    {dx.dx.map(d=><span key={d.name+d.system} style={{padding:"2px 9px",borderRadius:20,fontSize:"0.66rem",fontWeight:700,background:`${sysColors[d.system]||PC.accent}15`,color:sysColors[d.system]||PC.accent,border:`1px solid ${sysColors[d.system]||PC.accent}30`}}>✓ {d.system}</span>)}
-                  </div>
-                  {dx.dx.map((d,i)=>{
-                    const col=sysColors[d.system]||PC.accent;
-                    const exp=expandedDx[i];
-                    return(
-                      <div key={i} style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,marginBottom:9,overflow:"hidden"}}>
-                        <div onClick={()=>setExpandedDx(p=>({...p,[i]:!p[i]}))} style={{padding:"11px 13px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"flex-start",borderLeft:`3px solid ${col}`}}>
-                          <div>
-                            <div style={{display:"flex",gap:7,alignItems:"center",marginBottom:4}}>
-                              <span style={{fontSize:"0.8rem",fontWeight:700,padding:"2px 7px",borderRadius:7,background:`${col}20`,color:col}}>{d.system}</span>
-                              <span style={{fontSize:"0.8rem",fontWeight:700,padding:"2px 7px",borderRadius:7,background:d.confidence==="High"?"rgba(0,201,122,0.15)":"rgba(255,179,0,0.15)",color:d.confidence==="High"?PC.green:PC.yellow}}>{d.confidence}</span>
-                            </div>
-                            <div style={{fontWeight:700,fontSize:"0.86rem"}}>{i+1}. {d.name}</div>
-                          </div>
-                          <span style={{color:PC.muted,fontSize:"0.75rem"}}>{exp?"▲":"▼"}</span>
-                        </div>
-                        {exp&&(
-                          <div style={{padding:"0 13px 13px 16px"}}>
-                            <div style={{marginBottom:10}}><div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Evidence</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{d.evidence.map((e,j)=><span key={j} style={{fontSize:"0.78rem",padding:"2px 7px",borderRadius:7,background:PC.s3,color:PC.text,border:`1px solid ${PC.border}`}}>✓ {e}</span>)}</div></div>
-                            {d.mechanism&&<div style={{marginBottom:10}}><div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Mechanism</div><div style={{background:PC.s3,borderRadius:8,padding:10,fontSize:"0.76rem",color:PC.text,lineHeight:1.6}}>{d.mechanism}</div></div>}
-                            {d.treatment&&d.treatment.length>0&&<div><div style={{fontSize:"0.8rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Treatment Plan</div>{d.treatment.map((t,j)=><div key={j} style={{display:"flex",gap:8,padding:"5px 9px",background:PC.s3,borderRadius:7,marginBottom:4,alignItems:"flex-start"}}><span style={{color:PC.a3,fontWeight:700,flexShrink:0}}>→</span><span style={{fontSize:"0.76rem",color:PC.text,lineHeight:1.5}}>{t}</span></div>)}</div>}
-                            {d.interpretation&&<div style={{marginTop:10,padding:"8px 11px",background:"rgba(255,179,0,0.07)",border:"1px solid rgba(255,179,0,0.2)",borderRadius:8,fontSize:"0.78rem",color:PC.yellow,lineHeight:1.5}}>⚠ {d.interpretation}</div>}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {dx.fmsTotal!==null&&(
-                    <div style={{marginTop:10,padding:12,background:PC.s2,borderRadius:8,border:`1px solid ${PC.border}`,display:"flex",alignItems:"center",gap:12}}>
-                      <div style={{textAlign:"center",minWidth:55}}><div style={{fontSize:"1.8rem",fontWeight:800,color:dx.fmsTotal>=17?PC.green:dx.fmsTotal>=15?PC.yellow:PC.red}}>{dx.fmsTotal}</div><div style={{fontSize:"0.78rem",color:PC.muted}}>FMS/21</div></div>
-                      <div style={{fontSize:"0.76rem",color:PC.muted}}>{dx.fmsTotal>=17?"✅ Low risk":dx.fmsTotal>=15?"⚠️ Moderate risk — corrective exercises":"🔴 High risk — corrective exercises before loading"}</div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
 
           {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && (
           <div style={{marginBottom:24}}>
