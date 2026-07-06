@@ -77,7 +77,68 @@ function mmtFallbackLabel(raw) {
   if (/^[a-z]\d+$/i.test(cleaned.replace(/\s/g, ""))) {
     return `${cleaned.replace(/\s/g, "").toUpperCase()} (Myotome level)`;
   }
-  return cleaned.replace(/\w/g, c => c.toUpperCase());
+  return cleaned.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ─── Shared Cyriax/STTT key resolver ────────────────────────────────────────
+// Single source of truth for turning a cyriax_<region>_<fieldtype>_<testid>
+// (or legacy cy_*) key into its real region label, field-type word, and test
+// label. Before this, THREE separate copies of this parsing existed
+// (buildRealtimeSOAP's Live SOAP text, SOAPNoteModule's visual card grid,
+// and Patient Profile) and had drifted: all three used a LAZY region regex
+// that mis-split any two-word region id (wrist_hand, ankle_foot) -- e.g.
+// "cyriax_wrist_hand_act_rom_wr_a_flex" resolved region as just "wrist" and
+// left "hand_" glued onto the remainder, which then failed every field-type
+// check and fell through to a raw title-cased fallback: "Hand Act Rom Wr A
+// Flex" instead of the real "Wrist Flexion". Fixing this once, here, and
+// reusing it everywhere means it can't silently regress or diverge again.
+const CYRIAX_REGION_LABELS = { cervical:"Cervical", shoulder:"Shoulder", elbow:"Elbow", wrist_hand:"Wrist/Hand", hip:"Hip", knee:"Knee", ankle_foot:"Ankle/Foot", lumbar:"Lumbar", thoracic:"Thoracic", tmj:"TMJ" };
+const CYRIAX_REGION_KEYS = Object.keys(CYRIAX_REGIONS_DATA).sort((a,b)=>b.length-a.length);
+const CYRIAX_FIELD_TYPES = [
+  ["act_limited_","Limited: "],["act_comp_","Compensation: "],
+  ["pass_pain_","Passive pain: "],["pass_rom_","Passive: "],["pass_ovp_","Overpressure: "],
+  ["act_pain_","Pain: "],["act_rom_","ROM: "],["pass_ef_","End-feel: "],
+  ["res_notes_","Notes: "],["res_","Resisted: "],
+];
+const CYRIAX_TEST_LABEL = {};
+Object.entries(CYRIAX_REGIONS_DATA).forEach(([region, r]) => {
+  CYRIAX_TEST_LABEL[region] = {};
+  [...(r.activeROM||[]), ...(r.passiveROM||[]), ...(r.resistedTests||[])].forEach(t => {
+    CYRIAX_TEST_LABEL[region][t.id] = t.label;
+  });
+});
+const CYRIAX_LEGACY_REGION = { c:"Cervical", s:"Shoulder", e:"Elbow", k:"Knee", h:"Hip", w:"Wrist", t:"TMJ", f:"Foot/Ankle" };
+
+// Returns { region, regionKey, word, testId, label, cat } for a single real
+// cyriax_/cy_ key, or null if the key isn't recognizable at all.
+function resolveCyriaxKey(k) {
+  if (k.startsWith("cyriax_")) {
+    const withoutPrefix = k.slice("cyriax_".length);
+    const regionKey = CYRIAX_REGION_KEYS.find(rk => withoutPrefix.startsWith(rk + "_"));
+    if (!regionKey) return null;
+    const rest = withoutPrefix.slice(regionKey.length + 1);
+    const region = CYRIAX_REGION_LABELS[regionKey] || regionKey.replace(/_/g," ");
+    const ft = CYRIAX_FIELD_TYPES.find(([p]) => rest.startsWith(p));
+    let word = "", testId = rest, cat = "active";
+    if (ft) { const [prefix, w] = ft; word = w; testId = rest.slice(prefix.length); }
+    if (rest.startsWith("res_")) cat = "resisted";
+    else if (rest.startsWith("pass_")) cat = "passive";
+    const label = (CYRIAX_TEST_LABEL[regionKey]||{})[testId] || testId.replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+    return { region, regionKey, word, testId, label, cat };
+  }
+  if (k.startsWith("cy_")) {
+    const legacyMatch = k.match(/^cy_([csekhwtf])_(.+)$/);
+    if (legacyMatch) {
+      const region = CYRIAX_LEGACY_REGION[legacyMatch[1]] || "";
+      const label = legacyMatch[2].replace(/_/g," ").replace(/\b\w/g, l=>l.toUpperCase());
+      let cat = "active";
+      if (k.includes("_r_")) cat = "resisted"; else if (k.includes("_p_")) cat = "passive";
+      return { region, regionKey:"", word:"", testId:legacyMatch[2], label, cat };
+    }
+    const label = k.replace(/^cy_/, "").replace(/_/g," ").replace(/\b\w/g, l=>l.toUpperCase());
+    return { region:"", regionKey:"", word:"", testId:k, label, cat:"active" };
+  }
+  return null;
 }
 
 function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder="", data, set, note }) {
@@ -3083,40 +3144,30 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   }
 
   // ── STTT / CYRIAX ASSESSMENT — scan cyriax_<region>_* and legacy cy_* keys ──
+  // Uses the shared resolveCyriaxKey() resolver (see top of file) instead of
+  // its own inline region/field parsing -- that inline copy had the same
+  // lazy-region-regex bug fixed elsewhere this session (two-word regions
+  // like wrist_hand/ankle_foot garbled into "Hand Act Rom Wr A Flex"), just
+  // never caught here because this is the Live SOAP text builder, a
+  // different code path from the visual SOAP card grid.
   {
     const cyriaxLines = [];
     const SKIP_EXACT = new Set(["cy_contractile","cy_non_contractile","cy_capsular_pattern","cy_capsular","cy_endfeel","cy_notes"]);
-    // CyriaxModule saves: cyriax_<regionName>_<moveId>  e.g. cyriax_shoulder_a_abd
-    // Legacy keys use cy_* prefix — scan both
     const cyKeys = Object.keys(data).filter(k =>
       (k.startsWith("cy_") || k.startsWith("cyriax_")) &&
       data[k] && String(data[k]).trim() && !SKIP_EXACT.has(k)
     );
     const resisted = [], active = [], passive = [], endfeel = [], other = [];
-    const REGION_LABEL = { cervical:"Cervical", shoulder:"Shoulder", elbow:"Elbow", wrist_hand:"Wrist/Hand", hip:"Hip", knee:"Knee", ankle_foot:"Ankle/Foot", lumbar:"Lumbar", thoracic:"Thoracic", tmj:"TMJ" };
     cyKeys.forEach(k => {
       const val = String(data[k]).trim();
       if (!val || val==="Not tested") return;
-      let region = "";
-      let moveLabel = k;
-      const cyriaxMatch = k.match(/^cyriax_([a-z_]+?)_([a-z_]+(?:_[a-z0-9]+)*)$/);
-      if (cyriaxMatch) {
-        region = REGION_LABEL[cyriaxMatch[1]] || cyriaxMatch[1].replace(/_/g," ");
-        moveLabel = cyriaxMatch[2].replace(/_/g," ").replace(/\b\w/g, l=>l.toUpperCase());
-      } else {
-        const legacyMatch = k.match(/^cy_([csekhwtf])_(.+)$/);
-        if (legacyMatch) {
-          region = ({c:"Cervical",s:"Shoulder",e:"Elbow",k:"Knee",h:"Hip",w:"Wrist",t:"TMJ",f:"Foot/Ankle"}[legacyMatch[1]] || "");
-          moveLabel = legacyMatch[2].replace(/_/g," ").replace(/\b\w/g, l=>l.toUpperCase());
-        } else {
-          moveLabel = k.replace(/^cy_/, "").replace(/_/g," ").replace(/\b\w/g, l=>l.toUpperCase());
-        }
-      }
-      const entry = `  ${region?`[${region}] `:""}${moveLabel}: ${val}`;
-      if (k.includes("_r_")) resisted.push(entry);
-      else if (k.includes("_a_")) active.push(entry);
-      else if (k.includes("_p_")) passive.push(entry);
-      else other.push(entry);
+      const resolved = resolveCyriaxKey(k);
+      if (!resolved) return;
+      const { region, word, label, cat } = resolved;
+      const entry = `  ${region?`[${region}] `:""}${label}: ${word}${val}`;
+      if (cat === "resisted") resisted.push(entry);
+      else if (cat === "passive") passive.push(entry);
+      else active.push(entry);
     });
     const efKeys = Object.keys(data).filter(k => k.startsWith("ef_") || k.startsWith("endfeel_") || k==="cy_endfeel");
     efKeys.forEach(k => { const val=v(k); if(val) endfeel.push(`  End-feel: ${val}`); });
@@ -3304,7 +3355,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       hfs_step:"Step Down", hfs_lunge:"Lunge",
       afs_df:"Dorsiflexion Screen", afs_calf:"Calf Raise", afs_hop:"Hop & Stick", afs_squat:"Squat",
     };
-    const fsLabel = (id) => FS_TEST_LABELS[id] || id.replace(/^[a-z]+fs_/, "").replace(/_/g, " ").replace(/\w/g, c => c.toUpperCase());
+    const fsLabel = (id) => FS_TEST_LABELS[id] || id.replace(/^[a-z]+fs_/, "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
     const gradeLabel = (g) => g === 0 ? "Normal" : g === 1 ? "Compensated" : g === 2 ? "Abnormal" : `Grade ${g}`;
     const gradeFlag  = (g) => g === 0 ? "✅" : g === 1 ? "⚠️" : "🔴";
     FS_REGIONS.forEach(({ key, label }) => {
@@ -4536,40 +4587,13 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               parsing already validated for the text version, rather than a
               hand-copied per-test label list that could go stale. */}
           {(()=>{
-            // FIX #1 (region-key bug): the old regex `/^cyriax_([a-z_]+?)_(.+)$/`
-            // used a LAZY region-name match, so any two-word region id
-            // (wrist_hand, ankle_foot) got split wrong — e.g.
-            // "cyriax_wrist_hand_act_rom_wr_a_flex" matched regionKey="wrist"
-            // and left "hand_act_rom_wr_a_flex" as "rest", which then failed
-            // every FIELD_TYPES prefix check and fell through to the raw
-            // title-cased fallback: "Hand Act Rom Wr A Flex" — exactly the
-            // garbled heading reported. Fixed by matching against the real,
-            // known region keys from CYRIAX_REGIONS_DATA (longest-first)
-            // instead of guessing region boundaries with a regex.
-            //
-            // FIX #2 (redundant cards): ROM value / Pain / Limited /
-            // Compensation for the SAME movement were previously three
-            // separate field keys that each became their OWN card with a
-            // near-duplicate heading (repeating the test name three times).
-            // Now grouped by (region, testId) into ONE card per real test,
-            // with ROM/Pain/Limited/etc. as stacked rows inside it — same
-            // information, a third of the cards, no repeated headings.
+            // Uses the shared resolveCyriaxKey() resolver (top of file)
+            // instead of a locally-duplicated copy of the same region/
+            // field-type parsing -- that duplication is exactly how the
+            // lazy-region-regex bug (wrist_hand/ankle_foot garbling into
+            // "Hand Act Rom Wr A Flex") drifted between this visual card
+            // view and the plain-text Live SOAP builder in the first place.
             const SKIP_EXACT = new Set(["cy_contractile","cy_non_contractile","cy_capsular_pattern","cy_capsular","cy_endfeel","cy_notes"]);
-            const REGION_LABEL = { cervical:"Cervical", shoulder:"Shoulder", elbow:"Elbow", wrist_hand:"Wrist/Hand", hip:"Hip", knee:"Knee", ankle_foot:"Ankle/Foot", lumbar:"Lumbar", thoracic:"Thoracic", tmj:"TMJ" };
-            const REGION_KEYS = Object.keys(CYRIAX_REGIONS_DATA).sort((a,b)=>b.length-a.length);
-            const FIELD_TYPES = [
-              ["act_limited_","Limited: "],["act_comp_","Compensation: "],
-              ["pass_pain_","Passive pain: "],["pass_rom_","Passive: "],["pass_ovp_","Overpressure: "],
-              ["act_pain_","Pain: "],["act_rom_","ROM: "],["pass_ef_","End-feel: "],
-              ["res_notes_","Notes: "],["res_","Resisted: "],
-            ];
-            const TEST_LABEL = {};
-            Object.entries(CYRIAX_REGIONS_DATA).forEach(([region, r]) => {
-              TEST_LABEL[region] = {};
-              [...(r.activeROM||[]), ...(r.passiveROM||[]), ...(r.resistedTests||[])].forEach(t => {
-                TEST_LABEL[region][t.id] = t.label;
-              });
-            });
             const cyKeys = Object.keys(data).filter(k => (k.startsWith("cy_")||k.startsWith("cyriax_")) && data[k] && String(data[k]).trim() && !SKIP_EXACT.has(k));
             if (!cyKeys.length && !v("cy_contractile") && !v("cy_non_contractile") && !v("cy_capsular_pattern") && !v("cy_notes")) return null;
             // Card-grid style matching MMT below, instead of plain bullet
@@ -4577,31 +4601,14 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             // reflects whether any row for this test reads as painful/limited
             // (amber) vs full/normal (green), same visual language as the
             // MMT grade-based coloring right below this section.
-            const merged = {}; // key: region|testId -> { region, label, cat, rows:[{word,value}] }
+            const merged = {}; // key: regionKey|testId -> { region, label, cat, rows:[{word,value}] }
             const order = [];
             cyKeys.forEach(k => {
               const val = String(data[k]).trim();
-              if (!k.startsWith("cyriax_")) {
-                // legacy bare cy_ key (not region-scoped) — keep as its own
-                // single-row card rather than dropping it.
-                const label = k.replace(/^cy_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
-                const gk = `_legacy_${k}`;
-                merged[gk] = { region:"", label, cat:"active", rows:[{ word:"", value:val }] };
-                order.push(gk);
-                return;
-              }
-              const withoutPrefix = k.slice("cyriax_".length);
-              const regionKey = REGION_KEYS.find(rk => withoutPrefix.startsWith(rk + "_"));
-              if (!regionKey) return; // unrecognized region — skip rather than mislabel
-              const rest = withoutPrefix.slice(regionKey.length + 1);
-              const region = REGION_LABEL[regionKey] || regionKey.replace(/_/g," ");
-              const ft = FIELD_TYPES.find(([p]) => rest.startsWith(p));
-              let word = "", testId = rest, cat = "active";
-              if (ft) { const [prefix, w] = ft; word = w; testId = rest.slice(prefix.length); }
-              if (rest.startsWith("res_")) cat = "resisted";
-              else if (rest.startsWith("pass_")) cat = "passive";
-              const label = (TEST_LABEL[regionKey]||{})[testId] || testId.replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
-              const gk = `${regionKey}|${testId}`;
+              const resolved = resolveCyriaxKey(k);
+              if (!resolved) return;
+              const { region, regionKey, word, testId, label, cat } = resolved;
+              const gk = regionKey ? `${regionKey}|${testId}` : `_legacy_${k}`;
               if (!merged[gk]) { merged[gk] = { region, label, cat, rows:[] }; order.push(gk); }
               merged[gk].rows.push({ word, value: val });
             });
@@ -8843,7 +8850,8 @@ ${soap.P}` : "";
 
 export { GaitModule, OutcomeMeasuresModule, buildClinicalInterpretation, buildRealtimeSOAP,
   SOAPNoteModule, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX, ExercisePrescriptionModule, PalpationModule,
-  TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel, ObservationModule, detectModulesV2 };
+  TreatmentTechniquesModule, TreatmentSessionLogModule, Sparkline, LiveSOAPPanel, ObservationModule, detectModulesV2,
+  MMT_DATA_LABELS, mmtFallbackLabel, ST_DATA_LABELS, SCALE_DATA_LABELS, resolveCyriaxKey };
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // OBSERVATION MODULE — Magee's Orthopedic Physical Assessment (Inspection Only)

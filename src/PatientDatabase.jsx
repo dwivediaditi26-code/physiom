@@ -4,7 +4,9 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { createPortal } from "react-dom";
 import { supabase } from "./supabase.js";
 import { getC } from "./utils.jsx";
-import { DERMATOMES, MYOTOMES, REFLEXES } from "./PhysioNeuro.jsx";
+import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION } from "./PhysioNeuro.jsx";
+import { MMT_DATA_LABELS, mmtFallbackLabel, ST_DATA_LABELS, SCALE_DATA_LABELS, resolveCyriaxKey } from "./ClinicalModules.jsx";
+import { NKT_REGIONS } from "./SubjectiveObjective.jsx";
 import BodyChartPro from "./BodyChartPro.jsx";
 // These used to be flat constants shared by every user of a device. Now
 // they're per-user: two students sharing one browser/tablet each get their
@@ -1015,7 +1017,10 @@ const SPECIAL_TEST_NAMES = {
 function stName(key) {
   const base = key.replace(/_L$|_R$|_left$|_right$/i,"");
   const side = key.match(/_L$|_left$/i) ? " (L)" : key.match(/_R$|_right$/i) ? " (R)" : "";
-  return (SPECIAL_TEST_NAMES[base] || base.replace(/^st_/,"").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())) + side;
+  // ST_DATA_LABELS (real source, same as SOAP) checked first -- SPECIAL_TEST_NAMES
+  // is a separate hand-copied map with the same staleness risk already found
+  // and fixed once for the SOAP builder (57 of 89 real tests were missing).
+  return (ST_DATA_LABELS[base] || SPECIAL_TEST_NAMES[base] || base.replace(/^st_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase())) + side;
 }
 
 function QuickNotesWidget({ d, patient, onSaveField, C }) {
@@ -2124,8 +2129,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               const SYM_BG={pain:"#FEF2F2",tingling:"#FEFCE8",numbness:"#F5F3FF",burning:"#FFF7ED",stiffness:"#EFF6FF",weakness:"#F0FDF4",radiation:"#FDF2F8",swelling:"#ECFEFF"};
               const SYM_TEXT={pain:"#991B1B",tingling:"#92400E",numbness:"#5B21B6",burning:"#9A3412",stiffness:"#1E40AF",weakness:"#166534",radiation:"#9D174D",swelling:"#164E63"};
               if(entries.length===0&&legacyMarkers.length===0) return null;
-              const pills=entries.flatMap(e=>{const rl=(e.regionId||"").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase()).replace(/^Ant |^Post |^Left Lat |^Right Lat /,"").trim();return(e.symptoms||[]).map(sym=>({label:`${rl} — ${sym}`,sym,intensity:e.intensity}));});
-              const legPills=legacyMarkers.map(m=>({label:`${(m.region||"").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())} — ${m.type||"pain"}`,sym:m.type||"pain",intensity:null}));
+              const pills=entries.flatMap(e=>{const rl=(e.regionId||"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()).replace(/^Ant |^Post |^Left Lat |^Right Lat /,"").trim();return(e.symptoms||[]).map(sym=>({label:`${rl} — ${sym}`,sym,intensity:e.intensity}));});
+              const legPills=legacyMarkers.map(m=>({label:`${(m.region||"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase())} — ${m.type||"pain"}`,sym:m.type||"pain",intensity:null}));
               const allPills=[...pills,...legPills].slice(0,8);
               const BODY_IMG="https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/body-chart-4view";
               // Use stored centroid if available (saved by BodyChartPro since latest version)
@@ -2410,12 +2415,19 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               ));
               const kcKeys  = Object.keys(d).filter(k=>k.startsWith("kc_")&&d[k]);
               const faKeys  = Object.keys(d).filter(k=>(k.startsWith("fa_")||k.startsWith("fascia_"))&&d[k]);
-              const cyKeys  = Object.keys(d).filter(k=>k.startsWith("cy_")&&d[k]);
+              // Was cy_ only -- missed every real cyriax_<region>_<fieldtype>_<testid>
+              // key entirely (the actual format CyriaxModule writes), so STTT
+              // data recorded via the real per-region exam never appeared here.
+              const cyKeys  = Object.keys(d).filter(k=>(k.startsWith("cy_")||k.startsWith("cyriax_"))&&d[k]);
               const nktKeys = Object.keys(d).filter(k=>k.startsWith("nkt_")&&d[k]);
               const obsKeys = Object.keys(d).filter(k=>k.startsWith("obs_")&&k!=="obs_snapshots"&&d[k]);
               // Outcome measures: om_history_* OR om_psfs_* / om_ndi_* / ndi_score / psfs_score etc
               const omKeys  = Object.keys(d).filter(k=>d[k]&&(k.startsWith("om_history_")||k.startsWith("om_psfs_")||k.startsWith("om_ndi_")||k.startsWith("om_koos_")||k.startsWith("om_dash_")||k.startsWith("om_lefs_")||/^(ndi_score|psfs_score|koos_score|dash_score|lefs_score|om_odi_score|om_report)$/.test(k)));
               const hasGait = !!(d.ag_antalgic||d.gait_pattern||d.g_rom_findings);
+              // Palpation pins are already self-describing (label/structures/
+              // tenderness/temp/texture/notes/side set by PalpationModule
+              // itself) -- no separate label map needed, just parse and render.
+              let palpPins=[];try{palpPins=JSON.parse(d.palp_pins||"[]");}catch{}
               const hasErgo = !!(d.ergo_total_score||d.ergo_cervical_risk);
 
               return (
@@ -2476,7 +2488,12 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         const rGrade=d[base+"_R"]||d[base+"_right"]||null;
                         const labelBase=base.replace(/^mmt_mmt_/,"mmt_");
                         const info=MMT_INFO[labelBase];
-                        const muscle=(info&&info.name)||MMT_LABEL_MAP[labelBase]||(labelBase.replace("mmt_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()));
+                        // Same real source SOAP already uses (MMT_DATA_LABELS,
+                        // derived straight from MMT_DATA) instead of the
+                        // separate hand-copied MMT_LABEL_MAP that produced
+                        // raw, barely-capitalized fragments like "Ecrb" for
+                        // any muscle it didn't happen to list.
+                        const muscle=(info&&info.name)||MMT_DATA_LABELS[labelBase]||MMT_LABEL_MAP[labelBase]||mmtFallbackLabel(labelBase.replace(/^mmt_/,""));
                         rows.push({base,muscle,root:(info&&info.root)||"",lGrade,rGrade});
                       });
                       const gradeCol=g=>{const n=parseFloat(g)||0;return n>=5?C.green:n>=4?"#d97706":"#dc2626";};
@@ -2523,7 +2540,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         const base=sideMatch?k.slice(0,k.length-sideMatch[0].length):k;
                         if(seen.has(base)) return; seen.add(base);
                         const lRaw=d[base+"_left"]||null, rRaw=d[base+"_right"]||null, cRaw=sideMatch?null:d[base];
-                        const name=SPECIAL_TEST_NAMES[base]||base.replace(/^st_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+                        const name=ST_DATA_LABELS[base]||SPECIAL_TEST_NAMES[base]||base.replace(/^st_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
                         rows.push({base,name,lRaw,rRaw,cRaw});
                       });
                       const isP=v=>!!v&&v.includes("Positive");
@@ -2557,11 +2574,56 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     })()}
                   </Sec>
 
-                  {/* ── Neurological ── */}
-                  <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes}>
+                  {/* ── Palpation ── */}
+                  {/* Previously had NO section anywhere in Patient Profile at
+                      all -- palp_pins data (structured findings from
+                      PalpationModule's body-map pins) never appeared here,
+                      even though it's fully recorded and already used
+                      elsewhere (SOAP note). Each pin is self-describing
+                      already (label/structures/tenderness/temp/texture/side),
+                      so no separate label lookup is needed here. */}
+                  <Sec icon="🖐️" title="Palpation" navKey="palpation" hasData={palpPins.length>0}>
                     {(()=>{
-                      // Group into Reflexes / Dermatomes / Myotomes with L/R pairing
-                      const seen=new Set(); const groups={Reflexes:[],Dermatomes:[],Myotomes:[]};
+                      if(!palpPins.length) return null;
+                      const abnTemp=t=>t&&/warm|hot|cold/i.test(t);
+                      const abnTend=t=>t&&/severe|moderate|tender/i.test(t);
+                      return(
+                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                          {palpPins.slice(0,10).map((p,i2)=>{
+                            const abn=abnTend(p.tenderness)||abnTemp(p.temp);
+                            return(
+                              <div key={p.id||i2} style={{padding:"8px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
+                                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,marginBottom:3}}>
+                                  <span style={{fontSize:12.5,fontWeight:700,color:C.text}}>{p.label||"Palpation site"}</span>
+                                  {p.side&&<span style={{fontSize:9.5,fontWeight:700,padding:"1px 7px",borderRadius:99,background:"#EDE9FE",color:C.primary,flexShrink:0}}>{p.side}</span>}
+                                </div>
+                                {p.structures&&<div style={{fontSize:10.5,color:C.muted,marginBottom:4}}>{p.structures}</div>}
+                                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                                  {p.tenderness&&<span style={{fontSize:10.5,fontWeight:700,padding:"2px 8px",borderRadius:99,background:abnTend(p.tenderness)?"#FEF2F2":"#ECFDF5",color:abnTend(p.tenderness)?"#dc2626":C.green}}>{p.tenderness}</span>}
+                                  {p.temp&&<span style={{fontSize:10.5,fontWeight:700,padding:"2px 8px",borderRadius:99,background:abnTemp(p.temp)?"#FEF3C7":"#ECFDF5",color:abnTemp(p.temp)?"#92400E":C.green}}>{p.temp}</span>}
+                                  {(p.texture||[]).map((tx,ti)=><span key={ti} style={{fontSize:10.5,fontWeight:700,padding:"2px 8px",borderRadius:99,background:"#F3F4F6",color:C.muted}}>{tx}</span>)}
+                                </div>
+                                {p.notes&&<div style={{fontSize:11,color:C.text,marginTop:5,lineHeight:1.4}}>{p.notes}</div>}
+                              </div>
+                            );
+                          })}
+                          {palpPins.length>10&&<div style={{fontSize:10.5,color:C.muted,padding:"2px 8px"}}>+{palpPins.length-10} more sites</div>}
+                        </div>
+                      );
+                    })()}
+                  </Sec>
+
+                  {/* ── Neurological ── */}
+                  <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes||!!d.gcs_eye}>
+                    {(()=>{
+                      // Group into Reflexes / Dermatomes / Myotomes / Neural
+                      // Tension with L/R pairing. Neural Tension (nt_ keys)
+                      // was previously NOT one of the explicit branches below
+                      // -- the catch-all "else" branch dumped every
+                      // unrecognized key into Dermatomes, which is exactly
+                      // why a real Neural Tension test (e.g. "NT SLR") showed
+                      // up under the DERMATOMES heading in a live screenshot.
+                      const seen=new Set(); const groups={Dermatomes:[],Myotomes:[],Reflexes:[],"Neural Tension":[]};
                       neuroKeys.forEach(k=>{
                         const sideMatch=k.match(/_(left|right)$/);
                         const base=sideMatch?k.slice(0,k.length-sideMatch[0].length):k;
@@ -2578,6 +2640,11 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                           const my=(MYOTOMES||[]).find(m=>("myo_"+m.level.replace(/[^a-zA-Z0-9]/g,"_").toLowerCase())===base);
                           label=my?`${my.level} — ${my.action}`:base.replace(/^myo_/,"").replace(/_/g,"–").toUpperCase();
                           sub=my?my.test:"";
+                        } else if(base.startsWith("nt_")){
+                          group="Neural Tension";
+                          const nt=(NEURAL_TENSION||[]).find(n=>n.id===base);
+                          label=nt?nt.label:base.replace(/^nt_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+                          sub=nt&&nt.nerve?nt.nerve:"";
                         } else {
                           group="Dermatomes";
                           const de=(DERMATOMES||[]).find(dd=>dd.id===base);
@@ -2596,8 +2663,29 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         return <span style={{display:"inline-block",padding:"2px 8px",borderRadius:99,fontSize:10.5,fontWeight:800,background:bg,color:c2}}>{v.split(" — ")[0].split(" (")[0].slice(0,14)}</span>;
                       };
                       const hasRows=Object.values(groups).some(a=>a.length>0);
+                      // GCS (Glasgow Coma Scale) -- real fields are gcs_eye/
+                      // gcs_verbal/gcs_motor (+ pupils), which never matched
+                      // the neuroKeys regex at all, so GCS never appeared
+                      // anywhere in Patient Profile regardless of whether it
+                      // was recorded.
+                      const gEye=parseInt(d.gcs_eye)||0, gVerbal=parseInt(d.gcs_verbal)||0, gMotor=parseInt(d.gcs_motor)||0;
+                      const gTotal=gEye+gVerbal+gMotor;
+                      const hasGcs=!!(d.gcs_eye||d.gcs_verbal||d.gcs_motor);
+                      const gcsCol=gTotal<=8?"#dc2626":gTotal<=12?"#d97706":C.green;
                       return(
                         <div>
+                          {hasGcs&&(
+                            <div style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`,marginBottom:hasRows?10:0}}>
+                              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                                <span style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:"uppercase",letterSpacing:"0.5px",flex:1}}>Glasgow Coma Scale</span>
+                                <span style={{fontSize:16,fontWeight:900,color:gcsCol}}>{gTotal}<span style={{fontSize:9.5,color:C.muted,fontWeight:600}}>/15</span></span>
+                              </div>
+                              <div style={{display:"flex",gap:10,fontSize:11,color:C.text}}>
+                                <span>E {gEye||"—"}</span><span>V {gVerbal||"—"}</span><span>M {gMotor||"—"}</span>
+                              </div>
+                              {(d.gcs_pupil_l||d.gcs_pupil_r)&&<div style={{fontSize:10.5,color:C.muted,marginTop:4}}>Pupils: L {d.gcs_pupil_l||"—"} · R {d.gcs_pupil_r||"—"}</div>}
+                            </div>
+                          )}
                           {hasRows&&(
                             <div style={{display:"grid",gridTemplateColumns:"1fr 84px 84px",gap:4,padding:"4px 8px 6px",marginBottom:2,borderBottom:`1px solid ${C.border}`}}>
                               <div style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px"}}>Test</div>
@@ -2647,7 +2735,11 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                             const curr=parseFloat(hist[hist.length-1]?.score);
                             const prev=hist.length>=2?parseFloat(hist[hist.length-2]?.score):null;
                             const diff=prev!=null?curr-prev:null;
-                            const label=OM_NAMES[scaleId]||scaleId.toUpperCase();
+                            // SCALE_DATA_LABELS (real source, same as SOAP) checked
+                            // first -- OM_NAMES is a separate hand-copied map missing
+                            // many real scales (all Stroke/TBI scales, 10MWT, etc.),
+                            // same gap already fixed once for the SOAP builder.
+                            const label=SCALE_DATA_LABELS[scaleId]||OM_NAMES[scaleId]||scaleId.toUpperCase();
                             const max=OM_MAX[scaleId]||100;
                             const pct=isNaN(curr)?0:Math.min(100,Math.max(0,(curr/max)*100));
                             const lowIsBetter=["odi","ndi","dash","quickdash","vas","nprs","tsk","fabq","fabqpa","pcs","womac","spadi","pdi","rmdq","tug","koosjr","hoosjr"].includes(scaleId);
@@ -2797,7 +2889,13 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
                   {/* ── STTT ── */}
                   {nktKeys.length>0&&(()=>{
-                    const nktRows=nktKeys.map(k=>({k,label:k.replace("nkt_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase()),val:d[k]}));
+                    // Real label lookup built from NKT_REGIONS (same source
+                    // the CPA module's own UI and the diagnosis engine use)
+                    // instead of title-casing the raw key -- that's exactly
+                    // why muscles like "dnf"/"ta" showed as bare codes
+                    // instead of "Deep Neck Flexors"/"Tibialis Anterior".
+                    const NKT_TEST_LABEL={};Object.values(NKT_REGIONS).forEach(reg=>(reg.tests||[]).forEach(t=>{NKT_TEST_LABEL[t.id]=t.label;}));
+                    const nktRows=nktKeys.map(k=>({k,label:NKT_TEST_LABEL[k]||k.replace("nkt_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()),val:d[k]}));
                     nktRows.sort((a,b)=>{const aw=a.val&&(a.val.includes("Inhibited")||a.val.includes("Weak"))?0:1;const bw=b.val&&(b.val.includes("Inhibited")||b.val.includes("Weak"))?0:1;return aw-bw;});
                     const CpaPill=({v2})=>{if(!v2)return<span style={{fontSize:11,color:"#D1D5DB"}}>—</span>;const abn=v2.includes("Inhibited")||v2.includes("Weak");return<span style={{padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:abn?"#FEF3C7":"#ECFDF5",color:abn?"#92400E":C.green}}>{v2.split(" — ")[0].slice(0,16)}</span>;};
                     return(
@@ -2821,20 +2919,31 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {cyKeys.length>0&&(
                     <Sec icon="🦴" title="STTT / Orthopaedic" navKey="cyriax_full" hasData={true}>
                       {(()=>{
-                        const rows=cyKeys.map(k=>({k,label:k.replace("cy_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()),val:d[k]}));
+                        // Uses the shared resolveCyriaxKey() resolver (also
+                        // used by the SOAP note and Live SOAP text) instead of
+                        // a third hand-rolled raw-key label -- and merges
+                        // ROM/Pain/Limited/etc. for the SAME test into one row
+                        // instead of one row per field.
+                        const merged={};const order=[];
+                        cyKeys.forEach(k=>{
+                          const val=d[k];if(!val)return;
+                          const resolved=resolveCyriaxKey(k);if(!resolved)return;
+                          const {region,regionKey,word,testId,label}=resolved;
+                          const gk=regionKey?`${regionKey}|${testId}`:`_legacy_${k}`;
+                          if(!merged[gk]){merged[gk]={region,label,vals:[]};order.push(gk);}
+                          merged[gk].vals.push(`${word}${val}`);
+                        });
                         const isAbn=v=>{const t=String(v||"").toLowerCase();return !(t.includes("normal")||t.includes("full")||t.includes("negative"));};
-                        rows.sort((a,b)=>(isAbn(b.val)?1:0)-(isAbn(a.val)?1:0));
+                        const rows=order.map(gk=>{const it=merged[gk];const combined=it.vals.join(" · ");return{gk,label:it.label,region:it.region,val:combined,abn:isAbn(combined)};});
+                        rows.sort((a,b)=>(b.abn?1:0)-(a.abn?1:0));
                         return(
                           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:5}}>
-                            {rows.slice(0,8).map(r=>{
-                              const abn=isAbn(r.val);
-                              return(
-                                <div key={r.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
-                                  <span style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.2}}>{r.label}</span>
-                                  <span style={{flexShrink:0,padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:abn?"#FEF2F2":"#ECFDF5",color:abn?"#dc2626":C.green}}>{String(r.val).split(" — ")[0].slice(0,16)}</span>
-                                </div>
-                              );
-                            })}
+                            {rows.slice(0,8).map(r=>(
+                              <div key={r.gk} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
+                                <span style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.2}}>{r.label}{r.region&&<span style={{fontSize:9.5,fontWeight:700,color:C.muted,marginLeft:5}}>({r.region})</span>}</span>
+                                <span style={{flexShrink:0,padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:r.abn?"#FEF2F2":"#ECFDF5",color:r.abn?"#dc2626":C.green}}>{r.val.split(" — ")[0].slice(0,20)}</span>
+                              </div>
+                            ))}
                             {rows.length>8&&<div style={{fontSize:10.5,color:C.muted,padding:"4px 8px"}}>+{rows.length-8} more</div>}
                           </div>
                         );
@@ -3776,7 +3885,7 @@ function PostureSessionsView({ d, C, onNav }) {
             <span onClick={()=>onNav&&onNav("posture")} style={{fontSize:11,color:C.primary,fontWeight:700,cursor:"pointer"}}>Edit →</span>
           </div>
           <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-            {defects.map(k=>(<span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>{k.replace("posture_defect_","").replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}</span>))}
+            {defects.map(k=>(<span key={k} style={{padding:"3px 9px",borderRadius:20,fontSize:10.5,fontWeight:700,background:"#EDE9FE",color:C.primary,border:`1px solid ${C.primary}30`}}>{k.replace("posture_defect_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase())}</span>))}
           </div>
         </div>
       )}
