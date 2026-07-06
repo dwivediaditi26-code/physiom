@@ -4114,6 +4114,12 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const val_  = { fontSize:13,color:"#111827",lineHeight:1.5 };
   const row   = { borderBottom:"1px solid #F3F4F6",padding:"8px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,fontSize:13 };
   const chip_ = (bg,cl) => ({ display:"inline-block",padding:"3px 10px",borderRadius:100,background:bg,color:cl,fontSize:11,fontWeight:500,margin:"2px 3px 2px 0" });
+  // Small grouped card used WITHIN a section (S/O/A/P), so related fields
+  // (e.g. chief complaint, or "worse with" / "better with") read as one
+  // scannable block on a phone instead of a long unbroken column of labels.
+  const subCard = (accent="#E5E7EB") => ({ background:"#fff", borderRadius:10, borderLeft:`3px solid ${accent}`, padding:"8px 10px", marginBottom:8 });
+  const subLbl  = { fontSize:11,color:"#9CA3AF",fontWeight:500,marginBottom:4,display:"block" };
+  const bullet  = (text,i) => <div key={i} style={{fontSize:12,color:"#374151",lineHeight:1.9}}>&bull; {text}</div>;
   const inp   = { width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"7px 10px",fontSize:"0.78rem",fontFamily:"inherit",outline:"none",color:"#111827",background:"#FAFAFA",marginBottom:4,boxSizing:"border-box" };
   const subH  = (label, col="#334155") => (
     <div style={{display:"flex",alignItems:"center",gap:6,background:col,padding:"6px 12px",marginTop:12,marginBottom:6,borderRadius:6}}>
@@ -4138,6 +4144,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       }
       setActiveSection(active);
     }}>
+      <style>{`
+        .pm-soap-2col { display: grid; grid-template-columns: 1fr; gap: 6px; }
+        @media (min-width: 480px) { .pm-soap-2col { grid-template-columns: 1fr 1fr; } }
+      `}</style>
 
       {/* ── PATIENT HEADER ── */}
       <div style={{...card(),marginBottom:12}}>
@@ -4223,23 +4233,26 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {secBadge("Patient reported")}
         </div>
         <div style={cb}>
-          {cc&&<><span style={lbl}>Chief complaint</span><div style={{...val_,fontWeight:500,marginBottom:8}}>{cc}</div></>}
+          {(cc||loc||onset)&&<div style={subCard("#7c3aed")}>
+            {cc&&<><span style={subLbl}>Chief complaint</span><div style={{fontSize:13,fontWeight:500,color:"#111827",lineHeight:1.5,marginBottom:(loc||onset)?6:0}}>{cc}</div></>}
+            {loc&&<div style={{fontSize:12,color:"#374151",marginBottom:2}}><span style={{color:"#9CA3AF"}}>Site: </span>{loc}{rad?" → radiates: "+rad:""}</div>}
+            {onset&&<div style={{fontSize:12,color:"#374151"}}><span style={{color:"#9CA3AF"}}>Onset: </span>{[onset,dur].filter(Boolean).join(", ")}</div>}
+          </div>}
           {redFlags.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,color:"#991B1B",marginBottom:8,fontWeight:500}}>⚠ Red flags: {redFlags.join(", ")} — medical review indicated</div>}
-          {loc&&<><span style={lbl}>Pain site</span><div style={{...val_,marginBottom:8}}>{loc}{rad?" → radiates: "+rad:""}</div></>}
-          {onset&&<><span style={lbl}>Onset / mechanism</span><div style={{...val_,marginBottom:8}}>{[onset,dur].filter(Boolean).join(", ")}</div></>}
-          {agg.length>0&&<><span style={lbl}>Aggravating factors</span><div style={{marginBottom:8}}>{agg.slice(0,6).map((x,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{x}</span>)}</div></>}
-          {ease.length>0&&<><span style={lbl}>Relieving factors</span><div style={{marginBottom:8}}>{ease.slice(0,5).map((x,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{x}</span>)}</div></>}
-          {(morning||night)&&<><span style={lbl}>24-hour behaviour</span>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
-              {morning&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:10,color:"#9CA3AF",fontWeight:500}}>Morning</div><div style={{fontSize:12,color:"#111827",marginTop:2}}>{morning}</div></div>}
-              {night&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:10,color:"#9CA3AF",fontWeight:500}}>Night</div><div style={{fontSize:12,color:"#111827",marginTop:2}}>{night}</div></div>}
+          {agg.length>0&&<div style={subCard("#EF9F27")}><span style={subLbl}>Worse with</span>{agg.slice(0,6).map(bullet)}</div>}
+          {ease.length>0&&<div style={subCard("#639922")}><span style={subLbl}>Better with</span>{ease.slice(0,5).map(bullet)}</div>}
+          {(morning||night)&&<div style={subCard()}>
+            <span style={subLbl}>24-hour pattern</span>
+            <div className="pm-soap-2col">
+              {morning&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:10,color:"#9CA3AF",fontWeight:500}}>Morning</div><div style={{fontSize:12,color:"#111827",marginTop:2,lineHeight:1.4}}>{morning}</div></div>}
+              {night&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:10,color:"#9CA3AF",fontWeight:500}}>Night</div><div style={{fontSize:12,color:"#111827",marginTop:2,lineHeight:1.4}}>{night}</div></div>}
             </div>
-          </>}
+          </div>}
           {(phx||meds)&&<><span style={lbl}>History & medications</span>
             {phx&&<div style={{fontSize:12,color:"#374151",marginBottom:4}}>PMH: {phx}</div>}
             {meds&&<div style={{fontSize:12,color:"#374151",marginBottom:8}}>Meds: {meds}</div>}
           </>}
-          {goals_ar.length>0&&<><span style={lbl}>Patient goals</span><div style={{marginBottom:8}}>{goals_ar.map((g,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"3px 0",display:"flex",gap:6}}><span style={{color:"#6366F1"}}>→</span>{g}</div>)}</div></>}
+          {goals_ar.length>0&&<div style={subCard("#7c3aed")}><span style={subLbl}>Goals</span>{goals_ar.map((g,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"3px 0",display:"flex",gap:6}}><span style={{color:"#7c3aed"}}>→</span>{g}</div>)}</div>}
           {v("dem_occupation")&&<div style={{fontSize:12,color:"#9CA3AF"}}>{v("dem_occupation")}{v("dem_dominant_hand")?" · "+v("dem_dominant_hand")+" hand":""}</div>}
           {/* ── Regional clinician notes (loc_notes, moi_notes, agg_notes, rel_notes, symp_notes) ── */}
           {(()=>{
@@ -4258,8 +4271,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             if(!noteGroups.length) return null;
             return <><span style={lbl}>Clinician notes</span>
               {noteGroups.map(({region,parts},i)=>(
-                <div key={i} style={{marginBottom:6,background:"#F8F7FF",borderRadius:8,padding:"7px 10px",borderLeft:"3px solid #6366F1"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#6366F1",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.07em"}}>{region}</div>
+                <div key={i} style={{marginBottom:6,background:"#F8F7FF",borderRadius:8,padding:"7px 10px",borderLeft:"3px solid #7c3aed"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#7c3aed",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.07em"}}>{region}</div>
                   {parts.map(({label,text},j)=>(
                     <div key={j} style={{fontSize:12,color:"#374151",lineHeight:1.6,marginBottom:2}}>
                       <span style={{fontWeight:600,color:"#6B7280"}}>{label}: </span>{text}
