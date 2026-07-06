@@ -75,5 +75,8 @@ export default defineConfig({
     setupFiles: ['./src/__tests__/setupTests.js'],
     globals: true,
     css: false,
+    // e2e/ holds real-browser Playwright specs (different test runner,
+    // different globals) -- Vitest must never try to collect these.
+    exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
   },
 })
