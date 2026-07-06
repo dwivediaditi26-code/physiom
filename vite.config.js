@@ -1,8 +1,38 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// FIX: public/sw.js has always contained a literal, never-substituted
+// "__CACHE_VERSION__" placeholder — meaning the built service worker file
+// was byte-identical on every single deploy. Browsers detect service worker
+// updates by diffing the new sw.js against the currently installed one; if
+// they're identical, the browser assumes there's nothing new and keeps
+// running the OLD service worker indefinitely, regardless of how much the
+// actual app code changed. This is why a real, deployed, verified fix could
+// still appear completely absent for a user with the app already open or
+// installed to their home screen — not a deployment problem, a caching one.
+// This plugin substitutes a real per-build value after Vite copies sw.js
+// into dist/, so the file's contents (and therefore the cache name, and the
+// browser's update detection) actually change on every deploy.
+function swCacheBusterPlugin() {
+  return {
+    name: 'sw-cache-buster',
+    closeBundle() {
+      const swPath = path.resolve(__dirname, 'dist/sw.js')
+      if (!fs.existsSync(swPath)) return
+      const version = String(Date.now())
+      const content = fs.readFileSync(swPath, 'utf8').replaceAll('__CACHE_VERSION__', version)
+      fs.writeFileSync(swPath, content)
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), swCacheBusterPlugin()],
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {
