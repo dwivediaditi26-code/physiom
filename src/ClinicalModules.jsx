@@ -4187,10 +4187,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       <div style={{position:"sticky",top:0,zIndex:50,background:"#F8F8FC",borderBottom:"1px solid #E5E7EB",padding:"0 4px",marginBottom:8,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
         <div style={{display:"flex",alignItems:"center",gap:0,overflowX:"auto"}}>
           {[
-            {id:"S",label:"Subjective",sub:"History",color:"#1D4ED8",bg:"#DBEAFE",icon:"💬"},
+            {id:"S",label:"Subjective",sub:"History",color:"#7c3aed",bg:"#EDE9FE",icon:"💬"},
             {id:"O",label:"Objective",sub:"Clinical",color:"#065F46",bg:"#D1FAE5",icon:"🩺"},
-            {id:"A",label:"Assessment",sub:"Diagnosis",color:"#B45309",bg:"#FEF3C7",icon:"🧠"},
-            {id:"P",label:"Plan",sub:"Treatment",color:"#7C3AED",bg:"#EDE9FE",icon:"📋"},
+            {id:"A",label:"Assessment",sub:"Diagnosis",color:"#dc2626",bg:"#FEE2E2",icon:"🧠"},
+            {id:"P",label:"Plan",sub:"Treatment",color:"#1D4ED8",bg:"#DBEAFE",icon:"📋"},
           ].map(({id,label,sub,color,bg,icon})=>{
             const isActive = activeSection===id;
             return (
@@ -4216,8 +4216,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── S — SUBJECTIVE ── */}
-      <div id="soap-sec-S" style={card("#DBEAFE","#1D4ED8")}>
-        <div style={{...ch("#1e3a5f"),borderBottom:"none"}}>
+      <div id="soap-sec-S" style={card("#EDE9FE","#7c3aed")}>
+        <div style={{...ch("#7c3aed"),borderBottom:"none"}}>
           {secIcon("rgba(255,255,255,0.15)","#fff","💬")}
           {secTitle("S · Subjective","Patient reported","#fff")}
           {secBadge("Patient reported")}
@@ -4619,8 +4619,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── A — ASSESSMENT ── */}
-      <div id="soap-sec-A" style={card("#EDE9FE","#7c3aed")}>
-        <div style={{...ch("#7c3aed"),borderBottom:"none"}}>
+      <div id="soap-sec-A" style={card("#FEE2E2","#dc2626")}>
+        <div style={{...ch("#dc2626"),borderBottom:"none"}}>
           {secIcon("rgba(255,255,255,0.15)","#fff","🧠")}
           {secTitle("A · Assessment","Clinical impression","#fff")}
           {secBadge("Clinical impression")}
@@ -4815,8 +4815,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── P — PLAN ── */}
-      <div id="soap-sec-P" style={card("#FEF3C7","#92400E")}>
-        <div style={{...ch("#92400E"),borderBottom:"none"}}>
+      <div id="soap-sec-P" style={card("#DBEAFE","#1D4ED8")}>
+        <div style={{...ch("#1D4ED8"),borderBottom:"none"}}>
           {secIcon("rgba(255,255,255,0.15)","#fff","📋")}
           {secTitle("P · Plan","Treatment & goals","#fff")}
           {secBadge("Treatment & goals")}
