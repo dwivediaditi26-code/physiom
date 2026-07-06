@@ -44,8 +44,15 @@ test.describe('Full patient journey', () => {
     await page.getByRole('button', { name: 'Skip tour' }).click();
 
     // ── Create a patient via the intake form ──
-    await expect(page.getByText('New Patient', { exact: false })).toBeVisible({ timeout: 10_000 });
-    await page.getByText('New Patient', { exact: false }).click();
+    // NOTE: <SidebarItems> is rendered TWICE in AppFull.jsx (once for the
+    // fixed desktop sidebar, once for a mobile off-canvas menu that stays in
+    // the DOM even when hidden by CSS) -- confirmed by a real CI failure:
+    // "strict mode violation: getByText('New Patient') resolved to 2
+    // elements". Every sidebar-based locator below needs .first() for this
+    // same reason; the desktop copy renders first in DOM order, and this
+    // spec only runs against the desktop viewport (mobile is skipped above).
+    await expect(page.getByText('New Patient', { exact: false }).first()).toBeVisible({ timeout: 10_000 });
+    await page.getByText('New Patient', { exact: false }).first().click();
     await page.getByPlaceholder('e.g. Riya Sharma').fill(patientName);
     await page.getByRole('button', { name: 'Consent' }).click();
     await page.getByText('I consent to physiotherapy assessment and treatment').click();
@@ -56,14 +63,14 @@ test.describe('Full patient journey', () => {
     await expect(page.getByText(patientName, { exact: false }).first()).toBeVisible({ timeout: 10_000 });
 
     // ── Record a real MMT finding ──
-    await page.getByText('MMT', { exact: true }).click();
-    await expect(page.getByText('Sternocleidomastoid')).toBeVisible({ timeout: 10_000 });
+    await page.getByText('MMT', { exact: true }).first().click();
+    await expect(page.getByText('Sternocleidomastoid').first()).toBeVisible({ timeout: 10_000 });
     // First muscle card's Left grade select -- grade "5" (Normal).
     await page.locator('select.pm-compact-select').first().selectOption('5');
 
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
-    await page.getByText('Documentation', { exact: true }).click();
-    await page.getByText('SOAP Notes', { exact: true }).click();
+    await page.getByText('Documentation', { exact: true }).first().click();
+    await page.getByText('SOAP Notes', { exact: true }).first().click();
 
     // The MMT finding just recorded should be visible somewhere in the
     // Objective section of the real, rendered SOAP screen.
