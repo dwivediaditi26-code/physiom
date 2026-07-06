@@ -4125,8 +4125,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const bullet  = (text,i) => <div key={i} style={{fontSize:12,color:"#374151",lineHeight:1.9}}>&bull; {text}</div>;
   const inp   = { width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"7px 10px",fontSize:"0.78rem",fontFamily:"inherit",outline:"none",color:"#111827",background:"#FAFAFA",marginBottom:4,boxSizing:"border-box" };
   const subH  = (label, col="#334155") => (
-    <div style={{display:"flex",alignItems:"center",gap:6,background:col,padding:"6px 12px",marginTop:12,marginBottom:6,borderRadius:6}}>
-      <span style={{fontSize:10,fontWeight:700,color:"#fff",textTransform:"uppercase",letterSpacing:"0.08em"}}>{label}</span>
+    <div style={{display:"flex",alignItems:"center",gap:6,background:col,padding:"8px 14px",marginTop:14,marginBottom:8,borderRadius:10}}>
+      <span style={{fontSize:11,fontWeight:700,color:"#fff",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</span>
     </div>
   );
   const na    = { fontSize:12,color:"#9CA3AF",fontStyle:"italic",padding:"4px 0" };
@@ -4341,8 +4341,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             const hasLegacy = mods.posture||obsChips.length>0||postDefectList.length>0||postureTextFields.length>0;
             const obsSummary = v("obs_summary");
             if (!hasObs && !hasLegacy && !obsSummary) return null;
-            return <>
-              {subH("Observation & Posture","#334155")}
+            return <div style={subCard("#065F46")}>
+              {subH("Observation & Posture","#065F46")}
               {obsSummary&&<div style={{fontSize:12,color:"#374151",marginBottom:6,background:"#F9FAFB",padding:"8px 10px",borderRadius:8,lineHeight:1.5}}>{obsSummary}</div>}
               {hasObs&&obsFields.map(([section,fields],si)=>{
                 const filled=fields.filter(([,val])=>val);
@@ -4363,12 +4363,12 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               {postureTextFields.length>0&&<>{postureTextFields.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,minWidth:90,fontSize:12}}>{r}</span><span style={{color:"#111827",flex:1,textAlign:"right",fontSize:12}}>{t}</span></div>)}</>}
               {postDefectList.length>0&&<div style={{marginTop:4,display:"flex",flexWrap:"wrap",gap:4}}>{postDefectList.map(([,l],i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{l}</span>)}</div>}
               {obsChips.length>0&&<div style={{marginTop:4,display:"flex",flexWrap:"wrap",gap:4}}>{obsChips.map((o,i)=><span key={i} style={{...chip_("#F3F4F6","#374151"),fontSize:11}}>{o.region}: {o.text}</span>)}</div>}
-            </>;
+            </div>;
           })()}
 
           {/* AI Posture Analysis */}
-          {mods.postureAI&&<>
-            {subH("AI Postural Analysis","#334155")}
+          {mods.postureAI&&<div style={subCard("#065F46")}>
+            {subH("AI Postural Analysis","#065F46")}
             {[
               ["CVA",data.cvaAngle,"°","≥ 50°",50,"gte"],
               ["FHP",data.sagFHPCm||data.fhpDevCm,"cm","< 2.5cm",2.5,"lte"],
@@ -4389,19 +4389,19 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 {flag&&<span style={{fontSize:10,padding:"1px 7px",borderRadius:100,background:flag.b,color:flag.c,fontWeight:500}}>{flag.t}</span>}
               </div>;
             })}
-          </>}
+          </div>}
 
           {/* Gait */}
-          {mods.gait&&<>
-            {subH("Gait","#1e3a5f")}
+          {mods.gait&&<div style={subCard("#065F46")}>
+            {subH("Gait","#065F46")}
             {[v("gait_pattern")&&["Pattern",v("gait_pattern")],v("gait_antalgic")&&["Antalgic",v("gait_antalgic")],v("gait_trendelenburg")&&["Trendelenburg",v("gait_trendelenburg")],v("gait_cadence")&&["Cadence",v("gait_cadence")],v("gait_notes")&&["Notes",v("gait_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,fontSize:12,minWidth:90}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
-          </>}
+          </div>}
 
           {/* Neuro (general — above region) */}
-          {v("neuro_dermatomal")&&<>
-            {subH("Neuro (general)","#1e3a5f")}
+          {v("neuro_dermatomal")&&<div style={subCard("#065F46")}>
+            {subH("Neuro (general)","#065F46")}
             <div style={{fontSize:12,color:"#374151",marginBottom:4}}>{[v("neuro_dermatomal"),v("neuro_sensation")].filter(Boolean).join(". ")}</div>
-          </>}
+          </div>}
 
           {/* Neurological radiation chips */}
           {(rad||v("neuro_weakness"))&&<>
@@ -4410,22 +4410,22 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           </>}
 
           {/* OBSERVATION chips (regional) */}
-          {(postDefectList.length>0||obsChips.length>0)&&<>
-            {subH("Observation","#334155")}
+          {(postDefectList.length>0||obsChips.length>0)&&<div style={subCard("#065F46")}>
+            {subH("Observation","#065F46")}
             {postDefectList.map(([,l],i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{l}</span>)}
             {obsChips.map((o,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{o.text}</span>)}
-          </>}
+          </div>}
 
           {/* Palpation */}
-          {(palpPins.filter(p=>p.tenderness).length>0||palpText.length>0)&&<>
-            {subH("Palpation — Tender","#334155")}
+          {(palpPins.filter(p=>p.tenderness).length>0||palpText.length>0)&&<div style={subCard("#065F46")}>
+            {subH("Palpation — Tender","#065F46")}
             {palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{p.label}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — grade {p.tenderness}+</span>)}
             {palpText.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:50}}>{r}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
-          </>}
+          </div>}
 
           {/* Neurological */}
-          {neuroRows.length>0&&<>
-            {subH("Neurological","#312e81")}
+          {neuroRows.length>0&&<div style={subCard("#065F46")}>
+            {subH("Neurological","#065F46")}
             {neuroRows.map((r,i)=>{
               const lc=r.val.toLowerCase();
               const isAbn=lc.includes("reduced")||lc.includes("weak")||lc.includes("absent")||lc.includes("positive");
@@ -4435,10 +4435,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 <span style={{fontSize:12,fontWeight:500,color:isAbn?"#DC2626":isN?"#059669":"#111827"}}>{r.val}</span>
               </div>;
             })}
-          </>}
+          </div>}
 
           {/* Range of Motion */}
-          {romRows.length>0&&<>
+          {romRows.length>0&&<div style={subCard("#065F46")}>
             {subH("Range of Motion","#065F46")}
             {romRows.map((r,i)=>{
               if(!r.bilateral){
@@ -4468,11 +4468,11 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 </div>;
               }
             })}
-          </>}
+          </div>}
 
           {/* MMT */}
-          {mmtRows.length>0&&<>
-            {subH("Manual Muscle Testing (MMT)","#1e3a5f")}
+          {mmtRows.length>0&&<div style={subCard("#065F46")}>
+            {subH("Manual Muscle Testing (MMT)","#065F46")}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
             {mmtRows.map(([muscle,side,gr,desc],i)=>{
               const g=parseFloat(gr)||0;
@@ -4491,11 +4491,11 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               </div>;
             })}
             </div>
-          </>}
+          </div>}
 
           {/* Special Tests */}
-          {sttRows.length>0&&<>
-            {subH("Special Tests","#78350f")}
+          {sttRows.length>0&&<div style={subCard("#065F46")}>
+            {subH("Special Tests","#065F46")}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
               {sttRows.map((t,i)=>{
                 const lc=t.val.toLowerCase();
@@ -4510,7 +4510,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 );
               })}
             </div>
-          </>}
+          </div>}
 
           {/* STTT / Cyriax — this whole section did not exist in the visual
               SOAP screen at all before, even though it was already correctly
@@ -4538,8 +4538,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               else if (k.includes("_p_")) groups.passive.push(entry);
               else groups.other.push(entry);
             });
-            return <>
-              {subH("STTT / Selective Tissue Tension","#78350f")}
+            return <div style={subCard("#065F46")}>
+              {subH("STTT / Selective Tissue Tension","#065F46")}
               {groups.active.length>0&&<div style={{marginBottom:5}}><div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:2}}>Active movements</div>{groups.active.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}</div>}
               {groups.passive.length>0&&<div style={{marginBottom:5}}><div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:2}}>Passive movements</div>{groups.passive.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}</div>}
               {groups.resisted.length>0&&<div style={{marginBottom:5}}><div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:2}}>Resisted tests</div>{groups.resisted.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}</div>}
@@ -4548,22 +4548,22 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               {v("cy_non_contractile")&&<div style={{fontSize:12,color:"#374151"}}>Non-contractile: {v("cy_non_contractile")}</div>}
               {(v("cy_capsular_pattern")||v("cy_capsular"))&&<div style={{fontSize:12,color:"#374151"}}>Capsular pattern: {v("cy_capsular_pattern")||v("cy_capsular")}</div>}
               {v("cy_notes")&&<div style={{fontSize:12,color:"#374151"}}>Notes: {v("cy_notes")}</div>}
-            </>;
+            </div>;
           })()}
 
           {/* Functional Limitations */}
-          {(flChips.length>0||v("ar_goal_function"))&&<>
-            {subH("Functional limitations","#78350f")}
+          {(flChips.length>0||v("ar_goal_function"))&&<div style={subCard("#065F46")}>
+            {subH("Functional limitations","#065F46")}
             <div style={{marginBottom:6}}>{flChips.map((x,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{x}</span>)}</div>
             {v("ar_goal_function")&&<div style={{fontSize:12,color:"#374151"}}>{v("ar_goal_function")}</div>}
-          </>}
+          </div>}
 
           {/* Outcome Measures */}
-          {omRows.length>0&&<>
-            {subH("Outcome Measures","#334155")}
+          {omRows.length>0&&<div style={subCard("#065F46")}>
+            {subH("Outcome Measures","#065F46")}
             <table style={tbl}><thead><tr><th style={thS}>Scale</th><th style={thS}>Score</th><th style={thS}>Max</th><th style={thS}>Description</th></tr></thead>
             <tbody>{omRows.map((r,i)=><tr key={i}><td style={{...tdS,fontWeight:600}}>{r.name}</td><td style={{...tdS,fontWeight:700,color:"#6366F1"}}>{r.score}</td><td style={{...tdS,color:"#9CA3AF"}}>{r.max||"—"}</td><td style={{...tdS,color:"#6B7280",fontSize:10}}>{r.note}</td></tr>)}</tbody></table>
-          </>}
+          </div>}
 
           {/* CPA — was reading unused legacy fields (cpa_pattern, cx_cpa,
               etc.) that the real CPA/NKT assessment module never writes to.
@@ -4572,8 +4572,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               confirmed complete for the Live SOAP/copy text builder) — the
               section header was showing even when this content was
               silently blank. Fixed to scan the real fields. */}
-          {mods.cpa&&<>
-            {subH("Compensation Pattern Analysis (CPA)","#334155")}
+          {mods.cpa&&<div style={subCard("#065F46")}>
+            {subH("Compensation Pattern Analysis (CPA)","#065F46")}
             {(()=>{
               const NKT_IDS = [
                 ["nkt_dnf","Deep Neck Flexors"],["nkt_scm","SCM"],["nkt_suboccip","Suboccipitals"],
@@ -4621,11 +4621,11 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 {v("nkt_notes")&&<div style={{fontSize:11,color:"#374151",marginTop:2}}>Notes: {v("nkt_notes")}</div>}
               </div>;
             })()}
-          </>}
+          </div>}
 
           {/* Kinetic Chain */}
-          {mods.kinetic&&<>
-            {subH("Kinetic Chain","#334155")}
+          {mods.kinetic&&<div style={subCard("#065F46")}>
+            {subH("Kinetic Chain","#065F46")}
             {/* Legacy fields */}
             {[v("kinetic_primary")&&["Primary dysfunction",v("kinetic_primary")],v("kinetic_compensation")&&["Compensation",v("kinetic_compensation")],v("kinetic_notes")&&["Notes",v("kinetic_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:110}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
             {/* kc_* fields from Kinetic Chain module */}
@@ -4661,11 +4661,11 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 {v("kc_notes")&&<div style={{fontSize:11,color:"#374151",marginTop:2}}>Notes: {v("kc_notes")}</div>}
               </div>;
             })()}
-          </>}
+          </div>}
 
           {/* Fascia Integration */}
-          {mods.fascia&&<>
-            {subH("Fascia Integration","#334155")}
+          {mods.fascia&&<div style={subCard("#065F46")}>
+            {subH("Fascia Integration","#065F46")}
             {(()=>{
               const FA_NAMES={"fa_skin_roll":"Skin Rolling","fa_passive_tension":"Passive Line Tension","fa_active_line_load":"Active Line Load","fa_densification":"Densification Test","fa_scar":"Scar/Adhesion","fa_sbl_hamstring":"SBL Hamstring","fa_tlf":"TLF Assessment","fa_spiral_rot":"Spiral Rotation","fa_ll_test":"Lateral Line","fa_dfl_arch":"DFL Medial Arch","fa_dfl_breathing":"DFL Diaphragm","fa_remote_test":"Remote Restriction","fa_force_closure":"Force Closure/SIJ","fa_compensation_map":"Compensation Pattern"};
               const faItems=Object.keys(data).filter(k=>(k.startsWith("fa_")||k.startsWith("fascia_"))&&data[k]&&String(data[k]).trim()).map(k=>({label:FA_NAMES[k]||k.replace(/^fa_/,"").replace(/_/g," "),val:String(data[k])}));
@@ -4678,7 +4678,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 {normal.length>0&&<div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Normal: {normal.map(({label})=>label).join(", ")}</div>}
               </div>;
             })()}
-          </>}
+          </div>}
 
           {/* ── ADVANCED FUNCTIONAL SCREENS ── */}
           {(()=>{
@@ -4729,7 +4729,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               </div>;
             }).filter(Boolean);
             if(!rendered.length) return null;
-            return <>{subH("Functional Screens","#065F46")}{rendered}</>;
+            return <div style={subCard("#065F46")}>{subH("Functional Screens","#065F46")}{rendered}</div>;
           })()}
 
           {!mods.posture&&!mods.rom&&!mods.mmt&&!mods.neuro&&!mods.stt&&!mods.palpation&&!mods.gait&&!mods.postureAI&&<div style={na}>No objective findings recorded yet.</div>}
@@ -4831,10 +4831,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               </div>;
             };
 
-            return <>
+            return <div style={subCard("#dc2626")}>
               {/* ═══ 1. PROVISIONAL DIAGNOSIS ═══ */}
               <div style={{marginBottom:16}}>
-                {subH("Provisional Diagnosis","#1E40AF")}
+                {subH("Provisional Diagnosis","#dc2626")}
 
                 {/* AI suggestions */}
                 {(()=>{
@@ -4882,7 +4882,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
               {/* ═══ 2. DIFFERENTIAL DIAGNOSIS ═══ */}
               <div style={{marginBottom:16}}>
-                {subH("Differential Diagnosis","#4c1d95")}
+                {subH("Differential Diagnosis","#dc2626")}
 
                 {selectedDiffs.length>0&&<div style={{marginBottom:10,padding:"10px 12px",background:"#F5F3FF",border:"2px solid #8B5CF6",borderRadius:12}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Selected Differentials</div>
@@ -4901,15 +4901,15 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 <div style={{fontSize:11,color:"#6B7280",marginBottom:4,fontWeight:500}}>Or select from list:</div>
                 <DiagDropdown label="Differential Diagnosis" value="" onChange={val=>{if(val)toggleDiff(val);}} excludeList={selectedDiffs} color="#374151" borderColor="#D1D5DB" badgeColor="#8B5CF6"/>
               </div>
-            </>;
+            </div>;
           })()}
 
           {/* ── Problem List / Key Findings ── */}
           {(probList||posFindings.length>0||negFindings.length>0)&&<>
-            {(probList||posFindings.length>0)&&<>
-              {subH("Problem list","#334155")}
+            {(probList||posFindings.length>0)&&<div style={subCard("#dc2626")}>
+              {subH("Problem list","#dc2626")}
               <div style={{fontSize:12,color:"#374151",marginBottom:6,lineHeight:1.5}}>{probList||posFindings.slice(0,3).join(". ")}</div>
-            </>}
+            </div>}
             {(posFindings.length>0||negFindings.length>0)&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
               {posFindings.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:10}}>
                 <div style={{fontSize:10,fontWeight:600,color:"#991B1B",marginBottom:5}}>KEY POSITIVES</div>
