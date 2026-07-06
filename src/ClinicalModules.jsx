@@ -64,6 +64,21 @@ const ROM_DERIVED = Object.entries(ROM_DATA).flatMap(([region, movements]) =>
 const MMT_DATA_LABELS = Object.fromEntries(
   Object.values(MMT_DATA).flat().map(m => [m.id, m.muscle])
 );
+// Shared fallback for any muscle key that isn't in MMT_DATA_LABELS at all
+// (confirmed via screenshot: real patient data can contain keys like
+// "mmt_l3"/"mmt_s1" — spinal-level myotome shorthand, not an anatomical
+// muscle ID — that fall all the way through to this fallback and, without
+// this, render as a bare, unclear, inconsistently-cased fragment like "I3"
+// or "s1"). Properly capitalizes, and recognizes single-letter+digit level
+// patterns (C5, L3, S1, etc.) so they read as "L3 (Myotome level)" instead
+// of an unexplained code.
+function mmtFallbackLabel(raw) {
+  const cleaned = raw.replace(/_/g, " ").trim();
+  if (/^[a-z]\d+$/i.test(cleaned.replace(/\s/g, ""))) {
+    return `${cleaned.replace(/\s/g, "").toUpperCase()} (Myotome level)`;
+  }
+  return cleaned.replace(/\w/g, c => c.toUpperCase());
+}
 
 function EF({ id, label, type, options, unit, min=0, max=10, step=1, placeholder="", data, set, note }) {
   const base={width:"100%",background:C.s3,border:`1px solid ${C.border}`,borderRadius:8,color:C.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
@@ -2750,7 +2765,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       // Handle double-prefix keys like mmt_mmt_ta_L
       const strippedBase2 = base.startsWith("mmt_mmt_") ? base.replace("mmt_mmt_","mmt_") : base;
       const label = MMT_LABELS[k] || MMT_LABELS[base] ||
-        (MMT_LABELS[strippedBase2] ? MMT_LABELS[strippedBase2]+side : strippedBase2.replace(/^mmt_/,"").replace(/_/g," ")+side);
+        (MMT_LABELS[strippedBase2] ? MMT_LABELS[strippedBase2]+side : mmtFallbackLabel(strippedBase2.replace(/^mmt_/,""))+side);
       if (!isNaN(num)) {
         if (num < 5) mmtDeficit.push(`${label} ${num}/5${num <= 2 ? " ❌" : num <= 3 ? " ⚠" : ""}`);
         else mmtNormal.push(label);
@@ -3872,7 +3887,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
         const base = k.replace(/_[LRlr]$/, "");
         // Handle double-prefix keys (mmt_mmt_ta_L)
         const strippedBase = base.startsWith("mmt_mmt_") ? base.replace("mmt_mmt_","mmt_") : base;
-        const label = MMT_LBL[k] || MMT_LBL[base] || MMT_LBL[strippedBase] || strippedBase.replace(/^(muscle_|mmt_)/,"").replace(/_/g," ");
+        const label = MMT_LBL[k] || MMT_LBL[base] || MMT_LBL[strippedBase] || mmtFallbackLabel(strippedBase.replace(/^(muscle_|mmt_)/,""));
         return [label, side, raw, MMT_GRADE_LBL[raw.trim()]||""];
       })
       .filter(([,,v2])=>v2);
@@ -4545,10 +4560,15 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             });
             const cyKeys = Object.keys(data).filter(k => (k.startsWith("cy_")||k.startsWith("cyriax_")) && data[k] && String(data[k]).trim() && !SKIP_EXACT.has(k));
             if (!cyKeys.length && !v("cy_contractile") && !v("cy_non_contractile") && !v("cy_capsular_pattern") && !v("cy_notes")) return null;
-            const groups = { active:[], passive:[], resisted:[], other:[] };
+            // Card-grid style matching MMT below, instead of plain bullet
+            // text — bordered card per finding, region as a small badge,
+            // color reflects whether the finding reads as painful/limited
+            // (amber/red) vs full/normal (green), same visual language as
+            // the MMT grade-based coloring right below this section.
+            const groups = { active:[], passive:[], resisted:[] };
             cyKeys.forEach(k => {
               const val = String(data[k]).trim();
-              let region = "", entryLabel = "", prefixWord = "";
+              let region = "", entryLabel = "", prefixWord = "", cat = "active";
               const m = k.match(/^cyriax_([a-z_]+?)_(.+)$/);
               if (m) {
                 const [, regionKey, rest] = m;
@@ -4565,18 +4585,34 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               } else {
                 entryLabel = k.replace(/^cy_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
               }
-              const entry = `${region?`[${region}] `:""}${entryLabel}: ${prefixWord}${val}`;
-              if (k.includes("_r_")||k.includes("res_")) groups.resisted.push(entry);
-              else if (k.includes("_a_")||k.includes("act_")) groups.active.push(entry);
-              else if (k.includes("_p_")||k.includes("pass_")) groups.passive.push(entry);
-              else groups.other.push(entry);
+              if (k.includes("_r_")||k.includes("res_")) cat = "resisted";
+              else if (k.includes("_p_")||k.includes("pass_")) cat = "passive";
+              const abnormal = /pain|limit|restrict|abnormal|positive|reduced|weak|capsular/i.test(prefixWord + val);
+              groups[cat].push({ region, label: entryLabel, value: `${prefixWord}${val}`, abnormal });
             });
+            const CAT_LABEL = { active: "Active movements", passive: "Passive movements", resisted: "Resisted tests" };
+            const sttCard = (item, i) => {
+              const bg = item.abnormal ? "#fffbeb" : "#f0fdf4";
+              const bdr = item.abnormal ? "#fde68a" : "#bbf7d0";
+              const gc = item.abnormal ? "#d97706" : "#059669";
+              return <div key={i} style={{display:"flex",flexDirection:"column",padding:"7px 10px",borderRadius:8,border:`1px solid ${bdr}`,background:bg}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2}}>
+                  <span style={{fontSize:12,fontWeight:700,color:"#1f2937",flex:1,lineHeight:1.3}}>{item.label}</span>
+                  {item.region&&<span style={{fontSize:9,fontWeight:800,padding:"1px 6px",borderRadius:99,background:"#e0e7ff",color:"#3730a3",marginLeft:4,flexShrink:0}}>{item.region}</span>}
+                </div>
+                <span style={{fontSize:11,fontWeight:600,color:gc}}>{item.value}</span>
+              </div>;
+            };
             return <div style={subCard("#065F46")}>
               {subH("STTT / Selective Tissue Tension","#065F46")}
-              {groups.active.length>0&&<div style={{marginBottom:5}}><div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:2}}>Active movements</div>{groups.active.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}</div>}
-              {groups.passive.length>0&&<div style={{marginBottom:5}}><div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:2}}>Passive movements</div>{groups.passive.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}</div>}
-              {groups.resisted.length>0&&<div style={{marginBottom:5}}><div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:2}}>Resisted tests</div>{groups.resisted.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}</div>}
-              {groups.other.map((x,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0"}}>{x}</div>)}
+              {["active","passive","resisted"].map(cat => groups[cat].length>0 && (
+                <div key={cat} style={{marginBottom:8}}>
+                  <div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:4}}>{CAT_LABEL[cat]}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                    {groups[cat].map(sttCard)}
+                  </div>
+                </div>
+              ))}
               {v("cy_contractile")&&<div style={{fontSize:12,color:"#374151",marginTop:2}}>Contractile: {v("cy_contractile")}</div>}
               {v("cy_non_contractile")&&<div style={{fontSize:12,color:"#374151"}}>Non-contractile: {v("cy_non_contractile")}</div>}
               {(v("cy_capsular_pattern")||v("cy_capsular"))&&<div style={{fontSize:12,color:"#374151"}}>Capsular pattern: {v("cy_capsular_pattern")||v("cy_capsular")}</div>}

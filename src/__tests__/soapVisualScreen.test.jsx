@@ -22,17 +22,32 @@ describe("SOAP Notes visual screen — CPA and STTT sections", () => {
     expect(screen.getByText("Lower Trap")).toBeInTheDocument();
   });
 
-  it("STTT section shows the real test label, not a title-cased fallback of the raw key", () => {
+  it("STTT section shows the real test label (card grid), not a title-cased fallback of the raw key", () => {
     // Real key structure verified against CyriaxModule's actual sv() calls:
     // "cyriax_<region>_<fieldtype>_<testid>" — this exact key means "shoulder
     // region, active ROM measurement, test id sh_a_abd", which
     // CYRIAX_REGIONS_DATA defines as label "Abduction". The old fallback
     // would have shown "Sh A Abd" (title-casing the raw remainder) — this
-    // test fails if that regression reappears.
+    // test fails if that regression reappears. Card grid renders label,
+    // region badge, and value as separate elements, not one joined string.
     const data = { cyriax_shoulder_act_rom_sh_a_abd: "170" };
     render(<SOAPNoteModule data={data} set={() => {}} onNav={() => {}} initialTab="O" />);
     expect(screen.getByText("STTT / Selective Tissue Tension")).toBeInTheDocument();
-    expect(screen.getByText(/\[Shoulder\] Abduction: 170/)).toBeInTheDocument();
+    expect(screen.getByText("Abduction")).toBeInTheDocument();
+    expect(screen.getByText("Shoulder")).toBeInTheDocument();
+    expect(screen.getByText("170")).toBeInTheDocument();
     expect(screen.queryByText(/Sh A Abd/)).not.toBeInTheDocument();
+  });
+
+  it("MMT fallback labels a spinal-level-style key clearly instead of showing a bare, unclear fragment", () => {
+    // Confirmed via screenshot: real patient data can contain keys like
+    // "mmt_l3"/"mmt_s1" that aren't real MMT_DATA muscle IDs (spinal-level
+    // myotome shorthand, not an anatomical name) — these used to fall
+    // through to a bare, inconsistently-cased fragment ("I3", lowercase
+    // "s1"). Now formatted clearly as a level, not a mystery code.
+    const data = { mmt_l3_R: "5/5", mmt_s1_R: "5/5" };
+    render(<SOAPNoteModule data={data} set={() => {}} onNav={() => {}} initialTab="O" />);
+    expect(screen.getByText(/L3.*Myotome level/)).toBeInTheDocument();
+    expect(screen.getByText(/S1.*Myotome level/)).toBeInTheDocument();
   });
 });
