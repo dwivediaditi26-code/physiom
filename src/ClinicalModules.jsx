@@ -3701,6 +3701,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const stGoals  = v("soap_goal_short");
   const ltGoals  = v("soap_goal_long");
   const totalSess= v("soap_total_sessions");
+  // Real logged sessions (used by the header's session-progress bar) —
+  // same shape as buildRealtimeSOAP's own txSessArr elsewhere in this file.
+  const txSessArr = Array.isArray(data.tx_sessions) ? data.tx_sessions : [];
   const freq     = v("soap_frequency");
   const precautions = v("soap_precautions");
   const referral = v("soap_referral");
@@ -4152,35 +4155,40 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       {/* ── PATIENT HEADER ── */}
       <div style={{...card(),marginBottom:12}}>
         <div style={{padding:"14px 14px 10px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:48,height:48,borderRadius:"50%",background:"#DBEAFE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:600,color:"#1E40AF",flexShrink:0}}>{initials}</div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:17,fontWeight:700,color:"#111827"}}>{name}</div>
-              <div style={{fontSize:12,color:"#6B7280",marginTop:2}}>
-                {[age&&age+"yrs",sex&&sex.toUpperCase(),phone].filter(Boolean).join(" · ")}
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+            <div style={{width:44,height:44,borderRadius:"50%",background:"#EEEDFE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:600,color:"#3C3489",flexShrink:0}}>{initials}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:16,fontWeight:700,color:"#111827"}}>{name}</div>
+              <div style={{fontSize:11,color:"#6B7280",marginTop:1}}>
+                {[sex&&sex.toUpperCase(),age&&age+" yrs",phone].filter(Boolean).join(" · ")}
               </div>
             </div>
-            {vasNow&&<div style={{textAlign:"center",padding:"6px 12px",background:nrsBg(vasNow),borderRadius:12,border:`1px solid ${nrsColor(vasNow)}30`}}>
+            {vasNow&&<div style={{textAlign:"center",padding:"6px 12px",background:nrsBg(vasNow),borderRadius:12,border:`1px solid ${nrsColor(vasNow)}30`,flexShrink:0}}>
               <div style={{fontSize:9,color:nrsColor(vasNow),fontWeight:600,textTransform:"uppercase"}}>Pain</div>
               <div style={{fontSize:18,fontWeight:700,color:nrsColor(vasNow)}}>{vasNow}<span style={{fontSize:11}}>/10</span></div>
             </div>}
           </div>
 
-          {/* Meta row */}
-          <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",marginTop:12,padding:"8px 0",borderTop:"1px solid #F3F4F6",fontSize:12,color:"#6B7280"}}>
-            <div><span style={{fontWeight:600,color:"#374151"}}>Date</span><br/>{new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div>
-            {patId&&<div><span style={{fontWeight:600,color:"#374151"}}>Patient ID</span><br/>{patId}</div>}
-            {dob&&<div><span style={{fontWeight:600,color:"#374151"}}>DOB</span><br/>{dob}</div>}
-            {therapist&&<div><span style={{fontWeight:600,color:"#374151"}}>Therapist</span><br/>{therapist}</div>}
-            <div><span style={{fontWeight:600,color:"#374151"}}>Mode</span><br/><span style={{background:"#D1FAE5",color:"#065F46",padding:"1px 6px",borderRadius:4,fontSize:11}}>Digital template</span></div>
+          {/* Meta grid — every field the flex-wrap row had before, just
+              grouped as label/value pairs instead of a loose wrapping row,
+              and it drops to one column on a real phone via .pm-soap-2col */}
+          <div className="pm-soap-2col" style={{borderTop:"1px solid #F3F4F6",paddingTop:8}}>
+            <div><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Date</div><div style={{fontSize:12,color:"#374151",marginTop:1}}>{new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div></div>
+            {patId&&<div><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Patient ID</div><div style={{fontSize:12,color:"#374151",marginTop:1}}>{patId}</div></div>}
+            {dob&&<div><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>DOB</div><div style={{fontSize:12,color:"#374151",marginTop:1}}>{dob}</div></div>}
+            {therapist&&<div><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Therapist</div><div style={{fontSize:12,color:"#374151",marginTop:1}}>{therapist}</div></div>}
+            <div style={{gridColumn:"1 / -1"}}><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Mode</div><span style={{display:"inline-block",marginTop:2,background:"#D1FAE5",color:"#065F46",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:500}}>Digital template</span></div>
           </div>
 
-          {/* Progress */}
-          <div style={{marginTop:8,display:"flex",alignItems:"center",gap:8}}>
-            <div style={{flex:1,height:3,background:"#E5E7EB",borderRadius:100,overflow:"hidden"}}>
-              <div style={{height:"100%",background:"#6366F1",width:(doneCount/MOD_KEYS.length*100)+"%",borderRadius:100}}/>
+          {/* Session progress — was module-completion count, now reflects
+              actual treatment sessions logged (tx_sessions) against the
+              clinician-set total (soap_total_sessions), which is what a
+              therapist glancing at this header actually wants to know. */}
+          <div style={{marginTop:10,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{flex:1,height:5,background:"#E5E7EB",borderRadius:100,overflow:"hidden"}}>
+              <div style={{height:"100%",background:"#7c3aed",borderRadius:100,width:(totalSess?Math.min(100,(txSessArr.length/Number(totalSess))*100):(txSessArr.length>0?100:0))+"%"}}/>
             </div>
-            <span style={{fontSize:10,color:"#9CA3AF",whiteSpace:"nowrap"}}>{doneCount}/{MOD_KEYS.length} modules</span>
+            <span style={{fontSize:10,color:"#9CA3AF",whiteSpace:"nowrap"}}>Session {txSessArr.length || 1}{totalSess?` of ${totalSess}`:""}</span>
           </div>
         </div>
 
@@ -4235,7 +4243,14 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
         <div style={cb}>
           {(cc||loc||onset)&&<div style={subCard("#7c3aed")}>
             {cc&&<><span style={subLbl}>Chief complaint</span><div style={{fontSize:13,fontWeight:500,color:"#111827",lineHeight:1.5,marginBottom:(loc||onset)?6:0}}>{cc}</div></>}
-            {loc&&<div style={{fontSize:12,color:"#374151",marginBottom:2}}><span style={{color:"#9CA3AF"}}>Site: </span>{loc}{rad?" → radiates: "+rad:""}</div>}
+            {loc&&<div style={{marginBottom:rad?6:0}}>
+              <span style={subLbl}>Site</span>
+              <div>{loc.split(/\|\|\||,/).map(s=>s.trim()).filter(Boolean).map((s,i)=><span key={i} style={chip_("#EEEDFE","#3C3489")}>{s}</span>)}</div>
+            </div>}
+            {rad&&<div style={{marginBottom:6}}>
+              <span style={subLbl}>Radiates to</span>
+              <div>{rad.split(/\|\|\||,/).map(s=>s.trim()).filter(Boolean).map((s,i)=><span key={i} style={chip_("#FCEBEB","#712B13")}>{s}</span>)}</div>
+            </div>}
             {onset&&<div style={{fontSize:12,color:"#374151"}}><span style={{color:"#9CA3AF"}}>Onset: </span>{[onset,dur].filter(Boolean).join(", ")}</div>}
           </div>}
           {redFlags.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,color:"#991B1B",marginBottom:8,fontWeight:500}}>⚠ Red flags: {redFlags.join(", ")} — medical review indicated</div>}
