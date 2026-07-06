@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { getTopDiagnoses, getTopDiagnosesEnhanced, ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION } from "./PhysioNeuro.jsx";
-import { SPECIAL_TESTS_DATA } from "./SubjectiveObjective.jsx";
+import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA } from "./SubjectiveObjective.jsx";
 import { SCALES } from "./OutcomeMeasuresPro.jsx";
 
 // Auto-derived from SCALES (the same source OutcomeMeasuresPro's own UI
@@ -4207,7 +4207,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {[
             {id:"S",label:"Subjective",sub:"History",color:"#7c3aed",bg:"#EDE9FE",icon:"💬"},
             {id:"O",label:"Objective",sub:"Clinical",color:"#065F46",bg:"#D1FAE5",icon:"🩺"},
-            {id:"A",label:"Assessment",sub:"Diagnosis",color:"#dc2626",bg:"#FEE2E2",icon:"🧠"},
+            {id:"A",label:"Assessment",sub:"Diagnosis",color:"#0891b2",bg:"#CFFAFE",icon:"🧠"},
             {id:"P",label:"Plan",sub:"Treatment",color:"#1D4ED8",bg:"#DBEAFE",icon:"📋"},
           ].map(({id,label,sub,color,bg,icon})=>{
             const isActive = activeSection===id;
@@ -4481,7 +4481,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const bdr=g>=5?"#bbf7d0":g>=4?"#fde68a":g>=3?"#fed7aa":"#fecaca";
               return <div key={i} style={{display:"flex",flexDirection:"column",padding:"7px 10px",borderRadius:8,border:`1px solid ${bdr}`,background:bg}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2}}>
-                  <span style={{fontSize:11,fontWeight:700,color:"#1f2937",flex:1,lineHeight:1.2}}>{muscle}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#1f2937",flex:1,lineHeight:1.3,fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",letterSpacing:"0.01em"}}>{muscle}</span>
                   {side&&<span style={{fontSize:9,fontWeight:800,padding:"1px 6px",borderRadius:99,background:"#e0e7ff",color:"#3730a3",marginLeft:4,flexShrink:0}}>{side.trim().replace(/[()]/g,"")}</span>}
                 </div>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -4521,21 +4521,54 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               parsing already validated for the text version, rather than a
               hand-copied per-test label list that could go stale. */}
           {(()=>{
+            // FIX: was title-casing whatever remained after stripping the
+            // region prefix (e.g. "cyriax_shoulder_act_rom_sh_a_flex" ->
+            // "Act Rom Sh A Flex"), instead of recognizing the field-type
+            // segment (act_rom/act_pain/pass_ef/res/etc.) and looking the
+            // actual test id up against CYRIAX_REGIONS_DATA's own labels
+            // (e.g. "sh_a_flex" -> "Flexion", verified directly against the
+            // real sv() calls in CyriaxModule/CyriaxRegionTests).
             const SKIP_EXACT = new Set(["cy_contractile","cy_non_contractile","cy_capsular_pattern","cy_capsular","cy_endfeel","cy_notes"]);
             const REGION_LABEL = { cervical:"Cervical", shoulder:"Shoulder", elbow:"Elbow", wrist_hand:"Wrist/Hand", hip:"Hip", knee:"Knee", ankle_foot:"Ankle/Foot", lumbar:"Lumbar", thoracic:"Thoracic", tmj:"TMJ" };
+            const FIELD_TYPES = [
+              ["act_limited_","Limited: "],["act_comp_","Compensation: "],
+              ["pass_pain_","Passive pain: "],["pass_rom_","Passive: "],["pass_ovp_","Overpressure: "],
+              ["act_pain_","Pain: "],["act_rom_",""],["pass_ef_","End-feel: "],
+              ["res_notes_","Notes: "],["res_",""],
+            ];
+            const TEST_LABEL = {};
+            Object.entries(CYRIAX_REGIONS_DATA).forEach(([region, r]) => {
+              TEST_LABEL[region] = {};
+              [...(r.activeROM||[]), ...(r.passiveROM||[]), ...(r.resistedTests||[])].forEach(t => {
+                TEST_LABEL[region][t.id] = t.label;
+              });
+            });
             const cyKeys = Object.keys(data).filter(k => (k.startsWith("cy_")||k.startsWith("cyriax_")) && data[k] && String(data[k]).trim() && !SKIP_EXACT.has(k));
             if (!cyKeys.length && !v("cy_contractile") && !v("cy_non_contractile") && !v("cy_capsular_pattern") && !v("cy_notes")) return null;
             const groups = { active:[], passive:[], resisted:[], other:[] };
             cyKeys.forEach(k => {
               const val = String(data[k]).trim();
-              let region = "", moveLabel = k;
-              const m = k.match(/^cyriax_([a-z_]+?)_([a-z_]+(?:_[a-z0-9]+)*)$/);
-              if (m) { region = REGION_LABEL[m[1]] || m[1].replace(/_/g," "); moveLabel = m[2].replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()); }
-              else moveLabel = k.replace(/^cy_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
-              const entry = `${region?`[${region}] `:""}${moveLabel}: ${val}`;
-              if (k.includes("_r_")) groups.resisted.push(entry);
-              else if (k.includes("_a_")) groups.active.push(entry);
-              else if (k.includes("_p_")) groups.passive.push(entry);
+              let region = "", entryLabel = "", prefixWord = "";
+              const m = k.match(/^cyriax_([a-z_]+?)_(.+)$/);
+              if (m) {
+                const [, regionKey, rest] = m;
+                region = REGION_LABEL[regionKey] || regionKey.replace(/_/g," ");
+                const ft = FIELD_TYPES.find(([p]) => rest.startsWith(p));
+                if (ft) {
+                  const [prefix, word] = ft;
+                  prefixWord = word;
+                  const testId = rest.slice(prefix.length);
+                  entryLabel = (TEST_LABEL[regionKey]||{})[testId] || testId.replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+                } else {
+                  entryLabel = rest.replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+                }
+              } else {
+                entryLabel = k.replace(/^cy_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+              }
+              const entry = `${region?`[${region}] `:""}${entryLabel}: ${prefixWord}${val}`;
+              if (k.includes("_r_")||k.includes("res_")) groups.resisted.push(entry);
+              else if (k.includes("_a_")||k.includes("act_")) groups.active.push(entry);
+              else if (k.includes("_p_")||k.includes("pass_")) groups.passive.push(entry);
               else groups.other.push(entry);
             });
             return <div style={subCard("#065F46")}>
@@ -4738,8 +4771,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       </div>
 
       {/* ── A — ASSESSMENT ── */}
-      <div id="soap-sec-A" style={card("#FEE2E2","#dc2626")}>
-        <div style={{...ch("#dc2626"),borderBottom:"none"}}>
+      <div id="soap-sec-A" style={card("#CFFAFE","#0891b2")}>
+        <div style={{...ch("#0891b2"),borderBottom:"none"}}>
           {secIcon("rgba(255,255,255,0.15)","#fff","🧠")}
           {secTitle("A · Assessment","Clinical impression","#fff")}
           {secBadge("Clinical impression")}
@@ -4831,10 +4864,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               </div>;
             };
 
-            return <div style={subCard("#dc2626")}>
+            return <div style={subCard("#0891b2")}>
               {/* ═══ 1. PROVISIONAL DIAGNOSIS ═══ */}
               <div style={{marginBottom:16}}>
-                {subH("Provisional Diagnosis","#dc2626")}
+                {subH("Provisional Diagnosis","#0891b2")}
 
                 {/* AI suggestions */}
                 {(()=>{
@@ -4882,7 +4915,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
               {/* ═══ 2. DIFFERENTIAL DIAGNOSIS ═══ */}
               <div style={{marginBottom:16}}>
-                {subH("Differential Diagnosis","#dc2626")}
+                {subH("Differential Diagnosis","#0891b2")}
 
                 {selectedDiffs.length>0&&<div style={{marginBottom:10,padding:"10px 12px",background:"#F5F3FF",border:"2px solid #8B5CF6",borderRadius:12}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Selected Differentials</div>
@@ -4906,8 +4939,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* ── Problem List / Key Findings ── */}
           {(probList||posFindings.length>0||negFindings.length>0)&&<>
-            {(probList||posFindings.length>0)&&<div style={subCard("#dc2626")}>
-              {subH("Problem list","#dc2626")}
+            {(probList||posFindings.length>0)&&<div style={subCard("#0891b2")}>
+              {subH("Problem list","#0891b2")}
               <div style={{fontSize:12,color:"#374151",marginBottom:6,lineHeight:1.5}}>{probList||posFindings.slice(0,3).join(". ")}</div>
             </div>}
             {(posFindings.length>0||negFindings.length>0)&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>

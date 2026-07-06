@@ -22,10 +22,17 @@ describe("SOAP Notes visual screen — CPA and STTT sections", () => {
     expect(screen.getByText("Lower Trap")).toBeInTheDocument();
   });
 
-  it("STTT section now exists and shows real cyriax_ findings", () => {
-    const data = { cyriax_shoulder_a_abd: "Painful, limited" };
+  it("STTT section shows the real test label, not a title-cased fallback of the raw key", () => {
+    // Real key structure verified against CyriaxModule's actual sv() calls:
+    // "cyriax_<region>_<fieldtype>_<testid>" — this exact key means "shoulder
+    // region, active ROM measurement, test id sh_a_abd", which
+    // CYRIAX_REGIONS_DATA defines as label "Abduction". The old fallback
+    // would have shown "Sh A Abd" (title-casing the raw remainder) — this
+    // test fails if that regression reappears.
+    const data = { cyriax_shoulder_act_rom_sh_a_abd: "170" };
     render(<SOAPNoteModule data={data} set={() => {}} onNav={() => {}} initialTab="O" />);
     expect(screen.getByText("STTT / Selective Tissue Tension")).toBeInTheDocument();
-    expect(screen.getByText(/Shoulder.*Abd/)).toBeInTheDocument();
+    expect(screen.getByText(/\[Shoulder\] Abduction: 170/)).toBeInTheDocument();
+    expect(screen.queryByText(/Sh A Abd/)).not.toBeInTheDocument();
   });
 });
