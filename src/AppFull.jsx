@@ -753,17 +753,17 @@ function AppInner({ currentUser, onSignOut }) {
               <span style={{fontSize:"0.78rem",fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{data.dem_name}</span>
               {data.dem_age && <span style={{fontSize:"0.72rem",color:"#64748b",flexShrink:0}}>{data.dem_age}y</span>}
             </div>
-            {/* PDF download buttons */}
+            {/* Profile / Start Session buttons */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
               <button
-                onClick={()=>{ setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="assessment"]'); if(el) el.click(); },300); }}
+                onClick={()=>setProfilePatient(activePatient)}
                 style={{padding:"7px 6px",background:"linear-gradient(135deg,#1a3a5c,#2563eb)",border:"none",borderRadius:7,color:"#fff",fontWeight:700,fontSize:"0.7rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,boxShadow:"0 1px 6px rgba(37,99,235,0.3)"}}>
-                📋 Assessment
+                👤 Profile
               </button>
               <button
-                onClick={()=>{ setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="treatment"]'); if(el) el.click(); },300); }}
+                onClick={()=>navTo("tx_sessions")}
                 style={{padding:"7px 6px",background:"linear-gradient(135deg,#065f46,#059669)",border:"none",borderRadius:7,color:"#fff",fontWeight:700,fontSize:"0.7rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,boxShadow:"0 1px 6px rgba(5,150,105,0.3)"}}>
-                🗒️ Treatment
+                ▶️ Start Session
               </button>
             </div>
           </div>
