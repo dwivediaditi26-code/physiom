@@ -176,6 +176,21 @@ const MOBILE_CSS = `
       border-radius: 8px !important;
     }
     select { padding-right: 32px !important; }
+    /* Small inline grade/qualifier selects (e.g. MMT L/R grade dropdowns)
+       are intentionally narrow (~40-44px) to sit beside a muscle name.
+       The blanket 44px min-height + 12px/32px padding rule above consumes
+       more horizontal space than the box itself, squeezing the selected
+       grade text out of view entirely -- the select renders as just a
+       colored box with no visible number. This override restores a
+       compact size for anything explicitly marked as compact. */
+    select.pm-compact-select {
+      min-height: 30px !important;
+      font-size: 0.78rem !important;
+      padding: 3px 4px !important;
+      padding-right: 14px !important;
+      border-radius: 7px !important;
+      width: 42px !important;
+    }
     label { font-size: 0.82rem !important; font-weight: 600 !important; margin-bottom: 5px !important; display: block; }
   }
 

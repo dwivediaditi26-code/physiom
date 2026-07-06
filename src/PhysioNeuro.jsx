@@ -1522,6 +1522,7 @@ function MMTModule({data,set,navContext={}}){
                             <div key={side} style={{display:"flex",alignItems:"center",gap:2}}>
                               <span style={{fontSize:"0.58rem",color:C.muted,fontWeight:600}}>{side}</span>
                               <select
+                                className="pm-compact-select"
                                 value={val||""}
                                 onChange={e=>{e.stopPropagation();set(`mmt_${m.id}_${side}`,e.target.value);}}
                                 onClick={e=>e.stopPropagation()}

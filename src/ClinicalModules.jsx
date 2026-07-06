@@ -4536,20 +4536,32 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               parsing already validated for the text version, rather than a
               hand-copied per-test label list that could go stale. */}
           {(()=>{
-            // FIX: was title-casing whatever remained after stripping the
-            // region prefix (e.g. "cyriax_shoulder_act_rom_sh_a_flex" ->
-            // "Act Rom Sh A Flex"), instead of recognizing the field-type
-            // segment (act_rom/act_pain/pass_ef/res/etc.) and looking the
-            // actual test id up against CYRIAX_REGIONS_DATA's own labels
-            // (e.g. "sh_a_flex" -> "Flexion", verified directly against the
-            // real sv() calls in CyriaxModule/CyriaxRegionTests).
+            // FIX #1 (region-key bug): the old regex `/^cyriax_([a-z_]+?)_(.+)$/`
+            // used a LAZY region-name match, so any two-word region id
+            // (wrist_hand, ankle_foot) got split wrong — e.g.
+            // "cyriax_wrist_hand_act_rom_wr_a_flex" matched regionKey="wrist"
+            // and left "hand_act_rom_wr_a_flex" as "rest", which then failed
+            // every FIELD_TYPES prefix check and fell through to the raw
+            // title-cased fallback: "Hand Act Rom Wr A Flex" — exactly the
+            // garbled heading reported. Fixed by matching against the real,
+            // known region keys from CYRIAX_REGIONS_DATA (longest-first)
+            // instead of guessing region boundaries with a regex.
+            //
+            // FIX #2 (redundant cards): ROM value / Pain / Limited /
+            // Compensation for the SAME movement were previously three
+            // separate field keys that each became their OWN card with a
+            // near-duplicate heading (repeating the test name three times).
+            // Now grouped by (region, testId) into ONE card per real test,
+            // with ROM/Pain/Limited/etc. as stacked rows inside it — same
+            // information, a third of the cards, no repeated headings.
             const SKIP_EXACT = new Set(["cy_contractile","cy_non_contractile","cy_capsular_pattern","cy_capsular","cy_endfeel","cy_notes"]);
             const REGION_LABEL = { cervical:"Cervical", shoulder:"Shoulder", elbow:"Elbow", wrist_hand:"Wrist/Hand", hip:"Hip", knee:"Knee", ankle_foot:"Ankle/Foot", lumbar:"Lumbar", thoracic:"Thoracic", tmj:"TMJ" };
+            const REGION_KEYS = Object.keys(CYRIAX_REGIONS_DATA).sort((a,b)=>b.length-a.length);
             const FIELD_TYPES = [
               ["act_limited_","Limited: "],["act_comp_","Compensation: "],
               ["pass_pain_","Passive pain: "],["pass_rom_","Passive: "],["pass_ovp_","Overpressure: "],
-              ["act_pain_","Pain: "],["act_rom_",""],["pass_ef_","End-feel: "],
-              ["res_notes_","Notes: "],["res_",""],
+              ["act_pain_","Pain: "],["act_rom_","ROM: "],["pass_ef_","End-feel: "],
+              ["res_notes_","Notes: "],["res_","Resisted: "],
             ];
             const TEST_LABEL = {};
             Object.entries(CYRIAX_REGIONS_DATA).forEach(([region, r]) => {
@@ -4561,34 +4573,43 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             const cyKeys = Object.keys(data).filter(k => (k.startsWith("cy_")||k.startsWith("cyriax_")) && data[k] && String(data[k]).trim() && !SKIP_EXACT.has(k));
             if (!cyKeys.length && !v("cy_contractile") && !v("cy_non_contractile") && !v("cy_capsular_pattern") && !v("cy_notes")) return null;
             // Card-grid style matching MMT below, instead of plain bullet
-            // text — bordered card per finding, region as a small badge,
-            // color reflects whether the finding reads as painful/limited
-            // (amber/red) vs full/normal (green), same visual language as
-            // the MMT grade-based coloring right below this section.
-            const groups = { active:[], passive:[], resisted:[] };
+            // text — bordered card per test, region as a small badge, color
+            // reflects whether any row for this test reads as painful/limited
+            // (amber) vs full/normal (green), same visual language as the
+            // MMT grade-based coloring right below this section.
+            const merged = {}; // key: region|testId -> { region, label, cat, rows:[{word,value}] }
+            const order = [];
             cyKeys.forEach(k => {
               const val = String(data[k]).trim();
-              let region = "", entryLabel = "", prefixWord = "", cat = "active";
-              const m = k.match(/^cyriax_([a-z_]+?)_(.+)$/);
-              if (m) {
-                const [, regionKey, rest] = m;
-                region = REGION_LABEL[regionKey] || regionKey.replace(/_/g," ");
-                const ft = FIELD_TYPES.find(([p]) => rest.startsWith(p));
-                if (ft) {
-                  const [prefix, word] = ft;
-                  prefixWord = word;
-                  const testId = rest.slice(prefix.length);
-                  entryLabel = (TEST_LABEL[regionKey]||{})[testId] || testId.replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
-                } else {
-                  entryLabel = rest.replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
-                }
-              } else {
-                entryLabel = k.replace(/^cy_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+              if (!k.startsWith("cyriax_")) {
+                // legacy bare cy_ key (not region-scoped) — keep as its own
+                // single-row card rather than dropping it.
+                const label = k.replace(/^cy_/,"").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+                const gk = `_legacy_${k}`;
+                merged[gk] = { region:"", label, cat:"active", rows:[{ word:"", value:val }] };
+                order.push(gk);
+                return;
               }
-              if (k.includes("_r_")||k.includes("res_")) cat = "resisted";
-              else if (k.includes("_p_")||k.includes("pass_")) cat = "passive";
-              const abnormal = /pain|limit|restrict|abnormal|positive|reduced|weak|capsular/i.test(prefixWord + val);
-              groups[cat].push({ region, label: entryLabel, value: `${prefixWord}${val}`, abnormal });
+              const withoutPrefix = k.slice("cyriax_".length);
+              const regionKey = REGION_KEYS.find(rk => withoutPrefix.startsWith(rk + "_"));
+              if (!regionKey) return; // unrecognized region — skip rather than mislabel
+              const rest = withoutPrefix.slice(regionKey.length + 1);
+              const region = REGION_LABEL[regionKey] || regionKey.replace(/_/g," ");
+              const ft = FIELD_TYPES.find(([p]) => rest.startsWith(p));
+              let word = "", testId = rest, cat = "active";
+              if (ft) { const [prefix, w] = ft; word = w; testId = rest.slice(prefix.length); }
+              if (rest.startsWith("res_")) cat = "resisted";
+              else if (rest.startsWith("pass_")) cat = "passive";
+              const label = (TEST_LABEL[regionKey]||{})[testId] || testId.replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase());
+              const gk = `${regionKey}|${testId}`;
+              if (!merged[gk]) { merged[gk] = { region, label, cat, rows:[] }; order.push(gk); }
+              merged[gk].rows.push({ word, value: val });
+            });
+            const groups = { active:[], passive:[], resisted:[] };
+            order.forEach(gk => {
+              const item = merged[gk];
+              const abnormal = item.rows.some(r => /pain|limit|restrict|abnormal|positive|reduced|weak|capsular/i.test(r.word + r.value));
+              groups[item.cat].push({ ...item, abnormal });
             });
             const CAT_LABEL = { active: "Active movements", passive: "Passive movements", resisted: "Resisted tests" };
             const sttCard = (item, i) => {
@@ -4596,11 +4617,17 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const bdr = item.abnormal ? "#fde68a" : "#bbf7d0";
               const gc = item.abnormal ? "#d97706" : "#059669";
               return <div key={i} style={{display:"flex",flexDirection:"column",padding:"7px 10px",borderRadius:8,border:`1px solid ${bdr}`,background:bg}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:3}}>
                   <span style={{fontSize:12,fontWeight:700,color:"#1f2937",flex:1,lineHeight:1.3}}>{item.label}</span>
                   {item.region&&<span style={{fontSize:9,fontWeight:800,padding:"1px 6px",borderRadius:99,background:"#e0e7ff",color:"#3730a3",marginLeft:4,flexShrink:0}}>{item.region}</span>}
                 </div>
-                <span style={{fontSize:11,fontWeight:600,color:gc}}>{item.value}</span>
+                <div style={{display:"flex",flexDirection:"column",gap:1}}>
+                  {item.rows.map((r,ri)=>(
+                    <span key={ri} style={{fontSize:11,fontWeight:600,color:/pain|limit|restrict|abnormal|positive|reduced|weak|capsular/i.test(r.word+r.value)?"#d97706":"#059669"}}>
+                      {r.word}{r.value}
+                    </span>
+                  ))}
+                </div>
               </div>;
             };
             return <div style={subCard("#065F46")}>
