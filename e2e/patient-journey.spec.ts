@@ -269,7 +269,14 @@ test.describe('Full patient journey', () => {
     // separate piece of work, not attempted here. This just confirms the
     // module actually loads without crashing when navigated to.
     await sidebar.getByText('Posture Analysis', { exact: true }).click();
-    await expect(page.getByText('Upload or capture a photo to begin.')).toBeVisible({ timeout: 10_000 });
+    // Real CI failure: "Upload or capture a photo to begin." lives inside
+    // the findings/results panel, which may not render this specific text
+    // until MediaPipe (the AI pose-detection library) finishes initialising
+    // -- a network-dependent load that can take longer in a fresh CI
+    // environment than the 10s this test allows. Switched to the "↑ Upload"
+    // mode-toggle button, part of the static UI shell rendered immediately
+    // on mount with no dependency on MediaPipe's load state.
+    await expect(page.getByRole('button', { name: '↑ Upload' })).toBeVisible({ timeout: 10_000 });
 
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
     await sidebar.getByText('Documentation', { exact: true }).click();
