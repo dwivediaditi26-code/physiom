@@ -9547,7 +9547,7 @@ function LumbarFunctionalScreen({ data, set }) {
         const g = grades[t.id];
         const graded = g !== undefined;
         return (
-          <div key={t.id} style={{ marginBottom: 10, background: C.surface, borderRadius: 14,
+          <div key={t.id} data-lfs-id={t.id} style={{ marginBottom: 10, background: C.surface, borderRadius: 14,
             border: `1.5px solid ${isOpen ? C.accent : graded ? gradeColor(g) + "50" : C.border}`,
             overflow: "hidden", boxShadow: isOpen ? "0 4px 16px rgba(124,58,237,0.1)" : "0 1px 4px rgba(0,0,0,0.04)" }}>
 

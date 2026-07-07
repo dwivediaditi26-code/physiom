@@ -227,6 +227,25 @@ test.describe('Full patient journey', () => {
     await expect(page.getByText('Tenderness Grade (0 – 4+)', { exact: true })).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: '2+', exact: true }).click();
 
+    // ── Functional Assessment: Lumbar Screen, Sit-to-Stand -> Compensated ──
+    // NOTE: the sidebar's "Functional Assessment" item renders a real,
+    // working module (FunctionalScreenHub -> LumbarFunctionalScreen by
+    // default), which is a DIFFERENT thing from the classic 7-movement FMS
+    // (Deep Squat/Hurdle Step/etc, flat fields like "sp_fms_sq") that the
+    // diagnosis engine and an older SOAP section still reference -- that
+    // classic FMS has NO corresponding input UI anywhere in this app at all
+    // (confirmed: sp_fms_* is only ever read, never written, by anything).
+    // That's a separate, real finding flagged to the user, not something
+    // fixed here. This module actually stores grades in a JSON blob per
+    // region (e.g. data.lfs_data), which IS correctly wired end-to-end
+    // already.
+    await sidebar.getByText('Functional Assessment', { exact: true }).click();
+    // data-lfs-id added this round (LumbarFunctionalScreen had no stable
+    // per-test hook, unlike NKT/KC/Fascia's data-nkt-id/data-kc-id/data-fa-id).
+    const stsCard = page.locator('[data-lfs-id="lfs_sts"]');
+    await stsCard.getByText('Sit-to-Stand', { exact: true }).click(); // expand
+    await stsCard.getByText('Compensated', { exact: false }).click();
+
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
     await sidebar.getByText('Documentation', { exact: true }).click();
     await sidebar.getByText('SOAP Notes', { exact: true }).click();
@@ -248,6 +267,7 @@ test.describe('Full patient journey', () => {
     await expect(page.getByText('Ankle DF').first()).toBeVisible(); // Kinetic Chain
     await expect(page.getByText('Skin Rolling').first()).toBeVisible(); // Fascia
     await expect(page.getByText('Scalp').first()).toBeVisible(); // Palpation
+    await expect(page.getByText('Sit-to-Stand').first()).toBeVisible(); // Functional Assessment
 
     // ── Sign and lock the note (two-step confirm) ──
     await page.getByRole('button', { name: 'Sign & lock note' }).click();
@@ -279,5 +299,8 @@ test.describe('Full patient journey', () => {
     // this session -- confirms the pin's real label and grade both show up.
     await expect(profile.getByText('Palpation', { exact: false })).toBeVisible();
     await expect(profile.getByText('Scalp').first()).toBeVisible();
+    // Functional Assessment: real test label from the working fs_data
+    // module (not the dead classic-FMS code path).
+    await expect(profile.getByText('Sit-to-Stand').first()).toBeVisible();
   });
 });
