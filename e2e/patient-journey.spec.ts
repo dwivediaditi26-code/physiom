@@ -246,6 +246,31 @@ test.describe('Full patient journey', () => {
     await stsCard.getByText('Sit-to-Stand', { exact: true }).click(); // expand
     await stsCard.getByText('Compensated', { exact: false }).click();
 
+    // ── Observation: General Appearance -> Healthy ──
+    // Real finding along the way: Patient Profile's Observation section only
+    // ever showed the Posture/Physical Exam subset of obs_ fields
+    // (swelling/deformity/skin/etc) -- the "General Observation" section
+    // (appearance/consciousness/attitude/build/nutrition), shown open by
+    // default in the real ObservationModule UI, was completely missing from
+    // Patient Profile despite its own section header appearing. Fixed this
+    // round (PatientDatabase.jsx) before writing this test, so it verifies
+    // the fix rather than just documenting the gap.
+    await sidebar.getByText('Observation', { exact: true }).click();
+    await page.getByRole('button', { name: 'Healthy', exact: true }).click();
+
+    // ── Posture Analysis: smoke test only, not a full analysis ──
+    // This module is a fundamentally different kind of interaction from
+    // everything else tested -- camera/photo upload + MediaPipe AI pose
+    // detection + optional manual landmark placement, not a form. The
+    // underlying scoring math (HybridKendall) already has 37 dedicated unit
+    // tests (kendallGeometry.test.js/kendallPatterns.test.js). Simulating a
+    // real photo analysis here would need a real test image fixture and
+    // reliable AI pose detection in a headless CI browser -- a much bigger,
+    // separate piece of work, not attempted here. This just confirms the
+    // module actually loads without crashing when navigated to.
+    await sidebar.getByText('Posture Analysis', { exact: true }).click();
+    await expect(page.getByText('Upload or capture a photo to begin.')).toBeVisible({ timeout: 10_000 });
+
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
     await sidebar.getByText('Documentation', { exact: true }).click();
     await sidebar.getByText('SOAP Notes', { exact: true }).click();
@@ -268,6 +293,7 @@ test.describe('Full patient journey', () => {
     await expect(page.getByText('Skin Rolling').first()).toBeVisible(); // Fascia
     await expect(page.getByText('Scalp').first()).toBeVisible(); // Palpation
     await expect(page.getByText('Sit-to-Stand').first()).toBeVisible(); // Functional Assessment
+    await expect(page.getByText('Healthy').first()).toBeVisible(); // Observation
 
     // ── Sign and lock the note (two-step confirm) ──
     await page.getByRole('button', { name: 'Sign & lock note' }).click();
@@ -302,5 +328,11 @@ test.describe('Full patient journey', () => {
     // Functional Assessment: real test label from the working fs_data
     // module (not the dead classic-FMS code path).
     await expect(profile.getByText('Sit-to-Stand').first()).toBeVisible();
+    // Observation: real finding fixed this round -- Patient Profile's
+    // Observation section previously only showed the Posture/Physical Exam
+    // subset of obs_ fields, completely omitting "General Observation"
+    // (appearance/consciousness/attitude/build/nutrition) despite its own
+    // section header appearing.
+    await expect(profile.getByText('Healthy').first()).toBeVisible();
   });
 });

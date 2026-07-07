@@ -2323,6 +2323,19 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 {d.obs_summary&&<div style={{fontSize:12,color:C.text,lineHeight:1.65,marginBottom:8,fontStyle:"italic",borderLeft:`3px solid ${C.secondary}`,paddingLeft:10}}>{d.obs_summary}</div>}
                 <div style={{display:"flex",flexDirection:"column",gap:5}}>
                   {[
+                    // Was missing entirely -- the "General Observation" section
+                    // (appearance/consciousness/attitude/build/nutrition) is a
+                    // real part of ObservationModule's own UI (the section
+                    // shown open by default), but this list only ever included
+                    // the Posture/Physical Exam fields below it. Confirmed via
+                    // a real E2E test that recorded "obs_appearance" and found
+                    // it never appeared here despite the section header showing.
+                    d.obs_appearance&&{l:"Appearance",v:d.obs_appearance,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_consciousness&&d.obs_consciousness!=="Alert"&&{l:"Consciousness",v:d.obs_consciousness,col:"#92400E",bg:"#FEF3C7",bdr:"#EF9F27"},
+                    d.obs_attitude&&d.obs_attitude!=="Cooperative"&&{l:"Attitude",v:d.obs_attitude,col:"#92400E",bg:"#FEF3C7",bdr:"#EF9F27"},
+                    d.obs_build&&{l:"Build",v:d.obs_build,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_nutrition&&d.obs_nutrition!=="Normal"&&{l:"Nutrition",v:d.obs_nutrition,col:C.muted,bg:"#F3F4F6",bdr:C.border},
+                    d.obs_general_notes&&{l:"General notes",v:d.obs_general_notes,col:C.text,bg:"#F9FAFB",bdr:C.border},
                     d.obs_swelling_present==="Present"&&{l:"Swelling",v:`${d.obs_swelling_severity||""} ${d.obs_swelling_type||""}${d.obs_swelling_location?" · "+d.obs_swelling_location:""}`.trim(),col:"#A32D2D",bg:"#FEF2F2",bdr:"#E24B4A"},
                     d.obs_muscle_bulk&&d.obs_muscle_bulk!=="Symmetrical"&&{l:"Muscle bulk",v:`${d.obs_muscle_bulk}${d.obs_muscle_location?" · "+d.obs_muscle_location:""}`,col:"#92400E",bg:"#FEF3C7",bdr:"#EF9F27"},
                     d.obs_deformity&&d.obs_deformity!=="None"&&{l:"Deformity",v:`${d.obs_deformity}${d.obs_deformity_location?" · "+d.obs_deformity_location:""}`,col:"#A32D2D",bg:"#FEF2F2",bdr:"#E24B4A"},
