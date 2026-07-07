@@ -217,10 +217,13 @@ test.describe('Full patient journey', () => {
     // this round, matching the same convention used everywhere else.
     await sidebar.getByText('Palpation', { exact: true }).click();
     await page.locator('[data-hotspot-id="scalp"]').click();
-    // Clicking a hotspot creates a pin and opens its detail panel, showing
-    // the hotspot's real anatomical label -- confirms the pin was created
-    // for the right point before grading it.
-    await expect(page.getByText('Scalp / Occiput')).toBeVisible({ timeout: 10_000 });
+    // Real CI failure: "Scalp / Occiput" also appears as plain text in a
+    // separate reference table elsewhere on this screen (a structures
+    // legend), causing a strict-mode ambiguity against the pin detail
+    // panel's own heading. "Tenderness Grade (0 – 4+)" is unique to the
+    // detail panel itself and confirms it actually opened for this pin
+    // before grading it.
+    await expect(page.getByText('Tenderness Grade')).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: '2+', exact: true }).click();
 
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
