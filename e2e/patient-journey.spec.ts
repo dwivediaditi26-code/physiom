@@ -140,6 +140,32 @@ test.describe('Full patient journey', () => {
     const wristFlexCard = page.locator('[data-cy-id="wr_a_flex"]');
     await wristFlexCard.locator('input[type="text"]').first().fill('60');
 
+    // Phase 2 (per the testing roadmap): data-driven modules (MMT already
+    // covered above), done as one real, clinically specific finding per
+    // module rather than exhaustively clicking through every single real
+    // entry -- that exhaustive coverage already exists cheaply and fast as
+    // Vitest unit tests (mmtLabels.test.js, romCoverage.test.js,
+    // specialTestLabels.test.js each loop the real data source and check
+    // every single muscle/movement/test). This E2E layer's job is
+    // different: prove a real click, in a real browser, actually reaches
+    // the real UI element and the real SOAP note -- not re-prove label
+    // completeness, which is already proven exhaustively and far more
+    // cheaply elsewhere.
+
+    // ── ROM: Cervical Flexion (first region, first movement) ──
+    await sidebar.getByText('Range of Motion', { exact: true }).click();
+    // First number input on a freshly-opened ROM screen is Cervical
+    // Flexion's Active ROM value (ROM_DATA's first region, first movement).
+    await page.locator('input[type="number"]').first().fill('30');
+
+    // ── Special Tests: Neer's Test -> Positive (default region: shoulder) ──
+    await sidebar.getByText('Special Tests', { exact: false }).click();
+    await page.getByText("Neer's Test", { exact: true }).click(); // expand
+    // Only the expanded card renders a <select> at all (collapsed cards
+    // don't render the result-selection block), so once Neer's Test is the
+    // only expanded card, .first() reliably targets its LEFT-side select.
+    await page.locator('select').first().selectOption('Positive — anterior shoulder pain (impingement)');
+
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
     await sidebar.getByText('Documentation', { exact: true }).click();
     await sidebar.getByText('SOAP Notes', { exact: true }).click();
@@ -152,6 +178,11 @@ test.describe('Full patient journey', () => {
     await expect(page.getByText('Deep Neck Flexors').first()).toBeVisible();
     await expect(page.getByText('Straight Leg Raise').first()).toBeVisible();
     await expect(page.getByText('Wrist Flexion').first()).toBeVisible();
+    await expect(page.getByText('Flexion').first()).toBeVisible(); // ROM
+    await expect(page.getByText(/Neer/).first()).toBeVisible(); // Special Tests
+    // GCS: was only wired into Live SOAP text and Patient Profile before --
+    // added to this visual screen this same session, confirmed live here.
+    await expect(page.getByText('Glasgow Coma Scale')).toBeVisible();
 
     // ── Sign and lock the note (two-step confirm) ──
     await page.getByRole('button', { name: 'Sign & lock note' }).click();
@@ -176,5 +207,8 @@ test.describe('Full patient journey', () => {
     // ("Wrist Flexion"), not the old garbled "Hand Act Rom Wr A Flex".
     await expect(profile.getByText('Wrist Flexion').first()).toBeVisible();
     await expect(profile.getByText('Wrist/Hand').first()).toBeVisible();
+    // Special Tests: real test name (this session's fix, task #26) --
+    // ST_DATA_LABELS checked before the smaller, staler SPECIAL_TEST_NAMES.
+    await expect(profile.getByText(/Neer/).first()).toBeVisible();
   });
 });

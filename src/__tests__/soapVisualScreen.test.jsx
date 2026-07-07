@@ -76,6 +76,18 @@ describe("SOAP Notes visual screen — CPA and STTT sections", () => {
     expect(screen.getByText("Limited: Severely limited")).toBeInTheDocument();
   });
 
+  it("Neurological section shows GCS, which was previously wired into Live SOAP text and Patient Profile but never this visual screen", () => {
+    // gcs_eye/gcs_verbal/gcs_motor were already correctly handled in
+    // buildRealtimeSOAP (Live SOAP text) and in Patient Profile, but never
+    // reached this component's own JSX at all -- so GCS silently never
+    // appeared on the actual SOAP Notes screen a clinician looks at,
+    // regardless of whether it was recorded.
+    const data = { gcs_eye: "4", gcs_verbal: "5", gcs_motor: "6" };
+    render(<SOAPNoteModule data={data} set={() => {}} onNav={() => {}} initialTab="O" />);
+    expect(screen.getByText("Glasgow Coma Scale")).toBeInTheDocument();
+    expect(screen.getByText("15")).toBeInTheDocument();
+  });
+
   it("MMT fallback labels a spinal-level-style key clearly instead of showing a bare, unclear fragment", () => {
     // Confirmed via screenshot: real patient data can contain keys like
     // "mmt_l3"/"mmt_s1" that aren't real MMT_DATA muscle IDs (spinal-level

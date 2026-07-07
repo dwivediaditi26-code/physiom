@@ -4490,8 +4490,25 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           </div>}
 
           {/* Neurological */}
-          {neuroRows.length>0&&<div style={subCard("#065F46")}>
+          {(neuroRows.length>0||v("gcs_eye")||v("gcs_verbal")||v("gcs_motor"))&&<div style={subCard("#065F46")}>
             {subH("Neurological","#065F46")}
+            {/* GCS (Glasgow Coma Scale) -- was only ever wired into the
+                Live SOAP text builder and Patient Profile, never this
+                visual card screen, so it silently never appeared here
+                regardless of whether it was recorded. Same real fields
+                (gcs_eye/gcs_verbal/gcs_motor) as the other two locations. */}
+            {(v("gcs_eye")||v("gcs_verbal")||v("gcs_motor"))&&(()=>{
+              const e=parseInt(v("gcs_eye"))||0, ve=parseInt(v("gcs_verbal"))||0, m=parseInt(v("gcs_motor"))||0;
+              const total=e+ve+m;
+              const col=total<=8?"#DC2626":total<=12?"#D97706":"#059669";
+              return <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"#F9FAFB",borderRadius:8,marginBottom:8}}>
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:2}}>Glasgow Coma Scale</div>
+                  <div style={{fontSize:12,color:"#374151"}}>E {e||"—"} · V {ve||"—"} · M {m||"—"}</div>
+                </div>
+                <span style={{fontSize:18,fontWeight:800,color:col}}>{total}<span style={{fontSize:11,fontWeight:500,color:"#9CA3AF"}}>/15</span></span>
+              </div>;
+            })()}
             {neuroRows.map((r,i)=>{
               const lc=r.val.toLowerCase();
               const isAbn=lc.includes("reduced")||lc.includes("weak")||lc.includes("absent")||lc.includes("positive");
