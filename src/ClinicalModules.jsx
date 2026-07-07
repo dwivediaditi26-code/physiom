@@ -886,7 +886,7 @@ function GaitModule({ data, set }) {
           const val=data[g.id]||"";
           const present=val==="Present";
           return(
-            <div key={g.id} style={{background:C.surface,border:`1.5px solid ${present?C.yellow+"60":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"11px 13px",marginBottom:8,transition:"all 0.15s"}}>
+            <div key={g.id} data-ag-id={g.id} style={{background:C.surface,border:`1.5px solid ${present?C.yellow+"60":C.border}`,borderRadius:10,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.10)",borderRadius:16,padding:"11px 13px",marginBottom:8,transition:"all 0.15s"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:"0.85rem",color:present?C.yellow:C.text,marginBottom:3}}>{g.label}</div>

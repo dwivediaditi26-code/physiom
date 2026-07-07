@@ -187,9 +187,15 @@ test.describe('Full patient journey', () => {
     // visible from reading the tabs array alone. Must expand it first.
     await page.getByText('Detailed analysis', { exact: false }).click();
     await page.getByRole('button', { name: 'Gait Pattern' }).click(); // internal tab
-    // ag_trend (Trendelenburg) is first in ABNORMAL_GAITS, and is the only
-    // select rendered per abnormal-gait row -- first select on this tab.
-    await page.locator('select').first().selectOption('Present');
+    // Real CI failure: the "Quick Gait Summary" panel (quickFields) has its
+    // own selects (ag_antalgic, g_oga_step_sym, etc.) that stay mounted even
+    // after expanding "Detailed analysis" -- .first() grabbed one of those
+    // instead of Trendelenburg's, which doesn't have a "Present" option at
+    // all, hence the "did not find some options" timeout. Added data-ag-id
+    // to the ABNORMAL_GAITS row wrapper (matching the same convention used
+    // everywhere else: data-neuro-id/data-cy-id/data-nkt-id/data-kc-id/
+    // data-fa-id/data-nt-id) rather than guessing at select ordering again.
+    await page.locator('[data-ag-id="ag_trend"]').locator('select').selectOption('Present');
 
     // ── Kinetic Chain: Ankle DF -> Moderately restricted ──
     await sidebar.getByText('Kinetic Chain', { exact: true }).click();
