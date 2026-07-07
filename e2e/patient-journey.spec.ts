@@ -44,15 +44,23 @@ test.describe('Full patient journey', () => {
     await page.getByRole('button', { name: 'Skip tour' }).click();
 
     // ── Create a patient via the intake form ──
-    // NOTE: <SidebarItems> is rendered TWICE in AppFull.jsx (once for the
-    // fixed desktop sidebar, once for a mobile off-canvas menu that stays in
-    // the DOM even when hidden by CSS) -- confirmed by a real CI failure:
-    // "strict mode violation: getByText('New Patient') resolved to 2
-    // elements". Every sidebar-based locator below needs .first() for this
-    // same reason; the desktop copy renders first in DOM order, and this
-    // spec only runs against the desktop viewport (mobile is skipped above).
-    await expect(page.getByText('New Patient', { exact: false }).first()).toBeVisible({ timeout: 10_000 });
-    await page.getByText('New Patient', { exact: false }).first().click();
+    // NOTE on scoping: this page can have up to THREE elements matching
+    // "New Patient" text at once -- confirmed by two real CI failures in a
+    // row while chasing this. (1) <SidebarItems> is rendered TWICE in
+    // AppFull.jsx: once inside the hidden mobile nav drawer (`.pm-nav-drawer`,
+    // positioned off-screen by CSS -- and it renders FIRST in DOM order, the
+    // opposite of what an earlier fix here assumed, which is why .first()
+    // timed out clicking an element permanently outside the viewport), and
+    // once inside the real, always-visible desktop sidebar (`.pm-sidebar`).
+    // (2) A separate "No active patient" banner (`.pm-patient-bar`) has its
+    // own standalone "＋ New Patient" button, shown whenever no patient is
+    // selected yet -- exactly the state right after signup. Rather than
+    // guess at DOM order/position again, scope directly to the real
+    // `.pm-sidebar` container by its stable class name -- this can't drift
+    // if the page's structure changes elsewhere.
+    const sidebar = page.locator('.pm-sidebar');
+    await expect(sidebar.getByText('New Patient', { exact: false })).toBeVisible({ timeout: 10_000 });
+    await sidebar.getByText('New Patient', { exact: false }).click();
     await page.getByPlaceholder('e.g. Riya Sharma').fill(patientName);
     await page.getByRole('button', { name: 'Consent' }).click();
     await page.getByText('I consent to physiotherapy assessment and treatment').click();
@@ -63,14 +71,14 @@ test.describe('Full patient journey', () => {
     await expect(page.getByText(patientName, { exact: false }).first()).toBeVisible({ timeout: 10_000 });
 
     // ── Record a real MMT finding ──
-    await page.getByText('MMT', { exact: true }).first().click();
+    await sidebar.getByText('MMT', { exact: true }).click();
     await expect(page.getByText('Sternocleidomastoid').first()).toBeVisible({ timeout: 10_000 });
     // First muscle card's Left grade select -- grade "5" (Normal).
     await page.locator('select.pm-compact-select').first().selectOption('5');
 
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
-    await page.getByText('Documentation', { exact: true }).first().click();
-    await page.getByText('SOAP Notes', { exact: true }).first().click();
+    await sidebar.getByText('Documentation', { exact: true }).click();
+    await sidebar.getByText('SOAP Notes', { exact: true }).click();
 
     // The MMT finding just recorded should be visible somewhere in the
     // Objective section of the real, rendered SOAP screen.
