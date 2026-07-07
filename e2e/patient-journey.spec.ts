@@ -61,20 +61,21 @@ test.describe('Full patient journey', () => {
     const sidebar = page.locator('.pm-sidebar');
     await expect(sidebar.getByText('New Patient', { exact: false })).toBeVisible({ timeout: 10_000 });
     await sidebar.getByText('New Patient', { exact: false }).click();
-    await page.getByPlaceholder('e.g. Riya Sharma').fill(patientName);
-    // Playwright's getByRole name match is substring by default, not exact --
-    // "Consent" (the tab) also matched the disabled submit button's other
-    // label state, "Complete Consent tab first". exact: true fixes it.
-    await page.getByRole('button', { name: 'Consent', exact: true }).click();
-    // getByText matches an element's full aggregated text, including
-    // ancestors -- the same underlying issue as the Consent button, just one
-    // level deeper: the checkbox's own <span> label AND the entire
-    // surrounding <div> (heading + explanatory paragraph concatenated) both
-    // contain this substring. Target the actual checkbox by its role
-    // instead of any surrounding text -- more precise, and immune to this
-    // whole class of ancestor-text collision.
-    await page.getByRole('checkbox', { name: 'I consent to physiotherapy assessment and treatment' }).check();
-    await page.getByRole('button', { name: 'Start Assessment →' }).click();
+
+    // Real CI failure #5: "Start Assessment →" also resolved to 2 elements --
+    // a completely unrelated hero banner button on the dashboard (which stays
+    // mounted behind this modal, not unmounted) has the exact same text and
+    // navigates straight to Subjective, bypassing intake entirely. Given how
+    // many distinct ambiguity classes this modal has hit (sidebar dup, role
+    // substring match, ancestor-text match, and now an unrelated background
+    // element with identical text), added a data-testid to the actual modal
+    // wrapper in AppFull.jsx rather than continuing to patch text-matching
+    // edge cases one at a time -- scope everything inside intake to it.
+    const intake = page.getByTestId('intake-modal');
+    await intake.getByPlaceholder('e.g. Riya Sharma').fill(patientName);
+    await intake.getByRole('button', { name: 'Consent', exact: true }).click();
+    await intake.getByRole('checkbox', { name: 'I consent to physiotherapy assessment and treatment' }).check();
+    await intake.getByRole('button', { name: 'Start Assessment →' }).click();
 
     // Intake auto-navigates to Subjective -- confirms the patient record
     // was actually created, not just the modal closing.
