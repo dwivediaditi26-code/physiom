@@ -138,27 +138,40 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     await pageB.getByPlaceholder('••••••••').fill(password);
     await pageB.getByRole('button', { name: 'Sign in →' }).click();
 
-    // Real CI failure: `.pm-patient-bar` genuinely wasn't found at all (not
-    // a strict-mode ambiguity -- truly absent). Root cause: the first-time
-    // onboarding modal ("Skip tour", already documented in
-    // patient-journey.spec.ts) is gated on a *localStorage* flag, not an
-    // account flag -- confirmed by this project's own existing comments.
-    // Device B is a genuinely fresh browser context with no pm_onboarded
-    // flag, so it shows the same onboarding modal a brand-new signup does,
-    // covering the header/patient bar underneath. Missed dismissing it here
-    // the first time since Device B logs in rather than signs up.
-    await pageB.getByRole('button', { name: 'Skip tour' }).click();
+    // Anchor point: confirm login actually landed in the main app shell
+    // before reasoning about anything inside it. If this line itself ever
+    // fails, the problem is login/session handling, not the patient bar.
+    await expect(pageB.locator('.pm-sidebar')).toBeVisible({ timeout: 15_000 });
 
-    // A fresh account/context has no locally-cached patient -- open the
-    // patient loader and confirm the SAME patient, created on Device A,
-    // is visible via the real backend rather than any local cache.
-    // Also scoped to the real, always-visible desktop `.pm-patient-bar`
-    // container -- getByText('Load Patient') alone resolves to the MOBILE
-    // bottom-nav's hidden "👥 Load Patient" button (pm-bnav-dx) too, same
-    // dual-render class of bug as the sidebar duplication elsewhere.
+    // The first-time onboarding modal is gated on a per-browser localStorage
+    // flag (pm_onboarded), independent of signup vs login -- Device B is a
+    // genuinely fresh context, so it shows the same modal a signup would.
+    // Dismiss it if present; don't hard-fail if some other timing means it
+    // isn't (e.g. a slightly different mount order), since it's not the
+    // actual thing this test is verifying.
+    const skipTour = pageB.getByRole('button', { name: 'Skip tour' });
+    if (await skipTour.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await skipTour.click();
+    }
+
+    // Open the patient loader and confirm the SAME patient, created on
+    // Device A, is visible via the real backend rather than any local
+    // cache. Real CI failures chasing this: (1) getByText('Load Patient')
+    // alone resolves to the MOBILE bottom-nav's hidden "👥 Load Patient"
+    // button (pm-bnav-dx) too -- same dual-render class of bug as the
+    // sidebar duplication elsewhere -- fixed by scoping to the real,
+    // always-visible desktop `.pm-patient-bar` container. (2) Even scoped,
+    // "Load Patient" alone still wasn't found -- that text only renders in
+    // the *no active patient* branch of this bar; the *has active patient*
+    // branch (a plausible outcome if the app auto-loads the most recently
+    // used patient on login) shows "Switch Patient" instead, but both
+    // buttons call the identical setShowPatientDb(true) handler, so either
+    // one opens the same patient list. Matching both rather than assuming
+    // which branch renders.
     const patientBar = pageB.locator('.pm-patient-bar');
-    await expect(patientBar.getByText('Load Patient', { exact: false })).toBeVisible({ timeout: 15_000 });
-    await patientBar.getByText('Load Patient', { exact: false }).click();
+    const openPatientList = patientBar.getByText(/Load Patient|Switch Patient/);
+    await expect(openPatientList).toBeVisible({ timeout: 15_000 });
+    await openPatientList.click();
     await expect(pageB.getByText(patientName)).toBeVisible({ timeout: 10_000 });
 
     await contextB.close();
