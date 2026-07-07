@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ALL_EXERCISES, EXERCISE_DB } from "./ClinicalModules.jsx";
+import { ALL_EXERCISES, EXERCISE_DB } from "./sharedClinicalData.js";
 
 function buildWAText(programme, precautions, clinicName, therapistName, phone, patientName) {
   if (!programme.length) return "";

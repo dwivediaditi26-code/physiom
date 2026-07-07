@@ -1,8 +1,8 @@
 // AppModules.jsx — PDF reports, HEP helpers, QuickVisit, Intake, Onboarding
 // Extracted from AppFull.jsx — pure extraction, no logic changes
 import React, { useState } from "react";
-import { downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
-import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./ClinicalModules.jsx";
+import { downloadPDFFromHTML } from "./sharedClinicalData.js";
+import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./sharedClinicalData.js";
 function PdfReportsModal({ data, dx, onClose, patients=[] }) {
   const [generating, setGenerating] = useState(null);
   const [done, setDone] = useState({});

@@ -4,9 +4,9 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { createPortal } from "react-dom";
 import { supabase } from "./supabase.js";
 import { getC } from "./utils.jsx";
-import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION } from "./PhysioNeuro.jsx";
-import { MMT_DATA_LABELS, mmtFallbackLabel, ST_DATA_LABELS, SCALE_DATA_LABELS, resolveCyriaxKey } from "./ClinicalModules.jsx";
-import { NKT_REGIONS } from "./SubjectiveObjective.jsx";
+import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION } from "./sharedClinicalData.js";
+import { MMT_DATA_LABELS, mmtFallbackLabel, ST_DATA_LABELS, SCALE_DATA_LABELS, resolveCyriaxKey } from "./sharedClinicalData.js";
+import { NKT_REGIONS } from "./sharedClinicalData.js";
 import BodyChartPro from "./BodyChartPro.jsx";
 // These used to be flat constants shared by every user of a device. Now
 // they're per-user: two students sharing one browser/tablet each get their

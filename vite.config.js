@@ -46,16 +46,30 @@ export default defineConfig({
           if (id.includes('node_modules/')) {
             return 'vendor';
           }
-          // Heavy clinical source files → separate async chunks
-          if (id.includes('SubjectiveObjective')) return 'chunk-subjective';
-          if (id.includes('ClinicalModules'))    return 'chunk-clinical';
-          if (id.includes('OutcomeMeasuresPro')) return 'chunk-outcomes';
-          if (id.includes('PhysioNeuro'))        return 'chunk-neuro';
-          if (id.includes('BodyChartPro'))       return 'chunk-bodychart';
-          if (id.includes('HybridKendall'))      return 'chunk-kendall';
-          if (id.includes('vitposeEngine'))      return 'chunk-vitpose';
-          if (id.includes('contourEngine'))      return 'chunk-contour';
-          if (id.includes('sagittalFindings'))   return 'chunk-sagittal';
+          // Small, pure cross-file data/constants -- own tiny chunk so importing
+          // even one small constant from here never drags in a heavy UI chunk.
+          if (id.includes('sharedClinicalData')) return 'chunk-shareddata';
+          // NOTE: SubjectiveObjective.jsx, ClinicalModules.jsx, OutcomeMeasuresPro.jsx,
+          // PhysioNeuro.jsx, BodyChartPro.jsx, HybridKendall.jsx, vitposeEngine,
+          // contourEngine, sagittalFindings used to each get a fixed, named chunk here.
+          // Real, measured discovery: when a manualChunks callback assigns a *name*
+          // to a module that's ONLY ever reached via React.lazy()/dynamic import()
+          // from multiple different call sites, Rollup hoists that named chunk into
+          // a *static* import of the entry bundle -- completely defeating every
+          // lazy() wrapper pointing at it, regardless of how many "chunk-clinical is
+          // 530KB in its own file" numbers looked reassuring. Confirmed by diffing
+          // the actual entry bundle's own top-of-file `import` statements before and
+          // after removing one manual pin: chunk-subjective vanished from the entry's
+          // static imports and from the initial modulepreload list entirely once
+          // Rollup was left to name/place it itself. Removing these fixed names and
+          // letting Rollup's own chunking algorithm decide is the actual fix; it
+          // still produces per-file-ish chunks in practice (since these files are
+          // each only reachable from their own lazy_*.jsx wrapper), it just won't
+          // force them eager anymore. Files that DO have genuine remaining eager
+          // static importers (checked separately) will still legitimately end up
+          // wherever Rollup's default heuristic puts eager code -- that's correct,
+          // not a bug, and is addressed by removing those real static imports
+          // instead of fighting the chunk-naming mechanism.
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',

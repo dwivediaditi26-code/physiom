@@ -10,7 +10,7 @@
 // deriving ST_DATA_LABELS from SPECIAL_TESTS_DATA directly.
 import { describe, it, expect } from "vitest";
 import { buildRealtimeSOAP } from "../ClinicalModules.jsx";
-import { SPECIAL_TESTS_DATA } from "../SubjectiveObjective.jsx";
+import { SPECIAL_TESTS_DATA } from "../sharedClinicalData.js";
 
 describe("Special test labels in the SOAP Objective section", () => {
   it("shows the real test name for a test that was missing from ST_LABEL_MAP", () => {

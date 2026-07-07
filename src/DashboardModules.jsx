@@ -2,7 +2,7 @@
 // Extracted from AppFull.jsx — pure extraction, no logic changes
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { getC } from "./utils.jsx";
-import { makePDFPage, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
+import { makePDFPage, downloadPDFFromHTML } from "./sharedClinicalData.js";
 const POSTURE_DEFECTS = {
   forward_head: {
     id:"forward_head", icon:"🫀", label:"Forward Head Posture", region:"Cervical",

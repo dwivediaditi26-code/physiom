@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import {
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
-} from "./SubjectiveObjective.jsx";
+} from "./sharedClinicalData.js";
 // NOTE: SpecialTestsSection, FMASection, FasciaSection, KineticChainSection,
 // CyriaxRegionTests, SubjectiveModule, NKTSection, ErgoModule, CyriaxModule,
 // PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML used to be
@@ -37,8 +37,8 @@ import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import LandingPage from "./LandingPage.jsx";
-import { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
-  MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./PhysioNeuro.jsx";
+import { NeurologicalModule } from "./PhysioNeuro.jsx";
+import { ALL_TESTS, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
 import AIAssistant from "./AIAssistant.jsx";
 import HomeProtocolTab from "./HomeProtocolTab.jsx";
 
@@ -74,6 +74,8 @@ const LazyCyriaxRegion  = lazy(() => import("./lazy_cyriax_region.jsx"));
 const LazyObservation   = lazy(() => import("./lazy_observation.jsx"));
 const LazySOAPNote      = lazy(() => import("./lazy_soapnote.jsx"));
 const LazyLiveSOAP      = lazy(() => import("./lazy_livesoap.jsx"));
+const LazyMMT           = lazy(() => import("./lazy_mmt.jsx"));
+const LazyROM           = lazy(() => import("./lazy_rom.jsx"));
 
 // Minimal Suspense fallback
 const TabFallback = () => (
@@ -1434,7 +1436,7 @@ function AppInner({ currentUser, onSignOut }) {
                 </>
               ):tests==="MMT_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <MMTModule data={data} set={set} navContext={active==="mmt"?navContext:{}}/>
+                <Suspense fallback={<TabFallback/>}><LazyMMT data={data} set={set} navContext={active==="mmt"?navContext:{}}/></Suspense>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
@@ -1445,7 +1447,7 @@ function AppInner({ currentUser, onSignOut }) {
               </>
               ):tests==="ROM_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <ROMModule data={data} set={set} navContext={active==="rom"?navContext:{}}/>
+                <Suspense fallback={<TabFallback/>}><LazyROM data={data} set={set} navContext={active==="rom"?navContext:{}}/></Suspense>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
