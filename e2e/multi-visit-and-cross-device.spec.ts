@@ -116,10 +116,17 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     await sidebarA.getByText('MMT', { exact: true }).click();
     await expect(pageA.getByText('Sternocleidomastoid').first()).toBeVisible({ timeout: 10_000 });
     await pageA.locator('select.pm-compact-select').first().selectOption('5');
-    // Give the cloud-primary autosave a moment to actually reach Supabase
-    // before "Device B" tries to read it back -- this is exactly the kind
-    // of real timing this test exists to catch, not paper over.
-    await pageA.waitForTimeout(2_000);
+
+    // Real CI failure: a flat 2s wait here isn't enough. AppFull.jsx's cloud
+    // autosave effect (the one that pushes `data` edits to Supabase) itself
+    // *debounces 2000ms before it even starts the network request* -- a
+    // flat waitForTimeout(2_000) right after the edit is a race against that
+    // same debounce, most likely closing the context just as the actual
+    // network request began rather than after it finished. Wait for the
+    // real "✓ Saved to cloud" indicator (cloudSaveStatus === "saved" in
+    // AppFull.jsx) instead of guessing a duration -- this is the same
+    // signal a real clinician would look at before assuming a save is safe.
+    await expect(pageA.getByText(/Saved to cloud/)).toBeVisible({ timeout: 15_000 });
     await contextA.close();
 
     // ── "Device B": a brand-new, fully independent browser context (no
