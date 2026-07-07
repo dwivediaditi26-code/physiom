@@ -138,14 +138,24 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     await pageB.getByPlaceholder('••••••••').fill(password);
     await pageB.getByRole('button', { name: 'Sign in →' }).click();
 
+    // Real CI failure: `.pm-patient-bar` genuinely wasn't found at all (not
+    // a strict-mode ambiguity -- truly absent). Root cause: the first-time
+    // onboarding modal ("Skip tour", already documented in
+    // patient-journey.spec.ts) is gated on a *localStorage* flag, not an
+    // account flag -- confirmed by this project's own existing comments.
+    // Device B is a genuinely fresh browser context with no pm_onboarded
+    // flag, so it shows the same onboarding modal a brand-new signup does,
+    // covering the header/patient bar underneath. Missed dismissing it here
+    // the first time since Device B logs in rather than signs up.
+    await pageB.getByRole('button', { name: 'Skip tour' }).click();
+
     // A fresh account/context has no locally-cached patient -- open the
     // patient loader and confirm the SAME patient, created on Device A,
     // is visible via the real backend rather than any local cache.
-    // Real CI failure: getByText('Load Patient') resolved to the MOBILE
-    // bottom-nav's "👥 Load Patient" button (class pm-bnav-dx), which stays
-    // mounted-but-hidden on desktop -- same dual-render class of bug as the
-    // sidebar duplication in patient-journey.spec.ts. Scoped to the real,
-    // always-visible desktop `.pm-patient-bar` container instead.
+    // Also scoped to the real, always-visible desktop `.pm-patient-bar`
+    // container -- getByText('Load Patient') alone resolves to the MOBILE
+    // bottom-nav's hidden "👥 Load Patient" button (pm-bnav-dx) too, same
+    // dual-render class of bug as the sidebar duplication elsewhere.
     const patientBar = pageB.locator('.pm-patient-bar');
     await expect(patientBar.getByText('Load Patient', { exact: false })).toBeVisible({ timeout: 15_000 });
     await patientBar.getByText('Load Patient', { exact: false }).click();
