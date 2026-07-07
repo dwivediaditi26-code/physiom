@@ -66,7 +66,14 @@ test.describe('Full patient journey', () => {
     // "Consent" (the tab) also matched the disabled submit button's other
     // label state, "Complete Consent tab first". exact: true fixes it.
     await page.getByRole('button', { name: 'Consent', exact: true }).click();
-    await page.getByText('I consent to physiotherapy assessment and treatment').click();
+    // getByText matches an element's full aggregated text, including
+    // ancestors -- the same underlying issue as the Consent button, just one
+    // level deeper: the checkbox's own <span> label AND the entire
+    // surrounding <div> (heading + explanatory paragraph concatenated) both
+    // contain this substring. Target the actual checkbox by its role
+    // instead of any surrounding text -- more precise, and immune to this
+    // whole class of ancestor-text collision.
+    await page.getByRole('checkbox', { name: 'I consent to physiotherapy assessment and treatment' }).check();
     await page.getByRole('button', { name: 'Start Assessment →' }).click();
 
     // Intake auto-navigates to Subjective -- confirms the patient record
