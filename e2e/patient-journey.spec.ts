@@ -217,13 +217,14 @@ test.describe('Full patient journey', () => {
     // this round, matching the same convention used everywhere else.
     await sidebar.getByText('Palpation', { exact: true }).click();
     await page.locator('[data-hotspot-id="scalp"]').click();
-    // Real CI failure: "Scalp / Occiput" also appears as plain text in a
-    // separate reference table elsewhere on this screen (a structures
-    // legend), causing a strict-mode ambiguity against the pin detail
-    // panel's own heading. "Tenderness Grade (0 – 4+)" is unique to the
-    // detail panel itself and confirms it actually opened for this pin
-    // before grading it.
-    await expect(page.getByText('Tenderness Grade')).toBeVisible({ timeout: 10_000 });
+    // Real CI failures, twice in a row: (1) "Scalp / Occiput" also appears
+    // in a separate structures reference table elsewhere on this screen,
+    // and (2) getByText's default substring match is case-insensitive, so
+    // "Tenderness Grade" also matched an unrelated legend line "Dot colour
+    // = tenderness grade". Using the full exact heading text this time to
+    // close off this whole class of collision rather than trimming the
+    // search string again and hitting a third one.
+    await expect(page.getByText('Tenderness Grade (0 – 4+)', { exact: true })).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: '2+', exact: true }).click();
 
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
