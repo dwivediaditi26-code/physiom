@@ -25,6 +25,21 @@ allows 2 free projects per account, so this costs nothing extra.
    differently from prod on this one setting only).
 3. From **Project Settings -> API**, copy the **Project URL** and the
    **anon / publishable key**.
+4. **Set up the database schema.** A brand-new Supabase project has no
+   tables at all -- go to **SQL Editor -> New Query** and run these two
+   files from the repo root, in order:
+   - `supabase/schema.sql` (creates the `patients` table)
+   - `supabase_rls_setup.sql` (adds the `user_id` column and the
+     per-user Row Level Security policies)
+
+   Without this step, every write to Supabase (patient creation, autosave)
+   fails silently -- `syncPatientsToSupabase` in `PatientDatabase.jsx`
+   catches the error and only logs it via `console.warn`, so nothing in
+   the UI itself will tell you this is missing. This was found the hard
+   way: every test that only checks data within a single browser session
+   kept passing regardless, and it took a cross-device test (one that
+   logs in from a second, independent session to read data back) to
+   expose that the test project had never had its schema set up at all.
 
 ### 2. Add two secrets to this GitHub repo
 
