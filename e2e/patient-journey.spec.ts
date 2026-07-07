@@ -166,6 +166,39 @@ test.describe('Full patient journey', () => {
     // only expanded card, .first() reliably targets its LEFT-side select.
     await page.locator('select').first().selectOption('Positive — anterior shoulder pain (impingement)');
 
+    // Phase 3 (per the testing roadmap): Gait (had a severe, confirmed SOAP
+    // bug this project -- Trendelenburg/phase deviations/scale scores never
+    // reached the SOAP note at all), plus Kinetic Chain and Fascia.
+    // Deliberately NOT included this round: Palpation (its hotspots are raw
+    // SVG <circle> elements with no stable id/attribute to target -- needs
+    // its own careful setup rather than a fragile pixel-coordinate click),
+    // Functional Assessment/FMS, Posture Analysis (likely photo/AI-driven),
+    // and Observation -- flagged honestly rather than rushed.
+
+    // ── Gait: Trendelenburg -> Present ──
+    // "ag_trend" was the exact real field behind the second most severe SOAP
+    // bug found this project -- GaitModule wrote here, but the old SOAP
+    // builder checked entirely different, non-existent flat field names.
+    await sidebar.getByText('Gait Analysis', { exact: true }).click();
+    await page.getByRole('button', { name: 'Gait Pattern' }).click(); // internal tab
+    // ag_trend (Trendelenburg) is first in ABNORMAL_GAITS, and is the only
+    // select rendered per abnormal-gait row -- first select on this tab.
+    await page.locator('select').first().selectOption('Present');
+
+    // ── Kinetic Chain: Ankle DF -> Moderately restricted ──
+    await sidebar.getByText('Kinetic Chain', { exact: true }).click();
+    // data-kc-id already exists in source (SubjectiveObjective.jsx).
+    const ankleDfCard = page.locator('[data-kc-id="kc_ankle_df"]');
+    await ankleDfCard.getByText('Weight-Bearing Dorsiflexion').click(); // expand
+    await ankleDfCard.getByText('Moderately restricted').click();
+
+    // ── Fascia: Skin Rolling -> Localised restriction ──
+    await sidebar.getByText('Fascia Integration', { exact: true }).click();
+    // data-fa-id already exists in source (SubjectiveObjective.jsx).
+    const skinRollCard = page.locator('[data-fa-id="fa_skin_roll"]');
+    await skinRollCard.getByText('Skin Rolling Test').click(); // expand
+    await skinRollCard.getByText('Localised restriction').click();
+
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
     await sidebar.getByText('Documentation', { exact: true }).click();
     await sidebar.getByText('SOAP Notes', { exact: true }).click();
@@ -183,6 +216,9 @@ test.describe('Full patient journey', () => {
     // GCS: was only wired into Live SOAP text and Patient Profile before --
     // added to this visual screen this same session, confirmed live here.
     await expect(page.getByText('Glasgow Coma Scale')).toBeVisible();
+    await expect(page.getByText('Trendelenburg').first()).toBeVisible(); // Gait
+    await expect(page.getByText('Ankle DF').first()).toBeVisible(); // Kinetic Chain
+    await expect(page.getByText('Skin Rolling').first()).toBeVisible(); // Fascia
 
     // ── Sign and lock the note (two-step confirm) ──
     await page.getByRole('button', { name: 'Sign & lock note' }).click();
