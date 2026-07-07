@@ -95,6 +95,18 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     // ── "Device A": sign up, create a patient, save one real finding ──
     const contextA = await browser.newContext();
     const pageA = await contextA.newPage();
+    // Diagnostic only, not an assertion: after several rounds of this test
+    // failing at the cloud-save step with no clear signal from the
+    // assertion text alone, surface the app's own console output (it
+    // already does console.warn("[Supabase sync error]", e) on a failed
+    // upsert) directly into the CI log -- cheaper than downloading the
+    // trace/screenshot artifact to find the same thing.
+    pageA.on('console', (msg) => {
+      if (msg.type() === 'warning' || msg.type() === 'error') {
+        console.log(`[pageA console.${msg.type()}] ${msg.text()}`);
+      }
+    });
+    pageA.on('pageerror', (err) => console.log(`[pageA pageerror] ${err.message}`));
     await pageA.goto('/');
     await pageA.getByRole('button', { name: 'Create free account' }).click();
     await pageA.getByPlaceholder('Dr. Aditi').fill('E2E Runner A');
