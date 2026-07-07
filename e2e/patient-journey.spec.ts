@@ -18,10 +18,19 @@ import { test, expect } from '@playwright/test';
 // (pm-bnav-*) that hasn't been mapped out here yet and deserves its own spec
 // rather than guessing at untested selectors.
 
+// Phase 1 (per the testing roadmap discussed with the user): lock in
+// coverage for the three modules that had real, confirmed bugs fixed this
+// project -- Neurological (Neural Tension + GCS), CPA/NKT, and STTT/Cyriax
+// -- plus Patient Profile, which had its own separate, independently broken
+// rendering for all of these. This test records one real, clinically
+// specific finding per module via actual UI interaction (not synthetic
+// data passed directly to a component in a unit test) and confirms it
+// reaches both the signed SOAP note and Patient Profile correctly.
+
 test.describe('Full patient journey', () => {
   test.skip(({ isMobile }) => isMobile, 'Mobile uses a different bottom-nav UI -- needs its own spec');
 
-  test('sign up, create a patient, record an MMT finding, see it in the signed SOAP note', async ({ page }) => {
+  test('sign up, create a patient, record findings across MMT/CPA/Neuro/STTT, see them in the signed SOAP note and Patient Profile', async ({ page }) => {
     const unique = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
     const email = `e2e-${unique}@physiomind-test.dev`;
     const password = 'TestPass123!';
@@ -87,17 +96,85 @@ test.describe('Full patient journey', () => {
     // First muscle card's Left grade select -- grade "5" (Normal).
     await page.locator('select.pm-compact-select').first().selectOption('5');
 
+    // ── CPA/NKT: Deep Neck Flexors -> Inhibited ──
+    // Was reading the wrong legacy fields entirely before this session's fix
+    // (cpa_pattern/cx_cpa) -- confirmed via real UI here, not synthetic data.
+    // "Advanced Assessment" group is collapsed by default, unlike
+    // "Assessment" (open by default) -- must expand it first.
+    await sidebar.getByText('Advanced Assessment', { exact: true }).click();
+    await sidebar.getByText('CPA — Compensation Pattern Analysis', { exact: true }).click();
+    // data-nkt-id already exists in source (SubjectiveObjective.jsx) as a
+    // stable per-test hook -- scope to it rather than matching on label text,
+    // which would hit the same kind of ancestor-text ambiguity seen earlier.
+    const dnfCard = page.locator('[data-nkt-id="nkt_dnf"]');
+    await dnfCard.getByText('Deep Neck Flexors (DNF)').click(); // expand
+    await dnfCard.getByText('Inhibited', { exact: true }).click();
+
+    // ── Neurological: Neural Tension (SLR) + GCS ──
+    // Real bug fixed this session (Patient Profile only): Neural Tension
+    // tests had no explicit group in the label-grouping logic and fell into
+    // a catch-all labeled "Dermatomes" -- confirmed via a live screenshot
+    // showing "NT SLR" under the DERMATOMES heading. GCS (gcs_eye/verbal/
+    // motor) never matched Patient Profile's field filter at all, so it
+    // never appeared there regardless of whether it was recorded.
+    await sidebar.getByText('Neurological', { exact: true }).click();
+    await page.getByRole('button', { name: 'Neural Tension' }).click();
+    // Added data-nt-id this session (matching the existing data-neuro-id /
+    // data-cy-id / data-nkt-id convention already used elsewhere) since
+    // Neural Tension test cards had no stable per-test hook before.
+    const slrCard = page.locator('[data-nt-id="nt_slr"]');
+    await slrCard.locator('select').first().selectOption('Positive — symptoms reproduced');
+    await page.getByRole('button', { name: 'GCS' }).click();
+    await page.getByText('4 — Spontaneous').click();
+    await page.getByText('5 — Oriented').click();
+    await page.getByText('6 — Obeys Commands').click();
+
+    // ── STTT/Cyriax: Wrist Flexion (the exact real region-garbling bug) ──
+    // "cyriax_wrist_hand_act_rom_wr_a_flex" is the precise real-world key
+    // that used to render as "Hand Act Rom Wr A Flex" with a stray "wrist"
+    // badge, instead of the real label "Wrist Flexion" -- caused by a lazy
+    // region-matching regex that mis-split any two-word region id.
+    await sidebar.getByText('STTT — Selective Tissue Tension', { exact: true }).click();
+    await page.getByRole('button', { name: 'Wrist & Hand' }).click();
+    // data-cy-id already exists in source (SubjectiveObjective.jsx).
+    const wristFlexCard = page.locator('[data-cy-id="wr_a_flex"]');
+    await wristFlexCard.locator('input[type="text"]').first().fill('60');
+
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
     await sidebar.getByText('Documentation', { exact: true }).click();
     await sidebar.getByText('SOAP Notes', { exact: true }).click();
 
-    // The MMT finding just recorded should be visible somewhere in the
-    // Objective section of the real, rendered SOAP screen.
+    // Every finding recorded above should be visible somewhere in the real,
+    // rendered SOAP screen -- this is the exact class of bug (a module's
+    // data existing but never reaching the SOAP note) found repeatedly
+    // earlier this project via source review; here it's confirmed live.
     await expect(page.getByText('Sternocleidomastoid').first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Deep Neck Flexors').first()).toBeVisible();
+    await expect(page.getByText('Straight Leg Raise').first()).toBeVisible();
+    await expect(page.getByText('Wrist Flexion').first()).toBeVisible();
 
     // ── Sign and lock the note (two-step confirm) ──
     await page.getByRole('button', { name: 'Sign & lock note' }).click();
     await page.getByRole('button', { name: 'Confirm sign & lock' }).click();
     await expect(page.getByText('Note signed and locked successfully')).toBeVisible({ timeout: 10_000 });
+
+    // ── Patient Profile: confirm this session's six section fixes hold up
+    // under real UI interaction, not just the synthetic-data unit tests
+    // already covering these (patientProfileLabels.test.jsx). ──
+    await sidebar.getByText('Profile', { exact: false }).click();
+    const profile = page.getByTestId('patient-profile-modal');
+    await profile.getByText('Assessment', { exact: true }).click();
+    // CPA: real muscle name, not the raw code "dnf".
+    await expect(profile.getByText('Deep Neck Flexors').first()).toBeVisible({ timeout: 10_000 });
+    // Neurological: Neural Tension now has its own real group heading,
+    // and SLR is filed under it -- not under "Dermatomes".
+    await expect(profile.getByText('Neural Tension', { exact: true })).toBeVisible();
+    await expect(profile.getByText('Straight Leg Raise').first()).toBeVisible();
+    // GCS: previously never appeared anywhere in Patient Profile at all.
+    await expect(profile.getByText('Glasgow Coma Scale')).toBeVisible();
+    // STTT: real region label ("Wrist/Hand") and real test label
+    // ("Wrist Flexion"), not the old garbled "Hand Act Rom Wr A Flex".
+    await expect(profile.getByText('Wrist Flexion').first()).toBeVisible();
+    await expect(profile.getByText('Wrist/Hand').first()).toBeVisible();
   });
 });

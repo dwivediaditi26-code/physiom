@@ -1729,7 +1729,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   };
 
   return (
-    <div style={{
+    <div data-testid="patient-profile-modal" style={{
       position:"fixed",inset:0,zIndex:9000,background:C.bg,
       display:"flex",flexDirection:"column",
       fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",

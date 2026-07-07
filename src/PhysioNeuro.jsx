@@ -2443,7 +2443,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
             const posL=lv.includes("Positive"), posR=rv.includes("Positive");
             const abnormal=posL||posR;
             return(
-              <div key={nt.id} style={{background:C.surface,border:`1px solid ${abnormal?C.accent+"60":C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+              <div key={nt.id} data-nt-id={nt.id} style={{background:C.surface,border:`1px solid ${abnormal?C.accent+"60":C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:10}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8,gap:8}}>
                   <div>
                     <div style={{fontWeight:800,fontSize:"0.9rem",color:abnormal?C.accent:C.text,marginBottom:2}}>{nt.label}</div>
