@@ -65,8 +65,15 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     await page.getByPlaceholder('e.g. 5').fill('6');
     await page.getByPlaceholder('e.g. 3').fill('3');
     await page.getByRole('button', { name: 'Exercise therapy', exact: true }).click();
+    // Real CI failure: saveQuick() (AppModules.jsx) calls setSaved(true) and
+    // navTo("soap") in the same synchronous handler -- the navigation
+    // unmounts this form before the "Saved…" button-text change can ever
+    // become visible in a real browser, a genuine race rather than a flaky
+    // selector. Check we actually landed on SOAP Notes instead: since
+    // visit 1's note is already signed & locked, arriving here should show
+    // it under "Locked notes" (ClinicalModules.jsx's SOAPNoteModule).
     await page.getByRole('button', { name: 'Save & Go to SOAP →' }).click();
-    await expect(page.getByText('Saved — opening SOAP to sign…')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Locked notes/)).toBeVisible({ timeout: 10_000 });
 
     // ── Patient Profile -> Progress tab: confirm the follow-up visit
     // reached the Session Timeline with its real pain values, and that a
@@ -134,8 +141,14 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     // A fresh account/context has no locally-cached patient -- open the
     // patient loader and confirm the SAME patient, created on Device A,
     // is visible via the real backend rather than any local cache.
-    await expect(pageB.getByText('Load Patient', { exact: false })).toBeVisible({ timeout: 15_000 });
-    await pageB.getByText('Load Patient', { exact: false }).click();
+    // Real CI failure: getByText('Load Patient') resolved to the MOBILE
+    // bottom-nav's "👥 Load Patient" button (class pm-bnav-dx), which stays
+    // mounted-but-hidden on desktop -- same dual-render class of bug as the
+    // sidebar duplication in patient-journey.spec.ts. Scoped to the real,
+    // always-visible desktop `.pm-patient-bar` container instead.
+    const patientBar = pageB.locator('.pm-patient-bar');
+    await expect(patientBar.getByText('Load Patient', { exact: false })).toBeVisible({ timeout: 15_000 });
+    await patientBar.getByText('Load Patient', { exact: false }).click();
     await expect(pageB.getByText(patientName)).toBeVisible({ timeout: 10_000 });
 
     await contextB.close();
