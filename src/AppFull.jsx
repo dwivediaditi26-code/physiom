@@ -3,13 +3,36 @@ import React, { useState, useCallback, useRef, useEffect, useMemo, Suspense, laz
 import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
-import { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection,
+import {
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
-  ErgoModule, CyriaxModule, CyriaxRegionTests,
-  PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML } from "./SubjectiveObjective.jsx";
-import { GaitModule, OutcomeMeasuresModule, SOAPNoteModule, ExercisePrescriptionModule, LiveSOAPPanel,
-  PalpationModule, TreatmentTechniquesModule, TreatmentSessionLogModule,
-  buildClinicalInterpretation, Sparkline, EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX, ObservationModule } from "./ClinicalModules.jsx";
+} from "./SubjectiveObjective.jsx";
+// NOTE: SpecialTestsSection, FMASection, FasciaSection, KineticChainSection,
+// CyriaxRegionTests, SubjectiveModule, NKTSection, ErgoModule, CyriaxModule,
+// PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML used to be
+// imported here too. SubjectiveModule/NKTSection/ErgoModule/CyriaxModule were
+// dead imports (only ever rendered via their existing lazy_*.jsx wrappers
+// below); PDF_BASE_STYLES/makePDFPage/downloadPDFFromHTML were unused
+// entirely; MOVEMENTS only fed a dead percentage calc for the old, already-
+// removed classic-FMS scoring (see getSectionPct's old fmaKeys). The 5 real,
+// actively-rendered components moved to lazy()+Suspense below -- this file
+// (SubjectiveObjective.jsx) is ~15k lines and was the single largest bundle
+// chunk (~1MB), forced eager on every single page load purely because these
+// 5 components were statically imported/rendered here without the lazy
+// wrapper every sibling screen already uses.
+// NOTE: GaitModule, OutcomeMeasuresModule, SOAPNoteModule,
+// ExercisePrescriptionModule, LiveSOAPPanel, PalpationModule,
+// TreatmentTechniquesModule, TreatmentSessionLogModule, ObservationModule,
+// buildClinicalInterpretation, Sparkline, EXERCISE_DB, ALL_EXERCISES,
+// PROGRAMME_TEMPLATES, TEMPLATE_TX used to be imported here. GaitModule/
+// OutcomeMeasuresModule/ExercisePrescriptionModule/PalpationModule/
+// TreatmentTechniquesModule/TreatmentSessionLogModule/buildClinicalInterpretation/
+// Sparkline/EXERCISE_DB/ALL_EXERCISES/PROGRAMME_TEMPLATES/TEMPLATE_TX were
+// dead imports (unused directly, or only rendered via their existing
+// lazy_*.jsx wrappers). SOAPNoteModule, LiveSOAPPanel, and ObservationModule
+// WERE actively rendered directly (not lazy) -- moved to lazy()+Suspense
+// below, same reasoning as the SubjectiveObjective.jsx cleanup above:
+// ClinicalModules.jsx (~530KB) was forced eager on every page load only
+// because of these 3 direct renders.
 import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
@@ -43,6 +66,14 @@ const LazyBodyChart     = lazy(() => import("./lazy_bodychart.jsx"));
 const LazyGait          = lazy(() => import("./lazy_gait.jsx"));
 const LazyPalpation     = lazy(() => import("./lazy_palpation.jsx"));
 const LazyTreatment     = lazy(() => import("./lazy_treatment.jsx"));
+const LazySpecial       = lazy(() => import("./lazy_special.jsx"));
+const LazyFMA           = lazy(() => import("./lazy_fma.jsx"));
+const LazyFascia        = lazy(() => import("./lazy_fascia.jsx"));
+const LazyKinetic       = lazy(() => import("./lazy_kinetic.jsx"));
+const LazyCyriaxRegion  = lazy(() => import("./lazy_cyriax_region.jsx"));
+const LazyObservation   = lazy(() => import("./lazy_observation.jsx"));
+const LazySOAPNote      = lazy(() => import("./lazy_soapnote.jsx"));
+const LazyLiveSOAP      = lazy(() => import("./lazy_livesoap.jsx"));
 
 // Minimal Suspense fallback
 const TabFallback = () => (
@@ -618,7 +649,18 @@ function AppInner({ currentUser, onSignOut }) {
     const allT=Object.values(sec.groups||{}).flat().filter(t=>typeof t==="object"&&t.id);
     const nktT=key==="nkt"?Object.values(NKT_REGIONS||{}).flatMap(r=>r.tests||[]).map(t=>t.id):[];
     const kcT=key==="kinetic"?Object.values(KC_REGIONS||{}).flatMap(r=>r.tests||[]).map(t=>t.id):[];
-    const fmaKeys=key==="fma"?Object.keys(MOVEMENTS||{}).map(m=>`fma_${m}`):[];
+    // Was: fmaKeys=key==="fma"?Object.keys(MOVEMENTS||{}).map(m=>`fma_"+m+"`):[]
+    // MOVEMENTS is the classic-FMS movement list (squat/gait/single_leg/lunge),
+    // whose fma_<movement> fields are dead -- nothing has written them since
+    // Functional Assessment moved to FunctionalScreenHub/lfs_<test> fields
+    // (see this session's dead-code removal). Kept output identical (this
+    // always contributed 0 filled out of a nonzero total, i.e. always 0%,
+    // same as the current total=0 branch below now gives) while dropping the
+    // need to statically import MOVEMENTS from SubjectiveObjective.jsx here.
+    // Real follow-up (separate from this bundle-size fix): the "Functional
+    // Assessment" sidebar item has therefore always shown 0% regardless of
+    // real lfs_ data recorded -- worth wiring up to the real fields later.
+    const fmaKeys=[];
     const subjKeys=key==="subjective"?[
       ...Object.values(UNIV_S||{}).flatMap(s=>s.fields.map(f=>f.id)),
       ...Object.values(REG_MOD_S||{}).flatMap(mod=>Object.values(mod.sections||mod||{}).flatMap(s=>s.fields?s.fields.map(f=>f.id):[])),
@@ -1338,7 +1380,7 @@ function AppInner({ currentUser, onSignOut }) {
                 <PostureDefectModule/>
               ):tests==="OBSERVATION_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <ObservationModule data={data} set={set}/>
+                <Suspense fallback={<TabFallback/>}><LazyObservation data={data} set={set}/></Suspense>
                 </>
               ):tests==="CYRIAX_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
@@ -1346,7 +1388,7 @@ function AppInner({ currentUser, onSignOut }) {
                 </>
               ):tests==="SPECIAL_TESTS_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <SpecialTestsSection data={data} set={set} navContext={active==="special"?navContext:{}}/>
+                <Suspense fallback={<TabFallback/>}><LazySpecial data={data} set={set} navContext={active==="special"?navContext:{}}/></Suspense>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
@@ -1361,19 +1403,19 @@ function AppInner({ currentUser, onSignOut }) {
                 </>
               ):tests==="FMA_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <FMASection data={data} set={set} navTo={navTo} navContext={active==="fma"?navContext:{}}/>
+                <Suspense fallback={<TabFallback/>}><LazyFMA data={data} set={set} navTo={navTo} navContext={active==="fma"?navContext:{}}/></Suspense>
                 </>
               ):tests==="FASCIA_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <FasciaSection data={data} set={set} navContext={active==="fascia"?navContext:{}}/>
+                <Suspense fallback={<TabFallback/>}><LazyFascia data={data} set={set} navContext={active==="fascia"?navContext:{}}/></Suspense>
                 </>
               ):tests==="KC_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <KineticChainSection data={data} set={set} navContext={active==="kinetic"?navContext:{}}/>
+                <Suspense fallback={<TabFallback/>}><LazyKinetic data={data} set={set} navContext={active==="kinetic"?navContext:{}}/></Suspense>
                 </>
               ):tests==="CYRIAX_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <CyriaxRegionTests data={data} set={set}/>
+                <Suspense fallback={<TabFallback/>}><LazyCyriaxRegion data={data} set={set}/></Suspense>
                 </>
               ):tests==="NEURO_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
@@ -1467,7 +1509,7 @@ function AppInner({ currentUser, onSignOut }) {
                   </div>
                 </div>
               ):tests==="SOAP_MODULE"?(
-              <SOAPNoteModule data={data} set={set}/>
+              <Suspense fallback={<TabFallback/>}><LazySOAPNote data={data} set={set}/></Suspense>
               ):tests==="AI_MODULE"?(
               <AIAssistant data={data} PC={PC}/>
               ):(
@@ -1649,7 +1691,7 @@ function AppInner({ currentUser, onSignOut }) {
         </div>
       </nav>
       {/* ── Live SOAP Panel — always visible floating panel ── */}
-      <LiveSOAPPanel data={data} onNavigate={navTo}/>
+      <Suspense fallback={null}><LazyLiveSOAP data={data} onNavigate={navTo}/></Suspense>
     </div>
   );
 }
