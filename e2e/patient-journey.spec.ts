@@ -180,6 +180,12 @@ test.describe('Full patient journey', () => {
     // bug found this project -- GaitModule wrote here, but the old SOAP
     // builder checked entirely different, non-existent flat field names.
     await sidebar.getByText('Gait Analysis', { exact: true }).click();
+    // Real CI failure: GaitModule shows a "Quick Gait Summary" panel by
+    // default, and the entire detailed tab bar (including "Gait Pattern")
+    // is collapsed behind a "Detailed analysis" toggle (showFull state,
+    // starts false) -- missed during initial research since it wasn't
+    // visible from reading the tabs array alone. Must expand it first.
+    await page.getByText('Detailed analysis', { exact: false }).click();
     await page.getByRole('button', { name: 'Gait Pattern' }).click(); // internal tab
     // ag_trend (Trendelenburg) is first in ABNORMAL_GAITS, and is the only
     // select rendered per abnormal-gait row -- first select on this tab.
