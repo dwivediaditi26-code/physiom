@@ -88,6 +88,19 @@ describe("SOAP Notes visual screen — CPA and STTT sections", () => {
     expect(screen.getByText("15")).toBeInTheDocument();
   });
 
+  it("Gait section shows Trendelenburg, found via a real CI failure while extending E2E coverage -- was checking flat field names GaitModule never writes", () => {
+    // Same exact class of bug as the "severe Gait SOAP bug" already fixed
+    // in buildRealtimeSOAP (Live SOAP text): the real field is
+    // "ag_trend" (an ABNORMAL_GAITS id), but this component's own JSX was
+    // still checking "gait_trendelenburg", a flat field name that
+    // GaitModule never writes at all -- that earlier text-builder fix never
+    // touched this separate, visual-screen rendering.
+    const data = { ag_trend: "Present" };
+    render(<SOAPNoteModule data={data} set={() => {}} onNav={() => {}} initialTab="O" />);
+    expect(screen.getByText("Gait")).toBeInTheDocument();
+    expect(screen.getByText(/Trendelenburg/)).toBeInTheDocument();
+  });
+
   it("MMT fallback labels a spinal-level-style key clearly instead of showing a bare, unclear fragment", () => {
     // Confirmed via screenshot: real patient data can contain keys like
     // "mmt_l3"/"mmt_s1" that aren't real MMT_DATA muscle IDs (spinal-level

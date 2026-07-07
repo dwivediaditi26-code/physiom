@@ -4457,10 +4457,33 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             })}
           </div>}
 
-          {/* Gait */}
+          {/* Gait -- was checking flat field names (gait_trendelenburg,
+              gait_antalgic, gait_cadence) that GaitModule never actually
+              writes, the exact same class of bug already found and fixed
+              in buildRealtimeSOAP (the Live SOAP text builder) via the
+              "severe Gait SOAP bug" fix earlier this project -- but that
+              fix never touched this component's own separate JSX, so this
+              visual screen kept silently showing nothing regardless of
+              what was recorded. Real fields: "<ABNORMAL_GAITS id>" (e.g.
+              "ag_trend"), "<GAIT_PHASES id>_dev", "<GAIT_SCALES id>". */}
           {mods.gait&&<div style={subCard("#065F46")}>
             {subH("Gait","#065F46")}
-            {[v("gait_pattern")&&["Pattern",v("gait_pattern")],v("gait_antalgic")&&["Antalgic",v("gait_antalgic")],v("gait_trendelenburg")&&["Trendelenburg",v("gait_trendelenburg")],v("gait_cadence")&&["Cadence",v("gait_cadence")],v("gait_notes")&&["Notes",v("gait_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,fontSize:12,minWidth:90}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
+            {(()=>{
+              const rows2 = [];
+              if (v("gait_pattern")) rows2.push(["Pattern", v("gait_pattern")]);
+              const abnormalGaits = ABNORMAL_GAITS.filter(g => v(g.id) === "Present");
+              if (abnormalGaits.length) rows2.push(["Abnormal patterns", abnormalGaits.map(g => {
+                const note = v(`${g.id}_note`);
+                return `${g.label}${note ? ` (${note})` : ""}`;
+              }).join(", ")]);
+              const phaseDevs = GAIT_PHASES.filter(p => v(`${p.id}_dev`) && v(`${p.id}_dev`) !== "None");
+              if (phaseDevs.length) rows2.push(["Phase deviations", phaseDevs.map(p => `${p.phase} — ${v(`${p.id}_dev`)}`).join("; ")]);
+              const gaitScales = GAIT_SCALES.filter(s => v(s.id));
+              if (gaitScales.length) rows2.push(["Scales", gaitScales.map(s => `${s.label} ${v(s.id)}${s.range}`).join(", ")]);
+              if (v("ag_cadence")) rows2.push(["Cadence", v("ag_cadence")]);
+              if (v("gait_notes")) rows2.push(["Notes", v("gait_notes")]);
+              return rows2.map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,fontSize:12,minWidth:90}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>);
+            })()}
           </div>}
 
           {/* Neuro (general — above region) */}
