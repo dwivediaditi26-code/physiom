@@ -62,7 +62,10 @@ test.describe('Full patient journey', () => {
     await expect(sidebar.getByText('New Patient', { exact: false })).toBeVisible({ timeout: 10_000 });
     await sidebar.getByText('New Patient', { exact: false }).click();
     await page.getByPlaceholder('e.g. Riya Sharma').fill(patientName);
-    await page.getByRole('button', { name: 'Consent' }).click();
+    // Playwright's getByRole name match is substring by default, not exact --
+    // "Consent" (the tab) also matched the disabled submit button's other
+    // label state, "Complete Consent tab first". exact: true fixes it.
+    await page.getByRole('button', { name: 'Consent', exact: true }).click();
     await page.getByText('I consent to physiotherapy assessment and treatment').click();
     await page.getByRole('button', { name: 'Start Assessment →' }).click();
 
