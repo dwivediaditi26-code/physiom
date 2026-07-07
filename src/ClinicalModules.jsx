@@ -3062,46 +3062,17 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (nktLines.length) O_parts.push(`Neuromuscular Assessment (CPA):\n${nktLines.join("\n")}.`);
   }
 
-  // ── FUNCTIONAL MOVEMENT ASSESSMENT ─────────────────────────────────────
-  {
-    const fmaLines = [];
-    const FMA_MOVEMENTS = [
-      ["squat","Bilateral Squat"],["gait","Gait"],["single_leg","Single Leg Stance"],
-      ["lunge","Forward Lunge"],["bend","Forward Bend/Hip Hinge"],["overhead","Overhead Reach"],
-      ["step_down","Step Down"],["pushup_plus","Push-Up Plus"],
-      ["rotary_stability","Rotary Stability"],["upper_reach","Upper Limb Reach"],
-    ];
-    const FMS_SCORES = [
-      ["sp_fms_sq","Deep Squat"],["sp_fms_hs_l","Hurdle Step L"],["sp_fms_hs_r","Hurdle Step R"],
-      ["sp_fms_il_l","Inline Lunge L"],["sp_fms_il_r","Inline Lunge R"],
-      ["sp_fms_sm_l","Shoulder Mob L"],["sp_fms_sm_r","Shoulder Mob R"],
-      ["sp_fms_aslr_l","ASLR L"],["sp_fms_aslr_r","ASLR R"],
-      ["sp_fms_tspu","TSPU"],["sp_fms_rs_l","Rotary Stab L"],["sp_fms_rs_r","Rotary Stab R"],
-    ];
-    // FMA report — scoped to this patient's own record only (no cross-patient global fallback)
-    const fmaReport = data.fma_report || {};
-    FMA_MOVEMENTS.forEach(([id, label]) => {
-      const rpt = fmaReport[id] || {};
-      const comp = data[`fma_compensation_${id}`] || data[`fma_${id}`] || (rpt.defects?.length ? rpt.defects.map(d=>String(d).replace(/_/g," ")).join(", ") : "");
-      const score = data[`fma_score_${id}`] ?? rpt.score;
-      const notes = data[`fma_notes_${id}`] || rpt.notes || "";
-      if (comp || (score!==undefined&&score!=="") || notes) {
-        let line = `  ${label}:`;
-        if (score!==undefined&&score!=="") line += ` Score ${score}/4`;
-        if (comp) line += ` — Compensations: ${Array.isArray(comp)?comp.join(", "):String(comp).slice(0,100)}`;
-        if (notes) line += ` (${String(notes).slice(0,60)})`;
-        fmaLines.push(line);
-      }
-    });
-    // FMS scoring
-    const fmsScores = FMS_SCORES.filter(([k]) => data[k]).map(([k, label]) => `${label}: ${data[k]}/3`);
-    if (fmsScores.length) {
-      const total = FMS_SCORES.reduce((sum,[k]) => sum+(Number(data[k])||0), 0);
-      fmaLines.push(`  FMS Scores: ${fmsScores.join(", ")} [Total: ${total}/21]${total<14?" ⚠️ elevated injury risk":""}`);
-    }
-    if (v("fma_notes")) fmaLines.push(`  Notes: ${v("fma_notes")}`);
-    if (fmaLines.length) O_parts.push(`Functional Movement Assessment:\n${fmaLines.join("\n")}.`);
-  }
+  // NOTE: this section used to reference THREE generations of
+  // functional-assessment data, all confirmed dead via a full-repo search
+  // (never written by any real UI component): (1) fma_report/
+  // fma_compensation_*/fma_score_*/fma_notes_* -- only ever appeared in a
+  // hardcoded demo/seed patient record, never real clinician input; (2)
+  // sp_fms_* (the classic 7-movement FMS: Deep Squat/Hurdle Step/Inline
+  // Lunge/Shoulder Mob/ASLR/Trunk Stability Push-Up/Rotary Stability) --
+  // only ever read, never written. The real, working Functional Assessment
+  // is FunctionalScreenHub (region-based screens storing grades in a JSON
+  // blob per region, e.g. data.lfs_data/data.kfs_data), already correctly
+  // handled in the "Advanced Functional Screens (v2)" section further down.
 
   // ── KINETIC CHAIN ─────────────────────────────────────────────────────────
   {
@@ -3513,46 +3484,14 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     corrConf.forEach(r => A_parts.push(`  • ${r.tag}: ${r.text}`));
   }
 
-  // ── FMS INDIVIDUAL MOVEMENT SCORES ────────────────────────────────────────
-  if (dx?.fmsTotal !== null && dx?.fmsTotal !== undefined) {
-    const fmsRisk = dx.fmsTotal >= 17 ? "Low" : dx.fmsTotal >= 15 ? "Moderate" : "High";
-    const fmsFlag = dx.fmsTotal >= 17 ? "✅" : dx.fmsTotal >= 15 ? "⚠️" : "🔴";
-    const fmsMovements = [
-      ["Deep Squat",           "sp_fms_sq"],
-      ["Hurdle Step L",        "sp_fms_hs_l"],
-      ["Hurdle Step R",        "sp_fms_hs_r"],
-      ["Inline Lunge L",       "sp_fms_il_l"],
-      ["Inline Lunge R",       "sp_fms_il_r"],
-      ["Shoulder Mob L",       "sp_fms_sm_l"],
-      ["Shoulder Mob R",       "sp_fms_sm_r"],
-      ["ASLR L",               "sp_fms_aslr_l"],
-      ["ASLR R",               "sp_fms_aslr_r"],
-      ["Trunk Stability PU",   "sp_fms_tspu"],
-      ["Rotary Stability L",   "sp_fms_rs_l"],
-      ["Rotary Stability R",   "sp_fms_rs_r"],
-    ];
-    const fmsRows = fmsMovements
-      .map(([label, key]) => {
-        const score = v(key);
-        if (!score) return null;
-        const flag = score === "0" ? " 🔴" : score === "1" ? " ⚠️" : "";
-        return `  ${label.padEnd(22)}: ${score}/3${flag}`;
-      })
-      .filter(Boolean);
-    const asymmetries = [];
-    [["Hurdle Step","sp_fms_hs_l","sp_fms_hs_r"],
-     ["Inline Lunge","sp_fms_il_l","sp_fms_il_r"],
-     ["Shoulder Mob","sp_fms_sm_l","sp_fms_sm_r"],
-     ["ASLR","sp_fms_aslr_l","sp_fms_aslr_r"],
-     ["Rotary Stability","sp_fms_rs_l","sp_fms_rs_r"]].forEach(([name,kL,kR]) => {
-      const l = parseFloat(v(kL)), r = parseFloat(v(kR));
-      if (!isNaN(l) && !isNaN(r) && l !== r) asymmetries.push(`${name} (L:${l} vs R:${r})`);
-    });
-    let fmsBlock = `FMS Total: ${dx.fmsTotal}/21 — ${fmsFlag} ${fmsRisk} injury risk`;
-    if (fmsRows.length) fmsBlock += `\n${fmsRows.join("\n")}`;
-    if (asymmetries.length) fmsBlock += `\n  ⚠️ Asymmetries: ${asymmetries.join(", ")}`;
-    A_parts.push(`\n${fmsBlock}`);
-  }
+  // NOTE: this section used to display the classic 7-movement FMS
+  // (sp_fms_* flat fields) using dx.fmsTotal from generateDiagnosis --
+  // removed as dead code (see the note in buildRealtimeSOAP's Functional
+  // Movement Assessment section, and generateDiagnosis's FMS block, both
+  // removed the same day this was found). Never written by any real UI;
+  // the working Functional Assessment (FunctionalScreenHub) is handled
+  // separately in the "Advanced Functional Screens (v2)" section above.
+
 
   const prog = v("prognosis") || v("px_prognosis");
   if (prog) A_parts.push(`\nPrognosis: ${prog}.`);

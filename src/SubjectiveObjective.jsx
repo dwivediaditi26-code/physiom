@@ -14240,24 +14240,13 @@ function generateDiagnosis(data) {
     });
   }
 
-  // FMS
-  const fmsMap={sq:"sp_fms_sq",hs_l:"sp_fms_hs_l",hs_r:"sp_fms_hs_r",il_l:"sp_fms_il_l",il_r:"sp_fms_il_r",sm_l:"sp_fms_sm_l",sm_r:"sp_fms_sm_r",aslr_l:"sp_fms_aslr_l",aslr_r:"sp_fms_aslr_r",tspu:"sp_fms_tspu",rs_l:"sp_fms_rs_l",rs_r:"sp_fms_rs_r"};
-  const fmsS={};Object.entries(fmsMap).forEach(([k,id])=>{const val=v(id);fmsS[k]=val.startsWith("3")?3:val.startsWith("2")?2:val.startsWith("1")?1:val.startsWith("0")?0:-1;});
-  const fmsDone=Object.values(fmsS).filter(s=>s>=0).length;
-  let fmsTotal=null;
-  if(fmsDone>=4){
-    const pm=(a,b)=>Math.min(fmsS[a]>=0?fmsS[a]:3,fmsS[b]>=0?fmsS[b]:3);
-    fmsTotal=(fmsS.sq>=0?fmsS.sq:0)+pm("hs_l","hs_r")+pm("il_l","il_r")+pm("sm_l","sm_r")+pm("aslr_l","aslr_r")+(fmsS.tspu>=0?fmsS.tspu:0)+pm("rs_l","rs_r");
-    const hasAsym=["hs","il","sm","aslr","rs"].some(k=>{const l=fmsS[k+"_l"],r=fmsS[k+"_r"];return l>=0&&r>=0&&Math.abs(l-r)>0;});
-    const pain0=Object.values(fmsS).some(s=>s===0);
-    if(fmsTotal<=14||pain0||hasAsym){
-      dx.push({system:"FMS",name:`Movement Dysfunction — FMS ${fmsTotal}/21${hasAsym?" + Asymmetry":""}`,confidence:"High",
-        evidence:[`FMS Total: ${fmsTotal}/21 (threshold ≤14 = high risk)`,hasAsym?"⚠️ Bilateral asymmetry — highest injury predictor":null,pain0?"🔴 Score 0 present — pain during testing":null].filter(Boolean),
-        mechanism:"Movement pattern deficits indicate mobility/stability imbalances increasing injury risk.",
-        treatment:["Corrective priority: lowest FMS score first","Asymmetry: match bilateral scores before progressing","Deep Squat corrective: ankle DF drills + hip mobility + thoracic extension","Core control: dead bug, bird-dog, Pallof press progressions","Re-screen FMS after 6 weeks of corrective program"]
-      });
-    }
-  }
+  // NOTE: the classic 7-movement FMS scoring (Deep Squat/Hurdle Step/
+  // Inline Lunge/Shoulder Mob/ASLR/Trunk Stability Push-Up/Rotary Stability,
+  // reading sp_fms_* flat fields) was removed here -- confirmed via a
+  // full-repo search that sp_fms_* fields were never written by any
+  // component. The real, working Functional Assessment is FunctionalScreenHub
+  // (region-based screens storing grades in a JSON blob per region, e.g.
+  // data.lfs_data), which this diagnosis engine does not score directly.
 
   // Posture
   const ucs=v("p_ucs"),lcs=v("p_lcs");
@@ -14836,7 +14825,7 @@ dx.push({system:"Structural",name:`Lumbar Radiculopathy (${lv})`,confidence:"Hig
   });
   const dedupDx = Object.values(merged);
 
-  return { dx: dedupDx, redFlags, fmsTotal };
+  return { dx: dedupDx, redFlags };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
