@@ -335,11 +335,16 @@ test.describe('Full patient journey', () => {
     // Functional Assessment: real test label from the working fs_data
     // module (not the dead classic-FMS code path).
     await expect(profile.getByText('Sit-to-Stand').first()).toBeVisible();
+
     // Observation: real finding fixed this round -- Patient Profile's
     // Observation section previously only showed the Posture/Physical Exam
     // subset of obs_ fields, completely omitting "General Observation"
     // (appearance/consciousness/attitude/build/nutrition) despite its own
-    // section header appearing.
-    await expect(profile.getByText('Healthy').first()).toBeVisible();
+    // section header appearing. Real CI failure: this card actually lives
+    // under Patient Profile's "Subjective" tab (same tab as the pain
+    // pattern/24-hr pattern data), not "Assessment" -- confirmed against
+    // PatientDatabase.jsx's own tab list. Switch tabs before checking it.
+    await profile.getByText('Subjective', { exact: true }).click();
+    await expect(profile.getByText('Healthy').first()).toBeVisible({ timeout: 10_000 });
   });
 });
