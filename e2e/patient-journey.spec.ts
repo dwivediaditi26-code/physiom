@@ -211,6 +211,18 @@ test.describe('Full patient journey', () => {
     await skinRollCard.getByText('Skin Rolling Test').click(); // expand
     await skinRollCard.getByText('Localised restriction').click();
 
+    // ── Palpation: click a body-map hotspot, grade its tenderness ──
+    // Unlike every other module's test rows, hotspots were raw SVG <circle>
+    // elements with no stable id/attribute at all -- added data-hotspot-id
+    // this round, matching the same convention used everywhere else.
+    await sidebar.getByText('Palpation', { exact: true }).click();
+    await page.locator('[data-hotspot-id="scalp"]').click();
+    // Clicking a hotspot creates a pin and opens its detail panel, showing
+    // the hotspot's real anatomical label -- confirms the pin was created
+    // for the right point before grading it.
+    await expect(page.getByText('Scalp / Occiput')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: '2+', exact: true }).click();
+
     // ── Open SOAP Notes (Documentation group is collapsed by default) ──
     await sidebar.getByText('Documentation', { exact: true }).click();
     await sidebar.getByText('SOAP Notes', { exact: true }).click();
@@ -231,6 +243,7 @@ test.describe('Full patient journey', () => {
     await expect(page.getByText('Trendelenburg').first()).toBeVisible(); // Gait
     await expect(page.getByText('Ankle DF').first()).toBeVisible(); // Kinetic Chain
     await expect(page.getByText('Skin Rolling').first()).toBeVisible(); // Fascia
+    await expect(page.getByText('Scalp').first()).toBeVisible(); // Palpation
 
     // ── Sign and lock the note (two-step confirm) ──
     await page.getByRole('button', { name: 'Sign & lock note' }).click();
@@ -258,5 +271,9 @@ test.describe('Full patient journey', () => {
     // Special Tests: real test name (this session's fix, task #26) --
     // ST_DATA_LABELS checked before the smaller, staler SPECIAL_TEST_NAMES.
     await expect(profile.getByText(/Neer/).first()).toBeVisible();
+    // Palpation: this section didn't exist at all in Patient Profile before
+    // this session -- confirms the pin's real label and grade both show up.
+    await expect(profile.getByText('Palpation', { exact: false })).toBeVisible();
+    await expect(profile.getByText('Scalp').first()).toBeVisible();
   });
 });

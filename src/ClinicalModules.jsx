@@ -7279,6 +7279,7 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
           <g key={h.id}>
             {/* Invisible interaction zone */}
             <circle
+              data-hotspot-id={h.id}
               cx={sx} cy={sy} r={h.r * 0.85}
               fill={isHovered ? "rgba(0,229,255,0.12)" : "transparent"}
               stroke={isHovered ? "rgba(0,229,255,0.5)" : "transparent"}
