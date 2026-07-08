@@ -3050,12 +3050,13 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
             {(()=>{
               const sess=Array.isArray(d.tx_sessions)?d.tx_sessions:[];          // newest first
               const prog=Array.isArray(d.hep_programme)?d.hep_programme:[];
+              const rxProg=Array.isArray(d.tx_exercise_prescription)?d.tx_exercise_prescription:[];
               const hepLog=Array.isArray(d.hep_log)?d.hep_log:[];
               const hepV=parseInt(d.hep_version)||1;
               const firstS=sess[sess.length-1], lastS=sess[0];
               const painFirst=parseFloat(firstS?.vasStart);
               const painLast=parseFloat(lastS?.vasEnd||lastS?.vasStart);
-              const phases=prog.map(e=>e.phase).filter(Boolean);
+              const phases=[...rxProg,...prog].map(e=>e.phase).filter(Boolean);
               const phase=phases.length?phases.sort((a,b)=>phases.filter(x=>x===b).length-phases.filter(x=>x===a).length)[0]:"—";
               const startStr=d.tx_plan_start||firstS?.savedAt;
               let week="—";
@@ -3097,7 +3098,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       )}
                     </div>
                     {prog.length===0&&(
-                      <div style={{textAlign:"center",padding:"14px 0",color:C.muted,fontSize:12}}>No protocol yet — build it in Quick Visit or Exercise Prescription.</div>
+                      <div style={{textAlign:"center",padding:"14px 0",color:C.muted,fontSize:12}}>No protocol yet — build it in Quick Visit or Home Protocol.</div>
                     )}
                     {prog.map((e,i2)=>{
                       const hepDose=e2=>{const st=e2.customSets||e2.sets,rp=e2.customReps||e2.reps,hd=e2.customHold||e2.hold,fq=e2.customFreq||e2.freq;return `${st}×${rp}${hd?` · hold ${hd}s`:""}${fq?` · ${fq}`:""}`};
@@ -3113,6 +3114,31 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       );
                     })}
                     <div style={{marginTop:8,fontSize:10,color:C.muted,textAlign:"center"}}>Edit the protocol in <span onClick={()=>onNav&&onNav("tx_sessions")} style={{color:C.primary,fontWeight:700,cursor:"pointer"}}>Quick Visit →</span></div>
+                  </div>
+
+                  {/* ── Exercise prescription (clinical library picks, kept separate from the home protocol above) ── */}
+                  <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:12,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",border:`1px solid ${C.border}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                      <span style={{fontSize:13.5,fontWeight:800,color:C.text}}>💪 Exercise prescription <span style={{color:"#7c3aed"}}>{rxProg.length} exercise{rxProg.length!==1?"s":""}</span></span>
+                    </div>
+                    {rxProg.length===0&&(
+                      <div style={{textAlign:"center",padding:"14px 0",color:C.muted,fontSize:12}}>No prescription yet — build it in Exercise Prescription.</div>
+                    )}
+                    {rxProg.map((e,i2)=>{
+                      const hepDose=e2=>{const st=e2.customSets||e2.sets,rp=e2.customReps||e2.reps,hd=e2.customHold||e2.hold,fq=e2.customFreq||e2.freq;return `${st}×${rp}${hd?` · hold ${hd}s`:""}${fq?` · ${fq}`:""}`};
+                      return(
+                        <div key={e.id||i2} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:i2%2===0?"#F9FAFB":"#fff",borderRadius:8}}>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:12.5,fontWeight:700,color:C.text}}>{e.name}</div>
+                            <div style={{fontSize:10.5,color:C.muted}}>{hepDose(e)}{e.target?` · ${e.target}`:""}</div>
+                          </div>
+                          {e.phase&&<span style={{flexShrink:0,padding:"2px 9px",borderRadius:99,fontSize:10,fontWeight:800,background:"#EDE9FE",color:"#6D28D9"}}>{e.phase}</span>}
+                        </div>
+                      );
+                    })}
+                    {rxProg.length>0&&(
+                      <div style={{marginTop:8,fontSize:10,color:C.muted,textAlign:"center"}}>Edit in <span onClick={()=>onNav&&onNav("exercise")} style={{color:"#7c3aed",fontWeight:700,cursor:"pointer"}}>Exercise Prescription →</span></div>
+                    )}
                   </div>
 
                   {/* ── In-clinic treatment ── */}

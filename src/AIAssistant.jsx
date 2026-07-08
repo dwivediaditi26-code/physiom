@@ -1,5 +1,16 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 
+function formatExerciseList(exercises) {
+  return exercises.map(ex => {
+    const dose = [
+      (ex.sets && ex.reps) ? `${ex.sets}×${ex.reps}` : null,
+      ex.hold ? `hold ${ex.hold}s` : null,
+      ex.freq || null,
+    ].filter(Boolean).join(", ");
+    return ex.name ? (dose ? `${ex.name} (${dose})` : ex.name) : null;
+  }).filter(Boolean).join("; ");
+}
+
 function buildPatientContext(data) {
   // Privacy: only clinical findings plus a strict demographic whitelist
   // (age / sex / dominant hand). Never include name, phone, email, address,
@@ -57,17 +68,16 @@ function buildPatientContext(data) {
   if (data.soap_icd10)         lines.push(`ICD-10: ${data.soap_icd10}`);
   if (data.soap_modalities)    lines.push(`Treatment/Modalities: ${data.soap_modalities}`);
   if (Array.isArray(data.hep_programme) && data.hep_programme.length) {
-    const hepSummary = data.hep_programme.map(ex => {
-      const dose = [
-        (ex.sets && ex.reps) ? `${ex.sets}×${ex.reps}` : null,
-        ex.hold ? `hold ${ex.hold}s` : null,
-        ex.freq || null,
-      ].filter(Boolean).join(", ");
-      return ex.name ? (dose ? `${ex.name} (${dose})` : ex.name) : null;
-    }).filter(Boolean).join("; ");
+    const hepSummary = formatExerciseList(data.hep_programme);
     if (hepSummary) lines.push(`Home Exercise Programme: ${hepSummary}`);
   } else if (typeof data.hep_programme === "string" && data.hep_programme) {
     lines.push(`Home Exercise Programme: ${data.hep_programme}`);
+  }
+  // Exercise Prescription -- clinical library picks (ExercisePrescriptionModule),
+  // kept separate from the true home-protocol list above.
+  if (Array.isArray(data.tx_exercise_prescription) && data.tx_exercise_prescription.length) {
+    const rxSummary = formatExerciseList(data.tx_exercise_prescription);
+    if (rxSummary) lines.push(`Exercise Prescription: ${rxSummary}`);
   }
   if (data.soap_p_goals)       lines.push(`Goals: ${data.soap_p_goals}`);
   if (data.soap_p_plan)        lines.push(`Plan: ${data.soap_p_plan}`);

@@ -1224,7 +1224,7 @@ function AppInner({ currentUser, onSignOut }) {
               { key:"demographics", label:"Demographics", short:"Demo",  nav:"demographics", done:!!(d2.dem_name&&d2.dem_age), active:active==="demographics" },
               { key:"subjective",   label:"Subjective",   short:"Sub",   nav:"subjective",   done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
               { key:"objective",    label:"Objective",    short:"Obj",   nav:"rom",           done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:oKeys.includes(active) },
-              { key:"treatment",    label:"Treatment",    short:"Treat", nav:"treatment",     done:!!(d2.soap_modalities||d2.soap_frequency||d2.hep_programme||d2.tx_techniques), active:active==="treatment"||active==="exercise" },
+              { key:"treatment",    label:"Treatment",    short:"Treat", nav:"treatment",     done:!!(d2.soap_modalities||d2.soap_frequency||d2.hep_programme||d2.tx_exercise_prescription||d2.tx_techniques), active:active==="treatment"||active==="exercise" },
               { key:"soap",         label:"SOAP",         short:"SOAP",  nav:"soap",          done:!!(d2.soap_a_diagnosis||d2.soap_icd10||d2.soap_a), active:active==="soap" },
             ];
             const doneCount = wfSteps.filter(s => s.done).length;

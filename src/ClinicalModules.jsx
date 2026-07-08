@@ -3398,11 +3398,19 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     });
   }
 
-  // HEP
+  // HEP (true home-protocol exercises only -- see HomeProtocolTab.jsx / QuickVisitForm)
   const hepArr = Array.isArray(data.hep_programme) ? data.hep_programme : [];
   if (hepArr.length) {
     P_parts.push("\nHome Exercise Programme:");
     hepArr.forEach((ex,i) => P_parts.push(`  ${i+1}. ${ex.name} — ${ex.customSets||ex.sets}×${ex.customReps||ex.reps}, hold ${ex.customHold||ex.hold}s, ${ex.customFreq||ex.freq}${ex.notes?` (${ex.notes})`:""}`));
+  }
+
+  // Exercise Prescription (clinical library picks, kept separate from HEP --
+  // see ExercisePrescriptionModule)
+  const rxArr = Array.isArray(data.tx_exercise_prescription) ? data.tx_exercise_prescription : [];
+  if (rxArr.length) {
+    P_parts.push("\nExercise Prescription:");
+    rxArr.forEach((ex,i) => P_parts.push(`  ${i+1}. ${ex.name}${ex.phase?` (${ex.phase})`:""} — ${ex.customSets||ex.sets}×${ex.customReps||ex.reps}, hold ${ex.customHold||ex.hold}s, ${ex.customFreq||ex.freq}${ex.notes?` (${ex.notes})`:""}`));
   }
 
   // Session next plan
@@ -4927,11 +4935,17 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {/* Modalities */}
           {modalities&&<><span style={lbl}>Modalities</span><div style={{marginBottom:8}}>{modalities.split(",").map((m,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{m.trim()}</span>)}</div></>}
 
-          {/* HEP summary */}
+          {/* HEP summary -- true home-protocol exercises only (HomeProtocolTab.jsx / QuickVisitForm) */}
           {Array.isArray(data.hep_programme)&&data.hep_programme.length>0&&<>
             <span style={lbl}>Home exercise programme</span>
             <div style={{marginBottom:2}}><span style={{fontSize:11,color:"#6B7280"}}>Frequency: </span><span style={{fontSize:12,color:"#6366F1",fontWeight:600}}>{v("hep_frequency")||"As prescribed"}</span></div>
             {data.hep_programme.slice(0,6).map((ex,i)=><div key={i} style={{padding:"5px 0",borderBottom:"1px solid #F3F4F6",fontSize:12,color:"#374151",display:"flex",gap:6}}><span style={{width:20,height:20,borderRadius:"50%",background:"#FEF3C7",color:"#92400E",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>{ex.name}{ex.sets?" — "+ex.sets+"×"+(ex.reps||""):""}{ex.hold?" hold "+ex.hold+"s":""}</div>)}
+          </>}
+
+          {/* Exercise Prescription -- clinical library picks, kept separate from HEP (ExercisePrescriptionModule) */}
+          {Array.isArray(data.tx_exercise_prescription)&&data.tx_exercise_prescription.length>0&&<>
+            <span style={lbl}>Exercise prescription</span>
+            {data.tx_exercise_prescription.slice(0,6).map((ex,i)=><div key={i} style={{padding:"5px 0",borderBottom:"1px solid #F3F4F6",fontSize:12,color:"#374151",display:"flex",gap:6}}><span style={{width:20,height:20,borderRadius:"50%",background:"#EDE9FE",color:"#6D28D9",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>{ex.name}{ex.phase?` (${ex.phase})`:""}{ex.sets?" — "+ex.sets+"×"+(ex.reps||""):""}{ex.hold?" hold "+ex.hold+"s":""}</div>)}
           </>}
 
           {/* Prescription */}
@@ -6072,7 +6086,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
 
 function ExercisePrescriptionModule({ data, set }) {
   // programme derives directly from shared data — always in sync with QuickVisitForm
-  const programme = Array.isArray(data?.hep_programme) ? data.hep_programme : [];
+  const programme = Array.isArray(data?.tx_exercise_prescription) ? data.tx_exercise_prescription : [];
   const [activeRegion, setActiveRegion] = useState("lumbar");
   const [activePhase,  setActivePhase]  = useState("All");
   const [search,       setSearch]       = useState("");
@@ -6086,7 +6100,7 @@ function ExercisePrescriptionModule({ data, set }) {
   const phaseColor = {"Phase 1":"#00c97a","Phase 2":"#ffb300","Phase 3":"#ff4d6d"};
 
   // Sync every programme change back into shared patient data
-  const syncProgramme = (next) => { if(set) set("hep_programme", next); };
+  const syncProgramme = (next) => { if(set) set("tx_exercise_prescription", next); };
 
   const _hepSession = () => (Array.isArray(data?.tx_sessions)?data.tx_sessions.length:0)+1;
   const _hepLog = (change) => { if(!set) return; const log=Array.isArray(data?.hep_log)?data.hep_log:[]; set("hep_log",[{session:_hepSession(),date:new Date().toLocaleDateString("en-GB"),changes:[change],version:parseInt(data?.hep_version)||1},...log]); };
@@ -6135,10 +6149,10 @@ function ExercisePrescriptionModule({ data, set }) {
 
   const printHEP = () => {
     if(!programme.length) return;
-    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Home Exercise Programme</title>
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Exercise Prescription</title>
 <style>@page{size:A4;margin:18mm}*{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}body{background:#fff;color:#1a1a2e;font-size:11px;line-height:1.55}.header{border-bottom:3px solid #0077b6;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start}.logo{font-size:20px;font-weight:900;color:#0077b6}.logo span{color:#00b4d8}.meta{text-align:right;font-size:10px;color:#555}.ex{border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;overflow:hidden;break-inside:avoid}.ex-header{background:#0077b6;color:#fff;padding:8px 12px;display:flex;justify-content:space-between;align-items:center}.ex-title{font-size:12px;font-weight:800}.ex-phase{font-size:9px;opacity:0.8}.ex-body{padding:10px 12px}.ex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}.ex-stat{background:#f0f9ff;border-radius:6px;padding:5px 8px;text-align:center}.ex-stat-val{font-size:13px;font-weight:900;color:#0077b6}.ex-stat-label{font-size:8px;color:#64748b;text-transform:uppercase}.ex-target{font-size:9px;color:#7f5af0;font-weight:700;margin-bottom:5px}.ex-desc{font-size:10.5px;color:#334155;margin-bottom:6px;line-height:1.55}.ex-cues{background:#fefce8;border-left:3px solid #fbbf24;padding:5px 8px;font-size:10px;color:#713f12;margin-bottom:5px}.ex-prog{font-size:9.5px;color:#059669;margin-top:5px}.footer{margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center}.sig{margin-top:20px;display:flex;gap:30px}.sig-line{border-bottom:1px solid #94a3b8;height:28px;margin-bottom:3px}.sig-label{font-size:8px;color:#64748b}</style>
 </head><body>
-<div class="header"><div><div class="logo">Physio<span>Pro</span></div><div style="font-size:11px;color:#555;margin-top:2px">Home Exercise Programme</div></div><div class="meta"><div><b>Patient:</b> ${data?.dem_name||"—"}</div><div><b>Date:</b> ${new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"})}</div><div><b>Clinician:</b> ${clinician||"—"}</div>${reviewDate?`<div><b>Review:</b> ${reviewDate}</div>`:""}</div></div>
+<div class="header"><div><div class="logo">Physio<span>Pro</span></div><div style="font-size:11px;color:#555;margin-top:2px">Exercise Prescription</div></div><div class="meta"><div><b>Patient:</b> ${data?.dem_name||"—"}</div><div><b>Date:</b> ${new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"})}</div><div><b>Clinician:</b> ${clinician||"—"}</div>${reviewDate?`<div><b>Review:</b> ${reviewDate}</div>`:""}</div></div>
 <p style="font-size:10px;color:#555;margin-bottom:14px">Perform exercises as prescribed. Stop if severe pain. Mild discomfort is normal. Contact your physiotherapist if unsure.</p>
 ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-title">${i+1}. ${ex.name}</span><span class="ex-phase">${ex.phase||""}</span></div><div class="ex-body"><div class="ex-target">🎯 ${ex.target}</div><div class="ex-grid"><div class="ex-stat"><div class="ex-stat-val">${ex.customSets}</div><div class="ex-stat-label">Sets</div></div><div class="ex-stat"><div class="ex-stat-val">${ex.customReps}</div><div class="ex-stat-label">Reps</div></div><div class="ex-stat"><div class="ex-stat-val">${ex.customHold}s</div><div class="ex-stat-label">Hold</div></div><div class="ex-stat"><div class="ex-stat-val" style="font-size:9px">${ex.customFreq}</div><div class="ex-stat-label">Freq</div></div></div><div class="ex-desc">${ex.desc}</div><div class="ex-cues">💡 ${ex.cues}</div>${ex.notes?`<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px;font-size:10px;margin-top:5px"><b>Notes:</b> ${ex.notes}</div>`:""}<div class="ex-prog">📈 ${ex.progression}</div><div style="margin-top:8px;font-size:9px;color:#94a3b8">Pain (0–10): ___/10 &nbsp;&nbsp; ☐ Mon ☐ Tue ☐ Wed ☐ Thu ☐ Fri ☐ Sat ☐ Sun</div></div></div>`).join("")}
 <div class="sig"><div style="flex:1"><div class="sig-line"></div><div class="sig-label">Clinician Signature</div></div><div style="flex:1"><div class="sig-line"></div><div class="sig-label">Patient Signature</div></div></div>
@@ -7698,7 +7712,7 @@ function LiveSOAPPanel({ data, onNavigate }) {
       k.startsWith("gait_") || k.startsWith("post_") || k.startsWith("palp_") || k.startsWith("om_")
     ).length;
     const aCount = (vk("cc_main") || hasRegional) ? 1 : 0;
-    const pCount = (data["tx_techniques"] || data["hep_programme"] || data["tx_frequency"]) ? 1 : 0;
+    const pCount = (data["tx_techniques"] || data["hep_programme"] || data["tx_exercise_prescription"] || data["tx_frequency"]) ? 1 : 0;
     return { S: sCount, O: Math.min(oCount, 20), A: aCount, P: pCount };
   }, [data]);
 
