@@ -4908,77 +4908,111 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {secBadge("Treatment & goals")}
         </div>
         <div style={cb}>
-          {/* Clinician fields */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
-            <input placeholder="Clinician name" value={clinician} onChange={e=>setClinician(e.target.value)} style={{...inp,marginBottom:0}}/>
-            <input placeholder="Clinic name" value={clinic} onChange={e=>setClinic(e.target.value)} style={{...inp,marginBottom:0}}/>
-            <input placeholder="Session type (e.g. Initial Assessment)" value={session} onChange={e=>setSession(e.target.value)} style={{...inp,marginBottom:0,gridColumn:"1/-1"}}/>
+          {/* Session details */}
+          <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+            <div style={{fontSize:11,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Session details</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+              <input placeholder="Clinician" value={clinician} onChange={e=>setClinician(e.target.value)} style={{...inp,marginBottom:0}}/>
+              <input placeholder="Clinic" value={clinic} onChange={e=>setClinic(e.target.value)} style={{...inp,marginBottom:0}}/>
+            </div>
+            <input placeholder="Session type (e.g. Initial Assessment)" value={session} onChange={e=>setSession(e.target.value)} style={{...inp,marginBottom:8}}/>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              <input placeholder="Total sessions" value={v("soap_total_sessions")} onChange={e=>set("soap_total_sessions",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:11.5,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
+              <input placeholder="Frequency (e.g. 2×/week × 4 wks)" value={v("soap_frequency")} onChange={e=>set("soap_frequency",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:11.5,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
+            </div>
           </div>
 
           {/* Goals */}
-          {stGoals&&<><span style={lbl}>Short-term goals (2–4 wks)</span><div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"8px 10px",fontSize:13,color:"#111827",fontWeight:500,marginBottom:6}}>{stGoals}</div></>}
-          {ltGoals&&<><span style={lbl}>Long-term goals (discharge)</span><div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"8px 10px",fontSize:13,color:"#111827",fontWeight:500,marginBottom:6}}>{ltGoals}</div></>}
-          {goals_ar.length>0&&!stGoals&&<><span style={lbl}>Treatment goals</span>{goals_ar.map((g,i)=><div key={i} style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#111827",marginBottom:4}}><span style={{color:"#6B7280",fontSize:11,fontWeight:500}}>{i+1}. </span>{g}</div>)}</>}
-
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
-            {[["soap_total_sessions","Total sessions",totalSess],["soap_frequency","Frequency",freq]].map(([k,ph,val2])=>(
-              <div key={k}>
-                {val2?<><span style={lbl}>{ph}</span><div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"6px 10px",fontSize:13,color:"#111827",fontWeight:500,marginBottom:4}}>{val2}</div></>:null}
-                <input placeholder={ph} value={v(k)} onChange={e=>set(k,e.target.value)} style={{...inp,marginBottom:0}}/>
-              </div>
-            ))}
+          <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+            <div style={{fontSize:11,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Goals</div>
+            <span style={lbl}>Short-term goals (2–4 wks)</span>
+            <input placeholder="e.g. Reduce pain to under 3/10, sit 45 min without flare-up" value={v("soap_goal_short")} onChange={e=>set("soap_goal_short",e.target.value)} style={{...inp,marginBottom:(!stGoals&&goals_ar.length>0)?4:8}}/>
+            {!stGoals&&goals_ar.length>0&&<div style={{fontSize:10.5,color:"#9CA3AF",marginBottom:8}}>Suggested from assessment: {goals_ar.join(" · ")}</div>}
+            <span style={lbl}>Long-term goals (discharge)</span>
+            <input placeholder="e.g. Full return to desk work and training, pain-free" value={v("soap_goal_long")} onChange={e=>set("soap_goal_long",e.target.value)} style={{...inp,marginBottom:0}}/>
           </div>
 
-          {/* Precautions */}
-          {precautions&&<><span style={lbl}>General advice / precautions</span><div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#374151",marginBottom:8,lineHeight:1.5}}>{precautions}</div></>}
-
-          {/* Modalities */}
-          {modalities&&<><span style={lbl}>Modalities</span><div style={{marginBottom:8}}>{modalities.split(",").map((m,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{m.trim()}</span>)}</div></>}
-
           {/* HEP summary -- true home-protocol exercises only (HomeProtocolTab.jsx / QuickVisitForm) */}
-          {Array.isArray(data.hep_programme)&&data.hep_programme.length>0&&<>
-            <span style={lbl}>Home exercise programme</span>
-            <div style={{marginBottom:2}}><span style={{fontSize:11,color:"#6B7280"}}>Frequency: </span><span style={{fontSize:12,color:"#6366F1",fontWeight:600}}>{v("hep_frequency")||"As prescribed"}</span></div>
-            {data.hep_programme.slice(0,6).map((ex,i)=><div key={i} style={{padding:"5px 0",borderBottom:"1px solid #F3F4F6",fontSize:12,color:"#374151",display:"flex",gap:6}}><span style={{width:20,height:20,borderRadius:"50%",background:"#FEF3C7",color:"#92400E",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>{ex.name}{ex.sets?" — "+ex.sets+"×"+(ex.reps||""):""}{ex.hold?" hold "+ex.hold+"s":""}</div>)}
-          </>}
+          {Array.isArray(data.hep_programme)&&data.hep_programme.length>0&&(
+            <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                <span style={{fontSize:14}}>🏠</span>
+                <span style={{fontSize:13,fontWeight:500,color:"#111827"}}>Home exercise programme</span>
+                <span style={{marginLeft:"auto",fontSize:10.5,fontWeight:500,color:"#92400E",background:"#FEF3C7",padding:"2px 8px",borderRadius:99,flexShrink:0}}>{data.hep_programme.length} exercise{data.hep_programme.length!==1?"s":""}</span>
+              </div>
+              <div style={{fontSize:11,color:"#6B7280",marginBottom:8}}>Frequency: <span style={{color:"#6366F1",fontWeight:600}}>{v("hep_frequency")||"As prescribed"}</span></div>
+              {data.hep_programme.slice(0,6).map((ex,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #F3F4F6"}}>
+                  <span style={{width:18,height:18,borderRadius:"50%",background:"#FEF3C7",color:"#92400E",fontSize:9.5,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
+                  <span style={{fontSize:12,color:"#374151",flex:1,minWidth:0}}>{ex.name}</span>
+                  <span style={{fontSize:11,color:"#6B7280",flexShrink:0}}>{ex.sets?`${ex.sets}×${ex.reps||""}`:""}{ex.hold?` · ${ex.hold}s`:""}</span>
+                </div>
+              ))}
+              {data.hep_programme.length>6&&<div style={{fontSize:10.5,color:"#7c3aed",fontWeight:500,marginTop:8}}>+{data.hep_programme.length-6} more</div>}
+            </div>
+          )}
 
           {/* Exercise Prescription -- clinical library picks, kept separate from HEP (ExercisePrescriptionModule) */}
-          {Array.isArray(data.tx_exercise_prescription)&&data.tx_exercise_prescription.length>0&&<>
-            <span style={lbl}>Exercise prescription</span>
-            {data.tx_exercise_prescription.slice(0,6).map((ex,i)=><div key={i} style={{padding:"5px 0",borderBottom:"1px solid #F3F4F6",fontSize:12,color:"#374151",display:"flex",gap:6}}><span style={{width:20,height:20,borderRadius:"50%",background:"#EDE9FE",color:"#6D28D9",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>{ex.name}{ex.phase?` (${ex.phase})`:""}{ex.sets?" — "+ex.sets+"×"+(ex.reps||""):""}{ex.hold?" hold "+ex.hold+"s":""}</div>)}
-          </>}
+          {Array.isArray(data.tx_exercise_prescription)&&data.tx_exercise_prescription.length>0&&(
+            <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                <span style={{fontSize:14}}>💪</span>
+                <span style={{fontSize:13,fontWeight:500,color:"#111827"}}>Exercise prescription</span>
+                <span style={{marginLeft:"auto",fontSize:10.5,fontWeight:500,color:"#6D28D9",background:"#EDE9FE",padding:"2px 8px",borderRadius:99,flexShrink:0}}>{data.tx_exercise_prescription.length} exercise{data.tx_exercise_prescription.length!==1?"s":""}</span>
+              </div>
+              {data.tx_exercise_prescription.slice(0,6).map((ex,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #F3F4F6"}}>
+                  <span style={{width:18,height:18,borderRadius:"50%",background:"#EDE9FE",color:"#6D28D9",fontSize:9.5,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,color:"#374151"}}>{ex.name}</div>
+                    {ex.target&&<div style={{fontSize:10,color:"#9CA3AF"}}>{ex.target}</div>}
+                  </div>
+                  {ex.phase&&<span style={{fontSize:10,fontWeight:500,color:"#6D28D9",background:"#F3F0FF",padding:"2px 7px",borderRadius:99,flexShrink:0}}>{ex.phase}</span>}
+                </div>
+              ))}
+              {data.tx_exercise_prescription.length>6&&<div style={{fontSize:10.5,color:"#6B6B6B",marginTop:8}}>+{data.tx_exercise_prescription.length-6} more</div>}
+            </div>
+          )}
 
           {/* Prescription */}
-          {Array.isArray(data.tx_techniques)&&data.tx_techniques.length>0&&<>
-            <span style={lbl}>Clinic exercises / Treatment this session</span>
-            {data.tx_techniques.map((t,i)=>{
-              const label = t.type==="manual" ? `${t.technique||"Joint mob"}${t.grade?` Grade ${t.grade}`:""}${t.region?` — ${t.region}`:""}`
-                : t.type==="dn" ? `Dry Needling — ${t.dn_muscle||"unknown muscle"}`
-                : t.type==="st" ? `${t.st_technique||"Soft tissue"}${t.st_region?` — ${t.st_region}`:""}`
-                : t.type==="taping" ? `${t.tape_type||"Taping"}`
-                : t.type==="us" ? `Ultrasound${t.us_freq?` — ${t.us_freq}`:""}`
-                : t.type==="electro" ? `${t.electro_type||"Electrotherapy"}`
-                : (t.technique || "Technique");
-              return (
-                <div key={t.id||i} style={{padding:"5px 0",borderBottom:"1px solid #F3F4F6",fontSize:12,color:"#374151",display:"flex",gap:6}}>
-                  <span style={{width:20,height:20,borderRadius:"50%",background:"#DBEAFE",color:"#1E40AF",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
-                  {label}
-                </div>
-              );
-            })}
-          </>}
+          {Array.isArray(data.tx_techniques)&&data.tx_techniques.length>0&&(
+            <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+              <div style={{fontSize:13,fontWeight:500,color:"#111827",marginBottom:8}}>Clinic exercises / Treatment this session</div>
+              {data.tx_techniques.map((t,i)=>{
+                const label = t.type==="manual" ? `${t.technique||"Joint mob"}${t.grade?` Grade ${t.grade}`:""}${t.region?` — ${t.region}`:""}`
+                  : t.type==="dn" ? `Dry Needling — ${t.dn_muscle||"unknown muscle"}`
+                  : t.type==="st" ? `${t.st_technique||"Soft tissue"}${t.st_region?` — ${t.st_region}`:""}`
+                  : t.type==="taping" ? `${t.tape_type||"Taping"}`
+                  : t.type==="us" ? `Ultrasound${t.us_freq?` — ${t.us_freq}`:""}`
+                  : t.type==="electro" ? `${t.electro_type||"Electrotherapy"}`
+                  : (t.technique || "Technique");
+                return (
+                  <div key={t.id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:i<data.tx_techniques.length-1?"1px solid #F3F4F6":"none"}}>
+                    <span style={{width:18,height:18,borderRadius:"50%",background:"#DBEAFE",color:"#1E40AF",fontSize:9.5,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
+                    <span style={{fontSize:12,color:"#374151"}}>{label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-          {/* Plan inputs */}
-          <div style={{marginTop:8,display:"grid",gap:4}}>
-            <input placeholder="Short-term goals (2–4 wks)" value={v("soap_goal_short")} onChange={e=>set("soap_goal_short",e.target.value)} style={{...inp,marginBottom:0}}/>
-            <input placeholder="Long-term goals (discharge)" value={v("soap_goal_long")} onChange={e=>set("soap_goal_long",e.target.value)} style={{...inp,marginBottom:0}}/>
-            <input placeholder="Total sessions" value={v("soap_total_sessions")} onChange={e=>set("soap_total_sessions",e.target.value)} style={{...inp,marginBottom:0}}/>
-            <input placeholder="Frequency (e.g. 3×/week × 4 weeks)" value={v("soap_frequency")} onChange={e=>set("soap_frequency",e.target.value)} style={{...inp,marginBottom:0}}/>
-            <textarea placeholder="General advice / precautions..." value={v("soap_precautions")} onChange={e=>set("soap_precautions",e.target.value)} style={{...inp,resize:"vertical",minHeight:50,marginBottom:0}}/>
-            <input placeholder="Modalities (e.g. Hot pack, IFT, Traction)" value={v("soap_modalities")} onChange={e=>set("soap_modalities",e.target.value)} style={{...inp,marginBottom:0}}/>
-            <input placeholder="Referral (if any)" value={v("soap_referral")} onChange={e=>set("soap_referral",e.target.value)} style={{...inp,marginBottom:0}}/>
-            <input placeholder="Imaging / investigations requested" value={v("soap_imaging")} onChange={e=>set("soap_imaging",e.target.value)} style={{...inp,marginBottom:0}}/>
-            <textarea placeholder="Additional plan notes..." value={extraP} onChange={e=>setExtraP(e.target.value)} onBlur={()=>set("soap_extra_p",extraP)} style={{...inp,resize:"vertical",minHeight:40,marginBottom:0}}/>
+          {/* Precautions */}
+          <div style={{background:"#FFF7ED",border:"1px solid #FDE4B8",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",gap:8,alignItems:"flex-start"}}>
+            <span style={{fontSize:14,flexShrink:0,marginTop:1}}>⚠️</span>
+            <textarea placeholder="General advice / precautions (e.g. avoid loaded flexion, stop if symptoms increase)..." value={v("soap_precautions")} onChange={e=>set("soap_precautions",e.target.value)}
+              style={{flex:1,minWidth:0,border:"none",background:"transparent",outline:"none",resize:"vertical",minHeight:36,fontSize:11.5,fontFamily:"inherit",color:"#854F0B",lineHeight:1.5,padding:0}}/>
+          </div>
+
+          {/* Additional details */}
+          <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+            <div style={{fontSize:11,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Additional details</div>
+            {modalities&&<div style={{marginBottom:8}}>{modalities.split(",").map((m,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{m.trim()}</span>)}</div>}
+            <div style={{display:"grid",gap:6}}>
+              <input placeholder="Modalities (e.g. Hot pack, IFT, Traction)" value={v("soap_modalities")} onChange={e=>set("soap_modalities",e.target.value)} style={{...inp,marginBottom:0}}/>
+              <input placeholder="Referral (if any)" value={v("soap_referral")} onChange={e=>set("soap_referral",e.target.value)} style={{...inp,marginBottom:0}}/>
+              <input placeholder="Imaging / investigations requested" value={v("soap_imaging")} onChange={e=>set("soap_imaging",e.target.value)} style={{...inp,marginBottom:0}}/>
+              <textarea placeholder="Additional plan notes..." value={extraP} onChange={e=>setExtraP(e.target.value)} onBlur={()=>set("soap_extra_p",extraP)} style={{...inp,resize:"vertical",minHeight:40,marginBottom:0}}/>
+            </div>
           </div>
 
           {/* Sign & lock */}
