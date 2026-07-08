@@ -3402,8 +3402,22 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       {/* ── Summary modal — shows filled values as readable text ── */}
       {showSummary && (()=>{
         const SEP = "|";
-        const v = (k) => data[k]||"";
-        const arr = (k) => v(k)?v(k).split(SEP).filter(Boolean):[];
+        // Some fields matched by the broad *_agg/*_rel/*radiation* key scans
+        // below are written as arrays by multi-select/checkbox-group inputs
+        // elsewhere in this file (see rget()'s loc_radiation/cc_onset
+        // handling above for the same class of field) rather than as a
+        // SEP-joined string -- v()/arr() need to tolerate that instead of
+        // assuming every matched key is always a string.
+        const v = (k) => {
+          const val = data[k];
+          if (Array.isArray(val)) return val.filter(Boolean).join(SEP);
+          return typeof val === "string" ? val : (val ? String(val) : "");
+        };
+        const arr = (k) => {
+          const val = data[k];
+          if (Array.isArray(val)) return val.filter(Boolean);
+          return v(k) ? v(k).split(SEP).filter(Boolean) : [];
+        };
         const hasAny = (keys) => keys.some(k=>v(k));
 
         // Build readable summary rows from actual filled data
