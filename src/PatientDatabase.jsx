@@ -2805,7 +2805,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                             return(
                               <div key={r.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
                                 <span style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.2}}>{r.label}</span>
-                                <span style={{flexShrink:0,padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:bg,color:c2}}>{String(r.val).split(" — ")[0].slice(0,16)}</span>
+                                <span style={{flexShrink:0,maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:bg,color:c2}}>{String(r.val).split(" — ")[0]}</span>
                               </div>
                             );
                           })}
@@ -2830,7 +2830,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                               return(
                                 <div key={r.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
                                   <span style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.2}}>{r.label}</span>
-                                  <span style={{flexShrink:0,padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:abn?"#FEF3C7":"#ECFDF5",color:abn?"#92400E":C.green}}>{String(r.val).split(" — ")[0].slice(0,16)}</span>
+                                  <span style={{flexShrink:0,maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:abn?"#FEF3C7":"#ECFDF5",color:abn?"#92400E":C.green}}>{String(r.val).split(" — ")[0]}</span>
                                 </div>
                               );
                             })}
@@ -2910,7 +2910,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     const NKT_TEST_LABEL={};Object.values(NKT_REGIONS).forEach(reg=>(reg.tests||[]).forEach(t=>{NKT_TEST_LABEL[t.id]=t.label;}));
                     const nktRows=nktKeys.map(k=>({k,label:NKT_TEST_LABEL[k]||k.replace("nkt_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()),val:d[k]}));
                     nktRows.sort((a,b)=>{const aw=a.val&&(a.val.includes("Inhibited")||a.val.includes("Weak"))?0:1;const bw=b.val&&(b.val.includes("Inhibited")||b.val.includes("Weak"))?0:1;return aw-bw;});
-                    const CpaPill=({v2})=>{if(!v2)return<span style={{fontSize:11,color:"#D1D5DB"}}>—</span>;const abn=v2.includes("Inhibited")||v2.includes("Weak");return<span style={{padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:abn?"#FEF3C7":"#ECFDF5",color:abn?"#92400E":C.green}}>{v2.split(" — ")[0].slice(0,16)}</span>;};
+                    const CpaPill=({v2})=>{if(!v2)return<span style={{fontSize:11,color:"#D1D5DB"}}>—</span>;const abn=v2.includes("Inhibited")||v2.includes("Weak");return<span style={{maxWidth:130,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"inline-block",padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:abn?"#FEF3C7":"#ECFDF5",color:abn?"#92400E":C.green}}>{v2.split(" — ")[0]}</span>;};
                     return(
                       <Sec icon="🧠" title="CPA — Compensation Pattern Analysis" navKey="nkt" hasData={true}>
                         <div style={{display:"flex",flexDirection:"column",gap:0}}>
@@ -2947,14 +2947,25 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                           merged[gk].vals.push(`${word}${val}`);
                         });
                         const isAbn=v=>{const t=String(v||"").toLowerCase();return !(t.includes("normal")||t.includes("full")||t.includes("negative"));};
-                        const rows=order.map(gk=>{const it=merged[gk];const combined=it.vals.join(" · ");return{gk,label:it.label,region:it.region,val:combined,abn:isAbn(combined)};});
+                        // Keep the individual field-type values (Pain / ROM /
+                        // End-feel / etc.) separate instead of joining them
+                        // into one string and truncating -- a joined-then-
+                        // sliced string silently swallowed whichever field
+                        // came later (ROM was usually appended after Pain,
+                        // so it never survived a 20-char cut).
+                        const rows=order.map(gk=>{const it=merged[gk];const combined=it.vals.join(" · ");return{gk,label:it.label,region:it.region,vals:it.vals,abn:isAbn(combined)};});
                         rows.sort((a,b)=>(b.abn?1:0)-(a.abn?1:0));
                         return(
                           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:5}}>
                             {rows.slice(0,8).map(r=>(
-                              <div key={r.gk} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
+                              <div key={r.gk} style={{display:"flex",flexDirection:"column",gap:4,padding:"7px 10px",background:"#F9FAFB",borderRadius:8,border:`1px solid ${C.border}`}}>
                                 <span style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.2}}>{r.label}{r.region&&<span style={{fontSize:9.5,fontWeight:700,color:C.muted,marginLeft:5}}>({r.region})</span>}</span>
-                                <span style={{flexShrink:0,padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:r.abn?"#FEF2F2":"#ECFDF5",color:r.abn?"#dc2626":C.green}}>{r.val.split(" — ")[0].slice(0,20)}</span>
+                                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                  {r.vals.map((v2,vi)=>{
+                                    const vAbn=isAbn(v2);
+                                    return <span key={vi} style={{maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",padding:"2px 9px",borderRadius:99,fontSize:10.5,fontWeight:800,background:vAbn?"#FEF2F2":"#ECFDF5",color:vAbn?"#dc2626":C.green}}>{v2}</span>;
+                                  })}
+                                </div>
                               </div>
                             ))}
                             {rows.length>8&&<div style={{fontSize:10.5,color:C.muted,padding:"4px 8px"}}>+{rows.length-8} more</div>}

@@ -269,6 +269,32 @@ function ClinicalImageCard({ id, title, fallbackSvg, C, color }) {
   );
 }
 
+// TestInfoThumb — the "i" info button beside each test name; shows the
+// uploaded clinical photo as a small thumbnail when one exists for this
+// test ID, falling back to a plain info glyph when nothing's been
+// uploaded yet. Clicking it opens the same info modal either way.
+function TestInfoThumb({ id, color, onClick }) {
+  const [imgOk, setImgOk] = React.useState(true);
+  const thumb = `${CLOUDINARY_BASE_SO}/f_auto,q_auto,w_64,h_64,c_fill/${id}`;
+  const c = color || "#7c5af0";
+  return (
+    <button type="button" onClick={onClick}
+      style={{
+        padding: imgOk ? 0 : "3px 9px",
+        width: imgOk ? 32 : undefined, height: imgOk ? 32 : undefined,
+        background: "rgba(127,90,240,0.15)", border: `1px solid ${c}40`,
+        borderRadius: 6, color: c, fontSize: "0.82rem", fontWeight: 700,
+        cursor: "pointer", overflow: "hidden", display: "flex",
+        alignItems: "center", justifyContent: "center", flexShrink: 0,
+      }}>
+      {imgOk ? (
+        <img src={thumb} alt="" onError={() => setImgOk(false)}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}/>
+      ) : "ℹ"}
+    </button>
+  );
+}
+
 // SmallClinicalImg — compact inline thumbnail (for tables / rows)
 function SmallClinicalImg({ id, title }) {
   const [exists, setExists] = React.useState(true);
@@ -436,8 +462,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
                   )}
                 </div>
                 <div style={{ display:"flex", gap:7, alignItems:"center", flexShrink:0, marginLeft:10 }}>
-                  <button type="button" onClick={e => { e.stopPropagation(); setModalTest(t); }}
-                    style={{ padding:"3px 9px", background:"rgba(127,90,240,0.15)", border:`1px solid ${C.a2}40`, borderRadius:6, color:C.a2, fontSize:"0.82rem", fontWeight:700, cursor:"pointer" }}>ℹ</button>
+                  <TestInfoThumb id={t.id} color={C.a2} onClick={e => { e.stopPropagation(); setModalTest(t); }}/>
                   <span style={{ color:C.muted, fontSize:"0.82rem" }}>{isOpen ? "▲" : "▼"}</span>
                 </div>
               </div>
