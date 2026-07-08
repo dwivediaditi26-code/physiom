@@ -651,18 +651,25 @@ function AppInner({ currentUser, onSignOut }) {
     const allT=Object.values(sec.groups||{}).flat().filter(t=>typeof t==="object"&&t.id);
     const nktT=key==="nkt"?Object.values(NKT_REGIONS||{}).flatMap(r=>r.tests||[]).map(t=>t.id):[];
     const kcT=key==="kinetic"?Object.values(KC_REGIONS||{}).flatMap(r=>r.tests||[]).map(t=>t.id):[];
-    // Was: fmaKeys=key==="fma"?Object.keys(MOVEMENTS||{}).map(m=>`fma_"+m+"`):[]
-    // MOVEMENTS is the classic-FMS movement list (squat/gait/single_leg/lunge),
-    // whose fma_<movement> fields are dead -- nothing has written them since
-    // Functional Assessment moved to FunctionalScreenHub/lfs_<test> fields
-    // (see this session's dead-code removal). Kept output identical (this
-    // always contributed 0 filled out of a nonzero total, i.e. always 0%,
-    // same as the current total=0 branch below now gives) while dropping the
-    // need to statically import MOVEMENTS from SubjectiveObjective.jsx here.
-    // Real follow-up (separate from this bundle-size fix): the "Functional
-    // Assessment" sidebar item has therefore always shown 0% regardless of
-    // real lfs_ data recorded -- worth wiring up to the real fields later.
-    const fmaKeys=[];
+    // Real fix (was always 0%, see prior comment history in git blame): the
+    // "Functional Assessment" sidebar item checked dead fma_<movement>
+    // fields nothing has written since the module moved to
+    // FunctionalScreenHub. FunctionalScreenHub itself doesn't store one
+    // flat field per test -- each of its 10 body-region sub-screens
+    // (LumbarFunctionalScreen, ShoulderFunctionalScreen, ... in
+    // SubjectiveObjective.jsx) persists ALL its findings as a single JSON
+    // blob under its own region key (lfs_data, sfs_data, hfs_data,
+    // kfs_data, afs_data, cfs_data, thfs_data, elfs_data, wffs_data,
+    // tmjfs_data), written only on real user interaction (setObs/setGrade/
+    // setNote), never auto-initialised on mount -- confirmed by reading
+    // each screen's own useEffect (read-only) vs save() (write, user-
+    // triggered only). So a simple flat truthy check per region -- the
+    // same pattern this file already uses for every other section -- is
+    // both correct and consistent: 1 region assessed with any real finding
+    // counts as 1 of 10, not a fine-grained per-test count that would
+    // require parsing 10 separate JSON blobs to keep in sync.
+    const FMA_REGION_DATA_KEYS = ["lfs_data","sfs_data","hfs_data","kfs_data","afs_data","cfs_data","thfs_data","elfs_data","wffs_data","tmjfs_data"];
+    const fmaKeys=key==="fma"?FMA_REGION_DATA_KEYS:[];
     const subjKeys=key==="subjective"?[
       ...Object.values(UNIV_S||{}).flatMap(s=>s.fields.map(f=>f.id)),
       ...Object.values(REG_MOD_S||{}).flatMap(mod=>Object.values(mod.sections||mod||{}).flatMap(s=>s.fields?s.fields.map(f=>f.id):[])),
