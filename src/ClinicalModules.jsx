@@ -5771,7 +5771,7 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
 
 // ─── REGION TEMPLATE MAP ──────────────────────────────────────────────────────
 // ─── Reusable rich exercise card (same layout as the main Exercise Library) ──
-function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, accentColor="#7c3aed" }) {
+function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, accentColor="#7c3aed" }) {
   const [open, setOpen] = React.useState(false);
   const phaseColors = { "Phase 1":"#00c97a", "Phase 2":"#ffb300", "Phase 3":"#ff4d6d" };
   return (
@@ -5805,13 +5805,22 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, accentColor="#7c3aed"
       {open && (
         <div style={{ padding:"0 12px 12px", borderTop:"1px solid #E0E0E2" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:5, margin:"10px 0" }}>
-            {[["Sets",ex.sets],["Reps",ex.reps],["Hold",`${ex.hold}s`],["Freq",ex.freq]].map(([l,v])=>(
-              <div key={l} style={{ background:"#FAFAFA", borderRadius:8, padding:"7px", textAlign:"center" }}>
-                <div style={{ fontSize:"0.85rem", fontWeight:900, color:accentColor }}>{v}</div>
-                <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase" }}>{l}</div>
-              </div>
-            ))}
+            {[["Sets","sets","customSets"],["Reps","reps","customReps"],["Hold (s)","hold","customHold"],["Freq","freq","customFreq"]].map(([l,baseField,customField])=>{
+              const val = inProg ? (ex[customField] ?? ex[baseField] ?? "") : ex[baseField];
+              return (
+                <div key={l} style={{ background:"#FAFAFA", borderRadius:8, padding:"7px", textAlign:"center" }}>
+                  {inProg&&onUpdate ? (
+                    <input value={val} onChange={e=>onUpdate(customField,e.target.value)}
+                      style={{ width:"100%", textAlign:"center", fontSize:"0.85rem", fontWeight:900, color:accentColor, background:"transparent", border:"none", outline:"none", fontFamily:"inherit", padding:0 }}/>
+                  ) : (
+                    <div style={{ fontSize:"0.85rem", fontWeight:900, color:accentColor }}>{baseField==="hold"?`${val}s`:val}</div>
+                  )}
+                  <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase" }}>{l}</div>
+                </div>
+              );
+            })}
           </div>
+          {inProg&&onUpdate&&<div style={{ fontSize:"0.7rem", color:"#9CA3AF", textAlign:"center", marginTop:-4, marginBottom:6 }}>Tap a value above to adjust for this patient</div>}
           {ex.desc && <div style={{ fontSize:"0.73rem", color:"#0D0D0D", lineHeight:1.6, marginBottom:7 }}>{ex.desc}</div>}
           {ex.cues && <div style={{ padding:"7px 10px", background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:8, fontSize:"0.8rem", color:"#ffb300", marginBottom:7 }}>💡 {ex.cues}</div>}
           {ex.progression && <div style={{ fontSize:"0.75rem", color:"#00c97a", marginBottom:4 }}>📈 Progression: {ex.progression}</div>}
@@ -6265,10 +6274,11 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
           templateFilter.ids.map(id=>{
             const ex = ALL_EXERCISES.find(e=>e.id===id);
             if(!ex) return null;
-            const inProg = !!programme.find(p=>p.id===id);
+            const progEntry = programme.find(p=>p.id===id);
+            const inProg = !!progEntry;
             return (
-              <ExerciseDetailCard key={id} ex={ex} inProg={inProg}
-                onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} accentColor="#7c3aed"/>
+              <ExerciseDetailCard key={id} ex={progEntry||ex} inProg={inProg}
+                onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} onUpdate={(field,val)=>updateEx(ex.id,field,val)} accentColor="#7c3aed"/>
             );
           })
         ) : (
@@ -6278,10 +6288,11 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
                 <div style={{width:4,height:14,background:region.color,borderRadius:2}}/>{cat}
               </div>
               {exs.map(ex=>{
-                const inProg = !!programme.find(p=>p.id===ex.id);
+                const progEntry = programme.find(p=>p.id===ex.id);
+                const inProg = !!progEntry;
                 return (
-                  <ExerciseDetailCard key={ex.id} ex={ex} inProg={inProg}
-                    onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} accentColor={region.color}/>
+                  <ExerciseDetailCard key={ex.id} ex={progEntry||ex} inProg={inProg}
+                    onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} onUpdate={(field,val)=>updateEx(ex.id,field,val)} accentColor={region.color}/>
                 );
               })}
             </div>
