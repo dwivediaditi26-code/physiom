@@ -111,7 +111,7 @@ export default function AIAssistant({ data, PC, onClose }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const bottomRef = useRef(null);
+  const questionAnchorRef = useRef(null);
   const inputRef = useRef(null);
 
   const patientContext = useMemo(() => buildPatientContext(data), [data]);
@@ -124,9 +124,15 @@ export default function AIAssistant({ data, PC, onClose }) {
     return patientContext.split("\n")[0] || "";
   }, [patientContext, data]);
 
+  // When a new question is sent, scroll it to the top of the pane so the
+  // answer that follows is read from where it starts -- not auto-scrolled
+  // to its tail every time a (possibly long) reply comes in.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+    const last = messages[messages.length - 1];
+    if (last?.role === "user") {
+      questionAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [messages]);
 
   // Lock background scroll while the full-screen chat is open.
   useEffect(() => {
@@ -323,11 +329,13 @@ export default function AIAssistant({ data, PC, onClose }) {
         )}
 
         {messages.map((m, i) => (
-          <div key={i} style={{
-            display: "flex",
-            flexDirection: m.role === "user" ? "row-reverse" : "row",
-            gap: 8, alignItems: "flex-start",
-          }}>
+          <div key={i}
+            ref={(i === messages.length - 1 && m.role === "user") ? questionAnchorRef : null}
+            style={{
+              display: "flex",
+              flexDirection: m.role === "user" ? "row-reverse" : "row",
+              gap: 8, alignItems: "flex-start",
+            }}>
             {/* Avatar */}
             <div style={{
               width: 28, height: 28, flexShrink: 0,
@@ -386,7 +394,6 @@ export default function AIAssistant({ data, PC, onClose }) {
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* ── Error ── */}
