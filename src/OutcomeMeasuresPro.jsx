@@ -160,7 +160,7 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
   const selectAnswer=(opt)=>{
     setAnswers(p=>({...p,[f.id]:opt}));
     setTimeout(()=>{
-      if(qIdx<total-1) setQIdx(q=>q+1);
+      setQIdx(q=>Math.min(q+1,total-1));
     },300);
   };
 
@@ -312,12 +312,12 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
 
         {/* Navigation */}
         <div style={{display:"flex",gap:10,marginTop:8}}>
-          {qIdx>0&&<button type="button" onClick={()=>setQIdx(q=>q-1)}
+          {qIdx>0&&<button type="button" onClick={()=>setQIdx(q=>Math.max(q-1,0))}
             style={{flex:1,padding:"12px",borderRadius:10,border:`1px solid ${BD}`,
               background:"transparent",color:MU,fontSize:"0.82rem",cursor:"pointer",fontFamily:"inherit"}}>
             ← Back
           </button>}
-          {(f.type==="slider"||f.type==="timer")&&<button type="button" onClick={()=>{if(qIdx<total-1)setQIdx(q=>q+1);}}
+          {(f.type==="slider"||f.type==="timer")&&<button type="button" onClick={()=>setQIdx(q=>Math.min(q+1,total-1))}
             style={{flex:2,padding:"12px",borderRadius:10,border:"none",
               background:`linear-gradient(135deg,${A},#9333ea)`,color:"#fff",
               fontSize:"0.88rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
