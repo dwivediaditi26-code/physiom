@@ -1,6 +1,7 @@
 // PhysioMind Pro AppFull v3.3 — 23 May 2026 — clearRect overlay wipe fix + bilateral knee merge
 import React, { useState, useCallback, useRef, useEffect, useMemo, Component, Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
+import * as Sentry from "@sentry/react";
 
 // ─── Math Utilities (hoisted to top — used throughout app) ───────────────────
 const mid = (a, b) => a && b ? { x:(a.x+b.x)/2, y:(a.y+b.y)/2, visibility: Math.min(a.visibility||0,b.visibility||0) } : null;
@@ -79,12 +80,29 @@ function LazyTab({ children }) {
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null }; }
   static getDerivedStateFromError(e) { return { error: e }; }
+  componentDidCatch(error, info) {
+    // Reports to Sentry when VITE_SENTRY_DSN is configured (see main.jsx);
+    // silently does nothing otherwise, so this never throws on top of an
+    // existing crash if reporting isn't set up yet.
+    try { Sentry.captureException(error, { extra: { componentStack: info?.componentStack } }); } catch {}
+  }
   render() {
     if (this.state.error) return (
-      <div style={{padding:32,fontFamily:"monospace",background:"#fff",color:"#c00",whiteSpace:"pre-wrap"}}>
-        <h2>Runtime Error</h2>
-        <p>{this.state.error?.message}</p>
-        <pre>{this.state.error?.stack}</pre>
+      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",
+        padding:32,background:"#F7F7F8",fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif"}}>
+        <div style={{maxWidth:420,textAlign:"center",background:"#fff",border:"1px solid #E0E0E2",
+          borderRadius:16,padding:"32px 28px",boxShadow:"0 4px 24px rgba(0,0,0,0.06)"}}>
+          <div style={{fontSize:"2.2rem",marginBottom:12}}>⚠️</div>
+          <div style={{fontWeight:800,fontSize:"1.1rem",color:"#0D0D0D",marginBottom:8}}>Something went wrong</div>
+          <div style={{fontSize:"0.85rem",color:"#6B6B6B",lineHeight:1.6,marginBottom:20}}>
+            This screen hit an unexpected error. Anything already saved before now should still be there — try reloading to continue.
+          </div>
+          <button onClick={()=>window.location.reload()} style={{padding:"11px 24px",
+            background:"linear-gradient(135deg,#7c3aed,#9333ea)",border:"none",borderRadius:10,
+            color:"#fff",fontWeight:700,fontSize:"0.88rem",cursor:"pointer"}}>
+            Reload
+          </button>
+        </div>
       </div>
     );
     return this.props.children;
