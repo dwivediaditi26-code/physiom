@@ -56,7 +56,19 @@ function buildPatientContext(data) {
     lines.push(`Working Diagnosis: ${data.soap_a_diagnosis || data.soap_assessment}`);
   if (data.soap_icd10)         lines.push(`ICD-10: ${data.soap_icd10}`);
   if (data.soap_modalities)    lines.push(`Treatment/Modalities: ${data.soap_modalities}`);
-  if (data.hep_programme)      lines.push(`Home Exercise Programme: ${data.hep_programme}`);
+  if (Array.isArray(data.hep_programme) && data.hep_programme.length) {
+    const hepSummary = data.hep_programme.map(ex => {
+      const dose = [
+        (ex.sets && ex.reps) ? `${ex.sets}×${ex.reps}` : null,
+        ex.hold ? `hold ${ex.hold}s` : null,
+        ex.freq || null,
+      ].filter(Boolean).join(", ");
+      return ex.name ? (dose ? `${ex.name} (${dose})` : ex.name) : null;
+    }).filter(Boolean).join("; ");
+    if (hepSummary) lines.push(`Home Exercise Programme: ${hepSummary}`);
+  } else if (typeof data.hep_programme === "string" && data.hep_programme) {
+    lines.push(`Home Exercise Programme: ${data.hep_programme}`);
+  }
   if (data.soap_p_goals)       lines.push(`Goals: ${data.soap_p_goals}`);
   if (data.soap_p_plan)        lines.push(`Plan: ${data.soap_p_plan}`);
 
@@ -105,6 +117,12 @@ export default function AIAssistant({ data, PC, onClose }) {
   const patientContext = useMemo(() => buildPatientContext(data), [data]);
   const suggestions = useMemo(() => buildSuggestions(data), [data]);
   const patientLoaded = !!patientContext;
+  const [contextOpen, setContextOpen] = useState(false);
+  const contextSummary = useMemo(() => {
+    if (!patientContext) return "";
+    if (data?.cc_main) return truncate(data.cc_main, 90);
+    return patientContext.split("\n")[0] || "";
+  }, [patientContext, data]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -224,16 +242,40 @@ export default function AIAssistant({ data, PC, onClose }) {
         </span>
       </div>
 
-      {/* ── Patient context chip ── */}
+      {/* ── Patient context — collapsed to one line by default so it doesn't
+           crowd out the conversation; expand to review the full summary ── */}
       {patientLoaded ? (
         <div style={{
-          flexShrink: 0, fontSize: "0.76rem", color: muted,
+          flexShrink: 0,
           background: isDark ? "rgba(0,0,0,0.15)" : `${accent}05`,
           borderBottom: `1px solid ${border}`,
-          padding: "7px 16px", lineHeight: 1.5,
         }}>
-          <span style={{ fontWeight: 700, color: accent }}>Context: </span>
-          {patientContext.split("\n").join(" · ")}
+          <button
+            onClick={() => setContextOpen(o => !o)}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", gap: 8,
+              background: "transparent", border: "none", cursor: "pointer",
+              padding: "7px 16px", textAlign: "left", fontFamily: "inherit",
+            }}
+          >
+            <span style={{ fontWeight: 700, color: accent, fontSize: "0.76rem", flexShrink: 0 }}>Context</span>
+            {!contextOpen && (
+              <span style={{
+                fontSize: "0.76rem", color: muted, flex: 1, minWidth: 0,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>
+                {contextSummary}
+              </span>
+            )}
+            <span style={{ marginLeft: "auto", color: muted, fontSize: "0.68rem", fontWeight: 600, flexShrink: 0 }}>
+              {contextOpen ? "▴ Hide" : "▾ Show all"}
+            </span>
+          </button>
+          {contextOpen && (
+            <div style={{ padding: "0 16px 10px", fontSize: "0.76rem", color: muted, lineHeight: 1.5 }}>
+              {patientContext.split("\n").join(" · ")}
+            </div>
+          )}
         </div>
       ) : (
         <div style={{ flexShrink: 0, fontSize: "0.76rem", color: muted, padding: "7px 16px", borderBottom: `1px solid ${border}` }}>
