@@ -11,6 +11,13 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
+  // Per-test timeout (Playwright's own default is 30s). The cross-device
+  // spec waits up to 45s for a real cloud-save round-trip to a disposable,
+  // often-dormant free-tier Supabase project (cold-start latency on the
+  // first query after inactivity) -- without raising this, that wait would
+  // get killed by the test-level timeout before it ever got a chance to
+  // resolve, regardless of the assertion's own {timeout} option.
+  timeout: 90_000,
   reporter: process.env.CI ? [['html', { open: 'never' }], ['github']] : 'list',
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:4173',

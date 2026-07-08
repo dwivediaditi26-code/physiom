@@ -138,7 +138,19 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     // real "✓ Saved to cloud" indicator (cloudSaveStatus === "saved" in
     // AppFull.jsx) instead of guessing a duration -- this is the same
     // signal a real clinician would look at before assuming a save is safe.
-    await expect(pageA.getByText(/Saved to cloud/)).toBeVisible({ timeout: 15_000 });
+    //
+    // Follow-up real CI failure, seen intermittently even after the fix
+    // above (passed once, then failed twice more at this same line with a
+    // plain "element(s) not found" -- not a strict-mode ambiguity, genuine
+    // absence): a 15s timeout isn't consistently enough. The disposable
+    // free-tier Supabase project this test suite runs against sits idle
+    // between CI runs and can go dormant; the first query after a dormant
+    // period commonly takes several extra seconds to wake the database
+    // before it even starts executing, on top of the 2s debounce and normal
+    // network latency. Extended generously (45s) to absorb that rather
+    // than keep chasing a race that the debounce-aware fix already
+    // addressed correctly.
+    await expect(pageA.getByText(/Saved to cloud/)).toBeVisible({ timeout: 45_000 });
     await contextA.close();
 
     // ── "Device B": a brand-new, fully independent browser context (no
