@@ -36,7 +36,6 @@ import {
 import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
-import LandingPage from "./LandingPage.jsx";
 import { NeurologicalModule } from "./PhysioNeuro.jsx";
 import { ALL_TESTS, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
 import AIAssistant from "./AIAssistant.jsx";
@@ -1705,18 +1704,12 @@ function AppInner({ currentUser, onSignOut }) {
   );
 }
 
-function LandingAndAuth({ onAuth }) {
-  const [showAuth, setShowAuth] = React.useState(false);
-  if (showAuth) {
-    return <AuthScreen onAuth={onAuth} />;
-  }
-  return (
-    <LandingPage
-      onGetStarted={() => setShowAuth(true)}
-      onSignIn={() => setShowAuth(true)}
-    />
-  );
-}
+// NOTE: LandingAndAuth (a marketing landing page shown before the login
+// form, with its own "Try Free"/"Sign In" CTAs) used to be defined here,
+// wrapping LandingPage.jsx. Confirmed via App()'s actual render logic
+// below that it was never called by anything -- App() renders <AuthScreen/>
+// directly when signed out, always. Removed as genuine dead code, along
+// with LandingPage.jsx itself (deleted -- nothing else imported it).
 
 export default function App() {
   // `undefined` = still checking for an existing session, `null` = signed out,
