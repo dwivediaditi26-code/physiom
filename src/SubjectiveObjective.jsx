@@ -524,17 +524,18 @@ function SpecialTestsSection({ data, set, navContext={} }) {
               <button onClick={() => setModalTest(null)} style={{ background:"none", border:`1px solid ${C.border}`, color:C.muted, borderRadius:6, padding:"3px 9px", cursor:"pointer" }}>✕</button>
             </div>
 
-            {/* Illustration */}
-            <div style={{ background:C.s2, borderRadius:10, padding:12, marginBottom:14, textAlign:"center", border:`1px solid ${C.border}` }}>
-              <div style={{ display:"inline-block", maxWidth:200 }}>
-                {TEST_SVG[modalTest.id.replace("st_","")] || (
-                  <svg viewBox="0 0 120 100" width="180" height="140">
-                    <text x="50%" y="40%" textAnchor="middle" fontSize="32" fill={C.accent}>⚕</text>
-                    <text x="50%" y="65%" textAnchor="middle" fontSize="11" fill={C.muted}>Clinical Illustration</text>
-                    <text x="50%" y="78%" textAnchor="middle" fontSize="10" fill={C.muted}>{modalTest.label.split(" ").slice(0,3).join(" ")}</text>
-                  </svg>
-                )}
-              </div>
+            {/* Illustration -- uploaded clinical photo if one exists for this test
+                (same ClinicalImageCard used in the expanded inline card), falling
+                back to the generic SVG only when nothing has been uploaded. Tap
+                the image to open it full-size. */}
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:14 }}>
+              <ClinicalImageCard
+                id={modalTest.id}
+                title={modalTest.label}
+                fallbackSvg={TEST_SVG[modalTest.id.replace("st_","")]}
+                C={C}
+                color={C.accent}
+              />
             </div>
 
             <div style={{ marginBottom:12 }}>
