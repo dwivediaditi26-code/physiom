@@ -5832,7 +5832,7 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, accentColor
 }
 
 // ─── QUICK TEMPLATES PANEL ────────────────────────────────────────────────────
-function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[], onAdd, onRemove, onLoadTemplate, programme }) {
+function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[], onAdd, onRemove, onUpdate, onLoadTemplate, programme }) {
   const [open,       setOpen]       = useState(false);
   const [activeTab,  setActiveTab]  = useState("quick");
   const [openId,     setOpenId]     = useState(null);
@@ -5876,17 +5876,18 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
               → View & add {t.exercises.length} exercises in Exercise Library
             </button>
             <div style={{ marginBottom:6 }}>
-              <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>💪 Included exercises</div>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
-                {t.exercises.map(id => {
-                  const ex = ALL_EXERCISES.find(e=>e.id===id);
-                  return (
-                    <span key={id} style={{ fontSize:"0.68rem", color:"#0D0D0D", padding:"3px 8px", background:"#FAFAFA", border:"1px solid #E0E0E2", borderRadius:20 }}>
-                      {ex ? ex.name : id.replace(/_/g," ")}
-                    </span>
-                  );
-                })}
-              </div>
+              <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>💪 Included exercises — tap to add, adjust sets/reps/hold/freq once added</div>
+              {t.exercises.map(id => {
+                const ex = ALL_EXERCISES.find(e=>e.id===id);
+                if(!ex) return null;
+                const progEntry = programme?.find(p=>p.id===id);
+                const inProg = !!progEntry;
+                return (
+                  <ExerciseDetailCard key={id} ex={progEntry||ex} inProg={inProg}
+                    onAdd={()=>onAdd&&onAdd(ex)} onRemove={()=>onRemove&&onRemove(ex.id)}
+                    onUpdate={(field,val)=>onUpdate&&onUpdate(ex.id,field,val)} accentColor="#7c3aed"/>
+                );
+              })}
             </div>
             {tx&&(tx.manual||[]).length>0&&(
               <div style={{ marginBottom:5 }}>
@@ -6215,7 +6216,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
   return(
     <div>
       {/* ── QUICK TEMPLATES + KNEE PROTOCOLS ── */}
-      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} addedTx={addedTechniqueLabels} onAdd={addEx} onRemove={removeEx} onLoadTemplate={onLoadTemplate} programme={programme} />
+      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} addedTx={addedTechniqueLabels} onAdd={addEx} onRemove={removeEx} onUpdate={updateEx} onLoadTemplate={onLoadTemplate} programme={programme} />
 
       <div ref={libraryRef}/>
 
