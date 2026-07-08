@@ -40,6 +40,22 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
         run: npm run build
 
+      # src/supabase.js falls back to the real production project
+      # (dlauxdokkrqbvbormxte) via `||` whenever VITE_SUPABASE_URL is unset
+      # or empty -- which is exactly what happens if E2E_SUPABASE_URL is
+      # missing/blank in this repo's Actions secrets. That fallback is
+      # silent: `npm run build` above succeeds either way, so nothing
+      # upstream catches it. Confirmed locally that a build with no env
+      # vars set bakes the literal prod project ref into dist/ with no
+      # error. Fail loudly here instead of letting E2E silently run
+      # (and potentially write real-looking test data) against production.
+      - name: Guard against silently building against production Supabase
+        run: |
+          if grep -rq "dlauxdokkrqbvbormxte" dist/; then
+            echo "::error::Build output references the PRODUCTION Supabase project (dlauxdokkrqbvbormxte). This means VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY were empty or unset during build -- check the E2E_SUPABASE_URL / E2E_SUPABASE_ANON_KEY repo secrets (Settings -> Secrets and variables -> Actions). Refusing to run E2E tests against production."
+            exit 1
+          fi
+
       - name: Run E2E tests
         run: npx playwright test
         env:
