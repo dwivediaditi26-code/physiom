@@ -5855,12 +5855,18 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
     const tx = TEMPLATE_TX[key];
     const isOpen = openTpl === key;
     const added = t.exercises.filter(id => programme?.find(p=>p.id===id)).length;
+    // Manual therapy + modality chips count toward "added" too -- previously
+    // this summary only ever reflected exercises, so tapping a manual/
+    // modality chip (which does get saved) looked like it had no visible
+    // effect on the template's own progress indicator.
+    const txAll = tx ? [...(tx.manual||[]), ...(tx.machine||[])] : [];
+    const txAdded = txAll.filter(m => addedTx.includes(m)).length;
     return (
       <div key={key} style={{ marginBottom:4 }}>
         <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{t.label}</div>
-            <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{tx?` · ${(tx.manual||[]).length} manual`:""}</div>
+            <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{txAll.length?` · ${txAll.length} manual/modality${txAdded>0?` (${txAdded} added)`:""}`:""}</div>
           </div>
           <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
         </div>

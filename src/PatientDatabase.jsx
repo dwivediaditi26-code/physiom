@@ -3152,6 +3152,36 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     )}
                   </div>
 
+                  {/* ── Techniques applied (manual therapy / modalities) --
+                       was written correctly by both the Tx Techniques tab and
+                       the quick-template chips, but Patient Profile never
+                       actually read data.tx_techniques anywhere, so it was
+                       invisible here regardless of how it was added. Uses the
+                       same type-branching label resolver already used by
+                       SOAPNoteModule / buildRealtimeSOAP for consistency. ── */}
+                  {(()=>{
+                    const txList=Array.isArray(d.tx_techniques)?d.tx_techniques:[];
+                    if(!txList.length) return null;
+                    const txLabel=t=>t.type==="manual"?`${t.technique||"Joint mob"}${t.grade?` Grade ${t.grade}`:""}${t.region?` — ${t.region}`:""}${t.laterality?` (${t.laterality})`:""}`
+                      :t.type==="dn"?`Dry Needling — ${t.dn_muscle||"unknown muscle"}`
+                      :t.type==="st"?`${t.st_technique||"Soft tissue"}${t.st_region?` — ${t.st_region}`:""}`
+                      :t.type==="taping"?`${t.tape_type||"Taping"}`
+                      :t.type==="us"?`Ultrasound${t.us_freq?` — ${t.us_freq}`:""}`
+                      :t.type==="electro"?`${t.electro_type||"Electrotherapy"}`
+                      :(t.technique||"Technique");
+                    return(
+                      <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:12,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",border:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:13.5,fontWeight:800,color:C.text,marginBottom:10}}>🤲 Techniques applied <span style={{color:"#0369A1"}}>{txList.length}</span></div>
+                        {txList.map((t,i2)=>(
+                          <div key={t.id||i2} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:i2%2===0?"#F9FAFB":"#fff",borderRadius:8}}>
+                            <span style={{width:20,height:20,borderRadius:"50%",background:"#DBEAFE",color:"#1E40AF",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i2+1}</span>
+                            <span style={{fontSize:12.5,fontWeight:700,color:C.text}}>{txLabel(t)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
                   {/* ── In-clinic treatment ── */}
                   <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:12,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",border:`1px solid ${C.border}`}}>
                     <div style={{fontSize:13.5,fontWeight:800,color:C.text,marginBottom:8}}>🏥 In-clinic treatment {lastS&&<span style={{fontSize:10,color:C.muted,fontWeight:500}}>· latest S{lastS.sessionNo||sess.length}</span>}</div>

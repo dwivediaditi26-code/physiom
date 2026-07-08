@@ -106,3 +106,26 @@ describe("Patient Profile — Palpation", () => {
     expect(screen.getByText("Moderate tenderness")).toBeInTheDocument();
   });
 });
+
+describe("Patient Profile — Techniques applied", () => {
+  it("shows a manual therapy / modality technique, which previously never appeared anywhere in the profile", () => {
+    // Confirmed real gap: tx_techniques is written correctly by both the Tx
+    // Techniques tab and the quick-template chips (type:"quick" entries),
+    // and both Live SOAP and SOAP Notes already resolve it via a
+    // type-branching label fallback -- but Patient Profile never read
+    // data.tx_techniques at all, so it was invisible here regardless of how
+    // it was added.
+    const data = { tx_techniques: [{ id: "a1", type: "quick", technique: "Suboccipital release" }] };
+    render(
+      <PatientProfileModal
+        patient={{ id: "p1", name: "Test Patient", data }}
+        onClose={() => {}}
+        onSaveField={() => {}}
+        onNav={() => {}}
+        initialTab="treatment"
+      />
+    );
+    expect(screen.getByText(/Techniques applied/)).toBeInTheDocument();
+    expect(screen.getByText("Suboccipital release")).toBeInTheDocument();
+  });
+});
