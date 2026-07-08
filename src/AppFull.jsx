@@ -1656,11 +1656,6 @@ function AppInner({ currentUser, onSignOut }) {
                   </div>
                 )}
               </div>
-              <div className={`pm-bnav-panel${bnavTab==="top"?" open":""}`}>
-                <BnavItem navKey="home"      icon="🏠" label="Home"/>
-                <BnavItem navKey="dashboard" icon="📊" label="Dashboard"/>
-
-              </div>
             </>
           );
         })()}
@@ -1687,7 +1682,11 @@ function AppInner({ currentUser, onSignOut }) {
 
             return (
               <>
-                <TabBtn id="top"           icon="☰"  label="Menu"    matchKeys={topKeys}/>
+                <button className={`pm-bnav-tab${navOpen||topKeys.includes(active)?" active":""}`}
+                  onClick={()=>{ setBnavTab(null); setNavOpen(true); }}>
+                  <span className="pm-bnav-tab-icon">☰</span>
+                  <span className="pm-bnav-tab-label">Menu</span>
+                </button>
                 <TabBtn id="patient"       icon="👤" label="Patient" matchKeys={[]}/>
                 <TabBtn id="assessment"    icon="🩺" label="Assess"  matchKeys={assessKeys}/>
                 <TabBtn id="advanced"      icon="🔭" label="Adv."    matchKeys={advKeys}/>
