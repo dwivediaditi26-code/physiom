@@ -1519,7 +1519,7 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="SOAP_MODULE"?(
               <Suspense fallback={<TabFallback/>}><LazySOAPNote data={data} set={set}/></Suspense>
               ):tests==="AI_MODULE"?(
-              <AIAssistant data={data} PC={PC}/>
+              <AIAssistant data={data} PC={PC} onClose={()=>navTo("home")}/>
               ):(
                 <div style={{display:"grid",gap:8}}>
                   {tests.map(t=>{

@@ -1,9 +1,20 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
 function buildPatientContext(data) {
-  // Privacy: only clinical data — no demographics (name, age, sex, occupation)
+  // Privacy: only clinical findings plus a strict demographic whitelist
+  // (age / sex / dominant hand). Never include name, phone, email, address,
+  // occupation, employer, GP, or any other identifying field here — this
+  // string is sent verbatim to the AI backend (see api/chat.js).
   if (!data) return "";
   const lines = [];
+
+  // ── DEMOGRAPHICS (whitelisted only) ──
+  const demoBits = [];
+  if (data.dem_age)            demoBits.push(`${data.dem_age}y`);
+  const sex = data.dem_sex || data.dem_gender;
+  if (sex)                     demoBits.push(sex);
+  if (data.dem_dominant)       demoBits.push(`${data.dem_dominant}-hand dominant`);
+  if (demoBits.length)         lines.push(`Demographics: ${demoBits.join(", ")}`);
 
   // ── SUBJECTIVE ──
   if (data.cc_main)            lines.push(`Chief Complaint: ${data.cc_main}`);
@@ -52,7 +63,7 @@ function buildPatientContext(data) {
   return lines.join("\n");
 }
 
-const SUGGESTIONS = [
+const DEFAULT_SUGGESTIONS = [
   "What are the likely differential diagnoses for this patient?",
   "Suggest an evidence-based treatment plan",
   "Are there any red flags I should consider?",
@@ -61,7 +72,29 @@ const SUGGESTIONS = [
   "Suggest a home exercise programme",
 ];
 
-export default function AIAssistant({ data, PC }) {
+function truncate(str, n) {
+  if (!str) return str;
+  return str.length > n ? str.slice(0, n).trim() + "…" : str;
+}
+
+// Predefined questions, tailored to whichever patient profile is currently
+// open (chief complaint / region) so the clinician sees relevant prompts
+// first, falling back to general defaults when no patient is loaded.
+function buildSuggestions(data) {
+  if (!data) return DEFAULT_SUGGESTIONS;
+  const cc = data.cc_main;
+  const region = data.lx_loc || data.cx_loc || "";
+  const tailored = [];
+  if (cc) {
+    tailored.push(`What are the likely differential diagnoses for "${truncate(cc, 60)}"?`);
+    tailored.push(`What red flags should I screen for given "${truncate(cc, 60)}"?`);
+  }
+  if (region) tailored.push(`What special tests are most relevant for the ${region}?`);
+  if (!tailored.length) return DEFAULT_SUGGESTIONS;
+  return [...tailored, ...DEFAULT_SUGGESTIONS].slice(0, 6);
+}
+
+export default function AIAssistant({ data, PC, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -69,12 +102,20 @@ export default function AIAssistant({ data, PC }) {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
-  const patientContext = buildPatientContext(data);
-  const patientName = data?.dem_name || "this patient";
+  const patientContext = useMemo(() => buildPatientContext(data), [data]);
+  const suggestions = useMemo(() => buildSuggestions(data), [data]);
+  const patientLoaded = !!patientContext;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  // Lock background scroll while the full-screen chat is open.
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prevOverflow; };
+  }, []);
 
   async function send(text) {
     const userMsg = text || input.trim();
@@ -100,6 +141,7 @@ export default function AIAssistant({ data, PC }) {
       setError(e.message);
     } finally {
       setLoading(false);
+      inputRef.current?.focus();
     }
   }
 
@@ -111,6 +153,7 @@ export default function AIAssistant({ data, PC }) {
   // Colors — fallback if PC not passed
   const accent = PC?.accent || "#7c3aed";
   const a2     = PC?.a2    || "#9333ea";
+  const bg     = PC?.bg    || "#F7F7F8";
   const surface= PC?.surface|| "#fff";
   const border = PC?.border || "#e5e7eb";
   const text   = PC?.text  || "#111827";
@@ -118,170 +161,197 @@ export default function AIAssistant({ data, PC }) {
   const isDark = PC?.isDark|| false;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-
-      {/* ── Header banner ── */}
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 100000,
+      display: "flex", flexDirection: "column",
+      background: bg,
+    }}>
+      {/* ── Top bar ── */}
       <div style={{
-        background: `linear-gradient(135deg,${accent}14,${a2}08)`,
-        border: `1.5px solid ${accent}30`,
-        borderRadius: 14,
-        padding: "14px 16px",
-        marginBottom: 16,
+        flexShrink: 0, display: "flex", alignItems: "center", gap: 10,
+        padding: "10px 16px", borderBottom: `1px solid ${border}`,
+        background: surface,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-          <div style={{
-            width: 36, height: 36,
-            background: `linear-gradient(135deg,${accent}25,${a2}18)`,
-            border: `1px solid ${accent}35`,
-            borderRadius: 10,
+        <button
+          onClick={onClose}
+          aria-label="Back"
+          style={{
+            width: 34, height: 34, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "1.2rem", flexShrink: 0,
-          }}>🤖</div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: "1rem", color: accent, letterSpacing: "-0.2px" }}>
-              AI Clinical Assistant
-            </div>
-            <div style={{ fontSize: "0.75rem", color: muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginTop: 1 }}>
-              Powered by Groq · llama-3.3-70b
-            </div>
+            background: "transparent", border: `1px solid ${border}`,
+            borderRadius: 9, color: text, fontSize: "1.1rem", cursor: "pointer",
+          }}
+        >←</button>
+        <div style={{
+          width: 34, height: 34, flexShrink: 0,
+          background: `linear-gradient(135deg,${accent}25,${a2}18)`,
+          border: `1px solid ${accent}35`,
+          borderRadius: 9,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "1.1rem",
+        }}>🤖</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: "0.92rem", color: accent, letterSpacing: "-0.2px" }}>
+            AI Clinical Assistant
           </div>
-          {messages.length > 0 && (
-            <button onClick={clearChat} style={{
-              marginLeft: "auto", padding: "4px 10px",
-              background: "transparent", border: `1px solid ${border}`,
-              borderRadius: 7, color: muted, fontSize: "0.75rem",
-              fontWeight: 600, cursor: "pointer",
-            }}>
-              Clear
-            </button>
-          )}
+          <div style={{ fontSize: "0.7rem", color: muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Powered by Groq · llama-3.3-70b
+          </div>
         </div>
-        {patientContext ? (
-          <div style={{
-            fontSize: "0.78rem", color: muted,
-            background: isDark ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.6)",
-            border: `1px solid ${border}`,
-            borderRadius: 8, padding: "6px 10px",
-            lineHeight: 1.5,
+        {messages.length > 0 && (
+          <button onClick={clearChat} style={{
+            padding: "6px 12px",
+            background: "transparent", border: `1px solid ${border}`,
+            borderRadius: 8, color: muted, fontSize: "0.75rem",
+            fontWeight: 600, cursor: "pointer", flexShrink: 0,
           }}>
-            <span style={{ fontWeight: 700, color: accent }}>Context: </span>
-            {patientContext.split("\n").join(" · ")}
-          </div>
-        ) : (
-          <div style={{ fontSize: "0.78rem", color: muted }}>
-            No patient loaded — you can still ask general clinical questions.
-          </div>
+            Clear
+          </button>
         )}
       </div>
 
-      {/* ── Quick suggestion chips ── */}
-      {messages.length === 0 && (
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>
-            Quick Questions
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-            {SUGGESTIONS.map(s => (
-              <button key={s} onClick={() => send(s)} style={{
-                padding: "6px 12px",
-                background: isDark ? `${accent}15` : `${accent}08`,
-                border: `1px solid ${accent}25`,
-                borderRadius: 20, color: accent,
-                fontSize: "0.78rem", fontWeight: 600,
-                cursor: "pointer", lineHeight: 1.4,
-                textAlign: "left",
-              }}>
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* ── Persistent caution banner ── */}
+      <div style={{
+        flexShrink: 0, display: "flex", alignItems: "center", gap: 8,
+        padding: "8px 16px",
+        background: isDark ? "rgba(217,119,6,0.14)" : "#FFF7ED",
+        borderBottom: `1px solid ${border}`,
+        fontSize: "0.75rem", color: "#9A3412", lineHeight: 1.4,
+      }}>
+        <span style={{ flexShrink: 0 }}>⚠</span>
+        <span>
+          AI suggestions are assistive only — verify against {patientLoaded ? "this patient's" : "the"} full clinical record and your professional judgement before acting.
+        </span>
+      </div>
 
-      {/* ── Chat messages ── */}
-      {messages.length > 0 && (
+      {/* ── Patient context chip ── */}
+      {patientLoaded ? (
         <div style={{
-          background: isDark ? "rgba(0,0,0,0.12)" : `${accent}04`,
-          border: `1px solid ${border}`,
-          borderRadius: 12,
-          padding: "12px 14px",
-          marginBottom: 12,
-          maxHeight: 420,
-          overflowY: "auto",
-          display: "flex", flexDirection: "column", gap: 10,
+          flexShrink: 0, fontSize: "0.76rem", color: muted,
+          background: isDark ? "rgba(0,0,0,0.15)" : `${accent}05`,
+          borderBottom: `1px solid ${border}`,
+          padding: "7px 16px", lineHeight: 1.5,
         }}>
-          {messages.map((m, i) => (
-            <div key={i} style={{
-              display: "flex",
-              flexDirection: m.role === "user" ? "row-reverse" : "row",
-              gap: 8, alignItems: "flex-start",
-            }}>
-              {/* Avatar */}
-              <div style={{
-                width: 28, height: 28, flexShrink: 0,
-                borderRadius: "50%",
-                background: m.role === "user"
-                  ? `linear-gradient(135deg,${accent},${a2})`
-                  : isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "0.75rem", fontWeight: 800,
-                color: m.role === "user" ? "#fff" : accent,
-              }}>
-                {m.role === "user" ? "U" : "🤖"}
-              </div>
-              {/* Bubble */}
-              <div style={{
-                maxWidth: "82%",
-                background: m.role === "user"
-                  ? `linear-gradient(135deg,${accent},${a2})`
-                  : surface,
-                border: m.role === "user" ? "none" : `1px solid ${border}`,
-                borderRadius: m.role === "user" ? "12px 4px 12px 12px" : "4px 12px 12px 12px",
-                padding: "9px 13px",
-                fontSize: "0.82rem",
-                color: m.role === "user" ? "#fff" : text,
-                lineHeight: 1.6,
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-              }}>
-                {m.content}
-              </div>
-            </div>
-          ))}
-
-          {loading && (
-            <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-              <div style={{
-                width: 28, height: 28, flexShrink: 0, borderRadius: "50%",
-                background: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem",
-              }}>🤖</div>
-              <div style={{
-                background: surface, border: `1px solid ${border}`,
-                borderRadius: "4px 12px 12px 12px",
-                padding: "9px 16px",
-                display: "flex", gap: 5, alignItems: "center",
-              }}>
-                {[0,1,2].map(n => (
-                  <div key={n} style={{
-                    width: 7, height: 7, borderRadius: "50%",
-                    background: accent,
-                    animation: "aiDot 1.2s ease-in-out infinite",
-                    animationDelay: `${n * 0.2}s`,
-                    opacity: 0.7,
-                  }}/>
-                ))}
-              </div>
-            </div>
-          )}
-          <div ref={bottomRef}/>
+          <span style={{ fontWeight: 700, color: accent }}>Context: </span>
+          {patientContext.split("\n").join(" · ")}
+        </div>
+      ) : (
+        <div style={{ flexShrink: 0, fontSize: "0.76rem", color: muted, padding: "7px 16px", borderBottom: `1px solid ${border}` }}>
+          No patient loaded — you can still ask general clinical questions.
         </div>
       )}
+
+      {/* ── Quick suggestion chips — pinned above the conversation ── */}
+      <div style={{ flexShrink: 0, padding: "10px 16px", borderBottom: `1px solid ${border}`, background: surface }}>
+        <div style={{ fontSize: "0.7rem", fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 7 }}>
+          {patientLoaded ? "Questions for this patient" : "Quick Questions"}
+        </div>
+        <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }}>
+          {suggestions.map(s => (
+            <button key={s} disabled={loading} onClick={() => send(s)} style={{
+              whiteSpace: "nowrap", flexShrink: 0,
+              padding: "6px 12px",
+              background: isDark ? `${accent}15` : `${accent}08`,
+              border: `1px solid ${accent}25`,
+              borderRadius: 20, color: accent,
+              fontSize: "0.76rem", fontWeight: 600,
+              cursor: loading ? "not-allowed" : "pointer", lineHeight: 1.4,
+            }}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Conversation — grows to fill remaining height, scrolls independently ── */}
+      <div style={{
+        flex: 1, minHeight: 0, overflowY: "auto",
+        padding: "16px", display: "flex", flexDirection: "column", gap: 12,
+      }}>
+        {messages.length === 0 && !loading && (
+          <div style={{ margin: "auto", textAlign: "center", color: muted, maxWidth: 380 }}>
+            <div style={{ fontSize: "2.2rem", marginBottom: 10 }}>🤖</div>
+            <div style={{ fontWeight: 700, color: text, marginBottom: 4, fontSize: "0.95rem" }}>Ask me anything</div>
+            <div style={{ fontSize: "0.82rem", lineHeight: 1.5 }}>
+              {patientLoaded
+                ? "Pick a question above, ask about this patient, or ask about anything else."
+                : "No patient loaded — ask any general clinical question to get started."}
+            </div>
+          </div>
+        )}
+
+        {messages.map((m, i) => (
+          <div key={i} style={{
+            display: "flex",
+            flexDirection: m.role === "user" ? "row-reverse" : "row",
+            gap: 8, alignItems: "flex-start",
+          }}>
+            {/* Avatar */}
+            <div style={{
+              width: 28, height: 28, flexShrink: 0,
+              borderRadius: "50%",
+              background: m.role === "user"
+                ? `linear-gradient(135deg,${accent},${a2})`
+                : isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "0.75rem", fontWeight: 800,
+              color: m.role === "user" ? "#fff" : accent,
+            }}>
+              {m.role === "user" ? "U" : "🤖"}
+            </div>
+            {/* Bubble */}
+            <div style={{
+              maxWidth: "72%",
+              background: m.role === "user"
+                ? `linear-gradient(135deg,${accent},${a2})`
+                : surface,
+              border: m.role === "user" ? "none" : `1px solid ${border}`,
+              borderRadius: m.role === "user" ? "12px 4px 12px 12px" : "4px 12px 12px 12px",
+              padding: "9px 13px",
+              fontSize: "0.85rem",
+              color: m.role === "user" ? "#fff" : text,
+              lineHeight: 1.6,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+            }}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+
+        {loading && (
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <div style={{
+              width: 28, height: 28, flexShrink: 0, borderRadius: "50%",
+              background: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem",
+            }}>🤖</div>
+            <div style={{
+              background: surface, border: `1px solid ${border}`,
+              borderRadius: "4px 12px 12px 12px",
+              padding: "9px 16px",
+              display: "flex", gap: 5, alignItems: "center",
+            }}>
+              {[0, 1, 2].map(n => (
+                <div key={n} style={{
+                  width: 7, height: 7, borderRadius: "50%",
+                  background: accent,
+                  animation: "aiDot 1.2s ease-in-out infinite",
+                  animationDelay: `${n * 0.2}s`,
+                  opacity: 0.7,
+                }} />
+              ))}
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
 
       {/* ── Error ── */}
       {error && (
         <div style={{
-          padding: "9px 12px", borderRadius: 8, marginBottom: 10,
+          flexShrink: 0, margin: "0 16px 10px",
+          padding: "9px 12px", borderRadius: 8,
           background: "#FEF2F2", border: "1px solid #FCA5A5",
           fontSize: "0.8rem", color: "#DC2626",
         }}>
@@ -289,49 +359,51 @@ export default function AIAssistant({ data, PC }) {
         </div>
       )}
 
-      {/* ── Input bar ── */}
-      <div style={{
-        display: "flex", gap: 8, alignItems: "flex-end",
-        background: surface,
-        border: `1.5px solid ${accent}30`,
-        borderRadius: 12,
-        padding: "8px 10px",
-      }}>
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
-          }}
-          placeholder={`Ask anything about ${patientName}…`}
-          rows={2}
-          style={{
-            flex: 1, background: "transparent", border: "none", outline: "none",
-            resize: "none", fontSize: "0.85rem", color: text,
-            fontFamily: "inherit", lineHeight: 1.5,
-          }}
-        />
-        <button
-          onClick={() => send()}
-          disabled={!input.trim() || loading}
-          style={{
-            padding: "8px 16px", flexShrink: 0,
-            background: input.trim() && !loading
-              ? `linear-gradient(135deg,${accent},${a2})`
-              : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-            border: "none", borderRadius: 9,
-            color: input.trim() && !loading ? "#fff" : muted,
-            fontSize: "0.82rem", fontWeight: 700,
-            cursor: input.trim() && !loading ? "pointer" : "not-allowed",
-            transition: "all 0.15s",
-          }}
-        >
-          {loading ? "..." : "Send"}
-        </button>
-      </div>
-      <div style={{ fontSize: "0.72rem", color: muted, marginTop: 6, textAlign: "center" }}>
-        Press Enter to send · Shift+Enter for new line · AI responses are assistive only
+      {/* ── Input bar — pinned to the bottom of the screen ── */}
+      <div style={{ flexShrink: 0, borderTop: `1px solid ${border}`, background: surface, padding: "10px 16px" }}>
+        <div style={{
+          display: "flex", gap: 8, alignItems: "flex-end",
+          border: `1.5px solid ${accent}30`,
+          borderRadius: 12,
+          padding: "8px 10px",
+        }}>
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+            }}
+            placeholder="Ask about this patient, or ask anything else…"
+            rows={2}
+            autoFocus
+            style={{
+              flex: 1, background: "transparent", border: "none", outline: "none",
+              resize: "none", fontSize: "0.85rem", color: text,
+              fontFamily: "inherit", lineHeight: 1.5,
+            }}
+          />
+          <button
+            onClick={() => send()}
+            disabled={!input.trim() || loading}
+            style={{
+              padding: "8px 16px", flexShrink: 0,
+              background: input.trim() && !loading
+                ? `linear-gradient(135deg,${accent},${a2})`
+                : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+              border: "none", borderRadius: 9,
+              color: input.trim() && !loading ? "#fff" : muted,
+              fontSize: "0.82rem", fontWeight: 700,
+              cursor: input.trim() && !loading ? "pointer" : "not-allowed",
+              transition: "all 0.15s",
+            }}
+          >
+            {loading ? "..." : "Send"}
+          </button>
+        </div>
+        <div style={{ fontSize: "0.72rem", color: muted, marginTop: 6, textAlign: "center" }}>
+          Press Enter to send · Shift+Enter for new line · AI responses are assistive only
+        </div>
       </div>
 
       <style>{`
