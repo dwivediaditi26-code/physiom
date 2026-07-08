@@ -153,9 +153,18 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     // one appeared plus any captured console output, so the actual cause
     // shows up directly in the failure summary rather than requiring a
     // trip into the raw CI step log or the trace artifact.
+    // Same dual-render class of bug as the .pm-patient-bar scoping below for
+    // Device B: pm-mobile-hdr renders its own compact "· ⚠ Offline — will
+    // retry" status (activePatient block) alongside pm-patient-bar's fuller
+    // "⚠ Offline — will retry on next edit" -- both stay mounted regardless
+    // of viewport (CSS just hides one), so an unscoped getByText against
+    // `page` hits Playwright's strict-mode violation (2 elements) before
+    // the intended assertion ever gets to run. Scope to .pm-patient-bar,
+    // the real always-mounted desktop status source.
+    const patientBarA = pageA.locator('.pm-patient-bar');
     try {
-      await expect(pageA.getByText(/Saved to cloud|Offline — will retry/)).toBeVisible({ timeout: 45_000 });
-      const stateText = (await pageA.getByText(/Saved to cloud|Offline — will retry/).first().textContent()) || '(none)';
+      await expect(patientBarA.getByText(/Saved to cloud|Offline — will retry/)).toBeVisible({ timeout: 45_000 });
+      const stateText = (await patientBarA.getByText(/Saved to cloud|Offline — will retry/).first().textContent()) || '(none)';
       if (/Offline/.test(stateText)) {
         throw new Error(
           `Cloud save reached an error state instead of succeeding: "${stateText}". ` +
