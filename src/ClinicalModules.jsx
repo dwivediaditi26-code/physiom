@@ -6693,7 +6693,14 @@ function GradeChip({ value, selected, onClick }) {
 // ─── Main PalpationModule ─────────────────────────────────────────────────────
 function PalpationModule({ data, set }) {
   const C = getC();
-  const [pins, setPins]           = useState([]); // { id, hotspotId, label, structures, tenderness, temp, texture, notes, side }
+  // Hydrate from any previously recorded findings -- this was previously
+  // useState([]) with nothing to load existing data, so a useEffect below
+  // (which also fires on mount) immediately overwrote data.palp_pins with
+  // an empty array the instant this module rendered, silently destroying
+  // any prior palpation findings just by opening the tab.
+  const [pins, setPins]           = useState(() => {
+    try { const v = data?.palp_pins; return v ? JSON.parse(v) : []; } catch { return []; }
+  }); // { id, hotspotId, label, structures, tenderness, temp, texture, notes, side }
   const [selected, setSelected]   = useState(null); // id of selected pin
   const [hovered, setHovered]     = useState(null);  // hotspot id
   const [view, setView]           = useState("front"); // "front" | "back"
