@@ -7590,4 +7590,5 @@ function useVerifiedLandmarks() {
   return { verified, setVerified, clearVerified, mergeWithMediaPipe, boostFindingConfidence };
 }
 
-export { PostureAnalysisModule, PC };
+export { PostureAnalysisModule, PC, vec3Angle, dist2D, classifySeverity, POSTURE_THRESHOLDS,
+  getLandmarkConfidence, checkLandmarkReliability, checkAnatomicalOrder };
