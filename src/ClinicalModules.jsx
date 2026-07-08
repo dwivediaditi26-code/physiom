@@ -5683,7 +5683,7 @@ const HIP_PROTOCOLS = [
 ];
 
 // ─── SHARED PROTOCOL PANEL RENDERER ──────────────────────────────────────────
-function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPhase, togglePhase }) {
+function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPhase, togglePhase, onAdd, onRemove, onUpdate, programme }) {
   return (
     <div style={{ borderTop:"1px solid rgba(0,0,0,0.08)", padding:"10px 14px 14px" }}>
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
@@ -5731,22 +5731,17 @@ function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPh
                 </div>
                 {openPhase[`${p.id}_${pi}`] && (
                   <div style={{ padding:"10px 12px" }}>
-                    {ph.exercises.map((ex, ei) => (
-                      <div key={ei} style={{ background:"#FFFFFF", border:"1px solid #E0E0E2", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
-                        <div style={{ fontWeight:800, fontSize:"0.78rem", color:"#0D0D0D", marginBottom:4 }}>{ex.name}</div>
-                        <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:7 }}>
-                          {[["Sets",ex.sets],["Reps",ex.reps],["Hold",ex.hold+"s"],["Freq",ex.freq]].map(([l,v]) => (
-                            <div key={l} style={{ background:`${ph.color}12`, border:`1px solid ${ph.color}30`, borderRadius:6, padding:"3px 8px", textAlign:"center" }}>
-                              <div style={{ fontSize:"0.82rem", fontWeight:900, color:ph.color }}>{v}</div>
-                              <div style={{ fontSize:"0.82rem", color:"#6B6B6B", textTransform:"uppercase" }}>{l}</div>
-                            </div>
-                          ))}
-                        </div>
-                        <div style={{ fontSize:"0.73rem", color:"#334155", lineHeight:1.6, marginBottom:6 }}>{ex.desc}</div>
-                        <div style={{ background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:6, padding:"5px 8px", fontSize:"0.78rem", color:"#b45309", marginBottom:5 }}>💡 {ex.cues}</div>
-                        <div style={{ fontSize:"0.82rem", color:"#7f5af0" }}>📚 {ex.evidence}</div>
-                      </div>
-                    ))}
+                    {ph.exercises.map((ex, ei) => {
+                      const exId = "proto_" + ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_");
+                      const progEntry = programme?.find(e=>e.id===exId);
+                      const inProg = !!progEntry;
+                      const full = {...ex, id:exId, phase:ph.phase, target:ex.cues?.slice(0,40)||ex.name};
+                      return (
+                        <ExerciseDetailCard key={ei} ex={progEntry||full} inProg={inProg}
+                          onAdd={()=>onAdd&&onAdd(full)} onRemove={()=>onRemove&&onRemove(exId)}
+                          onUpdate={(field,val)=>onUpdate&&onUpdate(exId,field,val)} accentColor={ph.color}/>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -6023,23 +6018,13 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
                                   const exId = "proto_" + ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_");
                                   const inProg = programme?.find(e=>e.id===exId);
                                   return (
-                                  <div key={ei} style={{ background:"#FFFFFF", border:`1px solid ${inProg?"rgba(0,201,122,0.4)":"#E0E0E2"}`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
-                                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:3 }}>
-                                      <div style={{ fontWeight:800, fontSize:"0.71rem", color:"#0D0D0D" }}>{ex.name}</div>
-                                      {onAdd && <button onClick={()=>onAdd({...ex,id:exId,phase:ph.phase,target:ex.cues?.slice(0,40)||ex.name})} disabled={!!inProg} style={{ padding:"2px 9px", borderRadius:6, fontSize:"0.57rem", fontWeight:800, border:`1px solid ${inProg?"rgba(0,201,122,0.5)":"rgba(0,201,122,0.35)"}`, background:inProg?"rgba(0,201,122,0.15)":"rgba(0,201,122,0.08)", color:"#00c97a", cursor:inProg?"default":"pointer", flexShrink:0, marginLeft:7 }}>{inProg?"✓":"+ Add"}</button>}
-                                    </div>
-                                    <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:5 }}>
-                                      {[["Sets",ex.sets],["Reps",ex.reps],["Hold",ex.hold+"s"],["Freq",ex.freq]].map(([l,v])=>(
-                                        <div key={l} style={{ background:`${ph.color}12`, border:`1px solid ${ph.color}30`, borderRadius:5, padding:"2px 7px", textAlign:"center" }}>
-                                          <div style={{ fontSize:"0.66rem", fontWeight:900, color:ph.color }}>{v}</div>
-                                          <div style={{ fontSize:"0.49rem", color:"#6B6B6B", textTransform:"uppercase" }}>{l}</div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <div style={{ fontSize:"0.66rem", color:"#334155", lineHeight:1.5, marginBottom:4 }}>{ex.desc}</div>
-                                    <div style={{ background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:5, padding:"3px 7px", fontSize:"0.82rem", color:"#b45309", marginBottom:3 }}>💡 {ex.cues}</div>
-                                    <div style={{ fontSize:"0.57rem", color:"#7f5af0" }}>📚 {ex.evidence}</div>
-                                  </div>
+                                  <ExerciseDetailCard key={ei}
+                                    ex={inProg||{...ex,id:exId,phase:ph.phase,target:ex.cues?.slice(0,40)||ex.name}}
+                                    inProg={!!inProg}
+                                    onAdd={()=>onAdd&&onAdd({...ex,id:exId,phase:ph.phase,target:ex.cues?.slice(0,40)||ex.name})}
+                                    onRemove={()=>onRemove&&onRemove(exId)}
+                                    onUpdate={(field,val)=>onUpdate&&onUpdate(exId,field,val)}
+                                    accentColor={ph.color}/>
                                   );
                                 })}
                               </div>
@@ -6063,21 +6048,21 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
 
             {activeTab === "shoulder" && (
               <>
-                <ProtocolPanel protocols={SHOULDER_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
+                <ProtocolPanel protocols={SHOULDER_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} onRemove={onRemove} onUpdate={onUpdate} programme={programme} />
                 <QuickTemplatesForRegion regionName="Shoulder"/>
               </>
             )}
 
             {activeTab === "elbow" && (
               <>
-                <ProtocolPanel protocols={ELBOW_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
+                <ProtocolPanel protocols={ELBOW_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} onRemove={onRemove} onUpdate={onUpdate} programme={programme} />
                 <QuickTemplatesForRegion regionName="Elbow"/>
               </>
             )}
 
             {activeTab === "hip" && (
               <>
-                <ProtocolPanel protocols={HIP_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} programme={programme} />
+                <ProtocolPanel protocols={HIP_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} onRemove={onRemove} onUpdate={onUpdate} programme={programme} />
                 <QuickTemplatesForRegion regionName="Hip"/>
               </>
             )}
