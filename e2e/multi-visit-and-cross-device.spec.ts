@@ -95,18 +95,22 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     // ── "Device A": sign up, create a patient, save one real finding ──
     const contextA = await browser.newContext();
     const pageA = await contextA.newPage();
-    // Diagnostic only, not an assertion: after several rounds of this test
-    // failing at the cloud-save step with no clear signal from the
-    // assertion text alone, surface the app's own console output (it
-    // already does console.warn("[Supabase sync error]", e) on a failed
-    // upsert) directly into the CI log -- cheaper than downloading the
-    // trace/screenshot artifact to find the same thing.
+    // Capture the app's own console output (it already does
+    // console.warn("[Supabase sync error]", e) on a failed upsert) into an
+    // array, not just console.log -- a plain console.log only shows up in
+    // the raw "Run E2E tests" step log, which turned out to be a dead end
+    // for getting a diagnosis from CI output alone across several rounds.
+    // Folding any captured warnings/errors directly into the *thrown error
+    // message* below means they show up in the same failure summary
+    // GitHub surfaces automatically, no digging into expanded step logs
+    // required.
+    const consoleIssues = [];
     pageA.on('console', (msg) => {
       if (msg.type() === 'warning' || msg.type() === 'error') {
-        console.log(`[pageA console.${msg.type()}] ${msg.text()}`);
+        consoleIssues.push(`[console.${msg.type()}] ${msg.text()}`);
       }
     });
-    pageA.on('pageerror', (err) => console.log(`[pageA pageerror] ${err.message}`));
+    pageA.on('pageerror', (err) => consoleIssues.push(`[pageerror] ${err.message}`));
     await pageA.goto('/');
     await pageA.getByRole('button', { name: 'Create free account' }).click();
     await pageA.getByPlaceholder('Dr. Aditi').fill('E2E Runner A');
@@ -139,18 +143,30 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     // AppFull.jsx) instead of guessing a duration -- this is the same
     // signal a real clinician would look at before assuming a save is safe.
     //
-    // Follow-up real CI failure, seen intermittently even after the fix
-    // above (passed once, then failed twice more at this same line with a
-    // plain "element(s) not found" -- not a strict-mode ambiguity, genuine
-    // absence): a 15s timeout isn't consistently enough. The disposable
-    // free-tier Supabase project this test suite runs against sits idle
-    // between CI runs and can go dormant; the first query after a dormant
-    // period commonly takes several extra seconds to wake the database
-    // before it even starts executing, on top of the 2s debounce and normal
-    // network latency. Extended generously (45s) to absorb that rather
-    // than keep chasing a race that the debounce-aware fix already
-    // addressed correctly.
-    await expect(pageA.getByText(/Saved to cloud/)).toBeVisible({ timeout: 45_000 });
+    // Follow-up real CI failures, seen repeatedly even after extending the
+    // wait to 45s: still "element(s) not found", genuinely absent rather
+    // than merely slow -- ruling out cold-start latency as the cause.
+    // cloudSaveStatus (AppFull.jsx) has exactly one other terminal state,
+    // "error" -- rendered as "⚠ Offline — will retry on next edit" -- so a
+    // failed upsert is the live hypothesis now, not a timing issue. Race
+    // both outcomes and, on failure, throw a message that embeds whichever
+    // one appeared plus any captured console output, so the actual cause
+    // shows up directly in the failure summary rather than requiring a
+    // trip into the raw CI step log or the trace artifact.
+    try {
+      await expect(pageA.getByText(/Saved to cloud|Offline — will retry/)).toBeVisible({ timeout: 45_000 });
+      const stateText = (await pageA.getByText(/Saved to cloud|Offline — will retry/).first().textContent()) || '(none)';
+      if (/Offline/.test(stateText)) {
+        throw new Error(
+          `Cloud save reached an error state instead of succeeding: "${stateText}". ` +
+          `Console output captured during this page's lifetime:\n${consoleIssues.join('\n') || '(no console warnings/errors captured)'}`
+        );
+      }
+    } catch (e) {
+      throw new Error(
+        `${e.message}\n\nConsole output captured during this page's lifetime:\n${consoleIssues.join('\n') || '(no console warnings/errors captured)'}`
+      );
+    }
     await contextA.close();
 
     // ── "Device B": a brand-new, fully independent browser context (no
