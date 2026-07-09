@@ -846,7 +846,7 @@ function AppInner({ currentUser, onSignOut }) {
 
       {/* 6. Documentation (collapsible) */}
       <SidebarGroup groupKey="documentation" icon="📋" label="Documentation" accentColor="#b45309">
-        <SidebarItem navKey="tx_sessions"  icon="⚡" label="Quick Visit"/>
+        <SidebarItem navKey="tx_sessions"  icon="⚡" label="Sessions"/>
         <SidebarItem navKey="soap"         icon="📋" label="SOAP Notes"/>
         <SidebarItem navKey="ai_assistant" icon="🤖" label="AI Assistant"/>
       </SidebarGroup>
@@ -1509,9 +1509,9 @@ function AppInner({ currentUser, onSignOut }) {
                 <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
               ):tests==="TX_SESSION_MODULE"?(
                 <div>
-                  {/* ── Quick Visit Banner ── */}
+                  {/* ── Sessions Banner ── */}
                   <div style={{background:`linear-gradient(135deg,${PC.accent}12,${PC.a2}08)`,border:`1.5px solid ${PC.accent}30`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
-                    <div style={{fontWeight:800,fontSize:"0.88rem",color:PC.accent,marginBottom:4}}>⚡ Quick Visit</div>
+                    <div style={{fontWeight:800,fontSize:"0.88rem",color:PC.accent,marginBottom:4}}>⚡ Sessions</div>
                     <div style={{fontSize:"0.8rem",color:PC.muted,marginBottom:12}}>For follow-ups — fill these 4 fields and sign. Takes 60 seconds.</div>
                     <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo}/>
                   </div>
@@ -1607,7 +1607,7 @@ function AppInner({ currentUser, onSignOut }) {
                 ))}
               </div>
               <div className={`pm-bnav-panel${bnavTab==="documentation"?" open":""}`}>
-                <BnavItem navKey="tx_sessions" icon="⚡" label="Quick Visit"/>
+                <BnavItem navKey="tx_sessions" icon="⚡" label="Sessions"/>
                 <BnavItem navKey="soap"        icon="📋" label="SOAP Notes"/>
                 <BnavItem navKey="ai_assistant" icon="🤖" label="AI Assistant"/>
               </div>

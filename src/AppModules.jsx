@@ -858,7 +858,7 @@ ${pdfHeader("Physiotherapy Treatment Plan","Evidence-Based Clinical Management P
             <td style="font-size:8.5px;color:#6b7280;padding:6px 8px;">${escHtml(respShort)}</td>
           </tr>`;
         }).join("")
-      : `<tr><td colspan="5" style="text-align:center;padding:16px;font-size:9px;color:#94a3b8;">No sessions logged yet — use Quick Visit to record each treatment session.</td></tr>`;
+      : `<tr><td colspan="5" style="text-align:center;padding:16px;font-size:9px;color:#94a3b8;">No sessions logged yet — use Sessions to record each treatment session.</td></tr>`;
     return sectionCard("Outcome Measures &amp; Session Log","&#128200;",`
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
         <div>
@@ -1324,24 +1324,165 @@ ${prog.map((ex,i)=>`<div class="ex"><div class="ex-h"><span class="ex-t">${i+1}.
   catch(e){ const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>{try{w.print();}catch(_){}},500); }
 }
 
-function QuickVisitForm({ PC, data, set, navTo }) {
-  const sessionsArr = Array.isArray(data.tx_sessions)?data.tx_sessions:[];
+// ── Shared small components for the Sessions feature ──────────────────────
+
+function SessionPill({bg,col,children,onClick,title}){
+  return <span onClick={onClick} title={title} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:26,height:26,borderRadius:7,background:bg,color:col,fontSize:"0.8rem",fontWeight:800,cursor:"pointer",flexShrink:0,userSelect:"none"}}>{children}</span>;
+}
+
+// Reusable add/edit/remove list -- same Pill buttons, same input style, same
+// dashed "+ Add" box as the existing exercise list, so modalities, treatment,
+// and past-session exercises all look and behave identically to each other
+// and to the exercise list they were modelled on.
+function EditableItemList({ PC, items, onAdd, onEdit, onRemove, addLabel, quickOptions }) {
+  const [adding, setAdding] = useState(false);
+  const [addText, setAddText] = useState("");
+  const [addDetail, setAddDetail] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [editDetail, setEditDetail] = useState("");
+  const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"7px 9px",fontSize:"0.8rem"};
+  const startEdit = (it) => { setEditingId(it.id); setEditText(it.name); setEditDetail(it.detail||""); };
+  const applyEdit = () => { if(editText.trim()) onEdit(editingId,{name:editText.trim(),detail:editDetail.trim()}); setEditingId(null); };
+  const submitAdd = () => { if(addText.trim()){ onAdd({name:addText.trim(),detail:addDetail.trim()}); setAddText(""); setAddDetail(""); setAdding(false); } };
+  const itemNames = items.map(it=>it.name);
+  return (
+    <div>
+      {items.length===0 && <div style={{fontSize:"0.78rem",color:PC.muted,padding:"4px 0 8px"}}>None recorded yet.</div>}
+      {items.map(it=>(
+        <div key={it.id} style={{marginBottom:5}}>
+          <div style={{display:"flex",alignItems:"center",gap:7,padding:"8px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:9}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text}}>{it.name}</div>
+              {it.detail&&<div style={{fontSize:"0.82rem",color:PC.muted}}>{it.detail}</div>}
+            </div>
+            <SessionPill bg={`${PC.accent}14`} col={PC.accent} title="Edit" onClick={()=>startEdit(it)}>✎</SessionPill>
+            <SessionPill bg="rgba(220,38,38,0.1)" col="#dc2626" title="Remove" onClick={()=>onRemove(it.id)}>−</SessionPill>
+          </div>
+          {editingId===it.id&&(
+            <div style={{display:"flex",gap:6,alignItems:"center",padding:"7px 10px",background:`${PC.accent}08`,border:`1px dashed ${PC.accent}40`,borderRadius:9,marginTop:3,flexWrap:"wrap"}}>
+              <input style={{...inp,flex:"1 1 100px"}} placeholder="Name" value={editText} onChange={e=>setEditText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&applyEdit()}/>
+              <input style={{...inp,flex:"1 1 100px"}} placeholder="Detail (optional)" value={editDetail} onChange={e=>setEditDetail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&applyEdit()}/>
+              <button onClick={applyEdit} style={{padding:"6px 12px",borderRadius:7,border:"none",background:PC.accent,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer"}}>✓ Apply</button>
+            </div>
+          )}
+        </div>
+      ))}
+      {quickOptions&&quickOptions.length>0&&(
+        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:7}}>
+          {quickOptions.filter(o=>!itemNames.includes(o)).map(o=>(
+            <button key={o} onClick={()=>onAdd({name:o,detail:""})} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>＋ {o}</button>
+          ))}
+        </div>
+      )}
+      {!adding?(
+        <div onClick={()=>setAdding(true)} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.82rem",fontWeight:700,color:PC.accent,cursor:"pointer"}}>{addLabel}</div>
+      ):(
+        <div style={{display:"flex",gap:6,alignItems:"center",padding:"9px 10px",border:`1.5px solid ${PC.accent}35`,borderRadius:11,background:`${PC.accent}06`,flexWrap:"wrap"}}>
+          <input autoFocus style={{...inp,flex:"1 1 100px"}} placeholder="Name" value={addText} onChange={e=>setAddText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submitAdd()}/>
+          <input style={{...inp,flex:"1 1 100px"}} placeholder="Detail (optional)" value={addDetail} onChange={e=>setAddDetail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submitAdd()}/>
+          <button onClick={submitAdd} style={{padding:"6px 12px",borderRadius:7,border:"none",background:PC.accent,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer"}}>✓ Add</button>
+          <button onClick={()=>{setAdding(false);setAddText("");setAddDetail("");}} style={{padding:"6px 10px",borderRadius:7,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,cursor:"pointer",fontWeight:700}}>✕</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Legacy sessions (saved before this feature) only ever stored treatment as
+// one comma-joined string, since it was built by tapping chips that got
+// appended together. Splitting it back into discrete items is a faithful,
+// non-lossy reconstruction of what was already discrete data -- not a guess.
+function legacyTreatmentToList(treatmentGiven){
+  if(!treatmentGiven) return [];
+  return treatmentGiven.split(",").map(s=>s.trim()).filter(Boolean).map(name=>({id:Math.random().toString(36).slice(2,9),name,detail:""}));
+}
+
+function sessionSummaryLine(s){
+  const exN = Array.isArray(s.exercises)?s.exercises.length:0;
+  const moN = Array.isArray(s.modalities)?s.modalities.length:0;
+  const txN = Array.isArray(s.treatment)?s.treatment.length:legacyTreatmentToList(s.treatmentGiven).length;
+  const parts=[];
+  if(exN) parts.push(`${exN} exercise${exN!==1?"s":""}`);
+  if(moN) parts.push(`${moN} modalit${moN!==1?"ies":"y"}`);
+  if(txN) parts.push(`${txN} treatment${txN!==1?"s":""}`);
+  return parts.join(" · ")||"No details logged";
+}
+
+// ── Screen 1: list of all sessions, newest first ───────────────────────────
+function SessionListView({ PC, sessions, onOpen, onNew }) {
+  const lbl = {fontSize:"0.82rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px"};
+  return (
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexWrap:"wrap",gap:8}}>
+        <div style={lbl}>Sessions {sessions.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· {sessions.length} logged</span>}</div>
+        <button onClick={onNew} style={{padding:"7px 14px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>＋ New session</button>
+      </div>
+      {sessions.length===0&&(
+        <div style={{padding:"16px 12px",background:PC.s2,borderRadius:9,fontSize:"0.8rem",color:PC.muted,textAlign:"center"}}>No sessions logged yet — tap "＋ New session" to record the first visit.</div>
+      )}
+      {sessions.map((s,i)=>{
+        const vs=parseFloat(s.vasStart), ve=parseFloat(s.vasEnd!==undefined&&s.vasEnd!==""?s.vasEnd:s.vasStart);
+        const hasPain=!isNaN(vs);
+        const better=hasPain&&!isNaN(ve)&&ve<vs, worse=hasPain&&!isNaN(ve)&&ve>vs;
+        const note = s.quickNote||s.response||"";
+        return (
+          <div key={s.id||i} onClick={()=>onOpen(s.id)} style={{padding:"10px 11px",background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:10,marginBottom:8,cursor:"pointer"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5,gap:8}}>
+              <span style={{fontSize:"0.82rem",fontWeight:800,color:PC.text}}>Session {s.sessionNo||sessions.length-i} <span style={{color:PC.muted,fontWeight:600}}>· {s.date}</span></span>
+              {hasPain&&(
+                <span style={{flexShrink:0,fontSize:"0.75rem",fontWeight:800,padding:"2px 9px",borderRadius:99,background:better?`${PC.a3}18`:worse?"rgba(220,38,38,0.12)":`${PC.a4}18`,color:better?PC.a3:worse?"#dc2626":PC.a4}}>
+                  {vs}{!isNaN(ve)&&ve!==vs?`→${ve}`:""}
+                </span>
+              )}
+            </div>
+            <div style={{fontSize:"0.76rem",color:PC.muted,marginBottom:note?4:0}}>{sessionSummaryLine(s)}</div>
+            {note&&<div style={{fontSize:"0.76rem",color:PC.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>"{note}"</div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Screen 2: one session, fully editable — exercises, modalities,
+// treatment (each with its own add/edit/remove), pain, and a quick note.
+// For a brand-new (unsaved) session, exercises still edit the live,
+// ongoing hep_programme exactly as before (today's changes should affect
+// the active protocol). For a past, already-saved session, exercises are
+// that session's own frozen snapshot -- editing it corrects the historical
+// record without silently rewriting today's active protocol.
+function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack }) {
+  const isNew = activeId===null;
+  const activeSession = isNew ? null : (sessionsArr.find(s=>s.id===activeId)||null);
   const lastSession = sessionsArr[0];
-  const sessionNo = sessionsArr.length+1;
-  const [qv, setQv] = useState({pain_today:data.cc_vas_now||"",pain_after:"",treatment:lastSession?.treatmentGiven||"",response:"",next_plan:""});
+  const sessionNo = isNew ? sessionsArr.length+1 : (activeSession?.sessionNo||sessionsArr.length);
+
+  const [qv, setQv] = useState(()=> isNew
+    ? {pain_today:data.cc_vas_now||"",pain_after:"",response:"",next_plan:""}
+    : {pain_today:activeSession?.vasStart||"",pain_after:activeSession?.vasEnd||"",response:activeSession?.quickNote||activeSession?.response||"",next_plan:activeSession?.nextPlan||""});
   const [saved, setSaved] = useState(false);
-  const [pending, setPending] = useState([]);          // protocol change descriptions this visit
+  const [pending, setPending] = useState([]);          // protocol change descriptions this visit (new session only)
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerMode, setPickerMode] = useState("library");   // "library" | "templates"
+  const [pickerMode, setPickerMode] = useState("library");
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerRegion, setPickerRegion] = useState("all");
   const [openTemplate, setOpenTemplate] = useState(null);
   const [editId, setEditId] = useState(null);
   const [editDose, setEditDose] = useState({sets:"",reps:"",hold:""});
   const [removeId, setRemoveId] = useState(null);
+
+  const [treatmentList, setTreatmentList] = useState(()=> isNew
+    ? (Array.isArray(lastSession?.treatment) ? lastSession.treatment.map(t=>({...t})) : legacyTreatmentToList(lastSession?.treatmentGiven))
+    : (Array.isArray(activeSession?.treatment) ? activeSession.treatment.map(t=>({...t})) : legacyTreatmentToList(activeSession?.treatmentGiven)));
+  const [modalities, setModalities] = useState(()=> isNew ? [] : (Array.isArray(activeSession?.modalities)?activeSession.modalities.map(m=>({...m})):[]));
+  const [pastExercises, setPastExercises] = useState(()=> isNew ? [] : (Array.isArray(activeSession?.exercises)?activeSession.exercises.map(e=>({...e})):[]));
+
   const txOptions = ["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Postural correction","Manual therapy","Other"];
+  const modalityOptions = ["IFT","TENS","Hot pack","Cold pack","Ultrasound","Laser","Shockwave","Traction","Paraffin wax"];
   const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
   const lbl = {fontSize:"0.8rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
+  const sectionLbl = {fontSize:"0.82rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6};
 
   const prog = Array.isArray(data.hep_programme)?data.hep_programme:[];
 
@@ -1365,7 +1506,7 @@ function QuickVisitForm({ PC, data, set, navTo }) {
     setEditId(null);
   };
 
-  const addTx = (t) => setQv(p=>({...p,treatment:p.treatment?(p.treatment.includes(t)?p.treatment:`${p.treatment}, ${t}`):t}));
+  const addTxItem = (name) => setTreatmentList(list=>list.find(t=>t.name===name)?list:[...list,{id:Math.random().toString(36).slice(2,9),name,detail:""}]);
   const addTemplate = (key) => {
     const t=PROGRAMME_TEMPLATES[key]; if(!t) return;
     const exs=t.exercises.map(id=>ALL_EXERCISES.find(e=>e.id===id)).filter(Boolean).filter(e=>!prog.find(p=>p.id===e.id));
@@ -1373,6 +1514,8 @@ function QuickVisitForm({ PC, data, set, navTo }) {
       set("hep_programme",[...prog,...exs.map(ex=>({...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:"",addedSession:sessionNo,addedDate:new Date().toISOString()}))]);
       setPending(p=>[...p,`＋ ${t.label} template (${exs.length} exercise${exs.length!==1?"s":""})`]);
     }
+    const tx=TEMPLATE_TX[key];
+    if(tx){ (tx.manual||[]).forEach(addTxItem); (tx.machine||[]).forEach(addTxItem); }
   };
   const pickerResults = (()=>{
     if(!pickerOpen) return [];
@@ -1382,7 +1525,7 @@ function QuickVisitForm({ PC, data, set, navTo }) {
     return pool.filter(e=>!prog.find(p=>p.id===e.id)).slice(0,8);
   })();
 
-  const saveQuick = () => {
+  const saveNew = () => {
     set("cc_vas_now",qv.pain_today);
     let hepNote="";
     if(pending.length){
@@ -1393,160 +1536,218 @@ function QuickVisitForm({ PC, data, set, navTo }) {
       hepNote=`HEP v${version}: ${pending.join(" · ")}`;
     }
     set("soap_extra_p",[qv.next_plan,hepNote].filter(Boolean).join(" | "));
-    const entry = {id:(Date.now()).toString(36),date:new Date().toLocaleDateString("en-GB"),sessionNo,type:"Follow-up Treatment",vasStart:qv.pain_today,vasEnd:qv.pain_after||qv.pain_today,treatmentGiven:qv.treatment,response:qv.response,nextPlan:qv.next_plan,hepChanges:pending,savedAt:new Date().toISOString()};
+    const exercisesSnapshot = prog.map(e=>({id:e.id,name:e.name,detail:hepDose(e)}));
+    const entry = {
+      id:(Date.now()).toString(36),date:new Date().toLocaleDateString("en-GB"),sessionNo,type:"Follow-up Treatment",
+      vasStart:qv.pain_today,vasEnd:qv.pain_after||qv.pain_today,
+      treatmentGiven:treatmentList.map(t=>t.name).join(", "),response:qv.response,nextPlan:qv.next_plan,hepChanges:pending,
+      exercises:exercisesSnapshot, modalities, treatment:treatmentList, quickNote:qv.response,
+      savedAt:new Date().toISOString()
+    };
     set("tx_sessions",[entry,...sessionsArr]);
     setPending([]);
-    setSaved(true); setTimeout(()=>setSaved(false),3000);
-    navTo("soap");
+    setSaved(true);
+    setTimeout(()=>{setSaved(false); navTo("soap");},900);
   };
 
-  const Pill=({bg,col,children,onClick,title})=>(
-    <span onClick={onClick} title={title} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:26,height:26,borderRadius:7,background:bg,color:col,fontSize:"0.8rem",fontWeight:800,cursor:"pointer",flexShrink:0,userSelect:"none"}}>{children}</span>
-  );
+  const updatePast = () => {
+    const updated = {
+      ...activeSession,
+      vasStart:qv.pain_today, vasEnd:qv.pain_after||qv.pain_today,
+      treatmentGiven:treatmentList.map(t=>t.name).join(", "), response:qv.response, nextPlan:qv.next_plan,
+      exercises:pastExercises, modalities, treatment:treatmentList, quickNote:qv.response,
+      editedAt:new Date().toISOString()
+    };
+    set("tx_sessions", sessionsArr.map(s=>s.id===activeId?updated:s));
+    setSaved(true);
+    setTimeout(()=>{setSaved(false); onBack();},700);
+  };
 
   return(
     <div>
-      <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6}}>1 · Today — Session {sessionNo}</div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span onClick={onBack} style={{cursor:"pointer",fontSize:"0.95rem",color:PC.muted,lineHeight:1}} title="Back to sessions">←</span>
+        <div style={{...sectionLbl,marginBottom:0}}>{isNew?`Today — Session ${sessionNo}`:`Session ${sessionNo} · ${activeSession?.date||""}`}</div>
+      </div>
+
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div><label style={lbl}>Pain — start of session (NRS 0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 5" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
         <div><label style={lbl}>Pain — end of session (NRS 0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 3" value={qv.pain_after} onChange={e=>setQv(p=>({...p,pain_after:e.target.value}))}/></div>
-        <div><label style={lbl}>Treatment given {lastSession?.treatmentGiven?<span style={{textTransform:"none",fontWeight:500}}>(copied from S{lastSession.sessionNo||sessionNo-1})</span>:null}</label><input style={inp} placeholder="Tap chips below or type…" value={qv.treatment} onChange={e=>setQv(p=>({...p,treatment:e.target.value}))}/></div>
       </div>
-      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>
-        {txOptions.map(t=>(
-          <button key={t} onClick={()=>setQv(p=>({...p,treatment:p.treatment?(p.treatment.includes(t)?p.treatment:`${p.treatment}, ${t}`):t}))}
-            style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(t)?PC.accent:PC.border}`,background:qv.treatment.includes(t)?`${PC.accent}14`:"transparent",color:qv.treatment.includes(t)?PC.accent:PC.muted,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>{t}</button>
-        ))}
+
+      <div style={{marginBottom:14}}>
+        <div style={sectionLbl}>Treatment {isNew&&lastSession&&treatmentList.length>0&&<span style={{fontWeight:500,textTransform:"none",color:PC.muted}}>(copied from S{lastSession.sessionNo||sessionNo-1})</span>}</div>
+        <EditableItemList PC={PC} items={treatmentList}
+          onAdd={(it)=>setTreatmentList(l=>[...l,{id:Math.random().toString(36).slice(2,9),...it}])}
+          onEdit={(id,patch)=>setTreatmentList(l=>l.map(t=>t.id===id?{...t,...patch}:t))}
+          onRemove={(id)=>setTreatmentList(l=>l.filter(t=>t.id!==id))}
+          addLabel="＋ Add treatment" quickOptions={txOptions}/>
       </div>
-      <div style={{marginBottom:10}}><label style={lbl}>Patient response</label><input style={inp} placeholder="e.g. Good improvement, less pain on movement" value={qv.response} onChange={e=>setQv(p=>({...p,response:e.target.value}))}/></div>
-      <div style={{marginBottom:12}}><label style={lbl}>Plan for next session</label><input style={inp} placeholder="e.g. Progress to single-leg squat" value={qv.next_plan} onChange={e=>setQv(p=>({...p,next_plan:e.target.value}))}/></div>
 
-      {/* ── 2 · Home protocol — edit per session ── */}
-      <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6}}>2 · Home protocol {prog.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· v{parseInt(data.hep_version)||1} · {prog.length} exercise{prog.length!==1?"s":""}</span>}</div>
-      {prog.length===0&&(
-        <div style={{padding:"10px 12px",background:PC.s2,borderRadius:9,fontSize:"0.8rem",color:PC.muted,marginBottom:8}}>No protocol yet — add exercises below or build it in the Exercise Prescription tab.</div>
-      )}
-      {prog.map(e=>(
-        <div key={e.id} style={{marginBottom:5}}>
-          <div style={{display:"flex",alignItems:"center",gap:7,padding:"8px 10px",background:e.addedSession===sessionNo?`${PC.accent}10`:PC.s2,border:`1px solid ${e.addedSession===sessionNo?PC.accent+"35":PC.border}`,borderRadius:9}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text}}>{e.name}
-                {e.addedSession===sessionNo&&<span style={{marginLeft:6,fontSize:"0.75rem",fontWeight:800,color:PC.accent}}>＋ just added</span>}
-                {e.progressedSession===sessionNo&&<span style={{marginLeft:6,fontSize:"0.75rem",fontWeight:800,color:PC.a3}}>↑ progressed</span>}
-              </div>
-              <div style={{fontSize:"0.82rem",color:PC.muted}}>{hepDose(e)}</div>
-            </div>
-            <Pill bg={`${PC.a3}18`} col={PC.a3} title="Progress dosage" onClick={()=>startProgress(e)}>↑</Pill>
-            <Pill bg="rgba(220,38,38,0.1)" col="#dc2626" title="Remove" onClick={()=>setRemoveId(removeId===e.id?null:e.id)}>−</Pill>
-          </div>
-          {editId===e.id&&(
-            <div style={{display:"flex",gap:6,alignItems:"center",padding:"7px 10px",background:`${PC.a3}08`,border:`1px dashed ${PC.a3}40`,borderRadius:9,marginTop:3}}>
-              {["sets","reps","hold"].map(f=>(
-                <input key={f} style={{...inp,width:62,padding:"5px 7px",fontSize:"0.82rem"}} placeholder={f} value={editDose[f]} onChange={ev=>setEditDose(p=>({...p,[f]:ev.target.value}))}/>
-              ))}
-              <span style={{fontSize:"0.78rem",color:PC.muted}}>sets × reps · hold s</span>
-              <button onClick={applyProgress} style={{marginLeft:"auto",padding:"5px 12px",borderRadius:7,border:"none",background:PC.a3,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer"}}>✓ Apply</button>
-            </div>
-          )}
-          {removeId===e.id&&(
-            <div style={{display:"flex",gap:5,flexWrap:"wrap",padding:"7px 10px",background:"rgba(220,38,38,0.05)",border:"1px dashed rgba(220,38,38,0.35)",borderRadius:9,marginTop:3,alignItems:"center"}}>
-              <span style={{fontSize:"0.8rem",color:"#dc2626",fontWeight:700}}>Why?</span>
-              {["Mastered","Aggravating","Replaced","Other"].map(r=>(
-                <button key={r} onClick={()=>removeExercise(e.id,r)} style={{padding:"4px 10px",borderRadius:7,border:"1px solid rgba(220,38,38,0.3)",background:"transparent",color:"#dc2626",fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>{r}</button>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+      <div style={{marginBottom:14}}>
+        <div style={sectionLbl}>Modalities</div>
+        <EditableItemList PC={PC} items={modalities}
+          onAdd={(it)=>setModalities(l=>[...l,{id:Math.random().toString(36).slice(2,9),...it}])}
+          onEdit={(id,patch)=>setModalities(l=>l.map(m=>m.id===id?{...m,...patch}:m))}
+          onRemove={(id)=>setModalities(l=>l.filter(m=>m.id!==id))}
+          addLabel="＋ Add modality" quickOptions={modalityOptions}/>
+      </div>
 
-      {/* Add exercise — library picker */}
-      {!pickerOpen?(
-        <div onClick={()=>setPickerOpen(true)} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.82rem",fontWeight:700,color:PC.accent,cursor:"pointer",marginBottom:10}}>＋ Add exercise from library</div>
-      ):(
-        <div style={{border:`1.5px solid ${PC.accent}35`,borderRadius:11,padding:"10px",marginBottom:10,background:`${PC.accent}06`}}>
-          <div style={{display:"flex",gap:6,marginBottom:7}}>
-            {[["library","📚 Library"],["templates","📦 Templates"]].map(([m,l])=>(
-              <button key={m} onClick={()=>setPickerMode(m)} style={{flex:1,padding:"7px",borderRadius:8,border:`1px solid ${pickerMode===m?PC.accent:PC.border}`,background:pickerMode===m?`${PC.accent}15`:"transparent",color:pickerMode===m?PC.accent:PC.muted,fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>{l}</button>
-            ))}
-            <button onClick={()=>setPickerOpen(false)} style={{padding:"0 10px",borderRadius:8,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,cursor:"pointer",fontWeight:700}}>✕</button>
-          </div>
-          {pickerMode==="templates"&&(
-            <div>
-              {Object.entries(PROGRAMME_TEMPLATES).map(([key,t])=>{
-                const tx=TEMPLATE_TX[key];
-                const isOpen=openTemplate===key;
-                return(
-                  <div key={key} style={{marginBottom:4}}>
-                    <div onClick={()=>setOpenTemplate(isOpen?null:key)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,cursor:"pointer",background:PC.surface,border:`1px solid ${isOpen?PC.accent+"45":PC.border}`}}>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{t.label}</div>
-                        <div style={{fontSize:"0.78rem",color:PC.muted}}>{t.exercises.length} exercises{tx?` · ${(tx.manual||[]).length} manual · ${(tx.machine||[]).length} machine`:""}</div>
-                      </div>
-                      <span style={{fontSize:"0.75rem",color:PC.accent,fontWeight:800}}>{isOpen?"▲":"▼"}</span>
-                    </div>
-                    {isOpen&&(
-                      <div style={{padding:"8px 10px",border:`1px dashed ${PC.accent}35`,borderTop:"none",borderRadius:"0 0 8px 8px",background:`${PC.accent}05`}}>
-                        <button onClick={()=>{addTemplate(key);setOpenTemplate(null);}} style={{width:"100%",padding:"8px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:"pointer",marginBottom:7}}>＋ Add {t.exercises.length} exercises to protocol</button>
-                        {tx&&(tx.manual||[]).length>0&&(
-                          <div style={{marginBottom:5}}>
-                            <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>🤲 Manual — tap to add to treatment</div>
-                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                              {tx.manual.map(m=><button key={m} onClick={()=>addTx(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(m)?PC.accent:PC.border}`,background:qv.treatment.includes(m)?`${PC.accent}14`:PC.surface,color:qv.treatment.includes(m)?PC.accent:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>{qv.treatment.includes(m)?"✓ ":""}{m}</button>)}
-                            </div>
-                          </div>
-                        )}
-                        {tx&&(tx.machine||[]).length>0&&(
-                          <div>
-                            <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>⚡ Machine — tap to add to treatment</div>
-                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                              {tx.machine.map(m=><button key={m} onClick={()=>addTx(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${qv.treatment.includes(m)?PC.a2:PC.border}`,background:qv.treatment.includes(m)?`${PC.a2}14`:PC.surface,color:qv.treatment.includes(m)?PC.a2:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>{qv.treatment.includes(m)?"✓ ":""}{m}</button>)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+      <div style={{marginBottom:10}}><label style={lbl}>Quick note</label><input style={inp} placeholder="e.g. Good improvement, less pain on movement" value={qv.response} onChange={e=>setQv(p=>({...p,response:e.target.value}))}/></div>
+      <div style={{marginBottom:14}}><label style={lbl}>Plan for next session</label><input style={inp} placeholder="e.g. Progress to single-leg squat" value={qv.next_plan} onChange={e=>setQv(p=>({...p,next_plan:e.target.value}))}/></div>
+
+      <div style={{marginBottom:14}}>
+        <div style={sectionLbl}>Exercises {isNew&&prog.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· v{parseInt(data.hep_version)||1} · {prog.length} exercise{prog.length!==1?"s":""}</span>}</div>
+
+        {isNew?(<>
+          {prog.length===0&&(
+            <div style={{padding:"10px 12px",background:PC.s2,borderRadius:9,fontSize:"0.8rem",color:PC.muted,marginBottom:8}}>No protocol yet — add exercises below or build it in the Exercise Prescription tab.</div>
+          )}
+          {prog.map(e=>(
+            <div key={e.id} style={{marginBottom:5}}>
+              <div style={{display:"flex",alignItems:"center",gap:7,padding:"8px 10px",background:e.addedSession===sessionNo?`${PC.accent}10`:PC.s2,border:`1px solid ${e.addedSession===sessionNo?PC.accent+"35":PC.border}`,borderRadius:9}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text}}>{e.name}
+                    {e.addedSession===sessionNo&&<span style={{marginLeft:6,fontSize:"0.75rem",fontWeight:800,color:PC.accent}}>＋ just added</span>}
+                    {e.progressedSession===sessionNo&&<span style={{marginLeft:6,fontSize:"0.75rem",fontWeight:800,color:PC.a3}}>↑ progressed</span>}
                   </div>
-                );
-              })}
-            </div>
-          )}
-          {pickerMode==="library"&&(
-          <div style={{display:"flex",gap:6,marginBottom:7}}>
-            <input autoFocus style={{...inp,flex:1}} placeholder="Search exercises… e.g. plank, chin tuck" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)}/>
-            <select style={{...inp,width:120}} value={pickerRegion} onChange={e=>setPickerRegion(e.target.value)}>
-              <option value="all">All regions</option>
-              {Object.entries(EXERCISE_DB).map(([k,r])=><option key={k} value={k}>{r.label}</option>)}
-            </select>
-          </div>
-          )}
-          {pickerMode==="library"&&pickerResults.length===0&&<div style={{fontSize:"0.66rem",color:PC.muted,padding:"4px 2px"}}>No matches — try another term or region.</div>}
-          {pickerMode==="library"&&pickerResults.map(ex=>(
-            <div key={ex.id} onClick={()=>addExercise(ex)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 9px",borderRadius:8,cursor:"pointer",background:PC.surface,border:`1px solid ${PC.border}`,marginBottom:4}}>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{ex.name}</div>
-                <div style={{fontSize:"0.78rem",color:PC.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ex.sets}×{ex.reps}{ex.hold?` · ${ex.hold}s`:""} · {ex.freq} · {ex.target}</div>
+                  <div style={{fontSize:"0.82rem",color:PC.muted}}>{hepDose(e)}</div>
+                </div>
+                <SessionPill bg={`${PC.a3}18`} col={PC.a3} title="Progress dosage" onClick={()=>startProgress(e)}>↑</SessionPill>
+                <SessionPill bg="rgba(220,38,38,0.1)" col="#dc2626" title="Remove" onClick={()=>setRemoveId(removeId===e.id?null:e.id)}>−</SessionPill>
               </div>
-              <span style={{fontSize:"0.82rem",fontWeight:800,color:PC.accent,flexShrink:0}}>＋ Add</span>
+              {editId===e.id&&(
+                <div style={{display:"flex",gap:6,alignItems:"center",padding:"7px 10px",background:`${PC.a3}08`,border:`1px dashed ${PC.a3}40`,borderRadius:9,marginTop:3}}>
+                  {["sets","reps","hold"].map(f=>(
+                    <input key={f} style={{...inp,width:62,padding:"5px 7px",fontSize:"0.82rem"}} placeholder={f} value={editDose[f]} onChange={ev=>setEditDose(p=>({...p,[f]:ev.target.value}))}/>
+                  ))}
+                  <span style={{fontSize:"0.78rem",color:PC.muted}}>sets × reps · hold s</span>
+                  <button onClick={applyProgress} style={{marginLeft:"auto",padding:"5px 12px",borderRadius:7,border:"none",background:PC.a3,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer"}}>✓ Apply</button>
+                </div>
+              )}
+              {removeId===e.id&&(
+                <div style={{display:"flex",gap:5,flexWrap:"wrap",padding:"7px 10px",background:"rgba(220,38,38,0.05)",border:"1px dashed rgba(220,38,38,0.35)",borderRadius:9,marginTop:3,alignItems:"center"}}>
+                  <span style={{fontSize:"0.8rem",color:"#dc2626",fontWeight:700}}>Why?</span>
+                  {["Mastered","Aggravating","Replaced","Other"].map(r=>(
+                    <button key={r} onClick={()=>removeExercise(e.id,r)} style={{padding:"4px 10px",borderRadius:7,border:"1px solid rgba(220,38,38,0.3)",background:"transparent",color:"#dc2626",fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>{r}</button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
-        </div>
-      )}
 
-      {pending.length>0&&(
-        <div style={{padding:"8px 11px",background:`${PC.accent}0a`,border:`1px solid ${PC.accent}25`,borderRadius:9,fontSize:"0.75rem",color:PC.text,marginBottom:10,lineHeight:1.6}}>
-          <span style={{fontWeight:800,color:PC.accent}}>This session:</span> {pending.join(" · ")} <span style={{color:PC.muted}}>(will be logged as v{(parseInt(data.hep_version)||1)+1} on save)</span>
-        </div>
-      )}
+          {!pickerOpen?(
+            <div onClick={()=>setPickerOpen(true)} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.82rem",fontWeight:700,color:PC.accent,cursor:"pointer",marginBottom:10}}>＋ Add exercise from library</div>
+          ):(
+            <div style={{border:`1.5px solid ${PC.accent}35`,borderRadius:11,padding:"10px",marginBottom:10,background:`${PC.accent}06`}}>
+              <div style={{display:"flex",gap:6,marginBottom:7}}>
+                {[["library","📚 Library"],["templates","📦 Templates"]].map(([m,l])=>(
+                  <button key={m} onClick={()=>setPickerMode(m)} style={{flex:1,padding:"7px",borderRadius:8,border:`1px solid ${pickerMode===m?PC.accent:PC.border}`,background:pickerMode===m?`${PC.accent}15`:"transparent",color:pickerMode===m?PC.accent:PC.muted,fontWeight:800,fontSize:"0.78rem",cursor:"pointer"}}>{l}</button>
+                ))}
+                <button onClick={()=>setPickerOpen(false)} style={{padding:"0 10px",borderRadius:8,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,cursor:"pointer",fontWeight:700}}>✕</button>
+              </div>
+              {pickerMode==="templates"&&(
+                <div>
+                  {Object.entries(PROGRAMME_TEMPLATES).map(([key,t])=>{
+                    const tx=TEMPLATE_TX[key];
+                    const isOpen=openTemplate===key;
+                    return(
+                      <div key={key} style={{marginBottom:4}}>
+                        <div onClick={()=>setOpenTemplate(isOpen?null:key)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,cursor:"pointer",background:PC.surface,border:`1px solid ${isOpen?PC.accent+"45":PC.border}`}}>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{t.label}</div>
+                            <div style={{fontSize:"0.78rem",color:PC.muted}}>{t.exercises.length} exercises{tx?` · ${(tx.manual||[]).length} manual · ${(tx.machine||[]).length} machine`:""}</div>
+                          </div>
+                          <span style={{fontSize:"0.75rem",color:PC.accent,fontWeight:800}}>{isOpen?"▲":"▼"}</span>
+                        </div>
+                        {isOpen&&(
+                          <div style={{padding:"8px 10px",border:`1px dashed ${PC.accent}35`,borderTop:"none",borderRadius:"0 0 8px 8px",background:`${PC.accent}05`}}>
+                            <button onClick={()=>{addTemplate(key);setOpenTemplate(null);}} style={{width:"100%",padding:"8px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:"pointer",marginBottom:7}}>＋ Add {t.exercises.length} exercises to protocol</button>
+                            {tx&&(tx.manual||[]).length>0&&(
+                              <div style={{marginBottom:5}}>
+                                <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>🤲 Manual — tap to add to treatment</div>
+                                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                  {tx.manual.map(m=><button key={m} onClick={()=>addTxItem(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${treatmentList.find(t=>t.name===m)?PC.accent:PC.border}`,background:treatmentList.find(t=>t.name===m)?`${PC.accent}14`:PC.surface,color:treatmentList.find(t=>t.name===m)?PC.accent:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>{treatmentList.find(t=>t.name===m)?"✓ ":""}{m}</button>)}
+                                </div>
+                              </div>
+                            )}
+                            {tx&&(tx.machine||[]).length>0&&(
+                              <div>
+                                <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>⚡ Machine — tap to add to treatment</div>
+                                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                  {tx.machine.map(m=><button key={m} onClick={()=>addTxItem(m)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${treatmentList.find(t=>t.name===m)?PC.a2:PC.border}`,background:treatmentList.find(t=>t.name===m)?`${PC.a2}14`:PC.surface,color:treatmentList.find(t=>t.name===m)?PC.a2:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>{treatmentList.find(t=>t.name===m)?"✓ ":""}{m}</button>)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {pickerMode==="library"&&(
+              <div style={{display:"flex",gap:6,marginBottom:7}}>
+                <input autoFocus style={{...inp,flex:1}} placeholder="Search exercises… e.g. plank, chin tuck" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)}/>
+                <select style={{...inp,width:120}} value={pickerRegion} onChange={e=>setPickerRegion(e.target.value)}>
+                  <option value="all">All regions</option>
+                  {Object.entries(EXERCISE_DB).map(([k,r])=><option key={k} value={k}>{r.label}</option>)}
+                </select>
+              </div>
+              )}
+              {pickerMode==="library"&&pickerResults.length===0&&<div style={{fontSize:"0.66rem",color:PC.muted,padding:"4px 2px"}}>No matches — try another term or region.</div>}
+              {pickerMode==="library"&&pickerResults.map(ex=>(
+                <div key={ex.id} onClick={()=>addExercise(ex)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 9px",borderRadius:8,cursor:"pointer",background:PC.surface,border:`1px solid ${PC.border}`,marginBottom:4}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{ex.name}</div>
+                    <div style={{fontSize:"0.78rem",color:PC.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ex.sets}×{ex.reps}{ex.hold?` · ${ex.hold}s`:""} · {ex.freq} · {ex.target}</div>
+                  </div>
+                  <span style={{fontSize:"0.82rem",fontWeight:800,color:PC.accent,flexShrink:0}}>＋ Add</span>
+                </div>
+              ))}
+            </div>
+          )}
 
-      <button onClick={saveQuick} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",marginBottom:8}}>
-        {saved?"✅ Saved — opening SOAP to sign…":"Save & Go to SOAP →"}
-      </button>
-      <div style={{display:"flex",gap:8}}>
-        <button onClick={()=>sendHepWhatsApp(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a3}40`,background:`${PC.a3}10`,color:PC.a3,fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>📲 Send protocol — WhatsApp</button>
-        <button onClick={()=>downloadHepPdf(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a2}40`,background:`${PC.a2}10`,color:PC.a2,fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>📄 PDF handout</button>
+          {pending.length>0&&(
+            <div style={{padding:"8px 11px",background:`${PC.accent}0a`,border:`1px solid ${PC.accent}25`,borderRadius:9,fontSize:"0.75rem",color:PC.text,marginBottom:10,lineHeight:1.6}}>
+              <span style={{fontWeight:800,color:PC.accent}}>This session:</span> {pending.join(" · ")} <span style={{color:PC.muted}}>(will be logged as v{(parseInt(data.hep_version)||1)+1} on save)</span>
+            </div>
+          )}
+        </>):(
+          <EditableItemList PC={PC} items={pastExercises}
+            onAdd={(it)=>setPastExercises(l=>[...l,{id:Math.random().toString(36).slice(2,9),...it}])}
+            onEdit={(id,patch)=>setPastExercises(l=>l.map(e=>e.id===id?{...e,...patch}:e))}
+            onRemove={(id)=>setPastExercises(l=>l.filter(e=>e.id!==id))}
+            addLabel="＋ Add exercise"/>
+        )}
       </div>
+
+      <button onClick={isNew?saveNew:updatePast} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",marginBottom:8}}>
+        {saved?(isNew?"✅ Saved — opening SOAP to sign…":"✅ Session updated"):(isNew?"Save & Go to SOAP →":"Update session")}
+      </button>
+      {isNew&&(
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>sendHepWhatsApp(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a3}40`,background:`${PC.a3}10`,color:PC.a3,fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>📲 Send protocol — WhatsApp</button>
+          <button onClick={()=>downloadHepPdf(data)} style={{flex:1,padding:"10px",borderRadius:9,border:`1px solid ${PC.a2}40`,background:`${PC.a2}10`,color:PC.a2,fontWeight:800,fontSize:"0.82rem",cursor:"pointer"}}>📄 PDF handout</button>
+        </div>
+      )}
     </div>
   );
+}
+
+// ── Top-level: switches between the session list and one session's detail ──
+function QuickVisitForm({ PC, data, set, navTo }) {
+  const sessionsArr = Array.isArray(data.tx_sessions)?data.tx_sessions:[];
+  const [view, setView] = useState("list");
+  const [activeId, setActiveId] = useState(null);
+
+  if (view === "list") {
+    return <SessionListView PC={PC} sessions={sessionsArr}
+      onOpen={(id)=>{setActiveId(id); setView("detail");}}
+      onNew={()=>{setActiveId(null); setView("detail");}}/>;
+  }
+  return <SessionDetailView key={activeId||"new"} PC={PC} data={data} set={set} navTo={navTo}
+    sessionsArr={sessionsArr} activeId={activeId} onBack={()=>{setView("list"); setActiveId(null);}}/>;
 }
 
 function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
@@ -1737,4 +1938,4 @@ function OnboardingModal({ PC, onDismiss }) {
 }
 
 // ── Exports ──────────────────────────────────────────────────────────────────
-export { PdfReportsModal, QuickVisitForm, IntakeForm, OnboardingModal };
+export { PdfReportsModal, QuickVisitForm, IntakeForm, OnboardingModal, SessionListView, SessionDetailView, EditableItemList, legacyTreatmentToList, sessionSummaryLine };

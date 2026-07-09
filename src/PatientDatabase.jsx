@@ -3109,7 +3109,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       )}
                     </div>
                     {prog.length===0&&(
-                      <div style={{textAlign:"center",padding:"14px 0",color:C.muted,fontSize:12}}>No protocol yet — build it in Quick Visit or Home Protocol.</div>
+                      <div style={{textAlign:"center",padding:"14px 0",color:C.muted,fontSize:12}}>No protocol yet — build it in Sessions or Home Protocol.</div>
                     )}
                     {prog.map((e,i2)=>{
                       const hepDose=e2=>{const st=e2.customSets||e2.sets,rp=e2.customReps||e2.reps,hd=e2.customHold||e2.hold,fq=e2.customFreq||e2.freq;return `${st}×${rp}${hd?` · hold ${hd}s`:""}${fq?` · ${fq}`:""}`};
@@ -3124,7 +3124,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                         </div>
                       );
                     })}
-                    <div style={{marginTop:8,fontSize:10,color:C.muted,textAlign:"center"}}>Edit the protocol in <span onClick={()=>onNav&&onNav("tx_sessions")} style={{color:C.primary,fontWeight:700,cursor:"pointer"}}>Quick Visit →</span></div>
+                    <div style={{marginTop:8,fontSize:10,color:C.muted,textAlign:"center"}}>Edit the protocol in <span onClick={()=>onNav&&onNav("tx_sessions")} style={{color:C.primary,fontWeight:700,cursor:"pointer"}}>Sessions →</span></div>
                   </div>
 
                   {/* ── Exercise prescription (clinical library picks, kept separate from the home protocol above) ── */}
@@ -3197,7 +3197,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                           </div>
                         </div>
                       ):(
-                        <div style={{fontSize:11.5,color:C.muted}}>No sessions logged yet — log the first visit in Quick Visit.</div>
+                        <div style={{fontSize:11.5,color:C.muted}}>No sessions logged yet — log the first visit in Sessions.</div>
                       )
                     ):(
                       <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
@@ -3227,7 +3227,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {/* ── Sessions ── */}
                   <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:12,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",border:`1px solid ${C.border}`}}>
                     <div style={{fontSize:13.5,fontWeight:800,color:C.text,marginBottom:8}}>📅 Sessions ({sess.length})</div>
-                    {sess.length===0&&<div style={{fontSize:11.5,color:C.muted}}>No sessions yet — log the first one in Quick Visit.</div>}
+                    {sess.length===0&&<div style={{fontSize:11.5,color:C.muted}}>No sessions yet — log the first one in Sessions.</div>}
                     {sess.slice(0,8).map((s2,i2)=>{
                       const vs=parseFloat(s2.vasStart),ve=parseFloat(s2.vasEnd||s2.vasStart);
                       const better=!isNaN(vs)&&!isNaN(ve)&&ve<vs;

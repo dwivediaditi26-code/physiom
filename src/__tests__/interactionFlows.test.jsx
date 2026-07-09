@@ -49,10 +49,15 @@ describe("Treatment Techniques — add / edit / delete", () => {
   });
 });
 
-describe("Quick Visit — exercise picker, progress, remove", () => {
+describe("Quick Visit / Sessions — exercise picker, progress, remove", () => {
+  // QuickVisitForm now opens on the session list (Task: "Quick Visit" ->
+  // "Sessions" redesign) with a "New session" button leading to the same
+  // detail form these tests exercise -- so each test starts by opening a
+  // new session before interacting with it, matching the real click path.
   it("picking an exercise from the library adds it to hep_programme", () => {
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={{}} set={setMock} navTo={() => {}} />);
+    fireEvent.click(screen.getByText("＋ New session"));
     fireEvent.click(screen.getByText("＋ Add exercise from library"));
     fireEvent.change(screen.getByPlaceholderText(/Search exercises/), { target: { value: "chin tuck" } });
     const addRows = screen.getAllByText("＋ Add");
@@ -66,6 +71,7 @@ describe("Quick Visit — exercise picker, progress, remove", () => {
     const existing = { hep_programme: [{ id: "ex1", name: "Chin Tucks", sets: "3", reps: "10", hold: "5", freq: "Daily" }] };
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={existing} set={setMock} navTo={() => {}} />);
+    fireEvent.click(screen.getByText("＋ New session"));
     fireEvent.click(screen.getByTitle("Progress dosage"));
     fireEvent.change(screen.getByPlaceholderText("sets"), { target: { value: "4" } });
     fireEvent.click(screen.getByText("✓ Apply"));
@@ -78,9 +84,51 @@ describe("Quick Visit — exercise picker, progress, remove", () => {
     const existing = { hep_programme: [{ id: "ex1", name: "Chin Tucks", sets: "3", reps: "10" }] };
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={existing} set={setMock} navTo={() => {}} />);
+    fireEvent.click(screen.getByText("＋ New session"));
     fireEvent.click(screen.getByTitle("Remove"));
     fireEvent.click(screen.getByText("Mastered"));
     expect(setMock).toHaveBeenCalledWith("hep_programme", []);
+  });
+});
+
+describe("Sessions — list view, structured modalities/treatment, past-session editing", () => {
+  it("shows sessions in the list and opens one into the detail view", () => {
+    const sessions = [
+      { id: "s2", date: "05/07/2026", sessionNo: 2, vasStart: "7", vasEnd: "4", treatmentGiven: "IFT, Manual therapy", quickNote: "Good tolerance" },
+      { id: "s1", date: "01/07/2026", sessionNo: 1, vasStart: "8", vasEnd: "6", treatmentGiven: "Manual therapy" },
+    ];
+    const setMock = vi.fn();
+    render(<QuickVisitForm PC={PC} data={{ tx_sessions: sessions }} set={setMock} navTo={() => {}} />);
+    expect(screen.getByText(/Session 2/)).toBeTruthy();
+    expect(screen.getByText(/Session 1/)).toBeTruthy();
+    fireEvent.click(screen.getByText(/Session 2/));
+    expect(screen.getByDisplayValue("7")).toBeTruthy();
+    expect(screen.getByDisplayValue("4")).toBeTruthy();
+  });
+
+  it("adding a modality on a new session includes it in the saved tx_sessions entry", () => {
+    const setMock = vi.fn();
+    render(<QuickVisitForm PC={PC} data={{}} set={setMock} navTo={() => {}} />);
+    fireEvent.click(screen.getByText("＋ New session"));
+    fireEvent.click(screen.getByText(/＋ IFT/));
+    fireEvent.click(screen.getByText("Save & Go to SOAP →"));
+    expect(setMock).toHaveBeenCalledWith("tx_sessions", expect.arrayContaining([
+      expect.objectContaining({ modalities: expect.arrayContaining([expect.objectContaining({ name: "IFT" })]) }),
+    ]));
+  });
+
+  it("removing a treatment item on a past session updates that session only", () => {
+    const sessions = [
+      { id: "s1", date: "01/07/2026", sessionNo: 1, vasStart: "8", vasEnd: "6", treatment: [{ id: "t1", name: "Manual therapy", detail: "" }] },
+    ];
+    const setMock = vi.fn();
+    render(<QuickVisitForm PC={PC} data={{ tx_sessions: sessions }} set={setMock} navTo={() => {}} />);
+    fireEvent.click(screen.getByText(/Session 1/));
+    fireEvent.click(screen.getByTitle("Remove"));
+    fireEvent.click(screen.getByText("Update session"));
+    expect(setMock).toHaveBeenCalledWith("tx_sessions", [
+      expect.objectContaining({ id: "s1", treatment: [] }),
+    ]);
   });
 });
 
