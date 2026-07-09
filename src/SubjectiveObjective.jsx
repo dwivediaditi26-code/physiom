@@ -3552,6 +3552,34 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       ════════════════════════════════════════════════════ */}
       {activeTab === "form" && (
         <>
+          {/* ── Run Analysis — pinned to the top of the Assessment tab,
+               sticky so it stays visible while scrolling through the
+               section list below instead of only being reachable after
+               scrolling all the way to the bottom of a long form ── */}
+          <button type="button" onClick={()=>setShowSummary(true)}
+            disabled={selectedRegions.length === 0}
+            style={{
+              position:"sticky", top:0, zIndex:20,
+              width:"100%", padding:"12px 16px", borderRadius:10, border:"none",
+              background: selectedRegions.length > 0
+                ? `linear-gradient(135deg, ${PC.accent}, ${PC.a2})`
+                : PC.s3,
+              color: selectedRegions.length > 0 ? "#fff" : PC.muted,
+              fontWeight:800, fontSize:"0.85rem",
+              cursor: selectedRegions.length > 0 ? "pointer" : "not-allowed",
+              boxShadow: selectedRegions.length > 0 ? `0 4px 14px ${PC.accent}33` : "none",
+              fontFamily:"inherit", display:"flex", alignItems:"center",
+              justifyContent:"center", gap:8, marginBottom:12,
+            }}>
+            🧠 Review &amp; Run Analysis
+            {selectedRegions.length > 0 && (
+              <span style={{ fontSize:"0.75rem", background:"rgba(255,255,255,0.2)",
+                padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
+                {selectedRegions.length} region{selectedRegions.length>1?"s":""}
+              </span>
+            )}
+          </button>
+
           {/* Section nav — grouped by region */}
           {(() => {
             // Build groups: core universal keys, then one group per selected region, then trailing universal
@@ -3812,29 +3840,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             );
           })()}
 
-          {/* ── Run Analysis — bottom of form ── */}
-          <button type="button" onClick={()=>setShowSummary(true)}
-            disabled={selectedRegions.length === 0}
-            style={{
-              width:"100%", padding:"12px 16px", borderRadius:10, border:"none",
-              background: selectedRegions.length > 0
-                ? `linear-gradient(135deg, ${PC.accent}, ${PC.a2})`
-                : PC.s3,
-              color: selectedRegions.length > 0 ? "#fff" : PC.muted,
-              fontWeight:800, fontSize:"0.85rem",
-              cursor: selectedRegions.length > 0 ? "pointer" : "not-allowed",
-              boxShadow: selectedRegions.length > 0 ? `0 4px 14px ${PC.accent}33` : "none",
-              fontFamily:"inherit", display:"flex", alignItems:"center",
-              justifyContent:"center", gap:8, marginTop:4,
-            }}>
-            🧠 Review &amp; Run Analysis
-            {selectedRegions.length > 0 && (
-              <span style={{ fontSize:"0.75rem", background:"rgba(255,255,255,0.2)",
-                padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
-                {selectedRegions.length} region{selectedRegions.length>1?"s":""}
-              </span>
-            )}
-          </button>
         </>
       )}
 

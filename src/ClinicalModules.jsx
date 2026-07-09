@@ -3457,6 +3457,11 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function soapV(data, k) { return String(data[k] || "").trim(); }
+// Same as soapV but WITHOUT trimming -- use this (never soapV) as the
+// `value` of any live, actively-typed-into <input>/<textarea>. Trimming a
+// controlled input's value on every keystroke eats a trailing space the
+// instant it's typed, since "word " immediately re-renders back to "word".
+function soapVRaw(data, k) { return String(data[k] || ""); }
 function soapA(data, k) {
   const x = data[k];
   if (Array.isArray(x)) return x.filter(Boolean).join(", ");
@@ -3558,6 +3563,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const mods = useMemo(() => detectModulesV2(data), [data]);
 
   const v = (k) => soapV(data, k);
+  const rv = (k) => soapVRaw(data, k); // for live-editable input/textarea value props -- see soapVRaw
   const a = (k) => soapA(data, k);
   const scan = (s) => soapScan(data, s);
 
@@ -4890,10 +4896,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           </>}
 
           {/* ── Clinical Notes & Severity ── */}
-          <input placeholder="Clinical notes / key findings..." value={v("soap_clinical_notes")} onChange={e=>set("soap_clinical_notes",e.target.value)} style={inp}/>
+          <input placeholder="Clinical notes / key findings..." value={rv("soap_clinical_notes")} onChange={e=>set("soap_clinical_notes",e.target.value)} style={inp}/>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:4}}>
             {[["soap_irritability","Irritability"],["soap_stage","Stage"],["soap_prognosis","Prognosis"],["soap_severity","Severity"]].map(([k,ph])=>(
-              <input key={k} placeholder={ph} value={v(k)} onChange={e=>set(k,e.target.value)} style={{...inp,marginBottom:0}}/>
+              <input key={k} placeholder={ph} value={rv(k)} onChange={e=>set(k,e.target.value)} style={{...inp,marginBottom:0}}/>
             ))}
           </div>
           <textarea placeholder="Additional assessment notes..." value={extraA} onChange={e=>setExtraA(e.target.value)} onBlur={()=>set("soap_extra_a",extraA)} style={{...inp,resize:"vertical",minHeight:60,marginTop:6}}/>
@@ -4917,8 +4923,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             </div>
             <input placeholder="Session type (e.g. Initial Assessment)" value={session} onChange={e=>setSession(e.target.value)} style={{...inp,marginBottom:8}}/>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              <input placeholder="Total sessions" value={v("soap_total_sessions")} onChange={e=>set("soap_total_sessions",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:11.5,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
-              <input placeholder="Frequency (e.g. 2×/week × 4 wks)" value={v("soap_frequency")} onChange={e=>set("soap_frequency",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:11.5,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
+              <input placeholder="Total sessions" value={rv("soap_total_sessions")} onChange={e=>set("soap_total_sessions",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:11.5,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
+              <input placeholder="Frequency (e.g. 2×/week × 4 wks)" value={rv("soap_frequency")} onChange={e=>set("soap_frequency",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:11.5,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
             </div>
           </div>
 
@@ -4926,10 +4932,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
             <div style={{fontSize:11,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Goals</div>
             <span style={lbl}>Short-term goals (2–4 wks)</span>
-            <input placeholder="e.g. Reduce pain to under 3/10, sit 45 min without flare-up" value={v("soap_goal_short")} onChange={e=>set("soap_goal_short",e.target.value)} style={{...inp,marginBottom:(!stGoals&&goals_ar.length>0)?4:8}}/>
+            <input placeholder="e.g. Reduce pain to under 3/10, sit 45 min without flare-up" value={rv("soap_goal_short")} onChange={e=>set("soap_goal_short",e.target.value)} style={{...inp,marginBottom:(!stGoals&&goals_ar.length>0)?4:8}}/>
             {!stGoals&&goals_ar.length>0&&<div style={{fontSize:10.5,color:"#9CA3AF",marginBottom:8}}>Suggested from assessment: {goals_ar.join(" · ")}</div>}
             <span style={lbl}>Long-term goals (discharge)</span>
-            <input placeholder="e.g. Full return to desk work and training, pain-free" value={v("soap_goal_long")} onChange={e=>set("soap_goal_long",e.target.value)} style={{...inp,marginBottom:0}}/>
+            <input placeholder="e.g. Full return to desk work and training, pain-free" value={rv("soap_goal_long")} onChange={e=>set("soap_goal_long",e.target.value)} style={{...inp,marginBottom:0}}/>
           </div>
 
           {/* HEP summary -- true home-protocol exercises only (HomeProtocolTab.jsx / QuickVisitForm) */}
@@ -4999,7 +5005,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {/* Precautions */}
           <div style={{background:"#FFF7ED",border:"1px solid #FDE4B8",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",gap:8,alignItems:"flex-start"}}>
             <span style={{fontSize:14,flexShrink:0,marginTop:1}}>⚠️</span>
-            <textarea placeholder="General advice / precautions (e.g. avoid loaded flexion, stop if symptoms increase)..." value={v("soap_precautions")} onChange={e=>set("soap_precautions",e.target.value)}
+            <textarea placeholder="General advice / precautions (e.g. avoid loaded flexion, stop if symptoms increase)..." value={rv("soap_precautions")} onChange={e=>set("soap_precautions",e.target.value)}
               style={{flex:1,minWidth:0,border:"none",background:"transparent",outline:"none",resize:"vertical",minHeight:36,fontSize:11.5,fontFamily:"inherit",color:"#854F0B",lineHeight:1.5,padding:0}}/>
           </div>
 
@@ -5008,9 +5014,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             <div style={{fontSize:11,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Additional details</div>
             {modalities&&<div style={{marginBottom:8}}>{modalities.split(",").map((m,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{m.trim()}</span>)}</div>}
             <div style={{display:"grid",gap:6}}>
-              <input placeholder="Modalities (e.g. Hot pack, IFT, Traction)" value={v("soap_modalities")} onChange={e=>set("soap_modalities",e.target.value)} style={{...inp,marginBottom:0}}/>
-              <input placeholder="Referral (if any)" value={v("soap_referral")} onChange={e=>set("soap_referral",e.target.value)} style={{...inp,marginBottom:0}}/>
-              <input placeholder="Imaging / investigations requested" value={v("soap_imaging")} onChange={e=>set("soap_imaging",e.target.value)} style={{...inp,marginBottom:0}}/>
+              <input placeholder="Modalities (e.g. Hot pack, IFT, Traction)" value={rv("soap_modalities")} onChange={e=>set("soap_modalities",e.target.value)} style={{...inp,marginBottom:0}}/>
+              <input placeholder="Referral (if any)" value={rv("soap_referral")} onChange={e=>set("soap_referral",e.target.value)} style={{...inp,marginBottom:0}}/>
+              <input placeholder="Imaging / investigations requested" value={rv("soap_imaging")} onChange={e=>set("soap_imaging",e.target.value)} style={{...inp,marginBottom:0}}/>
               <textarea placeholder="Additional plan notes..." value={extraP} onChange={e=>setExtraP(e.target.value)} onBlur={()=>set("soap_extra_p",extraP)} style={{...inp,resize:"vertical",minHeight:40,marginBottom:0}}/>
             </div>
           </div>
@@ -7260,7 +7266,7 @@ function TreatmentTechniquesModule({ data, set }) {
   const ST_TECHNIQUES = ["Deep tissue massage","Myofascial release","Trigger point release","Friction massage","IASTM","Cupping","Foam roller prescription","PNF stretching","Contract-relax stretching","Passive stretching"];
   const ULTRASOUND_MODES = ["Pulsed 20%","Pulsed 50%","Continuous"];
   const TAPING_TYPES = ["McConnell — Patellar medial glide","McConnell — Patellar tilt correction","McConnell — Patellar rotation","McConnell — Shoulder posture","Kinesio — Pain inhibition","Kinesio — Muscle facilitation","Kinesio — Muscle inhibition","Kinesio — Fascia correction","Kinesio — Lymphatic drainage","Rigid sports tape — ankle","Rigid sports tape — wrist","Rigid sports tape — AC joint","Zinc oxide — blister prevention","Leukotape — posture correction","Dynamic tape — load transfer"];
-  const ELECTRO_TYPES = ["TENS — conventional (80–150Hz)","TENS — acupuncture-like (2–4Hz)","TENS — burst","IFT — 80–150Hz (pain)","IFT — 1–10Hz (muscle stim)","NMES — quadriceps","NMES — glutes","Russian stim","LASER — class 3B","LASER — class 4","Shockwave — radial","Shockwave — focused","Biofeedback EMG"];
+  const ELECTRO_TYPES = ["TENS — conventional (80–150Hz)","TENS — acupuncture-like (2–4Hz)","TENS — burst","IFT — 80–150Hz (pain)","IFT — 1–10Hz (muscle stim)","SWD — continuous","SWD — pulsed","NMES — quadriceps","NMES — glutes","Russian stim","LASER — class 3B","LASER — class 4","Shockwave — radial","Shockwave — focused","Biofeedback EMG"];
 
   const inp = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"7px 10px", fontSize:"0.75rem", WebkitAppearance:"none", appearance:"none" };
   const sel = { ...inp };
