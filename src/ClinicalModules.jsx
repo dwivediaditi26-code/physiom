@@ -4002,32 +4002,32 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const doneCount = MOD_KEYS.filter(k=>mods[k]).length;
 
   // ── Styles ──
-  const wrap  = { fontFamily:"inherit", fontSize:"0.82rem", paddingBottom:24 };
+  const wrap  = { fontFamily:"inherit", fontSize:14.5, paddingBottom:24 };
   const card  = (border="#E5E7EB", accent=null) => ({ background:"#fff", border:`1px solid ${border}`, borderRadius:16, marginBottom:12, overflow:"hidden", boxShadow:"0 2px 6px rgba(0,0,0,0.06)", ...(accent?{borderLeft:`3px solid ${accent}`}:{}) });
   const ch    = (bg="#fff") => ({ display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:bg,borderBottom:"1px solid #F3F4F6" });
-  const secIcon = (bg,cl,emoji) => <div style={{width:36,height:36,borderRadius:10,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0,color:cl}}>{emoji}</div>;
-  const secTitle = (t,sub,col="#fff") => <div><div style={{fontSize:13,fontWeight:700,color:col,letterSpacing:"0.1px"}}>{t}</div>{sub&&<div style={{fontSize:10,color:col==="white"||col==="#fff"?"rgba(255,255,255,0.65)":"#6B7280",marginTop:1}}>{sub}</div>}</div>;
-  const secBadge = (t,col="rgba(255,255,255,0.75)",bg="rgba(255,255,255,0.15)",border="rgba(255,255,255,0.25)") => <div style={{marginLeft:"auto",fontSize:10,color:col,background:bg,border:`1px solid ${border}`,borderRadius:20,padding:"2px 10px",flexShrink:0,fontWeight:500}}>{t}</div>;
+  const secIcon = (bg,cl,emoji) => <div style={{width:36,height:36,borderRadius:10,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:cl}}>{emoji}</div>;
+  const secTitle = (t,sub,col="#fff") => <div><div style={{fontSize:14.5,fontWeight:700,color:col,letterSpacing:"0.1px"}}>{t}</div>{sub&&<div style={{fontSize:12,color:col==="white"||col==="#fff"?"rgba(255,255,255,0.65)":"#6B7280",marginTop:1}}>{sub}</div>}</div>;
+  const secBadge = (t,col="rgba(255,255,255,0.75)",bg="rgba(255,255,255,0.15)",border="rgba(255,255,255,0.25)") => <div style={{marginLeft:"auto",fontSize:12,color:col,background:bg,border:`1px solid ${border}`,borderRadius:20,padding:"2px 10px",flexShrink:0,fontWeight:500}}>{t}</div>;
   const cb    = { padding:"12px 14px" };
-  const lbl   = { fontSize:11,color:"#9CA3AF",fontWeight:500,marginBottom:4,display:"block" };
-  const val_  = { fontSize:13,color:"#111827",lineHeight:1.5 };
-  const row   = { borderBottom:"1px solid #F3F4F6",padding:"8px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,fontSize:13 };
-  const chip_ = (bg,cl) => ({ display:"inline-block",padding:"3px 10px",borderRadius:100,background:bg,color:cl,fontSize:11,fontWeight:500,margin:"2px 3px 2px 0" });
+  const lbl   = { fontSize:13,color:"#9CA3AF",fontWeight:500,marginBottom:4,display:"block" };
+  const val_  = { fontSize:14.5,color:"#111827",lineHeight:1.5 };
+  const row   = { borderBottom:"1px solid #F3F4F6",padding:"8px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,fontSize:14.5 };
+  const chip_ = (bg,cl) => ({ display:"inline-block",padding:"3px 10px",borderRadius:100,background:bg,color:cl,fontSize:13,fontWeight:500,margin:"2px 3px 2px 0" });
   // Small grouped card used WITHIN a section (S/O/A/P), so related fields
   // (e.g. chief complaint, or "worse with" / "better with") read as one
   // scannable block on a phone instead of a long unbroken column of labels.
   const subCard = (accent="#E5E7EB") => ({ background:"#fff", borderRadius:10, borderLeft:`3px solid ${accent}`, padding:"8px 10px", marginBottom:8 });
-  const subLbl  = { fontSize:11,color:"#9CA3AF",fontWeight:500,marginBottom:4,display:"block" };
-  const bullet  = (text,i) => <div key={i} style={{fontSize:12,color:"#374151",lineHeight:1.9}}>&bull; {text}</div>;
-  const inp   = { width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"7px 10px",fontSize:"0.78rem",fontFamily:"inherit",outline:"none",color:"#111827",background:"#FAFAFA",marginBottom:4,boxSizing:"border-box" };
+  const subLbl  = { fontSize:13,color:"#9CA3AF",fontWeight:500,marginBottom:4,display:"block" };
+  const bullet  = (text,i) => <div key={i} style={{fontSize:14.5,color:"#374151",lineHeight:1.9}}>&bull; {text}</div>;
+  const inp   = { width:"100%",border:"1px solid #E5E7EB",borderRadius:8,padding:"7px 10px",fontSize:16,fontFamily:"inherit",outline:"none",color:"#111827",background:"#FAFAFA",marginBottom:4,boxSizing:"border-box" };
   const subH  = (label, col="#334155") => (
     <div style={{display:"flex",alignItems:"center",gap:6,background:col,padding:"8px 14px",marginTop:14,marginBottom:8,borderRadius:10}}>
-      <span style={{fontSize:11,fontWeight:700,color:"#fff",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</span>
+      <span style={{fontSize:13,fontWeight:700,color:"#fff",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</span>
     </div>
   );
-  const na    = { fontSize:12,color:"#9CA3AF",fontStyle:"italic",padding:"4px 0" };
-  const thS   = { padding:"5px 8px",fontSize:10,color:"#9CA3AF",textAlign:"left",borderBottom:"1px solid #F3F4F6",fontWeight:500 };
-  const tdS   = { padding:"5px 8px",borderBottom:"1px solid #F9FAFB",fontSize:12,color:"#111827",verticalAlign:"top" };
+  const na    = { fontSize:14.5,color:"#9CA3AF",fontStyle:"italic",padding:"4px 0" };
+  const thS   = { padding:"5px 8px",fontSize:12,color:"#9CA3AF",textAlign:"left",borderBottom:"1px solid #F3F4F6",fontWeight:500 };
+  const tdS   = { padding:"5px 8px",borderBottom:"1px solid #F9FAFB",fontSize:14.5,color:"#111827",verticalAlign:"top" };
   const tbl   = { width:"100%",borderCollapse:"collapse" };
 
   return (
@@ -4052,16 +4052,16 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
       <div style={{...card(),marginBottom:12}}>
         <div style={{padding:"14px 14px 10px"}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-            <div style={{width:44,height:44,borderRadius:"50%",background:"#EEEDFE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:600,color:"#3C3489",flexShrink:0}}>{initials}</div>
+            <div style={{width:44,height:44,borderRadius:"50%",background:"#EEEDFE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:600,color:"#3C3489",flexShrink:0}}>{initials}</div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:16,fontWeight:700,color:"#111827"}}>{name}</div>
-              <div style={{fontSize:11,color:"#6B7280",marginTop:1}}>
+              <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>{name}</div>
+              <div style={{fontSize:13,color:"#6B7280",marginTop:1}}>
                 {[sex&&sex.toUpperCase(),age&&age+" yrs",phone].filter(Boolean).join(" · ")}
               </div>
             </div>
             {vasNow&&<div style={{textAlign:"center",padding:"6px 12px",background:nrsBg(vasNow),borderRadius:12,border:`1px solid ${nrsColor(vasNow)}30`,flexShrink:0}}>
-              <div style={{fontSize:9,color:nrsColor(vasNow),fontWeight:600,textTransform:"uppercase"}}>Pain</div>
-              <div style={{fontSize:18,fontWeight:700,color:nrsColor(vasNow)}}>{vasNow}<span style={{fontSize:11}}>/10</span></div>
+              <div style={{fontSize:12,color:nrsColor(vasNow),fontWeight:600,textTransform:"uppercase"}}>Pain</div>
+              <div style={{fontSize:20,fontWeight:700,color:nrsColor(vasNow)}}>{vasNow}<span style={{fontSize:13}}>/10</span></div>
             </div>}
           </div>
 
@@ -4069,11 +4069,11 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               grouped as label/value pairs instead of a loose wrapping row,
               and it drops to one column on a real phone via .pm-soap-2col */}
           <div className="pm-soap-2col" style={{borderTop:"1px solid #F3F4F6",paddingTop:8}}>
-            <div><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Date</div><div style={{fontSize:12,color:"#374151",marginTop:1}}>{new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div></div>
-            {patId&&<div><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Patient ID</div><div style={{fontSize:12,color:"#374151",marginTop:1}}>{patId}</div></div>}
-            {dob&&<div><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>DOB</div><div style={{fontSize:12,color:"#374151",marginTop:1}}>{dob}</div></div>}
-            {therapist&&<div><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Therapist</div><div style={{fontSize:12,color:"#374151",marginTop:1}}>{therapist}</div></div>}
-            <div style={{gridColumn:"1 / -1"}}><div style={{fontSize:9,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Mode</div><span style={{display:"inline-block",marginTop:2,background:"#D1FAE5",color:"#065F46",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:500}}>Digital template</span></div>
+            <div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Date</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div></div>
+            {patId&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Patient ID</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{patId}</div></div>}
+            {dob&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>DOB</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{dob}</div></div>}
+            {therapist&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Therapist</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{therapist}</div></div>}
+            <div style={{gridColumn:"1 / -1"}}><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Mode</div><span style={{display:"inline-block",marginTop:2,background:"#D1FAE5",color:"#065F46",padding:"2px 8px",borderRadius:4,fontSize:13,fontWeight:500}}>Digital template</span></div>
           </div>
 
           {/* Session progress — was module-completion count, now reflects
@@ -4084,7 +4084,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             <div style={{flex:1,height:5,background:"#E5E7EB",borderRadius:100,overflow:"hidden"}}>
               <div style={{height:"100%",background:"#7c3aed",borderRadius:100,width:(totalSess?Math.min(100,(txSessArr.length/Number(totalSess))*100):(txSessArr.length>0?100:0))+"%"}}/>
             </div>
-            <span style={{fontSize:10,color:"#9CA3AF",whiteSpace:"nowrap"}}>Session {txSessArr.length || 1}{totalSess?` of ${totalSess}`:""}</span>
+            <span style={{fontSize:12,color:"#9CA3AF",whiteSpace:"nowrap"}}>Session {txSessArr.length || 1}{totalSess?` of ${totalSess}`:""}</span>
           </div>
         </div>
 
@@ -4119,9 +4119,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 transition:"all 0.15s",
               }}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                  <span style={{fontSize:15}}>{icon}</span>
-                  <span style={{fontSize:11,fontWeight:700,color:isActive?color:"#6B7280"}}>{id} · {label}</span>
-                  <span style={{fontSize:9,color:isActive?color+"AA":"#9CA3AF",display:"block"}}>{sub}</span>
+                  <span style={{fontSize:16}}>{icon}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:isActive?color:"#6B7280"}}>{id} · {label}</span>
+                  <span style={{fontSize:12,color:isActive?color+"AA":"#9CA3AF",display:"block"}}>{sub}</span>
                 </div>
               </button>
             );
@@ -4138,7 +4138,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
         </div>
         <div style={cb}>
           {(cc||loc||onset)&&<div style={subCard("#7c3aed")}>
-            {cc&&<><span style={subLbl}>Chief complaint</span><div style={{fontSize:13,fontWeight:500,color:"#111827",lineHeight:1.5,marginBottom:(loc||onset)?6:0}}>{cc}</div></>}
+            {cc&&<><span style={subLbl}>Chief complaint</span><div style={{fontSize:14.5,fontWeight:500,color:"#111827",lineHeight:1.5,marginBottom:(loc||onset)?6:0}}>{cc}</div></>}
             {loc&&<div style={{marginBottom:rad?6:0}}>
               <span style={subLbl}>Site</span>
               <div>{loc.split(/\|\|\||,/).map(s=>s.trim()).filter(Boolean).map((s,i)=><span key={i} style={chip_("#EEEDFE","#3C3489")}>{s}</span>)}</div>
@@ -4147,24 +4147,24 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               <span style={subLbl}>Radiates to</span>
               <div>{rad.split(/\|\|\||,/).map(s=>s.trim()).filter(Boolean).map((s,i)=><span key={i} style={chip_("#FCEBEB","#712B13")}>{s}</span>)}</div>
             </div>}
-            {onset&&<div style={{fontSize:12,color:"#374151"}}><span style={{color:"#9CA3AF"}}>Onset: </span>{[onset,dur].filter(Boolean).join(", ")}</div>}
+            {onset&&<div style={{fontSize:14.5,color:"#374151"}}><span style={{color:"#9CA3AF"}}>Onset: </span>{[onset,dur].filter(Boolean).join(", ")}</div>}
           </div>}
-          {redFlags.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,color:"#991B1B",marginBottom:8,fontWeight:500}}>⚠ Red flags: {redFlags.join(", ")} — medical review indicated</div>}
+          {redFlags.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:14.5,color:"#991B1B",marginBottom:8,fontWeight:500}}>⚠ Red flags: {redFlags.join(", ")} — medical review indicated</div>}
           {agg.length>0&&<div style={subCard("#EF9F27")}><span style={subLbl}>Worse with</span>{agg.slice(0,6).map(bullet)}</div>}
           {ease.length>0&&<div style={subCard("#639922")}><span style={subLbl}>Better with</span>{ease.slice(0,5).map(bullet)}</div>}
           {(morning||night)&&<div style={subCard()}>
             <span style={subLbl}>24-hour pattern</span>
             <div className="pm-soap-2col">
-              {morning&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:10,color:"#9CA3AF",fontWeight:500}}>Morning</div><div style={{fontSize:12,color:"#111827",marginTop:2,lineHeight:1.4}}>{morning}</div></div>}
-              {night&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:10,color:"#9CA3AF",fontWeight:500}}>Night</div><div style={{fontSize:12,color:"#111827",marginTop:2,lineHeight:1.4}}>{night}</div></div>}
+              {morning&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:12,color:"#9CA3AF",fontWeight:500}}>Morning</div><div style={{fontSize:14.5,color:"#111827",marginTop:2,lineHeight:1.4}}>{morning}</div></div>}
+              {night&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:12,color:"#9CA3AF",fontWeight:500}}>Night</div><div style={{fontSize:14.5,color:"#111827",marginTop:2,lineHeight:1.4}}>{night}</div></div>}
             </div>
           </div>}
           {(phx||meds)&&<><span style={lbl}>History & medications</span>
-            {phx&&<div style={{fontSize:12,color:"#374151",marginBottom:4}}>PMH: {phx}</div>}
-            {meds&&<div style={{fontSize:12,color:"#374151",marginBottom:8}}>Meds: {meds}</div>}
+            {phx&&<div style={{fontSize:14.5,color:"#374151",marginBottom:4}}>PMH: {phx}</div>}
+            {meds&&<div style={{fontSize:14.5,color:"#374151",marginBottom:8}}>Meds: {meds}</div>}
           </>}
-          {goals_ar.length>0&&<div style={subCard("#7c3aed")}><span style={subLbl}>Goals</span>{goals_ar.map((g,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"3px 0",display:"flex",gap:6}}><span style={{color:"#7c3aed"}}>→</span>{g}</div>)}</div>}
-          {v("dem_occupation")&&<div style={{fontSize:12,color:"#9CA3AF"}}>{v("dem_occupation")}{v("dem_dominant_hand")?" · "+v("dem_dominant_hand")+" hand":""}</div>}
+          {goals_ar.length>0&&<div style={subCard("#7c3aed")}><span style={subLbl}>Goals</span>{goals_ar.map((g,i)=><div key={i} style={{fontSize:14.5,color:"#374151",padding:"3px 0",display:"flex",gap:6}}><span style={{color:"#7c3aed"}}>→</span>{g}</div>)}</div>}
+          {v("dem_occupation")&&<div style={{fontSize:14.5,color:"#9CA3AF"}}>{v("dem_occupation")}{v("dem_dominant_hand")?" · "+v("dem_dominant_hand")+" hand":""}</div>}
           {/* ── Regional clinician notes (loc_notes, moi_notes, agg_notes, rel_notes, symp_notes) ── */}
           {(()=>{
             const PFXS=["cx","lx","shl","shr","hp","knl","knr","af","ew","tx"];
@@ -4183,9 +4183,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             return <><span style={lbl}>Clinician notes</span>
               {noteGroups.map(({region,parts},i)=>(
                 <div key={i} style={{marginBottom:6,background:"#F8F7FF",borderRadius:8,padding:"7px 10px",borderLeft:"3px solid #7c3aed"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#7c3aed",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.07em"}}>{region}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:"#7c3aed",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.07em"}}>{region}</div>
                   {parts.map(({label,text},j)=>(
-                    <div key={j} style={{fontSize:12,color:"#374151",lineHeight:1.6,marginBottom:2}}>
+                    <div key={j} style={{fontSize:14.5,color:"#374151",lineHeight:1.6,marginBottom:2}}>
                       <span style={{fontWeight:600,color:"#6B7280"}}>{label}: </span>{text}
                     </div>
                   ))}
@@ -4239,26 +4239,26 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             if (!hasObs && !hasLegacy && !obsSummary) return null;
             return <div style={subCard("#065F46")}>
               {subH("Observation & Posture","#065F46")}
-              {obsSummary&&<div style={{fontSize:12,color:"#374151",marginBottom:6,background:"#F9FAFB",padding:"8px 10px",borderRadius:8,lineHeight:1.5}}>{obsSummary}</div>}
+              {obsSummary&&<div style={{fontSize:14.5,color:"#374151",marginBottom:6,background:"#F9FAFB",padding:"8px 10px",borderRadius:8,lineHeight:1.5}}>{obsSummary}</div>}
               {hasObs&&obsFields.map(([section,fields],si)=>{
                 const filled=fields.filter(([,val])=>val);
                 if(!filled.length) return null;
                 // Highlight abnormal postural findings
                 const isAbnormal = (val)=>val&&!/neutral|normal|symmetrical|alert|cooperat|healthy/i.test(val);
                 return <div key={si} style={{marginBottom:6}}>
-                  <div style={{fontSize:10,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>{section}</div>
+                  <div style={{fontSize:12,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>{section}</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                     {filled.map(([label,val],fi)=>{
                       const abn=isAbnormal(val);
-                      return <span key={fi} style={{padding:"3px 9px",borderRadius:99,fontSize:11,background:abn?"#FEF3C7":"#F3F4F6",color:abn?"#92400E":"#374151",border:`1px solid ${abn?"#FDE68A":"#E5E7EB"}`,fontWeight:abn?600:400}}>{label}: {val}</span>;
+                      return <span key={fi} style={{padding:"3px 9px",borderRadius:99,fontSize:13,background:abn?"#FEF3C7":"#F3F4F6",color:abn?"#92400E":"#374151",border:`1px solid ${abn?"#FDE68A":"#E5E7EB"}`,fontWeight:abn?600:400}}>{label}: {val}</span>;
                     })}
                   </div>
                 </div>;
               })}
               {/* Legacy posture fields */}
-              {postureTextFields.length>0&&<>{postureTextFields.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,minWidth:90,fontSize:12}}>{r}</span><span style={{color:"#111827",flex:1,textAlign:"right",fontSize:12}}>{t}</span></div>)}</>}
+              {postureTextFields.length>0&&<>{postureTextFields.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,minWidth:90,fontSize:14.5}}>{r}</span><span style={{color:"#111827",flex:1,textAlign:"right",fontSize:14.5}}>{t}</span></div>)}</>}
               {postDefectList.length>0&&<div style={{marginTop:4,display:"flex",flexWrap:"wrap",gap:4}}>{postDefectList.map(([,l],i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{l}</span>)}</div>}
-              {obsChips.length>0&&<div style={{marginTop:4,display:"flex",flexWrap:"wrap",gap:4}}>{obsChips.map((o,i)=><span key={i} style={{...chip_("#F3F4F6","#374151"),fontSize:11}}>{o.region}: {o.text}</span>)}</div>}
+              {obsChips.length>0&&<div style={{marginTop:4,display:"flex",flexWrap:"wrap",gap:4}}>{obsChips.map((o,i)=><span key={i} style={{...chip_("#F3F4F6","#374151"),fontSize:13}}>{o.region}: {o.text}</span>)}</div>}
             </div>;
           })()}
 
@@ -4279,10 +4279,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 else if(lo!=null){flag=(n<lo||n>hi)?{t:n<lo?"Low":"High",c:"#B45309",b:"#FEF3C7"}:{t:"Normal",c:"#065F46",b:"#D1FAE5"};}
               }
               return <div key={i} style={row}>
-                <span style={{color:"#374151",fontWeight:500,fontSize:12,flex:1}}>{label}</span>
-                <span style={{fontWeight:600,color:"#111827",marginRight:8,fontSize:13}}>{val}{unit}</span>
-                <span style={{fontSize:10,color:"#9CA3AF",marginRight:8}}>{norm}</span>
-                {flag&&<span style={{fontSize:10,padding:"1px 7px",borderRadius:100,background:flag.b,color:flag.c,fontWeight:500}}>{flag.t}</span>}
+                <span style={{color:"#374151",fontWeight:500,fontSize:14.5,flex:1}}>{label}</span>
+                <span style={{fontWeight:600,color:"#111827",marginRight:8,fontSize:14.5}}>{val}{unit}</span>
+                <span style={{fontSize:12,color:"#9CA3AF",marginRight:8}}>{norm}</span>
+                {flag&&<span style={{fontSize:12,padding:"1px 7px",borderRadius:100,background:flag.b,color:flag.c,fontWeight:500}}>{flag.t}</span>}
               </div>;
             })}
           </div>}
@@ -4312,20 +4312,20 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               if (gaitScales.length) rows2.push(["Scales", gaitScales.map(s => `${s.label} ${v(s.id)}${s.range}`).join(", ")]);
               if (v("ag_cadence")) rows2.push(["Cadence", v("ag_cadence")]);
               if (v("gait_notes")) rows2.push(["Notes", v("gait_notes")]);
-              return rows2.map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,fontSize:12,minWidth:90}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>);
+              return rows2.map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontWeight:500,fontSize:14.5,minWidth:90}}>{l}</span><span style={{color:"#111827",fontSize:14.5,flex:1,textAlign:"right"}}>{t}</span></div>);
             })()}
           </div>}
 
           {/* Neuro (general — above region) */}
           {v("neuro_dermatomal")&&<div style={subCard("#065F46")}>
             {subH("Neuro (general)","#065F46")}
-            <div style={{fontSize:12,color:"#374151",marginBottom:4}}>{[v("neuro_dermatomal"),v("neuro_sensation")].filter(Boolean).join(". ")}</div>
+            <div style={{fontSize:14.5,color:"#374151",marginBottom:4}}>{[v("neuro_dermatomal"),v("neuro_sensation")].filter(Boolean).join(". ")}</div>
           </div>}
 
           {/* Neurological radiation chips */}
           {(rad||v("neuro_weakness"))&&<>
             {rad&&<div style={{marginBottom:6}}><span style={chip_("#EDE9FE","#5B21B6")}>Radiation / Referral</span>{v("neuro_sensation")&&v("neuro_sensation").toLowerCase().includes("tin")&&<span style={chip_("#EDE9FE","#5B21B6")}>Tingling / Pins &amp; Needles</span>}</div>}
-            {rad&&<div style={{fontSize:12,color:"#374151",marginBottom:4}}>Radiates → {rad}{v("neuro_dermatomal")?" · Nerve: "+v("neuro_dermatomal"):""}</div>}
+            {rad&&<div style={{fontSize:14.5,color:"#374151",marginBottom:4}}>Radiates → {rad}{v("neuro_dermatomal")?" · Nerve: "+v("neuro_dermatomal"):""}</div>}
           </>}
 
           {/* OBSERVATION chips (regional) */}
@@ -4339,7 +4339,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {(palpPins.filter(p=>p.tenderness).length>0||palpText.length>0)&&<div style={subCard("#065F46")}>
             {subH("Palpation — Tender","#065F46")}
             {palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{p.label}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — grade {p.tenderness}+</span>)}
-            {palpText.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:50}}>{r}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
+            {palpText.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:14.5,fontWeight:500,minWidth:50}}>{r}</span><span style={{color:"#111827",fontSize:14.5,flex:1,textAlign:"right"}}>{t}</span></div>)}
           </div>}
 
           {/* Neurological */}
@@ -4356,10 +4356,10 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const col=total<=8?"#DC2626":total<=12?"#D97706":"#059669";
               return <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"#F9FAFB",borderRadius:8,marginBottom:8}}>
                 <div>
-                  <div style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:2}}>Glasgow Coma Scale</div>
-                  <div style={{fontSize:12,color:"#374151"}}>E {e||"—"} · V {ve||"—"} · M {m||"—"}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:2}}>Glasgow Coma Scale</div>
+                  <div style={{fontSize:14.5,color:"#374151"}}>E {e||"—"} · V {ve||"—"} · M {m||"—"}</div>
                 </div>
-                <span style={{fontSize:18,fontWeight:800,color:col}}>{total}<span style={{fontSize:11,fontWeight:500,color:"#9CA3AF"}}>/15</span></span>
+                <span style={{fontSize:20,fontWeight:800,color:col}}>{total}<span style={{fontSize:13,fontWeight:500,color:"#9CA3AF"}}>/15</span></span>
               </div>;
             })()}
             {neuroRows.map((r,i)=>{
@@ -4367,8 +4367,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const isAbn=lc.includes("reduced")||lc.includes("weak")||lc.includes("absent")||lc.includes("positive");
               const isN=lc.includes("intact")||lc.includes("normal")||lc.includes("5/5")||lc.includes("negative");
               return <div key={i} style={row}>
-                <span style={{color:"#374151",fontSize:12,flex:1}}>{r.label}</span>
-                <span style={{fontSize:12,fontWeight:500,color:isAbn?"#DC2626":isN?"#059669":"#111827"}}>{r.val}</span>
+                <span style={{color:"#374151",fontSize:14.5,flex:1}}>{r.label}</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:isAbn?"#DC2626":isN?"#059669":"#111827"}}>{r.val}</span>
               </div>;
             })}
           </div>}
@@ -4383,22 +4383,22 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 return <div key={i} style={{marginBottom:6}}>
                   <div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                     <div>
-                      <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label}</div>
-                      <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.single}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
+                      <div style={{fontSize:13,color:"#9CA3AF",marginBottom:2}}>{r.label}</div>
+                      <div style={{fontSize:16,fontWeight:700,color:"#111827"}}>A:{r.single}°<span style={{fontSize:13,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
                     </div>
-                    {col&&<span style={{fontSize:10,fontWeight:700,color:col,padding:"2px 8px",borderRadius:99,background:col+"22"}}>{p!=null&&p>115?"Hypermobile":p!=null&&p>=85?"WNL":p!=null&&p>=65?"Mild":p!=null&&p>=40?"Moderate":p!=null?"Severe":""}</span>}
+                    {col&&<span style={{fontSize:12,fontWeight:700,color:col,padding:"2px 8px",borderRadius:99,background:col+"22"}}>{p!=null&&p>115?"Hypermobile":p!=null&&p>=85?"WNL":p!=null&&p>=65?"Mild":p!=null&&p>=40?"Moderate":p!=null?"Severe":""}</span>}
                   </div>
                 </div>;
               } else {
                 return <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
                   {r.l&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px"}}>
-                    <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label} (L)</div>
-                    <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.l}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
+                    <div style={{fontSize:13,color:"#9CA3AF",marginBottom:2}}>{r.label} (L)</div>
+                    <div style={{fontSize:16,fontWeight:700,color:"#111827"}}>A:{r.l}°<span style={{fontSize:13,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
 
                   </div>}
                   {r.r&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"7px 10px"}}>
-                    <div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{r.label} (R)</div>
-                    <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>A:{r.r}°<span style={{fontSize:11,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
+                    <div style={{fontSize:13,color:"#9CA3AF",marginBottom:2}}>{r.label} (R)</div>
+                    <div style={{fontSize:16,fontWeight:700,color:"#111827"}}>A:{r.r}°<span style={{fontSize:13,fontWeight:400,color:"#9CA3AF"}}> / 0–{r.norm}°</span></div>
 
                   </div>}
                 </div>;
@@ -4417,12 +4417,12 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const bdr=g>=5?"#bbf7d0":g>=4?"#fde68a":g>=3?"#fed7aa":"#fecaca";
               return <div key={i} style={{display:"flex",flexDirection:"column",padding:"7px 10px",borderRadius:8,border:`1px solid ${bdr}`,background:bg}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2}}>
-                  <span style={{fontSize:12,fontWeight:700,color:"#1f2937",flex:1,lineHeight:1.3,fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",letterSpacing:"0.01em"}}>{muscle}</span>
-                  {side&&<span style={{fontSize:9,fontWeight:800,padding:"1px 6px",borderRadius:99,background:"#e0e7ff",color:"#3730a3",marginLeft:4,flexShrink:0}}>{side.trim().replace(/[()]/g,"")}</span>}
+                  <span style={{fontSize:14.5,fontWeight:700,color:"#1f2937",flex:1,lineHeight:1.3,fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",letterSpacing:"0.01em"}}>{muscle}</span>
+                  {side&&<span style={{fontSize:12,fontWeight:800,padding:"1px 6px",borderRadius:99,background:"#e0e7ff",color:"#3730a3",marginLeft:4,flexShrink:0}}>{side.trim().replace(/[()]/g,"")}</span>}
                 </div>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <span style={{fontSize:10,color:"#6b7280"}}>{desc||""}</span>
-                  <span style={{fontSize:14,fontWeight:800,color:gc}}>{gr}</span>
+                  <span style={{fontSize:12,color:"#6b7280"}}>{desc||""}</span>
+                  <span style={{fontSize:16,fontWeight:800,color:gc}}>{gr}</span>
                 </div>
               </div>;
             })}
@@ -4440,8 +4440,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 if(!isPos&&!isNeg) return null;
                 return (
                   <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"5px 8px",background:isPos?"#fef2f2":"#f0fdf4",borderRadius:7,border:`1px solid ${isPos?"#fecaca":"#bbf7d0"}`}}>
-                    <span style={{fontSize:11,color:"#334155",flex:1,marginRight:4,lineHeight:1.3}}>{t.name}</span>
-                    <span style={{fontSize:9,fontWeight:800,padding:"2px 6px",borderRadius:10,flexShrink:0,background:isPos?"#dc2626":"#059669",color:"#fff"}}>{isPos?"+ve":"−ve"}</span>
+                    <span style={{fontSize:13,color:"#334155",flex:1,marginRight:4,lineHeight:1.3}}>{t.name}</span>
+                    <span style={{fontSize:12,fontWeight:800,padding:"2px 6px",borderRadius:10,flexShrink:0,background:isPos?"#dc2626":"#059669",color:"#fff"}}>{isPos?"+ve":"−ve"}</span>
                   </div>
                 );
               })}
@@ -4495,12 +4495,12 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const gc = item.abnormal ? "#d97706" : "#059669";
               return <div key={i} style={{display:"flex",flexDirection:"column",padding:"7px 10px",borderRadius:8,border:`1px solid ${bdr}`,background:bg}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:3}}>
-                  <span style={{fontSize:12,fontWeight:700,color:"#1f2937",flex:1,lineHeight:1.3}}>{item.label}</span>
-                  {item.region&&<span style={{fontSize:9,fontWeight:800,padding:"1px 6px",borderRadius:99,background:"#e0e7ff",color:"#3730a3",marginLeft:4,flexShrink:0}}>{item.region}</span>}
+                  <span style={{fontSize:14.5,fontWeight:700,color:"#1f2937",flex:1,lineHeight:1.3}}>{item.label}</span>
+                  {item.region&&<span style={{fontSize:12,fontWeight:800,padding:"1px 6px",borderRadius:99,background:"#e0e7ff",color:"#3730a3",marginLeft:4,flexShrink:0}}>{item.region}</span>}
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:1}}>
                   {item.rows.map((r,ri)=>(
-                    <span key={ri} style={{fontSize:11,fontWeight:600,color:/pain|limit|restrict|abnormal|positive|reduced|weak|capsular/i.test(r.word+r.value)?"#d97706":"#059669"}}>
+                    <span key={ri} style={{fontSize:13,fontWeight:600,color:/pain|limit|restrict|abnormal|positive|reduced|weak|capsular/i.test(r.word+r.value)?"#d97706":"#059669"}}>
                       {r.word}{r.value}
                     </span>
                   ))}
@@ -4511,16 +4511,16 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               {subH("STTT / Selective Tissue Tension","#065F46")}
               {["active","passive","resisted"].map(cat => groups[cat].length>0 && (
                 <div key={cat} style={{marginBottom:8}}>
-                  <div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:4}}>{CAT_LABEL[cat]}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:"#6B7280",marginBottom:4}}>{CAT_LABEL[cat]}</div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
                     {groups[cat].map(sttCard)}
                   </div>
                 </div>
               ))}
-              {v("cy_contractile")&&<div style={{fontSize:12,color:"#374151",marginTop:2}}>Contractile: {v("cy_contractile")}</div>}
-              {v("cy_non_contractile")&&<div style={{fontSize:12,color:"#374151"}}>Non-contractile: {v("cy_non_contractile")}</div>}
-              {(v("cy_capsular_pattern")||v("cy_capsular"))&&<div style={{fontSize:12,color:"#374151"}}>Capsular pattern: {v("cy_capsular_pattern")||v("cy_capsular")}</div>}
-              {v("cy_notes")&&<div style={{fontSize:12,color:"#374151"}}>Notes: {v("cy_notes")}</div>}
+              {v("cy_contractile")&&<div style={{fontSize:14.5,color:"#374151",marginTop:2}}>Contractile: {v("cy_contractile")}</div>}
+              {v("cy_non_contractile")&&<div style={{fontSize:14.5,color:"#374151"}}>Non-contractile: {v("cy_non_contractile")}</div>}
+              {(v("cy_capsular_pattern")||v("cy_capsular"))&&<div style={{fontSize:14.5,color:"#374151"}}>Capsular pattern: {v("cy_capsular_pattern")||v("cy_capsular")}</div>}
+              {v("cy_notes")&&<div style={{fontSize:14.5,color:"#374151"}}>Notes: {v("cy_notes")}</div>}
             </div>;
           })()}
 
@@ -4528,14 +4528,14 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {(flChips.length>0||v("ar_goal_function"))&&<div style={subCard("#065F46")}>
             {subH("Functional limitations","#065F46")}
             <div style={{marginBottom:6}}>{flChips.map((x,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{x}</span>)}</div>
-            {v("ar_goal_function")&&<div style={{fontSize:12,color:"#374151"}}>{v("ar_goal_function")}</div>}
+            {v("ar_goal_function")&&<div style={{fontSize:14.5,color:"#374151"}}>{v("ar_goal_function")}</div>}
           </div>}
 
           {/* Outcome Measures */}
           {omRows.length>0&&<div style={subCard("#065F46")}>
             {subH("Outcome Measures","#065F46")}
             <table style={tbl}><thead><tr><th style={thS}>Scale</th><th style={thS}>Score</th><th style={thS}>Max</th><th style={thS}>Description</th></tr></thead>
-            <tbody>{omRows.map((r,i)=><tr key={i}><td style={{...tdS,fontWeight:600}}>{r.name}</td><td style={{...tdS,fontWeight:700,color:"#6366F1"}}>{r.score}</td><td style={{...tdS,color:"#9CA3AF"}}>{r.max||"—"}</td><td style={{...tdS,color:"#6B7280",fontSize:10}}>{r.note}</td></tr>)}</tbody></table>
+            <tbody>{omRows.map((r,i)=><tr key={i}><td style={{...tdS,fontWeight:600}}>{r.name}</td><td style={{...tdS,fontWeight:700,color:"#6366F1"}}>{r.score}</td><td style={{...tdS,color:"#9CA3AF"}}>{r.max||"—"}</td><td style={{...tdS,color:"#6B7280",fontSize:12}}>{r.note}</td></tr>)}</tbody></table>
           </div>}
 
           {/* CPA — was reading unused legacy fields (cpa_pattern, cx_cpa,
@@ -4578,20 +4578,20 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               });
               if(!inh.length&&!over.length&&!fac.length&&!norm.length&&!v("nkt_notes")) return <div style={na}>No CPA findings recorded yet.</div>;
               return <div style={{marginTop:4}}>
-                {inh.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#B45309",marginBottom:3}}>Inhibited</div>
+                {inh.length>0&&<><div style={{fontSize:13,fontWeight:600,color:"#B45309",marginBottom:3}}>Inhibited</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
-                    {inh.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:500}}>{label}</span>)}
+                    {inh.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:13,fontWeight:500}}>{label}</span>)}
                   </div></>}
-                {over.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#DC2626",marginBottom:3}}>Overactive / Facilitated</div>
+                {over.length>0&&<><div style={{fontSize:13,fontWeight:600,color:"#DC2626",marginBottom:3}}>Overactive / Facilitated</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
-                    {over.map(({label},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEE2E2",color:"#991B1B",fontSize:11,fontWeight:500}}>{label}</span>)}
+                    {over.map(({label},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEE2E2",color:"#991B1B",fontSize:13,fontWeight:500}}>{label}</span>)}
                   </div></>}
-                {fac.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#0369A1",marginBottom:3}}>Facilitated (normal)</div>
+                {fac.length>0&&<><div style={{fontSize:13,fontWeight:600,color:"#0369A1",marginBottom:3}}>Facilitated (normal)</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
-                    {fac.map(({label},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#E0F2FE",color:"#0369A1",fontSize:11,fontWeight:500}}>{label}</span>)}
+                    {fac.map(({label},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#E0F2FE",color:"#0369A1",fontSize:13,fontWeight:500}}>{label}</span>)}
                   </div></>}
-                {norm.length>0&&<div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Normal: {norm.map(({label})=>label).join(", ")}</div>}
-                {v("nkt_notes")&&<div style={{fontSize:11,color:"#374151",marginTop:2}}>Notes: {v("nkt_notes")}</div>}
+                {norm.length>0&&<div style={{fontSize:13,color:"#6B7280",marginBottom:4}}>Normal: {norm.map(({label})=>label).join(", ")}</div>}
+                {v("nkt_notes")&&<div style={{fontSize:13,color:"#374151",marginTop:2}}>Notes: {v("nkt_notes")}</div>}
               </div>;
             })()}
           </div>}
@@ -4600,7 +4600,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {mods.kinetic&&<div style={subCard("#065F46")}>
             {subH("Kinetic Chain","#065F46")}
             {/* Legacy fields */}
-            {[v("kinetic_primary")&&["Primary dysfunction",v("kinetic_primary")],v("kinetic_compensation")&&["Compensation",v("kinetic_compensation")],v("kinetic_notes")&&["Notes",v("kinetic_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:12,fontWeight:500,minWidth:110}}>{l}</span><span style={{color:"#111827",fontSize:12,flex:1,textAlign:"right"}}>{t}</span></div>)}
+            {[v("kinetic_primary")&&["Primary dysfunction",v("kinetic_primary")],v("kinetic_compensation")&&["Compensation",v("kinetic_compensation")],v("kinetic_notes")&&["Notes",v("kinetic_notes")]].filter(Boolean).map(([l,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:14.5,fontWeight:500,minWidth:110}}>{l}</span><span style={{color:"#111827",fontSize:14.5,flex:1,textAlign:"right"}}>{t}</span></div>)}
             {/* kc_* fields from Kinetic Chain module */}
             {(()=>{
               const KC=[["kc_ankle_df","Ankle DF"],["kc_subtalar","Subtalar"],["kc_great_toe","1st MTP Ext"],
@@ -4618,20 +4618,20 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const norm=items.filter(({val})=>!/restrict|limit|dysfunc|unstable|abnormal|fail|hypomob|tight|valgus|dominant|positive|absent|crepitus|deviation|aslr|gird|chin.poke|no.ta|no.activation|hyper|lax|excess|cervicothoracic.instab/i.test(val)&&/normal|pass|adequate|full/i.test(val));
               const other=items.filter(({val})=>!/restrict|limit|dysfunc|unstable|abnormal|fail|hypomob|tight|valgus|dominant|positive|absent|crepitus|deviation|aslr|gird|chin.poke|no.ta|no.activation|hyper|lax|excess|cervicothoracic.instab|normal|pass|adequate|full/i.test(val));
               return <div style={{marginTop:4}}>
-                {fail.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#B45309",marginBottom:3}}>Restricted / Dysfunctional</div>
+                {fail.length>0&&<><div style={{fontSize:13,fontWeight:600,color:"#B45309",marginBottom:3}}>Restricted / Dysfunctional</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
-                    {fail.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}
+                    {fail.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:13,fontWeight:500}}>{label}: {val}</span>)}
                   </div></>}
-                {hyper.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#7C3AED",marginBottom:3}}>Hypermobile / Lax</div>
+                {hyper.length>0&&<><div style={{fontSize:13,fontWeight:600,color:"#7C3AED",marginBottom:3}}>Hypermobile / Lax</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
-                    {hyper.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#EDE9FE",color:"#5B21B6",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}
+                    {hyper.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#EDE9FE",color:"#5B21B6",fontSize:13,fontWeight:500}}>{label}: {val}</span>)}
                   </div></>}
-                {other.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#0369A1",marginBottom:3}}>Other Findings</div>
+                {other.length>0&&<><div style={{fontSize:13,fontWeight:600,color:"#0369A1",marginBottom:3}}>Other Findings</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
-                    {other.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#E0F2FE",color:"#0369A1",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}
+                    {other.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#E0F2FE",color:"#0369A1",fontSize:13,fontWeight:500}}>{label}: {val}</span>)}
                   </div></>}
-                {norm.length>0&&<div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Normal: {norm.map(({label})=>label).join(", ")}</div>}
-                {v("kc_notes")&&<div style={{fontSize:11,color:"#374151",marginTop:2}}>Notes: {v("kc_notes")}</div>}
+                {norm.length>0&&<div style={{fontSize:13,color:"#6B7280",marginBottom:4}}>Normal: {norm.map(({label})=>label).join(", ")}</div>}
+                {v("kc_notes")&&<div style={{fontSize:13,color:"#374151",marginTop:2}}>Notes: {v("kc_notes")}</div>}
               </div>;
             })()}
           </div>}
@@ -4646,9 +4646,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const normal=faItems.filter(({val})=>/normal|pass|adequate|clear/i.test(val));
               const other=faItems.filter(({val})=>!/restrict|tight|dysfunc|adher|dense|scar|normal|pass|adequate|clear/i.test(val));
               return <div style={{marginTop:4}}>
-                {restrict.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#B45309",marginBottom:3}}>Restricted / Dysfunctional</div><div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>{restrict.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}</div></>}
-                {other.length>0&&<><div style={{fontSize:11,fontWeight:600,color:"#6366F1",marginBottom:3}}>Findings</div><div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>{other.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#EDE9FE",color:"#4F46E5",fontSize:11,fontWeight:500}}>{label}: {val}</span>)}</div></>}
-                {normal.length>0&&<div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Normal: {normal.map(({label})=>label).join(", ")}</div>}
+                {restrict.length>0&&<><div style={{fontSize:13,fontWeight:600,color:"#B45309",marginBottom:3}}>Restricted / Dysfunctional</div><div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>{restrict.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:13,fontWeight:500}}>{label}: {val}</span>)}</div></>}
+                {other.length>0&&<><div style={{fontSize:13,fontWeight:600,color:"#6366F1",marginBottom:3}}>Findings</div><div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>{other.map(({label,val},i)=><span key={i} style={{padding:"2px 8px",borderRadius:99,background:"#EDE9FE",color:"#4F46E5",fontSize:13,fontWeight:500}}>{label}: {val}</span>)}</div></>}
+                {normal.length>0&&<div style={{fontSize:13,color:"#6B7280",marginBottom:4}}>Normal: {normal.map(({label})=>label).join(", ")}</div>}
               </div>;
             })()}
           </div>}
@@ -4688,17 +4688,17 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               const normal=ge.filter(([,g])=>g===0).map(([id])=>fsDisp(id));
               const noteEntries=Object.entries(notes).filter(([,n])=>n&&String(n).trim());
               return <div key={key} style={{marginBottom:8,padding:"8px 10px",background:"#F9FAFB",borderRadius:8,border:"1px solid #E5E7EB"}}>
-                <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:4}}>{label}</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#374151",marginBottom:4}}>{label}</div>
                 {abnormal.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:3}}>
-                  <span style={{fontSize:10,fontWeight:600,color:"#991B1B",marginRight:4}}>🔴 Abnormal:</span>
-                  {abnormal.map((t,i)=><span key={i} style={{padding:"1px 7px",borderRadius:99,background:"#FEE2E2",color:"#991B1B",fontSize:11,fontWeight:500}}>{t}</span>)}
+                  <span style={{fontSize:12,fontWeight:600,color:"#991B1B",marginRight:4}}>🔴 Abnormal:</span>
+                  {abnormal.map((t,i)=><span key={i} style={{padding:"1px 7px",borderRadius:99,background:"#FEE2E2",color:"#991B1B",fontSize:13,fontWeight:500}}>{t}</span>)}
                 </div>}
                 {compensated.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:3}}>
-                  <span style={{fontSize:10,fontWeight:600,color:"#92400E",marginRight:4}}>⚠️ Compensated:</span>
-                  {compensated.map((t,i)=><span key={i} style={{padding:"1px 7px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:11,fontWeight:500}}>{t}</span>)}
+                  <span style={{fontSize:12,fontWeight:600,color:"#92400E",marginRight:4}}>⚠️ Compensated:</span>
+                  {compensated.map((t,i)=><span key={i} style={{padding:"1px 7px",borderRadius:99,background:"#FEF3C7",color:"#92400E",fontSize:13,fontWeight:500}}>{t}</span>)}
                 </div>}
-                {normal.length>0&&(abnormal.length||compensated.length)>0&&<div style={{fontSize:11,color:"#6B7280"}}>✅ Normal: {normal.join(", ")}</div>}
-                {noteEntries.length>0&&<div style={{marginTop:4,fontSize:11,color:"#374151",fontStyle:"italic"}}>{noteEntries.map(([id,n])=>`${id.replace(/_/g," ")}: ${String(n).slice(0,100)}`).join(" · ")}</div>}
+                {normal.length>0&&(abnormal.length||compensated.length)>0&&<div style={{fontSize:13,color:"#6B7280"}}>✅ Normal: {normal.join(", ")}</div>}
+                {noteEntries.length>0&&<div style={{marginTop:4,fontSize:13,color:"#374151",fontStyle:"italic"}}>{noteEntries.map(([id,n])=>`${id.replace(/_/g," ")}: ${String(n).slice(0,100)}`).join(" · ")}</div>}
               </div>;
             }).filter(Boolean);
             if(!rendered.length) return null;
@@ -4767,32 +4767,32 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                     value={value}
                     onChange={e=>onChange(e.target.value)}
                     onFocus={()=>setOpen(true)}
-                    style={{...inp,marginBottom:0,flex:1,fontSize:13,fontWeight:600,color,borderColor:open?badgeColor:borderColor}}
+                    style={{...inp,marginBottom:0,flex:1,fontSize:14.5,fontWeight:600,color,borderColor:open?badgeColor:borderColor}}
                   />
-                  <button onClick={()=>setOpen(o=>!o)} style={{padding:"8px 12px",borderRadius:10,border:`1.5px solid ${open?badgeColor:borderColor}`,background:open?"#EEF2FF":"#F9FAFB",cursor:"pointer",fontSize:12,color:open?badgeColor:"#6B7280",fontWeight:600,whiteSpace:"nowrap"}}>
+                  <button onClick={()=>setOpen(o=>!o)} style={{padding:"8px 12px",borderRadius:10,border:`1.5px solid ${open?badgeColor:borderColor}`,background:open?"#EEF2FF":"#F9FAFB",cursor:"pointer",fontSize:14.5,color:open?badgeColor:"#6B7280",fontWeight:600,whiteSpace:"nowrap"}}>
                     {open ? "▲ Close" : "▼ List"}
                   </button>
                 </div>
                 {/* Dropdown panel */}
                 {open&&<div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:999,background:"#fff",border:`1.5px solid ${badgeColor}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,0.12)",overflow:"hidden"}}>
                   <div style={{padding:"8px 10px",borderBottom:"1px solid #F3F4F6",background:"#F9FAFB",display:"flex",gap:6,alignItems:"center"}}>
-                    <span style={{fontSize:12,color:"#9CA3AF"}}>🔍</span>
+                    <span style={{fontSize:14.5,color:"#9CA3AF"}}>🔍</span>
                     <input
                       autoFocus
                       placeholder="Search..."
                       value={search}
                       onChange={e=>setSearch(e.target.value)}
-                      style={{flex:1,border:"none",outline:"none",fontSize:12,background:"transparent",color:"#374151"}}
+                      style={{flex:1,border:"none",outline:"none",fontSize:14.5,background:"transparent",color:"#374151"}}
                     />
-                    {search&&<button onClick={()=>setSearch("")} style={{background:"none",border:"none",cursor:"pointer",color:"#9CA3AF",fontSize:12}}>✕</button>}
-                    <span style={{fontSize:10,color:"#9CA3AF"}}>{filtered.length}</span>
+                    {search&&<button onClick={()=>setSearch("")} style={{background:"none",border:"none",cursor:"pointer",color:"#9CA3AF",fontSize:14.5}}>✕</button>}
+                    <span style={{fontSize:12,color:"#9CA3AF"}}>{filtered.length}</span>
                   </div>
                   <div style={{maxHeight:200,overflowY:"auto"}}>
                     {filtered.length===0
-                      ? <div style={{padding:"12px 14px",fontSize:12,color:"#9CA3AF",textAlign:"center"}}>No matches</div>
+                      ? <div style={{padding:"12px 14px",fontSize:14.5,color:"#9CA3AF",textAlign:"center"}}>No matches</div>
                       : filtered.map((opt,i)=>(
                         <button key={i} onClick={()=>{onChange(opt);setOpen(false);setSearch("");}}
-                          style={{display:"block",width:"100%",padding:"10px 14px",fontSize:12,fontWeight:500,border:"none",borderBottom:i<filtered.length-1?"1px solid #F9FAFB":"none",background:"transparent",color:"#374151",cursor:"pointer",textAlign:"left"}}>
+                          style={{display:"block",width:"100%",padding:"10px 14px",fontSize:14.5,fontWeight:500,border:"none",borderBottom:i<filtered.length-1?"1px solid #F9FAFB":"none",background:"transparent",color:"#374151",cursor:"pointer",textAlign:"left"}}>
                           {opt}
                         </button>
                       ))
@@ -4821,35 +4821,35 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                     EMERGENCY: {bg:"#FEF2F2",border:"#FECACA",badge:"#DC2626"},
                   };
                   return <div style={{marginBottom:10}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"#065F46",marginBottom:6}}>💡 Suggested Clinical Diagnoses</div>
+                    <div style={{fontSize:13,fontWeight:700,color:"#065F46",marginBottom:6}}>💡 Suggested Clinical Diagnoses</div>
                     {suggestions.map((s,i)=>{
                       const key = s.urgency||s.confidenceLabel;
                       const cs  = CS[key]||CS.Low;
                       const isUrgent = s.urgency==="EMERGENCY"||s.urgency==="URGENT";
                       return <div key={i} style={{padding:"9px 12px",background:cs.bg,border:`1.5px solid ${cs.border}`,borderRadius:10,marginBottom:5}}>
                         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                          {isUrgent && <span style={{fontSize:13}}>{s.urgency==="EMERGENCY"?"🆘":"🔴"}</span>}
-                          <span style={{fontSize:12,fontWeight:700,color:"#111827",flex:1}}>{i+1}. {s.diagnosis}</span>
-                          <span style={{padding:"2px 7px",borderRadius:99,fontSize:10,fontWeight:700,background:cs.badge,color:"#fff"}}>
+                          {isUrgent && <span style={{fontSize:14.5}}>{s.urgency==="EMERGENCY"?"🆘":"🔴"}</span>}
+                          <span style={{fontSize:14.5,fontWeight:700,color:"#111827",flex:1}}>{i+1}. {s.diagnosis}</span>
+                          <span style={{padding:"2px 7px",borderRadius:99,fontSize:12,fontWeight:700,background:cs.badge,color:"#fff"}}>
                             {s.urgency || `${s.confidenceLabel} ${s.confidence}%`}
                           </span>
                         </div>
-                        <div style={{fontSize:10,color:"#6B7280",marginBottom:4}}>{s.icd10} · {s.hits}/{s.total} criteria · {s.reference}</div>
+                        <div style={{fontSize:12,color:"#6B7280",marginBottom:4}}>{s.icd10} · {s.hits}/{s.total} criteria · {s.reference}</div>
                         <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:4}}>
-                          {s.supportingFindings.map((f,fi)=><span key={fi} style={{padding:"1px 6px",borderRadius:6,background:isUrgent?"rgba(220,38,38,0.08)":"rgba(0,0,0,0.06)",fontSize:10,color:isUrgent?"#991B1B":"#374151"}}>{f}</span>)}
+                          {s.supportingFindings.map((f,fi)=><span key={fi} style={{padding:"1px 6px",borderRadius:6,background:isUrgent?"rgba(220,38,38,0.08)":"rgba(0,0,0,0.06)",fontSize:12,color:isUrgent?"#991B1B":"#374151"}}>{f}</span>)}
                         </div>
-                        {!dx&&<button onClick={()=>set("soap_a_diagnosis",s.diagnosis)} style={{padding:"3px 10px",fontSize:10,background:isUrgent?"#DC2626":"#1E40AF",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use as Provisional Dx</button>}
+                        {!dx&&<button onClick={()=>set("soap_a_diagnosis",s.diagnosis)} style={{padding:"3px 10px",fontSize:12,background:isUrgent?"#DC2626":"#1E40AF",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use as Provisional Dx</button>}
                       </div>;
                     })}
                   </div>;
                 })()}
 
                 <DiagDropdown label="Provisional Diagnosis" value={dx} onChange={val=>set("soap_a_diagnosis",val)} color="#1E40AF" borderColor="#C7D2FE" badgeColor="#4F46E5"/>
-                <input placeholder="ICD-10 code (e.g. M51.1)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={{...inp,marginBottom:0,fontSize:12}}/>
+                <input placeholder="ICD-10 code (e.g. M51.1)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={{...inp,marginBottom:0,fontSize:14.5}}/>
                 {dx&&<div style={{marginTop:8,padding:"10px 14px",background:"#EEF2FF",border:"2px solid #6366F1",borderRadius:12}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>Provisional Diagnosis</div>
-                  <div style={{fontSize:15,fontWeight:700,color:"#1E40AF",lineHeight:1.3}}>{dx}</div>
-                  {icd&&<div style={{fontSize:11,color:"#6366F1",marginTop:2}}>ICD-10: {icd}</div>}
+                  <div style={{fontSize:12,fontWeight:700,color:"#4F46E5",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>Provisional Diagnosis</div>
+                  <div style={{fontSize:16,fontWeight:700,color:"#1E40AF",lineHeight:1.3}}>{dx}</div>
+                  {icd&&<div style={{fontSize:13,color:"#6366F1",marginTop:2}}>ICD-10: {icd}</div>}
                 </div>}
               </div>
 
@@ -4858,20 +4858,20 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 {subH("Differential Diagnosis","#0891b2")}
 
                 {selectedDiffs.length>0&&<div style={{marginBottom:10,padding:"10px 12px",background:"#F5F3FF",border:"2px solid #8B5CF6",borderRadius:12}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Selected Differentials</div>
+                  <div style={{fontSize:12,fontWeight:700,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Selected Differentials</div>
                   <ol style={{margin:0,padding:"0 0 0 18px"}}>
-                    {selectedDiffs.map((d,i)=><li key={i} style={{fontSize:13,color:"#3730A3",fontWeight:600,marginBottom:3,lineHeight:1.4}}>
-                      {d} <button onClick={()=>toggleDiff(d)} style={{marginLeft:6,fontSize:10,color:"#9CA3AF",background:"none",border:"none",cursor:"pointer",padding:0}}>✕</button>
+                    {selectedDiffs.map((d,i)=><li key={i} style={{fontSize:14.5,color:"#3730A3",fontWeight:600,marginBottom:3,lineHeight:1.4}}>
+                      {d} <button onClick={()=>toggleDiff(d)} style={{marginLeft:6,fontSize:12,color:"#9CA3AF",background:"none",border:"none",cursor:"pointer",padding:0}}>✕</button>
                     </li>)}
                   </ol>
                 </div>}
 
                 {/* Manual entry */}
-                <div style={{fontSize:11,color:"#6B7280",marginBottom:4,fontWeight:500}}>Type manually + Enter:</div>
-                <input placeholder="Type and press Enter to add custom differential..." onKeyDown={e=>{if(e.key==="Enter"&&e.target.value.trim()){toggleDiff(e.target.value.trim());e.target.value="";}}} style={{...inp,marginBottom:8,fontSize:12}}/>
+                <div style={{fontSize:13,color:"#6B7280",marginBottom:4,fontWeight:500}}>Type manually + Enter:</div>
+                <input placeholder="Type and press Enter to add custom differential..." onKeyDown={e=>{if(e.key==="Enter"&&e.target.value.trim()){toggleDiff(e.target.value.trim());e.target.value="";}}} style={{...inp,marginBottom:8,fontSize:14.5}}/>
 
                 {/* Select from list */}
-                <div style={{fontSize:11,color:"#6B7280",marginBottom:4,fontWeight:500}}>Or select from list:</div>
+                <div style={{fontSize:13,color:"#6B7280",marginBottom:4,fontWeight:500}}>Or select from list:</div>
                 <DiagDropdown label="Differential Diagnosis" value="" onChange={val=>{if(val)toggleDiff(val);}} excludeList={selectedDiffs} color="#374151" borderColor="#D1D5DB" badgeColor="#8B5CF6"/>
               </div>
             </div>;
@@ -4881,16 +4881,16 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {(probList||posFindings.length>0||negFindings.length>0)&&<>
             {(probList||posFindings.length>0)&&<div style={subCard("#0891b2")}>
               {subH("Problem list","#0891b2")}
-              <div style={{fontSize:12,color:"#374151",marginBottom:6,lineHeight:1.5}}>{probList||posFindings.slice(0,3).join(". ")}</div>
+              <div style={{fontSize:14.5,color:"#374151",marginBottom:6,lineHeight:1.5}}>{probList||posFindings.slice(0,3).join(". ")}</div>
             </div>}
             {(posFindings.length>0||negFindings.length>0)&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
               {posFindings.length>0&&<div style={{padding:"8px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:10}}>
-                <div style={{fontSize:10,fontWeight:600,color:"#991B1B",marginBottom:5}}>KEY POSITIVES</div>
-                {posFindings.map((f,i)=><div key={i} style={{fontSize:10,color:"#374151",padding:"1px 0",display:"flex",gap:4,lineHeight:1.4}}><span style={{color:"#DC2626"}}>·</span>{f}</div>)}
+                <div style={{fontSize:12,fontWeight:600,color:"#991B1B",marginBottom:5}}>KEY POSITIVES</div>
+                {posFindings.map((f,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0",display:"flex",gap:4,lineHeight:1.4}}><span style={{color:"#DC2626"}}>·</span>{f}</div>)}
               </div>}
               {negFindings.length>0&&<div style={{padding:"8px 10px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:10}}>
-                <div style={{fontSize:10,fontWeight:600,color:"#166534",marginBottom:5}}>SCREENED NEGATIVE</div>
-                {negFindings.map((f,i)=><div key={i} style={{fontSize:10,color:"#374151",padding:"1px 0",display:"flex",gap:4,lineHeight:1.4}}><span style={{color:"#16A34A"}}>·</span>{f}</div>)}
+                <div style={{fontSize:12,fontWeight:600,color:"#166534",marginBottom:5}}>SCREENED NEGATIVE</div>
+                {negFindings.map((f,i)=><div key={i} style={{fontSize:12,color:"#374151",padding:"1px 0",display:"flex",gap:4,lineHeight:1.4}}><span style={{color:"#16A34A"}}>·</span>{f}</div>)}
               </div>}
             </div>}
           </>}
@@ -4916,24 +4916,24 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
         <div style={cb}>
           {/* Session details */}
           <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Session details</div>
+            <div style={{fontSize:13,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Session details</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
               <input placeholder="Clinician" value={clinician} onChange={e=>setClinician(e.target.value)} style={{...inp,marginBottom:0}}/>
               <input placeholder="Clinic" value={clinic} onChange={e=>setClinic(e.target.value)} style={{...inp,marginBottom:0}}/>
             </div>
             <input placeholder="Session type (e.g. Initial Assessment)" value={session} onChange={e=>setSession(e.target.value)} style={{...inp,marginBottom:8}}/>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              <input placeholder="Total sessions" value={rv("soap_total_sessions")} onChange={e=>set("soap_total_sessions",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:11.5,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
-              <input placeholder="Frequency (e.g. 2×/week × 4 wks)" value={rv("soap_frequency")} onChange={e=>set("soap_frequency",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:11.5,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
+              <input placeholder="Total sessions" value={rv("soap_total_sessions")} onChange={e=>set("soap_total_sessions",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:13,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
+              <input placeholder="Frequency (e.g. 2×/week × 4 wks)" value={rv("soap_frequency")} onChange={e=>set("soap_frequency",e.target.value)} style={{flex:"1 1 130px",minWidth:0,border:"none",background:"#F1F0F4",borderRadius:99,padding:"6px 12px",fontSize:13,fontFamily:"inherit",color:"#111827",fontWeight:500,outline:"none"}}/>
             </div>
           </div>
 
           {/* Goals */}
           <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Goals</div>
+            <div style={{fontSize:13,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Goals</div>
             <span style={lbl}>Short-term goals (2–4 wks)</span>
             <input placeholder="e.g. Reduce pain to under 3/10, sit 45 min without flare-up" value={rv("soap_goal_short")} onChange={e=>set("soap_goal_short",e.target.value)} style={{...inp,marginBottom:(!stGoals&&goals_ar.length>0)?4:8}}/>
-            {!stGoals&&goals_ar.length>0&&<div style={{fontSize:10.5,color:"#9CA3AF",marginBottom:8}}>Suggested from assessment: {goals_ar.join(" · ")}</div>}
+            {!stGoals&&goals_ar.length>0&&<div style={{fontSize:12.5,color:"#9CA3AF",marginBottom:8}}>Suggested from assessment: {goals_ar.join(" · ")}</div>}
             <span style={lbl}>Long-term goals (discharge)</span>
             <input placeholder="e.g. Full return to desk work and training, pain-free" value={rv("soap_goal_long")} onChange={e=>set("soap_goal_long",e.target.value)} style={{...inp,marginBottom:0}}/>
           </div>
@@ -4942,19 +4942,19 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {Array.isArray(data.hep_programme)&&data.hep_programme.length>0&&(
             <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-                <span style={{fontSize:14}}>🏠</span>
-                <span style={{fontSize:13,fontWeight:500,color:"#111827"}}>Home exercise programme</span>
-                <span style={{marginLeft:"auto",fontSize:10.5,fontWeight:500,color:"#92400E",background:"#FEF3C7",padding:"2px 8px",borderRadius:99,flexShrink:0}}>{data.hep_programme.length} exercise{data.hep_programme.length!==1?"s":""}</span>
+                <span style={{fontSize:16}}>🏠</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:"#111827"}}>Home exercise programme</span>
+                <span style={{marginLeft:"auto",fontSize:12.5,fontWeight:500,color:"#92400E",background:"#FEF3C7",padding:"2px 8px",borderRadius:99,flexShrink:0}}>{data.hep_programme.length} exercise{data.hep_programme.length!==1?"s":""}</span>
               </div>
-              <div style={{fontSize:11,color:"#6B7280",marginBottom:8}}>Frequency: <span style={{color:"#6366F1",fontWeight:600}}>{v("hep_frequency")||"As prescribed"}</span></div>
+              <div style={{fontSize:13,color:"#6B7280",marginBottom:8}}>Frequency: <span style={{color:"#6366F1",fontWeight:600}}>{v("hep_frequency")||"As prescribed"}</span></div>
               {data.hep_programme.slice(0,6).map((ex,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #F3F4F6"}}>
-                  <span style={{width:18,height:18,borderRadius:"50%",background:"#FEF3C7",color:"#92400E",fontSize:9.5,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
-                  <span style={{fontSize:12,color:"#374151",flex:1,minWidth:0}}>{ex.name}</span>
-                  <span style={{fontSize:11,color:"#6B7280",flexShrink:0}}>{ex.sets?`${ex.sets}×${ex.reps||""}`:""}{ex.hold?` · ${ex.hold}s`:""}</span>
+                  <span style={{width:18,height:18,borderRadius:"50%",background:"#FEF3C7",color:"#92400E",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
+                  <span style={{fontSize:14.5,color:"#374151",flex:1,minWidth:0}}>{ex.name}</span>
+                  <span style={{fontSize:13,color:"#6B7280",flexShrink:0}}>{ex.sets?`${ex.sets}×${ex.reps||""}`:""}{ex.hold?` · ${ex.hold}s`:""}</span>
                 </div>
               ))}
-              {data.hep_programme.length>6&&<div style={{fontSize:10.5,color:"#7c3aed",fontWeight:500,marginTop:8}}>+{data.hep_programme.length-6} more</div>}
+              {data.hep_programme.length>6&&<div style={{fontSize:12.5,color:"#7c3aed",fontWeight:500,marginTop:8}}>+{data.hep_programme.length-6} more</div>}
             </div>
           )}
 
@@ -4962,28 +4962,28 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {Array.isArray(data.tx_exercise_prescription)&&data.tx_exercise_prescription.length>0&&(
             <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-                <span style={{fontSize:14}}>💪</span>
-                <span style={{fontSize:13,fontWeight:500,color:"#111827"}}>Exercise prescription</span>
-                <span style={{marginLeft:"auto",fontSize:10.5,fontWeight:500,color:"#6D28D9",background:"#EDE9FE",padding:"2px 8px",borderRadius:99,flexShrink:0}}>{data.tx_exercise_prescription.length} exercise{data.tx_exercise_prescription.length!==1?"s":""}</span>
+                <span style={{fontSize:16}}>💪</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:"#111827"}}>Exercise prescription</span>
+                <span style={{marginLeft:"auto",fontSize:12.5,fontWeight:500,color:"#6D28D9",background:"#EDE9FE",padding:"2px 8px",borderRadius:99,flexShrink:0}}>{data.tx_exercise_prescription.length} exercise{data.tx_exercise_prescription.length!==1?"s":""}</span>
               </div>
               {data.tx_exercise_prescription.slice(0,6).map((ex,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #F3F4F6"}}>
-                  <span style={{width:18,height:18,borderRadius:"50%",background:"#EDE9FE",color:"#6D28D9",fontSize:9.5,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
+                  <span style={{width:18,height:18,borderRadius:"50%",background:"#EDE9FE",color:"#6D28D9",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,color:"#374151"}}>{ex.name}</div>
-                    {ex.target&&<div style={{fontSize:10,color:"#9CA3AF"}}>{ex.target}</div>}
+                    <div style={{fontSize:14.5,color:"#374151"}}>{ex.name}</div>
+                    {ex.target&&<div style={{fontSize:12,color:"#9CA3AF"}}>{ex.target}</div>}
                   </div>
-                  {ex.phase&&<span style={{fontSize:10,fontWeight:500,color:"#6D28D9",background:"#F3F0FF",padding:"2px 7px",borderRadius:99,flexShrink:0}}>{ex.phase}</span>}
+                  {ex.phase&&<span style={{fontSize:12,fontWeight:500,color:"#6D28D9",background:"#F3F0FF",padding:"2px 7px",borderRadius:99,flexShrink:0}}>{ex.phase}</span>}
                 </div>
               ))}
-              {data.tx_exercise_prescription.length>6&&<div style={{fontSize:10.5,color:"#6B6B6B",marginTop:8}}>+{data.tx_exercise_prescription.length-6} more</div>}
+              {data.tx_exercise_prescription.length>6&&<div style={{fontSize:12.5,color:"#6B6B6B",marginTop:8}}>+{data.tx_exercise_prescription.length-6} more</div>}
             </div>
           )}
 
           {/* Prescription */}
           {Array.isArray(data.tx_techniques)&&data.tx_techniques.length>0&&(
             <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
-              <div style={{fontSize:13,fontWeight:500,color:"#111827",marginBottom:8}}>Clinic exercises / Treatment this session</div>
+              <div style={{fontSize:14.5,fontWeight:500,color:"#111827",marginBottom:8}}>Clinic exercises / Treatment this session</div>
               {data.tx_techniques.map((t,i)=>{
                 const label = t.type==="manual" ? `${t.technique||"Joint mob"}${t.grade?` Grade ${t.grade}`:""}${t.region?` — ${t.region}`:""}`
                   : t.type==="dn" ? `Dry Needling — ${t.dn_muscle||"unknown muscle"}`
@@ -4994,8 +4994,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                   : (t.technique || "Technique");
                 return (
                   <div key={t.id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:i<data.tx_techniques.length-1?"1px solid #F3F4F6":"none"}}>
-                    <span style={{width:18,height:18,borderRadius:"50%",background:"#DBEAFE",color:"#1E40AF",fontSize:9.5,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
-                    <span style={{fontSize:12,color:"#374151"}}>{label}</span>
+                    <span style={{width:18,height:18,borderRadius:"50%",background:"#DBEAFE",color:"#1E40AF",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
+                    <span style={{fontSize:14.5,color:"#374151"}}>{label}</span>
                   </div>
                 );
               })}
@@ -5004,14 +5004,14 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* Precautions */}
           <div style={{background:"#FFF7ED",border:"1px solid #FDE4B8",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",gap:8,alignItems:"flex-start"}}>
-            <span style={{fontSize:14,flexShrink:0,marginTop:1}}>⚠️</span>
+            <span style={{fontSize:16,flexShrink:0,marginTop:1}}>⚠️</span>
             <textarea placeholder="General advice / precautions (e.g. avoid loaded flexion, stop if symptoms increase)..." value={rv("soap_precautions")} onChange={e=>set("soap_precautions",e.target.value)}
-              style={{flex:1,minWidth:0,border:"none",background:"transparent",outline:"none",resize:"vertical",minHeight:36,fontSize:11.5,fontFamily:"inherit",color:"#854F0B",lineHeight:1.5,padding:0}}/>
+              style={{flex:1,minWidth:0,border:"none",background:"transparent",outline:"none",resize:"vertical",minHeight:36,fontSize:13,fontFamily:"inherit",color:"#854F0B",lineHeight:1.5,padding:0}}/>
           </div>
 
           {/* Additional details */}
           <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Additional details</div>
+            <div style={{fontSize:13,fontWeight:500,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>Additional details</div>
             {modalities&&<div style={{marginBottom:8}}>{modalities.split(",").map((m,i)=><span key={i} style={chip_("#D1FAE5","#065F46")}>{m.trim()}</span>)}</div>}
             <div style={{display:"grid",gap:6}}>
               <input placeholder="Modalities (e.g. Hot pack, IFT, Traction)" value={rv("soap_modalities")} onChange={e=>set("soap_modalities",e.target.value)} style={{...inp,marginBottom:0}}/>
@@ -5022,14 +5022,14 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           </div>
 
           {/* Sign & lock */}
-          {lockSuccess&&<div style={{padding:"8px 12px",background:"#D1FAE5",border:"1px solid #6EE7B7",borderRadius:8,fontSize:12,color:"#065F46",marginTop:8}}>✓ Note signed and locked successfully</div>}
+          {lockSuccess&&<div style={{padding:"8px 12px",background:"#D1FAE5",border:"1px solid #6EE7B7",borderRadius:8,fontSize:14.5,color:"#065F46",marginTop:8}}>✓ Note signed and locked successfully</div>}
           {lockConfirm?<div style={{marginTop:8}}>
-            <div style={{fontSize:12,color:"#DC2626",marginBottom:6}}>Sign and lock this note? This cannot be undone.</div>
+            <div style={{fontSize:14.5,color:"#DC2626",marginBottom:6}}>Sign and lock this note? This cannot be undone.</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-              <button onClick={()=>setLockConfirm(false)} style={{padding:"10px",background:"#F3F4F6",color:"#374151",border:"1px solid #E5E7EB",borderRadius:8,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
-              <button onClick={handleSign} style={{padding:"10px",background:"#DC2626",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>Confirm sign &amp; lock</button>
+              <button onClick={()=>setLockConfirm(false)} style={{padding:"10px",background:"#F3F4F6",color:"#374151",border:"1px solid #E5E7EB",borderRadius:8,fontSize:14.5,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
+              <button onClick={handleSign} style={{padding:"10px",background:"#DC2626",color:"#fff",border:"none",borderRadius:8,fontSize:14.5,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>Confirm sign &amp; lock</button>
             </div>
-          </div>:<button onClick={handleSign} style={{width:"100%",marginTop:10,padding:"12px",background:"#6366F1",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit",letterSpacing:"0.01em"}}>Sign &amp; lock note</button>}
+          </div>:<button onClick={handleSign} style={{width:"100%",marginTop:10,padding:"12px",background:"#6366F1",color:"#fff",border:"none",borderRadius:10,fontSize:16,fontWeight:600,cursor:"pointer",fontFamily:"inherit",letterSpacing:"0.01em"}}>Sign &amp; lock note</button>}
         </div>
       </div>
 
@@ -5043,13 +5043,13 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {[...lockedNotes].reverse().map((n,i)=>(
             <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:i<lockedNotes.length-1?"1px solid #F3F4F6":"none"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <div><div style={{fontSize:13,fontWeight:600,color:"#111827"}}>{n.session}</div><div style={{fontSize:11,color:"#9CA3AF"}}>{n.lockedAtDisplay} · {n.clinician}{n.clinic?" · "+n.clinic:""}</div></div>
-                <span style={{padding:"2px 8px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:100,fontSize:10,fontWeight:600,color:"#DC2626"}}>LOCKED</span>
+                <div><div style={{fontSize:14.5,fontWeight:600,color:"#111827"}}>{n.session}</div><div style={{fontSize:13,color:"#9CA3AF"}}>{n.lockedAtDisplay} · {n.clinician}{n.clinic?" · "+n.clinic:""}</div></div>
+                <span style={{padding:"2px 8px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:100,fontSize:12,fontWeight:600,color:"#DC2626"}}>LOCKED</span>
               </div>
               {["S","O","A","P"].map(key=>(
                 <div key={key} style={{marginBottom:6}}>
-                  <div style={{fontSize:10,fontWeight:600,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{key} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[key]}</div>
-                  <div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 10px",fontSize:11,lineHeight:1.6,whiteSpace:"pre-wrap",color:"#374151"}}>{n[key]||"—"}</div>
+                  <div style={{fontSize:12,fontWeight:600,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{key} — {{"S":"Subjective","O":"Objective","A":"Assessment","P":"Plan"}[key]}</div>
+                  <div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 10px",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap",color:"#374151"}}>{n[key]||"—"}</div>
                 </div>
               ))}
             </div>
