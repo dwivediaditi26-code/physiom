@@ -1393,6 +1393,28 @@ const REGION_NAV = {
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_densification","fa_sbl_hamstring"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia links lumbar extensors to contralateral shoulder girdle." },
   ],
 };
+
+// runEngineV6's per-region results are keyed by the specific, laterality-
+// suffixed region the clinician selected (e.g. "Elbow (R)", "Ankle/Foot (L)"),
+// but REGION_NAV above only defines one shared entry per region *family*
+// (bare "Elbow/Wrist/Hand", "Ankle / Foot", etc — Shoulder and Knee are the
+// only two families broken out per-side, matching how REGION_NAV happens to
+// key them). Without this mapping, REGION_NAV[r.region] silently misses for
+// every region except Shoulder/Knee, since the exact strings never match --
+// the "Guided assessment workflow" smart-action grid and the results engine's
+// own analysis-module lookup both need this same translation, so it's shared
+// here rather than defined twice (it used to be redeclared inside
+// runEngineV6 as a local named _RKEY2).
+const REGION_FAMILY_KEY = {
+  "Cervical (L)":"Cervical spine","Cervical (R)":"Cervical spine",
+  "Thoracic (L)":"Thoracic spine","Thoracic (R)":"Thoracic spine",
+  "Lumbar/SI (L)":"Lumbar / SI","Lumbar/SI (R)":"Lumbar / SI",
+  "Elbow (L)":"Elbow/Wrist/Hand","Elbow (R)":"Elbow/Wrist/Hand",
+  "Wrist/Hand (L)":"Elbow/Wrist/Hand","Wrist/Hand (R)":"Elbow/Wrist/Hand",
+  "Hip/Groin (L)":"Hip / Groin","Hip/Groin (R)":"Hip / Groin",
+  "Ankle/Foot (L)":"Ankle / Foot","Ankle/Foot (R)":"Ankle / Foot",
+};
+
 function runEngineV6(data, selectedRegions) {
   if (!selectedRegions || selectedRegions.length === 0) return null;
 
@@ -1451,17 +1473,8 @@ function runEngineV6(data, selectedRegions) {
   // ══════════════════════════════════════════════════════════════════
   // PER-REGION ANALYSIS
   // ══════════════════════════════════════════════════════════════════
-  const _RKEY2 = {
-    "Cervical (L)":"Cervical spine","Cervical (R)":"Cervical spine",
-    "Thoracic (L)":"Thoracic spine","Thoracic (R)":"Thoracic spine",
-    "Lumbar/SI (L)":"Lumbar / SI","Lumbar/SI (R)":"Lumbar / SI",
-    "Elbow (L)":"Elbow/Wrist/Hand","Elbow (R)":"Elbow/Wrist/Hand",
-    "Wrist/Hand (L)":"Elbow/Wrist/Hand","Wrist/Hand (R)":"Elbow/Wrist/Hand",
-    "Hip/Groin (L)":"Hip / Groin","Hip/Groin (R)":"Hip / Groin",
-    "Ankle/Foot (L)":"Ankle / Foot","Ankle/Foot (R)":"Ankle / Foot",
-  };
   const regionResults = selectedRegions.map(region => {
-    const mod = REG_MOD_S[_RKEY2[region]||region];
+    const mod = REG_MOD_S[REGION_FAMILY_KEY[region]||region];
     if (!mod) return null;
     const px = mod.prefix;
     const rf = (suf) => av(`${px}_${suf}`);
@@ -3903,7 +3916,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             <div style={{ display:"flex", gap:6, flexWrap:"wrap", position:"sticky", top:0, zIndex:15,
               background: PC.bg, padding:"6px 0", marginBottom:2 }}>
               {allRegionResults.map((r, ri) => {
-                const regCol = r.urgentFlag ? PC.red : (RC_S[r.region] || PC.accent);
+                const regCol = r.urgentFlag ? PC.red : (RC_S[REGION_FAMILY_KEY[r.region] || r.region] || PC.accent);
                 const isActive = r.region === effectiveActiveRegion;
                 return (
                   <button key={ri} type="button" onClick={() => setActiveReviewRegion(r.region)}
@@ -3923,7 +3936,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           {/* ── REGION-SPECIFIC SMART ACTION CARDS ── */}
           {onNav && insight && insight.regionResults && insight.regionResults.map((r, ri) => {
             if (effectiveActiveRegion && r.region !== effectiveActiveRegion) return null;
-            const regionBtns = REGION_NAV[r.region] || [];
+            const regionBtns = REGION_NAV[REGION_FAMILY_KEY[r.region] || r.region] || [];
             if (!regionBtns.length) return null;
             const regCol = r.urgentFlag ? PC.red : ["#9333ea","#7c3aed","#0891b2","#059669","#d97706"][ri % 5];
             return (
@@ -3967,7 +3980,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           ══════════════════════════════════════════════ */}
           {insight.regionResults.map((r, ri) => {
             if (effectiveActiveRegion && r.region !== effectiveActiveRegion) return null;
-            const regCol = RC_S[r.region] || PC.accent;
+            const regCol = RC_S[REGION_FAMILY_KEY[r.region] || r.region] || PC.accent;
 
             // ── Derive observation suggestions from pattern ──
             const obsItems = [];
@@ -12551,4 +12564,4 @@ function ErgoModule({ data, set }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 
-export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA };
+export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA, REGION_NAV, REGION_FAMILY_KEY, RC_S };
