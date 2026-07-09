@@ -1,6 +1,6 @@
 // SubjectiveObjective.jsx — Special Tests, Subjective, CPA, KineticChain, FMS, Fascia, Ergo
 import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
-import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
+import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage } from "./sharedClinicalData.js";
 
 const TEST_SVG = {
@@ -335,8 +335,7 @@ function SpecialTestsSection({ data, set, navContext={} }) {
       const el = stHlRef.current[navContext.highlightTest];
       setTimeout(()=>{
         el.scrollIntoView({ behavior:"smooth", block:"center" });
-        el.classList.add("physio-highlight");
-        setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+        applyPersistentHighlight(el);
       }, 400);
     }
   },[navContext.highlightTest, region]);
@@ -787,8 +786,7 @@ function CyriaxModule({ data, set, navContext={} }) {
         const el = document.querySelector(`[data-cy-id="${id}"]`);
         if(el){
           if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
-          el.classList.add("physio-highlight");
-          setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+          applyPersistentHighlight(el);
         }
       });
     }, 500);
@@ -4486,7 +4484,7 @@ function KineticChainSection({ data, set, navContext={} }) {
       targets.forEach(id=>{
         const el=document.querySelector(`[data-kc-id="${id}"]`);
         if(el){ if(!scrolled){el.scrollIntoView({behavior:"smooth",block:"center"});scrolled=true;}
-          el.classList.add("physio-highlight"); setTimeout(()=>el.classList.remove("physio-highlight"),4000); }
+          applyPersistentHighlight(el); }
       });
     },450);
   },[navContext.kcHighlight,navContext.kcHighlights]);
@@ -10958,8 +10956,7 @@ function FasciaSection({ data, set, navContext={} }) {
         const el = document.querySelector(`[data-fa-id="${id}"]`);
         if(el){
           if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
-          el.classList.add("physio-highlight");
-          setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+          applyPersistentHighlight(el);
         }
       });
     }, 450);
@@ -11075,7 +11072,7 @@ function NKTSection({ data, set, navContext={} }) {
       targets.forEach(id=>{
         const el=document.querySelector(`[data-nkt-id="${id}"]`);
         if(el){ if(!scrolled){el.scrollIntoView({behavior:"smooth",block:"center"});scrolled=true;}
-          el.classList.add("physio-highlight"); setTimeout(()=>el.classList.remove("physio-highlight"),4000); }
+          applyPersistentHighlight(el); }
       });
     },450);
   },[navContext.nktHighlight,navContext.nktHighlights]);

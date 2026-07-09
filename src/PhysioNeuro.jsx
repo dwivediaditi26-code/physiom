@@ -1,6 +1,6 @@
 // PhysioNeuro.jsx — ALL_TESTS, ROM, MMT, Neurological
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
+import { C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
 import { ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, MMT_ICONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP } from "./sharedClinicalData.js";
 
 
@@ -110,7 +110,19 @@ if (typeof document !== "undefined" && !document.getElementById("physio-hl-style
       50%  { box-shadow: 0 0 0 8px rgba(147,51,234,0.2); border-color: #c084fc; }
       100% { box-shadow: 0 0 0 0 rgba(147,51,234,0); border-color: transparent; }
     }
+    /* Brief attention pulse when a suggested item is deep-linked to. */
     .physio-highlight { animation: physioHL 1.8s ease-out 2; }
+    /* Stays after the pulse ends -- previously the highlight vanished
+       after a blind 4s timeout even if the user hadn't looked at it yet.
+       Now it persists until the user clicks into the item (starting to
+       complete it) or otherwise dismisses it. Subtle glow, not another
+       animation, so it doesn't nag. */
+    .physio-highlight-persist {
+      border-color: #9333ea !important;
+      background: rgba(147,51,234,0.06);
+      box-shadow: 0 0 0 2px rgba(147,51,234,0.18);
+      transition: background 0.25s, box-shadow 0.25s, border-color 0.25s;
+    }
   `;
   document.head.appendChild(st);
 }
@@ -142,8 +154,7 @@ function ROMModule({data,set,navContext={}}){
         if(el){
           // Scroll to first match only
           if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
-          el.classList.add("physio-highlight");
-          setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+          applyPersistentHighlight(el);
         }
       });
     }, 350);
@@ -459,8 +470,7 @@ function MMTModule({data,set,navContext={}}){
         const el = mmtHlRef.current[id];
         if(el){
           if(!scrolled){ el.scrollIntoView({ behavior:"smooth", block:"center" }); scrolled=true; }
-          el.classList.add("physio-highlight");
-          setTimeout(()=>el.classList.remove("physio-highlight"), 4000);
+          applyPersistentHighlight(el);
         }
       });
     }, 350);
@@ -799,7 +809,7 @@ function NeurologicalModule({ data, set, navContext={} }) {
       targets.forEach(id=>{
         const el=document.querySelector(`[data-neuro-id="${id}"]`);
         if(el){ if(!scrolled){el.scrollIntoView({behavior:"smooth",block:"center"});scrolled=true;}
-          el.classList.add("physio-highlight"); setTimeout(()=>el.classList.remove("physio-highlight"),4000); }
+          applyPersistentHighlight(el); }
       });
     },500);
   },[navContext.neuroHighlight,navContext.neuroHighlights]);

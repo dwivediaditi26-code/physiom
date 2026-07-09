@@ -784,6 +784,30 @@ function RegionChips({ regions, active, onSelect }) {
   );
 }
 
+// Deep-link highlight: brief attention pulse (.physio-highlight, defined in
+// PhysioNeuro.jsx's global style injection) followed by a persistent glow
+// (.physio-highlight-persist) that stays on the element until the user
+// clicks/focuses into it -- i.e. starts completing it -- or otherwise
+// dismisses it. Previously every call site cleared the highlight on a
+// blind 4s timeout regardless of whether the user had even seen it yet.
+// Used by ROM, MMT, Neurological, Special Tests, STTT, Kinetic Chain,
+// Fascia and NKT's deep-link-from-suggestion scroll+highlight effects.
+function applyPersistentHighlight(el) {
+  if (!el) return;
+  el.classList.add("physio-highlight", "physio-highlight-persist");
+  // Let the pulse animation finish, then drop just the animation class --
+  // .physio-highlight-persist (no animation, just glow) stays.
+  setTimeout(() => el.classList.remove("physio-highlight"), 4000);
+  const dismiss = () => {
+    el.classList.remove("physio-highlight-persist");
+    el.removeEventListener("click", dismiss);
+    el.removeEventListener("focusin", dismiss);
+  };
+  el.addEventListener("click", dismiss);
+  el.addEventListener("focusin", dismiss);
+}
+
 export { TabLoader, LazyBoundary, LazyTab, ErrorBoundary, MobileStyleInjector, MOBILE_CSS, RegionPickerButton, RegionChips };
 export { THEMES, getC, setTheme, useTheme, C };
 export { mid, vis, px, r1, r2, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg };
+export { applyPersistentHighlight };
