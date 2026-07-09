@@ -3,6 +3,18 @@
 import React, { useState } from "react";
 import { downloadPDFFromHTML } from "./sharedClinicalData.js";
 import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./sharedClinicalData.js";
+// buildRealtimeSOAP is the single, verified-correct source for real
+// Subjective/Objective field names (ROM_DERIVED, dynamic mmt_*/st_* scans,
+// DERMATOMES/MYOTOMES/REFLEXES/NEURAL_TENSION, multi-region agg/rel/red-flag
+// aggregation via REG_MOD_S) -- already used by SOAP Notes and Live SOAP.
+// The assessment PDF previously re-implemented its own field mapping
+// separately and had drifted onto guessed/stale key names across most of
+// the Subjective and Objective sections, silently dropping real data.
+// Reusing this function instead of a second parallel implementation means
+// the PDF can never drift out of sync with SOAP Notes again.
+import { buildRealtimeSOAP } from "./ClinicalModules.jsx";
+import { REG_MOD_S } from "./SubjectiveObjective.jsx";
+
 function PdfReportsModal({ data, dx, onClose, patients=[] }) {
   const [generating, setGenerating] = useState(null);
   const [done, setDone] = useState({});
@@ -317,65 +329,58 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     const ahpra     = v("therapist_qual", "___________________");
     const clinicAddr = d.clinic_address || "PhysioMind Pro";
 
-    // ── region prefix (for agg/eas) ──────────────────────────────────────
-    const regionKey = (() => {
-      const r = (d.cc_body_region || "").toLowerCase();
-      if (r.includes("lumbar") || r.includes("lower back") || r.includes("lx")) return "lx";
-      if (r.includes("cervical") || r.includes("neck") || r.includes("cx")) return "cx";
-      if (r.includes("shoulder")) return "sh";
-      if (r.includes("knee")) return r.includes("right") ? "knr" : "knl";
-      if (r.includes("hip")) return "hip";
-      if (r.includes("ankle")) return "ank";
-      if (r.includes("elbow")) return "elb";
-      if (r.includes("thoracic")) return "tx";
-      if (r.includes("wrist")) return "wr";
-      return "lx"; // default
-    })();
+    // ── real-time SOAP text -- single verified source for subjective +
+    // objective field names (see import comment above for why) ─────────────
+    const soap = buildRealtimeSOAP(d);
+    const sLine = (label) => {
+      const m = soap.S.split("\n").find(l => l.startsWith(label + ":"));
+      return m ? m.slice(label.length + 1).trim().replace(/\.$/, "") : "";
+    };
+    const sTags = (label) => { const t = sLine(label); return t ? t.split(/[,;]/).map(s=>s.trim()).filter(Boolean) : []; };
 
-    // ── subjective fields ─────────────────────────────────────────────────
+    // ── subjective fields (demographic/chief-complaint fields verified real;
+    // everything region-dependent now sourced from buildRealtimeSOAP, which
+    // already correctly aggregates across every active region via REG_MOD_S
+    // instead of guessing a single region from a field that doesn't exist) ──
     const cc        = v("cc_main");
     const onset     = v("cc_onset");
     const duration  = v("cc_duration");
     const mechanism = v("cc_mechanism");
-    const quality   = v("cc_quality");
-    const behaviour = v("cc_24h_pattern") || v("cc_behaviour");
     const vasNow    = v("cc_vas_now");
     const vasWorst  = v("cc_vas_worst");
     const vasBest   = v("cc_vas_best");
-    const bodyRegion = v("cc_body_region");
+    const behaviour = sLine("Behaviour");
+    const bodyRegion = Object.keys(REG_MOD_S||{}).filter(r => {
+      const px = REG_MOD_S[r]?.prefix;
+      return px && Object.keys(d).some(k => k.startsWith(px + "_"));
+    }).join(", ");
 
-    // aggravating — try region-specific then generic
-    const aggMov  = av(`${regionKey}_agg_mov`);
-    const aggAct  = av(`${regionKey}_agg_act`);
-    const aggPost = av(`${regionKey}_agg_post`);
-    const aggAll  = [...aggMov, ...aggAct, ...aggPost];
-    const relMov  = av(`${regionKey}_rel_mov`);
-    const relPost = av(`${regionKey}_rel_post`);
-    const relMed  = av(`${regionKey}_rel_med`);
-    const relAll  = [...relMov, ...relPost, ...relMed];
+    const aggAll = sTags("Aggravating");
+    const relAll = sTags("Easing");
 
-    // red flags
-    const rfFields = ["grf_systemic","grf_cancer","grf_fracture","grf_infection","grf_neuro","grf_vascular",
-                      `${regionKey}_rf_cauda`,`${regionKey}_rf_fracture`,`${regionKey}_rf_inflammatory`,`${regionKey}_rf_serious`];
-    const rfItems = rfFields.flatMap(k => av(k)).filter(x => !/^no /i.test(x) && x.length > 2);
-    const rfAction = v("grf_action") || v(`${regionKey}_rf_notes`);
-    const yfItems = av(`${regionKey}_yf_beliefs`).concat(av(`${regionKey}_yf_emotion`));
+    const rfLine = (() => {
+      const m = soap.S.split("\n").find(l => l.startsWith("⚠ RED FLAGS IDENTIFIED:"));
+      return m ? m.replace("⚠ RED FLAGS IDENTIFIED:","").replace(/— medical review indicated\.?$/,"").trim() : "";
+    })();
+    const rfItems = rfLine ? rfLine.split(",").map(s=>s.trim()).filter(Boolean) : [];
+    const rfAction = v("grf_action") || v("grf_notes");
+    const yfItems = [];
 
-    // PMH
-    const pmhConds  = av("pmh_conditions").join(", ") || v("pmh_conditions");
-    const pmhMeds   = v("pmh_medications") || v("med_allergies");
-    const pmhAllerg = v("med_allergies") || v("pmh_allergies");
-    const pmhSurg   = v("pmh_surgical");
-    const pmhFam    = v("pmh_family");
+    // PMH — sourced from buildRealtimeSOAP's Past medical history/Medications lines
+    const pmhConds  = sLine("Past medical history");
+    const pmhMeds   = sLine("Medications");
+    const pmhAllerg = sLine("Allergies/precautions");
+    const pmhSurg   = "";
+    const pmhFam    = "";
 
     // goals / lifestyle
-    const goal      = v("ar_goal_function") || v("goal_main");
-    const goalBelief = v("goal_belief") || v("goal_concern");
-    const lsExercise = v("ls_exercise");
-    const lsSleep    = v("ls_sleep_quality");
-    const lsStress   = v("ls_stress");
-    const lsWork     = av("ls_occ_demands").join(", ");
-    const lsNotes    = v("ls_notes");
+    const goal       = sLine("Patient goals");
+    const goalBelief = "";
+    const lsExercise = "";
+    const lsSleep    = "";
+    const lsStress   = "";
+    const lsWork     = "";
+    const lsNotes    = sLine("Lifestyle");
 
     // clinician notes
     const ccNotes  = v("cc_notes");
@@ -383,164 +388,40 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     const goalNotes = v("goal_notes");
 
     // ── objective fields ──────────────────────────────────────────────────
-    // Observation
-    const obsGait    = v("obs_gait");
-    const obsPosture = v("obs_posture");
-    const obsSwelling = v("obs_swelling");
-    const obsWasting = v("obs_muscle_wasting");
-    const obsOther   = v("obs_other");
-
-    // Palpation
-    const palpTend  = v("palp_tenderness") || v("palp_tender");
-    const palpTone  = v("palp_tone") || v("palp_muscle_tone");
-    const palpSwel  = v("palp_swelling") || v("palp_swelling_notes");
-    const palpOther = v("palp_other") || v("palp_notes");
-
-    // ROM — collect all filled rom_ keys
-    const romEntries = [];
-    const romPairs = [
-      ["Lumbar flexion",   "rom_lx_flex",    "", "lx_flexion",    "", "80°",  ""],
-      ["Lumbar extension", "rom_lx_ext",     "", "lx_extension",  "", "25°",  ""],
-      ["Lumbar lat flex",  "rom_lx_lat_l",   "rom_lx_lat_r",      "", "25°",  ""],
-      ["Cervical flex",    "rom_cx_flex",     "",               "", "50°",  ""],
-      ["Cervical ext",     "rom_cx_ext",      "",               "", "60°",  ""],
-      ["Cervical rot L",   "rom_cx_rot_l",    "rom_cx_rot_r",   "", "80°",  ""],
-      ["Shoulder flex",    "rom_sh_flex_l",   "rom_sh_flex_r",  "", "180°", ""],
-      ["Shoulder abd",     "rom_sh_abd_l",    "rom_sh_abd_r",   "", "180°", ""],
-      ["Shoulder ER",      "rom_sh_er_l",     "rom_sh_er_r",    "", "90°",  ""],
-      ["Shoulder IR",      "rom_sh_ir_l",     "rom_sh_ir_r",    "", "70°",  ""],
-      ["Elbow flex",       "rom_elb_flex_l",  "rom_elb_flex_r", "", "145°", ""],
-      ["Wrist flex",       "rom_wr_flex_l",   "rom_wr_flex_r",  "", "80°",  ""],
-      ["Hip flex",         "rom_hip_flex_l",  "rom_hip_flex_r", "", "120°", ""],
-      ["Hip abd",          "rom_hip_abd_l",   "rom_hip_abd_r",  "", "45°",  ""],
-      ["Knee flex",        "rom_knee_flex_l", "rom_knee_flex_r","", "140°", ""],
-      ["Knee ext",         "rom_knee_ext_l",  "rom_knee_ext_r", "", "0°",   ""],
-      ["Ankle DF",         "rom_ankle_df_l",  "rom_ankle_df_r", "", "20°",  ""],
-      ["Ankle PF",         "rom_ankle_pf_l",  "rom_ankle_pf_r", "", "50°",  ""],
-    ];
-    const romRows = romPairs.map(([name, lk, rk, , norm]) => {
-      const lv = d[lk] || ""; const rv = d[rk] || "";
-      if (!lv && !rv) return "";
-      const limited = (lv && /^[0-9]/.test(lv) && parseFloat(lv) < parseFloat(norm)) ? "L" :
-                      (rv && /^[0-9]/.test(rv) && parseFloat(rv) < parseFloat(norm)) ? "R" :
-                      (lv && /−|lag|limit|restrict/i.test(lv)) ? "L" :
-                      (rv && /−|lag|limit|restrict/i.test(rv)) ? "R" : "";
-      return romRow(name, lv, rv, norm, limited);
+    // Every objective/advanced-assessment section (Observation, Palpation,
+    // ROM, MMT, Neurological, Special Tests, CPA, Kinetic Chain, STTT,
+    // Fascial, Outcome Measures, Gait, Functional Screens, Ergonomic) comes
+    // from soap.O -- split into individual blocks below rather than each
+    // being re-derived from field names by hand a second time.
+    const objSections = soap.O.split("\n\n").map(block => {
+      const idx = block.indexOf(":");
+      if (idx === -1) return null;
+      const title = block.slice(0, idx).trim();
+      const body = block.slice(idx + 1).trim().replace(/\.$/, "");
+      return title && body ? { title, body } : null;
     }).filter(Boolean);
 
-    // MMT
-    const mmtPairs = [
-      ["Quadriceps",        "mmt_quad_l",      "mmt_quad_r"],
-      ["Hamstrings",        "mmt_hams_l",       "mmt_hams_r"],
-      ["Glut maximus",      "mmt_glut_max_l",   "mmt_glut_max_r"],
-      ["Glut medius",       "mmt_glut_med_l",   "mmt_glut_med_r"],
-      ["Hip flexors",       "mmt_hip_flex_l",   "mmt_hip_flex_r"],
-      ["Gastroc/soleus",    "mmt_gastroc_l",    "mmt_gastroc_r"],
-      ["Tib anterior",      "mmt_tib_ant_l",    "mmt_tib_ant_r"],
-      ["EHL (L5)",          "mmt_ehl_l",        "mmt_ehl_r"],
-      ["Deltoid",           "mmt_deltoid_l",    "mmt_deltoid_r"],
-      ["Rotator cuff",      "mmt_rc_l",         "mmt_rc_r"],
-      ["Biceps",            "mmt_biceps_l",     "mmt_biceps_r"],
-      ["Triceps",           "mmt_triceps_l",    "mmt_triceps_r"],
-      ["Wrist ext",         "mmt_wr_ext_l",     "mmt_wr_ext_r"],
-      ["Deep neck flex",    "mmt_dnf_l",        "mmt_dnf_r"],
-    ];
-    const mmtRows = mmtPairs.map(([name, lk, rk]) => mmtRow(name, d[lk]||"", d[rk]||"")).filter(Boolean);
-
-    // Functional screen
-    const fsLabels = {
-      kfs_squat:"Double leg squat", kfs_lunge:"Forward lunge", kfs_step_down:"Step down",
-      kfs_single_leg:"Single leg squat", kfs_hop:"Single leg hop",
-      lfs_flexion:"Lumbar flexion", lfs_extension:"Lumbar extension", lfs_rot:"Lumbar rotation",
-      lfs_lateral:"Lateral bend", lfs_squat:"Squat pattern",
-      sfs_overhead:"Overhead reach", sfs_push:"Push-up", sfs_pull:"Pull pattern",
-      hfs_squat:"Hip single leg squat", hfs_hinge:"Hip hinge", hfs_lunge:"Hip lunge",
-      afs_raise:"Calf raise", afs_lunge:"Ankle lunge", afs_hop:"Hop & stick",
+    const OBJ_ICON = {
+      "Observation/Posture": "\ud83d\udc41\ufe0f", "Observation": "\ud83d\udc41\ufe0f",
+      "Palpation": "\ud83e\udd0f", "Range of Motion": "\ud83d\udcd0",
+      "Muscle Strength (MMT)": "\ud83d\udcaa", "Neurological": "\u26a1",
+      "Special Tests": "\ud83d\udd2c", "Neuromuscular Assessment (CPA)": "\ud83e\udde0",
+      "Kinetic Chain Assessment": "\u26d3\ufe0f", "STTT / Selective Tissue Tension": "\ud83e\uddec",
+      "Fascial Assessment": "\ud83d\udd78\ufe0f", "Pain Location (Body Chart)": "\ud83d\udccd",
+      "Outcome Measures": "\ud83d\udcc8", "Gait Analysis": "\ud83d\udeb6",
+      "Ergonomic Assessment": "\ud83d\udcbc", "Treatment Given": "\ud83c\udfe5", "Pain response": "\ud83d\udcca",
     };
-    const fsGradeColor = (g) => g >= 2 ? "#dc2626" : g === 1 ? "#d97706" : "#059669";
-    const fsGradeLabel = (g) => g >= 2 ? "Abnormal" : g === 1 ? "Compensated" : "Normal";
-    const fsScreens = ["kfs_data","lfs_data","sfs_data","hfs_data","afs_data"];
-    const fsRows = [];
-    fsScreens.forEach(key => {
-      if (!d[key]) return;
-      try {
-        const parsed = typeof d[key] === "string" ? JSON.parse(d[key]) : d[key];
-        const grades = parsed.grades || {};
-        const notes  = parsed.notes  || {};
-        Object.entries(grades).forEach(([id, g]) => {
-          const gn = parseInt(g) || 0;
-          const label = fsLabels[id] || id.replace(/_/g," ");
-          const note  = notes[id] ? escHtml(notes[id]) : "";
-          fsRows.push(`<tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="font-size:9.5px;padding:4px 6px;color:#334155;">${escHtml(label)}</td>
-            <td style="font-size:9px;padding:4px 6px;text-align:center;">
-              <span style="font-weight:700;color:${fsGradeColor(gn)};">${gn} — ${fsGradeLabel(gn)}</span>
-            </td>
-            <td style="font-size:9px;padding:4px 6px;color:#64748b;">${note}</td>
-          </tr>`);
-        });
-      } catch {}
-    });
-
-    // Special tests
-    const stKeys = Object.keys(d).filter(k => (k.startsWith("st_") || k.startsWith("lx_slr") || k.startsWith("lx_slump") || k.startsWith("lx_kemp")) && d[k] && String(d[k]).trim());
-    const stPos = stKeys.filter(k => /positive|abnormal/i.test(d[k]||""));
-    const stNeg = stKeys.filter(k => /negative|normal/i.test(d[k]||"") && !/positive/i.test(d[k]||""));
-    const stOth = stKeys.filter(k => !stPos.includes(k) && !stNeg.includes(k));
-    const stLabel = (k) => k.replace(/^(st_|lx_)/,"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
-
-    // Neurological
-    const neuroFields = [
-      ["L3 sensation", "n_l3_right", "n_l3_left"],
-      ["L4 sensation", "n_l4_right", "n_l4_left"],
-      ["L5 sensation", "n_l5_right", "n_l5_left"],
-      ["S1 sensation", "n_s1_right", "n_s1_left"],
-      ["C5 sensation", "n_c5_right", "n_c5_left"],
-      ["C6 sensation", "n_c6_right", "n_c6_left"],
-      ["C7 sensation", "n_c7_right", "n_c7_left"],
-      ["Patellar reflex",  "n_ref_patella_right",  "n_ref_patella_left"],
-      ["Achilles reflex",  "n_ref_achilles_right", "n_ref_achilles_left"],
-      ["Biceps reflex",    "n_ref_biceps_right",   "n_ref_biceps_left"],
-      ["Triceps reflex",   "n_ref_triceps_right",  "n_ref_triceps_left"],
-      ["Babinski",         "n_babinski_right",      "n_babinski_left"],
-      ["Neural tension",   "n_slr_right",           "n_slr_left"],
-      ["Upper limb tension","n_ultt_right",          "n_ultt_left"],
-    ];
-    const neuroRows = neuroFields.map(([name, rk, lk]) => {
-      const rv = d[rk]||""; const lv = d[lk]||"";
-      if (!rv && !lv) return "";
-      const val = [rv&&`R: ${rv}`, lv&&`L: ${lv}`].filter(Boolean).join(" · ");
-      const abnormal = /reduced|absent|impaired|weak|positive|abnormal/i.test(val);
-      return `<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid #f1f5f9;font-size:9.5px;">
-        <span style="min-width:120px;font-weight:600;color:#334155;flex-shrink:0;">${name}</span>
-        <span style="color:${abnormal?"#dc2626":"#334155"};">${escHtml(val)}</span>
-      </div>`;
-    }).filter(Boolean);
-    // Also check free-text neuro fields
-    const neuroNotes = v("neuro_clinician_notes") || v("n_notes");
-
-    // Gait
-    const gaitObs   = v("gait_observation") || v("obs_gait");
-    const gaitDev   = v("gait_deviations");
-    const gaitTrend = v("gait_trendelenburg");
-    const gaitStep  = v("gait_step_length");
-    const gaitNotes = v("gait_notes");
-
-    // Outcome measures
-    const omOdi    = v("om_odi_score")  || v("om_odi");
-    const omNdi    = v("om_ndi_score")  || v("om_ndi");
-    const omPsfs   = v("om_psfs_score") || v("om_psfs");
-    const omDash   = v("om_dash_score") || v("om_dash");
-    const omLefs   = v("om_lefs_score") || v("om_lefs");
-    const omKoosPain = v("om_koos_pain"); const omKoosSport = v("om_koos_sport"); const omKoosQol = v("om_koos_qol");
-    const omReport = d.om_report?.scores || {};
-
-    // Advanced assessment
-    const kcNotes   = v("kc_notes");
-    const fasc      = v("fa_passive_tension") || v("fa_densification");
-    const fascNotes = v("fa_compensation_map") || v("fa_remote_test");
-    const nktNotes  = v("nkt_notes");
-    const cyriaxNotes = v("cyriax_notes") || v("sttt_notes");
+    const OBJ_COLOR = {
+      "Observation/Posture": "#334155", "Observation": "#334155", "Palpation": "#334155",
+      "Range of Motion": "#0f6e56", "Muscle Strength (MMT)": "#1e3a5f", "Neurological": "#312e81",
+      "Special Tests": "#78350f", "Neuromuscular Assessment (CPA)": "#4c1d95",
+      "Kinetic Chain Assessment": "#4c1d95", "STTT / Selective Tissue Tension": "#4c1d95",
+      "Fascial Assessment": "#4c1d95", "Pain Location (Body Chart)": "#991b1b",
+      "Outcome Measures": "#0f6e56", "Gait Analysis": "#1e3a5f",
+      "Ergonomic Assessment": "#4c1d95", "Treatment Given": "#1e3a5f", "Pain response": "#991b1b",
+    };
+    const objIcon = (title) => OBJ_ICON[title] || (/screen/i.test(title) ? "\ud83c\udfc3" : "\ud83d\udcc4");
+    const objColor = (title) => OBJ_COLOR[title] || "#334155";
 
     // Diagnosis
     const dxMain  = v("soap_a_diagnosis") || v("soap_a");
@@ -593,7 +474,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
             ${miniField("Body region", bodyRegion)}
             ${miniField("Mechanism / onset", onset)}
             ${miniField("Duration", duration)}
-            ${miniField("Pain behaviour", behaviour || quality)}
+            ${miniField("Pain behaviour", behaviour)}
           </div>
         `)}
 
@@ -662,114 +543,14 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     </div>`;
 
     // ── PAGE 2: OBJECTIVE FINDINGS ────────────────────────────────────────
-    const obsHasData = hasAny("obs_gait","obs_posture","obs_swelling","obs_muscle_wasting","obs_other");
-    const palpHasData = hasAny("palp_tenderness","palp_tender","palp_tone","palp_muscle_tone","palp_swelling","palp_notes","palp_other");
-    const romHasData  = romRows.length > 0;
-    const mmtHasData  = mmtRows.length > 0;
-    const fsHasData   = fsRows.length > 0;
-    const stHasData   = stKeys.length > 0;
-    const neuroHasData = neuroRows.length > 0 || neuroNotes !== "--";
-    const gaitHasData = hasAny("gait_observation","obs_gait","gait_deviations","gait_notes");
-    const omHasData   = hasAny("om_odi_score","om_odi","om_ndi_score","om_ndi","om_psfs_score","om_lefs_score","om_koos_pain","om_koos_sport");
-    const advHasData  = hasAny("kc_notes","fa_passive_tension","fa_densification","fa_compensation_map","nkt_notes","cyriax_notes","sttt_notes");
-
     const page2 = `<div class="page">
       ${pdfHeader("Objective Findings", "Assessment & Advanced Assessment", "#0f6e56")}
       <div class="body">
 
-        ${(obsHasData || palpHasData) ? `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          ${obsHasData ? sec("👁️","Observation","#334155", `
-            ${obsGait    && obsGait    !== "--" ? fieldRow("Gait", obsGait) : ""}
-            ${obsPosture && obsPosture !== "--" ? fieldRow("Posture", obsPosture) : ""}
-            ${obsSwelling && obsSwelling !== "--" ? fieldRow("Swelling", obsSwelling) : ""}
-            ${obsWasting && obsWasting !== "--" ? fieldRow("Muscle wasting", obsWasting) : ""}
-            ${obsOther   && obsOther   !== "--" ? fieldRow("Other", obsOther) : ""}
-          `) : ""}
-          ${palpHasData ? sec("🖐️","Palpation","#334155", `
-            ${palpTend  && palpTend  !== "--" ? fieldRow("Tenderness", palpTend) : ""}
-            ${palpTone  && palpTone  !== "--" ? fieldRow("Muscle tone", palpTone) : ""}
-            ${palpSwel  && palpSwel  !== "--" ? fieldRow("Swelling", palpSwel) : ""}
-            ${palpOther && palpOther !== "--" ? fieldRow("Other", palpOther) : ""}
-          `) : ""}
-        </div>` : ""}
-
-        ${romHasData ? sec("📐","Range of motion","#0f6e56", `
-          <table><thead><tr>
-            <th style="width:35%">Movement</th>
-            <th style="width:15%;text-align:center;">Left</th>
-            <th style="width:15%;text-align:center;">Right</th>
-            <th style="width:15%;text-align:center;">Normal</th>
-            <th style="width:20%;text-align:center;">Status</th>
-          </tr></thead><tbody>${romRows.join("")}</tbody></table>
-        `) : ""}
-
-        ${(mmtHasData || fsHasData) ? `
-        <div style="display:grid;grid-template-columns:${mmtHasData && fsHasData ? "1fr 1fr" : "1fr"};gap:10px;">
-          ${mmtHasData ? sec("💪","Manual muscle testing (MMT)","#1e3a5f", `
-            <table><thead><tr>
-              <th>Muscle</th>
-              <th style="text-align:center;">L</th>
-              <th style="text-align:center;">R</th>
-            </tr></thead><tbody>${mmtRows.join("")}</tbody></table>
-          `) : ""}
-          ${fsHasData ? sec("🏃","Functional movement screen","#14532d", `
-            <table><thead><tr>
-              <th>Test</th>
-              <th style="width:120px;">Grade</th>
-              <th>Notes</th>
-            </tr></thead><tbody>${fsRows.join("")}</tbody></table>
-          `) : ""}
-        </div>` : ""}
-
-        ${stHasData ? sec("🔬","Special tests","#78350f", `
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
-            <div>
-              ${stPos.length ? `<div style="font-size:8.5px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Positive</div>
-              ${stPos.map(k => testRow(stLabel(k), d[k]||"")).join("")}` : ""}
-              ${stOth.length ? `<div style="font-size:8.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin:6px 0 4px;">Other findings</div>
-              ${stOth.map(k => testRow(stLabel(k), d[k]||"")).join("")}` : ""}
-            </div>
-            <div>
-              ${stNeg.length ? `<div style="font-size:8.5px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Negative</div>
-              ${stNeg.map(k => testRow(stLabel(k), d[k]||"")).join("")}` : ""}
-            </div>
-          </div>
-        `) : ""}
-
-        ${neuroHasData ? sec("⚡","Neurological findings","#312e81", `
-          ${neuroRows.join("")}
-          ${neuroNotes && neuroNotes !== "--" ? `<div style="margin-top:6px;font-size:9px;color:#64748b;padding:5px 8px;background:#eef2ff;border-radius:5px;">${neuroNotes}</div>` : ""}
-        `) : ""}
-
-        ${gaitHasData ? sec("🚶","Gait analysis","#1e3a5f", `
-          ${gaitObs  && gaitObs  !== "--" ? fieldRow("Observation", gaitObs) : ""}
-          ${gaitDev  && gaitDev  !== "--" ? fieldRow("Deviations", gaitDev) : ""}
-          ${gaitTrend && gaitTrend !== "--" ? fieldRow("Trendelenburg", gaitTrend) : ""}
-          ${gaitStep && gaitStep !== "--" ? fieldRow("Step length", gaitStep) : ""}
-          ${gaitNotes && gaitNotes !== "--" ? fieldRow("Notes", gaitNotes) : ""}
-        `) : ""}
-
-        ${omHasData ? sec("📈","Outcome measures","#0f6e56", `
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
-            ${omOdi   && omOdi   !== "--" ? `<div style="text-align:center;background:#fef2f2;border-radius:8px;padding:8px 4px;border:1px solid #fecaca;"><div style="font-size:18px;font-weight:700;color:#dc2626;">${omOdi}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">ODI</div></div>` : ""}
-            ${omNdi   && omNdi   !== "--" ? `<div style="text-align:center;background:#fef2f2;border-radius:8px;padding:8px 4px;border:1px solid #fecaca;"><div style="font-size:18px;font-weight:700;color:#dc2626;">${omNdi}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">NDI</div></div>` : ""}
-            ${omLefs  && omLefs  !== "--" ? `<div style="text-align:center;background:#fffbeb;border-radius:8px;padding:8px 4px;border:1px solid #fde68a;"><div style="font-size:18px;font-weight:700;color:#d97706;">${omLefs}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">LEFS</div></div>` : ""}
-            ${omPsfs  && omPsfs  !== "--" ? `<div style="text-align:center;background:#fffbeb;border-radius:8px;padding:8px 4px;border:1px solid #fde68a;"><div style="font-size:18px;font-weight:700;color:#d97706;">${omPsfs}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">PSFS</div></div>` : ""}
-            ${omDash  && omDash  !== "--" ? `<div style="text-align:center;background:#fffbeb;border-radius:8px;padding:8px 4px;border:1px solid #fde68a;"><div style="font-size:18px;font-weight:700;color:#d97706;">${omDash}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">DASH</div></div>` : ""}
-            ${omKoosPain && omKoosPain !== "--" ? `<div style="text-align:center;background:#f0fdf4;border-radius:8px;padding:8px 4px;border:1px solid #bbf7d0;"><div style="font-size:18px;font-weight:700;color:#059669;">${omKoosPain}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">KOOS Pain</div></div>` : ""}
-            ${omKoosSport && omKoosSport !== "--" ? `<div style="text-align:center;background:#f0fdf4;border-radius:8px;padding:8px 4px;border:1px solid #bbf7d0;"><div style="font-size:18px;font-weight:700;color:#059669;">${omKoosSport}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">KOOS Sport</div></div>` : ""}
-            ${omKoosQol && omKoosQol !== "--" ? `<div style="text-align:center;background:#f0fdf4;border-radius:8px;padding:8px 4px;border:1px solid #bbf7d0;"><div style="font-size:18px;font-weight:700;color:#059669;">${omKoosQol}</div><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;">KOOS QoL</div></div>` : ""}
-          </div>
-          ${Object.keys(omReport).length ? `<div style="margin-top:8px;font-size:9px;color:#64748b;">${Object.entries(omReport).map(([k,v2])=>`<b>${k.toUpperCase()}</b>: ${v2}`).join(" · ")}</div>` : ""}
-        `) : ""}
-
-        ${advHasData ? sec("🔭","Advanced assessment","#4c1d95", `
-          ${kcNotes && kcNotes !== "--" ? fieldRow("Kinetic chain", kcNotes) : ""}
-          ${fascNotes && fascNotes !== "--" ? fieldRow("Fascia / SBL", fascNotes) : ""}
-          ${nktNotes && nktNotes !== "--" ? fieldRow("CPA / NKT pattern", nktNotes) : ""}
-          ${cyriaxNotes && cyriaxNotes !== "--" ? fieldRow("STTT / Cyriax", cyriaxNotes) : ""}
-        `) : ""}
+        ${objSections.length === 0 ? `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No objective findings recorded yet.</div>` : objSections.map(s => sec(
+          objIcon(s.title), escHtml(s.title), objColor(s.title),
+          `<div style="font-size:9.5px;color:#334155;line-height:1.7;white-space:pre-line;">${escHtml(s.body)}</div>`
+        )).join("")}
 
         ${(dxMain && dxMain !== "--") || dxList.length > 0 ? sec("🩺","Clinical diagnosis","#1e3a5f", `
           ${dxList.length > 0 ? dxList.slice(0,4).map((dx2, i) => `
