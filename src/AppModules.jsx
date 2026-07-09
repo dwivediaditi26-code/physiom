@@ -1477,6 +1477,15 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
     : (Array.isArray(activeSession?.treatment) ? activeSession.treatment.map(t=>({...t})) : legacyTreatmentToList(activeSession?.treatmentGiven)));
   const [modalities, setModalities] = useState(()=> isNew ? [] : (Array.isArray(activeSession?.modalities)?activeSession.modalities.map(m=>({...m})):[]));
   const [pastExercises, setPastExercises] = useState(()=> isNew ? [] : (Array.isArray(activeSession?.exercises)?activeSession.exercises.map(e=>({...e})):[]));
+  // Exercise Prescription -- a separate, standing treatment programme from
+  // hep_programme (see ExercisePrescriptionModule, Treatment tab). This was
+  // being prescribed for patients but never surfaced anywhere in Sessions.
+  // Live for a new session (removing here removes from the real prescription,
+  // same as Exercises does for hep_programme); a frozen snapshot for a past
+  // session, same pattern as Exercises/Modalities/Treatment.
+  const rxProgramme = Array.isArray(data.tx_exercise_prescription) ? data.tx_exercise_prescription : [];
+  const [pastRx, setPastRx] = useState(()=> isNew ? [] : (Array.isArray(activeSession?.exercisePrescription)?activeSession.exercisePrescription.map(e=>({...e})):[]));
+  const removeRx = (id) => { if(!set) return; set("tx_exercise_prescription", rxProgramme.filter(e=>e.id!==id)); };
 
   const txOptions = ["Joint mobilisation","Soft tissue massage","Dry needling","Exercise therapy","TENS/IFT","Neural mobilisation","Taping/strapping","Education & advice","Postural correction","Manual therapy","Other"];
   const modalityOptions = ["IFT","TENS","Hot pack","Cold pack","Ultrasound","Laser","Shockwave","Traction","Paraffin wax"];
@@ -1537,11 +1546,13 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
     }
     set("soap_extra_p",[qv.next_plan,hepNote].filter(Boolean).join(" | "));
     const exercisesSnapshot = prog.map(e=>({id:e.id,name:e.name,detail:hepDose(e)}));
+    const rxSnapshot = rxProgramme.map(e=>({id:e.id,name:e.name,detail:hepDose(e)}));
     const entry = {
       id:(Date.now()).toString(36),date:new Date().toLocaleDateString("en-GB"),sessionNo,type:"Follow-up Treatment",
       vasStart:qv.pain_today,vasEnd:qv.pain_after||qv.pain_today,
       treatmentGiven:treatmentList.map(t=>t.name).join(", "),response:qv.response,nextPlan:qv.next_plan,hepChanges:pending,
       exercises:exercisesSnapshot, modalities, treatment:treatmentList, quickNote:qv.response,
+      exercisePrescription:rxSnapshot,
       savedAt:new Date().toISOString()
     };
     set("tx_sessions",[entry,...sessionsArr]);
@@ -1556,6 +1567,7 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
       vasStart:qv.pain_today, vasEnd:qv.pain_after||qv.pain_today,
       treatmentGiven:treatmentList.map(t=>t.name).join(", "), response:qv.response, nextPlan:qv.next_plan,
       exercises:pastExercises, modalities, treatment:treatmentList, quickNote:qv.response,
+      exercisePrescription:pastRx,
       editedAt:new Date().toISOString()
     };
     set("tx_sessions", sessionsArr.map(s=>s.id===activeId?updated:s));
@@ -1718,6 +1730,29 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
             onAdd={(it)=>setPastExercises(l=>[...l,{id:Math.random().toString(36).slice(2,9),...it}])}
             onEdit={(id,patch)=>setPastExercises(l=>l.map(e=>e.id===id?{...e,...patch}:e))}
             onRemove={(id)=>setPastExercises(l=>l.filter(e=>e.id!==id))}
+            addLabel="＋ Add exercise"/>
+        )}
+      </div>
+
+      <div style={{marginBottom:14}}>
+        <div style={sectionLbl}>Exercise Prescription {isNew&&rxProgramme.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· {rxProgramme.length} exercise{rxProgramme.length!==1?"s":""}</span>}</div>
+        {isNew?(<>
+          {rxProgramme.length===0&&<div style={{fontSize:"0.78rem",color:PC.muted,padding:"4px 0 8px"}}>None prescribed yet.</div>}
+          {rxProgramme.map(e=>(
+            <div key={e.id} style={{display:"flex",alignItems:"center",gap:7,padding:"8px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:9,marginBottom:5}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text}}>{e.name}</div>
+                <div style={{fontSize:"0.82rem",color:PC.muted}}>{hepDose(e)}</div>
+              </div>
+              <SessionPill bg="rgba(220,38,38,0.1)" col="#dc2626" title="Remove" onClick={()=>removeRx(e.id)}>−</SessionPill>
+            </div>
+          ))}
+          <div onClick={()=>navTo("treatment")} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.82rem",fontWeight:700,color:PC.accent,cursor:"pointer"}}>＋ Add / edit in Exercise Prescription →</div>
+        </>):(
+          <EditableItemList PC={PC} items={pastRx}
+            onAdd={(it)=>setPastRx(l=>[...l,{id:Math.random().toString(36).slice(2,9),...it}])}
+            onEdit={(id,patch)=>setPastRx(l=>l.map(e=>e.id===id?{...e,...patch}:e))}
+            onRemove={(id)=>setPastRx(l=>l.filter(e=>e.id!==id))}
             addLabel="＋ Add exercise"/>
         )}
       </div>
