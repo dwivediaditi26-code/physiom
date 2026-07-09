@@ -801,7 +801,7 @@ function CyriaxModule({ data, set, navContext={} }) {
   const boxStyle = { background:"#ffffff", border:"1px solid #E0E0E2", borderRadius:10, padding:13, marginBottom:10 };
   const RESULT_OPTIONS = ["","Strong & Painless","Strong & Painful","Weak & Painless","Weak & Painful"];
   const PAIN_OPTIONS = ["","No pain","Pain on initiation","Pain at mid-range","Pain at end range","Painful arc","Pain throughout range","Referred pain with movement"];
-  const LIMITED_OPTIONS = ["","Full range","Mildly limited","Moderately limited","Severely limited","Cannot perform"];
+  const LIMITED_OPTIONS = ["","Full range","Mildly limited","Moderately limited","Severely limited","Cannot perform","Hypermobile — above normal range"];
 
   const resColor = (val) => {
     if (!val) return "#1a2d45";
@@ -810,6 +810,23 @@ function CyriaxModule({ data, set, navContext={} }) {
   };
 
   const runReasoning = () => setReasoning(cyriaxAutoReason(region, data));
+
+  // Pain at Range is a multi-select (Beginning / Mid-range / End-range /
+  // Throughout / etc. can all apply at once) but stored as a single
+  // ", "-joined string, matching the plain-string shape every other reader
+  // of this field already expects. "No pain" is mutually exclusive with
+  // every other option in both directions.
+  const togglePainAtRange = (fieldKey, option) => {
+    const current = v(fieldKey) ? v(fieldKey).split(", ").filter(Boolean) : [];
+    let next;
+    if (option === "No pain") {
+      next = current.includes("No pain") ? [] : ["No pain"];
+    } else {
+      const withoutNoPain = current.filter(o => o !== "No pain");
+      next = withoutNoPain.includes(option) ? withoutNoPain.filter(o => o !== option) : [...withoutNoPain, option];
+    }
+    sv(fieldKey, next.join(", "));
+  };
 
   const tabStyle = (t) => ({ padding:"8px 16px", cursor:"pointer", fontSize:"0.8rem", fontWeight:tab===t?700:500, color:tab===t?C.accent:C.muted, background:"none", border:"none", borderBottom:`2px solid ${tab===t?C.accent:"transparent"}` });
 
@@ -897,22 +914,34 @@ function CyriaxModule({ data, set, navContext={} }) {
                   <SmallClinicalImg id={t.id} title={t.label} />
                   <div style={{flex:1}}><strong style={{ color:C.yellow }}>How: </strong>{t.how}</div>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:7 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:7 }}>
                   <div>
                     <div style={labelStyle}>ROM Value</div>
                     <input type="text" value={v(`act_rom_${t.id}`)} onChange={e=>sv(`act_rom_${t.id}`,e.target.value)} placeholder={`e.g. ${t.normal}`} style={selectStyle}/>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>Pain</div>
-                    <select value={v(`act_pain_${t.id}`)} onChange={e=>sv(`act_pain_${t.id}`,e.target.value)} style={{...selectStyle, borderColor:v(`act_pain_${t.id}`)?.includes("Pain")?"#ff4d6d":"#1a2d45"}}>
-                      {PAIN_OPTIONS.map(o=><option key={o} value={o}>{o||"— pain? —"}</option>)}
-                    </select>
                   </div>
                   <div>
                     <div style={labelStyle}>Range</div>
                     <select value={v(`act_limited_${t.id}`)} onChange={e=>sv(`act_limited_${t.id}`,e.target.value)} style={{...selectStyle, borderColor:v(`act_limited_${t.id}`)&&v(`act_limited_${t.id}`)!=="Full"?"#ffb300":"#1a2d45"}}>
                       {LIMITED_OPTIONS.map(o=><option key={o} value={o}>{o||"— range? —"}</option>)}
                     </select>
+                  </div>
+                </div>
+                <div style={{ marginTop:7 }}>
+                  <div style={labelStyle}>Pain at Range <span style={{ fontWeight:400, textTransform:"none", letterSpacing:"normal", color:C.muted }}>(select all that apply)</span></div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+                    {PAIN_OPTIONS.filter(Boolean).map(o=>{
+                      const selected = v(`act_pain_${t.id}`) ? v(`act_pain_${t.id}`).split(", ").filter(Boolean) : [];
+                      const checked = selected.includes(o);
+                      return (
+                        <button key={o} type="button" onClick={()=>togglePainAtRange(`act_pain_${t.id}`, o)}
+                          style={{ padding:"5px 10px", borderRadius:20, fontSize:"0.74rem", fontWeight:checked?700:500,
+                            border:`1px solid ${checked?"#ff4d6d":C.border}`,
+                            background:checked?"rgba(255,77,109,0.12)":"transparent",
+                            color:checked?"#ff4d6d":C.muted, cursor:"pointer", fontFamily:"inherit" }}>
+                          {checked?"☑":"☐"} {o}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <div style={{ marginTop:6 }}>
