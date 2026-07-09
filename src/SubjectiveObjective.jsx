@@ -2521,6 +2521,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
+  const [activeReviewRegion, setActiveReviewRegion] = useState(null); // which region tab is showing in the Interpretation results screen
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [regionPickerOpen, setRegionPickerOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState({});
@@ -3886,11 +3887,44 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
         </div>
       )}
 
-      {activeTab === "results" && insight && showInsight && (
+      {activeTab === "results" && insight && showInsight && (() => {
+        const allRegionResults = insight.regionResults || [];
+        const regionIds = allRegionResults.map(r => r.region);
+        // Tabbing only kicks in with 2+ regions -- a single-region review has
+        // nothing to switch between, so effectiveActiveRegion is null and
+        // both maps below render every (i.e. the one) result as before.
+        const effectiveActiveRegion = regionIds.length > 1
+          ? (regionIds.includes(activeReviewRegion) ? activeReviewRegion : regionIds[0])
+          : null;
+        return (
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+
+          {/* ── REGION TABS — one clinical review per region instead of every
+               region's full interpretation stacked into one long scroll ── */}
+          {effectiveActiveRegion && (
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap", position:"sticky", top:0, zIndex:15,
+              background: PC.bg, padding:"6px 0", marginBottom:2 }}>
+              {allRegionResults.map((r, ri) => {
+                const regCol = r.urgentFlag ? PC.red : (RC_S[r.region] || PC.accent);
+                const isActive = r.region === effectiveActiveRegion;
+                return (
+                  <button key={ri} type="button" onClick={() => setActiveReviewRegion(r.region)}
+                    style={{ padding:"7px 14px", borderRadius:20, fontSize:"0.78rem", fontWeight:isActive?800:600,
+                      border:`1.5px solid ${isActive?regCol:PC.border}`,
+                      background: isActive ? `${regCol}18` : "transparent",
+                      color: isActive ? regCol : PC.muted, cursor:"pointer", fontFamily:"inherit",
+                      display:"flex", alignItems:"center", gap:5 }}>
+                    {r.urgentFlag && <span>🚨</span>}
+                    {r.region}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* ── REGION-SPECIFIC SMART ACTION CARDS ── */}
           {onNav && insight && insight.regionResults && insight.regionResults.map((r, ri) => {
+            if (effectiveActiveRegion && r.region !== effectiveActiveRegion) return null;
             const regionBtns = REGION_NAV[r.region] || [];
             if (!regionBtns.length) return null;
             const regCol = r.urgentFlag ? PC.red : ["#9333ea","#7c3aed","#0891b2","#059669","#d97706"][ri % 5];
@@ -3934,6 +3968,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               PER-REGION: 7-PHASE CLINICAL REASONING
           ══════════════════════════════════════════════ */}
           {insight.regionResults.map((r, ri) => {
+            if (effectiveActiveRegion && r.region !== effectiveActiveRegion) return null;
             const regCol = RC_S[r.region] || PC.accent;
 
             // ── Derive observation suggestions from pattern ──
@@ -4416,7 +4451,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             </div>
           </div>
         </div>
-      )}
+        ); })()}
 
       {/* ── Saved confirmation toast ── */}
       {showSavedToast && (
