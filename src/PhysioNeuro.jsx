@@ -119,8 +119,8 @@ if (typeof document !== "undefined" && !document.getElementById("physio-hl-style
        animation, so it doesn't nag. */
     .physio-highlight-persist {
       border-color: #9333ea !important;
-      background: rgba(147,51,234,0.06);
-      box-shadow: 0 0 0 2px rgba(147,51,234,0.18);
+      background: rgba(147,51,234,0.09) !important;
+      box-shadow: 0 0 0 2px rgba(147,51,234,0.35) !important;
       transition: background 0.25s, box-shadow 0.25s, border-color 0.25s;
     }
   `;
