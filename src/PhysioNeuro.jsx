@@ -800,7 +800,8 @@ function NeurologicalModule({ data, set, navContext={} }) {
     if(!targets.length) return;
     // Switch to correct tab
     const first=targets[0];
-    if(first.startsWith("nt_")||first.startsWith("nrf_")) setTab("neural_tension");
+    if(first.startsWith("nt_")) setTab("tension");
+    else if(first.startsWith("nrf_")) setTab("redflags");
     else if(first.startsWith("gcs_")) setTab("gcs");
     else if(first.startsWith("dtr_")) setTab("reflexes");
     else if(first.startsWith("cn_")) setTab("cranial");
@@ -1934,6 +1935,111 @@ function NeurologicalModule({ data, set, navContext={} }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 
-export { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule,
+// A guided, start-to-finish checklist for a TBI patient -- built because
+// the full neuro exam now spans two hub tabs (Neurological for red flags
+// through coordination; Outcome Measures for tone/strength, balance/gait,
+// and condition staging), so a clinician working a TBI case wants one
+// ordered list they can work down rather than remembering which of the
+// two tabs each piece lives in. Each row's "done" status is read directly
+// off real patient data (never a separate progress flag to keep in sync),
+// and clicking a row calls the same navTo()+navContext deep-link
+// mechanism this app already uses for AI-suggested assessments -- for
+// rows living in the Neurological tab that lands on the exact sub-tab
+// (see the first.startsWith() switch in NeurologicalModule above); for
+// rows living in Outcome Measures it opens straight into that scale's
+// live-entry view via navContext.scaleId (see OutcomeMeasuresPro).
+function TBITemplateModule({ data, navTo }) {
+  const anyKeyStartsWith = (prefix) => Object.keys(data||{}).some(k=>k.startsWith(prefix) && data[k]);
+
+  const steps = [
+    {
+      n:1, label:"Red flags", desc:"Screen before proceeding",
+      done: ["nrf_saddle","nrf_bilateral","nrf_sphincter","nrf_prog_weak","nrf_raised_icp","nrf_loc_change"].some(k=>data[k]),
+      go: ()=>navTo("neuro",{neuroHighlight:"nrf_raised_icp"}),
+    },
+    {
+      n:2, label:"Glasgow Coma Scale", desc:"Eye, verbal, motor",
+      done: !!(data.gcs_eye && data.gcs_verbal && data.gcs_motor),
+      go: ()=>navTo("neuro",{neuroHighlight:"gcs_eye"}),
+    },
+    {
+      n:3, label:"Cognition", desc:"Orientation, MoCA, MMSE",
+      done: !!(data.cog_orient_person||data.cog_orient_place||data.cog_orient_time||data.cog_orient_situation||data.cog_moca_score||data.cog_mmse_score),
+      go: ()=>navTo("neuro",{neuroHighlight:"cog_orient_person"}),
+    },
+    {
+      n:4, label:"Cranial nerves", desc:"I through XII",
+      done: anyKeyStartsWith("cn_"),
+      go: ()=>navTo("neuro",{neuroHighlight:"cn_cn1"}),
+    },
+    {
+      n:5, label:"Reflexes", desc:"DTRs, Babinski, clonus",
+      done: REFLEXES.some(r=>data[`${r.id}_left`]||data[`${r.id}_right`]),
+      go: ()=>navTo("neuro",{neuroHighlight:"n_ref_bicep_left"}),
+    },
+    {
+      n:6, label:"Coordination", desc:"Finger-nose, heel-shin, involuntary movements",
+      done: anyKeyStartsWith("coord_") || !!data.neuro_involuntary_type,
+      go: ()=>navTo("neuro",{neuroHighlight:"coord_fingernose_L"}),
+    },
+    {
+      n:7, label:"Tone and strength", desc:"MAS, Fugl-Meyer — opens Outcome measures",
+      done: anyKeyStartsWith("mas_") || anyKeyStartsWith("fma_"),
+      go: ()=>navTo("outcome",{scaleId:"mas"}),
+    },
+    {
+      n:8, label:"Balance and gait", desc:"Berg, TUG, DGI — opens Outcome measures",
+      done: anyKeyStartsWith("bbs_") || !!data.tug_time || anyKeyStartsWith("dgi_"),
+      go: ()=>navTo("outcome",{scaleId:"bbs"}),
+    },
+    {
+      n:9, label:"Rancho and GOAT staging", desc:"Cognitive functioning level — opens Outcome measures",
+      done: !!data.rancho_level || anyKeyStartsWith("goat_"),
+      go: ()=>navTo("outcome",{scaleId:"rancho"}),
+    },
+    {
+      n:10, label:"Barthel functional outcome", desc:"ADL independence — opens Outcome measures",
+      done: anyKeyStartsWith("barthel_"),
+      go: ()=>navTo("outcome",{scaleId:"barthel"}),
+    },
+  ];
+
+  const doneCount = steps.filter(s=>s.done).length;
+  const pct = Math.round((doneCount/steps.length)*100);
+
+  return (
+    <div>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+        <div style={{width:38,height:38,borderRadius:10,background:`${C.accent}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <span style={{fontSize:19}}>🧠</span>
+        </div>
+        <div>
+          <div style={{fontSize:"0.85rem",fontWeight:700,color:C.text}}>TBI template</div>
+          <div style={{fontSize:"0.68rem",color:C.muted}}>{doneCount} of {steps.length} sections have data</div>
+        </div>
+      </div>
+
+      <div style={{height:4,background:C.s3,borderRadius:2,overflow:"hidden",marginBottom:16}}>
+        <div style={{width:`${pct}%`,height:"100%",background:C.accent,transition:"width 0.3s"}}/>
+      </div>
+
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {steps.map(s=>(
+          <div key={s.n} onClick={s.go}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:C.surface,border:`1px solid ${s.done?C.green+"50":C.border}`,borderRadius:10,cursor:"pointer"}}>
+            <span style={{fontSize:18,color:s.done?C.green:C.muted,flexShrink:0}}>{s.done?"✓":"○"}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:"0.78rem",fontWeight:600,color:C.text}}>{s.n}. {s.label}</div>
+              <div style={{fontSize:"0.66rem",color:s.done?C.green:C.muted,marginTop:1}}>{s.desc}</div>
+            </div>
+            <span style={{fontSize:15,color:C.muted,flexShrink:0}}>›</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule, TBITemplateModule,
   ROM_DATA, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES,
   NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP };

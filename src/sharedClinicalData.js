@@ -587,6 +587,7 @@ const ALL_TESTS = {
   mmt:{ label:"Muscle MMT", icon:"💪", groups:{ "Full MMT Assessment":"MMT_MODULE" }},
   special:{ label:"Special Tests (100+)", icon:"🔬", groups:{ "All Special Tests":"SPECIAL_TESTS_MODULE" }},
   neuro:{ label:"Neurological", icon:"⚡", groups:{ "Full Neurological Assessment":"NEURO_MODULE" }},
+  tbi:{ label:"TBI Template", icon:"🧠", groups:{ "TBI Assessment Checklist":"TBI_MODULE" }},
   gait:{ label:"Gait Analysis", icon:"🚶", groups:{ "Full Gait Analysis":"GAIT_MODULE" }},
   nkt:{ label:"CPA — Compensation Pattern Analysis", icon:"🧠", groups:{ "Compensation Pattern Tests":"NKT_REGION" }},
   kinetic:{ label:"Kinetic Chain", icon:"⛓️", groups:{ "Joint-by-Joint Assessment":"KC_REGION" }},

@@ -930,7 +930,7 @@ function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
 
 // ─── MAIN MODULE ──────────────────────────────────────────────────────────────
 export { SCALES };
-export default function OutcomeMeasuresPro({ data, set }) {
+export default function OutcomeMeasuresPro({ data, set, navContext={} }) {
   const PC=getC();
   const [view,setView]=useState("list"); // list | live | result | patient
   const [activeScale,setActiveScale]=useState(null);
@@ -938,6 +938,17 @@ export default function OutcomeMeasuresPro({ data, set }) {
   const [lastResult,setLastResult]=useState(null);
   const [omSearch,setOmSearch]=useState("");
   const [omSearchOpen,setOmSearchOpen]=useState(false);
+
+  // Deep-link support: a caller (e.g. the TBI template checklist) can jump
+  // straight into a specific scale's live-entry view via
+  // navContext.scaleId, instead of landing on the flat searchable list and
+  // making the clinician find it themselves.
+  React.useEffect(()=>{
+    if(navContext.scaleId){
+      setActiveScale(navContext.scaleId);
+      setView("live");
+    }
+  },[navContext.scaleId]);
 
   // Load history from patient data
   const getHistory=(scaleId)=>{
