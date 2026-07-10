@@ -422,6 +422,40 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     };
     const objIcon = (title) => OBJ_ICON[title] || (/screen/i.test(title) ? "\ud83c\udfc3" : "\ud83d\udcc4");
     const objColor = (title) => OBJ_COLOR[title] || "#334155";
+    // First attempt (a coloured left-border block per line) still read as
+    // one repetitive stack -- every row had identical shape, just with a
+    // stripe. This instead reuses the exact row style the Special Tests
+    // section already uses (testRow, defined below): a coloured +/-/*
+    // indicator, a bold fixed-width label column, and a lighter value
+    // column, so STTT and every other objective section reads as a proper
+    // scannable findings list instead of paragraphs of prose -- consistent
+    // with the one section of this PDF that never got a "too dense" complaint.
+    const objIndicator = (val) => {
+      const isPos = /positive|abnormal|restricted|present|reduced|elevated|absent|weak|impaired|inhibited/i.test(val);
+      const isNeg = /negative|normal|full|wnl|intact|equal|bilateral/i.test(val);
+      return isPos ? {c:"#dc2626", s:"+"} : isNeg ? {c:"#059669", s:"\u2212"} : {c:"#94a3b8", s:"\u00b7"};
+    };
+    const renderObjBody = (body, color) => {
+      const lines = body.split("\n").map(l => l.trim()).filter(Boolean);
+      return lines.map(line => {
+        const isHeader = line.endsWith(":") && line.length < 50;
+        if (isHeader) {
+          return `<div style="font-size:9px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.5px;margin:9px 0 3px;">${escHtml(line.slice(0,-1))}</div>`;
+        }
+        const colonIdx = line.indexOf(":");
+        if (colonIdx === -1 || colonIdx > 45) {
+          return `<div style="font-size:10px;color:#334155;line-height:1.6;padding:4px 0;border-bottom:1px solid #f1f5f9;">${escHtml(line)}</div>`;
+        }
+        const name = line.slice(0, colonIdx).trim();
+        const val = line.slice(colonIdx + 1).trim();
+        const ind = objIndicator(val);
+        return `<div style="display:flex;gap:6px;padding:4px 0;border-bottom:1px solid #f1f5f9;font-size:9.5px;">
+          <span style="color:${ind.c};font-weight:800;flex-shrink:0;">${ind.s}</span>
+          <span style="font-weight:600;color:#334155;min-width:130px;flex-shrink:0;">${escHtml(name)}</span>
+          <span style="color:#64748b;flex:1;">${escHtml(val)}</span>
+        </div>`;
+      }).join("");
+    };
 
     // Diagnosis
     const dxMain  = v("soap_a_diagnosis") || v("soap_a");
@@ -548,8 +582,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
       <div class="body">
 
         ${objSections.length === 0 ? `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No objective findings recorded yet.</div>` : objSections.map(s => sec(
-          objIcon(s.title), escHtml(s.title), objColor(s.title),
-          `<div style="font-size:9.5px;color:#334155;line-height:1.7;white-space:pre-line;">${escHtml(s.body)}</div>`
+          objIcon(s.title), escHtml(s.title), objColor(s.title), renderObjBody(s.body, objColor(s.title))
         )).join("")}
 
         ${(dxMain && dxMain !== "--") || dxList.length > 0 ? sec("🩺","Clinical diagnosis","#1e3a5f", `
