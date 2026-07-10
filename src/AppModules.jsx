@@ -149,21 +149,39 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
   };
 
   const gatherExercises = () => {
-    // ── 1. Real data: hep_programme array (Quick Visit / HEP module) ────────
+    // ── 1. Real data: merge Exercise Prescription (tx_exercise_prescription
+    // -- clinic-directed program added via the Treatment tab) with Home
+    // Exercise Programme (hep_programme -- separate home-only module). These
+    // two stores were deliberately split earlier so Sessions/SOAP could show
+    // them as distinct concepts, but this previously only ever read
+    // hep_programme -- so exercises added the more commonly used way, via
+    // Exercise Prescription, never appeared in the Treatment PDF (whose own
+    // section is literally titled "Exercise Prescription") or the Home
+    // Exercise Program PDF at all. De-duplicated by id/name in case the same
+    // library exercise was added to both lists.
+    const rx  = Array.isArray(d.tx_exercise_prescription) ? d.tx_exercise_prescription : [];
     const hep = Array.isArray(d.hep_programme) ? d.hep_programme : [];
-    if (hep.length > 0) {
-      return hep.map(ex => ({
-        name:        ex.name || "Unnamed Exercise",
-        sets:        ex.customSets  || ex.sets  || "3",
-        reps:        ex.customReps  || ex.reps  || "10",
-        hold:        ex.customHold  || ex.hold  || "",
-        rest:        ex.customRest  || ex.rest  || "60s",
-        freq:        ex.customFreq  || ex.freq  || "Daily",
-        phase:       ex.phase       || "Phase 1",
-        notes:       ex.notes       || "",
-        target:      ex.target      || ex.muscle || "",
-        progression: ex.progression || "",
-      }));
+    const mapEx = (ex) => ({
+      name:        ex.name || "Unnamed Exercise",
+      sets:        ex.customSets  || ex.sets  || "3",
+      reps:        ex.customReps  || ex.reps  || "10",
+      hold:        ex.customHold  || ex.hold  || "",
+      rest:        ex.customRest  || ex.rest  || "60s",
+      freq:        ex.customFreq  || ex.freq  || "Daily",
+      phase:       ex.phase       || "Phase 1",
+      notes:       ex.notes       || "",
+      target:      ex.target      || ex.muscle || "",
+      progression: ex.progression || "",
+      _key:        ex.id || ex.name || Math.random().toString(36),
+    });
+    if (rx.length > 0 || hep.length > 0) {
+      const seen = new Set();
+      const combined = [...rx.map(mapEx), ...hep.map(mapEx)].filter(ex => {
+        if (seen.has(ex._key)) return false;
+        seen.add(ex._key);
+        return true;
+      }).map(({ _key, ...rest }) => rest);
+      if (combined.length > 0) return combined;
     }
     // ── 2. Manual entries: ex_name_1..12 ────────────────────────────────────
     const exs = [];
