@@ -127,6 +127,118 @@ if (typeof document !== "undefined" && !document.getElementById("physio-hl-style
   document.head.appendChild(st);
 }
 
+// Uses the phone's built-in tilt sensor (accelerometer) as a single-axis
+// inclinometer -- the same technique validated apps like DrGoniometer /
+// Clinometer use, and shown in PT literature to track within 1-3 degrees
+// of a universal goniometer (ICC 0.95-0.99) for movements measured against
+// gravity. It is NOT reliable for rotation about the vertical axis (e.g.
+// forearm pronation/supination, hip internal/external rotation) since that
+// needs a compass heading rather than a gravity tilt -- manual entry stays
+// available for those. iOS 13+ requires an explicit permission prompt fired
+// from a direct tap (handled below); Android grants sensor access by default.
+function PhoneGoniometer({ label, unit="°", onCapture, onClose }){
+  const supported = typeof window !== "undefined" && typeof window.DeviceOrientationEvent !== "undefined";
+  const needsPermission = supported && typeof window.DeviceOrientationEvent.requestPermission === "function";
+  const [permission,setPermission]=useState(needsPermission?"prompt":"granted");
+  const [axis,setAxis]=useState("beta"); // beta = phone upright/portrait against limb; gamma = phone flat/landscape against limb
+  const [raw,setRaw]=useState(null);
+  const [baseline,setBaseline]=useState(null);
+
+  useEffect(()=>{
+    if(!supported || permission!=="granted") return;
+    const handler=(e)=>{
+      const v = axis==="beta" ? e.beta : e.gamma;
+      if(v!==null && v!==undefined) setRaw(v);
+    };
+    window.addEventListener("deviceorientation",handler);
+    return ()=>window.removeEventListener("deviceorientation",handler);
+  },[supported,permission,axis]);
+
+  const requestAccess=async()=>{
+    try{
+      const result = await window.DeviceOrientationEvent.requestPermission();
+      setPermission(result==="granted"?"granted":"denied");
+    }catch{
+      setPermission("denied");
+    }
+  };
+
+  const angle = (raw!==null && baseline!==null) ? Math.abs(raw-baseline) : null;
+
+  return(
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:99999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.surface,borderRadius:14,padding:"16px 18px",maxWidth:340,width:"100%",border:`1px solid ${C.border}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div style={{fontSize:"0.8rem",fontWeight:800,color:C.text}}>📱 Measure with phone</div>
+          <button type="button" onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,fontSize:"1rem",cursor:"pointer"}}>✕</button>
+        </div>
+        <div style={{fontSize:"0.72rem",color:C.muted,marginBottom:10}}>{label}</div>
+
+        {!supported && (
+          <div style={{fontSize:"0.72rem",color:C.text,lineHeight:1.5}}>
+            This device or browser doesn't expose a motion sensor to the page. Enter the value manually instead.
+          </div>
+        )}
+
+        {supported && permission==="prompt" && (
+          <>
+            <div style={{fontSize:"0.72rem",color:C.text,lineHeight:1.5,marginBottom:10}}>
+              iOS requires permission before an app can read the motion sensor.
+            </div>
+            <button type="button" onClick={requestAccess} style={{width:"100%",padding:"8px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:"0.75rem",fontWeight:700,cursor:"pointer"}}>
+              Enable motion sensor
+            </button>
+          </>
+        )}
+
+        {supported && permission==="denied" && (
+          <div style={{fontSize:"0.72rem",color:C.text,lineHeight:1.5}}>
+            Motion access was denied. Enable it in your browser's site settings, or enter the value manually.
+          </div>
+        )}
+
+        {supported && permission==="granted" && (
+          <>
+            <div style={{display:"flex",gap:6,marginBottom:10}}>
+              <button type="button" onClick={()=>{setAxis("beta");setBaseline(null);}}
+                style={{flex:1,padding:"6px 8px",borderRadius:7,border:`1px solid ${axis==="beta"?C.accent:C.border}`,background:axis==="beta"?`${C.accent}18`:"transparent",color:axis==="beta"?C.accent:C.muted,fontSize:"0.66rem",fontWeight:700,cursor:"pointer"}}>
+                Portrait (upright against limb)
+              </button>
+              <button type="button" onClick={()=>{setAxis("gamma");setBaseline(null);}}
+                style={{flex:1,padding:"6px 8px",borderRadius:7,border:`1px solid ${axis==="gamma"?C.accent:C.border}`,background:axis==="gamma"?`${C.accent}18`:"transparent",color:axis==="gamma"?C.accent:C.muted,fontSize:"0.66rem",fontWeight:700,cursor:"pointer"}}>
+                Landscape (flat against limb)
+              </button>
+            </div>
+
+            <div style={{textAlign:"center",padding:"10px",background:C.s2,borderRadius:9,marginBottom:10}}>
+              <div style={{fontSize:"0.6rem",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>Live tilt</div>
+              <div style={{fontSize:"1.4rem",fontWeight:800,color:C.text}}>{raw!==null?raw.toFixed(1):"—"}{unit}</div>
+            </div>
+
+            <button type="button" onClick={()=>setBaseline(raw)} disabled={raw===null}
+              style={{width:"100%",padding:"8px",borderRadius:8,border:`1px solid ${C.border}`,background:"transparent",color:C.text,fontSize:"0.75rem",fontWeight:700,cursor:raw===null?"default":"pointer",marginBottom:10,opacity:raw===null?0.5:1}}>
+              Zero at start position
+            </button>
+
+            {baseline!==null && (
+              <div style={{textAlign:"center",padding:"10px",background:`${C.accent}0d`,border:`1px solid ${C.accent}20`,borderRadius:9,marginBottom:10}}>
+                <div style={{fontSize:"0.6rem",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>Measured angle</div>
+                <div style={{fontSize:"1.4rem",fontWeight:800,color:C.accent}}>{angle!==null?Math.round(angle):"—"}{unit}</div>
+                <div style={{fontSize:"0.62rem",color:C.muted,marginTop:2}}>Move the limb to end-range, then capture</div>
+              </div>
+            )}
+
+            <button type="button" onClick={()=>{ if(angle!==null){ onCapture(Math.round(angle)); onClose(); } }} disabled={angle===null}
+              style={{width:"100%",padding:"8px",borderRadius:8,border:"none",background:angle===null?C.s3:C.accent,color:angle===null?C.muted:"#fff",fontSize:"0.75rem",fontWeight:700,cursor:angle===null?"default":"pointer"}}>
+              Use this value
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ROMModule({data,set,navContext={}}){
   const [region,setRegion]=useState(()=>{
     if(navContext.romRegion && ROM_REGIONS.includes(navContext.romRegion)) return navContext.romRegion;
@@ -162,6 +274,7 @@ function ROMModule({data,set,navContext={}}){
   const [selected,setSelected]=useState(null);
   const [showSoap,setShowSoap]=useState(false);
   const [mode,setMode]=useState("arom"); // arom | prom | resisted
+  const [gonioTarget,setGonioTarget]=useState(null); // {id,side,label,unit} while the phone-goniometer modal is open
 
   const movements=ROM_DATA[region]||[];
 
@@ -329,12 +442,20 @@ function ROMModule({data,set,navContext={}}){
                       return(
                         <div key={s} onClick={e=>e.stopPropagation()} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,minWidth:52}}>
                           {m.bilateral&&<span style={{fontSize:"0.55rem",fontWeight:700,color:C.muted}}>{s.slice(1)}</span>}
-                          <input
-                            type="number" min="0" max={m.normal?m.normal*1.2:200}
-                            value={val} placeholder="°"
-                            onChange={e=>setVal(m.id,s,e.target.value)}
-                            style={{width:52,padding:"3px 5px",borderRadius:6,border:`1px solid ${grade?grade.color:C.border}`,background:grade?`${grade.color}15`:C.s2,color:grade?grade.color:C.text,fontSize:"0.78rem",fontWeight:700,textAlign:"center"}}
-                          />
+                          <div style={{display:"flex",alignItems:"center",gap:2}}>
+                            <input
+                              type="number" min="0" max={m.normal?m.normal*1.2:200}
+                              value={val} placeholder="°"
+                              onChange={e=>setVal(m.id,s,e.target.value)}
+                              style={{width:52,padding:"3px 5px",borderRadius:6,border:`1px solid ${grade?grade.color:C.border}`,background:grade?`${grade.color}15`:C.s2,color:grade?grade.color:C.text,fontSize:"0.78rem",fontWeight:700,textAlign:"center"}}
+                            />
+                            <button type="button"
+                              onClick={()=>setGonioTarget({id:m.id, side:s, label:`${m.mv}${s?` (${s.slice(1)})`:""} — ${mode==="arom"?"Active":mode==="prom"?"Passive":"Resisted"} ROM`, unit:m.unit||"°"})}
+                              title="Measure with phone"
+                              style={{padding:"2px 3px",border:`1px solid ${C.border}`,borderRadius:5,background:"transparent",color:C.muted,fontSize:"0.62rem",cursor:"pointer",lineHeight:1}}>
+                              📱
+                            </button>
+                          </div>
                           {/* Bar indicator */}
                           {m.normal&&val&&(
                             <div style={{width:52,height:4,borderRadius:2,background:C.s3,overflow:"hidden"}}>
@@ -438,6 +559,15 @@ function ROMModule({data,set,navContext={}}){
           );
         })}
       </div>
+
+      {gonioTarget && (
+        <PhoneGoniometer
+          label={gonioTarget.label}
+          unit={gonioTarget.unit}
+          onCapture={(val)=>setVal(gonioTarget.id, gonioTarget.side, String(val))}
+          onClose={()=>setGonioTarget(null)}
+        />
+      )}
     </div>
   );
 }
