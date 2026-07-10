@@ -64,7 +64,9 @@ describe("Exercise Prescription visibility in Sessions", () => {
     );
   });
 
-  it("a past session shows its own snapshot, not the current live prescription", () => {
+  it("a past session shows the CURRENT live prescription, not a frozen snapshot -- " +
+      "Exercise Prescription is a standing programme, not a per-visit event, so exercises " +
+      "picked after a session was saved must still show up when that session is reopened", () => {
     const sessions = [{
       id: "s1", date: "01/07/2026", sessionNo: 1,
       exercisePrescription: [{ id: "rx-old", name: "Old prescribed exercise", detail: "3x10" }],
@@ -74,7 +76,19 @@ describe("Exercise Prescription visibility in Sessions", () => {
     ] };
     render(<QuickVisitForm PC={PC} data={data} set={vi.fn()} navTo={() => {}} />);
     fireEvent.click(screen.getByText(/Session 1/));
-    expect(screen.getByText("Old prescribed exercise")).toBeTruthy();
-    expect(screen.queryByText("Currently prescribed exercise")).toBeNull();
+    expect(screen.getByText("Currently prescribed exercise")).toBeTruthy();
+    expect(screen.queryByText("Old prescribed exercise")).toBeNull();
+  });
+
+  it("removing a prescribed exercise from a past session view also removes it live", () => {
+    const sessions = [{ id: "s1", date: "01/07/2026", sessionNo: 1 }];
+    const data = { tx_sessions: sessions, tx_exercise_prescription: [
+      { id: "rx1", name: "Bridging", sets: "3", reps: "12" },
+    ] };
+    const setMock = vi.fn();
+    render(<QuickVisitForm PC={PC} data={data} set={setMock} navTo={() => {}} />);
+    fireEvent.click(screen.getByText(/Session 1/));
+    fireEvent.click(screen.getByTitle("Remove"));
+    expect(setMock).toHaveBeenCalledWith("tx_exercise_prescription", []);
   });
 });

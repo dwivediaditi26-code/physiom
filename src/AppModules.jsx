@@ -1516,26 +1516,27 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
       </div>
 
       <div style={{marginBottom:14}}>
-        <div style={sectionLbl}>Exercise Prescription {isNew&&rxProgramme.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· {rxProgramme.length} exercise{rxProgramme.length!==1?"s":""}</span>}</div>
-        {isNew?(<>
-          {rxProgramme.length===0&&<div style={{fontSize:"0.78rem",color:PC.muted,padding:"4px 0 8px"}}>None prescribed yet.</div>}
-          {rxProgramme.map(e=>(
-            <div key={e.id} style={{display:"flex",alignItems:"center",gap:7,padding:"8px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:9,marginBottom:5}}>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text}}>{e.name}</div>
-                <div style={{fontSize:"0.82rem",color:PC.muted}}>{hepDose(e)}</div>
-              </div>
-              <SessionPill bg="rgba(220,38,38,0.1)" col="#dc2626" title="Remove" onClick={()=>removeRx(e.id)}>−</SessionPill>
+        <div style={sectionLbl}>Exercise Prescription {rxProgramme.length>0&&<span style={{fontWeight:600,textTransform:"none"}}>· {rxProgramme.length} exercise{rxProgramme.length!==1?"s":""}</span>}</div>
+        {/* Exercise Prescription is a standing treatment programme, not a
+            per-visit event like Modalities/Treatment -- always shows what's
+            CURRENTLY prescribed (data.tx_exercise_prescription) whether
+            you're looking at today's session or a past one, rather than a
+            frozen historical snapshot. A past session freezing this the
+            same way it freezes Modalities/Treatment meant exercises picked
+            after that session was saved would never show up when you
+            reopened it -- which is exactly what "not showing in session"
+            reports were describing. */}
+        {rxProgramme.length===0&&<div style={{fontSize:"0.78rem",color:PC.muted,padding:"4px 0 8px"}}>None prescribed yet.</div>}
+        {rxProgramme.map(e=>(
+          <div key={e.id} style={{display:"flex",alignItems:"center",gap:7,padding:"8px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:9,marginBottom:5}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:"0.76rem",fontWeight:700,color:PC.text}}>{e.name}</div>
+              <div style={{fontSize:"0.82rem",color:PC.muted}}>{hepDose(e)}</div>
             </div>
-          ))}
-          <div onClick={()=>navTo("treatment")} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.82rem",fontWeight:700,color:PC.accent,cursor:"pointer"}}>＋ Add / edit in Exercise Prescription →</div>
-        </>):(
-          <EditableItemList PC={PC} items={pastRx}
-            onAdd={(it)=>setPastRx(l=>[...l,{id:Math.random().toString(36).slice(2,9),...it}])}
-            onEdit={(id,patch)=>setPastRx(l=>l.map(e=>e.id===id?{...e,...patch}:e))}
-            onRemove={(id)=>setPastRx(l=>l.filter(e=>e.id!==id))}
-            addLabel="＋ Add exercise"/>
-        )}
+            <SessionPill bg="rgba(220,38,38,0.1)" col="#dc2626" title="Remove" onClick={()=>removeRx(e.id)}>−</SessionPill>
+          </div>
+        ))}
+        <div onClick={()=>navTo("treatment")} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.82rem",fontWeight:700,color:PC.accent,cursor:"pointer"}}>＋ Add / edit in Exercise Prescription →</div>
       </div>
 
       <button onClick={isNew?saveNew:updatePast} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",marginBottom:8}}>
