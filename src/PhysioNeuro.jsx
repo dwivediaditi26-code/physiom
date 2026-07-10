@@ -136,46 +136,13 @@ if (typeof document !== "undefined" && !document.getElementById("physio-hl-style
 // needs a compass heading rather than a gravity tilt -- manual entry stays
 // available for those. iOS 13+ requires an explicit permission prompt fired
 // from a direct tap (handled below); Android grants sensor access by default.
-// Parses the movement's real gonio placement string (e.g. shoulder flexion:
-// "Axis: lateral shoulder (GH joint); Fixed: mid-axillary line; Moving:
-// lateral humerus to lateral epicondyle") into the two physical landmarks a
-// clinician actually uses -- the fixed/stationary-arm reference and the
-// moving-segment reference -- so the phone workflow can mirror how a real
-// universal goniometer is used instead of a generic "hold still, zero,
-// capture" flow. Falls back to the raw text (e.g. "Same as flexion") when
-// a movement doesn't follow the Fixed/Moving pattern (a handful of
-// qualitative/ruler-based measures like TMJ opening).
-function parseGonioLandmarks(gonio){
-  if(!gonio) return null;
-  const m = gonio.match(/Fixed:\s*([^;]+);\s*Moving:\s*([^;]+)/i);
-  if(!m) return null;
-  return { fixed: m[1].trim(), moving: m[2].trim() };
-}
-
-// Uses the phone's built-in tilt sensor (accelerometer) as a single-axis
-// inclinometer -- the same technique validated apps like DrGoniometer /
-// Clinometer use, and shown in PT literature to track within 1-3 degrees
-// of a universal goniometer (ICC 0.95-0.99) for movements measured against
-// gravity. It is NOT reliable for rotation about the vertical axis (e.g.
-// forearm pronation/supination, hip internal/external rotation) since that
-// needs a compass heading rather than a gravity tilt -- manual entry stays
-// available for those. iOS 13+ requires an explicit permission prompt fired
-// from a direct tap (handled below); Android grants sensor access by default.
-//
-// Mirrors real goniometry technique: the phone plays the stationary arm
-// first (held at the "Fixed" landmark, e.g. mid-axillary line) to set zero,
-// then becomes the moving arm (moved to the "Moving" landmark, e.g. lateral
-// humerus) -- from that point the baseline stays locked and the reading
-// updates live as the limb moves, exactly like a goniometer needle.
-function PhoneGoniometer({ label, unit="°", gonio, onCapture, onClose }){
+function PhoneGoniometer({ label, unit="°", onCapture, onClose }){
   const supported = typeof window !== "undefined" && typeof window.DeviceOrientationEvent !== "undefined";
   const needsPermission = supported && typeof window.DeviceOrientationEvent.requestPermission === "function";
   const [permission,setPermission]=useState(needsPermission?"prompt":"granted");
   const [axis,setAxis]=useState("beta"); // beta = phone upright/portrait against limb; gamma = phone flat/landscape against limb
   const [raw,setRaw]=useState(null);
   const [baseline,setBaseline]=useState(null);
-
-  const landmarks = parseGonioLandmarks(gonio);
 
   useEffect(()=>{
     if(!supported || permission!=="granted") return;
@@ -196,8 +163,7 @@ function PhoneGoniometer({ label, unit="°", gonio, onCapture, onClose }){
     }
   };
 
-  const zeroed = baseline!==null;
-  const angle = (raw!==null && zeroed) ? Math.abs(raw-baseline) : null;
+  const angle = (raw!==null && baseline!==null) ? Math.abs(raw-baseline) : null;
 
   return(
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:99999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
@@ -236,43 +202,29 @@ function PhoneGoniometer({ label, unit="°", gonio, onCapture, onClose }){
             <div style={{display:"flex",gap:6,marginBottom:10}}>
               <button type="button" onClick={()=>{setAxis("beta");setBaseline(null);}}
                 style={{flex:1,padding:"6px 8px",borderRadius:7,border:`1px solid ${axis==="beta"?C.accent:C.border}`,background:axis==="beta"?`${C.accent}18`:"transparent",color:axis==="beta"?C.accent:C.muted,fontSize:"0.66rem",fontWeight:700,cursor:"pointer"}}>
-                Portrait (upright)
+                Portrait (upright against limb)
               </button>
               <button type="button" onClick={()=>{setAxis("gamma");setBaseline(null);}}
                 style={{flex:1,padding:"6px 8px",borderRadius:7,border:`1px solid ${axis==="gamma"?C.accent:C.border}`,background:axis==="gamma"?`${C.accent}18`:"transparent",color:axis==="gamma"?C.accent:C.muted,fontSize:"0.66rem",fontWeight:700,cursor:"pointer"}}>
-                Landscape (flat)
+                Landscape (flat against limb)
               </button>
             </div>
 
-            {/* Step 1 — stationary arm: zero against the fixed landmark */}
-            <div style={{padding:"9px 10px",background:zeroed?C.s2:`${C.accent}0d`,border:`1px solid ${zeroed?C.border:C.accent+"30"}`,borderRadius:9,marginBottom:8,opacity:zeroed?0.6:1}}>
-              <div style={{fontSize:"0.6rem",fontWeight:800,color:zeroed?C.muted:C.accent,textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:3}}>Step 1 · Stationary reference{zeroed&&" ✓"}</div>
-              <div style={{fontSize:"0.72rem",color:C.text,lineHeight:1.4}}>
-                {landmarks ? <>Hold the phone flat against the <strong>{landmarks.fixed}</strong>, keeping it still.</> : (gonio || "Hold the phone still at the joint's anatomical starting position.")}
-              </div>
-              {!zeroed && (
-                <div style={{textAlign:"center",padding:"8px",background:C.s2,borderRadius:8,margin:"8px 0"}}>
-                  <div style={{fontSize:"0.58rem",color:C.muted,textTransform:"uppercase",letterSpacing:"0.6px"}}>Live tilt</div>
-                  <div style={{fontSize:"1.25rem",fontWeight:800,color:C.text}}>{raw!==null?raw.toFixed(1):"—"}{unit}</div>
-                </div>
-              )}
-              <button type="button" onClick={()=>setBaseline(zeroed?null:raw)} disabled={!zeroed && raw===null}
-                style={{width:"100%",padding:"7px",borderRadius:7,border:`1px solid ${C.border}`,background:zeroed?"transparent":C.surface,color:C.text,fontSize:"0.72rem",fontWeight:700,cursor:(!zeroed && raw===null)?"default":"pointer",marginTop:zeroed?0:6,opacity:(!zeroed && raw===null)?0.5:1}}>
-                {zeroed ? "🔒 Locked at 0° — tap to re-zero" : "Zero here"}
-              </button>
+            <div style={{textAlign:"center",padding:"10px",background:C.s2,borderRadius:9,marginBottom:10}}>
+              <div style={{fontSize:"0.6rem",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>Live tilt</div>
+              <div style={{fontSize:"1.4rem",fontWeight:800,color:C.text}}>{raw!==null?raw.toFixed(1):"—"}{unit}</div>
             </div>
 
-            {/* Step 2 — moving arm: relocate the phone, read the live angle */}
-            {zeroed && (
-              <div style={{padding:"9px 10px",background:`${C.accent}0d`,border:`1px solid ${C.accent}20`,borderRadius:9,marginBottom:10}}>
-                <div style={{fontSize:"0.6rem",fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:3}}>Step 2 · Moving segment</div>
-                <div style={{fontSize:"0.72rem",color:C.text,lineHeight:1.4,marginBottom:8}}>
-                  {landmarks ? <>Now move the phone onto the <strong>{landmarks.moving}</strong> and move through the range — it reads live, like a goniometer's moving arm.</> : "Now move the phone onto the moving segment and move through the range — it reads live."}
-                </div>
-                <div style={{textAlign:"center",padding:"10px",background:C.surface,borderRadius:8}}>
-                  <div style={{fontSize:"0.6rem",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>Live angle</div>
-                  <div style={{fontSize:"1.6rem",fontWeight:800,color:C.accent}}>{angle!==null?Math.round(angle):"—"}{unit}</div>
-                </div>
+            <button type="button" onClick={()=>setBaseline(raw)} disabled={raw===null}
+              style={{width:"100%",padding:"8px",borderRadius:8,border:`1px solid ${C.border}`,background:"transparent",color:C.text,fontSize:"0.75rem",fontWeight:700,cursor:raw===null?"default":"pointer",marginBottom:10,opacity:raw===null?0.5:1}}>
+              Zero at start position
+            </button>
+
+            {baseline!==null && (
+              <div style={{textAlign:"center",padding:"10px",background:`${C.accent}0d`,border:`1px solid ${C.accent}20`,borderRadius:9,marginBottom:10}}>
+                <div style={{fontSize:"0.6rem",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:2}}>Measured angle</div>
+                <div style={{fontSize:"1.4rem",fontWeight:800,color:C.accent}}>{angle!==null?Math.round(angle):"—"}{unit}</div>
+                <div style={{fontSize:"0.62rem",color:C.muted,marginTop:2}}>Move the limb to end-range, then capture</div>
               </div>
             )}
 
@@ -498,7 +450,7 @@ function ROMModule({data,set,navContext={}}){
                               style={{width:52,padding:"3px 5px",borderRadius:6,border:`1px solid ${grade?grade.color:C.border}`,background:grade?`${grade.color}15`:C.s2,color:grade?grade.color:C.text,fontSize:"0.78rem",fontWeight:700,textAlign:"center"}}
                             />
                             <button type="button"
-                              onClick={()=>setGonioTarget({id:m.id, side:s, label:`${m.mv}${s?` (${s.slice(1)})`:""} — ${mode==="arom"?"Active":mode==="prom"?"Passive":"Resisted"} ROM`, unit:m.unit||"°", gonio:m.gonio})}
+                              onClick={()=>setGonioTarget({id:m.id, side:s, label:`${m.mv}${s?` (${s.slice(1)})`:""} — ${mode==="arom"?"Active":mode==="prom"?"Passive":"Resisted"} ROM`, unit:m.unit||"°"})}
                               title="Measure with phone"
                               style={{padding:"2px 3px",border:`1px solid ${C.border}`,borderRadius:5,background:"transparent",color:C.muted,fontSize:"0.62rem",cursor:"pointer",lineHeight:1}}>
                               📱
@@ -612,7 +564,6 @@ function ROMModule({data,set,navContext={}}){
         <PhoneGoniometer
           label={gonioTarget.label}
           unit={gonioTarget.unit}
-          gonio={gonioTarget.gonio}
           onCapture={(val)=>setVal(gonioTarget.id, gonioTarget.side, String(val))}
           onClose={()=>setGonioTarget(null)}
         />
