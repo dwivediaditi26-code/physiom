@@ -4,7 +4,7 @@ import { ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { runInterpretation } from "./interpretationEngine/index.js";
 import { buildAssessmentData } from "./interpretationAdapter.js";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
-import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION } from "./sharedClinicalData.js";
+import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA } from "./sharedClinicalData.js";
 import { SCALES } from "./sharedClinicalData.js";
 import { SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel, CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey, EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES } from "./sharedClinicalData.js";
@@ -2791,7 +2791,8 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     // Red flags neurological
     const nrfKeys = [["nrf_myelopathy","Myelopathy signs"],["nrf_cauda","Cauda equina"],
                      ["nrf_saddle","Saddle anaesthesia"],["nrf_sphincter","Sphincter dysfunction"],
-                     ["nrf_bilateral","Bilateral signs"],["nrf_prog_weak","Progressive weakness"]];
+                     ["nrf_bilateral","Bilateral signs"],["nrf_prog_weak","Progressive weakness"],
+                     ["nrf_raised_icp","Raised ICP signs"],["nrf_loc_change","Evolving consciousness change"]];
     const nrfFlags = nrfKeys.filter(([k]) => data[k] === true || String(data[k]).includes("yes") || String(data[k]).includes("present"))
                               .map(([,label]) => label);
     if (nrfFlags.length) neuroLines.push(`  ⚠️ Red Flags: ${nrfFlags.join(", ")}`);
@@ -2801,6 +2802,48 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       const total = (Number(gcsE)||0)+(Number(gcsV)||0)+(Number(gcsM)||0);
       neuroLines.push(`  GCS: E${gcsE||"?"}+V${gcsV||"?"}+M${gcsM||"?"} = ${total||"?"}/15`);
     }
+    // Cranial nerves — only lines that were actually tested
+    const cnLines = [];
+    CRANIAL_NERVES.forEach(cn => {
+      const val = v(`cn_${cn.id}_status`);
+      if (val) cnLines.push(`  CN ${cn.numeral} (${cn.name}): ${val}`);
+    });
+    if (cnLines.length) neuroLines.push(`  Cranial nerves:\n${cnLines.join("\n")}`);
+
+    // Cognition — orientation + MoCA/MMSE
+    const orientKeys = [["cog_orient_person","Person"],["cog_orient_place","Place"],["cog_orient_time","Time"],["cog_orient_situation","Situation"]];
+    const orientResults = orientKeys.filter(([k]) => data[k]).map(([k,label]) => `${label}: ${data[k]}`);
+    if (orientResults.length) neuroLines.push(`  Orientation: ${orientResults.join(", ")}`);
+    if (v("cog_moca_score")) neuroLines.push(`  MoCA: ${v("cog_moca_score")}/30`);
+    if (v("cog_mmse_score")) neuroLines.push(`  MMSE: ${v("cog_mmse_score")}/30`);
+
+    // Coordination + involuntary movements
+    const coordLines = [];
+    COORDINATION_TESTS.forEach(t => {
+      const lv = v(`${t.id}_L`), rv = v(`${t.id}_R`);
+      if (lv||rv) coordLines.push(`  ${t.label}: L ${lv||"—"} / R ${rv||"—"}`);
+    });
+    if (coordLines.length) neuroLines.push(`  Coordination:\n${coordLines.join("\n")}`);
+    if (v("neuro_involuntary_type") && v("neuro_involuntary_type") !== "None observed") {
+      neuroLines.push(`  Involuntary movements: ${v("neuro_involuntary_type")}${v("neuro_involuntary_notes") ? " — "+v("neuro_involuntary_notes") : ""}`);
+    }
+
+    // Vestibular / oculomotor
+    const vestLines = [];
+    VESTIBULAR_TESTS.forEach(t => {
+      const val = v(`vest_${t.id}_result`);
+      if (val) vestLines.push(`  ${t.label}: ${val}`);
+    });
+    if (vestLines.length) neuroLines.push(`  Vestibular/oculomotor:\n${vestLines.join("\n")}`);
+
+    // Perceptual screen
+    const percLines = [];
+    PERCEPTUAL_TESTS.forEach(t => {
+      const val = v(`perc_${t.id}_result`);
+      if (val) percLines.push(`  ${t.label}: ${val}`);
+    });
+    if (percLines.length) neuroLines.push(`  Perceptual screen:\n${percLines.join("\n")}`);
+
     // General neuro notes
     if (v("neuro_clinician_notes")) neuroLines.push(`  Notes: ${v("neuro_clinician_notes")}`);
     if (neuroLines.length) O_parts.push(`Neurological:\n${neuroLines.join("\n")}.`);

@@ -1,7 +1,7 @@
 // PhysioNeuro.jsx — ALL_TESTS, ROM, MMT, Neurological
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
-import { ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, MMT_ICONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP } from "./sharedClinicalData.js";
+import { ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, MMT_ICONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP, CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
 
 
 const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
@@ -803,6 +803,11 @@ function NeurologicalModule({ data, set, navContext={} }) {
     if(first.startsWith("nt_")||first.startsWith("nrf_")) setTab("neural_tension");
     else if(first.startsWith("gcs_")) setTab("gcs");
     else if(first.startsWith("dtr_")) setTab("reflexes");
+    else if(first.startsWith("cn_")) setTab("cranial");
+    else if(first.startsWith("cog_")) setTab("cognition");
+    else if(first.startsWith("coord_")) setTab("coordination");
+    else if(first.startsWith("vest_")) setTab("vestibular");
+    else if(first.startsWith("perc_")) setTab("perceptual");
     else setTab("dermatomes");
     setTimeout(()=>{
       let scrolled=false;
@@ -863,6 +868,11 @@ function NeurologicalModule({ data, set, navContext={} }) {
     { key:"reflexes",    label:"Reflexes",          icon:"🔨" },
     { key:"tension",     label:"Neural Tension",    icon:"⚡" },
     { key:"gcs",         label:"GCS",               icon:"🧠" },
+    { key:"cranial",     label:"Cranial Nerves",    icon:"👁️" },
+    { key:"cognition",   label:"Cognition",         icon:"🗓️" },
+    { key:"coordination",label:"Coordination",      icon:"🎯" },
+    { key:"vestibular",  label:"Vestibular",        icon:"🌀" },
+    { key:"perceptual",  label:"Perceptual",        icon:"🧩" },
     { key:"redflags",    label:"Red Flags",         icon:"🚨" },
     { key:"reasoning",   label:"Clinical Reasoning",icon:"📊" },
   ];
@@ -1726,6 +1736,176 @@ function NeurologicalModule({ data, set, navContext={} }) {
               style={{...inp,resize:"vertical",minHeight:100,display:"block",lineHeight:1.6}}
             />
           </div>
+        </div>
+      )}
+
+      {/* ── CRANIAL NERVES ── */}
+      {tab==="cranial"&&(
+        <div>
+          {sectionHead("Cranial Nerve Exam — I through XII")}
+          {CRANIAL_NERVES.map(cn=>{
+            const val = data[`cn_${cn.id}_status`]||"";
+            const flagged = /Impaired|UMN pattern|LMN pattern|Conductive|Sensorineural|Deviates|Weak/.test(val);
+            return (
+              <div key={cn.id} data-neuro-id={`cn_${cn.id}`} style={{background:C.surface,border:`1px solid ${flagged?C.red+"50":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:9}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:6}}>
+                  <div>
+                    <span style={{fontWeight:800,fontSize:"0.8rem",color:C.text}}>CN {cn.numeral}</span>
+                    <span style={{fontSize:"0.76rem",color:C.muted,marginLeft:6}}>{cn.name}</span>
+                  </div>
+                  <select value={val} onChange={e=>set(`cn_${cn.id}_status`,e.target.value)} style={{...inp,width:"auto",minWidth:150,flexShrink:0,borderColor:flagged?C.red:C.border,color:flagged?C.red:C.text}}>
+                    <option value="">Not tested</option>
+                    {cn.record.split(" / ").map(opt=><option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                </div>
+                <div style={{fontSize:"0.7rem",color:C.muted,lineHeight:1.5,marginBottom:5}}><strong style={{color:C.a2}}>Test:</strong> {cn.test}</div>
+                <div style={{fontSize:"0.68rem",color:C.muted,lineHeight:1.5,background:C.s2,borderRadius:6,padding:"6px 8px"}}>{cn.note}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── COGNITION ── */}
+      {tab==="cognition"&&(
+        <div>
+          {sectionHead("Consciousness & Cognition — Orientation, MoCA, MMSE")}
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:12}}>
+            <div style={{fontWeight:700,fontSize:"0.78rem",color:C.text,marginBottom:8}}>Orientation</div>
+            {[["cog_orient_person","Person — knows own name"],["cog_orient_place","Place — knows current location"],["cog_orient_time","Time — knows approximate date/time"],["cog_orient_situation","Situation — understands why they are here"]].map(([id,label])=>{
+              const val=data[id]||"";
+              return(
+                <div key={id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <span style={{fontSize:"0.75rem",color:C.text}}>{label}</span>
+                  <div style={{display:"flex",gap:5}}>
+                    {["Yes","No"].map(opt=>(
+                      <button key={opt} type="button" onClick={()=>set(id,val===opt?"":opt)}
+                        style={{padding:"4px 12px",borderRadius:7,border:`1px solid ${val===opt?(opt==="Yes"?C.green:C.red):C.border}`,background:val===opt?(opt==="Yes"?C.green:C.red)+"18":"transparent",color:val===opt?(opt==="Yes"?C.green:C.red):C.muted,fontSize:"0.72rem",fontWeight:val===opt?700:400,cursor:"pointer"}}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {[
+            {id:"cog_moca_score",label:"MoCA — Montreal Cognitive Assessment",max:30,cutoff:26,cutoffText:"impairment"},
+            {id:"cog_mmse_score",label:"MMSE — Mini-Mental State Exam",max:30,cutoff:24,cutoffText:"impairment"},
+          ].map(scale=>{
+            const val=parseInt(data[scale.id])||"";
+            const numVal=parseInt(data[scale.id]);
+            const impaired = !isNaN(numVal) && numVal < scale.cutoff;
+            return(
+              <div key={scale.id} style={{background:C.surface,border:`1px solid ${impaired?C.red+"50":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:9}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontWeight:700,fontSize:"0.78rem",color:C.text}}>{scale.label}</span>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <input type="number" min="0" max={scale.max} value={val} placeholder="—"
+                      onChange={e=>set(scale.id,e.target.value)}
+                      style={{width:54,padding:"4px 6px",borderRadius:6,border:`1px solid ${impaired?C.red:C.border}`,background:C.s2,color:impaired?C.red:C.text,fontSize:"0.8rem",fontWeight:700,textAlign:"center"}}/>
+                    <span style={{fontSize:"0.68rem",color:C.muted}}>/ {scale.max}</span>
+                  </div>
+                </div>
+                {!isNaN(numVal)&&<div style={{fontSize:"0.68rem",color:impaired?C.red:C.green,marginTop:5,fontWeight:600}}>{impaired?`Below ${scale.cutoff} — suggests cognitive ${scale.cutoffText}`:`At or above ${scale.cutoff} — within normal range`}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── COORDINATION ── */}
+      {tab==="coordination"&&(
+        <div>
+          {sectionHead("Coordination & Involuntary Movements")}
+          {COORDINATION_TESTS.map(t=>(
+            <div key={t.id} data-neuro-id={t.id} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:9}}>
+              <div style={{fontWeight:700,fontSize:"0.78rem",color:C.text,marginBottom:4}}>{t.label}</div>
+              <div style={{fontSize:"0.7rem",color:C.muted,lineHeight:1.5,marginBottom:8}}>{t.how}</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                {["L","R"].map(side=>{
+                  const id=`${t.id}_${side}`; const val=data[id]||"";
+                  const flagged=/dysmetria|ataxia|dysdiadochokinesia|Present|Unable/i.test(val)&&!/Absent|Normal/i.test(val);
+                  return(
+                    <div key={side}>
+                      <div style={{fontSize:"0.6rem",fontWeight:700,color:C.muted,marginBottom:3}}>{side==="L"?"Left":"Right"}</div>
+                      <select value={val} onChange={e=>set(id,e.target.value)} style={{...inp,borderColor:flagged?C.red:C.border,color:flagged?C.red:C.text}}>
+                        <option value="">Not tested</option>
+                        {t.record.map(o=><option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{fontSize:"0.66rem",color:C.muted,lineHeight:1.5,background:C.s2,borderRadius:6,padding:"6px 8px"}}>{t.note}</div>
+            </div>
+          ))}
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px"}}>
+            <div style={{fontWeight:700,fontSize:"0.78rem",color:C.text,marginBottom:8}}>Involuntary movements</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
+              {INVOLUNTARY_MOVEMENT_TYPES.map(opt=>{
+                const active=data["neuro_involuntary_type"]===opt;
+                return(
+                  <button key={opt} type="button" onClick={()=>set("neuro_involuntary_type",active?"":opt)}
+                    style={{padding:"5px 11px",borderRadius:8,border:`1px solid ${active?C.accent:C.border}`,background:active?`${C.accent}18`:"transparent",color:active?C.accent:C.muted,fontSize:"0.7rem",fontWeight:active?700:400,cursor:"pointer"}}>
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+            <textarea value={data["neuro_involuntary_notes"]||""} onChange={e=>set("neuro_involuntary_notes",e.target.value)}
+              placeholder="Describe frequency, amplitude, distribution, and any triggers..."
+              style={{...inp,resize:"vertical",minHeight:60,lineHeight:1.5}}/>
+          </div>
+        </div>
+      )}
+
+      {/* ── VESTIBULAR / OCULOMOTOR ── */}
+      {tab==="vestibular"&&(
+        <div>
+          {sectionHead("Vestibular & Oculomotor Screen")}
+          {VESTIBULAR_TESTS.map(t=>{
+            const id=`vest_${t.id}_result`; const val=data[id]||"";
+            const flagged=/Positive|Abnormal|central|drop/i.test(val)&&!/Negative|Normal/i.test(val);
+            return(
+              <div key={t.id} data-neuro-id={t.id} style={{background:C.surface,border:`1px solid ${flagged?C.red+"50":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:9}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:5}}>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:"0.78rem",color:C.text}}>{t.label}</div>
+                    <div style={{fontSize:"0.65rem",color:C.a3,marginTop:1}}>{t.purpose}</div>
+                  </div>
+                </div>
+                <div style={{fontSize:"0.7rem",color:C.muted,lineHeight:1.5,marginBottom:8}}>{t.how}</div>
+                <select value={val} onChange={e=>set(id,e.target.value)} style={{...inp,borderColor:flagged?C.red:C.border,color:flagged?C.red:C.text,marginBottom:8}}>
+                  <option value="">Not tested</option>
+                  {t.record.map(o=><option key={o} value={o}>{o}</option>)}
+                </select>
+                <div style={{fontSize:"0.66rem",color:C.muted,lineHeight:1.5,background:C.s2,borderRadius:6,padding:"6px 8px"}}>{t.note}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── PERCEPTUAL ── */}
+      {tab==="perceptual"&&(
+        <div>
+          {sectionHead("Perceptual Screen — Neglect, Apraxia, Body Scheme")}
+          {PERCEPTUAL_TESTS.map(t=>{
+            const id=`perc_${t.id}_result`; const val=data[id]||"";
+            const flagged=/neglect|Ideomotor|Ideational|Impaired/i.test(val)&&!/No neglect|Absent|Intact/i.test(val);
+            return(
+              <div key={t.id} data-neuro-id={t.id} style={{background:C.surface,border:`1px solid ${flagged?C.red+"50":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:9}}>
+                <div style={{fontWeight:700,fontSize:"0.78rem",color:C.text,marginBottom:4}}>{t.label}</div>
+                <div style={{fontSize:"0.7rem",color:C.muted,lineHeight:1.5,marginBottom:8}}>{t.how}</div>
+                <select value={val} onChange={e=>set(id,e.target.value)} style={{...inp,borderColor:flagged?C.red:C.border,color:flagged?C.red:C.text,marginBottom:8}}>
+                  <option value="">Not tested</option>
+                  {t.record.map(o=><option key={o} value={o}>{o}</option>)}
+                </select>
+                <div style={{fontSize:"0.66rem",color:C.muted,lineHeight:1.5,background:C.s2,borderRadius:6,padding:"6px 8px"}}>{t.note}</div>
+              </div>
+            );
+          })}
         </div>
       )}
 
