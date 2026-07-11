@@ -1659,6 +1659,30 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
               );
             })}
           </div>
+
+          {/* Bowel and bladder MANAGEMENT status -- distinct from the new-
+              onset red-flag screening questions above. This tracks a
+              patient's ongoing baseline management (relevant for SCI in
+              particular, where it's a standing part of the clinical
+              picture) rather than an acute new symptom. */}
+          <div style={{marginTop:14}}>
+            {sectionHead("Bowel and Bladder Management")}
+            {[
+              {id:"sci_bladder_mgmt",label:"Bladder management",options:["Voiding independently","Intermittent self-catheterization","Indwelling catheter","Suprapubic catheter","Reflex voiding","Not applicable"]},
+              {id:"sci_bowel_mgmt",label:"Bowel management",options:["Independent","Suppository-assisted","Manual evacuation","Colostomy","Not applicable"]},
+            ].map(q=>{
+              const val=data[q.id]||"";
+              return(
+                <div key={q.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,padding:"9px 12px",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,marginBottom:6}}>
+                  <span style={{fontSize:"0.76rem",color:C.text,flex:1}}>{q.label}</span>
+                  <select value={val} onChange={e=>set(q.id,e.target.value)} style={{...inp,width:"auto",minWidth:170,flexShrink:0}}>
+                    <option value="">— select —</option>
+                    {q.options.map(o=><option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -2130,6 +2154,184 @@ function StrokeTemplateModule({ data, navTo }) {
   return <ConditionChecklist label="Stroke template" icon="❤️‍🩹" steps={steps}/>;
 }
 
+function SCITemplateModule({ data, navTo }) {
+  const anyKeyStartsWith = (prefix) => Object.keys(data||{}).some(k=>k.startsWith(prefix) && data[k]);
+
+  const steps = [
+    {
+      n:1, label:"Red flags", desc:"Autonomic dysreflexia — screen before proceeding",
+      done: ["nrf_saddle","nrf_bilateral","nrf_sphincter","nrf_prog_weak","nrf_autonomic_dysreflexia"].some(k=>data[k]),
+      go: ()=>navTo("neuro",{neuroHighlight:"nrf_autonomic_dysreflexia"}),
+    },
+    {
+      n:2, label:"ASIA grading", desc:"Motor and sensory, neurological level of injury — opens Outcome measures",
+      done: !!data.asia_grade || anyKeyStartsWith("asia_m_"),
+      go: ()=>navTo("outcome",{scaleId:"asia"}),
+    },
+    {
+      n:3, label:"Reflexes", desc:"DTRs, Babinski, clonus",
+      done: REFLEXES.some(r=>data[`${r.id}_left`]||data[`${r.id}_right`]),
+      go: ()=>navTo("neuro",{neuroHighlight:"n_ref_bicep_left"}),
+    },
+    {
+      n:4, label:"Sensory dermatomes", desc:"Pinprick and light touch by level",
+      done: DERMATOMES.some(d=>data[`${d.id}_left`]||data[`${d.id}_right`]),
+      go: ()=>navTo("neuro",{neuroHighlight:"n_c5_left"}),
+    },
+    {
+      n:5, label:"Tone", desc:"Modified Ashworth Scale — opens Outcome measures",
+      done: anyKeyStartsWith("mas_"),
+      go: ()=>navTo("outcome",{scaleId:"mas"}),
+    },
+    {
+      n:6, label:"Bowel, bladder, and skin management", desc:"Ongoing management status",
+      done: !!(data.sci_bladder_mgmt || data.sci_bowel_mgmt),
+      go: ()=>navTo("neuro",{neuroHighlight:"sci_bladder_mgmt"}),
+    },
+    {
+      n:7, label:"Coordination", desc:"Finger-nose, heel-shin, involuntary movements",
+      done: anyKeyStartsWith("coord_") || !!data.neuro_involuntary_type,
+      go: ()=>navTo("neuro",{neuroHighlight:"coord_fingernose_L"}),
+    },
+    {
+      n:8, label:"Cranial nerves", desc:"Screen for concurrent head injury — I through XII",
+      done: anyKeyStartsWith("cn_"),
+      go: ()=>navTo("neuro",{neuroHighlight:"cn_cn1"}),
+    },
+    {
+      n:9, label:"Balance and gait", desc:"If ambulatory — Berg, TUG, DGI — opens Outcome measures",
+      done: anyKeyStartsWith("bbs_") || !!data.tug_time || anyKeyStartsWith("dgi_"),
+      go: ()=>navTo("outcome",{scaleId:"bbs"}),
+    },
+    {
+      n:10, label:"Barthel functional outcome", desc:"ADL independence — opens Outcome measures",
+      done: anyKeyStartsWith("barthel_"),
+      go: ()=>navTo("outcome",{scaleId:"barthel"}),
+    },
+  ];
+
+  return <ConditionChecklist label="SCI template" icon="🦾" steps={steps}/>;
+}
+
+function ParkinsonsTemplateModule({ data, navTo }) {
+  const anyKeyStartsWith = (prefix) => Object.keys(data||{}).some(k=>k.startsWith(prefix) && data[k]);
+
+  const steps = [
+    {
+      n:1, label:"Red flags", desc:"Screen before proceeding",
+      done: ["nrf_saddle","nrf_bilateral","nrf_sphincter","nrf_prog_weak"].some(k=>data[k]),
+      go: ()=>navTo("neuro",{neuroHighlight:"nrf_prog_weak"}),
+    },
+    {
+      n:2, label:"Hoehn and Yahr staging", desc:"Disease stage — opens Outcome measures",
+      done: data.hoehnyahr_stage!==undefined && data.hoehnyahr_stage!=="",
+      go: ()=>navTo("outcome",{scaleId:"hoehnyahr"}),
+    },
+    {
+      n:3, label:"Rigidity", desc:"Upper limb, lower limb, neck — opens Outcome measures",
+      done: anyKeyStartsWith("pdrigidity_"),
+      go: ()=>navTo("outcome",{scaleId:"pdrigidity"}),
+    },
+    {
+      n:4, label:"Tremor and involuntary movements", desc:"Including freezing of gait",
+      done: !!data.neuro_involuntary_type && data.neuro_involuntary_type!=="None observed",
+      go: ()=>navTo("neuro",{neuroHighlight:"coord_fingernose_L"}),
+    },
+    {
+      n:5, label:"Coordination", desc:"Finger-nose, heel-shin, rapid alternating movements",
+      done: anyKeyStartsWith("coord_"),
+      go: ()=>navTo("neuro",{neuroHighlight:"coord_fingernose_L"}),
+    },
+    {
+      n:6, label:"Cranial nerves", desc:"Facial masking, hypophonia — I through XII",
+      done: anyKeyStartsWith("cn_"),
+      go: ()=>navTo("neuro",{neuroHighlight:"cn_cn1"}),
+    },
+    {
+      n:7, label:"Cognition", desc:"Orientation, MoCA, MMSE — PD-associated cognitive change",
+      done: !!(data.cog_orient_person||data.cog_orient_place||data.cog_orient_time||data.cog_orient_situation||anyKeyStartsWith("moca_")||anyKeyStartsWith("mmse_")),
+      go: ()=>navTo("neuro",{neuroHighlight:"cog_orient_person"}),
+    },
+    {
+      n:8, label:"Balance and gait", desc:"TUG, freezing screen — opens Outcome measures",
+      done: !!data.tug_time || anyKeyStartsWith("bbs_"),
+      go: ()=>navTo("outcome",{scaleId:"tug"}),
+    },
+    {
+      n:9, label:"UPDRS part summary", desc:"4-part motor and non-motor totals — opens Outcome measures",
+      done: anyKeyStartsWith("updrs_"),
+      go: ()=>navTo("outcome",{scaleId:"updrs"}),
+    },
+    {
+      n:10, label:"Barthel functional outcome", desc:"ADL independence — opens Outcome measures",
+      done: anyKeyStartsWith("barthel_"),
+      go: ()=>navTo("outcome",{scaleId:"barthel"}),
+    },
+  ];
+
+  return <ConditionChecklist label="Parkinson's template" icon="🌀" steps={steps}/>;
+}
+
+function MSTemplateModule({ data, navTo }) {
+  const anyKeyStartsWith = (prefix) => Object.keys(data||{}).some(k=>k.startsWith(prefix) && data[k]);
+
+  const steps = [
+    {
+      n:1, label:"Red flags", desc:"Screen before proceeding",
+      done: ["nrf_saddle","nrf_bilateral","nrf_sphincter","nrf_prog_weak"].some(k=>data[k]),
+      go: ()=>navTo("neuro",{neuroHighlight:"nrf_prog_weak"}),
+    },
+    {
+      n:2, label:"EDSS", desc:"Functional System Scores and overall grade — opens Outcome measures",
+      done: anyKeyStartsWith("edss_"),
+      go: ()=>navTo("outcome",{scaleId:"edss"}),
+    },
+    {
+      n:3, label:"Cranial nerves", desc:"Optic neuritis, facial sensation — I through XII",
+      done: anyKeyStartsWith("cn_"),
+      go: ()=>navTo("neuro",{neuroHighlight:"cn_cn2"}),
+    },
+    {
+      n:4, label:"Vestibular and oculomotor", desc:"Nystagmus, internuclear ophthalmoplegia",
+      done: anyKeyStartsWith("vest_"),
+      go: ()=>navTo("neuro",{neuroHighlight:"vest_vest_dixhallpike"}),
+    },
+    {
+      n:5, label:"Coordination", desc:"Cerebellar signs — finger-nose, heel-shin, RAM",
+      done: anyKeyStartsWith("coord_"),
+      go: ()=>navTo("neuro",{neuroHighlight:"coord_fingernose_L"}),
+    },
+    {
+      n:6, label:"Sensory dermatomes", desc:"Pinprick and light touch",
+      done: DERMATOMES.some(d=>data[`${d.id}_left`]||data[`${d.id}_right`]),
+      go: ()=>navTo("neuro",{neuroHighlight:"n_c5_left"}),
+    },
+    {
+      n:7, label:"Reflexes", desc:"DTRs, Babinski, clonus",
+      done: REFLEXES.some(r=>data[`${r.id}_left`]||data[`${r.id}_right`]),
+      go: ()=>navTo("neuro",{neuroHighlight:"n_ref_bicep_left"}),
+    },
+    {
+      n:8, label:"Cognition", desc:"Orientation, MoCA, MMSE — MS-associated cognitive change",
+      done: !!(data.cog_orient_person||data.cog_orient_place||data.cog_orient_time||data.cog_orient_situation||anyKeyStartsWith("moca_")||anyKeyStartsWith("mmse_")),
+      go: ()=>navTo("neuro",{neuroHighlight:"cog_orient_person"}),
+    },
+    {
+      n:9, label:"Balance and gait", desc:"Fatigue-sensitive — Berg, TUG, DGI — opens Outcome measures",
+      done: anyKeyStartsWith("bbs_") || !!data.tug_time || anyKeyStartsWith("dgi_"),
+      go: ()=>navTo("outcome",{scaleId:"bbs"}),
+    },
+    {
+      n:10, label:"Barthel functional outcome", desc:"ADL independence — opens Outcome measures",
+      done: anyKeyStartsWith("barthel_"),
+      go: ()=>navTo("outcome",{scaleId:"barthel"}),
+    },
+  ];
+
+  return <ConditionChecklist label="MS template" icon="🧬" steps={steps}/>;
+}
+
 export { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule, TBITemplateModule, StrokeTemplateModule,
+  SCITemplateModule, ParkinsonsTemplateModule, MSTemplateModule,
   ROM_DATA, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES,
   NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP };

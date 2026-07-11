@@ -467,6 +467,74 @@ Object.assign(SCALES, {
     score:(v)=>v.rankin_grade?+v.rankin_grade.split(" — ")[0]:null
   },
 
+  hoehnyahr:{id:"hoehnyahr",label:"H&Y",full:"Hoehn and Yahr Scale — Parkinson Disease Staging",icon:"🌀",category:"Parkinson's",
+    maxScore:5,unit:"",mcid:1,
+    adminNote:"Base the stage on the patient current, medicated (\"on\") state unless you are specifically documenting an \"off\" period, and note which state you assessed in. Stage reflects bilateral vs unilateral involvement and postural stability, not tremor severity alone.",
+    interpret:(s)=>s===0?{label:"No signs of disease",color:"#16a34a"}:s===1?{label:"Unilateral involvement only",color:"#65a30d"}:s===2?{label:"Bilateral involvement, no balance impairment",color:"#0891b2"}:s===3?{label:"Bilateral involvement with mild-moderate postural instability, physically independent",color:"#d97706"}:s===4?{label:"Severe disability, still able to walk or stand unassisted",color:"#ea580c"}:{label:"Wheelchair-bound or bedridden unless aided",color:"#dc2626"},
+    fields:[
+      {id:"hoehnyahr_stage",label:"Hoehn and Yahr Stage",options:[
+        "0 — No signs of disease",
+        "1 — Unilateral involvement only, usually minimal or no functional impairment",
+        "2 — Bilateral or midline involvement, without impairment of balance",
+        "3 — Bilateral disease with mild to moderate postural instability, physically independent",
+        "4 — Severely disabling disease, still able to walk or stand unassisted",
+        "5 — Confined to bed or wheelchair unless aided",
+      ]},
+    ],
+    score:(v)=>v.hoehnyahr_stage!==undefined?+v.hoehnyahr_stage.split(" — ")[0]:null
+  },
+
+  pdrigidity:{id:"pdrigidity",label:"Rigidity",full:"Parkinsonian Rigidity Grading (per limb)",icon:"🔗",category:"Parkinson's",
+    maxScore:4,unit:"/4",mcid:1,
+    adminNote:"Rigidity is NOT the same as spasticity -- it is a constant resistance through the full range regardless of movement speed (unlike spasticity, which is velocity-dependent), often with a ratchety \"cogwheel\" quality when tremor is superimposed on lead-pipe rigidity. Move each limb slowly through its full passive range with the patient relaxed and not anticipating the movement -- ask them to look away or perform a distracting task (e.g. tapping the opposite hand) since voluntary relaxation is difficult and distraction reveals true tone.",
+    interpret:(s)=>s===0?{label:"No rigidity",color:"#16a34a"}:s===1?{label:"Mild, detectable only with reinforcement",color:"#65a30d"}:s===2?{label:"Mild to moderate",color:"#d97706"}:s===3?{label:"Marked, full range still easily achieved",color:"#ea580c"}:{label:"Severe, range achieved with difficulty",color:"#dc2626"},
+    fields:[
+      {id:"pdrigidity_upper",label:"Upper limb",options:["0 — No rigidity","1 — Mild, only detectable with reinforcement (e.g. clenching the opposite fist)","2 — Mild to moderate","3 — Marked, but full range of motion still easily achieved","4 — Severe, range of motion achieved with difficulty"]},
+      {id:"pdrigidity_lower",label:"Lower limb",options:["0 — No rigidity","1 — Mild, only detectable with reinforcement","2 — Mild to moderate","3 — Marked, but full range of motion still easily achieved","4 — Severe, range of motion achieved with difficulty"]},
+      {id:"pdrigidity_neck",label:"Neck",options:["0 — No rigidity","1 — Mild, only detectable with reinforcement","2 — Mild to moderate","3 — Marked, but full range of motion still easily achieved","4 — Severe, range of motion achieved with difficulty"]},
+    ],
+    score:(v)=>{
+      const ids=["pdrigidity_upper","pdrigidity_lower","pdrigidity_neck"];
+      const vals=ids.map(id=>v[id]!==undefined?+v[id].split(" — ")[0]:null).filter(x=>x!==null);
+      return vals.length?Math.max(...vals):null;
+    }
+  },
+
+  updrs:{id:"updrs",label:"UPDRS",full:"MDS-UPDRS — Part Summary",icon:"📋",category:"Parkinson's",
+    maxScore:260,unit:" pts",mcid:5,
+    adminNote:"The MDS-UPDRS is copyrighted by the International Parkinson and Movement Disorder Society and cannot be embedded in software without a separate paid licence -- this records only the 4 part totals after you administer the official, licensed instrument (free individual training/certification is available at movementdisorders.org) elsewhere. Part I: non-motor experiences of daily living (max 52). Part II: motor experiences of daily living (max 52). Part III: motor examination (max 132). Part IV: motor complications (max 24).",
+    interpret:(s)=>s<=32?{label:"Mild overall burden",color:"#16a34a"}:s<=58?{label:"Mild-moderate overall burden",color:"#65a30d"}:s<=89?{label:"Moderate overall burden",color:"#d97706"}:{label:"Severe overall burden",color:"#dc2626"},
+    fields:[
+      {id:"updrs_part1",label:"Part I — Non-motor experiences of daily living",note:"Total from the official Part I questionnaire (cognition, mood, sleep, autonomic symptoms).",options:["0","5","10","15","20","25","30","35","40","45","52"]},
+      {id:"updrs_part2",label:"Part II — Motor experiences of daily living",note:"Total from the official Part II questionnaire (speech, swallowing, dressing, hygiene, walking, tremor impact).",options:["0","5","10","15","20","25","30","35","40","45","52"]},
+      {id:"updrs_part3",label:"Part III — Motor examination",note:"Total from the official Part III motor exam (rigidity, bradykinesia, tremor, gait, postural stability).",options:["0","10","20","30","40","50","60","70","80","90","100","110","120","132"]},
+      {id:"updrs_part4",label:"Part IV — Motor complications",note:"Total from the official Part IV (dyskinesias and motor fluctuations).",options:["0","4","8","12","16","20","24"]},
+    ],
+    score:(v)=>{
+      const ids=["updrs_part1","updrs_part2","updrs_part3","updrs_part4"];
+      const vals=ids.map(id=>v[id]!==undefined?+v[id]:null).filter(x=>x!==null);
+      return vals.length?vals.reduce((a,b)=>a+b,0):null;
+    }
+  },
+
+  edss:{id:"edss",label:"EDSS",full:"Kurtzke Expanded Disability Status Scale",icon:"🧬",category:"MS",
+    maxScore:10,unit:"",mcid:1,
+    adminNote:"The EDSS is not a simple sum of the 8 Functional System Scores (FSS) below -- Kurtzke overall grade combines the FSS pattern with ambulation status through a set of clinical rules with exceptions, so the FSS entries here are for documentation and tracking, while the overall grade is entered directly as your considered clinical judgement (in 0.5-point steps) rather than auto-calculated, to avoid giving a false impression of precision an automated sum cannot deliver.",
+    interpret:(s)=>s<1?{label:"Normal neurological exam",color:"#16a34a"}:s<=2.5?{label:"Minimal disability, fully ambulatory",color:"#65a30d"}:s<=4?{label:"Moderate disability, ambulatory without aid or rest",color:"#0891b2"}:s<=5.5?{label:"Ambulation limited, requires rest or assistance to walk",color:"#d97706"}:s<=6.5?{label:"Requires a walking aid",color:"#ea580c"}:s<=7.5?{label:"Wheelchair-dependent",color:"#dc2626"}:{label:"Bedridden or restricted to bed/chair",color:"#450a0a"},
+    fields:[
+      {id:"edss_pyramidal",label:"Pyramidal Functional System",note:"Weakness or difficulty with movement due to corticospinal tract involvement.",options:["0 — Normal","1 — Abnormal signs, no disability","2 — Minimal disability","3 — Mild to moderate paraparesis or hemiparesis; severe monoparesis","4 — Marked paraparesis or hemiparesis; moderate quadriparesis; or monoplegia","5 — Paraplegia, hemiplegia, or marked quadriparesis","6 — Quadriplegia"]},
+      {id:"edss_cerebellar",label:"Cerebellar Functional System",note:"Ataxia, tremor, or coordination difficulty.",options:["0 — Normal","1 — Abnormal signs, no disability","2 — Mild ataxia","3 — Moderate truncal or limb ataxia","4 — Severe ataxia, all limbs","5 — Unable to perform coordinated movements due to ataxia"]},
+      {id:"edss_brainstem",label:"Brainstem Functional System",note:"Nystagmus, dysarthria, dysphagia, facial weakness.",options:["0 — Normal","1 — Signs only","2 — Moderate nystagmus or other mild disability","3 — Severe nystagmus, marked weakness, or moderate disability of other cranial nerves","4 — Marked dysarthria or other marked disability","5 — Unable to swallow or speak"]},
+      {id:"edss_sensory",label:"Sensory Functional System",note:"Touch, pain, proprioception, vibration.",options:["0 — Normal","1 — Vibration or figure-writing decrease only, 1-2 limbs","2 — Mild decrease in touch, pain, or position sense, 1-2 limbs","3 — Moderate decrease in touch, pain, or position sense; or loss of vibration, 1-2 limbs","4 — Marked decrease in touch or pain, or loss of proprioception, 1-2 limbs","5 — Sensation essentially lost, 1-2 limbs","6 — Sensation essentially lost below the head"]},
+      {id:"edss_bowelbladder",label:"Bowel and Bladder Functional System",note:"Urgency, hesitancy, incontinence, catheterization need.",options:["0 — Normal","1 — Mild urinary hesitancy, urgency, or retention","2 — Moderate hesitancy, urgency, retention, or rare incontinence","3 — Frequent urinary incontinence","4 — In need of almost constant catheterization","5 — Loss of bladder function","6 — Loss of bowel and bladder function"]},
+      {id:"edss_visual",label:"Visual Functional System",note:"Scotoma and visual acuity, worse eye.",options:["0 — Normal","1 — Scotoma with acuity better than 20/30","2 — Worse eye scotoma, max acuity 20/30 to 20/59","3 — Worse eye large scotoma or moderate field decrease, max acuity 20/60 to 20/99","4 — Worse eye marked field decrease, max acuity 20/100 to 20/200","5 — Worse eye max acuity below 20/200","6 — Grade 5 plus better eye significantly affected"]},
+      {id:"edss_cerebral",label:"Cerebral (Mental) Functional System",note:"Mood, cognition, mentation.",options:["0 — Normal","1 — Mood alteration only","2 — Mild decrease in mentation","3 — Moderate decrease in mentation","4 — Marked decrease in mentation","5 — Dementia or chronic brain syndrome, severe"]},
+      {id:"edss_other",label:"Other Functional System",note:"Any other neurological finding attributable to MS.",options:["0 — None","1 — Any other neurological findings attributed to MS"]},
+      {id:"edss_overall",label:"Overall EDSS grade (clinical judgement)",note:"Integrate the Functional System pattern above with ambulation status. Enter in 0.5-point steps per standard convention.",options:["0","1","1.5","2","2.5","3","3.5","4","4.5","5","5.5","6","6.5","7","7.5","8","8.5","9","9.5","10"]},
+    ],
+    score:(v)=>v.edss_overall!==undefined&&v.edss_overall!==""?+v.edss_overall:null
+  },
+
   mas:{id:"mas",label:"MAS",full:"Modified Ashworth Scale — Spasticity (more-affected side)",icon:"💪",category:"Stroke",
     maxScore:4,unit:"/4",mcid:1,
     adminNote:"Move the limb through its full range passively at a moderate, consistent speed, roughly one second through range, and grade the resistance felt rather than the resistance expected. Test each muscle group in the same starting position every time for reliable comparison across sessions. Grade 1+ is recorded as 1.5 for scoring purposes.",
@@ -694,6 +762,9 @@ const ALL_TESTS = {
   neuro:{ label:"Neurological", icon:"⚡", groups:{ "Full Neurological Assessment":"NEURO_MODULE" }},
   tbi:{ label:"TBI Template", icon:"🧠", groups:{ "TBI Assessment Checklist":"TBI_MODULE" }},
   stroke:{ label:"Stroke Template", icon:"❤️‍🩹", groups:{ "Stroke Assessment Checklist":"STROKE_MODULE" }},
+  sci:{ label:"SCI Template", icon:"🦾", groups:{ "SCI Assessment Checklist":"SCI_MODULE" }},
+  parkinsons:{ label:"Parkinson's Template", icon:"🌀", groups:{ "Parkinson's Assessment Checklist":"PARKINSONS_MODULE" }},
+  ms:{ label:"MS Template", icon:"🧬", groups:{ "MS Assessment Checklist":"MS_MODULE" }},
   gait:{ label:"Gait Analysis", icon:"🚶", groups:{ "Full Gait Analysis":"GAIT_MODULE" }},
   nkt:{ label:"CPA — Compensation Pattern Analysis", icon:"🧠", groups:{ "Compensation Pattern Tests":"NKT_REGION" }},
   kinetic:{ label:"Kinetic Chain", icon:"⛓️", groups:{ "Joint-by-Joint Assessment":"KC_REGION" }},
@@ -1712,6 +1783,7 @@ const RED_FLAGS_NEURO = [
   { id:"nrf_sphincter", label:"Sphincter Dysfunction",    severity:"EMERGENCY",   description:"New onset bowel/bladder dysfunction alongside back/leg pain", action:"Emergency admission.", icon:"🆘" },
   { id:"nrf_raised_icp", label:"Raised Intracranial Pressure", severity:"EMERGENCY", description:"Vomiting, falling consciousness level, unequal or non-reactive pupils, worsening headache post head injury", action:"Emergency Department / neurosurgical review NOW. Do not delay for further assessment.", icon:"🆘" },
   { id:"nrf_loc_change", label:"Evolving Consciousness Change", severity:"EMERGENCY", description:"Deteriorating GCS, new confusion, new focal weakness developing mid-session after head injury or stroke", action:"Stop assessment. Emergency Department NOW.", icon:"🆘" },
+  { id:"nrf_autonomic_dysreflexia", label:"Autonomic Dysreflexia", severity:"EMERGENCY", description:"SCI at or above T6: sudden severe headache with BP rise (20-40mmHg above the patient baseline), bradycardia, flushing/sweating above the injury level, pallor or goosebumps below it -- usually triggered by a noxious stimulus below the injury level (full bladder, bowel impaction, pressure sore, tight clothing)", action:"Sit the patient upright immediately, loosen restrictive clothing, and check for and remove the triggering stimulus (empty bladder/catheter check first). Stop assessment if BP remains elevated -- emergency medical attention required.", icon:"🆘" },
 ];
 
 const NERVE_ROOT_MAP = {
@@ -1746,7 +1818,7 @@ const COORDINATION_TESTS = [
   { id:"coord_rebound", label:"Rebound test", how:"Patient holds both arms outstretched, examiner pushes down on one forearm then suddenly releases, watching how quickly the arm corrects", record:["Absent — arm returns smoothly to position","Present — arm overshoots or oscillates before settling"], note:"A positive rebound (overshoot) indicates loss of the normal cerebellar check reflex, seen ipsilateral to cerebellar lesions." },
 ];
 
-const INVOLUNTARY_MOVEMENT_TYPES = ["None observed","Tremor — rest","Tremor — postural","Tremor — intention","Chorea","Dystonia","Myoclonus","Other (describe in notes)"];
+const INVOLUNTARY_MOVEMENT_TYPES = ["None observed","Tremor — rest","Tremor — postural","Tremor — intention","Chorea","Dystonia","Myoclonus","Freezing of gait","Other (describe in notes)"];
 
 const VESTIBULAR_TESTS = [
   { id:"vest_dixhallpike", label:"Dix-Hallpike", purpose:"BPPV screen (posterior/anterior canal)", how:"Seated, head turned 45° to the test side, then rapidly laid supine with head extended 20° over the table edge, hold 30-60s watching the eyes", record:["Negative — no nystagmus, no vertigo","Positive — right, torsional/upbeating nystagmus with latency, resolves within 60s","Positive — left, torsional/upbeating nystagmus with latency, resolves within 60s","Positive — atypical pattern, consider central cause"], note:"Latency, fatigability, and torsional/upbeating direction all point to peripheral BPPV. Immediate onset, non-fatigable, or purely vertical/direction-changing nystagmus should raise suspicion for a central cause instead." },
