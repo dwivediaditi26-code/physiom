@@ -227,7 +227,19 @@ function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
           {lang==="hi"&&hiData&&(
             <div style={{fontSize:"1rem",color:patientMode?"#9ca3af":MU,marginTop:4}}>{hiData[0]}</div>
           )}
+          {f.note&&(
+            <div style={{fontSize:"0.74rem",color:patientMode?"#9ca3af":MU,marginTop:8,lineHeight:1.5,background:patientMode?"#0d0d1a":"#F7F7F8",borderRadius:8,padding:"7px 10px"}}>
+              💡 {f.note}
+            </div>
+          )}
         </div>
+        {qIdx===0&&sc.adminNote&&(
+          <div style={{background:patientMode?"#161625":"#fff",borderRadius:14,padding:"14px 18px",
+            border:`1px solid ${patientMode?"#1e2a3a":BD}`,fontSize:"0.76rem",color:patientMode?"#9ca3af":MU,lineHeight:1.6}}>
+            <div style={{fontWeight:700,color:A,fontSize:"0.68rem",textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>How to administer</div>
+            {sc.adminNote}
+          </div>
+        )}
 
         {/* PSFS activity name input */}
         {f.type==="activity"&&(

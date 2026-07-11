@@ -1,7 +1,7 @@
 // PhysioNeuro.jsx — ALL_TESTS, ROM, MMT, Neurological
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
-import { ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, MMT_ICONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP, CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
+import { ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, MMT_ICONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP, CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SCALES } from "./sharedClinicalData.js";
 
 
 const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
@@ -783,7 +783,7 @@ function CollapsibleHow({ title, children }) {
   );
 }
 
-function NeurologicalModule({ data, set, navContext={} }) {
+function NeurologicalModule({ data, set, navContext={}, navTo }) {
   const [tab, setTab] = useState("dermatomes");
   const [expandedLevel, setExpandedLevel] = useState(null);
   const [expandedTest, setExpandedTest] = useState(null);
@@ -1770,45 +1770,62 @@ function NeurologicalModule({ data, set, navContext={} }) {
       {/* ── COGNITION ── */}
       {tab==="cognition"&&(
         <div>
-          {sectionHead("Consciousness & Cognition — Orientation, MoCA, MMSE")}
+          {sectionHead("Consciousness & Cognition — Orientation, MoCA, MMSE, Mini-Cog")}
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:12}}>
             <div style={{fontWeight:700,fontSize:"0.78rem",color:C.text,marginBottom:8}}>Orientation</div>
-            {[["cog_orient_person","Person — knows own name"],["cog_orient_place","Place — knows current location"],["cog_orient_time","Time — knows approximate date/time"],["cog_orient_situation","Situation — understands why they are here"]].map(([id,label])=>{
-              const val=data[id]||"";
+            {[
+              {id:"cog_orient_person",label:"Person",how:"Ask the patient to state their own full name."},
+              {id:"cog_orient_place",label:"Place",how:"Ask where they are right now — building, town, or type of facility."},
+              {id:"cog_orient_time",label:"Time",how:"Ask the approximate date, day of week, or time of day — allow a reasonable margin."},
+              {id:"cog_orient_situation",label:"Situation",how:"Ask why they are here or what happened to bring them in."},
+            ].map(o=>{
+              const val=data[o.id]||"";
               return(
-                <div key={id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
-                  <span style={{fontSize:"0.75rem",color:C.text}}>{label}</span>
-                  <div style={{display:"flex",gap:5}}>
-                    {["Yes","No"].map(opt=>(
-                      <button key={opt} type="button" onClick={()=>set(id,val===opt?"":opt)}
-                        style={{padding:"4px 12px",borderRadius:7,border:`1px solid ${val===opt?(opt==="Yes"?C.green:C.red):C.border}`,background:val===opt?(opt==="Yes"?C.green:C.red)+"18":"transparent",color:val===opt?(opt==="Yes"?C.green:C.red):C.muted,fontSize:"0.72rem",fontWeight:val===opt?700:400,cursor:"pointer"}}>
-                        {opt}
-                      </button>
-                    ))}
+                <div key={o.id} style={{padding:"7px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontSize:"0.75rem",fontWeight:600,color:C.text}}>{o.label}</span>
+                    <div style={{display:"flex",gap:5}}>
+                      {["Yes","No"].map(opt=>(
+                        <button key={opt} type="button" onClick={()=>set(o.id,val===opt?"":opt)}
+                          style={{padding:"4px 12px",borderRadius:7,border:`1px solid ${val===opt?(opt==="Yes"?C.green:C.red):C.border}`,background:val===opt?(opt==="Yes"?C.green:C.red)+"18":"transparent",color:val===opt?(opt==="Yes"?C.green:C.red):C.muted,fontSize:"0.72rem",fontWeight:val===opt?700:400,cursor:"pointer"}}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                  <div style={{fontSize:"0.66rem",color:C.muted,marginTop:3}}>{o.how}</div>
                 </div>
               );
             })}
           </div>
-          {[
-            {id:"cog_moca_score",label:"MoCA — Montreal Cognitive Assessment",max:30,cutoff:26,cutoffText:"impairment"},
-            {id:"cog_mmse_score",label:"MMSE — Mini-Mental State Exam",max:30,cutoff:24,cutoffText:"impairment"},
-          ].map(scale=>{
-            const val=parseInt(data[scale.id])||"";
-            const numVal=parseInt(data[scale.id]);
-            const impaired = !isNaN(numVal) && numVal < scale.cutoff;
+
+          {/* MoCA, MMSE, and Mini-Cog are full guided tests with real
+              licensing terms attached (MoCA and MMSE both require a
+              separate commercial licence to embed the actual test content
+              in software; Mini-Cog is free to reproduce). Rather than a
+              bare number box with no guidance, each card here reads the
+              live score straight off whatever domain/item fields have
+              already been recorded in Outcome Measures (same SCALES.score()
+              function that module itself uses, so the two can never
+              disagree), and offers a direct link to take or continue the
+              full guided version there instead of duplicating it here. */}
+          {["moca","mmse","minicog"].map(scaleId=>{
+            const sc=SCALES[scaleId];
+            const score=sc.score(data);
+            const interp=score!==null?sc.interpret(score):null;
             return(
-              <div key={scale.id} style={{background:C.surface,border:`1px solid ${impaired?C.red+"50":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:9}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <span style={{fontWeight:700,fontSize:"0.78rem",color:C.text}}>{scale.label}</span>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <input type="number" min="0" max={scale.max} value={val} placeholder="—"
-                      onChange={e=>set(scale.id,e.target.value)}
-                      style={{width:54,padding:"4px 6px",borderRadius:6,border:`1px solid ${impaired?C.red:C.border}`,background:C.s2,color:impaired?C.red:C.text,fontSize:"0.8rem",fontWeight:700,textAlign:"center"}}/>
-                    <span style={{fontSize:"0.68rem",color:C.muted}}>/ {scale.max}</span>
+              <div key={scaleId} style={{background:C.surface,border:`1px solid ${interp?interp.color+"50":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:9}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:score!==null?6:0}}>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:"0.78rem",color:C.text}}>{sc.full}</div>
+                    {score!==null&&<div style={{fontSize:"0.68rem",color:interp.color,fontWeight:600,marginTop:2}}>{score}{sc.unit} — {interp.label}</div>}
+                    {score===null&&<div style={{fontSize:"0.68rem",color:C.muted,marginTop:2}}>Not yet recorded</div>}
                   </div>
+                  <button type="button" onClick={()=>navTo&&navTo("outcome",{scaleId})}
+                    style={{padding:"7px 14px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:"0.7rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                    {score!==null?"Redo →":"Take full test →"}
+                  </button>
                 </div>
-                {!isNaN(numVal)&&<div style={{fontSize:"0.68rem",color:impaired?C.red:C.green,marginTop:5,fontWeight:600}}>{impaired?`Below ${scale.cutoff} — suggests cognitive ${scale.cutoffText}`:`At or above ${scale.cutoff} — within normal range`}</div>}
               </div>
             );
           })}

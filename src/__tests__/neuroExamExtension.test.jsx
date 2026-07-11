@@ -30,12 +30,26 @@ describe("Neurological module — new TBI-relevant tabs render", () => {
     expect(screen.getByText(/forehead-sparing weakness/)).toBeInTheDocument();
   });
 
-  it("Cognition tab has orientation toggles and MoCA/MMSE inputs with live cutoff interpretation", () => {
-    const setMock = (k, v) => {};
-    render(<NeurologicalModule data={{ cog_moca_score: "22" }} set={setMock} />);
+  it("Cognition tab shows orientation with per-item guidance, and a live MoCA score card computed from real domain fields", () => {
+    const navToMock = vi.fn();
+    const data = { moca_visuospatial:"3", moca_naming:"3", moca_attention:"4", moca_language:"2", moca_abstraction:"1", moca_delayed_recall:"3", moca_orientation:"3" };
+    render(<NeurologicalModule data={data} set={vi.fn()} navTo={navToMock} />);
     fireEvent.click(screen.getByText(/Cognition/));
-    expect(screen.getByText("Person — knows own name")).toBeInTheDocument();
-    expect(screen.getByText(/Below 26/)).toBeInTheDocument();
+    expect(screen.getByText("Person")).toBeInTheDocument();
+    expect(screen.getByText(/Ask the patient to state their own full name/)).toBeInTheDocument();
+    expect(screen.getByText(/19\/30/)).toBeInTheDocument();
+    expect(screen.getByText(/Mild cognitive impairment/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Redo →"));
+    expect(navToMock).toHaveBeenCalledWith("outcome", { scaleId: "moca" });
+  });
+
+  it("Cognition tab shows a take-full-test link for a scale that has not been recorded yet", () => {
+    const navToMock = vi.fn();
+    render(<NeurologicalModule data={{}} set={vi.fn()} navTo={navToMock} />);
+    fireEvent.click(screen.getByText(/Cognition/));
+    expect(screen.getAllByText("Not yet recorded").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getAllByText("Take full test →")[0]);
+    expect(navToMock).toHaveBeenCalledWith("outcome", { scaleId: "moca" });
   });
 
   it("Coordination tab lists finger-to-nose and rebound test with left/right selects", () => {
@@ -77,11 +91,25 @@ describe("New neuro exam fields reach the SOAP Objective section", () => {
     expect(failures).toEqual([]);
   });
 
-  it("orientation and MoCA/MMSE scores appear", () => {
-    const soap = buildRealtimeSOAP({ cog_orient_person: "Yes", cog_orient_time: "No", cog_moca_score: "19" });
+  it("orientation and a live-computed MoCA score appear", () => {
+    const soap = buildRealtimeSOAP({
+      cog_orient_person: "Yes", cog_orient_time: "No",
+      moca_visuospatial:"3", moca_naming:"3", moca_attention:"4", moca_language:"2", moca_abstraction:"1", moca_delayed_recall:"3", moca_orientation:"3",
+    });
     expect(soap.O).toContain("Person: Yes");
     expect(soap.O).toContain("Time: No");
     expect(soap.O).toContain("MoCA: 19/30");
+    expect(soap.O).toContain("Mild cognitive impairment");
+  });
+
+  it("MMSE and Mini-Cog scores also reach the SOAP Objective section when recorded", () => {
+    const soap = buildRealtimeSOAP({
+      mmse_orientation_time:"5", mmse_orientation_place:"5", mmse_registration:"3", mmse_attention:"5", mmse_recall:"3", mmse_language:"8", mmse_construction:"1",
+      minicog_recall:"3 — All three words recalled", minicog_clock:"2 — Normal",
+    });
+    expect(soap.O).toContain("MMSE: 30/30");
+    expect(soap.O).toContain("Within normal range");
+    expect(soap.O).toContain("Mini-Cog: 5/5");
   });
 
   it("covers every real coordination test on both sides", () => {

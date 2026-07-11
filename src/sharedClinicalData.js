@@ -191,6 +191,7 @@ Object.assign(SCALES, {
   // ── ASIA SCALE ─────────────────────────────────────────────────────────────
   asia:{id:"asia",label:"ASIA",full:"ASIA Impairment Scale (SCI Classification)",icon:"🦾",category:"Neurological / SCI",
     maxScore:100,unit:" motor pts",mcid:4,
+    adminNote:"Test each key muscle bilaterally using standard 0-5 MMT grading, and each dermatome bilaterally for pinprick and light touch, following the official ASIA worksheet and dermatome map. The Neurological Level of Injury (NLI) is the most caudal level with normal motor and sensory function on both sides. Grade A through E is then determined by whether any sacral sparing (S4-5) is present and how much motor function remains below the NLI.",
     interpret:(s)=>s>=80?{label:"AIS D/E — Incomplete",color:"#16a34a"}:s>=50?{label:"AIS C/D — Incomplete",color:"#0891b2"}:s>=20?{label:"AIS B/C — Incomplete",color:"#d97706"}:{label:"AIS A/B — Severe",color:"#dc2626"},
     score:(v)=>{
       const levels=["c5","c6","c7","c8","t1","l2","l3","l4","l5","s1"];
@@ -407,6 +408,7 @@ Object.assign(SCALES, {
 
   nihss:{id:"nihss",label:"NIHSS",full:"NIH Stroke Scale",icon:"🧠",category:"Stroke",
     maxScore:42,unit:"/42",mcid:2,
+    adminNote:"Score each item in the order presented, using the first response given -- do not coach or repeat commands beyond what the protocol allows. Score what the patient actually does, not what they seem capable of. If a limb is amputated, jointed, or otherwise untestable, mark that item separately and exclude it from the total rather than scoring it as normal.",
     interpret:(s)=>s===0?{label:"No stroke symptoms",color:"#16a34a"}:s<=4?{label:"Minor stroke",color:"#65a30d"}:s<=15?{label:"Moderate stroke",color:"#d97706"}:s<=20?{label:"Moderate-severe stroke",color:"#ea580c"}:{label:"Severe stroke",color:"#dc2626"},
     fields:[
       {id:"nihss_1a",label:"1a. Level of Consciousness (LOC)",options:["0 — Alert, keenly responsive","1 — Not alert, arousable by minor stimulation","2 — Not alert, requires repeated stimulation or obtunded","3 — Unresponsive, or only reflex motor/autonomic responses"]},
@@ -430,6 +432,7 @@ Object.assign(SCALES, {
 
   mas:{id:"mas",label:"MAS",full:"Modified Ashworth Scale — Spasticity (more-affected side)",icon:"💪",category:"Stroke",
     maxScore:4,unit:"/4",mcid:1,
+    adminNote:"Move the limb through its full range passively at a moderate, consistent speed, roughly one second through range, and grade the resistance felt rather than the resistance expected. Test each muscle group in the same starting position every time for reliable comparison across sessions. Grade 1+ is recorded as 1.5 for scoring purposes.",
     interpret:(s)=>s===0?{label:"Normal tone",color:"#16a34a"}:s<1.5?{label:"Mild spasticity",color:"#65a30d"}:s<2.5?{label:"Moderate spasticity",color:"#d97706"}:s<3.5?{label:"Considerable spasticity",color:"#ea580c"}:{label:"Severe rigidity",color:"#dc2626"},
     fields:[
       {id:"mas_elbow_flex",label:"Elbow Flexors",options:["0 — No increase in muscle tone","1 — Slight increase: catch and release at end of ROM","1.5 — Slight increase: catch + minimal resistance through <50% ROM (documented as 1+)","2 — Marked increase through most of ROM, easily moved","3 — Considerable increase, passive movement difficult","4 — Rigid in flexion or extension"]},
@@ -445,6 +448,7 @@ Object.assign(SCALES, {
   },
 
   fma:{id:"fma",label:"FMA",full:"Fugl-Meyer Assessment — Motor (Full standardised 50-item instrument: UE /66 + LE /34 = /100, per Fugl-Meyer et al. 1975 / Univ. of Gothenburg international protocol)",icon:"🎯",category:"Stroke",
+    adminNote:"Every item uses the same 3-point convention: 0 means cannot perform at all, 1 means performs partially, 2 means performs fully and correctly. Test the more-affected side only, following the standard proximal-to-distal sequence -- reflexes, then synergy patterns, then movement out of synergy, then wrist and hand, then coordination and speed. Demonstrate each movement once before asking the patient to attempt it.",
     maxScore:100,unit:"/100",mcid:6,
     interpret:(s)=>s<50?{label:"Severe motor impairment",color:"#dc2626"}:s<=84?{label:"Marked motor impairment",color:"#ea580c"}:s<=95?{label:"Moderate motor impairment",color:"#d97706"}:s<100?{label:"Slight motor impairment",color:"#65a30d"}:{label:"No motor impairment",color:"#16a34a"},
     fields:[
@@ -509,8 +513,70 @@ Object.assign(SCALES, {
   },
 
 
+  moca:{id:"moca",label:"MoCA",full:"Montreal Cognitive Assessment — Domain Summary",icon:"🧠",category:"TBI",
+    maxScore:30,unit:"/30",mcid:2,
+    adminNote:"MoCA is a copyrighted instrument. Embedding the actual test items in software requires a separate commercial licence from MoCA Cognition -- this form only records the resulting domain sub-scores after you administer the official test from your own licensed/registered form (free clinician registration at mocacognition.com). Enter the score your patient achieved in each domain below.",
+    interpret:(s)=>s>=26?{label:"Within normal range",color:"#16a34a"}:s>=18?{label:"Mild cognitive impairment",color:"#d97706"}:s>=10?{label:"Moderate cognitive impairment",color:"#ea580c"}:{label:"Severe cognitive impairment",color:"#dc2626"},
+    fields:[
+      {id:"moca_visuospatial",label:"Visuospatial / Executive",note:"Covers the trail-making, cube copy, and clock-drawing sub-tests on the official form.",options:["0","1","2","3","4","5"]},
+      {id:"moca_naming",label:"Naming",note:"Object-naming sub-test.",options:["0","1","2","3"]},
+      {id:"moca_attention",label:"Attention",note:"Digit span, vigilance, and serial subtraction sub-tests combined.",options:["0","1","2","3","4","5","6"]},
+      {id:"moca_language",label:"Language",note:"Sentence repetition and verbal fluency sub-tests.",options:["0","1","2","3"]},
+      {id:"moca_abstraction",label:"Abstraction",note:"Similarity-pair reasoning sub-test.",options:["0","1","2"]},
+      {id:"moca_delayed_recall",label:"Delayed Recall",note:"Unassisted recall of the word list introduced earlier in the test.",options:["0","1","2","3","4","5"]},
+      {id:"moca_orientation",label:"Orientation",note:"Date, month, year, day, place, and city.",options:["0","1","2","3","4","5","6"]},
+      {id:"moca_education_adjust",label:"Education adjustment",note:"Standard MoCA correction: add 1 point to the total if the patient has 12 years of formal education or fewer.",options:["0 — Not applied","1 — Applied (plus 1 point)"]},
+    ],
+    score:(v)=>{
+      const domains=["moca_visuospatial","moca_naming","moca_attention","moca_language","moca_abstraction","moca_delayed_recall","moca_orientation"];
+      const vals=domains.map(id=>v[id]!==undefined?+v[id]:null).filter(x=>x!==null);
+      if(!vals.length) return null;
+      let total=vals.reduce((a,b)=>a+b,0);
+      if(v.moca_education_adjust==="1 — Applied (plus 1 point)") total+=1;
+      return Math.min(30,total);
+    }
+  },
+
+  mmse:{id:"mmse",label:"MMSE",full:"Mini-Mental State Examination — Domain Summary",icon:"📝",category:"TBI",
+    maxScore:30,unit:"/30",mcid:2,
+    adminNote:"MMSE is a proprietary instrument; Psychological Assessment Resources (PAR) has held exclusive commercial rights since 2001. PAR's own published guidance is not to reproduce the MMSE items in software -- only to record that it was administered and document the score. This form records the resulting domain sub-scores after you administer the official test from your own PAR-licensed materials.",
+    interpret:(s)=>s>=24?{label:"Within normal range",color:"#16a34a"}:s>=18?{label:"Mild cognitive impairment",color:"#d97706"}:s>=10?{label:"Moderate cognitive impairment",color:"#ea580c"}:{label:"Severe cognitive impairment",color:"#dc2626"},
+    fields:[
+      {id:"mmse_orientation_time",label:"Orientation to Time",note:"Year, season, date, day, and month.",options:["0","1","2","3","4","5"]},
+      {id:"mmse_orientation_place",label:"Orientation to Place",note:"Country or state, county, town, building, and floor.",options:["0","1","2","3","4","5"]},
+      {id:"mmse_registration",label:"Registration",note:"Immediate repetition of a short word list.",options:["0","1","2","3"]},
+      {id:"mmse_attention",label:"Attention & Calculation",note:"Serial subtraction or backward-spelling task.",options:["0","1","2","3","4","5"]},
+      {id:"mmse_recall",label:"Recall",note:"Delayed recall of the same word list from Registration.",options:["0","1","2","3"]},
+      {id:"mmse_language",label:"Language",note:"Naming, repetition, a multi-step command, reading, and writing combined.",options:["0","1","2","3","4","5","6","7","8"]},
+      {id:"mmse_construction",label:"Visual Construction",note:"Copying an intersecting geometric figure.",options:["0","1"]},
+    ],
+    score:(v)=>{
+      const domains=["mmse_orientation_time","mmse_orientation_place","mmse_registration","mmse_attention","mmse_recall","mmse_language","mmse_construction"];
+      const vals=domains.map(id=>v[id]!==undefined?+v[id]:null).filter(x=>x!==null);
+      return vals.length?Math.min(30,vals.reduce((a,b)=>a+b,0)):null;
+    }
+  },
+
+  minicog:{id:"minicog",label:"Mini-Cog",full:"Mini-Cog — 3-Item Recall and Clock Draw",icon:"🕐",category:"TBI",
+    maxScore:5,unit:"/5",mcid:1,
+    adminNote:"Mini-Cog is free to use, reproduce, and distribute for clinical and educational use without a licensing agreement. Say the three words clearly and ask the patient to repeat them back immediately so you know they were heard correctly. Then have them draw a clock: put in all the numbers, then set the hands to 11:10 (ten past eleven). Give up to 3 minutes. Finally, ask them to recall the three words from the start, without any hints.",
+    interpret:(s)=>s>=4?{label:"Low likelihood of dementia",color:"#16a34a"}:s===3?{label:"Borderline — use clinical judgement",color:"#d97706"}:{label:"Positive screen — further cognitive evaluation indicated",color:"#dc2626"},
+    fields:[
+      {id:"minicog_wordlist",label:"Word list used",note:"Rotate between lists across visits to reduce practice effects.",options:["Banana, Sunrise, Chair","Daughter, Heaven, Mountain","Village, Kitchen, Baby","River, Nation, Finger","Captain, Garden, Picture","Leader, Season, Table"]},
+      {id:"minicog_recall",label:"3-word recall (after clock draw)",note:"1 point for each word correctly recalled, unprompted. No partial credit for cued recall.",options:["0 — None recalled","1 — One word recalled","2 — Two words recalled","3 — All three words recalled"]},
+      {id:"minicog_clock",label:"Clock draw",note:"Normal = all 12 numbers present, in correct sequence and roughly correct position, hands pointing to 11 and 2 (11:10). Any error, or inability/refusal to draw, is abnormal.",options:["0 — Abnormal or not attempted","2 — Normal"]},
+    ],
+    score:(v)=>{
+      const recall=v.minicog_recall!==undefined?+v.minicog_recall.split(" — ")[0]:null;
+      const clock=v.minicog_clock!==undefined?+v.minicog_clock.split(" — ")[0]:null;
+      if(recall===null||clock===null) return null;
+      return recall+clock;
+    }
+  },
+
   rancho:{id:"rancho",label:"Rancho",full:"Rancho Los Amigos Scale — Levels of Cognitive Functioning",icon:"🧩",category:"TBI",
     maxScore:8,unit:"/8",mcid:1,
+    adminNote:"This is an observational rating based on behaviour over the recent session or shift, not a single-moment test -- base the level on typical functioning, not the single best or worst moment observed. When behaviour spans two adjacent levels, select the lower, less-recovered level, since the scale describes a recovery trajectory and functioning is expected to be inconsistent during transitions between levels.",
     interpret:(s)=>s<=3?{label:"Low level of function",color:"#dc2626"}:s<=5?{label:"Confused / agitated or inappropriate",color:"#ea580c"}:s===6?{label:"Confused but appropriate",color:"#d97706"}:{label:"Automatic-to-purposeful — good recovery",color:"#16a34a"},
     fields:[
       {id:"rancho_level",label:"Select current cognitive/behavioural level",options:[
@@ -529,6 +595,7 @@ Object.assign(SCALES, {
 
   goat:{id:"goat",label:"GOAT",full:"Galveston Orientation & Amnesia Test — official Levin, O'Donnell & Grossman (1979) point deductions",icon:"🗓️",category:"TBI",
     maxScore:100,unit:"/100",mcid:10,
+    adminNote:"Ask each question conversationally rather than reading it like a script, and accept an approximate answer as correct where the scoring allows, for example within 30 minutes for time. This is typically repeated daily until the patient scores above 75 on 2 consecutive days, which operationally marks the end of post-traumatic amnesia.",
     interpret:(s)=>s>75?{label:"Normal orientation — no PTA",color:"#16a34a"}:s>=66?{label:"Borderline",color:"#d97706"}:{label:"Impaired — post-traumatic amnesia (PTA) present",color:"#dc2626"},
     fields:[
       {id:"goat_name",label:"1. What is your name? (max error 2)",options:["0 — Correct","2 — Incorrect"]},
@@ -554,6 +621,7 @@ Object.assign(SCALES, {
 
   barthel:{id:"barthel",label:"Barthel",full:"Barthel Index — Activities of Daily Living",icon:"🛁",category:"TBI",
     maxScore:100,unit:"/100",mcid:10,
+    adminNote:"Score based on what the patient actually does, not what they could do with more practice or what they did before the injury -- if in doubt between two grades, score the lower, more dependent one. Base it on direct observation or reliable carer report over the preceding 24 to 48 hours, not a single in-clinic demonstration.",
     interpret:(s)=>s>=100?{label:"Independent",color:"#16a34a"}:s>=91?{label:"Slight dependence",color:"#65a30d"}:s>=61?{label:"Moderate dependence",color:"#d97706"}:s>=21?{label:"Severe dependence",color:"#ea580c"}:{label:"Total dependence",color:"#dc2626"},
     fields:[
       {id:"barthel_feeding",label:"Feeding",options:["10 — Independent","5 — Needs help (e.g. cutting, spreading butter)","0 — Unable"]},

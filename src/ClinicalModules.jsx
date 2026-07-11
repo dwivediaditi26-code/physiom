@@ -2814,8 +2814,11 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     const orientKeys = [["cog_orient_person","Person"],["cog_orient_place","Place"],["cog_orient_time","Time"],["cog_orient_situation","Situation"]];
     const orientResults = orientKeys.filter(([k]) => data[k]).map(([k,label]) => `${label}: ${data[k]}`);
     if (orientResults.length) neuroLines.push(`  Orientation: ${orientResults.join(", ")}`);
-    if (v("cog_moca_score")) neuroLines.push(`  MoCA: ${v("cog_moca_score")}/30`);
-    if (v("cog_mmse_score")) neuroLines.push(`  MMSE: ${v("cog_mmse_score")}/30`);
+    ["moca","mmse","minicog"].forEach(scaleId => {
+      const sc = SCALES[scaleId];
+      const score = sc.score(data);
+      if (score !== null) neuroLines.push(`  ${sc.label}: ${score}${sc.unit} (${sc.interpret(score).label})`);
+    });
 
     // Coordination + involuntary movements
     const coordLines = [];
