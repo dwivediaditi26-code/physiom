@@ -430,6 +430,43 @@ Object.assign(SCALES, {
     score:(v)=>{const ids=["nihss_1a","nihss_1b","nihss_1c","nihss_2","nihss_3","nihss_4","nihss_5a","nihss_5b","nihss_6a","nihss_6b","nihss_7","nihss_8","nihss_9","nihss_10","nihss_11"];const s=ids.map(id=>v[id]?+v[id].split(" — ")[0]:null).filter(x=>x!==null);return s.length?s.reduce((a,b)=>a+b,0):null;}
   },
 
+  brunnstrom:{id:"brunnstrom",label:"Brunnstrom",full:"Brunnstrom Stages of Stroke Recovery — Arm, Hand, Leg",icon:"🔄",category:"Stroke",
+    maxScore:18,unit:"/18",mcid:1,
+    adminNote:"Stage each segment separately -- arm, hand, and leg often recover at different rates, so a single combined score can hide clinically important differences between them. Base each rating on the best movement quality observed, not just whether a movement happened at all.",
+    interpret:(s)=>{
+      const avg=s/3;
+      return avg<2?{label:"Severe — flaccid to early synergy",color:"#dc2626"}:avg<3.5?{label:"Moderate — synergy-dependent movement",color:"#d97706"}:avg<5?{label:"Good — movement beyond synergy",color:"#0891b2"}:{label:"Near-full recovery — isolated joint control",color:"#16a34a"};
+    },
+    fields:[
+      {id:"brunnstrom_arm",label:"Arm",options:["1 — I. Flaccid: no voluntary movement can be initiated","2 — II. Spasticity begins to appear; minimal voluntary movement, synergy patterns emerge as associated reactions","3 — III. Spasticity peaks; voluntary control of movement synergies present, cannot move outside synergy","4 — IV. Spasticity declining; some movement combinations outside basic synergy are mastered","5 — V. Spasticity continues to decline; more complex movement combinations independent of synergy","6 — VI. Spasticity minimal or absent; isolated joint movement possible, coordination near normal"]},
+      {id:"brunnstrom_hand",label:"Hand",options:["1 — I. Flaccid: no voluntary movement can be initiated","2 — II. Spasticity begins to appear; minimal voluntary movement, synergy patterns emerge as associated reactions","3 — III. Spasticity peaks; voluntary control of movement synergies present, cannot move outside synergy","4 — IV. Spasticity declining; some movement combinations outside basic synergy are mastered","5 — V. Spasticity continues to decline; more complex movement combinations independent of synergy","6 — VI. Spasticity minimal or absent; isolated joint movement possible, coordination near normal"]},
+      {id:"brunnstrom_leg",label:"Leg",options:["1 — I. Flaccid: no voluntary movement can be initiated","2 — II. Spasticity begins to appear; minimal voluntary movement, synergy patterns emerge as associated reactions","3 — III. Spasticity peaks; voluntary control of movement synergies present, cannot move outside synergy","4 — IV. Spasticity declining; some movement combinations outside basic synergy are mastered","5 — V. Spasticity continues to decline; more complex movement combinations independent of synergy","6 — VI. Spasticity minimal or absent; isolated joint movement possible, coordination near normal"]},
+    ],
+    score:(v)=>{
+      const ids=["brunnstrom_arm","brunnstrom_hand","brunnstrom_leg"];
+      const vals=ids.map(id=>v[id]?+v[id].split(" — ")[0]:null).filter(x=>x!==null);
+      return vals.length===3?vals.reduce((a,b)=>a+b,0):null;
+    }
+  },
+
+  rankin:{id:"rankin",label:"mRS",full:"Modified Rankin Scale — Global Disability",icon:"🎯",category:"Stroke",
+    maxScore:6,unit:"/6",mcid:1,
+    adminNote:"Rate based on the patient current functional state, not their pre-stroke baseline or their potential with further rehab. When in doubt between two adjacent grades, the standard convention is to select the higher (more disabled) grade.",
+    interpret:(s)=>s<=1?{label:"No significant disability",color:"#16a34a"}:s===2?{label:"Slight disability",color:"#65a30d"}:s===3?{label:"Moderate disability",color:"#d97706"}:s===4?{label:"Moderately severe disability",color:"#ea580c"}:s===5?{label:"Severe disability",color:"#dc2626"}:{label:"Death",color:"#450a0a"},
+    fields:[
+      {id:"rankin_grade",label:"Modified Rankin Scale Grade",options:[
+        "0 — No residual symptoms",
+        "1 — No significant disability; able to carry out all pre-stroke activities",
+        "2 — Slight disability; able to look after own affairs without assistance, but unable to carry out all previous activities",
+        "3 — Moderate disability; requires some help, but able to walk unassisted",
+        "4 — Moderately severe disability; unable to attend to own bodily needs without assistance, unable to walk unassisted",
+        "5 — Severe disability; bedridden, incontinent, requires constant nursing care and attention",
+        "6 — Death",
+      ]},
+    ],
+    score:(v)=>v.rankin_grade?+v.rankin_grade.split(" — ")[0]:null
+  },
+
   mas:{id:"mas",label:"MAS",full:"Modified Ashworth Scale — Spasticity (more-affected side)",icon:"💪",category:"Stroke",
     maxScore:4,unit:"/4",mcid:1,
     adminNote:"Move the limb through its full range passively at a moderate, consistent speed, roughly one second through range, and grade the resistance felt rather than the resistance expected. Test each muscle group in the same starting position every time for reliable comparison across sessions. Grade 1+ is recorded as 1.5 for scoring purposes.",
@@ -656,6 +693,7 @@ const ALL_TESTS = {
   special:{ label:"Special Tests (100+)", icon:"🔬", groups:{ "All Special Tests":"SPECIAL_TESTS_MODULE" }},
   neuro:{ label:"Neurological", icon:"⚡", groups:{ "Full Neurological Assessment":"NEURO_MODULE" }},
   tbi:{ label:"TBI Template", icon:"🧠", groups:{ "TBI Assessment Checklist":"TBI_MODULE" }},
+  stroke:{ label:"Stroke Template", icon:"❤️‍🩹", groups:{ "Stroke Assessment Checklist":"STROKE_MODULE" }},
   gait:{ label:"Gait Analysis", icon:"🚶", groups:{ "Full Gait Analysis":"GAIT_MODULE" }},
   nkt:{ label:"CPA — Compensation Pattern Analysis", icon:"🧠", groups:{ "Compensation Pattern Tests":"NKT_REGION" }},
   kinetic:{ label:"Kinetic Chain", icon:"⛓️", groups:{ "Joint-by-Joint Assessment":"KC_REGION" }},

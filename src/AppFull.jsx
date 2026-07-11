@@ -62,6 +62,7 @@ const LazyExercise      = lazy(() => import("./lazy_exercise.jsx"));
 const LazyOutcomes      = lazy(() => import("./lazy_outcomes.jsx"));
 const LazyNeuro         = lazy(() => import("./lazy_neuro.jsx"));
 const LazyTBI           = lazy(() => import("./lazy_tbi.jsx"));
+const LazyStroke        = lazy(() => import("./lazy_stroke.jsx"));
 const LazyBodyChart     = lazy(() => import("./lazy_bodychart.jsx"));
 const LazyGait          = lazy(() => import("./lazy_gait.jsx"));
 const LazyPalpation     = lazy(() => import("./lazy_palpation.jsx"));
@@ -828,6 +829,7 @@ function AppInner({ currentUser, onSignOut }) {
         <SidebarItem navKey="special"       icon="🔬" label="Special Tests (100+)"/>
         <SidebarItem navKey="neuro"         icon="⚡" label="Neurological"/>
         <SidebarItem navKey="tbi"           icon="🧠" label="TBI Template"/>
+        <SidebarItem navKey="stroke"        icon="❤️‍🩹" label="Stroke Template"/>
         <SidebarItem navKey="outcome"       icon="📈" label="Outcome Measures"/>
       </SidebarGroup>
 
@@ -1221,7 +1223,7 @@ function AppInner({ currentUser, onSignOut }) {
           {/* ── CLINICAL WORKFLOW HEADER ── */}
           {activePatient && (() => {
             const d2 = data;
-            const oKeys = ["rom","mmt","special","neuro","tbi","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+            const oKeys = ["rom","mmt","special","neuro","tbi","stroke","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
             const wfSteps = [
               { key:"demographics", label:"Demographics", short:"Demo",  nav:"demographics", done:!!(d2.dem_name&&d2.dem_age), active:active==="demographics" },
               { key:"subjective",   label:"Subjective",   short:"Sub",   nav:"subjective",   done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
@@ -1440,6 +1442,8 @@ function AppInner({ currentUser, onSignOut }) {
               </>
               ):tests==="TBI_MODULE"?(
                 <Suspense fallback={<TabFallback/>}><LazyTBI data={data} navTo={navTo}/></Suspense>
+              ):tests==="STROKE_MODULE"?(
+                <Suspense fallback={<TabFallback/>}><LazyStroke data={data} navTo={navTo}/></Suspense>
               ):tests==="GAIT_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyGait data={data} set={set}/></Suspense>
@@ -1592,6 +1596,7 @@ function AppInner({ currentUser, onSignOut }) {
                 <BnavItem navKey="special"     icon="🔬" label="Special Tests (100+)"/>
                 <BnavItem navKey="neuro"       icon="⚡" label="Neurological"/>
                 <BnavItem navKey="tbi"         icon="🧠" label="TBI Template"/>
+                <BnavItem navKey="stroke"      icon="❤️‍🩹" label="Stroke Template"/>
                 <BnavItem navKey="outcome"     icon="📈" label="Outcome Measures"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="advanced"?" open":""}`}>

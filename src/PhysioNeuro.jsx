@@ -1965,6 +1965,53 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
 // (see the first.startsWith() switch in NeurologicalModule above); for
 // rows living in Outcome Measures it opens straight into that scale's
 // live-entry view via navContext.scaleId (see OutcomeMeasuresPro).
+// Shared checklist launcher: a guided, start-to-finish list for a
+// specific neuro condition. Built for TBI first, then generalized here
+// when Stroke was added, so the two conditions share ONE rendering
+// component and one "how a checklist step looks" implementation --
+// only the step configuration (which sections, in what order, pointing
+// at which real data fields) differs per condition. Each step's "done"
+// status is read directly off real patient data fields, never a
+// separate progress flag that could drift out of sync, and clicking a
+// row uses the same navTo()+navContext deep-link mechanism the app
+// already uses for AI-suggested assessments.
+function ConditionChecklist({ label, icon, steps }) {
+  const doneCount = steps.filter(s=>s.done).length;
+  const pct = Math.round((doneCount/steps.length)*100);
+
+  return (
+    <div>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+        <div style={{width:38,height:38,borderRadius:10,background:`${C.accent}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <span style={{fontSize:19}}>{icon}</span>
+        </div>
+        <div>
+          <div style={{fontSize:"0.85rem",fontWeight:700,color:C.text}}>{label}</div>
+          <div style={{fontSize:"0.68rem",color:C.muted}}>{doneCount} of {steps.length} sections have data</div>
+        </div>
+      </div>
+
+      <div style={{height:4,background:C.s3,borderRadius:2,overflow:"hidden",marginBottom:16}}>
+        <div style={{width:`${pct}%`,height:"100%",background:C.accent,transition:"width 0.3s"}}/>
+      </div>
+
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {steps.map(s=>(
+          <div key={s.n} onClick={s.go}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:C.surface,border:`1px solid ${s.done?C.green+"50":C.border}`,borderRadius:10,cursor:"pointer"}}>
+            <span style={{fontSize:18,color:s.done?C.green:C.muted,flexShrink:0}}>{s.done?"✓":"○"}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:"0.78rem",fontWeight:600,color:C.text}}>{s.n}. {s.label}</div>
+              <div style={{fontSize:"0.66rem",color:s.done?C.green:C.muted,marginTop:1}}>{s.desc}</div>
+            </div>
+            <span style={{fontSize:15,color:C.muted,flexShrink:0}}>›</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TBITemplateModule({ data, navTo }) {
   const anyKeyStartsWith = (prefix) => Object.keys(data||{}).some(k=>k.startsWith(prefix) && data[k]);
 
@@ -2021,42 +2068,68 @@ function TBITemplateModule({ data, navTo }) {
     },
   ];
 
-  const doneCount = steps.filter(s=>s.done).length;
-  const pct = Math.round((doneCount/steps.length)*100);
-
-  return (
-    <div>
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-        <div style={{width:38,height:38,borderRadius:10,background:`${C.accent}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <span style={{fontSize:19}}>🧠</span>
-        </div>
-        <div>
-          <div style={{fontSize:"0.85rem",fontWeight:700,color:C.text}}>TBI template</div>
-          <div style={{fontSize:"0.68rem",color:C.muted}}>{doneCount} of {steps.length} sections have data</div>
-        </div>
-      </div>
-
-      <div style={{height:4,background:C.s3,borderRadius:2,overflow:"hidden",marginBottom:16}}>
-        <div style={{width:`${pct}%`,height:"100%",background:C.accent,transition:"width 0.3s"}}/>
-      </div>
-
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {steps.map(s=>(
-          <div key={s.n} onClick={s.go}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:C.surface,border:`1px solid ${s.done?C.green+"50":C.border}`,borderRadius:10,cursor:"pointer"}}>
-            <span style={{fontSize:18,color:s.done?C.green:C.muted,flexShrink:0}}>{s.done?"✓":"○"}</span>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:"0.78rem",fontWeight:600,color:C.text}}>{s.n}. {s.label}</div>
-              <div style={{fontSize:"0.66rem",color:s.done?C.green:C.muted,marginTop:1}}>{s.desc}</div>
-            </div>
-            <span style={{fontSize:15,color:C.muted,flexShrink:0}}>›</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <ConditionChecklist label="TBI template" icon="🧠" steps={steps}/>;
 }
 
-export { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule, TBITemplateModule,
+function StrokeTemplateModule({ data, navTo }) {
+  const anyKeyStartsWith = (prefix) => Object.keys(data||{}).some(k=>k.startsWith(prefix) && data[k]);
+
+  const steps = [
+    {
+      n:1, label:"Red flags", desc:"Evolving stroke signs — screen before proceeding",
+      done: ["nrf_saddle","nrf_bilateral","nrf_sphincter","nrf_prog_weak","nrf_umnsigns","nrf_loc_change"].some(k=>data[k]),
+      go: ()=>navTo("neuro",{neuroHighlight:"nrf_loc_change"}),
+    },
+    {
+      n:2, label:"NIHSS severity", desc:"NIH Stroke Scale — opens Outcome measures",
+      done: anyKeyStartsWith("nihss_"),
+      go: ()=>navTo("outcome",{scaleId:"nihss"}),
+    },
+    {
+      n:3, label:"Cranial nerves", desc:"Facial droop, speech, swallow — I through XII",
+      done: anyKeyStartsWith("cn_"),
+      go: ()=>navTo("neuro",{neuroHighlight:"cn_cn1"}),
+    },
+    {
+      n:4, label:"Coordination", desc:"Limb ataxia, involuntary movements",
+      done: anyKeyStartsWith("coord_") || !!data.neuro_involuntary_type,
+      go: ()=>navTo("neuro",{neuroHighlight:"coord_fingernose_L"}),
+    },
+    {
+      n:5, label:"Brunnstrom recovery stages", desc:"Arm, hand, leg — opens Outcome measures",
+      done: !!(data.brunnstrom_arm||data.brunnstrom_hand||data.brunnstrom_leg),
+      go: ()=>navTo("outcome",{scaleId:"brunnstrom"}),
+    },
+    {
+      n:6, label:"Fugl-Meyer motor assessment", desc:"Full 50-item motor instrument — opens Outcome measures",
+      done: anyKeyStartsWith("fma_"),
+      go: ()=>navTo("outcome",{scaleId:"fma"}),
+    },
+    {
+      n:7, label:"Balance and gait", desc:"Berg, TUG, DGI — opens Outcome measures",
+      done: anyKeyStartsWith("bbs_") || !!data.tug_time || anyKeyStartsWith("dgi_"),
+      go: ()=>navTo("outcome",{scaleId:"bbs"}),
+    },
+    {
+      n:8, label:"Neglect and perceptual screen", desc:"Line bisection, apraxia, body scheme",
+      done: anyKeyStartsWith("perc_"),
+      go: ()=>navTo("neuro",{neuroHighlight:"perc_perc_neglect"}),
+    },
+    {
+      n:9, label:"Modified Rankin Scale", desc:"Global disability grade — opens Outcome measures",
+      done: !!data.rankin_grade,
+      go: ()=>navTo("outcome",{scaleId:"rankin"}),
+    },
+    {
+      n:10, label:"Barthel functional outcome", desc:"ADL independence — opens Outcome measures",
+      done: anyKeyStartsWith("barthel_"),
+      go: ()=>navTo("outcome",{scaleId:"barthel"}),
+    },
+  ];
+
+  return <ConditionChecklist label="Stroke template" icon="❤️‍🩹" steps={steps}/>;
+}
+
+export { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule, TBITemplateModule, StrokeTemplateModule,
   ROM_DATA, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES,
   NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP };
