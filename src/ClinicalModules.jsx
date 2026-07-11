@@ -4391,7 +4391,9 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           </div>}
 
           {/* Neurological */}
-          {(neuroRows.length>0||v("gcs_eye")||v("gcs_verbal")||v("gcs_motor"))&&<div style={subCard("#065F46")}>
+          {(neuroRows.length>0||v("gcs_eye")||v("gcs_verbal")||v("gcs_motor")||
+            Object.keys(data).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_"))&&data[k])
+          )&&<div style={subCard("#065F46")}>
             {subH("Neurological","#065F46")}
             {/* GCS (Glasgow Coma Scale) -- was only ever wired into the
                 Live SOAP text builder and Patient Profile, never this
@@ -4417,6 +4419,63 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               return <div key={i} style={row}>
                 <span style={{color:"#374151",fontSize:14.5,flex:1}}>{r.label}</span>
                 <span style={{fontSize:14.5,fontWeight:500,color:isAbn?"#DC2626":isN?"#059669":"#111827"}}>{r.val}</span>
+              </div>;
+            })}
+            {/* Cranial nerves, cognition (orientation + MoCA/MMSE/Mini-Cog),
+                coordination, vestibular, and perceptual -- like GCS above,
+                these were only ever wired into buildRealtimeSOAP's text
+                output and never into this visual card, so they silently
+                never appeared here regardless of what was recorded. */}
+            {CRANIAL_NERVES.filter(cn=>v(`cn_${cn.id}_status`)).map(cn=>{
+              const val=v(`cn_${cn.id}_status`);
+              const isAbn=/Impaired|UMN pattern|LMN pattern|Conductive|Sensorineural|Deviates|Weak/.test(val);
+              return <div key={cn.id} style={row}>
+                <span style={{color:"#374151",fontSize:14.5,flex:1}}>{`CN ${cn.numeral} (${cn.name})`}</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:isAbn?"#DC2626":"#059669"}}>{val}</span>
+              </div>;
+            })}
+            {[["cog_orient_person","Orientation — Person"],["cog_orient_place","Orientation — Place"],["cog_orient_time","Orientation — Time"],["cog_orient_situation","Orientation — Situation"]].filter(([id])=>v(id)).map(([id,label])=>(
+              <div key={id} style={row}>
+                <span style={{color:"#374151",fontSize:14.5,flex:1}}>{label}</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:v(id)==="Yes"?"#059669":"#DC2626"}}>{v(id)}</span>
+              </div>
+            ))}
+            {["moca","mmse","minicog"].map(scaleId=>{
+              const sc=SCALES[scaleId]; const score=sc.score(data);
+              if(score===null) return null;
+              const interp=sc.interpret(score);
+              return <div key={scaleId} style={row}>
+                <span style={{color:"#374151",fontSize:14.5,flex:1}}>{sc.label}</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:interp.color}}>{score}{sc.unit} — {interp.label}</span>
+              </div>;
+            })}
+            {COORDINATION_TESTS.flatMap(t=>["L","R"].map(side=>({id:`${t.id}_${side}`,label:`${t.label} (${side})`,val:v(`${t.id}_${side}`)}))).filter(r=>r.val).map(r=>{
+              const isAbn=/dysmetria|ataxia|dysdiadochokinesia|Present|Unable/i.test(r.val)&&!/Absent|Normal/i.test(r.val);
+              return <div key={r.id} style={row}>
+                <span style={{color:"#374151",fontSize:14.5,flex:1}}>{r.label}</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:isAbn?"#DC2626":"#059669"}}>{r.val}</span>
+              </div>;
+            })}
+            {v("neuro_involuntary_type")&&v("neuro_involuntary_type")!=="None observed"&&(
+              <div style={row}>
+                <span style={{color:"#374151",fontSize:14.5,flex:1}}>Involuntary movements</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:"#DC2626"}}>{v("neuro_involuntary_type")}</span>
+              </div>
+            )}
+            {VESTIBULAR_TESTS.filter(t=>v(`vest_${t.id}_result`)).map(t=>{
+              const val=v(`vest_${t.id}_result`);
+              const isAbn=/Positive|Abnormal|central|drop/i.test(val)&&!/Negative|Normal/i.test(val);
+              return <div key={t.id} style={row}>
+                <span style={{color:"#374151",fontSize:14.5,flex:1}}>{t.label}</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:isAbn?"#DC2626":"#059669"}}>{val}</span>
+              </div>;
+            })}
+            {PERCEPTUAL_TESTS.filter(t=>v(`perc_${t.id}_result`)).map(t=>{
+              const val=v(`perc_${t.id}_result`);
+              const isAbn=/neglect|Ideomotor|Ideational|Impaired/i.test(val)&&!/No neglect|Absent|Intact/i.test(val);
+              return <div key={t.id} style={row}>
+                <span style={{color:"#374151",fontSize:14.5,flex:1}}>{t.label}</span>
+                <span style={{fontSize:14.5,fontWeight:500,color:isAbn?"#DC2626":"#059669"}}>{val}</span>
               </div>;
             })}
           </div>}

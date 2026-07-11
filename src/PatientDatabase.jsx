@@ -4,7 +4,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { createPortal } from "react-dom";
 import { supabase } from "./supabase.js";
 import { getC } from "./utils.jsx";
-import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION } from "./sharedClinicalData.js";
+import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SCALES } from "./sharedClinicalData.js";
 import { MMT_DATA_LABELS, mmtFallbackLabel, ST_DATA_LABELS, SCALE_DATA_LABELS, resolveCyriaxKey } from "./sharedClinicalData.js";
 import { NKT_REGIONS } from "./sharedClinicalData.js";
 import BodyChartPro from "./BodyChartPro.jsx";
@@ -2627,7 +2627,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   </Sec>
 
                   {/* ── Neurological ── */}
-                  <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes||!!d.gcs_eye}>
+                  <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes||!!d.gcs_eye||
+                    Object.keys(d).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_"))&&d[k])
+                  }>
                     {(()=>{
                       // Group into Reflexes / Dermatomes / Myotomes / Neural
                       // Tension with L/R pairing. Neural Tension (nt_ keys)
@@ -2699,6 +2701,85 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                               {(d.gcs_pupil_l||d.gcs_pupil_r)&&<div style={{fontSize:10.5,color:C.muted,marginTop:4}}>Pupils: L {d.gcs_pupil_l||"—"} · R {d.gcs_pupil_r||"—"}</div>}
                             </div>
                           )}
+                          {/* Cranial nerves, cognition (orientation +
+                              MoCA/MMSE/Mini-Cog), coordination, vestibular,
+                              and perceptual -- same real gap GCS had before
+                              it got its own card above: these were only
+                              ever wired into buildRealtimeSOAP's text
+                              output, never into this summary screen. */}
+                          {(()=>{
+                            const cnRows=CRANIAL_NERVES.filter(cn=>d[`cn_${cn.id}_status`]);
+                            if(!cnRows.length) return null;
+                            return <div style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`,marginBottom:10}}>
+                              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Cranial Nerves</div>
+                              {cnRows.map(cn=>(
+                                <div key={cn.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
+                                  <span style={{fontSize:12,color:C.text}}>{`CN ${cn.numeral}`}</span>
+                                  <NPill v={d[`cn_${cn.id}_status`]}/>
+                                </div>
+                              ))}
+                            </div>;
+                          })()}
+                          {(()=>{
+                            const orientRows=[["cog_orient_person","Person"],["cog_orient_place","Place"],["cog_orient_time","Time"],["cog_orient_situation","Situation"]].filter(([id])=>d[id]);
+                            const scaleRows=["moca","mmse","minicog"].map(id=>({id,sc:SCALES[id],score:SCALES[id].score(d)})).filter(r=>r.score!==null);
+                            if(!orientRows.length&&!scaleRows.length) return null;
+                            return <div style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`,marginBottom:10}}>
+                              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Cognition</div>
+                              {orientRows.map(([id,label])=>(
+                                <div key={id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
+                                  <span style={{fontSize:12,color:C.text}}>{label}</span>
+                                  <span style={{fontSize:11,fontWeight:700,color:d[id]==="Yes"?C.green:"#dc2626"}}>{d[id]}</span>
+                                </div>
+                              ))}
+                              {scaleRows.map(r=>{
+                                const interp=r.sc.interpret(r.score);
+                                return <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
+                                  <span style={{fontSize:12,color:C.text}}>{r.sc.label}</span>
+                                  <span style={{fontSize:11,fontWeight:700,color:interp.color}}>{r.score}{r.sc.unit}</span>
+                                </div>;
+                              })}
+                            </div>;
+                          })()}
+                          {(()=>{
+                            const coordRows=COORDINATION_TESTS.flatMap(t=>["L","R"].map(side=>({id:`${t.id}_${side}`,label:`${t.label} (${side})`,val:d[`${t.id}_${side}`]}))).filter(r=>r.val);
+                            if(!coordRows.length) return null;
+                            return <div style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`,marginBottom:10}}>
+                              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Coordination</div>
+                              {coordRows.map(r=>(
+                                <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
+                                  <span style={{fontSize:12,color:C.text}}>{r.label}</span>
+                                  <NPill v={r.val}/>
+                                </div>
+                              ))}
+                            </div>;
+                          })()}
+                          {(()=>{
+                            const vestRows=VESTIBULAR_TESTS.filter(t=>d[`vest_${t.id}_result`]);
+                            if(!vestRows.length) return null;
+                            return <div style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`,marginBottom:10}}>
+                              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Vestibular</div>
+                              {vestRows.map(t=>(
+                                <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
+                                  <span style={{fontSize:12,color:C.text}}>{t.label}</span>
+                                  <NPill v={d[`vest_${t.id}_result`]}/>
+                                </div>
+                              ))}
+                            </div>;
+                          })()}
+                          {(()=>{
+                            const percRows=PERCEPTUAL_TESTS.filter(t=>d[`perc_${t.id}_result`]);
+                            if(!percRows.length) return null;
+                            return <div style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`,marginBottom:10}}>
+                              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Perceptual</div>
+                              {percRows.map(t=>(
+                                <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
+                                  <span style={{fontSize:12,color:C.text}}>{t.label}</span>
+                                  <NPill v={d[`perc_${t.id}_result`]}/>
+                                </div>
+                              ))}
+                            </div>;
+                          })()}
                           {hasRows&&(
                             <div style={{display:"grid",gridTemplateColumns:"1fr 84px 84px",gap:4,padding:"4px 8px 6px",marginBottom:2,borderBottom:`1px solid ${C.border}`}}>
                               <div style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px"}}>Test</div>
