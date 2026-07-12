@@ -26,8 +26,9 @@ Return this exact JSON shape (null for anything not mentioned, empty array [] fo
   "aggMovements": array of 0-4 plain English movement descriptions,
   "aggActivities": array of 0-4 plain English activity descriptions,
   "relMovements": array of 0-4 plain English relief descriptions,
-  "hasRadiation": true|false|null, "radiationSide": "Left"|"Right"|"Bilateral"|null, "radiationArea": string or null,
-  "neuroSymptoms": array of 0-3 from ["No neurological symptoms","Objective numbness in specific area","Tingling","Pins and needles","Shooting pain","Burning — constant","Electric shock quality","Subjective weakness","Dropping objects involuntarily"],
+  "hasRadiation": true|false|null -- set true for ANY symptom described in a limb away from the main complaint area, not just classic shooting/sciatica-style pain. This includes neurogenic claudication (legs aching, heavy, or weak after walking a certain distance, relieved by sitting or bending forward) and any other referred limb symptom tied to a spinal or joint complaint.
+  "radiationSide": "Left"|"Right"|"Bilateral"|null, "radiationArea": string or null -- describe what's actually happening there, e.g. "Bilateral leg heaviness and aching after walking >5 min, relieved by sitting or leaning forward" -- don't just name the limb, carry over the pattern the patient described.
+  "neuroSymptoms": array of 0-3 from ["No neurological symptoms","Objective numbness in specific area","Tingling","Pins and needles","Shooting pain","Burning — constant","Electric shock quality","Subjective weakness","Heaviness/weakness in legs after walking (claudication pattern)","Dropping objects involuntarily"],
   "flags": array of red flag strings or []
 }
 If input is Hindi/mixed, extract clinical meaning in English.`;

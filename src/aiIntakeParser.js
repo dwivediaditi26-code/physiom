@@ -87,11 +87,19 @@ function mapParseResultToUpdates(result, existingData = {}) {
       updates[pfx + "_rel_best"] = result.relMovements[0];
     }
 
+    // {pfx}_radiation is the real field both buildRealtimeSOAP's Radiation
+    // line and the interpretation engine read (confirmed: _allRad scans
+    // data[px + "_radiation"] || data[px + "_loc_radiation"]). Previously
+    // wrote the positive case to {pfx}_rad_notes -- a name nothing in the
+    // app actually reads -- so any narrative describing radiation (leg
+    // symptoms, claudication, sciatica, referred arm pain) silently never
+    // reached the SOAP note or the differential engine, despite showing
+    // up correctly in the "fields written" summary console output.
     if (result.hasRadiation === false)
       updates[pfx + "_radiation"] = "No radiation — local only";
     else if (result.hasRadiation) {
       if (result.radiationArea)
-        updates[pfx + "_rad_notes"] = result.radiationArea + (result.radiationSide ? " (" + result.radiationSide + ")" : "");
+        updates[pfx + "_radiation"] = result.radiationArea + (result.radiationSide ? " (" + result.radiationSide + ")" : "");
     }
 
     if (result.neuroSymptoms?.length) {
