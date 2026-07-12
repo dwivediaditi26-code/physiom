@@ -1,0 +1,105 @@
+{
+  "region": "shoulder",
+  "diagnoses": [
+    {
+      "name": "Subacromial pain syndrome (impingement)",
+      "source": "JOSPT/APTA Shoulder Pain CPG; Magee Orthopedic Physical Assessment",
+      "requiredFindings": [],
+      "supportingFindings": ["overhead_aggravation", "painful_arc", "hawkins_positive", "neer_positive", "empty_can_positive", "greater_tuberosity_tender", "painful_weak_resist"],
+      "conflictingFindings": ["capsular_pattern", "global_rom_loss"],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.2, "painBehaviour": 1.0, "mmt": 0.8, "palpation": 0.6, "history": 0.7 },
+      "keyExams": ["Subacromial cluster (Hawkins, Neer, painful arc, empty can)"]
+    },
+    {
+      "name": "Rotator cuff tendinopathy",
+      "source": "Magee; Dutton Orthopaedic Examination",
+      "requiredFindings": [],
+      "supportingFindings": ["insidious_onset", "overhead_aggravation", "painful_arc", "empty_can_positive", "abduction_weak", "er_weak", "painful_weak_resist", "greater_tuberosity_tender"],
+      "conflictingFindings": ["capsular_pattern"],
+      "exclusionFindings": [],
+      "weights": { "mmt": 1.1, "specialTests": 1.0, "painBehaviour": 0.7, "history": 0.6, "palpation": 0.5 },
+      "keyExams": ["Resisted isometrics / MMT (abduction, ER)"]
+    },
+    {
+      "name": "Rotator cuff tear (full-thickness)",
+      "source": "McGee Evidence-Based Physical Diagnosis (lag signs, high specificity); JOSPT CPG",
+      "requiredFindings": [],
+      "supportingFindings": ["er_lag_positive", "drop_arm_positive", "lift_off_positive", "abduction_weak", "er_weak", "traumatic_onset", "night_pain", "imaging_full_thickness_tear"],
+      "conflictingFindings": ["capsular_pattern"],
+      "exclusionFindings": [],
+      "weights": { "imaging": 1.6, "specialTests": 1.3, "mmt": 1.0, "history": 0.7, "painBehaviour": 0.5 },
+      "keyExams": ["Full-thickness cuff tests (ER lag, drop-arm, lift-off)", "Imaging (US/MRI) if lag-sign positive"]
+    },
+    {
+      "name": "Adhesive capsulitis (frozen shoulder)",
+      "source": "APTA Adhesive Capsulitis CPG; Magee",
+      "requiredFindings": ["capsular_pattern"],
+      "supportingFindings": ["progressive_stiffness", "capsular_end_feel", "global_rom_loss", "insidious_onset", "night_pain"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "rom": 1.4, "endFeel": 1.0, "history": 0.8, "painBehaviour": 0.5 },
+      "keyExams": ["Passive ROM + end-feel (capsular pattern ER>Abd>IR)"]
+    },
+    {
+      "name": "AC joint pathology",
+      "source": "Magee; McGee",
+      "requiredFindings": [],
+      "supportingFindings": ["ac_scarf_positive", "ac_joint_tender", "obrien_positive"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.1, "palpation": 1.0 },
+      "keyExams": ["AC joint tests (scarf/cross-body, palpation)"]
+    },
+    {
+      "name": "Biceps tendinopathy / SLAP",
+      "source": "Magee",
+      "requiredFindings": [],
+      "supportingFindings": ["speeds_positive", "obrien_positive", "bicipital_groove_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.0, "palpation": 0.8 },
+      "keyExams": ["Biceps tests (Speed's, bicipital groove palpation)"]
+    },
+    {
+      "name": "Anterior glenohumeral instability",
+      "source": "Magee; JOSPT",
+      "requiredFindings": [],
+      "supportingFindings": ["apprehension_positive", "relocation_positive", "traumatic_onset"],
+      "conflictingFindings": ["capsular_pattern"],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.3, "history": 0.8 },
+      "keyExams": ["Instability tests (apprehension, relocation)"]
+    },
+    {
+      "name": "Calcific tendinopathy",
+      "source": "Standard orthopaedic imaging correlation",
+      "requiredFindings": ["imaging_calcific"],
+      "supportingFindings": ["painful_arc", "night_pain", "overhead_aggravation"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "imaging": 1.6, "painBehaviour": 0.6, "specialTests": 0.5 },
+      "keyExams": ["Imaging (X-ray/US) to confirm calcific deposit"]
+    },
+    {
+      "name": "Glenohumeral osteoarthritis",
+      "source": "Magee; radiographic correlation",
+      "requiredFindings": ["capsular_pattern"],
+      "supportingFindings": ["capsular_end_feel", "imaging_oa", "progressive_stiffness"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "rom": 1.2, "imaging": 1.4, "endFeel": 0.8, "history": 0.5 },
+      "keyExams": ["Imaging (X-ray) for joint-space/osteophytes"]
+    },
+    {
+      "name": "Cervical referral / radiculopathy (exclude)",
+      "source": "IFOMPT framework; Spurling cluster (Wainner)",
+      "requiredFindings": [],
+      "supportingFindings": ["paresthesia", "radiation_below_elbow", "spurling_positive"],
+      "conflictingFindings": ["painful_arc", "hawkins_positive"],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.2, "history": 1.0 },
+      "keyExams": ["Cervical neurological screen + Spurling's"]
+    }
+  ]
+}
