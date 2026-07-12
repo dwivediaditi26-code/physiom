@@ -1,1 +1,1 @@
-export { SOAPNoteModule as default } from "./ClinicalModules.jsx";
+export { SOAPNoteModule as default, buildRealtimeSOAP } from "./ClinicalModules.jsx";

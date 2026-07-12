@@ -3,8 +3,17 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import { inject } from '@vercel/analytics'
 import * as Sentry from '@sentry/react'
+import { installAiIntakeTestHarness } from './aiIntakeTestHarness.js'
 
 inject() // Enables Vercel Analytics — tracks page views and visitors automatically
+
+// On-demand console test tool for the AI intake pipeline -- attaches
+// window.physioAITest but runs nothing automatically. Open DevTools on
+// the live app and run physioAITest.runAll() to send 15 real patient
+// narratives through the actual /api/parse -> field mapping ->
+// interpretation -> SOAP pipeline and see the results. See
+// aiIntakeTestHarness.js for what it does and why it's opt-in only.
+installAiIntakeTestHarness()
 
 // Crash reporting — silently does nothing until VITE_SENTRY_DSN is set (see
 // README/session notes: create a free project at sentry.io, then add
