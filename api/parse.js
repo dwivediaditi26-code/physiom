@@ -23,6 +23,10 @@ Return this exact JSON shape (null for anything not mentioned, empty array [] fo
   "onset": one of ["Sudden — traumatic","Sudden — no trauma","Gradual — insidious","Sport-related","Lifting injury","Twisting injury","MVA / whiplash","Post-surgical","Woke with it","Repetitive strain","After new activity","Post-partum","Post-illness / viral","No clear cause"] or null,
   "nrsNow": number 0-10 or null, "nrsWorst": number 0-10 or null, "nrsBest": number 0-10 or null,
   "painQuality": array of 0-4 from ["Sharp","Dull","Aching","Throbbing","Burning","Shooting","Stabbing","Electric shock","Tingling","Pins and needles","Numbness","Heaviness","Tightness","Pressure","Cramping","Grinding","Catching","Weakness"],
+  "symptomPattern": one of ["Constant — always present, varies in intensity","Intermittent — comes and goes","Mechanical — clearly varies with movement/position/load","Non-mechanical — no clear relationship to movement"] or null -- only set this if the patient description actually supports it, don't guess.
+  "diurnalPattern": a short phrase capturing any time-of-day pattern mentioned, e.g. "Worse first thing in the morning, eases through the day", "Worse as the day goes on", "Worse at night, disturbs sleep", or null if nothing about timing was mentioned.
+  "morningSymptoms": array of 0-3 plain English descriptions of anything specifically worse/present in the morning (e.g. "Stiffness for 30 minutes on waking"), or [] if not mentioned.
+  "nightSymptoms": array of 0-3 plain English descriptions of anything specifically worse/present at night (e.g. "Wakes with pain when rolling over"), or [] if not mentioned.
   "aggMovements": array of 0-4 plain English movement descriptions,
   "aggActivities": array of 0-4 plain English activity descriptions,
   "relMovements": array of 0-4 plain English relief descriptions,
