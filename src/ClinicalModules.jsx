@@ -6025,6 +6025,11 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
         </div>
         {isOpen && (
           <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"transparent" }}>
+            {t.note&&(
+              <div style={{ padding:"7px 10px", background:"rgba(217,119,6,0.08)", border:"1px solid rgba(217,119,6,0.25)", borderRadius:7, marginBottom:8, fontSize:"0.68rem", color:"#854f0b", lineHeight:1.5 }}>
+                ⚠️ {t.note}
+              </div>
+            )}
             <button onClick={()=>{onLoadTemplate&&onLoadTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"9px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:8 }}>
               → View & add {t.exercises.length} exercises in Exercise Library
             </button>
