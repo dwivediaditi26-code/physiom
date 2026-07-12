@@ -43,6 +43,20 @@ function mapParseResultToUpdates(result, existingData = {}) {
   if (result.occupation) updates.dem_occupation = result.occupation;
 
   // ── Chief Complaint ───────────────────────────────────────────────
+  // cc_main is the actual free-text "Chief complaint" field a clinician
+  // fills in manually (see AppModules.jsx's intake form) -- it's also
+  // what buildRealtimeSOAP's opening Subjective line reads
+  // (`${name} presents with: "${cc}"`) and what the interpretation
+  // engine scans for red-flag keywords like "saddle"/"cauda". Found
+  // missing while reviewing a real result: a narrative describing a
+  // distal radius fracture with the cast just removed produced a SOAP
+  // note that never mentioned "fracture" at all, because none of the
+  // AI's other structured fields (onset category, duration, pain
+  // quality) carry that specific diagnosis detail -- only a genuine
+  // one-line summary does. /api/parse now asks for that summary
+  // explicitly as chiefComplaint; mapped here to the real field it
+  // needs to land in.
+  if (result.chiefComplaint) updates.cc_main = result.chiefComplaint;
   if (result.onset)    updates.cc_onset    = result.onset;
   if (result.duration) updates.cc_duration = result.duration;
   if (result.nrsNow   != null) updates.cc_vas_now   = String(Math.round(result.nrsNow));
@@ -92,6 +106,7 @@ function mapParseResultToUpdates(result, existingData = {}) {
 
   // ── Filled-field labels, for a human-readable summary ───────────────
   const filled = [];
+  if (result.chiefComplaint) filled.push("Chief complaint");
   if (result.age) filled.push("Age");
   if (result.sex) filled.push("Sex");
   if (result.occupation) filled.push("Occupation");

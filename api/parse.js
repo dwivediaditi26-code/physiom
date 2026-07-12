@@ -15,6 +15,7 @@ export default async function handler(req, res) {
 
 Return this exact JSON shape (null for anything not mentioned, empty array [] for arrays):
 {
+  "chiefComplaint": a short, one-line clinical summary a physiotherapist would write as the presenting complaint -- include the specific diagnosis/injury if one is mentioned (e.g. a fracture, tear, or surgery), the body part, and its current status. Examples: "Left distal radius fracture, cast removed, 6 weeks post-injury" or "Post-op right shoulder stiffness, 2 months post greater tuberosity fracture" or "Chronic mechanical low back pain, no red flags". Do not just restate the region -- carry over any injury/diagnosis detail the patient description already stated. String or null if truly nothing describable.
   "age": number or null, "sex": "Male"|"Female"|"Other"|null, "occupation": string or null,
   "region": one of ["Lumbar / SI","Cervical spine","Thoracic spine","Shoulder (L)","Shoulder (R)","Knee (L)","Knee (R)","Hip / Groin","Ankle / Foot","Elbow/Wrist/Hand"] or null,
   "laterality": "Left"|"Right"|"Bilateral"|null,
