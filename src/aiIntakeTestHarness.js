@@ -80,7 +80,15 @@ async function callParseOnce(narrative) {
     body: JSON.stringify({ text: narrative }),
   });
   const result = await res.json();
-  if (!res.ok || result.error) throw new Error(result.error || `Server error (${res.status})`);
+  if (!res.ok || result.error) {
+    // api/parse.js's 502 branch includes the real Groq response text in
+    // `detail` -- without surfacing it, every Groq-side failure (bad key,
+    // rate limit, model issue, outage) collapses into the same unhelpful
+    // "Groq error" label with no way to tell them apart. Found this gap
+    // live: a real 502 gave no way to diagnose what actually went wrong.
+    const detail = result.detail ? ` -- ${String(result.detail).slice(0, 300)}` : "";
+    throw new Error((result.error || `Server error (${res.status})`) + detail);
+  }
   return result;
 }
 
