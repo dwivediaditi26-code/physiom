@@ -501,6 +501,95 @@ function HomeModule({ onNav }) {
         ))}
       </div>
 
+      {/* AI Patient Intake explainer -- how the AI Assistant chat turns a
+          spoken/typed patient narrative into filled-in assessment fields.
+          Built as a step-by-step visual so a student opening this for the
+          first time understands the whole pipeline before ever using it,
+          not just a feature blurb. */}
+      <div style={{
+        background:"linear-gradient(180deg, #faf5ff 0%, #ffffff 100%)",
+        border:"1px solid #E9D5FF", borderRadius:18, padding:"24px 20px",
+        marginBottom:28, boxShadow:"0 2px 16px rgba(124,58,237,0.06)",
+      }}>
+        <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:18}}>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <span style={{fontSize:"1.3rem"}}>🤖</span>
+              <h2 style={{fontSize:"clamp(1rem,3vw,1.2rem)",fontWeight:900,color:"#0D0D0D",margin:0,letterSpacing:"-0.3px"}}>
+                AI Patient Intake
+              </h2>
+              <span style={{fontSize:"0.65rem",fontWeight:800,color:"#7c3aed",background:"#f5f3ff",border:"1px solid #ddd6fe",borderRadius:99,padding:"2px 9px",textTransform:"uppercase",letterSpacing:"0.4px"}}>New</span>
+            </div>
+            <p style={{fontSize:"0.82rem",color:"#6B6B6B",margin:0,lineHeight:1.55,maxWidth:560}}>
+              Describe a patient in plain language — speak or type — and the AI Assistant chat drafts the Subjective fields for you. Nothing saves until you say so.
+            </p>
+          </div>
+          <button onClick={()=>onNav("ai_assistant")} style={{
+            padding:"11px 20px", background:"linear-gradient(135deg, #7c3aed, #9333ea)",
+            border:"none", borderRadius:11, color:"#fff", fontWeight:800, fontSize:"0.82rem",
+            cursor:"pointer", boxShadow:"0 3px 14px rgba(124,58,237,0.28)", whiteSpace:"nowrap", flexShrink:0,
+          }}>
+            Try AI Assistant →
+          </button>
+        </div>
+
+        {/* 5-step pipeline */}
+        <div style={{display:"flex", alignItems:"stretch", flexWrap:"wrap", gap:0, marginBottom:20}}>
+          {[
+            {n:1, icon:"🎙️", title:"Speak or type", desc:"Natural narrative, no structure needed"},
+            {n:2, icon:"🧠", title:"AI extracts", desc:"Drafts fields, never saves yet"},
+            {n:3, icon:"👀", title:"You review", desc:"Confirm or edit each field"},
+            {n:4, icon:"✅", title:"Auto-fills tabs", desc:"Same fields as manual entry"},
+            {n:5, icon:"📊", title:"Review & Analysis", desc:"Your existing engine, unchanged"},
+          ].map((s,i,arr)=>(
+            <React.Fragment key={s.n}>
+              <div style={{
+                flex:"1 1 150px", minWidth:130, background:"#fff", border:"1px solid #E9D5FF",
+                borderRadius:14, padding:"14px 12px", position:"relative",
+              }}>
+                <div style={{
+                  width:22, height:22, borderRadius:"50%", background:"#7c3aed", color:"#fff",
+                  fontSize:"0.68rem", fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center",
+                  marginBottom:8,
+                }}>{s.n}</div>
+                <div style={{fontSize:"1.25rem", marginBottom:6}}>{s.icon}</div>
+                <div style={{fontSize:"0.8rem", fontWeight:800, color:"#0D0D0D", marginBottom:3, lineHeight:1.2}}>{s.title}</div>
+                <div style={{fontSize:"0.7rem", color:"#6B6B6B", lineHeight:1.4}}>{s.desc}</div>
+              </div>
+              {i < arr.length - 1 && (
+                <div style={{
+                  flex:"0 0 auto", display:"flex", alignItems:"center", justifyContent:"center",
+                  width:26, color:"#c4b5fd", fontSize:"1.1rem", fontWeight:900,
+                }}>→</div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Concrete example, so the pipeline above isn't abstract */}
+        <div style={{
+          background:"#fff", border:"1px solid #E0E0E2", borderRadius:14,
+          padding:"16px 16px", display:"grid", gridTemplateColumns:"minmax(220px,1fr) auto minmax(220px,1fr)",
+          gap:14, alignItems:"center",
+        }}>
+          <div>
+            <div style={{fontSize:"0.68rem", fontWeight:800, color:"#9333ea", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6}}>You say</div>
+            <div style={{fontSize:"0.78rem", color:"#0D0D0D", lineHeight:1.55, fontStyle:"italic", background:"#faf5ff", borderRadius:8, padding:"9px 11px", border:"1px solid #f0e6ff"}}>
+              "25 year old, post-op stiffness and limited ROM right shoulder — two months after a greater tuberosity fracture from an RTA."
+            </div>
+          </div>
+          <div style={{fontSize:"1.3rem", color:"#c4b5fd", justifySelf:"center", transform:"rotate(0deg)"}}>→</div>
+          <div>
+            <div style={{fontSize:"0.68rem", fontWeight:800, color:"#9333ea", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6}}>AI drafts</div>
+            <div style={{display:"flex", flexWrap:"wrap", gap:5}}>
+              {["Age: 25","Region: Shoulder (R)","Onset: Post-surgical","Duration: 6wk–3mo","Agg: Overhead reaching"].map((chip,i)=>(
+                <span key={i} style={{fontSize:"0.68rem", padding:"3px 9px", borderRadius:99, background:"#f5f3ff", color:"#5b21b6", border:"1px solid #ddd6fe", fontWeight:600}}>{chip}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Features grid */}
       <div style={{marginBottom:16}}>
         <h2 style={{fontSize:"clamp(1rem,3vw,1.25rem)",fontWeight:800,color:"#0D0D0D",margin:"0 0 6px",letterSpacing:"-0.3px"}}>Clinical Features</h2>
