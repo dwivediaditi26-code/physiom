@@ -73,7 +73,7 @@ const CASES = [
     narrative: "36 year old typist, numbness and tingling in the right thumb and first two fingers for two months, worse at night, gradual onset, shakes her hand to relieve it." },
 ];
 
-async function callParse(narrative) {
+async function callParseOnce(narrative) {
   const res = await fetch("/api/parse", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -82,6 +82,29 @@ async function callParse(narrative) {
   const result = await res.json();
   if (!res.ok || result.error) throw new Error(result.error || `Server error (${res.status})`);
   return result;
+}
+
+// Real-world finding: running all 15 cases back to back occasionally
+// fails a handful of consecutive calls partway through (observed: 4
+// cases in a row), while the exact same narrative re-run on its own
+// immediately afterward succeeds. That pattern -- fine in isolation,
+// fails under a rapid burst -- points at a transient rate limit
+// (Groq's API or Vercel's serverless concurrency), not a bug in the
+// mapping or interpretation logic. Retrying with backoff instead of
+// giving up on the first failure makes runAll() reliably finish all 15
+// in one pass rather than needing a second manual run for whatever
+// happened to land in the rate-limited window.
+async function callParse(narrative, attempt = 1) {
+  const MAX_ATTEMPTS = 3;
+  try {
+    return await callParseOnce(narrative);
+  } catch (e) {
+    if (attempt >= MAX_ATTEMPTS) throw e;
+    const waitMs = attempt * 2000; // 2s, then 4s
+    console.log(`%c⏳ Attempt ${attempt} failed (${e.message}) -- retrying in ${waitMs / 1000}s...`, "color:#b45309");
+    await new Promise(res => setTimeout(res, waitMs));
+    return callParse(narrative, attempt + 1);
+  }
 }
 
 // Runs one narrative through the full real pipeline: /api/parse -> field
@@ -158,7 +181,7 @@ async function runAll() {
     const r = await runOne(c.narrative, c);
     results.push(r);
     // Small gap between calls, easier on the API and easier to read as it streams in.
-    await new Promise(res => setTimeout(res, 250));
+    await new Promise(res => setTimeout(res, 600));
   }
 
   console.log("%c🤖 Summary — all 15 cases", "background:#059669;color:#fff;padding:3px 9px;border-radius:5px;font-weight:bold;font-size:1.05em");

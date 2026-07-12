@@ -62,18 +62,60 @@ describe("AI intake console test harness", () => {
     expect(typeof result.soap.O).toBe("string");
   });
 
-  test("a failed case doesn't stop the rest of the batch", async () => {
-    global.fetch
-      .mockRejectedValueOnce(new Error("network down"))
-      .mockResolvedValue({
-        ok: true,
-        json: async () => ({ age: 30, region: "Cervical spine", flags: [] }),
-      });
+  // Real-world finding from testing on the live app: running all 15
+  // cases back to back occasionally failed a handful of consecutive
+  // calls partway through, while the exact same narrative re-run in
+  // isolation immediately succeeded -- a transient rate limit, not a
+  // logic bug. These tests cover the retry-with-backoff added in
+  // response to that.
 
-    const results = await runAll();
+  test("a transient failure is retried and the case still succeeds", async () => {
+    vi.useFakeTimers();
+    global.fetch = vi.fn()
+      .mockRejectedValueOnce(new Error("rate limited"))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ age: 30, region: "Cervical spine", flags: [] }) });
+
+    const promise = runOne("test narrative", { label: "retry test" });
+    await vi.advanceTimersByTimeAsync(2100); // past the first 2s backoff
+    const result = await promise;
+
+    expect(result.error).toBeFalsy();
+    expect(result.mapped.region).toBe("Cervical spine");
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
+  test("exhausting all 3 attempts marks the case failed with the real error message", async () => {
+    vi.useFakeTimers();
+    global.fetch = vi.fn().mockRejectedValue(new Error("still rate limited"));
+
+    const promise = runOne("test narrative", { label: "always fails" });
+    await vi.advanceTimersByTimeAsync(2100); // 1st retry backoff
+    await vi.advanceTimersByTimeAsync(4100); // 2nd retry backoff
+    const result = await promise;
+
+    expect(result.error).toBe("still rate limited");
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+    vi.useRealTimers();
+  });
+
+  test("a case that exhausts all retries doesn't stop the rest of the 15-case batch", async () => {
+    vi.useFakeTimers();
+    let callCount = 0;
+    global.fetch = vi.fn().mockImplementation(async () => {
+      callCount++;
+      if (callCount <= 3) throw new Error("rate limited"); // all 3 attempts for case 1 fail
+      return { ok: true, json: async () => ({ age: 30, region: "Cervical spine", flags: [] }) };
+    });
+
+    const promise = runAll();
+    await vi.advanceTimersByTimeAsync(120000); // flush every backoff + between-case gap
+    const results = await promise;
+
     expect(results.length).toBe(15);
-    expect(results[0].error).toBe("network down");
-    // Every case after the failure still ran
-    expect(results[1].error).toBeFalsy();
-  }, 20000);
+    expect(results[0].error).toBe("rate limited");
+    // Every case after the exhausted one still ran and succeeded
+    expect(results.slice(1).every(r => !r.error)).toBe(true);
+    vi.useRealTimers();
+  }, 15000);
 });
