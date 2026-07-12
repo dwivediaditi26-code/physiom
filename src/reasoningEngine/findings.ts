@@ -34,6 +34,9 @@ export function deriveFindings(
   if (region === "shoulder") {
     deriveShoulder(subjective, objective, add);
   }
+  if (region === "cervical") {
+    deriveCervical(subjective, objective, add);
+  }
   return f;
 }
 
@@ -116,4 +119,57 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   abduction_weak: "mmt", er_weak: "mmt", painful_weak_resist: "mmt",
   ac_joint_tender: "palpation", greater_tuberosity_tender: "palpation", bicipital_groove_tender: "palpation",
   imaging_calcific: "imaging", imaging_full_thickness_tear: "imaging", imaging_oa: "imaging",
+  // cervical
+  radiating_arm_pain: "history", dermatomal_pattern: "history", headache_cervical: "history",
+  unilateral_headache: "history", neck_stiffness: "history", gait_disturbance: "history",
+  ext_rot_aggravation: "painBehaviour",
+  distraction_relief: "specialTests", ultta_positive: "specialTests",
+  rotation_lt_60: "specialTests", flexion_rotation_positive: "specialTests", hoffmann_positive: "specialTests",
+  reflex_change: "specialTests", sensory_deficit: "specialTests",
+  myotome_weak: "mmt",
+  cervical_ext_rom_limited: "rom", cervical_rot_rom_limited: "rom",
+  facet_tender: "palpation", upper_cervical_tender: "palpation",
 };
+
+function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  // History / behaviour (cervical-specific subjective signals)
+  add("radiating_arm_pain", "history", !!s.radiatingArmPain, "History: radiating arm pain");
+  add("dermatomal_pattern", "history", !!s.dermatomalPattern, "History: dermatomal distribution");
+  add("headache_cervical", "history", !!s.headacheFromNeck, "History: headache arising from neck");
+  add("unilateral_headache", "history", !!s.unilateralHeadache, "History: unilateral (side-locked) headache");
+  add("neck_stiffness", "history", !!s.neckStiffness, "History: neck stiffness");
+  add("gait_disturbance", "history", !!s.gaitDisturbance, "History: gait disturbance (UMN concern)");
+  add("ext_rot_aggravation", "painBehaviour", !!s.extensionRotationAggravation, "History: extension/rotation aggravates");
+
+  // Special tests / neuro
+  add("spurling_positive", "specialTests", t.spurling === true, "Spurling's: positive (radiculopathy)");
+  add("distraction_relief", "specialTests", t.distraction === true, "Cervical distraction: relieves (radiculopathy)");
+  add("ultta_positive", "specialTests", t.ultt === true, "Upper limb tension test A: positive (neural)");
+  add("rotation_lt_60", "specialTests", t.rotation_lt_60 === true, "Cervical rotation <60° to affected side");
+  add("flexion_rotation_positive", "specialTests", t.flexion_rotation === true, "Flexion-rotation test: positive (C1-2, cervicogenic HA)");
+  add("hoffmann_positive", "specialTests", t.hoffmann === true, "Hoffmann's: positive (UMN / myelopathy)");
+  add("reflex_change", "specialTests", t.reflex_change === true, "Reflex change (radiculopathy)");
+  add("sensory_deficit", "specialTests", t.sensory_deficit === true, "Dermatomal sensory deficit");
+
+  // MMT — myotome weakness
+  const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
+  add("myotome_weak", "mmt", weak("myotome") || weak("c5") || weak("c6") || weak("c7") || weak("c8"), "MMT: myotomal weakness (<=3/5)");
+
+  // ROM
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("cervical_ext_rom_limited", "rom", limited("extension"), "ROM: cervical extension limited (>=25%)");
+  add("cervical_rot_rom_limited", "rom", limited("rotation"), "ROM: cervical rotation limited (>=25%)");
+
+  // Palpation
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("facet_tender", "palpation", tender("facet") || tender("zygapophyseal"), "Palpation: facet joint tenderness");
+  add("upper_cervical_tender", "palpation", tender("suboccipital") || tender("upper cervical") || tender("c1") || tender("c2"), "Palpation: upper cervical tenderness");
+}

@@ -62,4 +62,4 @@ export function runReasoning(
 }
 
 export * from "./types";
-export { normalizeFromData, runShoulderReasoningFromData } from "./normalize";
+export { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, runCervicalReasoningFromData, runReasoningFromData } from "./normalize";

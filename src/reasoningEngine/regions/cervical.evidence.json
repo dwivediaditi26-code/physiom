@@ -1,0 +1,55 @@
+{
+  "region": "cervical",
+  "diagnoses": [
+    {
+      "name": "Cervical radiculopathy",
+      "source": "Wainner et al. diagnostic cluster; IFOMPT framework; Magee",
+      "requiredFindings": [],
+      "supportingFindings": ["radiating_arm_pain", "dermatomal_pattern", "paresthesia", "spurling_positive", "distraction_relief", "ultta_positive", "rotation_lt_60", "myotome_weak", "reflex_change", "sensory_deficit"],
+      "conflictingFindings": ["headache_cervical"],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.2, "history": 0.9, "mmt": 1.0 },
+      "keyExams": ["Wainner cluster (Spurling, distraction, ULTT-A, rotation <60°)", "Neurological screen (dermatomes/myotomes/reflexes)"]
+    },
+    {
+      "name": "Cervical facet syndrome / mechanical neck pain",
+      "source": "Magee; APTA Neck Pain CPG",
+      "requiredFindings": [],
+      "supportingFindings": ["neck_stiffness", "ext_rot_aggravation", "cervical_ext_rom_limited", "cervical_rot_rom_limited", "facet_tender"],
+      "conflictingFindings": ["radiating_arm_pain", "dermatomal_pattern", "spurling_positive"],
+      "exclusionFindings": [],
+      "weights": { "rom": 1.0, "painBehaviour": 0.9, "palpation": 0.9, "history": 0.6 },
+      "keyExams": ["Active/passive cervical ROM", "Facet loading (extension-rotation quadrant)"]
+    },
+    {
+      "name": "Cervicogenic headache",
+      "source": "Cervicogenic Headache International Study Group; flexion-rotation test (Hall)",
+      "requiredFindings": [],
+      "supportingFindings": ["headache_cervical", "unilateral_headache", "flexion_rotation_positive", "upper_cervical_tender"],
+      "conflictingFindings": ["radiating_arm_pain"],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.2, "history": 1.0, "palpation": 0.8 },
+      "keyExams": ["Flexion-rotation test (C1-2)", "Upper cervical palpation"]
+    },
+    {
+      "name": "Whiplash-associated disorder (WAD)",
+      "source": "Quebec Task Force WAD classification; Canadian C-Spine Rule",
+      "requiredFindings": [],
+      "supportingFindings": ["traumatic_onset", "neck_stiffness", "cervical_rot_rom_limited", "facet_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "rom": 0.9, "palpation": 0.7 },
+      "keyExams": ["Canadian C-Spine Rule screen", "Cervical ROM tolerance"]
+    },
+    {
+      "name": "Cervical myelopathy (URGENT — refer)",
+      "source": "IFOMPT; UMN sign clustering (Cook et al.)",
+      "requiredFindings": ["hoffmann_positive"],
+      "supportingFindings": ["gait_disturbance", "myotome_weak", "reflex_change"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.4, "history": 1.0, "mmt": 0.8 },
+      "keyExams": ["UMN screen (Hoffmann, hyperreflexia, clonus, gait) — urgent referral if positive"]
+    }
+  ]
+}

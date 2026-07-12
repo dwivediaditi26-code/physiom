@@ -15,6 +15,14 @@ interface RegionCompletenessConfig {
 }
 
 const CONFIGS: Record<string, RegionCompletenessConfig> = {
+  cervical: {
+    expectedDomains: ["history", "painBehaviour", "rom", "mmt", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Active/Passive cervical ROM", domain: "rom", why: "Range + directional provocation is required to separate facet from radicular presentations." },
+      { exam: "Neurological screen (dermatomes/myotomes/reflexes)", domain: "mmt", why: "Neuro testing is required to confirm or clear radiculopathy/myelopathy." },
+      { exam: "Cervical special-test cluster", domain: "specialTests", why: "Wainner/flexion-rotation/UMN testing is required to raise or lower structural probabilities." },
+    ],
+  },
   shoulder: {
     expectedDomains: ["history", "painBehaviour", "rom", "endFeel", "mmt", "specialTests", "palpation"],
     criticalExams: [

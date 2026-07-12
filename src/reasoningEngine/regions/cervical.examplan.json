@@ -1,0 +1,27 @@
+{
+  "region": "cervical",
+  "always": [
+    { "exam": "Observation & posture", "why": "Baseline; screens antalgic posture, torticollis, forward-head position, muscle guarding.", "confirmsOrExcludes": "Screens deformity, guarding, posture", "priority": "High" },
+    { "exam": "Active cervical ROM (all planes)", "why": "Establishes willingness, range and directional provocation (extension/rotation for facet).", "confirmsOrExcludes": "Screens restriction pattern and directional provocation", "priority": "High" },
+    { "exam": "Passive ROM + end-feel", "why": "Differentiates contractile vs articular restriction and localises segmental stiffness.", "confirmsOrExcludes": "Localises articular restriction", "priority": "High" }
+  ],
+  "conditional": [
+    { "when": { "flag": "dizzinessVBI", "equals": true },
+      "add": { "exam": "Vascular / VBI + upper cervical ligament screen (IFOMPT framework) FIRST", "why": "Dizziness/vertebrobasilar symptoms must be cleared before any end-range or manual testing — safety-critical.", "confirmsOrExcludes": "Excludes vascular / upper-cervical instability before provocation", "priority": "High" } },
+    { "when": { "flag": "radiatingArmPain", "equals": true },
+      "add": { "exam": "Neurological screen (dermatomes, myotomes, reflexes) + Wainner cluster (Spurling, distraction, ULTT-A, rotation <60°)", "why": "Radiating arm pain requires excluding/confirming cervical radiculopathy; the Wainner cluster of 3-4 positives materially raises probability.", "confirmsOrExcludes": "Confirms/excludes cervical radiculopathy", "priority": "High" } },
+    { "when": { "flag": "gaitDisturbance", "equals": true },
+      "add": { "exam": "Upper motor neuron screen (Hoffmann, hyperreflexia, clonus, gait) — urgent referral if positive", "why": "Gait disturbance raises myelopathy concern; UMN signs mandate urgent referral, not local treatment.", "confirmsOrExcludes": "Screens for cervical myelopathy (red flag)", "priority": "High" } },
+    { "when": { "flag": "headacheFromNeck", "equals": true },
+      "add": { "exam": "Flexion-rotation test (C1-2) + upper cervical palpation", "why": "Neck-related headache warrants testing the upper cervical segments; reduced flexion-rotation supports cervicogenic headache.", "confirmsOrExcludes": "Confirms/excludes cervicogenic headache", "priority": "Medium" } },
+    { "when": { "flag": "onsetTraumatic", "equals": true },
+      "add": { "exam": "Canadian C-Spine Rule screen + ROM tolerance", "why": "Traumatic onset requires clearing fracture risk (Canadian C-Spine Rule) before loaded testing.", "confirmsOrExcludes": "Clears fracture risk (WAD workup)", "priority": "High" } },
+    { "when": { "flag": "extensionRotationAggravation", "equals": true },
+      "add": { "exam": "Facet loading (extension-rotation quadrant) + segmental palpation", "why": "Extension-rotation provocation localises facet (zygapophyseal) joint pain.", "confirmsOrExcludes": "Confirms/excludes cervical facet syndrome", "priority": "Medium" } }
+  ],
+  "supporting": [
+    { "exam": "Segmental palpation (facet, suboccipital)", "why": "Localises symptomatic segment and tender structures.", "confirmsOrExcludes": "Localises symptomatic segment", "priority": "Medium" },
+    { "exam": "Functional + outcome measure (NDI)", "why": "Quantifies baseline disability for goal-setting and re-assessment.", "confirmsOrExcludes": "Baseline functional severity", "priority": "Medium" },
+    { "exam": "Imaging (only if red flag, trauma failing C-Spine Rule, or progressive neuro deficit)", "why": "Imaging is not routine for mechanical neck pain; reserve for red flags and progressive deficit.", "confirmsOrExcludes": "Confirms structural pathology when indicated", "priority": "Low" }
+  ]
+}

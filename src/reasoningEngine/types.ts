@@ -60,6 +60,15 @@ export interface SubjectiveInput {
   overheadAggravation?: boolean;
   progressiveStiffness?: boolean;
   ageBand?: "under40" | "40to65" | "over65";
+  // cervical-relevant history signals
+  radiatingArmPain?: boolean;
+  dermatomalPattern?: boolean;
+  headacheFromNeck?: boolean;
+  unilateralHeadache?: boolean;
+  neckStiffness?: boolean;
+  extensionRotationAggravation?: boolean;
+  gaitDisturbance?: boolean;
+  dizzinessVBI?: boolean;
   symptomDurationDays?: number | null;
 }
 
