@@ -197,16 +197,23 @@ export default function AIAssistant({ data, set, PC, onClose }) {
     setError("");
     setMessages(prev => [...prev, { role: "user", content: narrative }]);
     setLoading(true);
+    console.log("%c🤖 AI INTAKE — Stage 1: narrative captured (AI Assistant chat)", "background:#7c3aed;color:#fff;padding:2px 7px;border-radius:4px;font-weight:bold", narrative);
     try {
+      console.log("🤖 AI INTAKE — Stage 2: sending to /api/parse...");
       const res = await fetch("/api/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: narrative }),
       });
       const result = await res.json();
-      if (!res.ok || result.error) throw new Error(result.error || "Request failed");
+      if (!res.ok || result.error) {
+        console.log("%c🤖 AI INTAKE — Stage 2 FAILED", "color:#dc2626;font-weight:bold", result);
+        throw new Error(result.error || "Request failed");
+      }
+      console.log("🤖 AI INTAKE — Stage 2: response received", result);
       const mapped = mapParseResultToUpdates(result, data);
       setMessages(prev => [...prev, { role: "extraction", ...mapped, applied: false }]);
+      console.log("🤖 AI INTAKE — Stage 4: review card shown in chat, waiting for you to confirm or discard");
     } catch (e) {
       setError(e.message);
     } finally {
@@ -239,7 +246,9 @@ export default function AIAssistant({ data, set, PC, onClose }) {
           updates.cx_selected_regions = JSON.stringify([...existing, m.region]);
         }
       }
+      console.log("%c🤖 AI INTAKE — Stage 5: SAVING to patient record", "background:#059669;color:#fff;padding:2px 7px;border-radius:4px;font-weight:bold", updates);
       set && set(updates);
+      console.log("🤖 AI INTAKE — Stage 5: saved. Check Demographics / Subjective / Red Flags tabs.");
       return { ...m, applied: true };
     }));
   }
