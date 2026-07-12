@@ -112,32 +112,12 @@ function mapParseResultToUpdates(result, existingData = {}) {
   if (result.hasLegNeuro) filled.push("Leg neuro");
   if (reg) filled.push("Region: " + reg);
 
-  const out = {
+  return {
     updates,
     region: reg || null,
     filledLabels: filled,
     redFlagsToReview: Array.isArray(result.flags) ? result.flags.filter(Boolean) : [],
   };
-
-  // Debug console output -- lets you open DevTools (F12 -> Console) and
-  // watch exactly what the AI returned and exactly what fields it turned
-  // into, for any narrative, from either the Subjective tab's own AI
-  // panel or the AI Assistant chat (both call this same function).
-  // Search/filter the console for "AI INTAKE" to isolate this from
-  // everything else the app logs.
-  try {
-    console.groupCollapsed("%c🤖 AI INTAKE — Stage 3: mapped to form fields", "background:#7c3aed;color:#fff;padding:2px 7px;border-radius:4px;font-weight:bold");
-    console.log("Raw AI response (from /api/parse):", result);
-    console.log("Region detected:", out.region || "(none)");
-    console.log("Fields that will be written to the record:", out.updates);
-    console.log("Human-readable summary:", out.filledLabels);
-    if (out.redFlagsToReview.length) {
-      console.log("%c⚠ Red flags the AI noticed (not auto-marked, added to clinician notes for review):", "color:#dc2626;font-weight:bold", out.redFlagsToReview);
-    }
-    console.groupEnd();
-  } catch (e) { /* never let logging break the actual pipeline */ }
-
-  return out;
 }
 
 export { REGION_PREFIX_MAP, mapParseResultToUpdates };

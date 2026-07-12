@@ -2600,25 +2600,18 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     if (!textToParse.trim()) return;
     stopRecording();
     setAiStatus("processing");
-    console.log("%c🤖 AI INTAKE — Stage 1: narrative captured (Subjective tab AI panel)", "background:#7c3aed;color:#fff;padding:2px 7px;border-radius:4px;font-weight:bold", textToParse.trim());
 
     try {
-      console.log("🤖 AI INTAKE — Stage 2: sending to /api/parse...");
       const res = await fetch("/api/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: textToParse.trim() }),
       });
       const parsed = await res.json();
-      if (!res.ok) {
-        console.log("%c🤖 AI INTAKE — Stage 2 FAILED", "color:#dc2626;font-weight:bold", parsed);
-        throw new Error(parsed.error || "Server error");
-      }
-      console.log("🤖 AI INTAKE — Stage 2: response received", parsed);
+      if (!res.ok) throw new Error(parsed.error || "Server error");
       setAiResult(parsed);
       setAiStatus("done");
       setAiReview(true);
-      console.log("🤖 AI INTAKE — Stage 4: review panel shown, waiting for you to Apply or Re-try");
     } catch (e) {
       setAiStatus("error");
       setAiResult({ _errorMsg: e.message });
@@ -2664,9 +2657,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       updates.neuro_clinician_notes = existingNotes ? (existingNotes + String.fromCharCode(10) + aiNote) : aiNote;
     }
 
-    console.log("%c🤖 AI INTAKE — Stage 5: SAVING to patient record", "background:#059669;color:#fff;padding:2px 7px;border-radius:4px;font-weight:bold", updates);
     set(updates);
-    console.log("🤖 AI INTAKE — Stage 5: saved. Selected regions now:", reg ? [...selectedRegions, reg].filter((v,i,a)=>a.indexOf(v)===i) : selectedRegions);
     setAiOpen(false);
     setAiReview(false);
     setAiStatus("idle");
