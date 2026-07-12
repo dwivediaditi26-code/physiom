@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { mapParseResultToUpdates } from "./aiIntakeParser.js";
 
 function formatExerciseList(exercises) {
   return exercises.map(ex => {
@@ -116,7 +117,7 @@ function buildSuggestions(data) {
   return [...tailored, ...DEFAULT_SUGGESTIONS].slice(0, 6);
 }
 
-export default function AIAssistant({ data, PC, onClose }) {
+export default function AIAssistant({ data, set, PC, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -177,6 +178,55 @@ export default function AIAssistant({ data, PC, onClose }) {
       setLoading(false);
       inputRef.current?.focus();
     }
+  }
+
+  // ── Fill patient record from a dictated/typed narrative ──────────────
+  // Separate code path from send(): this never goes through /api/chat's
+  // conversational reply, and never touches patientContext (the earlier
+  // privacy whitelist) since /api/parse only needs the raw narrative
+  // text, nothing about the existing patient. Reuses the exact same
+  // extraction endpoint and field-mapping logic already proven inside
+  // the Subjective tab's own dictation feature (see
+  // SubjectiveObjective.jsx + aiIntakeParser.js) -- this is the same
+  // capability, made reachable from the chat window the user actually
+  // asked for, not a second, different implementation of it.
+  async function extractToRecord(text) {
+    const narrative = text || input.trim();
+    if (!narrative || loading) return;
+    setInput("");
+    setError("");
+    setMessages(prev => [...prev, { role: "user", content: narrative }]);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: narrative }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || "Request failed");
+      const mapped = mapParseResultToUpdates(result, data);
+      setMessages(prev => [...prev, { role: "extraction", ...mapped, applied: false }]);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus();
+    }
+  }
+
+  function confirmExtraction(msgIndex) {
+    setMessages(prev => prev.map((m, i) => {
+      if (i !== msgIndex || m.role !== "extraction") return m;
+      const updates = { ...m.updates };
+      if (m.redFlagsToReview?.length) {
+        const existingNotes = data.neuro_clinician_notes || "";
+        const aiNote = "AI noticed in intake narrative, please screen: " + m.redFlagsToReview.join("; ");
+        updates.neuro_clinician_notes = existingNotes ? (existingNotes + String.fromCharCode(10) + aiNote) : aiNote;
+      }
+      set && set(updates);
+      return { ...m, applied: true };
+    }));
   }
 
   function clearChat() {
@@ -339,6 +389,60 @@ export default function AIAssistant({ data, PC, onClose }) {
         )}
 
         {messages.map((m, i) => (
+          m.role === "extraction" ? (
+            <div key={i} style={{
+              maxWidth: "92%", alignSelf: "flex-start",
+              background: surface, border: `1.5px solid ${m.applied ? "#86efac" : accent + "40"}`,
+              borderRadius: "4px 12px 12px 12px", padding: "12px 14px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <span style={{ fontSize: "0.85rem" }}>{m.applied ? "✅" : "📋"}</span>
+                <span style={{ fontSize: "0.78rem", fontWeight: 700, color: m.applied ? "#166534" : accent }}>
+                  {m.applied ? `Filled ${m.filledLabels.length} field${m.filledLabels.length===1?"":"s"} into the patient record` : `Found ${m.filledLabels.length} field${m.filledLabels.length===1?"":"s"} to fill`}
+                </span>
+              </div>
+              {m.region && (
+                <div style={{ fontSize: "0.74rem", color: muted, marginBottom: 6 }}>Region detected: <strong style={{ color: text }}>{m.region}</strong></div>
+              )}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: m.redFlagsToReview?.length ? 8 : 10 }}>
+                {m.filledLabels.map((label, li) => (
+                  <span key={li} style={{
+                    fontSize: "0.68rem", padding: "3px 8px", borderRadius: 99,
+                    background: isDark ? `${accent}18` : `${accent}0d`, color: accent,
+                    border: `1px solid ${accent}30`,
+                  }}>{label}</span>
+                ))}
+              </div>
+              {m.redFlagsToReview?.length > 0 && (
+                <div style={{
+                  display: "flex", gap: 8, alignItems: "flex-start",
+                  padding: "8px 10px", borderRadius: 8, marginBottom: 10,
+                  background: isDark ? "rgba(220,38,38,0.14)" : "#FEF2F2",
+                  border: "1px solid #FCA5A5",
+                }}>
+                  <span style={{ flexShrink: 0 }}>⚠</span>
+                  <div style={{ fontSize: "0.74rem", color: "#B91C1C", lineHeight: 1.5 }}>
+                    <strong>Worth screening:</strong> {m.redFlagsToReview.join("; ")}. Not auto-marked — that's your call, but it'll be noted in Red Flags for you to check.
+                  </div>
+                </div>
+              )}
+              {!m.applied ? (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => confirmExtraction(i)} style={{
+                    flex: 1, padding: "8px", borderRadius: 8, border: "none",
+                    background: `linear-gradient(135deg,${accent},${a2})`, color: "#fff",
+                    fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  }}>✓ Confirm and fill record</button>
+                  <button onClick={() => setMessages(prev => prev.filter((_, idx) => idx !== i))} style={{
+                    padding: "8px 12px", borderRadius: 8, border: `1px solid ${border}`,
+                    background: "transparent", color: muted, fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit",
+                  }}>Discard</button>
+                </div>
+              ) : (
+                <div style={{ fontSize: "0.72rem", color: "#166534" }}>Saved. Check Demographics and Subjective to review what was filled.</div>
+              )}
+            </div>
+          ) : (
           <div key={i}
             ref={(i === messages.length - 1 && m.role === "user") ? questionAnchorRef : null}
             style={{
@@ -377,6 +481,7 @@ export default function AIAssistant({ data, PC, onClose }) {
               {m.content}
             </div>
           </div>
+          )
         ))}
 
         {loading && (
@@ -460,6 +565,23 @@ export default function AIAssistant({ data, PC, onClose }) {
             {loading ? "..." : "Send"}
           </button>
         </div>
+        {set && (
+          <button
+            onClick={() => extractToRecord()}
+            disabled={!input.trim() || loading}
+            style={{
+              width: "100%", marginTop: 7, padding: "7px", borderRadius: 8,
+              border: `1px dashed ${input.trim() && !loading ? accent : border}`,
+              background: "transparent",
+              color: input.trim() && !loading ? accent : muted,
+              fontSize: "0.75rem", fontWeight: 700,
+              cursor: input.trim() && !loading ? "pointer" : "not-allowed",
+              fontFamily: "inherit",
+            }}
+          >
+            📋 Fill patient record from this instead
+          </button>
+        )}
         <div style={{ fontSize: "0.72rem", color: muted, marginTop: 6, textAlign: "center" }}>
           Press Enter to send · Shift+Enter for new line · AI responses are assistive only
         </div>

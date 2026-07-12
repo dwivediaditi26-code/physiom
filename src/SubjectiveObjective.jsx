@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage } from "./sharedClinicalData.js";
+import { mapParseResultToUpdates } from "./aiIntakeParser.js";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -2619,84 +2620,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   }, [stopRecording]);
 
   const applyAiResult = React.useCallback((result) => {
-    const updates = { ...data };
-    const SEP = "|||";
+    // Shared with the AI Assistant chat's own extraction flow -- see
+    // aiIntakeParser.js. Previously this field mapping lived only here,
+    // duplicated by hand anywhere else that wanted the same capability.
+    const { updates, region: reg, filledLabels, redFlagsToReview } = mapParseResultToUpdates(result, data);
 
-    // ── Region prefix helper ─────────────────────────────────────────
-    let reg = result.region || "";
-    if (result.laterality === "Left"  && reg === "Shoulder") reg = "Shoulder (L)";
-    if (result.laterality === "Right" && reg === "Shoulder") reg = "Shoulder (R)";
-    if (result.laterality === "Left"  && reg === "Knee")     reg = "Knee (L)";
-    if (result.laterality === "Right" && reg === "Knee")     reg = "Knee (R)";
-    const prefixMap = {
-      "Cervical spine":"cx","Lumbar / SI":"lx","Thoracic spine":"tx",
-      "Shoulder (L)":"shl","Shoulder (R)":"shr",
-      "Knee (L)":"knl","Knee (R)":"knr",
-      "Hip / Groin":"hp","Ankle / Foot":"af","Elbow/Wrist/Hand":"ew",
-    };
-    const pfx = prefixMap[reg] || null;
-
-    // ── Demographics ─────────────────────────────────────────────────
-    if (result.age)        updates.dem_age = String(result.age);
-    if (result.sex)        updates.dem_sex = result.sex;
-    if (result.occupation) updates.dem_occupation = result.occupation;
-
-    // ── Chief Complaint ───────────────────────────────────────────────
-    if (result.onset)    updates.cc_onset    = result.onset;
-    if (result.duration) updates.cc_duration = result.duration;
-    if (result.nrsNow   != null) updates.cc_vas_now   = String(Math.round(result.nrsNow));
-    if (result.nrsWorst != null) updates.cc_vas_worst = String(Math.round(result.nrsWorst));
-    if (result.nrsBest  != null) updates.cc_vas_best  = String(Math.round(result.nrsBest));
-    if (result.painQuality?.length)
-      updates.cc_quality = result.painQuality.join(SEP);
-
-    // ── Region-prefixed fields ─────────────────────────────────────────
-    if (pfx) {
-      // Pain pattern
-      if (result.symptomPattern)
-        updates[pfx + "_pattern"] = result.symptomPattern;
-      if (result.diurnalPattern)
-        updates[pfx + "_24hr"] = result.diurnalPattern;
-
-      // Morning & night symptoms (multicheck)
-      if (result.morningSymptoms?.length)
-        updates[pfx + "_morning"] = result.morningSymptoms.join(SEP);
-      if (result.nightSymptoms?.length)
-        updates[pfx + "_night"] = result.nightSymptoms.join(SEP);
-
-      // Aggravating — write to notes AND worst-aggravator text field
-      const allAgg = [...(result.aggMovements||[]), ...(result.aggActivities||[])];
-      if (allAgg.length) {
-        updates[pfx + "_agg_notes"] = allAgg.join("\n");
-        updates[pfx + "_agg_worst"] = allAgg[0];
-      }
-      // Relieving — write to notes AND best-reliever text field
-      if (result.relMovements?.length) {
-        updates[pfx + "_rel_notes"] = result.relMovements.join("\n");
-        updates[pfx + "_rel_best"] = result.relMovements[0];
-      }
-
-      // Radiation — radiation field is a multicheck; single option value is fine
-      if (result.hasRadiation === false)
-        updates[pfx + "_radiation"] = "No radiation — local only";
-      else if (result.hasRadiation) {
-        if (result.radiationArea)
-          updates[pfx + "_rad_notes"] = result.radiationArea + (result.radiationSide ? " (" + result.radiationSide + ")" : "");
-        // Note: specific radiation destinations should be confirmed by clinician in multicheck
-      }
-
-      // Neurological symptoms
-      if (result.neuroSymptoms?.length) {
-        const neuroField = pfx === "cx" ? "cx_arm_neuro"
-          : pfx === "lx" ? "lx_neuro_quality"
-          : pfx + "_neuro";
-        updates[neuroField] = result.neuroSymptoms.join(SEP);
-      }
-      if (result.hasLegNeuro && pfx === "lx")
-        updates["lx_neuro_present"] = result.hasLegNeuro;
-    }
-
-    // ── Add region to selected regions ───────────────────────────────
     if (reg) {
       setSelectedRegions(prev => {
         if (prev.includes(reg) || prev.length >= 3) return prev;
@@ -2706,27 +2634,19 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       });
     }
 
-    // ── Count filled fields for success banner ────────────────────────
-    const filled = [];
-    if (result.age) filled.push("Age");
-    if (result.sex) filled.push("Sex");
-    if (result.occupation) filled.push("Occupation");
-    if (result.onset) filled.push("Onset");
-    if (result.duration) filled.push("Duration");
-    if (result.nrsNow != null) filled.push("NRS now");
-    if (result.nrsWorst != null) filled.push("NRS worst");
-    if (result.nrsBest != null) filled.push("NRS best");
-    if (result.painQuality?.length) filled.push("Pain quality (" + result.painQuality.join(", ") + ")");
-    if (result.symptomPattern) filled.push("Pain pattern");
-    if (result.diurnalPattern) filled.push("24hr pattern");
-    if (result.morningSymptoms?.length) filled.push("Morning symptoms");
-    if (result.nightSymptoms?.length) filled.push("Night symptoms");
-    if (result.aggMovements?.length || result.aggActivities?.length) filled.push("Aggravating factors");
-    if (result.relMovements?.length) filled.push("Relieving factors");
-    if (result.hasRadiation != null) filled.push("Radiation");
-    if (result.neuroSymptoms?.length) filled.push("Neuro symptoms");
-    if (result.hasLegNeuro) filled.push("Leg neuro");
-    if (reg) filled.push("Region: " + reg);
+    // Red flags the AI noticed in the narrative -- previously extracted
+    // by /api/parse and then silently discarded here, never shown to the
+    // clinician. Surfaced as a prompt to go screen them properly, never
+    // auto-marked positive/negative -- that stays a clinical judgement.
+    if (redFlagsToReview.length) {
+      // Append (not overwrite) to the real, already-visible clinician
+      // notes field on the Neurological Red Flags screening tab, so this
+      // actually surfaces somewhere a clinician would look, rather than
+      // sitting in a field nothing renders.
+      const existingNotes = data.neuro_clinician_notes || "";
+      const aiNote = "AI noticed in intake narrative, please screen: " + redFlagsToReview.join("; ");
+      updates.neuro_clinician_notes = existingNotes ? (existingNotes + String.fromCharCode(10) + aiNote) : aiNote;
+    }
 
     set(updates);
     setAiOpen(false);
@@ -2735,7 +2655,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     setAiText("");
     setActiveSection("complaint");
     if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    setAiSuccess({ count: filled.length, fields: filled });
+    setAiSuccess({ count: filledLabels.length, fields: redFlagsToReview.length ? [...filledLabels, `⚠ ${redFlagsToReview.length} possible red flag(s) to screen`] : filledLabels });
     setTimeout(() => setAiSuccess(null), 8000);
   }, [data, set]);
 
