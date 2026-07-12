@@ -2792,8 +2792,14 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     const nrfKeys = [["nrf_myelopathy","Myelopathy signs"],["nrf_cauda","Cauda equina"],
                      ["nrf_saddle","Saddle anaesthesia"],["nrf_sphincter","Sphincter dysfunction"],
                      ["nrf_bilateral","Bilateral signs"],["nrf_prog_weak","Progressive weakness"],
-                     ["nrf_raised_icp","Raised ICP signs"],["nrf_loc_change","Evolving consciousness change"]];
-    const nrfFlags = nrfKeys.filter(([k]) => data[k] === true || String(data[k]).includes("yes") || String(data[k]).includes("present"))
+                     ["nrf_raised_icp","Raised ICP signs"],["nrf_loc_change","Evolving consciousness change"],
+                     ["nrf_autonomic_dysreflexia","Autonomic dysreflexia"]];
+    const nrfFlags = nrfKeys.filter(([k]) => {
+      const val = data[k];
+      if (val === true) return true;
+      const lc = String(val).toLowerCase();
+      return lc.includes("yes") || lc.includes("present");
+    })
                               .map(([,label]) => label);
     if (nrfFlags.length) neuroLines.push(`  ⚠️ Red Flags: ${nrfFlags.join(", ")}`);
     // GCS if recorded
@@ -2819,6 +2825,20 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       const score = sc.score(data);
       if (score !== null) neuroLines.push(`  ${sc.label}: ${score}${sc.unit} (${sc.interpret(score).label})`);
     });
+
+    // Condition-specific staging scales -- Brunnstrom, Rankin, Hoehn & Yahr,
+    // PD rigidity, UPDRS, EDSS. Same live-computed pattern as the cognitive
+    // scales above (never a separate cached number, always SCALES.score()
+    // reading straight off the real recorded fields).
+    ["brunnstrom","rankin","hoehnyahr","pdrigidity","updrs","edss"].forEach(scaleId => {
+      const sc = SCALES[scaleId];
+      const score = sc.score(data);
+      if (score !== null) neuroLines.push(`  ${sc.label}: ${score}${sc.unit} (${sc.interpret(score).label})`);
+    });
+
+    // SCI bowel/bladder/skin management status
+    if (v("sci_bladder_mgmt")) neuroLines.push(`  Bladder management: ${v("sci_bladder_mgmt")}`);
+    if (v("sci_bowel_mgmt")) neuroLines.push(`  Bowel management: ${v("sci_bowel_mgmt")}`);
 
     // Coordination + involuntary movements
     const coordLines = [];
@@ -4392,7 +4412,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* Neurological */}
           {(neuroRows.length>0||v("gcs_eye")||v("gcs_verbal")||v("gcs_motor")||
-            Object.keys(data).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_"))&&data[k])
+            Object.keys(data).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_")||k.startsWith("brunnstrom_")||k.startsWith("rankin_")||k.startsWith("hoehnyahr_")||k.startsWith("pdrigidity_")||k.startsWith("updrs_")||k.startsWith("edss_")||k.startsWith("sci_")||k==="nrf_autonomic_dysreflexia")&&data[k])
           )&&<div style={subCard("#065F46")}>
             {subH("Neurological","#065F46")}
             {/* GCS (Glasgow Coma Scale) -- was only ever wired into the
@@ -4440,7 +4460,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 <span style={{fontSize:14.5,fontWeight:500,color:v(id)==="Yes"?"#059669":"#DC2626"}}>{v(id)}</span>
               </div>
             ))}
-            {["moca","mmse","minicog"].map(scaleId=>{
+            {["moca","mmse","minicog","brunnstrom","rankin","hoehnyahr","pdrigidity","updrs","edss"].map(scaleId=>{
               const sc=SCALES[scaleId]; const score=sc.score(data);
               if(score===null) return null;
               const interp=sc.interpret(score);
@@ -4449,6 +4469,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 <span style={{fontSize:14.5,fontWeight:500,color:interp.color}}>{score}{sc.unit} — {interp.label}</span>
               </div>;
             })}
+            {v("sci_bladder_mgmt")&&<div style={row}><span style={{color:"#374151",fontSize:14.5,flex:1}}>Bladder management</span><span style={{fontSize:14.5,fontWeight:500,color:"#111827"}}>{v("sci_bladder_mgmt")}</span></div>}
+            {v("sci_bowel_mgmt")&&<div style={row}><span style={{color:"#374151",fontSize:14.5,flex:1}}>Bowel management</span><span style={{fontSize:14.5,fontWeight:500,color:"#111827"}}>{v("sci_bowel_mgmt")}</span></div>}
             {COORDINATION_TESTS.flatMap(t=>["L","R"].map(side=>({id:`${t.id}_${side}`,label:`${t.label} (${side})`,val:v(`${t.id}_${side}`)}))).filter(r=>r.val).map(r=>{
               const isAbn=/dysmetria|ataxia|dysdiadochokinesia|Present|Unable/i.test(r.val)&&!/Absent|Normal/i.test(r.val);
               return <div key={r.id} style={row}>

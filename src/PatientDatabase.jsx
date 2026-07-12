@@ -2628,7 +2628,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
                   {/* ── Neurological ── */}
                   <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes||!!d.gcs_eye||
-                    Object.keys(d).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_"))&&d[k])
+                    Object.keys(d).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_")||k.startsWith("brunnstrom_")||k.startsWith("rankin_")||k.startsWith("hoehnyahr_")||k.startsWith("pdrigidity_")||k.startsWith("updrs_")||k.startsWith("edss_")||k.startsWith("sci_")||k==="nrf_autonomic_dysreflexia")&&d[k])
                   }>
                     {(()=>{
                       // Group into Reflexes / Dermatomes / Myotomes / Neural
@@ -2741,6 +2741,27 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                               })}
                             </div>;
                           })()}
+                          {(()=>{
+                            const stagingRows=["brunnstrom","rankin","hoehnyahr","pdrigidity","updrs","edss"].map(id=>({id,sc:SCALES[id],score:SCALES[id].score(d)})).filter(r=>r.score!==null);
+                            if(!stagingRows.length) return null;
+                            return <div style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`,marginBottom:10}}>
+                              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Condition Staging</div>
+                              {stagingRows.map(r=>{
+                                const interp=r.sc.interpret(r.score);
+                                return <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
+                                  <span style={{fontSize:12,color:C.text}}>{r.sc.label}</span>
+                                  <span style={{fontSize:11,fontWeight:700,color:interp.color}}>{r.score}{r.sc.unit}</span>
+                                </div>;
+                              })}
+                            </div>;
+                          })()}
+                          {(d.sci_bladder_mgmt||d.sci_bowel_mgmt)&&(
+                            <div style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`,marginBottom:10}}>
+                              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Bowel and Bladder Management</div>
+                              {d.sci_bladder_mgmt&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}><span style={{fontSize:12,color:C.text}}>Bladder</span><span style={{fontSize:11,fontWeight:700,color:C.text}}>{d.sci_bladder_mgmt}</span></div>}
+                              {d.sci_bowel_mgmt&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}><span style={{fontSize:12,color:C.text}}>Bowel</span><span style={{fontSize:11,fontWeight:700,color:C.text}}>{d.sci_bowel_mgmt}</span></div>}
+                            </div>
+                          )}
                           {(()=>{
                             const coordRows=COORDINATION_TESTS.flatMap(t=>["L","R"].map(side=>({id:`${t.id}_${side}`,label:`${t.label} (${side})`,val:d[`${t.id}_${side}`]}))).filter(r=>r.val);
                             if(!coordRows.length) return null;
