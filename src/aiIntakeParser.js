@@ -26,7 +26,7 @@ const REGION_PREFIX_MAP = {
   "Hip / Groin":"hp","Ankle / Foot":"af","Elbow/Wrist/Hand":"ew",
 };
 
-function mapParseResultToUpdates(result, existingData = {}) {
+function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") {
   const updates = {};
   const SEP = "|||";
 
@@ -135,11 +135,50 @@ function mapParseResultToUpdates(result, existingData = {}) {
   if (result.hasLegNeuro) filled.push("Leg neuro");
   if (reg) filled.push("Region: " + reg);
 
+  // ── Missing-information checklist ───────────────────────────────────
+  // Computed deterministically from what's actually still empty, not
+  // asked of the AI -- asking an LLM to self-report what it's missing
+  // is itself a hallucination risk (it could claim something is present
+  // when it isn't, or invent a plausible-sounding gap). Checking the
+  // real, already-extracted result is the only reliable way to build
+  // this list.
+  const missingInfo = [];
+  if (result.nrsNow == null && result.nrsWorst == null && result.nrsBest == null)
+    missingInfo.push("Pain scale (0-10)");
+  if (!result.occupation) missingInfo.push("Occupation");
+  if (!result.symptomPattern) missingInfo.push("Symptom pattern (constant vs intermittent)");
+  if (!result.diurnalPattern && !result.morningSymptoms?.length && !result.nightSymptoms?.length)
+    missingInfo.push("Time-of-day pattern (morning/night)");
+  if (result.hasRadiation == null) missingInfo.push("Radiation / referred symptoms");
+  if (!result.aggMovements?.length && !result.aggActivities?.length)
+    missingInfo.push("Aggravating factors");
+  if (!result.relMovements?.length) missingInfo.push("Relieving factors");
+  if (!result.painQuality?.length) missingInfo.push("Pain quality/character");
+
+  // ── Extraction audit trail ──────────────────────────────────────────
+  // Per-field confidence and the exact quote supporting it, straight
+  // from the AI's own self-reported values (never invented here) --
+  // plus the verbatim original narrative, so a clinician can always
+  // compare what was extracted against exactly what was said. This is
+  // deliberately NOT written into updates as if it were a real form
+  // field -- callers store it as one separate field
+  // (ai_extraction_audit) so every existing field the rest of the app
+  // reads (cc_main, dem_age, etc.) keeps storing a plain value exactly
+  // as before, and nothing downstream (SOAP, interpretation engine,
+  // Patient Profile) has to change or risk breaking.
+  const extractionMeta = {
+    narrative: narrativeText || "",
+    confidence: (result._confidence && typeof result._confidence === "object") ? result._confidence : {},
+    sourceQuotes: (result._sourceQuotes && typeof result._sourceQuotes === "object") ? result._sourceQuotes : {},
+    missingInfo,
+  };
+
   return {
     updates,
     region: reg || null,
     filledLabels: filled,
     redFlagsToReview: Array.isArray(result.flags) ? result.flags.filter(Boolean) : [],
+    extractionMeta,
   };
 }
 

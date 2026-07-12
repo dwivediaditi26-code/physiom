@@ -2567,6 +2567,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [aiStatus, setAiStatus] = useState("idle"); // "idle"|"recording"|"processing"|"done"|"error"
   const [aiResult, setAiResult] = useState(null);
   const [aiReview, setAiReview] = useState(false);
+  const [aiShowAudit, setAiShowAudit] = useState(false); // zero-hallucination review: narrative vs extraction toggle
 
   const [aiSuccess, setAiSuccess] = useState(null); // { count, fields[] }
   const aiRecognitionRef = React.useRef(null);
@@ -2623,7 +2624,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     // Shared with the AI Assistant chat's own extraction flow -- see
     // aiIntakeParser.js. Previously this field mapping lived only here,
     // duplicated by hand anywhere else that wanted the same capability.
-    const { updates, region: reg, filledLabels, redFlagsToReview } = mapParseResultToUpdates(result, data);
+    const { updates, region: reg, filledLabels, redFlagsToReview, extractionMeta } = mapParseResultToUpdates(result, data, aiText);
 
     // Compute the merged region list synchronously, then set() it below
     // in the SAME updates object that carries every other field.
@@ -2657,6 +2658,16 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       updates.neuro_clinician_notes = existingNotes ? (existingNotes + String.fromCharCode(10) + aiNote) : aiNote;
     }
 
+    // Extraction audit trail (zero-hallucination spec): verbatim
+    // narrative + per-field confidence/source quotes + missing-info
+    // checklist, stored as ONE new field -- never written into cc_main,
+    // dem_age, or any other real field, so every existing consumer
+    // (SOAP, interpretation engine, Patient Profile) keeps reading
+    // plain values exactly as before.
+    if (extractionMeta) {
+      updates.ai_extraction_audit = JSON.stringify({ ...extractionMeta, appliedAt: new Date().toISOString() });
+    }
+
     set(updates);
     setAiOpen(false);
     setAiReview(false);
@@ -2666,7 +2677,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     setAiSuccess({ count: filledLabels.length, fields: redFlagsToReview.length ? [...filledLabels, `⚠ ${redFlagsToReview.length} possible red flag(s) to screen`] : filledLabels });
     setTimeout(() => setAiSuccess(null), 8000);
-  }, [data, set, selectedRegions]);
+  }, [data, set, selectedRegions, aiText]);
 
   // ── Build active sections ───────────────────────────────────────────
   const sections = useMemo(() => {
@@ -3121,6 +3132,67 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     </span>
                   ))}
                 </div>
+
+                {/* Zero-hallucination review: original speech side by side
+                    with what was extracted, per-field confidence + the
+                    source quote, and what's still missing -- computed here
+                    purely for display (same pure function applyAiResult
+                    itself uses when actually saving), so nothing is taken
+                    on faith before it's confirmed. */}
+                {(() => {
+                  const preview = mapParseResultToUpdates(aiResult, data, aiText);
+                  const meta = preview.extractionMeta || {};
+                  return (
+                    <>
+                      <button type="button" onClick={() => setAiShowAudit(v => !v)} style={{
+                        display:"block", width:"100%", textAlign:"left", padding:"6px 10px",
+                        marginBottom:8, borderRadius:8, border:"1px solid #E0E0E2",
+                        background:"transparent", color:"#6B6B6B", fontSize:"0.7rem", fontWeight:700,
+                        cursor:"pointer", fontFamily:"inherit" }}>
+                        {aiShowAudit ? "▾ Hide" : "▸ Show"} original speech vs. extracted fields (confidence + source per field)
+                      </button>
+                      {aiShowAudit && (
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
+                          marginBottom:8, padding:10, borderRadius:8, background:"#FAFAFA", border:"1px solid #E0E0E2" }}>
+                          <div>
+                            <div style={{ fontSize:"0.66rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", marginBottom:5 }}>Original speech</div>
+                            <div style={{ fontSize:"0.74rem", color:"#0D0D0D", lineHeight:1.5, fontStyle:"italic" }}>"{meta.narrative || aiText || "(not available)"}"</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize:"0.66rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", marginBottom:5 }}>Extracted fields</div>
+                            {Object.entries(aiResult).filter(([k,v])=>!k.startsWith("_")&&v!=null&&v!==""&&!(Array.isArray(v)&&v.length===0)).map(([k,v])=>{
+                              const conf = meta.confidence?.[k];
+                              const src = meta.sourceQuotes?.[k];
+                              const needsReview = conf!=null && conf<90;
+                              const displayVal = Array.isArray(v) ? v.join(", ") : String(v);
+                              return (
+                                <div key={k} style={{ marginBottom:6, paddingBottom:6, borderBottom:"1px solid #E0E0E2" }}>
+                                  <div style={{ display:"flex", justifyContent:"space-between", gap:6 }}>
+                                    <span style={{ fontSize:"0.72rem", fontWeight:700, color:"#0D0D0D" }}>{k}: {displayVal}</span>
+                                    {conf!=null && (
+                                      <span style={{ fontSize:"0.62rem", fontWeight:800, padding:"1px 6px", borderRadius:99, flexShrink:0,
+                                        background: needsReview ? "#FEF2F2" : "#f0fdf4", color: needsReview ? "#B91C1C" : "#166534" }}>
+                                        {needsReview ? `⚠ ${conf}% — Needs Review` : `${conf}%`}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {src && <div style={{ fontSize:"0.68rem", color:"#6B6B6B", marginTop:2 }}>"{src}"</div>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {meta.missingInfo?.length > 0 && (
+                        <div style={{ padding:"8px 10px", borderRadius:8, marginBottom:8, background:"#FFFBEB", border:"1px solid #FDE68A" }}>
+                          <div style={{ fontSize:"0.7rem", fontWeight:800, color:"#92400E", marginBottom:3 }}>Not mentioned — worth asking about:</div>
+                          <div style={{ fontSize:"0.72rem", color:"#92400E" }}>{meta.missingInfo.join(" · ")}</div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+
                 <div style={{ display:"flex", gap:8 }}>
                   <button type="button" onClick={() => applyAiResult(aiResult)}
                     style={{ flex:1, padding:"9px", borderRadius:10, background:"#7c3aed",

@@ -11,7 +11,13 @@ export default async function handler(req, res) {
   const GROQ_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_KEY) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
 
-  const system = `You are a clinical data extractor for a physiotherapy intake form. Extract structured data and return ONLY valid JSON.
+  const system = `You are a clinical data extractor for a physiotherapy intake form used by physiotherapy students and clinicians for real patient care decisions. Extract structured data and return ONLY valid JSON.
+
+CRITICAL — DO NOT HALLUCINATE. You are a scribe, not a clinician. Extract ONLY what the speaker explicitly states.
+- Never invent, assume, infer, predict, or fill in a "typical" or "expected" value for anything not explicitly said, even if it seems clinically likely.
+- If a value is not explicitly and unambiguously stated, you MUST return null (or [] for arrays) for that field. Do not guess.
+- Do not summarize away or merge details in a way that changes their meaning. Carry over specific detail (a named diagnosis, a specific number, a specific activity) exactly as the speaker described it, not a generic paraphrase.
+- It is always better to leave a field null than to guess incorrectly. Incorrect clinical data is dangerous in this application.
 
 Return this exact JSON shape (null for anything not mentioned, empty array [] for arrays):
 {
@@ -33,7 +39,9 @@ Return this exact JSON shape (null for anything not mentioned, empty array [] fo
   "hasRadiation": true|false|null -- set true for ANY symptom described in a limb away from the main complaint area, not just classic shooting/sciatica-style pain. This includes neurogenic claudication (legs aching, heavy, or weak after walking a certain distance, relieved by sitting or bending forward) and any other referred limb symptom tied to a spinal or joint complaint.
   "radiationSide": "Left"|"Right"|"Bilateral"|null, "radiationArea": string or null -- describe what's actually happening there, e.g. "Bilateral leg heaviness and aching after walking >5 min, relieved by sitting or leaning forward" -- don't just name the limb, carry over the pattern the patient described.
   "neuroSymptoms": array of 0-3 from ["No neurological symptoms","Objective numbness in specific area","Tingling","Pins and needles","Shooting pain","Burning — constant","Electric shock quality","Subjective weakness","Heaviness/weakness in legs after walking (claudication pattern)","Dropping objects involuntarily"],
-  "flags": array of red flag strings or []
+  "flags": array of red flag strings or [],
+  "_confidence": an object mapping EVERY field above that you filled with a non-null/non-empty value to an integer 0-100 confidence score, reflecting how explicitly and unambiguously the narrative stated it. Use 100 only when it's stated in nearly these exact words. Use below 70 if you are inferring/interpreting rather than directly reading. Only include keys for fields you actually filled -- do not include keys for fields you left null or empty.
+  "_sourceQuotes": an object mapping EVERY field above that you filled with a non-null/non-empty value to a short (5-15 word) quote or very close paraphrase from the ORIGINAL narrative that directly supports that value. This must be real substance from what was actually said -- never invent a quote. Only include keys for fields you actually filled.
 }
 If input is Hindi/mixed, extract clinical meaning in English.`;
 
@@ -44,7 +52,7 @@ If input is Hindi/mixed, extract clinical meaning in English.`;
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'system', content: system }, { role: 'user', content: text.trim() }],
-        temperature: 0.1, max_tokens: 900,
+        temperature: 0.1, max_tokens: 1700,
         response_format: { type: 'json_object' },
       }),
     });

@@ -205,8 +205,8 @@ export default function AIAssistant({ data, set, PC, onClose }) {
       });
       const result = await res.json();
       if (!res.ok || result.error) throw new Error(result.error || "Request failed");
-      const mapped = mapParseResultToUpdates(result, data);
-      setMessages(prev => [...prev, { role: "extraction", ...mapped, applied: false }]);
+      const mapped = mapParseResultToUpdates(result, data, narrative);
+      setMessages(prev => [...prev, { role: "extraction", ...mapped, rawResult: result, applied: false, showAudit: false }]);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -239,6 +239,18 @@ export default function AIAssistant({ data, set, PC, onClose }) {
           updates.cx_selected_regions = JSON.stringify([...existing, m.region]);
         }
       }
+      // Extraction audit trail (zero-hallucination spec): the verbatim
+      // narrative, the AI's own per-field confidence + source quotes, and
+      // the missing-information checklist -- stored as ONE new field, not
+      // written into any existing field, so cc_main/dem_age/etc. keep
+      // storing plain values exactly as every other part of the app
+      // (SOAP, interpretation engine, Patient Profile) already expects.
+      if (m.extractionMeta) {
+        updates.ai_extraction_audit = JSON.stringify({
+          ...m.extractionMeta,
+          appliedAt: new Date().toISOString(),
+        });
+      }
       set && set(updates);
       return { ...m, applied: true };
     }));
@@ -247,6 +259,15 @@ export default function AIAssistant({ data, set, PC, onClose }) {
   function clearChat() {
     setMessages([]);
     setError("");
+  }
+
+  function toggleAudit(msgIndex) {
+    setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, showAudit: !m.showAudit } : m));
+  }
+
+  // Turns a raw AI field name into a readable label -- "chiefComplaint" -> "Chief Complaint"
+  function humanizeKey(key) {
+    return key.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()).trim();
   }
 
   // Colors — fallback if PC not passed
@@ -419,7 +440,7 @@ export default function AIAssistant({ data, set, PC, onClose }) {
               {m.region && (
                 <div style={{ fontSize: "0.74rem", color: muted, marginBottom: 6 }}>Region detected: <strong style={{ color: text }}>{m.region}</strong></div>
               )}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: m.redFlagsToReview?.length ? 8 : 10 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
                 {m.filledLabels.map((label, li) => (
                   <span key={li} style={{
                     fontSize: "0.68rem", padding: "3px 8px", borderRadius: 99,
@@ -428,6 +449,72 @@ export default function AIAssistant({ data, set, PC, onClose }) {
                   }}>{label}</span>
                 ))}
               </div>
+
+              {/* Zero-hallucination review: original narrative side by
+                  side with what was extracted, per-field confidence and
+                  the source quote it came from, and what's still
+                  missing -- so nothing is taken on faith. */}
+              {m.rawResult && (
+                <button type="button" onClick={() => toggleAudit(i)} style={{
+                  display: "block", width: "100%", textAlign: "left", padding: "6px 10px",
+                  marginBottom: 8, borderRadius: 8, border: `1px solid ${border}`,
+                  background: "transparent", color: muted, fontSize: "0.7rem", fontWeight: 700,
+                  cursor: "pointer", fontFamily: "inherit",
+                }}>
+                  {m.showAudit ? "▾ Hide" : "▸ Show"} original speech vs. extracted fields (confidence + source per field)
+                </button>
+              )}
+              {m.showAudit && m.rawResult && (
+                <div style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
+                  marginBottom: 10, padding: "10px", borderRadius: 8,
+                  background: isDark ? "rgba(255,255,255,0.03)" : "#FAFAFA",
+                  border: `1px solid ${border}`,
+                }}>
+                  <div>
+                    <div style={{ fontSize: "0.66rem", fontWeight: 800, color: muted, textTransform: "uppercase", marginBottom: 5 }}>Original speech</div>
+                    <div style={{ fontSize: "0.74rem", color: text, lineHeight: 1.5, fontStyle: "italic" }}>
+                      "{m.extractionMeta?.narrative || "(not available)"}"
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.66rem", fontWeight: 800, color: muted, textTransform: "uppercase", marginBottom: 5 }}>Extracted fields</div>
+                    {Object.entries(m.rawResult)
+                      .filter(([k, v]) => !k.startsWith("_") && v != null && v !== "" && !(Array.isArray(v) && v.length === 0))
+                      .map(([k, v]) => {
+                        const conf = m.extractionMeta?.confidence?.[k];
+                        const src = m.extractionMeta?.sourceQuotes?.[k];
+                        const needsReview = conf != null && conf < 90;
+                        const displayVal = Array.isArray(v) ? v.join(", ") : String(v);
+                        return (
+                          <div key={k} style={{ marginBottom: 6, paddingBottom: 6, borderBottom: `1px solid ${border}` }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+                              <span style={{ fontSize: "0.72rem", fontWeight: 700, color: text }}>{humanizeKey(k)}: {displayVal}</span>
+                              {conf != null && (
+                                <span style={{
+                                  fontSize: "0.62rem", fontWeight: 800, padding: "1px 6px", borderRadius: 99, flexShrink: 0,
+                                  background: needsReview ? "#FEF2F2" : "#f0fdf4",
+                                  color: needsReview ? "#B91C1C" : "#166534",
+                                }}>{needsReview ? `⚠ ${conf}% — Needs Review` : `${conf}%`}</span>
+                              )}
+                            </div>
+                            {src && <div style={{ fontSize: "0.68rem", color: muted, marginTop: 2 }}>"{src}"</div>}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+              {m.extractionMeta?.missingInfo?.length > 0 && (
+                <div style={{
+                  padding: "8px 10px", borderRadius: 8, marginBottom: 8,
+                  background: isDark ? "rgba(180,83,9,0.12)" : "#FFFBEB",
+                  border: "1px solid #FDE68A",
+                }}>
+                  <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#92400E", marginBottom: 3 }}>Not mentioned — worth asking about:</div>
+                  <div style={{ fontSize: "0.72rem", color: "#92400E" }}>{m.extractionMeta.missingInfo.join(" · ")}</div>
+                </div>
+              )}
               {m.redFlagsToReview?.length > 0 && (
                 <div style={{
                   display: "flex", gap: 8, alignItems: "flex-start",
