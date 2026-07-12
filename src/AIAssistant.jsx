@@ -224,6 +224,21 @@ export default function AIAssistant({ data, set, PC, onClose }) {
         const aiNote = "AI noticed in intake narrative, please screen: " + m.redFlagsToReview.join("; ");
         updates.neuro_clinician_notes = existingNotes ? (existingNotes + String.fromCharCode(10) + aiNote) : aiNote;
       }
+      // The Subjective tab's "Review & Run Analysis" button stays disabled
+      // until at least one region is in cx_selected_regions. That list is
+      // ordinary local state inside SubjectiveModule, seeded once from
+      // data.cx_selected_regions on mount -- this chat isn't mounted
+      // alongside it, so the only way a region filled here actually shows
+      // up (and unlocks analysis) once the clinician opens Subjective is
+      // to merge it into the persisted field directly, same dedupe/cap-at-3
+      // rule SubjectiveObjective.jsx's own applyAiResult uses.
+      if (m.region) {
+        let existing = [];
+        try { existing = JSON.parse(data.cx_selected_regions || "[]"); } catch {}
+        if (!existing.includes(m.region) && existing.length < 3) {
+          updates.cx_selected_regions = JSON.stringify([...existing, m.region]);
+        }
+      }
       set && set(updates);
       return { ...m, applied: true };
     }));

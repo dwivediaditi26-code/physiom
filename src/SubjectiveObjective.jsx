@@ -2625,13 +2625,22 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     // duplicated by hand anywhere else that wanted the same capability.
     const { updates, region: reg, filledLabels, redFlagsToReview } = mapParseResultToUpdates(result, data);
 
-    if (reg) {
-      setSelectedRegions(prev => {
-        if (prev.includes(reg) || prev.length >= 3) return prev;
-        const next = [...prev, reg];
-        updates.cx_selected_regions = JSON.stringify(next);
-        return next;
-      });
+    // Compute the merged region list synchronously, then set() it below
+    // in the SAME updates object that carries every other field.
+    // setSelectedRegions(prevFn) alone isn't enough here: React doesn't
+    // run a functional updater inline -- it's deferred to the next
+    // render -- so mutating `updates` from inside that callback and then
+    // immediately calling set(updates) right after (as this used to do)
+    // shipped `updates` to set() BEFORE the mutation had actually
+    // happened, silently dropping cx_selected_regions. Caught by a real
+    // render test simulating a remount after applying an AI result for a
+    // brand-new region: the field was persisted as undefined, so a
+    // reload would show the AI-filled data but no region tab selected
+    // and "Review & Run Analysis" stuck disabled.
+    if (reg && !selectedRegions.includes(reg) && selectedRegions.length < 3) {
+      const next = [...selectedRegions, reg];
+      updates.cx_selected_regions = JSON.stringify(next);
+      setSelectedRegions(next);
     }
 
     // Red flags the AI noticed in the narrative -- previously extracted
@@ -2657,7 +2666,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     setAiSuccess({ count: filledLabels.length, fields: redFlagsToReview.length ? [...filledLabels, `⚠ ${redFlagsToReview.length} possible red flag(s) to screen`] : filledLabels });
     setTimeout(() => setAiSuccess(null), 8000);
-  }, [data, set]);
+  }, [data, set, selectedRegions]);
 
   // ── Build active sections ───────────────────────────────────────────
   const sections = useMemo(() => {
