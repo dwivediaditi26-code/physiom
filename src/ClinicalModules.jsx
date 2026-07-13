@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { runInterpretation } from "./interpretationEngine/index.js";
 import { buildAssessmentData } from "./interpretationAdapter.js";
+import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA } from "./sharedClinicalData.js";
@@ -4937,6 +4938,8 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               {/* ═══ 1. PROVISIONAL DIAGNOSIS ═══ */}
               <div style={{marginBottom:16}}>
                 {subH("Provisional Diagnosis","#0891b2")}
+
+                <ProbableDiagnosis data={data} />
 
                 {/* AI suggestions — clinical interpretation engine (region-aware:
                     red flags -> subjective pattern -> ROM/MMT/Cyriax/special-test
