@@ -91,8 +91,8 @@ describe("Cervical region — interpretation + normalize", () => {
     const data = {
       cc_main: "Neck pain radiating to right arm",
       loc_radiation: "right arm and hand",
-      cx_spurling: "positive", cx_distraction: "positive", cx_ultt: "positive",
-      mmt_c6_L: "5", mmt_c6_R: "3",
+      st_spurling: "Positive — left (radiculopathy)", st_distraction: "Positive — symptom relief (nerve root compression)",
+      myo_c6_left: "5", myo_c6_right: "3",
     };
     const { subjective, objective, region } = normalizeCervicalFromData(data);
     expect(region).toBe("cervical");

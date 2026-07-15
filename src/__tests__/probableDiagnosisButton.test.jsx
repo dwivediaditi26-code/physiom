@@ -8,11 +8,13 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     expect(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i)).toBeInTheDocument();
   });
 
-  it("runs the engine on a shoulder dataset and shows a ranked probable diagnosis", () => {
+  it("runs the engine on a shoulder dataset (real field ids) and shows a ranked probable diagnosis", () => {
     const data = {
       cc_main: "Right shoulder pain reaching overhead",
       sh_agg_mov: "overhead",
-      sh_hawkins: "positive", sh_neer: "positive", sh_painful_arc: "positive", sh_empty_can: "positive",
+      st_hawkins: "Positive — subacromial pain",
+      st_neer: "Positive — anterior shoulder pain (impingement)",
+      st_empty_can: "Positive — painful (tendinopathy)",
     };
     render(<ProbableDiagnosis data={data} />);
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
@@ -20,11 +22,13 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     expect(screen.getAllByText(/Subacromial/i).length).toBeGreaterThan(0);
   });
 
-  it("runs on a cervical dataset via region detection", () => {
+  it("runs on a cervical dataset via region detection (real field ids)", () => {
     const data = {
       cc_main: "Neck pain radiating to right arm",
       loc_radiation: "right arm and hand",
-      cx_spurling: "positive", cx_distraction: "positive", cx_ultt: "positive",
+      st_spurling: "Positive — left (radiculopathy)",
+      st_distraction: "Positive — symptom relief (nerve root compression)",
+      myo_c6_left: "4", myo_c6_right: "3",
     };
     render(<ProbableDiagnosis data={data} />);
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
@@ -32,7 +36,7 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
   });
 
   it("withholds suggestions and shows the red-flag banner when a red flag is present", () => {
-    const data = { cc_main: "neck pain", cx_hoffmann: "positive", cx_gait: "positive" };
+    const data = { cc_main: "neck pain", st_hoffmanns: "Positive — present", cx_gait: "positive" };
     render(<ProbableDiagnosis data={data} />);
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
     expect(screen.getByText(/Red flag screen positive/i)).toBeInTheDocument();

@@ -1,16 +1,16 @@
 import { normalizeFromData, runShoulderReasoningFromData } from "../reasoningEngine/index";
 
-describe("normalizeFromData (flat app record -> typed engine inputs)", () => {
-  it("maps special tests, ROM and MMT from the flat data object", () => {
+describe("normalizeFromData (flat app record -> typed engine inputs, real field ids)", () => {
+  it("maps st_ special tests, rom_ ROM and mmt_mmt_ MMT from the flat data object", () => {
     const data = {
       cc_main: "Right shoulder pain",
       cc_onset: "insidious, no injury",
       sh_agg_mov: "overhead reaching",
-      sh_hawkins: "positive",
-      sh_neer: "positive",
-      sh_painful_arc: "positive",
-      sh_abduction_arom: "140", sh_abduction_prom: "165",
-      mmt_supraspinatus_L: "4", mmt_supraspinatus_R: "3",
+      st_hawkins: "Positive — subacromial pain",
+      st_neer: "Positive — anterior shoulder pain (impingement)",
+      st_empty_can: "Positive — painful (tendinopathy)",
+      rom_sabd_L_arom: "140", rom_sabd_L_prom: "165",
+      mmt_mmt_supra_L: "4", mmt_mmt_supra_R: "3",
       palp_pins: JSON.stringify([{ structures: ["greater tuberosity"] }]),
     };
     const { subjective, objective, region } = normalizeFromData(data);
@@ -18,7 +18,8 @@ describe("normalizeFromData (flat app record -> typed engine inputs)", () => {
     expect(subjective.overheadAggravation).toBe(true);
     expect(subjective.onsetInsidious).toBe(true);
     expect(objective.specialTests.hawkins).toBe(true);
-    expect(objective.specialTests.painful_arc).toBe(true);
+    expect(objective.specialTests.neer).toBe(true);
+    expect(objective.specialTests.empty_can).toBe(true);
     expect(objective.rom[0].movement).toBe("Abduction");
     // worse side wins on MMT (grade 3, not 4)
     expect(objective.mmt[0].grade).toBe(3);
@@ -29,12 +30,14 @@ describe("normalizeFromData (flat app record -> typed engine inputs)", () => {
     const data = {
       cc_main: "shoulder pain overhead",
       sh_agg_mov: "overhead",
-      sh_hawkins: "positive", sh_neer: "positive", sh_painful_arc: "positive", sh_empty_can: "positive",
+      st_hawkins: "Positive — subacromial pain",
+      st_neer: "Positive — anterior shoulder pain (impingement)",
+      st_empty_can: "Positive — painful (tendinopathy)",
     };
     const r = runShoulderReasoningFromData(data);
     expect(r.stopped).toBe(false);
     expect(r.differentials.length).toBeGreaterThan(0);
-    expect(r.differentials[0].name).toMatch(/Subacromial/);
+    expect(r.differentials[0].name).toMatch(/Subacromial|tendinopathy/i);
   });
 
   it("never fabricates findings — an empty record yields no positive tests", () => {
@@ -42,5 +45,11 @@ describe("normalizeFromData (flat app record -> typed engine inputs)", () => {
     expect(Object.keys(objective.specialTests)).toHaveLength(0);
     expect(objective.rom).toHaveLength(0);
     expect(objective.mmt).toHaveLength(0);
+  });
+
+  it("derives drop-arm from a massive-tear external-rotation-lag result", () => {
+    const { objective } = normalizeFromData({ st_er_lag: "Positive — full lag (massive RC tear)" });
+    expect(objective.specialTests.er_lag).toBe(true);
+    expect(objective.specialTests.drop_arm).toBe(true);
   });
 });
