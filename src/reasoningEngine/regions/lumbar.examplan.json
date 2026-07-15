@@ -1,0 +1,31 @@
+{
+  "region": "lumbar",
+  "always": [
+    { "exam": "Observation & posture (gait, lateral shift, lumbar lordosis)", "why": "Baseline for every lumbar assessment; screens antalgic gait, lateral shift, muscle guarding.", "confirmsOrExcludes": "Screens deformity, lateral shift, gait pattern", "priority": "High" },
+    { "exam": "Active lumbar ROM (flexion, extension, side-flexion, rotation) with symptom response", "why": "Establishes range, willingness to move, and directional pain/symptom response (centralisation vs peripheralisation).", "confirmsOrExcludes": "Screens restriction pattern and directional preference", "priority": "High" },
+    { "exam": "Passive PA spring test / segmental palpation (L1-L5, SI joints)", "why": "Localises the symptomatic segment and differentiates segmental stiffness/hypermobility from soft-tissue findings.", "confirmsOrExcludes": "Localises symptomatic segment; screens instability", "priority": "High" }
+  ],
+  "conditional": [
+    { "when": { "flag": "legPainBelowKnee", "equals": true },
+      "add": { "exam": "Neurological screen (dermatomes/myotomes/reflexes L2-S1) + SLR/slump neurodynamic testing", "why": "Leg pain extending below the knee crosses the radiculopathy threshold; neural tension testing and a full neuro screen are required to confirm/exclude a nerve-root source.", "confirmsOrExcludes": "Confirms/excludes lumbar radiculopathy", "priority": "High" } },
+    { "when": { "flag": "neurogenicClaudication", "equals": true },
+      "add": { "exam": "Walking tolerance / extension provocation vs flexion relief testing", "why": "A claudication-type pattern (worse with standing/walking, relieved by flexion/sitting) raises probability of central/lateral recess stenosis.", "confirmsOrExcludes": "Confirms/excludes spinal stenosis / neurogenic claudication", "priority": "High" } },
+    { "when": { "flag": "sacroiliacPainPattern", "equals": true },
+      "add": { "exam": "SIJ provocation cluster (distraction, compression, thigh thrust, Gaenslen's)", "why": "Localised SI-joint/buttock pain without a clear lumbar-dominant pattern warrants the Laslett cluster; 3+ positives materially raises SIJ probability.", "confirmsOrExcludes": "Confirms/excludes sacroiliac joint dysfunction", "priority": "High" } },
+    { "when": { "flag": "extensionAggravation", "equals": true },
+      "add": { "exam": "Kemp's test + prone instability test + stork test", "why": "Extension-provoked pain raises probability of facet loading, segmental instability, or pars stress; this cluster differentiates the three.", "confirmsOrExcludes": "Confirms/excludes facet syndrome, segmental instability, spondylolysis", "priority": "High" } },
+    { "when": { "flag": "flexionAggravation", "equals": true },
+      "add": { "exam": "Repeated-movement / directional-preference examination (McKenzie press-ups vs knee-to-chest) + slump test", "why": "Flexion-provoked pain with possible centralisation warrants directional-preference testing to characterise a discogenic pattern.", "confirmsOrExcludes": "Confirms/excludes discogenic pattern and directional preference", "priority": "High" } },
+    { "when": { "flag": "youngAthleteExtensionPain", "equals": true },
+      "add": { "exam": "Bilateral stork test + consider imaging if positive", "why": "A young athlete with extension-provoked unilateral low back pain is the classic spondylolysis presentation; stork test is the key clinical screen.", "confirmsOrExcludes": "Confirms/excludes spondylolysis / spondylolisthesis", "priority": "Medium" } },
+    { "when": { "flag": "footDropReported", "equals": true },
+      "add": { "exam": "Detailed myotomal + reflex + dermatomal screen (L4/L5/S1) with functional heel/toe walk", "why": "A reported foot drop suggests significant L4/L5 motor involvement; objective confirmation and monitoring for progression is required.", "confirmsOrExcludes": "Confirms/excludes significant motor radiculopathy", "priority": "High" } },
+    { "when": { "flag": "bilateralLegSymptoms", "equals": true },
+      "add": { "exam": "Full bilateral neurological screen + cauda equina safety-net questions (bladder/bowel/saddle)", "why": "Bilateral leg symptoms can indicate central stenosis or, rarely, evolving cauda equina — always re-screen safety-netting questions.", "confirmsOrExcludes": "Excludes cauda equina; confirms/excludes central stenosis pattern", "priority": "High" } }
+  ],
+  "supporting": [
+    { "exam": "Functional + outcome measure (ODI or RMDQ)", "why": "Quantifies baseline disability for goal-setting and re-assessment.", "confirmsOrExcludes": "Baseline functional severity", "priority": "Medium" },
+    { "exam": "Palpation (PA central, unilateral facet/mammary, SI joint)", "why": "Localises tender structures to corroborate the segmental and SIJ findings above.", "confirmsOrExcludes": "Localises pain generator", "priority": "Medium" },
+    { "exam": "Imaging (only if red flag, progressive neuro deficit, or suspected spondylolisthesis/pars fracture)", "why": "Imaging is not routine for mechanical low back pain; reserve for red flags, progressive deficit, or suspected structural/bony pathology.", "confirmsOrExcludes": "Confirms structural pathology when clinically indicated", "priority": "Low" }
+  ]
+}

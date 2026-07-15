@@ -69,6 +69,18 @@ export interface SubjectiveInput {
   extensionRotationAggravation?: boolean;
   gaitDisturbance?: boolean;
   dizzinessVBI?: boolean;
+  // lumbar-relevant history signals
+  legPainBelowKnee?: boolean;
+  bilateralLegSymptoms?: boolean;
+  flexionAggravation?: boolean;
+  extensionAggravation?: boolean;
+  sittingAggravation?: boolean;
+  neurogenicClaudication?: boolean;
+  centralisesWithExtension?: boolean;
+  centralisesWithFlexion?: boolean;
+  sacroiliacPainPattern?: boolean;
+  youngAthleteExtensionPain?: boolean;
+  footDropReported?: boolean;
   symptomDurationDays?: number | null;
 }
 

@@ -94,6 +94,46 @@ export function buildInterpretation(
       suggestedGoals.push("Restore confident, pain-managed neck movement and return to activity");
       homeAdvice.push("Stay active within comfort; gentle regular range exercises; avoid collar/immobilisation");
     }
+  } else if (region === "lumbar") {
+    if (has("lumbar_flexion_limited")) primaryImpairments.push("Restricted lumbar flexion");
+    if (has("lumbar_extension_limited")) primaryImpairments.push("Restricted lumbar extension");
+    if (has("myotome_weak")) primaryImpairments.push("Myotomal weakness on resisted testing");
+    if (has("reflex_change") || has("sensory_deficit")) primaryImpairments.push("Neurological deficit (reflex/sensory change)");
+    if (has("facet_tender")) likelyPainGenerators.push("Lumbar facet (zygapophyseal) joint");
+    if (has("si_joint_tender")) likelyPainGenerators.push("Sacroiliac joint");
+    if (has("slr_positive") || has("leg_pain_below_knee")) likelyPainGenerators.push("Lumbar nerve root");
+    if (has("flexion_aggravation")) movementDysfunction.push("Flexion-provoked pain pattern");
+    if (has("extension_aggravation")) movementDysfunction.push("Extension-provoked pain pattern");
+    if (has("neurogenic_claudication")) movementDysfunction.push("Walking/standing tolerance limited by a neurogenic claudication pattern");
+    if (has("sitting_aggravation")) functionalLimitations.push("Reduced sitting tolerance");
+    if (has("neurogenic_claudication")) functionalLimitations.push("Limited walking distance");
+    if (has("leg_pain_below_knee")) functionalLimitations.push("Leg-dominant symptoms affecting mobility/ADLs");
+
+    if (name.includes("radiculopathy")) {
+      treatmentPriorities.push("Neural symptom modulation and load management", "Directional-preference exercise if centralising", "Monitor neurological status; escalate if progressive");
+      suggestedGoals.push("Reduce leg-dominant symptoms and restore pain-free functional movement");
+      homeAdvice.push("Avoid prolonged flexed/sitting postures if these worsen leg symptoms; gentle nerve-glide within comfort");
+    } else if (name.includes("Discogenic") || name.includes("disc")) {
+      treatmentPriorities.push("Directional-preference (McKenzie) exercise toward centralisation", "Core/motor control retraining", "Graded activity modification");
+      suggestedGoals.push("Centralise and reduce leg-dominant symptoms; restore functional lumbar movement");
+      homeAdvice.push("Repeated end-range exercise in the direction of preference; avoid prolonged flexion/sitting");
+    } else if (name.includes("facet") || name.includes("mechanical")) {
+      treatmentPriorities.push("Segmental mobilisation of the symptomatic level", "Motor control / lumbar stabilisation exercise", "Postural and load management advice");
+      suggestedGoals.push("Restore pain-free lumbar range and function");
+      homeAdvice.push("Active range exercise within comfort; avoid sustained end-range extension");
+    } else if (name.includes("Sacroiliac") || name.includes("SIJ")) {
+      treatmentPriorities.push("SIJ motor-control retraining (transversus abdominis/multifidus/gluteals)", "Consider SI belt/support if needed", "Avoid asymmetric loading early");
+      suggestedGoals.push("Restore pain-free functional loading and gait");
+      homeAdvice.push("Pelvic stability exercise; avoid prolonged single-leg standing/asymmetric postures early");
+    } else if (name.includes("stenosis")) {
+      treatmentPriorities.push("Flexion-biased loading and exercise", "Graded walking program with rest-break pacing", "Deconditioning prevention");
+      suggestedGoals.push("Increase walking tolerance and overall function");
+      homeAdvice.push("Flexion-biased exercise (e.g. stationary cycling); pace walking with planned rest breaks");
+    } else if (name.includes("Spondylolisthesis") || name.includes("spondylolysis")) {
+      treatmentPriorities.push("Avoid repeated extension/impact loading", "Segmental core/multifidus stabilisation", "Gradual, monitored return to sport/activity");
+      suggestedGoals.push("Pain-free functional stability without extension provocation");
+      homeAdvice.push("Avoid repeated extension/impact loading (e.g. gymnastics, fast bowling) until stable; abdominal/multifidus stabilisation program");
+    }
   }
 
   const yellowFlags: string[] = [];
@@ -110,6 +150,10 @@ export function buildInterpretation(
     referralRecommendation = "UMN sign / gait disturbance — urgent referral to exclude cervical myelopathy before local treatment.";
   } else if (region === "cervical" && has("myotome_weak") && has("reflex_change")) {
     referralRecommendation = "Progressive/objective neurological deficit — consider medical/imaging referral alongside conservative care.";
+  } else if (region === "lumbar" && has("myotome_weak") && (has("reflex_change") || has("sensory_deficit"))) {
+    referralRecommendation = "Objective neurological deficit — consider medical/imaging referral alongside conservative care.";
+  } else if (region === "lumbar" && has("neurogenic_claudication") && has("bilateral_leg_symptoms")) {
+    referralRecommendation = "Bilateral neurogenic claudication pattern — consider imaging referral to confirm spinal stenosis if not improving with conservative care.";
   }
 
   const cap = (r: string) => r.charAt(0).toUpperCase() + r.slice(1);

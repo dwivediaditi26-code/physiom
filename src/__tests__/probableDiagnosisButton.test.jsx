@@ -35,6 +35,19 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     expect(screen.getAllByText(/radiculopathy/i).length).toBeGreaterThan(0);
   });
 
+  it("runs on a lumbar dataset via region detection (real field ids)", () => {
+    const data = {
+      cc_main: "Low back pain with leg pain below the knee",
+      lx_below_knee: "Leg pain — below knee (radiculopathy threshold)",
+      lx_dermatomal: "L5 — lateral lower leg / dorsum foot / great toe",
+      st_slr_test: "Positive 30–60° (highly specific for disc herniation)",
+      myo_l5_left: "5", myo_l5_right: "3",
+    };
+    render(<ProbableDiagnosis data={data} />);
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    expect(screen.getAllByText(/radiculopathy/i).length).toBeGreaterThan(0);
+  });
+
   it("withholds suggestions and shows the red-flag banner when a red flag is present", () => {
     const data = { cc_main: "neck pain", st_hoffmanns: "Positive — present", cx_gait: "positive" };
     render(<ProbableDiagnosis data={data} />);

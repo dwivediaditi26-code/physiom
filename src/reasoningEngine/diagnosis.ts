@@ -13,11 +13,13 @@ import { clamp, round, band, byScoreThenName } from "./determinism";
 import { FINDING_DOMAIN } from "./findings";
 import shoulderEvidence from "./regions/shoulder.evidence.json";
 import cervicalEvidence from "./regions/cervical.evidence.json";
+import lumbarEvidence from "./regions/lumbar.evidence.json";
 
 interface EvidenceConfig { region: string; diagnoses: EvidenceModel[]; }
 const CONFIGS: Record<string, EvidenceConfig> = {
   shoulder: shoulderEvidence as EvidenceConfig,
   cervical: cervicalEvidence as EvidenceConfig,
+  lumbar: lumbarEvidence as EvidenceConfig,
 };
 
 const DEFAULT_WEIGHT = 0.5;

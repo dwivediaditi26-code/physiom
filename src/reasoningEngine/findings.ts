@@ -37,6 +37,9 @@ export function deriveFindings(
   if (region === "cervical") {
     deriveCervical(subjective, objective, add);
   }
+  if (region === "lumbar") {
+    deriveLumbar(subjective, objective, add);
+  }
   return f;
 }
 
@@ -129,6 +132,21 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   myotome_weak: "mmt",
   cervical_ext_rom_limited: "rom", cervical_rot_rom_limited: "rom",
   facet_tender: "palpation", upper_cervical_tender: "palpation",
+  // lumbar
+  leg_pain_below_knee: "history", bilateral_leg_symptoms: "history",
+  neurogenic_claudication: "history", sij_pain_pattern: "history",
+  young_athlete_extension_pain: "history", foot_drop_reported: "history",
+  flexion_aggravation: "painBehaviour", extension_aggravation: "painBehaviour",
+  sitting_aggravation: "painBehaviour", centralises_extension: "painBehaviour",
+  centralises_flexion: "painBehaviour",
+  slr_positive: "specialTests", slump_positive: "specialTests",
+  femoral_stretch_positive: "specialTests", prone_instability_positive: "specialTests",
+  stork_positive: "specialTests", kemp_positive: "specialTests",
+  si_cluster_positive: "specialTests", lateral_shift_positive: "specialTests",
+  lumbar_flexion_limited: "rom", lumbar_extension_limited: "rom",
+  si_joint_tender: "palpation",
+  imaging_spondylolisthesis: "imaging", imaging_disc_herniation: "imaging",
+  imaging_stenosis: "imaging",
 };
 
 function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
@@ -172,4 +190,62 @@ function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): voi
   const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
   add("facet_tender", "palpation", tender("facet") || tender("zygapophyseal"), "Palpation: facet joint tenderness");
   add("upper_cervical_tender", "palpation", tender("suboccipital") || tender("upper cervical") || tender("c1") || tender("c2"), "Palpation: upper cervical tenderness");
+}
+
+
+function deriveLumbar(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  // History / behaviour (lumbar-specific subjective signals)
+  add("leg_pain_below_knee", "history", !!s.legPainBelowKnee, "History: leg pain extending below the knee (radiculopathy threshold)");
+  add("bilateral_leg_symptoms", "history", !!s.bilateralLegSymptoms, "History: bilateral leg symptoms");
+  add("dermatomal_pattern", "history", !!s.dermatomalPattern, "History: dermatomal leg pain distribution");
+  add("neurogenic_claudication", "history", !!s.neurogenicClaudication, "History: walking/standing tolerance limited, relieved by flexion/sitting (neurogenic claudication pattern)");
+  add("sij_pain_pattern", "history", !!s.sacroiliacPainPattern, "History: SI joint / buttock-localised pain pattern");
+  add("young_athlete_extension_pain", "history", !!s.youngAthleteExtensionPain, "History: young athlete with extension-provoked low back pain");
+  add("foot_drop_reported", "history", !!s.footDropReported, "History: reported foot drop / difficulty clearing foot");
+  add("flexion_aggravation", "painBehaviour", !!s.flexionAggravation, "History: forward bending/flexion aggravates");
+  add("extension_aggravation", "painBehaviour", !!s.extensionAggravation, "History: backward bending/extension aggravates");
+  add("sitting_aggravation", "painBehaviour", !!s.sittingAggravation, "History: sitting aggravates");
+  add("centralises_extension", "painBehaviour", !!s.centralisesWithExtension, "History: extension (press-up) centralises symptoms (McKenzie directional preference)");
+  add("centralises_flexion", "painBehaviour", !!s.centralisesWithFlexion, "History: flexion (knee-to-chest) centralises symptoms (McKenzie directional preference)");
+
+  // Special tests / neuro (explicit, cited)
+  add("slr_positive", "specialTests", isPositive(t, "slr"), "Straight Leg Raise: positive (L4-S1 nerve root tension)");
+  add("slump_positive", "specialTests", isPositive(t, "slump"), "Slump test: positive (neural tension, entire neuraxis)");
+  add("femoral_stretch_positive", "specialTests", isPositive(t, "femoral_stretch"), "Femoral Nerve Stretch Test: positive (L2-L4 nerve root tension)");
+  add("prone_instability_positive", "specialTests", isPositive(t, "prone_instab"), "Prone Instability Test: positive (segmental instability)");
+  add("stork_positive", "specialTests", isPositive(t, "stork"), "Stork test: positive (spondylolysis / pars stress)");
+  add("kemp_positive", "specialTests", isPositive(t, "kemp"), "Kemp's test: positive (facet joint)");
+  add("lateral_shift_positive", "specialTests", isPositive(t, "lateral_shift"), "Lateral shift correction: symptoms centralise (disc, directional preference)");
+  const siPositives = ["si_distraction", "si_compression", "gaenslen", "thigh_thrust"].filter((k) => isPositive(t, k));
+  add("si_cluster_positive", "specialTests", siPositives.length >= 3, `SIJ provocation cluster: ${siPositives.length}/4 positive (Laslett cluster ≥3)`);
+  add("reflex_change", "specialTests", t.reflex_change === true, "Reflex change: patella (L3-L4) / Achilles (S1)");
+  add("sensory_deficit", "specialTests", t.sensory_deficit === true, "Dermatomal sensory deficit (lumbosacral)");
+
+  // MMT — myotome weakness (L3-S1)
+  const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
+  add("myotome_weak", "mmt", weak("myotome"), "MMT: lumbosacral myotomal weakness (<=3/5)");
+
+  // ROM — flexion/extension limitation (>=25% active loss vs normal)
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("lumbar_flexion_limited", "rom", limited("flexion"), "ROM: lumbar flexion limited (>=25%)");
+  add("lumbar_extension_limited", "rom", limited("extension"), "ROM: lumbar extension limited (>=25%)");
+
+  // Palpation
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("facet_tender", "palpation", tender("facet") || tender("zygapophyseal"), "Palpation: lumbar facet joint tenderness");
+  add("si_joint_tender", "palpation", tender("si joint") || tender("sacroiliac") || tender("sij"), "Palpation: SI joint tenderness");
+
+  // Imaging
+  const imagingSummary = (o.imaging?.summary || "").toLowerCase();
+  add("imaging_spondylolisthesis", "imaging", imagingSummary.includes("spondylolisthesis") || imagingSummary.includes("pars") || imagingSummary.includes("forward slip"), "Imaging: spondylolisthesis / pars defect reported");
+  add("imaging_disc_herniation", "imaging", imagingSummary.includes("disc herniation") || imagingSummary.includes("hnp") || imagingSummary.includes("prolapse"), "Imaging: disc herniation reported");
+  add("imaging_stenosis", "imaging", imagingSummary.includes("stenosis"), "Imaging: spinal stenosis reported");
 }

@@ -9,6 +9,7 @@ import type {
 } from "./types";
 import shoulderPlan from "./regions/shoulder.examplan.json";
 import cervicalPlan from "./regions/cervical.examplan.json";
+import lumbarPlan from "./regions/lumbar.examplan.json";
 
 interface PlanConfig {
   region: string;
@@ -20,6 +21,7 @@ interface PlanConfig {
 const CONFIGS: Record<string, PlanConfig> = {
   shoulder: shoulderPlan as PlanConfig,
   cervical: cervicalPlan as PlanConfig,
+  lumbar: lumbarPlan as PlanConfig,
 };
 
 const PRIORITY_RANK: Record<Priority, number> = { High: 3, Medium: 2, Low: 1 };

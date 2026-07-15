@@ -10,7 +10,7 @@ import { runReasoningFromData } from "./reasoningEngine/index";
 const TEAL = "#0891b2";
 
 // Regions the deterministic engine currently covers end-to-end.
-const SUPPORTED = ["shoulder", "cervical"];
+const SUPPORTED = ["shoulder", "cervical", "lumbar"];
 
 // Detect the working region from the app's data. Order of trust:
 // explicit selected-regions -> chief complaint keywords.
@@ -18,6 +18,7 @@ function detectRegion(data) {
   const KEYWORDS = {
     shoulder: ["shoulder", "rotator cuff", "gh joint", "ac joint", "subacromial"],
     cervical: ["cervical", "neck", "c-spine", "c/s"],
+    lumbar: ["lumbar", "low back", "lower back", "l-spine", "lbp", "sacroiliac", "si joint"],
   };
   let selected = [];
   try {
@@ -102,7 +103,7 @@ export default function ProbableDiagnosis({ data = {} }) {
           {region
             ? `The deterministic engine doesn't yet cover "${region}".`
             : "Couldn't determine the region — select a region in the Subjective assessment first."}
-          {" "}It currently supports: shoulder, cervical spine (more regions are being added).
+          {" "}It currently supports: shoulder, cervical spine, lumbar spine (more regions are being added).
         </div>
       )}
 

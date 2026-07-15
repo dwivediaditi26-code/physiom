@@ -31,6 +31,14 @@ const CONFIGS: Record<string, RegionCompletenessConfig> = {
       { exam: "Subacromial/cuff special tests", domain: "specialTests", why: "Special-test clustering is required to raise or lower structural probabilities." },
     ],
   },
+  lumbar: {
+    expectedDomains: ["history", "painBehaviour", "rom", "mmt", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Active/Passive lumbar ROM + directional response", domain: "rom", why: "Range and pain response to flexion/extension is required to establish the mechanical pattern and directional preference." },
+      { exam: "Neurological screen (dermatomes/myotomes/reflexes L2-S1)", domain: "mmt", why: "Neuro testing is required to confirm or clear radiculopathy and detect an evolving neurological deficit." },
+      { exam: "Lumbar/SIJ special-test cluster (SLR, slump, SIJ provocation)", domain: "specialTests", why: "Special-test clustering is required to differentiate discogenic, radicular, and sacroiliac presentations." },
+    ],
+  },
 };
 
 function domainsWithData(findings: Finding[], objective: ObjectiveFindings): Domain[] {

@@ -232,8 +232,131 @@ export function runCervicalReasoningFromData(data: Data): ReasoningResult {
   return runReasoning(subjective, objective, region);
 }
 
+// ── Lumbar ──────────────────────────────────────────────────────────────────
+// Myotome/dermatome/reflex ids verified against the live neuro module
+// (PhysioNeuro.jsx computes myotome ids as "myo_"+level.replace(/[^a-zA-Z0-9]/g,"_").toLowerCase();
+// L3/L4/L5/S1 are single tokens so the slug is unambiguous — myo_l3/_l4/_l5/_s1).
+const LUMBAR_MYOTOMES = ["l3", "l4", "l5", "s1"];
+const LUMBAR_DERMATOMES = ["n_l2", "n_l3", "n_l4", "n_l5", "n_s1"];
+const LUMBAR_REFLEXES = ["n_ref_patella", "n_ref_achilles"];
+
+export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const cc = str(data.cc_main).toLowerCase();
+  const behaviour = str(data.lx_pattern ?? data.cc_pattern).toLowerCase();
+  const onset = str(data.lx_moi ?? data.cc_onset).toLowerCase();
+  const age = num(data.dem_age);
+  const belowKnee = str(data.lx_below_knee).toLowerCase();
+  const neuroPresent = str(data.lx_neuro_present).toLowerCase();
+  const neuroSigns = str(data.lx_neuro_signs).toLowerCase();
+  const neuroQuality = str(data.lx_neuro_quality).toLowerCase();
+  const dermatomal = str(data.lx_dermatomal).toLowerCase();
+  const claudication = str(data.lx_claudication).toLowerCase();
+  const pattern24hr = str(data.lx_24hr).toLowerCase();
+  const aggMov = str(data.lx_agg_mov).toLowerCase();
+  const aggPost = str(data.lx_agg_post).toLowerCase();
+  const moiPosition = str(data.lx_moi_position).toLowerCase();
+  const directional = str(data.lx_directional).toLowerCase();
+  const loc = str(data.lx_loc).toLowerCase();
+  const spondyloScreen = str(data.lx_spondylo_screen).toLowerCase();
+  const rfCauda = str(data.lx_rf_cauda).toLowerCase();
+  const rfSerious = str(data.lx_rf_serious).toLowerCase();
+  const rfFracture = str(data.lx_rf_fracture).toLowerCase();
+  const night = str(data.lx_night).toLowerCase();
+
+  const anyMyotomeWeak = LUMBAR_MYOTOMES.some((m) => myotomeAbnormal(data[`myo_${m}_left`]) || myotomeAbnormal(data[`myo_${m}_right`]));
+  const anyReflexChange = LUMBAR_REFLEXES.some((r) => reflexAbnormal(data[`${r}_left`]) || reflexAbnormal(data[`${r}_right`]));
+  const anySensoryDeficit = LUMBAR_DERMATOMES.some((d) => dermatomeAbnormal(data[`${d}_left`]) || dermatomeAbnormal(data[`${d}_right`]));
+  const dermatomalPositive = dermatomal !== "" && !has(dermatomal, "not dermatomal");
+
+  const subjective: SubjectiveInput = {
+    region: "lumbar",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    nightPain: has(night, "wakes", "wake once", "constant night pain", "leg pain at night"),
+    nightPainUnrelieved: has(night, "constant night pain") || has(rfSerious, "progressive night pain"),
+    constantPain: has(behaviour, "constant"),
+    constantUnremittingPain: has(rfSerious, "constant pain"),
+    easesWithRest: has(str(data.lx_rel_post), "lying"),
+    paresthesia: has(cc, "tingl", "numb", "pins") || has(neuroQuality, "tingling", "pins and needles", "numbness") || anySensoryDeficit,
+    dermatomalPattern: dermatomalPositive || anySensoryDeficit,
+    legPainBelowKnee: has(belowKnee, "below knee", "extends to foot"),
+    bilateralLegSymptoms: has(belowKnee, "bilateral") || has(neuroPresent, "bilateral") || has(dermatomal, "bilateral"),
+    flexionAggravation: has(aggMov, "forward bending") || has(moiPosition, "flexed"),
+    extensionAggravation: has(aggMov, "backward bending"),
+    sittingAggravation: has(aggPost, "sitting"),
+    neurogenicClaudication: has(claudication, "neurogenic", "leaning forward") || has(pattern24hr, "neurogenic claudication"),
+    centralisesWithExtension: has(directional, "extension preference"),
+    centralisesWithFlexion: has(directional, "flexion preference"),
+    sacroiliacPainPattern: has(loc, "si joint", "bilateral si joints"),
+    youngAthleteExtensionPain: has(spondyloScreen, "young athlete") || has(spondyloScreen, "extension pain"),
+    footDropReported: has(neuroSigns, "foot drop"),
+    onsetTraumatic: has(onset, "fall", "motor vehicle accident", "trip"),
+    onsetInsidious: has(onset, "no clear mechanism", "insidious", "sustained poor posture"),
+    traumaHistory: isPos(data.grf_fracture) || has(rfFracture, "major high-energy trauma") || has(onset, "fall", "motor vehicle accident"),
+    unexplainedWeightLoss: isPos(data.grf_cancer) || has(rfSerious, "unexplained weight loss"),
+    malignancyHistory: isPos(data.grf_cancer) || has(rfSerious, "history of cancer"),
+    systemicIllness: isPos(data.grf_systemic) || has(rfSerious, "fever", "systemically unwell"),
+    fever: has(rfSerious, "fever"),
+    // cauda equina red-flag sub-signals (generic fields consumed by redFlags.ts)
+    saddleAnesthesia: has(rfCauda, "saddle") || has(dermatomal, "saddle") || has(neuroSigns, "saddle"),
+    bladderBowelChange: has(rfCauda, "bladder", "bowel") || has(neuroSigns, "bladder", "bowel"),
+    bilateralLegWeakness: has(rfCauda, "bilateral leg weakness") || has(rfCauda, "rapidly progressive bilateral"),
+  };
+
+  const rom = [
+    readRom(data, "lflex", "Flexion", 60, false),
+    readRom(data, "lext", "Extension", 25, false),
+    readRom(data, "llfl", "Lateral flexion left", 25, false),
+    readRom(data, "llfr", "Lateral flexion right", 25, false),
+    readRom(data, "lrotl", "Rotation left", 5, false),
+    readRom(data, "lrotr", "Rotation right", 5, false),
+  ].filter((e): e is RomEntry => e != null);
+
+  const mmt: MmtEntry[] = [];
+  for (const m of LUMBAR_MYOTOMES) {
+    const l = num(data[`myo_${m}_left`]);
+    const r = num(data[`myo_${m}_right`]);
+    const grade = [l, r].filter((g): g is number => g != null).sort((a, b) => a - b)[0];
+    if (grade === undefined) continue;
+    mmt.push({ muscle: `${m.toUpperCase()} myotome`, grade });
+  }
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("slr", isPos(data.st_slr_test));
+  setT("slump", isPos(data.st_slump_test));
+  setT("femoral_stretch", isPos(data.st_femoral_nerve_stretch));
+  setT("prone_instab", isPos(data.st_prone_instab));
+  setT("stork", isPos(data.st_stork));
+  setT("kemp", isPos(data.st_kemp));
+  setT("si_distraction", isPos(data.st_si_distraction));
+  setT("si_compression", isPos(data.st_si_compression));
+  setT("gaenslen", isPos(data.st_gaenslen));
+  setT("thigh_thrust", isPos(data.st_thigh_thrust));
+  setT("lateral_shift", has(data.st_lateral_shift, "corrects easily", "corrects partially"));
+  setT("reflex_change", anyReflexChange);
+  setT("sensory_deficit", anySensoryDeficit);
+  // (myotome weakness surfaces to findings.ts via the "mmt" entries above,
+  // labelled "<LEVEL> myotome" — matching the cervical pattern exactly.)
+
+  const imagingSummary = str(data.lx_imaging ?? data.imaging_summary);
+  const objective: ObjectiveFindings = {
+    rom, mmt, specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: imagingSummary ? { performed: true, summary: imagingSummary } : { performed: false },
+  };
+  return { subjective, objective, region: "lumbar" };
+}
+
+export function runLumbarReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeLumbarFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 /** Region dispatcher — routes a flat record to the correct region normalizer. */
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
+  if (region === "lumbar") return runLumbarReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }
