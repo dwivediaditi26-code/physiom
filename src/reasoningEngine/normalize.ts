@@ -603,10 +603,118 @@ export function runKneeReasoningFromData(data: Data): ReasoningResult {
 }
 
 /** Region dispatcher — routes a flat record to the correct region normalizer. */
+// ── Elbow ───────────────────────────────────────────────────────────────────
+// IMPORTANT: unlike hip (dedicated hp_ module) and knee (split knl_/knr_
+// modules), the app has ONE combined "Elbow/Wrist/Hand" subjective module
+// (prefix "ew") shared across elbow AND wrist/hand complaints -- verified in
+// sharedClinicalData.js (search "Elbow/Wrist/Hand":{prefix:"ew"). Since only
+// elbow is being built here (wrist/hand is a separate, not-yet-built region),
+// every ew_* read below is deliberately filtered to ELBOW-specific option text
+// only (e.g. "Lateral elbow", "Direct trauma — elbow") and never to the
+// wrist/hand-only options in the same fields (e.g. "Wrist — dorsal",
+// "Suspected scaphoid") so this normalizer cannot silently misattribute a
+// wrist complaint to an elbow differential.
+// ROM ids (rom_eflex/eext/esup/epro) are the authoritative ROM_DATA "Elbow"
+// entries -- NOT the elbow{}.activeROM reference ids (rom_e* vs el_a_*), same
+// legacy-reference-vs-authoritative-table split already verified for hip/knee.
+// MMT ids (mmt_tricep/bicep/supinator/pt) are the authoritative MMT_DATA
+// "Elbow & Forearm" entries; mmt_ecrb/mmt_fcr/mmt_fcu are the authoritative
+// MMT_DATA "Wrist & Hand" entries reused here because ECRB/FCR/FCU originate
+// at the epicondyles -- they ARE the lateral/medial epicondylalgia tendons
+// (confirmed via el_r_wext/el_r_wflex reference text: "Pain at lateral
+// epicondyle = ECRB tendinopathy"; "Pain at medial epicondyle = medial
+// epicondylalgia"). Special tests (st_cozens/mills/golfers/valgus_stress_elbow/
+// tinel_elbow) all use the literal word "Positive" in every option (verified),
+// so plain isPos() is used throughout -- no graded-text special-casing needed
+// here, unlike hip/knee.
+export function normalizeElbowFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.ew_loc).toLowerCase();
+  const moi = str(data.ew_moi ?? data.cc_onset).toLowerCase();
+  const aggMov = str(data.ew_agg_mov).toLowerCase();
+  const aggAct = str(data.ew_agg_act).toLowerCase();
+  const pattern = str(data.ew_pattern).toLowerCase();
+  const neuro = str(data.ew_neuro).toLowerCase();
+  const rf = str(data.ew_rf).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "elbow",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    nightPain: has(pattern, "night dominant"),
+    constantPain: has(pattern, "constant"),
+    progressiveStiffness: has(pattern, "morning stiffness"),
+    onsetTraumatic: has(moi, "direct trauma", "foosh"),
+    onsetInsidious: has(moi, "insidious"),
+    paresthesia: has(neuro, "median nerve", "ulnar nerve", "radial nerve"),
+    elbowDirectTraumaOnset: has(moi, "direct trauma — elbow"),
+    elbowRacquetSportMechanism: has(moi, "sport — racquet") || has(aggAct, "tennis — backhand"),
+    elbowGolfSwingMechanism: has(moi, "sport — golf swing") || has(aggAct, "golf — grip at impact"),
+    elbowThrowingMechanism: has(moi, "sport — throwing mechanism") || has(aggAct, "throwing sport"),
+    elbowRepetitiveGripOveruse: has(moi, "repetitive gripping", "computer / keyboard", "tool use — vibration", "occupational repetitive strain"),
+    sustainedElbowFlexionAggravation: has(aggMov, "elbow flexion — sustained"),
+    resistedWristExtensionPain: has(aggMov, "wrist extension (resisted)"),
+    resistedWristFlexionPain: has(aggMov, "wrist flexion (resisted)"),
+    lateralElbowPainPattern: has(loc, "lateral elbow"),
+    medialElbowPainPattern: has(loc, "medial elbow"),
+    posteriorElbowPainPattern: has(loc, "posterior elbow"),
+    anteriorElbowPainPattern: has(loc, "anterior elbow"),
+    ulnarNerveDistributionSymptoms: has(neuro, "ulnar nerve — little and ring", "ulnar nerve — worse with elbow flexion"),
+    radialNerveDistributionSymptoms: has(neuro, "radial nerve — dorsum hand"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "direct trauma — elbow"),
+    hotSwollenJoint: has(rf, "septic arthritis"),
+    vascularCompromiseSigns: has(rf, "compartment syndrome"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    systemicIllness: selected(data.grf_systemic, "systemically well") || has(rf, "constitutional symptoms"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rf, "cancer history"),
+    nightPainUnrelieved: has(rf, "constant progressive pain"),
+  };
+
+  const rom = [
+    readRom(data, "eflex", "Flexion", 145, true),
+    readRom(data, "eext", "Extension", 0, true),
+    readRom(data, "esup", "Supination", 90, true),
+    readRom(data, "epro", "Pronation", 90, true),
+  ].filter((e): e is RomEntry => e != null);
+
+  const mmt = [
+    readMmt(data, "mmt_tricep", "Triceps Brachii (Extension)"),
+    readMmt(data, "mmt_bicep", "Biceps Brachii (Flexion/Supination)"),
+    readMmt(data, "mmt_supinator", "Supinator"),
+    readMmt(data, "mmt_pt", "Pronator Teres"),
+    readMmt(data, "mmt_ecrb", "ECRL + ECRB (Resisted Wrist Extension)"),
+    readMmt(data, "mmt_fcr", "Flexor Carpi Radialis (Resisted Wrist Flexion)"),
+    readMmt(data, "mmt_fcu", "Flexor Carpi Ulnaris (Resisted Wrist Flexion)"),
+  ].filter((e): e is MmtEntry => e != null);
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("cozens", isPos(data.st_cozens));
+  setT("mills", isPos(data.st_mills));
+  setT("golfers", isPos(data.st_golfers));
+  setT("valgus_stress_elbow", isPos(data.st_valgus_stress_elbow));
+  setT("tinel_elbow", isPos(data.st_tinel_elbow));
+
+  const objective: ObjectiveFindings = {
+    rom, mmt, specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "elbow" };
+}
+
+export function runElbowReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeElbowFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
   if (region === "lumbar") return runLumbarReasoningFromData(data);
   if (region === "hip") return runHipReasoningFromData(data);
   if (region === "knee") return runKneeReasoningFromData(data);
+  if (region === "elbow") return runElbowReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }

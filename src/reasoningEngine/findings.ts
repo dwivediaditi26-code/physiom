@@ -47,6 +47,9 @@ export function deriveFindings(
   if (region === "knee") {
     deriveKnee(subjective, objective, add);
   }
+  if (region === "elbow") {
+    deriveElbow(subjective, objective, add);
+  }
   return f;
 }
 
@@ -198,6 +201,27 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   medial_joint_line_tender: "palpation", lateral_joint_line_tender: "palpation",
   patellar_tendon_tender: "palpation",
   imaging_knee_oa: "imaging", imaging_meniscal_tear: "imaging", imaging_acl_tear: "imaging",
+  // elbow
+  cozens_positive: "specialTests", mills_positive: "specialTests",
+  golfers_test_positive: "specialTests", valgus_stress_elbow_positive: "specialTests",
+  tinel_elbow_positive: "specialTests",
+  elbow_direct_trauma: "history", elbow_racquet_sport_mechanism: "history",
+  elbow_golf_swing_mechanism: "history", elbow_throwing_mechanism: "history",
+  elbow_repetitive_overuse: "history", lateral_elbow_pain_pattern: "history",
+  medial_elbow_pain_pattern: "history", posterior_elbow_pain_pattern: "history",
+  anterior_elbow_pain_pattern: "history", ulnar_nerve_symptoms: "history",
+  radial_nerve_symptoms: "history",
+  sustained_flexion_aggravation: "painBehaviour",
+  resisted_wrist_extension_aggravation: "painBehaviour",
+  resisted_wrist_flexion_aggravation: "painBehaviour",
+  triceps_resisted_pain: "mmt", biceps_resisted_pain_or_weak: "mmt",
+  resisted_supination_pain: "mmt", resisted_pronation_pain: "mmt",
+  resisted_wrist_extensors_pain: "mmt", resisted_wrist_flexors_pain: "mmt",
+  elbow_extension_loss: "rom", elbow_flexion_loss: "rom",
+  lateral_epicondyle_tender: "palpation", medial_epicondyle_tender: "palpation",
+  olecranon_tender: "palpation", cubital_tunnel_tender: "palpation",
+  biceps_tendon_tender: "palpation", radial_head_tender: "palpation",
+  imaging_elbow_oa: "imaging", imaging_ucl_tear: "imaging", imaging_biceps_rupture: "imaging",
 };
 
 function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
@@ -432,4 +456,63 @@ function deriveKnee(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("imaging_knee_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: knee osteoarthritis reported");
   add("imaging_meniscal_tear", "imaging", imagingSummary.includes("meniscal") || imagingSummary.includes("meniscus"), "Imaging: meniscal tear reported");
   add("imaging_acl_tear", "imaging", imagingSummary.includes("acl") || imagingSummary.includes("anterior cruciate"), "Imaging: ACL tear reported");
+}
+
+function deriveElbow(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  add("elbow_direct_trauma", "history", !!s.elbowDirectTraumaOnset, "History: direct trauma to elbow");
+  add("elbow_racquet_sport_mechanism", "history", !!s.elbowRacquetSportMechanism, "History: racquet sport mechanism (tennis elbow pattern)");
+  add("elbow_golf_swing_mechanism", "history", !!s.elbowGolfSwingMechanism, "History: golf swing mechanism (golfer's elbow pattern)");
+  add("elbow_throwing_mechanism", "history", !!s.elbowThrowingMechanism, "History: throwing mechanism (valgus overload — UCL pattern)");
+  add("elbow_repetitive_overuse", "history", !!s.elbowRepetitiveGripOveruse, "History: repetitive gripping/keyboard/tool-use overuse");
+  add("lateral_elbow_pain_pattern", "history", !!s.lateralElbowPainPattern, "History: lateral elbow / extensor origin pain pattern");
+  add("medial_elbow_pain_pattern", "history", !!s.medialElbowPainPattern, "History: medial elbow / flexor origin pain pattern");
+  add("posterior_elbow_pain_pattern", "history", !!s.posteriorElbowPainPattern, "History: posterior elbow / olecranon pain pattern");
+  add("anterior_elbow_pain_pattern", "history", !!s.anteriorElbowPainPattern, "History: anterior elbow / cubital fossa pain pattern");
+  add("ulnar_nerve_symptoms", "history", !!s.ulnarNerveDistributionSymptoms, "History: ulnar nerve distribution symptoms (little/ring finger)");
+  add("radial_nerve_symptoms", "history", !!s.radialNerveDistributionSymptoms, "History: radial nerve distribution symptoms (dorsum hand/wrist)");
+
+  add("sustained_flexion_aggravation", "painBehaviour", !!s.sustainedElbowFlexionAggravation, "History: sustained elbow flexion aggravates (cubital tunnel pattern)");
+  add("resisted_wrist_extension_aggravation", "painBehaviour", !!s.resistedWristExtensionPain, "History: resisted wrist extension aggravates (lateral epicondylalgia pattern)");
+  add("resisted_wrist_flexion_aggravation", "painBehaviour", !!s.resistedWristFlexionPain, "History: resisted wrist flexion aggravates (medial epicondylalgia pattern)");
+
+  add("cozens_positive", "specialTests", isPositive(t, "cozens"), "Cozen's test: positive (lateral epicondylalgia — ECRB)");
+  add("mills_positive", "specialTests", isPositive(t, "mills"), "Mill's test: positive (lateral epicondylalgia — passive stretch)");
+  add("golfers_test_positive", "specialTests", isPositive(t, "golfers"), "Golfer's elbow test: positive (medial epicondylalgia — FCR/FCU)");
+  add("valgus_stress_elbow_positive", "specialTests", isPositive(t, "valgus_stress_elbow"), "Elbow valgus stress test: positive (UCL/MCL)");
+  add("tinel_elbow_positive", "specialTests", isPositive(t, "tinel_elbow"), "Tinel's sign at elbow: positive (cubital tunnel — ulnar nerve)");
+
+  const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
+  const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
+  add("triceps_resisted_pain", "mmt", painfulResist("triceps"), "MMT: painful resisted elbow extension (triceps/posterior)");
+  add("biceps_resisted_pain_or_weak", "mmt", weak("biceps") || painfulResist("biceps"), "MMT: weak or painful resisted elbow flexion/supination (distal biceps)");
+  add("resisted_supination_pain", "mmt", painfulResist("supinator") || painfulResist("biceps"), "MMT: painful resisted supination (lateral epicondylalgia/radial tunnel contribution)");
+  add("resisted_pronation_pain", "mmt", painfulResist("pronator teres"), "MMT: painful resisted pronation (medial epicondylalgia/pronator teres)");
+  add("resisted_wrist_extensors_pain", "mmt", painfulResist("ecrb") || painfulResist("ecrl"), "MMT: painful resisted wrist extensors (ECRB — lateral epicondylalgia)");
+  add("resisted_wrist_flexors_pain", "mmt", painfulResist("flexor carpi radialis") || painfulResist("flexor carpi ulnaris"), "MMT: painful resisted wrist flexors (medial epicondylalgia)");
+
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("elbow_flexion_loss", "rom", limited("flexion"), "ROM: elbow flexion limited (>=25%)");
+  const extEntry = romByMove.get("extension");
+  add("elbow_extension_loss", "rom", !!extEntry && extEntry.active != null && extEntry.active > 5, "ROM: extension loss present (earliest sign of elbow OA/effusion)");
+
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("lateral_epicondyle_tender", "palpation", tender("lateral epicondyle"), "Palpation: lateral epicondyle tenderness");
+  add("medial_epicondyle_tender", "palpation", tender("medial epicondyle"), "Palpation: medial epicondyle tenderness");
+  add("olecranon_tender", "palpation", tender("olecranon"), "Palpation: olecranon tenderness");
+  add("cubital_tunnel_tender", "palpation", tender("cubital tunnel") || tender("ulnar nerve"), "Palpation: cubital tunnel/ulnar nerve tenderness");
+  add("biceps_tendon_tender", "palpation", tender("biceps tendon") || tender("cubital fossa") || tender("antecubital"), "Palpation: distal biceps tendon/cubital fossa tenderness");
+  add("radial_head_tender", "palpation", tender("radial head"), "Palpation: radial head tenderness");
+
+  const imagingSummary = (o.imaging?.summary || "").toLowerCase();
+  add("imaging_elbow_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: elbow osteoarthritis reported");
+  add("imaging_ucl_tear", "imaging", imagingSummary.includes("ucl") || imagingSummary.includes("medial collateral"), "Imaging: UCL tear reported");
+  add("imaging_biceps_rupture", "imaging", imagingSummary.includes("biceps rupture") || imagingSummary.includes("biceps tendon tear"), "Imaging: distal biceps rupture/tear reported");
 }

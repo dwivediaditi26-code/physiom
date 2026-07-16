@@ -103,6 +103,19 @@ describe("SOAP Notes Assessment tab -- diagnosis suggestion engine, rendered", (
     expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
   });
 
+  it("shows only the new deterministic engine's button for elbow -- no duplicate/competing panel (regression proof the gate now covers elbow too)", () => {
+    const data = {
+      dem_name: "Test Patient", dem_age: "32",
+      cc_main: "Right lateral elbow pain, tennis player, worse gripping the racquet",
+      rom_eflex_R_arom: "140", rom_eflex_R_prom: "145",
+      ew_loc: "Lateral elbow — lateral epicondyle / extensor origin",
+      st_cozens: "Positive — lateral epicondyle pain (lateral epicondylalgia)",
+    };
+    render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
+    expect(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i)).toBeTruthy();
+    expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
+  });
+
   it("still shows the OLDER suggestion panel for a region the new engine doesn't cover yet (ankle), confirming the gate is per-region not global", () => {
     const data = {
       dem_name: "Test Patient", dem_age: "30",

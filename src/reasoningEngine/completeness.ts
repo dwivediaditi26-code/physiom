@@ -55,6 +55,14 @@ const CONFIGS: Record<string, RegionCompletenessConfig> = {
       { exam: "Knee ligament + meniscal special-test cluster (Lachman's, valgus/varus stress, McMurray's)", domain: "specialTests", why: "Special-test clustering is required to differentiate ligamentous, meniscal, and patellofemoral presentations." },
     ],
   },
+  elbow: {
+    expectedDomains: ["history", "painBehaviour", "rom", "mmt", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Active/Passive elbow ROM with end-feel", domain: "rom", why: "Range and end-feel is required to identify a capsular/OA restriction pattern (extension loss earliest sign) versus a soft-tissue-limited presentation." },
+      { exam: "Resisted isometrics / MMT (wrist extensors, wrist flexors, biceps, triceps)", domain: "mmt", why: "Contractile testing is required to implicate or clear the common extensor/flexor origin, biceps, and triceps." },
+      { exam: "Elbow/wrist special-test cluster (Cozen's, Mill's, Golfer's elbow, valgus stress, Tinel's)", domain: "specialTests", why: "Special-test clustering is required to differentiate lateral/medial epicondylalgia, UCL sprain, and cubital tunnel syndrome." },
+    ],
+  },
 };
 
 function domainsWithData(findings: Finding[], objective: ObjectiveFindings): Domain[] {

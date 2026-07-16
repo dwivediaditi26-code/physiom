@@ -13,7 +13,7 @@ const TEAL = "#0891b2";
 // other UI (e.g. ClinicalModules.jsx's SOAP Assessment tab) can hide the OLDER
 // interpretationEngine's auto-rendered suggestions once a region is migrated
 // here, instead of showing two competing diagnosis panels.
-export const SUPPORTED = ["shoulder", "cervical", "lumbar", "hip", "knee"];
+export const SUPPORTED = ["shoulder", "cervical", "lumbar", "hip", "knee", "elbow"];
 
 // Detect the working region from the app's data. Order of trust:
 // explicit selected-regions -> chief complaint keywords.
@@ -24,6 +24,7 @@ function detectRegion(data) {
     lumbar: ["lumbar", "low back", "lower back", "l-spine", "lbp", "sacroiliac", "si joint"],
     hip: ["hip", "groin", "trochanter", "gluteal", "labral"],
     knee: ["knee", "patella", "patellar", "acl", "pcl", "meniscus", "meniscal"],
+    elbow: ["elbow", "epicondyle", "epicondylitis", "epicondylalgia", "olecranon", "cubital tunnel"],
   };
   let selected = [];
   try {
@@ -108,7 +109,7 @@ export default function ProbableDiagnosis({ data = {} }) {
           {region
             ? `The deterministic engine doesn't yet cover "${region}".`
             : "Couldn't determine the region — select a region in the Subjective assessment first."}
-          {" "}It currently supports: shoulder, cervical spine, lumbar spine, hip, knee (more regions are being added).
+          {" "}It currently supports: shoulder, cervical spine, lumbar spine, hip, knee, elbow (more regions are being added).
         </div>
       )}
 

@@ -33,4 +33,51 @@ describe("Stage 6 clinical interpretation", () => {
     const r = runReasoning(s, o, "shoulder");
     expect(r.interpretation!.primaryImpairments.some((x) => /capsular/i.test(x))).toBe(true);
   });
+
+  // Regression coverage: hip/knee previously fell through buildInterpretation's
+  // region if/else chain with NO matching branch (only shoulder/cervical/lumbar
+  // existed), silently producing empty primaryImpairments/treatmentPriorities/
+  // etc for every hip and knee case. The region-specific diagnosis/exam-plan
+  // tests never caught this because they don't assert on interpretation detail
+  // -- only on differentials[0].name and plan.recommendations. These three
+  // tests assert the detail is actually populated, for every migrated region,
+  // so this gap can't silently reopen.
+  it("populates hip-specific impairments and treatment priorities (not just the bare diagnosis name)", () => {
+    const s: SubjectiveInput = { region: "hip", chiefComplaint: "lateral hip pain", lateralHipPattern: true, worseLyingOnAffectedSide: true };
+    const o: ObjectiveFindings = {
+      rom: [], mmt: [{ muscle: "Gluteus Medius (Abduction)", grade: 3 }],
+      specialTests: { trendelenburg: true, ober: true },
+      palpation: { tenderStructures: ["greater trochanter"] }, functional: { movements: [] }, imaging: { performed: false },
+    };
+    const r = runReasoning(s, o, "hip");
+    expect(r.interpretation!.primaryImpairments.length).toBeGreaterThan(0);
+    expect(r.interpretation!.likelyPainGenerators.some((x) => /trochanter/i.test(x))).toBe(true);
+    expect(r.interpretation!.treatmentPriorities.length).toBeGreaterThan(0);
+    expect(r.interpretation!.homeAdvice.length).toBeGreaterThan(0);
+  });
+
+  it("populates knee-specific impairments and treatment priorities (not just the bare diagnosis name)", () => {
+    const s: SubjectiveInput = { region: "knee", chiefComplaint: "non-contact twist, pop, swelling, giving way", kneeNonContactTwistMechanism: true, kneeAcutePopFelt: true, kneeImmediateHaemarthrosis: true, kneeGivingWayWithPivot: true };
+    const o: ObjectiveFindings = {
+      rom: [], mmt: [], specialTests: { lachman: true, pivot_shift: true },
+      palpation: { tenderStructures: [] }, functional: { movements: [] }, imaging: { performed: false },
+    };
+    const r = runReasoning(s, o, "knee");
+    expect(r.interpretation!.primaryImpairments.length + r.interpretation!.movementDysfunction.length).toBeGreaterThan(0);
+    expect(r.interpretation!.treatmentPriorities.some((x) => /quadriceps|neuromuscular|pivot/i.test(x))).toBe(true);
+    expect(r.interpretation!.homeAdvice.length).toBeGreaterThan(0);
+  });
+
+  it("populates elbow-specific impairments and treatment priorities (not just the bare diagnosis name)", () => {
+    const s: SubjectiveInput = { region: "elbow", chiefComplaint: "lateral elbow pain, tennis player", lateralElbowPainPattern: true, elbowRacquetSportMechanism: true, resistedWristExtensionPain: true };
+    const o: ObjectiveFindings = {
+      rom: [], mmt: [], specialTests: { cozens: true, mills: true },
+      palpation: { tenderStructures: ["lateral epicondyle"] }, functional: { movements: [] }, imaging: { performed: false },
+    };
+    const r = runReasoning(s, o, "elbow");
+    expect(r.interpretation!.likelyPainGenerators.some((x) => /epicondyle/i.test(x))).toBe(true);
+    expect(r.interpretation!.movementDysfunction.length).toBeGreaterThan(0);
+    expect(r.interpretation!.treatmentPriorities.some((x) => /load management|tendon/i.test(x))).toBe(true);
+    expect(r.interpretation!.homeAdvice.length).toBeGreaterThan(0);
+  });
 });

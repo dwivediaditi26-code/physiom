@@ -88,4 +88,17 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
     expect(screen.getAllByText(/ACL/i).length).toBeGreaterThan(0);
   });
+
+  it("runs the engine on an elbow dataset via region detection (real field ids)", () => {
+    const data = {
+      cc_main: "Right lateral elbow pain, tennis player, worse gripping the racquet",
+      ew_loc: "Lateral elbow — lateral epicondyle / extensor origin",
+      ew_moi: "Sport — racquet (lateral elbow — tennis elbow)",
+      st_cozens: "Positive — lateral epicondyle pain (lateral epicondylalgia)",
+      st_mills: "Positive — lateral epicondyle pain (ECRB)",
+    };
+    render(<ProbableDiagnosis data={data} />);
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    expect(screen.getAllByText(/lateral epicondylalgia/i).length).toBeGreaterThan(0);
+  });
 });

@@ -124,6 +124,21 @@ export interface SubjectiveInput {
   kneeLateralJointPain?: boolean;
   kneeLateralItbPattern?: boolean;
   kneeDiffuseWholeKneePain?: boolean;
+
+  elbowDirectTraumaOnset?: boolean;
+  elbowRacquetSportMechanism?: boolean;
+  elbowGolfSwingMechanism?: boolean;
+  elbowThrowingMechanism?: boolean;
+  elbowRepetitiveGripOveruse?: boolean;
+  sustainedElbowFlexionAggravation?: boolean;
+  resistedWristExtensionPain?: boolean;
+  resistedWristFlexionPain?: boolean;
+  lateralElbowPainPattern?: boolean;
+  medialElbowPainPattern?: boolean;
+  posteriorElbowPainPattern?: boolean;
+  anteriorElbowPainPattern?: boolean;
+  ulnarNerveDistributionSymptoms?: boolean;
+  radialNerveDistributionSymptoms?: boolean;
   symptomDurationDays?: number | null;
 }
 

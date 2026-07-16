@@ -1,0 +1,189 @@
+{
+  "region": "elbow",
+  "diagnoses": [
+    {
+      "name": "Lateral epicondylalgia (ECRB tendinopathy / tennis elbow)",
+      "source": "Magee Orthopedic Physical Assessment; Cook & Purdam tendinopathy continuum",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "cozens_positive",
+        "mills_positive",
+        "lateral_epicondyle_tender",
+        "lateral_elbow_pain_pattern",
+        "elbow_racquet_sport_mechanism",
+        "resisted_wrist_extension_aggravation",
+        "resisted_wrist_extensors_pain",
+        "elbow_repetitive_overuse"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "specialTests": 1.3,
+        "palpation": 1.1,
+        "history": 0.6,
+        "mmt": 0.7,
+        "painBehaviour": 0.5
+      },
+      "keyExams": ["Cozen's test", "Mill's test"]
+    },
+    {
+      "name": "Medial epicondylalgia (FCR/FCU / golfer's elbow)",
+      "source": "Magee Orthopedic Physical Assessment; Cook & Purdam tendinopathy continuum",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "golfers_test_positive",
+        "medial_epicondyle_tender",
+        "medial_elbow_pain_pattern",
+        "elbow_golf_swing_mechanism",
+        "resisted_wrist_flexion_aggravation",
+        "resisted_wrist_flexors_pain",
+        "elbow_repetitive_overuse"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "specialTests": 1.3,
+        "palpation": 1.1,
+        "history": 0.6,
+        "mmt": 0.7,
+        "painBehaviour": 0.5
+      },
+      "keyExams": ["Golfer's elbow test"]
+    },
+    {
+      "name": "Distal biceps tendinopathy / rupture",
+      "source": "Magee Orthopedic Physical Assessment",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "anterior_elbow_pain_pattern",
+        "biceps_tendon_tender",
+        "biceps_resisted_pain_or_weak",
+        "imaging_biceps_rupture"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "mmt": 1.1,
+        "palpation": 1.0,
+        "history": 0.6,
+        "imaging": 0.9
+      },
+      "keyExams": ["Resisted elbow flexion/supination (biceps)"]
+    },
+    {
+      "name": "Elbow osteoarthritis",
+      "source": "Magee Orthopedic Physical Assessment; Altman ACR clinical criteria (adapted)",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "elbow_extension_loss",
+        "elbow_flexion_loss",
+        "age_over_50",
+        "progressive_stiffness",
+        "radial_head_tender",
+        "imaging_elbow_oa"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "rom": 1.3,
+        "history": 0.6,
+        "palpation": 0.5,
+        "imaging": 0.8
+      },
+      "keyExams": ["Active/passive elbow ROM with end-feel"]
+    },
+    {
+      "name": "Olecranon bursitis",
+      "source": "Magee Orthopedic Physical Assessment",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "posterior_elbow_pain_pattern",
+        "olecranon_tender",
+        "elbow_direct_trauma"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "palpation": 1.3,
+        "history": 0.9
+      },
+      "keyExams": ["Olecranon palpation", "Fluctuance/temperature assessment"]
+    },
+    {
+      "name": "UCL (ulnar collateral ligament) sprain",
+      "source": "Magee Orthopedic Physical Assessment",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "valgus_stress_elbow_positive",
+        "elbow_throwing_mechanism",
+        "medial_elbow_pain_pattern",
+        "imaging_ucl_tear"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "specialTests": 1.4,
+        "history": 0.8,
+        "imaging": 0.7
+      },
+      "keyExams": ["Elbow valgus stress test"]
+    },
+    {
+      "name": "Cubital tunnel syndrome (ulnar neuropathy at the elbow)",
+      "source": "Magee Orthopedic Physical Assessment",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "tinel_elbow_positive",
+        "ulnar_nerve_symptoms",
+        "sustained_flexion_aggravation",
+        "cubital_tunnel_tender",
+        "medial_elbow_pain_pattern"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "specialTests": 1.2,
+        "history": 1.0,
+        "painBehaviour": 0.7,
+        "palpation": 0.6
+      },
+      "keyExams": ["Tinel's sign at elbow"]
+    },
+    {
+      "name": "Radial tunnel syndrome",
+      "source": "Magee Orthopedic Physical Assessment",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "radial_nerve_symptoms",
+        "resisted_supination_pain",
+        "lateral_elbow_pain_pattern",
+        "radial_head_tender"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "history": 1.0,
+        "mmt": 0.8,
+        "palpation": 0.6
+      },
+      "keyExams": ["Resisted supination", "Radial nerve distribution screen"]
+    },
+    {
+      "name": "Pronator teres syndrome",
+      "source": "Magee Orthopedic Physical Assessment",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "resisted_pronation_pain",
+        "medial_elbow_pain_pattern",
+        "elbow_repetitive_overuse"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "mmt": 1.2,
+        "history": 0.6
+      },
+      "keyExams": ["Resisted pronation with elbow flexion"]
+    }
+  ]
+}
