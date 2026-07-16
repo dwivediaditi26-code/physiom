@@ -9,8 +9,11 @@ import { runReasoningFromData } from "./reasoningEngine/index";
 
 const TEAL = "#0891b2";
 
-// Regions the deterministic engine currently covers end-to-end.
-const SUPPORTED = ["shoulder", "cervical", "lumbar"];
+// Regions the deterministic engine currently covers end-to-end. Exported so
+// other UI (e.g. ClinicalModules.jsx's SOAP Assessment tab) can hide the OLDER
+// interpretationEngine's auto-rendered suggestions once a region is migrated
+// here, instead of showing two competing diagnosis panels.
+export const SUPPORTED = ["shoulder", "cervical", "lumbar"];
 
 // Detect the working region from the app's data. Order of trust:
 // explicit selected-regions -> chief complaint keywords.

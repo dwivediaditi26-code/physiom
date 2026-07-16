@@ -50,4 +50,31 @@ describe("SOAP Notes Assessment tab -- diagnosis suggestion engine, rendered", (
   it("never crashes rendering the Assessment tab for a patient with no data at all", () => {
     expect(() => render(<SOAPNoteModule data={{}} set={vi.fn()} onNav={()=>{}} initialTab="A" />)).not.toThrow();
   });
+
+  it("shows only the new deterministic engine's button for a region it now covers (shoulder) -- no duplicate/competing panel", () => {
+    const data = {
+      dem_name: "Test Patient", dem_age: "45",
+      cc_main: "Right shoulder pain reaching overhead",
+      rom_sflex_R_arom: "150", rom_sflex_R_prom: "160",
+      st_hawkins: "Positive — subacromial pain",
+      st_neer: "Positive — anterior shoulder pain (impingement)",
+    };
+    render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
+    expect(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i)).toBeTruthy();
+    expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
+  });
+
+  it("still shows the OLDER suggestion panel for a region the new engine doesn't cover yet (knee), confirming the gate is per-region not global", () => {
+    const data = {
+      dem_name: "Test Patient", dem_age: "24",
+      cc_main: "Right knee gave way during a pivoting movement while playing football, immediate swelling",
+      rom_kflex_R_arom: "90", rom_kflex_R_prom: "95",
+      mmt_quad_R: "3",
+      st_lachmans: "Positive — soft end point, increased translation",
+      st_anterior_drawer: "Positive",
+      st_pivot_shift: "Positive",
+    };
+    render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
+    expect(screen.getByText("💡 Suggested Clinical Diagnoses")).toBeTruthy();
+  });
 });

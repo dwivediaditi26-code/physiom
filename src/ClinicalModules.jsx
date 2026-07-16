@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import { runInterpretation } from "./interpretationEngine/index.js";
-import { buildAssessmentData } from "./interpretationAdapter.js";
-import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
+import { buildAssessmentData, detectRegion as detectRegionForOldEngine } from "./interpretationAdapter.js";
+import ProbableDiagnosis, { SUPPORTED as NEW_ENGINE_REGIONS } from "./ProbableDiagnosis.jsx";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA } from "./sharedClinicalData.js";
@@ -4941,13 +4941,18 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
                 <ProbableDiagnosis data={data} />
 
-                {/* AI suggestions — clinical interpretation engine (region-aware:
+                {/* AI suggestions — OLDER clinical interpretation engine (region-aware:
                     red flags -> subjective pattern -> ROM/MMT/Cyriax/special-test
                     clustering -> kinetic chain + fascial chain -> ranked differential).
                     Reads live from this same data object (demographic + subjective +
                     objective + assessment), so it's always in sync with whatever is
-                    in SOAP Live / SOAP Notes right now — there's only one data source. */}
-                {(()=>{
+                    in SOAP Live / SOAP Notes right now — there's only one data source.
+                    Gated to regions the new deterministic reasoningEngine (the
+                    SUGGEST PROBABLE DIAGNOSIS button above) does NOT yet cover, so a
+                    migrated region shows exactly one diagnosis panel instead of two
+                    that can disagree. Remove this whole block once every region is
+                    migrated and the monolith engines are retired for good. */}
+                {!NEW_ENGINE_REGIONS.includes(detectRegionForOldEngine(data)) && (()=>{
                   const assessmentInput = buildAssessmentData(data);
                   const result = runInterpretation(assessmentInput);
 
