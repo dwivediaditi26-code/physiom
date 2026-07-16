@@ -63,6 +63,14 @@ const CONFIGS: Record<string, RegionCompletenessConfig> = {
       { exam: "Elbow/wrist special-test cluster (Cozen's, Mill's, Golfer's elbow, valgus stress, Tinel's)", domain: "specialTests", why: "Special-test clustering is required to differentiate lateral/medial epicondylalgia, UCL sprain, and cubital tunnel syndrome." },
     ],
   },
+  thoracic: {
+    expectedDomains: ["history", "painBehaviour", "rom", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Active thoracic ROM (flexion/extension/rotation)", domain: "rom", why: "Range identifies a mechanical restriction pattern and localises rotation/extension deficits driving compensatory overload elsewhere in the kinetic chain." },
+      { exam: "Rib cage / costovertebral screen (rib spring test, expansion symmetry)", domain: "specialTests", why: "A large share of thoracic presentations are costal/rib in origin and are missed without a dedicated rib screen." },
+      { exam: "Red flag screen (cardiac, respiratory, abdominal, fracture, cord compression)", domain: "history", why: "Thoracic pain has an unusually wide visceral-referral differential that must be screened before treating as musculoskeletal." },
+    ],
+  },
 };
 
 function domainsWithData(findings: Finding[], objective: ObjectiveFindings): Domain[] {

@@ -796,11 +796,116 @@ export function runElbowReasoningFromData(data: Data): ReasoningResult {
   return runReasoning(subjective, objective, region);
 }
 
+// ── Thoracic ─────────────────────────────────────────────────────────────
+// NOTE: thoracic has NO dedicated entry in CYRIAX_REGIONS_DATA or NKT_REGIONS
+// (verified) -- STTT/CPA are genuinely not modelled for this region in the
+// app. Kinetic-chain (KC_REGIONS.thoracic) IS present and rich, so that IS
+// wired in below via the same "kc_<testId>" direct-key pattern already
+// established for NKT (data[t.id], t.id already includes the "kc_" prefix).
+export function normalizeThoracicFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.tx_loc).toLowerCase();
+  const radiation = str(data.tx_radiation).toLowerCase();
+  const moi = str(data.tx_moi ?? data.cc_onset).toLowerCase();
+  const aggMov = str(data.tx_agg_mov).toLowerCase();
+  const aggPost = str(data.tx_agg_post).toLowerCase();
+  const rel = str(data.tx_rel).toLowerCase();
+  const pattern = str(data.tx_pattern).toLowerCase();
+  const rf = str(data.tx_rf).toLowerCase();
+  const ribScreen = str(data.tx_rib_screen).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "thoracic",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    onsetInsidious: has(moi, "insidious", "no clear mechanism"),
+    onsetTraumatic: has(moi, "fall / direct trauma", "mva"),
+    nightPain: has(pattern, "night dominant"),
+    constantPain: has(pattern, "constant"),
+    constantUnremittingPain: has(pattern, "constant — unrelated") || has(rf, "constant pain completely unaffected"),
+    progressiveStiffness: has(pattern, "morning stiffness"),
+    paresthesia: has(loc, "dermatomal band") || has(radiation, "dermatomal"),
+    traumaHistory: has(moi, "fall / direct trauma", "mva") || has(rf, "recent trauma"),
+    unexplainedWeightLoss: has(rf, "unexplained weight loss"),
+    nightPainUnrelieved: has(rf, "night pain — awakens patient — progressive", "progressive worsening despite conservative"),
+    fever: has(rf, "fever"),
+    systemicIllness: has(rf, "systemically unwell"),
+    malignancyHistory: has(rf, "cancer history"),
+    bilateralLegWeakness: has(rf, "bilateral leg weakness"),
+    thoracicUpperRegionPain: has(loc, "upper thoracic"),
+    thoracicMidRegionPain: has(loc, "mid thoracic"),
+    thoracicLowerRegionPain: has(loc, "lower thoracic"),
+    thoracicInterscapularPain: has(loc, "interscapular"),
+    thoracicChestWallPain: has(loc, "chest wall", "sternal", "anterior chest"),
+    thoracicDermatomalBandPattern: has(loc, "dermatomal band") || has(radiation, "dermatomal"),
+    thoracicCardiacLikeRadiation: has(radiation, "cardiac-like radiation"),
+    thoracicLiftingMechanism: has(moi, "lifting injury"),
+    thoracicRotationInjuryMechanism: has(moi, "rotation injury"),
+    thoracicDirectTraumaMechanism: has(moi, "fall / direct trauma", "mva") || has(ribScreen, "direct trauma to chest"),
+    thoracicPosturalInsidiousOnset: has(moi, "insidious — postural", "prolonged computer", "post-partum"),
+    thoracicPostViralOnset: has(moi, "viral illness"),
+    thoracicOsteoporoticMinimalTraumaMechanism: has(moi, "osteoporotic fracture") || has(rf, "known osteoporosis") || has(ribScreen, "osteoporosis + minimal trauma"),
+    thoracicStressFractureRiskActivity: has(ribScreen, "stress fracture"),
+    thoracicHighImpactSportMechanism: has(ribScreen, "high-impact sport"),
+    thoracicRotationAggravation: has(aggMov, "rotation"),
+    thoracicExtensionAggravation: has(aggMov, "extension"),
+    thoracicBreathingAggravation: has(aggMov, "deep breathing", "laughing"),
+    thoracicCoughSneezeAggravation: has(aggMov, "coughing", "sneezing"),
+    thoracicProlongedSittingAggravation: has(aggPost, "prolonged sitting", "computer work sustained", "driving"),
+    thoracicManipulationRelief: has(rel, "manipulation — significant relief"),
+    thoracicInflammatoryPattern: has(pattern, "inflammatory"),
+    thoracicConstantUnrelatedToMovement: has(pattern, "constant — unrelated") || has(rf, "constant pain completely unaffected"),
+    thoracicCardiacSymptoms: has(rf, "cardiac symptoms"),
+    thoracicCardiacHistory: has(rf, "cardiac history"),
+    thoracicRespiratorySymptoms: has(rf, "respiratory symptoms") || has(ribScreen, "pneumothorax risk"),
+    thoracicAbdominalSymptoms: has(rf, "abdominal symptoms"),
+    thoracicCordCompressionSigns: has(rf, "neurological symptoms in legs", "bilateral leg weakness"),
+  };
+
+  const rom = [
+    readRom(data, "thflex", "Flexion", 50, false),
+    readRom(data, "thext", "Extension", 25, false),
+    readRom(data, "throtl", "Rotation L", 35, false),
+    readRom(data, "throtr", "Rotation R", 35, false),
+  ].filter((e): e is RomEntry => e != null);
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("rib_point_tenderness", has(ribScreen, "point tenderness"));
+  setT("rib_spring_test_positive", has(ribScreen, "rib spring test positive"));
+  setT("costochondritis_pattern", has(ribScreen, "costochondritis"));
+  setT("tietze_swelling_pattern", has(ribScreen, "tietze syndrome"));
+  // Kinetic chain (KC_REGIONS.thoracic): data["kc_<testId>"] direct key (verified
+  // via KineticChainSection's `set(t.id, ...)` where t.id already includes "kc_").
+  // Categorical text: "Normal...", "Mildly restricted...", "Moderately restricted...",
+  // "Severely restricted..." for rotation/extension; a 4th distinct option set for
+  // rib mobility. Only moderate-or-worse restriction is treated as a positive
+  // finding (mild restriction is a very common, low-specificity finding).
+  setT("kc_thoracic_rotation_restricted", has(data.kc_thoracic_rotation, "moderately restricted", "severely restricted"));
+  setT("kc_thoracic_extension_restricted", has(data.kc_thoracic_extension, "moderately restricted", "severely restricted"));
+  setT("kc_rib_mobility_abnormal", has(data.kc_rib_mobility, "asymmetric", "hypomobile", "upper chest breathing"));
+
+  const objective: ObjectiveFindings = {
+    rom, mmt: [], specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "thoracic" };
+}
+
+export function runThoracicReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeThoracicFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
   if (region === "lumbar") return runLumbarReasoningFromData(data);
   if (region === "hip") return runHipReasoningFromData(data);
   if (region === "knee") return runKneeReasoningFromData(data);
   if (region === "elbow") return runElbowReasoningFromData(data);
+  if (region === "thoracic") return runThoracicReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }

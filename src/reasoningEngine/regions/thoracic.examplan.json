@@ -1,0 +1,108 @@
+{
+  "region": "thoracic",
+  "always": [
+    {
+      "exam": "Red flag screen (cardiac, respiratory, abdominal, cancer, fracture, infection, cord compression)",
+      "why": "Thoracic pain has an unusually wide differential including visceral referral (cardiac, pulmonary, GI) that must be screened out before treating as musculoskeletal.",
+      "confirmsOrExcludes": "Screens for non-musculoskeletal / urgent pathology",
+      "priority": "High"
+    },
+    {
+      "exam": "Active thoracic ROM (flexion, extension, rotation left/right) with observation of movement quality",
+      "why": "The thoracic spine's primary role is rotation/mobility; range and symmetry localise a mechanical versus systemic pattern.",
+      "confirmsOrExcludes": "Screens mechanical thoracic restriction pattern",
+      "priority": "High"
+    },
+    {
+      "exam": "Rib cage / costovertebral screen (rib spring test, point tenderness, breathing expansion symmetry)",
+      "why": "A large share of thoracic presentations are rib/costal in origin rather than pure facet/disc, and this is easily missed without a dedicated rib screen.",
+      "confirmsOrExcludes": "Screens costovertebral/costochondral involvement",
+      "priority": "High"
+    }
+  ],
+  "conditional": [
+    {
+      "when": { "flag": "thoracicChestWallPain", "equals": true },
+      "add": {
+        "exam": "Costochondral junction palpation + observation for swelling (Tietze)",
+        "why": "Anterior/sternal chest wall pain requires differentiating costochondritis/Tietze syndrome from a cardiac or pulmonary source.",
+        "confirmsOrExcludes": "Confirms/excludes costochondritis vs Tietze syndrome",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "thoracicBreathingAggravation", "equals": true },
+      "add": {
+        "exam": "Rib spring test + bilateral rib expansion assessment",
+        "why": "Pain provoked by deep breathing/coughing points toward a costal/rib-cage source rather than a pure vertebral facet source.",
+        "confirmsOrExcludes": "Confirms/excludes costovertebral joint dysfunction",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "thoracicStressFractureRiskActivity", "equals": true },
+      "add": {
+        "exam": "Point rib palpation + training-load history (rowing/throwing/repetitive coughing)",
+        "why": "A stress-fracture risk activity in an athlete with localised point tenderness warrants specific screening before return to loaded training.",
+        "confirmsOrExcludes": "Confirms/excludes rib stress fracture",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": { "flag": "thoracicDermatomalBandPattern", "equals": true },
+      "add": {
+        "exam": "Dermatomal band sensory mapping + lower-limb neurological screen if any radicular concern",
+        "why": "A dermatomal band pattern raises suspicion for thoracic disc herniation/radiculopathy or intercostal neuralgia and needs differentiation from a musculoskeletal referral pattern.",
+        "confirmsOrExcludes": "Confirms/excludes thoracic disc herniation/radiculopathy vs intercostal neuralgia",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": { "flag": "thoracicPosturalInsidiousOnset", "equals": true },
+      "add": {
+        "exam": "Postural/ergonomic screen + wall angel test + foam roller thoracic extension test",
+        "why": "An insidious postural onset is the classic pattern for both sustained-posture pain and early thoracic hypomobility, and mobility testing differentiates the two.",
+        "confirmsOrExcludes": "Confirms/excludes postural thoracic pain syndrome vs Scheuermann's/postural kyphosis",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": { "flag": "thoracicOsteoporoticMinimalTraumaMechanism", "equals": true },
+      "add": {
+        "exam": "Percussion tenderness over spinous processes + imaging referral if positive",
+        "why": "Minimal-trauma onset in a patient with osteoporosis risk requires screening for a vertebral compression fracture before any manual loading.",
+        "confirmsOrExcludes": "Confirms/excludes osteoporotic vertebral compression fracture",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "thoracicDirectTraumaMechanism", "equals": true },
+      "add": {
+        "exam": "Fracture screen (point bony tenderness, deformity, breathing mechanics) before any provocative testing",
+        "why": "Direct trauma to the chest/rib cage requires excluding an occult rib or vertebral fracture before proceeding.",
+        "confirmsOrExcludes": "Screens for occult fracture requiring imaging referral before proceeding",
+        "priority": "High"
+      }
+    }
+  ],
+  "supporting": [
+    {
+      "exam": "Thoracic rotation and extension kinetic-chain screen (seated rotation, foam roller extension, wall angel)",
+      "why": "Thoracic mobility deficits commonly drive compensatory cervical, shoulder, and lumbar overload — quantifying this guides both local and referred treatment priorities.",
+      "confirmsOrExcludes": "Screens thoracic mobility contribution to the broader kinetic chain",
+      "priority": "Low"
+    },
+    {
+      "exam": "Functional + outcome measure (PSFS top 3 activities)",
+      "why": "Quantifies baseline thoracic-related disability for goal-setting and re-assessment.",
+      "confirmsOrExcludes": "Baseline functional severity",
+      "priority": "Medium"
+    },
+    {
+      "exam": "Imaging (only if red flag, suspected fracture, or failed conservative management)",
+      "why": "Imaging is not routine for mechanical thoracic pain; reserve for red flags, suspected fracture, or a structural diagnosis that will change management.",
+      "confirmsOrExcludes": "Confirms structural pathology when clinically indicated",
+      "priority": "Low"
+    }
+  ]
+}

@@ -50,6 +50,9 @@ export function deriveFindings(
   if (region === "elbow") {
     deriveElbow(subjective, objective, add);
   }
+  if (region === "thoracic") {
+    deriveThoracic(subjective, objective, add);
+  }
   return f;
 }
 
@@ -227,6 +230,25 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   olecranon_tender: "palpation", cubital_tunnel_tender: "palpation",
   biceps_tendon_tender: "palpation", radial_head_tender: "palpation",
   imaging_elbow_oa: "imaging", imaging_ucl_tear: "imaging", imaging_biceps_rupture: "imaging",
+  // thoracic
+  thoracic_upper_pain: "history", thoracic_mid_pain: "history", thoracic_lower_pain: "history",
+  thoracic_interscapular_pain: "history", thoracic_chest_wall_pain: "history",
+  thoracic_dermatomal_band: "history", thoracic_lifting_mechanism: "history",
+  thoracic_rotation_injury_mechanism: "history", thoracic_direct_trauma_mechanism: "history",
+  thoracic_postural_insidious: "history", thoracic_post_viral_onset: "history",
+  thoracic_osteoporotic_minimal_trauma: "history", thoracic_stress_fracture_risk_activity: "history",
+  thoracic_high_impact_sport_mechanism: "history",
+  thoracic_rotation_aggravation: "painBehaviour", thoracic_extension_aggravation: "painBehaviour",
+  thoracic_breathing_aggravation: "painBehaviour", thoracic_cough_sneeze_aggravation: "painBehaviour",
+  thoracic_prolonged_sitting_aggravation: "painBehaviour", thoracic_manipulation_relief: "painBehaviour",
+  thoracic_inflammatory_pattern: "painBehaviour", thoracic_constant_unrelated_to_movement: "painBehaviour",
+  rib_point_tenderness: "specialTests", rib_spring_test_positive: "specialTests",
+  costochondritis_pattern: "specialTests", tietze_swelling_pattern: "specialTests",
+  kc_thoracic_rotation_restricted: "specialTests", kc_thoracic_extension_restricted: "specialTests",
+  kc_rib_mobility_abnormal: "specialTests",
+  thoracic_rotation_loss: "rom", thoracic_extension_loss: "rom",
+  costovertebral_tender: "palpation", sternal_costal_tender: "palpation",
+  imaging_compression_fracture: "imaging", imaging_thoracic_disc: "imaging",
 };
 
 function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
@@ -466,6 +488,60 @@ function deriveKnee(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("imaging_knee_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: knee osteoarthritis reported");
   add("imaging_meniscal_tear", "imaging", imagingSummary.includes("meniscal") || imagingSummary.includes("meniscus"), "Imaging: meniscal tear reported");
   add("imaging_acl_tear", "imaging", imagingSummary.includes("acl") || imagingSummary.includes("anterior cruciate"), "Imaging: ACL tear reported");
+}
+
+function deriveThoracic(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  add("thoracic_upper_pain", "history", !!s.thoracicUpperRegionPain, "History: upper thoracic (T1-T4) pain location");
+  add("thoracic_mid_pain", "history", !!s.thoracicMidRegionPain, "History: mid thoracic (T5-T8) pain location");
+  add("thoracic_lower_pain", "history", !!s.thoracicLowerRegionPain, "History: lower thoracic (T9-T12) pain location");
+  add("thoracic_interscapular_pain", "history", !!s.thoracicInterscapularPain, "History: interscapular pain pattern");
+  add("thoracic_chest_wall_pain", "history", !!s.thoracicChestWallPain, "History: anterior/lateral chest wall or sternal pain pattern");
+  add("thoracic_dermatomal_band", "history", !!s.thoracicDermatomalBandPattern, "History: dermatomal band radiation around chest wall");
+  add("thoracic_lifting_mechanism", "history", !!s.thoracicLiftingMechanism, "History: lifting injury mechanism");
+  add("thoracic_rotation_injury_mechanism", "history", !!s.thoracicRotationInjuryMechanism, "History: rotation injury mechanism");
+  add("thoracic_direct_trauma_mechanism", "history", !!s.thoracicDirectTraumaMechanism, "History: fall/direct trauma mechanism");
+  add("thoracic_postural_insidious", "history", !!s.thoracicPosturalInsidiousOnset, "History: insidious postural/sustained-posture onset");
+  add("thoracic_post_viral_onset", "history", !!s.thoracicPostViralOnset, "History: post-viral illness onset (costochondritis pattern)");
+  add("thoracic_osteoporotic_minimal_trauma", "history", !!s.thoracicOsteoporoticMinimalTraumaMechanism, "History: osteoporotic fracture-pattern — minimal trauma");
+  add("thoracic_stress_fracture_risk_activity", "history", !!s.thoracicStressFractureRiskActivity, "History: rib stress-fracture risk activity (rowing/coughing athlete)");
+  add("thoracic_high_impact_sport_mechanism", "history", !!s.thoracicHighImpactSportMechanism, "History: high-impact contact sport mechanism");
+
+  add("thoracic_rotation_aggravation", "painBehaviour", !!s.thoracicRotationAggravation, "History: rotation aggravates (most thoracic-sensitive movement)");
+  add("thoracic_extension_aggravation", "painBehaviour", !!s.thoracicExtensionAggravation, "History: extension aggravates");
+  add("thoracic_breathing_aggravation", "painBehaviour", !!s.thoracicBreathingAggravation, "History: deep breathing aggravates (rib/costal involvement)");
+  add("thoracic_cough_sneeze_aggravation", "painBehaviour", !!s.thoracicCoughSneezeAggravation, "History: coughing/sneezing aggravates");
+  add("thoracic_prolonged_sitting_aggravation", "painBehaviour", !!s.thoracicProlongedSittingAggravation, "History: prolonged sitting/desk posture aggravates");
+  add("thoracic_manipulation_relief", "painBehaviour", !!s.thoracicManipulationRelief, "History: significant relief with manipulation (mechanical pattern)");
+  add("thoracic_inflammatory_pattern", "painBehaviour", !!s.thoracicInflammatoryPattern, "History: inflammatory pattern — morning stiffness, eases with movement");
+  add("thoracic_constant_unrelated_to_movement", "painBehaviour", !!s.thoracicConstantUnrelatedToMovement, "History: constant pain unaffected by position/movement (non-mechanical flag)");
+
+  add("rib_point_tenderness", "specialTests", isPositive(t, "rib_point_tenderness"), "Rib screen: point tenderness over specific rib");
+  add("rib_spring_test_positive", "specialTests", isPositive(t, "rib_spring_test_positive"), "Rib spring test: positive (costovertebral/costotransverse joint dysfunction)");
+  add("costochondritis_pattern", "specialTests", isPositive(t, "costochondritis_pattern"), "Rib screen: costochondritis pattern (anterior chest + cartilage tenderness)");
+  add("tietze_swelling_pattern", "specialTests", isPositive(t, "tietze_swelling_pattern"), "Rib screen: Tietze syndrome pattern (swelling at costochondral junction)");
+  add("kc_thoracic_rotation_restricted", "specialTests", isPositive(t, "kc_thoracic_rotation_restricted"), "Kinetic chain: thoracic rotation moderately-to-severely restricted");
+  add("kc_thoracic_extension_restricted", "specialTests", isPositive(t, "kc_thoracic_extension_restricted"), "Kinetic chain: thoracic extension moderately-to-severely restricted (kyphosis fixation)");
+  add("kc_rib_mobility_abnormal", "specialTests", isPositive(t, "kc_rib_mobility_abnormal"), "Kinetic chain: asymmetric or hypomobile rib cage expansion on palpation");
+
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("thoracic_rotation_loss", "rom", limited("rotation l") || limited("rotation r"), "ROM: thoracic rotation limited (>=25%)");
+  add("thoracic_extension_loss", "rom", limited("extension"), "ROM: thoracic extension limited (>=25%)");
+
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("costovertebral_tender", "palpation", tender("costovertebral") || tender("rib angle") || tender("paraspinal"), "Palpation: costovertebral/rib angle or paraspinal tenderness");
+  add("sternal_costal_tender", "palpation", tender("sternal") || tender("costochondral") || tender("costal cartilage"), "Palpation: sternal/costochondral tenderness");
+
+  const imagingSummary = (o.imaging?.summary || "").toLowerCase();
+  add("imaging_compression_fracture", "imaging", imagingSummary.includes("compression fracture") || imagingSummary.includes("wedge fracture"), "Imaging: vertebral compression/wedge fracture reported");
+  add("imaging_thoracic_disc", "imaging", imagingSummary.includes("disc") && imagingSummary.includes("thoracic"), "Imaging: thoracic disc pathology reported");
 }
 
 function deriveElbow(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {

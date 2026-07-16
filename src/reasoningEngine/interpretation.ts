@@ -283,6 +283,57 @@ export function buildInterpretation(
       suggestedGoals.push("Reduce proximal forearm pain and restore pain-free resisted pronation");
       homeAdvice.push("Avoid repetitive resisted pronation tasks; gentle median nerve glides within comfort");
     }
+  } else if (region === "thoracic") {
+    if (has("thoracic_rotation_loss")) primaryImpairments.push("Restricted thoracic rotation");
+    if (has("thoracic_extension_loss")) primaryImpairments.push("Restricted thoracic extension (kyphosis fixation)");
+    if (has("kc_thoracic_rotation_restricted")) primaryImpairments.push("Thoracic rotation mobility deficit on kinetic-chain screen");
+    if (has("kc_thoracic_extension_restricted")) primaryImpairments.push("Thoracic extension mobility deficit on kinetic-chain screen");
+    if (has("rib_point_tenderness") || has("rib_spring_test_positive")) likelyPainGenerators.push("Costovertebral/costotransverse joint(s)");
+    if (has("costochondritis_pattern") || has("tietze_swelling_pattern") || has("sternal_costal_tender")) likelyPainGenerators.push("Costochondral junction (anterior chest wall)");
+    if (has("costovertebral_tender")) likelyPainGenerators.push("Rib angle / paraspinal soft tissue");
+    if (has("thoracic_rotation_aggravation") || has("thoracic_extension_aggravation")) movementDysfunction.push("Rotation/extension reproduces thoracic pain");
+    if (has("thoracic_breathing_aggravation") || has("thoracic_cough_sneeze_aggravation")) movementDysfunction.push("Deep breathing/coughing reproduces pain (costal involvement)");
+    if (has("kc_rib_mobility_abnormal")) movementDysfunction.push("Asymmetric or restricted rib cage expansion on breathing");
+    if (has("thoracic_prolonged_sitting_aggravation")) functionalLimitations.push("Difficulty with prolonged sitting/desk posture");
+    if (has("thoracic_breathing_aggravation")) functionalLimitations.push("Discomfort with deep breathing, coughing, or laughing");
+
+    if (name.includes("facet syndrome") || name.includes("mechanical thoracic")) {
+      treatmentPriorities.push("Thoracic mobilisation/manipulation (rotation and extension directions)", "Postural correction and ergonomic review", "Progressive thoracic rotation and extension exercise");
+      suggestedGoals.push("Restore full pain-free thoracic rotation and extension");
+      homeAdvice.push("Daily thoracic extension over a foam roller and seated rotation drills");
+    } else if (name.includes("Costovertebral") || name.includes("rib dysfunction")) {
+      treatmentPriorities.push("Rib mobilisation at hypomobile levels", "Breathing retraining (lateral rib cage expansion)", "Address any driving mechanism (repetitive coughing, sport, posture)");
+      suggestedGoals.push("Restore symmetric, pain-free rib cage expansion with breathing");
+      homeAdvice.push("Lateral rib expansion breathing drills; avoid provocative sustained postures");
+    } else if (name.includes("Costochondritis") || name.includes("Tietze")) {
+      treatmentPriorities.push("Reassurance and activity modification (self-limiting in most cases)", "Address any post-viral or repetitive-strain contributing factor", "Monitor for red-flag features atypical for costochondritis");
+      suggestedGoals.push("Resolve anterior chest wall pain and confirm benign course");
+      homeAdvice.push("Avoid provocative chest-wall loading (push-ups, heavy lifting) until settling; NSAIDs may help if appropriate");
+    } else if (name.includes("Rib stress fracture")) {
+      treatmentPriorities.push("Relative rest from the provocative training load (rowing/throwing/repetitive coughing)", "Graded return-to-sport/training programme once pain-free", "Imaging referral if not settling with rest");
+      suggestedGoals.push("Pain-free return to full training load");
+      homeAdvice.push("Avoid the provocative activity until reviewed; gradual reintroduction of load once asymptomatic");
+    } else if (name.includes("disc herniation") || name.includes("radiculopathy")) {
+      treatmentPriorities.push("Neurological monitoring (lower limb screen) at each review", "Graded activity modification away from the provocative rotation/lifting mechanism", "Refer if progressive neurological signs develop");
+      suggestedGoals.push("Resolve dermatomal band symptoms and restore pain-free rotation/lifting tolerance");
+      homeAdvice.push("Avoid the provocative lifting/rotation mechanism; seek urgent review if leg weakness or bladder/bowel change develops");
+    } else if (name.includes("Scheuermann") || name.includes("postural kyphosis")) {
+      treatmentPriorities.push("Thoracic extension mobility programme", "Postural strengthening (lower trapezius, rhomboids, thoracic extensors)", "Imaging referral if kyphosis is rigid/progressive to confirm diagnosis");
+      suggestedGoals.push("Improve thoracic extension range and postural control");
+      homeAdvice.push("Daily thoracic extension and postural strengthening exercise; avoid prolonged flexed postures");
+    } else if (name.includes("compression fracture")) {
+      treatmentPriorities.push("Imaging referral to confirm before loaded treatment", "Pain-guided gentle mobility once confirmed stable", "Osteoporosis risk-factor management referral (bone health)");
+      suggestedGoals.push("Manage pain safely while protecting the healing vertebra");
+      homeAdvice.push("Avoid heavy lifting, high-impact loading, or forceful manipulation until cleared by imaging/medical review");
+    } else if (name.includes("Intercostal neuralgia")) {
+      treatmentPriorities.push("Neural mobility work within comfort", "Address any post-viral (shingles) or mechanical nerve irritation cause", "Activity modification away from provocative postures");
+      suggestedGoals.push("Reduce neuropathic band pain and restore comfortable breathing/movement");
+      homeAdvice.push("Gentle thoracic mobility within comfort; seek review if a vesicular rash appears (possible shingles)");
+    } else if (name.includes("Postural thoracic pain")) {
+      treatmentPriorities.push("Ergonomic/workstation review", "Postural strengthening and thoracic mobility programme", "Movement-break education for prolonged sitting");
+      suggestedGoals.push("Reduce posture-related pain and improve thoracic mobility tolerance for sitting");
+      homeAdvice.push("Regular movement breaks from sitting; daily thoracic mobility and postural strengthening exercise");
+    }
   }
 
   const yellowFlags: string[] = [];
@@ -321,6 +372,10 @@ export function buildInterpretation(
     referralRecommendation = "Positive valgus stress test in a throwing athlete — consider orthopaedic/sports medicine referral to assess UCL integrity before return to throwing.";
   } else if (region === "elbow" && has("elbow_reflex_change")) {
     referralRecommendation = "Biceps or triceps reflex change noted at the elbow — this reflects C5-C7 nerve root function, not local elbow pathology; consider cervical spine assessment/referral to screen for radiculopathy.";
+  } else if (region === "thoracic" && has("imaging_compression_fracture")) {
+    referralRecommendation = "Imaged vertebral compression/wedge fracture — consider medical referral for bone-health assessment and to confirm stability before loaded manual therapy.";
+  } else if (region === "thoracic" && has("thoracic_dermatomal_band") && has("thoracic_lifting_mechanism")) {
+    referralRecommendation = "Dermatomal band pain following a lifting mechanism — consider imaging referral to assess for thoracic disc herniation if not settling with conservative care.";
   }
 
   const cap = (r: string) => r.charAt(0).toUpperCase() + r.slice(1);

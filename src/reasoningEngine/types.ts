@@ -139,6 +139,41 @@ export interface SubjectiveInput {
   anteriorElbowPainPattern?: boolean;
   ulnarNerveDistributionSymptoms?: boolean;
   radialNerveDistributionSymptoms?: boolean;
+
+  // thoracic-relevant history signals
+  thoracicUpperRegionPain?: boolean;
+  thoracicMidRegionPain?: boolean;
+  thoracicLowerRegionPain?: boolean;
+  thoracicInterscapularPain?: boolean;
+  thoracicChestWallPain?: boolean;
+  thoracicDermatomalBandPattern?: boolean;
+  thoracicCardiacLikeRadiation?: boolean;
+  thoracicLiftingMechanism?: boolean;
+  thoracicRotationInjuryMechanism?: boolean;
+  thoracicDirectTraumaMechanism?: boolean;
+  thoracicPosturalInsidiousOnset?: boolean;
+  thoracicPostViralOnset?: boolean;
+  thoracicOsteoporoticMinimalTraumaMechanism?: boolean;
+  thoracicRotationAggravation?: boolean;
+  thoracicExtensionAggravation?: boolean;
+  thoracicBreathingAggravation?: boolean;
+  thoracicCoughSneezeAggravation?: boolean;
+  thoracicProlongedSittingAggravation?: boolean;
+  thoracicManipulationRelief?: boolean;
+  thoracicInflammatoryPattern?: boolean;
+  thoracicConstantUnrelatedToMovement?: boolean;
+  thoracicRibPointTenderness?: boolean;
+  thoracicRibSpringTestPositive?: boolean;
+  thoracicCostochondritisPattern?: boolean;
+  thoracicTietzeSwellingPattern?: boolean;
+  thoracicStressFractureRiskActivity?: boolean;
+  thoracicHighImpactSportMechanism?: boolean;
+  thoracicCardiacSymptoms?: boolean;
+  thoracicCardiacHistory?: boolean;
+  thoracicRespiratorySymptoms?: boolean;
+  thoracicAbdominalSymptoms?: boolean;
+  thoracicCordCompressionSigns?: boolean;
+
   symptomDurationDays?: number | null;
 }
 
