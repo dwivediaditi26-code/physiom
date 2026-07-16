@@ -30,6 +30,7 @@ export function deriveFindings(
   add("radiation_below_elbow", "history", !!subjective.radiationBelowElbow, "History: radiation below elbow");
   add("overhead_aggravation", "painBehaviour", !!subjective.overheadAggravation, "History: overhead activity aggravates");
   add("progressive_stiffness", "history", !!subjective.progressiveStiffness, "History: progressive global stiffness");
+  add("age_over_50", "history", !!subjective.ageOver50, "History: age 50+ (degenerative risk factor)");
 
   if (region === "shoulder") {
     deriveShoulder(subjective, objective, add);
@@ -39,6 +40,12 @@ export function deriveFindings(
   }
   if (region === "lumbar") {
     deriveLumbar(subjective, objective, add);
+  }
+  if (region === "hip") {
+    deriveHip(subjective, objective, add);
+  }
+  if (region === "knee") {
+    deriveKnee(subjective, objective, add);
   }
   return f;
 }
@@ -112,6 +119,7 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   radiation_below_elbow: "history", progressive_stiffness: "history",
   night_pain: "painBehaviour", constant_pain: "painBehaviour", eases_with_rest: "painBehaviour",
   overhead_aggravation: "painBehaviour",
+  age_over_50: "history",
   hawkins_positive: "specialTests", neer_positive: "specialTests", painful_arc: "specialTests",
   empty_can_positive: "specialTests", er_lag_positive: "specialTests", drop_arm_positive: "specialTests",
   lift_off_positive: "specialTests", ac_scarf_positive: "specialTests", obrien_positive: "specialTests",
@@ -147,6 +155,49 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   si_joint_tender: "palpation",
   imaging_spondylolisthesis: "imaging", imaging_disc_herniation: "imaging",
   imaging_stenosis: "imaging",
+  // hip
+  fadir_test_positive: "specialTests", faber_groin_positive: "specialTests",
+  faber_sij_positive: "specialTests", hip_scour_positive: "specialTests",
+  trendelenburg_positive: "specialTests", thomas_test_positive: "specialTests",
+  ober_test_positive: "specialTests", piriformis_test_positive: "specialTests",
+  hamstring_90_90_tight: "specialTests",
+  fadir_aggravation: "painBehaviour", faber_aggravation: "painBehaviour",
+  c_sign_positive: "history", hip_groin_dominant_pattern: "history",
+  lateral_hip_pattern: "history", worse_lying_on_side: "painBehaviour",
+  ischial_sitting_pain: "painBehaviour", proximal_hamstring_pattern: "history",
+  adductor_pattern: "history", pubic_symphysis_pattern: "history",
+  kicking_sprint_mechanism: "history", snapping_hip_internal: "history",
+  snapping_hip_external: "history", hip_catching_locking: "painBehaviour",
+  hip_crepitus_grinding: "painBehaviour", deep_buttock_pain: "history",
+  meralgia_pattern: "history", hip_morning_stiffness: "painBehaviour",
+  gmed_weak: "mmt", resisted_abduction_pain: "mmt",
+  resisted_hip_extension_pain: "mmt", resisted_adduction_pain: "mmt",
+  hip_ir_capsular_pattern: "rom", hip_flexion_loss: "rom",
+  greater_trochanter_tender: "palpation", ischial_tuberosity_tender: "palpation",
+  adductor_origin_tender: "palpation",
+  imaging_hip_oa: "imaging", imaging_avn: "imaging", imaging_labral_tear: "imaging",
+  // knee
+  lachman_positive: "specialTests", anterior_drawer_positive: "specialTests",
+  posterior_drawer_positive: "specialTests", pivot_shift_positive: "specialTests",
+  valgus_stress_positive: "specialTests", varus_stress_positive: "specialTests",
+  mcmurray_positive: "specialTests", apley_compression_positive: "specialTests",
+  thessaly_positive: "specialTests", clarkes_positive: "specialTests",
+  patellar_grind_positive: "specialTests", effusion_positive: "specialTests",
+  noble_positive: "specialTests",
+  knee_non_contact_twist: "history", knee_acute_pop: "history",
+  knee_immediate_haemarthrosis: "history", knee_giving_way_pivot: "history",
+  knee_true_locking: "painBehaviour", knee_movie_sign: "painBehaviour",
+  knee_worse_descending_stairs: "painBehaviour", knee_valgus_mechanism: "history",
+  knee_varus_mechanism: "history", knee_pcl_mechanism: "history",
+  knee_joint_line_mechanical: "painBehaviour", knee_recurrent_effusion: "painBehaviour",
+  knee_anterior_pain_pattern: "history", knee_patellar_tendon_pattern: "history",
+  knee_medial_joint_pain: "history", knee_lateral_joint_pain: "history",
+  knee_lateral_itb_pattern: "history", knee_diffuse_pain: "history",
+  quad_weak: "mmt", resisted_knee_extension_pain: "mmt",
+  knee_flexion_loss: "rom", knee_extension_loss: "rom",
+  medial_joint_line_tender: "palpation", lateral_joint_line_tender: "palpation",
+  patellar_tendon_tender: "palpation",
+  imaging_knee_oa: "imaging", imaging_meniscal_tear: "imaging", imaging_acl_tear: "imaging",
 };
 
 function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
@@ -248,4 +299,137 @@ function deriveLumbar(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void 
   add("imaging_spondylolisthesis", "imaging", imagingSummary.includes("spondylolisthesis") || imagingSummary.includes("pars") || imagingSummary.includes("forward slip"), "Imaging: spondylolisthesis / pars defect reported");
   add("imaging_disc_herniation", "imaging", imagingSummary.includes("disc herniation") || imagingSummary.includes("hnp") || imagingSummary.includes("prolapse"), "Imaging: disc herniation reported");
   add("imaging_stenosis", "imaging", imagingSummary.includes("stenosis"), "Imaging: spinal stenosis reported");
+}
+
+function deriveHip(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  add("c_sign_positive", "history", !!s.cSignPositive, "History: C-sign — patient cups anterolateral hip (intra-articular pattern)");
+  add("hip_groin_dominant_pattern", "history", !!s.hipGroinDominantPattern, "History: groin-dominant pain pattern (intra-articular: FAI/OA/labral)");
+  add("lateral_hip_pattern", "history", !!s.lateralHipPattern, "History: lateral hip pain pattern (trochanteric/abductor)");
+  add("proximal_hamstring_pattern", "history", !!s.proximalHamstringPattern, "History: ischial tuberosity / proximal hamstring pain pattern");
+  add("adductor_pattern", "history", !!s.adductorPattern, "History: adductor / groin pain pattern");
+  add("pubic_symphysis_pattern", "history", !!s.pubicSymphysisPattern, "History: pubic symphysis pain pattern (athletic pubalgia / osteitis pubis)");
+  add("kicking_sprint_mechanism", "history", !!s.kickingOrSprintMechanism, "History: kicking/lunging/sprint mechanism");
+  add("snapping_hip_internal", "history", !!s.snappingHipInternal, "History: internal snapping (coxa saltans interna — iliopsoas)");
+  add("snapping_hip_external", "history", !!s.snappingHipExternal, "History: external snapping (coxa saltans externa — ITB over trochanter)");
+  add("deep_buttock_pain", "history", !!s.deepButtockPain, "History: deep buttock pain, not SIJ (piriformis / deep gluteal)");
+  add("meralgia_pattern", "history", !!s.meralgiaPattern, "History: lateral thigh burning/numbness pattern (meralgia paraesthetica)");
+  add("fadir_aggravation", "painBehaviour", !!s.fadirAggravation, "History: FADIR combined movement aggravates (FAI pattern)");
+  add("faber_aggravation", "painBehaviour", !!s.faberAggravation, "History: FABER combined movement aggravates (SIJ/labral pattern)");
+  add("worse_lying_on_side", "painBehaviour", !!s.worseLyingOnAffectedSide, "History: worse lying on affected side (trochanteric)");
+  add("ischial_sitting_pain", "painBehaviour", !!s.ischialSittingPain, "History: worse sitting on hard surface (ischial tuberosity)");
+  add("hip_catching_locking", "painBehaviour", !!s.hipCatchingOrLocking, "History: catching/giving way/locking (labral or loose body)");
+  add("hip_crepitus_grinding", "painBehaviour", !!s.hipCrepitusGrinding, "History: crepitus/grinding (osteoarthritic)");
+  add("hip_morning_stiffness", "painBehaviour", !!s.hipMorningStiffness, "History: morning stiffness easing with movement");
+
+  add("fadir_test_positive", "specialTests", isPositive(t, "fadir"), "FADIR test: positive — anterior groin pain (FAI / labral)");
+  add("faber_groin_positive", "specialTests", isPositive(t, "faber_groin"), "FABER/Patrick's test: positive — groin pain (hip joint)");
+  add("faber_sij_positive", "specialTests", isPositive(t, "faber_sij"), "FABER/Patrick's test: positive — posterior pelvic pain (SIJ)");
+  add("hip_scour_positive", "specialTests", isPositive(t, "hip_scour"), "Hip Scour test: positive (labral tear / loose body / OA)");
+  add("trendelenburg_positive", "specialTests", isPositive(t, "trendelenburg"), "Trendelenburg test: positive (gluteus medius weakness)");
+  add("thomas_test_positive", "specialTests", isPositive(t, "thomas"), "Thomas test: positive (hip flexor / rectus femoris / TFL tightness)");
+  add("ober_test_positive", "specialTests", isPositive(t, "ober"), "Ober's test: positive (IT band / TFL tightness)");
+  add("piriformis_test_positive", "specialTests", isPositive(t, "piriformis"), "Piriformis (FAIR) test: positive (deep gluteal / piriformis syndrome)");
+  add("hamstring_90_90_tight", "specialTests", isPositive(t, "hamstring_90_90"), "90-90 hamstring test: hamstring tightness present");
+
+  const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
+  const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
+  add("gmed_weak", "mmt", weak("gluteus medius"), "MMT: gluteus medius weakness (<=3/5)");
+  add("resisted_abduction_pain", "mmt", painfulResist("gluteus medius") || painfulResist("tensor fasciae latae"), "MMT: painful resisted abduction (trochanteric/abductor tendinopathy)");
+  add("resisted_hip_extension_pain", "mmt", painfulResist("gluteus maximus") || painfulResist("hamstring"), "MMT: painful resisted hip extension (proximal hamstring/gluteal)");
+  add("resisted_adduction_pain", "mmt", painfulResist("adduct"), "MMT: painful resisted adduction (adductor strain)");
+
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const lossPct = (m: string): number | null => {
+    const r = romByMove.get(m);
+    if (!r || r.passive == null || r.normal == null || r.normal === 0) return null;
+    return Math.max(0, (r.normal - r.passive) / r.normal);
+  };
+  const ir = lossPct("internal rotation");
+  const flex = lossPct("flexion");
+  const abd = lossPct("abduction");
+  const capsular = ir != null && flex != null && abd != null && ir >= 0.3 && ir >= flex && flex >= abd - 0.001;
+  add("hip_ir_capsular_pattern", "rom", capsular, "ROM: hip capsular pattern (IR most limited, then flexion, then abduction — early OA sign)");
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("hip_flexion_loss", "rom", limited("flexion"), "ROM: hip flexion limited (>=25%)");
+
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("greater_trochanter_tender", "palpation", tender("trochanter") || tender("gluteal tendinopathy") || tender("gluteus medius"), "Palpation: greater trochanter tenderness (GTPS)");
+  add("ischial_tuberosity_tender", "palpation", tender("ischial"), "Palpation: ischial tuberosity tenderness (proximal hamstring)");
+  add("adductor_origin_tender", "palpation", tender("adductor") || tender("pubic"), "Palpation: adductor origin / pubic ramus tenderness");
+
+  const imagingSummary = (o.imaging?.summary || "").toLowerCase();
+  add("imaging_hip_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: hip osteoarthritis reported");
+  add("imaging_avn", "imaging", imagingSummary.includes("avascular necrosis") || imagingSummary.includes("avn") || imagingSummary.includes("osteonecrosis"), "Imaging: avascular necrosis reported");
+  add("imaging_labral_tear", "imaging", imagingSummary.includes("labral") || imagingSummary.includes("labrum"), "Imaging: acetabular labral tear reported");
+}
+
+function deriveKnee(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  add("knee_non_contact_twist", "history", !!s.kneeNonContactTwistMechanism, "History: non-contact twisting/pivoting mechanism (ACL pattern)");
+  add("knee_acute_pop", "history", !!s.kneeAcutePopFelt, "History: heard/felt a pop at time of injury (ACL flag)");
+  add("knee_immediate_haemarthrosis", "history", !!s.kneeImmediateHaemarthrosis, "History: immediate swelling within 2 hours (haemarthrosis — ACL/fracture flag)");
+  add("knee_giving_way_pivot", "history", !!s.kneeGivingWayWithPivot, "History: giving way with direction change/pivot (ACL pattern)");
+  add("knee_valgus_mechanism", "history", !!s.kneeValgusMechanism, "History: direct blow medial knee — valgus stress mechanism (MCL)");
+  add("knee_varus_mechanism", "history", !!s.kneeVarusMechanism, "History: direct blow lateral knee — varus stress mechanism (LCL)");
+  add("knee_pcl_mechanism", "history", !!s.kneePclMechanism, "History: dashboard/direct blow anterior tibia mechanism (PCL)");
+  add("knee_anterior_pain_pattern", "history", !!s.kneeAnteriorPainPattern, "History: anterior knee / peripatellar pain pattern (PFPS)");
+  add("knee_patellar_tendon_pattern", "history", !!s.kneePatellarTendonPattern, "History: patellar tendon inferior-pole pain pattern");
+  add("knee_medial_joint_pain", "history", !!s.kneeMedialJointPain, "History: medial joint line pain pattern");
+  add("knee_lateral_joint_pain", "history", !!s.kneeLateralJointPain, "History: lateral joint line pain pattern");
+  add("knee_lateral_itb_pattern", "history", !!s.kneeLateralItbPattern, "History: lateral (ITB attachment) pain pattern");
+  add("knee_diffuse_pain", "history", !!s.kneeDiffuseWholeKneePain, "History: diffuse whole-knee pain pattern");
+  add("knee_true_locking", "painBehaviour", !!s.kneeTrueLocking, "History: true mechanical locking (cannot fully extend)");
+  add("knee_movie_sign", "painBehaviour", !!s.kneeMovieSignPositive, "History: movie sign — pain with prolonged knee flexion (PFPS)");
+  add("knee_worse_descending_stairs", "painBehaviour", !!s.kneeWorseDescendingStairs, "History: worse descending stairs (patellofemoral/meniscal)");
+  add("knee_joint_line_mechanical", "painBehaviour", !!s.kneeJointLineMechanical, "History: mechanical catching/clicking/grinding at joint line");
+  add("knee_recurrent_effusion", "painBehaviour", !!s.kneeDelayedOrRecurrentSwelling, "History: delayed or recurrent effusion pattern");
+
+  add("lachman_positive", "specialTests", isPositive(t, "lachman"), "Lachman's test: positive (ACL — most sensitive)");
+  add("anterior_drawer_positive", "specialTests", isPositive(t, "anterior_drawer"), "Anterior drawer: positive (ACL)");
+  add("posterior_drawer_positive", "specialTests", isPositive(t, "posterior_drawer"), "Posterior drawer: positive (PCL)");
+  add("pivot_shift_positive", "specialTests", isPositive(t, "pivot_shift"), "Pivot shift: positive (ACL — rotational instability)");
+  add("valgus_stress_positive", "specialTests", isPositive(t, "valgus_stress"), "Valgus stress test: positive (MCL)");
+  add("varus_stress_positive", "specialTests", isPositive(t, "varus_stress"), "Varus stress test: positive (LCL)");
+  add("mcmurray_positive", "specialTests", isPositive(t, "mcmurray"), "McMurray's test: positive (meniscal)");
+  add("apley_compression_positive", "specialTests", isPositive(t, "apley_compression"), "Apley's grind (compression): positive (meniscal)");
+  add("thessaly_positive", "specialTests", isPositive(t, "thessaly"), "Thessaly test: positive (meniscal — weight-bearing)");
+  add("clarkes_positive", "specialTests", isPositive(t, "clarkes"), "Clarke's sign: positive (patellofemoral)");
+  add("patellar_grind_positive", "specialTests", isPositive(t, "patellar_grind"), "Patellar grind test: positive (patellofemoral cartilage)");
+  add("effusion_positive", "specialTests", isPositive(t, "effusion"), "Sweep/ballottement test: effusion present");
+  add("noble_positive", "specialTests", isPositive(t, "noble"), "Noble compression test: positive (IT band syndrome)");
+  add("ober_test_positive", "specialTests", isPositive(t, "ober"), "Ober's test: positive (IT band tightness)");
+
+  const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
+  const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
+  add("quad_weak", "mmt", weak("quadriceps"), "MMT: quadriceps weakness (<=3/5)");
+  add("resisted_knee_extension_pain", "mmt", painfulResist("quadriceps"), "MMT: painful resisted knee extension (patellar tendinopathy/PFPS)");
+
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("knee_flexion_loss", "rom", limited("flexion"), "ROM: knee flexion limited (>=25%)");
+  const extEntry = romByMove.get("extension");
+  add("knee_extension_loss", "rom", !!extEntry && extEntry.active != null && extEntry.active > 5, "ROM: extension lag/loss present (earliest OA sign; also ACL block / extensor mechanism flag)");
+
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("medial_joint_line_tender", "palpation", tender("medial joint") || tender("medial meniscus"), "Palpation: medial joint line tenderness");
+  add("lateral_joint_line_tender", "palpation", tender("lateral joint") || tender("lateral meniscus"), "Palpation: lateral joint line tenderness");
+  add("patellar_tendon_tender", "palpation", tender("patellar tendon") || tender("infrapatellar"), "Palpation: patellar tendon tenderness");
+
+  const imagingSummary = (o.imaging?.summary || "").toLowerCase();
+  add("imaging_knee_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: knee osteoarthritis reported");
+  add("imaging_meniscal_tear", "imaging", imagingSummary.includes("meniscal") || imagingSummary.includes("meniscus"), "Imaging: meniscal tear reported");
+  add("imaging_acl_tear", "imaging", imagingSummary.includes("acl") || imagingSummary.includes("anterior cruciate"), "Imaging: ACL tear reported");
 }

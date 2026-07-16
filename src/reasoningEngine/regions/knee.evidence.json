@@ -1,0 +1,95 @@
+{
+  "region": "knee",
+  "diagnoses": [
+    {
+      "name": "ACL tear / insufficiency",
+      "source": "Magee Orthopedic Physical Assessment; Benjaminse et al. Lachman/anterior drawer/pivot shift diagnostic accuracy meta-analysis",
+      "requiredFindings": [],
+      "supportingFindings": ["knee_non_contact_twist", "knee_acute_pop", "knee_immediate_haemarthrosis", "knee_giving_way_pivot", "lachman_positive", "anterior_drawer_positive", "pivot_shift_positive"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.3, "history": 1.0 },
+      "keyExams": ["Lachman's test", "Pivot shift test"]
+    },
+    {
+      "name": "PCL injury",
+      "source": "Magee; Rubinstein et al. posterior drawer diagnostic accuracy",
+      "requiredFindings": [],
+      "supportingFindings": ["knee_pcl_mechanism", "posterior_drawer_positive"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.4, "history": 1.0 },
+      "keyExams": ["Posterior drawer test"]
+    },
+    {
+      "name": "Meniscal tear",
+      "source": "Magee; McGee Evidence-Based Physical Diagnosis (McMurray/Thessaly diagnostic accuracy)",
+      "requiredFindings": [],
+      "supportingFindings": ["knee_joint_line_mechanical", "mcmurray_positive", "apley_compression_positive", "thessaly_positive", "knee_true_locking", "knee_recurrent_effusion", "medial_joint_line_tender", "lateral_joint_line_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.2, "history": 0.8, "painBehaviour": 0.6, "palpation": 0.8 },
+      "keyExams": ["McMurray's test", "Thessaly test"]
+    },
+    {
+      "name": "MCL sprain",
+      "source": "Magee; valgus stress test diagnostic accuracy literature",
+      "requiredFindings": [],
+      "supportingFindings": ["knee_valgus_mechanism", "knee_medial_joint_pain", "valgus_stress_positive", "medial_joint_line_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.3, "history": 1.0, "palpation": 0.7 },
+      "keyExams": ["Valgus stress test"]
+    },
+    {
+      "name": "LCL sprain",
+      "source": "Magee; varus stress test diagnostic accuracy literature",
+      "requiredFindings": [],
+      "supportingFindings": ["knee_varus_mechanism", "knee_lateral_joint_pain", "varus_stress_positive", "lateral_joint_line_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.3, "history": 1.0, "palpation": 0.7 },
+      "keyExams": ["Varus stress test"]
+    },
+    {
+      "name": "Patellofemoral pain syndrome (PFPS)",
+      "source": "Magee; Cook et al. clinical prediction rule for PFPS",
+      "requiredFindings": [],
+      "supportingFindings": ["knee_anterior_pain_pattern", "knee_movie_sign", "knee_worse_descending_stairs", "clarkes_positive", "patellar_grind_positive", "insidious_onset"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 0.9, "specialTests": 1.1, "painBehaviour": 0.9 },
+      "keyExams": ["Clarke's sign", "Patellar grind test"]
+    },
+    {
+      "name": "Patellar tendinopathy",
+      "source": "Magee; Cook & Purdam tendinopathy continuum model",
+      "requiredFindings": [],
+      "supportingFindings": ["knee_patellar_tendon_pattern", "resisted_knee_extension_pain", "patellar_tendon_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "mmt": 1.1, "palpation": 0.9 },
+      "keyExams": ["Resisted knee extension (MMT)", "Palpation of patellar tendon"]
+    },
+    {
+      "name": "Knee osteoarthritis",
+      "source": "Magee; ACR clinical criteria for knee OA; capsular pattern (Cyriax)",
+      "requiredFindings": [],
+      "supportingFindings": ["knee_flexion_loss", "knee_diffuse_pain", "knee_recurrent_effusion", "effusion_positive", "imaging_knee_oa", "insidious_onset", "age_over_50"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "rom": 1.2, "history": 0.7, "painBehaviour": 0.6, "specialTests": 0.6, "imaging": 1.1 },
+      "keyExams": ["Passive knee ROM with end-feel", "Sweep/ballottement test for effusion"]
+    },
+    {
+      "name": "Iliotibial band friction syndrome",
+      "source": "Magee; Noble compression test literature",
+      "requiredFindings": [],
+      "supportingFindings": ["knee_lateral_itb_pattern", "noble_positive", "ober_test_positive"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.2, "history": 1.0 },
+      "keyExams": ["Noble compression test", "Ober's test"]
+    }
+  ]
+}

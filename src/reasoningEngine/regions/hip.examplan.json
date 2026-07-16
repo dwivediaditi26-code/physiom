@@ -1,0 +1,37 @@
+{
+  "region": "hip",
+  "always": [
+    { "exam": "Observation & gait (Trendelenburg gait, antalgic pattern, leg length)", "why": "Baseline for every hip assessment; screens gluteal weakness gait pattern, antalgia, and limb-length asymmetry.", "confirmsOrExcludes": "Screens gait deviation and gross weakness pattern", "priority": "High" },
+    { "exam": "Active + passive hip ROM (flexion, extension, abduction, adduction, IR, ER) with end-feel and capsular pattern", "why": "Range and end-feel across all planes is required to identify a capsular (osteoarthritic) restriction pattern versus a soft-tissue-limited presentation.", "confirmsOrExcludes": "Screens capsular restriction pattern (IR most limited = early hip OA)", "priority": "High" },
+    { "exam": "Hip special test screen (FABER/Patrick's, FADIR, Scour)", "why": "First-line provocation cluster to broadly localise intra-articular (FAI/OA/labral) versus extra-articular (SIJ) pain sources.", "confirmsOrExcludes": "Screens intra-articular vs SIJ source", "priority": "High" }
+  ],
+  "conditional": [
+    { "when": { "flag": "fadirAggravation", "equals": true },
+      "add": { "exam": "FADIR test + C-sign screen; consider imaging if impingement/labral tear suspected", "why": "FADIR-provoked anterior groin pain is the classic femoroacetabular impingement / labral tear pattern and warrants targeted confirmation.", "confirmsOrExcludes": "Confirms/excludes FAI / acetabular labral tear", "priority": "High" } },
+    { "when": { "flag": "cSignPositive", "equals": true },
+      "add": { "exam": "FADIR test + Hip Scour test (C-sign strongly suggests an intra-articular source)", "why": "The C-sign is a well-recognised marker of intra-articular hip pathology and should be corroborated with provocation testing.", "confirmsOrExcludes": "Confirms/excludes intra-articular hip pathology", "priority": "Medium" } },
+    { "when": { "flag": "faberAggravation", "equals": true },
+      "add": { "exam": "FABER/Patrick's test + SIJ provocation cluster to differentiate hip from SIJ source", "why": "FABER-provoked pain can arise from the hip joint (groin) or the SI joint (posterior pelvic pain) — the distribution during the test differentiates the two.", "confirmsOrExcludes": "Confirms/excludes hip joint vs SIJ source", "priority": "High" } },
+    { "when": { "flag": "lateralHipPattern", "equals": true },
+      "add": { "exam": "Resisted hip abduction (MMT gluteus medius/minimus) + Trendelenburg test + Ober's test", "why": "Lateral hip pain is the hallmark of greater trochanteric pain syndrome / gluteal tendinopathy; resisted abduction, Trendelenburg, and Ober's test together confirm or exclude it.", "confirmsOrExcludes": "Confirms/excludes greater trochanteric pain syndrome / gluteal tendinopathy", "priority": "High" } },
+    { "when": { "flag": "ischialSittingPain", "equals": true },
+      "add": { "exam": "Resisted hip extension / knee flexion (proximal hamstring) + palpation of ischial tuberosity", "why": "Pain localised to the ischial tuberosity, worse sitting, is the classic proximal hamstring tendinopathy pattern.", "confirmsOrExcludes": "Confirms/excludes proximal hamstring tendinopathy", "priority": "Medium" } },
+    { "when": { "flag": "adductorPattern", "equals": true },
+      "add": { "exam": "Resisted hip adduction + adductor squeeze test + palpation of adductor origin/pubic ramus", "why": "Groin pain reproduced by resisted adduction localises to the adductor group and screens for athletic pubalgia/osteitis pubis.", "confirmsOrExcludes": "Confirms/excludes adductor strain / athletic pubalgia", "priority": "Medium" } },
+    { "when": { "flag": "pubicSymphysisPattern", "equals": true },
+      "add": { "exam": "Palpate pubic symphysis + resisted adduction; screen for athletic pubalgia / osteitis pubis", "why": "Pubic symphysis-localised pain in an athletic or post-partum population needs a specific pubic-region screen distinct from simple adductor strain.", "confirmsOrExcludes": "Confirms/excludes osteitis pubis / athletic pubalgia", "priority": "Medium" } },
+    { "when": { "flag": "deepButtockPain", "equals": true },
+      "add": { "exam": "Piriformis (FAIR) test + neurological screen to exclude a lumbar/sciatic source", "why": "Deep buttock pain with sciatic-type symptoms requires differentiating piriformis/deep gluteal syndrome from a true lumbar radiculopathy.", "confirmsOrExcludes": "Confirms/excludes piriformis / deep gluteal syndrome", "priority": "High" } },
+    { "when": { "flag": "snappingHipInternal", "equals": true },
+      "add": { "exam": "Dynamic snapping hip test (active hip flexion/extension observing/palpating the snap)", "why": "Mechanical snapping needs to be reproduced and located (iliopsoas over the femoral head vs ITB over the trochanter) to confirm the snapping-hip subtype.", "confirmsOrExcludes": "Confirms/excludes internal vs external snapping hip syndrome", "priority": "Low" } },
+    { "when": { "flag": "snappingHipExternal", "equals": true },
+      "add": { "exam": "Dynamic snapping hip test (active hip flexion/extension observing/palpating the snap)", "why": "Mechanical snapping needs to be reproduced and located (iliopsoas over the femoral head vs ITB over the trochanter) to confirm the snapping-hip subtype.", "confirmsOrExcludes": "Confirms/excludes internal vs external snapping hip syndrome", "priority": "Low" } },
+    { "when": { "flag": "meralgiaPattern", "equals": true },
+      "add": { "exam": "Sensory testing over the lateral thigh (LFCN distribution) + Tinel's sign over the inguinal ligament", "why": "Lateral thigh burning/numbness without a lumbar source suggests meralgia paraesthetica (lateral femoral cutaneous nerve entrapment) rather than a musculoskeletal hip pathology.", "confirmsOrExcludes": "Confirms/excludes meralgia paraesthetica", "priority": "Medium" } }
+  ],
+  "supporting": [
+    { "exam": "Neurological screen — hip flexion myotome (L1-L2) if red-flag or neurological concern", "why": "Rules out a proximal lumbar plexus/nerve root contribution when hip flexor weakness or atypical pain is present.", "confirmsOrExcludes": "Screens L1-L2 nerve root / femoral nerve contribution", "priority": "Low" },
+    { "exam": "Functional + outcome measure (HOOS, Oxford Hip Score, iHOT-33, or HAGOS)", "why": "Quantifies baseline hip-related disability for goal-setting and re-assessment.", "confirmsOrExcludes": "Baseline functional severity", "priority": "Medium" },
+    { "exam": "Imaging (only if red flag, suspected fracture/AVN, or failed conservative management)", "why": "Imaging is not routine for mechanical hip/groin pain; reserve for red flags, suspected fracture/AVN, or a structural diagnosis that will change management.", "confirmsOrExcludes": "Confirms structural pathology when clinically indicated", "priority": "Low" }
+  ]
+}

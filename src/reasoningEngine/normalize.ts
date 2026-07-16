@@ -386,9 +386,227 @@ export function runLumbarReasoningFromData(data: Data): ReasoningResult {
   return runReasoning(subjective, objective, region);
 }
 
+// ── Hip ─────────────────────────────────────────────────────────────────────
+// Hip subjective fields are NOT side-split -- unlike knee, there is a single
+// "Hip / Groin":{prefix:"hp"} module regardless of which side is selected
+// (verified: REG_KEY_MAP aliases "Hip/Groin (L)"/"Hip/Groin (R)" onto the same
+// underlying hp_ fields). ROM/MMT/special tests use the same generic rom_/mmt_/
+// st_ ids as every other region (side handled by the _L/_R ROM suffix and
+// worse-side-wins MMT convention already used above).
+export function normalizeHipFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.hp_loc).toLowerCase();
+  const locPattern = str(data.hp_loc_pattern).toLowerCase();
+  const cSign = str(data.hp_c_sign).toLowerCase();
+  const moi = str(data.hp_moi ?? data.cc_onset).toLowerCase();
+  const aggMov = str(data.hp_agg_mov).toLowerCase();
+  const aggAct = str(data.hp_agg_act).toLowerCase();
+  const pattern = str(data.hp_pattern).toLowerCase();
+  const mechanical = str(data.hp_mechanical).toLowerCase();
+  const rf = str(data.hp_rf).toLowerCase();
+  const hamstringOnset = str(data.hp_hamstring_onset).toLowerCase();
+  const piriformis = str(data.hp_piriformis).toLowerCase();
+  const meralgia = str(data.hp_meralgia).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "hip",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    nightPain: has(pattern, "night pain"),
+    constantPain: has(pattern, "constant"),
+    onsetTraumatic: has(moi, "fall", "high-speed sport", "kicking mechanism", "lunging mechanism", "twisting"),
+    onsetInsidious: has(moi, "insidious onset", "age-related degenerative", "overuse"),
+    cSignPositive: has(cSign, "yes —"),
+    hipGroinDominantPattern: has(locPattern, "groin-dominant") || has(loc, "groin — anterior", "anterior hip"),
+    lateralHipPattern: has(locPattern, "lateral hip") || has(loc, "lateral hip"),
+    proximalHamstringPattern: has(locPattern, "ischial tuberosity") || has(loc, "ischial tuberosity") || has(hamstringOnset, "sitting on ischial tuberosity painful"),
+    adductorPattern: has(locPattern, "adductor") || has(loc, "adductor"),
+    pubicSymphysisPattern: has(locPattern, "pubic symphysis") || has(loc, "pubic symphysis"),
+    kickingOrSprintMechanism: has(moi, "kicking mechanism", "lunging mechanism", "high-speed sport"),
+    fadirAggravation: has(aggMov, "fadir combined"),
+    faberAggravation: has(aggMov, "faber combined"),
+    worseLyingOnAffectedSide: has(aggAct, "lying on affected side"),
+    ischialSittingPain: has(aggAct, "sitting on hard surface"),
+    snappingHipInternal: has(mechanical, "internal snapping"),
+    snappingHipExternal: has(mechanical, "external snapping"),
+    hipCatchingOrLocking: has(mechanical, "clicking — with pain", "catching sensation", "giving way", "locking — intermittent"),
+    hipCrepitusGrinding: has(mechanical, "crepitus"),
+    deepButtockPain: has(piriformis, "deep buttock pain", "sciatica-like radiation", "tenderness deep to gluteus"),
+    meralgiaPattern: has(meralgia, "lateral thigh burning"),
+    hipMorningStiffness: has(pattern, "morning stiffness"),
+    avnRiskFactors: has(rf, "avascular necrosis risk"),
+    nonMskReferralSuspected: has(rf, "referred pain from abdomen", "gynaecological referral", "testicular"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(rf, "suspected fracture", "suspected neck of femur") || has(moi, "fall"),
+    unableToWeightBear: has(rf, "cannot weight bear"),
+    hotSwollenJoint: has(rf, "acute hot swollen hip joint"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    systemicIllness: selected(data.grf_systemic, "systemically well") || has(rf, "constitutional symptoms"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rf, "cancer history"),
+    nightPainUnrelieved: has(rf, "constant progressive pain"),
+  };
+
+  const rom = [
+    readRom(data, "hflex", "Flexion", 120, true),
+    readRom(data, "hext", "Extension", 20, true),
+    readRom(data, "habd", "Abduction", 45, true),
+    readRom(data, "hadd", "Adduction", 30, true),
+    readRom(data, "her", "External rotation", 45, true),
+    readRom(data, "hir", "Internal rotation", 45, true),
+  ].filter((e): e is RomEntry => e != null);
+
+  const mmt = [
+    readMmt(data, "mmt_gmax", "Gluteus Maximus (Extension)"),
+    readMmt(data, "mmt_gmed", "Gluteus Medius (Abduction)"),
+    readMmt(data, "mmt_tfl", "Tensor Fasciae Latae (Flexion/Abduction/IR)"),
+    readMmt(data, "mmt_adduc", "Hip Adductors (Adduction)"),
+    readMmt(data, "mmt_hamstr", "Hamstrings (Hip Extension/Knee Flexion)"),
+  ].filter((e): e is MmtEntry => e != null);
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("fadir", has(data.st_fadir_test, "positive — anterior groin"));
+  setT("faber_groin", has(data.st_faber_test, "positive — groin"));
+  setT("faber_sij", has(data.st_faber_test, "positive — posterior pelvic"));
+  setT("hip_scour", isPos(data.st_hip_scour));
+  setT("trendelenburg", has(data.st_trendelenburg_test, "positive", "compensatory lurch"));
+  setT("thomas", has(data.st_thomas_test, "positive", "combined"));
+  setT("ober", isPos(data.st_ober_test));
+  setT("piriformis", isPos(data.st_piriformis_test));
+  setT("hamstring_90_90", has(data.st_90_90, "mild hamstring tightness", "moderate hamstring tightness", "severe hamstring tightness"));
+
+  const objective: ObjectiveFindings = {
+    rom, mmt, specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "hip" };
+}
+
+export function runHipReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeHipFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
+// ── Knee ────────────────────────────────────────────────────────────────────
+// IMPORTANT: unlike every other region, knee subjective history is NOT a single
+// shared module. sharedClinicalData.js defines two independent, NON-symmetric
+// modules: "Knee (L)" (prefix "knl") and "Knee (R)" (prefix "knr") -- the right
+// side is missing several fields the left has (knl_weightbear, knl_agg_other,
+// the whole knl_sport_* section, knl_plc posterolateral-corner screen) and some
+// shared concepts use different field-name suffixes (knl_swelling_pattern vs
+// knr_swelling_patt). A naive `${prefix}_x` template would silently miss data
+// on one side. Every concept below reads BOTH knl_ and knr_ fields and combines
+// them into one lowercased string via combo(), so a signal present on either
+// side is picked up (same "worse/either side" principle already used for ROM
+// and MMT above) -- verified against the real field ids on both sides, not
+// assumed symmetric. Special tests and ROM use the generic rom_/st_ ids, which
+// are NOT side-split, so they need no such handling.
+const combo = (a: unknown, b: unknown): string => `${str(a)} | ${str(b)}`.toLowerCase();
+
+export function normalizeKneeFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = combo(data.knl_loc, data.knr_loc);
+  const moi = combo(data.knl_moi, data.knr_moi);
+  const pop = combo(data.knl_pop, data.knr_pop);
+  const swelling = combo(data.knl_swelling, data.knr_swelling);
+  // NOTE: right-side field is "knr_swelling_patt" (truncated), not "_pattern" -- verified, not a typo.
+  const swellingPattern = combo(data.knl_swelling_pattern, data.knr_swelling_patt);
+  const givingWay = combo(data.knl_giving_way, data.knr_giving_way);
+  const locking = combo(data.knl_locking, data.knr_locking);
+  const movie = combo(data.knl_movie, data.knr_movie);
+  const descent = combo(data.knl_descent, data.knr_descent);
+  const clicking = combo(data.knl_clicking, data.knr_clicking);
+  const pattern = combo(data.knl_pattern, data.knr_pattern);
+  const pcl = combo(data.knl_pcl, data.knr_pcl);
+  const rf = combo(data.knl_rf, data.knr_rf);
+
+  const subjective: SubjectiveInput = {
+    region: "knee",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    nightPain: has(rf, "night pain progressive", "constant night pain"),
+    onsetTraumatic: has(moi, "twisting", "direct blow", "fall onto knee", "jumping", "pivoting", "hyperextension"),
+    onsetInsidious: has(moi, "no clear mechanism", "insidious", "overuse"),
+    kneeNonContactTwistMechanism: has(moi, "non-contact"),
+    kneeAcutePopFelt: has(pop, "yes — clear pop"),
+    kneeImmediateHaemarthrosis: has(swelling, "haemarthrosis"),
+    kneeGivingWayWithPivot: has(givingWay, "pivot"),
+    kneeTrueLocking: has(locking, "true locking"),
+    kneeMovieSignPositive: has(movie, "yes —"),
+    kneeWorseDescendingStairs: has(descent, "worse going down"),
+    // Right-side "direct blow medial / lateral" is a single combined option in
+    // the app (verified) -- it cannot be split into valgus vs varus, so only
+    // the left-side wording (which IS specific) drives these two flags.
+    kneeValgusMechanism: has(str(data.knl_moi).toLowerCase(), "direct blow medial"),
+    kneeVarusMechanism: has(str(data.knl_moi).toLowerCase(), "direct blow lateral"),
+    kneePclMechanism: has(pcl, "dashboard mechanism", "direct blow to anterior tibia"),
+    kneeJointLineMechanical: has(clicking, "click with pain", "painful click", "catching", "grinding", "crepitus", "clunk"),
+    kneeDelayedOrRecurrentSwelling: has(swellingPattern, "persistent", "recurrent"),
+    kneeAnteriorPainPattern: has(loc, "anterior knee", "patella —"),
+    kneePatellarTendonPattern: has(loc, "patellar tendon — inferior pole"),
+    kneeMedialJointPain: has(loc, "medial joint line"),
+    kneeLateralJointPain: has(loc, "lateral joint line"),
+    kneeLateralItbPattern: has(loc, "itb attachment"),
+    kneeDiffuseWholeKneePain: has(loc, "whole knee"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "fall onto knee", "direct blow", "jumping") || has(rf, "unable to bear weight", "ottawa"),
+    unableToWeightBear: has(rf, "unable to bear weight", "ottawa rules positive"),
+    hotSwollenJoint: has(rf, "septic arthritis"),
+    irreducibleLocking: has(rf, "irreducible"),
+    vascularCompromiseSigns: has(rf, "vascular compromise", "compartment syndrome"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    systemicIllness: selected(data.grf_systemic, "systemically well") || has(rf, "night pain progressive"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rf, "cancer history"),
+    nightPainUnrelieved: has(rf, "night pain progressive", "constant night pain"),
+  };
+
+  const rom = [
+    readRom(data, "kflex", "Flexion", 140, true),
+    readRom(data, "kext", "Extension", 0, true),
+  ].filter((e): e is RomEntry => e != null);
+
+  const mmt = [
+    readMmt(data, "mmt_quad", "Quadriceps (Knee Extension)"),
+  ].filter((e): e is MmtEntry => e != null);
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("lachman", has(data.st_lachmans, "grade 1", "grade 2", "grade 3"));
+  setT("anterior_drawer", isPos(data.st_anterior_drawer));
+  setT("posterior_drawer", isPos(data.st_posterior_drawer));
+  setT("pivot_shift", has(data.st_pivot_shift, "grade 1", "grade 2", "grade 3"));
+  setT("valgus_stress", has(data.st_valgus_stress_knee, "grade 1", "grade 2", "grade 3"));
+  setT("varus_stress", isPos(data.st_varus_stress_knee));
+  setT("mcmurray", isPos(data.st_mcmurray_test));
+  setT("apley_compression", has(data.st_apley, "positive — compression", "both positive"));
+  setT("thessaly", isPos(data.st_thessaly));
+  setT("clarkes", isPos(data.st_clarkes));
+  setT("patellar_grind", isPos(data.st_patellar_grind));
+  setT("effusion", selected(data.st_effusion, "no effusion"));
+  setT("noble", isPos(data.st_noble));
+  setT("ober", isPos(data.st_ober_test));
+
+  const objective: ObjectiveFindings = {
+    rom, mmt, specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "knee" };
+}
+
+export function runKneeReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeKneeFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 /** Region dispatcher — routes a flat record to the correct region normalizer. */
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
   if (region === "lumbar") return runLumbarReasoningFromData(data);
+  if (region === "hip") return runHipReasoningFromData(data);
+  if (region === "knee") return runKneeReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }

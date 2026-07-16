@@ -39,6 +39,22 @@ const CONFIGS: Record<string, RegionCompletenessConfig> = {
       { exam: "Lumbar/SIJ special-test cluster (SLR, slump, SIJ provocation)", domain: "specialTests", why: "Special-test clustering is required to differentiate discogenic, radicular, and sacroiliac presentations." },
     ],
   },
+  hip: {
+    expectedDomains: ["history", "painBehaviour", "rom", "mmt", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Active/Passive hip ROM with capsular pattern", domain: "rom", why: "Range and end-feel across all planes is required to identify a capsular (osteoarthritic) restriction versus a soft-tissue-limited presentation." },
+      { exam: "Resisted isometrics / MMT (gluteal, hip flexor, adductor, hamstring)", domain: "mmt", why: "Contractile testing is required to implicate or clear the gluteal, adductor, or proximal hamstring muscle groups." },
+      { exam: "Hip special-test cluster (FABER, FADIR, Scour, Trendelenburg)", domain: "specialTests", why: "Special-test clustering is required to differentiate intra-articular (FAI/OA/labral) from extra-articular (GTPS/SIJ/muscular) presentations." },
+    ],
+  },
+  knee: {
+    expectedDomains: ["history", "painBehaviour", "rom", "mmt", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Active/Passive knee ROM with end-feel", domain: "rom", why: "Range and end-feel is required to identify a capsular/effusion pattern versus an extension block or extensor-mechanism lag." },
+      { exam: "Resisted isometrics / MMT (quadriceps)", domain: "mmt", why: "Contractile testing is required to implicate or clear the extensor mechanism (patellar tendinopathy / PFPS)." },
+      { exam: "Knee ligament + meniscal special-test cluster (Lachman's, valgus/varus stress, McMurray's)", domain: "specialTests", why: "Special-test clustering is required to differentiate ligamentous, meniscal, and patellofemoral presentations." },
+    ],
+  },
 };
 
 function domainsWithData(findings: Finding[], objective: ObjectiveFindings): Domain[] {

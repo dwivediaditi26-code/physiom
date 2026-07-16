@@ -12,26 +12,34 @@
 // halt behaviour reaches the screen, not just the return value.
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 import { SOAPNoteModule } from "../ClinicalModules.jsx";
 
 describe("SOAP Notes Assessment tab -- diagnosis suggestion engine, rendered", () => {
-  it("surfaces ACL tear at high confidence for a real knee ACL presentation", () => {
+  it("surfaces ACL tear at high confidence for a real knee ACL presentation (new deterministic engine)", () => {
+    // Knee is now covered by the deterministic engine (src/reasoningEngine), so
+    // this goes through the new "SUGGEST PROBABLE DIAGNOSIS" button + ranked
+    // panel rather than the older auto-rendered block -- see the gate test
+    // below and reasoningEngine_knee.test.ts for the underlying scoring proof.
     const data = {
       dem_name: "Test Patient", dem_age: "24", dem_sex: "Male",
       cc_main: "Right knee gave way during a pivoting movement while playing football, immediate swelling",
       cc_onset: "Sudden, during sport", cc_duration: "3 days",
       cc_vas_now: "5", cc_vas_worst: "9",
       rom_kflex_R_arom: "90", rom_kflex_R_prom: "95",
-      mmt_quad_R: "3",
-      st_lachmans: "Positive — soft end point, increased translation",
-      st_anterior_drawer: "Positive",
-      st_pivot_shift: "Positive",
+      mmt_mmt_quad_R: "3",
+      knr_moi: "Twisting — non-contact (ACL)",
+      knr_pop: "Yes — clear pop (ACL flag)",
+      knr_swelling: "Immediate <2hrs (haemarthrosis flag)",
+      st_lachmans: "Grade 3 (> 10mm, soft end-feel — complete ACL rupture)",
+      st_anterior_drawer: "Positive — ACL insufficiency (compare to Lachman's)",
+      st_pivot_shift: "Grade 2 — clunk (moderate)",
     };
     render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
-    expect(screen.getByText("💡 Suggested Clinical Diagnoses")).toBeTruthy();
-    expect(screen.getByText("ACL tear")).toBeTruthy();
+    expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    expect(screen.getAllByText(/ACL/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/High/)).toBeTruthy();
   });
 
@@ -64,15 +72,42 @@ describe("SOAP Notes Assessment tab -- diagnosis suggestion engine, rendered", (
     expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
   });
 
-  it("still shows the OLDER suggestion panel for a region the new engine doesn't cover yet (knee), confirming the gate is per-region not global", () => {
+  it("shows only the new deterministic engine's button for hip -- no duplicate/competing panel", () => {
+    // The OLDER engine's own region detector (interpretationAdapter.js) keys off
+    // real rom_h*_arom/_prom fields being present, not chief-complaint keywords
+    // -- so a hip ROM field must be included here for the gate itself to have a
+    // region to test against (matches how the existing shoulder/knee cases above
+    // include their rom_* fields for the same reason).
+    const data = {
+      dem_name: "Test Patient", dem_age: "35",
+      cc_main: "Right anterior groin pain, worse with FADIR movement",
+      rom_hflex_R_arom: "95", rom_hflex_R_prom: "100",
+      hp_agg_mov: "FADIR combined (flexion + adduction + IR) — FAI pattern",
+      st_fadir_test: "Positive — anterior groin pain (FAI / labral tear)",
+    };
+    render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
+    expect(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i)).toBeTruthy();
+    expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
+  });
+
+  it("shows only the new deterministic engine's button for knee -- no duplicate/competing panel (regression proof the gate now covers knee too)", () => {
     const data = {
       dem_name: "Test Patient", dem_age: "24",
       cc_main: "Right knee gave way during a pivoting movement while playing football, immediate swelling",
       rom_kflex_R_arom: "90", rom_kflex_R_prom: "95",
-      mmt_quad_R: "3",
-      st_lachmans: "Positive — soft end point, increased translation",
-      st_anterior_drawer: "Positive",
-      st_pivot_shift: "Positive",
+      knr_moi: "Twisting — non-contact (ACL)",
+      st_lachmans: "Grade 3 (> 10mm, soft end-feel — complete ACL rupture)",
+    };
+    render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
+    expect(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i)).toBeTruthy();
+    expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
+  });
+
+  it("still shows the OLDER suggestion panel for a region the new engine doesn't cover yet (ankle), confirming the gate is per-region not global", () => {
+    const data = {
+      dem_name: "Test Patient", dem_age: "30",
+      cc_main: "Ankle sprain playing basketball, rolled inward",
+      rom_adf_R_arom: "10", rom_adf_R_prom: "12",
     };
     render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
     expect(screen.getByText("💡 Suggested Clinical Diagnoses")).toBeTruthy();

@@ -56,8 +56,36 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
   });
 
   it("shows a graceful message for a region the engine does not yet cover", () => {
-    render(<ProbableDiagnosis data={{ cc_main: "knee pain after twisting" }} />);
+    // Knee is now covered by the deterministic engine (see the hip/knee tests
+    // below and reasoningEngine_knee.test.ts) -- ankle remains genuinely
+    // unsupported, so it is used here instead to keep this test meaningful.
+    render(<ProbableDiagnosis data={{ cc_main: "ankle pain after twisting" }} />);
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
     expect(screen.getByText(/currently supports/i)).toBeInTheDocument();
+  });
+
+  it("runs the engine on a hip dataset via region detection (real field ids)", () => {
+    const data = {
+      cc_main: "Right groin pain, worse with FADIR movement, feels like it catches",
+      hp_agg_mov: "FADIR combined (flexion + adduction + IR) — FAI pattern",
+      hp_c_sign: "Yes — typical intra-articular pattern",
+      st_fadir_test: "Positive — anterior groin pain (FAI / labral tear)",
+    };
+    render(<ProbableDiagnosis data={data} />);
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    expect(screen.getAllByText(/impingement|labral/i).length).toBeGreaterThan(0);
+  });
+
+  it("runs the engine on a knee dataset via region detection (real field ids)", () => {
+    const data = {
+      cc_main: "Right knee gave way during a pivoting movement while playing football, immediate swelling",
+      knr_moi: "Twisting — non-contact (ACL)",
+      knr_pop: "Yes — clear pop (ACL flag)",
+      st_lachmans: "Grade 3 (> 10mm, soft end-feel — complete ACL rupture)",
+      st_pivot_shift: "Grade 2 — clunk (moderate)",
+    };
+    render(<ProbableDiagnosis data={data} />);
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    expect(screen.getAllByText(/ACL/i).length).toBeGreaterThan(0);
   });
 });

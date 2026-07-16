@@ -81,6 +81,49 @@ export interface SubjectiveInput {
   sacroiliacPainPattern?: boolean;
   youngAthleteExtensionPain?: boolean;
   footDropReported?: boolean;
+  hotSwollenJoint?: boolean;
+  irreducibleLocking?: boolean;
+  vascularCompromiseSigns?: boolean;
+  // hip-relevant history signals
+  hipGroinDominantPattern?: boolean;
+  cSignPositive?: boolean;
+  fadirAggravation?: boolean;
+  faberAggravation?: boolean;
+  lateralHipPattern?: boolean;
+  worseLyingOnAffectedSide?: boolean;
+  ischialSittingPain?: boolean;
+  proximalHamstringPattern?: boolean;
+  adductorPattern?: boolean;
+  pubicSymphysisPattern?: boolean;
+  kickingOrSprintMechanism?: boolean;
+  snappingHipInternal?: boolean;
+  snappingHipExternal?: boolean;
+  hipCatchingOrLocking?: boolean;
+  hipCrepitusGrinding?: boolean;
+  deepButtockPain?: boolean;
+  meralgiaPattern?: boolean;
+  hipMorningStiffness?: boolean;
+  avnRiskFactors?: boolean;
+  nonMskReferralSuspected?: boolean;
+  // knee-relevant history signals
+  kneeNonContactTwistMechanism?: boolean;
+  kneeAcutePopFelt?: boolean;
+  kneeImmediateHaemarthrosis?: boolean;
+  kneeGivingWayWithPivot?: boolean;
+  kneeTrueLocking?: boolean;
+  kneeMovieSignPositive?: boolean;
+  kneeWorseDescendingStairs?: boolean;
+  kneeValgusMechanism?: boolean;
+  kneeVarusMechanism?: boolean;
+  kneePclMechanism?: boolean;
+  kneeJointLineMechanical?: boolean;
+  kneeDelayedOrRecurrentSwelling?: boolean;
+  kneeAnteriorPainPattern?: boolean;
+  kneePatellarTendonPattern?: boolean;
+  kneeMedialJointPain?: boolean;
+  kneeLateralJointPain?: boolean;
+  kneeLateralItbPattern?: boolean;
+  kneeDiffuseWholeKneePain?: boolean;
   symptomDurationDays?: number | null;
 }
 

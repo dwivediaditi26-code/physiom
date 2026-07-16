@@ -24,8 +24,13 @@ const RULES: Rule[] = [
   },
   {
     id: "vascular",
-    check: (s) => !!(s.suddenSevereHeadacheOrNeckPain || s.vertebrobasilarSigns),
+    check: (s) => !!(s.suddenSevereHeadacheOrNeckPain || s.vertebrobasilarSigns || s.vascularCompromiseSigns),
     message: "Possible vascular pathology — do not proceed with manual therapy.",
+  },
+  {
+    id: "joint_emergency",
+    check: (s) => !!(s.hotSwollenJoint || s.irreducibleLocking),
+    message: "Acute joint emergency (septic arthritis / irreducible mechanical block) — urgent same-day referral; do not proceed with routine assessment.",
   },
   {
     id: "infection",

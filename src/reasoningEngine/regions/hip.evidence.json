@@ -1,0 +1,75 @@
+{
+  "region": "hip",
+  "diagnoses": [
+    {
+      "name": "Femoroacetabular impingement (FAI) / acetabular labral tear",
+      "source": "Magee Orthopedic Physical Assessment; Reiman et al. FADIR/FABER diagnostic accuracy meta-analysis",
+      "requiredFindings": [],
+      "supportingFindings": ["fadir_test_positive", "fadir_aggravation", "c_sign_positive", "hip_groin_dominant_pattern", "hip_catching_locking", "hip_scour_positive", "faber_groin_positive"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.3, "history": 0.9, "painBehaviour": 0.6 },
+      "keyExams": ["FADIR test", "Hip Scour test"]
+    },
+    {
+      "name": "Hip osteoarthritis",
+      "source": "Magee; Altman clinical criteria for hip OA; capsular pattern (Cyriax)",
+      "requiredFindings": [],
+      "supportingFindings": ["hip_ir_capsular_pattern", "hip_crepitus_grinding", "hip_groin_dominant_pattern", "hip_morning_stiffness", "hip_flexion_loss", "imaging_hip_oa", "insidious_onset", "age_over_50"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "rom": 1.3, "painBehaviour": 0.7, "history": 0.7, "imaging": 1.1 },
+      "keyExams": ["Passive hip ROM with end-feel (capsular pattern)", "Hip Scour test"]
+    },
+    {
+      "name": "Greater trochanteric pain syndrome (gluteal tendinopathy)",
+      "source": "Magee; Grimaldi & Fearon GTPS clinical diagnosis criteria",
+      "requiredFindings": [],
+      "supportingFindings": ["lateral_hip_pattern", "worse_lying_on_side", "trendelenburg_positive", "ober_test_positive", "gmed_weak", "resisted_abduction_pain", "greater_trochanter_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 0.9, "specialTests": 1.1, "mmt": 1.1, "palpation": 0.8, "painBehaviour": 0.6 },
+      "keyExams": ["Resisted hip abduction (MMT)", "Trendelenburg test", "Ober's test"]
+    },
+    {
+      "name": "Proximal hamstring tendinopathy",
+      "source": "Magee; Cook & Purdam tendinopathy continuum model",
+      "requiredFindings": [],
+      "supportingFindings": ["ischial_sitting_pain", "proximal_hamstring_pattern", "resisted_hip_extension_pain", "ischial_tuberosity_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "mmt": 1.0, "palpation": 0.9, "painBehaviour": 0.7 },
+      "keyExams": ["Resisted hip extension / knee flexion (MMT)", "Palpation of ischial tuberosity"]
+    },
+    {
+      "name": "Adductor-related groin pain (adductor strain / athletic pubalgia)",
+      "source": "Magee; Doha agreement meeting classification of groin pain in athletes",
+      "requiredFindings": [],
+      "supportingFindings": ["adductor_pattern", "resisted_adduction_pain", "kicking_sprint_mechanism", "pubic_symphysis_pattern", "adductor_origin_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "mmt": 1.0, "palpation": 0.8 },
+      "keyExams": ["Resisted hip adduction (MMT)", "Palpation of adductor origin / pubic ramus"]
+    },
+    {
+      "name": "Piriformis syndrome / deep gluteal syndrome",
+      "source": "Magee; Martin et al. deep gluteal syndrome diagnostic criteria",
+      "requiredFindings": [],
+      "supportingFindings": ["deep_buttock_pain", "piriformis_test_positive"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.4, "history": 1.0 },
+      "keyExams": ["Piriformis (FAIR) test"]
+    },
+    {
+      "name": "Snapping hip syndrome (coxa saltans, internal or external)",
+      "source": "Magee; Musick et al. snapping hip syndrome review",
+      "requiredFindings": [],
+      "supportingFindings": ["snapping_hip_internal", "snapping_hip_external"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.4 },
+      "keyExams": ["Dynamic snapping hip test (observe/palpate active flexion-extension)"]
+    }
+  ]
+}
