@@ -25,7 +25,7 @@
       "name": "Cervicogenic headache",
       "source": "Cervicogenic Headache International Study Group; flexion-rotation test (Hall)",
       "requiredFindings": [],
-      "supportingFindings": ["headache_cervical", "unilateral_headache", "flexion_rotation_positive", "upper_cervical_tender"],
+      "supportingFindings": ["headache_cervical", "unilateral_headache", "flexion_rotation_positive", "upper_cervical_tender", "cpa_dnf_pattern"],
       "conflictingFindings": ["radiating_arm_pain"],
       "exclusionFindings": [],
       "weights": { "specialTests": 1.2, "history": 1.0, "palpation": 0.8 },

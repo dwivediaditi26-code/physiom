@@ -25,7 +25,7 @@
       "name": "Rotator cuff tear (full-thickness)",
       "source": "McGee Evidence-Based Physical Diagnosis (lag signs, high specificity); JOSPT CPG",
       "requiredFindings": [],
-      "supportingFindings": ["er_lag_positive", "drop_arm_positive", "lift_off_positive", "abduction_weak", "er_weak", "traumatic_onset", "night_pain", "imaging_full_thickness_tear"],
+      "supportingFindings": ["er_lag_positive", "drop_arm_positive", "lift_off_positive", "abduction_weak", "er_weak", "traumatic_onset", "night_pain", "imaging_full_thickness_tear", "ir_weak"],
       "conflictingFindings": ["capsular_pattern"],
       "exclusionFindings": [],
       "weights": { "imaging": 1.6, "specialTests": 1.3, "mmt": 1.0, "history": 0.7, "painBehaviour": 0.5 },

@@ -99,7 +99,8 @@ function deriveShoulder(s: SubjectiveInput, o: ObjectiveFindings, add: Add): voi
   const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
   add("abduction_weak", "mmt", weak("abduct") || weak("supraspinatus"), "MMT: abduction/supraspinatus weakness (<=3/5)");
   add("er_weak", "mmt", weak("external") || weak("infraspinatus"), "MMT: external rotation/infraspinatus weakness (<=3/5)");
-  add("painful_weak_resist", "mmt", painfulResist("abduct") || painfulResist("supraspinatus") || painfulResist("external"), "MMT: painful resisted contraction (contractile lesion)");
+  add("ir_weak", "mmt", weak("internal") || weak("subscapularis"), "MMT: internal rotation/subscapularis weakness (<=3/5)");
+  add("painful_weak_resist", "mmt", painfulResist("abduct") || painfulResist("supraspinatus") || painfulResist("external") || painfulResist("internal") || painfulResist("subscapularis"), "MMT: painful resisted contraction (contractile lesion)");
 
   // Palpation
   const tender = (name: string): boolean => o.palpation.tenderStructures.some((s) => s.toLowerCase().includes(name));
@@ -130,7 +131,11 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   spurling_positive: "specialTests",
   capsular_pattern: "rom", global_rom_loss: "rom",
   capsular_end_feel: "endFeel",
-  abduction_weak: "mmt", er_weak: "mmt", painful_weak_resist: "mmt",
+  abduction_weak: "mmt", er_weak: "mmt", ir_weak: "mmt", painful_weak_resist: "mmt",
+  cpa_dnf_pattern: "specialTests", cpa_core_inhibition: "specialTests",
+  cpa_piriformis_dysfunction: "specialTests", cpa_tfl_overactive: "specialTests",
+  cpa_pronator_dysfunction: "specialTests", resisted_wrist_extensors_weak: "mmt",
+  knee_reflex_change: "specialTests", elbow_reflex_change: "specialTests", grip_weak_or_painful: "mmt",
   ac_joint_tender: "palpation", greater_tuberosity_tender: "palpation", bicipital_groove_tender: "palpation",
   imaging_calcific: "imaging", imaging_full_thickness_tear: "imaging", imaging_oa: "imaging",
   // cervical
@@ -245,6 +250,7 @@ function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): voi
   add("hoffmann_positive", "specialTests", t.hoffmann === true, "Hoffmann's: positive (UMN / myelopathy)");
   add("reflex_change", "specialTests", t.reflex_change === true, "Reflex change (radiculopathy)");
   add("sensory_deficit", "specialTests", t.sensory_deficit === true, "Dermatomal sensory deficit");
+  add("cpa_dnf_pattern", "specialTests", t.cpa_dnf_pattern === true, "CPA: deep neck flexor inhibition / SCM-upper trap-suboccipital compensation pattern (cervicogenic headache mechanism)");
 
   // MMT — myotome weakness
   const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
@@ -297,6 +303,7 @@ function deriveLumbar(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void 
   add("si_cluster_positive", "specialTests", siPositives.length >= 3, `SIJ provocation cluster: ${siPositives.length}/4 positive (Laslett cluster ≥3)`);
   add("reflex_change", "specialTests", t.reflex_change === true, "Reflex change: patella (L3-L4) / Achilles (S1)");
   add("sensory_deficit", "specialTests", t.sensory_deficit === true, "Dermatomal sensory deficit (lumbosacral)");
+  add("cpa_core_inhibition", "specialTests", t.cpa_core_inhibition === true, "CPA: transversus abdominis / multifidus inhibition (core motor control dysfunction — mechanical LBP and SIJ force-closure)");
 
   // MMT — myotome weakness (L3-S1)
   const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
@@ -356,6 +363,7 @@ function deriveHip(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("ober_test_positive", "specialTests", isPositive(t, "ober"), "Ober's test: positive (IT band / TFL tightness)");
   add("piriformis_test_positive", "specialTests", isPositive(t, "piriformis"), "Piriformis (FAIR) test: positive (deep gluteal / piriformis syndrome)");
   add("hamstring_90_90_tight", "specialTests", isPositive(t, "hamstring_90_90"), "90-90 hamstring test: hamstring tightness present");
+  add("cpa_piriformis_dysfunction", "specialTests", isPositive(t, "cpa_piriformis_dysfunction"), "CPA: piriformis overactive or inhibited (deep gluteal motor control dysfunction)");
 
   const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
   const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
@@ -430,6 +438,8 @@ function deriveKnee(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("effusion_positive", "specialTests", isPositive(t, "effusion"), "Sweep/ballottement test: effusion present");
   add("noble_positive", "specialTests", isPositive(t, "noble"), "Noble compression test: positive (IT band syndrome)");
   add("ober_test_positive", "specialTests", isPositive(t, "ober"), "Ober's test: positive (IT band tightness)");
+  add("cpa_tfl_overactive", "specialTests", t.cpa_tfl_overactive === true, "CPA: TFL overactive (compensating for inhibited glute med — drives IT band tension/ITB friction syndrome)");
+  add("knee_reflex_change", "specialTests", t.knee_reflex_change === true, "Reflex change: patellar reflex (L3-L4) — possible lumbar radiculopathy referred to knee, not a local knee finding");
 
   const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
   const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
@@ -482,6 +492,8 @@ function deriveElbow(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("golfers_test_positive", "specialTests", isPositive(t, "golfers"), "Golfer's elbow test: positive (medial epicondylalgia — FCR/FCU)");
   add("valgus_stress_elbow_positive", "specialTests", isPositive(t, "valgus_stress_elbow"), "Elbow valgus stress test: positive (UCL/MCL)");
   add("tinel_elbow_positive", "specialTests", isPositive(t, "tinel_elbow"), "Tinel's sign at elbow: positive (cubital tunnel — ulnar nerve)");
+  add("cpa_pronator_dysfunction", "specialTests", t.cpa_pronator_dysfunction === true, "CPA: pronator teres overactive (restricts supination, may compress median nerve — pronator syndrome)");
+  add("elbow_reflex_change", "specialTests", t.elbow_reflex_change === true, "Reflex change: biceps (C5-C6) or triceps (C6-C7) — possible cervical radiculopathy referred to elbow, not a local elbow finding");
 
   const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
   const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
@@ -491,6 +503,8 @@ function deriveElbow(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("resisted_pronation_pain", "mmt", painfulResist("pronator teres"), "MMT: painful resisted pronation (medial epicondylalgia/pronator teres)");
   add("resisted_wrist_extensors_pain", "mmt", painfulResist("ecrb") || painfulResist("ecrl"), "MMT: painful resisted wrist extensors (ECRB — lateral epicondylalgia)");
   add("resisted_wrist_flexors_pain", "mmt", painfulResist("flexor carpi radialis") || painfulResist("flexor carpi ulnaris"), "MMT: painful resisted wrist flexors (medial epicondylalgia)");
+  add("resisted_wrist_extensors_weak", "mmt", weak("ecrb") || weak("ecrl"), "MMT: wrist extensor weakness (<=3/5) — posterior interosseous nerve (radial tunnel motor variant), distinguishes from simple lateral epicondylalgia");
+  add("grip_weak_or_painful", "mmt", weak("grip") || painfulResist("grip"), "MMT: reduced or painful grip strength (lateral epicondylalgia — pain inhibition mechanism; or C8/T1 radiculopathy)");
 
   const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
   for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });

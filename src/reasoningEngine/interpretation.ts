@@ -313,10 +313,14 @@ export function buildInterpretation(
     referralRecommendation = "True mechanical locking (cannot fully extend) — consider orthopaedic referral to assess for a displaced meniscal tear or loose body.";
   } else if (region === "knee" && has("knee_immediate_haemarthrosis") && has("lachman_positive")) {
     referralRecommendation = "Immediate haemarthrosis with a positive Lachman's test — consider orthopaedic referral to assess ACL integrity.";
+  } else if (region === "knee" && has("knee_reflex_change")) {
+    referralRecommendation = "Patellar reflex change noted at the knee — this reflects L3-L4 nerve root function, not local knee pathology; consider lumbar spine assessment/referral to screen for radiculopathy.";
   } else if (region === "elbow" && has("imaging_biceps_rupture")) {
     referralRecommendation = "Imaged distal biceps rupture — consider orthopaedic surgical opinion referral (early repair improves outcomes).";
   } else if (region === "elbow" && has("valgus_stress_elbow_positive") && subjective.elbowThrowingMechanism) {
     referralRecommendation = "Positive valgus stress test in a throwing athlete — consider orthopaedic/sports medicine referral to assess UCL integrity before return to throwing.";
+  } else if (region === "elbow" && has("elbow_reflex_change")) {
+    referralRecommendation = "Biceps or triceps reflex change noted at the elbow — this reflects C5-C7 nerve root function, not local elbow pathology; consider cervical spine assessment/referral to screen for radiculopathy.";
   }
 
   const cap = (r: string) => r.charAt(0).toUpperCase() + r.slice(1);

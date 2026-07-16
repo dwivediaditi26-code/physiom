@@ -55,7 +55,7 @@
       "name": "Piriformis syndrome / deep gluteal syndrome",
       "source": "Magee; Martin et al. deep gluteal syndrome diagnostic criteria",
       "requiredFindings": [],
-      "supportingFindings": ["deep_buttock_pain", "piriformis_test_positive"],
+      "supportingFindings": ["deep_buttock_pain", "piriformis_test_positive", "cpa_piriformis_dysfunction"],
       "conflictingFindings": [],
       "exclusionFindings": [],
       "weights": { "specialTests": 1.4, "history": 1.0 },

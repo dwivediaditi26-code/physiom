@@ -79,6 +79,36 @@ function readMmt(data: Data, mmtId: string, label: string): MmtEntry | null {
   return { muscle: label, grade, painOnResist: false };
 }
 
+// STTT (Cyriax selective tissue tension testing) -- data["cyriax_<region>_res_<testId>"]
+// stores one of "", "Strong & Painless", "Strong & Painful", "Weak & Painless",
+// "Weak & Painful" (verified: CyriaxModule's `sv=(id,val)=>set(prefix+id,val)` where
+// prefix=`cyriax_${region}_`, RESULT_OPTIONS is exactly these 5 values). Folded into
+// the SAME MmtEntry shape/array as real MMT so the EXISTING weak()/painfulResist()
+// finding checks in findings.ts pick it up automatically wherever the muscle label
+// already matches an existing substring check -- no new finding codes needed for
+// pure strength/pain-on-resist enrichment.
+function readCyriax(data: Data, region: string, testId: string, muscleLabel: string): MmtEntry | null {
+  const v = str(data[`cyriax_${region}_res_${testId}`]).toLowerCase();
+  if (!v) return null;
+  return { muscle: `${muscleLabel} (STTT)`, grade: v.includes("weak") ? 3 : 5, painOnResist: v.includes("painful") };
+}
+
+// CPA (NKT motor control) -- data["nkt_<testId>"] stores a free-text classification
+// whose benign option is always "Facilitated"/"Normal"/"Normal tone"/"Normal
+// strength ..." (verified per-test across NKT_REGIONS). Only the "Inhibited" state is
+// folded into the mmt array here (CPA identifies inhibition via manual muscle
+// testing, so representing it as a weak() entry is accurate); "Overactive" describes
+// a DIFFERENT construct (a compensating muscle, usually normal-or-supra-normal
+// strength) that does not map onto the weak/painful axis this engine scores on, so
+// it is deliberately read separately per-region as a dedicated specialTests flag
+// where it clinically supports a specific differential (see deriveX functions),
+// rather than force-fit here.
+function readCpaInhibited(data: Data, testId: string, muscleLabel: string): MmtEntry | null {
+  const v = str(data[`nkt_${testId}`]).toLowerCase();
+  if (!v.includes("inhibited")) return null;
+  return { muscle: `${muscleLabel} (CPA)`, grade: 3 };
+}
+
 function readPalpation(data: Data): string[] {
   try {
     const pins = data.palp_pins ? JSON.parse(str(data.palp_pins)) : [];
@@ -133,6 +163,15 @@ export function normalizeFromData(data: Data): { subjective: SubjectiveInput; ob
     readMmt(data, "mmt_supra", "Supraspinatus (abduction)"),
     readMmt(data, "mmt_infra", "Infraspinatus (external rotation)"),
     readMmt(data, "mmt_subscap", "Subscapularis (internal rotation)"),
+    // STTT (Cyriax) + CPA (NKT) enrichment -- same muscle labels as the readMmt()
+    // calls above so the existing weak()/painfulResist() checks in deriveShoulder
+    // pick these up automatically regardless of which source (formal MMT, Cyriax
+    // resisted test, or CPA) actually supplied the data.
+    readCyriax(data, "shoulder", "sh_r_abd", "Supraspinatus (abduction)"),
+    readCyriax(data, "shoulder", "sh_r_er", "Infraspinatus (external rotation)"),
+    readCyriax(data, "shoulder", "sh_r_ir", "Subscapularis (internal rotation)"),
+    readCpaInhibited(data, "infraspinatus", "Infraspinatus (external rotation)"),
+    readCpaInhibited(data, "subscapularis", "Subscapularis (internal rotation)"),
   ].filter((e): e is MmtEntry => e != null);
 
   const specialTests: Record<string, boolean> = {};
@@ -250,6 +289,15 @@ export function normalizeCervicalFromData(data: Data): { subjective: SubjectiveI
   setT("reflex_change", anyReflexChange);
   setT("sensory_deficit", anySensoryDeficit);
   setT("ultt", isPos(data.st_slump_test)); // no dedicated ULTT test in the app yet
+  // CPA (NKT motor control): DNF inhibited (or its compensators SCM/upper trap/
+  // suboccipitals overactive) is the CPA-described mechanism for cervicogenic
+  // headache -- forward head posture maintained by superficial flexors substituting
+  // for the deep neck flexors. Kept as its own specialTests flag (not folded into
+  // the mmt weak() pathway) because it is a motor-control-pattern finding, not a
+  // graded strength/nerve-root test.
+  const cpaDnfInhibited = has(data.nkt_dnf, "inhibited");
+  const cpaCompensatorOveractive = has(data.nkt_scm, "overactive") || has(data.nkt_upper_trap, "overactive") || has(data.nkt_suboccip, "overactive");
+  setT("cpa_dnf_pattern", cpaDnfInhibited || cpaCompensatorOveractive);
 
   const objective: ObjectiveFindings = {
     rom, mmt, specialTests,
@@ -369,6 +417,12 @@ export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInp
   setT("lateral_shift", has(data.st_lateral_shift, "corrects easily", "corrects partially"));
   setT("reflex_change", anyReflexChange);
   setT("sensory_deficit", anySensoryDeficit);
+  // CPA (NKT core stability): TA/multifidus inhibition is the classic
+  // Richardson & Hodges finding in non-specific mechanical LBP, and also
+  // implicated in SIJ force-closure dysfunction. Own specialTests flag (not
+  // folded into mmt weak()) because it is a motor-control-pattern finding,
+  // not a myotomal/nerve-root strength test.
+  setT("cpa_core_inhibition", has(data.nkt_ta, "inhibited") || has(data.nkt_multifidus, "inhibited"));
   // (myotome weakness surfaces to findings.ts via the "mmt" entries above,
   // labelled "<LEVEL> myotome" — matching the cervical pattern exactly.)
 
@@ -461,6 +515,14 @@ export function normalizeHipFromData(data: Data): { subjective: SubjectiveInput;
     readMmt(data, "mmt_tfl", "Tensor Fasciae Latae (Flexion/Abduction/IR)"),
     readMmt(data, "mmt_adduc", "Hip Adductors (Adduction)"),
     readMmt(data, "mmt_hamstr", "Hamstrings (Hip Extension/Knee Flexion)"),
+    // STTT (Cyriax) + CPA (NKT) enrichment -- same muscle labels as readMmt() above
+    // so the existing weak()/painfulResist() checks in deriveHip pick these up
+    // automatically regardless of source.
+    readCyriax(data, "hip", "hip_r_abd", "Gluteus Medius (Abduction)"),
+    readCyriax(data, "hip", "hip_r_ext", "Gluteus Maximus (Extension)"),
+    readCyriax(data, "hip", "hip_r_add", "Hip Adductors (Adduction)"),
+    readCpaInhibited(data, "gmax", "Gluteus Maximus (Extension)"),
+    readCpaInhibited(data, "gmed", "Gluteus Medius (Abduction)"),
   ].filter((e): e is MmtEntry => e != null);
 
   const specialTests: Record<string, boolean> = {};
@@ -474,6 +536,10 @@ export function normalizeHipFromData(data: Data): { subjective: SubjectiveInput;
   setT("ober", isPos(data.st_ober_test));
   setT("piriformis", isPos(data.st_piriformis_test));
   setT("hamstring_90_90", has(data.st_90_90, "mild hamstring tightness", "moderate hamstring tightness", "severe hamstring tightness"));
+  // CPA (NKT): piriformis overactive OR inhibited is a direct motor-control
+  // marker of piriformis/deep gluteal dysfunction -- own flag (dysfunction can
+  // present as either state, unlike the weak()-only pathway used for gmax/gmed).
+  setT("cpa_piriformis_dysfunction", has(data.nkt_piriformis, "overactive", "inhibited"));
 
   const objective: ObjectiveFindings = {
     rom, mmt, specialTests,
@@ -569,7 +635,11 @@ export function normalizeKneeFromData(data: Data): { subjective: SubjectiveInput
 
   const mmt = [
     readMmt(data, "mmt_quad", "Quadriceps (Knee Extension)"),
+    readCyriax(data, "knee", "kn_r_ext", "Quadriceps (Knee Extension)"),
+    readCpaInhibited(data, "vmo", "Quadriceps (Knee Extension)"),
   ].filter((e): e is MmtEntry => e != null);
+
+  const kneeReflexChange = reflexAbnormal(data["n_ref_patella_left"]) || reflexAbnormal(data["n_ref_patella_right"]);
 
   const specialTests: Record<string, boolean> = {};
   const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
@@ -587,6 +657,8 @@ export function normalizeKneeFromData(data: Data): { subjective: SubjectiveInput
   setT("effusion", selected(data.st_effusion, "no effusion"));
   setT("noble", isPos(data.st_noble));
   setT("ober", isPos(data.st_ober_test));
+  setT("cpa_tfl_overactive", has(data.nkt_tfl, "overactive"));
+  setT("knee_reflex_change", kneeReflexChange);
 
   const objective: ObjectiveFindings = {
     rom, mmt, specialTests,
@@ -686,7 +758,19 @@ export function normalizeElbowFromData(data: Data): { subjective: SubjectiveInpu
     readMmt(data, "mmt_ecrb", "ECRL + ECRB (Resisted Wrist Extension)"),
     readMmt(data, "mmt_fcr", "Flexor Carpi Radialis (Resisted Wrist Flexion)"),
     readMmt(data, "mmt_fcu", "Flexor Carpi Ulnaris (Resisted Wrist Flexion)"),
+    readCyriax(data, "elbow", "el_r_ext", "Triceps Brachii (Extension)"),
+    readCyriax(data, "elbow", "el_r_flex", "Biceps Brachii (Flexion/Supination)"),
+    readCyriax(data, "elbow", "el_r_sup", "Supinator"),
+    readCyriax(data, "elbow", "el_r_pro", "Pronator Teres"),
+    readCyriax(data, "elbow", "el_r_wext", "ECRL + ECRB (Resisted Wrist Extension)"),
+    readCyriax(data, "elbow", "el_r_wflex", "Flexor Carpi Radialis (Resisted Wrist Flexion)"),
+    readCyriax(data, "elbow", "el_r_grip", "Grip Strength (Forearm Flexors)"),
+    readCpaInhibited(data, "biceps", "Biceps Brachii (Flexion/Supination)"),
+    readCpaInhibited(data, "triceps", "Triceps Brachii (Extension)"),
   ].filter((e): e is MmtEntry => e != null);
+
+  const elbowReflexChange = reflexAbnormal(data["n_ref_bicep_left"]) || reflexAbnormal(data["n_ref_bicep_right"])
+    || reflexAbnormal(data["n_ref_tricep_left"]) || reflexAbnormal(data["n_ref_tricep_right"]);
 
   const specialTests: Record<string, boolean> = {};
   const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
@@ -695,6 +779,8 @@ export function normalizeElbowFromData(data: Data): { subjective: SubjectiveInpu
   setT("golfers", isPos(data.st_golfers));
   setT("valgus_stress_elbow", isPos(data.st_valgus_stress_elbow));
   setT("tinel_elbow", isPos(data.st_tinel_elbow));
+  setT("cpa_pronator_dysfunction", has(data.nkt_pronator, "overactive"));
+  setT("elbow_reflex_change", elbowReflexChange);
 
   const objective: ObjectiveFindings = {
     rom, mmt, specialTests,
