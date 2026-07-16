@@ -28,6 +28,25 @@ const has = (v: unknown, ...keys: string[]): boolean => {
   const s = str(v).toLowerCase();
   return keys.some((k) => s.includes(k.toLowerCase()));
 };
+// Many multicheck red-flag/screening fields have NO literal "positive" option --
+// they list specific concerning findings as checkboxes and use one dedicated
+// negative option (e.g. "No cancer history", "No VBI signs"). isPos() (which
+// looks for the literal word "positive"/"yes"/"true") never matches these, so
+// treat "anything selected other than the stated negative option" as present.
+const selected = (v: unknown, negativeSubstring: string): boolean => {
+  const s = str(v);
+  return s !== "" && !has(s, negativeSubstring);
+};
+// Combines the coarse "Previous imaging" checklist (hx_imaging) with the free-text
+// findings field (hx_imaging_detail) -- the only real imaging fields in the app;
+// sh_imaging/cx_imaging/lx_imaging/imaging_summary do not exist.
+const readImaging = (data: Data): { performed: boolean; summary?: string } => {
+  const checklist = str(data.hx_imaging);
+  const detail = str(data.hx_imaging_detail);
+  const performed = selected(checklist, "none") || detail !== "";
+  if (!performed) return { performed: false };
+  return { performed: true, summary: [checklist, detail].filter(Boolean).join(" — ") };
+};
 
 // Read a ROM movement, choosing the more restricted side when bilateral.
 function readRom(data: Data, romId: string, label: string, normal: number, bilateral: boolean): RomEntry | null {
@@ -71,29 +90,36 @@ function readPalpation(data: Data): string[] {
 }
 
 // ── Shoulder ──────────────────────────────────────────────────────────────
+// NOTE: the app has no dedicated shoulder subjective-behaviour group -- unlike
+// cervical (cx_*) and lumbar (lx_*), there is no sh_night/sh_behaviour/sh_agg_*/
+// sh_onset/sh_imaging field anywhere in sharedClinicalData.js (verified). Those
+// were guessed in an earlier session and silently never matched anything.
+// Shoulder behavioural signals are only really captured in the free-text chief
+// complaint (cc_main) and the generic cc_quality/cc_onset/grf_* fields today,
+// so those are the only sources used below.
 export function normalizeFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
   const cc = str(data.cc_main).toLowerCase();
-  const behaviour = str(data.sh_behaviour ?? data.cx_behaviour ?? data.cc_pattern).toLowerCase();
-  const onset = str(data.cc_onset ?? data.sh_onset).toLowerCase();
+  const quality = str(data.cc_quality).toLowerCase();
+  const onset = str(data.cc_onset).toLowerCase();
   const age = num(data.dem_age);
 
   const subjective: SubjectiveInput = {
     region: "shoulder",
     chiefComplaint: str(data.cc_main),
     ageOver50: age != null && age >= 50,
-    nightPain: isPos(data.sh_night) || has(behaviour, "night"),
-    constantPain: has(behaviour, "constant"),
-    easesWithRest: has(behaviour, "rest", "ease"),
-    paresthesia: has(cc, "tingl", "numb", "pins") || isPos(data.sh_paresthesia),
+    nightPain: has(cc, "night"),
+    constantPain: has(cc, "constant"),
+    easesWithRest: has(cc, "rest", "ease"),
+    paresthesia: has(cc, "tingl", "numb", "pins") || has(quality, "tingling", "pins and needles", "numbness"),
     radiationBelowElbow: has(str(data.loc_radiation), "forearm", "hand", "below elbow", "finger"),
     onsetTraumatic: has(onset, "trauma", "fall", "injury", "sudden"),
     onsetInsidious: has(onset, "insidious", "gradual", "no injury"),
-    overheadAggravation: has(str(data.sh_agg_mov ?? data.sh_agg_act ?? data.cc_agg), "overhead", "reach", "lift", "above"),
-    progressiveStiffness: has(behaviour, "stiff", "progressive") || has(cc, "stiff"),
-    traumaHistory: isPos(data.grf_fracture) || has(onset, "major trauma"),
-    unexplainedWeightLoss: isPos(data.grf_cancer),
-    systemicIllness: isPos(data.grf_systemic),
-    malignancyHistory: isPos(data.grf_cancer),
+    overheadAggravation: has(cc, "overhead", "reach", "lift", "above"),
+    progressiveStiffness: has(cc, "stiff", "progressive"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(onset, "major trauma"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    systemicIllness: selected(data.grf_systemic, "systemically well"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history"),
   };
 
   const rom = [
@@ -123,12 +149,11 @@ export function normalizeFromData(data: Data): { subjective: SubjectiveInput; ob
   setT("relocation", isPos(data.st_relocation));
   setT("scarf", isPos(data.st_cross_arm) || isPos(data.st_acromioclavicular));
 
-  const imagingSummary = str(data.sh_imaging ?? data.imaging_summary);
   const objective: ObjectiveFindings = {
     rom, mmt, specialTests,
     palpation: { tenderStructures: readPalpation(data) },
     functional: { movements: [] },
-    imaging: imagingSummary ? { performed: true, summary: imagingSummary } : { performed: false },
+    imaging: readImaging(data),
   };
   return { subjective, objective, region: "shoulder" };
 }
@@ -147,45 +172,53 @@ const myotomeAbnormal = (v: unknown): boolean => { const s = str(v).trim(); retu
 const dermatomeAbnormal = (v: unknown): boolean => { const s = str(v).trim(); return s !== "" && !/normal/i.test(s); };
 const reflexAbnormal = (v: unknown): boolean => { const s = str(v).trim(); return s !== "" && /absent|diminish|hyper|brisk|clonus|^0|^1\+?|3\+|4\+/i.test(s); };
 
+// NOTE: cx_behaviour, cx_onset, cx_arm_pain, cx_headache, cx_unilateral_headache,
+// cx_stiffness, cx_gait, cx_umn, cx_vbi, cx_dizziness, cx_thunderclap and
+// cx_paresthesia do NOT exist anywhere in sharedClinicalData.js (verified) --
+// guessed in an earlier session and silently dead. Rewired below to the real
+// fields: cx_pattern, cx_moi, cx_arm_present, cx_ha_present, cx_ha_location,
+// cx_rf_myelopathy, cx_rf_vbi, cx_rf_other, cx_arm_quality.
 export function normalizeCervicalFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
   const cc = str(data.cc_main).toLowerCase();
-  const behaviour = str(data.cx_behaviour ?? data.cc_pattern).toLowerCase();
-  const onset = str(data.cc_onset ?? data.cx_onset).toLowerCase();
+  const pattern = str(data.cx_pattern).toLowerCase();
+  const onset = str(data.cc_onset ?? data.cx_moi).toLowerCase();
   const age = num(data.dem_age);
   const radiation = str(data.loc_radiation ?? data.cx_radiation).toLowerCase();
+  const armQuality = str(data.cx_arm_quality).toLowerCase();
 
-  const vbiPos = isPos(data.st_vbi) || isPos(data.cx_vbi) || isPos(data.cx_dizziness) || has(cc, "dizz");
+  const vbiPos = isPos(data.st_vbi) || selected(data.cx_rf_vbi, "no vbi signs") || has(cc, "dizz");
   const hoffmannPos = isPos(data.st_hoffmanns);
   const babinskiPos = isPos(data.st_babinski) || reflexAbnormal(data["n_ref_babinski_left"]) || reflexAbnormal(data["n_ref_babinski_right"]);
   const anyMyotomeWeak = CERVICAL_MYOTOMES.some((m) => myotomeAbnormal(data[`myo_${m}_left`]) || myotomeAbnormal(data[`myo_${m}_right`]));
   const anyReflexChange = CERVICAL_REFLEXES.some((r) => reflexAbnormal(data[`${r}_left`]) || reflexAbnormal(data[`${r}_right`]));
   const anySensoryDeficit = CERVICAL_DERMATOMES.some((d) => dermatomeAbnormal(data[`${d}_left`]) || dermatomeAbnormal(data[`${d}_right`]));
+  const myelopathyChecklistPositive = selected(data.cx_rf_myelopathy, "no myelopathy signs");
 
   const subjective: SubjectiveInput = {
     region: "cervical",
     chiefComplaint: str(data.cc_main),
     ageOver50: age != null && age >= 50,
-    nightPain: isPos(data.cx_night) || has(behaviour, "night"),
-    constantPain: has(behaviour, "constant"),
-    paresthesia: has(cc, "tingl", "numb", "pins") || has(radiation, "tingl", "numb") || isPos(data.cx_paresthesia) || anySensoryDeficit,
-    radiatingArmPain: has(radiation, "arm", "shoulder", "forearm", "hand") || isPos(data.cx_arm_pain),
-    dermatomalPattern: isPos(data.cx_dermatomal) || has(radiation, "dermatom") || anySensoryDeficit,
-    headacheFromNeck: has(cc, "headache") || isPos(data.cx_headache),
-    unilateralHeadache: isPos(data.cx_unilateral_headache) || has(str(data.cx_headache), "unilateral", "one side", "side-locked"),
-    neckStiffness: has(behaviour, "stiff") || has(cc, "stiff") || isPos(data.cx_stiffness),
-    extensionRotationAggravation: has(str(data.cx_agg_mov ?? data.cx_agg_post ?? data.cc_agg), "extension", "rotation", "looking up", "overhead"),
+    nightPain: isPos(data.cx_night) || has(pattern, "night"),
+    constantPain: has(pattern, "constant"),
+    paresthesia: has(cc, "tingl", "numb", "pins") || has(radiation, "tingl", "numb") || has(armQuality, "tingling", "pins and needles", "numbness") || anySensoryDeficit,
+    radiatingArmPain: has(radiation, "arm", "shoulder", "forearm", "hand") || has(str(data.cx_arm_present), "yes —"),
+    dermatomalPattern: selected(data.cx_dermatomal, "not dermatomal") || has(radiation, "dermatom") || anySensoryDeficit,
+    headacheFromNeck: has(cc, "headache") || has(str(data.cx_ha_present), "yes —"),
+    unilateralHeadache: has(str(data.cx_ha_location), "temporal (l)", "temporal (r)", "hemicranial"),
+    neckStiffness: has(pattern, "stiff") || has(cc, "stiff"),
+    extensionRotationAggravation: has(str(data.cx_agg_mov ?? data.cx_agg_post), "extension", "rotation", "looking up", "overhead"),
     onsetTraumatic: has(onset, "trauma", "whiplash", "rta", "accident", "fall", "sudden"),
     onsetInsidious: has(onset, "insidious", "gradual"),
-    gaitDisturbance: isPos(data.cx_gait) || has(str(data.cx_umn), "gait", "unsteady", "balance"),
+    gaitDisturbance: has(str(data.cx_rf_myelopathy), "gait disturbance", "unexplained falls"),
     dizzinessVBI: vbiPos,
     // red-flag sub-signals
-    myelopathySigns: isPos(data.cx_rf_myelopathy) || hoffmannPos || babinskiPos || isPos(data.cx_gait),
-    suddenSevereHeadacheOrNeckPain: isPos(data.cx_rf_vbi) || isPos(data.cx_thunderclap),
-    vertebrobasilarSigns: isPos(data.cx_rf_vbi) || vbiPos,
-    traumaHistory: isPos(data.grf_fracture) || has(onset, "major trauma"),
-    unexplainedWeightLoss: isPos(data.grf_cancer),
-    systemicIllness: isPos(data.grf_systemic),
-    malignancyHistory: isPos(data.grf_cancer),
+    myelopathySigns: myelopathyChecklistPositive || hoffmannPos || babinskiPos,
+    suddenSevereHeadacheOrNeckPain: has(str(data.cx_rf_vbi), "thunderclap") || has(str(data.cx_rf_other), "thunderclap"),
+    vertebrobasilarSigns: vbiPos,
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(onset, "major trauma"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    systemicIllness: selected(data.grf_systemic, "systemically well"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history"),
   };
 
   const rot = [readRom(data, "crotl", "Rotation", 60, false), readRom(data, "crotr", "Rotation", 60, false)]
@@ -216,13 +249,13 @@ export function normalizeCervicalFromData(data: Data): { subjective: SubjectiveI
   setT("rotation_lt_60", rotationLt60);
   setT("reflex_change", anyReflexChange);
   setT("sensory_deficit", anySensoryDeficit);
-  setT("ultt", isPos(data.st_ultt) || isPos(data.st_slump_test));
+  setT("ultt", isPos(data.st_slump_test)); // no dedicated ULTT test in the app yet
 
   const objective: ObjectiveFindings = {
     rom, mmt, specialTests,
     palpation: { tenderStructures: readPalpation(data) },
     functional: { movements: [] },
-    imaging: str(data.cx_imaging) ? { performed: true, summary: str(data.cx_imaging) } : { performed: false },
+    imaging: readImaging(data),
   };
   return { subjective, objective, region: "cervical" };
 }
@@ -242,7 +275,7 @@ const LUMBAR_REFLEXES = ["n_ref_patella", "n_ref_achilles"];
 
 export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
   const cc = str(data.cc_main).toLowerCase();
-  const behaviour = str(data.lx_pattern ?? data.cc_pattern).toLowerCase();
+  const behaviour = str(data.lx_pattern).toLowerCase(); // cc_pattern does not exist -- lx_pattern is the real field
   const onset = str(data.lx_moi ?? data.cc_onset).toLowerCase();
   const age = num(data.dem_age);
   const belowKnee = str(data.lx_below_knee).toLowerCase();
@@ -292,10 +325,10 @@ export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInp
     footDropReported: has(neuroSigns, "foot drop"),
     onsetTraumatic: has(onset, "fall", "motor vehicle accident", "trip"),
     onsetInsidious: has(onset, "no clear mechanism", "insidious", "sustained poor posture"),
-    traumaHistory: isPos(data.grf_fracture) || has(rfFracture, "major high-energy trauma") || has(onset, "fall", "motor vehicle accident"),
-    unexplainedWeightLoss: isPos(data.grf_cancer) || has(rfSerious, "unexplained weight loss"),
-    malignancyHistory: isPos(data.grf_cancer) || has(rfSerious, "history of cancer"),
-    systemicIllness: isPos(data.grf_systemic) || has(rfSerious, "fever", "systemically unwell"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(rfFracture, "major high-energy trauma") || has(onset, "fall", "motor vehicle accident"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss") || has(rfSerious, "unexplained weight loss"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rfSerious, "history of cancer"),
+    systemicIllness: selected(data.grf_systemic, "systemically well") || has(rfSerious, "fever", "systemically unwell"),
     fever: has(rfSerious, "fever"),
     // cauda equina red-flag sub-signals (generic fields consumed by redFlags.ts)
     saddleAnesthesia: has(rfCauda, "saddle") || has(dermatomal, "saddle") || has(neuroSigns, "saddle"),
@@ -339,12 +372,11 @@ export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInp
   // (myotome weakness surfaces to findings.ts via the "mmt" entries above,
   // labelled "<LEVEL> myotome" — matching the cervical pattern exactly.)
 
-  const imagingSummary = str(data.lx_imaging ?? data.imaging_summary);
   const objective: ObjectiveFindings = {
     rom, mmt, specialTests,
     palpation: { tenderStructures: readPalpation(data) },
     functional: { movements: [] },
-    imaging: imagingSummary ? { performed: true, summary: imagingSummary } : { performed: false },
+    imaging: readImaging(data),
   };
   return { subjective, objective, region: "lumbar" };
 }
