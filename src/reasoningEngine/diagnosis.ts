@@ -19,6 +19,7 @@ import kneeEvidence from "./regions/knee.evidence.json";
 import elbowEvidence from "./regions/elbow.evidence.json";
 import thoracicEvidence from "./regions/thoracic.evidence.json";
 import ankleEvidence from "./regions/ankle.evidence.json";
+import wristEvidence from "./regions/wrist.evidence.json";
 
 interface EvidenceConfig { region: string; diagnoses: EvidenceModel[]; }
 const CONFIGS: Record<string, EvidenceConfig> = {
@@ -30,6 +31,7 @@ const CONFIGS: Record<string, EvidenceConfig> = {
   elbow: elbowEvidence as EvidenceConfig,
   thoracic: thoracicEvidence as EvidenceConfig,
   ankle: ankleEvidence as EvidenceConfig,
+  wrist: wristEvidence as EvidenceConfig,
 };
 
 const DEFAULT_WEIGHT = 0.5;

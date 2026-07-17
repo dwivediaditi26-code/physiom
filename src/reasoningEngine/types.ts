@@ -200,6 +200,36 @@ export interface SubjectiveInput {
   ankleStressFractureSuspected?: boolean;
   anklePeronealSubluxationSuspected?: boolean;
 
+  // wrist/hand-relevant history signals
+  wristDorsalPainPattern?: boolean;
+  wristVolarPainPattern?: boolean;
+  wristRadialPainPattern?: boolean;
+  wristUlnarPainPattern?: boolean;
+  thumbCmcPainPattern?: boolean;
+  palmPainPattern?: boolean;
+  wristFooshMechanism?: boolean;
+  wristFooshDorsiflexionMechanism?: boolean;
+  wristDirectTraumaMechanism?: boolean;
+  wristRepetitiveGripOveruse?: boolean;
+  wristComputerOveruse?: boolean;
+  wristDeQuervainNewParentMechanism?: boolean;
+  wristGrippingAggravation?: boolean;
+  thumbExtensionAbductionAggravation?: boolean;
+  wristCompressionLoadingAggravation?: boolean;
+  medianNerveNightSymptoms?: boolean;
+  medianNerveFlickSignRelief?: boolean;
+  deQuervainFinkelsteinReportedPattern?: boolean;
+  triggerFingerPattern?: boolean;
+  wristSuspectedDistalRadiusFracture?: boolean;
+  wristSuspectedScaphoidFracture?: boolean;
+  wristSuspectedLunatePerilunateDislocation?: boolean;
+  wristTendonRuptureFlag?: boolean;
+  wristDupuytrensContracture?: boolean;
+  wristGanglionCyst?: boolean;
+  wristBilateralCtsScreen?: boolean;
+  wristCrpsFeatures?: boolean;
+  wristRaynaudsFeatures?: boolean;
+
   symptomDurationDays?: number | null;
 }
 

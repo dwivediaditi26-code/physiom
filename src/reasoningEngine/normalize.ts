@@ -1027,6 +1027,128 @@ export function runAnkleReasoningFromData(data: Data): ReasoningResult {
   return runReasoning(subjective, objective, region);
 }
 
+// ── Wrist ─────────────────────────────────────────────────────────────────
+// Wrist shares its subjective module with elbow (ew_* fields, verified in
+// sharedClinicalData.js under "Elbow/Wrist"). Filtered to wrist/hand-specific
+// option text only, same methodology as elbow's own ew_* filtering.
+export function normalizeWristFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.ew_loc).toLowerCase();
+  const radiation = str(data.ew_radiation).toLowerCase();
+  const moi = str(data.ew_moi ?? data.cc_onset).toLowerCase();
+  const aggMov = str(data.ew_agg_mov).toLowerCase();
+  const aggAct = str(data.ew_agg_act).toLowerCase();
+  const pattern = str(data.ew_pattern).toLowerCase();
+  const neuro = str(data.ew_neuro).toLowerCase();
+  const rf = str(data.ew_rf).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "wrist",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    nightPain: has(pattern, "night dominant"),
+    constantPain: has(pattern, "constant"),
+    progressiveStiffness: has(pattern, "morning stiffness"),
+    onsetTraumatic: has(moi, "foosh", "direct trauma — wrist"),
+    onsetInsidious: has(moi, "insidious"),
+    paresthesia: has(neuro, "median nerve", "ulnar nerve", "radial nerve"),
+    ulnarNerveDistributionSymptoms: has(neuro, "ulnar nerve — little and ring"),
+    radialNerveDistributionSymptoms: has(neuro, "radial nerve — dorsum hand"),
+    resistedWristExtensionPain: has(aggMov, "wrist extension (resisted)"),
+    resistedWristFlexionPain: has(aggMov, "wrist flexion (resisted)"),
+    wristDorsalPainPattern: has(loc, "wrist — dorsal"),
+    wristVolarPainPattern: has(loc, "wrist — volar"),
+    wristRadialPainPattern: has(loc, "wrist — radial border"),
+    wristUlnarPainPattern: has(loc, "wrist — ulnar border"),
+    thumbCmcPainPattern: has(loc, "thumb cmc joint"),
+    palmPainPattern: has(loc, "palm — thenar", "palm — hypothenar"),
+    wristFooshMechanism: has(moi, "foosh — fall onto outstretched hand"),
+    wristFooshDorsiflexionMechanism: has(moi, "foosh — wrist dorsiflexion impact"),
+    wristDirectTraumaMechanism: has(moi, "direct trauma — wrist / hand"),
+    wristRepetitiveGripOveruse: has(moi, "repetitive gripping", "computer / keyboard / mouse overuse"),
+    wristComputerOveruse: has(moi, "computer / keyboard / mouse overuse"),
+    wristDeQuervainNewParentMechanism: has(moi, "new baby / childcare"),
+    wristGrippingAggravation: has(aggMov, "gripping"),
+    thumbExtensionAbductionAggravation: has(aggMov, "thumb extension / abduction"),
+    wristCompressionLoadingAggravation: has(aggMov, "wrist compression / loading"),
+    medianNerveNightSymptoms: has(neuro, "median nerve — thumb / index / middle waking at night"),
+    medianNerveFlickSignRelief: has(neuro, "median nerve — improves with shaking hand"),
+    deQuervainFinkelsteinReportedPattern: has(neuro, "de quervain's — thumb base pain"),
+    triggerFingerPattern: has(neuro, "trigger finger"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "foosh", "direct trauma — wrist"),
+    wristSuspectedDistalRadiusFracture: has(rf, "suspected distal radius fracture"),
+    wristSuspectedScaphoidFracture: has(rf, "suspected scaphoid"),
+    wristSuspectedLunatePerilunateDislocation: has(rf, "suspected lunate"),
+    wristTendonRuptureFlag: has(rf, "rupture extensor / flexor tendons"),
+    wristDupuytrensContracture: has(rf, "dupuytren's"),
+    wristGanglionCyst: has(rf, "ganglion cyst"),
+    wristBilateralCtsScreen: has(rf, "bilateral carpal tunnel"),
+    wristCrpsFeatures: has(rf, "reflex sympathetic dystrophy", "crps"),
+    wristRaynaudsFeatures: has(rf, "raynaud's"),
+    hotSwollenJoint: has(rf, "acute septic arthritis"),
+    vascularCompromiseSigns: has(rf, "acute compartment syndrome"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    systemicIllness: selected(data.grf_systemic, "systemically well") || has(rf, "constitutional symptoms"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rf, "cancer history"),
+    nightPainUnrelieved: has(rf, "constant progressive pain"),
+  };
+
+  const rom = [
+    readRom(data, "wflex", "Wrist Flexion", 80, true),
+    readRom(data, "wext", "Wrist Extension", 70, true),
+    readRom(data, "wrad", "Radial Deviation", 20, true),
+    readRom(data, "wuln", "Ulnar Deviation", 30, true),
+  ].filter((e): e is RomEntry => e != null);
+
+  const mmt = [
+    readMmt(data, "mmt_ecrb", "Wrist Extensors (ECRL/ECRB)"),
+    readMmt(data, "mmt_ecul", "Wrist Extensors (ECU)"),
+    readMmt(data, "mmt_fcr", "Wrist Flexors (FCR)"),
+    readMmt(data, "mmt_fcu", "Wrist Flexors (FCU)"),
+    // Cyriax STTT resisted tests, region key "wrist_hand" (verified in
+    // CYRIAX_REGIONS_DATA). Combined muscle-group labels ("Wrist Extensors"/
+    // "Wrist Flexors") match the readMmt() labels above via substring so
+    // weak()/painfulResist() checks in findings.ts pick up either source.
+    readCyriax(data, "wrist_hand", "wr_r_ext", "Wrist Extensors (ECRL/ECRB/ECU)"),
+    readCyriax(data, "wrist_hand", "wr_r_flex", "Wrist Flexors (FCR/FCU)"),
+    // No dedicated MMT_DATA entries exist for EPL/EPB/APL (thumb extensor/
+    // abductor) -- read via Cyriax resisted tests only.
+    readCyriax(data, "wrist_hand", "wr_r_thumb_ext", "Thumb Extensors (EPL/EPB)"),
+    readCyriax(data, "wrist_hand", "wr_r_thumb_abd", "Thumb Abductor (APL)"),
+    // CPA: nkt_wrist_ext's abnormal state is "Inhibited -- lateral
+    // epicondylalgia" (verified) so it folds in here as wrist extensor
+    // strength information. nkt_wrist_flex/nkt_grip use "Overactive"/
+    // "Inhibited -- neurological" wording instead -- read separately below.
+    readCpaInhibited(data, "wrist_ext", "Wrist Extensors (ECRL/ECRB)"),
+  ].filter((e): e is MmtEntry => e != null);
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("phalen_positive", isPos(data.st_phalen));
+  setT("tinel_wrist_positive", isPos(data.st_tinel_wrist));
+  setT("finkelstein_positive", isPos(data.st_finkelstein));
+  setT("watson_positive", isPos(data.st_watson));
+  setT("grind_positive", isPos(data.st_grind));
+  setT("cpa_wrist_extensors_inhibited", has(data.nkt_wrist_ext, "inhibited"));
+  // nkt_grip's "Inhibited -- neurological cause" option text explicitly names
+  // carpal/cubital tunnel (verified) -- read directly as a CTS-supportive flag.
+  setT("cpa_grip_neuro_inhibited", has(data.nkt_grip, "inhibited — neurological"));
+
+  const objective: ObjectiveFindings = {
+    rom, mmt, specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "wrist" };
+}
+
+export function runWristReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeWristFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
   if (region === "lumbar") return runLumbarReasoningFromData(data);
@@ -1035,5 +1157,6 @@ export function runReasoningFromData(data: Data, region: string): ReasoningResul
   if (region === "elbow") return runElbowReasoningFromData(data);
   if (region === "thoracic") return runThoracicReasoningFromData(data);
   if (region === "ankle") return runAnkleReasoningFromData(data);
+  if (region === "wrist") return runWristReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }

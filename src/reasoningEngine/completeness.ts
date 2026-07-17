@@ -79,6 +79,14 @@ const CONFIGS: Record<string, RegionCompletenessConfig> = {
       { exam: "Resisted testing (dorsiflexion, plantarflexion, inversion, eversion)", domain: "mmt", why: "Contractile testing is required to implicate or clear tibialis anterior/posterior, gastroc-soleus, and peroneals." },
     ],
   },
+  wrist: {
+    expectedDomains: ["history", "painBehaviour", "rom", "mmt", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Fracture/trauma screen", domain: "history", why: "A FOOSH or direct trauma mechanism requires excluding a fracture or dislocation before further provocative testing." },
+      { exam: "Neurological screen (Phalen's, Tinel's at wrist)", domain: "specialTests", why: "Required to confirm or exclude carpal tunnel syndrome, the most common wrist neuropathy." },
+      { exam: "Resisted testing (wrist extension, wrist flexion, thumb extension/abduction)", domain: "mmt", why: "Contractile testing is required to implicate or clear wrist extensors/flexors and the thumb De Quervain's complex." },
+    ],
+  },
 };
 
 function domainsWithData(findings: Finding[], objective: ObjectiveFindings): Domain[] {

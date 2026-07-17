@@ -1,0 +1,114 @@
+{
+  "region": "wrist",
+  "always": [
+    {
+      "exam": "Fracture/trauma screen (deformity, bony tenderness, ability to move fingers) before further testing if any trauma mechanism",
+      "why": "A FOOSH or direct trauma mechanism requires excluding a fracture (distal radius, scaphoid) or dislocation before proceeding with provocative special tests.",
+      "confirmsOrExcludes": "Screens for occult fracture/dislocation requiring imaging referral",
+      "priority": "High"
+    },
+    {
+      "exam": "Active + passive wrist ROM (flexion, extension, radial deviation, ulnar deviation) with end-feel",
+      "why": "Establishes the mobility baseline and end-feel pattern that differentiates capsular/OA restriction from soft-tissue/ligamentous presentations.",
+      "confirmsOrExcludes": "Screens mechanical restriction pattern",
+      "priority": "High"
+    },
+    {
+      "exam": "Neurological screen (median/ulnar/radial nerve distribution, Phalen's, Tinel's at wrist)",
+      "why": "Neurological symptoms are common at the wrist/hand and a structured screen differentiates carpal tunnel syndrome from cervical referral or other nerve entrapment.",
+      "confirmsOrExcludes": "Screens carpal tunnel syndrome vs other neurological sources",
+      "priority": "High"
+    }
+  ],
+  "conditional": [
+    {
+      "when": { "flag": "wristRadialPainPattern", "equals": true },
+      "add": {
+        "exam": "Finkelstein's test + 1st dorsal compartment palpation",
+        "why": "Radial-sided wrist pain is the classic presentation of De Quervain's tenosynovitis and requires this specific confirmatory test.",
+        "confirmsOrExcludes": "Confirms/excludes De Quervain's tenosynovitis",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "wristUlnarPainPattern", "equals": true },
+      "add": {
+        "exam": "TFCC stress test + ECU synergy test + ulnar-sided palpation",
+        "why": "Ulnar-sided wrist pain has a distinct differential (TFCC tear vs ECU tendinopathy/instability) that requires dedicated testing to separate.",
+        "confirmsOrExcludes": "Differentiates TFCC tear from ECU tendinopathy/instability",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": { "flag": "wristFooshMechanism", "equals": true },
+      "add": {
+        "exam": "Anatomical snuffbox palpation + Watson scaphoid shift test",
+        "why": "A FOOSH mechanism requires screening for scaphoid fracture (easily missed and high false-negative rate on initial x-ray) and scapholunate ligament instability.",
+        "confirmsOrExcludes": "Confirms/excludes scaphoid fracture and scapholunate instability",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "wristSuspectedDistalRadiusFracture", "equals": true },
+      "add": {
+        "exam": "Deformity/swelling observation and urgent imaging referral before any further provocative testing",
+        "why": "A suspected distal radius fracture must be confirmed or excluded before any loading or manual testing is attempted.",
+        "confirmsOrExcludes": "Confirms/excludes distal radius fracture",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "thumbCmcPainPattern", "equals": true },
+      "add": {
+        "exam": "Grind test + 1st CMC joint palpation",
+        "why": "Thumb base pain in an appropriate age group is the classic presentation of 1st CMC osteoarthritis and requires this specific confirmatory test.",
+        "confirmsOrExcludes": "Confirms/excludes 1st CMC osteoarthritis",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": { "flag": "triggerFingerPattern", "equals": true },
+      "add": {
+        "exam": "Palpation for flexor tendon nodule/catching at the A1 pulley with active finger flexion/extension",
+        "why": "A catching/locking digit pattern needs direct confirmation of a flexor tendon nodule to distinguish trigger finger from other hand pathology.",
+        "confirmsOrExcludes": "Confirms/excludes trigger finger",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": { "flag": "wristBilateralCtsScreen", "equals": true },
+      "add": {
+        "exam": "Bilateral neurological screen + systemic/metabolic history review (thyroid, diabetes, pregnancy, rheumatoid arthritis)",
+        "why": "Bilateral carpal tunnel symptoms raise suspicion for a systemic contributing cause that should be screened rather than treated as a purely local mechanical problem.",
+        "confirmsOrExcludes": "Screens for a systemic cause of bilateral carpal tunnel syndrome",
+        "priority": "Medium"
+      }
+    }
+  ],
+  "supporting": [
+    {
+      "exam": "Resisted testing (wrist extension, wrist flexion, thumb extension/abduction, finger flexion/extension) for strength and pain-on-resist",
+      "why": "Differentiates contractile (tendon/muscle) sources from inert (ligament/capsule) sources per Cyriax selective tissue tension principles.",
+      "confirmsOrExcludes": "Localises contractile vs inert tissue involvement",
+      "priority": "Medium"
+    },
+    {
+      "exam": "Grip strength measurement (dynamometer) and intrinsic vs extrinsic hand muscle screen",
+      "why": "Quantifies functional strength baseline and helps differentiate neurological weakness from disuse or local tendon pathology.",
+      "confirmsOrExcludes": "Baseline grip strength and intrinsic/extrinsic balance",
+      "priority": "Low"
+    },
+    {
+      "exam": "Functional + outcome measure (DASH/Quick-DASH or PRWE, PSFS top 3 activities)",
+      "why": "Quantifies baseline wrist/hand-related disability for goal-setting and re-assessment.",
+      "confirmsOrExcludes": "Baseline functional severity",
+      "priority": "Medium"
+    },
+    {
+      "exam": "Imaging (only if fracture suspected, red flag present, or failed conservative management)",
+      "why": "Imaging is not routine for straightforward soft-tissue wrist/hand overuse presentations; reserve for fracture screening or non-resolving presentations.",
+      "confirmsOrExcludes": "Confirms structural pathology when clinically indicated",
+      "priority": "Low"
+    }
+  ]
+}

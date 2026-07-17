@@ -393,6 +393,63 @@ export function buildInterpretation(
       suggestedGoals.push("Restore pain-free functional dorsiflexion (squatting, stairs)");
       homeAdvice.push("Avoid repeated end-range dorsiflexion loading until mobility improves");
     }
+  } else if (region === "wrist") {
+    if (has("wrist_flexion_loss")) primaryImpairments.push("Restricted wrist flexion");
+    if (has("wrist_extension_loss")) primaryImpairments.push("Restricted wrist extension");
+    if (has("wrist_extensors_weak_or_painful")) primaryImpairments.push("Wrist extensor weakness/pain");
+    if (has("wrist_flexors_weak_or_painful")) primaryImpairments.push("Wrist flexor weakness/pain");
+    if (has("phalen_positive") || has("tinel_wrist_positive")) likelyPainGenerators.push("Median nerve (carpal tunnel)");
+    if (has("finkelstein_positive")) likelyPainGenerators.push("1st dorsal compartment (APL/EPB -- De Quervain's)");
+    if (has("watson_positive")) likelyPainGenerators.push("Scapholunate ligament");
+    if (has("grind_positive")) likelyPainGenerators.push("1st CMC joint (thumb base)");
+    if (has("ecu_tender")) likelyPainGenerators.push("Extensor carpi ulnaris tendon");
+    if (has("wrist_gripping_aggravation")) movementDysfunction.push("Gripping reproduces symptoms");
+    if (has("thumb_extension_abduction_aggravation")) movementDysfunction.push("Thumb extension/abduction reproduces symptoms");
+    if (has("wrist_compression_loading_aggravation")) movementDysfunction.push("Wrist compression/axial loading reproduces symptoms");
+    if (has("median_nerve_night_symptoms")) functionalLimitations.push("Sleep disturbance from night-time hand symptoms");
+    if (has("wrist_gripping_aggravation")) functionalLimitations.push("Difficulty with gripping/carrying tasks");
+
+    if (name.includes("Carpal tunnel syndrome")) {
+      treatmentPriorities.push("Neural mobility work within comfort", "Night splinting in neutral", "Ergonomic/workstation review and activity modification");
+      suggestedGoals.push("Resolve night-time median nerve symptoms and restore pain-free grip");
+      homeAdvice.push("Wear a neutral wrist splint at night; avoid sustained wrist flexion/extension postures");
+    } else if (name.includes("De Quervain's")) {
+      treatmentPriorities.push("Thumb spica splinting", "Activity modification away from repetitive thumb/wrist ulnar deviation", "Progressive loading once acute irritability settles");
+      suggestedGoals.push("Restore pain-free thumb extension/abduction and grip");
+      homeAdvice.push("Avoid repetitive lifting with the thumb extended (e.g. lifting a baby under the arms); consider a thumb spica splint");
+    } else if (name.includes("TFCC tear")) {
+      treatmentPriorities.push("Activity modification away from axial loading/ulnar deviation", "Progressive loading and grip strengthening once settling", "Orthopaedic/imaging referral if not improving with conservative care");
+      suggestedGoals.push("Restore pain-free weight-bearing through the wrist (push-up, plank positions) and grip");
+      homeAdvice.push("Avoid weight-bearing through an extended wrist and forceful gripping with rotation until settling");
+    } else if (name.includes("Scapholunate")) {
+      treatmentPriorities.push("Orthopaedic referral to confirm ligament integrity", "Activity modification away from loaded wrist extension", "Bracing as advised pending specialist review");
+      suggestedGoals.push("Confirm diagnosis and follow the appropriate management pathway (conservative vs surgical)");
+      homeAdvice.push("Avoid loaded weight-bearing through the wrist until reviewed");
+    } else if (name.includes("Wrist osteoarthritis")) {
+      treatmentPriorities.push("Joint mobilisation within tolerance", "Grip and forearm strengthening", "Splinting/bracing for aggravating activities");
+      suggestedGoals.push("Improve functional wrist range and reduce activity-related pain");
+      homeAdvice.push("Regular gentle mobility exercise; supportive splint for aggravating/high-load tasks");
+    } else if (name.includes("Distal radius fracture")) {
+      treatmentPriorities.push("Urgent imaging referral before any further loading or manual testing", "Immobilisation per medical guidance", "Staged rehabilitation only once medically cleared");
+      suggestedGoals.push("Confirm diagnosis urgently and follow the appropriate fracture management pathway");
+      homeAdvice.push("Avoid weight-bearing and further testing on the wrist; seek urgent medical assessment");
+    } else if (name.includes("Scaphoid fracture")) {
+      treatmentPriorities.push("Urgent imaging referral (and repeat imaging if initial films are negative but clinically suspected)", "Immobilisation/splinting per medical guidance pending confirmation", "Avoid loaded testing until fracture is excluded");
+      suggestedGoals.push("Confirm or exclude scaphoid fracture given its high non-union risk if missed");
+      homeAdvice.push("Avoid weight-bearing and gripping on the wrist; seek urgent medical assessment given the risk of avascular necrosis if missed");
+    } else if (name.includes("1st CMC osteoarthritis")) {
+      treatmentPriorities.push("Thumb spica splinting for aggravating activities", "Joint protection education and grip technique modification", "Progressive thumb/hand strengthening within tolerance");
+      suggestedGoals.push("Reduce thumb base pain and improve pinch/grip tolerance for daily tasks");
+      homeAdvice.push("Modify pinch-grip tasks (jar opening, writing) and consider a thumb spica splint for flare-ups");
+    } else if (name.includes("ECU tendinopathy")) {
+      treatmentPriorities.push("Progressive loading programme for ECU", "Activity/technique modification (grip, racquet/bat technique if relevant)", "Bracing in slight extension/radial deviation during aggravating activity if needed");
+      suggestedGoals.push("Restore pain-free resisted wrist extension in ulnar deviation");
+      homeAdvice.push("Gradual return to loading as tolerated; avoid abrupt training-load spikes");
+    } else if (name.includes("Trigger finger")) {
+      treatmentPriorities.push("Activity modification away from repetitive gripping", "Splinting the affected digit if catching is significant", "Referral for corticosteroid injection or surgical opinion if not resolving conservatively");
+      suggestedGoals.push("Resolve catching/locking and restore smooth pain-free finger flexion/extension");
+      homeAdvice.push("Avoid repetitive gripping tasks that provoke catching; gentle active range of motion within comfort");
+    }
   }
 
   const yellowFlags: string[] = [];
@@ -441,6 +498,12 @@ export function buildInterpretation(
     referralRecommendation = "Suspected complete ligament rupture flagged on intake — consider orthopaedic/imaging referral before progressing loaded rehabilitation.";
   } else if (region === "ankle" && subjective.ankleStressFractureSuspected) {
     referralRecommendation = "Stress fracture suspected — consider imaging referral before continuing loaded activity.";
+  } else if (region === "wrist" && (subjective.wristSuspectedDistalRadiusFracture || subjective.wristSuspectedScaphoidFracture || subjective.wristSuspectedLunatePerilunateDislocation)) {
+    referralRecommendation = "Suspected fracture/dislocation flagged on intake — urgent imaging referral before progressing loaded rehabilitation.";
+  } else if (region === "wrist" && subjective.wristTendonRuptureFlag) {
+    referralRecommendation = "Suspected extensor/flexor tendon rupture — urgent orthopaedic/hand surgery referral.";
+  } else if (region === "wrist" && subjective.wristCrpsFeatures) {
+    referralRecommendation = "Features suggestive of CRPS/reflex sympathetic dystrophy — consider prompt specialist referral, as early management improves outcomes.";
   }
 
   const cap = (r: string) => r.charAt(0).toUpperCase() + r.slice(1);

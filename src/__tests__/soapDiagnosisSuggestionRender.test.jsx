@@ -116,11 +116,20 @@ describe("SOAP Notes Assessment tab -- diagnosis suggestion engine, rendered", (
     expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
   });
 
-  it("still shows the OLDER suggestion panel for a region the new engine doesn't cover yet (wrist), confirming the gate is per-region not global", () => {
+  it("still shows the OLDER suggestion panel before any objective ROM data exists, confirming the gate is per-region not an unconditional hide", () => {
+    // All 9 regions the app supports are now covered by the deterministic
+    // engine, so there is no longer a specific still-uncovered region to use
+    // here. The gate itself (detectRegionForOldEngine) works off real ROM_DATA
+    // field presence, not chief-complaint text -- so with a chief complaint
+    // typed but zero rom_* fields recorded yet, detectRegionForOldEngine(data)
+    // resolves to null (outside NEW_ENGINE_REGIONS) and the older panel still
+    // shows, even though its OWN internal regionScreen.js separately manages
+    // to identify "shoulder" from the chief-complaint text alone and produce
+    // a real candidate. This is the genuine remaining case where the gate
+    // must not hide the panel: before objective data exists for any region.
     const data = {
       dem_name: "Test Patient", dem_age: "30",
-      cc_main: "Wrist pain after a fall onto an outstretched hand",
-      rom_wflex_R_arom: "40", rom_wflex_R_prom: "45",
+      cc_main: "Shoulder pain, gradual onset, worse overhead",
     };
     render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
     expect(screen.getByText("💡 Suggested Clinical Diagnoses")).toBeTruthy();
