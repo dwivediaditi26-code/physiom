@@ -28,6 +28,38 @@ const has = (v: unknown, ...keys: string[]): boolean => {
   const s = str(v).toLowerCase();
   return keys.some((k) => s.includes(k.toLowerCase()));
 };
+// Negation-safe substring match for FREE-TEXT fields only. has() is safe
+// against controlled dropdown/checkbox option text (those never contain a
+// self-negating phrase), but a plain free-text field is vulnerable to normal
+// clinical documentation like "no night pain" / "denies numbness" / "not
+// constant" -- has() would match the very word it's negating and flip a
+// signal true when the clinician wrote the opposite. Shoulder is the region
+// most exposed to this (its subjective behavioural signals come from cc_main
+// free text rather than a dedicated structured module like every other
+// region has), so this exists for shoulder's use; scans every occurrence of
+// each key and checks a short window immediately before it for a common
+// negation word.
+const hasUnnegated = (v: unknown, ...keys: string[]): boolean => {
+  const s = str(v).toLowerCase();
+  const negators = ["no ", "not ", "denies ", "denying ", "without ", "absence of ", "negative for ", "doesn't ", "does not ", "didn't ", "did not ", "never "];
+  // Split on strong clause boundaries only -- commas/and/or are deliberately
+  // NOT split points, because clinicians commonly list several negated items
+  // under one shared negator ("denies fall or injury", "no trauma, fracture,
+  // or dislocation"): a negator anywhere earlier in the same clause negates
+  // every key that follows it in that clause. "but"/"however"/"though" DO
+  // split, so a contrastive re-assertion after an earlier negation ("no
+  // numbness, but definite trauma from a fall") is correctly read as positive.
+  const clauses = s.split(/[.;]| but | however | though /);
+  return keys.some((key) => {
+    const k = key.toLowerCase();
+    return clauses.some((clause) => {
+      const idx = clause.indexOf(k);
+      if (idx === -1) return false;
+      const before = clause.slice(0, idx);
+      return !negators.some((n) => before.includes(n));
+    });
+  });
+};
 // Many multicheck red-flag/screening fields have NO literal "positive" option --
 // they list specific concerning findings as checkboxes and use one dedicated
 // negative option (e.g. "No cancer history", "No VBI signs"). isPos() (which
@@ -132,24 +164,80 @@ export function normalizeFromData(data: Data): { subjective: SubjectiveInput; ob
   const quality = str(data.cc_quality).toLowerCase();
   const onset = str(data.cc_onset).toLowerCase();
   const age = num(data.dem_age);
+  // shl_rf/shr_rf: shoulder's OWN dedicated red-flag checklist (fracture,
+  // dislocation, malignancy-pattern night pain, septic joint, vascular
+  // compromise, cancer history). Real fields, confirmed in sharedClinicalData.js
+  // -- but never read anywhere before this fix, so none of it ever reached the
+  // red-flag screen no matter what a clinician checked.
+  const shRf = [str(data.shl_rf), str(data.shr_rf)].join(" | ").toLowerCase();
+  // shl_radiation/shr_radiation: the REAL radiation fields. The engine used to
+  // read a field called "loc_radiation", which does not exist anywhere in
+  // sharedClinicalData.js (confirmed) -- radiationBelowElbow could never be
+  // true for shoulder, silently weakening the cervical-referral exclusion
+  // differential a second way (on top of the Spurling's gap fixed separately).
+  const shRadiation = [str(data.shl_radiation), str(data.shr_radiation)].join(" | ").toLowerCase();
 
   const subjective: SubjectiveInput = {
     region: "shoulder",
     chiefComplaint: str(data.cc_main),
     ageOver50: age != null && age >= 50,
-    nightPain: has(cc, "night"),
-    constantPain: has(cc, "constant"),
-    easesWithRest: has(cc, "rest", "ease"),
-    paresthesia: has(cc, "tingl", "numb", "pins") || has(quality, "tingling", "pins and needles", "numbness"),
-    radiationBelowElbow: has(str(data.loc_radiation), "forearm", "hand", "below elbow", "finger"),
-    onsetTraumatic: has(onset, "trauma", "fall", "injury", "sudden"),
+    // Bug fix: plain has() against free text is vulnerable to ordinary
+    // clinical negation ("no night pain", "denies numbness", "not constant",
+    // "insidious onset, no injury") -- the negated word is a substring of
+    // itself, so has() was reading denials as confirmations. hasUnnegated()
+    // guards against this; see its definition above. Shoulder is the one
+    // region exposed to this because it has no dedicated structured
+    // behavioural module and reads cc_main free text directly (every other
+    // region uses controlled dropdown/checkbox option text, which can't
+    // self-negate).
+    nightPain: hasUnnegated(cc, "night"),
+    constantPain: hasUnnegated(cc, "constant"),
+    easesWithRest: hasUnnegated(cc, "rest", "ease"),
+    paresthesia: hasUnnegated(cc, "tingl", "numb", "pins") || has(quality, "tingling", "pins and needles", "numbness"),
+    radiationBelowElbow: has(shRadiation, "down to hand", "concerning"),
+    onsetTraumatic: hasUnnegated(onset, "trauma", "fall", "injury", "sudden"),
     onsetInsidious: has(onset, "insidious", "gradual", "no injury"),
-    overheadAggravation: has(cc, "overhead", "reach", "lift", "above"),
-    progressiveStiffness: has(cc, "stiff", "progressive"),
-    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(onset, "major trauma"),
+    overheadAggravation: hasUnnegated(cc, "overhead", "reach", "lift", "above"),
+    progressiveStiffness: hasUnnegated(cc, "stiff", "progressive"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(onset, "major trauma") || has(shRf, "suspected fracture", "dislocation"),
     unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
     systemicIllness: selected(data.grf_systemic, "systemically well"),
-    malignancyHistory: selected(data.grf_cancer, "no cancer history"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(shRf, "cancer history", "mass"),
+    // Red-flag sub-signals below were ALL previously unset for shoulder --
+    // each one gated an entire redFlags.ts rule permanently unreachable from a
+    // shoulder assessment, silently, with no error (missing field = not
+    // triggered, by design -- which is exactly why this was invisible without
+    // deliberately testing for it).
+    //
+    // nightPainUnrelieved: shoulder's own field has a purpose-built option for
+    // this exact malignancy-pattern signal ("Pain at rest and night --
+    // progressive (malignancy flag)").
+    nightPainUnrelieved: has(shRf, "pain at rest and night", "malignancy flag"),
+    // unableToWeightBear: named for the lower-limb rule wording, but the
+    // "fracture" red flag only checks traumaHistory && unableToWeightBear as a
+    // boolean pair meaning "significant trauma + can't use the limb" -- a
+    // clinician explicitly flagging "Suspected fracture"/"dislocation" IS that
+    // signal for an upper limb. Reusing the field (rather than adding a new
+    // one) keeps this a one-region fix; a cleaner long-term name like
+    // unableToLoadLimb would need a shared-type change affecting all regions.
+    unableToWeightBear: has(shRf, "suspected fracture", "dislocation"),
+    hotSwollenJoint: has(shRf, "septic joint"),
+    vascularCompromiseSigns: has(shRf, "vascular compromise"),
+    irreducibleLocking: has(shRf, "dislocation"),
+    // Cross-region reads: the app is one flat data record per patient, not
+    // siloed per body-region tab, so a thorough clinician assessing shoulder
+    // pain who ALSO screens for neck (cx_rf_myelopathy) or chest/visceral
+    // (tx_rf/tx_radiation) red flags -- both textbook "shoulder pain that
+    // isn't shoulder pain" teaching scenarios (cervical myelopathy can present
+    // as arm pain + hand clumsiness; cardiac ischaemia and Pancoast tumours
+    // are classic causes of shoulder pain) -- should have that safety net
+    // apply regardless of which tab they filled it in on. Mirrors the exact
+    // fields/logic cervical's and thoracic's own normalizers already use.
+    myelopathySigns: selected(data.cx_rf_myelopathy, "no myelopathy signs"),
+    thoracicCardiacSymptoms: has(str(data.tx_rf), "cardiac symptoms"),
+    thoracicCardiacLikeRadiation: has(str(data.tx_radiation), "cardiac-like radiation") || has(shRadiation, "anterior chest"),
+    thoracicRespiratorySymptoms: has(str(data.tx_rf), "respiratory symptoms"),
+    thoracicAbdominalSymptoms: has(str(data.tx_rf), "abdominal symptoms"),
   };
 
   const rom = [
@@ -187,6 +275,23 @@ export function normalizeFromData(data: Data): { subjective: SubjectiveInput; ob
   setT("apprehension", isPos(data.st_apprehension));
   setT("relocation", isPos(data.st_relocation));
   setT("scarf", isPos(data.st_cross_arm) || isPos(data.st_acromioclavicular));
+  // Bug fix: painful arc (one of the most classic impingement signs, and part
+  // of the cited Park/Hawkins/Neer cluster this diagnosis model relies on) was
+  // never read for shoulder even though the app collects it via a dedicated
+  // select (shl_arc/shr_arc) AND as a checkbox option inside the aggravating-
+  // movements multicheck (shl_agg_mov/shr_agg_mov). Real option text: "60-120
+  // abduction (subacromial / impingement pattern)" (select) or "Painful arc -
+  // 60 to 120 degrees abduction" (checkbox) -- "60" is unambiguous against the
+  // other options (No painful arc / Above 120 / Throughout range / Only at
+  // beginning / Only at end), so match on that.
+  const painfulArcText = [data.shl_arc, data.shr_arc, data.shl_agg_mov, data.shr_agg_mov].map(str).join(" | ");
+  setT("painful_arc", has(painfulArcText, "60"));
+  // Bug fix: Spurling's is a real, shared special-test field (st_spurling) the
+  // shoulder evidence model explicitly cites for its cervical-referral
+  // exclusion differential, but only the cervical normalizer ever read it --
+  // a positive Spurling's recorded during a shoulder work-up silently
+  // contributed nothing to the "is this actually your neck" flag.
+  setT("spurling", isPos(data.st_spurling));
 
   const objective: ObjectiveFindings = {
     rom, mmt, specialTests,
