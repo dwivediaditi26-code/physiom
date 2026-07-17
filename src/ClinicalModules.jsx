@@ -6703,20 +6703,22 @@ const FINDING_COLORS = {
 };
 
 // ─── SVG Body Figure ──────────────────────────────────────────────────────────
-// Draws a clean anatomical outline — front (left) and back (right) in one SVG
-// ViewBox: 0 0 200 130  (front occupies 0–90, back 110–200, y 0–130)
+// Uses the same professional anatomical body-chart illustration as the Pain
+// Map (BodyChartPro) — one wide image, 4 views side by side:
+// [ Anterior | Left Lateral | Right Lateral | Posterior ], each ≈25% of width.
+// Front/back panels here crop to the Anterior and Posterior quarters.
+// ViewBox: 0 0 220 125  (front occupies 0–90, back 110–200, y 0–125)
 // All hotspot coordinates use this viewBox scale
 
+const BODY_IMAGE_URL = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/body-chart-4view";
 const BODY_SVG_VIEWBOX = "0 0 220 125";
 
 function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
   // view: "front" | "back"
   const offsetX = view === "back" ? 110 : 0;
 
-  // anatomical outline paths (simplified but recognisable)
-  const bodyColor = "#0d1929";
-  const outlineColor = "#1e3a5f";
-  const sk = outlineColor;
+  // quarter index within the 4-view source image: 0=anterior, 3=posterior
+  const quarterIndex = view === "front" ? 0 : 3;
 
   return (
     <g transform={`translate(${offsetX}, 0)`}>
@@ -6725,83 +6727,32 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
         {view === "front" ? "ANTERIOR" : "POSTERIOR"}
       </text>
 
-      {/* ── HEAD ── */}
-      <ellipse cx="45" cy="16" rx="10" ry="12" fill={bodyColor} stroke={sk} strokeWidth="0.8"/>
-      {/* ears */}
-      <ellipse cx="35.5" cy="16" rx="2" ry="3.5" fill={bodyColor} stroke={sk} strokeWidth="0.6"/>
-      <ellipse cx="54.5" cy="16" rx="2" ry="3.5" fill={bodyColor} stroke={sk} strokeWidth="0.6"/>
-      {/* neck */}
-      <rect x="40" y="26.5" width="10" height="8" rx="2" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-
-      {/* ── TORSO ── */}
-      {/* shoulders */}
-      <path d="M28,33 Q20,32 18,38 L20,48 Q22,50 25,49 L30,38Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      <path d="M62,33 Q70,32 72,38 L70,48 Q68,50 65,49 L60,38Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      {/* torso body */}
-      <path d="M30,33 Q45,30 60,33 L63,68 Q58,75 45,76 Q32,75 27,68Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      {/* clavicles (front only) */}
-      {view === "front" && <>
-        <line x1="40" y1="33" x2="28" y2="35" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
-        <line x1="50" y1="33" x2="62" y2="35" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
-        {/* sternum */}
-        <line x1="45" y1="33" x2="45" y2="66" stroke={sk} strokeWidth="0.5" opacity="0.4"/>
-      </>}
-      {/* spine line (back only) */}
-      {view === "back" && <line x1="45" y1="33" x2="45" y2="76" stroke={sk} strokeWidth="0.5" opacity="0.4"/>}
-
-      {/* ── PELVIS ── */}
-      <path d="M27,68 Q45,80 63,68 L65,78 Q58,86 45,87 Q32,86 25,78Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      {/* iliac crests */}
-      <path d="M27,68 Q24,72 25,78" fill="none" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
-      <path d="M63,68 Q66,72 65,78" fill="none" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
-
-      {/* ── UPPER ARMS ── */}
-      <path d="M20,38 L14,60 Q13,63 16,64 L22,62 L25,49Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      <path d="M70,38 L76,60 Q77,63 74,64 L68,62 L65,49Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-
-      {/* ── FOREARMS ── */}
-      <path d="M14,60 L10,80 Q9,83 12,84 L16,83 L22,62Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      <path d="M76,60 L80,80 Q81,83 78,84 L74,83 L68,62Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-
-      {/* ── HANDS ── */}
-      <ellipse cx="11" cy="87" rx="4" ry="5.5" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      <ellipse cx="79" cy="87" rx="4" ry="5.5" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      {/* fingers */}
-      {[8,10,12,14].map((x,i)=><line key={i} x1={x} y1="91" x2={x-0.5} y2="95" stroke={sk} strokeWidth="0.5" opacity="0.6"/>)}
-      {[76,78,80,82].map((x,i)=><line key={i} x1={x} y1="91" x2={x+0.5} y2="95" stroke={sk} strokeWidth="0.5" opacity="0.6"/>)}
-
-      {/* ── THIGHS ── */}
-      <path d="M25,78 L22,108 Q22,112 25,113 L34,113 Q37,112 37,108 L38,78Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      <path d="M65,78 L68,108 Q68,112 65,113 L56,113 Q53,112 53,108 L52,78Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-
-      {/* ── LOWER LEGS ── */}
-      <path d="M22,108 L21,120 Q21,122 24,122 L28,122 Q31,122 32,120 L34,113 Q26,113 22,108Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      <path d="M68,108 L69,120 Q69,122 66,122 L62,122 Q59,122 58,120 L56,113 Q64,113 68,108Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-
-      {/* ── FEET ── */}
-      <path d="M21,120 Q18,122 17,124 L30,124 Q32,124 32,122 L28,122Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-      <path d="M69,120 Q72,122 73,124 L60,124 Q58,124 58,122 L62,122Z" fill={bodyColor} stroke={sk} strokeWidth="0.7"/>
-
-      {/* ── SCAPULAE (back only) ── */}
-      {view === "back" && <>
-        <path d="M27,35 Q24,42 26,48 Q30,52 34,48 Q36,42 33,35Z" fill="none" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
-        <path d="M63,35 Q66,42 64,48 Q60,52 56,48 Q54,42 57,35Z" fill="none" stroke={sk} strokeWidth="0.5" opacity="0.5"/>
-        {/* spine of scapula */}
-        <line x1="26" y1="37" x2="34" y2="37" stroke={sk} strokeWidth="0.4" opacity="0.5"/>
-        <line x1="64" y1="37" x2="56" y2="37" stroke={sk} strokeWidth="0.4" opacity="0.5"/>
-      </>}
-
-      {/* ── KNEE CAPS (front) ── */}
-      {view === "front" && <>
-        <ellipse cx="29" cy="108" rx="5" ry="4" fill={bodyColor} stroke={sk} strokeWidth="0.6" opacity="0.7"/>
-        <ellipse cx="61" cy="108" rx="5" ry="4" fill={bodyColor} stroke={sk} strokeWidth="0.6" opacity="0.7"/>
-      </>}
+      {/* ── Realistic anatomical illustration ── */}
+      {/* Cropped from the same body-chart image used in the Pain Map tab */}
+      <defs>
+        <clipPath id={`bodyclip-${view}`}>
+          <rect x="0" y="0" width="90" height="125" rx="6"/>
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#bodyclip-${view})`}>
+        <image
+          href={BODY_IMAGE_URL}
+          xlinkHref={BODY_IMAGE_URL}
+          x={-quarterIndex * 90}
+          y="0"
+          width="360"
+          height="125"
+          preserveAspectRatio="none"
+        />
+      </g>
 
       {/* ── HOTSPOT INTERACTIVE ZONES ── */}
       {ANATOMICAL_HOTSPOTS.filter(h => h.side === view || h.side === "both").map(h => {
         // convert % coords to SVG space (viewbox 90×125 per body)
+        // y uses /113 (not /100): hotspot y-values run 6–113, calibrated so
+        // the lowest points (heel/plantar) land at the very bottom of frame
         const sx = (h.x / 100) * 90;
-        const sy = (h.y / 100) * 125;
+        const sy = (h.y / 113) * 125;
         const pin = pins.find(p => p.hotspotId === h.id);
         const isHovered = hoveredHotspot === h.id;
         const gradeColor = pin ? (GRADE_COLOR[pin.tenderness] || C.accent) : null;
@@ -7002,11 +6953,11 @@ function PalpationModule({ data, set }) {
       <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
 
         {/* SVG Body */}
-        <div style={{ flex:"0 0 auto", display:"flex", flexDirection:"column", alignItems:"center", width:"100%", maxWidth:300 }}>
+        <div style={{ flex:"0 0 auto", display:"flex", flexDirection:"column", alignItems:"center", width:"100%", maxWidth:480 }}>
           <svg
             viewBox={BODY_SVG_VIEWBOX}
             width="100%"
-            style={{ maxWidth:280, minWidth:180, background:C.surface,
+            style={{ maxWidth:460, minWidth:260, background:C.surface,
               border:`1px solid ${C.border}`, borderRadius:14,
               cursor:"crosshair", userSelect:"none" }}
           >
@@ -7042,7 +6993,7 @@ function PalpationModule({ data, set }) {
           {/* Hover tooltip outside SVG */}
           {hovered && (
             <div style={{ marginTop:6, padding:"6px 12px", background:C.s2,
-              border:`1px solid ${C.accent}40`, borderRadius:8, maxWidth:280,
+              border:`1px solid ${C.accent}40`, borderRadius:8, maxWidth:460,
               fontSize:"0.78rem", color:C.accent, fontWeight:600, textAlign:"center",
               animation:"slideIn 0.15s ease" }}>
               {ANATOMICAL_HOTSPOTS.find(h => h.id === hovered)?.label}
@@ -7054,7 +7005,7 @@ function PalpationModule({ data, set }) {
 
           {/* Tenderness legend */}
           <div style={{ marginTop:10, padding:"8px 10px", background:C.surface,
-            border:`1px solid ${C.border}`, borderRadius:8, maxWidth:280, width:"100%" }}>
+            border:`1px solid ${C.border}`, borderRadius:8, maxWidth:460, width:"100%" }}>
             <div style={{ fontSize:"0.78rem", fontWeight:700, color:C.muted,
               textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>Tenderness Legend</div>
             <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
