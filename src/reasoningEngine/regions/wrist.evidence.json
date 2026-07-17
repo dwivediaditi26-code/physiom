@@ -1,0 +1,105 @@
+{
+  "region": "wrist",
+  "diagnoses": [
+    {
+      "name": "Carpal tunnel syndrome (median nerve)",
+      "source": "Magee Orthopedic Physical Assessment; Phalen's/Tinel's diagnostic literature",
+      "requiredFindings": [],
+      "supportingFindings": ["median_nerve_night_symptoms", "median_nerve_flick_sign_relief", "phalen_positive", "tinel_wrist_positive", "cpa_grip_neuro_inhibited", "paresthesia", "night_pain"],
+      "conflictingFindings": ["wrist_ulnar_pain_pattern"],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.3, "history": 1.0, "painBehaviour": 0.8 },
+      "keyExams": ["Phalen's test", "Tinel's sign at wrist", "Median nerve sensory mapping"]
+    },
+    {
+      "name": "De Quervain's tenosynovitis",
+      "source": "Magee; Finkelstein's test diagnostic literature",
+      "requiredFindings": ["finkelstein_positive"],
+      "supportingFindings": ["wrist_radial_pain_pattern", "thumb_extension_abduction_aggravation", "wrist_de_quervain_new_parent_mechanism", "de_quervain_finkelstein_reported", "radial_styloid_tender", "thumb_extensor_abductor_painful"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.4, "history": 0.9, "painBehaviour": 0.8, "palpation": 1.0, "mmt": 0.9 },
+      "keyExams": ["Finkelstein's test", "Resisted thumb extension/abduction", "1st dorsal compartment palpation"]
+    },
+    {
+      "name": "TFCC tear (ulnar-sided wrist pain)",
+      "source": "Magee; TFCC stress test / ulnar-sided wrist pain differential literature",
+      "requiredFindings": [],
+      "supportingFindings": ["wrist_ulnar_pain_pattern", "wrist_compression_loading_aggravation", "wrist_direct_trauma_mechanism", "traumatic_onset"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "painBehaviour": 1.1 },
+      "keyExams": ["TFCC stress test (ulnar compression through lunate)", "Passive ulnar deviation load", "Ulnar-sided wrist palpation"]
+    },
+    {
+      "name": "Scapholunate ligament instability",
+      "source": "Magee; Watson scaphoid shift test diagnostic literature",
+      "requiredFindings": ["watson_positive"],
+      "supportingFindings": ["wrist_dorsal_pain_pattern", "wrist_foosh_mechanism", "scaphoid_snuffbox_tender", "traumatic_onset"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.4, "history": 0.9, "palpation": 1.0 },
+      "keyExams": ["Watson scaphoid shift test", "Radiocarpal/midcarpal joint play assessment"]
+    },
+    {
+      "name": "Wrist osteoarthritis (radiocarpal)",
+      "source": "Magee; capsular pattern (flexion = extension equally limited) diagnostic criteria",
+      "requiredFindings": [],
+      "supportingFindings": ["age_over_50", "progressive_stiffness", "wrist_flexion_loss", "wrist_extension_loss", "imaging_wrist_oa"],
+      "conflictingFindings": ["traumatic_onset"],
+      "exclusionFindings": [],
+      "weights": { "rom": 1.2, "history": 0.8, "imaging": 1.3 },
+      "keyExams": ["Active/passive wrist ROM with end-feel", "Imaging referral if not already available"]
+    },
+    {
+      "name": "Distal radius fracture (suspected, Colles/Barton)",
+      "source": "Magee; Ottawa/fracture-screening literature for FOOSH presentations",
+      "requiredFindings": [],
+      "supportingFindings": ["wrist_foosh_dorsiflexion_mechanism", "wrist_suspected_distal_radius_fracture", "traumatic_onset", "imaging_distal_radius_fracture"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.2, "imaging": 1.4 },
+      "keyExams": ["Deformity/swelling observation", "Urgent imaging referral before further loading"]
+    },
+    {
+      "name": "Scaphoid fracture (suspected)",
+      "source": "Magee; anatomical snuffbox tenderness diagnostic literature (high false-negative rate on initial x-ray)",
+      "requiredFindings": [],
+      "supportingFindings": ["wrist_foosh_dorsiflexion_mechanism", "wrist_suspected_scaphoid_fracture", "scaphoid_snuffbox_tender", "traumatic_onset", "imaging_scaphoid_fracture"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.1, "palpation": 1.2, "imaging": 1.4 },
+      "keyExams": ["Anatomical snuffbox palpation", "Scaphoid compression test", "Imaging referral (repeat if initial films negative but clinically suspected)"]
+    },
+    {
+      "name": "1st CMC osteoarthritis (thumb base)",
+      "source": "Magee; Grind test diagnostic literature",
+      "requiredFindings": ["grind_positive"],
+      "supportingFindings": ["thumb_cmc_pain_pattern", "age_over_50", "cmc_thumb_base_tender", "progressive_stiffness"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.3, "history": 0.8, "palpation": 1.0 },
+      "keyExams": ["Grind test", "1st CMC joint palpation", "Thumb ROM assessment"]
+    },
+    {
+      "name": "ECU tendinopathy / instability",
+      "source": "Magee; ulnar-sided wrist overuse tendinopathy literature",
+      "requiredFindings": [],
+      "supportingFindings": ["wrist_ulnar_pain_pattern", "wrist_extensors_weak_or_painful", "ecu_tender", "wrist_repetitive_grip_overuse", "insidious_onset"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "palpation": 1.1, "mmt": 1.0, "history": 0.8 },
+      "keyExams": ["Resisted wrist extension in ulnar deviation", "ECU synergy test", "ECU tendon palpation"]
+    },
+    {
+      "name": "Trigger finger / flexor tenosynovitis",
+      "source": "Magee; stenosing tenosynovitis diagnostic literature",
+      "requiredFindings": [],
+      "supportingFindings": ["trigger_finger_pattern", "wrist_repetitive_grip_overuse", "palm_pain_pattern", "wrist_volar_pain_pattern"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.1, "painBehaviour": 0.7 },
+      "keyExams": ["Palpation for flexor tendon nodule/catching at A1 pulley", "Active finger flexion/extension observation"]
+    }
+  ]
+}

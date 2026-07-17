@@ -796,11 +796,367 @@ export function runElbowReasoningFromData(data: Data): ReasoningResult {
   return runReasoning(subjective, objective, region);
 }
 
+// ── Thoracic ─────────────────────────────────────────────────────────────
+// NOTE: thoracic has NO dedicated entry in CYRIAX_REGIONS_DATA or NKT_REGIONS
+// (verified) -- STTT/CPA are genuinely not modelled for this region in the
+// app. Kinetic-chain (KC_REGIONS.thoracic) IS present and rich, so that IS
+// wired in below via the same "kc_<testId>" direct-key pattern already
+// established for NKT (data[t.id], t.id already includes the "kc_" prefix).
+export function normalizeThoracicFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.tx_loc).toLowerCase();
+  const radiation = str(data.tx_radiation).toLowerCase();
+  const moi = str(data.tx_moi ?? data.cc_onset).toLowerCase();
+  const aggMov = str(data.tx_agg_mov).toLowerCase();
+  const aggPost = str(data.tx_agg_post).toLowerCase();
+  const rel = str(data.tx_rel).toLowerCase();
+  const pattern = str(data.tx_pattern).toLowerCase();
+  const rf = str(data.tx_rf).toLowerCase();
+  const ribScreen = str(data.tx_rib_screen).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "thoracic",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    onsetInsidious: has(moi, "insidious", "no clear mechanism"),
+    onsetTraumatic: has(moi, "fall / direct trauma", "mva"),
+    nightPain: has(pattern, "night dominant"),
+    constantPain: has(pattern, "constant"),
+    constantUnremittingPain: has(pattern, "constant — unrelated") || has(rf, "constant pain completely unaffected"),
+    progressiveStiffness: has(pattern, "morning stiffness"),
+    paresthesia: has(loc, "dermatomal band") || has(radiation, "dermatomal"),
+    traumaHistory: has(moi, "fall / direct trauma", "mva") || has(rf, "recent trauma"),
+    unexplainedWeightLoss: has(rf, "unexplained weight loss"),
+    nightPainUnrelieved: has(rf, "night pain — awakens patient — progressive", "progressive worsening despite conservative"),
+    fever: has(rf, "fever"),
+    systemicIllness: has(rf, "systemically unwell"),
+    malignancyHistory: has(rf, "cancer history"),
+    bilateralLegWeakness: has(rf, "bilateral leg weakness"),
+    thoracicUpperRegionPain: has(loc, "upper thoracic"),
+    thoracicMidRegionPain: has(loc, "mid thoracic"),
+    thoracicLowerRegionPain: has(loc, "lower thoracic"),
+    thoracicInterscapularPain: has(loc, "interscapular"),
+    thoracicChestWallPain: has(loc, "chest wall", "sternal", "anterior chest"),
+    thoracicDermatomalBandPattern: has(loc, "dermatomal band") || has(radiation, "dermatomal"),
+    thoracicCardiacLikeRadiation: has(radiation, "cardiac-like radiation"),
+    thoracicLiftingMechanism: has(moi, "lifting injury"),
+    thoracicRotationInjuryMechanism: has(moi, "rotation injury"),
+    thoracicDirectTraumaMechanism: has(moi, "fall / direct trauma", "mva") || has(ribScreen, "direct trauma to chest"),
+    thoracicPosturalInsidiousOnset: has(moi, "insidious — postural", "prolonged computer", "post-partum"),
+    thoracicPostViralOnset: has(moi, "viral illness"),
+    thoracicOsteoporoticMinimalTraumaMechanism: has(moi, "osteoporotic fracture") || has(rf, "known osteoporosis") || has(ribScreen, "osteoporosis + minimal trauma"),
+    thoracicStressFractureRiskActivity: has(ribScreen, "stress fracture"),
+    thoracicHighImpactSportMechanism: has(ribScreen, "high-impact sport"),
+    thoracicRotationAggravation: has(aggMov, "rotation"),
+    thoracicExtensionAggravation: has(aggMov, "extension"),
+    thoracicBreathingAggravation: has(aggMov, "deep breathing", "laughing"),
+    thoracicCoughSneezeAggravation: has(aggMov, "coughing", "sneezing"),
+    thoracicProlongedSittingAggravation: has(aggPost, "prolonged sitting", "computer work sustained", "driving"),
+    thoracicManipulationRelief: has(rel, "manipulation — significant relief"),
+    thoracicInflammatoryPattern: has(pattern, "inflammatory"),
+    thoracicConstantUnrelatedToMovement: has(pattern, "constant — unrelated") || has(rf, "constant pain completely unaffected"),
+    thoracicCardiacSymptoms: has(rf, "cardiac symptoms"),
+    thoracicCardiacHistory: has(rf, "cardiac history"),
+    thoracicRespiratorySymptoms: has(rf, "respiratory symptoms") || has(ribScreen, "pneumothorax risk"),
+    thoracicAbdominalSymptoms: has(rf, "abdominal symptoms"),
+    thoracicCordCompressionSigns: has(rf, "neurological symptoms in legs", "bilateral leg weakness"),
+  };
+
+  const rom = [
+    readRom(data, "thflex", "Flexion", 50, false),
+    readRom(data, "thext", "Extension", 25, false),
+    readRom(data, "throtl", "Rotation L", 35, false),
+    readRom(data, "throtr", "Rotation R", 35, false),
+  ].filter((e): e is RomEntry => e != null);
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("rib_point_tenderness", has(ribScreen, "point tenderness"));
+  setT("rib_spring_test_positive", has(ribScreen, "rib spring test positive"));
+  setT("costochondritis_pattern", has(ribScreen, "costochondritis"));
+  setT("tietze_swelling_pattern", has(ribScreen, "tietze syndrome"));
+  // Kinetic chain (KC_REGIONS.thoracic): data["kc_<testId>"] direct key (verified
+  // via KineticChainSection's `set(t.id, ...)` where t.id already includes "kc_").
+  // Categorical text: "Normal...", "Mildly restricted...", "Moderately restricted...",
+  // "Severely restricted..." for rotation/extension; a 4th distinct option set for
+  // rib mobility. Only moderate-or-worse restriction is treated as a positive
+  // finding (mild restriction is a very common, low-specificity finding).
+  setT("kc_thoracic_rotation_restricted", has(data.kc_thoracic_rotation, "moderately restricted", "severely restricted"));
+  setT("kc_thoracic_extension_restricted", has(data.kc_thoracic_extension, "moderately restricted", "severely restricted"));
+  setT("kc_rib_mobility_abnormal", has(data.kc_rib_mobility, "asymmetric", "hypomobile", "upper chest breathing"));
+
+  const objective: ObjectiveFindings = {
+    rom, mmt: [], specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "thoracic" };
+}
+
+export function runThoracicReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeThoracicFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
+// ── Ankle ─────────────────────────────────────────────────────────────────
+// Subjective source fields verified in sharedClinicalData.js under
+// af_location/af_mechanism/af_aggravating/af_symptoms/af_redflags. af_loc,
+// af_moi, af_agg_mov, af_pattern, af_morning, af_swelling, af_instability,
+// af_radiation, af_prev_sprains, af_moi_pop, af_moi_weightbear, af_rf are all
+// multicheck/select fields whose stored value is the joined selected option
+// text(s) -- `has()` substring-matches against the real option strings below.
+export function normalizeAnkleFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.af_loc).toLowerCase();
+  const radiation = str(data.af_radiation).toLowerCase();
+  const moi = str(data.af_moi ?? data.cc_onset).toLowerCase();
+  const pop = str(data.af_moi_pop).toLowerCase();
+  const weightbear = str(data.af_moi_weightbear).toLowerCase();
+  const prevSprains = str(data.af_prev_sprains).toLowerCase();
+  const aggMov = str(data.af_agg_mov).toLowerCase();
+  const pattern = str(data.af_pattern).toLowerCase();
+  const morning = str(data.af_morning).toLowerCase();
+  const swelling = str(data.af_swelling).toLowerCase();
+  const instability = str(data.af_instability).toLowerCase();
+  const rf = str(data.af_rf).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "ankle",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    onsetInsidious: has(moi, "insidious onset"),
+    onsetTraumatic: has(moi, "inversion sprain", "eversion sprain", "high ankle sprain", "direct impact", "fall from height"),
+    nightPain: has(pattern, "night dominant") || has(pattern, "burning / night"),
+    constantPain: has(pattern, "constant — never fully eases"),
+    paresthesia: has(radiation, "tarsal tunnel") || has(pattern, "burning / night"),
+    traumaHistory: has(moi, "inversion sprain", "eversion sprain", "high ankle sprain", "direct impact", "fall from height"),
+    unableToWeightBear: has(rf, "cannot weight bear 4 steps") || has(weightbear, "required assistance", "stopped activity immediately"),
+    hotSwollenJoint: has(rf, "acute hot swollen joint"),
+    vascularCompromiseSigns: has(rf, "compartment syndrome", "vascular compromise"),
+    ankleLateralPainPattern: has(loc, "lateral ankle"),
+    ankleMedialPainPattern: has(loc, "medial ankle"),
+    ankleAnteriorPainPattern: has(loc, "anterior ankle"),
+    anklePosteriorPainPattern: has(loc, "posterior ankle"),
+    achillesInsertionalPainPattern: has(loc, "achilles tendon — insertional"),
+    achillesMidPortionPainPattern: has(loc, "achilles tendon — mid-portion"),
+    ankleInversionSprainMechanism: has(moi, "inversion sprain"),
+    ankleEversionSprainMechanism: has(moi, "eversion sprain"),
+    ankleHighSprainMechanism: has(moi, "high ankle sprain"),
+    ankleAchillesRuptureFeltPop: has(pop, "achilles insertion", "mid-achilles"),
+    ankleAtflPopFelt: has(pop, "lateral ankle"),
+    anklePreviousMultipleSprains: has(prevSprains, "2–3 previous sprains", "4+ previous sprains", "multiple sprains"),
+    ankleInsidiousOveruseOnset: has(moi, "insidious onset"),
+    ankleDorsiflexionAggravation: has(aggMov, "dorsiflexion"),
+    ankleMorningStiffnessAchilles: has(morning, "achilles stiff and sore"),
+    ankleWarmsUpThenWorsensPattern: has(pattern, "warms up then worsens"),
+    ankleGivingWayInstability: has(instability, "giving way"),
+    ankleRadiatesTarsalTunnel: has(radiation, "tarsal tunnel"),
+    ankleRecurrentSwellingPattern: has(swelling, "persistent low-grade", "recurrent swelling"),
+    ankleOttawaBonyTenderness: has(rf, "ottawa rules — bony tenderness"),
+    ankleSuspectedAchillesRuptureFlag: has(rf, "suspected achilles rupture"),
+    ankleSuspectedLigamentRuptureFlag: has(rf, "suspected complete atfl"),
+    ankleStressFractureSuspected: has(rf, "stress fracture suspected"),
+    anklePeronealSubluxationSuspected: has(rf, "peroneal tendon subluxation"),
+  };
+
+  const rom = [
+    readRom(data, "adf", "Dorsiflexion", 20, true),
+    readRom(data, "apf", "Plantarflexion", 50, true),
+    readRom(data, "ainv", "Inversion", 35, true),
+    readRom(data, "aev", "Eversion", 15, true),
+  ].filter((e): e is RomEntry => e != null);
+
+  const mmt = [
+    readMmt(data, "mmt_ta", "Tibialis Anterior (Dorsiflexion)"),
+    readMmt(data, "mmt_soleus", "Gastrocnemius/Soleus (Plantarflexion)"),
+    readMmt(data, "mmt_tp", "Tibialis Posterior (Inversion)"),
+    readMmt(data, "mmt_peronls", "Peroneals (Eversion)"),
+    // Cyriax STTT resisted tests, region key "ankle_foot" (verified in
+    // CYRIAX_REGIONS_DATA). Same muscle labels as the paired readMmt() calls
+    // above so weak()/painfulResist() substring checks in findings.ts pick up
+    // both sources automatically.
+    readCyriax(data, "ankle_foot", "ank_r_df", "Tibialis Anterior (Dorsiflexion)"),
+    readCyriax(data, "ankle_foot", "ank_r_pf", "Gastrocnemius/Soleus (Plantarflexion)"),
+    readCyriax(data, "ankle_foot", "ank_r_inv", "Tibialis Posterior (Inversion)"),
+    readCyriax(data, "ankle_foot", "ank_r_ev", "Peroneals (Eversion)"),
+    // CPA (NKT motor control): nkt_tib_ant / nkt_tib_post use "Inhibited ..." as
+    // their abnormal options (verified) so they fold in here via readCpaInhibited.
+    // NOTE: mmt_ta ("Tibialis Anterior") is also independently used, under the
+    // SAME literal storage key, by "Transversus Abdominis" in MMT_DATA["Spine &
+    // Core"] -- storage keys are id-based, not region-scoped. Accepted risk: TA
+    // (core) is explicitly documented as "not a standard MMT" (assessed via
+    // draw-in/CCFT instead), so a genuine collision in practice is unlikely.
+    readCpaInhibited(data, "tib_ant", "Tibialis Anterior (Dorsiflexion)"),
+    readCpaInhibited(data, "tib_post", "Tibialis Posterior (Inversion)"),
+  ].filter((e): e is MmtEntry => e != null);
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("ant_drawer_ankle_positive", isPos(data.st_ant_drawer_ankle));
+  setT("talar_tilt_positive", isPos(data.st_talar_tilt));
+  setT("squeeze_ankle_positive", isPos(data.st_squeeze_ankle));
+  setT("thompson_positive", isPos(data.st_thompson_test));
+  setT("navicular_drop_significant", has(data.st_navicular_drop, "significant collapse"));
+  setT("tinel_ankle_positive", isPos(data.st_tinel_ankle));
+  setT("royal_london_positive", has(data.st_royal_london, "positive"));
+  // NKT gastroc/peroneals have NO "Inhibited" option (they are compensators, not
+  // inhibited primaries), so they are read directly here rather than via
+  // readCpaInhibited -- verified against nkt_gastroc / nkt_peroneals option text.
+  setT("cpa_gastroc_overactive", has(data.nkt_gastroc, "overactive"));
+  setT("cpa_peroneal_overactive", has(data.nkt_peroneals, "overactive"));
+  // Kinetic chain (KC_REGIONS.foot_ankle): data["kc_<testId>"] direct key. Only
+  // moderate-or-worse restriction / hypermobility treated as a positive finding,
+  // matching the threshold established for thoracic's KC wiring.
+  setT("kc_ankle_df_restricted", has(data.kc_ankle_df, "moderately restricted", "severely restricted"));
+  setT("kc_subtalar_hypermobile", has(data.kc_subtalar, "hypermobile"));
+
+  const objective: ObjectiveFindings = {
+    rom, mmt, specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "ankle" };
+}
+
+export function runAnkleReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeAnkleFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
+// ── Wrist ─────────────────────────────────────────────────────────────────
+// Wrist shares its subjective module with elbow (ew_* fields, verified in
+// sharedClinicalData.js under "Elbow/Wrist"). Filtered to wrist/hand-specific
+// option text only, same methodology as elbow's own ew_* filtering.
+export function normalizeWristFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.ew_loc).toLowerCase();
+  const radiation = str(data.ew_radiation).toLowerCase();
+  const moi = str(data.ew_moi ?? data.cc_onset).toLowerCase();
+  const aggMov = str(data.ew_agg_mov).toLowerCase();
+  const aggAct = str(data.ew_agg_act).toLowerCase();
+  const pattern = str(data.ew_pattern).toLowerCase();
+  const neuro = str(data.ew_neuro).toLowerCase();
+  const rf = str(data.ew_rf).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "wrist",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    nightPain: has(pattern, "night dominant"),
+    constantPain: has(pattern, "constant"),
+    progressiveStiffness: has(pattern, "morning stiffness"),
+    onsetTraumatic: has(moi, "foosh", "direct trauma — wrist"),
+    onsetInsidious: has(moi, "insidious"),
+    paresthesia: has(neuro, "median nerve", "ulnar nerve", "radial nerve"),
+    ulnarNerveDistributionSymptoms: has(neuro, "ulnar nerve — little and ring"),
+    radialNerveDistributionSymptoms: has(neuro, "radial nerve — dorsum hand"),
+    resistedWristExtensionPain: has(aggMov, "wrist extension (resisted)"),
+    resistedWristFlexionPain: has(aggMov, "wrist flexion (resisted)"),
+    wristDorsalPainPattern: has(loc, "wrist — dorsal"),
+    wristVolarPainPattern: has(loc, "wrist — volar"),
+    wristRadialPainPattern: has(loc, "wrist — radial border"),
+    wristUlnarPainPattern: has(loc, "wrist — ulnar border"),
+    thumbCmcPainPattern: has(loc, "thumb cmc joint"),
+    palmPainPattern: has(loc, "palm — thenar", "palm — hypothenar"),
+    wristFooshMechanism: has(moi, "foosh — fall onto outstretched hand"),
+    wristFooshDorsiflexionMechanism: has(moi, "foosh — wrist dorsiflexion impact"),
+    wristDirectTraumaMechanism: has(moi, "direct trauma — wrist / hand"),
+    wristRepetitiveGripOveruse: has(moi, "repetitive gripping", "computer / keyboard / mouse overuse"),
+    wristComputerOveruse: has(moi, "computer / keyboard / mouse overuse"),
+    wristDeQuervainNewParentMechanism: has(moi, "new baby / childcare"),
+    wristGrippingAggravation: has(aggMov, "gripping"),
+    thumbExtensionAbductionAggravation: has(aggMov, "thumb extension / abduction"),
+    wristCompressionLoadingAggravation: has(aggMov, "wrist compression / loading"),
+    medianNerveNightSymptoms: has(neuro, "median nerve — thumb / index / middle waking at night"),
+    medianNerveFlickSignRelief: has(neuro, "median nerve — improves with shaking hand"),
+    deQuervainFinkelsteinReportedPattern: has(neuro, "de quervain's — thumb base pain"),
+    triggerFingerPattern: has(neuro, "trigger finger"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "foosh", "direct trauma — wrist"),
+    wristSuspectedDistalRadiusFracture: has(rf, "suspected distal radius fracture"),
+    wristSuspectedScaphoidFracture: has(rf, "suspected scaphoid"),
+    wristSuspectedLunatePerilunateDislocation: has(rf, "suspected lunate"),
+    wristTendonRuptureFlag: has(rf, "rupture extensor / flexor tendons"),
+    wristDupuytrensContracture: has(rf, "dupuytren's"),
+    wristGanglionCyst: has(rf, "ganglion cyst"),
+    wristBilateralCtsScreen: has(rf, "bilateral carpal tunnel"),
+    wristCrpsFeatures: has(rf, "reflex sympathetic dystrophy", "crps"),
+    wristRaynaudsFeatures: has(rf, "raynaud's"),
+    hotSwollenJoint: has(rf, "acute septic arthritis"),
+    vascularCompromiseSigns: has(rf, "acute compartment syndrome"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    systemicIllness: selected(data.grf_systemic, "systemically well") || has(rf, "constitutional symptoms"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rf, "cancer history"),
+    nightPainUnrelieved: has(rf, "constant progressive pain"),
+  };
+
+  const rom = [
+    readRom(data, "wflex", "Wrist Flexion", 80, true),
+    readRom(data, "wext", "Wrist Extension", 70, true),
+    readRom(data, "wrad", "Radial Deviation", 20, true),
+    readRom(data, "wuln", "Ulnar Deviation", 30, true),
+  ].filter((e): e is RomEntry => e != null);
+
+  const mmt = [
+    readMmt(data, "mmt_ecrb", "Wrist Extensors (ECRL/ECRB)"),
+    readMmt(data, "mmt_ecul", "Wrist Extensors (ECU)"),
+    readMmt(data, "mmt_fcr", "Wrist Flexors (FCR)"),
+    readMmt(data, "mmt_fcu", "Wrist Flexors (FCU)"),
+    // Cyriax STTT resisted tests, region key "wrist_hand" (verified in
+    // CYRIAX_REGIONS_DATA). Combined muscle-group labels ("Wrist Extensors"/
+    // "Wrist Flexors") match the readMmt() labels above via substring so
+    // weak()/painfulResist() checks in findings.ts pick up either source.
+    readCyriax(data, "wrist_hand", "wr_r_ext", "Wrist Extensors (ECRL/ECRB/ECU)"),
+    readCyriax(data, "wrist_hand", "wr_r_flex", "Wrist Flexors (FCR/FCU)"),
+    // No dedicated MMT_DATA entries exist for EPL/EPB/APL (thumb extensor/
+    // abductor) -- read via Cyriax resisted tests only.
+    readCyriax(data, "wrist_hand", "wr_r_thumb_ext", "Thumb Extensors (EPL/EPB)"),
+    readCyriax(data, "wrist_hand", "wr_r_thumb_abd", "Thumb Abductor (APL)"),
+    // CPA: nkt_wrist_ext's abnormal state is "Inhibited -- lateral
+    // epicondylalgia" (verified) so it folds in here as wrist extensor
+    // strength information. nkt_wrist_flex/nkt_grip use "Overactive"/
+    // "Inhibited -- neurological" wording instead -- read separately below.
+    readCpaInhibited(data, "wrist_ext", "Wrist Extensors (ECRL/ECRB)"),
+  ].filter((e): e is MmtEntry => e != null);
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("phalen_positive", isPos(data.st_phalen));
+  setT("tinel_wrist_positive", isPos(data.st_tinel_wrist));
+  setT("finkelstein_positive", isPos(data.st_finkelstein));
+  setT("watson_positive", isPos(data.st_watson));
+  setT("grind_positive", isPos(data.st_grind));
+  setT("cpa_wrist_extensors_inhibited", has(data.nkt_wrist_ext, "inhibited"));
+  // nkt_grip's "Inhibited -- neurological cause" option text explicitly names
+  // carpal/cubital tunnel (verified) -- read directly as a CTS-supportive flag.
+  setT("cpa_grip_neuro_inhibited", has(data.nkt_grip, "inhibited — neurological"));
+
+  const objective: ObjectiveFindings = {
+    rom, mmt, specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "wrist" };
+}
+
+export function runWristReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeWristFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
   if (region === "lumbar") return runLumbarReasoningFromData(data);
   if (region === "hip") return runHipReasoningFromData(data);
   if (region === "knee") return runKneeReasoningFromData(data);
   if (region === "elbow") return runElbowReasoningFromData(data);
+  if (region === "thoracic") return runThoracicReasoningFromData(data);
+  if (region === "ankle") return runAnkleReasoningFromData(data);
+  if (region === "wrist") return runWristReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }

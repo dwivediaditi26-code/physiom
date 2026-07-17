@@ -13,6 +13,9 @@ import lumbarPlan from "./regions/lumbar.examplan.json";
 import hipPlan from "./regions/hip.examplan.json";
 import kneePlan from "./regions/knee.examplan.json";
 import elbowPlan from "./regions/elbow.examplan.json";
+import thoracicPlan from "./regions/thoracic.examplan.json";
+import anklePlan from "./regions/ankle.examplan.json";
+import wristPlan from "./regions/wrist.examplan.json";
 
 interface PlanConfig {
   region: string;
@@ -28,6 +31,9 @@ const CONFIGS: Record<string, PlanConfig> = {
   hip: hipPlan as PlanConfig,
   knee: kneePlan as PlanConfig,
   elbow: elbowPlan as PlanConfig,
+  thoracic: thoracicPlan as PlanConfig,
+  ankle: anklePlan as PlanConfig,
+  wrist: wristPlan as PlanConfig,
 };
 
 const PRIORITY_RANK: Record<Priority, number> = { High: 3, Medium: 2, Low: 1 };

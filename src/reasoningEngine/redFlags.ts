@@ -47,6 +47,16 @@ const RULES: Rule[] = [
     check: (s) => !!(s.systemicIllness || s.malignancyHistory),
     message: "Systemic/serious pathology flag raised — refer per protocol before proceeding.",
   },
+  {
+    id: "thoracic_cord_compression",
+    check: (s) => !!s.thoracicCordCompressionSigns,
+    message: "Possible spinal cord compression at the thoracic level — urgent referral required.",
+  },
+  {
+    id: "thoracic_visceral_referral",
+    check: (s) => !!(s.thoracicCardiacSymptoms || s.thoracicCardiacLikeRadiation || s.thoracicRespiratorySymptoms || s.thoracicAbdominalSymptoms),
+    message: "Possible non-musculoskeletal (cardiac/respiratory/abdominal) referral pattern — refer for urgent medical assessment before proceeding with musculoskeletal treatment.",
+  },
 ];
 
 export function redFlagScreen(subjective: SubjectiveInput): RedFlagResult {

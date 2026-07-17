@@ -50,6 +50,15 @@ export function deriveFindings(
   if (region === "elbow") {
     deriveElbow(subjective, objective, add);
   }
+  if (region === "thoracic") {
+    deriveThoracic(subjective, objective, add);
+  }
+  if (region === "ankle") {
+    deriveAnkle(subjective, objective, add);
+  }
+  if (region === "wrist") {
+    deriveWrist(subjective, objective, add);
+  }
   return f;
 }
 
@@ -227,6 +236,74 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   olecranon_tender: "palpation", cubital_tunnel_tender: "palpation",
   biceps_tendon_tender: "palpation", radial_head_tender: "palpation",
   imaging_elbow_oa: "imaging", imaging_ucl_tear: "imaging", imaging_biceps_rupture: "imaging",
+  // thoracic
+  thoracic_upper_pain: "history", thoracic_mid_pain: "history", thoracic_lower_pain: "history",
+  thoracic_interscapular_pain: "history", thoracic_chest_wall_pain: "history",
+  thoracic_dermatomal_band: "history", thoracic_lifting_mechanism: "history",
+  thoracic_rotation_injury_mechanism: "history", thoracic_direct_trauma_mechanism: "history",
+  thoracic_postural_insidious: "history", thoracic_post_viral_onset: "history",
+  thoracic_osteoporotic_minimal_trauma: "history", thoracic_stress_fracture_risk_activity: "history",
+  thoracic_high_impact_sport_mechanism: "history",
+  thoracic_rotation_aggravation: "painBehaviour", thoracic_extension_aggravation: "painBehaviour",
+  thoracic_breathing_aggravation: "painBehaviour", thoracic_cough_sneeze_aggravation: "painBehaviour",
+  thoracic_prolonged_sitting_aggravation: "painBehaviour", thoracic_manipulation_relief: "painBehaviour",
+  thoracic_inflammatory_pattern: "painBehaviour", thoracic_constant_unrelated_to_movement: "painBehaviour",
+  rib_point_tenderness: "specialTests", rib_spring_test_positive: "specialTests",
+  costochondritis_pattern: "specialTests", tietze_swelling_pattern: "specialTests",
+  kc_thoracic_rotation_restricted: "specialTests", kc_thoracic_extension_restricted: "specialTests",
+  kc_rib_mobility_abnormal: "specialTests",
+  thoracic_rotation_loss: "rom", thoracic_extension_loss: "rom",
+  costovertebral_tender: "palpation", sternal_costal_tender: "palpation",
+  imaging_compression_fracture: "imaging", imaging_thoracic_disc: "imaging",
+  // ankle
+  ankle_lateral_pain_pattern: "history", ankle_medial_pain_pattern: "history",
+  ankle_anterior_pain_pattern: "history", ankle_posterior_pain_pattern: "history",
+  achilles_insertional_pattern: "history", achilles_mid_portion_pattern: "history",
+  ankle_inversion_sprain_mechanism: "history", ankle_eversion_sprain_mechanism: "history",
+  ankle_high_sprain_mechanism: "history", ankle_achilles_rupture_pop: "history",
+  ankle_atfl_pop_felt: "history", ankle_previous_multiple_sprains: "history",
+  ankle_ottawa_bony_tenderness: "history", ankle_stress_fracture_suspected: "history",
+  ankle_peroneal_subluxation_suspected: "history", ankle_suspected_achilles_rupture_flag: "history",
+  ankle_suspected_ligament_rupture_flag: "history",
+  ankle_dorsiflexion_aggravation: "painBehaviour", ankle_morning_stiffness_achilles: "painBehaviour",
+  ankle_warms_up_then_worsens: "painBehaviour", ankle_giving_way_instability: "painBehaviour",
+  ankle_radiates_tarsal_tunnel: "painBehaviour", ankle_recurrent_swelling_pattern: "painBehaviour",
+  ant_drawer_ankle_positive: "specialTests", talar_tilt_positive: "specialTests",
+  squeeze_ankle_positive: "specialTests", thompson_positive: "specialTests",
+  navicular_drop_significant: "specialTests", tinel_ankle_positive: "specialTests",
+  royal_london_positive: "specialTests", cpa_gastroc_overactive: "specialTests",
+  cpa_peroneal_overactive: "specialTests", kc_ankle_df_restricted: "specialTests",
+  kc_subtalar_hypermobile: "specialTests",
+  tib_ant_weak: "mmt", tib_post_weak_or_painful: "mmt",
+  gastroc_soleus_painful: "mmt", peroneal_weak_or_painful: "mmt",
+  ankle_dorsiflexion_loss: "rom", ankle_plantarflexion_loss: "rom",
+  lateral_malleolus_tender: "palpation", medial_malleolus_tender: "palpation",
+  achilles_tender: "palpation", tarsal_tunnel_tender: "palpation",
+  imaging_ankle_oa: "imaging", imaging_achilles_rupture: "imaging", imaging_stress_fracture: "imaging",
+  // wrist
+  wrist_dorsal_pain_pattern: "history", wrist_volar_pain_pattern: "history",
+  wrist_radial_pain_pattern: "history", wrist_ulnar_pain_pattern: "history",
+  thumb_cmc_pain_pattern: "history", palm_pain_pattern: "history",
+  wrist_foosh_mechanism: "history", wrist_foosh_dorsiflexion_mechanism: "history",
+  wrist_direct_trauma_mechanism: "history", wrist_repetitive_grip_overuse: "history",
+  wrist_computer_overuse: "history", wrist_de_quervain_new_parent_mechanism: "history",
+  median_nerve_night_symptoms: "history", median_nerve_flick_sign_relief: "history",
+  de_quervain_finkelstein_reported: "history", trigger_finger_pattern: "history",
+  wrist_suspected_distal_radius_fracture: "history", wrist_suspected_scaphoid_fracture: "history",
+  wrist_suspected_lunate_perilunate_dislocation: "history", wrist_tendon_rupture_flag: "history",
+  wrist_bilateral_cts_screen: "history", wrist_crps_features: "history", wrist_raynauds_features: "history",
+  wrist_gripping_aggravation: "painBehaviour", thumb_extension_abduction_aggravation: "painBehaviour",
+  wrist_compression_loading_aggravation: "painBehaviour",
+  phalen_positive: "specialTests", tinel_wrist_positive: "specialTests",
+  finkelstein_positive: "specialTests", watson_positive: "specialTests", grind_positive: "specialTests",
+  cpa_wrist_extensors_inhibited: "specialTests", cpa_grip_neuro_inhibited: "specialTests",
+  wrist_extensors_weak_or_painful: "mmt", wrist_flexors_weak_or_painful: "mmt",
+  thumb_extensor_abductor_painful: "mmt",
+  wrist_flexion_loss: "rom", wrist_extension_loss: "rom",
+  scaphoid_snuffbox_tender: "palpation", ecu_tender: "palpation",
+  radial_styloid_tender: "palpation", cmc_thumb_base_tender: "palpation",
+  carpal_tunnel_tender_wrist: "palpation",
+  imaging_wrist_oa: "imaging", imaging_scaphoid_fracture: "imaging", imaging_distal_radius_fracture: "imaging",
 };
 
 function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
@@ -466,6 +543,201 @@ function deriveKnee(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("imaging_knee_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: knee osteoarthritis reported");
   add("imaging_meniscal_tear", "imaging", imagingSummary.includes("meniscal") || imagingSummary.includes("meniscus"), "Imaging: meniscal tear reported");
   add("imaging_acl_tear", "imaging", imagingSummary.includes("acl") || imagingSummary.includes("anterior cruciate"), "Imaging: ACL tear reported");
+}
+
+function deriveWrist(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  add("wrist_dorsal_pain_pattern", "history", !!s.wristDorsalPainPattern, "History: dorsal wrist pain pattern");
+  add("wrist_volar_pain_pattern", "history", !!s.wristVolarPainPattern, "History: volar (palmar) wrist pain pattern");
+  add("wrist_radial_pain_pattern", "history", !!s.wristRadialPainPattern, "History: radial wrist / anatomical snuffbox pain pattern");
+  add("wrist_ulnar_pain_pattern", "history", !!s.wristUlnarPainPattern, "History: ulnar-sided wrist pain pattern");
+  add("thumb_cmc_pain_pattern", "history", !!s.thumbCmcPainPattern, "History: thumb CMC (base of thumb) pain pattern");
+  add("palm_pain_pattern", "history", !!s.palmPainPattern, "History: palm (thenar/hypothenar) pain pattern");
+  add("wrist_foosh_mechanism", "history", !!s.wristFooshMechanism, "History: FOOSH mechanism (fall onto outstretched hand)");
+  add("wrist_foosh_dorsiflexion_mechanism", "history", !!s.wristFooshDorsiflexionMechanism, "History: FOOSH with wrist dorsiflexion impact (scaphoid/distal radius pattern)");
+  add("wrist_direct_trauma_mechanism", "history", !!s.wristDirectTraumaMechanism, "History: direct trauma to wrist/hand");
+  add("wrist_repetitive_grip_overuse", "history", !!s.wristRepetitiveGripOveruse, "History: repetitive gripping/wringing overuse");
+  add("wrist_computer_overuse", "history", !!s.wristComputerOveruse, "History: computer/keyboard/mouse overuse");
+  add("wrist_de_quervain_new_parent_mechanism", "history", !!s.wristDeQuervainNewParentMechanism, "History: new-parent lifting pattern (classic De Quervain's mechanism)");
+  add("median_nerve_night_symptoms", "history", !!s.medianNerveNightSymptoms, "History: median nerve distribution symptoms waking patient at night (classic CTS)");
+  add("median_nerve_flick_sign_relief", "history", !!s.medianNerveFlickSignRelief, "History: symptoms improve with shaking the hand (flick sign)");
+  add("de_quervain_finkelstein_reported", "history", !!s.deQuervainFinkelsteinReportedPattern, "History: thumb base pain consistent with De Quervain's reported on intake");
+  add("trigger_finger_pattern", "history", !!s.triggerFingerPattern, "History: digit catching/locking with flexion (trigger finger pattern)");
+  add("wrist_suspected_distal_radius_fracture", "history", !!s.wristSuspectedDistalRadiusFracture, "History: suspected distal radius fracture (Colles/Barton) flagged on intake");
+  add("wrist_suspected_scaphoid_fracture", "history", !!s.wristSuspectedScaphoidFracture, "History: suspected scaphoid fracture (snuffbox tenderness) flagged on intake");
+  add("wrist_suspected_lunate_perilunate_dislocation", "history", !!s.wristSuspectedLunatePerilunateDislocation, "History: suspected lunate/perilunate dislocation flagged on intake");
+  add("wrist_tendon_rupture_flag", "history", !!s.wristTendonRuptureFlag, "History: suspected extensor/flexor tendon rupture flagged on intake");
+  add("wrist_bilateral_cts_screen", "history", !!s.wristBilateralCtsScreen, "History: bilateral carpal tunnel symptoms (systemic cause screen)");
+  add("wrist_crps_features", "history", !!s.wristCrpsFeatures, "History: features suggestive of CRPS/reflex sympathetic dystrophy");
+  add("wrist_raynauds_features", "history", !!s.wristRaynaudsFeatures, "History: Raynaud's phenomenon features (colour change with cold)");
+
+  add("ulnar_nerve_symptoms", "history", !!s.ulnarNerveDistributionSymptoms, "History: ulnar nerve distribution symptoms (little/ring finger)");
+  add("radial_nerve_symptoms", "history", !!s.radialNerveDistributionSymptoms, "History: radial nerve distribution symptoms (dorsum hand/wrist)");
+  add("resisted_wrist_extension_aggravation", "painBehaviour", !!s.resistedWristExtensionPain, "History: resisted wrist extension aggravates");
+  add("resisted_wrist_flexion_aggravation", "painBehaviour", !!s.resistedWristFlexionPain, "History: resisted wrist flexion aggravates");
+  add("wrist_gripping_aggravation", "painBehaviour", !!s.wristGrippingAggravation, "History: gripping aggravates");
+  add("thumb_extension_abduction_aggravation", "painBehaviour", !!s.thumbExtensionAbductionAggravation, "History: thumb extension/abduction aggravates (De Quervain's pattern)");
+  add("wrist_compression_loading_aggravation", "painBehaviour", !!s.wristCompressionLoadingAggravation, "History: wrist compression/axial loading aggravates (TFCC pattern)");
+
+  add("phalen_positive", "specialTests", isPositive(t, "phalen_positive"), "Phalen's test: positive (carpal tunnel syndrome)");
+  add("tinel_wrist_positive", "specialTests", isPositive(t, "tinel_wrist_positive"), "Tinel's sign at wrist: positive (carpal tunnel syndrome)");
+  add("finkelstein_positive", "specialTests", isPositive(t, "finkelstein_positive"), "Finkelstein's test: positive (De Quervain's tenosynovitis)");
+  add("watson_positive", "specialTests", isPositive(t, "watson_positive"), "Watson scaphoid shift test: positive (scapholunate instability)");
+  add("grind_positive", "specialTests", isPositive(t, "grind_positive"), "Grind test: positive (1st CMC/thumb base osteoarthritis)");
+  add("cpa_wrist_extensors_inhibited", "specialTests", isPositive(t, "cpa_wrist_extensors_inhibited"), "CPA: wrist extensors inhibited");
+  add("cpa_grip_neuro_inhibited", "specialTests", isPositive(t, "cpa_grip_neuro_inhibited"), "CPA: grip inhibited with a neurological pattern (median/ulnar nerve distribution)");
+
+  const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
+  const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
+  add("wrist_extensors_weak_or_painful", "mmt", weak("wrist extensors") || painfulResist("wrist extensors"), "MMT: wrist extensor weakness or painful resisted extension");
+  add("wrist_flexors_weak_or_painful", "mmt", weak("wrist flexors") || painfulResist("wrist flexors"), "MMT: wrist flexor weakness or painful resisted flexion");
+  add("thumb_extensor_abductor_painful", "mmt", painfulResist("thumb"), "MMT/STTT: painful resisted thumb extension/abduction (De Quervain's)");
+
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("wrist_flexion_loss", "rom", limited("wrist flexion"), "ROM: wrist flexion limited (>=25%)");
+  add("wrist_extension_loss", "rom", limited("wrist extension"), "ROM: wrist extension limited (>=25%)");
+
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("scaphoid_snuffbox_tender", "palpation", tender("scaphoid") || tender("snuffbox"), "Palpation: scaphoid/anatomical snuffbox tenderness");
+  add("ecu_tender", "palpation", tender("ecu") || tender("extensor carpi ulnaris"), "Palpation: ECU tendon tenderness");
+  add("radial_styloid_tender", "palpation", tender("radial styloid") || tender("1st dorsal compartment"), "Palpation: radial styloid/1st dorsal compartment tenderness");
+  add("cmc_thumb_base_tender", "palpation", tender("cmc") || tender("thumb base"), "Palpation: 1st CMC/thumb base tenderness");
+  add("carpal_tunnel_tender_wrist", "palpation", tender("carpal tunnel") || tender("volar wrist"), "Palpation: carpal tunnel/volar wrist tenderness");
+
+  const imagingSummary = (o.imaging?.summary || "").toLowerCase();
+  add("imaging_wrist_oa", "imaging", imagingSummary.includes("osteoarth") && (imagingSummary.includes("wrist") || imagingSummary.includes("radiocarpal")), "Imaging: wrist osteoarthritis reported");
+  add("imaging_scaphoid_fracture", "imaging", imagingSummary.includes("scaphoid") && (imagingSummary.includes("fracture") || imagingSummary.includes("fx")), "Imaging: scaphoid fracture reported");
+  add("imaging_distal_radius_fracture", "imaging", imagingSummary.includes("distal radius") && (imagingSummary.includes("fracture") || imagingSummary.includes("fx")), "Imaging: distal radius fracture reported");
+}
+
+function deriveAnkle(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  add("ankle_lateral_pain_pattern", "history", !!s.ankleLateralPainPattern, "History: lateral ankle pain pattern (ATFL/CFL/sinus tarsi)");
+  add("ankle_medial_pain_pattern", "history", !!s.ankleMedialPainPattern, "History: medial ankle pain pattern (deltoid/tibialis posterior)");
+  add("ankle_anterior_pain_pattern", "history", !!s.ankleAnteriorPainPattern, "History: anterior ankle joint-line pain pattern");
+  add("ankle_posterior_pain_pattern", "history", !!s.anklePosteriorPainPattern, "History: posterior ankle pain pattern (FHL/posterior impingement)");
+  add("achilles_insertional_pattern", "history", !!s.achillesInsertionalPainPattern, "History: Achilles insertional pain pattern");
+  add("achilles_mid_portion_pattern", "history", !!s.achillesMidPortionPainPattern, "History: Achilles mid-portion pain pattern");
+  add("ankle_inversion_sprain_mechanism", "history", !!s.ankleInversionSprainMechanism, "History: inversion sprain mechanism (foot rolled in)");
+  add("ankle_eversion_sprain_mechanism", "history", !!s.ankleEversionSprainMechanism, "History: eversion sprain mechanism (foot rolled out)");
+  add("ankle_high_sprain_mechanism", "history", !!s.ankleHighSprainMechanism, "History: high ankle sprain mechanism (external rotation)");
+  add("ankle_achilles_rupture_pop", "history", !!s.ankleAchillesRuptureFeltPop, "History: felt/heard a pop at the Achilles (rupture flag)");
+  add("ankle_atfl_pop_felt", "history", !!s.ankleAtflPopFelt, "History: felt/heard a pop at the lateral ankle (ATFL)");
+  add("ankle_previous_multiple_sprains", "history", !!s.anklePreviousMultipleSprains, "History: multiple previous ankle sprains (chronic instability risk)");
+  add("ankle_ottawa_bony_tenderness", "history", !!s.ankleOttawaBonyTenderness, "History: Ottawa Rules bony tenderness reported");
+  add("ankle_stress_fracture_suspected", "history", !!s.ankleStressFractureSuspected, "History: stress fracture suspected (tibial/metatarsal)");
+  add("ankle_peroneal_subluxation_suspected", "history", !!s.anklePeronealSubluxationSuspected, "History: peroneal tendon subluxation suspected");
+  add("ankle_suspected_achilles_rupture_flag", "history", !!s.ankleSuspectedAchillesRuptureFlag, "History: suspected Achilles rupture flagged on intake");
+  add("ankle_suspected_ligament_rupture_flag", "history", !!s.ankleSuspectedLigamentRuptureFlag, "History: suspected complete ATFL/ligament rupture flagged on intake");
+
+  add("ankle_dorsiflexion_aggravation", "painBehaviour", !!s.ankleDorsiflexionAggravation, "History: dorsiflexion aggravates");
+  add("ankle_morning_stiffness_achilles", "painBehaviour", !!s.ankleMorningStiffnessAchilles, "History: Achilles stiff and sore on rising");
+  add("ankle_warms_up_then_worsens", "painBehaviour", !!s.ankleWarmsUpThenWorsensPattern, "History: warms up then worsens with sustained activity (mid-portion Achilles pattern)");
+  add("ankle_giving_way_instability", "painBehaviour", !!s.ankleGivingWayInstability, "History: sense of ankle giving way / instability");
+  add("ankle_radiates_tarsal_tunnel", "painBehaviour", !!s.ankleRadiatesTarsalTunnel, "History: burning/tingling referred from tarsal tunnel (tibial nerve)");
+  add("ankle_recurrent_swelling_pattern", "painBehaviour", !!s.ankleRecurrentSwellingPattern, "History: persistent/recurrent swelling pattern");
+
+  add("ant_drawer_ankle_positive", "specialTests", isPositive(t, "ant_drawer_ankle_positive"), "Anterior drawer test (ankle): positive (ATFL laxity/rupture)");
+  add("talar_tilt_positive", "specialTests", isPositive(t, "talar_tilt_positive"), "Talar tilt test: positive (CFL laxity)");
+  add("squeeze_ankle_positive", "specialTests", isPositive(t, "squeeze_ankle_positive"), "Squeeze/mortise test: positive (syndesmotic/high ankle sprain)");
+  add("thompson_positive", "specialTests", isPositive(t, "thompson_positive"), "Thompson's test: positive (complete Achilles rupture)");
+  add("navicular_drop_significant", "specialTests", isPositive(t, "navicular_drop_significant"), "Navicular drop test: significant collapse (>10mm — tibialis posterior insufficiency)");
+  add("tinel_ankle_positive", "specialTests", isPositive(t, "tinel_ankle_positive"), "Tinel's sign at ankle: positive (tarsal tunnel syndrome)");
+  add("royal_london_positive", "specialTests", isPositive(t, "royal_london_positive"), "Royal London Hospital test: positive (mid-portion Achilles tendinopathy)");
+  add("cpa_gastroc_overactive", "specialTests", isPositive(t, "cpa_gastroc_overactive"), "CPA: gastrocnemius/soleus overactive (Achilles tendinopathy pattern, or compensating for restricted dorsiflexion)");
+  add("cpa_peroneal_overactive", "specialTests", isPositive(t, "cpa_peroneal_overactive"), "CPA: peroneals overactive (compensating for inhibited tibialis anterior/posterior — chronic overload pattern)");
+  add("kc_ankle_df_restricted", "specialTests", isPositive(t, "kc_ankle_df_restricted"), "Kinetic chain: weight-bearing dorsiflexion (lunge test) moderately-to-severely restricted");
+  add("kc_subtalar_hypermobile", "specialTests", isPositive(t, "kc_subtalar_hypermobile"), "Kinetic chain: subtalar joint hypermobile — excessive pronation pattern");
+
+  const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
+  const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
+  add("tib_ant_weak", "mmt", weak("tibialis anterior"), "MMT: tibialis anterior weakness (<=3/5)");
+  add("tib_post_weak_or_painful", "mmt", weak("tibialis posterior") || painfulResist("tibialis posterior"), "MMT: tibialis posterior weakness or painful resisted inversion");
+  add("gastroc_soleus_painful", "mmt", painfulResist("gastrocnemius"), "MMT: painful resisted plantarflexion (Achilles/gastroc-soleus)");
+  add("peroneal_weak_or_painful", "mmt", weak("peroneals") || painfulResist("peroneals"), "MMT: peroneal weakness or painful resisted eversion");
+
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("ankle_dorsiflexion_loss", "rom", limited("dorsiflexion"), "ROM: ankle dorsiflexion limited (>=25%)");
+  add("ankle_plantarflexion_loss", "rom", limited("plantarflexion"), "ROM: ankle plantarflexion limited (>=25%)");
+
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("lateral_malleolus_tender", "palpation", tender("lateral malleolus") || tender("atfl") || tender("cfl"), "Palpation: lateral malleolus/ATFL/CFL tenderness");
+  add("medial_malleolus_tender", "palpation", tender("medial malleolus") || tender("deltoid"), "Palpation: medial malleolus/deltoid ligament tenderness");
+  add("achilles_tender", "palpation", tender("achilles"), "Palpation: Achilles tendon tenderness");
+  add("tarsal_tunnel_tender", "palpation", tender("tarsal tunnel") || tender("posterior tibial nerve"), "Palpation: tarsal tunnel/posterior tibial nerve tenderness");
+
+  const imagingSummary = (o.imaging?.summary || "").toLowerCase();
+  add("imaging_ankle_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: ankle osteoarthritis reported");
+  add("imaging_achilles_rupture", "imaging", imagingSummary.includes("achilles rupture") || imagingSummary.includes("achilles tear"), "Imaging: Achilles rupture/tear reported");
+  add("imaging_stress_fracture", "imaging", imagingSummary.includes("stress fracture") || imagingSummary.includes("stress reaction"), "Imaging: stress fracture/reaction reported");
+}
+
+function deriveThoracic(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  add("thoracic_upper_pain", "history", !!s.thoracicUpperRegionPain, "History: upper thoracic (T1-T4) pain location");
+  add("thoracic_mid_pain", "history", !!s.thoracicMidRegionPain, "History: mid thoracic (T5-T8) pain location");
+  add("thoracic_lower_pain", "history", !!s.thoracicLowerRegionPain, "History: lower thoracic (T9-T12) pain location");
+  add("thoracic_interscapular_pain", "history", !!s.thoracicInterscapularPain, "History: interscapular pain pattern");
+  add("thoracic_chest_wall_pain", "history", !!s.thoracicChestWallPain, "History: anterior/lateral chest wall or sternal pain pattern");
+  add("thoracic_dermatomal_band", "history", !!s.thoracicDermatomalBandPattern, "History: dermatomal band radiation around chest wall");
+  add("thoracic_lifting_mechanism", "history", !!s.thoracicLiftingMechanism, "History: lifting injury mechanism");
+  add("thoracic_rotation_injury_mechanism", "history", !!s.thoracicRotationInjuryMechanism, "History: rotation injury mechanism");
+  add("thoracic_direct_trauma_mechanism", "history", !!s.thoracicDirectTraumaMechanism, "History: fall/direct trauma mechanism");
+  add("thoracic_postural_insidious", "history", !!s.thoracicPosturalInsidiousOnset, "History: insidious postural/sustained-posture onset");
+  add("thoracic_post_viral_onset", "history", !!s.thoracicPostViralOnset, "History: post-viral illness onset (costochondritis pattern)");
+  add("thoracic_osteoporotic_minimal_trauma", "history", !!s.thoracicOsteoporoticMinimalTraumaMechanism, "History: osteoporotic fracture-pattern — minimal trauma");
+  add("thoracic_stress_fracture_risk_activity", "history", !!s.thoracicStressFractureRiskActivity, "History: rib stress-fracture risk activity (rowing/coughing athlete)");
+  add("thoracic_high_impact_sport_mechanism", "history", !!s.thoracicHighImpactSportMechanism, "History: high-impact contact sport mechanism");
+
+  add("thoracic_rotation_aggravation", "painBehaviour", !!s.thoracicRotationAggravation, "History: rotation aggravates (most thoracic-sensitive movement)");
+  add("thoracic_extension_aggravation", "painBehaviour", !!s.thoracicExtensionAggravation, "History: extension aggravates");
+  add("thoracic_breathing_aggravation", "painBehaviour", !!s.thoracicBreathingAggravation, "History: deep breathing aggravates (rib/costal involvement)");
+  add("thoracic_cough_sneeze_aggravation", "painBehaviour", !!s.thoracicCoughSneezeAggravation, "History: coughing/sneezing aggravates");
+  add("thoracic_prolonged_sitting_aggravation", "painBehaviour", !!s.thoracicProlongedSittingAggravation, "History: prolonged sitting/desk posture aggravates");
+  add("thoracic_manipulation_relief", "painBehaviour", !!s.thoracicManipulationRelief, "History: significant relief with manipulation (mechanical pattern)");
+  add("thoracic_inflammatory_pattern", "painBehaviour", !!s.thoracicInflammatoryPattern, "History: inflammatory pattern — morning stiffness, eases with movement");
+  add("thoracic_constant_unrelated_to_movement", "painBehaviour", !!s.thoracicConstantUnrelatedToMovement, "History: constant pain unaffected by position/movement (non-mechanical flag)");
+
+  add("rib_point_tenderness", "specialTests", isPositive(t, "rib_point_tenderness"), "Rib screen: point tenderness over specific rib");
+  add("rib_spring_test_positive", "specialTests", isPositive(t, "rib_spring_test_positive"), "Rib spring test: positive (costovertebral/costotransverse joint dysfunction)");
+  add("costochondritis_pattern", "specialTests", isPositive(t, "costochondritis_pattern"), "Rib screen: costochondritis pattern (anterior chest + cartilage tenderness)");
+  add("tietze_swelling_pattern", "specialTests", isPositive(t, "tietze_swelling_pattern"), "Rib screen: Tietze syndrome pattern (swelling at costochondral junction)");
+  add("kc_thoracic_rotation_restricted", "specialTests", isPositive(t, "kc_thoracic_rotation_restricted"), "Kinetic chain: thoracic rotation moderately-to-severely restricted");
+  add("kc_thoracic_extension_restricted", "specialTests", isPositive(t, "kc_thoracic_extension_restricted"), "Kinetic chain: thoracic extension moderately-to-severely restricted (kyphosis fixation)");
+  add("kc_rib_mobility_abnormal", "specialTests", isPositive(t, "kc_rib_mobility_abnormal"), "Kinetic chain: asymmetric or hypomobile rib cage expansion on palpation");
+
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("thoracic_rotation_loss", "rom", limited("rotation l") || limited("rotation r"), "ROM: thoracic rotation limited (>=25%)");
+  add("thoracic_extension_loss", "rom", limited("extension"), "ROM: thoracic extension limited (>=25%)");
+
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("costovertebral_tender", "palpation", tender("costovertebral") || tender("rib angle") || tender("paraspinal"), "Palpation: costovertebral/rib angle or paraspinal tenderness");
+  add("sternal_costal_tender", "palpation", tender("sternal") || tender("costochondral") || tender("costal cartilage"), "Palpation: sternal/costochondral tenderness");
+
+  const imagingSummary = (o.imaging?.summary || "").toLowerCase();
+  add("imaging_compression_fracture", "imaging", imagingSummary.includes("compression fracture") || imagingSummary.includes("wedge fracture"), "Imaging: vertebral compression/wedge fracture reported");
+  add("imaging_thoracic_disc", "imaging", imagingSummary.includes("disc") && imagingSummary.includes("thoracic"), "Imaging: thoracic disc pathology reported");
 }
 
 function deriveElbow(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {

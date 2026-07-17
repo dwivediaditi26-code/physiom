@@ -139,6 +139,97 @@ export interface SubjectiveInput {
   anteriorElbowPainPattern?: boolean;
   ulnarNerveDistributionSymptoms?: boolean;
   radialNerveDistributionSymptoms?: boolean;
+
+  // thoracic-relevant history signals
+  thoracicUpperRegionPain?: boolean;
+  thoracicMidRegionPain?: boolean;
+  thoracicLowerRegionPain?: boolean;
+  thoracicInterscapularPain?: boolean;
+  thoracicChestWallPain?: boolean;
+  thoracicDermatomalBandPattern?: boolean;
+  thoracicCardiacLikeRadiation?: boolean;
+  thoracicLiftingMechanism?: boolean;
+  thoracicRotationInjuryMechanism?: boolean;
+  thoracicDirectTraumaMechanism?: boolean;
+  thoracicPosturalInsidiousOnset?: boolean;
+  thoracicPostViralOnset?: boolean;
+  thoracicOsteoporoticMinimalTraumaMechanism?: boolean;
+  thoracicRotationAggravation?: boolean;
+  thoracicExtensionAggravation?: boolean;
+  thoracicBreathingAggravation?: boolean;
+  thoracicCoughSneezeAggravation?: boolean;
+  thoracicProlongedSittingAggravation?: boolean;
+  thoracicManipulationRelief?: boolean;
+  thoracicInflammatoryPattern?: boolean;
+  thoracicConstantUnrelatedToMovement?: boolean;
+  thoracicRibPointTenderness?: boolean;
+  thoracicRibSpringTestPositive?: boolean;
+  thoracicCostochondritisPattern?: boolean;
+  thoracicTietzeSwellingPattern?: boolean;
+  thoracicStressFractureRiskActivity?: boolean;
+  thoracicHighImpactSportMechanism?: boolean;
+  thoracicCardiacSymptoms?: boolean;
+  thoracicCardiacHistory?: boolean;
+  thoracicRespiratorySymptoms?: boolean;
+  thoracicAbdominalSymptoms?: boolean;
+  thoracicCordCompressionSigns?: boolean;
+
+  // ankle-relevant history signals
+  ankleLateralPainPattern?: boolean;
+  ankleMedialPainPattern?: boolean;
+  ankleAnteriorPainPattern?: boolean;
+  anklePosteriorPainPattern?: boolean;
+  achillesInsertionalPainPattern?: boolean;
+  achillesMidPortionPainPattern?: boolean;
+  ankleInversionSprainMechanism?: boolean;
+  ankleEversionSprainMechanism?: boolean;
+  ankleHighSprainMechanism?: boolean;
+  ankleAchillesRuptureFeltPop?: boolean;
+  ankleAtflPopFelt?: boolean;
+  anklePreviousMultipleSprains?: boolean;
+  ankleInsidiousOveruseOnset?: boolean;
+  ankleDorsiflexionAggravation?: boolean;
+  ankleMorningStiffnessAchilles?: boolean;
+  ankleWarmsUpThenWorsensPattern?: boolean;
+  ankleGivingWayInstability?: boolean;
+  ankleRadiatesTarsalTunnel?: boolean;
+  ankleRecurrentSwellingPattern?: boolean;
+  ankleOttawaBonyTenderness?: boolean;
+  ankleSuspectedAchillesRuptureFlag?: boolean;
+  ankleSuspectedLigamentRuptureFlag?: boolean;
+  ankleStressFractureSuspected?: boolean;
+  anklePeronealSubluxationSuspected?: boolean;
+
+  // wrist/hand-relevant history signals
+  wristDorsalPainPattern?: boolean;
+  wristVolarPainPattern?: boolean;
+  wristRadialPainPattern?: boolean;
+  wristUlnarPainPattern?: boolean;
+  thumbCmcPainPattern?: boolean;
+  palmPainPattern?: boolean;
+  wristFooshMechanism?: boolean;
+  wristFooshDorsiflexionMechanism?: boolean;
+  wristDirectTraumaMechanism?: boolean;
+  wristRepetitiveGripOveruse?: boolean;
+  wristComputerOveruse?: boolean;
+  wristDeQuervainNewParentMechanism?: boolean;
+  wristGrippingAggravation?: boolean;
+  thumbExtensionAbductionAggravation?: boolean;
+  wristCompressionLoadingAggravation?: boolean;
+  medianNerveNightSymptoms?: boolean;
+  medianNerveFlickSignRelief?: boolean;
+  deQuervainFinkelsteinReportedPattern?: boolean;
+  triggerFingerPattern?: boolean;
+  wristSuspectedDistalRadiusFracture?: boolean;
+  wristSuspectedScaphoidFracture?: boolean;
+  wristSuspectedLunatePerilunateDislocation?: boolean;
+  wristTendonRuptureFlag?: boolean;
+  wristDupuytrensContracture?: boolean;
+  wristGanglionCyst?: boolean;
+  wristBilateralCtsScreen?: boolean;
+  wristCrpsFeatures?: boolean;
+  wristRaynaudsFeatures?: boolean;
+
   symptomDurationDays?: number | null;
 }
 

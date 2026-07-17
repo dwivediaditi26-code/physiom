@@ -55,13 +55,17 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     expect(screen.getByText(/Red flag screen positive/i)).toBeInTheDocument();
   });
 
-  it("shows a graceful message for a region the engine does not yet cover", () => {
-    // Knee is now covered by the deterministic engine (see the hip/knee tests
-    // below and reasoningEngine_knee.test.ts) -- ankle remains genuinely
-    // unsupported, so it is used here instead to keep this test meaningful.
-    render(<ProbableDiagnosis data={{ cc_main: "ankle pain after twisting" }} />);
+  it("shows a graceful message when no region can be determined from the data", () => {
+    // All 9 regions the app supports (shoulder/cervical/lumbar/hip/knee/elbow/
+    // thoracic/ankle/wrist) are now covered by the deterministic engine (see
+    // each region's reasoningEngine_*.test.ts file), so there is no longer a
+    // *specific* still-uncovered region to use as an example here. This test
+    // instead exercises the other branch of the same graceful-degradation
+    // message: a chief complaint with no region-identifying keywords at all.
+    render(<ProbableDiagnosis data={{ cc_main: "generalised ache, unsure where it's coming from" }} />);
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
     expect(screen.getByText(/currently supports/i)).toBeInTheDocument();
+    expect(screen.getByText(/couldn't determine the region/i)).toBeInTheDocument();
   });
 
   it("runs the engine on a hip dataset via region detection (real field ids)", () => {

@@ -1,0 +1,114 @@
+{
+  "region": "ankle",
+  "always": [
+    {
+      "exam": "Ottawa Ankle Rules screen (bony tenderness posterior malleoli/navicular/5th MT base, ability to weight bear 4 steps)",
+      "why": "A validated, high-sensitivity rule to exclude fracture before proceeding with soft-tissue special testing.",
+      "confirmsOrExcludes": "Screens for occult ankle/foot fracture requiring imaging referral",
+      "priority": "High"
+    },
+    {
+      "exam": "Active + passive ankle ROM (dorsiflexion, plantarflexion, inversion, eversion) with end-feel",
+      "why": "Establishes the mobility baseline and end-feel pattern that differentiates capsular/OA restriction from soft-tissue/ligamentous presentations.",
+      "confirmsOrExcludes": "Screens mechanical restriction pattern vs ligamentous laxity",
+      "priority": "High"
+    },
+    {
+      "exam": "Ligament stability screen (anterior drawer, talar tilt, squeeze/mortise test)",
+      "why": "The three core stability tests differentiate lateral (ATFL/CFL) sprain from high (syndesmotic) sprain and quantify laxity grade.",
+      "confirmsOrExcludes": "Confirms/excludes ATFL/CFL laxity vs syndesmotic injury",
+      "priority": "High"
+    }
+  ],
+  "conditional": [
+    {
+      "when": { "flag": "achillesMidPortionPainPattern", "equals": true },
+      "add": {
+        "exam": "Thompson's test + Royal London Hospital test + Achilles palpation",
+        "why": "Achilles pain requires urgently excluding complete rupture (Thompson's) before proceeding to confirm tendinopathy (Royal London).",
+        "confirmsOrExcludes": "Excludes Achilles rupture; confirms mid-portion tendinopathy",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "achillesInsertionalPainPattern", "equals": true },
+      "add": {
+        "exam": "Thompson's test + insertional palpation + single-leg heel raise endurance",
+        "why": "Insertional Achilles pain needs rupture excluded and load tolerance quantified to guide eccentric loading dosage.",
+        "confirmsOrExcludes": "Excludes rupture; confirms insertional tendinopathy severity",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "ankleSuspectedAchillesRuptureFlag", "equals": true },
+      "add": {
+        "exam": "Thompson's test + palpable tendon gap check, before any weight-bearing testing",
+        "why": "A flagged suspected rupture must be confirmed or excluded before any further loading or resisted testing is attempted.",
+        "confirmsOrExcludes": "Confirms/excludes complete Achilles rupture",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "ankleGivingWayInstability", "equals": true },
+      "add": {
+        "exam": "Talar tilt test + single-leg balance/proprioception screen + subtalar mobility assessment",
+        "why": "Reported instability needs both mechanical laxity and functional/proprioceptive deficits assessed, since chronic instability has both components.",
+        "confirmsOrExcludes": "Confirms/excludes chronic ankle instability (mechanical vs functional)",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "ankleMedialPainPattern", "equals": true },
+      "add": {
+        "exam": "Navicular drop test + resisted inversion in plantarflexion + single-leg heel raise (too-many-toes sign)",
+        "why": "Medial ankle pain in an adult raises suspicion for tibialis posterior dysfunction / progressive flatfoot, which is easily missed without a dedicated arch assessment.",
+        "confirmsOrExcludes": "Confirms/excludes tibialis posterior dysfunction (PTTD)",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": { "flag": "ankleRadiatesTarsalTunnel", "equals": true },
+      "add": {
+        "exam": "Tinel's sign at tarsal tunnel + plantar foot sensory mapping",
+        "why": "A neuropathic-sounding referral pattern requires differentiating tarsal tunnel syndrome from a local musculoskeletal source.",
+        "confirmsOrExcludes": "Confirms/excludes tarsal tunnel syndrome",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": { "flag": "ankleStressFractureSuspected", "equals": true },
+      "add": {
+        "exam": "Point bony palpation + hop test + training-load history, before any further loaded testing",
+        "why": "A suspected stress fracture requires screening before continuing with provocative/resisted testing that could aggravate it.",
+        "confirmsOrExcludes": "Screens for stress fracture requiring imaging referral before continued loading",
+        "priority": "High"
+      }
+    }
+  ],
+  "supporting": [
+    {
+      "exam": "Resisted testing (dorsiflexion, plantarflexion, inversion, eversion) for strength and pain-on-resist",
+      "why": "Differentiates contractile (tendon/muscle) sources from inert (ligament/capsule) sources per Cyriax selective tissue tension principles.",
+      "confirmsOrExcludes": "Localises contractile vs inert tissue involvement",
+      "priority": "Medium"
+    },
+    {
+      "exam": "Kinetic chain screen: weight-bearing dorsiflexion lunge test + subtalar mobility",
+      "why": "Ankle mobility deficits are a well-established driver of compensatory knee, hip, and lumbar loading patterns further up the chain.",
+      "confirmsOrExcludes": "Screens ankle mobility contribution to the broader kinetic chain",
+      "priority": "Low"
+    },
+    {
+      "exam": "Functional + outcome measure (single-leg balance, hop tests, PSFS top 3 activities)",
+      "why": "Quantifies baseline function and instability risk for goal-setting, return-to-sport planning, and re-assessment.",
+      "confirmsOrExcludes": "Baseline functional severity and re-injury risk",
+      "priority": "Medium"
+    },
+    {
+      "exam": "Imaging (only if Ottawa Rules positive, suspected rupture, or failed conservative management)",
+      "why": "Imaging is not routine for straightforward soft-tissue ankle sprains; reserve for fracture screening, suspected rupture, or non-resolving presentations.",
+      "confirmsOrExcludes": "Confirms structural pathology when clinically indicated",
+      "priority": "Low"
+    }
+  ]
+}

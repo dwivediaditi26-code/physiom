@@ -1,0 +1,95 @@
+{
+  "region": "thoracic",
+  "diagnoses": [
+    {
+      "name": "Thoracic facet syndrome / mechanical thoracic pain",
+      "source": "Magee Orthopedic Physical Assessment; APTA spine CPGs",
+      "requiredFindings": [],
+      "supportingFindings": ["thoracic_mid_pain", "thoracic_interscapular_pain", "thoracic_rotation_aggravation", "thoracic_extension_aggravation", "thoracic_manipulation_relief", "thoracic_rotation_loss", "kc_thoracic_rotation_restricted", "insidious_onset"],
+      "conflictingFindings": ["thoracic_constant_unrelated_to_movement"],
+      "exclusionFindings": [],
+      "weights": { "painBehaviour": 1.1, "specialTests": 1.0, "rom": 0.9, "history": 0.7 },
+      "keyExams": ["Active thoracic ROM (flexion/extension/rotation)", "Thoracic rotation kinetic-chain screen"]
+    },
+    {
+      "name": "Costovertebral / costotransverse joint dysfunction (rib dysfunction)",
+      "source": "Magee; Cyriax selective tissue tension principles applied to the rib cage",
+      "requiredFindings": [],
+      "supportingFindings": ["rib_point_tenderness", "rib_spring_test_positive", "thoracic_breathing_aggravation", "thoracic_cough_sneeze_aggravation", "kc_rib_mobility_abnormal", "costovertebral_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.3, "palpation": 1.0, "painBehaviour": 0.8 },
+      "keyExams": ["Rib spring test", "Rib cage mobility / expansion assessment"]
+    },
+    {
+      "name": "Costochondritis / Tietze syndrome",
+      "source": "Magee; differential diagnosis of anterior chest wall pain literature",
+      "requiredFindings": [],
+      "supportingFindings": ["costochondritis_pattern", "tietze_swelling_pattern", "thoracic_chest_wall_pain", "thoracic_post_viral_onset", "thoracic_breathing_aggravation", "sternal_costal_tender"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.2, "history": 0.9, "palpation": 1.0 },
+      "keyExams": ["Costochondral junction palpation", "Chest wall observation for swelling (Tietze)"]
+    },
+    {
+      "name": "Rib stress fracture",
+      "source": "Magee; sports medicine rib stress injury literature (rowing/throwing athletes)",
+      "requiredFindings": [],
+      "supportingFindings": ["thoracic_stress_fracture_risk_activity", "thoracic_high_impact_sport_mechanism", "rib_point_tenderness", "thoracic_cough_sneeze_aggravation"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.2, "palpation": 1.0, "painBehaviour": 0.7 },
+      "keyExams": ["Point tenderness over specific rib", "Training load history (rowing/coughing athlete)"]
+    },
+    {
+      "name": "Thoracic disc herniation / radiculopathy",
+      "source": "Magee Orthopedic Physical Assessment",
+      "requiredFindings": [],
+      "supportingFindings": ["thoracic_dermatomal_band", "thoracic_lifting_mechanism", "thoracic_rotation_injury_mechanism", "paresthesia"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "specialTests": 0.8 },
+      "keyExams": ["Dermatomal band mapping", "Neurological screen (lower limb myotome/reflex if radicular concern)"]
+    },
+    {
+      "name": "Scheuermann's disease / postural kyphosis",
+      "source": "Magee; adolescent spine deformity literature",
+      "requiredFindings": [],
+      "supportingFindings": ["thoracic_postural_insidious", "progressive_stiffness", "kc_thoracic_extension_restricted", "thoracic_extension_loss"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.1, "rom": 1.0, "history": 0.7 },
+      "keyExams": ["Wall angel / foam roller thoracic extension test", "Postural observation for fixed kyphosis"]
+    },
+    {
+      "name": "Osteoporotic vertebral compression fracture",
+      "source": "Magee; spinal fracture red-flag screening literature",
+      "requiredFindings": [],
+      "supportingFindings": ["thoracic_osteoporotic_minimal_trauma", "age_over_50", "night_pain", "constant_pain", "imaging_compression_fracture"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.3, "imaging": 1.5, "painBehaviour": 0.8 },
+      "keyExams": ["Percussion tenderness over spinous process", "Imaging referral if suspected"]
+    },
+    {
+      "name": "Intercostal neuralgia",
+      "source": "Magee; peripheral neuropathic pain differential diagnosis",
+      "requiredFindings": [],
+      "supportingFindings": ["thoracic_dermatomal_band", "thoracic_chest_wall_pain", "paresthesia"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.1, "painBehaviour": 0.7 },
+      "keyExams": ["Dermatomal band mapping", "Sensory screen along affected intercostal distribution"]
+    },
+    {
+      "name": "Postural thoracic pain syndrome (sustained-posture pattern)",
+      "source": "Magee; desk-worker postural pain literature",
+      "requiredFindings": [],
+      "supportingFindings": ["thoracic_postural_insidious", "thoracic_prolonged_sitting_aggravation", "kc_thoracic_rotation_restricted", "kc_thoracic_extension_restricted"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "specialTests": 0.9, "painBehaviour": 0.8 },
+      "keyExams": ["Postural/ergonomic screen", "Thoracic rotation and extension kinetic-chain screen"]
+    }
+  ]
+}

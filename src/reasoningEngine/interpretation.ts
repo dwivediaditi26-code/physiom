@@ -283,6 +283,173 @@ export function buildInterpretation(
       suggestedGoals.push("Reduce proximal forearm pain and restore pain-free resisted pronation");
       homeAdvice.push("Avoid repetitive resisted pronation tasks; gentle median nerve glides within comfort");
     }
+  } else if (region === "thoracic") {
+    if (has("thoracic_rotation_loss")) primaryImpairments.push("Restricted thoracic rotation");
+    if (has("thoracic_extension_loss")) primaryImpairments.push("Restricted thoracic extension (kyphosis fixation)");
+    if (has("kc_thoracic_rotation_restricted")) primaryImpairments.push("Thoracic rotation mobility deficit on kinetic-chain screen");
+    if (has("kc_thoracic_extension_restricted")) primaryImpairments.push("Thoracic extension mobility deficit on kinetic-chain screen");
+    if (has("rib_point_tenderness") || has("rib_spring_test_positive")) likelyPainGenerators.push("Costovertebral/costotransverse joint(s)");
+    if (has("costochondritis_pattern") || has("tietze_swelling_pattern") || has("sternal_costal_tender")) likelyPainGenerators.push("Costochondral junction (anterior chest wall)");
+    if (has("costovertebral_tender")) likelyPainGenerators.push("Rib angle / paraspinal soft tissue");
+    if (has("thoracic_rotation_aggravation") || has("thoracic_extension_aggravation")) movementDysfunction.push("Rotation/extension reproduces thoracic pain");
+    if (has("thoracic_breathing_aggravation") || has("thoracic_cough_sneeze_aggravation")) movementDysfunction.push("Deep breathing/coughing reproduces pain (costal involvement)");
+    if (has("kc_rib_mobility_abnormal")) movementDysfunction.push("Asymmetric or restricted rib cage expansion on breathing");
+    if (has("thoracic_prolonged_sitting_aggravation")) functionalLimitations.push("Difficulty with prolonged sitting/desk posture");
+    if (has("thoracic_breathing_aggravation")) functionalLimitations.push("Discomfort with deep breathing, coughing, or laughing");
+
+    if (name.includes("facet syndrome") || name.includes("mechanical thoracic")) {
+      treatmentPriorities.push("Thoracic mobilisation/manipulation (rotation and extension directions)", "Postural correction and ergonomic review", "Progressive thoracic rotation and extension exercise");
+      suggestedGoals.push("Restore full pain-free thoracic rotation and extension");
+      homeAdvice.push("Daily thoracic extension over a foam roller and seated rotation drills");
+    } else if (name.includes("Costovertebral") || name.includes("rib dysfunction")) {
+      treatmentPriorities.push("Rib mobilisation at hypomobile levels", "Breathing retraining (lateral rib cage expansion)", "Address any driving mechanism (repetitive coughing, sport, posture)");
+      suggestedGoals.push("Restore symmetric, pain-free rib cage expansion with breathing");
+      homeAdvice.push("Lateral rib expansion breathing drills; avoid provocative sustained postures");
+    } else if (name.includes("Costochondritis") || name.includes("Tietze")) {
+      treatmentPriorities.push("Reassurance and activity modification (self-limiting in most cases)", "Address any post-viral or repetitive-strain contributing factor", "Monitor for red-flag features atypical for costochondritis");
+      suggestedGoals.push("Resolve anterior chest wall pain and confirm benign course");
+      homeAdvice.push("Avoid provocative chest-wall loading (push-ups, heavy lifting) until settling; NSAIDs may help if appropriate");
+    } else if (name.includes("Rib stress fracture")) {
+      treatmentPriorities.push("Relative rest from the provocative training load (rowing/throwing/repetitive coughing)", "Graded return-to-sport/training programme once pain-free", "Imaging referral if not settling with rest");
+      suggestedGoals.push("Pain-free return to full training load");
+      homeAdvice.push("Avoid the provocative activity until reviewed; gradual reintroduction of load once asymptomatic");
+    } else if (name.includes("disc herniation") || name.includes("radiculopathy")) {
+      treatmentPriorities.push("Neurological monitoring (lower limb screen) at each review", "Graded activity modification away from the provocative rotation/lifting mechanism", "Refer if progressive neurological signs develop");
+      suggestedGoals.push("Resolve dermatomal band symptoms and restore pain-free rotation/lifting tolerance");
+      homeAdvice.push("Avoid the provocative lifting/rotation mechanism; seek urgent review if leg weakness or bladder/bowel change develops");
+    } else if (name.includes("Scheuermann") || name.includes("postural kyphosis")) {
+      treatmentPriorities.push("Thoracic extension mobility programme", "Postural strengthening (lower trapezius, rhomboids, thoracic extensors)", "Imaging referral if kyphosis is rigid/progressive to confirm diagnosis");
+      suggestedGoals.push("Improve thoracic extension range and postural control");
+      homeAdvice.push("Daily thoracic extension and postural strengthening exercise; avoid prolonged flexed postures");
+    } else if (name.includes("compression fracture")) {
+      treatmentPriorities.push("Imaging referral to confirm before loaded treatment", "Pain-guided gentle mobility once confirmed stable", "Osteoporosis risk-factor management referral (bone health)");
+      suggestedGoals.push("Manage pain safely while protecting the healing vertebra");
+      homeAdvice.push("Avoid heavy lifting, high-impact loading, or forceful manipulation until cleared by imaging/medical review");
+    } else if (name.includes("Intercostal neuralgia")) {
+      treatmentPriorities.push("Neural mobility work within comfort", "Address any post-viral (shingles) or mechanical nerve irritation cause", "Activity modification away from provocative postures");
+      suggestedGoals.push("Reduce neuropathic band pain and restore comfortable breathing/movement");
+      homeAdvice.push("Gentle thoracic mobility within comfort; seek review if a vesicular rash appears (possible shingles)");
+    } else if (name.includes("Postural thoracic pain")) {
+      treatmentPriorities.push("Ergonomic/workstation review", "Postural strengthening and thoracic mobility programme", "Movement-break education for prolonged sitting");
+      suggestedGoals.push("Reduce posture-related pain and improve thoracic mobility tolerance for sitting");
+      homeAdvice.push("Regular movement breaks from sitting; daily thoracic mobility and postural strengthening exercise");
+    }
+  } else if (region === "ankle") {
+    if (has("ankle_dorsiflexion_loss")) primaryImpairments.push("Restricted ankle dorsiflexion");
+    if (has("ankle_plantarflexion_loss")) primaryImpairments.push("Restricted ankle plantarflexion");
+    if (has("kc_ankle_df_restricted")) primaryImpairments.push("Weight-bearing dorsiflexion (lunge test) mobility deficit");
+    if (has("kc_subtalar_hypermobile")) primaryImpairments.push("Subtalar hypermobility / excessive pronation pattern");
+    if (has("tib_ant_weak")) primaryImpairments.push("Tibialis anterior weakness");
+    if (has("tib_post_weak_or_painful")) primaryImpairments.push("Tibialis posterior weakness/pain");
+    if (has("peroneal_weak_or_painful")) primaryImpairments.push("Peroneal weakness/pain");
+    if (has("ant_drawer_ankle_positive") || has("talar_tilt_positive")) likelyPainGenerators.push("Lateral ankle ligament complex (ATFL/CFL)");
+    if (has("squeeze_ankle_positive")) likelyPainGenerators.push("Distal tibiofibular syndesmosis");
+    if (has("achilles_tender") || has("gastroc_soleus_painful")) likelyPainGenerators.push("Achilles tendon / gastroc-soleus complex");
+    if (has("navicular_drop_significant") || has("medial_malleolus_tender")) likelyPainGenerators.push("Tibialis posterior / medial arch structures");
+    if (has("tarsal_tunnel_tender") || has("tinel_ankle_positive")) likelyPainGenerators.push("Posterior tibial nerve (tarsal tunnel)");
+    if (has("ankle_giving_way_instability")) movementDysfunction.push("Reported instability / giving way with weight-bearing activity");
+    if (has("ankle_warms_up_then_worsens") || has("ankle_morning_stiffness_achilles")) movementDysfunction.push("Load-dependent Achilles symptom pattern (warms up then worsens, or morning stiffness)");
+    if (has("ankle_dorsiflexion_aggravation")) functionalLimitations.push("Difficulty with dorsiflexion-loaded tasks (squatting, stairs, lunging)");
+    if (has("ankle_giving_way_instability")) functionalLimitations.push("Avoidance of uneven ground / fear of re-injury");
+
+    if (name.includes("Lateral ankle sprain")) {
+      treatmentPriorities.push("Protection/relative rest in the acute phase (POLICE principles)", "Early controlled mobilisation and progressive weight-bearing", "Proprioceptive/balance retraining once acute phase settles");
+      suggestedGoals.push("Restore pain-free weight-bearing and full ankle ROM");
+      homeAdvice.push("Ice and elevation in the first 48-72h; avoid immobilising longer than necessary");
+    } else if (name.includes("Chronic ankle instability")) {
+      treatmentPriorities.push("Proprioceptive and single-leg balance training programme", "Peroneal strengthening", "Bracing/taping during high-risk activity as an interim measure");
+      suggestedGoals.push("Reduce recurrent giving-way episodes and improve dynamic balance");
+      homeAdvice.push("Daily single-leg balance drills; consider a lace-up brace for higher-risk sport until strength/balance improve");
+    } else if (name.includes("High ankle sprain")) {
+      treatmentPriorities.push("Protected weight-bearing until syndesmotic stability confirmed", "Avoid early forced dorsiflexion/external rotation loading", "Graded return-to-sport programme (longer timeline than lateral sprain)");
+      suggestedGoals.push("Restore pain-free weight-bearing and dorsiflexion without syndesmotic widening");
+      homeAdvice.push("Avoid forced dorsiflexion and external rotation loading until cleared; recovery is typically slower than a lateral sprain");
+    } else if (name.includes("Achilles tendinopathy")) {
+      treatmentPriorities.push("Progressive loading programme (eccentric or heavy-slow-resistance)", "Load management / training-error correction", "Address contributing calf and kinetic-chain factors (gastroc CPA, ankle DF mobility)");
+      suggestedGoals.push("Restore pain-free loaded calf function (single-leg heel raise tolerance)");
+      homeAdvice.push("Consistent daily loading programme as prescribed; avoid complete rest which can delay tendon adaptation");
+    } else if (name.includes("Achilles tendon rupture")) {
+      treatmentPriorities.push("Urgent orthopaedic referral before any further loading or manual testing", "Immobilisation/bracing per surgical or specialist guidance", "Staged rehabilitation only once medically cleared");
+      suggestedGoals.push("Confirm diagnosis urgently and follow specialist management pathway");
+      homeAdvice.push("Avoid weight-bearing and further testing; seek urgent medical assessment");
+    } else if (name.includes("Ankle osteoarthritis")) {
+      treatmentPriorities.push("Joint mobilisation within tolerance", "Progressive strengthening and dorsiflexion mobility work", "Footwear/load modification advice");
+      suggestedGoals.push("Improve functional dorsiflexion range and reduce activity-related pain");
+      homeAdvice.push("Regular gentle mobility exercise; supportive footwear for aggravating activities");
+    } else if (name.includes("Tibialis posterior dysfunction") || name.includes("PTTD")) {
+      treatmentPriorities.push("Tibialis posterior strengthening (heel raises in inversion)", "Orthotic/arch support assessment if navicular drop significant", "Address kinetic-chain pronation contributors (subtalar, hip control)");
+      suggestedGoals.push("Restore single-leg heel raise capacity and reduce medial arch pain");
+      homeAdvice.push("Daily tibialis posterior strengthening; supportive footwear or orthotic as advised");
+    } else if (name.includes("Peroneal tendinopathy")) {
+      treatmentPriorities.push("Progressive peroneal loading programme", "Address chronic instability/overload contributors if present", "Footwear and training-load review");
+      suggestedGoals.push("Restore pain-free resisted eversion and return to full activity");
+      homeAdvice.push("Gradual return to loading as tolerated; avoid abrupt training-load spikes");
+    } else if (name.includes("Tarsal tunnel syndrome")) {
+      treatmentPriorities.push("Neural mobility work within comfort", "Address any space-occupying/compressive contributing factor (footwear, swelling, biomechanics)", "Orthotic/footwear modification if biomechanically driven");
+      suggestedGoals.push("Reduce plantar foot paraesthesia and improve nerve mobility tolerance");
+      homeAdvice.push("Avoid prolonged compressive footwear; gentle neural glide exercise within comfort");
+    } else if (name.includes("Anterior ankle impingement")) {
+      treatmentPriorities.push("Joint mobilisation to improve dorsiflexion", "Activity modification away from end-range dorsiflexion loading", "Imaging referral if not responding to conservative care (bony impingement)");
+      suggestedGoals.push("Restore pain-free functional dorsiflexion (squatting, stairs)");
+      homeAdvice.push("Avoid repeated end-range dorsiflexion loading until mobility improves");
+    }
+  } else if (region === "wrist") {
+    if (has("wrist_flexion_loss")) primaryImpairments.push("Restricted wrist flexion");
+    if (has("wrist_extension_loss")) primaryImpairments.push("Restricted wrist extension");
+    if (has("wrist_extensors_weak_or_painful")) primaryImpairments.push("Wrist extensor weakness/pain");
+    if (has("wrist_flexors_weak_or_painful")) primaryImpairments.push("Wrist flexor weakness/pain");
+    if (has("phalen_positive") || has("tinel_wrist_positive")) likelyPainGenerators.push("Median nerve (carpal tunnel)");
+    if (has("finkelstein_positive")) likelyPainGenerators.push("1st dorsal compartment (APL/EPB -- De Quervain's)");
+    if (has("watson_positive")) likelyPainGenerators.push("Scapholunate ligament");
+    if (has("grind_positive")) likelyPainGenerators.push("1st CMC joint (thumb base)");
+    if (has("ecu_tender")) likelyPainGenerators.push("Extensor carpi ulnaris tendon");
+    if (has("wrist_gripping_aggravation")) movementDysfunction.push("Gripping reproduces symptoms");
+    if (has("thumb_extension_abduction_aggravation")) movementDysfunction.push("Thumb extension/abduction reproduces symptoms");
+    if (has("wrist_compression_loading_aggravation")) movementDysfunction.push("Wrist compression/axial loading reproduces symptoms");
+    if (has("median_nerve_night_symptoms")) functionalLimitations.push("Sleep disturbance from night-time hand symptoms");
+    if (has("wrist_gripping_aggravation")) functionalLimitations.push("Difficulty with gripping/carrying tasks");
+
+    if (name.includes("Carpal tunnel syndrome")) {
+      treatmentPriorities.push("Neural mobility work within comfort", "Night splinting in neutral", "Ergonomic/workstation review and activity modification");
+      suggestedGoals.push("Resolve night-time median nerve symptoms and restore pain-free grip");
+      homeAdvice.push("Wear a neutral wrist splint at night; avoid sustained wrist flexion/extension postures");
+    } else if (name.includes("De Quervain's")) {
+      treatmentPriorities.push("Thumb spica splinting", "Activity modification away from repetitive thumb/wrist ulnar deviation", "Progressive loading once acute irritability settles");
+      suggestedGoals.push("Restore pain-free thumb extension/abduction and grip");
+      homeAdvice.push("Avoid repetitive lifting with the thumb extended (e.g. lifting a baby under the arms); consider a thumb spica splint");
+    } else if (name.includes("TFCC tear")) {
+      treatmentPriorities.push("Activity modification away from axial loading/ulnar deviation", "Progressive loading and grip strengthening once settling", "Orthopaedic/imaging referral if not improving with conservative care");
+      suggestedGoals.push("Restore pain-free weight-bearing through the wrist (push-up, plank positions) and grip");
+      homeAdvice.push("Avoid weight-bearing through an extended wrist and forceful gripping with rotation until settling");
+    } else if (name.includes("Scapholunate")) {
+      treatmentPriorities.push("Orthopaedic referral to confirm ligament integrity", "Activity modification away from loaded wrist extension", "Bracing as advised pending specialist review");
+      suggestedGoals.push("Confirm diagnosis and follow the appropriate management pathway (conservative vs surgical)");
+      homeAdvice.push("Avoid loaded weight-bearing through the wrist until reviewed");
+    } else if (name.includes("Wrist osteoarthritis")) {
+      treatmentPriorities.push("Joint mobilisation within tolerance", "Grip and forearm strengthening", "Splinting/bracing for aggravating activities");
+      suggestedGoals.push("Improve functional wrist range and reduce activity-related pain");
+      homeAdvice.push("Regular gentle mobility exercise; supportive splint for aggravating/high-load tasks");
+    } else if (name.includes("Distal radius fracture")) {
+      treatmentPriorities.push("Urgent imaging referral before any further loading or manual testing", "Immobilisation per medical guidance", "Staged rehabilitation only once medically cleared");
+      suggestedGoals.push("Confirm diagnosis urgently and follow the appropriate fracture management pathway");
+      homeAdvice.push("Avoid weight-bearing and further testing on the wrist; seek urgent medical assessment");
+    } else if (name.includes("Scaphoid fracture")) {
+      treatmentPriorities.push("Urgent imaging referral (and repeat imaging if initial films are negative but clinically suspected)", "Immobilisation/splinting per medical guidance pending confirmation", "Avoid loaded testing until fracture is excluded");
+      suggestedGoals.push("Confirm or exclude scaphoid fracture given its high non-union risk if missed");
+      homeAdvice.push("Avoid weight-bearing and gripping on the wrist; seek urgent medical assessment given the risk of avascular necrosis if missed");
+    } else if (name.includes("1st CMC osteoarthritis")) {
+      treatmentPriorities.push("Thumb spica splinting for aggravating activities", "Joint protection education and grip technique modification", "Progressive thumb/hand strengthening within tolerance");
+      suggestedGoals.push("Reduce thumb base pain and improve pinch/grip tolerance for daily tasks");
+      homeAdvice.push("Modify pinch-grip tasks (jar opening, writing) and consider a thumb spica splint for flare-ups");
+    } else if (name.includes("ECU tendinopathy")) {
+      treatmentPriorities.push("Progressive loading programme for ECU", "Activity/technique modification (grip, racquet/bat technique if relevant)", "Bracing in slight extension/radial deviation during aggravating activity if needed");
+      suggestedGoals.push("Restore pain-free resisted wrist extension in ulnar deviation");
+      homeAdvice.push("Gradual return to loading as tolerated; avoid abrupt training-load spikes");
+    } else if (name.includes("Trigger finger")) {
+      treatmentPriorities.push("Activity modification away from repetitive gripping", "Splinting the affected digit if catching is significant", "Referral for corticosteroid injection or surgical opinion if not resolving conservatively");
+      suggestedGoals.push("Resolve catching/locking and restore smooth pain-free finger flexion/extension");
+      homeAdvice.push("Avoid repetitive gripping tasks that provoke catching; gentle active range of motion within comfort");
+    }
   }
 
   const yellowFlags: string[] = [];
@@ -321,6 +488,22 @@ export function buildInterpretation(
     referralRecommendation = "Positive valgus stress test in a throwing athlete — consider orthopaedic/sports medicine referral to assess UCL integrity before return to throwing.";
   } else if (region === "elbow" && has("elbow_reflex_change")) {
     referralRecommendation = "Biceps or triceps reflex change noted at the elbow — this reflects C5-C7 nerve root function, not local elbow pathology; consider cervical spine assessment/referral to screen for radiculopathy.";
+  } else if (region === "thoracic" && has("imaging_compression_fracture")) {
+    referralRecommendation = "Imaged vertebral compression/wedge fracture — consider medical referral for bone-health assessment and to confirm stability before loaded manual therapy.";
+  } else if (region === "thoracic" && has("thoracic_dermatomal_band") && has("thoracic_lifting_mechanism")) {
+    referralRecommendation = "Dermatomal band pain following a lifting mechanism — consider imaging referral to assess for thoracic disc herniation if not settling with conservative care.";
+  } else if (region === "ankle" && has("thompson_positive")) {
+    referralRecommendation = "Positive Thompson's test — urgent orthopaedic referral to confirm/manage suspected complete Achilles rupture.";
+  } else if (region === "ankle" && subjective.ankleSuspectedLigamentRuptureFlag) {
+    referralRecommendation = "Suspected complete ligament rupture flagged on intake — consider orthopaedic/imaging referral before progressing loaded rehabilitation.";
+  } else if (region === "ankle" && subjective.ankleStressFractureSuspected) {
+    referralRecommendation = "Stress fracture suspected — consider imaging referral before continuing loaded activity.";
+  } else if (region === "wrist" && (subjective.wristSuspectedDistalRadiusFracture || subjective.wristSuspectedScaphoidFracture || subjective.wristSuspectedLunatePerilunateDislocation)) {
+    referralRecommendation = "Suspected fracture/dislocation flagged on intake — urgent imaging referral before progressing loaded rehabilitation.";
+  } else if (region === "wrist" && subjective.wristTendonRuptureFlag) {
+    referralRecommendation = "Suspected extensor/flexor tendon rupture — urgent orthopaedic/hand surgery referral.";
+  } else if (region === "wrist" && subjective.wristCrpsFeatures) {
+    referralRecommendation = "Features suggestive of CRPS/reflex sympathetic dystrophy — consider prompt specialist referral, as early management improves outcomes.";
   }
 
   const cap = (r: string) => r.charAt(0).toUpperCase() + r.slice(1);

@@ -63,6 +63,30 @@ const CONFIGS: Record<string, RegionCompletenessConfig> = {
       { exam: "Elbow/wrist special-test cluster (Cozen's, Mill's, Golfer's elbow, valgus stress, Tinel's)", domain: "specialTests", why: "Special-test clustering is required to differentiate lateral/medial epicondylalgia, UCL sprain, and cubital tunnel syndrome." },
     ],
   },
+  thoracic: {
+    expectedDomains: ["history", "painBehaviour", "rom", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Active thoracic ROM (flexion/extension/rotation)", domain: "rom", why: "Range identifies a mechanical restriction pattern and localises rotation/extension deficits driving compensatory overload elsewhere in the kinetic chain." },
+      { exam: "Rib cage / costovertebral screen (rib spring test, expansion symmetry)", domain: "specialTests", why: "A large share of thoracic presentations are costal/rib in origin and are missed without a dedicated rib screen." },
+      { exam: "Red flag screen (cardiac, respiratory, abdominal, fracture, cord compression)", domain: "history", why: "Thoracic pain has an unusually wide visceral-referral differential that must be screened before treating as musculoskeletal." },
+    ],
+  },
+  ankle: {
+    expectedDomains: ["history", "painBehaviour", "rom", "mmt", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Ottawa Ankle Rules screen", domain: "history", why: "A validated fracture-exclusion rule must be applied before proceeding with soft-tissue special testing." },
+      { exam: "Ligament stability cluster (anterior drawer, talar tilt, squeeze test)", domain: "specialTests", why: "Required to differentiate lateral ligament sprain, chronic instability, and syndesmotic (high ankle) injury." },
+      { exam: "Resisted testing (dorsiflexion, plantarflexion, inversion, eversion)", domain: "mmt", why: "Contractile testing is required to implicate or clear tibialis anterior/posterior, gastroc-soleus, and peroneals." },
+    ],
+  },
+  wrist: {
+    expectedDomains: ["history", "painBehaviour", "rom", "mmt", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Fracture/trauma screen", domain: "history", why: "A FOOSH or direct trauma mechanism requires excluding a fracture or dislocation before further provocative testing." },
+      { exam: "Neurological screen (Phalen's, Tinel's at wrist)", domain: "specialTests", why: "Required to confirm or exclude carpal tunnel syndrome, the most common wrist neuropathy." },
+      { exam: "Resisted testing (wrist extension, wrist flexion, thumb extension/abduction)", domain: "mmt", why: "Contractile testing is required to implicate or clear wrist extensors/flexors and the thumb De Quervain's complex." },
+    ],
+  },
 };
 
 function domainsWithData(findings: Finding[], objective: ObjectiveFindings): Domain[] {
