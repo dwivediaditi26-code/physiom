@@ -6638,8 +6638,8 @@ const FINDING_COLORS = {
 };
 
 // ─── SVG Body Figure ──────────────────────────────────────────────────────────
-// Draws a clean anatomical outline — front (left) and back (right) in one SVG
-// ViewBox: 0 0 200 130  (front occupies 0–90, back 110–200, y 0–130)
+// Hand-drawn anatomical outline — front (left) and back (right) in one SVG
+// ViewBox: 0 0 220 125  (front occupies 0–90, back 110–200, y 0–125)
 // All hotspot coordinates use this viewBox scale
 
 const BODY_SVG_VIEWBOX = "0 0 220 125";
@@ -6735,8 +6735,10 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
       {/* ── HOTSPOT INTERACTIVE ZONES ── */}
       {ANATOMICAL_HOTSPOTS.filter(h => h.side === view || h.side === "both").map(h => {
         // convert % coords to SVG space (viewbox 90×125 per body)
+        // y uses /113 (not /100): hotspot y-values run 6–113, calibrated so
+        // the lowest points (heel/plantar) land at the very bottom of frame
         const sx = (h.x / 100) * 90;
-        const sy = (h.y / 100) * 125;
+        const sy = (h.y / 113) * 125;
         const pin = pins.find(p => p.hotspotId === h.id);
         const isHovered = hoveredHotspot === h.id;
         const gradeColor = pin ? (GRADE_COLOR[pin.tenderness] || C.accent) : null;
@@ -6937,11 +6939,11 @@ function PalpationModule({ data, set }) {
       <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
 
         {/* SVG Body */}
-        <div style={{ flex:"0 0 auto", display:"flex", flexDirection:"column", alignItems:"center", width:"100%", maxWidth:300 }}>
+        <div style={{ flex:"0 0 auto", display:"flex", flexDirection:"column", alignItems:"center", width:"100%", maxWidth:480 }}>
           <svg
             viewBox={BODY_SVG_VIEWBOX}
             width="100%"
-            style={{ maxWidth:280, minWidth:180, background:C.surface,
+            style={{ maxWidth:460, minWidth:260, background:C.surface,
               border:`1px solid ${C.border}`, borderRadius:14,
               cursor:"crosshair", userSelect:"none" }}
           >
@@ -6977,7 +6979,7 @@ function PalpationModule({ data, set }) {
           {/* Hover tooltip outside SVG */}
           {hovered && (
             <div style={{ marginTop:6, padding:"6px 12px", background:C.s2,
-              border:`1px solid ${C.accent}40`, borderRadius:8, maxWidth:280,
+              border:`1px solid ${C.accent}40`, borderRadius:8, maxWidth:460,
               fontSize:"0.78rem", color:C.accent, fontWeight:600, textAlign:"center",
               animation:"slideIn 0.15s ease" }}>
               {ANATOMICAL_HOTSPOTS.find(h => h.id === hovered)?.label}
@@ -6989,7 +6991,7 @@ function PalpationModule({ data, set }) {
 
           {/* Tenderness legend */}
           <div style={{ marginTop:10, padding:"8px 10px", background:C.surface,
-            border:`1px solid ${C.border}`, borderRadius:8, maxWidth:280, width:"100%" }}>
+            border:`1px solid ${C.border}`, borderRadius:8, maxWidth:460, width:"100%" }}>
             <div style={{ fontSize:"0.78rem", fontWeight:700, color:C.muted,
               textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>Tenderness Legend</div>
             <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
