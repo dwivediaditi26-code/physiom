@@ -2331,7 +2331,48 @@ function MSTemplateModule({ data, navTo }) {
   return <ConditionChecklist label="MS template" icon="🧬" steps={steps}/>;
 }
 
+// Consolidated single entry point for all 5 condition templates -- shows a
+// pill selector (TBI/Stroke/SCI/Parkinson's/MS) and renders the selected
+// condition's existing checklist below it. Replaces having 5 separate
+// sidebar/bottom-nav rows with one "Neuro Templates" row.
+function NeuroTemplatesHub({ data, navTo }) {
+  const CONDITIONS = [
+    { id:"tbi",        label:"TBI",         icon:"🧠", Comp: TBITemplateModule },
+    { id:"stroke",     label:"Stroke",      icon:"❤️‍🩹", Comp: StrokeTemplateModule },
+    { id:"sci",        label:"SCI",         icon:"🦾", Comp: SCITemplateModule },
+    { id:"parkinsons", label:"Parkinson's", icon:"🌀", Comp: ParkinsonsTemplateModule },
+    { id:"ms",         label:"MS",          icon:"🧬", Comp: MSTemplateModule },
+  ];
+  const [active, setActive] = useState("tbi");
+  const current = CONDITIONS.find(c => c.id === active) || CONDITIONS[0];
+  const ActiveComp = current.Comp;
+
+  return (
+    <div>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20}}>
+        {CONDITIONS.map(c => {
+          const isAct = c.id === active;
+          return (
+            <button key={c.id} onClick={() => setActive(c.id)} style={{
+              display:"flex",alignItems:"center",gap:6,
+              padding:"8px 14px",borderRadius:20,cursor:"pointer",
+              border:`1.5px solid ${isAct?C.accent:C.border}`,
+              background:isAct?`${C.accent}18`:C.surface,
+              color:isAct?C.accent:C.text,
+              fontWeight:700,fontSize:"0.78rem",
+              transition:"all 0.15s",
+            }}>
+              <span style={{fontSize:15}}>{c.icon}</span>{c.label}
+            </button>
+          );
+        })}
+      </div>
+      <ActiveComp data={data} navTo={navTo}/>
+    </div>
+  );
+}
+
 export { ALL_TESTS, ROMModule, MMTModule, NeurologicalModule, TBITemplateModule, StrokeTemplateModule,
-  SCITemplateModule, ParkinsonsTemplateModule, MSTemplateModule,
+  SCITemplateModule, ParkinsonsTemplateModule, MSTemplateModule, NeuroTemplatesHub,
   ROM_DATA, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES,
   NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP };
