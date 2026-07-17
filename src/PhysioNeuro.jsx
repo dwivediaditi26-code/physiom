@@ -1857,7 +1857,7 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
                   </div>
                   <button type="button" onClick={()=>navTo&&navTo("outcome",{scaleId})}
                     style={{padding:"7px 14px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:"0.7rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-                    {score!==null?"Redo →":"Take full test →"}
+                    {score!==null?"Review →":"Take full test →"}
                   </button>
                 </div>
               </div>
