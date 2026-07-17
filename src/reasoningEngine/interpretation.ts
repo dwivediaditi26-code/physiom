@@ -334,6 +334,65 @@ export function buildInterpretation(
       suggestedGoals.push("Reduce posture-related pain and improve thoracic mobility tolerance for sitting");
       homeAdvice.push("Regular movement breaks from sitting; daily thoracic mobility and postural strengthening exercise");
     }
+  } else if (region === "ankle") {
+    if (has("ankle_dorsiflexion_loss")) primaryImpairments.push("Restricted ankle dorsiflexion");
+    if (has("ankle_plantarflexion_loss")) primaryImpairments.push("Restricted ankle plantarflexion");
+    if (has("kc_ankle_df_restricted")) primaryImpairments.push("Weight-bearing dorsiflexion (lunge test) mobility deficit");
+    if (has("kc_subtalar_hypermobile")) primaryImpairments.push("Subtalar hypermobility / excessive pronation pattern");
+    if (has("tib_ant_weak")) primaryImpairments.push("Tibialis anterior weakness");
+    if (has("tib_post_weak_or_painful")) primaryImpairments.push("Tibialis posterior weakness/pain");
+    if (has("peroneal_weak_or_painful")) primaryImpairments.push("Peroneal weakness/pain");
+    if (has("ant_drawer_ankle_positive") || has("talar_tilt_positive")) likelyPainGenerators.push("Lateral ankle ligament complex (ATFL/CFL)");
+    if (has("squeeze_ankle_positive")) likelyPainGenerators.push("Distal tibiofibular syndesmosis");
+    if (has("achilles_tender") || has("gastroc_soleus_painful")) likelyPainGenerators.push("Achilles tendon / gastroc-soleus complex");
+    if (has("navicular_drop_significant") || has("medial_malleolus_tender")) likelyPainGenerators.push("Tibialis posterior / medial arch structures");
+    if (has("tarsal_tunnel_tender") || has("tinel_ankle_positive")) likelyPainGenerators.push("Posterior tibial nerve (tarsal tunnel)");
+    if (has("ankle_giving_way_instability")) movementDysfunction.push("Reported instability / giving way with weight-bearing activity");
+    if (has("ankle_warms_up_then_worsens") || has("ankle_morning_stiffness_achilles")) movementDysfunction.push("Load-dependent Achilles symptom pattern (warms up then worsens, or morning stiffness)");
+    if (has("ankle_dorsiflexion_aggravation")) functionalLimitations.push("Difficulty with dorsiflexion-loaded tasks (squatting, stairs, lunging)");
+    if (has("ankle_giving_way_instability")) functionalLimitations.push("Avoidance of uneven ground / fear of re-injury");
+
+    if (name.includes("Lateral ankle sprain")) {
+      treatmentPriorities.push("Protection/relative rest in the acute phase (POLICE principles)", "Early controlled mobilisation and progressive weight-bearing", "Proprioceptive/balance retraining once acute phase settles");
+      suggestedGoals.push("Restore pain-free weight-bearing and full ankle ROM");
+      homeAdvice.push("Ice and elevation in the first 48-72h; avoid immobilising longer than necessary");
+    } else if (name.includes("Chronic ankle instability")) {
+      treatmentPriorities.push("Proprioceptive and single-leg balance training programme", "Peroneal strengthening", "Bracing/taping during high-risk activity as an interim measure");
+      suggestedGoals.push("Reduce recurrent giving-way episodes and improve dynamic balance");
+      homeAdvice.push("Daily single-leg balance drills; consider a lace-up brace for higher-risk sport until strength/balance improve");
+    } else if (name.includes("High ankle sprain")) {
+      treatmentPriorities.push("Protected weight-bearing until syndesmotic stability confirmed", "Avoid early forced dorsiflexion/external rotation loading", "Graded return-to-sport programme (longer timeline than lateral sprain)");
+      suggestedGoals.push("Restore pain-free weight-bearing and dorsiflexion without syndesmotic widening");
+      homeAdvice.push("Avoid forced dorsiflexion and external rotation loading until cleared; recovery is typically slower than a lateral sprain");
+    } else if (name.includes("Achilles tendinopathy")) {
+      treatmentPriorities.push("Progressive loading programme (eccentric or heavy-slow-resistance)", "Load management / training-error correction", "Address contributing calf and kinetic-chain factors (gastroc CPA, ankle DF mobility)");
+      suggestedGoals.push("Restore pain-free loaded calf function (single-leg heel raise tolerance)");
+      homeAdvice.push("Consistent daily loading programme as prescribed; avoid complete rest which can delay tendon adaptation");
+    } else if (name.includes("Achilles tendon rupture")) {
+      treatmentPriorities.push("Urgent orthopaedic referral before any further loading or manual testing", "Immobilisation/bracing per surgical or specialist guidance", "Staged rehabilitation only once medically cleared");
+      suggestedGoals.push("Confirm diagnosis urgently and follow specialist management pathway");
+      homeAdvice.push("Avoid weight-bearing and further testing; seek urgent medical assessment");
+    } else if (name.includes("Ankle osteoarthritis")) {
+      treatmentPriorities.push("Joint mobilisation within tolerance", "Progressive strengthening and dorsiflexion mobility work", "Footwear/load modification advice");
+      suggestedGoals.push("Improve functional dorsiflexion range and reduce activity-related pain");
+      homeAdvice.push("Regular gentle mobility exercise; supportive footwear for aggravating activities");
+    } else if (name.includes("Tibialis posterior dysfunction") || name.includes("PTTD")) {
+      treatmentPriorities.push("Tibialis posterior strengthening (heel raises in inversion)", "Orthotic/arch support assessment if navicular drop significant", "Address kinetic-chain pronation contributors (subtalar, hip control)");
+      suggestedGoals.push("Restore single-leg heel raise capacity and reduce medial arch pain");
+      homeAdvice.push("Daily tibialis posterior strengthening; supportive footwear or orthotic as advised");
+    } else if (name.includes("Peroneal tendinopathy")) {
+      treatmentPriorities.push("Progressive peroneal loading programme", "Address chronic instability/overload contributors if present", "Footwear and training-load review");
+      suggestedGoals.push("Restore pain-free resisted eversion and return to full activity");
+      homeAdvice.push("Gradual return to loading as tolerated; avoid abrupt training-load spikes");
+    } else if (name.includes("Tarsal tunnel syndrome")) {
+      treatmentPriorities.push("Neural mobility work within comfort", "Address any space-occupying/compressive contributing factor (footwear, swelling, biomechanics)", "Orthotic/footwear modification if biomechanically driven");
+      suggestedGoals.push("Reduce plantar foot paraesthesia and improve nerve mobility tolerance");
+      homeAdvice.push("Avoid prolonged compressive footwear; gentle neural glide exercise within comfort");
+    } else if (name.includes("Anterior ankle impingement")) {
+      treatmentPriorities.push("Joint mobilisation to improve dorsiflexion", "Activity modification away from end-range dorsiflexion loading", "Imaging referral if not responding to conservative care (bony impingement)");
+      suggestedGoals.push("Restore pain-free functional dorsiflexion (squatting, stairs)");
+      homeAdvice.push("Avoid repeated end-range dorsiflexion loading until mobility improves");
+    }
   }
 
   const yellowFlags: string[] = [];
@@ -376,6 +435,12 @@ export function buildInterpretation(
     referralRecommendation = "Imaged vertebral compression/wedge fracture — consider medical referral for bone-health assessment and to confirm stability before loaded manual therapy.";
   } else if (region === "thoracic" && has("thoracic_dermatomal_band") && has("thoracic_lifting_mechanism")) {
     referralRecommendation = "Dermatomal band pain following a lifting mechanism — consider imaging referral to assess for thoracic disc herniation if not settling with conservative care.";
+  } else if (region === "ankle" && has("thompson_positive")) {
+    referralRecommendation = "Positive Thompson's test — urgent orthopaedic referral to confirm/manage suspected complete Achilles rupture.";
+  } else if (region === "ankle" && subjective.ankleSuspectedLigamentRuptureFlag) {
+    referralRecommendation = "Suspected complete ligament rupture flagged on intake — consider orthopaedic/imaging referral before progressing loaded rehabilitation.";
+  } else if (region === "ankle" && subjective.ankleStressFractureSuspected) {
+    referralRecommendation = "Stress fracture suspected — consider imaging referral before continuing loaded activity.";
   }
 
   const cap = (r: string) => r.charAt(0).toUpperCase() + r.slice(1);

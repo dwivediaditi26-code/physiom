@@ -174,6 +174,32 @@ export interface SubjectiveInput {
   thoracicAbdominalSymptoms?: boolean;
   thoracicCordCompressionSigns?: boolean;
 
+  // ankle-relevant history signals
+  ankleLateralPainPattern?: boolean;
+  ankleMedialPainPattern?: boolean;
+  ankleAnteriorPainPattern?: boolean;
+  anklePosteriorPainPattern?: boolean;
+  achillesInsertionalPainPattern?: boolean;
+  achillesMidPortionPainPattern?: boolean;
+  ankleInversionSprainMechanism?: boolean;
+  ankleEversionSprainMechanism?: boolean;
+  ankleHighSprainMechanism?: boolean;
+  ankleAchillesRuptureFeltPop?: boolean;
+  ankleAtflPopFelt?: boolean;
+  anklePreviousMultipleSprains?: boolean;
+  ankleInsidiousOveruseOnset?: boolean;
+  ankleDorsiflexionAggravation?: boolean;
+  ankleMorningStiffnessAchilles?: boolean;
+  ankleWarmsUpThenWorsensPattern?: boolean;
+  ankleGivingWayInstability?: boolean;
+  ankleRadiatesTarsalTunnel?: boolean;
+  ankleRecurrentSwellingPattern?: boolean;
+  ankleOttawaBonyTenderness?: boolean;
+  ankleSuspectedAchillesRuptureFlag?: boolean;
+  ankleSuspectedLigamentRuptureFlag?: boolean;
+  ankleStressFractureSuspected?: boolean;
+  anklePeronealSubluxationSuspected?: boolean;
+
   symptomDurationDays?: number | null;
 }
 

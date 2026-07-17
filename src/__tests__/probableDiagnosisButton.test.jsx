@@ -56,10 +56,11 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
   });
 
   it("shows a graceful message for a region the engine does not yet cover", () => {
-    // Knee is now covered by the deterministic engine (see the hip/knee tests
-    // below and reasoningEngine_knee.test.ts) -- ankle remains genuinely
-    // unsupported, so it is used here instead to keep this test meaningful.
-    render(<ProbableDiagnosis data={{ cc_main: "ankle pain after twisting" }} />);
+    // Knee, elbow, thoracic, and ankle are now covered by the deterministic
+    // engine (see their respective reasoningEngine_*.test.ts files) -- wrist
+    // remains genuinely unsupported, so it is used here instead to keep this
+    // test meaningful.
+    render(<ProbableDiagnosis data={{ cc_main: "wrist pain after a fall" }} />);
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
     expect(screen.getByText(/currently supports/i)).toBeInTheDocument();
   });

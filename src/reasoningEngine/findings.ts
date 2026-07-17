@@ -53,6 +53,9 @@ export function deriveFindings(
   if (region === "thoracic") {
     deriveThoracic(subjective, objective, add);
   }
+  if (region === "ankle") {
+    deriveAnkle(subjective, objective, add);
+  }
   return f;
 }
 
@@ -249,6 +252,31 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   thoracic_rotation_loss: "rom", thoracic_extension_loss: "rom",
   costovertebral_tender: "palpation", sternal_costal_tender: "palpation",
   imaging_compression_fracture: "imaging", imaging_thoracic_disc: "imaging",
+  // ankle
+  ankle_lateral_pain_pattern: "history", ankle_medial_pain_pattern: "history",
+  ankle_anterior_pain_pattern: "history", ankle_posterior_pain_pattern: "history",
+  achilles_insertional_pattern: "history", achilles_mid_portion_pattern: "history",
+  ankle_inversion_sprain_mechanism: "history", ankle_eversion_sprain_mechanism: "history",
+  ankle_high_sprain_mechanism: "history", ankle_achilles_rupture_pop: "history",
+  ankle_atfl_pop_felt: "history", ankle_previous_multiple_sprains: "history",
+  ankle_ottawa_bony_tenderness: "history", ankle_stress_fracture_suspected: "history",
+  ankle_peroneal_subluxation_suspected: "history", ankle_suspected_achilles_rupture_flag: "history",
+  ankle_suspected_ligament_rupture_flag: "history",
+  ankle_dorsiflexion_aggravation: "painBehaviour", ankle_morning_stiffness_achilles: "painBehaviour",
+  ankle_warms_up_then_worsens: "painBehaviour", ankle_giving_way_instability: "painBehaviour",
+  ankle_radiates_tarsal_tunnel: "painBehaviour", ankle_recurrent_swelling_pattern: "painBehaviour",
+  ant_drawer_ankle_positive: "specialTests", talar_tilt_positive: "specialTests",
+  squeeze_ankle_positive: "specialTests", thompson_positive: "specialTests",
+  navicular_drop_significant: "specialTests", tinel_ankle_positive: "specialTests",
+  royal_london_positive: "specialTests", cpa_gastroc_overactive: "specialTests",
+  cpa_peroneal_overactive: "specialTests", kc_ankle_df_restricted: "specialTests",
+  kc_subtalar_hypermobile: "specialTests",
+  tib_ant_weak: "mmt", tib_post_weak_or_painful: "mmt",
+  gastroc_soleus_painful: "mmt", peroneal_weak_or_painful: "mmt",
+  ankle_dorsiflexion_loss: "rom", ankle_plantarflexion_loss: "rom",
+  lateral_malleolus_tender: "palpation", medial_malleolus_tender: "palpation",
+  achilles_tender: "palpation", tarsal_tunnel_tender: "palpation",
+  imaging_ankle_oa: "imaging", imaging_achilles_rupture: "imaging", imaging_stress_fracture: "imaging",
 };
 
 function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
@@ -488,6 +516,75 @@ function deriveKnee(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("imaging_knee_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: knee osteoarthritis reported");
   add("imaging_meniscal_tear", "imaging", imagingSummary.includes("meniscal") || imagingSummary.includes("meniscus"), "Imaging: meniscal tear reported");
   add("imaging_acl_tear", "imaging", imagingSummary.includes("acl") || imagingSummary.includes("anterior cruciate"), "Imaging: ACL tear reported");
+}
+
+function deriveAnkle(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+
+  add("ankle_lateral_pain_pattern", "history", !!s.ankleLateralPainPattern, "History: lateral ankle pain pattern (ATFL/CFL/sinus tarsi)");
+  add("ankle_medial_pain_pattern", "history", !!s.ankleMedialPainPattern, "History: medial ankle pain pattern (deltoid/tibialis posterior)");
+  add("ankle_anterior_pain_pattern", "history", !!s.ankleAnteriorPainPattern, "History: anterior ankle joint-line pain pattern");
+  add("ankle_posterior_pain_pattern", "history", !!s.anklePosteriorPainPattern, "History: posterior ankle pain pattern (FHL/posterior impingement)");
+  add("achilles_insertional_pattern", "history", !!s.achillesInsertionalPainPattern, "History: Achilles insertional pain pattern");
+  add("achilles_mid_portion_pattern", "history", !!s.achillesMidPortionPainPattern, "History: Achilles mid-portion pain pattern");
+  add("ankle_inversion_sprain_mechanism", "history", !!s.ankleInversionSprainMechanism, "History: inversion sprain mechanism (foot rolled in)");
+  add("ankle_eversion_sprain_mechanism", "history", !!s.ankleEversionSprainMechanism, "History: eversion sprain mechanism (foot rolled out)");
+  add("ankle_high_sprain_mechanism", "history", !!s.ankleHighSprainMechanism, "History: high ankle sprain mechanism (external rotation)");
+  add("ankle_achilles_rupture_pop", "history", !!s.ankleAchillesRuptureFeltPop, "History: felt/heard a pop at the Achilles (rupture flag)");
+  add("ankle_atfl_pop_felt", "history", !!s.ankleAtflPopFelt, "History: felt/heard a pop at the lateral ankle (ATFL)");
+  add("ankle_previous_multiple_sprains", "history", !!s.anklePreviousMultipleSprains, "History: multiple previous ankle sprains (chronic instability risk)");
+  add("ankle_ottawa_bony_tenderness", "history", !!s.ankleOttawaBonyTenderness, "History: Ottawa Rules bony tenderness reported");
+  add("ankle_stress_fracture_suspected", "history", !!s.ankleStressFractureSuspected, "History: stress fracture suspected (tibial/metatarsal)");
+  add("ankle_peroneal_subluxation_suspected", "history", !!s.anklePeronealSubluxationSuspected, "History: peroneal tendon subluxation suspected");
+  add("ankle_suspected_achilles_rupture_flag", "history", !!s.ankleSuspectedAchillesRuptureFlag, "History: suspected Achilles rupture flagged on intake");
+  add("ankle_suspected_ligament_rupture_flag", "history", !!s.ankleSuspectedLigamentRuptureFlag, "History: suspected complete ATFL/ligament rupture flagged on intake");
+
+  add("ankle_dorsiflexion_aggravation", "painBehaviour", !!s.ankleDorsiflexionAggravation, "History: dorsiflexion aggravates");
+  add("ankle_morning_stiffness_achilles", "painBehaviour", !!s.ankleMorningStiffnessAchilles, "History: Achilles stiff and sore on rising");
+  add("ankle_warms_up_then_worsens", "painBehaviour", !!s.ankleWarmsUpThenWorsensPattern, "History: warms up then worsens with sustained activity (mid-portion Achilles pattern)");
+  add("ankle_giving_way_instability", "painBehaviour", !!s.ankleGivingWayInstability, "History: sense of ankle giving way / instability");
+  add("ankle_radiates_tarsal_tunnel", "painBehaviour", !!s.ankleRadiatesTarsalTunnel, "History: burning/tingling referred from tarsal tunnel (tibial nerve)");
+  add("ankle_recurrent_swelling_pattern", "painBehaviour", !!s.ankleRecurrentSwellingPattern, "History: persistent/recurrent swelling pattern");
+
+  add("ant_drawer_ankle_positive", "specialTests", isPositive(t, "ant_drawer_ankle_positive"), "Anterior drawer test (ankle): positive (ATFL laxity/rupture)");
+  add("talar_tilt_positive", "specialTests", isPositive(t, "talar_tilt_positive"), "Talar tilt test: positive (CFL laxity)");
+  add("squeeze_ankle_positive", "specialTests", isPositive(t, "squeeze_ankle_positive"), "Squeeze/mortise test: positive (syndesmotic/high ankle sprain)");
+  add("thompson_positive", "specialTests", isPositive(t, "thompson_positive"), "Thompson's test: positive (complete Achilles rupture)");
+  add("navicular_drop_significant", "specialTests", isPositive(t, "navicular_drop_significant"), "Navicular drop test: significant collapse (>10mm — tibialis posterior insufficiency)");
+  add("tinel_ankle_positive", "specialTests", isPositive(t, "tinel_ankle_positive"), "Tinel's sign at ankle: positive (tarsal tunnel syndrome)");
+  add("royal_london_positive", "specialTests", isPositive(t, "royal_london_positive"), "Royal London Hospital test: positive (mid-portion Achilles tendinopathy)");
+  add("cpa_gastroc_overactive", "specialTests", isPositive(t, "cpa_gastroc_overactive"), "CPA: gastrocnemius/soleus overactive (Achilles tendinopathy pattern, or compensating for restricted dorsiflexion)");
+  add("cpa_peroneal_overactive", "specialTests", isPositive(t, "cpa_peroneal_overactive"), "CPA: peroneals overactive (compensating for inhibited tibialis anterior/posterior — chronic overload pattern)");
+  add("kc_ankle_df_restricted", "specialTests", isPositive(t, "kc_ankle_df_restricted"), "Kinetic chain: weight-bearing dorsiflexion (lunge test) moderately-to-severely restricted");
+  add("kc_subtalar_hypermobile", "specialTests", isPositive(t, "kc_subtalar_hypermobile"), "Kinetic chain: subtalar joint hypermobile — excessive pronation pattern");
+
+  const weak = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.grade <= 3);
+  const painfulResist = (name: string): boolean => o.mmt.some((m) => m.muscle.toLowerCase().includes(name) && m.painOnResist === true);
+  add("tib_ant_weak", "mmt", weak("tibialis anterior"), "MMT: tibialis anterior weakness (<=3/5)");
+  add("tib_post_weak_or_painful", "mmt", weak("tibialis posterior") || painfulResist("tibialis posterior"), "MMT: tibialis posterior weakness or painful resisted inversion");
+  add("gastroc_soleus_painful", "mmt", painfulResist("gastrocnemius"), "MMT: painful resisted plantarflexion (Achilles/gastroc-soleus)");
+  add("peroneal_weak_or_painful", "mmt", weak("peroneals") || painfulResist("peroneals"), "MMT: peroneal weakness or painful resisted eversion");
+
+  const romByMove = new Map<string, { active: number | null; passive: number | null; normal: number | null }>();
+  for (const r of o.rom) romByMove.set(r.movement.toLowerCase(), { active: r.activeROM, passive: r.passiveROM, normal: r.normalROM });
+  const limited = (m: string): boolean => {
+    const r = romByMove.get(m);
+    if (!r || r.active == null || r.normal == null || r.normal === 0) return false;
+    return (r.normal - r.active) / r.normal >= 0.25;
+  };
+  add("ankle_dorsiflexion_loss", "rom", limited("dorsiflexion"), "ROM: ankle dorsiflexion limited (>=25%)");
+  add("ankle_plantarflexion_loss", "rom", limited("plantarflexion"), "ROM: ankle plantarflexion limited (>=25%)");
+
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("lateral_malleolus_tender", "palpation", tender("lateral malleolus") || tender("atfl") || tender("cfl"), "Palpation: lateral malleolus/ATFL/CFL tenderness");
+  add("medial_malleolus_tender", "palpation", tender("medial malleolus") || tender("deltoid"), "Palpation: medial malleolus/deltoid ligament tenderness");
+  add("achilles_tender", "palpation", tender("achilles"), "Palpation: Achilles tendon tenderness");
+  add("tarsal_tunnel_tender", "palpation", tender("tarsal tunnel") || tender("posterior tibial nerve"), "Palpation: tarsal tunnel/posterior tibial nerve tenderness");
+
+  const imagingSummary = (o.imaging?.summary || "").toLowerCase();
+  add("imaging_ankle_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: ankle osteoarthritis reported");
+  add("imaging_achilles_rupture", "imaging", imagingSummary.includes("achilles rupture") || imagingSummary.includes("achilles tear"), "Imaging: Achilles rupture/tear reported");
+  add("imaging_stress_fracture", "imaging", imagingSummary.includes("stress fracture") || imagingSummary.includes("stress reaction"), "Imaging: stress fracture/reaction reported");
 }
 
 function deriveThoracic(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {

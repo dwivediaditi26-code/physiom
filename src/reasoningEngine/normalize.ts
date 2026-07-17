@@ -900,6 +900,133 @@ export function runThoracicReasoningFromData(data: Data): ReasoningResult {
   return runReasoning(subjective, objective, region);
 }
 
+// ── Ankle ─────────────────────────────────────────────────────────────────
+// Subjective source fields verified in sharedClinicalData.js under
+// af_location/af_mechanism/af_aggravating/af_symptoms/af_redflags. af_loc,
+// af_moi, af_agg_mov, af_pattern, af_morning, af_swelling, af_instability,
+// af_radiation, af_prev_sprains, af_moi_pop, af_moi_weightbear, af_rf are all
+// multicheck/select fields whose stored value is the joined selected option
+// text(s) -- `has()` substring-matches against the real option strings below.
+export function normalizeAnkleFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.af_loc).toLowerCase();
+  const radiation = str(data.af_radiation).toLowerCase();
+  const moi = str(data.af_moi ?? data.cc_onset).toLowerCase();
+  const pop = str(data.af_moi_pop).toLowerCase();
+  const weightbear = str(data.af_moi_weightbear).toLowerCase();
+  const prevSprains = str(data.af_prev_sprains).toLowerCase();
+  const aggMov = str(data.af_agg_mov).toLowerCase();
+  const pattern = str(data.af_pattern).toLowerCase();
+  const morning = str(data.af_morning).toLowerCase();
+  const swelling = str(data.af_swelling).toLowerCase();
+  const instability = str(data.af_instability).toLowerCase();
+  const rf = str(data.af_rf).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "ankle",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    onsetInsidious: has(moi, "insidious onset"),
+    onsetTraumatic: has(moi, "inversion sprain", "eversion sprain", "high ankle sprain", "direct impact", "fall from height"),
+    nightPain: has(pattern, "night dominant") || has(pattern, "burning / night"),
+    constantPain: has(pattern, "constant — never fully eases"),
+    paresthesia: has(radiation, "tarsal tunnel") || has(pattern, "burning / night"),
+    traumaHistory: has(moi, "inversion sprain", "eversion sprain", "high ankle sprain", "direct impact", "fall from height"),
+    unableToWeightBear: has(rf, "cannot weight bear 4 steps") || has(weightbear, "required assistance", "stopped activity immediately"),
+    hotSwollenJoint: has(rf, "acute hot swollen joint"),
+    vascularCompromiseSigns: has(rf, "compartment syndrome", "vascular compromise"),
+    ankleLateralPainPattern: has(loc, "lateral ankle"),
+    ankleMedialPainPattern: has(loc, "medial ankle"),
+    ankleAnteriorPainPattern: has(loc, "anterior ankle"),
+    anklePosteriorPainPattern: has(loc, "posterior ankle"),
+    achillesInsertionalPainPattern: has(loc, "achilles tendon — insertional"),
+    achillesMidPortionPainPattern: has(loc, "achilles tendon — mid-portion"),
+    ankleInversionSprainMechanism: has(moi, "inversion sprain"),
+    ankleEversionSprainMechanism: has(moi, "eversion sprain"),
+    ankleHighSprainMechanism: has(moi, "high ankle sprain"),
+    ankleAchillesRuptureFeltPop: has(pop, "achilles insertion", "mid-achilles"),
+    ankleAtflPopFelt: has(pop, "lateral ankle"),
+    anklePreviousMultipleSprains: has(prevSprains, "2–3 previous sprains", "4+ previous sprains", "multiple sprains"),
+    ankleInsidiousOveruseOnset: has(moi, "insidious onset"),
+    ankleDorsiflexionAggravation: has(aggMov, "dorsiflexion"),
+    ankleMorningStiffnessAchilles: has(morning, "achilles stiff and sore"),
+    ankleWarmsUpThenWorsensPattern: has(pattern, "warms up then worsens"),
+    ankleGivingWayInstability: has(instability, "giving way"),
+    ankleRadiatesTarsalTunnel: has(radiation, "tarsal tunnel"),
+    ankleRecurrentSwellingPattern: has(swelling, "persistent low-grade", "recurrent swelling"),
+    ankleOttawaBonyTenderness: has(rf, "ottawa rules — bony tenderness"),
+    ankleSuspectedAchillesRuptureFlag: has(rf, "suspected achilles rupture"),
+    ankleSuspectedLigamentRuptureFlag: has(rf, "suspected complete atfl"),
+    ankleStressFractureSuspected: has(rf, "stress fracture suspected"),
+    anklePeronealSubluxationSuspected: has(rf, "peroneal tendon subluxation"),
+  };
+
+  const rom = [
+    readRom(data, "adf", "Dorsiflexion", 20, true),
+    readRom(data, "apf", "Plantarflexion", 50, true),
+    readRom(data, "ainv", "Inversion", 35, true),
+    readRom(data, "aev", "Eversion", 15, true),
+  ].filter((e): e is RomEntry => e != null);
+
+  const mmt = [
+    readMmt(data, "mmt_ta", "Tibialis Anterior (Dorsiflexion)"),
+    readMmt(data, "mmt_soleus", "Gastrocnemius/Soleus (Plantarflexion)"),
+    readMmt(data, "mmt_tp", "Tibialis Posterior (Inversion)"),
+    readMmt(data, "mmt_peronls", "Peroneals (Eversion)"),
+    // Cyriax STTT resisted tests, region key "ankle_foot" (verified in
+    // CYRIAX_REGIONS_DATA). Same muscle labels as the paired readMmt() calls
+    // above so weak()/painfulResist() substring checks in findings.ts pick up
+    // both sources automatically.
+    readCyriax(data, "ankle_foot", "ank_r_df", "Tibialis Anterior (Dorsiflexion)"),
+    readCyriax(data, "ankle_foot", "ank_r_pf", "Gastrocnemius/Soleus (Plantarflexion)"),
+    readCyriax(data, "ankle_foot", "ank_r_inv", "Tibialis Posterior (Inversion)"),
+    readCyriax(data, "ankle_foot", "ank_r_ev", "Peroneals (Eversion)"),
+    // CPA (NKT motor control): nkt_tib_ant / nkt_tib_post use "Inhibited ..." as
+    // their abnormal options (verified) so they fold in here via readCpaInhibited.
+    // NOTE: mmt_ta ("Tibialis Anterior") is also independently used, under the
+    // SAME literal storage key, by "Transversus Abdominis" in MMT_DATA["Spine &
+    // Core"] -- storage keys are id-based, not region-scoped. Accepted risk: TA
+    // (core) is explicitly documented as "not a standard MMT" (assessed via
+    // draw-in/CCFT instead), so a genuine collision in practice is unlikely.
+    readCpaInhibited(data, "tib_ant", "Tibialis Anterior (Dorsiflexion)"),
+    readCpaInhibited(data, "tib_post", "Tibialis Posterior (Inversion)"),
+  ].filter((e): e is MmtEntry => e != null);
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("ant_drawer_ankle_positive", isPos(data.st_ant_drawer_ankle));
+  setT("talar_tilt_positive", isPos(data.st_talar_tilt));
+  setT("squeeze_ankle_positive", isPos(data.st_squeeze_ankle));
+  setT("thompson_positive", isPos(data.st_thompson_test));
+  setT("navicular_drop_significant", has(data.st_navicular_drop, "significant collapse"));
+  setT("tinel_ankle_positive", isPos(data.st_tinel_ankle));
+  setT("royal_london_positive", has(data.st_royal_london, "positive"));
+  // NKT gastroc/peroneals have NO "Inhibited" option (they are compensators, not
+  // inhibited primaries), so they are read directly here rather than via
+  // readCpaInhibited -- verified against nkt_gastroc / nkt_peroneals option text.
+  setT("cpa_gastroc_overactive", has(data.nkt_gastroc, "overactive"));
+  setT("cpa_peroneal_overactive", has(data.nkt_peroneals, "overactive"));
+  // Kinetic chain (KC_REGIONS.foot_ankle): data["kc_<testId>"] direct key. Only
+  // moderate-or-worse restriction / hypermobility treated as a positive finding,
+  // matching the threshold established for thoracic's KC wiring.
+  setT("kc_ankle_df_restricted", has(data.kc_ankle_df, "moderately restricted", "severely restricted"));
+  setT("kc_subtalar_hypermobile", has(data.kc_subtalar, "hypermobile"));
+
+  const objective: ObjectiveFindings = {
+    rom, mmt, specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "ankle" };
+}
+
+export function runAnkleReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeAnkleFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
   if (region === "lumbar") return runLumbarReasoningFromData(data);
@@ -907,5 +1034,6 @@ export function runReasoningFromData(data: Data, region: string): ReasoningResul
   if (region === "knee") return runKneeReasoningFromData(data);
   if (region === "elbow") return runElbowReasoningFromData(data);
   if (region === "thoracic") return runThoracicReasoningFromData(data);
+  if (region === "ankle") return runAnkleReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }

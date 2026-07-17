@@ -116,11 +116,11 @@ describe("SOAP Notes Assessment tab -- diagnosis suggestion engine, rendered", (
     expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
   });
 
-  it("still shows the OLDER suggestion panel for a region the new engine doesn't cover yet (ankle), confirming the gate is per-region not global", () => {
+  it("still shows the OLDER suggestion panel for a region the new engine doesn't cover yet (wrist), confirming the gate is per-region not global", () => {
     const data = {
       dem_name: "Test Patient", dem_age: "30",
-      cc_main: "Ankle sprain playing basketball, rolled inward",
-      rom_adf_R_arom: "10", rom_adf_R_prom: "12",
+      cc_main: "Wrist pain after a fall onto an outstretched hand",
+      rom_wflex_R_arom: "40", rom_wflex_R_prom: "45",
     };
     render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
     expect(screen.getByText("💡 Suggested Clinical Diagnoses")).toBeTruthy();

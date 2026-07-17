@@ -1,0 +1,268 @@
+{
+  "region": "ankle",
+  "diagnoses": [
+    {
+      "name": "Lateral ankle sprain (ATFL/CFL) - acute",
+      "source": "Magee Orthopedic Physical Assessment; Ottawa Ankle Rules literature",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "ankle_lateral_pain_pattern",
+        "ankle_inversion_sprain_mechanism",
+        "ankle_atfl_pop_felt",
+        "ant_drawer_ankle_positive",
+        "talar_tilt_positive",
+        "lateral_malleolus_tender",
+        "traumatic_onset"
+      ],
+      "conflictingFindings": [
+        "ankle_medial_pain_pattern",
+        "achilles_mid_portion_pattern"
+      ],
+      "exclusionFindings": [],
+      "weights": {
+        "specialTests": 1.3,
+        "palpation": 1.0,
+        "history": 0.9,
+        "painBehaviour": 0.5
+      },
+      "keyExams": [
+        "Anterior drawer test",
+        "Talar tilt test",
+        "Ottawa Ankle Rules screen"
+      ]
+    },
+    {
+      "name": "Chronic ankle instability (CAI)",
+      "source": "Magee; International Ankle Consortium consensus statements",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "ankle_previous_multiple_sprains",
+        "ankle_giving_way_instability",
+        "kc_subtalar_hypermobile",
+        "cpa_peroneal_overactive",
+        "talar_tilt_positive",
+        "peroneal_weak_or_painful"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "history": 1.2,
+        "specialTests": 1.0,
+        "mmt": 0.9,
+        "painBehaviour": 1.0
+      },
+      "keyExams": [
+        "Talar tilt test",
+        "Single-leg balance / proprioception screen",
+        "Subtalar mobility assessment"
+      ]
+    },
+    {
+      "name": "High ankle sprain (syndesmosis)",
+      "source": "Magee; syndesmotic injury diagnostic literature (squeeze/external rotation stress tests)",
+      "requiredFindings": [
+        "squeeze_ankle_positive"
+      ],
+      "supportingFindings": [
+        "ankle_high_sprain_mechanism",
+        "ankle_anterior_pain_pattern",
+        "traumatic_onset"
+      ],
+      "conflictingFindings": [
+        "ankle_inversion_sprain_mechanism"
+      ],
+      "exclusionFindings": [],
+      "weights": {
+        "specialTests": 1.4,
+        "history": 1.0,
+        "painBehaviour": 0.6
+      },
+      "keyExams": [
+        "Squeeze/mortise test",
+        "External rotation stress test"
+      ]
+    },
+    {
+      "name": "Achilles tendinopathy (insertional or mid-portion)",
+      "source": "Magee; VISA-A framework; Royal London Hospital test literature",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "achilles_mid_portion_pattern",
+        "achilles_insertional_pattern",
+        "ankle_morning_stiffness_achilles",
+        "ankle_warms_up_then_worsens",
+        "achilles_tender",
+        "gastroc_soleus_painful",
+        "cpa_gastroc_overactive",
+        "royal_london_positive",
+        "insidious_onset"
+      ],
+      "conflictingFindings": [
+        "ankle_achilles_rupture_pop",
+        "thompson_positive"
+      ],
+      "exclusionFindings": [],
+      "weights": {
+        "painBehaviour": 1.1,
+        "specialTests": 1.2,
+        "palpation": 1.0,
+        "history": 1.0,
+        "mmt": 0.7
+      },
+      "keyExams": [
+        "Royal London Hospital test",
+        "Single-leg heel raise endurance test",
+        "Achilles palpation (insertional vs mid-portion)"
+      ]
+    },
+    {
+      "name": "Achilles tendon rupture (complete)",
+      "source": "Magee; Thompson's (Simmond's) test literature",
+      "requiredFindings": [
+        "thompson_positive"
+      ],
+      "supportingFindings": [
+        "ankle_achilles_rupture_pop",
+        "ankle_suspected_achilles_rupture_flag",
+        "achilles_tender"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "specialTests": 1.6,
+        "history": 1.0,
+        "palpation": 0.7
+      },
+      "keyExams": [
+        "Thompson's (Simmond's) test",
+        "Palpable tendon gap"
+      ]
+    },
+    {
+      "name": "Ankle osteoarthritis",
+      "source": "Magee; capsular pattern (PF > DF) diagnostic criteria",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "ankle_dorsiflexion_loss",
+        "ankle_plantarflexion_loss",
+        "kc_ankle_df_restricted",
+        "age_over_50",
+        "progressive_stiffness",
+        "imaging_ankle_oa"
+      ],
+      "conflictingFindings": [
+        "traumatic_onset"
+      ],
+      "exclusionFindings": [],
+      "weights": {
+        "rom": 1.2,
+        "specialTests": 0.9,
+        "imaging": 1.3,
+        "history": 0.7
+      },
+      "keyExams": [
+        "Passive ROM with end-feel assessment",
+        "Weight-bearing dorsiflexion lunge test",
+        "Imaging referral if not already available"
+      ]
+    },
+    {
+      "name": "Tibialis posterior dysfunction / progressive flatfoot (PTTD)",
+      "source": "Magee; adult-acquired flatfoot deformity staging literature",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "ankle_medial_pain_pattern",
+        "navicular_drop_significant",
+        "kc_subtalar_hypermobile",
+        "tib_post_weak_or_painful",
+        "medial_malleolus_tender",
+        "insidious_onset"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "specialTests": 1.3,
+        "mmt": 1.2,
+        "palpation": 0.9,
+        "history": 0.8
+      },
+      "keyExams": [
+        "Navicular drop test",
+        "Single-leg heel raise (too-many-toes sign)",
+        "Resisted inversion in plantarflexion"
+      ]
+    },
+    {
+      "name": "Peroneal tendinopathy",
+      "source": "Magee; lateral ankle overuse tendinopathy literature",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "ankle_lateral_pain_pattern",
+        "peroneal_weak_or_painful",
+        "cpa_peroneal_overactive",
+        "ankle_peroneal_subluxation_suspected",
+        "ankle_previous_multiple_sprains"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "mmt": 1.2,
+        "specialTests": 1.0,
+        "history": 0.9
+      },
+      "keyExams": [
+        "Resisted eversion",
+        "Peroneal tendon palpation behind lateral malleolus",
+        "Subluxation provocation (resisted eversion + dorsiflexion)"
+      ]
+    },
+    {
+      "name": "Tarsal tunnel syndrome",
+      "source": "Magee; tibial nerve entrapment literature",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "ankle_radiates_tarsal_tunnel",
+        "tinel_ankle_positive",
+        "tarsal_tunnel_tender",
+        "paresthesia",
+        "night_pain"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "specialTests": 1.3,
+        "palpation": 1.0,
+        "painBehaviour": 0.9,
+        "history": 0.8
+      },
+      "keyExams": [
+        "Tinel's sign at tarsal tunnel",
+        "Sensory mapping of plantar foot",
+        "Dorsiflexion-eversion provocation"
+      ]
+    },
+    {
+      "name": "Anterior ankle impingement",
+      "source": "Magee; footballer's ankle / anterior tibiotalar impingement literature",
+      "requiredFindings": [],
+      "supportingFindings": [
+        "ankle_anterior_pain_pattern",
+        "ankle_dorsiflexion_loss",
+        "kc_ankle_df_restricted",
+        "ankle_dorsiflexion_aggravation"
+      ],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": {
+        "rom": 1.1,
+        "specialTests": 1.0,
+        "history": 0.7,
+        "painBehaviour": 0.8
+      },
+      "keyExams": [
+        "Weight-bearing dorsiflexion lunge test with anterior pain provocation",
+        "Passive dorsiflexion end-feel"
+      ]
+    }
+  ]
+}

@@ -71,6 +71,14 @@ const CONFIGS: Record<string, RegionCompletenessConfig> = {
       { exam: "Red flag screen (cardiac, respiratory, abdominal, fracture, cord compression)", domain: "history", why: "Thoracic pain has an unusually wide visceral-referral differential that must be screened before treating as musculoskeletal." },
     ],
   },
+  ankle: {
+    expectedDomains: ["history", "painBehaviour", "rom", "mmt", "specialTests", "palpation"],
+    criticalExams: [
+      { exam: "Ottawa Ankle Rules screen", domain: "history", why: "A validated fracture-exclusion rule must be applied before proceeding with soft-tissue special testing." },
+      { exam: "Ligament stability cluster (anterior drawer, talar tilt, squeeze test)", domain: "specialTests", why: "Required to differentiate lateral ligament sprain, chronic instability, and syndesmotic (high ankle) injury." },
+      { exam: "Resisted testing (dorsiflexion, plantarflexion, inversion, eversion)", domain: "mmt", why: "Contractile testing is required to implicate or clear tibialis anterior/posterior, gastroc-soleus, and peroneals." },
+    ],
+  },
 };
 
 function domainsWithData(findings: Finding[], objective: ObjectiveFindings): Domain[] {
