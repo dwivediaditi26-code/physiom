@@ -1,9 +1,7 @@
 // ClinicalModules.jsx — Gait, Outcomes, SOAP, Exercise, Palpation, Treatment, SessionLog
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { ALL_DIAGNOSES } from "./DiagnosisEngine.js";
-import { runInterpretation } from "./interpretationEngine/index.js";
-import { buildAssessmentData, detectRegion as detectRegionForOldEngine } from "./interpretationAdapter.js";
-import ProbableDiagnosis, { SUPPORTED as NEW_ENGINE_REGIONS } from "./ProbableDiagnosis.jsx";
+import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA } from "./sharedClinicalData.js";
@@ -4940,69 +4938,6 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 {subH("Provisional Diagnosis","#0891b2")}
 
                 <ProbableDiagnosis data={data} />
-
-                {/* AI suggestions — OLDER clinical interpretation engine (region-aware:
-                    red flags -> subjective pattern -> ROM/MMT/Cyriax/special-test
-                    clustering -> kinetic chain + fascial chain -> ranked differential).
-                    Reads live from this same data object (demographic + subjective +
-                    objective + assessment), so it's always in sync with whatever is
-                    in SOAP Live / SOAP Notes right now — there's only one data source.
-                    Gated to regions the new deterministic reasoningEngine (the
-                    SUGGEST PROBABLE DIAGNOSIS button above) does NOT yet cover, so a
-                    migrated region shows exactly one diagnosis panel instead of two
-                    that can disagree. Remove this whole block once every region is
-                    migrated and the monolith engines are retired for good. */}
-                {!NEW_ENGINE_REGIONS.includes(detectRegionForOldEngine(data)) && (()=>{
-                  const assessmentInput = buildAssessmentData(data);
-                  const result = runInterpretation(assessmentInput);
-
-                  if (result.stopped) {
-                    return <div style={{marginBottom:10,padding:"12px 14px",background:"#FEF2F2",border:"2px solid #FECACA",borderRadius:10}}>
-                      <div style={{fontSize:13,fontWeight:800,color:"#991B1B",marginBottom:6}}>🚨 Red flag screen positive — diagnosis suggestions withheld</div>
-                      {result.redFlag.flags.map((f,i)=>(
-                        <div key={i} style={{fontSize:13,color:"#7F1D1D",marginBottom:3,lineHeight:1.5}}>• {f.message}</div>
-                      ))}
-                      <div style={{fontSize:12,color:"#991B1B",marginTop:4,fontStyle:"italic"}}>Address the red flag(s) above before relying on a differential — this screen runs first and intentionally blocks suggestions until it's clear.</div>
-                    </div>;
-                  }
-
-                  const CS = {
-                    High:     {bg:"#ECFDF5",border:"#6EE7B7",badge:"#059669"},
-                    Moderate: {bg:"#FFFBEB",border:"#FDE68A",badge:"#D97706"},
-                    Low:      {bg:"#F9FAFB",border:"#E5E7EB",badge:"#6B7280"},
-                  };
-                  const band = (pct) => pct>=70?"High":pct>=40?"Moderate":"Low";
-                  const candidates = [
-                    result.ranked.primaryDifferential && { name: result.ranked.primaryDifferential, confidence: result.ranked.confidence, supportingFindings: result.ranked.supportingFindings },
-                    ...(result.ranked.alternateDifferentials||[]),
-                  ].filter(Boolean);
-
-                  if (!candidates.length) {
-                    return result.ranked.note
-                      ? <div style={{marginBottom:10,fontSize:13,color:"#6B7280",fontStyle:"italic"}}>{result.ranked.note}</div>
-                      : null;
-                  }
-
-                  return <div style={{marginBottom:10}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"#065F46",marginBottom:6}}>💡 Suggested Clinical Diagnoses</div>
-                    {candidates.map((s,i)=>{
-                      const cs = CS[band(s.confidence)];
-                      return <div key={i} style={{padding:"9px 12px",background:cs.bg,border:`1.5px solid ${cs.border}`,borderRadius:10,marginBottom:5}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                          <span style={{fontSize:14.5,fontWeight:700,color:"#111827",flex:1}}>{i+1}. {s.name}</span>
-                          <span style={{padding:"2px 7px",borderRadius:99,fontSize:12,fontWeight:700,background:cs.badge,color:"#fff"}}>
-                            {band(s.confidence)} {s.confidence}%
-                          </span>
-                        </div>
-                        <div style={{fontSize:12,color:"#6B7280",marginBottom:4}}>{result.region.region} · matched via {result.region.matchedVia}</div>
-                        <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:4}}>
-                          {s.supportingFindings.map((f,fi)=><span key={fi} style={{padding:"1px 6px",borderRadius:6,background:"rgba(0,0,0,0.06)",fontSize:12,color:"#374151"}}>{f}</span>)}
-                        </div>
-                        {!dx&&<button onClick={()=>set("soap_a_diagnosis",s.name)} style={{padding:"3px 10px",fontSize:12,background:"#1E40AF",color:"#fff",border:"none",borderRadius:99,cursor:"pointer",fontWeight:600}}>Use as Provisional Dx</button>}
-                      </div>;
-                    })}
-                  </div>;
-                })()}
 
                 <DiagDropdown label="Provisional Diagnosis" value={dx} onChange={val=>set("soap_a_diagnosis",val)} color="#1E40AF" borderColor="#C7D2FE" badgeColor="#4F46E5"/>
                 <input placeholder="ICD-10 code (e.g. M51.1)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={{...inp,marginBottom:0,fontSize:14.5}}/>
