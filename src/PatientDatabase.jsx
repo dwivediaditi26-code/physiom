@@ -2628,7 +2628,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
                   {/* ── Neurological ── */}
                   <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes||!!d.gcs_eye||
-                    Object.keys(d).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_")||k.startsWith("brunnstrom_")||k.startsWith("rankin_")||k.startsWith("hoehnyahr_")||k.startsWith("pdrigidity_")||k.startsWith("updrs_")||k.startsWith("edss_")||k.startsWith("sci_")||k==="nrf_autonomic_dysreflexia")&&d[k])
+                    Object.keys(d).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_")||k.startsWith("brunnstrom_")||k.startsWith("rankin_")||k.startsWith("hoehnyahr_")||k.startsWith("pdrigidity_")||k.startsWith("updrs_")||k.startsWith("edss_")||k.startsWith("sci_")||k.startsWith("rancho_")||k.startsWith("goat_")||k.startsWith("barthel_")||k.startsWith("asia_")||k.startsWith("nihss_")||k==="nrf_autonomic_dysreflexia")&&d[k])
                   }>
                     {(()=>{
                       // Group into Reflexes / Dermatomes / Myotomes / Neural
@@ -2742,7 +2742,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                             </div>;
                           })()}
                           {(()=>{
-                            const stagingRows=["brunnstrom","rankin","hoehnyahr","pdrigidity","updrs","edss"].map(id=>({id,sc:SCALES[id],score:SCALES[id].score(d)})).filter(r=>r.score!==null);
+                            const stagingRows=["brunnstrom","rankin","hoehnyahr","pdrigidity","updrs","edss","rancho","goat","barthel","asia","nihss"].map(id=>({id,sc:SCALES[id],score:SCALES[id].score(d)})).filter(r=>r.score!==null);
                             if(!stagingRows.length) return null;
                             return <div style={{padding:"9px 11px",background:"#F9FAFB",borderRadius:10,border:`1px solid ${C.border}`,marginBottom:10}}>
                               <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Condition Staging</div>

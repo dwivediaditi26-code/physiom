@@ -83,7 +83,7 @@ describe("SCI template checklist", () => {
     const navTo = vi.fn();
     render(<SCITemplateModule data={{}} navTo={navTo} />);
     fireEvent.click(screen.getByText(/1\. Red flags/));
-    expect(navTo).toHaveBeenCalledWith("neuro", { neuroHighlight: "nrf_autonomic_dysreflexia" });
+    expect(navTo).toHaveBeenCalledWith("neuro", { fromTemplate: { id: "sci", label: "SCI" }, neuroHighlight: "nrf_autonomic_dysreflexia" });
   });
 });
 
@@ -98,7 +98,7 @@ describe("Parkinson's template checklist", () => {
     const navTo = vi.fn();
     render(<ParkinsonsTemplateModule data={{}} navTo={navTo} />);
     fireEvent.click(screen.getByText(/9\. UPDRS part summary/));
-    expect(navTo).toHaveBeenCalledWith("outcome", { scaleId: "updrs" });
+    expect(navTo).toHaveBeenCalledWith("outcome", { fromTemplate: { id: "parkinsons", label: "Parkinson's" }, scaleId: "updrs" });
   });
 });
 
@@ -112,6 +112,6 @@ describe("MS template checklist", () => {
     const navTo = vi.fn();
     render(<MSTemplateModule data={{}} navTo={navTo} />);
     fireEvent.click(screen.getByText(/2\. EDSS/));
-    expect(navTo).toHaveBeenCalledWith("outcome", { scaleId: "edss" });
+    expect(navTo).toHaveBeenCalledWith("outcome", { fromTemplate: { id: "ms", label: "MS" }, scaleId: "edss" });
   });
 });

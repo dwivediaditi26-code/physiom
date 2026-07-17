@@ -57,21 +57,21 @@ describe("Stroke template checklist", () => {
     const navTo = vi.fn();
     render(<StrokeTemplateModule data={{}} navTo={navTo} />);
     fireEvent.click(screen.getByText(/2\. NIHSS severity/));
-    expect(navTo).toHaveBeenCalledWith("outcome", { scaleId: "nihss" });
+    expect(navTo).toHaveBeenCalledWith("outcome", { fromTemplate: { id: "stroke", label: "Stroke" }, scaleId: "nihss" });
   });
 
   it("clicking Modified Rankin Scale opens Outcome Measures directly into that scale", () => {
     const navTo = vi.fn();
     render(<StrokeTemplateModule data={{}} navTo={navTo} />);
     fireEvent.click(screen.getByText(/9\. Modified Rankin Scale/));
-    expect(navTo).toHaveBeenCalledWith("outcome", { scaleId: "rankin" });
+    expect(navTo).toHaveBeenCalledWith("outcome", { fromTemplate: { id: "stroke", label: "Stroke" }, scaleId: "rankin" });
   });
 
   it("clicking the red flag step reuses the same evolving-consciousness-change flag TBI uses (no duplicate flag was created)", () => {
     const navTo = vi.fn();
     render(<StrokeTemplateModule data={{}} navTo={navTo} />);
     fireEvent.click(screen.getByText(/1\. Red flags/));
-    expect(navTo).toHaveBeenCalledWith("neuro", { neuroHighlight: "nrf_loc_change" });
+    expect(navTo).toHaveBeenCalledWith("neuro", { fromTemplate: { id: "stroke", label: "Stroke" }, neuroHighlight: "nrf_loc_change" });
   });
 
   it("TBI template still works unchanged after the shared-component refactor", () => {
