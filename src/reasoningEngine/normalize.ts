@@ -132,6 +132,15 @@ export function normalizeFromData(data: Data): { subjective: SubjectiveInput; ob
   const quality = str(data.cc_quality).toLowerCase();
   const onset = str(data.cc_onset).toLowerCase();
   const age = num(data.dem_age);
+  // Bug fix: "insidious onset, no injury" was being read as onsetTraumatic=true
+  // because has(onset,"injury") matches the "injury" inside "no injury" -- with
+  // no dedicated mechanism-of-injury dropdown for shoulder (unlike every other
+  // region), this free-text onset field is the only source, so a clinician
+  // typing the very normal phrase "no injury"/"no trauma"/"no fall" was
+  // silently flipping BOTH onsetInsidious and onsetTraumatic to true at once,
+  // a contradiction that fed small false-positive scores into traumatic-onset
+  // diagnoses (instability, acute cuff tear) on purely insidious cases.
+  const onsetNegated = has(onset, "no injury", "no trauma", "no fall", "denies trauma", "denies injury", "denies fall", "without injury", "without trauma");
 
   const subjective: SubjectiveInput = {
     region: "shoulder",
@@ -142,7 +151,7 @@ export function normalizeFromData(data: Data): { subjective: SubjectiveInput; ob
     easesWithRest: has(cc, "rest", "ease"),
     paresthesia: has(cc, "tingl", "numb", "pins") || has(quality, "tingling", "pins and needles", "numbness"),
     radiationBelowElbow: has(str(data.loc_radiation), "forearm", "hand", "below elbow", "finger"),
-    onsetTraumatic: has(onset, "trauma", "fall", "injury", "sudden"),
+    onsetTraumatic: !onsetNegated && has(onset, "trauma", "fall", "injury", "sudden"),
     onsetInsidious: has(onset, "insidious", "gradual", "no injury"),
     overheadAggravation: has(cc, "overhead", "reach", "lift", "above"),
     progressiveStiffness: has(cc, "stiff", "progressive"),
@@ -187,6 +196,23 @@ export function normalizeFromData(data: Data): { subjective: SubjectiveInput; ob
   setT("apprehension", isPos(data.st_apprehension));
   setT("relocation", isPos(data.st_relocation));
   setT("scarf", isPos(data.st_cross_arm) || isPos(data.st_acromioclavicular));
+  // Bug fix: painful arc (one of the most classic impingement signs, and part
+  // of the cited Park/Hawkins/Neer cluster this diagnosis model relies on) was
+  // never read for shoulder even though the app collects it via a dedicated
+  // select (shl_arc/shr_arc) AND as a checkbox option inside the aggravating-
+  // movements multicheck (shl_agg_mov/shr_agg_mov). Real option text: "60-120
+  // abduction (subacromial / impingement pattern)" (select) or "Painful arc -
+  // 60 to 120 degrees abduction" (checkbox) -- "60" is unambiguous against the
+  // other options (No painful arc / Above 120 / Throughout range / Only at
+  // beginning / Only at end), so match on that.
+  const painfulArcText = [data.shl_arc, data.shr_arc, data.shl_agg_mov, data.shr_agg_mov].map(str).join(" | ");
+  setT("painful_arc", has(painfulArcText, "60"));
+  // Bug fix: Spurling's is a real, shared special-test field (st_spurling) the
+  // shoulder evidence model explicitly cites for its cervical-referral
+  // exclusion differential, but only the cervical normalizer ever read it --
+  // a positive Spurling's recorded during a shoulder work-up silently
+  // contributed nothing to the "is this actually your neck" flag.
+  setT("spurling", isPos(data.st_spurling));
 
   const objective: ObjectiveFindings = {
     rom, mmt, specialTests,

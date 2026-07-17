@@ -95,6 +95,72 @@ describe("normalizeFromData (flat app record -> typed engine inputs, real field 
     expect(subjective.systemicIllness).toBe(false);
     expect(subjective.traumaHistory).toBe(false);
   });
+
+  // Regression for a bug caught during real-case validation: "insidious onset,
+  // no injury" -- completely normal clinical phrasing -- was being read as
+  // BOTH insidious AND traumatic, because has(onset,"injury") matches the
+  // "injury" substring inside "no injury". onsetInsidious was always correct;
+  // onsetTraumatic was the false positive.
+  it("does not read negated onset phrasing ('no injury'/'no trauma'/'no fall') as confirming trauma", () => {
+    const noInjury = normalizeFromData({ cc_main: "shoulder pain", cc_onset: "insidious, no injury" });
+    expect(noInjury.subjective.onsetInsidious).toBe(true);
+    expect(noInjury.subjective.onsetTraumatic).toBe(false);
+
+    const noTrauma = normalizeFromData({ cc_main: "shoulder pain", cc_onset: "gradual onset, no trauma" });
+    expect(noTrauma.subjective.onsetTraumatic).toBe(false);
+
+    const deniesFall = normalizeFromData({ cc_main: "shoulder pain", cc_onset: "insidious, denies fall or injury" });
+    expect(deniesFall.subjective.onsetTraumatic).toBe(false);
+  });
+
+  // Real positive mentions of trauma must still register -- the fix guards
+  // against negation, it must not blanket-suppress genuine trauma detection.
+  it("still detects genuine traumatic onset when actually described", () => {
+    const fell = normalizeFromData({ cc_main: "shoulder pain", cc_onset: "sudden onset after a fall onto outstretched arm" });
+    expect(fell.subjective.onsetTraumatic).toBe(true);
+
+    const workInjury = normalizeFromData({ cc_main: "shoulder pain", cc_onset: "work injury lifting a heavy box" });
+    expect(workInjury.subjective.onsetTraumatic).toBe(true);
+  });
+
+  // Regression: painful arc (shl_arc/shr_arc dedicated select, or the
+  // "Painful arc — 60 to 120 degrees abduction" option inside the
+  // shl_agg_mov/shr_agg_mov aggravating-movements multicheck) was collected
+  // by the app but never reached the shoulder engine at all.
+  it("reads painful arc from the dedicated shl_arc/shr_arc select field", () => {
+    const { objective } = normalizeFromData({
+      cc_main: "shoulder pain",
+      shr_arc: "60–120° abduction (subacromial)",
+    });
+    expect(objective.specialTests.painful_arc).toBe(true);
+  });
+
+  it("reads painful arc from the shl_agg_mov/shr_agg_mov checkbox option as a fallback", () => {
+    const { objective } = normalizeFromData({
+      cc_main: "shoulder pain",
+      shl_agg_mov: ["Reaching overhead", "Painful arc — 60 to 120 degrees abduction"],
+    });
+    expect(objective.specialTests.painful_arc).toBe(true);
+  });
+
+  it("does not fabricate painful arc when the arc field says 'No painful arc' or 'Above 120°'", () => {
+    const none = normalizeFromData({ cc_main: "shoulder pain", shr_arc: "No painful arc" });
+    expect(none.objective.specialTests.painful_arc).toBeUndefined();
+
+    const acPattern = normalizeFromData({ cc_main: "shoulder pain", shr_arc: "Above 120° (AC joint)" });
+    expect(acPattern.objective.specialTests.painful_arc).toBeUndefined();
+  });
+
+  // Regression: Spurling's (st_spurling) is a real, shared field the shoulder
+  // evidence model explicitly wants for its cervical-referral exclusion
+  // differential, but only the cervical normalizer ever read it.
+  it("reads Spurling's test for the shoulder region's cervical-referral exclusion differential", () => {
+    const { objective } = normalizeFromData({
+      cc_main: "shoulder pain radiating into forearm",
+      st_spurling: "Positive — reproduces ipsilateral radicular arm pain",
+    });
+    expect(objective.specialTests.spurling).toBe(true);
+  });
 });
 
 describe("normalizeCervicalFromData — regression: guessed field names replaced with real ones", () => {
