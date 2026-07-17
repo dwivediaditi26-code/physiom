@@ -942,7 +942,7 @@ function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
 
 // ─── MAIN MODULE ──────────────────────────────────────────────────────────────
 export { SCALES };
-export default function OutcomeMeasuresPro({ data, set, navContext={} }) {
+export default function OutcomeMeasuresPro({ data, set, navContext={}, navTo }) {
   const PC=getC();
   const [view,setView]=useState("list"); // list | live | result | patient
   const [activeScale,setActiveScale]=useState(null);
@@ -982,18 +982,26 @@ export default function OutcomeMeasuresPro({ data, set, navContext={} }) {
     setView("result");
   };
 
+  // Deep-linked here from a Neuro Templates checklist step? Then "back"
+  // (and "close" after completing a scale) should return straight to that
+  // condition's checklist instead of this module's own flat list.
+  const backToOrigin = () => {
+    if (navContext.fromTemplate && navTo) navTo("neurotemplates",{selectCondition:navContext.fromTemplate.id});
+    else setView("list");
+  };
+
   if(view==="live"&&activeScale==="asia"){
     return <AsiaGridMode patientName={data?.name||"Patient"}
-      onComplete={handleComplete} onBack={()=>setView("list")} patientMode={false}/>;
+      onComplete={handleComplete} onBack={backToOrigin} patientMode={false}/>;
   }
   if(view==="live"){
     return <LiveMode scaleId={activeScale} patientName={data?.name||"Patient"}
-      onComplete={handleComplete} onBack={()=>setView("list")} patientMode={false}/>;
+      onComplete={handleComplete} onBack={backToOrigin} patientMode={false}/>;
   }
   if(view==="result"&&lastResult){
     return <ResultScreen result={lastResult} history={lastResult.history}
       patientName={data?.name||"Patient"}
-      onClose={()=>setView("list")} onRetake={()=>setView("live")}/>;
+      onClose={backToOrigin} onRetake={()=>setView("live")}/>;
   }
 
   // Scale list

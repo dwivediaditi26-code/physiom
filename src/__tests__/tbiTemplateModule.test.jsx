@@ -48,16 +48,16 @@ describe("TBI template checklist", () => {
     const navTo = vi.fn();
     render(<TBITemplateModule data={{}} navTo={navTo} />);
     fireEvent.click(screen.getByText(/2\. Glasgow Coma Scale/));
-    expect(navTo).toHaveBeenCalledWith("neuro", { neuroHighlight: "gcs_eye" });
+    expect(navTo).toHaveBeenCalledWith("neuro", { fromTemplate: { id: "tbi", label: "TBI" }, neuroHighlight: "gcs_eye" });
   });
 
   it("clicking a row that lives in Outcome Measures calls navTo with the outcome key and the right scaleId", () => {
     const navTo = vi.fn();
     render(<TBITemplateModule data={{}} navTo={navTo} />);
     fireEvent.click(screen.getByText(/9\. Rancho and GOAT staging/));
-    expect(navTo).toHaveBeenCalledWith("outcome", { scaleId: "rancho" });
+    expect(navTo).toHaveBeenCalledWith("outcome", { fromTemplate: { id: "tbi", label: "TBI" }, scaleId: "rancho" });
     fireEvent.click(screen.getByText(/10\. Barthel functional outcome/));
-    expect(navTo).toHaveBeenCalledWith("outcome", { scaleId: "barthel" });
+    expect(navTo).toHaveBeenCalledWith("outcome", { fromTemplate: { id: "tbi", label: "TBI" }, scaleId: "barthel" });
   });
 });
 

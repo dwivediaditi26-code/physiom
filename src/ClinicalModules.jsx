@@ -2831,7 +2831,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     // PD rigidity, UPDRS, EDSS. Same live-computed pattern as the cognitive
     // scales above (never a separate cached number, always SCALES.score()
     // reading straight off the real recorded fields).
-    ["brunnstrom","rankin","hoehnyahr","pdrigidity","updrs","edss"].forEach(scaleId => {
+    ["brunnstrom","rankin","hoehnyahr","pdrigidity","updrs","edss","rancho","goat","barthel","asia","nihss"].forEach(scaleId => {
       const sc = SCALES[scaleId];
       const score = sc.score(data);
       if (score !== null) neuroLines.push(`  ${sc.label}: ${score}${sc.unit} (${sc.interpret(score).label})`);
@@ -4413,7 +4413,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
 
           {/* Neurological */}
           {(neuroRows.length>0||v("gcs_eye")||v("gcs_verbal")||v("gcs_motor")||
-            Object.keys(data).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_")||k.startsWith("brunnstrom_")||k.startsWith("rankin_")||k.startsWith("hoehnyahr_")||k.startsWith("pdrigidity_")||k.startsWith("updrs_")||k.startsWith("edss_")||k.startsWith("sci_")||k==="nrf_autonomic_dysreflexia")&&data[k])
+            Object.keys(data).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_")||k.startsWith("brunnstrom_")||k.startsWith("rankin_")||k.startsWith("hoehnyahr_")||k.startsWith("pdrigidity_")||k.startsWith("updrs_")||k.startsWith("edss_")||k.startsWith("sci_")||k.startsWith("rancho_")||k.startsWith("goat_")||k.startsWith("barthel_")||k.startsWith("asia_")||k.startsWith("nihss_")||k==="nrf_autonomic_dysreflexia")&&data[k])
           )&&<div style={subCard("#065F46")}>
             {subH("Neurological","#065F46")}
             {/* GCS (Glasgow Coma Scale) -- was only ever wired into the
@@ -4461,7 +4461,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 <span style={{fontSize:14.5,fontWeight:500,color:v(id)==="Yes"?"#059669":"#DC2626"}}>{v(id)}</span>
               </div>
             ))}
-            {["moca","mmse","minicog","brunnstrom","rankin","hoehnyahr","pdrigidity","updrs","edss"].map(scaleId=>{
+            {["moca","mmse","minicog","brunnstrom","rankin","hoehnyahr","pdrigidity","updrs","edss","rancho","goat","barthel","asia","nihss"].map(scaleId=>{
               const sc=SCALES[scaleId]; const score=sc.score(data);
               if(score===null) return null;
               const interp=sc.interpret(score);

@@ -1439,7 +1439,7 @@ function AppInner({ currentUser, onSignOut }) {
                 </div>
               </>
               ):tests==="NEURO_TEMPLATES_MODULE"?(
-                <Suspense fallback={<TabFallback/>}><LazyNeuroTemplates data={data} navTo={navTo}/></Suspense>
+                <Suspense fallback={<TabFallback/>}><LazyNeuroTemplates data={data} navTo={navTo} navContext={active==="neurotemplates"?navContext:{}}/></Suspense>
               ):tests==="GAIT_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyGait data={data} set={set}/></Suspense>
@@ -1468,7 +1468,7 @@ function AppInner({ currentUser, onSignOut }) {
               </>
               ):tests==="OUTCOME_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyOutcomes data={data} set={set} navContext={active==="outcome"?navContext:{}}/></Suspense>
+                <Suspense fallback={<TabFallback/>}><LazyOutcomes data={data} set={set} navTo={navTo} navContext={active==="outcome"?navContext:{}}/></Suspense>
                 </>
               ):tests==="TREATMENT_MODULE"?(
                 <>
@@ -1521,7 +1521,7 @@ function AppInner({ currentUser, onSignOut }) {
                   </div>
                 </div>
               ):tests==="SOAP_MODULE"?(
-              <Suspense fallback={<TabFallback/>}><LazySOAPNote data={data} set={set}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazySOAPNote data={data} set={set} initialTab={active==="soap"?navContext.initialTab:undefined}/></Suspense>
               ):tests==="AI_MODULE"?(
               <AIAssistant data={data} set={set} PC={PC} onClose={()=>navTo("home")}/>
               ):(
