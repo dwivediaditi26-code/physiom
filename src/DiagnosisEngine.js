@@ -4,13 +4,12 @@
  * The clinical diagnosis SUGGESTION engine that used to live in this file
  * (runDiagnosisEngine, runNeuroPatternEngine, runFunctionalScreenEngine,
  * runOutcomeMeasureEngine, and the getTopDiagnoses/getTopDiagnosesEnhanced
- * wrappers around them) has been removed and replaced by
- * src/interpretationEngine/ (fed by src/interpretationAdapter.js), which is
- * now what powers "Suggested Clinical Diagnoses" in SOAP Notes' Assessment
- * tab. That old engine also read several field names (s_onset,
- * s_chief_complaint, s_aggravating, etc.) that the current Subjective module
- * doesn't actually write anymore -- the new engine's adapter was built
- * against the real, current field names instead.
+ * wrappers around them) has been removed. It was briefly replaced by
+ * src/interpretationEngine/ (fed by src/interpretationAdapter.js); that
+ * system has since also been removed and replaced by the deterministic
+ * src/reasoningEngine/, which now powers "SUGGEST PROBABLE DIAGNOSIS" in
+ * SOAP Notes' Assessment tab (see src/ProbableDiagnosis.jsx) across all 9
+ * supported regions.
  *
  * ALL_DIAGNOSES stays here because it's a separate, still-active feature: the
  * manual "Provisional Diagnosis" / differential dropdown pickers in SOAP

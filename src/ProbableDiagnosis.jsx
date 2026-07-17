@@ -9,10 +9,10 @@ import { runReasoningFromData } from "./reasoningEngine/index";
 
 const TEAL = "#0891b2";
 
-// Regions the deterministic engine currently covers end-to-end. Exported so
-// other UI (e.g. ClinicalModules.jsx's SOAP Assessment tab) can hide the OLDER
-// interpretationEngine's auto-rendered suggestions once a region is migrated
-// here, instead of showing two competing diagnosis panels.
+// Regions the deterministic engine covers end-to-end. This is now the only
+// diagnosis-suggestion path in the app -- the older interpretationEngine /
+// interpretationAdapter system has been removed. Exported for use elsewhere
+// (e.g. region-aware messaging) if needed.
 export const SUPPORTED = ["shoulder", "cervical", "lumbar", "hip", "knee", "elbow", "thoracic", "ankle", "wrist"];
 
 // Detect the working region from the app's data. Order of trust:

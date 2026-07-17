@@ -39,7 +39,7 @@ describe("Neurological module — new TBI-relevant tabs render", () => {
     expect(screen.getByText(/Ask the patient to state their own full name/)).toBeInTheDocument();
     expect(screen.getByText(/19\/30/)).toBeInTheDocument();
     expect(screen.getByText(/Mild cognitive impairment/)).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Redo →"));
+    fireEvent.click(screen.getByText("Review →"));
     expect(navToMock).toHaveBeenCalledWith("outcome", { scaleId: "moca" });
   });
 

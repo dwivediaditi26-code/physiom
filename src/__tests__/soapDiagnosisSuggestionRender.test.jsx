@@ -1,15 +1,17 @@
 // soapDiagnosisSuggestionRender.test.jsx
 // End-to-end verification that the "Suggested Clinical Diagnoses" block in
 // SOAP Notes' Assessment tab genuinely works through the real rendered UI --
-// not just the underlying runInterpretation/buildAssessmentData functions in
-// isolation (already covered by interpretationEngine.test.js). Renders the
-// actual SOAPNoteModule component with realistic patient records the way a
+// not just the underlying reasoning-engine functions in isolation (already
+// covered by src/__tests__/reasoningEngine_*.test.ts). Renders the actual
+// SOAPNoteModule component with realistic patient records the way a
 // clinician's browser would, and checks the DOM for the right output.
 //
-// Uses a knee ACL scenario (independent of the cervical radiculopathy case
-// interpretationEngine.test.js already covers) to confirm the engine
-// generalises correctly across regions, and a red-flag case to confirm the
-// halt behaviour reaches the screen, not just the return value.
+// Uses a knee ACL scenario to confirm the engine generalises correctly
+// across regions, and a red-flag case to confirm the halt behaviour reaches
+// the screen, not just the return value. The older interpretationEngine/
+// interpretationAdapter system this file used to also exercise has been
+// removed -- the deterministic reasoning engine now covers all 9 regions
+// and is the only diagnosis-suggestion path left in the app.
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -50,8 +52,10 @@ describe("SOAP Notes Assessment tab -- diagnosis suggestion engine, rendered", (
       lx_rf_cauda: "Positive — saddle anaesthesia and bladder changes reported",
     };
     render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
-    expect(screen.getByText(/Red flag screen positive — diagnosis suggestions withheld/)).toBeTruthy();
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    expect(screen.getByText(/Red flag screen positive — probable-diagnosis suggestions withheld/)).toBeTruthy();
     expect(screen.getByText(/Possible cauda equina syndrome/)).toBeTruthy();
+    expect(screen.queryByText(/Probable Diagnoses \(ranked\)/)).toBeNull();
     expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
   });
 
@@ -73,11 +77,6 @@ describe("SOAP Notes Assessment tab -- diagnosis suggestion engine, rendered", (
   });
 
   it("shows only the new deterministic engine's button for hip -- no duplicate/competing panel", () => {
-    // The OLDER engine's own region detector (interpretationAdapter.js) keys off
-    // real rom_h*_arom/_prom fields being present, not chief-complaint keywords
-    // -- so a hip ROM field must be included here for the gate itself to have a
-    // region to test against (matches how the existing shoulder/knee cases above
-    // include their rom_* fields for the same reason).
     const data = {
       dem_name: "Test Patient", dem_age: "35",
       cc_main: "Right anterior groin pain, worse with FADIR movement",
@@ -114,24 +113,5 @@ describe("SOAP Notes Assessment tab -- diagnosis suggestion engine, rendered", (
     render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
     expect(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i)).toBeTruthy();
     expect(screen.queryByText("💡 Suggested Clinical Diagnoses")).toBeNull();
-  });
-
-  it("still shows the OLDER suggestion panel before any objective ROM data exists, confirming the gate is per-region not an unconditional hide", () => {
-    // All 9 regions the app supports are now covered by the deterministic
-    // engine, so there is no longer a specific still-uncovered region to use
-    // here. The gate itself (detectRegionForOldEngine) works off real ROM_DATA
-    // field presence, not chief-complaint text -- so with a chief complaint
-    // typed but zero rom_* fields recorded yet, detectRegionForOldEngine(data)
-    // resolves to null (outside NEW_ENGINE_REGIONS) and the older panel still
-    // shows, even though its OWN internal regionScreen.js separately manages
-    // to identify "shoulder" from the chief-complaint text alone and produce
-    // a real candidate. This is the genuine remaining case where the gate
-    // must not hide the panel: before objective data exists for any region.
-    const data = {
-      dem_name: "Test Patient", dem_age: "30",
-      cc_main: "Shoulder pain, gradual onset, worse overhead",
-    };
-    render(<SOAPNoteModule data={data} set={vi.fn()} onNav={()=>{}} initialTab="A" />);
-    expect(screen.getByText("💡 Suggested Clinical Diagnoses")).toBeTruthy();
   });
 });
