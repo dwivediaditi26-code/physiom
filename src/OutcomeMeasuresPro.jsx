@@ -110,20 +110,36 @@ ${sc.fields.map((f,i)=>`<div class="question">
 }
 
 // ─── LIVE GUIDED MODE ─────────────────────────────────────────────────────────
-function LiveMode({scaleId, patientName, onComplete, onBack, patientMode}){
+function LiveMode({scaleId, patientName, onComplete, onBack, patientMode, data}){
   const sc=SCALES[scaleId];
+  const fields=sc.fields;
+  // Pre-fill from whatever this scale's fields already hold in the real
+  // patient record -- previously "Start Assessment" (and "Redo" from the
+  // Neuro cognition cards) always started completely blank even when the
+  // scale had already been completed, with no way to see or edit the
+  // answers that were actually recorded, only the final score.
+  const [answers,setAnswers]=useState(() => {
+    const init = {};
+    if (data) fields.forEach(fld => { if (data[fld.id] !== undefined && data[fld.id] !== "") init[fld.id] = data[fld.id]; });
+    return init;
+  });
+  const hasExisting = Object.keys(answers).length > 0;
   const [qIdx,setQIdx]=useState(0);
-  const [answers,setAnswers]=useState({});
   const [lang,setLang]=useState("en");
-  const [activity,setActivity]=useState({act1:"",act2:"",act3:""});
+  const [activity,setActivity]=useState({
+    act1: data?.psfs_activity1 || "",
+    act2: data?.psfs_activity2 || "",
+    act3: data?.psfs_activity3 || "",
+  });
   // Timer state for TUG / 10MWT
   const [timerMs,setTimerMs]=useState(0);
   const [timerRunning,setTimerRunning]=useState(false);
   const timerRef=useRef(null);
   const timerStartRef=useRef(0);
-  const [stage,setStage]=useState("questions"); // questions | review
+  // Land straight on the full filled-in review screen when reopening an
+  // already-answered scale, instead of question 1 of a blank flow.
+  const [stage,setStage]=useState(hasExisting ? "review" : "questions"); // questions | review
 
-  const fields=sc.fields;
   const total=fields.length;
   const f=fields[qIdx];
   const answered=answers[f.id]!==undefined;
@@ -527,9 +543,17 @@ const GRADE_OPTS=["A","B","C","D","E"];
 const GRADE_DESC={A:"Complete",B:"Sensory only",C:"Motor <50%<3",D:"Motor ≥50%≥3",E:"Normal"};
 const NLI_OPTS=["C1","C2","C3","C4","C5","C6","C7","C8","T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12","L1","L2","L3","L4","L5","S1","S2","S3","S4-5"];
 
-function AsiaGridMode({patientName, onComplete, onBack, patientMode}){
-  const [answers,setAnswers]=useState({});
-  const [stage,setStage]=useState("grid"); // grid | review
+function AsiaGridMode({patientName, onComplete, onBack, patientMode, data}){
+  const ASIA_ALL_KEYS = [...ASIA_MOTOR_LEVELS.flatMap(r=>[r.r,r.l]), "asia_grade","asia_nli","asia_vac","asia_dap"];
+  const [answers,setAnswers]=useState(() => {
+    const init = {};
+    if (data) ASIA_ALL_KEYS.forEach(k => { if (data[k] !== undefined && data[k] !== "") init[k] = data[k]; });
+    return init;
+  });
+  const hasExisting = Object.keys(answers).length > 0;
+  // Land straight on the full filled-in review screen when reopening an
+  // already-recorded ASIA grading, instead of the blank entry grid.
+  const [stage,setStage]=useState(hasExisting ? "review" : "grid"); // grid | review
   const [showGuide,setShowGuide]=useState(false);
   const bg=patientMode?"#0d0d1a":"#F2F2F4";
   const card=patientMode?"#161625":"#fff";
@@ -991,11 +1015,11 @@ export default function OutcomeMeasuresPro({ data, set, navContext={}, navTo }) 
   };
 
   if(view==="live"&&activeScale==="asia"){
-    return <AsiaGridMode patientName={data?.name||"Patient"}
+    return <AsiaGridMode patientName={data?.name||"Patient"} data={data}
       onComplete={handleComplete} onBack={backToOrigin} patientMode={false}/>;
   }
   if(view==="live"){
-    return <LiveMode scaleId={activeScale} patientName={data?.name||"Patient"}
+    return <LiveMode scaleId={activeScale} patientName={data?.name||"Patient"} data={data}
       onComplete={handleComplete} onBack={backToOrigin} patientMode={false}/>;
   }
   if(view==="result"&&lastResult){
@@ -1072,7 +1096,7 @@ export default function OutcomeMeasuresPro({ data, set, navContext={}, navTo }) 
                       <div className="pm-outcome-actions" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0,borderTop:`1px solid ${BD}`}}>
                         {[
                           {label:"📄 Blank PDF",color:MU,action:()=>generateBlankPDF(sc.id,data?.name||"")},
-                          {label:"▶ Start Assessment",color:A,action:()=>{setActiveScale(sc.id);setView("live");}},
+                          {label:last?"👁 Review / Edit":"▶ Start Assessment",color:A,action:()=>{setActiveScale(sc.id);setView("live");}},
                         ].map((btn,i)=>(
                           <button key={i} onClick={btn.action}
                             style={{padding:"9px 4px",border:"none",borderRight:i<1?`1px solid ${BD}`:"none",
