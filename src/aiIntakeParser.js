@@ -65,6 +65,23 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   if (result.painQuality?.length)
     updates.cc_quality = result.painQuality.join(SEP);
 
+  // Medical history, medications, prior episodes, goals -- global
+  // (not region-prefixed). These map onto fields the rest of the app
+  // already reads (pmh_notes/hx_episodes/hx_resolve/goal_main), not
+  // new fields nothing downstream sees. pmh_conditions/med_current are
+  // deliberately NOT written here: both are fixed-enum multichecks (36
+  // and 29 options respectively) and forcing free-text AI output into
+  // an exact enum match is a real hallucination/mismatch risk --
+  // pmh_notes is the existing free-text companion field for exactly
+  // this, already read into the SOAP as "Clinician note (PMH)".
+  const pmhParts = [];
+  if (result.medicalHistory) pmhParts.push(result.medicalHistory);
+  if (result.medications) pmhParts.push("Medications: " + result.medications);
+  if (pmhParts.length) updates.pmh_notes = pmhParts.join(". ");
+  if (result.priorEpisodeCount) updates.hx_episodes = result.priorEpisodeCount;
+  if (result.priorEpisodeOutcome) updates.hx_resolve = result.priorEpisodeOutcome;
+  if (result.patientGoals) updates.goal_main = result.patientGoals;
+
   // ── Region-prefixed fields ─────────────────────────────────────────
   if (pfx) {
     if (result.symptomPattern)
@@ -102,14 +119,32 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
         updates[pfx + "_radiation"] = result.radiationArea + (result.radiationSide ? " (" + result.radiationSide + ")" : "");
     }
 
+    const neuroField = pfx === "cx" ? "cx_arm_neuro"
+      : pfx === "lx" ? "lx_neuro_quality"
+      : pfx + "_neuro";
     if (result.neuroSymptoms?.length) {
-      const neuroField = pfx === "cx" ? "cx_arm_neuro"
-        : pfx === "lx" ? "lx_neuro_quality"
-        : pfx + "_neuro";
       updates[neuroField] = result.neuroSymptoms.join(SEP);
     }
     if (result.hasLegNeuro && pfx === "lx")
       updates["lx_neuro_present"] = result.hasLegNeuro;
+
+    // Bladder/bowel is a cauda equina red-flag screen. Deliberately
+    // never auto-writes any red-flag/clinician-verdict field (lx_rf_cauda,
+    // s_red5, etc.) -- same principle as flags/redFlagsToReview below,
+    // that stays a clinical judgement call. Recorded as plain
+    // informational text next to any neuro symptoms captured, so a
+    // genuine denied negative is visible in the SOAP note too, not just
+    // a positive.
+    if (result.hasBladderBowelSymptoms === true) {
+      const note = "Reports bladder/bowel involvement — see red flags";
+      updates[neuroField] = updates[neuroField] ? updates[neuroField] + SEP + note : note;
+    } else if (result.hasBladderBowelSymptoms === false) {
+      const note = "No bladder/bowel symptoms";
+      updates[neuroField] = updates[neuroField] ? updates[neuroField] + SEP + note : note;
+    }
+
+    if (result.functionalLimitations?.length)
+      updates[pfx + "_fn_notes"] = result.functionalLimitations.join("\n");
   }
 
   // ── Filled-field labels, for a human-readable summary ───────────────
@@ -133,6 +168,13 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   if (result.hasRadiation != null) filled.push("Radiation");
   if (result.neuroSymptoms?.length) filled.push("Neuro symptoms");
   if (result.hasLegNeuro) filled.push("Leg neuro");
+  if (result.hasBladderBowelSymptoms != null) filled.push("Bladder/bowel screen");
+  if (result.priorEpisodeCount) filled.push("Prior episodes");
+  if (result.priorEpisodeOutcome) filled.push("Prior episode outcome");
+  if (result.medicalHistory) filled.push("Medical history");
+  if (result.medications) filled.push("Medications");
+  if (result.functionalLimitations?.length) filled.push("Functional limitations");
+  if (result.patientGoals) filled.push("Patient goals");
   if (reg) filled.push("Region: " + reg);
 
   // ── Missing-information checklist ───────────────────────────────────
@@ -154,6 +196,8 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
     missingInfo.push("Aggravating factors");
   if (!result.relMovements?.length) missingInfo.push("Relieving factors");
   if (!result.painQuality?.length) missingInfo.push("Pain quality/character");
+  if (result.hasBladderBowelSymptoms == null) missingInfo.push("Bladder/bowel screen (red flag)");
+  if (!result.patientGoals) missingInfo.push("Patient's own goals");
 
   // ── Extraction audit trail ──────────────────────────────────────────
   // Per-field confidence and the exact quote supporting it, straight
@@ -173,11 +217,15 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
     missingInfo,
   };
 
+  const redFlagsToReview = Array.isArray(result.flags) ? result.flags.filter(Boolean) : [];
+  if (result.hasBladderBowelSymptoms === true)
+    redFlagsToReview.push("Patient reports bladder/bowel involvement — screen for cauda equina");
+
   return {
     updates,
     region: reg || null,
     filledLabels: filled,
-    redFlagsToReview: Array.isArray(result.flags) ? result.flags.filter(Boolean) : [],
+    redFlagsToReview,
     extractionMeta,
   };
 }

@@ -21,7 +21,7 @@ CRITICAL — DO NOT HALLUCINATE. You are a scribe, not a clinician. Extract ONLY
 
 Return this exact JSON shape (null for anything not mentioned, empty array [] for arrays):
 {
-  "chiefComplaint": a short, one-line clinical summary a physiotherapist would write as the presenting complaint -- include the specific diagnosis/injury if one is mentioned (e.g. a fracture, tear, or surgery), the body part, and its current status. Examples: "Left distal radius fracture, cast removed, 6 weeks post-injury" or "Post-op right shoulder stiffness, 2 months post greater tuberosity fracture" or "Chronic mechanical low back pain, no red flags". Do not just restate the region -- carry over any injury/diagnosis detail the patient description already stated. String or null if truly nothing describable.
+  "chiefComplaint": a short, one-line clinical summary a physiotherapist would write as the presenting complaint -- include the specific diagnosis/injury if one is mentioned (e.g. a fracture, tear, or surgery), the body part, and its current status. Do NOT include a chronicity/duration adjective (acute, subacute, chronic) here -- that belongs only in the separate "duration" and "symptomPattern" fields below; inventing one here (e.g. calling a 3-week history "chronic") is a factual error, not a paraphrase. Examples: "Left distal radius fracture, cast removed, 6 weeks post-injury" or "Post-op right shoulder stiffness, 2 months post greater tuberosity fracture" or "Mechanical low back pain, no red flags". Do not just restate the region -- carry over any injury/diagnosis detail the patient description already stated. String or null if truly nothing describable.
   "age": number or null, "sex": "Male"|"Female"|"Other"|null, "occupation": string or null,
   "region": one of ["Lumbar / SI","Cervical spine","Thoracic spine","Shoulder (L)","Shoulder (R)","Knee (L)","Knee (R)","Hip / Groin","Ankle / Foot","Elbow/Wrist/Hand"] or null,
   "laterality": "Left"|"Right"|"Bilateral"|null,
@@ -39,6 +39,13 @@ Return this exact JSON shape (null for anything not mentioned, empty array [] fo
   "hasRadiation": true|false|null -- set true for ANY symptom described in a limb away from the main complaint area, not just classic shooting/sciatica-style pain. This includes neurogenic claudication (legs aching, heavy, or weak after walking a certain distance, relieved by sitting or bending forward) and any other referred limb symptom tied to a spinal or joint complaint.
   "radiationSide": "Left"|"Right"|"Bilateral"|null, "radiationArea": string or null -- describe what's actually happening there, e.g. "Bilateral leg heaviness and aching after walking >5 min, relieved by sitting or leaning forward" -- don't just name the limb, carry over the pattern the patient described.
   "neuroSymptoms": array of 0-3 from ["No neurological symptoms","Objective numbness in specific area","Tingling","Pins and needles","Shooting pain","Burning — constant","Electric shock quality","Subjective weakness","Heaviness/weakness in legs after walking (claudication pattern)","Dropping objects involuntarily"],
+  "hasBladderBowelSymptoms": true|false|null -- true only if the patient describes any new bladder or bowel change (incontinence, retention, numbness, loss of control) in the context of their current complaint. false if they explicitly deny it (e.g. "no bladder or bowel problems"). null if never mentioned either way. This is a cauda equina red-flag screen -- never guess.
+  "priorEpisodeCount": one of ["First episode","2–3 episodes","4–6 episodes","More than 6","Continuous since onset"] or null -- how many times (including now) this same problem has occurred, only if the patient states or clearly implies a count (e.g. "this happened once before" = "2–3 episodes").
+  "priorEpisodeOutcome": one of ["Resolved fully on its own","Physiotherapy helped","Medication helped","Injection helped","Surgery helped","Did not fully resolve","Never fully resolved"] or null -- how a PREVIOUS episode resolved, only if stated.
+  "medicalHistory": string or null -- relevant past medical history / comorbidities exactly as the patient described them, including explicit denials (e.g. "No diabetes or hypertension"). Do not infer conditions that weren't mentioned.
+  "medications": string or null -- current medications exactly as stated, including explicit denials (e.g. "Not on any regular medications").
+  "functionalLimitations": array of 0-4 plain English descriptions of activities/participation the patient says are affected (e.g. "Difficulty sitting at desk for long periods", "Difficulty driving", "Difficulty playing with children"), or [] if not mentioned.
+  "patientGoals": string or null -- what the patient says they want to achieve/return to, in their own words or a close paraphrase (e.g. "Return to work and exercise without pain"), or null if not mentioned.
   "flags": array of red flag strings or [],
   "_confidence": an object mapping EVERY field above that you filled with a non-null/non-empty value to an integer 0-100 confidence score, reflecting how explicitly and unambiguously the narrative stated it. Use 100 only when it's stated in nearly these exact words. Use below 70 if you are inferring/interpreting rather than directly reading. Only include keys for fields you actually filled -- do not include keys for fields you left null or empty.
   "_sourceQuotes": an object mapping EVERY field above that you filled with a non-null/non-empty value to a short (5-15 word) quote or very close paraphrase from the ORIGINAL narrative that directly supports that value. This must be real substance from what was actually said -- never invent a quote. Only include keys for fields you actually filled.
@@ -50,9 +57,19 @@ If input is Hindi/mixed, extract clinical meaning in English.`;
       method: 'POST',
       headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        // llama-3.3-70b-versatile was deprecated by Groq on 2026-06-17,
+        // shutdown 2026-08-16 (console.groq.com/docs/deprecations) --
+        // migrated to their recommended replacement ahead of that date.
+        // gpt-oss-120b is a reasoning model: reasoning tokens land in a
+        // separate message.reasoning field, never mixed into content, so
+        // JSON.parse(content) below is unaffected. Reasoning kept low and
+        // excluded from the response -- this is structured extraction,
+        // not a task that benefits from visible chain-of-thought, and low
+        // effort keeps latency close to the old non-reasoning model's.
+        model: 'openai/gpt-oss-120b',
         messages: [{ role: 'system', content: system }, { role: 'user', content: text.trim() }],
-        temperature: 0.1, max_tokens: 1700,
+        temperature: 0.1, max_completion_tokens: 3000,
+        reasoning_effort: 'low', include_reasoning: false,
         response_format: { type: 'json_object' },
       }),
     });

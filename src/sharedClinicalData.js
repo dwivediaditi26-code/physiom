@@ -5352,7 +5352,40 @@ const ALL_EXERCISES = Object.values(EXERCISE_DB).flatMap(region =>
   Object.values(region.categories).flatMap(cat => cat)
 );
 
+// ─── GENERIC SUBJECTIVE FIELD CATALOG LOOKUP ─────────────────────────────────
+// Single source of truth for "every field the Subjective step can capture",
+// used to build a catch-all "Additional documented findings" fallback in the
+// three display surfaces (Live SOAP text, SOAP Notes card view, Patient
+// Profile). Without this, each surface has to remember to hand-write a line
+// for every new field added to UNIV_S/REG_MOD_S above, and history shows that
+// drifts (see: goal_main/pmh_notes silently missing from two of three
+// surfaces even though correctly captured). Any field with a truthy value in
+// `data` is guaranteed to surface somewhere via this catalog, present and
+// future, unless a surface explicitly excludes it because it already shows
+// that field through bespoke narrative logic.
+function listGlobalCatalogFields() {
+  // BPS_S/SLEEP_S/SPORT_S are separate catalogs (conditionally merged into
+  // the live Subjective form via needsBPS_S/needsSleep_S/needsSport_S), not
+  // nested inside UNIV_S -- but they're still real, capturable Subjective
+  // fields, so the catch-all needs all four sources or it silently misses
+  // an entire category (confirmed: sl_hours/sp_sport were invisible on all
+  // three surfaces until this was added).
+  return [UNIV_S, BPS_S, SLEEP_S, SPORT_S].flatMap(catalog =>
+    Object.values(catalog).flatMap(section =>
+      (section.fields || []).map(f => ({ id: f.id, label: f.label, section: section.label }))
+    )
+  );
+}
+function listRegionCatalogFields(prefix) {
+  const region = Object.values(REG_MOD_S).find(r => r.prefix === prefix);
+  if (!region) return [];
+  return Object.values(region.sections).flatMap(section =>
+    (section.fields || []).map(f => ({ id: f.id, label: f.label, section: section.label }))
+  );
+}
+
 export {
+  listGlobalCatalogFields, listRegionCatalogFields,
   SCALES,
   ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS,
   MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, MMT_ICONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS,
