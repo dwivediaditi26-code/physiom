@@ -6426,7 +6426,7 @@ const GRADE_COLOR = {
 
 const ANATOMICAL_HOTSPOTS = [
   // ── HEAD & NECK (front) ─────────────────────────────────────────────────────
-  { id:"scalp",           x:50,  y:7,   r:14, side:"front", label:"Scalp / Occiput",
+  { id:"scalp",           x:50,  y:6,   r:14, side:"front", label:"Scalp / Occiput",
     structures:["Occipitofrontalis","Temporalis","Suboccipital muscles","Occipital protuberance","Mastoid process"] },
   { id:"tmj_r",           x:59,  y:15,  r:7,  side:"front", label:"Right TMJ",
     structures:["Temporomandibular joint","Lateral pterygoid","Masseter insertion","Articular disc"] },
@@ -6522,19 +6522,19 @@ const ANATOMICAL_HOTSPOTS = [
     structures:["Carpal tunnel (median nerve)","Flexor retinaculum","Radial styloid (De Quervain's)","Scaphoid tubercle","Pisiform (ulnar nerve / FCU)"] },
 
   // ── ABDOMEN / LUMBAR (front) ─────────────────────────────────────────────────
-  { id:"abdomen",         x:50,  y:44,  r:10, side:"front", label:"Abdomen",
+  { id:"abdomen",         x:50,  y:43,  r:10, side:"front", label:"Abdomen",
     structures:["Rectus abdominis","External oblique","Linea alba","Umbilical region","Inguinal ligament","McBurney's point (appendix)"] },
 
   // ── LUMBAR SPINE (back) ──────────────────────────────────────────────────────
-  { id:"lumbar_spine",    x:50,  y:46,  r:9,  side:"back", label:"Lumbar Spine (L1–L5)",
+  { id:"lumbar_spine",    x:50,  y:45,  r:9,  side:"back", label:"Lumbar Spine (L1–L5)",
     structures:["L1–L5 spinous processes","Lumbar facet joints","Erector spinae (paraspinal)","Multifidus","Interspinous ligaments","L4/L5 — most common disc level"] },
-  { id:"si_joint_r",      x:57,  y:52,  r:7,  side:"back", label:"Right Sacroiliac Joint",
+  { id:"si_joint_r",      x:57,  y:51,  r:7,  side:"back", label:"Right Sacroiliac Joint",
     structures:["Sacroiliac joint (PSIS)","Posterior SI ligament","Iliolumbar ligament","Piriformis origin","PSIS landmark"] },
-  { id:"si_joint_l",      x:43,  y:52,  r:7,  side:"back", label:"Left Sacroiliac Joint",
+  { id:"si_joint_l",      x:43,  y:51,  r:7,  side:"back", label:"Left Sacroiliac Joint",
     structures:["Sacroiliac joint (PSIS)","Posterior SI ligament","Iliolumbar ligament","Piriformis origin","PSIS landmark"] },
-  { id:"ql_r",            x:61,  y:47,  r:6,  side:"back", label:"Right Quadratus Lumborum",
+  { id:"ql_r",            x:61,  y:46,  r:6,  side:"back", label:"Right Quadratus Lumborum",
     structures:["Quadratus lumborum","QL trigger point zone","12th rib attachment","Iliac crest insertion","L1–L4 transverse processes"] },
-  { id:"ql_l",            x:39,  y:47,  r:6,  side:"back", label:"Left Quadratus Lumborum",
+  { id:"ql_l",            x:39,  y:46,  r:6,  side:"back", label:"Left Quadratus Lumborum",
     structures:["Quadratus lumborum","QL trigger point zone","12th rib attachment","Iliac crest insertion","L1–L4 transverse processes"] },
 
   // ── HIP (front) ──────────────────────────────────────────────────────────────
