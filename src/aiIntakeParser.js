@@ -85,6 +85,10 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   // from goal_main (what they want to achieve). Both are free text, no
   // enum-mismatch risk.
   if (result.patientConcern) updates.goal_concern = result.patientConcern;
+  // goal_belief is the existing "What do YOU think is causing it?" field --
+  // the patient's own causal theory, recorded as their belief, never
+  // auto-treated as a confirmed mechanism or diagnosis.
+  if (result.patientBelief) updates.goal_belief = result.patientBelief;
   // hx_notes is the existing free-text "History Notes" field
   // ("Patterns across episodes, what works vs doesn't"), the right home
   // for a treatment tried during the CURRENT episode -- distinct from
@@ -100,6 +104,12 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
     // fixed-enum options.
     if (result.onsetContext)
       updates[pfx + "_moi_notes"] = result.onsetContext;
+    // {pfx}_loc_notes is the existing free-text "Location Notes" field
+    // ("Specific location details... patient description") -- the right
+    // home for the patient's own layman location wording, distinct from
+    // the coarse 10-option "region" enum.
+    if (result.locationDescription)
+      updates[pfx + "_loc_notes"] = result.locationDescription;
 
     if (result.symptomPattern)
       updates[pfx + "_pattern"] = result.symptomPattern;
@@ -195,6 +205,8 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   if (result.patientConcern) filled.push("Patient's main concern/fear");
   if (result.onsetContext) filled.push("Mechanism detail (uncertain)");
   if (result.priorTreatmentTried) filled.push("Prior treatment tried (current episode)");
+  if (result.patientBelief) filled.push("Patient's own belief about cause");
+  if (result.locationDescription) filled.push("Location detail (patient's words)");
   if (reg) filled.push("Region: " + reg);
 
   // ── Missing-information checklist ───────────────────────────────────

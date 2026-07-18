@@ -87,3 +87,50 @@ describe("/api/parse system prompt: round-3 anti-hallucination fixes", () => {
     expect(src).toMatch(/could you point to the actual words in the transcript/);
   });
 });
+
+// Round-4 QA review, real transcript, found a more dangerous error class:
+// the SAME activity landing in both the aggravating and relieving lists
+// (a direct clinical inversion -- "stretching backwards feels better"
+// also appearing under aggravating), plus missing temporal detail
+// (afternoon/evening/after-work/after-sitting), over-clinicalised
+// location wording, and the patient's own causal theory ("I think it's
+// my posture") not captured as a distinct, non-diagnostic belief. The
+// user explicitly asked, for the third time and most insistently, for a
+// genuine multi-stage extract -> classify -> verify -> remove pipeline
+// rather than more instructions on a single pass -- this is now
+// implemented as a real second Groq call (see verifierSystem/extractResp/
+// verifyResp in api/parse.js) rather than another same-generation
+// self-check.
+describe("/api/parse system prompt: round-4 fixes", () => {
+  test("explicitly forbids the same activity appearing in both aggravating and relieving lists", () => {
+    expect(src).toMatch(/NEVER put the same activity\/movement in both/);
+    expect(src).toContain("stretch backwards");
+  });
+
+  test("diurnalPattern now covers afternoon/evening and activity-linked delayed onset", () => {
+    expect(src).toMatch(/diurnalPattern[\s\S]{0,400}afternoon/i);
+    expect(src).toMatch(/diurnalPattern[\s\S]{0,400}after sitting/i);
+  });
+
+  test("includes locationDescription for preserving the patient's own layman wording", () => {
+    expect(src).toContain("locationDescription");
+    expect(src).toMatch(/shoulder blades/);
+  });
+
+  test("includes patientBelief, distinct from onsetContext, for the patient's own causal theory", () => {
+    expect(src).toContain("patientBelief");
+    expect(src).toMatch(/patientBelief[\s\S]{0,700}Distinct from onsetContext/);
+  });
+
+  test("implements a genuine second-call verification stage, not just more same-pass instructions", () => {
+    expect(src).toContain("verifierSystem");
+    expect(src).toContain("extractResp");
+    expect(src).toContain("verifyResp");
+    expect(src).toMatch(/STAGE 2/);
+  });
+
+  test("verification stage falls back to the first pass rather than failing the request", () => {
+    expect(src).toMatch(/firstPass/);
+    expect(src).toMatch(/res\.status\(200\)\.json\(firstPass\)/);
+  });
+});

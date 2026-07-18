@@ -97,4 +97,17 @@ describe("aiIntakeParser maps the 3 new round-3 fields onto real, already-read a
     const { extractionMeta } = mapParseResultToUpdates(noConcern);
     expect(extractionMeta.missingInfo).toContain("Patient's main concern/fear");
   });
+
+  test("patientBelief maps to goal_belief, distinct from goal_concern", () => {
+    const withBelief = { ...correctedShoulderResult, patientBelief: "Thinks it's from lifting heavy stock boxes at the shop" };
+    const { updates } = mapParseResultToUpdates(withBelief);
+    expect(updates.goal_belief).toContain("lifting heavy stock boxes");
+    expect(updates.goal_belief).not.toBe(updates.goal_concern);
+  });
+
+  test("locationDescription maps to the region-prefixed location notes field", () => {
+    const withLocation = { ...correctedShoulderResult, locationDescription: "Right at the top of the shoulder, over the point of the bone" };
+    const { updates } = mapParseResultToUpdates(withLocation);
+    expect(updates.shl_loc_notes).toContain("top of the shoulder");
+  });
 });
