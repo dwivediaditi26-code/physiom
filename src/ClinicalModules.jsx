@@ -4,6 +4,7 @@ import { ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
+import { listGlobalCatalogFields, listRegionCatalogFields } from "./sharedClinicalData.js";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA } from "./sharedClinicalData.js";
 import { SCALES } from "./sharedClinicalData.js";
 import { SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel, CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey, EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES } from "./sharedClinicalData.js";
@@ -2185,6 +2186,42 @@ function buildClinicalInterpretation(data) {
 // Pulls from ALL assessment data fields and auto-populates S, O, A, P in real time
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Field IDs (from sharedClinicalData.js's UNIV_S/REG_MOD_S catalog) that this
+// function already narrates by name above -- generated from a coverage audit
+// of this file. Everything else in the catalog falls through to the
+// "Additional documented findings" catch-all near the end of the S section,
+// so a field being added to the catalog later is shown by default instead of
+// silently dropped (the failure mode that prompted this: goal_main/pmh_notes
+// were captured correctly but invisible in two of three surfaces).
+const SOAP_LIVE_CATCHALL_EXCLUDE = new Set([
+  "af_agg_act", "af_agg_mov", "af_agg_notes", "af_fn_notes", "af_fn_psfs", "af_loc", "af_loc_notes", "af_moi",
+  "af_moi_notes", "af_morning", "af_pattern", "af_radiation", "af_rel_manual", "af_rel_med", "af_rel_mov", "af_rel_notes",
+  "af_symp_notes", "bps_fear", "bps_mood", "bps_work_facs", "cc_duration", "cc_main", "cc_notes", "cc_onset",
+  "cc_quality", "cc_vas_best", "cc_vas_now", "cc_vas_worst", "cx_agg_act", "cx_agg_mov", "cx_agg_notes", "cx_agg_other",
+  "cx_agg_post", "cx_fn_notes", "cx_fn_psfs", "cx_loc", "cx_loc_notes", "cx_moi", "cx_moi_notes", "cx_morning",
+  "cx_night", "cx_pattern", "cx_radiation", "cx_rel_manual", "cx_rel_med", "cx_rel_mov", "cx_rel_notes", "cx_rel_post",
+  "cx_symp_notes", "ew_agg_act", "ew_agg_mov", "ew_agg_notes", "ew_fn_notes", "ew_fn_psfs", "ew_loc", "ew_loc_notes",
+  "ew_moi", "ew_moi_notes", "ew_pattern", "ew_radiation", "ew_rel", "ew_rel_notes", "ew_symp_notes", "goal_belief",
+  "goal_concern", "goal_expect", "goal_main", "goal_notes", "goal_success", "goal_told", "grf_notes", "hp_agg_act",
+  "hp_agg_mov", "hp_agg_notes", "hp_fn_notes", "hp_fn_psfs", "hp_loc", "hp_loc_notes", "hp_moi", "hp_moi_notes",
+  "hp_pattern", "hp_rel_manual", "hp_rel_med", "hp_rel_notes", "hp_rel_post", "hp_symp_notes", "hx_first", "hx_imaging",
+  "hx_imaging_detail", "hx_injections", "hx_notes", "hx_prev_physio", "hx_providers", "hx_resolve", "hx_surgery", "knl_agg_act",
+  "knl_agg_mov", "knl_agg_notes", "knl_agg_other", "knl_fn_notes", "knl_fn_psfs", "knl_loc", "knl_loc_notes", "knl_moi",
+  "knl_moi_notes", "knl_pattern", "knl_radiation", "knl_rel_manual", "knl_rel_med", "knl_rel_notes", "knl_rel_post", "knl_symp_notes",
+  "knr_agg_act", "knr_agg_mov", "knr_agg_notes", "knr_fn_notes", "knr_fn_psfs", "knr_loc", "knr_loc_notes", "knr_moi",
+  "knr_moi_notes", "knr_pattern", "knr_radiation", "knr_rel", "knr_rel_notes", "knr_symp_notes", "ls_alcohol", "ls_exercise",
+  "ls_health", "ls_notes", "ls_smoking", "ls_stress", "lx_agg_act", "lx_agg_mov", "lx_agg_notes", "lx_agg_other",
+  "lx_agg_post", "lx_fn_notes", "lx_fn_psfs", "lx_loc", "lx_loc_notes", "lx_moi", "lx_moi_notes", "lx_morning",
+  "lx_night", "lx_pattern", "lx_radiation", "lx_rel_manual", "lx_rel_med", "lx_rel_mov", "lx_rel_notes", "lx_rel_post",
+  "lx_symp_notes", "med_allergies", "med_current", "pmh_conditions", "pmh_notes", "shl_agg_act", "shl_agg_mov", "shl_agg_notes",
+  "shl_bilateral", "shl_fn_notes", "shl_fn_psfs", "shl_loc", "shl_loc_notes", "shl_moi", "shl_moi_notes", "shl_night",
+  "shl_pattern", "shl_radiation", "shl_rel_manual", "shl_rel_med", "shl_rel_notes", "shl_rel_post", "shl_symp_notes", "shr_agg_act",
+  "shr_agg_mov", "shr_agg_notes", "shr_bilateral", "shr_fn_notes", "shr_fn_psfs", "shr_loc", "shr_loc_notes", "shr_moi",
+  "shr_moi_notes", "shr_night", "shr_pattern", "shr_radiation", "shr_rel_manual", "shr_rel_med", "shr_rel_notes", "shr_rel_post",
+  "shr_symp_notes", "tx_agg_mov", "tx_agg_notes", "tx_agg_post", "tx_fn_notes", "tx_fn_psfs", "tx_loc", "tx_loc_notes",
+  "tx_moi", "tx_moi_notes", "tx_pattern", "tx_radiation", "tx_rel", "tx_rel_notes", "tx_symp_notes",
+]);
+
 function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   const v = (k) => String(data[k] || "").trim();
   const a = (k) => {
@@ -2492,6 +2529,20 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   if (pmhNotes)  S_parts.push(`Clinician note (PMH): ${pmhNotes}.`);
   if (lsNotes)   S_parts.push(`Clinician note (lifestyle): ${lsNotes}.`);
   if (demNotes)  S_parts.push(`Clinician note (demographics): ${demNotes}.`);
+
+  // Catch-all: any other captured Subjective field not already narrated
+  // above, keyed off the full field catalog rather than a hand-maintained
+  // list, so nothing a clinician fills in is ever silently dropped here.
+  {
+    const catchAll = listGlobalCatalogFields()
+      .concat(activePrefixes.flatMap(px => listRegionCatalogFields(px)))
+      .filter(f => !SOAP_LIVE_CATCHALL_EXCLUDE.has(f.id))
+      .map(f => ({ ...f, val: a(f.id) }))
+      .filter(f => f.val);
+    if (catchAll.length) {
+      S_parts.push(`Additional documented findings: ${catchAll.map(f => `${f.label}: ${f.val}`).join("; ")}.`);
+    }
+  }
 
   if (extraS) S_parts.push(extraS);
 
@@ -3608,6 +3659,31 @@ function detectModulesV2(data) {
   };
 }
 
+// Same idea as SOAP_LIVE_CATCHALL_EXCLUDE above, but for this card view --
+// audited separately since this component re-derives its own local
+// loc/agg/ease/etc rather than sharing buildRealtimeSOAP's scope, so its
+// real coverage differs field-by-field.
+const SOAP_NOTES_CATCHALL_EXCLUDE = new Set([
+  "af_agg_act", "af_agg_mov", "af_agg_notes", "af_fn_notes", "af_fn_psfs", "af_loc", "af_loc_notes", "af_moi_notes",
+  "af_morning", "af_radiation", "af_rel_manual", "af_rel_mov", "af_rel_notes", "af_symp_notes", "cc_duration", "cc_main",
+  "cc_onset", "cc_vas_best", "cc_vas_now", "cc_vas_worst", "cx_agg_act", "cx_agg_mov", "cx_agg_notes", "cx_agg_post",
+  "cx_fn_notes", "cx_fn_psfs", "cx_loc", "cx_loc_notes", "cx_moi_notes", "cx_morning", "cx_night", "cx_radiation",
+  "cx_rel_manual", "cx_rel_mov", "cx_rel_notes", "cx_symp_notes", "ew_agg_act", "ew_agg_mov", "ew_agg_notes", "ew_fn_notes",
+  "ew_fn_psfs", "ew_loc", "ew_loc_notes", "ew_moi_notes", "ew_neuro", "ew_radiation", "ew_rel_notes", "ew_symp_notes",
+  "goal_main", "hp_agg_act", "hp_agg_mov", "hp_agg_notes", "hp_fn_notes", "hp_fn_psfs", "hp_loc", "hp_loc_notes",
+  "hp_moi_notes", "hp_rel_manual", "hp_rel_notes", "hp_symp_notes", "knl_agg_act", "knl_agg_mov", "knl_agg_notes", "knl_fn_notes",
+  "knl_fn_psfs", "knl_loc", "knl_loc_notes", "knl_moi_notes", "knl_radiation", "knl_rel_manual", "knl_rel_notes", "knl_symp_notes",
+  "knr_agg_act", "knr_agg_mov", "knr_agg_notes", "knr_fn_notes", "knr_fn_psfs", "knr_loc", "knr_loc_notes", "knr_moi_notes",
+  "knr_radiation", "knr_rel_notes", "knr_symp_notes", "lx_agg_act", "lx_agg_mov", "lx_agg_notes", "lx_agg_post", "lx_fn_notes",
+  "lx_fn_psfs", "lx_loc", "lx_loc_notes", "lx_moi_notes", "lx_morning", "lx_night", "lx_radiation", "lx_rel_manual",
+  "lx_rel_mov", "lx_rel_notes", "lx_symp_notes", "med_current", "pmh_conditions", "pmh_notes", "shl_agg_act", "shl_agg_mov",
+  "shl_agg_notes", "shl_bilateral", "shl_fn_notes", "shl_fn_psfs", "shl_loc", "shl_loc_notes", "shl_moi_notes", "shl_night",
+  "shl_radiation", "shl_rel_manual", "shl_rel_notes", "shl_symp_notes", "shr_agg_act", "shr_agg_mov", "shr_agg_notes", "shr_bilateral",
+  "shr_fn_notes", "shr_fn_psfs", "shr_loc", "shr_loc_notes", "shr_moi_notes", "shr_night", "shr_radiation", "shr_rel_manual",
+  "shr_rel_notes", "shr_symp_notes", "tx_agg_mov", "tx_agg_notes", "tx_agg_post", "tx_fn_notes", "tx_fn_psfs", "tx_loc",
+  "tx_loc_notes", "tx_moi_notes", "tx_radiation", "tx_rel_notes", "tx_symp_notes",
+]);
+
 function SOAPNoteModule({ data, set, onNav, initialTab }) {
   // Note: fma_report / om_report are read directly from this patient's own scoped
   // record only. A previous version seeded these from global (non-patient-scoped)
@@ -4269,6 +4345,32 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                   ))}
                 </div>
               ))}
+            </>;
+          })()}
+          {/* ── Catch-all: any other captured Subjective field this card
+              doesn't already narrate by name, keyed off the shared field
+              catalog (sharedClinicalData.js) rather than a hand-maintained
+              list -- so a field being added later shows up by default
+              instead of silently missing from this view. ── */}
+          {(()=>{
+            const PFXS=["cx","lx","shl","shr","hp","knl","knr","af","ew","tx"];
+            const fmt = x => Array.isArray(x) ? x.filter(Boolean).join(", ")
+              : typeof x==="string" ? x.split("|||").filter(Boolean).join(", ")
+              : String(x||"").trim();
+            const extra = listGlobalCatalogFields()
+              .concat(PFXS.flatMap(px=>listRegionCatalogFields(px)))
+              .filter(f=>!SOAP_NOTES_CATCHALL_EXCLUDE.has(f.id))
+              .map(f=>({...f, val: fmt(data[f.id])}))
+              .filter(f=>f.val);
+            if(!extra.length) return null;
+            return <><span style={lbl}>Additional documented findings</span>
+              <div style={{background:"#F8F7FF",borderRadius:8,padding:"7px 10px",borderLeft:"3px solid #9CA3AF"}}>
+                {extra.map((f,i)=>(
+                  <div key={i} style={{fontSize:14.5,color:"#374151",lineHeight:1.6,marginBottom:2}}>
+                    <span style={{fontWeight:600,color:"#6B7280"}}>{f.label}: </span>{f.val}
+                  </div>
+                ))}
+              </div>
             </>;
           })()}
           <textarea placeholder="Additional subjective notes..." value={extraS} onChange={e=>setExtraS(e.target.value)} onBlur={()=>set("soap_extra_s",extraS)} style={{...inp,resize:"vertical",minHeight:40,marginTop:8}}/>

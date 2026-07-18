@@ -7,6 +7,7 @@ import { getC } from "./utils.jsx";
 import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SCALES } from "./sharedClinicalData.js";
 import { MMT_DATA_LABELS, mmtFallbackLabel, ST_DATA_LABELS, SCALE_DATA_LABELS, resolveCyriaxKey } from "./sharedClinicalData.js";
 import { NKT_REGIONS } from "./sharedClinicalData.js";
+import { listGlobalCatalogFields, listRegionCatalogFields } from "./sharedClinicalData.js";
 import BodyChartPro from "./BodyChartPro.jsx";
 // These used to be flat constants shared by every user of a device. Now
 // they're per-user: two students sharing one browser/tablet each get their
@@ -1412,6 +1413,28 @@ function ClinicalImpressionTab({ d, C, onSaveField, onNav }) {
   );
 }
 
+// Field IDs (from sharedClinicalData.js's UNIV_S/REG_MOD_S catalog) already
+// shown by name somewhere in this modal -- generated from a coverage audit.
+// Everything else in the catalog falls through to the "Additional
+// documented findings" catch-all cards below, so a field being added to the
+// catalog later is shown by default here too, instead of silently missing
+// (the bug that prompted this: goal_main/pmh_notes/fn_notes were captured
+// correctly but invisible on this screen).
+const PATIENT_PROFILE_CATCHALL_EXCLUDE = new Set([
+  "af_agg_act", "af_agg_mov", "af_agg_notes", "af_fn_notes", "af_irritability", "af_rel_mov", "af_rel_notes", "cc_duration",
+  "cc_main", "cc_onset", "cc_vas_now", "cc_vas_worst", "cx_24hr", "cx_agg_act", "cx_agg_mov", "cx_agg_notes",
+  "cx_agg_post", "cx_fn_adl", "cx_fn_notes", "cx_fn_work", "cx_irritability", "cx_rel_mov", "cx_rel_notes", "cx_rel_post",
+  "cx_rf_action", "cx_trajectory", "ew_agg_act", "ew_agg_mov", "ew_agg_notes", "ew_fn_notes", "ew_irritability", "ew_neuro",
+  "ew_rel", "ew_rel_notes", "goal_main", "grf_action", "hp_agg_act", "hp_agg_mov", "hp_agg_notes", "hp_fn_notes",
+  "hp_irritability", "hp_rel_notes", "hp_rel_post", "knl_agg_act", "knl_agg_mov", "knl_agg_notes", "knl_fn_notes", "knl_irritability",
+  "knl_rel_notes", "knl_rel_post", "knr_agg_act", "knr_agg_mov", "knr_agg_notes", "knr_fn_notes", "knr_irritability", "knr_rel",
+  "knr_rel_notes", "lx_24hr", "lx_agg_act", "lx_agg_mov", "lx_agg_notes", "lx_agg_post", "lx_fn_adl", "lx_fn_notes",
+  "lx_fn_work", "lx_irritability", "lx_rel_mov", "lx_rel_notes", "lx_rel_post", "lx_trajectory", "med_current", "pmh_notes",
+  "shl_agg_act", "shl_agg_mov", "shl_agg_notes", "shl_fn_notes", "shl_fn_work", "shl_irritability", "shl_rel_notes", "shl_rel_post",
+  "shr_agg_act", "shr_agg_mov", "shr_agg_notes", "shr_fn_notes", "shr_irritability", "shr_rel_notes", "shr_rel_post", "tx_agg_mov",
+  "tx_agg_notes", "tx_agg_post", "tx_fn_notes", "tx_irritability", "tx_rel", "tx_rel_notes",
+]);
+
 function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, onNav, initialTab }) {
   const { useState, useEffect, useMemo } = React;
   const [tab, setTab] = useState(initialTab||"overview");
@@ -2244,6 +2267,32 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     )}
                   </div>
 
+                  {/* Additional documented findings — global Subjective fields
+                      (demographics/goals/history/lifestyle/PMH/etc) not already
+                      shown in the core card above. Driven by the shared field
+                      catalog so newly added fields show up here by default. */}
+                  {(()=>{
+                    const fmt = x => Array.isArray(x) ? x.filter(Boolean).join(", ")
+                      : typeof x==="string" ? x.split("|||").filter(Boolean).join(", ")
+                      : String(x||"").trim();
+                    const extra = listGlobalCatalogFields()
+                      .filter(f=>!PATIENT_PROFILE_CATCHALL_EXCLUDE.has(f.id))
+                      .map(f=>({...f, val: fmt(d[f.id])}))
+                      .filter(f=>f.val);
+                    if(!extra.length) return null;
+                    return (
+                      <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,padding:"12px 14px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)",marginBottom:10}}>
+                        <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:10}}>📋 Additional documented findings</div>
+                        {extra.map((f,i2)=>(
+                          <div key={i2} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:i2<extra.length-1?`1px solid ${C.border}`:"none",alignItems:"flex-start"}}>
+                            <span style={{fontSize:11.5,color:C.muted,minWidth:110,flexShrink:0,paddingTop:1}}>{f.label}</span>
+                            <span style={{fontSize:12,fontWeight:500,color:C.text,lineHeight:1.5,flex:1}}>{f.val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
                   {/* Per-region subjective cards */}
                   {selRegions.length>0 ? selRegions.map((region,ri)=>{
                     const px=PREFIX_MAP[region]; if(!px) return null;
@@ -2280,6 +2329,14 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       fnWork&&{l:"Work impact",v:fnWork},
                       rfAction&&{l:"⚠️ Red flag action",v:rfAction,col:"#A32D2D",bg:"#FEF2F2"},
                     ].filter(Boolean);
+                    // Catch-all: any other captured field for THIS region not
+                    // already itemised above, keyed off the shared field
+                    // catalog rather than a hand-maintained list.
+                    const catchAllRows = listRegionCatalogFields(px)
+                      .filter(f=>!PATIENT_PROFILE_CATCHALL_EXCLUDE.has(f.id))
+                      .map(f=>({l:f.label, v:multiVal(d[f.id])||notesToList(String(d[f.id]||"")) || String(d[f.id]||"").trim()}))
+                      .filter(f=>f.v);
+                    rows.push(...catchAllRows);
                     if(rows.length===0) return null;
                     return (
                       <div key={ri} style={{background:"#fff",borderRadius:14,border:`2px solid ${col}30`,padding:"12px 14px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)",marginBottom:10}}>
