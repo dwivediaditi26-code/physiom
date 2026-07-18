@@ -6496,29 +6496,29 @@ const ANATOMICAL_HOTSPOTS = [
     structures:["Middle trapezius","Lower trapezius","Rhomboid major","Interscapular trigger point zone","T2–T5 spinous processes"] },
 
   // ── ELBOW (front) ────────────────────────────────────────────────────────────
-  { id:"lat_epicon_r",    x:83,  y:47,  r:6,  side:"front", label:"Right Lateral Epicondyle",
+  { id:"lat_epicon_r",    x:83,  y:46,  r:6,  side:"front", label:"Right Lateral Epicondyle",
     structures:["Lateral epicondyle","ECRB origin (tennis elbow)","EDC origin","Radiohumeral joint","Lateral collateral ligament origin"] },
-  { id:"lat_epicon_l",    x:17,  y:47,  r:6,  side:"front", label:"Left Lateral Epicondyle",
+  { id:"lat_epicon_l",    x:17,  y:46,  r:6,  side:"front", label:"Left Lateral Epicondyle",
     structures:["Lateral epicondyle","ECRB origin (tennis elbow)","EDC origin","Radiohumeral joint","Lateral collateral ligament origin"] },
-  { id:"med_epicon_r",    x:77,  y:47,  r:6,  side:"front", label:"Right Medial Epicondyle",
+  { id:"med_epicon_r",    x:77,  y:46,  r:6,  side:"front", label:"Right Medial Epicondyle",
     structures:["Medial epicondyle","FCR / FCU origin (golfer's elbow)","Ulnar nerve (cubital tunnel)","UCL origin","Pronator teres origin"] },
-  { id:"med_epicon_l",    x:23,  y:47,  r:6,  side:"front", label:"Left Medial Epicondyle",
+  { id:"med_epicon_l",    x:23,  y:46,  r:6,  side:"front", label:"Left Medial Epicondyle",
     structures:["Medial epicondyle","FCR / FCU origin (golfer's elbow)","Ulnar nerve (cubital tunnel)","UCL origin","Pronator teres origin"] },
-  { id:"ant_cubital_r",   x:80,  y:46,  r:5,  side:"front", label:"Right Antecubital Fossa",
+  { id:"ant_cubital_r",   x:80,  y:45,  r:5,  side:"front", label:"Right Antecubital Fossa",
     structures:["Biceps tendon","Brachialis","Brachial artery","Median nerve","Bicipital aponeurosis"] },
-  { id:"ant_cubital_l",   x:20,  y:46,  r:5,  side:"front", label:"Left Antecubital Fossa",
+  { id:"ant_cubital_l",   x:20,  y:45,  r:5,  side:"front", label:"Left Antecubital Fossa",
     structures:["Biceps tendon","Brachialis","Brachial artery","Median nerve","Bicipital aponeurosis"] },
 
   // ── FOREARM (front) ──────────────────────────────────────────────────────────
-  { id:"ant_forearm_r",   x:82,  y:51,  r:6,  side:"front", label:"Right Anterior Forearm",
+  { id:"ant_forearm_r",   x:82,  y:50,  r:6,  side:"front", label:"Right Anterior Forearm",
     structures:["Flexor digitorum superficialis","Flexor carpi radialis","Palmaris longus","Pronator teres","Median nerve (midforearm)"] },
-  { id:"ant_forearm_l",   x:18,  y:51,  r:6,  side:"front", label:"Left Anterior Forearm",
+  { id:"ant_forearm_l",   x:18,  y:50,  r:6,  side:"front", label:"Left Anterior Forearm",
     structures:["Flexor digitorum superficialis","Flexor carpi radialis","Palmaris longus","Pronator teres","Median nerve (midforearm)"] },
 
   // ── WRIST & HAND ─────────────────────────────────────────────────────────────
-  { id:"wrist_r",         x:83,  y:53,  r:6,  side:"front", label:"Right Wrist / Carpal Tunnel",
+  { id:"wrist_r",         x:83,  y:52,  r:6,  side:"front", label:"Right Wrist / Carpal Tunnel",
     structures:["Carpal tunnel (median nerve)","Flexor retinaculum","Radial styloid (De Quervain's)","Scaphoid tubercle","Pisiform (ulnar nerve / FCU)"] },
-  { id:"wrist_l",         x:17,  y:53,  r:6,  side:"front", label:"Left Wrist / Carpal Tunnel",
+  { id:"wrist_l",         x:17,  y:52,  r:6,  side:"front", label:"Left Wrist / Carpal Tunnel",
     structures:["Carpal tunnel (median nerve)","Flexor retinaculum","Radial styloid (De Quervain's)","Scaphoid tubercle","Pisiform (ulnar nerve / FCU)"] },
 
   // ── ABDOMEN / LUMBAR (front) ─────────────────────────────────────────────────
