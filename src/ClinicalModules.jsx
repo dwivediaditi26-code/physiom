@@ -6538,9 +6538,9 @@ const ANATOMICAL_HOTSPOTS = [
     structures:["Quadratus lumborum","QL trigger point zone","12th rib attachment","Iliac crest insertion","L1–L4 transverse processes"] },
 
   // ── HIP (front) ──────────────────────────────────────────────────────────────
-  { id:"asis_r",          x:64,  y:55,  r:7,  side:"front", label:"Right ASIS / Hip Flexors",
+  { id:"asis_r",          x:64,  y:54,  r:7,  side:"front", label:"Right ASIS / Hip Flexors",
     structures:["Anterior superior iliac spine (ASIS)","Sartorius origin","TFL origin","Inguinal ligament lateral end","Femoral nerve (medial to ASIS)"] },
-  { id:"asis_l",          x:36,  y:55,  r:7,  side:"front", label:"Left ASIS / Hip Flexors",
+  { id:"asis_l",          x:36,  y:54,  r:7,  side:"front", label:"Left ASIS / Hip Flexors",
     structures:["Anterior superior iliac spine (ASIS)","Sartorius origin","TFL origin","Inguinal ligament lateral end","Femoral nerve (medial to ASIS)"] },
   { id:"groin_r",         x:59,  y:58,  r:7,  side:"front", label:"Right Groin / Adductor Origin",
     structures:["Adductor longus origin (pubic tubercle)","Adductor brevis","Gracilis origin","Iliopsoas tendon (lesser trochanter)","Femoral triangle"] },
