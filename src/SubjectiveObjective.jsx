@@ -3120,18 +3120,36 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             {/* Review panel */}
             {aiReview && aiResult && !aiResult._errorMsg && (
               <div>
-                <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#166534", marginBottom:8,
-                  padding:"6px 10px", background:"#f0fdf4", borderRadius:8, border:"1px solid #86efac" }}>
-                  ✓ {Object.keys(aiResult).filter(k=>!k.startsWith("_")).length} fields extracted
-                </div>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:8 }}>
-                  {Object.entries(aiResult).filter(([k])=>!k.startsWith("_")&&aiResult[k]!=null).slice(0,8).map(([k,v])=>(
-                    <span key={k} style={{ fontSize:"0.68rem", padding:"2px 7px", borderRadius:99,
-                      background:"#f5f3ff", color:"#5b21b6", border:"1px solid #c4b5fd" }}>
-                      {k}: {String(v).substring(0,20)}
-                    </span>
-                  ))}
-                </div>
+                {(() => {
+                  // Count/display only fields the AI actually filled --
+                  // aiResult always has every schema key present (null
+                  // when not mentioned), so counting Object.keys() alone
+                  // previously showed a constant ~24 regardless of how
+                  // much was really extracted. This is the single source
+                  // the header count and the chip preview both read, so
+                  // they can never drift out of sync with each other.
+                  const filledEntries = Object.entries(aiResult).filter(([k,v])=>!k.startsWith("_")&&v!=null&&v!==""&&!(Array.isArray(v)&&v.length===0));
+                  return (<>
+                    <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#166534", marginBottom:8,
+                      padding:"6px 10px", background:"#f0fdf4", borderRadius:8, border:"1px solid #86efac" }}>
+                      ✓ {filledEntries.length} fields extracted
+                    </div>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:8 }}>
+                      {filledEntries.slice(0,8).map(([k,v])=>(
+                        <span key={k} style={{ fontSize:"0.68rem", padding:"2px 7px", borderRadius:99,
+                          background:"#f5f3ff", color:"#5b21b6", border:"1px solid #c4b5fd" }}>
+                          {k}: {String(v).substring(0,20)}
+                        </span>
+                      ))}
+                      {filledEntries.length > 8 && (
+                        <span style={{ fontSize:"0.68rem", padding:"2px 7px", borderRadius:99,
+                          background:"#ede9fe", color:"#5b21b6", fontWeight:700, border:"1px dashed #c4b5fd" }}>
+                          +{filledEntries.length - 8} more — see details below ↓
+                        </span>
+                      )}
+                    </div>
+                  </>);
+                })()}
 
                 {/* Zero-hallucination review: original speech side by side
                     with what was extracted, per-field confidence + the

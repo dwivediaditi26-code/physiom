@@ -29,10 +29,16 @@ Respond clearly and concisely. Use clinical terminology appropriately. Always re
       method: 'POST',
       headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        // See api/parse.js -- llama-3.3-70b-versatile is deprecated
+        // (shuts down 2026-08-16), migrated to Groq's recommended
+        // replacement. Reasoning kept low/excluded: this is a live
+        // clinician-facing chat reply, not a task where exposing
+        // chain-of-thought helps, and low effort keeps latency down.
+        model: 'openai/gpt-oss-120b',
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
         temperature: 0.3,
-        max_tokens: 1200,
+        max_completion_tokens: 1200,
+        reasoning_effort: 'low', include_reasoning: false,
       }),
     });
     if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Groq error', detail: t }); }
