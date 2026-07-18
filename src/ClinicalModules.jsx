@@ -3656,6 +3656,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const night    = [...scan("sb_night"),   ...scan("night"),   a("sb_night")  ].filter(Boolean)[0] || "";
   const phx      = a("pmh_conditions") || a("phx_conditions");
   const meds     = a("med_current") || v("meds_current");
+  const pmhNotes = v("pmh_notes"); // SOAPNoteModule's own copy of buildRealtimeSOAP's pmhNotes local -- this component renders its cards independently rather than reusing buildRealtimeSOAP's output, so it needs its own reference to the same field.
   const goals_ar = [v("ar_goal_pain"), v("ar_goal_function"), v("ar_goal_return"), v("ar_goal_sport")].filter(Boolean);
   const dx       = v("soap_a_diagnosis") || v("soap_assessment");
   const icd      = v("soap_icd10");
@@ -4226,10 +4227,19 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               {night&&<div style={{background:"#F9FAFB",borderRadius:8,padding:"6px 8px"}}><div style={{fontSize:12,color:"#9CA3AF",fontWeight:500}}>Night</div><div style={{fontSize:14.5,color:"#111827",marginTop:2,lineHeight:1.4}}>{night}</div></div>}
             </div>
           </div>}
-          {(phx||meds)&&<><span style={lbl}>History & medications</span>
+          {(phx||meds||pmhNotes)&&<><span style={lbl}>History & medications</span>
             {phx&&<div style={{fontSize:14.5,color:"#374151",marginBottom:4}}>PMH: {phx}</div>}
             {meds&&<div style={{fontSize:14.5,color:"#374151",marginBottom:8}}>Meds: {meds}</div>}
+            {pmhNotes&&<div style={{fontSize:14.5,color:"#374151",marginBottom:8}}>{pmhNotes}</div>}
           </>}
+          {/* Patient's own stated intake goal (goal_main) -- distinct from
+              goals_ar below, which is clinician-authored SMART treatment
+              goals set later (ar_goal_*). Both are real, different things;
+              this was reaching the text SOAP note's "Patient goals:" line
+              already but had no card here, so it silently never appeared
+              on this screen even though buildRealtimeSOAP's own text did
+              include it. */}
+          {v("goal_main")&&<div style={subCard("#7c3aed")}><span style={subLbl}>Patient's stated goal</span><div style={{fontSize:14.5,color:"#374151",padding:"3px 0",display:"flex",gap:6}}><span style={{color:"#7c3aed"}}>→</span>{v("goal_main")}</div></div>}
           {goals_ar.length>0&&<div style={subCard("#7c3aed")}><span style={subLbl}>Goals</span>{goals_ar.map((g,i)=><div key={i} style={{fontSize:14.5,color:"#374151",padding:"3px 0",display:"flex",gap:6}}><span style={{color:"#7c3aed"}}>→</span>{g}</div>)}</div>}
           {v("dem_occupation")&&<div style={{fontSize:14.5,color:"#9CA3AF"}}>{v("dem_occupation")}{v("dem_dominant_hand")?" · "+v("dem_dominant_hand")+" hand":""}</div>}
           {/* ── Regional clinician notes (loc_notes, moi_notes, agg_notes, rel_notes, symp_notes) ── */}
@@ -4243,6 +4253,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
                 v(`${px}_agg_notes`)  && {label:"Aggravating",text:v(`${px}_agg_notes`)},
                 v(`${px}_rel_notes`)  && {label:"Relieving",  text:v(`${px}_rel_notes`)},
                 v(`${px}_symp_notes`) && {label:"Behaviour",  text:v(`${px}_symp_notes`)},
+                (v(`${px}_fn_notes`)||v(`${px}_fn_psfs`)) && {label:"Functional limitations", text:v(`${px}_fn_notes`)||v(`${px}_fn_psfs`)},
               ].filter(Boolean);
               return parts.length?[{region:PFX_LABELS[px]||px.toUpperCase(),parts}]:[];
             });

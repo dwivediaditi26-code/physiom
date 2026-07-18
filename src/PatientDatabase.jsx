@@ -2222,8 +2222,8 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                       {l:"Onset", v:[d.cc_onset_date||d.cx_onset_date||(Array.isArray(d.cc_onset)?d.cc_onset[0]:d.cc_onset),d.cc_mechanism||d.cc_mech_type].filter(Boolean).join(" · ")},
                       {l:"Duration", v:d.cc_duration||""},
                       {l:"24-hr pattern", v:d.cc_24hr||d.cc_behaviour||""},
-                      {l:"Goals", v:[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||""},
-                      {l:"Past history", v:d.phx_conditions||d.sub_past_history||d.hx_past||""},
+                      {l:"Goals", v:d.goal_main||[d.ar_goal_function,d.ar_goal_pain,d.ar_goal_return].filter(Boolean).join("; ")||d.sub_goals||""},
+                      {l:"Past history", v:d.pmh_notes||d.phx_conditions||d.sub_past_history||d.hx_past||""},
                       // medications shown below as pills
                     ].filter(row=>row.v).map((row,i2)=>(
                       <div key={i2} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:`1px solid ${C.border}`,alignItems:"flex-start"}}>
@@ -2248,15 +2248,23 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {selRegions.length>0 ? selRegions.map((region,ri)=>{
                     const px=PREFIX_MAP[region]; if(!px) return null;
                     const col=RC_PROF[region]||C.primary;
-                    const aggMovs  = multiVal(d[`${px}_agg_mov`]||d[`${px}_agg`]);
+                    // _agg_notes/_rel_notes are the free-text fields the AI
+                    // intake parser (and the manual dictation flow) actually
+                    // write -- _agg_mov/_agg/_rel_mov/_rel are an older,
+                    // structured-dropdown convention. Fall back to the notes
+                    // text (newline-joined -> comma-joined, matching how
+                    // multiVal already formats the structured version) so
+                    // data from either path is visible here.
+                    const notesToList = s => (s||"").split("\n").map(x=>x.trim()).filter(Boolean).join(", ");
+                    const aggMovs  = multiVal(d[`${px}_agg_mov`]||d[`${px}_agg`]) || notesToList(d[`${px}_agg_notes`]);
                     const aggPosts = multiVal(d[`${px}_agg_post`]);
                     const aggActs  = multiVal(d[`${px}_agg_act`]);
-                    const relMovs  = multiVal(d[`${px}_rel_mov`]||d[`${px}_rel`]);
+                    const relMovs  = multiVal(d[`${px}_rel_mov`]||d[`${px}_rel`]) || notesToList(d[`${px}_rel_notes`]);
                     const relPosts = multiVal(d[`${px}_rel_post`]);
                     const pattern24= d[`${px}_24hr`]||d[`${px}_behaviour`]||"";
                     const trajectory= d[`${px}_trajectory`]||"";
                     const irritability= d[`${px}_irritability`]||d[`${px}_sin`]||"";
-                    const fnAdl    = multiVal(d[`${px}_fn_adl`]);
+                    const fnAdl    = multiVal(d[`${px}_fn_adl`]) || notesToList(d[`${px}_fn_notes`]);
                     const fnWork   = d[`${px}_fn_work`]||"";
                     const rfAction = d[`${px}_rf_action`]||d[`${px}_rf_review`]||"";
                     const rows = [
