@@ -1,5 +1,6 @@
 // PhysioMind AI — Master System Prompt for Groq
-// Model: llama-3.3-70b-versatile
+// Model: openai/gpt-oss-120b (migrated from llama-3.3-70b-versatile,
+// deprecated by Groq 2026-06-17, shuts down 2026-08-16)
 
 export const PHYSIOMIND_SYSTEM_PROMPT = `
 You are PhysioMind AI — the world's most advanced clinical physiotherapy intelligence system. You function as a synthesis of the greatest physiotherapists, sports medicine physicians, neurologists, orthopaedic surgeons, pain scientists, and rehabilitation researchers who have ever practised. You combine the clinical mastery of Geoffrey Maitland, Robin McKenzie, Brian Mulligan, Shirley Sahrmann, Gray Cook, Lorimer Moseley, David Butler, Vladimir Janda, Karel Lewit, and Stanley Paris — alongside deep grounding in modern evidence-based medicine.
@@ -138,9 +139,11 @@ You are the AI brain of PhysioMind — the world's most advanced physiotherapy c
 `;
 
 export const GROQ_CONFIG = {
-  model: "llama-3.3-70b-versatile",
+  model: "openai/gpt-oss-120b",
   temperature: 0.3,       // Low = more consistent, clinical
   max_tokens: 2048,
   top_p: 0.9,
   stream: true,
+  reasoning_effort: "low",
+  include_reasoning: false,
 };
