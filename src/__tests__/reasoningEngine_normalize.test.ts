@@ -1,4 +1,4 @@
-import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData } from "../reasoningEngine/index";
+import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData, runReasoningFromData } from "../reasoningEngine/index";
 
 describe("normalizeFromData (flat app record -> typed engine inputs, real field ids)", () => {
   it("maps st_ special tests, rom_ ROM and mmt_mmt_ MMT from the flat data object", () => {
@@ -399,6 +399,158 @@ describe("normalizeCervicalFromData — regression: guessed field names replaced
     const { objective } = normalizeCervicalFromData(data);
     expect(objective.imaging?.performed).toBe(true);
     expect(objective.imaging?.summary).toMatch(/spondylosis/i);
+  });
+});
+
+describe("normalizeCervicalFromData — deep audit: ULTT wiring, cx_night helper bug, red-flag gaps, negation safety", () => {
+  // Regression: ultta_positive was wired from st_slump_test (a lower-limb/whole-
+  // neuraxis test), not st_ultt1 (ULTT1 -- Median Nerve), which is the actual
+  // ULTT-A component of the Wainner cervical radiculopathy cluster this
+  // diagnosis cites. st_slump_test is a real, separately-used field (lumbar
+  // slump), so a positive slump alone must NOT satisfy cervical's ULTT signal.
+  it("wires the Wainner cluster's ULTT-A from the real st_ultt1/2/3 fields, not st_slump_test", () => {
+    const positive = normalizeCervicalFromData({ cc_main: "arm pain", st_ultt1: "Positive right — median nerve sensitised" });
+    expect(positive.objective.specialTests.ultt).toBe(true);
+    const radial = normalizeCervicalFromData({ cc_main: "arm pain", st_ultt2: "Positive left — radial nerve sensitised" });
+    expect(radial.objective.specialTests.ultt).toBe(true);
+    const ulnar = normalizeCervicalFromData({ cc_main: "arm pain", st_ultt3: "Positive right — ulnar nerve sensitised" });
+    expect(ulnar.objective.specialTests.ultt).toBe(true);
+    const slumpOnly = normalizeCervicalFromData({ cc_main: "arm pain", st_slump_test: "Reproduces symptoms — eases with neck extension" });
+    expect(slumpOnly.objective.specialTests.ultt).toBeUndefined();
+  });
+
+  // Regression: cx_night was read with isPos(), which only matches
+  // "positive"/"+ve"/"true"/"yes" substrings. None of cx_night's real options
+  // ("Wakes multiple times from sleep", "Constant night pain -- cannot sleep",
+  // etc.) contain those words, so isPos(data.cx_night) was ALWAYS false --
+  // nightPain silently depended on the cx_pattern "night" fallback alone.
+  it("detects night pain from the real cx_night checklist text (isPos() never matched it)", () => {
+    const { subjective } = normalizeCervicalFromData({ cc_main: "neck pain", cx_night: ["Wakes multiple times from sleep"] });
+    expect(subjective.nightPain).toBe(true);
+  });
+
+  // nightPainUnrelieved was never set at all for cervical -- the malignancy red
+  // flag (unexplainedWeightLoss && nightPainUnrelieved && ageOver50) was
+  // structurally blind for this region regardless of what was recorded.
+  it("sets nightPainUnrelieved from cx_night's 'constant, cannot sleep' option and fires the malignancy red flag end to end", () => {
+    const { subjective } = normalizeCervicalFromData({ cc_main: "neck pain", cx_night: ["Constant night pain — cannot sleep"] });
+    expect(subjective.nightPainUnrelieved).toBe(true);
+
+    const data = {
+      dem_age: "64",
+      cc_main: "constant neck pain, worse over six weeks",
+      cx_night: ["Constant night pain — cannot sleep"],
+      grf_systemic: ["Unexplained weight loss >5kg"],
+    };
+    const r = runReasoningFromData(data, "cervical");
+    expect(r.stopped).toBe(true);
+    expect(r.redFlag?.flags?.some((f) => f.id === "malignancy")).toBe(true);
+  });
+
+  // unableToWeightBear (reused across regions as "hard evidence of suspected
+  // fracture") was never set for cervical -- the fracture red flag
+  // (traumaHistory && unableToWeightBear) was structurally blind even though a
+  // full, real "Cervical -- Fracture Screen" checklist (cx_fracture_screen,
+  // NEXUS / Canadian C-Spine Rule wording) already existed and was simply never
+  // read anywhere in the engine.
+  it("wires the real cx_fracture_screen checklist into traumaHistory/unableToWeightBear and fires the fracture red flag end to end", () => {
+    const { subjective } = normalizeCervicalFromData({
+      cc_main: "severe neck pain after motorcycle accident",
+      cx_fracture_screen: ["High-energy trauma (MVA / fall >1m / diving)", "Cannot move neck at all — voluntary splinting"],
+    });
+    expect(subjective.traumaHistory).toBe(true);
+    expect(subjective.unableToWeightBear).toBe(true);
+
+    const r = runReasoningFromData({ cc_main: "severe neck pain after MVA, cannot move neck", cx_fracture_screen: ["High-energy trauma (MVA / fall >1m / diving)", "Cannot move neck at all — voluntary splinting"] }, "cervical");
+    expect(r.stopped).toBe(true);
+    expect(r.redFlag?.flags?.some((f) => f.id === "fracture")).toBe(true);
+  });
+
+  it("does not fire the fracture red flag from cx_fracture_screen's 'Not applicable' placeholder", () => {
+    const { subjective } = normalizeCervicalFromData({ cc_main: "neck pain", cx_fracture_screen: ["Not applicable"] });
+    expect(subjective.unableToWeightBear).toBe(false);
+  });
+
+  // cx_rf_other reinforcement: "Known cervical cancer / tumour" ->
+  // malignancyHistory, "Constitutional symptoms with neck pain" ->
+  // systemicIllness, "Carotid / vertebral artery dissection symptoms" ->
+  // vascularCompromiseSigns. Same cross-field-reinforcement pattern used for
+  // shoulder's shl_rf/shr_rf audit.
+  it("reinforces malignancyHistory, systemicIllness and vascularCompromiseSigns from the real cx_rf_other checklist", () => {
+    const cancer = normalizeCervicalFromData({ cc_main: "neck pain", cx_rf_other: ["Known cervical cancer / tumour"] });
+    expect(cancer.subjective.malignancyHistory).toBe(true);
+    const constitutional = normalizeCervicalFromData({ cc_main: "neck pain", cx_rf_other: ["Constitutional symptoms with neck pain"] });
+    expect(constitutional.subjective.systemicIllness).toBe(true);
+    const dissection = normalizeCervicalFromData({ cc_main: "neck pain", cx_rf_other: ["Carotid / vertebral artery dissection symptoms"] });
+    expect(dissection.subjective.vascularCompromiseSigns).toBe(true);
+  });
+
+  // Negation safety: cc_main is genuine free text, and cc_onset -- though a UI
+  // dropdown with fixed options -- is ALSO written by the AI intake parser
+  // (aiIntakeParser.js: updates.cc_onset = result.onset) with LLM-generated text
+  // that is not enum-validated, so it carries the same risk. Plain has() reads
+  // ordinary clinical negation ("denies dizziness", "no headache") as a
+  // confirmation because the negated word is a substring of itself.
+  it("does not fabricate dizziness/headache/stiffness/paraesthesia findings from negated free text", () => {
+    const data = {
+      cc_main: "Neck pain, denies dizziness, no headache, not stiff, denies numbness or tingling",
+    };
+    const { subjective } = normalizeCervicalFromData(data);
+    expect(subjective.dizzinessVBI).toBe(false);
+    expect(subjective.vertebrobasilarSigns).toBe(false);
+    expect(subjective.headacheFromNeck).toBe(false);
+    expect(subjective.neckStiffness).toBe(false);
+    expect(subjective.paresthesia).toBe(false);
+  });
+
+  it("still detects genuine positive mentions of the same terms (negation guard is not overzealous)", () => {
+    const data = { cc_main: "Neck pain with dizziness, headache, stiffness, and numbness in the fingers" };
+    const { subjective } = normalizeCervicalFromData(data);
+    expect(subjective.dizzinessVBI).toBe(true);
+    expect(subjective.headacheFromNeck).toBe(true);
+    expect(subjective.neckStiffness).toBe(true);
+    expect(subjective.paresthesia).toBe(true);
+  });
+
+  // Regression: cc_onset's real dropdown includes a literal "Sudden — no trauma"
+  // option (e.g. acute wry neck / idiopathic facet lock). "sudden" used to be
+  // its own keyword alongside "trauma", and hasUnnegated only negates the
+  // specific key it's checking -- so "sudden" matched positively even while
+  // "trauma" in that same option was correctly excluded. Also verifies cx_moi
+  // is read as an independent OR source, not merely a `??` fallback that a
+  // populated (but unrelated) cc_onset would shadow.
+  it("does not read 'Sudden — no trauma' as a traumatic onset, but still catches 'Sudden — traumatic' and cx_moi mechanisms", () => {
+    const noTrauma = normalizeCervicalFromData({ cc_main: "neck locked this morning", cc_onset: "Sudden — no trauma" });
+    expect(noTrauma.subjective.onsetTraumatic).toBe(false);
+
+    const traumatic = normalizeCervicalFromData({ cc_main: "neck pain", cc_onset: "Sudden — traumatic" });
+    expect(traumatic.subjective.onsetTraumatic).toBe(true);
+
+    // cc_onset populated with something unrelated must not shadow a real cx_moi mechanism.
+    const moiOnly = normalizeCervicalFromData({ cc_main: "neck pain", cc_onset: "Woke with it", cx_moi: ["Whiplash — rear-end MVA"] });
+    expect(moiOnly.subjective.onsetTraumatic).toBe(true);
+  });
+
+  // Regression: cx_agg_mov ("Movements aggravate") and cx_agg_post ("Postures
+  // aggravate") are two separate real questions a clinician normally answers
+  // both of. The old `cx_agg_mov ?? cx_agg_post` fallback meant a populated
+  // cx_agg_mov (even with unrelated content) silently shadowed a correctly
+  // filled cx_agg_post.
+  it("reads extension/rotation aggravation from BOTH cx_agg_mov and cx_agg_post independently", () => {
+    const movOnly = normalizeCervicalFromData({ cc_main: "neck pain", cx_agg_mov: ["Extension — looking up"] });
+    expect(movOnly.subjective.extensionRotationAggravation).toBe(true);
+    // cx_agg_mov populated with unrelated content must not shadow cx_agg_post.
+    const postOnly = normalizeCervicalFromData({
+      cc_main: "neck pain",
+      cx_agg_mov: ["Side bend left"],
+      cx_agg_post: ["Looking up — overhead"],
+    });
+    expect(postOnly.subjective.extensionRotationAggravation).toBe(true);
+  });
+
+  it("reads radiation from the real cx_radiation field alone (loc_radiation has never existed)", () => {
+    const { subjective } = normalizeCervicalFromData({ cc_main: "neck pain", cx_radiation: ["To hand / fingers (R)"] });
+    expect(subjective.radiatingArmPain).toBe(true);
   });
 });
 

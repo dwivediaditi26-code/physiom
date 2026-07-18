@@ -195,7 +195,13 @@ export function normalizeFromData(data: Data): { subjective: SubjectiveInput; ob
     easesWithRest: hasUnnegated(cc, "rest", "ease"),
     paresthesia: hasUnnegated(cc, "tingl", "numb", "pins") || has(quality, "tingling", "pins and needles", "numbness"),
     radiationBelowElbow: has(shRadiation, "down to hand", "concerning"),
-    onsetTraumatic: hasUnnegated(onset, "trauma", "fall", "injury", "sudden"),
+    // "sudden" was dropped as a standalone keyword (see cervical's identical fix
+    // for the full rationale): the real cc_onset dropdown has a literal
+    // "Sudden — no trauma" option, and hasUnnegated only negates the specific key
+    // it's checking, so "sudden" matched positively on its own even when "trauma"
+    // in that same option was correctly excluded. "Sudden — traumatic" is still
+    // caught via "trauma" (substring of "traumatic"), so no real signal is lost.
+    onsetTraumatic: hasUnnegated(onset, "trauma", "fall", "injury"),
     onsetInsidious: has(onset, "insidious", "gradual", "no injury"),
     overheadAggravation: hasUnnegated(cc, "overhead", "reach", "lift", "above"),
     progressiveStiffness: hasUnnegated(cc, "stiff", "progressive"),
@@ -325,44 +331,111 @@ const reflexAbnormal = (v: unknown): boolean => { const s = str(v).trim(); retur
 export function normalizeCervicalFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
   const cc = str(data.cc_main).toLowerCase();
   const pattern = str(data.cx_pattern).toLowerCase();
-  const onset = str(data.cc_onset ?? data.cx_moi).toLowerCase();
+  // cc_onset is a UI dropdown (fixed options) but is ALSO written by the AI intake
+  // parser (aiIntakeParser.js: updates.cc_onset = result.onset) with LLM-generated
+  // text that is not enum-validated -- so unlike other cx_* dropdowns, it carries
+  // the same free-text negation risk as cc_main and needs hasUnnegated(), not has().
+  // cx_moi is a real, UI-only, cervical-specific mechanism checklist (never touched
+  // by the AI parser) -- read independently and OR'd in, not used as a mere fallback,
+  // so a clinician who fills in cx_moi still counts even if cc_onset also holds an
+  // unrelated value (previously `cc_onset ?? cx_moi` let a populated-but-unrelated
+  // cc_onset silently shadow a correctly-filled cx_moi).
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const moi = str(data.cx_moi).toLowerCase();
   const age = num(data.dem_age);
-  const radiation = str(data.loc_radiation ?? data.cx_radiation).toLowerCase();
+  // cx_radiation is the only real radiation field for cervical; loc_radiation has
+  // never existed in sharedClinicalData.js, so the old `loc_radiation ?? cx_radiation`
+  // was dead code (always fell through) -- simplified, no behaviour change.
+  const radiation = str(data.cx_radiation).toLowerCase();
   const armQuality = str(data.cx_arm_quality).toLowerCase();
+  // Same shadowing issue as onset: "Movements aggravate" (cx_agg_mov) and "Postures
+  // aggravate" (cx_agg_post) are two separate real questions a clinician normally
+  // answers both of -- read independently and OR'd, not `??`-chained.
+  const aggMov = str(data.cx_agg_mov).toLowerCase();
+  const aggPost = str(data.cx_agg_post).toLowerCase();
 
-  const vbiPos = isPos(data.st_vbi) || selected(data.cx_rf_vbi, "no vbi signs") || has(cc, "dizz");
+  const vbiPos = isPos(data.st_vbi) || selected(data.cx_rf_vbi, "no vbi signs") || hasUnnegated(cc, "dizz");
   const hoffmannPos = isPos(data.st_hoffmanns);
   const babinskiPos = isPos(data.st_babinski) || reflexAbnormal(data["n_ref_babinski_left"]) || reflexAbnormal(data["n_ref_babinski_right"]);
   const anyMyotomeWeak = CERVICAL_MYOTOMES.some((m) => myotomeAbnormal(data[`myo_${m}_left`]) || myotomeAbnormal(data[`myo_${m}_right`]));
   const anyReflexChange = CERVICAL_REFLEXES.some((r) => reflexAbnormal(data[`${r}_left`]) || reflexAbnormal(data[`${r}_right`]));
   const anySensoryDeficit = CERVICAL_DERMATOMES.some((d) => dermatomeAbnormal(data[`${d}_left`]) || dermatomeAbnormal(data[`${d}_right`]));
   const myelopathyChecklistPositive = selected(data.cx_rf_myelopathy, "no myelopathy signs");
+  // cx_night is a real, structured, cervical-specific night-symptom checklist
+  // (options like "Wakes multiple times from sleep", "Constant night pain -- cannot
+  // sleep") -- it was being read with isPos(), which only matches
+  // "positive"/"+ve"/"true"/"yes" substrings. None of cx_night's real options
+  // contain those words, so isPos(data.cx_night) was ALWAYS false regardless of
+  // what was actually selected; nightPain for cervical was silently running on the
+  // cx_pattern "night" fallback alone. Fixed to has()-match the real option text
+  // (multicheck fields are UI-only, never AI-parser-written, so has() -- not
+  // hasUnnegated() -- is the correct/safe reading here, consistent with every other
+  // structured cx_* field in this function).
+  const night = str(data.cx_night).toLowerCase();
+  const rfOther = str(data.cx_rf_other).toLowerCase();
+  // cx_fracture_screen: a full, real, purpose-built "Cervical -- Fracture Screen"
+  // checklist (NEXUS / Canadian C-Spine Rule wording) that was defined in
+  // sharedClinicalData.js but never read anywhere in the reasoning engine -- the
+  // fracture red flag rule (traumaHistory && unableToWeightBear) was structurally
+  // blind for cervical because unableToWeightBear was never set at all. Same class
+  // of gap as shoulder's shl_rf/shr_rf before that was fixed.
+  const fractureScreenPositive = selected(data.cx_fracture_screen, "not applicable");
 
   const subjective: SubjectiveInput = {
     region: "cervical",
     chiefComplaint: str(data.cc_main),
     ageOver50: age != null && age >= 50,
-    nightPain: isPos(data.cx_night) || has(pattern, "night"),
+    nightPain: has(night, "wakes", "pain on turning", "constant night pain", "arm / hand symptoms at night", "night headache") || has(pattern, "night"),
     constantPain: has(pattern, "constant"),
-    paresthesia: has(cc, "tingl", "numb", "pins") || has(radiation, "tingl", "numb") || has(armQuality, "tingling", "pins and needles", "numbness") || anySensoryDeficit,
+    paresthesia: hasUnnegated(cc, "tingl", "numb", "pins") || has(radiation, "tingl", "numb") || has(armQuality, "tingling", "pins and needles", "numbness") || anySensoryDeficit,
     radiatingArmPain: has(radiation, "arm", "shoulder", "forearm", "hand") || has(str(data.cx_arm_present), "yes —"),
     dermatomalPattern: selected(data.cx_dermatomal, "not dermatomal") || has(radiation, "dermatom") || anySensoryDeficit,
-    headacheFromNeck: has(cc, "headache") || has(str(data.cx_ha_present), "yes —"),
+    headacheFromNeck: hasUnnegated(cc, "headache") || has(str(data.cx_ha_present), "yes —"),
     unilateralHeadache: has(str(data.cx_ha_location), "temporal (l)", "temporal (r)", "hemicranial"),
-    neckStiffness: has(pattern, "stiff") || has(cc, "stiff"),
-    extensionRotationAggravation: has(str(data.cx_agg_mov ?? data.cx_agg_post), "extension", "rotation", "looking up", "overhead"),
-    onsetTraumatic: has(onset, "trauma", "whiplash", "rta", "accident", "fall", "sudden"),
-    onsetInsidious: has(onset, "insidious", "gradual"),
+    neckStiffness: has(pattern, "stiff") || hasUnnegated(cc, "stiff"),
+    extensionRotationAggravation: has(aggMov, "extension", "rotation", "looking up", "overhead") || has(aggPost, "looking up", "overhead"),
+    // "sudden" was previously its own keyword alongside "trauma" -- but the real
+    // cc_onset dropdown has a literal "Sudden — no trauma" option (e.g. acute wry
+    // neck / idiopathic facet lock), and hasUnnegated only negates the specific key
+    // it's checking -- so "sudden" matched positively in its own right even though
+    // "trauma" in that same option was correctly excluded. Dropped "sudden" as a
+    // standalone keyword: "Sudden — traumatic" is still caught via "trauma"
+    // (substring of "traumatic"), and "Sudden — no trauma" is now correctly
+    // excluded entirely. cx_moi is OR'd in as a second, structured source.
+    onsetTraumatic: hasUnnegated(onsetText, "trauma", "whiplash", "rta", "accident", "fall", "injury")
+      || has(moi, "whiplash", "hyperflexion", "hyperextension", "combined flexion", "direct trauma", "diving"),
+    onsetInsidious: has(onsetText, "insidious", "gradual") || has(moi, "insidious", "sustained poor posture", "sleeping position"),
     gaitDisturbance: has(str(data.cx_rf_myelopathy), "gait disturbance", "unexplained falls"),
     dizzinessVBI: vbiPos,
     // red-flag sub-signals
     myelopathySigns: myelopathyChecklistPositive || hoffmannPos || babinskiPos,
-    suddenSevereHeadacheOrNeckPain: has(str(data.cx_rf_vbi), "thunderclap") || has(str(data.cx_rf_other), "thunderclap"),
+    suddenSevereHeadacheOrNeckPain: has(str(data.cx_rf_vbi), "thunderclap") || has(rfOther, "thunderclap"),
     vertebrobasilarSigns: vbiPos,
-    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(onset, "major trauma"),
+    // Carotid/vertebral artery dissection is a direct, named vascular-compromise
+    // sign in cx_rf_other -- previously this field only fed
+    // suddenSevereHeadacheOrNeckPain (via "thunderclap"); wiring the dissection
+    // wording into its own condition too is more explainable even though
+    // vertebrobasilarSigns already covers most VBI presentations via cx_rf_vbi.
+    vascularCompromiseSigns: has(rfOther, "carotid", "dissection"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(onsetText, "major trauma") || fractureScreenPositive,
     unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
-    systemicIllness: selected(data.grf_systemic, "systemically well"),
-    malignancyHistory: selected(data.grf_cancer, "no cancer history"),
+    // "Constitutional symptoms with neck pain" in cx_rf_other is a direct,
+    // cervical-specific systemic-illness indicator -- reinforces the global
+    // grf_systemic checklist the same way shoulder's audit added shl_rf/shr_rf
+    // reinforcement for its own systemic/malignancy signals.
+    systemicIllness: selected(data.grf_systemic, "systemically well") || has(rfOther, "constitutional symptoms"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rfOther, "cancer"),
+    // unableToWeightBear is reused across regions as "hard evidence of suspected
+    // fracture" rather than literal weight-bearing (same convention established for
+    // shoulder's shl_rf/shr_rf "suspected fracture" wiring) -- any real selection in
+    // the dedicated fracture screen is exactly that.
+    unableToWeightBear: fractureScreenPositive,
+    // nightPainUnrelieved: cx_night's "Constant night pain -- cannot sleep" is a
+    // direct match for the malignancy red flag's "unrelieved" night pain criterion.
+    // This rule only fires in combination with unexplainedWeightLoss && ageOver50,
+    // so wiring this closes real malignancy-rule blindness without materially
+    // widening false-positive risk (the AND-gate still requires both other signs).
+    nightPainUnrelieved: has(night, "constant night pain"),
   };
 
   const rot = [readRom(data, "crotl", "Rotation", 60, false), readRom(data, "crotr", "Rotation", 60, false)]
@@ -393,7 +466,18 @@ export function normalizeCervicalFromData(data: Data): { subjective: SubjectiveI
   setT("rotation_lt_60", rotationLt60);
   setT("reflex_change", anyReflexChange);
   setT("sensory_deficit", anySensoryDeficit);
-  setT("ultt", isPos(data.st_slump_test)); // no dedicated ULTT test in the app yet
+  // ULTT-A in the Wainner cervical radiculopathy cluster is the median-nerve-bias
+  // upper limb tension test. The app's real field for that is st_ultt1 (ULTT1 --
+  // Median Nerve, sens 75%/spec 74%) under the Special Tests module -- the same
+  // st_* module family as st_spurling/st_distraction above. st_slump_test is a
+  // real field too (correctly used elsewhere, see setT("slump", ...) for lumbar),
+  // but it's a lower-limb/whole-neuraxis test, not the median-nerve ULTT-A the
+  // cervical radiculopathy citation actually specifies -- wiring it here read the
+  // wrong test as evidence for this diagnosis. st_ultt2 (radial) / st_ultt3 (ulnar)
+  // are OR'd in too: any positive upper-limb nerve tension test on a patient
+  // already being worked up for cervical radiculopathy is real neural-tension
+  // evidence, even if it's not strictly the median bias.
+  setT("ultt", isPos(data.st_ultt1) || isPos(data.st_ultt2) || isPos(data.st_ultt3));
   // CPA (NKT motor control): DNF inhibited (or its compensators SCM/upper trap/
   // suboccipitals overactive) is the CPA-described mechanism for cervicogenic
   // headache -- forward head posture maintained by superficial flexors substituting

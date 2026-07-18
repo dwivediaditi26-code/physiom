@@ -90,7 +90,12 @@ describe("Cervical region — interpretation + normalize", () => {
   it("normalizes a flat cervical record and runs via the dispatcher", () => {
     const data = {
       cc_main: "Neck pain radiating to right arm",
-      loc_radiation: "right arm and hand",
+      // Regression: this used to be loc_radiation, a field that has never
+      // existed anywhere in sharedClinicalData.js (see normalize.ts's comment
+      // on the cervical radiation reconciliation) -- the test happened to pass
+      // only because the code shared the same wrong assumption. cx_radiation is
+      // the real field; "To hand / fingers (R)" is one of its actual options.
+      cx_radiation: "To hand / fingers (R)",
       st_spurling: "Positive — left (radiculopathy)", st_distraction: "Positive — symptom relief (nerve root compression)",
       myo_c6_left: "5", myo_c6_right: "3",
     };
