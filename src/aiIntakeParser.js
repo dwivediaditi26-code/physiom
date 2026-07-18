@@ -81,9 +81,26 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   if (result.priorEpisodeCount) updates.hx_episodes = result.priorEpisodeCount;
   if (result.priorEpisodeOutcome) updates.hx_resolve = result.priorEpisodeOutcome;
   if (result.patientGoals) updates.goal_main = result.patientGoals;
+  // goal_concern is the real field for "what worries you most?" -- distinct
+  // from goal_main (what they want to achieve). Both are free text, no
+  // enum-mismatch risk.
+  if (result.patientConcern) updates.goal_concern = result.patientConcern;
+  // hx_notes is the existing free-text "History Notes" field
+  // ("Patterns across episodes, what works vs doesn't"), the right home
+  // for a treatment tried during the CURRENT episode -- distinct from
+  // hx_episodes/hx_resolve, which are about a SEPARATE past episode.
+  if (result.priorTreatmentTried) updates.hx_notes = result.priorTreatmentTried;
 
   // ── Region-prefixed fields ─────────────────────────────────────────
   if (pfx) {
+    // {pfx}_moi_notes is the existing free-text "Mechanism Notes" field,
+    // already read by name in buildRealtimeSOAP/SOAPNoteModule's region
+    // notes card. The right home for hedged/uncertain mechanism detail
+    // (onsetContext) that shouldn't be forced into cc_onset's confident
+    // fixed-enum options.
+    if (result.onsetContext)
+      updates[pfx + "_moi_notes"] = result.onsetContext;
+
     if (result.symptomPattern)
       updates[pfx + "_pattern"] = result.symptomPattern;
     if (result.diurnalPattern)
@@ -175,6 +192,9 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   if (result.medications) filled.push("Medications");
   if (result.functionalLimitations?.length) filled.push("Functional limitations");
   if (result.patientGoals) filled.push("Patient goals");
+  if (result.patientConcern) filled.push("Patient's main concern/fear");
+  if (result.onsetContext) filled.push("Mechanism detail (uncertain)");
+  if (result.priorTreatmentTried) filled.push("Prior treatment tried (current episode)");
   if (reg) filled.push("Region: " + reg);
 
   // ── Missing-information checklist ───────────────────────────────────
@@ -198,6 +218,7 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   if (!result.painQuality?.length) missingInfo.push("Pain quality/character");
   if (result.hasBladderBowelSymptoms == null) missingInfo.push("Bladder/bowel screen (red flag)");
   if (!result.patientGoals) missingInfo.push("Patient's own goals");
+  if (!result.patientConcern) missingInfo.push("Patient's main concern/fear");
 
   // ── Extraction audit trail ──────────────────────────────────────────
   // Per-field confidence and the exact quote supporting it, straight
