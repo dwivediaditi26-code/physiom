@@ -2445,41 +2445,30 @@ function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
   };
 
   return (
-    <div style={{ border:`1px solid ${hasSelected ? PC.accent+"55" : PC.border}`, borderRadius:9, overflow:"hidden" }}>
-      {/* Selected tags summary strip (only when something selected) */}
-      {hasSelected && (
-        <div style={{ display:"flex", alignItems:"center", gap:5, flexWrap:"wrap",
-          padding:"8px 12px 6px", background:PC.accent+"06",
-          borderBottom:`1px solid ${PC.accent}22` }}>
-          {selected.map(s => (
-            <span key={s} style={{ fontSize:"0.75rem", fontWeight:700, padding:"2px 8px",
-              borderRadius:99, background:PC.accent+"18", color:PC.accent,
-              border:`1px solid ${PC.accent}44` }}>{s}</span>
-          ))}
-        </div>
+    // Flat, unboxed pill row -- no outer card/border, no separate "selected
+    // tags" summary strip. Selection state shows purely via each pill's own
+    // filled/highlighted style, matching the confirmed lightweight mockup
+    // (numbered line-wise fields, no boxed containers around chip choices).
+    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+      {visibleOpts.map(opt => <PillBtn key={opt} opt={opt} />)}
+      {!showMore && hiddenCount > 0 && (
+        <button type="button" onClick={() => setShowMore(true)}
+          style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
+            border:`1.5px dashed ${PC.border}`, background:"transparent",
+            color:PC.muted, fontSize:"0.82rem", fontWeight:600,
+            lineHeight:1.4, minHeight:38 }}>
+          +{hiddenCount} more
+        </button>
       )}
-      {/* Always-visible pills */}
-      <div style={{ padding:"10px 12px", display:"flex", flexWrap:"wrap", gap:8, background:PC.surface }}>
-        {visibleOpts.map(opt => <PillBtn key={opt} opt={opt} />)}
-        {!showMore && hiddenCount > 0 && (
-          <button type="button" onClick={() => setShowMore(true)}
-            style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
-              border:`1.5px dashed ${PC.border}`, background:"transparent",
-              color:PC.muted, fontSize:"0.82rem", fontWeight:600,
-              lineHeight:1.4, minHeight:38 }}>
-            +{hiddenCount} more
-          </button>
-        )}
-        {showMore && hiddenCount > 0 && (
-          <button type="button" onClick={() => setShowMore(false)}
-            style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
-              border:`1.5px dashed ${PC.border}`, background:"transparent",
-              color:PC.muted, fontSize:"0.82rem", fontWeight:600,
-              lineHeight:1.4, minHeight:38 }}>
-            Show less ▲
-          </button>
-        )}
-      </div>
+      {showMore && hiddenCount > 0 && (
+        <button type="button" onClick={() => setShowMore(false)}
+          style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
+            border:`1.5px dashed ${PC.border}`, background:"transparent",
+            color:PC.muted, fontSize:"0.82rem", fontWeight:600,
+            lineHeight:1.4, minHeight:38 }}>
+          Show less ▲
+        </button>
+      )}
     </div>
   );
 }
@@ -3727,6 +3716,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
             const groupSections = activeGroup ? activeGroup.keys.map(k => sections[k]).filter(Boolean) : [];
             const groupHasMulticheck = groupSections.some((s, i) => activeGroup.keys[i] !== "complaint" && s.fields.some(f => f.type === "multicheck"));
+            // Continuous "N." numbering across every field in the active group
+            // (matches the confirmed mockup) -- resets to 1 whenever the group
+            // tab changes, since this is recomputed fresh on every render.
+            let fieldNum = 0;
 
             return (
               <>
@@ -3841,11 +3834,12 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                         <div style={{ padding:"18px 18px" }}>
                           {s.fields.map(field => {
                             const helpText = FIELD_HELP[field.id];
+                            const fNum = ++fieldNum;
                             return (
                             <div key={field.id} style={{ marginBottom:20 }}>
                               <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.93rem", fontWeight:600,
                                 color: PC.text, marginBottom:8, letterSpacing:0.1, flexWrap:"wrap" }}>
-                                <span>{field.label}</span>
+                                <span>{fNum}. {field.label}</span>
                                 {field.type === "textarea" && (
                                   <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:400, fontStyle:"italic" }}>notes</span>
                                 )}
