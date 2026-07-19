@@ -2741,8 +2741,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     return m;
   }, [data, selectedRegions]);
 
-  const sec = sections[activeSection] || sections.complaint;
-  const secColor = sec.color || PC.accent;
 
   // ── Progress (exclude notes fields) ────────────────────────────────
   const { totalF, totalD, pct } = useMemo(() => {
@@ -3640,7 +3638,15 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             )}
           </button>
 
-          {/* Section nav — grouped by region */}
+          {/* ══════════════════════════════════════════════════════
+              Section nav + continuous field list. One top-level group
+              (Core / a body region / General / ...) is active at a time --
+              switching groups still switches which region's fields you're
+              viewing, same as before. But WITHIN a group, every section is
+              now rendered top to bottom in one continuous scroll instead of
+              being stepped through one section at a time behind a
+              "N / M" counter and Prev/Next buttons.
+          ══════════════════════════════════════════════════════ */}
           {(() => {
             // Build groups: core universal keys, then one group per selected region, then trailing universal
             const CORE_KEYS = ["complaint"];
@@ -3706,197 +3712,163 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             const activeGroup = groups.find(g => g.keys.includes(activeSection)) || groups[0];
             const agCol = activeGroup ? activeGroup.col : PC.accent;
 
+            const jumpToGroup = (key) => {
+              setActiveSection(key);
+              setSearchTerm("");
+              setTimeout(() => {
+                if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
+              }, 30);
+            };
+            const jumpToSection = (key) => {
+              setActiveSection(key);
+              const el = document.getElementById(`subj-sec-${key}`);
+              if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+            };
+
+            const groupSections = activeGroup ? activeGroup.keys.map(k => sections[k]).filter(Boolean) : [];
+            const groupHasMulticheck = groupSections.some((s, i) => activeGroup.keys[i] !== "complaint" && s.fields.some(f => f.type === "multicheck"));
+
             return (
-              <div style={{ background:"#fff", borderRadius:14, overflow:"hidden",
-                border:"1px solid rgba(0,0,0,0.07)",
-                boxShadow:"0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)" }}>
+              <>
+                <div style={{ background:"#fff", borderRadius:14, overflow:"hidden",
+                  border:"1px solid rgba(0,0,0,0.07)",
+                  boxShadow:"0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)" }}>
 
-                {/* ── Row 1: Group tabs — plain text, purple underline ── */}
-                <div style={{ display:"flex", overflowX:"auto", scrollbarWidth:"none",
-                  WebkitOverflowScrolling:"touch", borderBottom:"1px solid #F0F0F0",
-                  padding:"0 4px" }}>
-                  {groups.map((g) => {
-                    const isAct = activeGroup && g.label === activeGroup.label;
-                    return (
-                      <button key={g.label} type="button"
-                        onClick={()=>{ setActiveSection(g.keys[0]); setSearchTerm(""); }}
-                        style={{
-                          padding:"10px 12px 8px",
-                          background:"transparent",
-                          borderBottom: isAct ? `2.5px solid ${g.col}` : "2.5px solid transparent",
-                          border:"none", borderRadius:0, cursor:"pointer", fontFamily:"inherit",
-                          flexShrink:0, whiteSpace:"nowrap", transition:"color 120ms",
-                        }}>
-                        <span style={{
-                          fontSize:"0.75rem", fontWeight: isAct ? 700 : 500,
-                          color: isAct ? g.col : "#888",
-                        }}>{g.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* ── Row 2: Section pills ── */}
-                {activeGroup && (
-                  <div style={{ display:"flex", overflowX:"auto", gap:6, padding:"8px 10px",
-                    scrollbarWidth:"none", WebkitOverflowScrolling:"touch", flexWrap:"nowrap" }}>
-                    {activeGroup.keys.map(key => {
-                      const s = sections[key]; if (!s) return null;
-                      const isAct = key === activeSection;
+                  {/* ── Row 1: Group tabs — plain text, purple underline ── */}
+                  <div style={{ display:"flex", overflowX:"auto", scrollbarWidth:"none",
+                    WebkitOverflowScrolling:"touch", borderBottom:"1px solid #F0F0F0",
+                    padding:"0 4px" }}>
+                    {groups.map((g) => {
+                      const isAct = activeGroup && g.label === activeGroup.label;
                       return (
-                        <button key={key} type="button"
-                          onClick={()=>{ setActiveSection(key); setSearchTerm(""); }}
+                        <button key={g.label} type="button" data-testid={`subj-group-tab-${g.label}`}
+                          onClick={()=>jumpToGroup(g.keys[0])}
                           style={{
-                            display:"flex", alignItems:"center", gap:5,
-                            padding:"6px 13px",
-                            borderRadius:99, cursor:"pointer", fontFamily:"inherit",
-                            flexShrink:0, whiteSpace:"nowrap", transition:"all 120ms",
-                            border: isAct ? "none" : "1.5px solid #E8E8E8",
-                            background: isAct ? agCol : "#F5F5F5",
-                            boxShadow: isAct ? `0 2px 8px ${agCol}40` : "none",
+                            padding:"10px 12px 8px",
+                            background:"transparent",
+                            borderBottom: isAct ? `2.5px solid ${g.col}` : "2.5px solid transparent",
+                            border:"none", borderRadius:0, cursor:"pointer", fontFamily:"inherit",
+                            flexShrink:0, whiteSpace:"nowrap", transition:"color 120ms",
                           }}>
-                          <span style={{ fontSize:"0.8rem", lineHeight:1 }}>{s.icon}</span>
                           <span style={{
-                            fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
-                            color: isAct ? "#fff" : "#555",
-                          }}>
-                            {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
-                          </span>
+                            fontSize:"0.75rem", fontWeight: isAct ? 700 : 500,
+                            color: isAct ? g.col : "#888",
+                          }}>{g.label}</span>
                         </button>
                       );
                     })}
                   </div>
-                )}
-              </div>
-            );
-          })()}
 
-          {/* No region selected prompt */}
-          {selectedRegions.length === 0 && !["complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
-            <div style={{ background:"#fffbeb", border:`1px solid ${PC.yellow}55`, borderRadius:10,
-              padding:"12px 16px", color: PC.yellow, fontSize:"0.78rem" }}>
-              ⚠ Select at least one region above to load the region-specific assessment module
-            </div>
-          )}
-
-          {/* Active section card */}
-          {sec && (() => {
-            const sectionKeys = Object.keys(sections);
-            const curIdx = sectionKeys.indexOf(activeSection);
-            const prevKey = curIdx > 0 ? sectionKeys[curIdx - 1] : null;
-            const nextKey = curIdx < sectionKeys.length - 1 ? sectionKeys[curIdx + 1] : null;
-            const prevSec = prevKey ? sections[prevKey] : null;
-            const nextSec = nextKey ? sections[nextKey] : null;
-            const goTo = (key) => {
-              setActiveSection(key);
-              setSearchTerm("");
-              // Scroll the section card to top (works inside any scrollable container)
-              setTimeout(() => {
-                if (sectionTopRef.current) {
-                  sectionTopRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
-                }
-              }, 30);
-            };
-            return (
-              <div ref={sectionTopRef} style={{ background: PC.surface, borderRadius:12,
-                border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44`, overflow:"hidden" }}>
-
-                {/* Section header */}
-                <div style={{ padding:"16px 18px 12px", borderBottom:`1px solid ${PC.border}`, background: secColor+"06" }}>
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <div style={{ fontSize:"1.05rem", fontWeight:800, color: secColor }}>
-                      {sec.icon} {sec.label}
-                    </div>
-                    <span style={{ fontSize:"0.85rem", color: PC.muted, fontWeight:600,
-                      background: PC.s2, borderRadius:20, padding:"2px 10px" }}>
-                      {curIdx + 1} / {sectionKeys.length}
-                    </span>
-                  </div>
-                  {sec.description && (
-                    <div style={{ fontSize:"0.82rem", color: PC.muted, marginTop:6, fontStyle:"italic",
-                      borderLeft:`3px solid ${secColor}55`, paddingLeft:10, lineHeight:1.5 }}>
-                      {sec.description}
+                  {/* ── Row 2: Section pills — jump to that section below; every
+                       section stays visible, this just scrolls to it ── */}
+                  {activeGroup && (
+                    <div style={{ display:"flex", overflowX:"auto", gap:6, padding:"8px 10px",
+                      scrollbarWidth:"none", WebkitOverflowScrolling:"touch", flexWrap:"nowrap" }}>
+                      {activeGroup.keys.map(key => {
+                        const s = sections[key]; if (!s) return null;
+                        const isAct = key === activeSection;
+                        return (
+                          <button key={key} type="button"
+                            onClick={()=>jumpToSection(key)}
+                            style={{
+                              display:"flex", alignItems:"center", gap:5,
+                              padding:"6px 13px",
+                              borderRadius:99, cursor:"pointer", fontFamily:"inherit",
+                              flexShrink:0, whiteSpace:"nowrap", transition:"all 120ms",
+                              border: isAct ? "none" : "1.5px solid #E8E8E8",
+                              background: isAct ? agCol : "#F5F5F5",
+                              boxShadow: isAct ? `0 2px 8px ${agCol}40` : "none",
+                            }}>
+                            <span style={{ fontSize:"0.8rem", lineHeight:1 }}>{s.icon}</span>
+                            <span style={{
+                              fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
+                              color: isAct ? "#fff" : "#555",
+                            }}>
+                              {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                {/* Fields */}
-                <div style={{ padding:"18px 18px" }}>
-                  {/* Search (multicheck sections only, excluding Chief Complaint) */}
-                  {activeSection !== "complaint" && sec.fields.some(f => f.type === "multicheck") && (
-                    <input type="text" value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                      placeholder="🔎 Filter options..."
-                      style={{ width:"100%", padding:"11px 14px", marginBottom:14,
-                        background: PC.s2, border:`1.5px solid ${PC.inputBorder}`,
-                        borderRadius:10, fontSize:"0.95rem", color: PC.text,
-                        outline:"none", boxSizing:"border-box", minHeight:46 }} />
-                  )}
+                {/* No region selected prompt */}
+                {selectedRegions.length === 0 && !["complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
+                  <div style={{ background:"#fffbeb", border:`1px solid ${PC.yellow}55`, borderRadius:10,
+                    padding:"12px 16px", color: PC.yellow, fontSize:"0.78rem" }}>
+                    ⚠ Select at least one region above to load the region-specific assessment module
+                  </div>
+                )}
 
-                  {sec.fields.map(field => {
-                    const helpText = FIELD_HELP[field.id];
+                {/* Shared filter box — applies to every multicheck field across
+                    every section below, so it appears once per group rather
+                    than once per section. */}
+                {groupHasMulticheck && (
+                  <input type="text" value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    placeholder="🔎 Filter options..."
+                    style={{ width:"100%", padding:"11px 14px",
+                      background: PC.s2, border:`1.5px solid ${PC.inputBorder}`,
+                      borderRadius:10, fontSize:"0.95rem", color: PC.text,
+                      outline:"none", boxSizing:"border-box", minHeight:46 }} />
+                )}
+
+                {/* Every section in the active group, stacked top to bottom --
+                    one continuous scroll instead of one section at a time. */}
+                <div ref={sectionTopRef} style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                  {groupSections.map((s, si) => {
+                    const key = activeGroup.keys[si];
+                    const sColor = s.color || PC.accent;
                     return (
-                    <div key={field.id} style={{ marginBottom:20 }}>
-                      <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.93rem", fontWeight:600,
-                        color: PC.text, marginBottom:8, letterSpacing:0.1, flexWrap:"wrap" }}>
-                        <span>{field.label}</span>
-                        {field.type === "textarea" && (
-                          <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:400, fontStyle:"italic" }}>notes</span>
-                        )}
-                        {helpText && (
-                          <span title={helpText} style={{
-                            display:"inline-flex", alignItems:"center", justifyContent:"center",
-                            width:16, height:16, borderRadius:"50%",
-                            background: PC.accent+"22", color: PC.accent,
-                            fontSize:"0.72rem", fontWeight:900, cursor:"help",
-                            border:`1px solid ${PC.accent}44`, flexShrink:0, lineHeight:1,
-                          }}>ⓘ</span>
-                        )}
-                      </label>
-                      {renderField(field)}
-                    </div>
+                      <div key={key} id={`subj-sec-${key}`} style={{ background: PC.surface, borderRadius:12,
+                        border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44`, overflow:"hidden" }}>
+
+                        {/* Section header */}
+                        <div style={{ padding:"16px 18px 12px", borderBottom:`1px solid ${PC.border}`, background: sColor+"06" }}>
+                          <div style={{ fontSize:"1.05rem", fontWeight:800, color: sColor }}>
+                            {s.icon} {s.label}
+                          </div>
+                          {s.description && (
+                            <div style={{ fontSize:"0.82rem", color: PC.muted, marginTop:6, fontStyle:"italic",
+                              borderLeft:`3px solid ${sColor}55`, paddingLeft:10, lineHeight:1.5 }}>
+                              {s.description}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Fields */}
+                        <div style={{ padding:"18px 18px" }}>
+                          {s.fields.map(field => {
+                            const helpText = FIELD_HELP[field.id];
+                            return (
+                            <div key={field.id} style={{ marginBottom:20 }}>
+                              <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.93rem", fontWeight:600,
+                                color: PC.text, marginBottom:8, letterSpacing:0.1, flexWrap:"wrap" }}>
+                                <span>{field.label}</span>
+                                {field.type === "textarea" && (
+                                  <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:400, fontStyle:"italic" }}>notes</span>
+                                )}
+                                {helpText && (
+                                  <span title={helpText} style={{
+                                    display:"inline-flex", alignItems:"center", justifyContent:"center",
+                                    width:16, height:16, borderRadius:"50%",
+                                    background: PC.accent+"22", color: PC.accent,
+                                    fontSize:"0.72rem", fontWeight:900, cursor:"help",
+                                    border:`1px solid ${PC.accent}44`, flexShrink:0, lineHeight:1,
+                                  }}>ⓘ</span>
+                                )}
+                              </label>
+                              {renderField(field)}
+                            </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
-
-                {/* Prev / Next row */}
-                <div style={{ display:"flex", borderTop:`1px solid ${PC.border}` }}>
-                  <button type="button"
-                    onClick={() => prevKey && goTo(prevKey)}
-                    disabled={!prevKey}
-                    style={{
-                      flex:1, minWidth:0, padding:"15px 14px", background:"transparent", border:"none",
-                      borderRight:`1px solid ${PC.border}`,
-                      color: prevKey ? PC.muted : PC.border,
-                      fontSize:"0.9rem", fontWeight:500, cursor: prevKey ? "pointer" : "default",
-                      fontFamily:"inherit", textAlign:"left", display:"flex", alignItems:"center", gap:6,
-                    }}>
-                    {prevKey && <span style={{ fontSize:"1rem" }}>←</span>}
-                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      {prevSec ? `${prevSec.icon} ${prevSec.label}` : ""}
-                    </span>
-                  </button>
-                  <button type="button"
-                    onClick={() => nextKey && goTo(nextKey)}
-                    disabled={!nextKey}
-                    style={{
-                      flex:1, minWidth:0, padding:"15px 14px",
-                      background: nextKey ? secColor+"14" : "transparent",
-                      border:"none",
-                      color: nextKey ? secColor : PC.border,
-                      fontSize:"0.9rem", fontWeight: nextKey ? 700 : 500,
-                      cursor: nextKey ? "pointer" : "default",
-                      fontFamily:"inherit", textAlign:"right", display:"flex",
-                      alignItems:"center", justifyContent:"flex-end", gap:6,
-                    }}>
-                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      {nextSec ? `${nextSec.icon} ${nextSec.label}` : "All done ✓"}
-                    </span>
-                    {nextKey && <span style={{ fontSize:"1rem" }}>→</span>}
-                  </button>
-                </div>
-
-              </div>
+              </>
             );
           })()}
 
