@@ -1,4 +1,4 @@
-import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData, normalizeHipFromData, runReasoningFromData } from "../reasoningEngine/index";
+import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData, normalizeHipFromData, normalizeKneeFromData, runReasoningFromData } from "../reasoningEngine/index";
 
 describe("normalizeFromData (flat app record -> typed engine inputs, real field ids)", () => {
   it("maps st_ special tests, rom_ ROM and mmt_mmt_ MMT from the flat data object", () => {
@@ -687,5 +687,54 @@ describe("normalizeHipFromData — deep audit: onset field-shadowing/negation sa
     }, "hip");
     expect(r.stopped).toBe(true);
     expect(r.redFlag?.flags?.some((f) => f.id === "fracture")).toBe(true);
+  });
+});
+
+describe("normalizeKneeFromData — deep audit: septic bursitis gap, PCL mechanism gap, cc_onset addition", () => {
+  // Regression: knl_bursa/knr_bursa's "Hot red swollen bursa -- septic bursitis
+  // screen" option is a real, urgent-referral-level finding (same clinical
+  // action as septic arthritis: urgent same-day referral, do not proceed with
+  // routine assessment) defined in sharedClinicalData.js and never read
+  // anywhere. Reused into the existing hotSwollenJoint signal, same convention
+  // as unableToWeightBear's established cross-region reuse.
+  it("fires the joint_emergency red flag from a real septic-bursitis finding, not just septic arthritis", () => {
+    const { subjective } = normalizeKneeFromData({ cc_main: "hot swollen area below the kneecap", knl_bursa: ["Hot red swollen bursa — septic bursitis screen"] });
+    expect(subjective.hotSwollenJoint).toBe(true);
+
+    const r = runReasoningFromData({ cc_main: "hot swollen area below the kneecap, feels unwell", knl_bursa: ["Hot red swollen bursa — septic bursitis screen"] }, "knee");
+    expect(r.stopped).toBe(true);
+    expect(r.redFlag?.flags?.some((f) => f.id === "joint_emergency")).toBe(true);
+  });
+
+  it("does not fire hotSwollenJoint from a benign, non-inflammatory bursa finding", () => {
+    const { subjective } = normalizeKneeFromData({ cc_main: "knee pain", knl_bursa: ["Fluctuant soft swelling — non-inflammatory bursa"] });
+    expect(subjective.hotSwollenJoint).toBe(false);
+  });
+
+  // Regression: "Fall onto flexed knee" is a real, well-established PCL
+  // mechanism (posteriorly directed force on a flexed tibia) already present
+  // as literal text in the real knl_pcl/knr_pcl checklist, but the keyword
+  // list only checked "dashboard mechanism" and "direct blow to anterior
+  // tibia" -- missing this third real option.
+  it("recognises 'Fall onto flexed knee' as a PCL mechanism", () => {
+    const { subjective } = normalizeKneeFromData({ cc_main: "knee pain after a fall", knl_pcl: ["Fall onto flexed knee"] });
+    expect(subjective.kneePclMechanism).toBe(true);
+  });
+
+  // Regression: unlike its sibling regions (all since fixed to read cc_onset
+  // as an independent source), knee never read cc_onset at all -- only
+  // knl_moi/knr_moi. Added as an OR'd, negation-safe additional source.
+  it("reads onset from cc_onset as an independent additional source alongside knl_/knr_moi", () => {
+    const fromOnset = normalizeKneeFromData({ cc_main: "knee pain", cc_onset: "MVA / whiplash", knl_moi: ["No clear mechanism — insidious / overuse"] });
+    expect(fromOnset.subjective.onsetTraumatic).toBe(true);
+
+    const noTrauma = normalizeKneeFromData({ cc_main: "knee stiffness this morning", cc_onset: "Sudden — no trauma" });
+    expect(noTrauma.subjective.onsetTraumatic).toBe(false);
+    const traumatic = normalizeKneeFromData({ cc_main: "knee pain", cc_onset: "Sudden — traumatic" });
+    expect(traumatic.subjective.onsetTraumatic).toBe(true);
+
+    // Existing knl_/knr_moi-only detection still works unchanged.
+    const moiOnly = normalizeKneeFromData({ cc_main: "knee pain", knl_moi: ["Twisting injury — non-contact (ACL pattern)"] });
+    expect(moiOnly.subjective.onsetTraumatic).toBe(true);
   });
 });
