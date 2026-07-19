@@ -3108,34 +3108,97 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             {aiReview && aiResult && !aiResult._errorMsg && (
               <div>
                 {(() => {
-                  // Count/display only fields the AI actually filled --
-                  // aiResult always has every schema key present (null
-                  // when not mentioned), so counting Object.keys() alone
-                  // previously showed a constant ~24 regardless of how
-                  // much was really extracted. This is the single source
-                  // the header count and the chip preview both read, so
-                  // they can never drift out of sync with each other.
-                  const filledEntries = Object.entries(aiResult).filter(([k,v])=>!k.startsWith("_")&&v!=null&&v!==""&&!(Array.isArray(v)&&v.length===0));
-                  return (<>
-                    <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#166534", marginBottom:8,
-                      padding:"6px 10px", background:"#f0fdf4", borderRadius:8, border:"1px solid #86efac" }}>
-                      ✓ {filledEntries.length} fields extracted
+                  // Polished, human-readable review card -- icon + label on
+                  // the left, bold value on the right, divided rows, no
+                  // per-row box. Replaces the old dense "key: value" chip
+                  // list per user feedback comparing it against the
+                  // confirmed mockup. The technical confidence/source-quote
+                  // audit view right below this is UNCHANGED -- this card
+                  // is a friendly summary sitting on top of it, not a
+                  // replacement for the zero-hallucination detail there.
+                  const v = aiResult;
+                  const fmtList = (arr) => Array.isArray(arr) && arr.length ? arr.join(", ") : null;
+                  const agg = fmtList([...(v.aggMovements||[]), ...(v.aggActivities||[])]);
+                  const radiation = v.hasRadiation === false ? "No radiation"
+                    : v.radiationArea ? v.radiationArea + (v.radiationSide ? ` (${v.radiationSide})` : "")
+                    : v.hasRadiation === true ? "Yes" : null;
+                  const region = v.region ? v.region + (v.laterality ? ` (${v.laterality})` : "") : null;
+                  const hasRedFlags = Array.isArray(v.flags) && v.flags.length > 0;
+
+                  // "Onset" here intentionally shows TIME-SINCE (the real
+                  // `duration` field, e.g. "2-6 weeks") -- separate from
+                  // "Mechanism of Injury" (the real `onset` field, which
+                  // actually holds the HOW-it-started enum, e.g. "Lifting
+                  // injury"). Matches how a clinician reads these two
+                  // concepts apart in the confirmed mockup.
+                  const rows = [
+                    { icon:"🧑", label:"Age", value: v.age ? `${v.age} Years` : null },
+                    { icon:"⚧", label:"Gender", value: v.sex || null },
+                    { icon:"💼", label:"Occupation", value: v.occupation || null },
+                    { icon:"🧭", label:"Region", value: region },
+                    { icon:"🎯", label:"Chief Complaint", value: v.chiefComplaint || null },
+                    { icon:"📅", label:"Onset", value: v.duration || null },
+                    { icon:"💥", label:"Mechanism of Injury", value: v.onset || null },
+                    { icon:"❔", label:"Mechanism Detail", value: v.onsetContext || null },
+                    { icon:"⚡", label:"Aggravating Factors", value: agg },
+                    { icon:"🍃", label:"Relieving Factors", value: fmtList(v.relMovements) },
+                    { icon:"🌡️", label:"Pain Now (NRS 0–10)", value: v.nrsNow != null ? `${v.nrsNow} / 10` : null, pill:true },
+                    { icon:"📈", label:"Pain Worst (NRS 0–10)", value: v.nrsWorst != null ? `${v.nrsWorst} / 10` : null, pill:true },
+                    { icon:"📉", label:"Pain Best (NRS 0–10)", value: v.nrsBest != null ? `${v.nrsBest} / 10` : null, pill:true },
+                    { icon:"🩹", label:"Pain Quality", value: fmtList(v.painQuality) },
+                    { icon:"📊", label:"Pain Behaviour", value: v.symptomPattern || v.diurnalPattern || null },
+                    { icon:"📍", label:"Location", value: v.locationDescription || null },
+                    { icon:"🔀", label:"Radiation", value: radiation },
+                    { icon:"✨", label:"Numbness / Tingling", value: fmtList(v.neuroSymptoms) },
+                    { icon:"🚩", label:"Red Flags", value: Array.isArray(v.flags) ? (hasRedFlags ? v.flags.join(", ") : "No red flags reported") : null, tint: Array.isArray(v.flags) ? (hasRedFlags ? "red" : "green") : undefined },
+                    { icon:"🏁", label:"Patient Goals", value: v.patientGoals || null },
+                    { icon:"😟", label:"Main Concern", value: v.patientConcern || null },
+                    { icon:"💭", label:"Patient's Belief", value: v.patientBelief || null },
+                    { icon:"🔁", label:"Prior Episode", value: v.priorEpisodeCount ? `${v.priorEpisodeCount} (${v.priorEpisodeOutcome || "outcome not stated"})` : null },
+                    { icon:"💊", label:"Treatment Tried", value: v.priorTreatmentTried || null },
+                    { icon:"📋", label:"Medical History", value: v.medicalHistory || null },
+                    { icon:"💊", label:"Medications", value: v.medications || null },
+                    { icon:"🚫", label:"Functional Limitations", value: fmtList(v.functionalLimitations) },
+                  ].filter(r => r.value != null && r.value !== "");
+
+                  return (
+                    <div style={{ background:"#fff", borderRadius:14, border:"1px solid #EDEBFB",
+                      boxShadow:"0 2px 10px rgba(124,58,237,0.06)", overflow:"hidden", marginBottom:10 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderBottom:"1px solid #F0EEFB" }}>
+                        <span style={{ width:30, height:30, borderRadius:9, background:"#f5f3ff", display:"flex",
+                          alignItems:"center", justifyContent:"center", fontSize:"0.95rem", flexShrink:0 }}>🩺</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:"0.85rem", fontWeight:800, color:"#0D0D0D" }}>Extracted Patient Information</div>
+                          <div style={{ fontSize:"0.72rem", color:"#8B8B8D" }}>Review and confirm the details below</div>
+                        </div>
+                        <button type="button" onClick={() => runParse(aiText)} title="Re-parse this narrative"
+                          style={{ width:26, height:26, borderRadius:"50%", border:"1px solid #E0E0E2",
+                            background:"transparent", color:"#7c3aed", cursor:"pointer", fontSize:"0.85rem",
+                            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>↻</button>
+                      </div>
+                      {rows.map((r, i) => {
+                        const tintBg = r.tint === "red" ? "#fef2f2" : r.tint === "green" ? "#f0fdf4" : "#f5f3ff";
+                        return (
+                        <div key={r.label} style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 14px",
+                          borderBottom: i < rows.length - 1 ? "1px solid #F3F2F9" : "none" }}>
+                          <span style={{ width:26, height:26, borderRadius:8, background:tintBg, display:"flex",
+                            alignItems:"center", justifyContent:"center", fontSize:"0.8rem", flexShrink:0 }}>{r.icon}</span>
+                          <span style={{ fontSize:"0.78rem", color:"#8B8B8D", flexShrink:0 }}>{r.label}</span>
+                          {r.pill ? (
+                            <span style={{ marginLeft:"auto", fontSize:"0.76rem", fontWeight:800, color:"#5b21b6",
+                              background:"#f5f3ff", padding:"3px 10px", borderRadius:99, flexShrink:0 }}>{r.value}</span>
+                          ) : (
+                            <span style={{ marginLeft:"auto", fontSize:"0.8rem", fontWeight:700, color:"#0D0D0D",
+                              textAlign:"right", maxWidth:"55%" }}>{r.value}</span>
+                          )}
+                        </div>
+                        );
+                      })}
+                      <div style={{ padding:"8px 14px 10px", fontSize:"0.7rem", color:"#8B8B8D" }}>
+                        {rows.length} field{rows.length===1?"":"s"} extracted
+                      </div>
                     </div>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:8 }}>
-                      {filledEntries.slice(0,8).map(([k,v])=>(
-                        <span key={k} style={{ fontSize:"0.68rem", padding:"2px 7px", borderRadius:99,
-                          background:"#f5f3ff", color:"#5b21b6", border:"1px solid #c4b5fd" }}>
-                          {k}: {String(v).substring(0,20)}
-                        </span>
-                      ))}
-                      {filledEntries.length > 8 && (
-                        <span style={{ fontSize:"0.68rem", padding:"2px 7px", borderRadius:99,
-                          background:"#ede9fe", color:"#5b21b6", fontWeight:700, border:"1px dashed #c4b5fd" }}>
-                          +{filledEntries.length - 8} more — see details below ↓
-                        </span>
-                      )}
-                    </div>
-                  </>);
+                  );
                 })()}
 
                 {/* Zero-hallucination review: original speech side by side
