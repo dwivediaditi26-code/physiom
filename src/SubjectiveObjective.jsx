@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, Component } f
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage } from "./sharedClinicalData.js";
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
-import { buildRealtimeSOAP } from "./ClinicalModules.jsx";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -2514,123 +2513,6 @@ const FIELD_HELP = {
   "lx_night": "Night pain: can patient get comfortable? Positional night pain = mechanical. Constant unable to get comfortable = inflammatory or serious pathology. Bladder waking since onset — compare to pre-pain baseline.",
 };
 
-// ── AI Clinical Reasoning panel (Lumbar / SI) ──────────────────────────
-// Renders the output of api/lumbarReasoning.js: an independent, LLM-driven
-// second opinion that runs alongside Engine v6 (runEngineV6 above), which
-// stays fully deterministic and unmodified. Only ever shown for Lumbar/SI,
-// and never blocks or replaces the deterministic results.
-function AiLumbarReasoningPanel({ PC, loading, error, reasoning }) {
-  const badgeColor = (level) => level === "High" ? PC.green : level === "Moderate" ? PC.yellow : PC.muted;
-  const CATS = [
-    { key:"observation",  label:"Observation",              field:"item" },
-    { key:"rom",          label:"Lumbar ROM",                field:"movement" },
-    { key:"mmt",          label:"MMT",                        field:"muscle" },
-    { key:"functional",   label:"Functional Assessment",      field:"task" },
-    { key:"kineticChain", label:"Kinetic Chain Assessment",   field:"area" },
-    { key:"specialTests", label:"Special Tests",              field:"test" },
-  ];
-
-  return (
-    <div style={{ background: PC.surface, borderRadius:12, border:`1.5px solid ${PC.accent}44`, overflow:"hidden" }}>
-      <div style={{ background: PC.accent+"12", borderBottom:`1px solid ${PC.accent}33`,
-        padding:"10px 16px", display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-        <span style={{ fontSize:"1rem" }}>🤖</span>
-        <span style={{ fontSize:"0.78rem", fontWeight:800, color: PC.accent, letterSpacing:0.5 }}>
-          AI Clinical Reasoning — Lumbar / SI
-        </span>
-        <span style={{ fontSize:"0.7rem", color: PC.muted, marginLeft:"auto" }}>
-          Adaptive · independent of Engine v6 above
-        </span>
-      </div>
-
-      <div style={{ padding:"14px 16px" }}>
-        {loading && (
-          <div style={{ fontSize:"0.8rem", color: PC.muted, display:"flex", alignItems:"center", gap:8 }}>
-            <span>⏳</span> Reasoning through this patient's subjective findings…
-          </div>
-        )}
-
-        {!loading && error && (
-          <div style={{ fontSize:"0.78rem", color: PC.yellow, lineHeight:1.6 }}>
-            AI reasoning unavailable right now ({error}). The deterministic analysis above is unaffected.
-          </div>
-        )}
-
-        {!loading && !error && reasoning && (
-          <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-
-            {/* ── Hypotheses ── */}
-            {reasoning.hypotheses && reasoning.hypotheses.length > 0 && (
-              <div>
-                <div style={{ fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase",
-                  letterSpacing:1, color: PC.muted, marginBottom:8 }}>
-                  Clinical Hypotheses — presentation suggests, not confirmed diagnosis
-                </div>
-                {reasoning.hypotheses.map((h, i) => (
-                  <div key={i} style={{ marginBottom:8, paddingBottom:8,
-                    borderBottom: i < reasoning.hypotheses.length-1 ? `1px solid ${PC.border}` : "none" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3, flexWrap:"wrap" }}>
-                      <span style={{ fontSize:"0.8rem", fontWeight:700, color: PC.text }}>{h.pattern}</span>
-                      <span style={{ fontSize:"0.68rem", fontWeight:800, padding:"2px 8px", borderRadius:99,
-                        background: badgeColor(h.probability)+"18", color: badgeColor(h.probability),
-                        border:`1px solid ${badgeColor(h.probability)}44` }}>
-                        {h.probability}
-                      </span>
-                    </div>
-                    <div style={{ fontSize:"0.78rem", color: PC.muted, lineHeight:1.6 }}>{h.reasoning}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* ── Objective plan, by category ── */}
-            {reasoning.objectivePlan && CATS.map(({ key, label, field }) => {
-              const items = reasoning.objectivePlan[key];
-              if (!items || items.length === 0) return null;
-              return (
-                <div key={key}>
-                  <div style={{ fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase",
-                    letterSpacing:1, color: PC.muted, marginBottom:8 }}>
-                    {label}
-                  </div>
-                  {items.map((it, i) => (
-                    <div key={i} style={{ marginBottom:7, paddingBottom:7,
-                      borderBottom: i < items.length-1 ? `1px solid ${PC.border}` : "none" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3, flexWrap:"wrap" }}>
-                        <span style={{ fontSize:"0.8rem", fontWeight:700, color: PC.text }}>{it[field]}</span>
-                        <span style={{ fontSize:"0.66rem", fontWeight:800, padding:"2px 7px", borderRadius:99,
-                          background: badgeColor(it.priority)+"18", color: badgeColor(it.priority),
-                          border:`1px solid ${badgeColor(it.priority)}44` }}>
-                          {it.priority}
-                        </span>
-                      </div>
-                      <div style={{ fontSize:"0.76rem", color: PC.muted, lineHeight:1.6 }}>{it.reasoning}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-
-            {/* ── Clinical summary ── */}
-            {reasoning.clinicalSummary && (
-              <div style={{ background: PC.accent+"08", border:`1px solid ${PC.accent}33`,
-                borderRadius:10, padding:"10px 12px" }}>
-                <div style={{ fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase",
-                  letterSpacing:1, color: PC.accent, marginBottom:6 }}>
-                  Clinical Summary
-                </div>
-                <div style={{ fontSize:"0.78rem", color: PC.text, lineHeight:1.65 }}>
-                  {reasoning.clinicalSummary}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#FFFFFF", s3:"#FFFFFF", border:"#E0E0E2",
@@ -2653,11 +2535,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [showSummary, setShowSummary] = useState(false);
   const [activeReviewRegion, setActiveReviewRegion] = useState(null); // which region tab is showing in the Interpretation results screen
   const [showSavedToast, setShowSavedToast] = useState(false);
-  // AI Clinical Reasoning (Lumbar/SI) -- additive, alongside runEngineV6 above,
-  // never persisted (re-fetched fresh on each Run Analysis click)
-  const [aiLumbarReasoning, setAiLumbarReasoning] = useState(null);
-  const [aiLumbarLoading, setAiLumbarLoading] = useState(false);
-  const [aiLumbarError, setAiLumbarError] = useState(null);
   const [regionPickerOpen, setRegionPickerOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState({});
   const [openRegions, setOpenRegions] = useState({});
@@ -2895,37 +2772,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     // Show saved confirmation toast
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 3000);
-
-    // ── AI Clinical Reasoning (Lumbar / SI only) ──────────────────────────
-    // Additive second opinion that runs ALONGSIDE runEngineV6 above -- it
-    // never blocks, gates, or overwrites the deterministic result set above.
-    // Only fires for Lumbar/SI since that is the only region the clinician-
-    // authored reasoning prompt (api/lumbarReasoning.js) currently covers.
-    setAiLumbarReasoning(null);
-    setAiLumbarError(null);
-    if (selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Lumbar / SI")) {
-      setAiLumbarLoading(true);
-      (async () => {
-        try {
-          const narrative = buildRealtimeSOAP(data).S;
-          const res = await fetch("/api/lumbarReasoning", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ subjectiveNarrative: narrative }),
-          });
-          const parsed = await res.json();
-          if (!res.ok) throw new Error(parsed.error || "AI reasoning request failed");
-          setAiLumbarReasoning(parsed);
-        } catch (e) {
-          setAiLumbarError(e.message || "AI reasoning failed");
-          console.error("AI lumbar reasoning error:", e);
-        } finally {
-          setAiLumbarLoading(false);
-        }
-      })();
-    } else {
-      setAiLumbarLoading(false);
-    }
   };
 
   // ── Inline field renderer (app UI style) ───────────────────────────
@@ -4634,18 +4480,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               Magee(7th) · Petty(5th) · Maitland(8th) · Sahrmann · Butler · McKenzie · Brukner & Khan(5th) · Cook & Purdam · Moseley & Butler · Hides · Richardson & Hodges · NICE NG59 · ASAS · Woolf(IASP 2017)
             </div>
           </div>
-
-          {/* ══════════════════════════════════════════════
-              AI CLINICAL REASONING — Lumbar / SI (additive)
-              Independent, LLM-generated second opinion that runs alongside
-              Engine v6 above -- never replaces or gates it. Only rendered
-              for Lumbar/SI, and only once there is something to show.
-          ══════════════════════════════════════════════ */}
-          {selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Lumbar / SI") &&
-            (!effectiveActiveRegion || (REGION_FAMILY_KEY[effectiveActiveRegion] || effectiveActiveRegion) === "Lumbar / SI") &&
-            (aiLumbarLoading || aiLumbarError || aiLumbarReasoning) && (
-            <AiLumbarReasoningPanel PC={PC} loading={aiLumbarLoading} error={aiLumbarError} reasoning={aiLumbarReasoning} />
-          )}
         </div>
         ); })()}
 
