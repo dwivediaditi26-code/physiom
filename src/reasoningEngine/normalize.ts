@@ -1143,7 +1143,13 @@ export function normalizeAnkleFromData(data: Data): { subjective: SubjectiveInpu
   const age = num(data.dem_age);
   const loc = str(data.af_loc).toLowerCase();
   const radiation = str(data.af_radiation).toLowerCase();
-  const moi = str(data.af_moi ?? data.cc_onset).toLowerCase();
+  // af_moi is a structured multicheck (dropdown-safe with has()). cc_onset is
+  // the shared, AI-parser-writable free-text field -- read independently (not
+  // via ?? fallback, which let a populated-but-non-matching af_moi silently
+  // shadow real onset text in cc_onset) and negation-guarded, matching the
+  // now-standard pattern from shoulder/cervical/lumbar/hip/knee.
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const moi = str(data.af_moi).toLowerCase();
   const pop = str(data.af_moi_pop).toLowerCase();
   const weightbear = str(data.af_moi_weightbear).toLowerCase();
   const prevSprains = str(data.af_prev_sprains).toLowerCase();
@@ -1153,19 +1159,37 @@ export function normalizeAnkleFromData(data: Data): { subjective: SubjectiveInpu
   const swelling = str(data.af_swelling).toLowerCase();
   const instability = str(data.af_instability).toLowerCase();
   const rf = str(data.af_rf).toLowerCase();
+  // "Ankle -- Muscle / Tendon Injury" section (af_calf_onset, af_shin_pain,
+  // af_lisfranc, af_peroneal) is a separate, dedicated module a clinician may
+  // fill in WITHOUT also re-ticking the terser af_rf red-flag checkbox for the
+  // same finding. All structured multichecks -- has() is safe (no negation
+  // risk). Added as additional OR'd sources below; af_rf remains a source too.
+  const calfOnset = str(data.af_calf_onset).toLowerCase();
+  const shinPain = str(data.af_shin_pain).toLowerCase();
+  const lisfranc = str(data.af_lisfranc).toLowerCase();
+  const peroneal = str(data.af_peroneal).toLowerCase();
 
   const subjective: SubjectiveInput = {
     region: "ankle",
     chiefComplaint: str(data.cc_main),
     ageOver50: age != null && age >= 50,
     ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
-    onsetInsidious: has(moi, "insidious onset"),
-    onsetTraumatic: has(moi, "inversion sprain", "eversion sprain", "high ankle sprain", "direct impact", "fall from height"),
+    onsetInsidious: has(moi, "insidious onset") || has(onsetText, "insidious", "gradual", "no clear cause"),
+    onsetTraumatic: has(moi, "inversion sprain", "eversion sprain", "high ankle sprain", "direct impact", "fall from height")
+      || hasUnnegated(onsetText, "trauma", "fall", "twisting", "injury", "whiplash", "mva"),
     nightPain: has(pattern, "night dominant") || has(pattern, "burning / night"),
     constantPain: has(pattern, "constant — never fully eases"),
     paresthesia: has(radiation, "tarsal tunnel") || has(pattern, "burning / night"),
-    traumaHistory: has(moi, "inversion sprain", "eversion sprain", "high ankle sprain", "direct impact", "fall from height"),
-    unableToWeightBear: has(rf, "cannot weight bear 4 steps") || has(weightbear, "required assistance", "stopped activity immediately"),
+    // Lisfranc's "high-energy mechanism" folded into the existing generic
+    // traumaHistory flag (not a new red-flag category) -- see commit notes.
+    traumaHistory: has(moi, "inversion sprain", "eversion sprain", "high ankle sprain", "direct impact", "fall from height")
+      || hasUnnegated(onsetText, "trauma", "fall", "twisting", "injury", "whiplash", "mva")
+      || has(lisfranc, "high-energy mechanism"),
+    // Lisfranc's "cannot weight bear on toes" folded into unableToWeightBear,
+    // which is the established cross-region "hard evidence of suspected
+    // fracture" signal feeding the generic fracture red flag -- not literal
+    // weight-bearing capacity.
+    unableToWeightBear: has(rf, "cannot weight bear 4 steps") || has(weightbear, "required assistance", "stopped activity immediately") || has(lisfranc, "cannot weight bear on toes"),
     hotSwollenJoint: has(rf, "acute hot swollen joint"),
     vascularCompromiseSigns: has(rf, "compartment syndrome", "vascular compromise"),
     ankleLateralPainPattern: has(loc, "lateral ankle"),
@@ -1188,10 +1212,24 @@ export function normalizeAnkleFromData(data: Data): { subjective: SubjectiveInpu
     ankleRadiatesTarsalTunnel: has(radiation, "tarsal tunnel"),
     ankleRecurrentSwellingPattern: has(swelling, "persistent low-grade", "recurrent swelling"),
     ankleOttawaBonyTenderness: has(rf, "ottawa rules — bony tenderness"),
-    ankleSuspectedAchillesRuptureFlag: has(rf, "suspected achilles rupture"),
+    // Both calfOnset options below are self-labelled "(Achilles rupture)" /
+    // "Achilles rupture screen" in their own option text -- unambiguous to fold
+    // into the same suspicion flag af_rf's terser checkbox already feeds.
+    ankleSuspectedAchillesRuptureFlag: has(rf, "suspected achilles rupture") || has(calfOnset, "shot in back of leg", "cannot rise on tiptoe"),
     ankleSuspectedLigamentRuptureFlag: has(rf, "suspected complete atfl"),
-    ankleStressFractureSuspected: has(rf, "stress fracture suspected"),
-    anklePeronealSubluxationSuspected: has(rf, "peroneal tendon subluxation"),
+    // "Diffuse tibial pain -- stress reaction" and the exertional-compartment
+    // option deliberately excluded: too common/benign (ordinary shin splints)
+    // to justify a "consider imaging referral" advisory on their own. Only the
+    // two options whose own label explicitly names stress fracture are folded
+    // in. Exertional compartment syndrome is also deliberately NOT folded into
+    // vascularCompromiseSigns -- it is a distinct, non-emergency, activity-
+    // related entity, not the acute/limb-threatening compartment syndrome that
+    // flag is for; conflating them would cause an inappropriate hard-stop.
+    ankleStressFractureSuspected: has(rf, "stress fracture suspected") || has(shinPain, "focal point tenderness over tibia", "pain at rest + activity"),
+    // af_peroneal's dedicated subluxation options folded in alongside af_rf's
+    // terser checkbox -- same finding, more likely to be the one a clinician
+    // actually fills in when working through this specific section.
+    anklePeronealSubluxationSuspected: has(rf, "peroneal tendon subluxation") || has(peroneal, "snapping behind lateral malleolus", "tendon flick out of groove"),
   };
 
   const rom = [

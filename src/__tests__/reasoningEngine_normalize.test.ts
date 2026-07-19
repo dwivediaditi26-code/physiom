@@ -1,4 +1,4 @@
-import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData, normalizeHipFromData, normalizeKneeFromData, runReasoningFromData } from "../reasoningEngine/index";
+import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData, normalizeHipFromData, normalizeKneeFromData, normalizeAnkleFromData, runReasoningFromData } from "../reasoningEngine/index";
 
 describe("normalizeFromData (flat app record -> typed engine inputs, real field ids)", () => {
   it("maps st_ special tests, rom_ ROM and mmt_mmt_ MMT from the flat data object", () => {
@@ -736,5 +736,69 @@ describe("normalizeKneeFromData — deep audit: septic bursitis gap, PCL mechani
     // Existing knl_/knr_moi-only detection still works unchanged.
     const moiOnly = normalizeKneeFromData({ cc_main: "knee pain", knl_moi: ["Twisting injury — non-contact (ACL pattern)"] });
     expect(moiOnly.subjective.onsetTraumatic).toBe(true);
+  });
+});
+
+describe("normalizeAnkleFromData — deep audit: onset shadowing, peroneal/stress-fracture/Achilles under-wiring, Lisfranc-to-fracture-flag folding", () => {
+  it("reads onset from BOTH af_moi and cc_onset independently (af_moi no longer shadows cc_onset)", () => {
+    const r1 = normalizeAnkleFromData({ af_moi: "Insidious onset — overuse / gradual" });
+    expect(r1.subjective.onsetInsidious).toBe(true);
+    expect(r1.subjective.onsetTraumatic).toBeFalsy();
+
+    // af_moi populated with something that matches NEITHER traumatic nor
+    // insidious keywords (e.g. just a footwear-change mechanism) used to
+    // completely block cc_onset via the ?? fallback.
+    const r2 = normalizeAnkleFromData({ af_moi: "Change in footwear recently", cc_onset: "twisting the ankle stepping off a curb, sudden onset" });
+    expect(r2.subjective.onsetTraumatic).toBe(true);
+    expect(r2.subjective.traumaHistory).toBe(true);
+  });
+
+  it("does not fire onsetTraumatic/traumaHistory from a negated cc_onset ('denies any trauma')", () => {
+    const r = normalizeAnkleFromData({ cc_onset: "Gradual ache, denies any trauma or fall." });
+    expect(r.subjective.onsetTraumatic).toBeFalsy();
+    expect(r.subjective.traumaHistory).toBeFalsy();
+  });
+
+  it("recognises peroneal tendon subluxation from the dedicated af_peroneal section, not just af_rf", () => {
+    const r = normalizeAnkleFromData({ af_peroneal: "Felt tendon flick out of groove" });
+    expect(r.subjective.anklePeronealSubluxationSuspected).toBe(true);
+  });
+
+  it("recognises stress fracture suspicion from af_shin_pain's explicit stress-fracture options, not just af_rf", () => {
+    const r = normalizeAnkleFromData({ af_shin_pain: "Focal point tenderness over tibia — stress fracture screen" });
+    expect(r.subjective.ankleStressFractureSuspected).toBe(true);
+  });
+
+  it("does NOT treat ordinary diffuse shin pain (MTSS-like) as stress-fracture suspected", () => {
+    const r = normalizeAnkleFromData({ af_shin_pain: "Diffuse tibial pain — stress reaction" });
+    expect(r.subjective.ankleStressFractureSuspected).toBeFalsy();
+  });
+
+  it("recognises Achilles rupture suspicion from af_calf_onset ('cannot rise on tiptoe'), not just af_rf", () => {
+    const r = normalizeAnkleFromData({ af_calf_onset: "Cannot rise on tiptoe — Achilles rupture screen" });
+    expect(r.subjective.ankleSuspectedAchillesRuptureFlag).toBe(true);
+  });
+
+  it("folds a Lisfranc-pattern presentation (cannot weight bear on toes + high-energy mechanism) into the existing generic fracture red flag end to end", () => {
+    const result = runReasoningFromData({
+      af_lisfranc: ["Cannot weight bear on toes", "High-energy mechanism — Lisfranc screen"],
+    }, "ankle");
+    expect(result.redFlag.triggered).toBe(true);
+    expect(result.redFlag.flags.some((f) => f.id === "fracture")).toBe(true);
+    expect(result.stopped).toBe(true);
+  });
+
+  it("does not fire the fracture red flag from Lisfranc mechanism alone without the weight-bear-on-toes finding", () => {
+    const result = runReasoningFromData({
+      af_lisfranc: "High-energy mechanism — Lisfranc screen",
+    }, "ankle");
+    expect(result.redFlag.flags.some((f) => f.id === "fracture")).toBe(false);
+  });
+
+  it("surfaces a stress-fracture referral recommendation end to end through real af_shin_pain field data", () => {
+    const result = runReasoningFromData({
+      af_shin_pain: "Pain at rest + activity — stress fracture concern",
+    }, "ankle");
+    expect(result.interpretation?.referralRecommendation).toMatch(/stress fracture/i);
   });
 });
