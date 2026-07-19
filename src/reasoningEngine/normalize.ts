@@ -664,7 +664,16 @@ export function normalizeHipFromData(data: Data): { subjective: SubjectiveInput;
   const loc = str(data.hp_loc).toLowerCase();
   const locPattern = str(data.hp_loc_pattern).toLowerCase();
   const cSign = str(data.hp_c_sign).toLowerCase();
-  const moi = str(data.hp_moi ?? data.cc_onset).toLowerCase();
+  // cc_onset is a UI dropdown (fixed options) but is ALSO written by the AI
+  // intake parser with LLM-generated text that is not enum-validated -- same
+  // free-text negation risk as cc_main, needs hasUnnegated() not has(). hp_moi
+  // is a real, UI-only, hip-specific mechanism checklist (never touched by the
+  // AI parser) -- read independently and OR'd in below, not used as a `??`
+  // fallback (that previously let a populated-but-unrelated hp_moi silently
+  // shadow cc_onset -- same class of bug fixed for cervical/lumbar's
+  // cc_onset/moi pairs).
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const moi = str(data.hp_moi).toLowerCase();
   const aggMov = str(data.hp_agg_mov).toLowerCase();
   const aggAct = str(data.hp_agg_act).toLowerCase();
   const pattern = str(data.hp_pattern).toLowerCase();
@@ -681,8 +690,9 @@ export function normalizeHipFromData(data: Data): { subjective: SubjectiveInput;
     ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
     nightPain: has(pattern, "night pain"),
     constantPain: has(pattern, "constant"),
-    onsetTraumatic: has(moi, "fall", "high-speed sport", "kicking mechanism", "lunging mechanism", "twisting"),
-    onsetInsidious: has(moi, "insidious onset", "age-related degenerative", "overuse"),
+    onsetTraumatic: has(moi, "fall", "high-speed sport", "kicking mechanism", "lunging mechanism", "twisting")
+      || hasUnnegated(onsetText, "trauma", "fall", "twisting", "injury", "whiplash", "mva"),
+    onsetInsidious: has(moi, "insidious onset", "age-related degenerative", "overuse") || has(onsetText, "insidious", "gradual", "no clear cause"),
     cSignPositive: has(cSign, "yes —"),
     hipGroinDominantPattern: has(locPattern, "groin-dominant") || has(loc, "groin — anterior", "anterior hip"),
     lateralHipPattern: has(locPattern, "lateral hip") || has(loc, "lateral hip"),
@@ -703,7 +713,7 @@ export function normalizeHipFromData(data: Data): { subjective: SubjectiveInput;
     hipMorningStiffness: has(pattern, "morning stiffness"),
     avnRiskFactors: has(rf, "avascular necrosis risk"),
     nonMskReferralSuspected: has(rf, "referred pain from abdomen", "gynaecological referral", "testicular"),
-    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(rf, "suspected fracture", "suspected neck of femur") || has(moi, "fall"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(rf, "suspected fracture", "suspected neck of femur") || has(moi, "fall") || hasUnnegated(onsetText, "trauma", "fall"),
     unableToWeightBear: has(rf, "cannot weight bear"),
     hotSwollenJoint: has(rf, "acute hot swollen hip joint"),
     unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),

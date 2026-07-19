@@ -1,4 +1,4 @@
-import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData, runReasoningFromData } from "../reasoningEngine/index";
+import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData, normalizeHipFromData, runReasoningFromData } from "../reasoningEngine/index";
 
 describe("normalizeFromData (flat app record -> typed engine inputs, real field ids)", () => {
   it("maps st_ special tests, rom_ ROM and mmt_mmt_ MMT from the flat data object", () => {
@@ -654,5 +654,38 @@ describe("normalizeLumbarFromData — deep audit: fracture red-flag gap, cauda e
 
     const positive = normalizeLumbarFromData({ cc_main: "Low back pain with tingling down the right leg" });
     expect(positive.subjective.paresthesia).toBe(true);
+  });
+});
+
+describe("normalizeHipFromData — deep audit: onset field-shadowing/negation safety", () => {
+  // Regression: `hp_moi ?? data.cc_onset` meant a populated-but-unrelated hp_moi
+  // could silently shadow a correctly-filled cc_onset holding real trauma
+  // information, and the combined read used has() instead of hasUnnegated() --
+  // same class of bug fixed for cervical/lumbar's cc_onset/moi pairs. cc_onset
+  // is AI-parser-writable free text (non-enum-validated), same risk as cc_main.
+  it("reads onset from BOTH hp_moi and cc_onset independently (hp_moi no longer shadows cc_onset)", () => {
+    // hp_moi populated with an unrelated (insidious) mechanism must not shadow a real cc_onset trauma mention.
+    const onsetOnly = normalizeHipFromData({ cc_main: "hip pain", cc_onset: "Twisting injury", hp_moi: ["Age-related degenerative — no specific event"] });
+    expect(onsetOnly.subjective.onsetTraumatic).toBe(true);
+
+    // hp_moi-only mechanism data (no relevant cc_onset) still correctly registers post-refactor.
+    const moiOnly = normalizeHipFromData({ cc_main: "hip pain", cc_onset: "Woke with it", hp_moi: ["Fall — directly onto hip"] });
+    expect(moiOnly.subjective.onsetTraumatic).toBe(true);
+
+    // AI-parser free text negation on the shared cc_onset field.
+    const noTrauma = normalizeHipFromData({ cc_main: "hip locked up this morning", cc_onset: "Sudden — no trauma" });
+    expect(noTrauma.subjective.onsetTraumatic).toBe(false);
+    const traumatic = normalizeHipFromData({ cc_main: "hip pain", cc_onset: "Sudden — traumatic" });
+    expect(traumatic.subjective.onsetTraumatic).toBe(true);
+  });
+
+  it("still fires the fracture red flag end to end through real hp_rf + onset fields (regression -- this path was already correctly wired)", () => {
+    const r = runReasoningFromData({
+      cc_main: "elderly patient fell, cannot weight bear on hip",
+      cc_onset: "Sudden — traumatic",
+      hp_rf: ["Suspected neck of femur fracture — cannot weight bear"],
+    }, "hip");
+    expect(r.stopped).toBe(true);
+    expect(r.redFlag?.flags?.some((f) => f.id === "fracture")).toBe(true);
   });
 });
