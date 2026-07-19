@@ -575,3 +575,84 @@ describe("normalizeLumbarFromData — regression: grf_* + imaging field fixes", 
     expect(objective.imaging?.summary).toMatch(/spondylolisthesis/i);
   });
 });
+
+describe("normalizeLumbarFromData — deep audit: fracture red-flag gap, cauda equina bilateral-sciatica gap, extension-aggravation parity, negation safety", () => {
+  // Regression: unableToWeightBear (reused across regions as "hard evidence of
+  // suspected fracture") was never set for lumbar -- the fracture red flag
+  // (traumaHistory && unableToWeightBear) was structurally blind even though a
+  // full, real "Lumbar -- Fracture risk indicators" checklist (lx_rf_fracture)
+  // already existed and was only partially read (traumaHistory alone, via one
+  // of its nine options).
+  it("wires the real lx_rf_fracture checklist into traumaHistory/unableToWeightBear and fires the fracture red flag end to end", () => {
+    const { subjective } = normalizeLumbarFromData({
+      cc_main: "low back pain",
+      lx_rf_fracture: ["Point bone tenderness on spinous process", "Minor trauma + age >70"],
+    });
+    expect(subjective.traumaHistory).toBe(true);
+    expect(subjective.unableToWeightBear).toBe(true);
+
+    const r = runReasoningFromData({
+      cc_main: "sudden severe low back pain after a minor fall, 74 years old",
+      lx_rf_fracture: ["Point bone tenderness on spinous process", "Minor trauma + age >70"],
+    }, "lumbar");
+    expect(r.stopped).toBe(true);
+    expect(r.redFlag?.flags?.some((f) => f.id === "fracture")).toBe(true);
+  });
+
+  it("does not fire the fracture red flag from lx_rf_fracture's 'No fracture indicators' placeholder", () => {
+    const { subjective } = normalizeLumbarFromData({ cc_main: "low back pain", lx_rf_fracture: ["No fracture indicators"] });
+    expect(subjective.unableToWeightBear).toBe(false);
+  });
+
+  // Regression: lx_rf_cauda's "Bilateral sciatica — new onset" option -- a real,
+  // recognised cauda equina warning sign in its own right (new-onset bilateral
+  // sciatica, distinct from the usual unilateral presentation) -- was defined
+  // in sharedClinicalData.js but never read into any signal at all.
+  it("detects the cauda equina red flag from lx_rf_cauda's 'Bilateral sciatica — new onset' option", () => {
+    const { subjective } = normalizeLumbarFromData({ cc_main: "back and leg pain", lx_rf_cauda: ["Bilateral sciatica — new onset"] });
+    expect(subjective.bilateralLegWeakness).toBe(true);
+
+    const r = runReasoningFromData({ cc_main: "sudden bilateral leg pain", lx_rf_cauda: ["Bilateral sciatica — new onset"] }, "lumbar");
+    expect(r.stopped).toBe(true);
+    expect(r.redFlag?.flags?.some((f) => f.id === "cauda_equina")).toBe(true);
+  });
+
+  // Regression: lx_moi_position's "Flexed forward" option was wired into
+  // flexionAggravation, but the parallel "Extended backward" option in that
+  // same field was never wired into extensionAggravation -- an asymmetric gap
+  // (extension_aggravation feeds both facet syndrome and spinal stenosis).
+  it("reads extension aggravation from lx_moi_position's 'Extended backward', matching flexion's existing 'Flexed forward' wiring", () => {
+    const { subjective } = normalizeLumbarFromData({ cc_main: "back pain", lx_moi_position: ["Extended backward"] });
+    expect(subjective.extensionAggravation).toBe(true);
+  });
+
+  // Regression: `lx_moi ?? cc_onset` meant a populated-but-unrelated lx_moi
+  // silently shadowed a correctly-filled cc_onset, and the combined string was
+  // read with has() instead of hasUnnegated() -- misreading a negated cc_onset
+  // (AI-parser free text) as a positive. Split into independent reads, OR'd.
+  it("reads onset from BOTH lx_moi and cc_onset independently (lx_moi no longer shadows cc_onset)", () => {
+    // lx_moi populated with an unrelated (insidious) mechanism must not shadow a real cc_onset trauma mention.
+    const onsetOnly = normalizeLumbarFromData({ cc_main: "back pain", cc_onset: "MVA / whiplash", lx_moi: ["No clear mechanism — insidious onset"] });
+    expect(onsetOnly.subjective.onsetTraumatic).toBe(true);
+
+    // lx_moi-only mechanism data (no relevant cc_onset) still correctly registers post-refactor.
+    const moiOnly = normalizeLumbarFromData({ cc_main: "back pain", cc_onset: "Woke with it", lx_moi: ["Fall from height"] });
+    expect(moiOnly.subjective.onsetTraumatic).toBe(true);
+
+    // AI-parser free text negation on the shared cc_onset field (same risk class as cervical's identical fix).
+    const noTrauma = normalizeLumbarFromData({ cc_main: "back pain", cc_onset: "Sudden — no trauma" });
+    expect(noTrauma.subjective.onsetTraumatic).toBe(false);
+    const traumatic = normalizeLumbarFromData({ cc_main: "back pain", cc_onset: "Sudden — traumatic" });
+    expect(traumatic.subjective.onsetTraumatic).toBe(true);
+  });
+
+  // Negation safety: cc_main is genuine free text (also AI-parser-writable).
+  // Plain has() previously read "denies numbness or tingling" as a confirmation.
+  it("does not fabricate paraesthesia from negated free text in cc_main, but still detects genuine mentions", () => {
+    const negated = normalizeLumbarFromData({ cc_main: "Low back pain, denies numbness or tingling in the legs" });
+    expect(negated.subjective.paresthesia).toBe(false);
+
+    const positive = normalizeLumbarFromData({ cc_main: "Low back pain with tingling down the right leg" });
+    expect(positive.subjective.paresthesia).toBe(true);
+  });
+});

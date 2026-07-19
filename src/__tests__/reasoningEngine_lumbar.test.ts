@@ -141,4 +141,39 @@ describe("Lumbar region — interpretation + normalize", () => {
     expect(r.stopped).toBe(true);
     expect(r.redFlag.triggered).toBe(true);
   });
+
+  // Real-case validation (deep audit): older patient, bilateral leg heaviness
+  // provoked by walking/standing and relieved by leaning forward -- the
+  // textbook neurogenic claudication pattern of central/lateral recess
+  // stenosis -- built from real field ids and run through the actual
+  // production entrypoint.
+  it("ranks spinal stenosis top for a real flat record with a neurogenic claudication pattern", () => {
+    const data = {
+      dem_age: "68",
+      cc_main: "Bilateral leg heaviness and back pain when walking, better sitting down",
+      lx_claudication: "Relieved by leaning forward / bending (neurogenic claudication — stenosis)",
+      lx_below_knee: "Leg pain — bilateral (cauda equina / stenosis flag)",
+      lx_agg_mov: ["Backward bending (extension)"],
+      rom_lext_arom: "12", rom_lext_prom: "15",
+    };
+    const r = runReasoningFromData(data, "lumbar");
+    expect(r.stopped).toBe(false);
+    expect(r.differentials[0].name).toMatch(/stenosis/i);
+  });
+
+  // Real-case validation (deep audit): confirms the pre-existing (already
+  // correct) malignancy wiring -- age 50+, unexplained weight loss
+  // (grf_systemic), and unrelieved constant night pain (lx_night) -- still
+  // fires end to end through real field ids after this audit's other changes.
+  it("fires the malignancy red flag from real dem_age/grf_systemic/lx_night fields", () => {
+    const data = {
+      dem_age: "67",
+      cc_main: "Progressive low back pain over 2 months, unintentional weight loss",
+      lx_night: ["Constant night pain — cannot sleep"],
+      grf_systemic: ["Unexplained weight loss >5kg"],
+    };
+    const r = runReasoningFromData(data, "lumbar");
+    expect(r.stopped).toBe(true);
+    expect(r.redFlag?.flags?.some((f) => f.id === "malignancy")).toBe(true);
+  });
 });

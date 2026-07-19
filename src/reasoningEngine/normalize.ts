@@ -513,7 +513,17 @@ const LUMBAR_REFLEXES = ["n_ref_patella", "n_ref_achilles"];
 export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
   const cc = str(data.cc_main).toLowerCase();
   const behaviour = str(data.lx_pattern).toLowerCase(); // cc_pattern does not exist -- lx_pattern is the real field
-  const onset = str(data.lx_moi ?? data.cc_onset).toLowerCase();
+  // cc_onset is a UI dropdown (fixed options) but is ALSO written by the AI
+  // intake parser (aiIntakeParser.js: updates.cc_onset = result.onset) with
+  // LLM-generated text that is not enum-validated -- same free-text negation
+  // risk as cc_main, needs hasUnnegated() not has(). lx_moi is a real,
+  // UI-only, lumbar-specific mechanism checklist (never touched by the AI
+  // parser) -- read independently and OR'd in below, not used as a `??`
+  // fallback (that previously let a populated-but-unrelated lx_moi silently
+  // shadow cc_onset -- same class of bug fixed for cervical's cc_onset/cx_moi
+  // pair).
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const moi = str(data.lx_moi).toLowerCase();
   const age = num(data.dem_age);
   const belowKnee = str(data.lx_below_knee).toLowerCase();
   const neuroPresent = str(data.lx_neuro_present).toLowerCase();
@@ -530,7 +540,18 @@ export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInp
   const spondyloScreen = str(data.lx_spondylo_screen).toLowerCase();
   const rfCauda = str(data.lx_rf_cauda).toLowerCase();
   const rfSerious = str(data.lx_rf_serious).toLowerCase();
-  const rfFracture = str(data.lx_rf_fracture).toLowerCase();
+  // lx_rf_fracture is a full, real, purpose-built "Lumbar -- Fracture risk
+  // indicators" checklist that was defined in sharedClinicalData.js and only
+  // partially read (just the "major high-energy trauma" option, into
+  // traumaHistory) -- it never fed unableToWeightBear, so the fracture red
+  // flag (traumaHistory && unableToWeightBear) was structurally blind for
+  // lumbar the same way it was for cervical before that audit
+  // (cx_fracture_screen). unableToWeightBear is reused across regions as
+  // "hard evidence of suspected fracture" rather than literal weight-bearing
+  // (same convention as cervical/shoulder) -- any real selection in this
+  // dedicated screen (osteoporosis + minor trauma, point bone tenderness,
+  // prior vertebral fracture, etc.) is exactly that.
+  const fractureScreenPositive = selected(data.lx_rf_fracture, "no fracture indicators");
   const night = str(data.lx_night).toLowerCase();
 
   const anyMyotomeWeak = LUMBAR_MYOTOMES.some((m) => myotomeAbnormal(data[`myo_${m}_left`]) || myotomeAbnormal(data[`myo_${m}_right`]));
@@ -547,12 +568,12 @@ export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInp
     constantPain: has(behaviour, "constant"),
     constantUnremittingPain: has(rfSerious, "constant pain"),
     easesWithRest: has(str(data.lx_rel_post), "lying"),
-    paresthesia: has(cc, "tingl", "numb", "pins") || has(neuroQuality, "tingling", "pins and needles", "numbness") || anySensoryDeficit,
+    paresthesia: hasUnnegated(cc, "tingl", "numb", "pins") || has(neuroQuality, "tingling", "pins and needles", "numbness") || anySensoryDeficit,
     dermatomalPattern: dermatomalPositive || anySensoryDeficit,
     legPainBelowKnee: has(belowKnee, "below knee", "extends to foot"),
     bilateralLegSymptoms: has(belowKnee, "bilateral") || has(neuroPresent, "bilateral") || has(dermatomal, "bilateral"),
     flexionAggravation: has(aggMov, "forward bending") || has(moiPosition, "flexed"),
-    extensionAggravation: has(aggMov, "backward bending"),
+    extensionAggravation: has(aggMov, "backward bending") || has(moiPosition, "extended"),
     sittingAggravation: has(aggPost, "sitting"),
     neurogenicClaudication: has(claudication, "neurogenic", "leaning forward") || has(pattern24hr, "neurogenic claudication"),
     centralisesWithExtension: has(directional, "extension preference"),
@@ -560,9 +581,11 @@ export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInp
     sacroiliacPainPattern: has(loc, "si joint", "bilateral si joints"),
     youngAthleteExtensionPain: has(spondyloScreen, "young athlete") || has(spondyloScreen, "extension pain"),
     footDropReported: has(neuroSigns, "foot drop"),
-    onsetTraumatic: has(onset, "fall", "motor vehicle accident", "trip"),
-    onsetInsidious: has(onset, "no clear mechanism", "insidious", "sustained poor posture"),
-    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(rfFracture, "major high-energy trauma") || has(onset, "fall", "motor vehicle accident"),
+    onsetTraumatic: hasUnnegated(onsetText, "trauma", "fall", "trip", "whiplash", "injury")
+      || has(moi, "fall onto back", "fall from height", "motor vehicle accident", "stumble"),
+    onsetInsidious: has(onsetText, "insidious", "gradual", "no clear cause") || has(moi, "no clear mechanism", "insidious onset", "sustained poor posture"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || hasUnnegated(onsetText, "fall", "trauma", "whiplash", "injury") || has(moi, "fall onto back", "fall from height", "motor vehicle accident", "stumble") || fractureScreenPositive,
+    unableToWeightBear: fractureScreenPositive,
     unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss") || has(rfSerious, "unexplained weight loss"),
     malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rfSerious, "history of cancer"),
     systemicIllness: selected(data.grf_systemic, "systemically well") || has(rfSerious, "fever", "systemically unwell"),
@@ -570,7 +593,7 @@ export function normalizeLumbarFromData(data: Data): { subjective: SubjectiveInp
     // cauda equina red-flag sub-signals (generic fields consumed by redFlags.ts)
     saddleAnesthesia: has(rfCauda, "saddle") || has(dermatomal, "saddle") || has(neuroSigns, "saddle"),
     bladderBowelChange: has(rfCauda, "bladder", "bowel") || has(neuroSigns, "bladder", "bowel"),
-    bilateralLegWeakness: has(rfCauda, "bilateral leg weakness") || has(rfCauda, "rapidly progressive bilateral"),
+    bilateralLegWeakness: has(rfCauda, "bilateral leg weakness") || has(rfCauda, "rapidly progressive bilateral") || has(rfCauda, "bilateral sciatica"),
   };
 
   const rom = [
