@@ -809,6 +809,15 @@ export function normalizeKneeFromData(data: Data): { subjective: SubjectiveInput
   const pattern = combo(data.knl_pattern, data.knr_pattern);
   const pcl = combo(data.knl_pcl, data.knr_pcl);
   const rf = combo(data.knl_rf, data.knr_rf);
+  const bursa = combo(data.knl_bursa, data.knr_bursa);
+  // Unlike its sibling regions (shoulder/cervical/lumbar/hip, all since fixed
+  // to read cc_onset as an independent, negation-safe additional source), knee
+  // never read cc_onset at all -- only knl_moi/knr_moi. cc_onset is a shared,
+  // AI-parser-writable free-text field (non-enum-validated) that can hold real
+  // onset information before a clinician has filled in the region-specific
+  // mechanism checklist. Added as an OR'd, hasUnnegated()-guarded source,
+  // matching the now-standard pattern -- not a replacement for knl_/knr_moi.
+  const onsetText = str(data.cc_onset).toLowerCase();
 
   const subjective: SubjectiveInput = {
     region: "knee",
@@ -816,8 +825,9 @@ export function normalizeKneeFromData(data: Data): { subjective: SubjectiveInput
     ageOver50: age != null && age >= 50,
     ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
     nightPain: has(rf, "night pain progressive", "constant night pain"),
-    onsetTraumatic: has(moi, "twisting", "direct blow", "fall onto knee", "jumping", "pivoting", "hyperextension"),
-    onsetInsidious: has(moi, "no clear mechanism", "insidious", "overuse"),
+    onsetTraumatic: has(moi, "twisting", "direct blow", "fall onto knee", "jumping", "pivoting", "hyperextension")
+      || hasUnnegated(onsetText, "trauma", "fall", "twisting", "injury", "whiplash", "mva"),
+    onsetInsidious: has(moi, "no clear mechanism", "insidious", "overuse") || has(onsetText, "insidious", "gradual", "no clear cause"),
     kneeNonContactTwistMechanism: has(moi, "non-contact"),
     kneeAcutePopFelt: has(pop, "yes — clear pop"),
     kneeImmediateHaemarthrosis: has(swelling, "haemarthrosis"),
@@ -830,7 +840,7 @@ export function normalizeKneeFromData(data: Data): { subjective: SubjectiveInput
     // the left-side wording (which IS specific) drives these two flags.
     kneeValgusMechanism: has(str(data.knl_moi).toLowerCase(), "direct blow medial"),
     kneeVarusMechanism: has(str(data.knl_moi).toLowerCase(), "direct blow lateral"),
-    kneePclMechanism: has(pcl, "dashboard mechanism", "direct blow to anterior tibia"),
+    kneePclMechanism: has(pcl, "dashboard mechanism", "direct blow to anterior tibia", "fall onto flexed knee"),
     kneeJointLineMechanical: has(clicking, "click with pain", "painful click", "catching", "grinding", "crepitus", "clunk"),
     kneeDelayedOrRecurrentSwelling: has(swellingPattern, "persistent", "recurrent"),
     kneeAnteriorPainPattern: has(loc, "anterior knee", "patella —"),
@@ -839,9 +849,9 @@ export function normalizeKneeFromData(data: Data): { subjective: SubjectiveInput
     kneeLateralJointPain: has(loc, "lateral joint line"),
     kneeLateralItbPattern: has(loc, "itb attachment"),
     kneeDiffuseWholeKneePain: has(loc, "whole knee"),
-    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "fall onto knee", "direct blow", "jumping") || has(rf, "unable to bear weight", "ottawa"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "fall onto knee", "direct blow", "jumping") || has(rf, "unable to bear weight", "ottawa") || hasUnnegated(onsetText, "trauma", "fall"),
     unableToWeightBear: has(rf, "unable to bear weight", "ottawa rules positive"),
-    hotSwollenJoint: has(rf, "septic arthritis"),
+    hotSwollenJoint: has(rf, "septic arthritis") || has(bursa, "hot red swollen"),
     irreducibleLocking: has(rf, "irreducible"),
     vascularCompromiseSigns: has(rf, "vascular compromise", "compartment syndrome"),
     unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
