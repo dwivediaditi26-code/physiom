@@ -2503,152 +2503,109 @@ const FIELD_HELP = {
 };
 
 // ══════════════════════════════════════════════════════════════════
-// COMPACT LINE-WISE ASSESSMENT UI — reusable row components
-// (EMR-style: icon + label on the left, blank input on the right,
-// suggestions live in a bottom sheet instead of on-screen at all times)
+// SETTINGS-STYLE ASSESSMENT UI — reusable row components
+// (iOS Settings pattern: label left, value right-aligned, hairline
+// dividers only — no per-field borders/boxes, no per-row icons.
+// Suggestions live in a bottom sheet instead of on-screen at all times)
 // ══════════════════════════════════════════════════════════════════
 
-// Best-effort icon per field, based on id/label keywords. Falls back
-// to a neutral dot so every row still has a left-hand anchor even for
-// fields this map doesn't recognise (custom/region-specific fields).
+// Kept only for backward compatibility with any external caller —
+// per-row icons were removed from the redesign (icons now live only
+// in section headers, per feedback that per-row emoji stopped adding
+// value after the first row).
 function fieldIcon_S(f) {
-  const id = (f.id || "").toLowerCase();
-  const label = (f.label || "").toLowerCase();
-  const has = (s) => id.includes(s) || label.includes(s);
-  if (has("chief") || has("main complaint")) return "🎯";
-  if (has("goal")) return "🎯";
-  if (has("onset")) return "📅";
-  if (has("duration")) return "⏳";
-  if (has("mechanism")) return "🚗";
-  if (has("radiat")) return "✳️";
-  if (has("location") || has("site")) return "📍";
-  if (has("worst") && has("pain")) return "⚡";
-  if (has("behav")) return "↗️";
-  if (has("aggravat")) return "🔺";
-  if (has("reliev")) return "🍃";
-  if (has("associated")) return "🧍";
-  if (has("red flag") || has("rf_") || has("_rf")) return "🚩";
-  if (has("previous") || has("episode")) return "🕓";
-  if (has("occupation") || has("work")) return "💼";
-  if (has("sleep") || has("night")) return "🌙";
-  if (has("sport")) return "🏃";
-  if (has("note") || has("detail")) return "📝";
-  if (has("pain")) return "⚡";
-  if (f.type === "range") return "⚡";
-  if (f.type === "multicheck") return "☰";
-  if (f.type === "textarea") return "📝";
-  return "•";
+  return "";
 }
 
-// One compact clinical-chart row: icon + label on the left (fixed
-// width), whatever the field renders on the right (flexes). No card,
-// no vertical stacking — this is the "line-wise" unit the whole
-// redesign is built from.
-// Clinical-chart row: label on the left (~38% width), a VISIBLE
-// bordered answer box on the right (~62%) — the box itself is the
-// tap target for select/multicheck fields, so there's no separate
-// "opens another page" affordance. Standard rows hold a consistent
-// height; narrative fields (multiline) are allowed to grow taller.
-// Clinical-chart row. Label column is deliberately narrow (30%) —
-// the therapist reads answers, not questions — so the value column
-// (70%) can carry a genuinely wide input. Labels clamp to 2 lines max
-// so nothing pushes the row taller than the fixed target height.
-function AssessmentRow({ icon, label, helpText, PC, children, last }) {
+// iOS-Settings-style row: label on the left (plain weight, no icon),
+// value right-aligned in the remaining space. No border, no box —
+// the only visual separator is a hairline divider between rows. The
+// value area is a flex container that right-aligns its own content,
+// so short answers hug the chevron and wide content (like a slider)
+// can still stretch to fill the space.
+function AssessmentRow({ label, helpText, PC, children, last }) {
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 16,
-      padding: "12px 16px", minHeight: 68,
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "13px 16px", minHeight: 50,
       borderBottom: last ? "none" : `1px solid ${PC.border}`,
     }}>
-      <div style={{ width: "30%", flexShrink: 0, display: "flex", alignItems: "flex-start", gap: 10 }}>
-        {icon && icon !== "•" && (
-          <span style={{ fontSize: "1.15rem", lineHeight: 1.3, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+      <span style={{
+        fontSize: "1rem", fontWeight: 400, color: PC.text, lineHeight: 1.3,
+        flexShrink: 0, maxWidth: "48%",
+      }}>
+        {label}
+        {helpText && (
+          <span title={helpText} style={{
+            display: "inline-flex", marginLeft: 4, color: PC.accent,
+            fontSize: "0.66rem", cursor: "help", verticalAlign: "top",
+          }}>ⓘ</span>
         )}
-        <span style={{
-          fontSize: "1rem", fontWeight: 600, color: PC.text, lineHeight: 1.25,
-          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-        }}>
-          {label}
-          {helpText && (
-            <span title={helpText} style={{
-              display: "inline-flex", marginLeft: 4, color: PC.accent,
-              fontSize: "0.68rem", cursor: "help", verticalAlign: "top",
-            }}>ⓘ</span>
-          )}
-        </span>
+      </span>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+        {children}
       </div>
-      <div style={{ width: "70%", flexShrink: 0, minWidth: 0 }}>{children}</div>
     </div>
   );
 }
 
-const FIELD_BOX = (PC) => ({
-  width: "100%", boxSizing: "border-box",
-  border: `1.5px solid ${PC.inputBorder || PC.border}`, borderRadius: 8,
-  background: "#fff",
-});
-
-// Free-typed field: a real box, 44px tall at rest. No instructional
-// placeholder copy — the field is simply left visually blank, which
-// itself signals "empty" without adding words to read.
-// Multiline (narrative) fields stay collapsed to one line until the
-// therapist taps in; only then do they expand into a writing area,
-// so the resting screen never shows a big empty textarea.
+// Free-typed field: no border, no box — just right-aligned text that
+// sits inline with the row. Narrative fields (chief complaint, notes,
+// goals...) stay collapsed to one truncated line until tapped, then
+// expand into a plain borderless writing area.
 function SmartInput({ value, onChange, PC, multiline, type = "text", expandRows = 3 }) {
   const [focused, setFocused] = useState(false);
-  const oneLineBox = {
-    ...FIELD_BOX(PC), height: 44, padding: "0 12px",
-    fontSize: "1rem", fontWeight: 500, color: PC.text, fontFamily: "inherit",
-    outline: "none", display: "flex", alignItems: "center",
-  };
 
   if (multiline) {
     if (!focused) {
       return (
         <div tabIndex={0} onFocus={() => setFocused(true)} onClick={() => setFocused(true)}
           style={{
-            ...oneLineBox, cursor: "text",
+            fontSize: "1rem", color: value ? PC.text : "transparent", cursor: "text",
             overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
+            maxWidth: 240, textAlign: "right",
           }}>
-          {value || ""}
+          {value || "—"}
         </div>
       );
     }
     return (
-      <textarea autoFocus value={value} onChange={onChange}
-        onBlur={() => setFocused(false)} rows={expandRows}
+      <textarea autoFocus value={value} onChange={onChange} onBlur={() => setFocused(false)}
+        rows={expandRows}
         style={{
-          ...FIELD_BOX(PC), padding: "10px 12px", fontSize: "1rem", fontWeight: 500,
-          color: PC.text, fontFamily: "inherit", outline: "none", lineHeight: 1.4,
-          resize: "none", minHeight: expandRows * 22 + 20,
+          width: "100%", border: "none", outline: "none", background: "transparent",
+          fontSize: "1rem", color: PC.text, fontFamily: "inherit", textAlign: "left",
+          resize: "none", padding: "6px 0", lineHeight: 1.4,
         }} />
     );
   }
-  return <input type={type} value={value} onChange={onChange} style={oneLineBox} />;
+  return (
+    <input type={type} value={value} onChange={onChange}
+      style={{
+        border: "none", outline: "none", background: "transparent", width: "100%",
+        fontSize: "1rem", color: PC.text, fontFamily: "inherit", textAlign: "right", padding: 0,
+      }} />
+  );
 }
 
-// Compact pain slider — question, slider and value badge share one
-// 44px-tall row; nothing oversized.
+// Compact pain slider — fills the value area of its row, numeric
+// readout at the end. No card, no border.
 function PainSliderCompact({ value, onChange, PC }) {
   const num = parseInt(value || 0, 10) || 0;
   const col = num >= 7 ? "#dc2626" : num >= 4 ? "#d97706" : "#059669";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, height: 44 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
       <input type="range" min={0} max={10} step={1} value={num}
         onChange={e => onChange(e.target.value)}
         style={{ flex: 1, accentColor: col, cursor: "pointer" }} />
-      <div style={{
-        minWidth: 46, textAlign: "center", padding: "3px 8px", borderRadius: 8,
-        border: `1.5px solid ${PC.border}`, background: "#fff",
-        fontWeight: 700, fontSize: "0.95rem", color: col, flexShrink: 0,
-      }}>
-        {num}<span style={{ fontSize: "0.62rem", fontWeight: 600, color: PC.muted }}>/10</span>
-      </div>
+      <span style={{ fontSize: "0.95rem", fontWeight: 700, color: col, minWidth: 22, textAlign: "right", flexShrink: 0 }}>
+        {num}
+      </span>
     </div>
   );
 }
 
-// Bottom sheet: suggestions stay hidden until the field box is
+// Bottom sheet: suggestions stay hidden until the row itself is
 // tapped, then this opens with (optionally searchable) options.
 // Single-select calls onSelect and closes itself; multi-select calls
 // onToggle per tap and waits for "Done".
@@ -2670,7 +2627,7 @@ function SuggestionBottomSheet({ title, options, selected, multi, onSelect, onTo
           padding: "14px 18px 10px", borderBottom: `1px solid ${PC.border}`,
           display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
         }}>
-          <div style={{ fontSize: "1rem", fontWeight: 800, color: PC.text }}>{title}</div>
+          <div style={{ fontSize: "1rem", fontWeight: 700, color: PC.text }}>{title}</div>
           <button type="button" onClick={onClose} style={{
             background: "transparent", border: "none", fontSize: "1.1rem", color: PC.muted, cursor: "pointer",
           }}>✕</button>
@@ -2718,25 +2675,24 @@ function SuggestionBottomSheet({ title, options, selected, multi, onSelect, onTo
   );
 }
 
-// Single-select row: 44px box, wide value column. Empty state shows
-// only a subtle "Select" hint — once answered, the chosen value sits
-// directly in the box.
+// Single-select row: no box. Value sits right-aligned, muted "Select"
+// when empty, chevron marks it as tappable — exactly the iOS Settings
+// disclosure row pattern.
 function SelectRow({ f, val, PC, setField }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} style={{
-        ...FIELD_BOX(PC), height: 44, padding: "0 12px",
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-        cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+        display: "flex", alignItems: "center", gap: 6, background: "transparent",
+        border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0, maxWidth: "100%",
       }}>
         <span style={{
-          fontSize: "1rem", color: val ? PC.text : "#C4C4C9", fontWeight: val ? 500 : 400,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          fontSize: "1rem", color: val ? PC.text : "#B0B0B6", fontWeight: 400,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220,
         }}>
           {val || "Select"}
         </span>
-        <span style={{ fontSize: "0.9rem", color: PC.muted, flexShrink: 0 }}>›</span>
+        <span style={{ fontSize: "0.95rem", color: "#C4C4C9", flexShrink: 0 }}>›</span>
       </button>
       {open && (
         <SuggestionBottomSheet title={f.label} options={f.options || []} selected={val}
@@ -2747,37 +2703,27 @@ function SelectRow({ f, val, PC, setField }) {
   );
 }
 
-// Multi-select row: same box. Chosen values render as removable chips
-// inline (✕ removes without reopening the sheet); the box grows past
-// 44px only if the chips genuinely need a second line.
+// Multi-select row: same flat pattern. Chosen values join into one
+// comma-separated line (truncated with ellipsis if long) instead of
+// wrapping chips — matches how iOS Settings summarises multi-value
+// rows (e.g. "Banners, Sounds").
 function MultiSelectField({ f, val, PC, toggleMulti, SEP_S }) {
   const [open, setOpen] = useState(false);
   const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
+  const summary = selected.join(", ");
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} style={{
-        ...FIELD_BOX(PC), minHeight: 44, padding: selected.length ? "6px 8px" : "0 12px",
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-        cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+        display: "flex", alignItems: "center", gap: 6, background: "transparent",
+        border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0, maxWidth: "100%",
       }}>
-        {selected.length === 0 ? (
-          <span style={{ fontSize: "1rem", color: "#C4C4C9" }}>Select</span>
-        ) : (
-          <span style={{ display: "flex", flexWrap: "wrap", gap: 5, flex: 1 }}>
-            {selected.map(s => (
-              <span key={s} style={{
-                fontSize: "0.8rem", fontWeight: 700, color: PC.accent, background: PC.accent + "12",
-                padding: "3px 8px 3px 9px", borderRadius: 99, whiteSpace: "nowrap",
-                display: "inline-flex", alignItems: "center", gap: 5,
-              }}>
-                {s}
-                <span onClick={(e) => { e.stopPropagation(); toggleMulti(f.id, s); }}
-                  style={{ cursor: "pointer", fontWeight: 900, fontSize: "0.7rem", lineHeight: 1 }}>✕</span>
-              </span>
-            ))}
-          </span>
-        )}
-        <span style={{ fontSize: "0.9rem", color: PC.muted, flexShrink: 0 }}>›</span>
+        <span style={{
+          fontSize: "1rem", color: selected.length ? PC.text : "#B0B0B6", fontWeight: 400,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220,
+        }}>
+          {selected.length ? summary : "Select"}
+        </span>
+        <span style={{ fontSize: "0.95rem", color: "#C4C4C9", flexShrink: 0 }}>›</span>
       </button>
       {open && (
         <SuggestionBottomSheet title={f.label} options={f.options || []} selected={selected} multi
@@ -2789,8 +2735,8 @@ function MultiSelectField({ f, val, PC, toggleMulti, SEP_S }) {
 }
 
 // Narrative fields (chief complaint, notes, goals, history detail...)
-// collapse to one line at rest and expand to a real writing box only
-// once tapped — see SmartInput's `multiline` branch above.
+// collapse to one truncated line at rest and expand to a plain
+// borderless writing area only once tapped.
 const NARRATIVE_RE_S = /(complaint|notes|goal|detail|finding|narrative)/i;
 function isNarrativeField_S(f) {
   return f.type === "textarea" || NARRATIVE_RE_S.test(f.id || "") || NARRATIVE_RE_S.test(f.label || "");
@@ -4089,28 +4035,29 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
                 {/* Every section in the active group, stacked top to bottom --
                     one continuous scroll instead of one section at a time. */}
-                <div ref={sectionTopRef} style={{ display:"flex", flexDirection:"column", gap:22 }}>
+                <div ref={sectionTopRef} style={{ display:"flex", flexDirection:"column", gap:20 }}>
                   {groupSections.map((s, si) => {
                     const key = activeGroup.keys[si];
                     const sColor = s.color || PC.accent;
                     return (
                       <div key={key} id={`subj-sec-${key}`}>
 
-                        {/* Section header — 18px/700, one line, icon + label */}
-                        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"2px 4px 8px" }}>
-                          <span style={{ fontSize:"1rem" }}>{s.icon}</span>
-                          <span style={{ fontSize:"1.125rem", fontWeight:700, color: sColor }}>{s.label}</span>
+                        {/* Small, subtle section header — icon lives here only */}
+                        <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 4px 6px" }}>
+                          <span style={{ fontSize:"0.78rem" }}>{s.icon}</span>
+                          <span style={{ fontSize:"0.72rem", fontWeight:700, letterSpacing:"0.06em",
+                            textTransform:"uppercase", color: PC.muted }}>{s.label}</span>
                         </div>
                         {s.description && (
-                          <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 7px", lineHeight:1.5 }}>
+                          <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 6px", lineHeight:1.5 }}>
                             {s.description}
                           </div>
                         )}
 
-                        {/* Dense, line-wise field rows — one clinical chart */}
-                        <div style={{ background: PC.surface, borderRadius:14, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
+                        {/* Flat list — no per-field boxes, hairline dividers only */}
+                        <div style={{ background: PC.surface, borderRadius:12, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
                           {s.fields.map((field, fi) => (
-                            <AssessmentRow key={field.id} icon={fieldIcon_S(field)} label={field.label}
+                            <AssessmentRow key={field.id} label={field.label}
                               helpText={FIELD_HELP[field.id]} PC={PC} last={fi === s.fields.length - 1}>
                               {renderField(field)}
                             </AssessmentRow>
