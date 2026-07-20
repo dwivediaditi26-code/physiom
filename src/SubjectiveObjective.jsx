@@ -2502,6 +2502,235 @@ const FIELD_HELP = {
   "lx_night": "Night pain: can patient get comfortable? Positional night pain = mechanical. Constant unable to get comfortable = inflammatory or serious pathology. Bladder waking since onset — compare to pre-pain baseline.",
 };
 
+// ══════════════════════════════════════════════════════════════════
+// COMPACT LINE-WISE ASSESSMENT UI — reusable row components
+// (EMR-style: icon + label on the left, blank input on the right,
+// suggestions live in a bottom sheet instead of on-screen at all times)
+// ══════════════════════════════════════════════════════════════════
+
+// Best-effort icon per field, based on id/label keywords. Falls back
+// to a neutral dot so every row still has a left-hand anchor even for
+// fields this map doesn't recognise (custom/region-specific fields).
+function fieldIcon_S(f) {
+  const id = (f.id || "").toLowerCase();
+  const label = (f.label || "").toLowerCase();
+  const has = (s) => id.includes(s) || label.includes(s);
+  if (has("chief") || has("main complaint")) return "🎯";
+  if (has("goal")) return "🎯";
+  if (has("onset")) return "📅";
+  if (has("duration")) return "⏳";
+  if (has("mechanism")) return "🚗";
+  if (has("radiat")) return "✳️";
+  if (has("location") || has("site")) return "📍";
+  if (has("worst") && has("pain")) return "⚡";
+  if (has("behav")) return "↗️";
+  if (has("aggravat")) return "🔺";
+  if (has("reliev")) return "🍃";
+  if (has("associated")) return "🧍";
+  if (has("red flag") || has("rf_") || has("_rf")) return "🚩";
+  if (has("previous") || has("episode")) return "🕓";
+  if (has("occupation") || has("work")) return "💼";
+  if (has("sleep") || has("night")) return "🌙";
+  if (has("sport")) return "🏃";
+  if (has("note") || has("detail")) return "📝";
+  if (has("pain")) return "⚡";
+  if (f.type === "range") return "⚡";
+  if (f.type === "multicheck") return "☰";
+  if (f.type === "textarea") return "📝";
+  return "•";
+}
+
+// One compact clinical-chart row: icon + label on the left (fixed
+// width), whatever the field renders on the right (flexes). No card,
+// no vertical stacking — this is the "line-wise" unit the whole
+// redesign is built from.
+function AssessmentRow({ icon, label, helpText, PC, children, last }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "0 14px", minHeight: 56,
+      borderBottom: last ? "none" : `1px solid ${PC.border}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, width: 132, flexShrink: 0 }}>
+        <span style={{
+          width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+          background: PC.accent + "12", display: "flex", alignItems: "center",
+          justifyContent: "center", fontSize: "0.85rem",
+        }}>{icon}</span>
+        <span style={{ fontSize: "0.86rem", fontWeight: 700, color: PC.text, lineHeight: 1.2 }}>
+          {label}
+          {helpText && (
+            <span title={helpText} style={{
+              display: "inline-flex", marginLeft: 4, color: PC.accent,
+              fontSize: "0.68rem", cursor: "help", verticalAlign: "top",
+            }}>ⓘ</span>
+          )}
+        </span>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+    </div>
+  );
+}
+
+// Free-typed field. Stays visually blank until the therapist types —
+// no "Write here" / "Tap to select" chrome.
+function SmartInput({ value, onChange, PC, multiline, type = "text" }) {
+  const base = {
+    width: "100%", border: "none", outline: "none", background: "transparent",
+    fontSize: "0.92rem", color: PC.text, fontFamily: "inherit", padding: "14px 0",
+    lineHeight: 1.4, boxSizing: "border-box",
+  };
+  if (multiline) {
+    return (
+      <textarea value={value} onChange={onChange} rows={1}
+        onInput={e => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}
+        style={{ ...base, resize: "none", overflow: "hidden", minHeight: 24 }} />
+    );
+  }
+  return <input type={type} value={value} onChange={onChange} style={base} />;
+}
+
+// Inline compact pain slider — one row, no oversized card.
+function PainSliderCompact({ value, onChange, PC }) {
+  const num = parseInt(value || 0, 10) || 0;
+  const col = num >= 7 ? "#dc2626" : num >= 4 ? "#d97706" : "#059669";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0" }}>
+      <input type="range" min={0} max={10} step={1} value={num}
+        onChange={e => onChange(e.target.value)}
+        style={{ flex: 1, accentColor: col, cursor: "pointer" }} />
+      <div style={{
+        minWidth: 50, textAlign: "center", padding: "3px 8px", borderRadius: 8,
+        background: PC.s2 || "#F5F5F7", border: `1px solid ${PC.border}`,
+        fontWeight: 800, fontSize: "0.88rem", color: col, flexShrink: 0,
+      }}>
+        {num}<span style={{ fontSize: "0.62rem", fontWeight: 600, color: PC.muted }}>/10</span>
+      </div>
+    </div>
+  );
+}
+
+// Bottom sheet: suggestions stay hidden until the row is tapped, then
+// this opens with (optionally searchable) options. Single-select calls
+// onSelect and closes itself; multi-select calls onToggle per tap and
+// waits for "Done".
+function SuggestionBottomSheet({ title, options, selected, multi, onSelect, onToggle, onClose, PC, searchable }) {
+  const [q, setQ] = useState("");
+  const filtered = searchable && q.trim()
+    ? options.filter(o => o.toLowerCase().includes(q.toLowerCase()))
+    : options;
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "flex-end" }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }} />
+      <div style={{
+        position: "relative", width: "100%", maxHeight: "72vh", background: "#fff",
+        borderRadius: "18px 18px 0 0", boxShadow: "0 -4px 24px rgba(0,0,0,0.18)",
+        display: "flex", flexDirection: "column", animation: "sheetUp_S 160ms ease-out",
+      }}>
+        <style>{`@keyframes sheetUp_S{from{transform:translateY(20px);opacity:0.6}to{transform:translateY(0);opacity:1}}`}</style>
+        <div style={{
+          padding: "14px 18px 10px", borderBottom: `1px solid ${PC.border}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
+        }}>
+          <div style={{ fontSize: "1rem", fontWeight: 800, color: PC.text }}>{title}</div>
+          <button type="button" onClick={onClose} style={{
+            background: "transparent", border: "none", fontSize: "1.1rem", color: PC.muted, cursor: "pointer",
+          }}>✕</button>
+        </div>
+        {searchable && (
+          <div style={{ padding: "10px 18px 4px", flexShrink: 0 }}>
+            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Search..."
+              style={{
+                width: "100%", padding: "9px 12px", borderRadius: 10, border: `1.5px solid ${PC.border}`,
+                fontSize: "0.9rem", outline: "none", fontFamily: "inherit", boxSizing: "border-box",
+              }} />
+          </div>
+        )}
+        <div style={{ overflowY: "auto", padding: "6px 8px 10px" }}>
+          {filtered.map(o => {
+            const isSel = multi ? selected.includes(o) : selected === o;
+            return (
+              <button key={o} type="button"
+                onClick={() => multi ? onToggle(o) : (onSelect(o), onClose())}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "12px 12px", border: "none", background: isSel ? PC.accent + "10" : "transparent",
+                  borderRadius: 10, textAlign: "left", fontSize: "0.9rem", color: PC.text, cursor: "pointer",
+                  fontFamily: "inherit", fontWeight: isSel ? 700 : 500,
+                }}>
+                <span>{o}</span>
+                {isSel && <span style={{ color: PC.accent, fontWeight: 900 }}>✓</span>}
+              </button>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div style={{ padding: 20, textAlign: "center", color: PC.muted, fontSize: "0.85rem" }}>No matches</div>
+          )}
+        </div>
+        {multi && (
+          <div style={{ padding: "10px 18px 16px", borderTop: `1px solid ${PC.border}`, flexShrink: 0 }}>
+            <button type="button" onClick={onClose} style={{
+              width: "100%", padding: "12px", borderRadius: 10, background: PC.accent, color: "#fff",
+              border: "none", fontWeight: 800, fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit",
+            }}>Done{selected.length ? ` (${selected.length})` : ""}</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Single-select row: blank until chosen, tap opens the bottom sheet.
+function SelectRow({ f, val, PC, setField }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} style={{
+        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+        background: "transparent", border: "none", cursor: "pointer", padding: "14px 0", fontFamily: "inherit",
+      }}>
+        <span style={{ fontSize: "0.92rem", color: PC.text, fontWeight: val ? 600 : 400 }}>{val}</span>
+        <span style={{ fontSize: "0.72rem", color: PC.muted, flexShrink: 0 }}>⌄</span>
+      </button>
+      {open && (
+        <SuggestionBottomSheet title={f.label} options={f.options || []} selected={val}
+          onSelect={(o) => setField(f.id, o)} onClose={() => setOpen(false)} PC={PC}
+          searchable={(f.options || []).length > 8} />
+      )}
+    </>
+  );
+}
+
+// Multi-select row: chosen values render as compact chips inside the
+// row instead of stacking the field across multiple lines.
+function MultiSelectField({ f, val, PC, toggleMulti, SEP_S }) {
+  const [open, setOpen] = useState(false);
+  const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} style={{
+        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+        background: "transparent", border: "none", cursor: "pointer", padding: "10px 0", fontFamily: "inherit",
+      }}>
+        <span style={{ display: "flex", flexWrap: "wrap", gap: 6, flex: 1, minHeight: 24 }}>
+          {selected.map(s => (
+            <span key={s} style={{
+              fontSize: "0.75rem", fontWeight: 700, color: PC.accent, background: PC.accent + "12",
+              padding: "4px 10px", borderRadius: 99, whiteSpace: "nowrap",
+            }}>{s}</span>
+          ))}
+        </span>
+        <span style={{ fontSize: "0.72rem", color: PC.muted, flexShrink: 0 }}>⌄</span>
+      </button>
+      {open && (
+        <SuggestionBottomSheet title={f.label} options={f.options || []} selected={selected} multi
+          onToggle={(o) => toggleMulti(f.id, o)} onClose={() => setOpen(false)} PC={PC}
+          searchable={(f.options || []).length > 8} />
+      )}
+    </>
+  );
+}
+
 function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#FFFFFF", s3:"#FFFFFF", border:"#E0E0E2",
@@ -2761,107 +2990,36 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     setTimeout(() => setShowSavedToast(false), 3000);
   };
 
-  // ── Inline field renderer (app UI style) ───────────────────────────
+  // ── Inline field renderer — compact line-wise EMR style ─────────────
+  // Every field type renders as the RIGHT-hand content of one
+  // AssessmentRow (icon + label lives in the row wrapper, added where
+  // sections are laid out below). Nothing here is a card; suggestions
+  // for select/multicheck fields live behind a bottom sheet so the
+  // screen stays blank and scannable until the therapist taps in.
   const renderField = (f) => {
     const val = data[f.id] || "";
-    const inputStyle = {
-      width:"100%", padding:"12px 14px",
-      background: PC.inputBg, border:`1.5px solid ${PC.inputBorder}`,
-      borderRadius:10, color: PC.text, fontFamily:"inherit",
-      fontSize:"0.95rem", outline:"none", boxSizing:"border-box",
-      minHeight:48, lineHeight:1.4,
-    };
 
     if (f.type === "multicheck") {
-      return (
-        <CollapsibleMulticheck
-          f={f} val={val} PC={PC}
-          toggleMulti={toggleMulti}
-          searchTerm={searchTerm}
-          SEP_S={SEP_S}
-        />
-      );
+      return <MultiSelectField f={f} val={val} PC={PC} toggleMulti={toggleMulti} SEP_S={SEP_S} />;
     }
 
     if (f.type === "select") {
-      return (
-        <select value={val} onChange={e => setField(f.id, e.target.value)} style={inputStyle}>
-          <option value="">— select —</option>
-          {f.options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      );
+      return <SelectRow f={f} val={val} PC={PC} setField={setField} />;
     }
 
     if (f.type === "textarea") {
-      return (
-        <textarea value={val} onChange={e => setField(f.id, e.target.value)}
-          placeholder={f.placeholder || "Clinical notes — patient quotes, specific detail, clinician observations..."}
-          rows={4} style={{ ...inputStyle, resize:"vertical", minHeight:88, lineHeight:1.6 }} />
-      );
+      return <SmartInput value={val} onChange={e => setField(f.id, e.target.value)} PC={PC} multiline />;
     }
 
     if (f.type === "range") {
-      const num = parseInt(val || 0);
-      const dotCol = (n) => n >= 7 ? "#ef4444" : n >= 4 ? "#f59e0b" : "#22c55e";
-      const col = dotCol(num);
-      const severity = num === 0 ? "No pain" : num <= 3 ? "Mild" : num <= 6 ? "Moderate" : num <= 8 ? "Severe" : "Worst possible";
-      const sevEmoji = num === 0 ? "😊" : num <= 3 ? "🙂" : num <= 6 ? "😐" : num <= 8 ? "😣" : "😭";
-      return (
-        <div style={{
-          background:"#fff",
-          borderRadius:14,
-          padding:"14px 14px 12px",
-          border:`1.5px solid ${col}33`,
-          boxShadow:`0 2px 12px ${col}18, 0 1px 3px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)`
-        }}>
-          {/* Score display row */}
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
-            <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
-              <span style={{ fontWeight:900, color:col, fontSize:"2.2rem", lineHeight:1, fontVariantNumeric:"tabular-nums" }}>{num}</span>
-              <span style={{ fontSize:"0.75rem", color:PC.muted, fontWeight:500 }}>/10</span>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", gap:6,
-              background:col+"15", borderRadius:20, padding:"5px 12px",
-              border:`1px solid ${col}30` }}>
-              <span style={{ fontSize:"1rem" }}>{sevEmoji}</span>
-              <span style={{ fontSize:"0.75rem", fontWeight:700, color:col }}>{severity}</span>
-            </div>
-          </div>
-
-          {/* Drag slider */}
-          <input
-            type="range" min={0} max={10} step={1}
-            value={num}
-            onChange={e => setField(f.id, e.target.value)}
-            style={{
-              width:"100%", height:8, margin:"6px 0 2px",
-              accentColor: col, cursor:"pointer",
-            }}
-          />
-
-          {/* Track labels */}
-          <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, paddingLeft:2, paddingRight:2 }}>
-            <span style={{ fontSize:"0.6rem", color:"#22c55e", fontWeight:600 }}>No pain</span>
-            <span style={{ fontSize:"0.6rem", color:"#f59e0b", fontWeight:600 }}>Moderate</span>
-            <span style={{ fontSize:"0.6rem", color:"#ef4444", fontWeight:600 }}>Worst</span>
-          </div>
-        </div>
-      );
+      return <PainSliderCompact value={val} onChange={v => setField(f.id, v)} PC={PC} />;
     }
 
     if (f.type === "number") {
-      return (
-        <input type="number" min="0" max="10" value={val}
-          onChange={e => setField(f.id, e.target.value)}
-          placeholder={f.placeholder || "0–10"} style={{ ...inputStyle, width:90 }} />
-      );
+      return <SmartInput value={val} onChange={e => setField(f.id, e.target.value)} PC={PC} type="number" />;
     }
 
-    return (
-      <input type="text" value={val}
-        onChange={e => setField(f.id, e.target.value)}
-        placeholder={f.placeholder || ""} style={inputStyle} />
-    );
+    return <SmartInput value={val} onChange={e => setField(f.id, e.target.value)} PC={PC} />;
   };
 
   // ── Confidence colour helpers ───────────────────────────────────────
@@ -3857,69 +4015,35 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   </div>
                 )}
 
-                {/* Shared filter box — applies to every multicheck field across
-                    every section below, so it appears once per group rather
-                    than once per section. */}
-                {groupHasMulticheck && (
-                  <input type="text" value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    placeholder="🔎 Filter options..."
-                    style={{ width:"100%", padding:"11px 14px",
-                      background: PC.s2, border:`1.5px solid ${PC.inputBorder}`,
-                      borderRadius:10, fontSize:"0.95rem", color: PC.text,
-                      outline:"none", boxSizing:"border-box", minHeight:46 }} />
-                )}
-
                 {/* Every section in the active group, stacked top to bottom --
                     one continuous scroll instead of one section at a time. */}
-                <div ref={sectionTopRef} style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                <div ref={sectionTopRef} style={{ display:"flex", flexDirection:"column", gap:22 }}>
                   {groupSections.map((s, si) => {
                     const key = activeGroup.keys[si];
                     const sColor = s.color || PC.accent;
                     return (
-                      <div key={key} id={`subj-sec-${key}`} style={{ background: PC.surface, borderRadius:12,
-                        border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44`, overflow:"hidden" }}>
+                      <div key={key} id={`subj-sec-${key}`}>
 
-                        {/* Section header */}
-                        <div style={{ padding:"16px 18px 12px", borderBottom:`1px solid ${PC.border}`, background: sColor+"06" }}>
-                          <div style={{ fontSize:"1.05rem", fontWeight:800, color: sColor }}>
-                            {s.icon} {s.label}
-                          </div>
-                          {s.description && (
-                            <div style={{ fontSize:"0.82rem", color: PC.muted, marginTop:6, fontStyle:"italic",
-                              borderLeft:`3px solid ${sColor}55`, paddingLeft:10, lineHeight:1.5 }}>
-                              {s.description}
-                            </div>
-                          )}
+                        {/* Compact eyebrow section header — no card, no padding-heavy banner */}
+                        <div style={{ display:"flex", alignItems:"center", gap:7, padding:"0 4px 7px" }}>
+                          <span style={{ fontSize:"0.78rem" }}>{s.icon}</span>
+                          <span style={{ fontSize:"0.7rem", fontWeight:800, letterSpacing:"0.06em",
+                            textTransform:"uppercase", color: sColor }}>{s.label}</span>
                         </div>
+                        {s.description && (
+                          <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 7px", lineHeight:1.5 }}>
+                            {s.description}
+                          </div>
+                        )}
 
-                        {/* Fields */}
-                        <div style={{ padding:"18px 18px" }}>
-                          {s.fields.map(field => {
-                            const helpText = FIELD_HELP[field.id];
-                            const fNum = ++fieldNum;
-                            return (
-                            <div key={field.id} style={{ marginBottom:20 }}>
-                              <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.93rem", fontWeight:600,
-                                color: PC.text, marginBottom:8, letterSpacing:0.1, flexWrap:"wrap" }}>
-                                <span>{fNum}. {field.label}</span>
-                                {field.type === "textarea" && (
-                                  <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:400, fontStyle:"italic" }}>notes</span>
-                                )}
-                                {helpText && (
-                                  <span title={helpText} style={{
-                                    display:"inline-flex", alignItems:"center", justifyContent:"center",
-                                    width:16, height:16, borderRadius:"50%",
-                                    background: PC.accent+"22", color: PC.accent,
-                                    fontSize:"0.72rem", fontWeight:900, cursor:"help",
-                                    border:`1px solid ${PC.accent}44`, flexShrink:0, lineHeight:1,
-                                  }}>ⓘ</span>
-                                )}
-                              </label>
+                        {/* Dense, line-wise field rows — one clinical chart */}
+                        <div style={{ background: PC.surface, borderRadius:14, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
+                          {s.fields.map((field, fi) => (
+                            <AssessmentRow key={field.id} icon={fieldIcon_S(field)} label={field.label}
+                              helpText={FIELD_HELP[field.id]} PC={PC} last={fi === s.fields.length - 1}>
                               {renderField(field)}
-                            </div>
-                            );
-                          })}
+                            </AssessmentRow>
+                          ))}
                         </div>
                       </div>
                     );
