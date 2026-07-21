@@ -4533,6 +4533,27 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
                               {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
                             </div>
+                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
+                              <div style={{ marginTop:6, paddingTop:6, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:4 }}>
+                                  Suggested objective tests
+                                </div>
+                                <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                                  {(c.objectiveTests.required || []).map((t, ti) => (
+                                    <span key={"req"+ti} style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6,
+                                      background: PC.surface, border:`1px solid ${PC.border}`, color: PC.text, fontWeight:600 }}>
+                                      {t}
+                                    </span>
+                                  ))}
+                                  {(c.objectiveTests.recommended || []).map((t, ti) => (
+                                    <span key={"rec"+ti} style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6,
+                                      background: "transparent", border:`1px dashed ${PC.border}`, color: PC.muted }}>
+                                      {t}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
