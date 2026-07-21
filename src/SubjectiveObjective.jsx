@@ -3195,16 +3195,16 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       {/* ── Mobile-only ~40% scale-down of field-row text/blocks ───── */}
       <style>{`
         @media (max-width: 767px) {
-          .pm-arow { padding: 4px 6px !important; min-height: 16px !important; gap: 5px !important; }
-          .pm-arow-icon { font-size: 0.9rem !important; }
-          .pm-arow-label { font-size: 0.72rem !important; }
-          .pm-arow-sub { font-size: 0.6rem !important; }
-          .pm-cfield-box, .pm-sinput-box { padding: 3px 5px !important; }
-          .pm-cfield-text, .pm-sinput-text { font-size: 0.66rem !important; }
-          .pm-cfield-chevron { font-size: 0.72rem !important; }
-          .pm-slider-end { font-size: 0.54rem !important; }
-          .pm-slider-val { font-size: 0.66rem !important; }
-          .pm-slider-val-suffix { font-size: 0.54rem !important; }
+          .pm-arow { padding: 3px 4px !important; min-height: 12px !important; gap: 3px !important; }
+          .pm-arow-icon { font-size: 1.08rem !important; }
+          .pm-arow-label { font-size: 0.86rem !important; }
+          .pm-arow-sub { font-size: 0.72rem !important; }
+          .pm-cfield-box, .pm-sinput-box { padding: 2px 3px !important; }
+          .pm-cfield-text, .pm-sinput-text { font-size: 0.79rem !important; }
+          .pm-cfield-chevron { font-size: 0.86rem !important; }
+          .pm-slider-end { font-size: 0.65rem !important; }
+          .pm-slider-val { font-size: 0.79rem !important; }
+          .pm-slider-val-suffix { font-size: 0.65rem !important; }
         }
       `}</style>
 
