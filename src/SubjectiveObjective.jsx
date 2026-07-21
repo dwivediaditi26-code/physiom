@@ -2513,236 +2513,201 @@ const FIELD_HELP = {
 // per-row icons were removed from the redesign (icons now live only
 // in section headers, per feedback that per-row emoji stopped adding
 // value after the first row).
+// Best-effort icon per field, based on id/label keywords. Falls back
+// to a neutral dot so every row still has a left-hand anchor even for
+// fields this map doesn't recognise (custom/region-specific fields).
 function fieldIcon_S(f) {
-  return "";
+  const id = (f.id || "").toLowerCase();
+  const label = (f.label || "").toLowerCase();
+  const has = (s) => id.includes(s) || label.includes(s);
+  if (has("chief") || has("main complaint")) return "🎯";
+  if (has("goal")) return "🎯";
+  if (has("onset")) return "📅";
+  if (has("duration")) return "⏳";
+  if (has("mechanism")) return "🚗";
+  if (has("radiat")) return "☀️";
+  if (has("location") || has("site")) return "📍";
+  if (has("worst") && has("pain")) return "⚡";
+  if (has("behav")) return "↗️";
+  if (has("aggravat")) return "📈";
+  if (has("reliev")) return "🍃";
+  if (has("associated")) return "👤";
+  if (has("red flag") || has("rf_") || has("_rf")) return "🚩";
+  if (has("previous") || has("episode") || has("past history")) return "📋";
+  if (has("medication")) return "💊";
+  if (has("imaging") || has("report")) return "🖼️";
+  if (has("occupation") || has("work")) return "💼";
+  if (has("sleep") || has("night")) return "🌙";
+  if (has("sport")) return "🏃";
+  if (has("note") || has("detail")) return "📝";
+  if (has("quality")) return "〰️";
+  if (has("pain")) return "⚡";
+  if (f.type === "range") return "⚡";
+  if (f.type === "multicheck") return "📈";
+  if (f.type === "textarea") return "📝";
+  return "•";
 }
 
-// iOS-Settings-style row: label on the left (plain weight, no icon),
-// value right-aligned in the remaining space. No border, no box —
-// the only visual separator is a hairline divider between rows. The
-// value area is a flex container that right-aligns its own content,
-// so short answers hug the chevron and wide content (like a slider)
-// can still stretch to fill the space.
-function AssessmentRow({ label, helpText, PC, children, last }) {
+// One row: small icon + label on the left (~30% width, fixed so
+// every row lines up), the field's input on the right (~70%). A
+// hairline divider is the only separator — rows are compact at rest
+// and grow only as far as their content needs.
+function AssessmentRow({ icon, label, helpText, PC, children, last }) {
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "13px 16px", minHeight: 50,
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "9px 16px", minHeight: 44,
       borderBottom: last ? "none" : `1px solid ${PC.border}`,
     }}>
-      <span style={{
-        fontSize: "1rem", fontWeight: 400, color: PC.text, lineHeight: 1.3,
-        flexShrink: 0, maxWidth: "48%",
-      }}>
-        {label}
-        {helpText && (
-          <span title={helpText} style={{
-            display: "inline-flex", marginLeft: 4, color: PC.accent,
-            fontSize: "0.66rem", cursor: "help", verticalAlign: "top",
-          }}>ⓘ</span>
-        )}
-      </span>
-      <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-        {children}
+      <div style={{ width: "30%", flexShrink: 0, display: "flex", alignItems: "flex-start", gap: 7 }}>
+        {icon && icon !== "•" && <span style={{ fontSize: "1.05rem", flexShrink: 0, lineHeight: 1.25 }}>{icon}</span>}
+        <span style={{ fontSize: "0.9rem", fontWeight: 700, color: PC.text, lineHeight: 1.2 }}>
+          {label}
+          {helpText && (
+            <span title={helpText} style={{
+              display: "inline-flex", marginLeft: 4, color: PC.accent,
+              fontSize: "0.62rem", cursor: "help", verticalAlign: "top",
+            }}>ⓘ</span>
+          )}
+        </span>
       </div>
+      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
     </div>
   );
 }
 
-// Free-typed field: no border, no box — just right-aligned text that
-// sits inline with the row. Narrative fields (chief complaint, notes,
-// goals...) stay collapsed to one truncated line until tapped, then
-// expand into a plain borderless writing area.
-function SmartInput({ value, onChange, PC, multiline, type = "text", expandRows = 3 }) {
-  const [focused, setFocused] = useState(false);
+const autoGrow_S = (el) => {
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+};
 
-  if (multiline) {
-    if (!focused) {
-      return (
-        <div tabIndex={0} onFocus={() => setFocused(true)} onClick={() => setFocused(true)}
-          style={{
-            fontSize: "1rem", color: value ? PC.text : "transparent", cursor: "text",
-            overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
-            maxWidth: 240, textAlign: "right",
-          }}>
-          {value || "—"}
-        </div>
-      );
-    }
-    return (
-      <textarea autoFocus value={value} onChange={onChange} onBlur={() => setFocused(false)}
-        rows={expandRows}
-        style={{
-          width: "100%", border: "none", outline: "none", background: "transparent",
-          fontSize: "1rem", color: PC.text, fontFamily: "inherit", textAlign: "left",
-          resize: "none", padding: "6px 0", lineHeight: 1.4,
-        }} />
-    );
-  }
+// Free-typed field: an auto-growing textarea — never truncates or
+// hides text, it just wraps and gets taller as the therapist types.
+function SmartInput({ value, onChange, PC, multiline }) {
+  const taRef = useRef(null);
+  useEffect(() => { autoGrow_S(taRef.current); }, [value]);
   return (
-    <input type={type} value={value} onChange={onChange}
+    <textarea ref={taRef} rows={1} value={value}
+      onChange={e => { onChange(e); autoGrow_S(taRef.current); }}
+      placeholder="Type or tap to enter..."
       style={{
-        border: "none", outline: "none", background: "transparent", width: "100%",
-        fontSize: "1rem", color: PC.text, fontFamily: "inherit", textAlign: "right", padding: 0,
+        width: "100%", boxSizing: "border-box", border: `1.5px solid ${PC.inputBorder || PC.border}`,
+        borderRadius: 11, background: "#FBFBFD", padding: "9px 12px", fontSize: "0.92rem",
+        color: PC.text, fontFamily: "inherit", outline: "none", resize: "none", overflow: "hidden",
+        lineHeight: 1.35, minHeight: 38,
       }} />
   );
 }
 
-// Compact pain slider — fills the value area of its row, numeric
-// readout at the end. No card, no border.
+// Compact pain slider — track + numeric readout in one row, no card.
 function PainSliderCompact({ value, onChange, PC }) {
   const num = parseInt(value || 0, 10) || 0;
   const col = num >= 7 ? "#dc2626" : num >= 4 ? "#d97706" : "#059669";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
+      <span style={{ fontSize: "0.8rem", color: PC.muted, fontWeight: 600, width: 12, flexShrink: 0 }}>0</span>
       <input type="range" min={0} max={10} step={1} value={num}
         onChange={e => onChange(e.target.value)}
         style={{ flex: 1, accentColor: col, cursor: "pointer" }} />
-      <span style={{ fontSize: "0.95rem", fontWeight: 700, color: col, minWidth: 22, textAlign: "right", flexShrink: 0 }}>
-        {num}
-      </span>
+      <span style={{ fontSize: "0.8rem", color: PC.muted, fontWeight: 600, width: 16, flexShrink: 0 }}>10</span>
+      <span style={{
+        minWidth: 26, textAlign: "center", fontWeight: 800, fontSize: "0.92rem", color: col, flexShrink: 0,
+      }}>{num}</span>
     </div>
   );
 }
 
-// Bottom sheet: suggestions stay hidden until the row itself is
-// tapped, then this opens with (optionally searchable) options.
-// Single-select calls onSelect and closes itself; multi-select calls
-// onToggle per tap and waits for "Done".
-function SuggestionBottomSheet({ title, options, selected, multi, onSelect, onToggle, onClose, PC, searchable }) {
-  const [q, setQ] = useState("");
-  const filtered = searchable && q.trim()
-    ? options.filter(o => o.toLowerCase().includes(q.toLowerCase()))
-    : options;
+// Combo field: pick-or-type. An auto-growing textarea that the
+// therapist can type into directly, plus a small round arrow beside
+// it that opens a compact list anchored to THIS field only (not a
+// full-screen sheet). Selecting an option fills the text; the text
+// stays editable afterward. Used for both single-select and
+// multi-select fields — multi joins picks into a comma-separated
+// line that's still hand-editable.
+function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const taRef = useRef(null);
+
+  useEffect(() => {
+    function onDocClick(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  useEffect(() => { autoGrow_S(taRef.current); }, [val]);
+
+  const selectedList = isMulti ? (val ? String(val).split(SEP_S).filter(Boolean) : []) : [];
+  const textValue = isMulti ? selectedList.join(", ") : (val || "");
+
+  const handleTyped = (e) => {
+    const v = e.target.value;
+    if (isMulti) {
+      setField(f.id, v.split(",").map(s => s.trim()).filter(Boolean).join(SEP_S));
+    } else {
+      setField(f.id, v);
+    }
+    autoGrow_S(taRef.current);
+  };
+
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "flex-end" }}>
-      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }} />
+    <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
       <div style={{
-        position: "relative", width: "100%", maxHeight: "72vh", background: "#fff",
-        borderRadius: "18px 18px 0 0", boxShadow: "0 -4px 24px rgba(0,0,0,0.18)",
-        display: "flex", flexDirection: "column", animation: "sheetUp_S 160ms ease-out",
+        display: "flex", alignItems: "flex-end", gap: 6,
+        border: `1.5px solid ${PC.inputBorder || PC.border}`, borderRadius: 11,
+        background: "#FBFBFD", padding: "7px 6px 7px 12px", minHeight: 38,
       }}>
-        <style>{`@keyframes sheetUp_S{from{transform:translateY(20px);opacity:0.6}to{transform:translateY(0);opacity:1}}`}</style>
+        <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
+          onClick={e => e.stopPropagation()}
+          placeholder="Type, or pick from list..."
+          style={{
+            flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
+            fontSize: "0.92rem", color: PC.text, fontFamily: "inherit", resize: "none",
+            overflow: "hidden", lineHeight: 1.35, padding: "2px 0",
+          }} />
+        <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} style={{
+          flexShrink: 0, width: 24, height: 24, borderRadius: "50%", alignSelf: "flex-end", marginBottom: 1,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: PC.accent + "14", color: PC.accent, fontSize: "0.66rem", cursor: "pointer",
+          border: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease",
+        }}>▾</button>
+      </div>
+
+      {open && (
         <div style={{
-          padding: "14px 18px 10px", borderBottom: `1px solid ${PC.border}`,
-          display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
+          position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 40,
+          background: "#fff", border: `1px solid ${PC.border}`, borderRadius: 12,
+          boxShadow: "0 10px 28px rgba(0,0,0,0.14)", maxHeight: 210, overflowY: "auto", padding: 6,
         }}>
-          <div style={{ fontSize: "1rem", fontWeight: 700, color: PC.text }}>{title}</div>
-          <button type="button" onClick={onClose} style={{
-            background: "transparent", border: "none", fontSize: "1.1rem", color: PC.muted, cursor: "pointer",
-          }}>✕</button>
-        </div>
-        {searchable && (
-          <div style={{ padding: "10px 18px 4px", flexShrink: 0 }}>
-            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Search..."
-              style={{
-                width: "100%", padding: "9px 12px", borderRadius: 10, border: `1.5px solid ${PC.border}`,
-                fontSize: "0.9rem", outline: "none", fontFamily: "inherit", boxSizing: "border-box",
-              }} />
-          </div>
-        )}
-        <div style={{ overflowY: "auto", padding: "6px 8px 10px" }}>
-          {filtered.map(o => {
-            const isSel = multi ? selected.includes(o) : selected === o;
+          {(f.options || []).map(o => {
+            const isSel = isMulti ? selectedList.includes(o) : val === o;
             return (
               <button key={o} type="button"
-                onClick={() => multi ? onToggle(o) : (onSelect(o), onClose())}
+                onClick={e => {
+                  e.stopPropagation();
+                  if (isMulti) { toggleMulti(f.id, o); } else { setField(f.id, o); setOpen(false); }
+                }}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "12px 12px", border: "none", background: isSel ? PC.accent + "10" : "transparent",
-                  borderRadius: 10, textAlign: "left", fontSize: "0.9rem", color: PC.text, cursor: "pointer",
-                  fontFamily: "inherit", fontWeight: isSel ? 700 : 500,
+                  textAlign: "left", border: "none", background: isSel ? PC.accent + "10" : "transparent",
+                  padding: "9px 10px", borderRadius: 8, fontSize: "0.88rem", color: PC.text,
+                  cursor: "pointer", fontFamily: "inherit", fontWeight: isSel ? 700 : 500,
                 }}>
                 <span>{o}</span>
                 {isSel && <span style={{ color: PC.accent, fontWeight: 900 }}>✓</span>}
               </button>
             );
           })}
-          {filtered.length === 0 && (
-            <div style={{ padding: 20, textAlign: "center", color: PC.muted, fontSize: "0.85rem" }}>No matches</div>
+          {(f.options || []).length === 0 && (
+            <div style={{ padding: 16, textAlign: "center", color: PC.muted, fontSize: "0.82rem" }}>No options</div>
           )}
         </div>
-        {multi && (
-          <div style={{ padding: "10px 18px 16px", borderTop: `1px solid ${PC.border}`, flexShrink: 0 }}>
-            <button type="button" onClick={onClose} style={{
-              width: "100%", padding: "12px", borderRadius: 10, background: PC.accent, color: "#fff",
-              border: "none", fontWeight: 800, fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit",
-            }}>Done{selected.length ? ` (${selected.length})` : ""}</button>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
-}
-
-// Single-select row: no box. Value sits right-aligned, muted "Select"
-// when empty, chevron marks it as tappable — exactly the iOS Settings
-// disclosure row pattern.
-function SelectRow({ f, val, PC, setField }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button type="button" onClick={() => setOpen(true)} style={{
-        display: "flex", alignItems: "center", gap: 6, background: "transparent",
-        border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0, maxWidth: "100%",
-      }}>
-        <span style={{
-          fontSize: "1rem", color: val ? PC.text : "#B0B0B6", fontWeight: 400,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220,
-        }}>
-          {val || "Select"}
-        </span>
-        <span style={{ fontSize: "0.95rem", color: "#C4C4C9", flexShrink: 0 }}>›</span>
-      </button>
-      {open && (
-        <SuggestionBottomSheet title={f.label} options={f.options || []} selected={val}
-          onSelect={(o) => setField(f.id, o)} onClose={() => setOpen(false)} PC={PC}
-          searchable={(f.options || []).length > 8} />
-      )}
-    </>
-  );
-}
-
-// Multi-select row: same flat pattern. Chosen values join into one
-// comma-separated line (truncated with ellipsis if long) instead of
-// wrapping chips — matches how iOS Settings summarises multi-value
-// rows (e.g. "Banners, Sounds").
-function MultiSelectField({ f, val, PC, toggleMulti, SEP_S }) {
-  const [open, setOpen] = useState(false);
-  const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
-  const summary = selected.join(", ");
-  return (
-    <>
-      <button type="button" onClick={() => setOpen(true)} style={{
-        display: "flex", alignItems: "center", gap: 6, background: "transparent",
-        border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0, maxWidth: "100%",
-      }}>
-        <span style={{
-          fontSize: "1rem", color: selected.length ? PC.text : "#B0B0B6", fontWeight: 400,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220,
-        }}>
-          {selected.length ? summary : "Select"}
-        </span>
-        <span style={{ fontSize: "0.95rem", color: "#C4C4C9", flexShrink: 0 }}>›</span>
-      </button>
-      {open && (
-        <SuggestionBottomSheet title={f.label} options={f.options || []} selected={selected} multi
-          onToggle={(o) => toggleMulti(f.id, o)} onClose={() => setOpen(false)} PC={PC}
-          searchable={(f.options || []).length > 8} />
-      )}
-    </>
-  );
-}
-
-// Narrative fields (chief complaint, notes, goals, history detail...)
-// collapse to one truncated line at rest and expand to a plain
-// borderless writing area only once tapped.
-const NARRATIVE_RE_S = /(complaint|notes|goal|detail|finding|narrative)/i;
-function isNarrativeField_S(f) {
-  return f.type === "textarea" || NARRATIVE_RE_S.test(f.id || "") || NARRATIVE_RE_S.test(f.label || "");
-}
-function isChiefComplaintField_S(f) {
-  return /chief complaint/i.test(f.label || "") || /^cc_(main|complaint)/i.test(f.id || "");
 }
 
 function SubjectiveModule({ data, set, onNav, onTabChange }) {
@@ -3014,27 +2979,15 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     const val = data[f.id] || "";
 
     if (f.type === "multicheck") {
-      return <MultiSelectField f={f} val={val} PC={PC} toggleMulti={toggleMulti} SEP_S={SEP_S} />;
+      return <ComboField f={f} val={val} PC={PC} isMulti setField={setField} toggleMulti={toggleMulti} SEP_S={SEP_S} />;
     }
 
     if (f.type === "select") {
-      return <SelectRow f={f} val={val} PC={PC} setField={setField} />;
+      return <ComboField f={f} val={val} PC={PC} setField={setField} toggleMulti={toggleMulti} SEP_S={SEP_S} />;
     }
 
     if (f.type === "range") {
       return <PainSliderCompact value={val} onChange={v => setField(f.id, v)} PC={PC} />;
-    }
-
-    if (f.type === "number") {
-      return <SmartInput value={val} onChange={e => setField(f.id, e.target.value)} PC={PC} type="number" />;
-    }
-
-    if (f.type === "textarea" || isNarrativeField_S(f)) {
-      const isChief = isChiefComplaintField_S(f);
-      return (
-        <SmartInput value={val} onChange={e => setField(f.id, e.target.value)} PC={PC} multiline
-          expandRows={isChief ? 4 : 3} />
-      );
     }
 
     return <SmartInput value={val} onChange={e => setField(f.id, e.target.value)} PC={PC} />;
@@ -4054,10 +4007,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                           </div>
                         )}
 
-                        {/* Flat list — no per-field boxes, hairline dividers only */}
-                        <div style={{ background: PC.surface, borderRadius:12, border:`1px solid ${PC.border}`, overflow:"hidden" }}>
+                        {/* Line-wise field rows — icon + label left, boxed input right */}
+                        <div style={{ background: PC.surface, borderRadius:12, border:`1px solid ${PC.border}`, overflow:"visible" }}>
                           {s.fields.map((field, fi) => (
-                            <AssessmentRow key={field.id} label={field.label}
+                            <AssessmentRow key={field.id} icon={fieldIcon_S(field)} label={field.label}
                               helpText={FIELD_HELP[field.id]} PC={PC} last={fi === s.fields.length - 1}>
                               {renderField(field)}
                             </AssessmentRow>
