@@ -92,3 +92,61 @@ describe("runLumbarReasoningEngine", () => {
     expect(l09.note).toMatch(/UNVERIFIED/);
   });
 });
+
+describe("runLumbarReasoningEngine -- L01/L07 differentiation fixes (real-case regression)", () => {
+  // Real test case: extension aggravates + flexion relieves alone made
+  // L07 (spondylolisthesis) rank equal to L03 (facet) with "2 supporting"
+  // each, because both conditions shared only two low-specificity
+  // mechanical-pattern checks. Facet should outrank spondylolisthesis
+  // whenever there's no actual athlete/repetitive-extension/young-age
+  // evidence for spondylolisthesis specifically.
+  it("does not let L07 out-rank L03 on shared low-specificity checks alone (no athlete history, no young age)", () => {
+    const data = {
+      dem_age: "52",
+      lx_agg_mov: ["Backward bending (extension)"].join("|||"),
+      lx_rel_mov: [].join("|||"),
+      lx_below_knee: "Back pain only — no leg symptoms (facet/muscular pattern)",
+    };
+    const lv = extractLumbarVariablesStructured(data);
+    const result = runLumbarReasoningEngine(lv);
+    const l03 = result.conditions.find((c) => c.id === "L03");
+    const l07 = result.conditions.find((c) => c.id === "L07");
+    // L07's new checks (athlete history, young age) should both read
+    // false/unknown-but-not-supporting for a 52-year-old with no athletic
+    // history mentioned, so it must not out-rank L03.
+    expect(l03.supportingMatched.length).toBeGreaterThanOrEqual(l07.supportingMatched.length);
+  });
+
+  it("a young athlete with a repetitive-extension history now supports L07 beyond the old generic mechanical checks", () => {
+    const data = {
+      dem_age: "17",
+      lx_agg_mov: ["Backward bending (extension)"].join("|||"),
+      lx_below_knee: "Back pain only — no leg symptoms (facet/muscular pattern)",
+    };
+    const lv = extractLumbarVariablesStructured(data);
+    // Simulate the AI note pass finding the athlete history the
+    // structured checkboxes have no field for at all.
+    lv.mechanism.repetitiveExtensionAthleteHistory = true;
+    const result = runLumbarReasoningEngine(lv);
+    const l07 = result.conditions.find((c) => c.id === "L07");
+    expect(l07.supportingMatched).toContain("Repetitive-extension athlete history");
+    expect(l07.supportingMatched).toContain("Young age (<25) -- typical spondylolysis/-listhesis age range");
+  });
+
+  it("'First episode' does not count as supporting evidence for L01's recurrence check (previously a bug)", () => {
+    const data = { hx_episodes: "First episode" };
+    const lv = extractLumbarVariablesStructured(data);
+    const result = runLumbarReasoningEngine(lv);
+    const l01 = result.conditions.find((c) => c.id === "L01");
+    expect(l01.supportingMatched).not.toContain("Previous similar episodes");
+  });
+
+  it("a real recurrence value (2-3 episodes) does count as supporting evidence for L01", () => {
+    const data = { hx_episodes: "2–3 episodes" };
+    const lv = extractLumbarVariablesStructured(data);
+    const result = runLumbarReasoningEngine(lv);
+    const l01 = result.conditions.find((c) => c.id === "L01");
+    expect(l01.supportingMatched).toContain("Previous similar episodes");
+  });
+});
+

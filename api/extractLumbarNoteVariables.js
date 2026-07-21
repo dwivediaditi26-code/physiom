@@ -18,10 +18,11 @@
 
 const ALLOWED_VARIABLES = [
   "belowKneePain", "dermatomalPattern", "acuteLiftingMechanism",
-  "flexionAggravates", "extensionAggravates", "sittingAggravates",
+  "flexionAggravates", "extensionAggravates", "rotationAggravates", "sittingAggravates",
   "coughSneezeAggravates", "valsalvaAggravates", "extensionRelieves",
   "flexionRelieves", "walkingRelieves", "constantUnremitting",
-  "constantNightPain", "hasLegNeuro", "footDrop", "neurogenicClaudication",
+  "constantNightPain", "morningStiffnessOver60", "hasLegNeuro", "footDrop", "neurogenicClaudication",
+  "priorEpisodeCount", "repetitiveExtensionAthleteHistory",
   "caudaEquinaConcern", "fractureRiskConcern", "inflammatoryConcern",
   "otherSeriousPathologyConcern", "highPsychosocialLoad",
   "otherRelevantFinding",
@@ -49,11 +50,28 @@ export default async function handler(req, res) {
   const system = `You are a clinical data extractor supplementing a lumbar spine physiotherapy assessment. You are given free-text notes a clinician wrote (or notes carried over from an earlier AI narrative parse) AND a list of what has ALREADY been determined from structured checkboxes elsewhere on the form.
 
 CRITICAL RULES — do not violate these:
-1. Extract ONLY what the notes explicitly state. Never invent, assume, or infer a "typical" finding.
+1. Extract what the notes state — directly, OR through one of the specific SAFE INFERENCES named below. Never invent a finding beyond what is explicitly written or one of those named patterns.
 2. NEVER output a variable that is already listed in "already known" below — those came from an actual clinician selection and are ground truth. Your job is only to fill genuine gaps the notes reveal that the checkboxes did not capture.
-3. If the notes don't clearly support a value, do not include that variable at all. Omission is always safer than a guess.
+3. If the notes don't clearly support a value (directly or via a named safe inference), do not include that variable at all. Omission is always safer than a guess.
 4. You may only use variable names from this exact list: ${ALLOWED_VARIABLES.join(", ")}. Use "otherRelevantFinding" (as many times as needed) for anything clinically relevant that doesn't map to a specific named variable — e.g. a detail affecting confidence but not itself a listed variable.
 5. Every finding must include a short direct quote or close paraphrase from the notes proving it.
+
+NEGATIONS ARE FINDINGS TOO — do not only look for positive mentions. An explicit denial is just as real and useful a finding as an explicit positive, and must be reported the same way (value "false"), not skipped:
+- "denies numbness, tingling, or weakness" → hasLegNeuro: "false"
+- "no radiation", "does not radiate", "no leg pain" → dermatomalPattern: "false"
+- "no cough or sneeze aggravation" → coughSneezeAggravates: "false"
+- "stiffness resolves in under 10 minutes" / "no morning stiffness" (anything clearly under an hour) → morningStiffnessOver60: "false"
+- "this is the first time this has happened" → priorEpisodeCount: "First episode"
+Look for negation language such as: "denies", "no", "none", "without", "negative for", "not present", "absent", "resolved" — in addition to explicit positive statements.
+
+SAFE INFERENCES — narrow, deterministic inferences you may make ONLY when the exact pattern below is met. Mark these with confidence no higher than 60 (lower than a directly stated finding), and quote the specific phrase that justifies it:
+- If the notes give a COMPLETE location description using language like "localized to", "confined to", "only in", or explicitly state "no radiation" / "does not radiate" — AND no leg/below-knee symptom is mentioned anywhere else in the notes — you may infer belowKneePain: "false" and dermatomalPattern: "false". Do NOT make this inference from a partial or ambiguous location mention (e.g. a region named without "localized"/"confined"/"no radiation" language) — omit instead of guessing.
+- Do not chain inferences (never infer a second variable from an already-inferred one).
+
+VARIABLE-SPECIFIC GUIDANCE:
+- priorEpisodeCount: map any stated count of past episodes to EXACTLY one of these five strings, no others: "First episode", "2–3 episodes", "4–6 episodes", "More than 6", "Continuous since onset". E.g. "two similar episodes before" → "2–3 episodes".
+- repetitiveExtensionAthleteHistory: "true" only if the notes describe a sport/activity with repeated spinal extension or hyperextension — e.g. gymnastics, fast bowling (cricket), diving, volleyball, weightlifting, dance, football lineman play. A bare "plays sport" with no repetitive-extension activity named is NOT enough — omit instead of guessing "true".
+- rotationAggravates: only from an explicit statement that twisting/rotating worsens symptoms.
 
 Return ONLY valid JSON in this exact shape:
 {

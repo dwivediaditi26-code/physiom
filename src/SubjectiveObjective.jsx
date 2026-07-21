@@ -3019,6 +3019,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       if (lv.mechanism.acuteLiftingMechanism !== "unknown") already.push("acuteLiftingMechanism");
       if (lv.aggravating.flexionAggravates) already.push("flexionAggravates");
       if (lv.aggravating.extensionAggravates) already.push("extensionAggravates");
+      if (lv.aggravating.rotationAggravates) already.push("rotationAggravates");
       if (lv.aggravating.sittingAggravates) already.push("sittingAggravates");
       if (lv.aggravating.coughSneezeAggravates) already.push("coughSneezeAggravates");
       if (lv.aggravating.valsalvaAggravates) already.push("valsalvaAggravates");
@@ -3027,6 +3028,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       if (lv.relieving.walkingRelieves) already.push("walkingRelieves");
       if (lv.symptomBehaviour.constantUnremitting) already.push("constantUnremitting");
       if (lv.symptomBehaviour.constantNightPain) already.push("constantNightPain");
+      if (lv.symptomBehaviour.morningStiffnessOver60) already.push("morningStiffnessOver60");
+      if (lv.history.priorEpisodeCount) already.push("priorEpisodeCount");
       if (lv.neurological.hasLegNeuro !== "unknown") already.push("hasLegNeuro");
       if (lv.neurological.footDrop) already.push("footDrop");
       if (lv.neurological.neurogenicClaudication) already.push("neurogenicClaudication");

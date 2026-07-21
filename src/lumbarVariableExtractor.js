@@ -114,6 +114,15 @@ function extractLumbarVariablesStructured(data) {
     loadEstimate: selectState(data, "lx_moi_load"),
     spinePosition: multicheckState(data, "lx_moi_position", ["Not applicable"]),
     firstSymptomTiming: selectState(data, "lx_moi_first"),
+    // No structured checkbox captures this specific concept (repetitive
+    // spinal-extension sport/activity history -- gymnastics, fast
+    // bowling, diving, etc.) -- it stays "unknown" from Pass 1 always,
+    // only ever filled by the Pass 2 AI note-reading pass. This is a
+    // real, higher-specificity differentiator for L07 (spondylolysis/
+    // spondylolisthesis) than the generic "sport" mechanism checkbox,
+    // per Magee's own spondylolysis section (classically an overuse
+    // fatigue injury in adolescent athletes doing repeated hyperextension).
+    repetitiveExtensionAthleteHistory: "unknown",
   };
   const acuteLiftingMechanism = boolFromMulticheck(data, "lx_moi",
     ["No clear mechanism — insidious onset", "No identified mechanism"],
@@ -308,7 +317,22 @@ const AI_MERGEABLE_FIELD_MAP = {
   belowKneePain:          { isUnknown: (lv) => lv.location.belowKneePain === "unknown",
                              set: (lv, val) => { lv.location.belowKneePain = (val === "true" || val === true); } },
   dermatomalPattern:      { isUnknown: (lv) => lv.location.dermatomal.state === "unknown",
-                             set: (lv, val) => { lv.location.dermatomal = { state: "present", values: [String(val)] }; } },
+                             // Bug fix: this setter previously always wrote
+                             // state:"present" no matter what val was --
+                             // there was no way to represent "no dermatomal
+                             // pattern" from an AI finding (e.g. "no
+                             // radiating pain", "does not radiate") even
+                             // though the note-reading pass is explicitly
+                             // allowed to report that negation. Now a
+                             // false/none-style value correctly sets
+                             // state:"absent" instead.
+                             set: (lv, val) => {
+                               const negative = val === "false" || val === false ||
+                                 /^(none|no|absent|not dermatomal|not present)/i.test(String(val).trim());
+                               lv.location.dermatomal = negative
+                                 ? { state: "absent", values: [] }
+                                 : { state: "present", values: [String(val)] };
+                             } },
   acuteLiftingMechanism:  { isUnknown: (lv) => lv.mechanism.acuteLiftingMechanism === "unknown",
                              set: (lv, val) => { lv.mechanism.acuteLiftingMechanism = (val === "true" || val === true); } },
   flexionAggravates:      { isUnknown: (lv) => lv.aggravating.movements.state === "unknown",
@@ -339,6 +363,17 @@ const AI_MERGEABLE_FIELD_MAP = {
                              set: (lv, val) => { lv.neurological.neurogenicClaudication = (val === "true" || val === true); } },
   highPsychosocialLoad:   { isUnknown: (lv) => [lv.yellowFlags.beliefs, lv.yellowFlags.emotional, lv.yellowFlags.work, lv.yellowFlags.social].every((f) => f.state === "unknown"),
                              set: (lv, val) => { lv.yellowFlags.highPsychosocialLoad = (val === "true" || val === true); } },
+  rotationAggravates:     { isUnknown: (lv) => lv.aggravating.movements.state === "unknown",
+                             set: (lv, val) => { lv.aggravating.rotationAggravates = (val === "true" || val === true); } },
+  morningStiffnessOver60: { isUnknown: (lv) => lv.symptomBehaviour.morning.state === "unknown",
+                             set: (lv, val) => { lv.symptomBehaviour.morningStiffnessOver60 = (val === "true" || val === true); } },
+  // Expects one of the five exact hx_episodes select-option strings (the
+  // API prompt is told to map any free-text count onto these) so this
+  // reads identically to a real checkbox pick, not a raw AI string.
+  priorEpisodeCount:      { isUnknown: (lv) => !lv.history.priorEpisodeCount,
+                             set: (lv, val) => { lv.history.priorEpisodeCount = String(val); } },
+  repetitiveExtensionAthleteHistory: { isUnknown: (lv) => lv.mechanism.repetitiveExtensionAthleteHistory === "unknown",
+                             set: (lv, val) => { lv.mechanism.repetitiveExtensionAthleteHistory = (val === "true" || val === true); } },
 };
 
 const RED_FLAG_CATEGORIES = new Set([

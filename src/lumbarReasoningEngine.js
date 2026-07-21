@@ -104,7 +104,12 @@ const CONDITIONS = [
       { label: "No leg neurological symptoms", check: stateOf((lv) => lv.neurological.hasLegNeuro === false) },
       { label: "Symptoms vary with posture/movement (mechanical behaviour)", check: stateOf((lv) => present(lv.aggravating.postures) || present(lv.aggravating.movements)) },
       { label: "Identifiable directional preference", check: stateOf((lv) => lv.relieving.directionalPreference.state === "answered" && !textIncludes(lv.relieving.directionalPreference.value, "not assessed", "no clear")) },
-      { label: "Previous similar episodes", check: stateOf((lv) => !!lv.history.priorEpisodeCount) },
+      // Bug fix: this used to read !!priorEpisodeCount, which treated
+      // "First episode" (itself meaning NO prior recurrence) as truthy
+      // supporting evidence for a recurrent-mechanical pattern -- the
+      // opposite of what it should mean. Now only a real recurrence
+      // value counts.
+      { label: "Previous similar episodes", check: stateOf((lv) => !!lv.history.priorEpisodeCount && lv.history.priorEpisodeCount !== "First episode") },
       { label: "Gradual or non-specific onset (approx, from onset text)", check: stateOf((lv) => textIncludes(lv.chiefComplaint.onset, "gradual", "insidious", "no clear cause")) },
     ],
     refuting: [
@@ -220,7 +225,26 @@ const CONDITIONS = [
       { label: "Extension aggravates", check: stateOf((lv) => lv.aggravating.extensionAggravates) },
       { label: "Flexion relieves", check: stateOf((lv) => lv.relieving.flexionRelieves) },
       { label: "No leg pain (back pain only)", check: stateOf((lv) => lv.location.belowKneePain === false) },
-      { label: "Repetitive-extension sport / athlete history (approx, from onset+mechanism text)", check: stateOf((lv) => textIncludes(lv.chiefComplaint.onset, "sport") || lv.mechanism.type.values.some((v) => textIncludes(v, "sport"))) },
+      // Higher-specificity check first: a real structured/AI-extracted
+      // repetitive-extension-athlete flag (gymnastics, fast bowling,
+      // diving, volleyball, weightlifting, etc.) -- Magee's own
+      // spondylolysis section describes this as classically an overuse
+      // fatigue injury from repeated hyperextension, most often in
+      // adolescent athletes. Falls back to the older generic "sport"
+      // text search only when that specific flag hasn't been asked/found,
+      // so existing behaviour isn't lost for cases already relying on it.
+      { label: "Repetitive-extension athlete history", check: stateOf((lv) =>
+          lv.mechanism.repetitiveExtensionAthleteHistory === true ? true :
+          lv.mechanism.repetitiveExtensionAthleteHistory === false ? false :
+          (textIncludes(lv.chiefComplaint.onset, "sport") || lv.mechanism.type.values.some((v) => textIncludes(v, "sport"))) ? true :
+          "unknown") },
+      // Age is a real, already-reliable field (demographics.age) that
+      // was never cross-referenced by L07 at all -- spondylolysis is
+      // classically an adolescent/young-athlete presentation.
+      { label: "Young age (<25) -- typical spondylolysis/-listhesis age range", check: stateOf((lv) => {
+          const age = parseInt(lv.demographics.age, 10);
+          return Number.isFinite(age) ? age < 25 : "unknown";
+        }) },
     ],
     refuting: [
       { label: "Leg pain dominant with dermatomal features (points to L02)", check: stateOf((lv) => lv.location.belowKneePain === true && present(lv.location.dermatomal)) },

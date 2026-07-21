@@ -143,3 +143,74 @@ describe("mergeLumbarVariables", () => {
   });
 });
 
+describe("mergeLumbarVariables -- expanded variable coverage (real-case regression)", () => {
+  // These lock in the fixes made after a real end-to-end test case showed
+  // the Pass 2 AI extractor's ALLOWED_VARIABLES/merge map couldn't
+  // represent several things the narrative explicitly stated: a negative
+  // dermatomal finding, morning stiffness duration, prior episode count,
+  // rotation aggravation, and a repetitive-extension athlete history.
+
+  it("sets dermatomalPattern to absent (not present) on a negative AI finding -- previously impossible to represent", () => {
+    const lv = extractLumbarVariablesStructured({});
+    const { merged } = mergeLumbarVariables(lv, [
+      { variable: "dermatomalPattern", value: "false", sourceQuote: "no radiation, does not radiate", confidence: 55 },
+    ]);
+    expect(merged.location.dermatomal.state).toBe("absent");
+    expect(merged.location.dermatomal.values).toEqual([]);
+  });
+
+  it("still sets dermatomalPattern to present with the level when the AI reports a real positive finding", () => {
+    const lv = extractLumbarVariablesStructured({});
+    const { merged } = mergeLumbarVariables(lv, [
+      { variable: "dermatomalPattern", value: "L5 — lateral lower leg / dorsum foot / great toe", sourceQuote: "x", confidence: 90 },
+    ]);
+    expect(merged.location.dermatomal.state).toBe("present");
+    expect(merged.location.dermatomal.values).toEqual(["L5 — lateral lower leg / dorsum foot / great toe"]);
+  });
+
+  it("fills rotationAggravates from an AI finding", () => {
+    const lv = extractLumbarVariablesStructured({});
+    const { merged, aiFilledFields } = mergeLumbarVariables(lv, [
+      { variable: "rotationAggravates", value: "true", sourceQuote: "worse with twisting", confidence: 80 },
+    ]);
+    expect(merged.aggravating.rotationAggravates).toBe(true);
+    expect(aiFilledFields).toContain("rotationAggravates");
+  });
+
+  it("fills morningStiffnessOver60 as false from a short-duration stiffness statement", () => {
+    const lv = extractLumbarVariablesStructured({});
+    const { merged } = mergeLumbarVariables(lv, [
+      { variable: "morningStiffnessOver60", value: "false", sourceQuote: "morning stiffness less than 10 minutes", confidence: 85 },
+    ]);
+    expect(merged.symptomBehaviour.morningStiffnessOver60).toBe(false);
+  });
+
+  it("fills priorEpisodeCount from a mapped enum string ('two similar episodes' -> '2–3 episodes')", () => {
+    const lv = extractLumbarVariablesStructured({});
+    const { merged, aiFilledFields } = mergeLumbarVariables(lv, [
+      { variable: "priorEpisodeCount", value: "2–3 episodes", sourceQuote: "two similar episodes in the past", confidence: 75 },
+    ]);
+    expect(merged.history.priorEpisodeCount).toBe("2–3 episodes");
+    expect(aiFilledFields).toContain("priorEpisodeCount");
+  });
+
+  it("never overrides a real Pass 1 episode count with an AI finding", () => {
+    const data = { hx_episodes: "More than 6" };
+    const lv = extractLumbarVariablesStructured(data);
+    const { merged } = mergeLumbarVariables(lv, [
+      { variable: "priorEpisodeCount", value: "First episode", sourceQuote: "x", confidence: 50 },
+    ]);
+    expect(merged.history.priorEpisodeCount).toBe("More than 6");
+  });
+
+  it("fills repetitiveExtensionAthleteHistory -- a field Pass 1 can never set (no matching checkbox exists)", () => {
+    const lv = extractLumbarVariablesStructured({});
+    expect(lv.mechanism.repetitiveExtensionAthleteHistory).toBe("unknown");
+    const { merged, aiFilledFields } = mergeLumbarVariables(lv, [
+      { variable: "repetitiveExtensionAthleteHistory", value: "true", sourceQuote: "competitive gymnast for 8 years", confidence: 80 },
+    ]);
+    expect(merged.mechanism.repetitiveExtensionAthleteHistory).toBe(true);
+    expect(aiFilledFields).toContain("repetitiveExtensionAthleteHistory");
+  });
+});
+
