@@ -16,8 +16,8 @@
 // REGION_FAMILY_KEY first) so a future edit can't silently reintroduce
 // the same mismatch.
 import React from "react";
-import { describe, test, expect } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, test, expect, vi } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SubjectiveModule } from "../SubjectiveObjective.jsx";
 
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
@@ -108,3 +108,71 @@ describe("Lumbar/SI region: Phase 0.5 Reasoning Engine renders end to end", () =
     expect(screen.getByText(/EMERGENCY — Cauda Equina Indicators/)).toBeInTheDocument();
   });
 });
+
+// ── Regression test for the AI-extraction-not-merged-into-scoring bug ──
+//
+// Reported by real end-to-end use: a case narrated almost entirely in
+// free text (not checkboxes) showed Phase 0 as "Not asked" for fields
+// the AI pass had plainly found (visible only in the separate "Found
+// in your notes" list below it), and Phase 0.5 scored L02 as
+// "Insufficient data -- 0 supporting" despite a textbook radiculopathy
+// presentation. Root cause: setLumbarReasoning(...) ran once,
+// synchronously, on Pass-1-only data; the async Pass 2 fetch's .then()
+// called setLumbarNoteFindings(...) but never re-ran the reasoning
+// engine or updated lumbarVariables with the merged result -- so the
+// two systems stayed disconnected no matter what the AI found.
+//
+// This test leaves the structured checkboxes UNSET (so Pass 1 alone
+// would score L02 as weak/insufficient) and puts everything into the
+// free-text notes instead, mocking the /api/extractLumbarNoteVariables
+// response the same way the note-reading pass would return it for this
+// narrative. It asserts the merged result actually reaches both the
+// Phase 0 card (with an "AI extracted" badge, not "Not asked") and the
+// Phase 0.5 reasoning engine (L02 promoted out of "Insufficient data").
+describe("Lumbar/SI region: AI note findings merge into scoring (regression)", () => {
+  test("AI-note-only radiculopathy findings upgrade L02 out of 'Insufficient data' and show as AI-extracted, not 'Not asked'", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        findings: [
+          { variable: "dermatomalPattern", value: "L5 — lateral lower leg / dorsum foot / great toe", sourceQuote: "pain radiating into the left buttock, posterior thigh, and lateral calf", confidence: 90 },
+          { variable: "sittingAggravates", value: "true", sourceQuote: "worse with prolonged sitting", confidence: 88 },
+          { variable: "coughSneezeAggravates", value: "true", sourceQuote: "coughing brings on the leg pain", confidence: 85 },
+          { variable: "flexionAggravates", value: "true", sourceQuote: "bending forward makes it worse", confidence: 85 },
+          { variable: "flexionRelieves", value: "false", sourceQuote: "extension eases it, not flexion", confidence: 70 },
+          { variable: "walkingRelieves", value: "true", sourceQuote: "walking around helps a bit", confidence: 60 },
+          { variable: "hasLegNeuro", value: "true", sourceQuote: "numbness and tingling down the left leg", confidence: 92 },
+        ],
+      }),
+    });
+
+    const data = {
+      cx_selected_regions: JSON.stringify(["Lumbar/SI (L)"]),
+      // Everything below is free text only -- no lx_* checkboxes set --
+      // so Pass 1 alone has nothing to score L02 on.
+      lx_agg_notes: "Pain worse with prolonged sitting, coughing, and bending forward.",
+      lx_neuro_notes: "Numbness and tingling down the left leg, radiating into the calf and foot.",
+      lx_loc_notes: "Pain radiating into the left buttock, posterior thigh, and lateral calf.",
+    };
+
+    render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
+    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Run analysis/));
+
+    // Pass 2 resolves asynchronously -- wait for the merged reasoning
+    // result to land rather than asserting on the Pass-1-only render.
+    await waitFor(() => {
+      expect(screen.getByText(/L02 — Lumbar Disc Herniation \/ Radiculopathy/)).toBeInTheDocument();
+    });
+
+    // Phase 0.5: L02 must no longer read "Insufficient data" once the
+    // AI-found variables are actually feeding the matching engine.
+    const l02Card = screen.getByText(/L02 — Lumbar Disc Herniation \/ Radiculopathy/).closest("div");
+    expect(l02Card).not.toHaveTextContent(/Insufficient data/);
+
+    // Phase 0: an AI-filled field must show the "AI extracted" badge,
+    // not silently blend in with a real "Not asked".
+    expect(screen.getAllByText(/AI extracted/).length).toBeGreaterThan(0);
+  });
+});
+

@@ -8,7 +8,7 @@
 // explicit "No X" selection (a real, deliberate negative finding) reads
 // as "absent", distinct from both "unknown" and "present".
 import { describe, it, expect } from "vitest";
-import { extractLumbarVariablesStructured } from "../lumbarVariableExtractor.js";
+import { extractLumbarVariablesStructured, mergeLumbarVariables } from "../lumbarVariableExtractor.js";
 
 const SEP = "|||";
 
@@ -79,3 +79,67 @@ describe("extractLumbarVariablesStructured", () => {
     expect(lv.aggravating.activities.state).toBe("unknown");
   });
 });
+
+describe("mergeLumbarVariables", () => {
+  it("fills a field that Pass 1 left unknown with the AI note-pass finding", () => {
+    const lv = extractLumbarVariablesStructured({}); // everything unknown
+    const { merged, aiFilledFields } = mergeLumbarVariables(lv, [
+      { variable: "hasLegNeuro", value: "true", sourceQuote: "numbness down the leg", confidence: 90 },
+    ]);
+    expect(merged.neurological.hasLegNeuro).toBe(true);
+    expect(aiFilledFields).toContain("hasLegNeuro");
+  });
+
+  it("never overrides a real Pass 1 answer, even when the AI finding disagrees", () => {
+    const data = { lx_agg_mov: ["Forward bending (flexion)"].join("|||") }; // flexionAggravates = true via checkbox
+    const lv = extractLumbarVariablesStructured(data);
+    const { merged, aiFilledFields } = mergeLumbarVariables(lv, [
+      { variable: "flexionAggravates", value: "false", sourceQuote: "flexion doesn't bother them", confidence: 80 },
+    ]);
+    expect(merged.aggravating.flexionAggravates).toBe(true); // Pass 1 checkbox still wins
+    expect(aiFilledFields).not.toContain("flexionAggravates");
+  });
+
+  it("fills a boolean field whose 'unknown' lives on a PARENT container, not the derived value itself", () => {
+    // Regression: flexionAggravates/sittingAggravates/etc. are plain
+    // `.includes()` booleans in Pass 1 that default to `false` (not the
+    // string "unknown") when nothing was selected -- their real
+    // "was this ever asked" signal lives on the parent field's .state
+    // (e.g. lv.aggravating.movements.state / .postures.state). A naive
+    // isFillable() check against the derived boolean itself would never
+    // detect these as fillable and would silently never merge them.
+    const lv = extractLumbarVariablesStructured({}); // nothing touched
+    expect(lv.aggravating.sittingAggravates).toBe(false); // false, NOT "unknown" -- the trap
+    const { merged, aiFilledFields } = mergeLumbarVariables(lv, [
+      { variable: "sittingAggravates", value: "true", sourceQuote: "worse sitting", confidence: 85 },
+    ]);
+    expect(merged.aggravating.sittingAggravates).toBe(true);
+    expect(aiFilledFields).toContain("sittingAggravates");
+  });
+
+  it("never auto-merges red-flag-category findings -- routes them to pendingRedFlagReview instead", () => {
+    const lv = extractLumbarVariablesStructured({});
+    const { merged, pendingRedFlagReview, aiFilledFields } = mergeLumbarVariables(lv, [
+      { variable: "caudaEquinaConcern", value: "true", sourceQuote: "some bladder change mentioned", confidence: 55 },
+    ]);
+    expect(merged.redFlags.cauda.state).toBe("unknown"); // untouched -- never silently written
+    expect(pendingRedFlagReview.length).toBe(1);
+    expect(aiFilledFields).not.toContain("caudaEquinaConcern");
+  });
+
+  it("does not mutate the input lv object", () => {
+    const lv = extractLumbarVariablesStructured({});
+    const before = JSON.stringify(lv);
+    mergeLumbarVariables(lv, [{ variable: "hasLegNeuro", value: "true", sourceQuote: "x", confidence: 90 }]);
+    expect(JSON.stringify(lv)).toBe(before);
+  });
+
+  it("ignores findings for unrecognized or display-only variables (e.g. otherRelevantFinding)", () => {
+    const lv = extractLumbarVariablesStructured({});
+    const { aiFilledFields } = mergeLumbarVariables(lv, [
+      { variable: "otherRelevantFinding", value: "patient mentions a hobby of running", sourceQuote: "x", confidence: 50 },
+    ]);
+    expect(aiFilledFields.length).toBe(0);
+  });
+});
+
