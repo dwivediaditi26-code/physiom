@@ -276,4 +276,120 @@ function extractLumbarVariablesStructured(data) {
   };
 }
 
-export { extractLumbarVariablesStructured };
+// Categories the reasoning engine treats as safe to auto-fill from AI's
+// note-reading pass. Deliberately EXCLUDES anything red-flag-related
+// (caudaEquinaConcern, fractureRiskConcern, inflammatoryConcern,
+// otherSeriousPathologyConcern) -- those are handled by
+// mergeLumbarVariables() as a separate "needs clinician screening" list,
+// never silently flipped into the formal redFlags.*.state used by
+// evaluateRedFlagOverride() in lumbarReasoningEngine.js. Matches the
+// principle already established elsewhere in this codebase (see
+// aiIntakeParser.js's comment on why bladder/bowel never auto-writes a
+// red-flag field): a red-flag determination is a clinical judgement
+// call, not something an AI note-reading pass should be allowed to
+// silently assert into the field that drives an emergency-referral
+// banner. Getting this wrong in either direction is dangerous -- so it
+// isn't merged into that field at all, it's surfaced instead.
+// Each entry pairs a setter with an EXPLICIT isUnknown() check against
+// the real underlying field this derived value comes from -- NOT a
+// generic check against the derived value itself. This matters because
+// most of these derived booleans (flexionAggravates, sittingAggravates,
+// etc.) are plain `.includes()`/`.some()` checks on an array in
+// lumbarVariableExtractor.js's Pass 1 code, which default to `false`
+// when the field was simply never touched -- they do NOT come back as
+// the literal string "unknown" the way belowKneePain/hasLegNeuro/
+// acuteLiftingMechanism do (those three route through a real
+// state-aware helper already). Checking the derived boolean directly
+// for "unknown" would silently never match, and the merge would look
+// like it worked while actually never filling anything for most fields
+// -- exactly the class of bug this merge function exists to fix, so it
+// can't be allowed to reintroduce a version of it here.
+const AI_MERGEABLE_FIELD_MAP = {
+  belowKneePain:          { isUnknown: (lv) => lv.location.belowKneePain === "unknown",
+                             set: (lv, val) => { lv.location.belowKneePain = (val === "true" || val === true); } },
+  dermatomalPattern:      { isUnknown: (lv) => lv.location.dermatomal.state === "unknown",
+                             set: (lv, val) => { lv.location.dermatomal = { state: "present", values: [String(val)] }; } },
+  acuteLiftingMechanism:  { isUnknown: (lv) => lv.mechanism.acuteLiftingMechanism === "unknown",
+                             set: (lv, val) => { lv.mechanism.acuteLiftingMechanism = (val === "true" || val === true); } },
+  flexionAggravates:      { isUnknown: (lv) => lv.aggravating.movements.state === "unknown",
+                             set: (lv, val) => { lv.aggravating.flexionAggravates = (val === "true" || val === true); } },
+  extensionAggravates:    { isUnknown: (lv) => lv.aggravating.movements.state === "unknown",
+                             set: (lv, val) => { lv.aggravating.extensionAggravates = (val === "true" || val === true); } },
+  sittingAggravates:      { isUnknown: (lv) => lv.aggravating.postures.state === "unknown",
+                             set: (lv, val) => { lv.aggravating.sittingAggravates = (val === "true" || val === true); } },
+  coughSneezeAggravates:  { isUnknown: (lv) => lv.aggravating.activities.state === "unknown",
+                             set: (lv, val) => { lv.aggravating.coughSneezeAggravates = (val === "true" || val === true); } },
+  valsalvaAggravates:     { isUnknown: (lv) => lv.aggravating.activities.state === "unknown",
+                             set: (lv, val) => { lv.aggravating.valsalvaAggravates = (val === "true" || val === true); } },
+  extensionRelieves:      { isUnknown: (lv) => lv.relieving.movements.state === "unknown" && lv.relieving.directionalPreference.state === "unknown",
+                             set: (lv, val) => { lv.relieving.extensionRelieves = (val === "true" || val === true); } },
+  flexionRelieves:        { isUnknown: (lv) => lv.relieving.movements.state === "unknown" && lv.relieving.directionalPreference.state === "unknown",
+                             set: (lv, val) => { lv.relieving.flexionRelieves = (val === "true" || val === true); } },
+  walkingRelieves:        { isUnknown: (lv) => lv.relieving.movements.state === "unknown",
+                             set: (lv, val) => { lv.relieving.walkingRelieves = (val === "true" || val === true); } },
+  constantUnremitting:    { isUnknown: (lv) => lv.symptomBehaviour.overallPattern.state === "unknown",
+                             set: (lv, val) => { lv.symptomBehaviour.constantUnremitting = (val === "true" || val === true); } },
+  constantNightPain:      { isUnknown: (lv) => lv.symptomBehaviour.night.state === "unknown",
+                             set: (lv, val) => { lv.symptomBehaviour.constantNightPain = (val === "true" || val === true); } },
+  hasLegNeuro:            { isUnknown: (lv) => lv.neurological.hasLegNeuro === "unknown",
+                             set: (lv, val) => { lv.neurological.hasLegNeuro = (val === "true" || val === true); } },
+  footDrop:               { isUnknown: (lv) => lv.neurological.signs.state === "unknown",
+                             set: (lv, val) => { lv.neurological.footDrop = (val === "true" || val === true); } },
+  neurogenicClaudication: { isUnknown: (lv) => lv.neurological.claudication.state === "unknown",
+                             set: (lv, val) => { lv.neurological.neurogenicClaudication = (val === "true" || val === true); } },
+  highPsychosocialLoad:   { isUnknown: (lv) => [lv.yellowFlags.beliefs, lv.yellowFlags.emotional, lv.yellowFlags.work, lv.yellowFlags.social].every((f) => f.state === "unknown"),
+                             set: (lv, val) => { lv.yellowFlags.highPsychosocialLoad = (val === "true" || val === true); } },
+};
+
+const RED_FLAG_CATEGORIES = new Set([
+  "caudaEquinaConcern", "fractureRiskConcern", "inflammatoryConcern", "otherSeriousPathologyConcern",
+]);
+
+/**
+ * Merge Pass 2 (AI note-reading) findings into a Pass 1 (structured
+ * field) variable object. Pure function -- returns a NEW object, never
+ * mutates the input, so callers can tell "before merge" and "after
+ * merge" apart if needed (e.g. to show which values came from AI).
+ *
+ * Additive-only by construction: each field in AI_MERGEABLE_FIELD_MAP
+ * carries its own isUnknown() check against the REAL underlying Pass 1
+ * field state (not a generic check on the derived value), so a real
+ * clinician/checkbox answer -- true OR false -- always wins and is
+ * never overwritten by an AI note finding.
+ *
+ * @param {object} lv - output of extractLumbarVariablesStructured()
+ * @param {Array}  aiFindings - the `findings` array from
+ *   api/extractLumbarNoteVariables.js: [{variable, value, sourceQuote, confidence}]
+ * @returns {{ merged: object, aiFilledFields: string[], pendingRedFlagReview: Array }}
+ */
+function mergeLumbarVariables(lv, aiFindings) {
+  // Structured clone via JSON round-trip -- lv is plain data (no
+  // functions/dates), so this is a safe, dependency-free deep copy that
+  // guarantees the original object passed in is never mutated.
+  const merged = JSON.parse(JSON.stringify(lv));
+  const aiFilledFields = [];
+  const pendingRedFlagReview = [];
+
+  (Array.isArray(aiFindings) ? aiFindings : []).forEach((f) => {
+    if (!f || !f.variable) return;
+
+    if (RED_FLAG_CATEGORIES.has(f.variable)) {
+      // Never auto-merged into redFlags.*.state -- surfaced separately
+      // so a clinician has to actually look at it and screen properly.
+      pendingRedFlagReview.push(f);
+      return;
+    }
+
+    const field = AI_MERGEABLE_FIELD_MAP[f.variable];
+    if (!field) return; // otherRelevantFinding and anything unrecognized: display-only, not merged into scoring
+
+    if (!field.isUnknown(merged)) return; // Pass 1 already answered this -- never override
+
+    field.set(merged, f.value);
+    aiFilledFields.push(f.variable);
+  });
+
+  return { merged, aiFilledFields, pendingRedFlagReview };
+}
+
+export { extractLumbarVariablesStructured, mergeLumbarVariables };
