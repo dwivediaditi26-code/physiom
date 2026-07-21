@@ -86,3 +86,25 @@ describe("Lumbar/SI region: Review & Run Analysis end to end", () => {
     expect(screen.queryByText(/Insufficient data — complete subjective form/)).not.toBeInTheDocument();
   });
 });
+
+describe("Lumbar/SI region: Phase 0.5 Reasoning Engine renders end to end", () => {
+  test("realistic radiculopathy case shows the Phase 0.5 card with L02 leading", () => {
+    const data = realisticRadiculopathyData("Lumbar/SI (L)");
+    render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
+    runReviewAndAnalysis();
+
+    expect(screen.getByText(/Phase 0.5 — Lumbar Condition Matches/)).toBeInTheDocument();
+    expect(screen.getByText(/L02 — Lumbar Disc Herniation \/ Radiculopathy/)).toBeInTheDocument();
+  });
+
+  test("cauda equina indicators show the emergency override banner in Phase 0.5", () => {
+    const data = {
+      cx_selected_regions: JSON.stringify(["Lumbar/SI (L)"]),
+      lx_rf_cauda: "Saddle area anaesthesia — perineum / inner thighs",
+    };
+    render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
+    runReviewAndAnalysis();
+
+    expect(screen.getByText(/EMERGENCY — Cauda Equina Indicators/)).toBeInTheDocument();
+  });
+});

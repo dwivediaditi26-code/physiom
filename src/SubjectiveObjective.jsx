@@ -4,6 +4,7 @@ import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButto
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage } from "./sharedClinicalData.js";
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
 import { extractLumbarVariablesStructured } from "./lumbarVariableExtractor.js";
+import { runLumbarReasoningEngine } from "./lumbarReasoningEngine.js";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -2736,6 +2737,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [lumbarVariables, setLumbarVariables] = useState(null);
   const [lumbarNoteFindings, setLumbarNoteFindings] = useState([]);
   const [lumbarNotesLoading, setLumbarNotesLoading] = useState(false);
+  // Layer 3 (Reasoning Engine) output -- recomputed synchronously
+  // alongside lumbarVariables in runInterpretation(), since it's a pure
+  // function of the already-extracted variables and needs no AI call.
+  const [lumbarReasoning, setLumbarReasoning] = useState(null);
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
@@ -2983,6 +2988,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       const lv = extractLumbarVariablesStructured(data);
       setLumbarVariables(lv);
       setLumbarNoteFindings([]);
+      setLumbarReasoning(runLumbarReasoningEngine(lv));
 
       // Variables Pass 1 already resolved definitively -- Pass 2 is told
       // never to re-derive or contradict these.
@@ -3023,6 +3029,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     } else {
       setLumbarVariables(null);
       setLumbarNoteFindings([]);
+      setLumbarReasoning(null);
     }
     // Persist insight so it survives navigation to ROM/MMT and back
     try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
@@ -4397,6 +4404,68 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             ))}
                           </div>
                         )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0.5: LUMBAR REASONING ENGINE (Layer 3) ──
+                       Separate from Phase 1 below, which is the older,
+                       unweighted runEngineV6 differential logic. This is
+                       the new engine covering all 11 lumbar condition
+                       hypotheses (L01-L11), built off the same
+                       lumbarVariables Phase 0 extracted above. Also
+                       unweighted -- count-based match tiers, not a
+                       probability -- per the explicit build order this
+                       project has followed (variables before weights). ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Lumbar / SI" && lumbarReasoning && (() => {
+                    const lr = lumbarReasoning;
+                    const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:"4px solid #7c3aed" }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#7c3aed", marginBottom:8 }}>
+                          Phase 0.5 — Lumbar Condition Matches (L01–L11)
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Unweighted, count-based matches against all 11 lumbar hypotheses — not a probability. Weighting is a deliberately deferred future step.
+                        </div>
+
+                        {lr.redFlagOverride.triggered && (
+                          <div style={{ background:"#FEF2F2", border:"2px solid #dc2626", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+                            <div style={{ fontWeight:800, color:"#dc2626", fontSize:"0.78rem", marginBottom:3 }}>
+                              🚨 {lr.redFlagOverride.urgency === "EMERGENCY" ? "EMERGENCY — Cauda Equina Indicators" : "URGENT REFERRAL INDICATED"}
+                            </div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", marginBottom:3 }}>{lr.redFlagOverride.reason}</div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", fontWeight:600 }}>{lr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+                        {lr.redFlagOverride.urgency === "SCREEN_INCOMPLETE" && (
+                          <div style={{ background:"#FFFBEB", border:"1px solid #d97706", borderRadius:8, padding:"8px 12px", marginBottom:10 }}>
+                            <div style={{ fontSize:"0.73rem", color:"#92400E" }}>⚠ {lr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+
+                        {lr.conditions.slice(0, 6).map((c, ci) => (
+                          <div key={c.id} style={{
+                            background: ci===0 ? "#7c3aed12" : PC.surface,
+                            border: `1px solid ${ci===0 ? "#7c3aed44" : PC.border}`,
+                            borderRadius:8, padding:"9px 12px", marginBottom:6,
+                          }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>
+                                {c.id} — {c.name}{c.lowConfidence ? " ⚠" : ""}
+                              </span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                                background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>
+                                {c.matchTier}
+                              </span>
+                            </div>
+                            <div style={{ fontSize:"0.72rem", color: PC.muted }}>
+                              {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
+                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     );
                   })()}
