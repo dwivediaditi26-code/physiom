@@ -2559,16 +2559,16 @@ function AssessmentRow({ icon, label, helpText, PC, children, last }) {
   const main = dashSplit[0];
   const sub = dashSplit.slice(1).join(" — ");
   return (
-    <div style={{
+    <div className="pm-arow" style={{
       display: "flex", alignItems: "center", gap: 12,
       padding: "8px 14px", minHeight: 40,
       borderBottom: last ? "none" : `1px solid ${PC.border}`,
     }}>
       <div style={{ width: "38%", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
         {icon && icon !== "•" && (
-          <span style={{ fontSize: "1.15rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
+          <span className="pm-arow-icon" style={{ fontSize: "1.15rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
         )}
-        <span style={{ fontSize: "1rem", fontWeight: 600, color: PC.text, lineHeight: 1.25 }}>
+        <span className="pm-arow-label" style={{ fontSize: "1rem", fontWeight: 600, color: PC.text, lineHeight: 1.25 }}>
           {main}
           {helpText && (
             <span title={helpText} style={{
@@ -2577,7 +2577,7 @@ function AssessmentRow({ icon, label, helpText, PC, children, last }) {
             }}>ⓘ</span>
           )}
           {sub && (
-            <><br /><span style={{ fontSize: "0.8125rem", fontWeight: 500, color: PC.muted }}>{sub}</span></>
+            <><br /><span className="pm-arow-sub" style={{ fontSize: "0.8125rem", fontWeight: 500, color: PC.muted }}>{sub}</span></>
           )}
         </span>
       </div>
@@ -2601,6 +2601,7 @@ function SmartInput({ value, onChange, PC, multiline }) {
     <textarea ref={taRef} rows={1} value={value}
       onChange={e => { onChange(e); autoGrow_S(taRef.current); }}
       placeholder="Type or tap to enter..."
+      className="pm-sinput-box pm-sinput-text"
       style={{
         width: "100%", boxSizing: "border-box", border: `1.5px solid ${PC.inputBorder || PC.border}`,
         borderRadius: 11, background: "#FBFBFD", padding: "9px 12px", fontSize: "0.92rem",
@@ -2615,16 +2616,16 @@ function PainSliderCompact({ value, onChange, PC }) {
   const num = parseInt(value || 0, 10) || 0;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
-      <span style={{ fontSize: "0.75rem", color: PC.muted, fontWeight: 600, width: 12, flexShrink: 0 }}>0</span>
+      <span className="pm-slider-end" style={{ fontSize: "0.75rem", color: PC.muted, fontWeight: 600, width: 12, flexShrink: 0 }}>0</span>
       <input type="range" min={0} max={10} step={1} value={num}
         onChange={e => onChange(e.target.value)}
         style={{ flex: 1, accentColor: PC.accent, cursor: "pointer" }} />
-      <span style={{ fontSize: "0.75rem", color: PC.muted, fontWeight: 600, width: 16, flexShrink: 0 }}>10</span>
+      <span className="pm-slider-end" style={{ fontSize: "0.75rem", color: PC.muted, fontWeight: 600, width: 16, flexShrink: 0 }}>10</span>
       <span style={{
         marginLeft: "auto", minWidth: 34, textAlign: "right", flexShrink: 0,
       }}>
-        <span style={{ fontWeight: 800, fontSize: "0.9rem", color: PC.text }}>{num}</span>
-        <span style={{ fontWeight: 600, fontSize: "0.72rem", color: PC.muted }}> /10</span>
+        <span className="pm-slider-val" style={{ fontWeight: 800, fontSize: "0.9rem", color: PC.text }}>{num}</span>
+        <span className="pm-slider-val-suffix" style={{ fontWeight: 600, fontSize: "0.72rem", color: PC.muted }}> /10</span>
       </span>
     </div>
   );
@@ -2667,7 +2668,7 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
-      <div style={{
+      <div className="pm-cfield-box" style={{
         display: "flex", alignItems: "flex-end", gap: 6,
         border: `1.5px solid ${PC.inputBorder || PC.border}`, borderRadius: 11,
         background: "#FBFBFD", padding: "7px 6px 7px 12px", minHeight: 38,
@@ -2675,12 +2676,14 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
         <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
           onClick={e => e.stopPropagation()}
           placeholder={isMulti ? "Tap to select (multiple)..." : "Tap to select..."}
+          className="pm-cfield-text"
           style={{
             flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
             fontSize: "0.92rem", color: PC.text, fontFamily: "inherit", resize: "none",
             overflow: "hidden", lineHeight: 1.35, padding: "2px 0",
           }} />
-        <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} style={{
+        <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+          className="pm-cfield-chevron" style={{
           flexShrink: 0, width: 20, height: 20, alignSelf: "flex-end", marginBottom: 3,
           display: "flex", alignItems: "center", justifyContent: "center",
           background: "none", color: PC.muted, fontSize: "1rem", cursor: "pointer",
@@ -3135,6 +3138,22 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       display:"flex", flexDirection:"column", gap:14, maxWidth:"100%",
       fontFamily: "ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, -apple-system, sans-serif",
     }}>
+
+      {/* ── Mobile-only ~40% scale-down of field-row text/blocks ───── */}
+      <style>{`
+        @media (max-width: 767px) {
+          .pm-arow { padding: 5px 8px !important; min-height: 24px !important; gap: 7px !important; }
+          .pm-arow-icon { font-size: 0.75rem !important; }
+          .pm-arow-label { font-size: 0.6rem !important; }
+          .pm-arow-sub { font-size: 0.5rem !important; }
+          .pm-cfield-box, .pm-sinput-box { padding: 5px 7px !important; }
+          .pm-cfield-text, .pm-sinput-text { font-size: 0.55rem !important; }
+          .pm-cfield-chevron { font-size: 0.6rem !important; }
+          .pm-slider-end { font-size: 0.45rem !important; }
+          .pm-slider-val { font-size: 0.55rem !important; }
+          .pm-slider-val-suffix { font-size: 0.45rem !important; }
+        }
+      `}</style>
 
       {/* ── Red Flag Alert Banner ─────────────────────────────────── */}
       {hasAnyRedFlag && (
