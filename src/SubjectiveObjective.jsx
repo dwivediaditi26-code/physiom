@@ -3334,6 +3334,19 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     🎤
                   </button>
                 </div>
+                {/* Regression fix: this banner used to only exist inside
+                    the aiMode==="voice" block above, so a failed parse in
+                    TEXT mode (the default/most-used mode) left the user
+                    with nothing but the generic "⚠ Error" header pill --
+                    the actual reason (e.message from runParse's catch
+                    block, e.g. a Groq API error or network failure) was
+                    silently undisplayed anywhere in the UI. */}
+                {aiStatus === "error" && (
+                  <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8,
+                    padding:"8px 12px", fontSize:"0.82rem", color:"#b91c1c", marginTop:8 }}>
+                    {aiResult?._errorMsg || "Parse failed — check internet connection or try again."}
+                  </div>
+                )}
               </div>
             )}
 

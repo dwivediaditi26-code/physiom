@@ -77,4 +77,37 @@ describe("Subjective Assessment tab -- native AI panel, full pipeline", () => {
     const analysisBtnAfter = screen.getByText(/Review & Run Analysis/i).closest("button");
     expect(analysisBtnAfter).not.toBeDisabled();
   });
+
+  // Regression test for a real reported bug: a user parsing in TEXT mode
+  // (the default/most-used mode -- opening the panel goes straight to
+  // text, not voice) saw only a generic "⚠ Error" header after a failed
+  // parse, with no way to tell what actually went wrong. Root cause: the
+  // error-detail banner rendering aiResult._errorMsg lived inside the
+  // `aiMode === "voice"` block only, so it never rendered in text mode at
+  // all -- the real reason (e.message from runParse's catch, e.g. the
+  // server's actual error text) was computed and stored but never shown
+  // anywhere on screen.
+  test("a failed parse in TEXT mode shows the actual error detail, not just the header pill", async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      json: async () => ({ error: "Groq API rate limit exceeded, please try again shortly" }),
+    });
+
+    render(<SubjectiveModule data={{}} set={vi.fn()} onNav={() => {}} onTabChange={() => {}} />);
+    const aiButtons = screen.getAllByRole("button").filter(b => b.textContent.trim() === "✦AI");
+    fireEvent.click(aiButtons[0]);
+    // Default mode on opening the panel is text mode -- confirm the
+    // textarea is already showing without switching to voice mode first.
+    const textarea = screen.getByPlaceholderText(/34M LBP/i);
+    fireEvent.change(textarea, { target: { value: "some narrative" } });
+    fireEvent.click(screen.getByText(/Parse with Groq AI/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Groq API rate limit exceeded/)).toBeInTheDocument();
+    });
+    // The header pill alone (previously the only visible signal) is not
+    // sufficient -- assert the actual detail text renders on screen.
+    expect(screen.getByText(/⚠ Error/)).toBeInTheDocument();
+  });
 });
