@@ -2558,12 +2558,18 @@ function AssessmentRow({ icon, label, helpText, PC, children, last }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
-      padding: "9px 16px", minHeight: 44,
+      padding: "11px 14px", minHeight: 44,
       borderBottom: last ? "none" : `1px solid ${PC.border}`,
     }}>
-      <div style={{ width: "30%", flexShrink: 0, display: "flex", alignItems: "flex-start", gap: 7 }}>
-        {icon && icon !== "•" && <span style={{ fontSize: "1.05rem", flexShrink: 0, lineHeight: 1.25 }}>{icon}</span>}
-        <span style={{ fontSize: "0.9rem", fontWeight: 700, color: PC.text, lineHeight: 1.2 }}>
+      <div style={{ width: "30%", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+        {icon && icon !== "•" && (
+          <span style={{
+            width: 26, height: 26, borderRadius: 8, background: `${PC.accent}12`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "0.8rem", flexShrink: 0,
+          }}>{icon}</span>
+        )}
+        <span style={{ fontSize: "0.78rem", fontWeight: 600, color: PC.muted, lineHeight: 1.2 }}>
           {label}
           {helpText && (
             <span title={helpText} style={{
@@ -2605,17 +2611,17 @@ function SmartInput({ value, onChange, PC, multiline }) {
 // Compact pain slider — track + numeric readout in one row, no card.
 function PainSliderCompact({ value, onChange, PC }) {
   const num = parseInt(value || 0, 10) || 0;
-  const col = num >= 7 ? "#dc2626" : num >= 4 ? "#d97706" : "#059669";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
-      <span style={{ fontSize: "0.8rem", color: PC.muted, fontWeight: 600, width: 12, flexShrink: 0 }}>0</span>
+      <span style={{ fontSize: "0.75rem", color: PC.muted, fontWeight: 600, width: 12, flexShrink: 0 }}>0</span>
       <input type="range" min={0} max={10} step={1} value={num}
         onChange={e => onChange(e.target.value)}
-        style={{ flex: 1, accentColor: col, cursor: "pointer" }} />
-      <span style={{ fontSize: "0.8rem", color: PC.muted, fontWeight: 600, width: 16, flexShrink: 0 }}>10</span>
+        style={{ flex: 1, accentColor: PC.accent, cursor: "pointer" }} />
+      <span style={{ fontSize: "0.75rem", color: PC.muted, fontWeight: 600, width: 16, flexShrink: 0 }}>10</span>
       <span style={{
-        minWidth: 26, textAlign: "center", fontWeight: 800, fontSize: "0.92rem", color: col, flexShrink: 0,
-      }}>{num}</span>
+        marginLeft: "auto", minWidth: 42, textAlign: "center", fontWeight: 800, fontSize: "0.76rem",
+        color: PC.a2 || PC.accent, background: `${PC.accent}12`, padding: "3px 10px", borderRadius: 99, flexShrink: 0,
+      }}>{num} / 10</span>
     </div>
   );
 }
@@ -4080,7 +4086,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                         )}
 
                         {/* Line-wise field rows — icon + label left, boxed input right */}
-                        <div style={{ background: PC.surface, borderRadius:12, border:`1px solid ${PC.border}`, overflow:"visible" }}>
+                        <div style={{ background: PC.surface, borderRadius:14, border:`1px solid ${PC.accent}22`, boxShadow:`0 2px 10px ${PC.accent}0D`, overflow:"visible" }}>
                           {s.fields.map((field, fi) => (
                             <AssessmentRow key={field.id} icon={fieldIcon_S(field)} label={field.label}
                               helpText={FIELD_HELP[field.id]} PC={PC} last={fi === s.fields.length - 1}>
