@@ -2561,14 +2561,14 @@ function AssessmentRow({ icon, label, helpText, PC, children, last }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 12,
-      padding: "10px 14px", minHeight: 40,
+      padding: "8px 14px", minHeight: 40,
       borderBottom: last ? "none" : `1px solid ${PC.border}`,
     }}>
       <div style={{ width: "38%", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
         {icon && icon !== "•" && (
           <span style={{ fontSize: "1.15rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
         )}
-        <span style={{ fontSize: "0.86rem", fontWeight: 700, color: PC.text, lineHeight: 1.25 }}>
+        <span style={{ fontSize: "1rem", fontWeight: 600, color: PC.text, lineHeight: 1.25 }}>
           {main}
           {helpText && (
             <span title={helpText} style={{
@@ -2577,7 +2577,7 @@ function AssessmentRow({ icon, label, helpText, PC, children, last }) {
             }}>ⓘ</span>
           )}
           {sub && (
-            <><br /><span style={{ fontSize: "0.72rem", fontWeight: 500, color: PC.muted }}>{sub}</span></>
+            <><br /><span style={{ fontSize: "0.8125rem", fontWeight: 500, color: PC.muted }}>{sub}</span></>
           )}
         </span>
       </div>
