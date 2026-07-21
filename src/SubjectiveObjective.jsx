@@ -4102,8 +4102,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                         {/* Small, subtle section header — icon lives here only */}
                         <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 4px 6px" }}>
                           <span style={{ fontSize:"0.78rem" }}>{s.icon}</span>
-                          <span style={{ fontSize:"0.72rem", fontWeight:700, letterSpacing:"0.06em",
-                            textTransform:"uppercase", color: PC.muted }}>{s.label}</span>
+                          <span style={{ fontSize:"0.74rem", fontWeight:800, letterSpacing:"0.06em",
+                            textTransform:"uppercase", color: PC.text }}>{s.label}</span>
                         </div>
                         {s.description && (
                           <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 6px", lineHeight:1.5 }}>
