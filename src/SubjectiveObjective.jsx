@@ -2807,28 +2807,62 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [insight, setInsight] = useState(()=>{
     try{ return data.cx_insight?JSON.parse(data.cx_insight):null; }catch{ return null; }
   });
+  // Guards the four cx_lumbar_* rehydrations just below: only trust the
+  // persisted lumbar blob if the persisted region selection actually still
+  // includes Lumbar/SI. Without this, a stale cx_lumbar_variables sitting
+  // alongside a `data` blob whose selected regions had since changed to
+  // something else would render Phase 0/0.5 for a region that isn't even
+  // selected any more.
+  const dataHasLumbarRegionSelected = (() => {
+    try {
+      const regs = JSON.parse(data.cx_selected_regions || "[]");
+      return regs.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Lumbar / SI");
+    } catch { return false; }
+  })();
   const [showInsight, setShowInsight] = useState(true);
   // Lumbar Variable Extractor state -- Pass 1 (deterministic, from
   // structured lx_* fields) is synchronous, set alongside `insight` in
   // runInterpretation(). Pass 2 (AI over free-text notes only) is async,
   // fetched separately and merged in once it resolves -- never blocks or
   // delays showing Pass 1's result.
-  const [lumbarVariables, setLumbarVariables] = useState(null);
-  const [lumbarNoteFindings, setLumbarNoteFindings] = useState([]);
+  // Rehydrated from `data.cx_lumbar_*` (same pattern as `insight`/cx_insight
+  // above) so Phase 0/0.5 survive navigating away to ROM/MMT/Special Tests
+  // and back -- previously these four lived in local state only, with no
+  // persisted source, so switching tabs unmounted this component and
+  // switching back remounted it with everything reset to null/[], forcing
+  // a re-click of "Review & Run Analysis" even though `insight` (the older
+  // Phase 1 engine) correctly survived the same navigation.
+  const [lumbarVariables, setLumbarVariables] = useState(()=>{
+    try{ return (dataHasLumbarRegionSelected && data.cx_lumbar_variables)?JSON.parse(data.cx_lumbar_variables):null; }catch{ return null; }
+  });
+  const [lumbarNoteFindings, setLumbarNoteFindings] = useState(()=>{
+    try{ return (dataHasLumbarRegionSelected && data.cx_lumbar_note_findings)?JSON.parse(data.cx_lumbar_note_findings):[]; }catch{ return []; }
+  });
   const [lumbarNotesLoading, setLumbarNotesLoading] = useState(false);
   // Which fields in lumbarVariables were filled by the AI note pass
   // (Pass 2) rather than a checkbox (Pass 1) -- drives the "AI
   // extracted" badge in the Phase 0 display so a clinician can tell the
   // two sources apart at a glance.
-  const [lumbarAiFilledFields, setLumbarAiFilledFields] = useState([]);
+  const [lumbarAiFilledFields, setLumbarAiFilledFields] = useState(()=>{
+    try{ return (dataHasLumbarRegionSelected && data.cx_lumbar_ai_filled)?JSON.parse(data.cx_lumbar_ai_filled):[]; }catch{ return []; }
+  });
   // Red-flag-category AI findings are never auto-merged into
   // redFlags.*.state (patient safety) -- they land here instead, purely
   // for on-screen review, so a clinician has to look and decide.
-  const [lumbarPendingRedFlagReview, setLumbarPendingRedFlagReview] = useState([]);
+  const [lumbarPendingRedFlagReview, setLumbarPendingRedFlagReview] = useState(()=>{
+    try{ return (dataHasLumbarRegionSelected && data.cx_lumbar_pending_rf)?JSON.parse(data.cx_lumbar_pending_rf):[]; }catch{ return []; }
+  });
   // Layer 3 (Reasoning Engine) output -- recomputed synchronously
   // alongside lumbarVariables in runInterpretation(), since it's a pure
   // function of the already-extracted variables and needs no AI call.
-  const [lumbarReasoning, setLumbarReasoning] = useState(null);
+  // On rehydration, re-derive it the same way from the rehydrated
+  // lumbarVariables above rather than persisting a second redundant blob.
+  const [lumbarReasoning, setLumbarReasoning] = useState(()=>{
+    try{
+      const lv0 = (dataHasLumbarRegionSelected && data.cx_lumbar_variables)?JSON.parse(data.cx_lumbar_variables):null;
+      return lv0 ? runLumbarReasoningEngine(lv0) : null;
+    }catch{ return null; }
+  });
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
@@ -2853,10 +2887,16 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
         ? prev.filter(x => x !== r)
         : prev.length >= 3 ? prev : [...prev, r];
       // Persist to patient data so navigation doesn't lose selection
-      set({ ...data, cx_selected_regions: JSON.stringify(next), cx_insight: null });
+      set({ cx_selected_regions: JSON.stringify(next), cx_insight: null,
+        cx_lumbar_variables: null, cx_lumbar_note_findings: null, cx_lumbar_ai_filled: null, cx_lumbar_pending_rf: null });
       return next;
     });
     setInsight(null);
+    setLumbarVariables(null);
+    setLumbarNoteFindings([]);
+    setLumbarAiFilledFields([]);
+    setLumbarPendingRedFlagReview([]);
+    setLumbarReasoning(null);
   }, [set, data]);
 
   // ── AI Parser state ────────────────────────────────────────────────
@@ -3079,6 +3119,12 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       setLumbarAiFilledFields([]);
       setLumbarPendingRedFlagReview([]);
       setLumbarReasoning(runLumbarReasoningEngine(lv));
+      // NOTE: pass only the changed keys here, not `...data` -- set() already
+      // merges against the true latest state internally (setData(prev => ({...prev,
+      // ...patch}))), and this call sits before an async Pass-2 completion further
+      // below that must not clobber it with a stale `data` snapshot spread.
+      try { set({ cx_lumbar_variables: JSON.stringify(lv), cx_lumbar_note_findings: JSON.stringify([]),
+        cx_lumbar_ai_filled: JSON.stringify([]), cx_lumbar_pending_rf: JSON.stringify([]) }); } catch {}
 
       // Variables Pass 1 already resolved definitively -- Pass 2 is told
       // never to re-derive or contradict these.
@@ -3129,6 +3175,12 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           setLumbarAiFilledFields(aiFilledFields);
           setLumbarPendingRedFlagReview(pendingRedFlagReview);
           setLumbarReasoning(runLumbarReasoningEngine(merged));
+          // Same reasoning as the sync persist above: only the changed keys,
+          // no `...data` spread -- this callback's `data` closure is frozen at
+          // whatever it was when runInterpretation() started, so spreading it
+          // here would silently re-write cx_insight back to its pre-run value.
+          try { set({ cx_lumbar_variables: JSON.stringify(merged), cx_lumbar_note_findings: JSON.stringify(findings),
+            cx_lumbar_ai_filled: JSON.stringify(aiFilledFields), cx_lumbar_pending_rf: JSON.stringify(pendingRedFlagReview) }); } catch {}
         }).catch(() => { setLumbarNoteFindings([]); })
           .finally(() => setLumbarNotesLoading(false));
       }
@@ -3138,6 +3190,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       setLumbarAiFilledFields([]);
       setLumbarPendingRedFlagReview([]);
       setLumbarReasoning(null);
+      try { set({ cx_lumbar_variables: null, cx_lumbar_note_findings: null,
+        cx_lumbar_ai_filled: null, cx_lumbar_pending_rf: null }); } catch {}
     }
     // Persist insight so it survives navigation to ROM/MMT and back
     try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
