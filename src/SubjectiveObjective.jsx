@@ -2561,10 +2561,10 @@ function AssessmentRow({ icon, label, helpText, PC, children, last }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 12,
-      padding: "13px 14px", minHeight: 44,
+      padding: "10px 14px", minHeight: 40,
       borderBottom: last ? "none" : `1px solid ${PC.border}`,
     }}>
-      <div style={{ width: "36%", flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ width: "38%", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
         {icon && icon !== "•" && (
           <span style={{ fontSize: "1.15rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
         )}
