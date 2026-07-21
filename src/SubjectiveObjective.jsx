@@ -3023,7 +3023,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const hasAnyRedFlag = allRedFlags.length > 0;
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:14, maxWidth:"100%" }}>
+    <div style={{
+      display:"flex", flexDirection:"column", gap:14, maxWidth:"100%",
+      fontFamily: "ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, -apple-system, sans-serif",
+    }}>
 
       {/* ── Red Flag Alert Banner ─────────────────────────────────── */}
       {hasAnyRedFlag && (
