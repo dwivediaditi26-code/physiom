@@ -2979,7 +2979,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     // zero-hallucination-risk read rather than folded into runEngineV6's
     // own ad-hoc field reads. Pass 2 asks AI to check ONLY the free-text
     // note fields for anything Pass 1 didn't already capture.
-    if (selectedRegions.includes("Lumbar / SI")) {
+    if (selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Lumbar / SI")) {
       const lv = extractLumbarVariablesStructured(data);
       setLumbarVariables(lv);
       setLumbarNoteFindings([]);
@@ -4329,7 +4329,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                        are shown explicitly rather than collapsing Unknown
                        into a "no" -- unknown data should lower confidence,
                        not count as evidence against a hypothesis. ── */}
-                  {r.region === "Lumbar / SI" && lumbarVariables && (() => {
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Lumbar / SI" && lumbarVariables && (() => {
                     const lv = lumbarVariables;
                     const Chip = ({ state, children }) => (
                       <span style={{
