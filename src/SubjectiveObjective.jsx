@@ -1284,6 +1284,59 @@ function NavActionBtn({ btn, onNav, PC }) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// LUMBAR ENGINE (L01-L11) OBJECTIVE TEST -> NAV TARGET MAPPING
+// The lumbarReasoningEngine.js objectiveTests.{required,recommended} arrays
+// are free-text test names (grounded in Magee/Kisner&Colby, not app internals).
+// This maps ONLY the subset that has a real, unambiguous 1:1 implemented
+// module in this app -- same accuracy bar as the rest of this engine: no
+// invented mappings. A test with no genuine implemented equivalent (imaging,
+// palpation, outcome-measure questionnaires, PA glides, PPIVMs, Farfan/
+// Pheasant/H&I, etc.) is deliberately left non-clickable rather than pointed
+// at a module that doesn't actually test it.
+// ══════════════════════════════════════════════════════════════════════════════
+const LUMBAR_ROM_HIGHLIGHTS = ["rom_lflex","rom_lext","rom_llfl","rom_llfr","rom_lrotl","rom_lrotr"];
+const LUMBAR_NEURO_HIGHLIGHTS = ["n_l4","n_l5","n_s1","n_s2","nt_slr","nt_slump_test"];
+const LUMBAR_CORE_MMT_HIGHLIGHTS = ["mmt_multif","mmt_ta","mmt_ql","mmt_diaphragm","mmt_obliques"];
+
+function lumbarTestNav(testStr) {
+  const s = String(testStr || "");
+  // Exclusions first: tests that share a word with a mapped test but are
+  // clinically distinct and have no dedicated implementation of their own.
+  if (/active slr/i.test(s)) return null;
+  if (/crossed slr/i.test(s)) return null; // distinct test (opposite leg), not implemented in this app
+
+
+  if (/slump test/i.test(s))
+    return { nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" } };
+  if (/femoral nerve tension test/i.test(s))
+    return { nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_femoral_nerve_stretch" } };
+  if (/quadrant test|kemp'?s test/i.test(s))
+    return { nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_kemp" } };
+  if (/stork/i.test(s))
+    return { nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_stork" } };
+  if (/sij provocation cluster/i.test(s))
+    return { nav:"special", ctx:{ specialRegion:"lumbar" } }; // cluster of several tests -- land on the region, don't pin one
+  if (/faber/i.test(s))
+    return { nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" } };
+  if (/\bslr\b/i.test(s))
+    return { nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_slr_test" } };
+
+  if (/neuro(logical)? screen/i.test(s))
+    return { nav:"neuro", ctx:{ neuroHighlights: LUMBAR_NEURO_HIGHLIGHTS } };
+
+  if (/core\/?lumbopelvic motor control|core assessment/i.test(s))
+    return { nav:"mmt", ctx:{ mmtRegion:"Spine & Core", mmtHighlights: LUMBAR_CORE_MMT_HIGHLIGHTS } };
+
+  if (/functional (movement )?screen|functional testing/i.test(s))
+    return { nav:"fma", ctx:{ fsRegion:"lumbar" } };
+
+  if (/lumbar arom|repeated movement/i.test(s))
+    return { nav:"rom", ctx:{ romRegion:"Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS } };
+
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // REGION-SPECIFIC NAV CONFIG
 // Maps each subjective region → exact module + navContext payload
 // All region keys must match runEngineV6 output strings exactly.
@@ -4558,18 +4611,36 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   Suggested objective tests
                                 </div>
                                 <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
-                                  {(c.objectiveTests.required || []).map((t, ti) => (
-                                    <span key={"req"+ti} style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6,
-                                      background: PC.surface, border:`1px solid ${PC.border}`, color: PC.text, fontWeight:600 }}>
-                                      {t}
-                                    </span>
-                                  ))}
-                                  {(c.objectiveTests.recommended || []).map((t, ti) => (
-                                    <span key={"rec"+ti} style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6,
-                                      background: "transparent", border:`1px dashed ${PC.border}`, color: PC.muted }}>
-                                      {t}
-                                    </span>
-                                  ))}
+                                  {(c.objectiveTests.required || []).map((t, ti) => {
+                                    const target = lumbarTestNav(t);
+                                    return (target && onNav) ? (
+                                      <button key={"req"+ti} onClick={()=>onNav(target.nav, target.ctx)}
+                                        style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6, cursor:"pointer",
+                                        background: PC.surface, border:`1px solid ${PC.border}`, color: PC.accent, fontWeight:700 }}>
+                                        {t} →
+                                      </button>
+                                    ) : (
+                                      <span key={"req"+ti} style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6,
+                                        background: PC.surface, border:`1px solid ${PC.border}`, color: PC.text, fontWeight:600 }}>
+                                        {t}
+                                      </span>
+                                    );
+                                  })}
+                                  {(c.objectiveTests.recommended || []).map((t, ti) => {
+                                    const target = lumbarTestNav(t);
+                                    return (target && onNav) ? (
+                                      <button key={"rec"+ti} onClick={()=>onNav(target.nav, target.ctx)}
+                                        style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6, cursor:"pointer",
+                                        background: "transparent", border:`1px dashed ${PC.accent}66`, color: PC.accent }}>
+                                        {t} →
+                                      </button>
+                                    ) : (
+                                      <span key={"rec"+ti} style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6,
+                                        background: "transparent", border:`1px dashed ${PC.border}`, color: PC.muted }}>
+                                        {t}
+                                      </span>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
@@ -13031,4 +13102,4 @@ function ErgoModule({ data, set }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 
-export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA, REGION_NAV, REGION_FAMILY_KEY, RC_S };
+export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA, REGION_NAV, REGION_FAMILY_KEY, RC_S, lumbarTestNav };
