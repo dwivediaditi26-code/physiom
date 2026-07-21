@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, Component } f
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage } from "./sharedClinicalData.js";
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
-import { extractLumbarVariablesStructured, mergeLumbarVariables } from "./lumbarVariableExtractor.js";
+import { extractLumbarVariablesStructured } from "./lumbarVariableExtractor.js";
 import { runLumbarReasoningEngine } from "./lumbarReasoningEngine.js";
 
 const TEST_SVG = {
@@ -2743,15 +2743,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [lumbarVariables, setLumbarVariables] = useState(null);
   const [lumbarNoteFindings, setLumbarNoteFindings] = useState([]);
   const [lumbarNotesLoading, setLumbarNotesLoading] = useState(false);
-  // Which fields in lumbarVariables were filled by the AI note pass
-  // (Pass 2) rather than a checkbox (Pass 1) -- drives the "AI
-  // extracted" badge in the Phase 0 display so a clinician can tell the
-  // two sources apart at a glance.
-  const [lumbarAiFilledFields, setLumbarAiFilledFields] = useState([]);
-  // Red-flag-category AI findings are never auto-merged into
-  // redFlags.*.state (patient safety) -- they land here instead, purely
-  // for on-screen review, so a clinician has to look and decide.
-  const [lumbarPendingRedFlagReview, setLumbarPendingRedFlagReview] = useState([]);
   // Layer 3 (Reasoning Engine) output -- recomputed synchronously
   // alongside lumbarVariables in runInterpretation(), since it's a pure
   // function of the already-extracted variables and needs no AI call.
@@ -3003,8 +2994,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       const lv = extractLumbarVariablesStructured(data);
       setLumbarVariables(lv);
       setLumbarNoteFindings([]);
-      setLumbarAiFilledFields([]);
-      setLumbarPendingRedFlagReview([]);
       setLumbarReasoning(runLumbarReasoningEngine(lv));
 
       // Variables Pass 1 already resolved definitively -- Pass 2 is told
@@ -3039,28 +3028,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ notes: lv._notesForAiPass, alreadyKnown: already }),
         }).then(r => r.json()).then(j => {
-          const findings = Array.isArray(j.findings) ? j.findings : [];
-          setLumbarNoteFindings(findings);
-          // Merge AI note findings into the Pass 1 variables before
-          // re-scoring -- without this, Phase 0 keeps showing "Not
-          // asked" for fields the AI plainly found, and Phase 0.5 keeps
-          // scoring against Pass-1-only data (the exact bug reported:
-          // L02 read "Insufficient data" despite a textbook
-          // radiculopathy case because none of the AI-found variables
-          // ever reached the matching engine).
-          const { merged, aiFilledFields, pendingRedFlagReview } = mergeLumbarVariables(lv, findings);
-          setLumbarVariables(merged);
-          setLumbarAiFilledFields(aiFilledFields);
-          setLumbarPendingRedFlagReview(pendingRedFlagReview);
-          setLumbarReasoning(runLumbarReasoningEngine(merged));
+          setLumbarNoteFindings(Array.isArray(j.findings) ? j.findings : []);
         }).catch(() => { setLumbarNoteFindings([]); })
           .finally(() => setLumbarNotesLoading(false));
       }
     } else {
       setLumbarVariables(null);
       setLumbarNoteFindings([]);
-      setLumbarAiFilledFields([]);
-      setLumbarPendingRedFlagReview([]);
       setLumbarReasoning(null);
     }
     // Persist insight so it survives navigation to ROM/MMT and back
@@ -4381,30 +4355,12 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                         {state==="present" ? "✓" : state==="absent" ? "—" : "?"} {children}
                       </span>
                     );
-                    // fieldKey lets a row look itself up in
-                    // lumbarAiFilledFields -- when the AI note pass
-                    // filled this exact field (not just found *a*
-                    // mention of it somewhere), the row shows a
-                    // distinct "AI extracted" badge instead of a plain
-                    // Yes/No, so a clinician can see at a glance which
-                    // answers came from a checkbox vs. a note.
-                    const row = (label, state, detail, fieldKey) => {
-                      const aiFilled = fieldKey && lumbarAiFilledFields.includes(fieldKey);
-                      return (
-                        <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
-                          <span style={{ fontSize:"0.74rem", color: PC.muted, minWidth:150 }}>{label}</span>
-                          <Chip state={state}>{state==="unknown" ? "Not asked" : (detail || (state==="present"?"Yes":"No"))}</Chip>
-                          {aiFilled && (
-                            <span style={{
-                              fontSize:"0.66rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
-                              background:"#7c3aed18", color:"#7c3aed", border:"1px solid #7c3aed44",
-                            }}>
-                              ✓ AI extracted
-                            </span>
-                          )}
-                        </div>
-                      );
-                    };
+                    const row = (label, state, detail) => (
+                      <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                        <span style={{ fontSize:"0.74rem", color: PC.muted, minWidth:150 }}>{label}</span>
+                        <Chip state={state}>{state==="unknown" ? "Not asked" : (detail || (state==="present"?"Yes":"No"))}</Chip>
+                      </div>
+                    );
                     const redFlagState = (f) => f.state;
                     return (
                       <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:`4px solid #0891b2` }}>
@@ -4417,19 +4373,19 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                         </div>
 
                         {row("Below-knee pain", lv.location.belowKneePain==="unknown"?"unknown":lv.location.belowKneePain?"present":"absent",
-                          lv.location.belowKneePain==="bilateral"?"Bilateral":undefined, "belowKneePain")}
-                        {row("Dermatomal pattern", lv.location.dermatomal.state, lv.location.dermatomal.values.join(", "), "dermatomalPattern")}
-                        {row("Acute lifting mechanism", lv.mechanism.acuteLiftingMechanism==="unknown"?"unknown":lv.mechanism.acuteLiftingMechanism?"present":"absent", undefined, "acuteLiftingMechanism")}
-                        {row("Flexion aggravates", lv.aggravating.movements.state==="unknown"?"unknown":lv.aggravating.flexionAggravates?"present":"absent", undefined, "flexionAggravates")}
-                        {row("Extension aggravates", lv.aggravating.movements.state==="unknown"?"unknown":lv.aggravating.extensionAggravates?"present":"absent", undefined, "extensionAggravates")}
-                        {row("Sitting aggravates", lv.aggravating.postures.state==="unknown"?"unknown":lv.aggravating.sittingAggravates?"present":"absent", undefined, "sittingAggravates")}
-                        {row("Cough/sneeze aggravates", lv.aggravating.activities.state==="unknown"?"unknown":lv.aggravating.coughSneezeAggravates?"present":"absent", undefined, "coughSneezeAggravates")}
-                        {row("Extension relieves", lv.relieving.movements.state==="unknown"?"unknown":lv.relieving.extensionRelieves?"present":"absent", undefined, "extensionRelieves")}
-                        {row("Walking relieves", lv.relieving.movements.state==="unknown"?"unknown":lv.relieving.walkingRelieves?"present":"absent", undefined, "walkingRelieves")}
-                        {row("Constant, unremitting pain", lv.symptomBehaviour.overallPattern.state==="unknown"?"unknown":lv.symptomBehaviour.constantUnremitting?"present":"absent", undefined, "constantUnremitting")}
-                        {row("Constant night pain", lv.symptomBehaviour.night.state==="unknown"?"unknown":lv.symptomBehaviour.constantNightPain?"present":"absent", undefined, "constantNightPain")}
-                        {row("Leg neurological symptoms", lv.neurological.hasLegNeuro==="unknown"?"unknown":lv.neurological.hasLegNeuro?"present":"absent", undefined, "hasLegNeuro")}
-                        {row("Neurogenic claudication pattern", lv.neurological.claudication.state==="unknown"?"unknown":lv.neurological.neurogenicClaudication?"present":"absent", undefined, "neurogenicClaudication")}
+                          lv.location.belowKneePain==="bilateral"?"Bilateral":undefined)}
+                        {row("Dermatomal pattern", lv.location.dermatomal.state, lv.location.dermatomal.values.join(", "))}
+                        {row("Acute lifting mechanism", lv.mechanism.acuteLiftingMechanism==="unknown"?"unknown":lv.mechanism.acuteLiftingMechanism?"present":"absent")}
+                        {row("Flexion aggravates", lv.aggravating.movements.state==="unknown"?"unknown":lv.aggravating.flexionAggravates?"present":"absent")}
+                        {row("Extension aggravates", lv.aggravating.movements.state==="unknown"?"unknown":lv.aggravating.extensionAggravates?"present":"absent")}
+                        {row("Sitting aggravates", lv.aggravating.postures.state==="unknown"?"unknown":lv.aggravating.sittingAggravates?"present":"absent")}
+                        {row("Cough/sneeze aggravates", lv.aggravating.activities.state==="unknown"?"unknown":lv.aggravating.coughSneezeAggravates?"present":"absent")}
+                        {row("Extension relieves", lv.relieving.movements.state==="unknown"?"unknown":lv.relieving.extensionRelieves?"present":"absent")}
+                        {row("Walking relieves", lv.relieving.movements.state==="unknown"?"unknown":lv.relieving.walkingRelieves?"present":"absent")}
+                        {row("Constant, unremitting pain", lv.symptomBehaviour.overallPattern.state==="unknown"?"unknown":lv.symptomBehaviour.constantUnremitting?"present":"absent")}
+                        {row("Constant night pain", lv.symptomBehaviour.night.state==="unknown"?"unknown":lv.symptomBehaviour.constantNightPain?"present":"absent")}
+                        {row("Leg neurological symptoms", lv.neurological.hasLegNeuro==="unknown"?"unknown":lv.neurological.hasLegNeuro?"present":"absent")}
+                        {row("Neurogenic claudication pattern", lv.neurological.claudication.state==="unknown"?"unknown":lv.neurological.neurogenicClaudication?"present":"absent")}
 
                         <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", margin:"10px 0 5px" }}>Red flag screen (mandatory)</div>
                         {row("Cauda equina indicators", redFlagState(lv.redFlags.cauda), lv.redFlags.cauda.values.join(", "))}
@@ -4445,21 +4401,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                         {!lumbarNotesLoading && lumbarNoteFindings.length > 0 && (
                           <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed ${PC.border}` }}>
                             <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#7c3aed", marginBottom:5 }}>
-                              Found in your notes (AI — merged into the variables above where a checkbox hadn't already answered that field)
+                              Found in your notes (AI, supplementing only — never overrides a checkbox)
                             </div>
                             {lumbarNoteFindings.map((f, fi) => (
-                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
-                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {!lumbarNotesLoading && lumbarPendingRedFlagReview.length > 0 && (
-                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed #dc2626` }}>
-                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", marginBottom:5 }}>
-                              ⚠ Possible red-flag mentions in your notes — NOT auto-applied, please review the red flag screen above yourself
-                            </div>
-                            {lumbarPendingRedFlagReview.map((f, fi) => (
                               <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
                                 <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
                               </div>
