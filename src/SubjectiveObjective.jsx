@@ -2555,27 +2555,29 @@ function fieldIcon_S(f) {
 // hairline divider is the only separator — rows are compact at rest
 // and grow only as far as their content needs.
 function AssessmentRow({ icon, label, helpText, PC, children, last }) {
+  const dashSplit = typeof label === "string" ? label.split(/\s+—\s+/) : [label];
+  const main = dashSplit[0];
+  const sub = dashSplit.slice(1).join(" — ");
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: "11px 14px", minHeight: 44,
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "13px 14px", minHeight: 44,
       borderBottom: last ? "none" : `1px solid ${PC.border}`,
     }}>
-      <div style={{ width: "30%", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ width: "36%", flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }}>
         {icon && icon !== "•" && (
-          <span style={{
-            width: 26, height: 26, borderRadius: 8, background: `${PC.accent}12`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "0.8rem", flexShrink: 0,
-          }}>{icon}</span>
+          <span style={{ fontSize: "1.15rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
         )}
-        <span style={{ fontSize: "0.78rem", fontWeight: 600, color: PC.muted, lineHeight: 1.2 }}>
-          {label}
+        <span style={{ fontSize: "0.86rem", fontWeight: 700, color: PC.text, lineHeight: 1.25 }}>
+          {main}
           {helpText && (
             <span title={helpText} style={{
               display: "inline-flex", marginLeft: 4, color: PC.accent,
               fontSize: "0.62rem", cursor: "help", verticalAlign: "top",
             }}>ⓘ</span>
+          )}
+          {sub && (
+            <><br /><span style={{ fontSize: "0.72rem", fontWeight: 500, color: PC.muted }}>{sub}</span></>
           )}
         </span>
       </div>
@@ -2619,9 +2621,11 @@ function PainSliderCompact({ value, onChange, PC }) {
         style={{ flex: 1, accentColor: PC.accent, cursor: "pointer" }} />
       <span style={{ fontSize: "0.75rem", color: PC.muted, fontWeight: 600, width: 16, flexShrink: 0 }}>10</span>
       <span style={{
-        marginLeft: "auto", minWidth: 42, textAlign: "center", fontWeight: 800, fontSize: "0.76rem",
-        color: PC.a2 || PC.accent, background: `${PC.accent}12`, padding: "3px 10px", borderRadius: 99, flexShrink: 0,
-      }}>{num} / 10</span>
+        marginLeft: "auto", minWidth: 34, textAlign: "right", flexShrink: 0,
+      }}>
+        <span style={{ fontWeight: 800, fontSize: "0.9rem", color: PC.text }}>{num}</span>
+        <span style={{ fontWeight: 600, fontSize: "0.72rem", color: PC.muted }}> /10</span>
+      </span>
     </div>
   );
 }
@@ -2670,18 +2674,18 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
       }}>
         <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
           onClick={e => e.stopPropagation()}
-          placeholder="Type, or pick from list..."
+          placeholder={isMulti ? "Tap to select (multiple)..." : "Tap to select..."}
           style={{
             flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
             fontSize: "0.92rem", color: PC.text, fontFamily: "inherit", resize: "none",
             overflow: "hidden", lineHeight: 1.35, padding: "2px 0",
           }} />
         <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} style={{
-          flexShrink: 0, width: 24, height: 24, borderRadius: "50%", alignSelf: "flex-end", marginBottom: 1,
+          flexShrink: 0, width: 20, height: 20, alignSelf: "flex-end", marginBottom: 3,
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: PC.accent + "14", color: PC.accent, fontSize: "0.66rem", cursor: "pointer",
-          border: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease",
-        }}>▾</button>
+          background: "none", color: PC.muted, fontSize: "1rem", cursor: "pointer",
+          border: "none", transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms ease",
+        }}>›</button>
       </div>
 
       {open && (
