@@ -7,10 +7,10 @@ import { lumbarTestNav } from "../SubjectiveObjective.jsx";
 // must stay unmapped so the UI leaves it as a plain, non-clickable chip.
 describe("lumbarTestNav -- L01-L11 objective test -> module mapping", () => {
   it("maps SLR variants to the special-tests SLR entry", () => {
-    expect(lumbarTestNav("SLR (expect negative)")).toEqual({
+    expect(lumbarTestNav("SLR (expect negative)")).toMatchObject({
       nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_slr_test" },
     });
-    expect(lumbarTestNav("Bilateral SLR")).toEqual({
+    expect(lumbarTestNav("Bilateral SLR")).toMatchObject({
       nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_slr_test" },
     });
   });
@@ -20,37 +20,37 @@ describe("lumbarTestNav -- L01-L11 objective test -> module mapping", () => {
   });
 
   it("maps Slump test to the neural special-tests entry", () => {
-    expect(lumbarTestNav("Slump test")).toEqual({
+    expect(lumbarTestNav("Slump test")).toMatchObject({
       nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_slump_test" },
     });
   });
 
   it("maps Quadrant Test / Kemp's Test to st_kemp", () => {
-    expect(lumbarTestNav("Quadrant Test / Kemp's Test")).toEqual({
+    expect(lumbarTestNav("Quadrant Test / Kemp's Test")).toMatchObject({
       nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_kemp" },
     });
   });
 
   it("maps the stork test (L07 spondylolisthesis) to st_stork", () => {
-    expect(lumbarTestNav("One-Leg Standing (Stork) Lumbar Extension Test")).toEqual({
+    expect(lumbarTestNav("One-Leg Standing (Stork) Lumbar Extension Test")).toMatchObject({
       nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_stork" },
     });
   });
 
   it("maps femoral nerve tension test to st_femoral_nerve_stretch", () => {
-    expect(lumbarTestNav("Femoral nerve tension test (if upper lumbar)")).toEqual({
+    expect(lumbarTestNav("Femoral nerve tension test (if upper lumbar)")).toMatchObject({
       nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_femoral_nerve_stretch" },
     });
   });
 
   it("maps the SIJ provocation cluster to the lumbar special-tests region without pinning one test", () => {
-    expect(lumbarTestNav("SIJ provocation CLUSTER (not a single test): Compression, Distraction, Sacral Thrust, Gaenslen's, FABERE/Patrick, Gillet's")).toEqual({
+    expect(lumbarTestNav("SIJ provocation CLUSTER (not a single test): Compression, Distraction, Sacral Thrust, Gaenslen's, FABERE/Patrick, Gillet's")).toMatchObject({
       nav: "special", ctx: { specialRegion: "lumbar" },
     });
   });
 
   it("maps FABER (L10 cross-ref) to the hip special-tests entry, not the SIJ cluster", () => {
-    expect(lumbarTestNav("FABER + posterior SIJ provocation (cross-ref L05)")).toEqual({
+    expect(lumbarTestNav("FABER + posterior SIJ provocation (cross-ref L05)")).toMatchObject({
       nav: "special", ctx: { specialRegion: "hip", highlightTest: "st_faber_test" },
     });
   });

@@ -1251,22 +1251,25 @@ const RC_S={"Cervical spine":"#7c3aed","Thoracic spine":"#d97706","Lumbar / SI":
 const ALL_REGIONS_S=Object.keys(RC_S);
 function NavActionBtn({ btn, onNav, PC }) {
   const [showWhy, setShowWhy] = React.useState(false);
+  const clickable = !!btn.nav;
+  const col = clickable ? btn.col : PC.muted;
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
       <div style={{ display:"flex", gap:4 }}>
         <button
-          onClick={()=>onNav(btn.nav, btn.ctx)}
+          onClick={clickable ? ()=>onNav(btn.nav, btn.ctx) : undefined}
+          disabled={!clickable}
           style={{ flex:1, display:"flex", alignItems:"center", gap:6, padding:"7px 10px",
-            background:`${btn.col}12`, border:`1px solid ${btn.col}30`, borderRadius:"7px 0 0 7px",
-            color:btn.col, cursor:"pointer", fontSize:"0.67rem", fontWeight:700,
+            background:`${col}12`, border:`1px solid ${col}30`, borderRadius:"7px 0 0 7px",
+            color:col, cursor: clickable ? "pointer" : "default", fontSize:"0.67rem", fontWeight:700,
             textAlign:"left", transition:"all 0.15s" }}>
           <span style={{fontSize:"0.9rem",flexShrink:0}}>{btn.icon}</span>
           <span>{btn.label}</span>
         </button>
         <button
           onClick={()=>setShowWhy(w=>!w)}
-          style={{ padding:"7px 8px", background:`${btn.col}08`,
-            border:`1px solid ${btn.col}20`, borderLeft:"none",
+          style={{ padding:"7px 8px", background:`${col}08`,
+            border:`1px solid ${col}20`, borderLeft:"none",
             borderRadius:"0 7px 7px 0", color:PC.muted, cursor:"pointer",
             fontSize:"0.78rem", fontWeight:800 }}>
           ?
@@ -1275,7 +1278,7 @@ function NavActionBtn({ btn, onNav, PC }) {
       {showWhy && (
         <div style={{ fontSize:"0.82rem", color:PC.muted, padding:"5px 8px",
           background:PC.s3, borderRadius:"0 0 6px 6px",
-          border:`1px solid ${btn.col}20`, borderTop:"none", lineHeight:1.5 }}>
+          border:`1px solid ${col}20`, borderTop:"none", lineHeight:1.5 }}>
           {btn.why}
         </div>
       )}
@@ -1305,33 +1308,43 @@ function lumbarTestNav(testStr) {
   if (/active slr/i.test(s)) return null;
   if (/crossed slr/i.test(s)) return null; // distinct test (opposite leg), not implemented in this app
 
-
   if (/slump test/i.test(s))
-    return { nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" } };
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },
+      why:"Slump — more sensitive than SLR for disc herniation. Reproduces radicular symptoms in flexed posture." };
   if (/femoral nerve tension test/i.test(s))
-    return { nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_femoral_nerve_stretch" } };
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_femoral_nerve_stretch" },
+      why:"FNST — 88% sensitivity for L2/3/4 femoral nerve tension. Prone knee flexion reproducing anterior thigh pain = positive." };
   if (/quadrant test|kemp'?s test/i.test(s))
-    return { nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_kemp" } };
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_kemp" },
+      why:"Kemp's — facet loading test. Positive = ipsilateral facet referral or foraminal stenosis." };
   if (/stork/i.test(s))
-    return { nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_stork" } };
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_stork" },
+      why:"Stork Test — single-leg lumbar extension loading. Ipsilateral LBP in a young athlete is highly suspicious for spondylolysis/spondylolisthesis." };
   if (/sij provocation cluster/i.test(s))
-    return { nav:"special", ctx:{ specialRegion:"lumbar" } }; // cluster of several tests -- land on the region, don't pin one
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar" },
+      why:"A cluster, not one test — Compression, Distraction, Sacral Thrust (Thigh Thrust), Gaenslen's all live on this page. 3+ positive = 91% specific for SIJ." };
   if (/faber/i.test(s))
-    return { nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" } };
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" },
+      why:"FABER/Patrick's — SIJ and hip joint provocation. 77% sensitivity. Cross-check against the SIJ cluster above." };
   if (/\bslr\b/i.test(s))
-    return { nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_slr_test" } };
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_slr_test" },
+      why:"SLR — 80% sensitivity for L4/L5/S1 nerve root compression. Positive < 60° = neural involvement." };
 
   if (/neuro(logical)? screen/i.test(s))
-    return { nav:"neuro", ctx:{ neuroHighlights: LUMBAR_NEURO_HIGHLIGHTS } };
+    return { icon:"\u26a1", col:"#dc2626", nav:"neuro", ctx:{ neuroHighlights: LUMBAR_NEURO_HIGHLIGHTS },
+      why:"L1-S2 dermatomes, myotomes, patella/achilles reflexes. Localise disc level. Rule out cauda equina." };
 
   if (/core\/?lumbopelvic motor control|core assessment/i.test(s))
-    return { nav:"mmt", ctx:{ mmtRegion:"Spine & Core", mmtHighlights: LUMBAR_CORE_MMT_HIGHLIGHTS } };
+    return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Spine & Core", mmtHighlights: LUMBAR_CORE_MMT_HIGHLIGHTS },
+      why:"Multifidus — segmental stabiliser most inhibited in LBP. Assess before any loading programme." };
 
   if (/functional (movement )?screen|functional testing/i.test(s))
-    return { nav:"fma", ctx:{ fsRegion:"lumbar" } };
+    return { icon:"\ud83c\udfc3", col:"#059669", nav:"fma", ctx:{ fsRegion:"lumbar" },
+      why:"Forward bend — hip hinge vs lumbar flexion. Squat — global lower chain. Single-leg — SIJ control." };
 
   if (/lumbar arom|repeated movement/i.test(s))
-    return { nav:"rom", ctx:{ romRegion:"Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS } };
+    return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS },
+      why:"Lumbar flexion/extension — establishes direction of pain provocation. McKenzie: flexion or extension preference?" };
 
   return null;
 }
@@ -4606,42 +4619,35 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
                             </div>
                             {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
-                              <div style={{ marginTop:6, paddingTop:6, borderTop:`1px solid ${PC.border}` }}>
-                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:4 }}>
-                                  Suggested objective tests
+                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                  Suggested objective tests — Required
                                 </div>
-                                <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
                                   {(c.objectiveTests.required || []).map((t, ti) => {
                                     const target = lumbarTestNav(t);
-                                    return (target && onNav) ? (
-                                      <button key={"req"+ti} onClick={()=>onNav(target.nav, target.ctx)}
-                                        style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6, cursor:"pointer",
-                                        background: PC.surface, border:`1px solid ${PC.border}`, color: PC.accent, fontWeight:700 }}>
-                                        {t} →
-                                      </button>
-                                    ) : (
-                                      <span key={"req"+ti} style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6,
-                                        background: PC.surface, border:`1px solid ${PC.border}`, color: PC.text, fontWeight:600 }}>
-                                        {t}
-                                      </span>
-                                    );
-                                  })}
-                                  {(c.objectiveTests.recommended || []).map((t, ti) => {
-                                    const target = lumbarTestNav(t);
-                                    return (target && onNav) ? (
-                                      <button key={"rec"+ti} onClick={()=>onNav(target.nav, target.ctx)}
-                                        style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6, cursor:"pointer",
-                                        background: "transparent", border:`1px dashed ${PC.accent}66`, color: PC.accent }}>
-                                        {t} →
-                                      </button>
-                                    ) : (
-                                      <span key={"rec"+ti} style={{ fontSize:"0.72rem", padding:"2px 7px", borderRadius:6,
-                                        background: "transparent", border:`1px dashed ${PC.border}`, color: PC.muted }}>
-                                        {t}
-                                      </span>
-                                    );
+                                    const btn = target
+                                      ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                      : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                    return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                   })}
                                 </div>
+                                {(c.objectiveTests.recommended || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
+                                      Recommended (if indicated)
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
+                                        const target = lumbarTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             )}
                           </div>
