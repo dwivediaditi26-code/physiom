@@ -1367,6 +1367,12 @@ const CERVICAL_NEURO_HIGHLIGHTS = ["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1"
 function cervicalTestNav(testStr) {
   const s = String(testStr || "");
 
+  if (/tinel'?s sign at wrist/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_tinel_wrist" },
+      why:"Tinel's at the wrist — median nerve / carpal tunnel. A positive result here (not at the neck) points to a distal peripheral entrapment (C09), not cervical radiculopathy (C02)." };
+  if (/tinel'?s sign at elbow/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_tinel_elbow" },
+      why:"Tinel's at the elbow — ulnar nerve / cubital tunnel. Same logic as the wrist version: a distal, single-nerve finding argues against a cervical nerve-root source." };
   if (/ultt1/i.test(s))
     return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_ultt1" },
       why:"ULTT1 — median nerve tension. Upper-limb equivalent of the SLR; double-crush check against cervical nerve root involvement." };

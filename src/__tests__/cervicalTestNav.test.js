@@ -67,6 +67,15 @@ describe("cervicalTestNav -- C01-C11 objective test -> module mapping", () => {
     });
   });
 
+  it("maps Tinel's Sign at Wrist and Tinel's Sign at Elbow to the real elbow_wrist special-tests entries", () => {
+    expect(cervicalTestNav("Tinel's Sign at Wrist")).toMatchObject({
+      nav: "special", ctx: { specialRegion: "elbow_wrist", highlightTest: "st_tinel_wrist" },
+    });
+    expect(cervicalTestNav("Tinel's Sign at Elbow")).toMatchObject({
+      nav: "special", ctx: { specialRegion: "elbow_wrist", highlightTest: "st_tinel_elbow" },
+    });
+  });
+
   it("maps neurological screen variants to the neuro module", () => {
     expect(cervicalTestNav("Neurological screen (myotomes, dermatomes, reflexes)")).toMatchObject({ nav: "neuro" });
     expect(cervicalTestNav("Bilateral neurological screen")).toMatchObject({ nav: "neuro" });
@@ -96,7 +105,6 @@ describe("cervicalTestNav -- C01-C11 objective test -> module mapping", () => {
     expect(cervicalTestNav("MRI if red flags or progressive signs")).toBeNull();
     expect(cervicalTestNav("Resisted isometric movements")).toBeNull();
     expect(cervicalTestNav("Outcome measure (Neck Disability Index)")).toBeNull();
-    expect(cervicalTestNav("Tinel's sign at likely entrapment sites (elbow/wrist — not a dedicated module in this app yet)")).toBeNull();
     expect(cervicalTestNav("Palpation for taut bands/trigger points reproducing referred pain (unverified against a real source)")).toBeNull();
   });
 });

@@ -152,13 +152,35 @@ describe("runCervicalReasoningEngine", () => {
     expect(result.conditions.some(c => c.id === "C11")).toBe(false);
   });
 
-  it("flags C09 and C10 as lowConfidence placeholders, same policy as lumbar L06/L09", () => {
+  it("flags C09 and C10 as lowConfidence, grounded in real sources (Travell & Simons / C Rex) rather than left as unverified placeholders", () => {
     const cv = extractCervicalVariablesStructured({});
     const result = runCervicalReasoningEngine(cv);
     const c09 = result.conditions.find(c => c.id === "C09");
     const c10 = result.conditions.find(c => c.id === "C10");
     expect(c09.lowConfidence).toBe(true);
     expect(c10.lowConfidence).toBe(true);
-    expect(c10.note).toMatch(/UNVERIFIED/);
+    expect(c09.note).toMatch(/C Rex/);
+    expect(c10.note).toMatch(/Travell & Simons/);
+    expect(c10.note).not.toMatch(/UNVERIFIED/);
+  });
+
+  it("ranks C10 (myofascial) with real support for an occipital headache triggered by neck movement, grounded in Travell & Simons referred-pain patterns", () => {
+    const data = {
+      cx_ha_present: "Yes",
+      cx_ha_location: ["Occipital / base of skull (cervicogenic)"].join(SEP),
+      cx_ha_triggers: ["Triggered by neck movement (cervicogenic)"].join(SEP),
+      cx_agg_post: ["Prolonged sitting / desk posture"].join(SEP),
+      cx_arm_present: "No arm/hand symptoms",
+      cx_dermatomal: ["Not dermatomal / not applicable"].join(SEP),
+      cx_rf_myelopathy: ["No myelopathy signs"].join(SEP),
+      cx_rf_vbi: ["No VBI signs"].join(SEP),
+      cx_rf_instability: ["No instability signs"].join(SEP),
+      cx_rf_other: ["No other red flags"].join(SEP),
+    };
+    const cv = extractCervicalVariablesStructured(data);
+    const result = runCervicalReasoningEngine(cv);
+    const c10 = result.conditions.find(c => c.id === "C10");
+    expect(c10.supportingMatched.length).toBeGreaterThanOrEqual(4);
+    expect(c10.matchTier).not.toBe("Insufficient data");
   });
 });

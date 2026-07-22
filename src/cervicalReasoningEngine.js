@@ -313,6 +313,18 @@ const CONDITIONS = [
     // motor changes confined to a single peripheral nerve's distribution
     // (not a dermatome/myotome), typically NOT reproduced or aggravated
     // by cervical movement -- the key distinguishing feature from C02.
+    // Cross-referenced against C Rex, "Examination of Peripheral Nerves
+    // and Brachial Plexus" (Ch.9): names real distal entrapment
+    // syndromes that mimic a cervical presentation -- posterior
+    // interosseous nerve syndrome / radial tunnel syndrome (radial
+    // nerve), pronator syndrome (median nerve), Guyon's canal /
+    // hypothenar hammer syndrome (ulnar nerve) -- each confined to a
+    // single peripheral nerve's territory, not a dermatome, and each
+    // with its own named provocation test distinct from Spurling's/ULTT.
+    // Tinel's sign (percussion over the nerve, positive = distal
+    // tingling in that nerve's distribution) is the one provocation
+    // test common to all three and the one this app has a real,
+    // dedicated module for (st_tinel_wrist, st_tinel_elbow).
     lowConfidence: true,
     supporting: [
       { label: "Arm/hand symptoms present but NOT dermatomal", check: stateOf((cv) => (cv.location.armHandPain === true || cv.location.armHandPain === "bilateral") && absent(cv.location.dermatomal)) },
@@ -325,30 +337,58 @@ const CONDITIONS = [
     ],
     objectiveTests: {
       required: ["Neurological screen (map symptoms against peripheral nerve vs. dermatomal charts)", "ULTT1 — Median Nerve", "ULTT2 — Radial Nerve", "ULTT3 — Ulnar Nerve"],
-      recommended: ["Tinel's sign at likely entrapment sites (elbow/wrist — not a dedicated module in this app yet)", "Cervical AROM (expect non-provocative, to help rule out C02)"],
+      recommended: ["Tinel's Sign at Wrist", "Tinel's Sign at Elbow", "Cervical AROM (expect non-provocative, to help rule out C02)"],
     },
-    note: "UNVERIFIED against a specific Magee page beyond the Table 3-11 category label. This app has no dedicated distal entrapment tests (Tinel's, Phalen's), so this condition's checks are coarse approximations -- do not weight or trust its output the same as the better-grounded conditions above.",
+    note: "The named distal entrapment syndromes (radial tunnel, pronator syndrome, Guyon's canal, etc.) are grounded in C Rex's Ch.9 'Examination of Peripheral Nerves and Brachial Plexus' -- but this app's checks are still a coarse location-overlap proxy (no dedicated single-nerve-distribution mapping field), so treat the matchTier here as lower-confidence than the better-grounded conditions above.",
   },
   {
     id: "C10", name: "Cervical Myofascial Pain",
-    // Same explicit caveat as lumbar L09: none of the uploaded references
-    // (Magee, Kendall, Kisner & Colby) cover myofascial pain/trigger
-    // points as their own diagnostic category. Kept as a low-confidence
-    // placeholder, not hidden, matching this project's established
-    // policy of flagging ungrounded conditions rather than silently
-    // dropping them or pretending they're equally well-supported.
+    // Grounded in Travell & Simons' published Trigger Point referred-pain
+    // -pattern chart (figure-cited quick reference, e.g. [V1Fig6.1],
+    // [V1Fig7.1], [V1Fig16.1]) for the head/neck muscle group:
+    // - Upper trapezius, sternocleidomastoid (sternal + clavicular
+    //   divisions) refer pain into the head/temple/face -- overlaps
+    //   common headache presentations.
+    // - Splenius capitis, splenius cervicis, semispinalis capitis,
+    //   semispinalis cervicis, and the suboccipital muscles all refer
+    //   pain into the head (vertex, orbit, occiput) -- the classic
+    //   cervicogenic-headache-mimicking muscle group.
+    // - Levator scapulae refers into the neck-shoulder angle, a
+    //   textbook "stiff neck" presentation often mistaken for facet
+    //   pain (C03).
+    // - Scaleni (anterior/medius/posterior) refer into the arm/chest --
+    //   can mimic radiculopathy (C02) or brachial plexus involvement
+    //   (C08); explicitly cross-checked against those below.
+    // - Cervical multifidi/rotatores TrP1, deep at C4-C5, is explicitly
+    //   noted as the posterior cervical trigger point "most commonly
+    //   found" and one that "often leads to entrapment of the greater
+    //   occipital nerve" -- a direct mechanistic link to occipital
+    //   headache.
+    // Standard trigger point diagnostic criteria (taut band, local
+    // twitch response, jump sign) are NOT covered in the uploaded
+    // chart excerpt (it only covers referred-pain locations per
+    // muscle), so this remains a location-overlap proxy, not a
+    // replication of a real palpation-based trigger point exam --
+    // kept as lowConfidence for that reason, not because the source is
+    // unverified any more.
     lowConfidence: true,
     supporting: [
-      { label: "No objective neurological signs (approx — not a real myofascial-specific marker, just an absence check)", check: stateOf((cv) => cv.armHand.objectiveNeuroSigns === false) },
+      { label: "Occipital / base-of-skull headache (overlaps suboccipital, splenius capitis, semispinalis capitis referred-pain zones — Travell & Simons)", check: stateOf((cv) => cv.headache.occipitalHeadache) },
+      { label: "Headache triggered by neck movement (overlaps SCM / upper trapezius referred-pain zones — Travell & Simons)", check: stateOf((cv) => cv.headache.headacheTriggeredByNeckMovement) },
+      { label: "Sustained posture aggravates (approx — consistent with postural overload of trapezius/levator scapulae/SCM, though the referred-pain chart itself doesn't state aggravating factors)", check: stateOf((cv) => cv.aggravating.sustainedPostureAggravates) },
+      { label: "No objective neurological signs (trigger point referral doesn't produce a true neuro deficit)", check: stateOf((cv) => cv.armHand.objectiveNeuroSigns === false) },
+      { label: "No dermatomal pattern (trigger point referral doesn't follow a dermatome)", check: stateOf((cv) => absent(cv.location.dermatomal)) },
     ],
     refuting: [
+      { label: "Objective neurological signs present (points to C02/C11 instead)", check: stateOf((cv) => cv.armHand.objectiveNeuroSigns === true) },
+      { label: "Dermatomal pattern present (points to C02)", check: stateOf((cv) => present(cv.location.dermatomal)) },
       { label: "Any red flag present", check: stateOf((cv) => cv.redFlags.redFlagScreen === "positive") },
     ],
     objectiveTests: {
-      required: ["Palpation for taut bands/trigger points reproducing referred pain (unverified against a real source)"],
-      recommended: ["Assessment of postural/movement contributors (unverified against a real source)"],
+      required: ["Palpation for taut bands/trigger points — upper trapezius, sternocleidomastoid, levator scapulae (Travell & Simons)", "Palpation — suboccipital, splenius capitis/cervicis, semispinalis capitis/cervicis (referred pain to head/vertex/orbit — Travell & Simons)"],
+      recommended: ["Palpation — scalene muscles (refer pain into arm/chest; cross-check against C02/C08 before attributing arm symptoms to a nerve root)", "Reproduction of the patient's usual headache/neck pain on sustained trigger-point palpation"],
     },
-    note: "UNVERIFIED. None of the three uploaded references (Magee, Kendall, Kisner & Colby) cover myofascial pain/trigger points. This condition's checks are placeholders, not grounded clinical logic -- do not weight or trust its output the same as the better-grounded conditions above.",
+    note: "Grounded in Travell & Simons' Trigger Point referred-pain-pattern chart -- real, figure-cited muscle-by-muscle referred pain zones, including the specific finding that a cervical multifidi/rotatores trigger point at C4-C5 often causes entrapment of the greater occipital nerve. Standard diagnostic criteria (taut band, local twitch response, jump sign) are not covered in the uploaded excerpt, so this stays a location-overlap-based match rather than a full trigger-point exam replication -- do not weight it identically to the fully-grounded conditions above.",
   },
   // C11 is intentionally excluded from this array -- see evaluateRedFlagOverride() above.
   // It is not "one more condition to rank," it's a hard override checked first.
