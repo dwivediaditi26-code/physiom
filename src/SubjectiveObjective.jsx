@@ -7,6 +7,8 @@ import { extractLumbarVariablesStructured, mergeLumbarVariables } from "./lumbar
 import { runLumbarReasoningEngine } from "./lumbarReasoningEngine.js";
 import { extractCervicalVariablesStructured, mergeCervicalVariables } from "./cervicalVariableExtractor.js";
 import { runCervicalReasoningEngine } from "./cervicalReasoningEngine.js";
+import { extractThoracicVariablesStructured, mergeThoracicVariables } from "./thoracicVariableExtractor.js";
+import { runThoracicReasoningEngine } from "./thoracicReasoningEngine.js";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -1427,6 +1429,49 @@ function cervicalTestNav(testStr) {
   if (/cervical mmt|deep cervical flexor/i.test(s))
     return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Cervical", mmtHighlights: CERVICAL_MMT_HIGHLIGHTS },
       why:"Deep cervical flexors (craniocervical flexion test) are the most commonly inhibited muscle group in cervical dysfunction and a key forward-head-posture driver (Jull 2008). Deep neck extensors (cervical multifidus) atrophy in chronic cervical pain (Elliott 2006)." };
+
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// THORACIC ENGINE (T01-T11) OBJECTIVE TEST -> NAV TARGET MAPPING
+// Same accuracy bar as lumbarTestNav()/cervicalTestNav(): only maps the
+// subset of thoracicReasoningEngine.js's objectiveTests.{required,recommended}
+// strings that have a real, unambiguous 1:1 implemented module in this app.
+// Confirmed via grep that this app has NO dedicated Adson's, Costoclavicular,
+// Roos/EAST, Cyriax Release, First Thoracic Nerve Root Stretch, Passive
+// Scapular Approximation, or Evjenth-Gloeck breath-hold modules -- these
+// stay non-clickable (honest gap, not a wrong pointer), same policy as
+// imaging/palpation/outcome-measure strings across all three engines.
+// ══════════════════════════════════════════════════════════════════════════════
+const THORACIC_ROM_HIGHLIGHTS = ["rom_throtl","rom_throtr","rom_thflex","rom_thext"];
+const THORACIC_MMT_HIGHLIGHTS = ["mmt_trapL","mmt_trapM","mmt_serratus","mmt_trapU","mmt_rhomb"];
+
+function thoracicTestNav(testStr) {
+  const s = String(testStr || "");
+
+  if (/slump test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },
+      why:"Slump Test (add trunk rotation per Butler for intercostal nerve stress) -- reproduces radicular/dural symptoms in a flexed, loaded posture." };
+  if (/cervical rotation lateral flexion|\bcrlf\b/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_cervical_rotation_lt" },
+      why:"CRLF -- Magee-described as testing first-rib elevation restricting cervical rotation/lateral flexion, directly relevant to thoracic outlet syndrome (T04)." };
+
+  if (/rib spring|rib mobility|functional (movement )?screen|functional testing/i.test(s))
+    return { icon:"\ud83c\udfc3", col:"#059669", nav:"fma", ctx:{ fsRegion:"thoracic" },
+      why:"Rib spring (prone PA over each rib angle), pump handle (ribs 1-5), and bucket handle (ribs 6-10) all live in this functional/rib mobility screen -- the real implemented version of Rib Springing." };
+
+  if (/postural assessment/i.test(s))
+    return { icon:"\ud83e\uddcd", col:"#059669", nav:"posture", ctx:{ region:"Thoracic" },
+      why:"Kyphosis angle, forward head, scapular position -- the postural drivers behind both round-back kyphosis (T06) and thoracic outlet loading (T04)." };
+
+  if (/thoracic arom/i.test(s))
+    return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Thoracic", romHighlights: THORACIC_ROM_HIGHLIGHTS },
+      why:"Rotation -- most thoracic-sensitive plane (Magee); <30\u00b0 bilateral = significant restriction. Extension -- capsular pattern check. Compare for a hinge point vs. even, distributed motion." };
+
+  if (/thoracic mmt/i.test(s))
+    return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights: THORACIC_MMT_HIGHLIGHTS },
+      why:"Lower/mid/upper trapezius, serratus anterior, rhomboids -- weakness here maintains a kyphotic, round-back posture (T06) and is the muscle group most often implicated in thoracic myofascial referral (T09, Magee Table 8-8)." };
 
   return null;
 }
@@ -2974,6 +3019,33 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       return cv0 ? runCervicalReasoningEngine(cv0) : null;
     }catch{ return null; }
   });
+  // Thoracic Variable Extractor / Reasoning Engine state -- exact mirror of
+  // the Lumbar/Cervical blocks above, persistence built in from the start.
+  const dataHasThoracicRegionSelected = (() => {
+    try {
+      const regs = JSON.parse(data.cx_selected_regions || "[]");
+      return regs.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Thoracic spine");
+    } catch { return false; }
+  })();
+  const [thoracicVariables, setThoracicVariables] = useState(()=>{
+    try{ return (dataHasThoracicRegionSelected && data.cx_thoracic_variables)?JSON.parse(data.cx_thoracic_variables):null; }catch{ return null; }
+  });
+  const [thoracicNoteFindings, setThoracicNoteFindings] = useState(()=>{
+    try{ return (dataHasThoracicRegionSelected && data.cx_thoracic_note_findings)?JSON.parse(data.cx_thoracic_note_findings):[]; }catch{ return []; }
+  });
+  const [thoracicNotesLoading, setThoracicNotesLoading] = useState(false);
+  const [thoracicAiFilledFields, setThoracicAiFilledFields] = useState(()=>{
+    try{ return (dataHasThoracicRegionSelected && data.cx_thoracic_ai_filled)?JSON.parse(data.cx_thoracic_ai_filled):[]; }catch{ return []; }
+  });
+  const [thoracicPendingRedFlagReview, setThoracicPendingRedFlagReview] = useState(()=>{
+    try{ return (dataHasThoracicRegionSelected && data.cx_thoracic_pending_rf)?JSON.parse(data.cx_thoracic_pending_rf):[]; }catch{ return []; }
+  });
+  const [thoracicReasoning, setThoracicReasoning] = useState(()=>{
+    try{
+      const tv0 = (dataHasThoracicRegionSelected && data.cx_thoracic_variables)?JSON.parse(data.cx_thoracic_variables):null;
+      return tv0 ? runThoracicReasoningEngine(tv0) : null;
+    }catch{ return null; }
+  });
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
@@ -3000,7 +3072,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       // Persist to patient data so navigation doesn't lose selection
       set({ cx_selected_regions: JSON.stringify(next), cx_insight: null,
         cx_lumbar_variables: null, cx_lumbar_note_findings: null, cx_lumbar_ai_filled: null, cx_lumbar_pending_rf: null,
-        cx_cervical_variables: null, cx_cervical_note_findings: null, cx_cervical_ai_filled: null, cx_cervical_pending_rf: null });
+        cx_cervical_variables: null, cx_cervical_note_findings: null, cx_cervical_ai_filled: null, cx_cervical_pending_rf: null,
+        cx_thoracic_variables: null, cx_thoracic_note_findings: null, cx_thoracic_ai_filled: null, cx_thoracic_pending_rf: null });
       return next;
     });
     setInsight(null);
@@ -3014,6 +3087,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     setCervicalAiFilledFields([]);
     setCervicalPendingRedFlagReview([]);
     setCervicalReasoning(null);
+    setThoracicVariables(null);
+    setThoracicNoteFindings([]);
+    setThoracicAiFilledFields([]);
+    setThoracicPendingRedFlagReview([]);
+    setThoracicReasoning(null);
   }, [set, data]);
 
   // ── AI Parser state ────────────────────────────────────────────────
@@ -3381,6 +3459,74 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       setCervicalReasoning(null);
       try { set({ cx_cervical_variables: null, cx_cervical_note_findings: null,
         cx_cervical_ai_filled: null, cx_cervical_pending_rf: null }); } catch {}
+    }
+
+    // ── Thoracic Variable Extractor (Pass 1 + Pass 2) ──────────
+    // Independent of the Lumbar/Cervical blocks above -- a separate if/else,
+    // never clears their persisted keys or vice versa.
+    if (selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Thoracic spine")) {
+      const tv = extractThoracicVariablesStructured(data);
+      setThoracicVariables(tv);
+      setThoracicNoteFindings([]);
+      setThoracicAiFilledFields([]);
+      setThoracicPendingRedFlagReview([]);
+      setThoracicReasoning(runThoracicReasoningEngine(tv));
+      try { set({ cx_thoracic_variables: JSON.stringify(tv), cx_thoracic_note_findings: JSON.stringify([]),
+        cx_thoracic_ai_filled: JSON.stringify([]), cx_thoracic_pending_rf: JSON.stringify([]) }); } catch {}
+
+      // Variables Pass 1 already resolved definitively -- Pass 2 is told
+      // never to re-derive or contradict these.
+      const alreadyT = [];
+      if (tv.aggravating.movements.state !== "unknown") {
+        alreadyT.push("rotationAggravates", "sideBendingAggravates", "extensionAggravates", "flexionAggravates",
+          "coughSneezeLaughAggravates", "breathingAggravates", "overheadReachingAggravates");
+      }
+      if (tv.aggravating.postures.state !== "unknown") alreadyT.push("sustainedPostureAggravates");
+      if (tv.relieving.treatments.state !== "unknown") alreadyT.push("manipulationSignificantRelief");
+      if (tv.symptomBehaviour.pattern.state !== "unknown") {
+        alreadyT.push("mechanicalPattern", "constantUnaffectedPattern", "breathingRelatedPattern", "morningStiffness");
+      }
+      if (tv.location.primaryLocation.state !== "unknown") alreadyT.push("costovertebralLocation");
+      if (tv.history.priorEpisodeCount) alreadyT.push("priorEpisodeCount");
+      // tx_rf is a single combined screen -- if it was answered at all
+      // (positive or negative), every red-flag category it covers is
+      // already known, not just one.
+      if (tv.redFlags.redFlagScreen !== "incomplete") {
+        alreadyT.push("cardiacConcern", "respiratoryConcern", "visceralConcern", "oncologicConcern",
+          "infectionConcern", "fractureConcern", "cordCompressionConcern");
+      }
+
+      const hasAnyNoteT = Object.values(tv._notesForAiPass || {}).some(t => t && t.trim());
+      if (hasAnyNoteT) {
+        setThoracicNotesLoading(true);
+        fetch("/api/extractThoracicNoteVariables", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: tv._notesForAiPass, alreadyKnown: alreadyT }),
+        }).then(r => r.json()).then(j => {
+          const findings = Array.isArray(j.findings) ? j.findings : [];
+          setThoracicNoteFindings(findings);
+          const { merged, aiFilledFields, pendingRedFlagReview } = mergeThoracicVariables(tv, findings);
+          setThoracicVariables(merged);
+          setThoracicAiFilledFields(aiFilledFields);
+          setThoracicPendingRedFlagReview(pendingRedFlagReview);
+          setThoracicReasoning(runThoracicReasoningEngine(merged));
+          // Same reasoning as Lumbar/Cervical's async callback: only the
+          // changed keys, no `...data` spread -- this callback's `data`
+          // closure is frozen at whatever it was when runInterpretation()
+          // started.
+          try { set({ cx_thoracic_variables: JSON.stringify(merged), cx_thoracic_note_findings: JSON.stringify(findings),
+            cx_thoracic_ai_filled: JSON.stringify(aiFilledFields), cx_thoracic_pending_rf: JSON.stringify(pendingRedFlagReview) }); } catch {}
+        }).catch(() => { setThoracicNoteFindings([]); })
+          .finally(() => setThoracicNotesLoading(false));
+      }
+    } else {
+      setThoracicVariables(null);
+      setThoracicNoteFindings([]);
+      setThoracicAiFilledFields([]);
+      setThoracicPendingRedFlagReview([]);
+      setThoracicReasoning(null);
+      try { set({ cx_thoracic_variables: null, cx_thoracic_note_findings: null,
+        cx_thoracic_ai_filled: null, cx_thoracic_pending_rf: null }); } catch {}
     }
     // Persist insight so it survives navigation to ROM/MMT and back
     try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
@@ -5076,6 +5222,206 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
                                       {(c.objectiveTests.recommended || []).map((t, ti) => {
                                         const target = cervicalTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0 (THORACIC): EXTRACTED CLINICAL VARIABLES ──
+                       Exact mirror of the Lumbar/Cervical Phase 0 blocks above,
+                       reading thoracicVariables instead. ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Thoracic spine" && thoracicVariables && (() => {
+                    const tv = thoracicVariables;
+                    const Chip = ({ state, children }) => (
+                      <span style={{
+                        display:"inline-flex", alignItems:"center", gap:4,
+                        fontSize:"0.72rem", fontWeight:700, padding:"3px 9px", borderRadius:99,
+                        background: state==="present" ? "#dc262618" : state==="absent" ? "#05966918" : "#94a3b818",
+                        color: state==="present" ? "#dc2626" : state==="absent" ? "#059669" : "#64748b",
+                        border: `1px solid ${state==="present" ? "#dc262644" : state==="absent" ? "#05966944" : "#94a3b844"}`,
+                      }}>
+                        {state==="present" ? "✓" : state==="absent" ? "—" : "?"} {children}
+                      </span>
+                    );
+                    const row = (label, state, detail, fieldKey) => {
+                      const aiFilled = fieldKey && thoracicAiFilledFields.includes(fieldKey);
+                      return (
+                        <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                          <span style={{ fontSize:"0.74rem", color: PC.muted, minWidth:150 }}>{label}</span>
+                          <Chip state={state}>{state==="unknown" ? "Not asked" : (detail || (state==="present"?"Yes":"No"))}</Chip>
+                          {aiFilled && (
+                            <span style={{
+                              fontSize:"0.66rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                              background:"#7c3aed18", color:"#7c3aed", border:"1px solid #7c3aed44",
+                            }}>
+                              ✓ AI extracted
+                            </span>
+                          )}
+                        </div>
+                      );
+                    };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:`4px solid #0891b2` }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#0891b2", marginBottom:8 }}>
+                          Phase 0 — Extracted Clinical Variables
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Read from the Subjective Assessment (checkboxes + notes, filled by hand or by AI) — this is the input the hypotheses below are built from
+                        </div>
+
+                        {row("Rotation aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.rotationAggravates?"present":"absent", undefined, "rotationAggravates")}
+                        {row("Side bending aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.sideBendingAggravates?"present":"absent", undefined, "sideBendingAggravates")}
+                        {row("Extension aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.extensionAggravates?"present":"absent", undefined, "extensionAggravates")}
+                        {row("Flexion aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.flexionAggravates?"present":"absent", undefined, "flexionAggravates")}
+                        {row("Cough/sneeze/laugh aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.coughSneezeLaughAggravates?"present":"absent", undefined, "coughSneezeLaughAggravates")}
+                        {row("Deep breathing aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.breathingAggravates?"present":"absent", undefined, "breathingAggravates")}
+                        {row("Reaching overhead aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.overheadReachingAggravates?"present":"absent", undefined, "overheadReachingAggravates")}
+                        {row("Sustained posture aggravates", tv.aggravating.postures.state==="unknown"?"unknown":tv.aggravating.sustainedPostureAggravates?"present":"absent", undefined, "sustainedPostureAggravates")}
+                        {row("Manipulation — significant relief", tv.relieving.treatments.state==="unknown"?"unknown":tv.relieving.manipulationSignificantRelief?"present":"absent", undefined, "manipulationSignificantRelief")}
+                        {row("Mechanical pattern", tv.symptomBehaviour.pattern.state==="unknown"?"unknown":tv.symptomBehaviour.mechanicalPattern?"present":"absent", undefined, "mechanicalPattern")}
+                        {row("Constant, unaffected pattern", tv.symptomBehaviour.pattern.state==="unknown"?"unknown":tv.symptomBehaviour.constantUnaffectedPattern?"present":"absent", undefined, "constantUnaffectedPattern")}
+                        {row("Breathing-related pattern", tv.symptomBehaviour.pattern.state==="unknown"?"unknown":tv.symptomBehaviour.breathingRelatedPattern?"present":"absent", undefined, "breathingRelatedPattern")}
+                        {row("Morning stiffness / inflammatory pattern", tv.symptomBehaviour.pattern.state==="unknown"?"unknown":tv.symptomBehaviour.morningStiffness?"present":"absent", undefined, "morningStiffness")}
+                        {row("Costovertebral-pattern location", tv.location.primaryLocation.state==="unknown"?"unknown":tv.location.costovertebralLocation?"present":"absent", undefined, "costovertebralLocation")}
+                        {row("Interscapular referral", tv.location.primaryLocation.state==="unknown"?"unknown":tv.location.interscapularLocation?"present":"absent")}
+                        {row("Cardiac-like radiation (urgent flag)", tv.location.radiation.state==="unknown"?"unknown":tv.location.cardiacLikeRadiation?"present":"absent")}
+                        {row("Traumatic mechanism", tv.mechanism.type.state==="unknown"?"unknown":tv.mechanism.traumaticMechanism?"present":"absent")}
+                        {row("Insidious, postural onset", tv.mechanism.type.state==="unknown"?"unknown":tv.mechanism.insidiousPosturalOnset?"present":"absent")}
+                        {row("Post-viral costochondritis history", tv.mechanism.type.state==="unknown"?"unknown":tv.mechanism.postViralCostochondritis?"present":"absent")}
+
+                        <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", margin:"10px 0 5px" }}>Red flag screen (mandatory — single combined checklist, Magee Table 8-1)</div>
+                        {row("Red flag screen answered", tv.redFlags.screen.state, tv.redFlags.screen.values.join(", "))}
+                        {row("Cardiac indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.cardiac?"present":"absent")}
+                        {row("Respiratory indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.respiratory?"present":"absent")}
+                        {row("Visceral/GI indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.visceral?"present":"absent")}
+                        {row("Oncologic indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.oncologic?"present":"absent")}
+                        {row("Infection indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.infection?"present":"absent")}
+                        {row("Fracture-risk indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.fracture?"present":"absent")}
+                        {row("Cord compression indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.cordCompression?"present":"absent")}
+                        {row("General serious-pathology indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.generalSerious?"present":"absent")}
+
+                        {thoracicNotesLoading && (
+                          <div style={{ fontSize:"0.73rem", color: PC.muted, marginTop:8, fontStyle:"italic" }}>
+                            🔄 Checking free-text notes for anything not already captured…
+                          </div>
+                        )}
+                        {!thoracicNotesLoading && thoracicNoteFindings.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed ${PC.border}` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#7c3aed", marginBottom:5 }}>
+                              Found in your notes (AI — merged into the variables above where a checkbox hadn't already answered that field)
+                            </div>
+                            {thoracicNoteFindings.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {!thoracicNotesLoading && thoracicPendingRedFlagReview.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed #dc2626` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", marginBottom:5 }}>
+                              ⚠ Possible red-flag mentions in your notes — NOT auto-applied, please review the red flag screen above yourself
+                            </div>
+                            {thoracicPendingRedFlagReview.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0.5 (THORACIC): REASONING ENGINE (Layer 3) ──
+                       Exact mirror of the Lumbar/Cervical Phase 0.5 blocks
+                       above, reading thoracicReasoning / thoracicTestNav
+                       instead. T11's override treats cardiac, respiratory,
+                       AND cord-compression as EMERGENCY (not just one
+                       category, unlike L11/C11) -- Magee Table 8-1 lists
+                       MI, PE, and pneumothorax side-by-side as equally
+                       immediate-danger presentations. ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Thoracic spine" && thoracicReasoning && (() => {
+                    const tr = thoracicReasoning;
+                    const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:"4px solid #7c3aed" }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#7c3aed", marginBottom:8 }}>
+                          Phase 0.5 — Thoracic Condition Matches (T01–T11)
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Unweighted, count-based matches against all 11 thoracic hypotheses — not a probability. Weighting is a deliberately deferred future step.
+                        </div>
+
+                        {tr.redFlagOverride.triggered && (
+                          <div style={{ background:"#FEF2F2", border:"2px solid #dc2626", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+                            <div style={{ fontWeight:800, color:"#dc2626", fontSize:"0.78rem", marginBottom:3 }}>
+                              🚨 {tr.redFlagOverride.urgency === "EMERGENCY" ? "EMERGENCY — Cardiac / Respiratory / Cord Compression Indicators" : "URGENT REFERRAL INDICATED"}
+                            </div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", marginBottom:3 }}>{tr.redFlagOverride.reason}</div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", fontWeight:600 }}>{tr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+                        {tr.redFlagOverride.urgency === "SCREEN_INCOMPLETE" && (
+                          <div style={{ background:"#FFFBEB", border:"1px solid #d97706", borderRadius:8, padding:"8px 12px", marginBottom:10 }}>
+                            <div style={{ fontSize:"0.73rem", color:"#92400E" }}>⚠ {tr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+
+                        {tr.conditions.slice(0, 6).map((c, ci) => (
+                          <div key={c.id} style={{
+                            background: ci===0 ? "#7c3aed12" : PC.surface,
+                            border: `1px solid ${ci===0 ? "#7c3aed44" : PC.border}`,
+                            borderRadius:8, padding:"9px 12px", marginBottom:6,
+                          }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>
+                                {c.id} — {c.name}{c.lowConfidence ? " ⚠" : ""}
+                              </span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                                background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>
+                                {c.matchTier}
+                              </span>
+                            </div>
+                            <div style={{ fontSize:"0.72rem", color: PC.muted }}>
+                              {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
+                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
+                            </div>
+                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
+                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                  Suggested objective tests — Required
+                                </div>
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
+                                  {(c.objectiveTests.required || []).map((t, ti) => {
+                                    const target = thoracicTestNav(t);
+                                    const btn = target
+                                      ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                      : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                    return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                  })}
+                                </div>
+                                {(c.objectiveTests.recommended || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
+                                      Recommended (if indicated)
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
+                                        const target = thoracicTestNav(t);
                                         const btn = target
                                           ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
                                           : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
@@ -13544,4 +13890,4 @@ function ErgoModule({ data, set }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 
-export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA, REGION_NAV, REGION_FAMILY_KEY, RC_S, lumbarTestNav, cervicalTestNav };
+export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA, REGION_NAV, REGION_FAMILY_KEY, RC_S, lumbarTestNav, cervicalTestNav, thoracicTestNav };
