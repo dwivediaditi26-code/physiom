@@ -103,6 +103,12 @@ describe("cervicalTestNav -- C01-C11 objective test -> module mapping", () => {
     expect(cervicalTestNav("Cervical AROM (pain on stretch directions)")).toMatchObject({ nav: "rom" });
   });
 
+  it("maps Functional movement screen to the cervical functional screen (found unmapped via a full objectiveTests audit; C04 lists it as recommended, and Lumbar/Thoracic both already map this exact phrase)", () => {
+    expect(cervicalTestNav("Functional movement screen")).toMatchObject({
+      nav: "fma", ctx: { fsRegion: "cervical" },
+    });
+  });
+
   it("leaves imaging/palpation/outcome-measure/unimplemented tests unmapped (honest gap, not a wrong pointer)", () => {
     expect(cervicalTestNav("Observation (posture, head position, muscle guarding)")).toBeNull();
     expect(cervicalTestNav("Palpation (soft tissue + segmental)")).toBeNull();

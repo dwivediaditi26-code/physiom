@@ -1414,6 +1414,10 @@ function cervicalTestNav(testStr) {
     return { icon:"\u26a1", col:"#dc2626", nav:"neuro", ctx:{ neuroHighlights: CERVICAL_NEURO_HIGHLIGHTS },
       why:"C5-T1 dermatomes, myotomes, biceps/brachioradialis/triceps reflexes. Localise nerve root level; screen for myelopathic signs." };
 
+  if (/functional (movement )?screen|functional testing/i.test(s))
+    return { icon:"\ud83c\udfc3", col:"#059669", nav:"fma", ctx:{ fsRegion:"cervical" },
+      why:"Deep neck flexor endurance and functional overhead/rotation tasks under load -- reveals compensation patterns a static exam misses." };
+
   if (/postural assessment/i.test(s))
     return { icon:"\ud83e\uddcd", col:"#059669", nav:"posture", ctx:{ region:"Cervical" },
       why:"Forward head posture, CVA, thoracic kyphosis — all increase cervical loading and headache trigger load." };
@@ -1460,6 +1464,10 @@ function thoracicTestNav(testStr) {
   if (/rib spring|rib mobility|functional (movement )?screen|functional testing/i.test(s))
     return { icon:"\ud83c\udfc3", col:"#059669", nav:"fma", ctx:{ fsRegion:"thoracic" },
       why:"Rib spring (prone PA over each rib angle), pump handle (ribs 1-5), and bucket handle (ribs 6-10) all live in this functional/rib mobility screen -- the real implemented version of Rib Springing." };
+
+  if (/neurological screen/i.test(s))
+    return { icon:"\u26a1", col:"#dc2626", nav:"neuro", ctx:{},
+      why:"Screen for cord-compression signs (bilateral leg weakness/sensory change, hyperreflexia) before proceeding -- this app has no dedicated T2-T12 dermatome table, so nothing is pre-highlighted; use the neuro module's general reflex/sensation testing." };
 
   if (/postural assessment/i.test(s))
     return { icon:"\ud83e\uddcd", col:"#059669", nav:"posture", ctx:{ region:"Thoracic" },

@@ -56,9 +56,13 @@ describe("thoracicTestNav -- T01-T11 objective test -> module mapping", () => {
     expect(thoracicTestNav("Thoracic MMT (assess associated weakness/inhibition — lower trapezius, serratus anterior, rhomboids)")).toMatchObject({ nav: "mmt" });
   });
 
+  it("maps Neurological screen to the neuro module (found unmapped via a full objectiveTests audit; T01/T02 both list it as required)", () => {
+    expect(thoracicTestNav("Neurological screen (expect normal)")).toMatchObject({ nav: "neuro" });
+    expect(thoracicTestNav("Neurological screen")).toMatchObject({ nav: "neuro" });
+  });
+
   it("leaves imaging/palpation/outcome-measure/unimplemented tests unmapped (honest gap, not a wrong pointer)", () => {
     expect(thoracicTestNav("Observation (posture, kyphosis)")).toBeNull();
-    expect(thoracicTestNav("Neurological screen (expect normal)")).toBeNull();
     expect(thoracicTestNav("PA central + unilateral vertebral pressures")).toBeNull();
     expect(thoracicTestNav("First Thoracic Nerve Root Stretch")).toBeNull();
     expect(thoracicTestNav("Passive Scapular Approximation")).toBeNull();
