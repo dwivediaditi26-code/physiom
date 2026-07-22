@@ -5,6 +5,8 @@ import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEE
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
 import { extractLumbarVariablesStructured, mergeLumbarVariables } from "./lumbarVariableExtractor.js";
 import { runLumbarReasoningEngine } from "./lumbarReasoningEngine.js";
+import { extractCervicalVariablesStructured, mergeCervicalVariables } from "./cervicalVariableExtractor.js";
+import { runCervicalReasoningEngine } from "./cervicalReasoningEngine.js";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -1345,6 +1347,75 @@ function lumbarTestNav(testStr) {
   if (/lumbar arom|repeated movement/i.test(s))
     return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS },
       why:"Lumbar flexion/extension — establishes direction of pain provocation. McKenzie: flexion or extension preference?" };
+
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CERVICAL ENGINE (C01-C11) OBJECTIVE TEST -> NAV TARGET MAPPING
+// Same design and same accuracy bar as lumbarTestNav() above: only maps the
+// subset of cervicalReasoningEngine.js's objectiveTests.{required,recommended}
+// strings that have a real, unambiguous 1:1 implemented module in this app.
+// Imaging, palpation, PA glides, outcome measures (NDI), and Tinel's sign
+// (no dedicated distal-entrapment module yet) are deliberately left
+// non-clickable rather than pointed at a module that doesn't actually test
+// them -- an honest gap, not a wrong pointer.
+// ══════════════════════════════════════════════════════════════════════════════
+const CERVICAL_ROM_HIGHLIGHTS = ["rom_crotl","rom_crotr","rom_cflex","rom_cext","rom_clatl","rom_clatr"];
+const CERVICAL_NEURO_HIGHLIGHTS = ["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"];
+
+function cervicalTestNav(testStr) {
+  const s = String(testStr || "");
+
+  if (/ultt1/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_ultt1" },
+      why:"ULTT1 — median nerve tension. Upper-limb equivalent of the SLR; double-crush check against cervical nerve root involvement." };
+  if (/ultt2/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_ultt2" },
+      why:"ULTT2 — radial nerve bias. Differentiates radial nerve tension from median (ULTT1) or ulnar (ULTT3) involvement." };
+  if (/ultt3/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_ultt3" },
+      why:"ULTT3 — ulnar nerve bias. Completes the three-nerve upper limb tension screen alongside ULTT1/2." };
+  if (/spurling'?s test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_spurling" },
+      why:"Spurling's — highest specificity (~92%) for cervical radiculopathy. Foraminal compression test; run first if arm symptoms present." };
+  if (/cervical distraction test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_distraction" },
+      why:"Distraction — relief with axial traction supports a foraminal/nerve-root source, the mirror image of Spurling's." };
+  if (/sharp-?purser test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_sharp_purser" },
+      why:"Sharp-Purser — atlantoaxial (C1-C2) instability screen. Mandatory before any upper cervical manipulation." };
+  if (/alar ligament test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_alar" },
+      why:"Alar ligament stress test — C1-C2 stability. Run alongside Sharp-Purser before end-range cervical rotation testing." };
+  if (/3-part test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_vbi" },
+      why:"VBI / 3-Part Test — vertebral artery patency screen. Mandatory before manipulation or sustained end-range rotation." };
+  if (/flexion-rotation test|\bfrt\b/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_flex_rot" },
+      why:"Flexion-Rotation Test — positive for pain/dysfunction at C1-C2 in cervicogenic headache (Magee)." };
+  if (/jackson'?s compression test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_jackson" },
+      why:"Jackson's Compression — axial loading reproduces facet or nerve-root referral pain." };
+  if (/cervical rotation lateral flexion|\bcrlf\b/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_cervical_rotation_lt" },
+      why:"CRLF — screens for first-rib elevation restricting cervical rotation/lateral flexion." };
+
+  if (/neurological screen/i.test(s))
+    return { icon:"\u26a1", col:"#dc2626", nav:"neuro", ctx:{ neuroHighlights: CERVICAL_NEURO_HIGHLIGHTS },
+      why:"C5-T1 dermatomes, myotomes, biceps/brachioradialis/triceps reflexes. Localise nerve root level; screen for myelopathic signs." };
+
+  if (/postural assessment/i.test(s))
+    return { icon:"\ud83e\uddcd", col:"#059669", nav:"posture", ctx:{ region:"Cervical" },
+      why:"Forward head posture, CVA, thoracic kyphosis — all increase cervical loading and headache trigger load." };
+
+  if (/gait assessment/i.test(s))
+    return { icon:"\ud83d\udeb6", col:"#059669", nav:"gait", ctx:{},
+      why:"A wide-based, unsteady, or myelopathic gait pattern is a key sign of cervical cord compression — screen before proceeding." };
+
+  if (/cervical arom/i.test(s))
+    return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Cervical", romHighlights: CERVICAL_ROM_HIGHLIGHTS },
+      why:"Cervical rotation — most restricted in facet arthropathy and disc pathology. Note capsular pattern and painful arc." };
 
   return null;
 }
@@ -2863,6 +2934,35 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       return lv0 ? runLumbarReasoningEngine(lv0) : null;
     }catch{ return null; }
   });
+  // Cervical Variable Extractor / Reasoning Engine state -- exact mirror of
+  // the Lumbar block above, including persistence from the start (this is
+  // the bug already fixed once for Lumbar in a follow-up patch; built in
+  // proactively here so it never has to be reported for Cervical).
+  const dataHasCervicalRegionSelected = (() => {
+    try {
+      const regs = JSON.parse(data.cx_selected_regions || "[]");
+      return regs.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Cervical spine");
+    } catch { return false; }
+  })();
+  const [cervicalVariables, setCervicalVariables] = useState(()=>{
+    try{ return (dataHasCervicalRegionSelected && data.cx_cervical_variables)?JSON.parse(data.cx_cervical_variables):null; }catch{ return null; }
+  });
+  const [cervicalNoteFindings, setCervicalNoteFindings] = useState(()=>{
+    try{ return (dataHasCervicalRegionSelected && data.cx_cervical_note_findings)?JSON.parse(data.cx_cervical_note_findings):[]; }catch{ return []; }
+  });
+  const [cervicalNotesLoading, setCervicalNotesLoading] = useState(false);
+  const [cervicalAiFilledFields, setCervicalAiFilledFields] = useState(()=>{
+    try{ return (dataHasCervicalRegionSelected && data.cx_cervical_ai_filled)?JSON.parse(data.cx_cervical_ai_filled):[]; }catch{ return []; }
+  });
+  const [cervicalPendingRedFlagReview, setCervicalPendingRedFlagReview] = useState(()=>{
+    try{ return (dataHasCervicalRegionSelected && data.cx_cervical_pending_rf)?JSON.parse(data.cx_cervical_pending_rf):[]; }catch{ return []; }
+  });
+  const [cervicalReasoning, setCervicalReasoning] = useState(()=>{
+    try{
+      const cv0 = (dataHasCervicalRegionSelected && data.cx_cervical_variables)?JSON.parse(data.cx_cervical_variables):null;
+      return cv0 ? runCervicalReasoningEngine(cv0) : null;
+    }catch{ return null; }
+  });
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
@@ -2888,7 +2988,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
         : prev.length >= 3 ? prev : [...prev, r];
       // Persist to patient data so navigation doesn't lose selection
       set({ cx_selected_regions: JSON.stringify(next), cx_insight: null,
-        cx_lumbar_variables: null, cx_lumbar_note_findings: null, cx_lumbar_ai_filled: null, cx_lumbar_pending_rf: null });
+        cx_lumbar_variables: null, cx_lumbar_note_findings: null, cx_lumbar_ai_filled: null, cx_lumbar_pending_rf: null,
+        cx_cervical_variables: null, cx_cervical_note_findings: null, cx_cervical_ai_filled: null, cx_cervical_pending_rf: null });
       return next;
     });
     setInsight(null);
@@ -2897,6 +2998,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     setLumbarAiFilledFields([]);
     setLumbarPendingRedFlagReview([]);
     setLumbarReasoning(null);
+    setCervicalVariables(null);
+    setCervicalNoteFindings([]);
+    setCervicalAiFilledFields([]);
+    setCervicalPendingRedFlagReview([]);
+    setCervicalReasoning(null);
   }, [set, data]);
 
   // ── AI Parser state ────────────────────────────────────────────────
@@ -3192,6 +3298,78 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       setLumbarReasoning(null);
       try { set({ cx_lumbar_variables: null, cx_lumbar_note_findings: null,
         cx_lumbar_ai_filled: null, cx_lumbar_pending_rf: null }); } catch {}
+    }
+
+    // ── Cervical Variable Extractor (Pass 1 + Pass 2) ────────────────
+    // Independent of the Lumbar block above -- a clinician can select both
+    // Lumbar/SI and Cervical spine as two of their up-to-3 regions, so this
+    // is a separate if/else, not nested inside the Lumbar one, and never
+    // clears Lumbar's persisted keys or vice versa.
+    if (selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Cervical spine")) {
+      const cv = extractCervicalVariablesStructured(data);
+      setCervicalVariables(cv);
+      setCervicalNoteFindings([]);
+      setCervicalAiFilledFields([]);
+      setCervicalPendingRedFlagReview([]);
+      setCervicalReasoning(runCervicalReasoningEngine(cv));
+      try { set({ cx_cervical_variables: JSON.stringify(cv), cx_cervical_note_findings: JSON.stringify([]),
+        cx_cervical_ai_filled: JSON.stringify([]), cx_cervical_pending_rf: JSON.stringify([]) }); } catch {}
+
+      // Variables Pass 1 already resolved definitively -- Pass 2 is told
+      // never to re-derive or contradict these.
+      const alreadyC = [];
+      if (cv.location.armHandPain !== "unknown") alreadyC.push("armHandPain");
+      if (cv.location.dermatomal.state !== "unknown") alreadyC.push("dermatomalPattern");
+      if (cv.mechanism.type.state !== "unknown") alreadyC.push("whiplashMechanism");
+      if (cv.aggravating.movements.state !== "unknown") {
+        alreadyC.push("flexionAggravates", "extensionAggravates", "rotationAggravates", "quadrantAggravates");
+      }
+      if (cv.aggravating.postures.state !== "unknown") alreadyC.push("sustainedPostureAggravates");
+      if (cv.aggravating.other.state !== "unknown") alreadyC.push("coughSneezeAggravates");
+      if (cv.relieving.movements.state !== "unknown") alreadyC.push("chinTuckRelieves", "armOverheadRelievesArmSymptoms");
+      if (cv.symptomBehaviour.overallPattern.state !== "unknown") alreadyC.push("constantUnremitting");
+      if (cv.symptomBehaviour.morning.state !== "unknown") alreadyC.push("morningStiffnessOver30");
+      if (cv.symptomBehaviour.night.state !== "unknown") alreadyC.push("constantNightPain");
+      if (cv.headache.location.state !== "unknown") alreadyC.push("occipitalHeadache");
+      if (cv.headache.triggers.state !== "unknown") alreadyC.push("headacheTriggeredByNeckMovement");
+      if (cv.armHand.neuroSigns.state !== "unknown") alreadyC.push("objectiveNeuroSigns");
+      if (cv.armHand.lhermitte.state !== "unknown") alreadyC.push("lhermittePositive");
+      if (cv.history.priorEpisodeCount) alreadyC.push("priorEpisodeCount");
+      if (cv.redFlags.myelopathy.state !== "unknown") alreadyC.push("myelopathyConcern");
+      if (cv.redFlags.vbi.state !== "unknown") alreadyC.push("vbiConcern");
+      if (cv.redFlags.instability.state !== "unknown") alreadyC.push("instabilityConcern");
+      if (cv.redFlags.other.state !== "unknown") alreadyC.push("otherSeriousPathologyConcern");
+
+      const hasAnyNoteC = Object.values(cv._notesForAiPass || {}).some(t => t && t.trim());
+      if (hasAnyNoteC) {
+        setCervicalNotesLoading(true);
+        fetch("/api/extractCervicalNoteVariables", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: cv._notesForAiPass, alreadyKnown: alreadyC }),
+        }).then(r => r.json()).then(j => {
+          const findings = Array.isArray(j.findings) ? j.findings : [];
+          setCervicalNoteFindings(findings);
+          const { merged, aiFilledFields, pendingRedFlagReview } = mergeCervicalVariables(cv, findings);
+          setCervicalVariables(merged);
+          setCervicalAiFilledFields(aiFilledFields);
+          setCervicalPendingRedFlagReview(pendingRedFlagReview);
+          setCervicalReasoning(runCervicalReasoningEngine(merged));
+          // Same reasoning as Lumbar's async callback: only the changed keys,
+          // no `...data` spread -- this callback's `data` closure is frozen at
+          // whatever it was when runInterpretation() started.
+          try { set({ cx_cervical_variables: JSON.stringify(merged), cx_cervical_note_findings: JSON.stringify(findings),
+            cx_cervical_ai_filled: JSON.stringify(aiFilledFields), cx_cervical_pending_rf: JSON.stringify(pendingRedFlagReview) }); } catch {}
+        }).catch(() => { setCervicalNoteFindings([]); })
+          .finally(() => setCervicalNotesLoading(false));
+      }
+    } else {
+      setCervicalVariables(null);
+      setCervicalNoteFindings([]);
+      setCervicalAiFilledFields([]);
+      setCervicalPendingRedFlagReview([]);
+      setCervicalReasoning(null);
+      try { set({ cx_cervical_variables: null, cx_cervical_note_findings: null,
+        cx_cervical_ai_filled: null, cx_cervical_pending_rf: null }); } catch {}
     }
     // Persist insight so it survives navigation to ROM/MMT and back
     try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
@@ -4694,6 +4872,199 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
                                       {(c.objectiveTests.recommended || []).map((t, ti) => {
                                         const target = lumbarTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0 (CERVICAL): EXTRACTED CLINICAL VARIABLES ──
+                       Exact mirror of the Lumbar Phase 0 block above, reading
+                       cervicalVariables instead. See that block's comment for
+                       the full rationale (Present/Absent/Unknown tri-state,
+                       AI-extracted badges, etc). ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Cervical spine" && cervicalVariables && (() => {
+                    const cv = cervicalVariables;
+                    const Chip = ({ state, children }) => (
+                      <span style={{
+                        display:"inline-flex", alignItems:"center", gap:4,
+                        fontSize:"0.72rem", fontWeight:700, padding:"3px 9px", borderRadius:99,
+                        background: state==="present" ? "#dc262618" : state==="absent" ? "#05966918" : "#94a3b818",
+                        color: state==="present" ? "#dc2626" : state==="absent" ? "#059669" : "#64748b",
+                        border: `1px solid ${state==="present" ? "#dc262644" : state==="absent" ? "#05966944" : "#94a3b844"}`,
+                      }}>
+                        {state==="present" ? "✓" : state==="absent" ? "—" : "?"} {children}
+                      </span>
+                    );
+                    const row = (label, state, detail, fieldKey) => {
+                      const aiFilled = fieldKey && cervicalAiFilledFields.includes(fieldKey);
+                      return (
+                        <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                          <span style={{ fontSize:"0.74rem", color: PC.muted, minWidth:150 }}>{label}</span>
+                          <Chip state={state}>{state==="unknown" ? "Not asked" : (detail || (state==="present"?"Yes":"No"))}</Chip>
+                          {aiFilled && (
+                            <span style={{
+                              fontSize:"0.66rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                              background:"#7c3aed18", color:"#7c3aed", border:"1px solid #7c3aed44",
+                            }}>
+                              ✓ AI extracted
+                            </span>
+                          )}
+                        </div>
+                      );
+                    };
+                    const redFlagState = (f) => f.state;
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:`4px solid #0891b2` }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#0891b2", marginBottom:8 }}>
+                          Phase 0 — Extracted Clinical Variables
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Read from the Subjective Assessment (checkboxes + notes, filled by hand or by AI) — this is the input the hypotheses below are built from
+                        </div>
+
+                        {row("Arm/hand pain", cv.location.armHandPain==="unknown"?"unknown":cv.location.armHandPain?"present":"absent",
+                          cv.location.armHandPain==="bilateral"?"Bilateral":undefined, "armHandPain")}
+                        {row("Dermatomal pattern", cv.location.dermatomal.state, cv.location.dermatomal.values.join(", "), "dermatomalPattern")}
+                        {row("Whiplash mechanism", cv.mechanism.type.state==="unknown"?"unknown":cv.mechanism.whiplashMechanism?"present":"absent", undefined, "whiplashMechanism")}
+                        {row("Flexion aggravates", cv.aggravating.movements.state==="unknown"?"unknown":cv.aggravating.flexionAggravates?"present":"absent", undefined, "flexionAggravates")}
+                        {row("Extension aggravates", cv.aggravating.movements.state==="unknown"?"unknown":cv.aggravating.extensionAggravates?"present":"absent", undefined, "extensionAggravates")}
+                        {row("Rotation aggravates", cv.aggravating.movements.state==="unknown"?"unknown":cv.aggravating.rotationAggravates?"present":"absent", undefined, "rotationAggravates")}
+                        {row("Quadrant position aggravates", cv.aggravating.movements.state==="unknown"?"unknown":cv.aggravating.quadrantAggravates?"present":"absent", undefined, "quadrantAggravates")}
+                        {row("Sustained posture aggravates", cv.aggravating.postures.state==="unknown"?"unknown":cv.aggravating.sustainedPostureAggravates?"present":"absent", undefined, "sustainedPostureAggravates")}
+                        {row("Cough/sneeze aggravates", cv.aggravating.other.state==="unknown"?"unknown":cv.aggravating.coughSneezeAggravates?"present":"absent", undefined, "coughSneezeAggravates")}
+                        {row("Chin tuck relieves", cv.relieving.movements.state==="unknown"?"unknown":cv.relieving.chinTuckRelieves?"present":"absent", undefined, "chinTuckRelieves")}
+                        {row("Arm-overhead relieves arm symptoms", cv.relieving.movements.state==="unknown"?"unknown":cv.relieving.armOverheadRelievesArmSymptoms?"present":"absent", undefined, "armOverheadRelievesArmSymptoms")}
+                        {row("Constant, unremitting pain", cv.symptomBehaviour.overallPattern.state==="unknown"?"unknown":cv.symptomBehaviour.constantUnremitting?"present":"absent", undefined, "constantUnremitting")}
+                        {row("Constant night pain", cv.symptomBehaviour.night.state==="unknown"?"unknown":cv.symptomBehaviour.constantNightPain?"present":"absent", undefined, "constantNightPain")}
+                        {row("Occipital / base-of-skull headache", cv.headache.location.state==="unknown"?"unknown":cv.headache.occipitalHeadache?"present":"absent", undefined, "occipitalHeadache")}
+                        {row("Headache triggered by neck movement", cv.headache.triggers.state==="unknown"?"unknown":cv.headache.headacheTriggeredByNeckMovement?"present":"absent", undefined, "headacheTriggeredByNeckMovement")}
+                        {row("Objective neurological signs", cv.armHand.neuroSigns.state==="unknown"?"unknown":cv.armHand.objectiveNeuroSigns?"present":"absent", undefined, "objectiveNeuroSigns")}
+                        {row("Lhermitte's sign positive", cv.armHand.lhermitte.state==="unknown"?"unknown":cv.armHand.lhermittePositive?"present":"absent", undefined, "lhermittePositive")}
+
+                        <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", margin:"10px 0 5px" }}>Red flag screen (mandatory)</div>
+                        {row("Cervical myelopathy indicators", redFlagState(cv.redFlags.myelopathy), cv.redFlags.myelopathy.values.join(", "))}
+                        {row("Vertebrobasilar insufficiency indicators", redFlagState(cv.redFlags.vbi), cv.redFlags.vbi.values.join(", "))}
+                        {row("Upper cervical instability indicators", redFlagState(cv.redFlags.instability), cv.redFlags.instability.values.join(", "))}
+                        {row("Other serious pathology", redFlagState(cv.redFlags.other), cv.redFlags.other.values.join(", "))}
+
+                        {cervicalNotesLoading && (
+                          <div style={{ fontSize:"0.73rem", color: PC.muted, marginTop:8, fontStyle:"italic" }}>
+                            🔄 Checking free-text notes for anything not already captured…
+                          </div>
+                        )}
+                        {!cervicalNotesLoading && cervicalNoteFindings.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed ${PC.border}` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#7c3aed", marginBottom:5 }}>
+                              Found in your notes (AI — merged into the variables above where a checkbox hadn't already answered that field)
+                            </div>
+                            {cervicalNoteFindings.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {!cervicalNotesLoading && cervicalPendingRedFlagReview.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed #dc2626` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", marginBottom:5 }}>
+                              ⚠ Possible red-flag mentions in your notes — NOT auto-applied, please review the red flag screen above yourself
+                            </div>
+                            {cervicalPendingRedFlagReview.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0.5 (CERVICAL): REASONING ENGINE (Layer 3) ──
+                       Exact mirror of the Lumbar Phase 0.5 block above,
+                       reading cervicalReasoning / cervicalTestNav instead.
+                       ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Cervical spine" && cervicalReasoning && (() => {
+                    const cr = cervicalReasoning;
+                    const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:"4px solid #7c3aed" }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#7c3aed", marginBottom:8 }}>
+                          Phase 0.5 — Cervical Condition Matches (C01–C11)
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Unweighted, count-based matches against all 11 cervical hypotheses — not a probability. Weighting is a deliberately deferred future step.
+                        </div>
+
+                        {cr.redFlagOverride.triggered && (
+                          <div style={{ background:"#FEF2F2", border:"2px solid #dc2626", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+                            <div style={{ fontWeight:800, color:"#dc2626", fontSize:"0.78rem", marginBottom:3 }}>
+                              🚨 {cr.redFlagOverride.urgency === "EMERGENCY" ? "EMERGENCY — Myelopathy / VBI Indicators" : "URGENT REFERRAL INDICATED"}
+                            </div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", marginBottom:3 }}>{cr.redFlagOverride.reason}</div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", fontWeight:600 }}>{cr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+                        {cr.redFlagOverride.urgency === "SCREEN_INCOMPLETE" && (
+                          <div style={{ background:"#FFFBEB", border:"1px solid #d97706", borderRadius:8, padding:"8px 12px", marginBottom:10 }}>
+                            <div style={{ fontSize:"0.73rem", color:"#92400E" }}>⚠ {cr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+
+                        {cr.conditions.slice(0, 6).map((c, ci) => (
+                          <div key={c.id} style={{
+                            background: ci===0 ? "#7c3aed12" : PC.surface,
+                            border: `1px solid ${ci===0 ? "#7c3aed44" : PC.border}`,
+                            borderRadius:8, padding:"9px 12px", marginBottom:6,
+                          }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>
+                                {c.id} — {c.name}{c.lowConfidence ? " ⚠" : ""}
+                              </span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                                background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>
+                                {c.matchTier}
+                              </span>
+                            </div>
+                            <div style={{ fontSize:"0.72rem", color: PC.muted }}>
+                              {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
+                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
+                            </div>
+                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
+                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                  Suggested objective tests — Required
+                                </div>
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
+                                  {(c.objectiveTests.required || []).map((t, ti) => {
+                                    const target = cervicalTestNav(t);
+                                    const btn = target
+                                      ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                      : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                    return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                  })}
+                                </div>
+                                {(c.objectiveTests.recommended || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
+                                      Recommended (if indicated)
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
+                                        const target = cervicalTestNav(t);
                                         const btn = target
                                           ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
                                           : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
@@ -13162,4 +13533,4 @@ function ErgoModule({ data, set }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 
-export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA, REGION_NAV, REGION_FAMILY_KEY, RC_S, lumbarTestNav };
+export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA, REGION_NAV, REGION_FAMILY_KEY, RC_S, lumbarTestNav, cervicalTestNav };
