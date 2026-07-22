@@ -1338,7 +1338,7 @@ function lumbarTestNav(testStr) {
 
   if (/core\/?lumbopelvic motor control|core assessment/i.test(s))
     return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Spine & Core", mmtHighlights: LUMBAR_CORE_MMT_HIGHLIGHTS },
-      why:"Multifidus — segmental stabiliser most inhibited in LBP. Assess before any loading programme." };
+      why:"Multifidus atrophies within 24hrs of acute LBP and does not recover spontaneously (Hides 1994). Transversus abdominis is the first-to-fire stabiliser and its activation is delayed in LBP (Hodges 1996). Assess both before any loading programme." };
 
   if (/functional (movement )?screen|functional testing/i.test(s))
     return { icon:"\ud83c\udfc3", col:"#059669", nav:"fma", ctx:{ fsRegion:"lumbar" },
@@ -1346,7 +1346,7 @@ function lumbarTestNav(testStr) {
 
   if (/lumbar arom|repeated movement/i.test(s))
     return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS },
-      why:"Lumbar flexion/extension — establishes direction of pain provocation. McKenzie: flexion or extension preference?" };
+      why:"Flexion — discogenic aggravator; test for centralisation with repeated movements (McKenzie). Extension — facet/stenosis pattern, reproduces symptoms and tests centralisation the opposite direction. Side flexion asymmetry — lateral shift/disc protrusion screen." };
 
   return null;
 }
@@ -1363,6 +1363,7 @@ function lumbarTestNav(testStr) {
 // ══════════════════════════════════════════════════════════════════════════════
 const CERVICAL_ROM_HIGHLIGHTS = ["rom_crotl","rom_crotr","rom_cflex","rom_cext","rom_clatl","rom_clatr"];
 const CERVICAL_NEURO_HIGHLIGHTS = ["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"];
+const CERVICAL_MMT_HIGHLIGHTS = ["mmt_dnf","mmt_scm","mmt_trapU","mmt_scalenes","mmt_suboccip"];
 
 function cervicalTestNav(testStr) {
   const s = String(testStr || "");
@@ -1421,7 +1422,11 @@ function cervicalTestNav(testStr) {
 
   if (/cervical arom/i.test(s))
     return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Cervical", romHighlights: CERVICAL_ROM_HIGHLIGHTS },
-      why:"Cervical rotation — most restricted in facet arthropathy and disc pathology. Note capsular pattern and painful arc." };
+      why:"Rotation L+R — most clinically relevant plane; restriction below ~60° (of a ~90° norm) suggests C1-C2 involvement, cross-check with the Flexion-Rotation Test. Flexion — discogenic aggravator, test for centralisation. Extension + rotation quadrant — facet loading, reproduces facet or radicular pain." };
+
+  if (/cervical mmt|deep cervical flexor/i.test(s))
+    return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Cervical", mmtHighlights: CERVICAL_MMT_HIGHLIGHTS },
+      why:"Deep cervical flexors (craniocervical flexion test) are the most commonly inhibited muscle group in cervical dysfunction and a key forward-head-posture driver (Jull 2008). Deep neck extensors (cervical multifidus) atrophy in chronic cervical pain (Elliott 2006)." };
 
   return null;
 }

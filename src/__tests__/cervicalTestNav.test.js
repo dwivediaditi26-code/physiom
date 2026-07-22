@@ -91,6 +91,12 @@ describe("cervicalTestNav -- C01-C11 objective test -> module mapping", () => {
     expect(cervicalTestNav("Gait assessment (screen for myelopathic gait before proceeding)")).toMatchObject({ nav: "gait" });
   });
 
+  it("maps Cervical MMT / deep cervical flexor test to the MMT module (Jull 2008 / Elliott 2006 grounding)", () => {
+    expect(cervicalTestNav("Cervical MMT (deep cervical flexor test — craniocervical flexion)")).toMatchObject({
+      nav: "mmt", ctx: { mmtRegion: "Cervical" },
+    });
+  });
+
   it("maps every Cervical AROM variant to the ROM module", () => {
     expect(cervicalTestNav("Cervical AROM all planes")).toMatchObject({ nav: "rom" });
     expect(cervicalTestNav("Cervical AROM (extension likely limited/provocative)")).toMatchObject({ nav: "rom" });

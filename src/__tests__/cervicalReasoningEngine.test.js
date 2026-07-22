@@ -145,6 +145,15 @@ describe("runCervicalReasoningEngine", () => {
     });
   });
 
+  it("includes the deep cervical flexor MMT test (Jull 2008 / Elliott 2006) as a recommended objective test for C01 and C04", () => {
+    const cv = extractCervicalVariablesStructured({});
+    const result = runCervicalReasoningEngine(cv);
+    const c01 = result.conditions.find(c => c.id === "C01");
+    const c04 = result.conditions.find(c => c.id === "C04");
+    expect(c01.objectiveTests.recommended).toContain("Cervical MMT (deep cervical flexor test — craniocervical flexion)");
+    expect(c04.objectiveTests.recommended).toContain("Cervical MMT (deep cervical flexor test — craniocervical flexion)");
+  });
+
   it("returns exactly 10 scored conditions (C01-C10), with C11 handled only via redFlagOverride", () => {
     const cv = extractCervicalVariablesStructured({});
     const result = runCervicalReasoningEngine(cv);

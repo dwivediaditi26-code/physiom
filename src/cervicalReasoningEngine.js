@@ -133,7 +133,7 @@ const CONDITIONS = [
     ],
     objectiveTests: {
       required: ["Observation (posture, head position, muscle guarding)", "Cervical AROM all planes", "Neurological screen (expect normal)", "Palpation (soft tissue + segmental)"],
-      recommended: ["PA central + unilateral vertebral pressures", "Postural assessment (forward head, upper crossed syndrome)", "Functional movement screen"],
+      recommended: ["PA central + unilateral vertebral pressures", "Postural assessment (forward head, upper crossed syndrome)", "Functional movement screen", "Cervical MMT (deep cervical flexor test — craniocervical flexion)"],
     },
   },
   {
@@ -211,7 +211,7 @@ const CONDITIONS = [
     ],
     objectiveTests: {
       required: ["Observation (head/neck posture)", "Cervical AROM (esp. upper cervical rotation)", "Flexion-Rotation Test (FRT)", "Palpation (C0-C1, C1-C2, suboccipital)"],
-      recommended: ["Cervical Distraction Test", "Postural assessment (forward head posture)"],
+      recommended: ["Cervical Distraction Test", "Postural assessment (forward head posture)", "Cervical MMT (deep cervical flexor test — craniocervical flexion)"],
     },
   },
   {
