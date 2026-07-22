@@ -206,6 +206,11 @@ describe("runCervicalReasoningEngine", () => {
       cx_arm_present: "No arm or hand symptoms",
       cx_dermatomal: ["Not dermatomal / not applicable"].join(SEP),
       cx_agg_mov: ["Rotation left"].join(SEP),
+      // Explicit negative (not just omitted) -- a later fix made
+      // objectiveNeuroSigns correctly read as "unknown" rather than a
+      // silent false-positive "confirmed absent" when cx_arm_neuro is
+      // never touched at all, so the tie premise needs a real answer here.
+      cx_arm_neuro: ["No neurological symptoms"].join(SEP),
       cx_rf_myelopathy: "No myelopathy signs", cx_rf_vbi: "No VBI signs",
       cx_rf_instability: "No instability signs", cx_rf_other: "No other red flags",
     };
@@ -222,5 +227,29 @@ describe("runCervicalReasoningEngine", () => {
     const c06Index = result.conditions.findIndex(c => c.id === "C06");
     const c03Index = result.conditions.findIndex(c => c.id === "C03");
     expect(c06Index).toBeLessThan(c03Index);
+  });
+
+  it("does not let an entirely untouched field masquerade as a confirmed negative finding", () => {
+    // Real-world regression found via a fully-blank-form sweep: several
+    // derived booleans (whiplashMechanism, objectiveNeuroSigns,
+    // extensionAggravates, rotationAggravates, quadrantAggravates) used
+    // to default to a plain `false` whenever their underlying multicheck
+    // field was never touched at all -- indistinguishable from a real,
+    // deliberate negative answer. That silently inflated match tiers on
+    // completely blank forms (e.g. C05 showed "Unlikely" -- as if a
+    // clinician had actively ruled out whiplash -- and C08/C09 showed
+    // "Possible match" purely from unanswered aggravating-movement
+    // fields). Every condition on a genuinely empty form must reflect
+    // that nothing was actually asked.
+    const cv = extractCervicalVariablesStructured({});
+    const result = runCervicalReasoningEngine(cv);
+    result.conditions.forEach((c) => {
+      expect(["Insufficient data"]).toContain(
+        c.supportingMatched.length === 0 ? "Insufficient data" : c.matchTier
+      );
+    });
+    const c05 = result.conditions.find(c => c.id === "C05");
+    expect(c05.matchTier).not.toBe("Unlikely");
+    expect(c05.refutingMatched).not.toContain("No clear traumatic/collision mechanism");
   });
 });

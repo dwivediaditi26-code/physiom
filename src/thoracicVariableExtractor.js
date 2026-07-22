@@ -102,9 +102,17 @@ function extractThoracicVariablesStructured(data) {
   };
   const insidiousPosturalOnset = mechanism.type.values.includes(
     "Insidious — postural / sustained");
-  const traumaticMechanism = mechanism.type.values.some((v) =>
-    v.startsWith("Lifting") || v.startsWith("Rotation injury") ||
-    v.startsWith("Fall") || v.startsWith("MVA"));
+  // Guarded against an untouched tx_moi collapsing into a false "no
+  // trauma" -- found via a fully-blank-form sweep: T05's "No traumatic
+  // mechanism" supporting check was wrongly scoring a match on an
+  // entirely untouched form (an unasked mechanism field defaulted to
+  // the same `false` a genuine "mechanism asked, no trauma selected"
+  // answer would produce). Same fix pattern as cervical's
+  // whiplashMechanism/objectiveNeuroSigns.
+  const traumaticMechanism = mechanism.type.state === "unknown" ? "unknown" :
+    mechanism.type.values.some((v) =>
+      v.startsWith("Lifting") || v.startsWith("Rotation injury") ||
+      v.startsWith("Fall") || v.startsWith("MVA"));
   const osteoporoticFractureRiskMechanism = mechanism.type.values.includes(
     "Osteoporotic fracture — minimal trauma");
   const postViralCostochondritis = mechanism.type.values.includes(

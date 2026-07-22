@@ -92,7 +92,15 @@ function extractCervicalVariablesStructured(data) {
     lossOfConsciousness: selectState(data, "cx_moi_loc"),
     firstSymptomTiming: selectState(data, "cx_moi_first"),
   };
-  const whiplashMechanism = mechanism.type.values.some((v) => v.toLowerCase().startsWith("whiplash"));
+  // Guarded against "never touched cx_moi at all" collapsing into a
+  // false "no whiplash mechanism" -- found via a fully-blank-form sweep:
+  // C05's "No clear traumatic/collision mechanism" supporting check was
+  // wrongly scoring a match on an entirely untouched form, because an
+  // untouched multicheck's default `false` is indistinguishable from a
+  // real, deliberate "mechanism asked, whiplash not selected." Same fix
+  // pattern as armHandPain/headachePresent below.
+  const whiplashMechanism = mechanism.type.state === "unknown" ? "unknown" :
+    mechanism.type.values.some((v) => v.toLowerCase().startsWith("whiplash"));
   const wadVal = mechanism.wadGrade.value || "";
   const wadGradeNum =
     wadVal.startsWith("Grade 0") ? 0 : wadVal.startsWith("Grade I ") ? 1 :
@@ -121,8 +129,12 @@ function extractCervicalVariablesStructured(data) {
   // head is "usually indicative of problems in the C4 or C5 area."
   // Captured on the RELIEVING side (cx_rel_mov), not here, but the
   // underlying neurological signs that co-occur are read here.
-  const objectiveNeuroSigns = armHand.neuroSigns.values.some((v) =>
-    v.startsWith("Objective numbness") || v.startsWith("Wasting"));
+  // Same guard: cx_arm_neuro never touched must not collapse into a
+  // confirmed-negative "no objective neuro signs" (used as real support
+  // for C01/C03/C10's "No objective neurological signs" checks).
+  const objectiveNeuroSigns = armHand.neuroSigns.state === "unknown" ? "unknown" :
+    armHand.neuroSigns.values.some((v) =>
+      v.startsWith("Objective numbness") || v.startsWith("Wasting"));
   const lhermitteVal = armHand.lhermitte.value || "";
   const lhermittePositive = lhermitteVal.startsWith("Yes");
 
@@ -135,14 +147,24 @@ function extractCervicalVariablesStructured(data) {
     worstSingle: str(data, "cx_agg_worst") || null,
   };
   const flexionAggravates = aggravating.movements.values.includes("Flexion — looking down");
-  const extensionAggravates = aggravating.movements.values.includes("Extension — looking up");
-  const rotationAggravates = aggravating.movements.values.some((v) => v.toLowerCase().startsWith("rotation"));
+  // extensionAggravates/rotationAggravates/quadrantAggravates are guarded
+  // against an untouched cx_agg_mov -- C08/C09's "no clear single
+  // direction reproduces it" supporting checks test whether ALL THREE are
+  // === false, so on a completely blank form the old unguarded booleans
+  // (all defaulting to false) made that ternary fire as a false positive
+  // for BOTH conditions on every single untouched case, not just a
+  // genuine "asked, and no direction aggravates" finding.
+  const extensionAggravates = aggravating.movements.state === "unknown" ? "unknown" :
+    aggravating.movements.values.includes("Extension — looking up");
+  const rotationAggravates = aggravating.movements.state === "unknown" ? "unknown" :
+    aggravating.movements.values.some((v) => v.toLowerCase().startsWith("rotation"));
   // Quadrant position (combined extension + rotation, either side) --
   // Magee: end-range extension/side-flexion/rotation together is "highly
   // suggestive of nerve root pathology (radicular signs), apophyseal
   // joint involvement (localized pain), or vertebral artery involvement."
-  const quadrantAggravates = aggravating.movements.values.some((v) =>
-    v.startsWith("Combined extension + rotation"));
+  const quadrantAggravates = aggravating.movements.state === "unknown" ? "unknown" :
+    aggravating.movements.values.some((v) =>
+      v.startsWith("Combined extension + rotation"));
   const sustainedPostureAggravates = aggravating.postures.values.some((v) =>
     v.startsWith("Prolonged sitting") || v.startsWith("Computer") || v.startsWith("Looking down") ||
     v.startsWith("Looking up") || v.startsWith("Forward head") || v.startsWith("Slumped"));

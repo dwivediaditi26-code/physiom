@@ -217,6 +217,11 @@ describe("runThoracicReasoningEngine", () => {
     const data = {
       dem_age: "13", dem_sex: "Female",
       tx_loc: ["Bilateral paraspinal"].join(SEP),
+      // Explicit negative (not just omitted) -- a later fix made
+      // traumaticMechanism correctly read as "unknown" rather than a
+      // silent false-positive "confirmed no trauma" when tx_moi is never
+      // touched at all, so the tie premise needs a real answer here.
+      tx_moi: ["No clear mechanism"].join(SEP),
       tx_rf: ["No red flags"].join(SEP),
     };
     const tv = extractThoracicVariablesStructured(data);
@@ -233,6 +238,19 @@ describe("runThoracicReasoningEngine", () => {
     const t07Index = result.conditions.findIndex(c => c.id === "T07");
     const t05Index = result.conditions.findIndex(c => c.id === "T05");
     expect(t07Index).toBeLessThan(t05Index);
+  });
+
+  it("does not let an entirely untouched tx_moi masquerade as a confirmed 'no trauma' finding", () => {
+    // Real-world regression found via a fully-blank-form sweep:
+    // traumaticMechanism used to default to a plain `false` whenever
+    // tx_moi was never touched at all -- indistinguishable from a real
+    // "mechanism asked, no trauma selected" answer. That silently
+    // inflated T05's (Scheuermann's) supporting count on a completely
+    // blank form via its "No traumatic mechanism" check.
+    const tv = extractThoracicVariablesStructured({});
+    const result = runThoracicReasoningEngine(tv);
+    const t05 = result.conditions.find(c => c.id === "T05");
+    expect(t05.supportingMatched).not.toContain("No traumatic mechanism");
   });
 
   it("includes the Thoracic MMT test as a recommended objective test for T06 and T09", () => {
