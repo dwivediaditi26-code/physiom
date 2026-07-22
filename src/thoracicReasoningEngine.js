@@ -419,6 +419,13 @@ function evaluateCondition(condition, tv) {
     refutingMatched: refutingTrue.map((r) => r.label),
     unknownCount,
     totalChecks: condition.supporting.length + condition.refuting.length,
+    // Total size of THIS condition's own supporting checklist -- exposed
+    // so runThoracicReasoningEngine()'s sort can break same-tier ties by
+    // proportion satisfied rather than raw count (see that function for
+    // why: found by testing a 13-year-old scoliosis-screening case where
+    // T05 (2/3 supporting = 67%) out-ranked T07 (2/2 supporting = 100%)
+    // purely because 2 == 2 on the old raw-count tiebreak).
+    supportingTotal: condition.supporting.length,
     objectiveTests: condition.objectiveTests,
   };
 }
@@ -436,7 +443,21 @@ function runThoracicReasoningEngine(tv) {
   const redFlagOverride = evaluateRedFlagOverride(tv);
   const conditions = CONDITIONS
     .map((c) => evaluateCondition(c, tv))
-    .sort((a, b) => (TIER_ORDER[b.matchTier] - TIER_ORDER[a.matchTier]) || (b.supportingMatched.length - a.supportingMatched.length));
+    .sort((a, b) => {
+      const tierDiff = TIER_ORDER[b.matchTier] - TIER_ORDER[a.matchTier];
+      if (tierDiff !== 0) return tierDiff;
+      // Same-tier tiebreak: proportion of EACH condition's own supporting
+      // checklist satisfied, not raw count -- a condition with a smaller
+      // checklist fully satisfied (e.g. 2/2 = 100%) should outrank one
+      // with a larger checklist only partly satisfied (e.g. 2/3 = 67%),
+      // even though both hit the same raw count of 2.
+      const aProp = a.supportingTotal > 0 ? a.supportingMatched.length / a.supportingTotal : 0;
+      const bProp = b.supportingTotal > 0 ? b.supportingMatched.length / b.supportingTotal : 0;
+      if (bProp !== aProp) return bProp - aProp;
+      // Still tied on proportion -- fall back to raw count for full
+      // determinism (matches the pre-fix behavior in this last-resort case).
+      return b.supportingMatched.length - a.supportingMatched.length;
+    });
 
   return { redFlagOverride, conditions };
 }

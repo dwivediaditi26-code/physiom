@@ -206,6 +206,35 @@ describe("runThoracicReasoningEngine", () => {
     expect(t05.matchTier).toBe("Strong match");
   });
 
+  it("breaks same-tier ties by proportion of each condition's own checklist satisfied, not raw count", () => {
+    // Real-world regression: a 13-year-old flagged for scoliosis screening
+    // with bilateral paraspinal ache used to rank T05 (Scheuermann's,
+    // 2 of 3 supporting checks = 67%) above T07 (idiopathic scoliosis,
+    // 2 of 2 supporting checks = 100%) purely because both hit the same
+    // raw count of 2 -- the sort's old tiebreak compared counts, not
+    // proportions. T07 should lead here: its own checklist is fully
+    // satisfied, T05's is only partly satisfied.
+    const data = {
+      dem_age: "13", dem_sex: "Female",
+      tx_loc: ["Bilateral paraspinal"].join(SEP),
+      tx_rf: ["No red flags"].join(SEP),
+    };
+    const tv = extractThoracicVariablesStructured(data);
+    const result = runThoracicReasoningEngine(tv);
+    const t05 = result.conditions.find(c => c.id === "T05");
+    const t07 = result.conditions.find(c => c.id === "T07");
+    expect(t05.matchTier).toBe("Strong match");
+    expect(t07.matchTier).toBe("Strong match");
+    expect(t05.supportingMatched.length).toBe(2);
+    expect(t05.supportingTotal).toBe(3);
+    expect(t07.supportingMatched.length).toBe(2);
+    expect(t07.supportingTotal).toBe(2);
+    // T07 (100%) must rank above T05 (67%) despite the tied raw count.
+    const t07Index = result.conditions.findIndex(c => c.id === "T07");
+    const t05Index = result.conditions.findIndex(c => c.id === "T05");
+    expect(t07Index).toBeLessThan(t05Index);
+  });
+
   it("includes the Thoracic MMT test as a recommended objective test for T06 and T09", () => {
     const tv = extractThoracicVariablesStructured({});
     const result = runThoracicReasoningEngine(tv);
