@@ -161,6 +161,51 @@ describe("runThoracicReasoningEngine", () => {
     expect(t09.note).not.toMatch(/UNVERIFIED/);
   });
 
+  it("hard-excludes T05 (Scheuermann's) and T07 (idiopathic scoliosis) for a confirmed non-adolescent age, even with otherwise-generic supporting findings present", () => {
+    // Real-world regression: a 45-year-old with a plain insidious,
+    // non-traumatic mechanical presentation used to score T05 as
+    // 'Strong match' purely on "insidious onset + no trauma" -- both
+    // true for huge swaths of ordinary adult mechanical back pain --
+    // because a confirmed out-of-range age only failed to add support
+    // rather than actively ruling the condition out.
+    const data = {
+      dem_age: "45",
+      tx_moi: ["Insidious — postural / sustained"].join(SEP),
+      tx_rf: ["No red flags"].join(SEP),
+    };
+    const tv = extractThoracicVariablesStructured(data);
+    const result = runThoracicReasoningEngine(tv);
+    const t05 = result.conditions.find(c => c.id === "T05");
+    const t07 = result.conditions.find(c => c.id === "T07");
+    expect(t05.matchTier).toBe("Unlikely");
+    expect(t07.matchTier).toBe("Unlikely");
+    expect(t05.refutingMatched.some(r => /outside the 13-16/i.test(r))).toBe(true);
+  });
+
+  it("does NOT hard-exclude T05 for a genuine adolescent (age confirmed inside 13-16)", () => {
+    const data = {
+      dem_age: "14",
+      tx_moi: ["Insidious — postural / sustained"].join(SEP),
+      tx_rf: ["No red flags"].join(SEP),
+    };
+    const tv = extractThoracicVariablesStructured(data);
+    const result = runThoracicReasoningEngine(tv);
+    const t05 = result.conditions.find(c => c.id === "T05");
+    expect(t05.matchTier).not.toBe("Unlikely");
+  });
+
+  it("does not penalize T05/T07 any more than before when age was never captured at all", () => {
+    const tv = extractThoracicVariablesStructured({
+      tx_moi: ["Insidious — postural / sustained"].join(SEP),
+      tx_rf: ["No red flags"].join(SEP),
+    });
+    const result = runThoracicReasoningEngine(tv);
+    const t05 = result.conditions.find(c => c.id === "T05");
+    // hardExclude must stay inert (not treat "unknown" as "confirmed
+    // outside range") -- same behavior as before this fix.
+    expect(t05.matchTier).toBe("Strong match");
+  });
+
   it("includes the Thoracic MMT test as a recommended objective test for T06 and T09", () => {
     const tv = extractThoracicVariablesStructured({});
     const result = runThoracicReasoningEngine(tv);

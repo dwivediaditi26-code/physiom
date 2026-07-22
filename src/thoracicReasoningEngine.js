@@ -204,6 +204,13 @@ const CONDITIONS = [
     // anterior wedging of ≥3 consecutive vertebrae + Schmorl's nodes) --
     // explicitly a radiographic diagnosis, not a special-test one.
     lowConfidence: true,
+    // A confirmed age outside 13-16 rules this out clinically -- it
+    // shouldn't just fail to add support. See evaluateCondition()'s
+    // hardExclude handling above.
+    hardExclude: (tv) => {
+      const age = parseInt(tv.demographics.age, 10);
+      return Number.isFinite(age) ? (age < 13 || age > 16) : false;
+    },
     supporting: [
       { label: "Adolescent age (13-16 — Magee's own age range for this condition)", check: stateOf((tv) => {
           const age = parseInt(tv.demographics.age, 10);
@@ -215,6 +222,10 @@ const CONDITIONS = [
     refuting: [
       { label: "Any red flag present", check: stateOf((tv) => tv.redFlags.redFlagScreen === "positive") },
       { label: "Traumatic mechanism (points to a fracture/acute injury instead)", check: stateOf((tv) => tv.mechanism.traumaticMechanism === true) },
+      { label: "Age confirmed clearly outside the 13-16 adolescent range", check: stateOf((tv) => {
+          const age = parseInt(tv.demographics.age, 10);
+          return Number.isFinite(age) ? (age < 13 || age > 16) : "unknown";
+        }) },
     ],
     objectiveTests: {
       required: ["Observation (postural inspection for a fixed/structural kyphosis — does it correct with active extension?)", "Thoracic AROM (assess flexibility of the kyphotic curve)"],
@@ -248,6 +259,13 @@ const CONDITIONS = [
     // (Adam's forward bend equivalent) for rib hump detection --
     // fundamentally an observation + imaging diagnosis.
     lowConfidence: true,
+    // Same reasoning as T05's hardExclude: a confirmed age well outside
+    // the classic 10-18 adolescent-onset window rules idiopathic
+    // scoliosis out rather than merely failing to support it.
+    hardExclude: (tv) => {
+      const age = parseInt(tv.demographics.age, 10);
+      return Number.isFinite(age) ? (age < 10 || age > 18) : false;
+    },
     supporting: [
       { label: "Adolescent age + female sex (approx — idiopathic scoliosis' classic demographic per Table 8-3's age/incidence data)", check: stateOf((tv) => {
           const age = parseInt(tv.demographics.age, 10);
@@ -260,6 +278,10 @@ const CONDITIONS = [
     refuting: [
       { label: "Any red flag present", check: stateOf((tv) => tv.redFlags.redFlagScreen === "positive") },
       { label: "Traumatic mechanism (acute injury, not a developmental curve)", check: stateOf((tv) => tv.mechanism.traumaticMechanism === true) },
+      { label: "Age confirmed clearly outside the 10-18 adolescent range", check: stateOf((tv) => {
+          const age = parseInt(tv.demographics.age, 10);
+          return Number.isFinite(age) ? (age < 10 || age > 18) : "unknown";
+        }) },
     ],
     objectiveTests: {
       required: ["Observation (Adam's forward bend / skyline view for rib hump, pelvic obliquity, shoulder height asymmetry)"],
@@ -367,6 +389,24 @@ function evaluateCondition(condition, tv) {
     matchTier = "Possible match";
   } else {
     matchTier = "Weak match";
+  }
+
+  // Hard-exclude override -- ONLY for conditions that opt in via
+  // condition.hardExclude(tv). Needed because the count-based tier math
+  // above can't express "this one confirmed fact rules the condition out,
+  // no matter how many generic/non-specific supporting checks are also
+  // true." Surfaced by testing with a realistic 45-year-old mechanical
+  // thoracic case: T05 (Scheuermann's, a condition Magee defines by an
+  // age-13-16 presentation) reached "Strong match" on nothing more than
+  // "insidious onset + no trauma" -- both true for huge swaths of ordinary
+  // adult mechanical back pain. A confirmed age of 45 should rule
+  // Scheuermann's out, not just fail to support it. This does not touch
+  // lumbar/cervicalReasoningEngine.js's own separate evaluateCondition() --
+  // thoracic's copy only.
+  if (typeof condition.hardExclude === "function") {
+    let excluded = false;
+    try { excluded = condition.hardExclude(tv) === true; } catch { excluded = false; }
+    if (excluded) matchTier = "Unlikely";
   }
 
   return {
