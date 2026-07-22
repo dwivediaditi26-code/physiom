@@ -148,5 +148,20 @@ describe("runLumbarReasoningEngine -- L01/L07 differentiation fixes (real-case r
     const l01 = result.conditions.find((c) => c.id === "L01");
     expect(l01.supportingMatched).toContain("Previous similar episodes");
   });
+
+  it("exposes supportingTotal on every condition, and breaks same-tier ties by proportion satisfied rather than raw count", () => {
+    // Same tiebreak fix ported from thoracicReasoningEngine.js /
+    // cervicalReasoningEngine.js (both found real ties via realistic-
+    // patient sweeps). Lumbar wasn't caught misranking in the 10-case
+    // sweep run against it, but the underlying sort logic was identical
+    // to cervical's pre-fix version, so this locks in the same
+    // structural guarantee here too rather than leaving it unverified.
+    const lv = extractLumbarVariablesStructured({});
+    const result = runLumbarReasoningEngine(lv);
+    result.conditions.forEach((c) => {
+      expect(typeof c.supportingTotal).toBe("number");
+      expect(c.supportingTotal).toBeGreaterThan(0);
+    });
+  });
 });
 

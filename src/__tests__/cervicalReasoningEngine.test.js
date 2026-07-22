@@ -192,4 +192,35 @@ describe("runCervicalReasoningEngine", () => {
     expect(c10.supportingMatched.length).toBeGreaterThanOrEqual(4);
     expect(c10.matchTier).not.toBe("Insufficient data");
   });
+
+  it("breaks same-tier ties by proportion of each condition's own checklist satisfied, not raw count", () => {
+    // Real-world regression found via a 20-case realistic-patient sweep:
+    // a 22-year-old who woke up with sudden severe neck pain and
+    // torticollis (rotation-guarding, no arm symptoms) used to rank C03
+    // (facet dysfunction, 4 of 6 supporting = 67%) above C06 (acute
+    // muscle strain/torticollis, 4 of 4 supporting = 100%) purely
+    // because both matched the same raw count of 4. Same bug class
+    // already fixed once in thoracicReasoningEngine.js, ported here.
+    const data = {
+      cc_onset: "Sudden onset, woke up with severe neck pain and unable to turn head",
+      cx_arm_present: "No arm or hand symptoms",
+      cx_dermatomal: ["Not dermatomal / not applicable"].join(SEP),
+      cx_agg_mov: ["Rotation left"].join(SEP),
+      cx_rf_myelopathy: "No myelopathy signs", cx_rf_vbi: "No VBI signs",
+      cx_rf_instability: "No instability signs", cx_rf_other: "No other red flags",
+    };
+    const cv = extractCervicalVariablesStructured(data);
+    const result = runCervicalReasoningEngine(cv);
+    const c03 = result.conditions.find(c => c.id === "C03");
+    const c06 = result.conditions.find(c => c.id === "C06");
+    expect(c03.matchTier).toBe("Strong match");
+    expect(c06.matchTier).toBe("Strong match");
+    expect(c03.supportingMatched.length).toBe(4);
+    expect(c03.supportingTotal).toBe(6);
+    expect(c06.supportingMatched.length).toBe(4);
+    expect(c06.supportingTotal).toBe(4);
+    const c06Index = result.conditions.findIndex(c => c.id === "C06");
+    const c03Index = result.conditions.findIndex(c => c.id === "C03");
+    expect(c06Index).toBeLessThan(c03Index);
+  });
 });

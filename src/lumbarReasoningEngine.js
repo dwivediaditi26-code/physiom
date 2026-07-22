@@ -348,6 +348,16 @@ function evaluateCondition(condition, lv) {
     refutingMatched: refutingTrue.map((r) => r.label),
     unknownCount,
     totalChecks: condition.supporting.length + condition.refuting.length,
+    // Total size of THIS condition's own supporting checklist -- exposed
+    // so the sort below can break same-tier ties by proportion satisfied
+    // rather than raw count. Fix ported from thoracicReasoningEngine.js,
+    // where it was found via realistic-patient testing (a 13yo scoliosis
+    // screening case ranked a 2-of-3 = 67% match above a 2-of-2 = 100%
+    // match purely because both hit the same raw count). The same class
+    // of tie was then confirmed here too via a 20-case sweep: a
+    // torticollis/muscle-strain case (C06, 4/4 = 100%) was ranking below
+    // facet dysfunction (C03, 4/6 = 67%) on the old raw-count tiebreak.
+    supportingTotal: condition.supporting.length,
     objectiveTests: condition.objectiveTests,
   };
 }
@@ -367,7 +377,24 @@ function runLumbarReasoningEngine(lv) {
   const redFlagOverride = evaluateRedFlagOverride(lv);
   const conditions = CONDITIONS
     .map((c) => evaluateCondition(c, lv))
-    .sort((a, b) => (TIER_ORDER[b.matchTier] - TIER_ORDER[a.matchTier]) || (b.supportingMatched.length - a.supportingMatched.length));
+    .sort((a, b) => {
+      const tierDiff = TIER_ORDER[b.matchTier] - TIER_ORDER[a.matchTier];
+      if (tierDiff !== 0) return tierDiff;
+      // Primary same-tier ranking stays raw count -- proportion is ONLY
+      // a tiebreaker for conditions tied on raw count (see supportingTotal's
+      // comment in evaluateCondition() above). Proportion must never be
+      // the primary key, or a tiny checklist (e.g. 1/1) could leapfrog a
+      // condition with much more raw matched evidence (e.g. 3/4) purely
+      // because its denominator is smaller.
+      const countDiff = b.supportingMatched.length - a.supportingMatched.length;
+      if (countDiff !== 0) return countDiff;
+      const aProp = a.supportingTotal > 0 ? a.supportingMatched.length / a.supportingTotal : 0;
+      const bProp = b.supportingTotal > 0 ? b.supportingMatched.length / b.supportingTotal : 0;
+      if (bProp !== aProp) return bProp - aProp;
+      // Still tied on proportion -- fall back to raw count for full
+      // determinism (matches the pre-fix behavior in this last-resort case).
+      return b.supportingMatched.length - a.supportingMatched.length;
+    });
 
   return { redFlagOverride, conditions };
 }

@@ -446,11 +446,18 @@ function runThoracicReasoningEngine(tv) {
     .sort((a, b) => {
       const tierDiff = TIER_ORDER[b.matchTier] - TIER_ORDER[a.matchTier];
       if (tierDiff !== 0) return tierDiff;
-      // Same-tier tiebreak: proportion of EACH condition's own supporting
-      // checklist satisfied, not raw count -- a condition with a smaller
-      // checklist fully satisfied (e.g. 2/2 = 100%) should outrank one
-      // with a larger checklist only partly satisfied (e.g. 2/3 = 67%),
-      // even though both hit the same raw count of 2.
+      // Primary same-tier ranking stays raw count (more matched criteria
+      // wins) -- proportion is ONLY a tiebreaker for conditions that hit
+      // the exact same raw count, e.g. T07 (2/2=100%) vs T05 (2/3=67%)
+      // both matching 2 -- T07's fuller checklist should win that tie.
+      // Proportion must never be the primary key: a condition with a
+      // tiny checklist (e.g. 1/1) would otherwise leapfrog a condition
+      // with much more raw matched evidence (e.g. 3/4) just because its
+      // denominator is smaller -- caught via a 20-case Lumbar/Cervical
+      // sweep where a near-vacuous 1-item checklist outranked genuinely
+      // better-evidenced conditions.
+      const countDiff = b.supportingMatched.length - a.supportingMatched.length;
+      if (countDiff !== 0) return countDiff;
       const aProp = a.supportingTotal > 0 ? a.supportingMatched.length / a.supportingTotal : 0;
       const bProp = b.supportingTotal > 0 ? b.supportingMatched.length / b.supportingTotal : 0;
       if (bProp !== aProp) return bProp - aProp;
