@@ -274,7 +274,14 @@ export function normalizeFromData(data: Data): { subjective: SubjectiveInput; ob
   setT("neer", isPos(data.st_neer));
   setT("empty_can", isPos(data.st_empty_can));
   setT("er_lag", isPos(data.st_er_lag));
-  setT("drop_arm", has(data.st_er_lag, "massive", "full lag"));
+  // Bug fix: the app's shoulder red-flag checklists (shl_rf/shr_rf) each have a
+  // dedicated "Drop arm" option ("Drop arm — acute full-thickness tear" / "Drop
+  // arm — acute") for a clinician who documents a positive drop-arm sign directly
+  // via that checklist rather than inferring it from the ER-lag test's "massive/
+  // full lag" wording. Previously only the st_er_lag inference was read, so a
+  // drop-arm finding documented the other (arguably more direct) way silently
+  // never reached the Rotator cuff tear differential's drop_arm_positive support.
+  setT("drop_arm", has(data.st_er_lag, "massive", "full lag") || has(shRf, "drop arm"));
   setT("lift_off", isPos(data.st_lift_off));
   setT("obrien", isPos(data.st_obrien));
   setT("speeds", isPos(data.st_speeds));
