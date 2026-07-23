@@ -802,3 +802,36 @@ describe("normalizeAnkleFromData — deep audit: onset shadowing, peroneal/stres
     expect(result.interpretation?.referralRecommendation).toMatch(/stress fracture/i);
   });
 });
+
+describe("normalizeWristFromData — 50-case validation finding: fracture red flag was unreachable", () => {
+  it("fires the generic fracture red flag for a suspected scaphoid fracture (FOOSH mechanism)", () => {
+    const result = runReasoningFromData({
+      cc_main: "fell on outstretched hand, pain at the base of my thumb",
+      ew_moi: "FOOSH — fall onto outstretched hand",
+      ew_rf: "Suspected scaphoid fracture",
+      grf_fracture: "Major trauma — high energy",
+    }, "wrist");
+    expect(result.redFlag.triggered).toBe(true);
+    expect(result.redFlag.flags.some((f) => f.id === "fracture")).toBe(true);
+    expect(result.stopped).toBe(true);
+  });
+
+  it("fires the fracture red flag for a suspected distal radius fracture too", () => {
+    const result = runReasoningFromData({
+      cc_main: "fell on outstretched hand, wrist deformity",
+      ew_moi: "FOOSH — fall onto outstretched hand",
+      ew_rf: "Suspected distal radius fracture",
+      grf_fracture: "Major trauma — high energy",
+    }, "wrist");
+    expect(result.redFlag.flags.some((f) => f.id === "fracture")).toBe(true);
+  });
+
+  it("does not fire the fracture red flag from trauma mechanism alone without a suspected-fracture finding", () => {
+    const result = runReasoningFromData({
+      cc_main: "fell on outstretched hand, wrist sore",
+      ew_moi: "FOOSH — fall onto outstretched hand",
+      grf_fracture: "Major trauma — high energy",
+    }, "wrist");
+    expect(result.redFlag.flags.some((f) => f.id === "fracture")).toBe(false);
+  });
+});
