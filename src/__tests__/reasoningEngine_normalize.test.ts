@@ -868,3 +868,40 @@ describe("normalizeElbowFromData / normalizeThoracicFromData / normalizeWristFro
     expect(subjective.onsetTraumatic).toBe(true);
   });
 });
+
+describe("normalizeElbowFromData — deep audit: unread Additional-Conditions module (ew_ucl/ew_olecranon/ew_biceps_rupture), dead nightPainUnrelieved check", () => {
+  it("fires the joint_emergency red flag from a real septic olecranon bursitis finding, not just ew_rf", () => {
+    const result = runReasoningFromData({ ew_olecranon: "Hot red painful — septic bursitis screen" }, "elbow");
+    expect(result.redFlag.triggered).toBe(true);
+    expect(result.redFlag.flags.some((f) => f.id === "joint_emergency")).toBe(true);
+  });
+
+  it("does not fire hotSwollenJoint from a benign, non-inflammatory olecranon bursa finding", () => {
+    const { subjective } = normalizeElbowFromData({ ew_olecranon: "Fluctuant soft swelling — non-inflammatory" });
+    expect(subjective.hotSwollenJoint).toBeFalsy();
+  });
+
+  it("recognises a dedicated UCL/thrower's-elbow screen as elbowThrowingMechanism, not just ew_moi", () => {
+    const { subjective } = normalizeElbowFromData({ ew_ucl: "Felt pop at medial elbow" });
+    expect(subjective.elbowThrowingMechanism).toBe(true);
+  });
+
+  it("recognises a dedicated biceps-rupture screen finding as anteriorElbowPainPattern, not just ew_loc", () => {
+    const { subjective } = normalizeElbowFromData({ ew_biceps_rupture: "Ball of muscle migrated distally (distal rupture)" });
+    expect(subjective.anteriorElbowPainPattern).toBe(true);
+  });
+
+  it("does not treat a negative hook test as confirming biceps rupture", () => {
+    const { subjective } = normalizeElbowFromData({ ew_biceps_rupture: "Hook test negative (distal biceps)" });
+    expect(subjective.anteriorElbowPainPattern).toBeFalsy();
+  });
+
+  it("surfaces the malignancy red flag via the ew_pattern proxy now that the ew_rf text check was confirmed dead", () => {
+    const result = runReasoningFromData({
+      dem_age: 62,
+      grf_systemic: "Unexplained weight loss",
+      ew_pattern: "Constant — sensitisation / neuropathic",
+    }, "elbow");
+    expect(result.redFlag.flags.some((f) => f.id === "malignancy")).toBe(true);
+  });
+});
