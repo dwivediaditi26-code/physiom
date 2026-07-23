@@ -2755,33 +2755,20 @@ function fieldIcon_S(f) {
 // every row lines up), the field's input on the right (~70%). A
 // hairline divider is the only separator — rows are compact at rest
 // and grow only as far as their content needs.
-function AssessmentRow({ icon, label, helpText, PC, children, last }) {
-  const dashSplit = typeof label === "string" ? label.split(/\s+—\s+/) : [label];
-  const main = dashSplit[0];
-  const sub = dashSplit.slice(1).join(" — ");
+function AssessmentRow({ label, helpText, PC, children }) {
   return (
     <div className="pm-arow" style={{
       display: "flex", alignItems: "center", gap: 12,
-      padding: "8px 14px", minHeight: 40,
-      borderBottom: last ? "none" : `1px solid ${PC.border}`,
     }}>
-      <div style={{ width: "38%", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
-        {icon && icon !== "•" && (
-          <span className="pm-arow-icon" style={{ fontSize: "1.15rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
+      <span className="pm-arow-label" style={{ width: "38%", flexShrink: 0, fontSize: "0.95rem", fontWeight: 400, color: "#6B6B7A", lineHeight: 1.3 }}>
+        {label}
+        {helpText && (
+          <span title={helpText} style={{
+            display: "inline-flex", marginLeft: 4, color: PC.accent,
+            fontSize: "0.62rem", cursor: "help", verticalAlign: "top",
+          }}>ⓘ</span>
         )}
-        <span className="pm-arow-label" style={{ fontSize: "1rem", fontWeight: 600, color: PC.text, lineHeight: 1.25 }}>
-          {main}
-          {helpText && (
-            <span title={helpText} style={{
-              display: "inline-flex", marginLeft: 4, color: PC.accent,
-              fontSize: "0.62rem", cursor: "help", verticalAlign: "top",
-            }}>ⓘ</span>
-          )}
-          {sub && (
-            <><br /><span className="pm-arow-sub" style={{ fontSize: "0.8125rem", fontWeight: 500, color: PC.muted }}>{sub}</span></>
-          )}
-        </span>
-      </div>
+      </span>
       <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
     </div>
   );
@@ -2804,10 +2791,10 @@ function SmartInput({ value, onChange, PC, multiline }) {
       placeholder="Type or tap to enter..."
       className="pm-sinput-box pm-sinput-text"
       style={{
-        width: "100%", boxSizing: "border-box", border: `1.5px solid ${PC.inputBorder || PC.border}`,
-        borderRadius: 11, background: "#FBFBFD", padding: "9px 12px", fontSize: "0.92rem",
-        color: PC.text, fontFamily: "inherit", outline: "none", resize: "none", overflow: "hidden",
-        lineHeight: 1.35, minHeight: 38,
+        width: "100%", boxSizing: "border-box", border: "1px solid #ECE9F7",
+        borderRadius: 16, background: "#fff", padding: "14px 16px", fontSize: "0.95rem", fontWeight: 500,
+        color: "#2D2D3A", fontFamily: "inherit", outline: "none", resize: "none", overflow: "hidden",
+        lineHeight: 1.35, minHeight: 48,
       }} />
   );
 }
@@ -2816,18 +2803,16 @@ function SmartInput({ value, onChange, PC, multiline }) {
 function PainSliderCompact({ value, onChange, PC }) {
   const num = parseInt(value || 0, 10) || 0;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
-      <span className="pm-slider-end" style={{ fontSize: "0.75rem", color: PC.muted, fontWeight: 600, width: 12, flexShrink: 0 }}>0</span>
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10, width: "100%", boxSizing: "border-box",
+      border: "1px solid #ECE9F7", borderRadius: 16, background: "#fff", padding: "12px 16px",
+    }}>
+      <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 12, flexShrink: 0 }}>0</span>
       <input type="range" min={0} max={10} step={1} value={num}
         onChange={e => onChange(e.target.value)}
-        style={{ flex: 1, accentColor: PC.accent, cursor: "pointer" }} />
-      <span className="pm-slider-end" style={{ fontSize: "0.75rem", color: PC.muted, fontWeight: 600, width: 16, flexShrink: 0 }}>10</span>
-      <span style={{
-        marginLeft: "auto", minWidth: 34, textAlign: "right", flexShrink: 0,
-      }}>
-        <span className="pm-slider-val" style={{ fontWeight: 800, fontSize: "0.9rem", color: PC.text }}>{num}</span>
-        <span className="pm-slider-val-suffix" style={{ fontWeight: 600, fontSize: "0.72rem", color: PC.muted }}> /10</span>
-      </span>
+        style={{ flex: 1, minWidth: 0, accentColor: "#6C5CE7", cursor: "pointer" }} />
+      <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 16, flexShrink: 0 }}>10</span>
+      <span className="pm-slider-val" style={{ fontWeight: 700, fontSize: "0.95rem", color: "#2D2D3A", minWidth: 34, textAlign: "right", flexShrink: 0 }}>{num}/10</span>
     </div>
   );
 }
@@ -2870,9 +2855,9 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
       <div className="pm-cfield-box" style={{
-        display: "flex", alignItems: "flex-end", gap: 6,
-        border: `1.5px solid ${PC.inputBorder || PC.border}`, borderRadius: 11,
-        background: "#FBFBFD", padding: "7px 6px 7px 12px", minHeight: 38,
+        display: "flex", alignItems: "center", gap: 6,
+        border: "1px solid #E4E1F5", borderRadius: 16,
+        background: "#fff", padding: "12px 14px 12px 16px", minHeight: 48, boxSizing: "border-box",
       }}>
         <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
           onClick={e => e.stopPropagation()}
@@ -2880,16 +2865,16 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
           className="pm-cfield-text"
           style={{
             flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
-            fontSize: "0.92rem", color: PC.text, fontFamily: "inherit", resize: "none",
+            fontSize: "0.95rem", fontWeight: 500, color: "#2D2D3A", fontFamily: "inherit", resize: "none",
             overflow: "hidden", lineHeight: 1.35, padding: "2px 0",
           }} />
         <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
           className="pm-cfield-chevron" style={{
-          flexShrink: 0, width: 20, height: 20, alignSelf: "flex-end", marginBottom: 3,
+          flexShrink: 0, width: 20, height: 20,
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: "none", color: PC.muted, fontSize: "1rem", cursor: "pointer",
-          border: "none", transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms ease",
-        }}>›</button>
+          background: "none", color: "#7B68EE", fontSize: "1rem", cursor: "pointer",
+          border: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease",
+        }}>⌄</button>
       </div>
 
       {open && (
@@ -3601,22 +3586,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       display:"flex", flexDirection:"column", gap:14, maxWidth:"100%",
       fontFamily: "ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, -apple-system, sans-serif",
     }}>
-
-      {/* ── Mobile-only ~40% scale-down of field-row text/blocks ───── */}
-      <style>{`
-        @media (max-width: 767px) {
-          .pm-arow { padding: 3px 4px !important; min-height: 12px !important; gap: 3px !important; }
-          .pm-arow-icon { font-size: 1.08rem !important; }
-          .pm-arow-label { font-size: 0.86rem !important; }
-          .pm-arow-sub { font-size: 0.72rem !important; }
-          .pm-cfield-box, .pm-sinput-box { padding: 2px 3px !important; }
-          .pm-cfield-text, .pm-sinput-text { font-size: 0.79rem !important; }
-          .pm-cfield-chevron { font-size: 0.86rem !important; }
-          .pm-slider-end { font-size: 0.65rem !important; }
-          .pm-slider-val { font-size: 0.79rem !important; }
-          .pm-slider-val-suffix { font-size: 0.65rem !important; }
-        }
-      `}</style>
 
       {/* ── Red Flag Alert Banner ─────────────────────────────────── */}
       {hasAnyRedFlag && (
@@ -4600,10 +4569,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                           </div>
                         )}
 
-                        {/* Line-wise field rows — icon + label left, boxed input right */}
-                        <div style={{ background: PC.surface, borderRadius:14, border:`1px solid ${PC.accent}22`, boxShadow:`0 2px 10px ${PC.accent}0D`, overflow:"visible" }}>
+                        {/* Field rows — no shared card; each is its own block with real gap between */}
+                        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
                           {s.fields.map((field, fi) => (
-                            <AssessmentRow key={field.id} icon={fieldIcon_S(field)} label={field.label}
+                            <AssessmentRow key={field.id} label={field.label}
                               helpText={FIELD_HELP[field.id]} PC={PC} last={fi === s.fields.length - 1}>
                               {renderField(field)}
                             </AssessmentRow>
