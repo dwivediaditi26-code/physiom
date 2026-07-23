@@ -946,6 +946,15 @@ export function normalizeElbowFromData(data: Data): { subjective: SubjectiveInpu
   const pattern = str(data.ew_pattern).toLowerCase();
   const neuro = str(data.ew_neuro).toLowerCase();
   const rf = str(data.ew_rf).toLowerCase();
+  // "Elbow/Wrist -- Additional Conditions" (ew_ucl, ew_olecranon,
+  // ew_biceps_rupture) is a dedicated, purpose-built screening module never
+  // read anywhere in this normalizer -- verified in sharedClinicalData.js.
+  // ew_pect_rupture and ew_tfcc are also part of this module but are NOT
+  // elbow-relevant (pec rupture is a shoulder-region condition; TFCC is a
+  // wrist-region structure) so are deliberately left for their own regions.
+  const ucl = str(data.ew_ucl).toLowerCase();
+  const olecranon = str(data.ew_olecranon).toLowerCase();
+  const bicepsRupture = str(data.ew_biceps_rupture).toLowerCase();
 
   const subjective: SubjectiveInput = {
     region: "elbow",
@@ -958,27 +967,67 @@ export function normalizeElbowFromData(data: Data): { subjective: SubjectiveInpu
     onsetTraumatic: has(moi, "direct trauma", "foosh") || hasUnnegated(onsetText, "trauma", "fall", "foosh", "injury", "whiplash", "mva"),
     onsetInsidious: has(moi, "insidious") || has(onsetText, "insidious", "gradual", "no clear cause"),
     paresthesia: has(neuro, "median nerve", "ulnar nerve", "radial nerve"),
-    elbowDirectTraumaOnset: has(moi, "direct trauma — elbow"),
+    // ew_olecranon's own direct-trauma option folded in alongside ew_moi's --
+    // a clinician working through the dedicated olecranon-bursitis screen
+    // (rather than the generic mechanism checklist) still gets credit.
+    elbowDirectTraumaOnset: has(moi, "direct trauma — elbow") || has(olecranon, "direct trauma to posterior elbow"),
     elbowRacquetSportMechanism: has(moi, "sport — racquet") || has(aggAct, "tennis — backhand"),
     elbowGolfSwingMechanism: has(moi, "sport — golf swing") || has(aggAct, "golf — grip at impact"),
-    elbowThrowingMechanism: has(moi, "sport — throwing mechanism") || has(aggAct, "throwing sport"),
+    // ew_ucl's dedicated thrower's-elbow screen folded into the SAME consumed
+    // flag (elbow_throwing_mechanism, cited by UCL sprain in elbow.evidence.json)
+    // -- richer, more specific findings than the generic mechanism checklist.
+    elbowThrowingMechanism: has(moi, "sport — throwing mechanism") || has(aggAct, "throwing sport")
+      || has(ucl, "overhead throwing athlete", "late cocking", "valgus stress mechanism", "felt pop at medial elbow", "loss of throwing velocity", "valgus instability on stress testing"),
     elbowRepetitiveGripOveruse: has(moi, "repetitive gripping", "computer / keyboard", "tool use — vibration", "occupational repetitive strain"),
     sustainedElbowFlexionAggravation: has(aggMov, "elbow flexion — sustained"),
     resistedWristExtensionPain: has(aggMov, "wrist extension (resisted)"),
     resistedWristFlexionPain: has(aggMov, "wrist flexion (resisted)"),
     lateralElbowPainPattern: has(loc, "lateral elbow"),
     medialElbowPainPattern: has(loc, "medial elbow"),
-    posteriorElbowPainPattern: has(loc, "posterior elbow"),
-    anteriorElbowPainPattern: has(loc, "anterior elbow"),
+    // ew_olecranon's own location option folded in alongside ew_loc.
+    posteriorElbowPainPattern: has(loc, "posterior elbow") || has(olecranon, "posterior elbow swelling"),
+    // ew_biceps_rupture's positive rupture indicators folded in. Deliberately
+    // excludes "Hook test negative (distal biceps)" (a NEGATIVE/rule-out
+    // finding -- must not be read as confirmatory) and "Visible muscle
+    // deformity -- Popeye sign in upper arm (proximal)" (that describes a
+    // PROXIMAL biceps rupture, a different structure/diagnosis not covered
+    // by this region's "distal biceps" category). "Weakness supination /
+    // elbow flexion -- sudden onset" also left unwired -- no clean
+    // subjective-flag home beyond what biceps_resisted_pain_or_weak (an
+    // objective MMT finding) already covers; flagged only.
+    anteriorElbowPainPattern: has(loc, "anterior elbow") || has(bicepsRupture, "sudden pop in anterior elbow", "ball of muscle migrated distally", "anterior elbow bruising"),
     ulnarNerveDistributionSymptoms: has(neuro, "ulnar nerve — little and ring", "ulnar nerve — worse with elbow flexion"),
     radialNerveDistributionSymptoms: has(neuro, "radial nerve — dorsum hand"),
     traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "direct trauma — elbow") || hasUnnegated(onsetText, "trauma", "fall", "foosh", "injury"),
-    hotSwollenJoint: has(rf, "septic arthritis"),
+    // Bug fix: ew_olecranon's "Hot red painful -- septic bursitis screen" is
+    // a genuine, urgent finding (septic olecranon bursitis needs aspiration/
+    // antibiotics) that had ZERO wiring anywhere -- same class of gap as the
+    // knee septic-bursitis fix earlier this session. Folded into the same
+    // hotSwollenJoint flag ew_rf's "septic arthritis" already feeds (both
+    // trigger the same joint_emergency red flag, which is the clinically
+    // correct action either way).
+    hotSwollenJoint: has(rf, "septic arthritis") || has(olecranon, "hot red painful"),
     vascularCompromiseSigns: has(rf, "compartment syndrome"),
     unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    // NOTE: has(rf, "constitutional symptoms") and has(rf, "cancer history")
+    // below are DEAD -- ew_rf's real option list (verified in
+    // sharedClinicalData.js) is entirely wrist/hand-fracture and CTS/CRPS
+    // focused and contains neither phrase. Harmless (both flags still work
+    // via the working grf_systemic/grf_cancer fallback) so left as-is rather
+    // than removed, but flagged here for visibility.
     systemicIllness: selected(data.grf_systemic, "systemically well") || has(rf, "constitutional symptoms"),
     malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rf, "cancer history"),
-    nightPainUnrelieved: has(rf, "constant progressive pain"),
+    // Bug fix: has(rf, "constant progressive pain") is ALSO dead (same reason
+    // as above) -- unlike systemicIllness/malignancyHistory, nightPainUnrelieved
+    // had NO other source at all, meaning the malignancy red flag
+    // (unexplainedWeightLoss && nightPainUnrelieved && ageOver50) was
+    // structurally unreachable for elbow no matter what a clinician entered.
+    // Elbow has no purpose-built "progressive/unrelieved night pain" field
+    // (unlike lumbar/hip/shoulder/cervical, each of which has one) -- ew_pattern's
+    // "Constant -- sensitisation / neuropathic" option is the best available
+    // proxy and is used here as one, alongside the (harmless, kept for when/if
+    // the field text is ever corrected) original dead check.
+    nightPainUnrelieved: has(rf, "constant progressive pain") || has(pattern, "constant — sensitisation / neuropathic"),
   };
 
   const rom = [
