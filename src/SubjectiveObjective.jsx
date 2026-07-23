@@ -9,6 +9,7 @@ import { extractCervicalVariablesStructured, mergeCervicalVariables } from "./ce
 import { runCervicalReasoningEngine } from "./cervicalReasoningEngine.js";
 import { extractThoracicVariablesStructured, mergeThoracicVariables } from "./thoracicVariableExtractor.js";
 import { runThoracicReasoningEngine } from "./thoracicReasoningEngine.js";
+import { runShoulderPhase05, shoulderTestNav } from "./shoulderPhase05.js";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -3039,6 +3040,24 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       return tv0 ? runThoracicReasoningEngine(tv0) : null;
     }catch{ return null; }
   });
+
+  // Shoulder Phase 0 / 0.5 -- reuses the existing, already-tested Shoulder
+  // reasoningEngine (src/reasoningEngine/) via shoulderPhase05.js's adapter,
+  // rather than a separate Lumbar/Cervical/Thoracic-style extractor. Unlike
+  // those three, this needs NO separate persisted blob: runShoulderPhase05(data)
+  // is a pure, synchronous function of the same `data` record that's already
+  // persisted for the whole form (no async Pass-2 AI note merge to preserve
+  // across navigation), so simply re-deriving it from `data` on every mount/
+  // rehydrate is both correct and sufficient.
+  const dataHasShoulderRegionSelected = (() => {
+    try {
+      const regs = JSON.parse(data.cx_selected_regions || "[]");
+      return regs.some(reg => reg === "Shoulder (L)" || reg === "Shoulder (R)");
+    } catch { return false; }
+  })();
+  const [shoulderReasoning, setShoulderReasoning] = useState(()=>{
+    try{ return dataHasShoulderRegionSelected ? runShoulderPhase05(data) : null; }catch{ return null; }
+  });
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
@@ -3521,6 +3540,17 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       try { set({ cx_thoracic_variables: null, cx_thoracic_note_findings: null,
         cx_thoracic_ai_filled: null, cx_thoracic_pending_rf: null }); } catch {}
     }
+
+    // -- Shoulder Phase 0 / 0.5 -- no Pass 1/Pass 2 split, no persisted blob:
+    // runShoulderPhase05(data) is a pure function of `data`, computed fresh
+    // here (same trigger point as the other three) and again automatically
+    // on remount from the useState initializer above.
+    if (selectedRegions.some(reg => reg === "Shoulder (L)" || reg === "Shoulder (R)")) {
+      try { setShoulderReasoning(runShoulderPhase05(data)); } catch { setShoulderReasoning(null); }
+    } else {
+      setShoulderReasoning(null);
+    }
+
     // Persist insight so it survives navigation to ROM/MMT and back
     try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
     // Show saved confirmation toast
@@ -5399,6 +5429,167 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
                                       {(c.objectiveTests.recommended || []).map((t, ti) => {
                                         const target = thoracicTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0 (SHOULDER): EXTRACTED CLINICAL VARIABLES ──
+                       Shoulder has no dedicated structured subjective module
+                       (unlike Lumbar/Cervical/Thoracic's lx_, cx_, tx_ prefixed
+                       checklists) -- its signals come from the free-text
+                       chief complaint (cc_main) plus cc_onset/red-flag
+                       checklists, read via the same normalizeFromData() the
+                       reasoningEngine itself uses (negation-safe). Because a
+                       keyword search over free text can only ever return
+                       true/false, NOT a genuine tri-state "not asked" the
+                       way a checkbox can, this card is honest about that --
+                       two states only (Found / Not mentioned), not three. ── */}
+                  {(r.region === "Shoulder (L)" || r.region === "Shoulder (R)") && shoulderReasoning && (() => {
+                    const sv = shoulderReasoning.subjective;
+                    const Chip = ({ found, children }) => (
+                      <span style={{
+                        display:"inline-flex", alignItems:"center", gap:4,
+                        fontSize:"0.72rem", fontWeight:700, padding:"3px 9px", borderRadius:99,
+                        background: found ? "#dc262618" : "#94a3b818",
+                        color: found ? "#dc2626" : "#64748b",
+                        border: `1px solid ${found ? "#dc262644" : "#94a3b844"}`,
+                      }}>
+                        {found ? "✓" : "—"} {children}
+                      </span>
+                    );
+                    const row = (label, found) => (
+                      <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                        <span style={{ fontSize:"0.74rem", color: PC.muted, minWidth:150 }}>{label}</span>
+                        <Chip found={found}>{found ? "Found in your notes" : "Not mentioned"}</Chip>
+                      </div>
+                    );
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:`4px solid #0891b2` }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#0891b2", marginBottom:8 }}>
+                          Phase 0 — Extracted Clinical Variables
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Read from the chief complaint / onset / red-flag text — negation-safe (e.g. "no night pain" is correctly read as absent). "Not mentioned" means either genuinely absent or simply not yet typed; unlike the checkbox-based regions, free text can't distinguish the two.
+                        </div>
+
+                        {row("Night pain", sv.nightPain)}
+                        {row("Constant pain", sv.constantPain)}
+                        {row("Eases with rest", sv.easesWithRest)}
+                        {row("Paraesthesia / tingling", sv.paresthesia)}
+                        {row("Radiation below elbow (cervical concern)", sv.radiationBelowElbow)}
+                        {row("Traumatic onset", sv.onsetTraumatic)}
+                        {row("Insidious onset", sv.onsetInsidious)}
+                        {row("Overhead activity aggravates", sv.overheadAggravation)}
+                        {row("Progressive global stiffness", sv.progressiveStiffness)}
+                        {row("Age 50+ (degenerative risk factor)", sv.ageOver50)}
+
+                        <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", margin:"10px 0 5px" }}>Red flag screen (mandatory)</div>
+                        {row("Suspected fracture / unreduced dislocation", sv.traumaHistory)}
+                        {row("Unexplained weight loss", sv.unexplainedWeightLoss)}
+                        {row("Systemic illness signs", sv.systemicIllness)}
+                        {row("Cancer history", sv.malignancyHistory)}
+                        {row("Unrelieved night pain (malignancy pattern)", sv.nightPainUnrelieved)}
+                        {row("Hot, swollen joint (septic joint)", sv.hotSwollenJoint)}
+                        {row("Vascular compromise signs", sv.vascularCompromiseSigns)}
+                        {row("Cervical myelopathy signs", sv.myelopathySigns)}
+                        {row("Cardiac / respiratory / abdominal referral pattern", sv.thoracicCardiacSymptoms || sv.thoracicCardiacLikeRadiation || sv.thoracicRespiratorySymptoms || sv.thoracicAbdominalSymptoms)}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0.5 (SHOULDER): REASONING ENGINE ──
+                       Same visual card as Lumbar/Cervical/Thoracic's Phase
+                       0.5, but the scoring underneath is the EXISTING,
+                       already-tested Shoulder reasoningEngine (src/
+                       reasoningEngine/), reused via shoulderPhase05.js's
+                       adapter -- not a rebuilt/duplicated clinical model.
+                       See that file's header comment for exactly what the
+                       adapter does and does not do. ── */}
+                  {(r.region === "Shoulder (L)" || r.region === "Shoulder (R)") && shoulderReasoning && (() => {
+                    const sr = shoulderReasoning;
+                    const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:"4px solid #7c3aed" }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#7c3aed", marginBottom:8 }}>
+                          Phase 0.5 — Shoulder Condition Matches (SH01–SH10)
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Deterministic, weighted matches against all 10 shoulder differentials (JOSPT/APTA CPG, Magee, Dutton, McGee) — same engine that powers "Suggest Probable Diagnosis" in SOAP Notes, run here off Subjective data only to guide the objective exam.
+                        </div>
+
+                        {sr.redFlagOverride.triggered && (
+                          <div style={{ background:"#FEF2F2", border:"2px solid #dc2626", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+                            <div style={{ fontWeight:800, color:"#dc2626", fontSize:"0.78rem", marginBottom:3 }}>
+                              🚨 {sr.redFlagOverride.urgency === "EMERGENCY" ? "EMERGENCY — Urgent Indicators" : "URGENT REFERRAL INDICATED"}
+                            </div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", marginBottom:3 }}>{sr.redFlagOverride.reason}</div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", fontWeight:600 }}>{sr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+
+                        {sr.conditions.length === 0 && !sr.redFlagOverride.triggered && (
+                          <div style={{ fontSize:"0.74rem", color: PC.muted, fontStyle:"italic" }}>Insufficient data — complete the Subjective assessment first.</div>
+                        )}
+
+                        {sr.conditions.slice(0, 6).map((c, ci) => (
+                          <div key={c.id} style={{
+                            background: ci===0 ? "#7c3aed12" : PC.surface,
+                            border: `1px solid ${ci===0 ? "#7c3aed44" : PC.border}`,
+                            borderRadius:8, padding:"9px 12px", marginBottom:6,
+                          }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>
+                                {c.id} — {c.name}
+                              </span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                                background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>
+                                {c.matchTier}
+                              </span>
+                            </div>
+                            <div style={{ fontSize:"0.72rem", color: PC.muted }}>
+                              {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} not yet tested
+                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
+                            </div>
+                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
+                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                {(c.objectiveTests.required || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                      Suggested objective tests — Required
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
+                                      {(c.objectiveTests.required || []).map((t, ti) => {
+                                        const target = shoulderTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                                {(c.objectiveTests.recommended || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
+                                      Recommended (if indicated)
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
+                                        const target = shoulderTestNav(t);
                                         const btn = target
                                           ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
                                           : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
