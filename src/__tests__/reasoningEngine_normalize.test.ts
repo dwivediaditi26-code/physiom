@@ -1,4 +1,4 @@
-import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData, normalizeHipFromData, normalizeKneeFromData, normalizeAnkleFromData, runReasoningFromData } from "../reasoningEngine/index";
+import { normalizeFromData, runShoulderReasoningFromData, normalizeCervicalFromData, normalizeLumbarFromData, normalizeHipFromData, normalizeKneeFromData, normalizeAnkleFromData, normalizeElbowFromData, normalizeThoracicFromData, normalizeWristFromData, runReasoningFromData } from "../reasoningEngine/index";
 
 describe("normalizeFromData (flat app record -> typed engine inputs, real field ids)", () => {
   it("maps st_ special tests, rom_ ROM and mmt_mmt_ MMT from the flat data object", () => {
@@ -833,5 +833,38 @@ describe("normalizeWristFromData — 50-case validation finding: fracture red fl
       grf_fracture: "Major trauma — high energy",
     }, "wrist");
     expect(result.redFlag.flags.some((f) => f.id === "fracture")).toBe(false);
+  });
+});
+
+describe("normalizeElbowFromData / normalizeThoracicFromData / normalizeWristFromData — onset-shadowing fix (found via 50-case round-2 validation)", () => {
+  it("elbow: denied trauma in cc_onset (no ew_moi) no longer sets onsetTraumatic/traumaHistory", () => {
+    const { subjective } = normalizeElbowFromData({ cc_onset: "gradual overuse pain, no history of FOOSH or direct trauma to the elbow" });
+    expect(subjective.onsetTraumatic).toBeFalsy();
+    expect(subjective.traumaHistory).toBeFalsy();
+  });
+
+  it("elbow: real trauma text in cc_onset (no ew_moi) still correctly sets onsetTraumatic/traumaHistory", () => {
+    const { subjective } = normalizeElbowFromData({ cc_onset: "had a fall onto the elbow yesterday, sudden onset" });
+    expect(subjective.onsetTraumatic).toBe(true);
+    expect(subjective.traumaHistory).toBe(true);
+  });
+
+  it("thoracic: denied trauma in cc_onset (no tx_moi) no longer sets onsetTraumatic", () => {
+    const { subjective } = normalizeThoracicFromData({ cc_onset: "gradual postural ache, no mva or direct trauma" });
+    expect(subjective.onsetTraumatic).toBeFalsy();
+  });
+
+  it("wrist: denied trauma in cc_onset (no ew_moi) no longer sets onsetTraumatic/traumaHistory", () => {
+    const { subjective } = normalizeWristFromData({ cc_onset: "gradual wrist ache, denies any FOOSH or direct trauma" });
+    expect(subjective.onsetTraumatic).toBeFalsy();
+    expect(subjective.traumaHistory).toBeFalsy();
+  });
+
+  it("wrist: a populated-but-unrelated ew_moi no longer shadows real trauma text in cc_onset", () => {
+    const { subjective } = normalizeWristFromData({
+      ew_moi: "Repetitive gripping — computer / keyboard / mouse overuse",
+      cc_onset: "actually this started after a fall onto my outstretched hand",
+    });
+    expect(subjective.onsetTraumatic).toBe(true);
   });
 });

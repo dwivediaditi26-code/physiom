@@ -941,7 +941,13 @@ export function runKneeReasoningFromData(data: Data): ReasoningResult {
 export function normalizeElbowFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
   const age = num(data.dem_age);
   const loc = str(data.ew_loc).toLowerCase();
-  const moi = str(data.ew_moi ?? data.cc_onset).toLowerCase();
+  // ew_moi is a structured multicheck (dropdown-safe with has()). cc_onset is
+  // the shared, AI-parser-writable free-text field -- read independently (not
+  // via ?? fallback, which let a populated-but-non-matching ew_moi silently
+  // shadow real onset text in cc_onset) and negation-guarded, matching the
+  // now-standard pattern from shoulder/cervical/lumbar/hip/knee/ankle.
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const moi = str(data.ew_moi).toLowerCase();
   const aggMov = str(data.ew_agg_mov).toLowerCase();
   const aggAct = str(data.ew_agg_act).toLowerCase();
   const pattern = str(data.ew_pattern).toLowerCase();
@@ -956,8 +962,8 @@ export function normalizeElbowFromData(data: Data): { subjective: SubjectiveInpu
     nightPain: has(pattern, "night dominant"),
     constantPain: has(pattern, "constant"),
     progressiveStiffness: has(pattern, "morning stiffness"),
-    onsetTraumatic: has(moi, "direct trauma", "foosh"),
-    onsetInsidious: has(moi, "insidious"),
+    onsetTraumatic: has(moi, "direct trauma", "foosh") || hasUnnegated(onsetText, "trauma", "fall", "foosh", "injury", "whiplash", "mva"),
+    onsetInsidious: has(moi, "insidious") || has(onsetText, "insidious", "gradual", "no clear cause"),
     paresthesia: has(neuro, "median nerve", "ulnar nerve", "radial nerve"),
     elbowDirectTraumaOnset: has(moi, "direct trauma — elbow"),
     elbowRacquetSportMechanism: has(moi, "sport — racquet") || has(aggAct, "tennis — backhand"),
@@ -973,7 +979,7 @@ export function normalizeElbowFromData(data: Data): { subjective: SubjectiveInpu
     anteriorElbowPainPattern: has(loc, "anterior elbow"),
     ulnarNerveDistributionSymptoms: has(neuro, "ulnar nerve — little and ring", "ulnar nerve — worse with elbow flexion"),
     radialNerveDistributionSymptoms: has(neuro, "radial nerve — dorsum hand"),
-    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "direct trauma — elbow"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "direct trauma — elbow") || hasUnnegated(onsetText, "trauma", "fall", "foosh", "injury"),
     hotSwollenJoint: has(rf, "septic arthritis"),
     vascularCompromiseSigns: has(rf, "compartment syndrome"),
     unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
@@ -1045,7 +1051,11 @@ export function normalizeThoracicFromData(data: Data): { subjective: SubjectiveI
   const age = num(data.dem_age);
   const loc = str(data.tx_loc).toLowerCase();
   const radiation = str(data.tx_radiation).toLowerCase();
-  const moi = str(data.tx_moi ?? data.cc_onset).toLowerCase();
+  // tx_moi is a structured multicheck (dropdown-safe with has()). cc_onset is
+  // the shared, AI-parser-writable free-text field -- read independently (not
+  // via ?? fallback) and negation-guarded, matching the now-standard pattern.
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const moi = str(data.tx_moi).toLowerCase();
   const aggMov = str(data.tx_agg_mov).toLowerCase();
   const aggPost = str(data.tx_agg_post).toLowerCase();
   const rel = str(data.tx_rel).toLowerCase();
@@ -1058,14 +1068,14 @@ export function normalizeThoracicFromData(data: Data): { subjective: SubjectiveI
     chiefComplaint: str(data.cc_main),
     ageOver50: age != null && age >= 50,
     ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
-    onsetInsidious: has(moi, "insidious", "no clear mechanism"),
-    onsetTraumatic: has(moi, "fall / direct trauma", "mva"),
+    onsetInsidious: has(moi, "insidious", "no clear mechanism") || has(onsetText, "insidious", "gradual", "no clear cause"),
+    onsetTraumatic: has(moi, "fall / direct trauma", "mva") || hasUnnegated(onsetText, "trauma", "fall", "injury", "whiplash", "mva"),
     nightPain: has(pattern, "night dominant"),
     constantPain: has(pattern, "constant"),
     constantUnremittingPain: has(pattern, "constant — unrelated") || has(rf, "constant pain completely unaffected"),
     progressiveStiffness: has(pattern, "morning stiffness"),
     paresthesia: has(loc, "dermatomal band") || has(radiation, "dermatomal"),
-    traumaHistory: has(moi, "fall / direct trauma", "mva") || has(rf, "recent trauma"),
+    traumaHistory: has(moi, "fall / direct trauma", "mva") || has(rf, "recent trauma") || hasUnnegated(onsetText, "trauma", "fall", "injury"),
     unexplainedWeightLoss: has(rf, "unexplained weight loss"),
     nightPainUnrelieved: has(rf, "night pain — awakens patient — progressive", "progressive worsening despite conservative"),
     fever: has(rf, "fever"),
@@ -1312,7 +1322,11 @@ export function normalizeWristFromData(data: Data): { subjective: SubjectiveInpu
   const age = num(data.dem_age);
   const loc = str(data.ew_loc).toLowerCase();
   const radiation = str(data.ew_radiation).toLowerCase();
-  const moi = str(data.ew_moi ?? data.cc_onset).toLowerCase();
+  // ew_moi is a structured multicheck (dropdown-safe with has()). cc_onset is
+  // the shared, AI-parser-writable free-text field -- read independently (not
+  // via ?? fallback) and negation-guarded, matching the now-standard pattern.
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const moi = str(data.ew_moi).toLowerCase();
   const aggMov = str(data.ew_agg_mov).toLowerCase();
   const aggAct = str(data.ew_agg_act).toLowerCase();
   const pattern = str(data.ew_pattern).toLowerCase();
@@ -1327,8 +1341,8 @@ export function normalizeWristFromData(data: Data): { subjective: SubjectiveInpu
     nightPain: has(pattern, "night dominant"),
     constantPain: has(pattern, "constant"),
     progressiveStiffness: has(pattern, "morning stiffness"),
-    onsetTraumatic: has(moi, "foosh", "direct trauma — wrist"),
-    onsetInsidious: has(moi, "insidious"),
+    onsetTraumatic: has(moi, "foosh", "direct trauma — wrist") || hasUnnegated(onsetText, "trauma", "fall", "foosh", "injury", "whiplash", "mva"),
+    onsetInsidious: has(moi, "insidious") || has(onsetText, "insidious", "gradual", "no clear cause"),
     paresthesia: has(neuro, "median nerve", "ulnar nerve", "radial nerve"),
     ulnarNerveDistributionSymptoms: has(neuro, "ulnar nerve — little and ring"),
     radialNerveDistributionSymptoms: has(neuro, "radial nerve — dorsum hand"),
@@ -1353,7 +1367,7 @@ export function normalizeWristFromData(data: Data): { subjective: SubjectiveInpu
     medianNerveFlickSignRelief: has(neuro, "median nerve — improves with shaking hand"),
     deQuervainFinkelsteinReportedPattern: has(neuro, "de quervain's — thumb base pain"),
     triggerFingerPattern: has(neuro, "trigger finger"),
-    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "foosh", "direct trauma — wrist"),
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "foosh", "direct trauma — wrist") || hasUnnegated(onsetText, "trauma", "fall", "foosh", "injury"),
     // Bug fix (50-case validation run): unableToWeightBear was never set
     // anywhere in this normalizer, so the generic `fracture` red flag
     // (traumaHistory && unableToWeightBear) was structurally unreachable for
