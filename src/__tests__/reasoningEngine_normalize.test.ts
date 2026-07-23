@@ -905,3 +905,40 @@ describe("normalizeElbowFromData — deep audit: unread Additional-Conditions mo
     expect(result.redFlag.flags.some((f) => f.id === "malignancy")).toBe(true);
   });
 });
+
+describe("normalizeThoracicFromData — deep audit: unreachable fracture red flag, age>50 checkbox, visceral 'after eating' gap", () => {
+  it("fires the generic fracture red flag from tx_rf's dedicated fracture-risk options (was structurally unreachable)", () => {
+    const result = runReasoningFromData({
+      cc_main: "sudden severe back pain after a fall",
+      tx_moi: "Fall / direct trauma",
+      tx_rf: "Recent trauma — fracture risk",
+    }, "thoracic");
+    expect(result.redFlag.triggered).toBe(true);
+    expect(result.redFlag.flags.some((f) => f.id === "fracture")).toBe(true);
+  });
+
+  it("does not fire the fracture red flag from known osteoporosis alone, without any trauma mechanism", () => {
+    const result = runReasoningFromData({
+      cc_main: "gradual back ache", tx_rf: "Known osteoporosis — pathological fracture risk",
+    }, "thoracic");
+    expect(result.redFlag.flags.some((f) => f.id === "fracture")).toBe(false);
+  });
+
+  it("fires the fracture red flag when osteoporosis risk combines with a real trauma mechanism", () => {
+    const result = runReasoningFromData({
+      cc_main: "sudden back pain after a minor stumble", tx_moi: "Fall / direct trauma",
+      tx_rf: "Known osteoporosis — pathological fracture risk",
+    }, "thoracic");
+    expect(result.redFlag.flags.some((f) => f.id === "fracture")).toBe(true);
+  });
+
+  it("reads tx_rf's 'Age >50' checkbox as an additional ageOver50 source alongside dem_age", () => {
+    const { subjective } = normalizeThoracicFromData({ tx_rf: "Age >50 — first episode without cause" });
+    expect(subjective.ageOver50).toBe(true);
+  });
+
+  it("recognises tx_agg_post's 'after eating' option as a visceral/abdominal-referral signal, not just tx_rf", () => {
+    const { subjective } = normalizeThoracicFromData({ tx_agg_post: "After eating (lower thoracic — visceral?)" });
+    expect(subjective.thoracicAbdominalSymptoms).toBe(true);
+  });
+});
