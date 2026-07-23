@@ -1115,7 +1115,10 @@ export function normalizeThoracicFromData(data: Data): { subjective: SubjectiveI
   const subjective: SubjectiveInput = {
     region: "thoracic",
     chiefComplaint: str(data.cc_main),
-    ageOver50: age != null && age >= 50,
+    // tx_rf's own "Age >50 -- first episode without cause" option folded in
+    // as an additional source alongside dem_age -- lets a clinician's
+    // explicit age-related concern register even if dem_age wasn't entered.
+    ageOver50: (age != null && age >= 50) || has(rf, "age >50"),
     ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
     onsetInsidious: has(moi, "insidious", "no clear mechanism") || has(onsetText, "insidious", "gradual", "no clear cause"),
     onsetTraumatic: has(moi, "fall / direct trauma", "mva") || hasUnnegated(onsetText, "trauma", "fall", "injury", "whiplash", "mva"),
@@ -1125,6 +1128,22 @@ export function normalizeThoracicFromData(data: Data): { subjective: SubjectiveI
     progressiveStiffness: has(pattern, "morning stiffness"),
     paresthesia: has(loc, "dermatomal band") || has(radiation, "dermatomal"),
     traumaHistory: has(moi, "fall / direct trauma", "mva") || has(rf, "recent trauma") || hasUnnegated(onsetText, "trauma", "fall", "injury"),
+    // Bug fix: unableToWeightBear was never set anywhere for thoracic, so the
+    // generic `fracture` red flag (traumaHistory && unableToWeightBear) was
+    // structurally unreachable no matter what a clinician entered -- even
+    // though tx_rf has two real, dedicated fracture-risk options ("Recent
+    // trauma -- fracture risk", "Known osteoporosis -- pathological fracture
+    // risk"). Same class of gap already fixed this session for shoulder,
+    // cervical, lumbar, hip, and wrist. unableToWeightBear is reused
+    // cross-region as "hard evidence of suspected fracture", not literal
+    // weight-bearing capacity -- consistent with cervical/lumbar's own
+    // dedicated-fracture-screen precedent (one checklist feeding both sides
+    // of the AND-gate). "Known osteoporosis" alone (no reported trauma) will
+    // NOT trigger the red flag on its own, since traumaHistory still requires
+    // an actual trauma indicator -- it only completes the gate in combination
+    // with a real mechanism, which is the clinically intended behaviour
+    // (osteoporotic fracture risk + any trauma = elevated concern).
+    unableToWeightBear: has(rf, "recent trauma", "known osteoporosis"),
     unexplainedWeightLoss: has(rf, "unexplained weight loss"),
     nightPainUnrelieved: has(rf, "night pain — awakens patient — progressive", "progressive worsening despite conservative"),
     fever: has(rf, "fever"),
@@ -1157,7 +1176,10 @@ export function normalizeThoracicFromData(data: Data): { subjective: SubjectiveI
     thoracicCardiacSymptoms: has(rf, "cardiac symptoms"),
     thoracicCardiacHistory: has(rf, "cardiac history"),
     thoracicRespiratorySymptoms: has(rf, "respiratory symptoms") || has(ribScreen, "pneumothorax risk"),
-    thoracicAbdominalSymptoms: has(rf, "abdominal symptoms"),
+    // tx_agg_post's "After eating (lower thoracic -- visceral?)" option folded
+    // in -- its own label already flags visceral concern, and it was never
+    // read anywhere despite being a real, selectable option.
+    thoracicAbdominalSymptoms: has(rf, "abdominal symptoms") || has(aggPost, "after eating"),
     thoracicCordCompressionSigns: has(rf, "neurological symptoms in legs", "bilateral leg weakness"),
   };
 
