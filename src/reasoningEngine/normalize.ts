@@ -1347,6 +1347,16 @@ export function normalizeWristFromData(data: Data): { subjective: SubjectiveInpu
     deQuervainFinkelsteinReportedPattern: has(neuro, "de quervain's — thumb base pain"),
     triggerFingerPattern: has(neuro, "trigger finger"),
     traumaHistory: selected(data.grf_fracture, "no fracture indicators") || has(moi, "foosh", "direct trauma — wrist"),
+    // Bug fix (50-case validation run): unableToWeightBear was never set
+    // anywhere in this normalizer, so the generic `fracture` red flag
+    // (traumaHistory && unableToWeightBear) was structurally unreachable for
+    // wrist no matter what a clinician selected -- a suspected scaphoid/distal
+    // radius fracture or lunate/perilunate dislocation produced no red flag at
+    // all. Same class of gap already fixed for shoulder (shl_rf/shr_rf),
+    // cervical (cx_fracture_screen), lumbar (lx_rf_fracture), and hip (hp_rf)
+    // this session -- unableToWeightBear is reused across regions as "hard
+    // evidence of suspected fracture", not literal weight-bearing capacity.
+    unableToWeightBear: has(rf, "suspected distal radius fracture", "suspected scaphoid", "suspected lunate"),
     wristSuspectedDistalRadiusFracture: has(rf, "suspected distal radius fracture"),
     wristSuspectedScaphoidFracture: has(rf, "suspected scaphoid"),
     wristSuspectedLunatePerilunateDislocation: has(rf, "suspected lunate"),
