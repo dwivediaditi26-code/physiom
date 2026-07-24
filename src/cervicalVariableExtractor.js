@@ -233,6 +233,14 @@ function extractCervicalVariablesStructured(data) {
     vbi: multicheckState(data, "cx_rf_vbi", ["No VBI signs"]),
     instability: multicheckState(data, "cx_rf_instability", ["No instability signs"]),
     other: multicheckState(data, "cx_rf_other", ["No other red flags"]),
+    // Bug fix (Layer 3 audit): the dedicated cx_fracture_screen field
+    // (real, defined in sharedClinicalData.js: high-energy trauma, axial
+    // loading, Canadian C-Spine high-risk features, NEXUS not cleared,
+    // odontoid peg fracture risk, etc.) was never read here, so a suspected
+    // cervical fracture produced NO red-flag override at all -- the single
+    // most dangerous thing to miss before cervical manipulation/end-range
+    // testing. Now screened as a first-class red-flag category.
+    fracture: multicheckState(data, "cx_fracture_screen", ["Not applicable"]),
     action: selectState(data, "cx_rf_action"),
   };
   const anyState = (...fields) => {
@@ -240,7 +248,7 @@ function extractCervicalVariablesStructured(data) {
     if (fields.every((f) => f.state === "absent")) return "negative";
     return "incomplete"; // at least one screen never touched
   };
-  const redFlagScreen = anyState(redFlags.myelopathy, redFlags.vbi, redFlags.instability, redFlags.other);
+  const redFlagScreen = anyState(redFlags.myelopathy, redFlags.vbi, redFlags.instability, redFlags.other, redFlags.fracture);
 
   // ── Functional impact ────────────────────────────────────────────
   const functional = {
@@ -294,6 +302,7 @@ function extractCervicalVariablesStructured(data) {
       cx_arm_notes: str(data, "cx_arm_notes"),
       cx_ha_notes: str(data, "cx_ha_notes"),
       cx_rf_notes: str(data, "cx_rf_notes"),
+      cx_fracture_notes: str(data, "cx_fracture_notes"),
       cx_fn_notes: str(data, "cx_fn_notes"),
       hx_notes: str(data, "hx_notes"),
       goal_belief: str(data, "goal_belief"),

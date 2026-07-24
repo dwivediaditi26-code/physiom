@@ -65,6 +65,21 @@ describe("extractLumbarVariablesStructured", () => {
     expect(lv.location.dermatomal.state).toBe("present");
   });
 
+  it("wires lx_spondylo_screen into repetitiveExtensionAthleteHistory for L07 (Layer 3 audit)", () => {
+    const present = extractLumbarVariablesStructured({
+      lx_spondylo_screen: "Sport with repeated extension loading (gymnastics / cricket fast bowling / swimming butterfly / weightlifting)",
+    });
+    expect(present.mechanism.repetitiveExtensionAthleteHistory).toBe(true);
+    const young = extractLumbarVariablesStructured({
+      lx_spondylo_screen: "Young athlete (10\u201325 years) with low back pain",
+    });
+    expect(young.mechanism.repetitiveExtensionAthleteHistory).toBe(true);
+    const na = extractLumbarVariablesStructured({ lx_spondylo_screen: "Not applicable" });
+    expect(na.mechanism.repetitiveExtensionAthleteHistory).toBe(false);
+    const untouched = extractLumbarVariablesStructured({});
+    expect(untouched.mechanism.repetitiveExtensionAthleteHistory).toBe("unknown");
+  });
+
   it("flags bilateral below-knee pain distinctly rather than collapsing it into a plain true/false", () => {
     const data = { lx_below_knee: "Leg pain — bilateral (cauda equina / stenosis flag)" };
     const lv = extractLumbarVariablesStructured(data);

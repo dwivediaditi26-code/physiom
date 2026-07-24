@@ -7,6 +7,7 @@
 // red-flag-category AI findings are never auto-merged into redFlags.*.state.
 import { describe, it, expect } from "vitest";
 import { extractCervicalVariablesStructured, mergeCervicalVariables } from "../cervicalVariableExtractor.js";
+import { runCervicalReasoningEngine } from "../cervicalReasoningEngine.js";
 
 const SEP = "|||";
 
@@ -28,11 +29,25 @@ describe("extractCervicalVariablesStructured", () => {
       cx_rf_vbi: "No VBI signs",
       cx_rf_instability: "No instability signs",
       cx_rf_other: "No other red flags",
+      cx_fracture_screen: "Not applicable",
     };
     const cv = extractCervicalVariablesStructured(data);
     expect(cv.location.radiation.state).toBe("absent");
     expect(cv.redFlags.myelopathy.state).toBe("absent");
+    expect(cv.redFlags.fracture.state).toBe("absent");
     expect(cv.redFlags.redFlagScreen).toBe("negative");
+  });
+
+  it("screens cx_fracture_screen as a first-class red flag and drives an EMERGENCY override (Layer 3 audit)", () => {
+    const cv = extractCervicalVariablesStructured({
+      cx_fracture_screen: "High-energy trauma (MVA / fall >1m / diving)",
+    });
+    expect(cv.redFlags.fracture.state).toBe("present");
+    expect(cv.redFlags.redFlagScreen).toBe("positive");
+    const res = runCervicalReasoningEngine(cv);
+    expect(res.redFlagOverride.triggered).toBe(true);
+    expect(res.redFlagOverride.urgency).toBe("EMERGENCY");
+    expect(res.redFlagOverride.reason.toLowerCase()).toMatch(/fracture/);
   });
 
   it("marks the red flag screen positive as soon as any single real flag is ticked, even if others are untouched", () => {

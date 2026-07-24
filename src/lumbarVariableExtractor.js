@@ -114,16 +114,28 @@ function extractLumbarVariablesStructured(data) {
     loadEstimate: selectState(data, "lx_moi_load"),
     spinePosition: multicheckState(data, "lx_moi_position", ["Not applicable"]),
     firstSymptomTiming: selectState(data, "lx_moi_first"),
-    // No structured checkbox captures this specific concept (repetitive
-    // spinal-extension sport/activity history -- gymnastics, fast
-    // bowling, diving, etc.) -- it stays "unknown" from Pass 1 always,
-    // only ever filled by the Pass 2 AI note-reading pass. This is a
-    // real, higher-specificity differentiator for L07 (spondylolysis/
-    // spondylolisthesis) than the generic "sport" mechanism checkbox,
-    // per Magee's own spondylolysis section (classically an overuse
-    // fatigue injury in adolescent athletes doing repeated hyperextension).
-    repetitiveExtensionAthleteHistory: "unknown",
+    // Bug fix (Layer 3 audit): the dedicated structured field
+    // lx_spondylo_screen (real, defined in sharedClinicalData.js) captures
+    // exactly this concept -- "Sport with repeated extension loading
+    // (gymnastics / cricket fast bowling / swimming butterfly /
+    // weightlifting)" and "Young athlete (10-25 years) with low back pain"
+    // -- yet Pass 1 never read it, so a clinician ticking the spondylolysis
+    // screen gave L07 zero deterministic credit (it worked only if the
+    // Pass 2 AI note pass happened to catch it in free text). Now read it
+    // here deterministically; still returns "unknown" (not false) when the
+    // screen is present but the athlete-history options specifically
+    // weren't ticked, so the AI note pass can still supplement.
+    repetitiveExtensionAthleteHistory: (() => {
+      const screen = multicheckState(data, "lx_spondylo_screen", ["Not applicable"]);
+      if (screen.state === "unknown") return "unknown";
+      if (screen.values.some((v) =>
+        v.toLowerCase().includes("repeated extension loading") ||
+        v.toLowerCase().includes("young athlete"))) return true;
+      if (screen.state === "absent") return false;
+      return "unknown";
+    })(),
   };
+  const spondyloScreen = multicheckState(data, "lx_spondylo_screen", ["Not applicable"]);
   const acuteLiftingMechanism = boolFromMulticheck(data, "lx_moi",
     ["No clear mechanism — insidious onset", "No identified mechanism"],
     (v) => v.toLowerCase().includes("lifting"));
@@ -246,7 +258,7 @@ function extractLumbarVariablesStructured(data) {
     demographics,
     chiefComplaint,
     location: { ...location, belowKneePain },
-    mechanism: { ...mechanism, acuteLiftingMechanism, flexionRotationMechanism },
+    mechanism: { ...mechanism, acuteLiftingMechanism, flexionRotationMechanism, spondyloScreen },
     aggravating: {
       ...aggravating, flexionAggravates, extensionAggravates, rotationAggravates,
       sittingAggravates, coughSneezeAggravates, valsalvaAggravates,

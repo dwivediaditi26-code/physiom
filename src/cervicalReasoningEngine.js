@@ -63,19 +63,24 @@ function evaluateRedFlagOverride(cv) {
   const rf = cv.redFlags || {};
   const myelopathyPositive = present(rf.myelopathy);
   const vbiPositive = present(rf.vbi);
+  // Suspected cervical fracture (cx_fracture_screen) is an EMERGENCY-tier
+  // stop: manipulation or end-range rotation on an unstable fracture risks
+  // catastrophic cord injury. Previously not screened at all (extractor gap).
+  const fracturePositive = present(rf.fracture);
   const anyPositive = rf.redFlagScreen === "positive";
   const screenIncomplete = rf.redFlagScreen === "incomplete";
 
-  if (myelopathyPositive || vbiPositive) {
+  if (myelopathyPositive || vbiPositive || fracturePositive) {
     const which = [
       myelopathyPositive ? `cervical myelopathy: ${rf.myelopathy.values.join(", ")}` : null,
       vbiPositive ? `vertebrobasilar insufficiency: ${rf.vbi.values.join(", ")}` : null,
+      fracturePositive ? `suspected cervical fracture: ${rf.fracture.values.join(", ")}` : null,
     ].filter(Boolean).join(" | ");
     return {
       triggered: true,
       urgency: "EMERGENCY",
-      reason: "Cervical myelopathy and/or vertebrobasilar insufficiency indicator(s) present: " + which,
-      action: "Same-day emergency medical referral. Do not proceed with cervical manipulation, end-range rotation testing (e.g. VBI test, flexion-rotation test, Spurling's), or the routine objective assessment sequence until cleared.",
+      reason: "Cervical myelopathy, vertebrobasilar insufficiency and/or suspected cervical fracture indicator(s) present: " + which,
+      action: "Same-day emergency medical referral (immobilise and image if fracture suspected). Do not proceed with cervical manipulation, end-range rotation testing (e.g. VBI test, flexion-rotation test, Spurling's), or the routine objective assessment sequence until cleared.",
     };
   }
   if (anyPositive) {

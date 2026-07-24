@@ -109,10 +109,12 @@ function extractThoracicVariablesStructured(data) {
   // the same `false` a genuine "mechanism asked, no trauma selected"
   // answer would produce). Same fix pattern as cervical's
   // whiplashMechanism/objectiveNeuroSigns.
-  const traumaticMechanism = mechanism.type.state === "unknown" ? "unknown" :
-    mechanism.type.values.some((v) =>
+  const traumaticMechanism = (mechanism.type.state === "unknown" &&
+      !multicheckState(data, "tx_rib_screen", ["Not applicable"]).values.some((v) => v.startsWith("Direct trauma to chest / rib") || v.startsWith("High-impact sport"))) ? "unknown" :
+    (mechanism.type.values.some((v) =>
       v.startsWith("Lifting") || v.startsWith("Rotation injury") ||
-      v.startsWith("Fall") || v.startsWith("MVA"));
+      v.startsWith("Fall") || v.startsWith("MVA")) ||
+     multicheckState(data, "tx_rib_screen", ["Not applicable"]).values.some((v) => v.startsWith("Direct trauma to chest / rib") || v.startsWith("High-impact sport")));
   const osteoporoticFractureRiskMechanism = mechanism.type.values.includes(
     "Osteoporotic fracture — minimal trauma");
   const postViralCostochondritis = mechanism.type.values.includes(
@@ -131,10 +133,18 @@ function extractThoracicVariablesStructured(data) {
   // Dural tension indicator -- Magee p.572: "Is the pain affected by
   // coughing, sneezing, or straining? Dural pain is often accentuated
   // by these maneuvers."
+  // tx_rib_screen (Rib / Costochondral screen) -- a real subjective screen
+  // that Pass 1 never read at all (Layer 3 audit). Beyond the rib-dysfunction
+  // support signals folded in below, it carries two safety-critical items
+  // (pneumothorax-risk penetrating trauma, and rib/stress-fracture / minimal-
+  // trauma-osteoporosis indicators) wired into the red flags further down.
+  const ribScreen = multicheckState(data, "tx_rib_screen", ["Not applicable"]);
+  const ribHas = (...needles) => ribScreen.values.some((v) => needles.some((n) => v.startsWith(n)));
+  const ribWorseBreathing = ribHas("Worse deep breathing / coughing / laughing", "Point tenderness over specific rib", "Rib spring test positive");
   const coughSneezeLaughAggravates = aggravating.movements.values.some((v) =>
-    v === "Coughing" || v === "Sneezing" || v === "Laughing");
-  const breathingAggravates = aggravating.movements.values.some((v) =>
-    v.startsWith("Deep breathing"));
+    v === "Coughing" || v === "Sneezing" || v === "Laughing") || ribWorseBreathing;
+  const breathingAggravates = (aggravating.movements.values.some((v) =>
+    v.startsWith("Deep breathing"))) || ribWorseBreathing;
   const overheadReachingAggravates = aggravating.movements.values.includes(
     "Reaching overhead");
   const sustainedPostureAggravates = aggravating.postures.values.some((v) =>
@@ -181,17 +191,27 @@ function extractThoracicVariablesStructured(data) {
   const redFlags = {
     screen: rf,
     cardiac: rfHas("Cardiac symptoms with pain", "Cardiac history"),
-    respiratory: rfHas("Respiratory symptoms"),
+    respiratory: rfHas("Respiratory symptoms") || ribHas("Pneumothorax risk"),
     visceral: rfHas("Abdominal symptoms"),
     oncologic: rfHas("Cancer history", "Unexplained weight loss"),
     infection: rfHas("Fever + thoracic pain"),
-    fracture: rfHas("Recent trauma — fracture risk", "Known osteoporosis"),
+    // rib/stress-fracture and minimal-trauma-osteoporosis indicators from
+    // the previously-unread tx_rib_screen also raise the fracture flag.
+    fracture: rfHas("Recent trauma — fracture risk", "Known osteoporosis") ||
+      ribHas("Stress fracture", "Osteoporosis + minimal trauma", "Direct trauma to chest / rib"),
     cordCompression: rfHas("Neurological symptoms in legs", "Bilateral leg weakness"),
     generalSerious: rfHas("Constant pain completely unaffected",
       "Progressive worsening", "Age >50 — first episode without cause",
       "Systemically unwell"),
   };
-  const redFlagScreen = rf.state === "unknown" ? "incomplete" : rf.state === "absent" ? "negative" : "positive";
+  // A rib-screen-derived red flag makes the overall screen positive even when
+  // the combined tx_rf field itself was left blank/negative -- otherwise the
+  // URGENT-tier fracture override (gated on redFlagScreen === "positive")
+  // could never fire from a rib-screen-only fracture indicator.
+  const ribDerivedRedFlag = ribHas("Pneumothorax risk", "Stress fracture",
+    "Osteoporosis + minimal trauma", "Direct trauma to chest / rib");
+  const redFlagScreen = (rf.state === "present" || ribDerivedRedFlag) ? "positive" :
+    rf.state === "absent" ? "negative" : "incomplete";
 
   // ── Functional impact ──────────────────────────────────────────────
   const functional = {
@@ -242,6 +262,7 @@ function extractThoracicVariablesStructured(data) {
       tx_rel_notes: str(data, "tx_rel_notes"),
       tx_symp_notes: str(data, "tx_symp_notes"),
       tx_rf_notes: str(data, "tx_rf_notes"),
+      tx_rib_notes: str(data, "tx_rib_notes"),
       tx_fn_notes: str(data, "tx_fn_notes"),
       hx_notes: str(data, "hx_notes"),
       goal_belief: str(data, "goal_belief"),

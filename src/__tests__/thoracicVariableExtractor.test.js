@@ -14,6 +14,7 @@
 // fields -- several tests below specifically exercise that sub-bucketing.
 import { describe, it, expect } from "vitest";
 import { extractThoracicVariablesStructured, mergeThoracicVariables } from "../thoracicVariableExtractor.js";
+import { runThoracicReasoningEngine } from "../thoracicReasoningEngine.js";
 
 const SEP = "|||";
 
@@ -43,6 +44,31 @@ describe("extractThoracicVariablesStructured", () => {
     expect(tv.redFlags.fracture).toBe(true);
     expect(tv.redFlags.redFlagScreen).toBe("positive");
     expect(tv.redFlags.cardiac).toBe(false); // other categories stay false, not conflated
+  });
+
+  it("wires the previously-unread tx_rib_screen into red flags (Layer 3 audit)", () => {
+    // pneumothorax risk -> respiratory -> EMERGENCY override
+    const pneumo = extractThoracicVariablesStructured({
+      tx_rib_screen: ["Pneumothorax risk — penetrating trauma"].join(SEP),
+    });
+    expect(pneumo.redFlags.respiratory).toBe(true);
+    expect(pneumo.redFlags.redFlagScreen).toBe("positive");
+    expect(runThoracicReasoningEngine(pneumo).redFlagOverride.urgency).toBe("EMERGENCY");
+
+    // rib/stress fracture indicator -> fracture flag + positive screen even
+    // though the combined tx_rf field itself was left blank
+    const frac = extractThoracicVariablesStructured({
+      tx_rib_screen: ["Osteoporosis + minimal trauma"].join(SEP),
+    });
+    expect(frac.redFlags.fracture).toBe(true);
+    expect(frac.redFlags.redFlagScreen).toBe("positive");
+    expect(runThoracicReasoningEngine(frac).redFlagOverride.triggered).toBe(true);
+
+    // rib-dysfunction support signal folds into breathing/cough aggravation
+    const ribDys = extractThoracicVariablesStructured({
+      tx_rib_screen: ["Worse deep breathing / coughing / laughing"].join(SEP),
+    });
+    expect(ribDys.aggravating.breathingAggravates).toBe(true);
   });
 
   it("sub-buckets the single tx_rf field into the correct named category for cardiac, respiratory, and cord compression", () => {
