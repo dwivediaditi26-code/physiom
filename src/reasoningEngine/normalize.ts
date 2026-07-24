@@ -1272,7 +1272,16 @@ export function normalizeAnkleFromData(data: Data): { subjective: SubjectiveInpu
     // traumaHistory flag (not a new red-flag category) -- see commit notes.
     traumaHistory: has(moi, "inversion sprain", "eversion sprain", "high ankle sprain", "direct impact", "fall from height")
       || hasUnnegated(onsetText, "trauma", "fall", "twisting", "injury", "whiplash", "mva")
-      || has(lisfranc, "high-energy mechanism"),
+      || has(lisfranc, "high-energy mechanism")
+      // A positive Ottawa ankle screen (bony tenderness / cannot weight-bear
+      // 4 steps) is applied only in an acute-injury context and is the standard
+      // fracture-screening trigger -- treat it as trauma history so a clinician
+      // who works the Ottawa checklist reaches the fracture red flag
+      // (traumaHistory && unableToWeightBear) even when the mechanism was only
+      // captured in free text. Found via a 50-vignette validation run: an
+      // Ottawa-positive ankle produced no red-flag stop unless trauma was ALSO
+      // separately coded -- same unreachable-fracture-flag class fixed elsewhere.
+      || has(rf, "ottawa rules"),
     // Lisfranc's "cannot weight bear on toes" folded into unableToWeightBear,
     // which is the established cross-region "hard evidence of suspected
     // fracture" signal feeding the generic fracture red flag -- not literal

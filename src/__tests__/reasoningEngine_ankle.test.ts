@@ -146,6 +146,14 @@ describe("Ankle region — diagnosis (Stage 5)", () => {
     expect(r.stopped).toBe(true);
     expect(r.interpretation!.referralRecommendation).toMatch(/septic arthritis/i);
   });
+  it("reaches the fracture red flag from a positive Ottawa screen alone, without a separately-coded mechanism (50-vignette validation fix)", () => {
+    const r = runReasoningFromData({
+      cc_main: "Severe ankle pain, cannot weight bear",
+      af_rf: "Ottawa Rules — cannot weight bear 4 steps, Ottawa Rules — bony tenderness posterior lateral malleolus",
+    }, "ankle");
+    expect(r.stopped).toBe(true);
+    expect(r.interpretation!.referralRecommendation).toMatch(/fracture/i);
+  });
 });
 
 describe("Ankle region — normalizer field-mapping (real field ids only)", () => {
