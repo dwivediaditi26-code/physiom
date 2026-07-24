@@ -1707,6 +1707,64 @@ export function runFootReasoningFromData(data: Data): ReasoningResult {
   return runReasoning(subjective, objective, region);
 }
 
+// ── Hand / fingers ──────────────────────────────────────────
+// Shares the Elbow/Wrist/Hand (ew_*) module, filtered to digit/finger/thumb
+// signals (complements the wrist region, which owns the CTS/De Quervain/TFCC/
+// carpal side). Red-flag wiring mirrors wrist (ew_rf septic/compartment/tendon-
+// rupture + shared grf_* screens).
+export function normalizeHandFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.ew_loc).toLowerCase();
+  const moi = str(data.ew_moi).toLowerCase();
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const aggMov = str(data.ew_agg_mov).toLowerCase();
+  const pattern = str(data.ew_pattern).toLowerCase();
+  const neuro = str(data.ew_neuro).toLowerCase();
+  const rf = str(data.ew_rf).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "hand",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    nightPain: has(pattern, "night dominant"),
+    constantPain: has(pattern, "constant"),
+    progressiveStiffness: has(pattern, "morning stiffness"),
+    onsetInsidious: has(moi, "insidious") || has(onsetText, "insidious", "gradual", "no clear cause"),
+    onsetTraumatic: has(moi, "direct trauma — wrist / hand", "foosh") || hasUnnegated(onsetText, "trauma", "fall", "jammed", "hyperextend", "injury", "caught", "twist"),
+    fingerJointPainPattern: has(loc, "fingers", "multiple fingers / whole hand", "dorsum of hand"),
+    thumbMcpPainPattern: has(loc, "thumb mcp"),
+    handPalmPainPattern: has(loc, "palm — thenar", "palm — hypothenar"),
+    thumbUclInjuryMechanism: has(loc, "thumb mcp") && (hasUnnegated(onsetText, "fall", "ski", "valgus", "forced", "caught", "jammed") || has(moi, "direct trauma — wrist / hand", "foosh")),
+    jammedFingerMechanism: has(onsetText, "jammed", "hyperextend", "caught the finger", "stubbed", "ball hit") && has(loc, "fingers", "multiple fingers / whole hand"),
+    triggerDigitPattern: has(neuro, "trigger finger") || has(rf, "trigger finger"),
+    handDupuytrensContracture: has(rf, "dupuytren's"),
+    handRaynaudsFeatures: has(rf, "raynaud's"),
+    // Red-flag screen (shared ew_/grf_ fields) -- same wiring as wrist.
+    traumaHistory: has(moi, "direct trauma — wrist / hand", "foosh") || hasUnnegated(onsetText, "trauma", "fall", "injury") || selected(data.grf_fracture, "no fracture indicators"),
+    hotSwollenJoint: has(rf, "acute septic arthritis"),
+    vascularCompromiseSigns: has(rf, "acute compartment syndrome"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    systemicIllness: selected(data.grf_systemic, "systemically well"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history"),
+  };
+
+  const objective: ObjectiveFindings = {
+    rom: [],
+    mmt: [],
+    specialTests: {},
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "hand" };
+}
+
+export function runHandReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeHandFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
   if (region === "lumbar") return runLumbarReasoningFromData(data);
@@ -1718,5 +1776,6 @@ export function runReasoningFromData(data: Data, region: string): ReasoningResul
   if (region === "wrist") return runWristReasoningFromData(data);
   if (region === "si") return runSiReasoningFromData(data);
   if (region === "foot") return runFootReasoningFromData(data);
+  if (region === "hand") return runHandReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }

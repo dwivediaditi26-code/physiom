@@ -1,0 +1,65 @@
+{
+  "region": "hand",
+  "diagnoses": [
+    {
+      "name": "Digital osteoarthritis (Heberden's / Bouchard's nodes)",
+      "source": "Magee; hand OA diagnostic criteria (DIP/PIP/thumb-base nodal OA)",
+      "requiredFindings": [],
+      "supportingFindings": ["finger_joint_pain_pattern", "age_over_50", "progressive_stiffness", "insidious_onset", "finger_nodes_tender"],
+      "conflictingFindings": ["traumatic_onset"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.2, "painBehaviour": 0.8, "palpation": 1.0 },
+      "keyExams": ["Inspection/palpation of DIP (Heberden's) and PIP (Bouchard's) nodes", "Grip and pinch strength", "Imaging if diagnosis unclear"]
+    },
+    {
+      "name": "Thumb ulnar collateral ligament injury (skier's / gamekeeper's thumb)",
+      "source": "Magee; thumb MCP UCL sprain diagnostic literature",
+      "requiredFindings": [],
+      "supportingFindings": ["thumb_mcp_pain_pattern", "thumb_ucl_injury_mechanism", "traumatic_onset", "thumb_mcp_tender"],
+      "conflictingFindings": ["insidious_onset"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.3, "painBehaviour": 0.7, "palpation": 1.0 },
+      "keyExams": ["Valgus stress test of the thumb MCP in flexion and extension", "Palpation of the ulnar aspect of the thumb MCP", "Imaging to exclude an avulsion fracture (Stener lesion)"]
+    },
+    {
+      "name": "Trigger finger / thumb (stenosing flexor tenosynovitis)",
+      "source": "Magee; stenosing tenosynovitis (A1 pulley) diagnostic literature",
+      "requiredFindings": [],
+      "supportingFindings": ["trigger_digit_pattern", "hand_palm_pain_pattern", "finger_joint_pain_pattern"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.2, "painBehaviour": 0.8, "palpation": 1.0 },
+      "keyExams": ["Palpation for an A1-pulley nodule / catching on active flexion-extension", "Observation of triggering / locking of the digit"]
+    },
+    {
+      "name": "Dupuytren's contracture (palmar fascia)",
+      "source": "Magee; Dupuytren's disease diagnostic literature",
+      "requiredFindings": [],
+      "supportingFindings": ["hand_dupuytrens_contracture", "hand_palm_pain_pattern", "insidious_onset"],
+      "conflictingFindings": ["traumatic_onset"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.3, "palpation": 1.0 },
+      "keyExams": ["Palpation of palmar fascia cords / nodules (ring and little finger)", "Hueston tabletop test", "MCP/PIP flexion contracture measurement"]
+    },
+    {
+      "name": "Finger sprain / collateral ligament injury (jammed finger)",
+      "source": "Magee; PIP/DIP sprain and mallet-finger differential",
+      "requiredFindings": [],
+      "supportingFindings": ["jammed_finger_mechanism", "finger_joint_pain_pattern", "traumatic_onset"],
+      "conflictingFindings": ["insidious_onset"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.2, "painBehaviour": 0.7, "palpation": 0.9 },
+      "keyExams": ["Active DIP/PIP extension (exclude mallet / boutonniere)", "Collateral ligament stress test of the affected joint", "Imaging to exclude avulsion fracture"]
+    },
+    {
+      "name": "Raynaud's phenomenon (vascular differential)",
+      "source": "Magee; Raynaud's phenomenon diagnostic features",
+      "requiredFindings": [],
+      "supportingFindings": ["hand_raynauds_features"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 1.4 },
+      "keyExams": ["History of triphasic colour change (white-blue-red) with cold", "Screen for secondary causes (connective tissue disease) if atypical"]
+    }
+  ]
+}

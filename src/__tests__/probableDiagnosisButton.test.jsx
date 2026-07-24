@@ -136,4 +136,16 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     expect(screen.getAllByText(/plantar fasci/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/ankle \+ foot|foot \+ ankle/i)).toBeInTheDocument();
   });
+
+  it("runs BOTH wrist and hand engines on the shared Elbow/Wrist/Hand module", () => {
+    const data = {
+      cc_main: "Ring finger slowly bending in with a tight cord in the palm",
+      ew_loc: "Palm — hypothenar eminence (little finger)",
+      ew_rf: "Dupuytren's contracture — ring finger flexion contracture",
+    };
+    render(<ProbableDiagnosis data={data} />);
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    expect(screen.getAllByText(/dupuytren/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/wrist \+ hand|hand \+ wrist/i)).toBeInTheDocument();
+  });
 });

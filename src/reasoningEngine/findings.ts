@@ -65,6 +65,9 @@ export function deriveFindings(
   if (region === "foot") {
     deriveFoot(subjective, objective, add);
   }
+  if (region === "hand") {
+    deriveHand(subjective, objective, add);
+  }
   return f;
 }
 
@@ -326,6 +329,12 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   tight_toe_box_aggravation: "painBehaviour", forefoot_paresthesia: "history",
   midfoot_pain_pattern: "history", hallux_hyperextension_mechanism: "history",
   windlass_positive: "specialTests",
+  // Hand / fingers region
+  finger_joint_pain_pattern: "history", thumb_mcp_pain_pattern: "history",
+  thumb_ucl_injury_mechanism: "history", jammed_finger_mechanism: "history",
+  trigger_digit_pattern: "history", hand_dupuytrens_contracture: "history",
+  hand_raynauds_features: "history", hand_palm_pain_pattern: "history",
+  finger_nodes_tender: "palpation", thumb_mcp_tender: "palpation",
 };
 
 function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
@@ -867,4 +876,18 @@ function deriveFoot(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("midfoot_pain_pattern", "history", !!s.midfootPainPattern, "History: midfoot (navicular / cuboid) pain pattern");
   add("hallux_hyperextension_mechanism", "history", !!s.halluxHyperextensionMechanism, "History: forced big-toe hyperextension mechanism (turf toe)");
   add("windlass_positive", "specialTests", isPositive(t, "windlass"), "Windlass test: positive (plantar fascia)");
+}
+
+function deriveHand(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  add("finger_joint_pain_pattern", "history", !!s.fingerJointPainPattern, "History: finger joint (DIP/PIP/MCP) pain pattern");
+  add("thumb_mcp_pain_pattern", "history", !!s.thumbMcpPainPattern, "History: thumb MCP pain pattern");
+  add("thumb_ucl_injury_mechanism", "history", !!s.thumbUclInjuryMechanism, "History: forced thumb abduction / valgus mechanism (skier's thumb)");
+  add("jammed_finger_mechanism", "history", !!s.jammedFingerMechanism, "History: jammed / hyperextended finger mechanism");
+  add("trigger_digit_pattern", "history", !!s.triggerDigitPattern, "History: catching / locking digit (trigger finger)");
+  add("hand_dupuytrens_contracture", "history", !!s.handDupuytrensContracture, "History: palmar cord / ring-finger flexion contracture (Dupuytren's)");
+  add("hand_raynauds_features", "history", !!s.handRaynaudsFeatures, "History: cold-induced colour change (Raynaud's)");
+  add("hand_palm_pain_pattern", "history", !!s.handPalmPainPattern, "History: palm-dominant pain pattern");
+  const tender = (name: string): boolean => o.palpation.tenderStructures.some((x) => x.toLowerCase().includes(name));
+  add("finger_nodes_tender", "palpation", tender("heberden") || tender("bouchard") || tender("dip") || tender("pip"), "Palpation: DIP/PIP nodal tenderness");
+  add("thumb_mcp_tender", "palpation", tender("thumb mcp") || tender("ulnar collateral"), "Palpation: thumb MCP / UCL tenderness");
 }

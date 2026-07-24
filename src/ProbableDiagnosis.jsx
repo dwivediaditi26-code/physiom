@@ -13,7 +13,7 @@ const TEAL = "#0891b2";
 // diagnosis-suggestion path in the app -- the older interpretationEngine /
 // interpretationAdapter system has been removed. Exported for use elsewhere
 // (e.g. region-aware messaging) if needed.
-export const SUPPORTED = ["shoulder", "cervical", "lumbar", "hip", "knee", "elbow", "thoracic", "ankle", "wrist", "si", "foot"];
+export const SUPPORTED = ["shoulder", "cervical", "lumbar", "hip", "knee", "elbow", "thoracic", "ankle", "wrist", "si", "foot", "hand"];
 
 // Some regions share a single subjective intake module and should be reasoned
 // about together. The lumbar spine and the sacroiliac joint share the one
@@ -21,11 +21,11 @@ export const SUPPORTED = ["shoulder", "cervical", "lumbar", "hip", "knee", "elbo
 // of exclusion FROM the lumbar spine, a lumbopelvic assessment runs BOTH engines
 // and the two differential sets are surfaced together (ranked by match score),
 // rather than forcing the clinician to pick lumbar-vs-SI up front.
-const COMPANION = { lumbar: ["si"], ankle: ["foot"], foot: ["ankle"] };
+const COMPANION = { lumbar: ["si"], ankle: ["foot"], foot: ["ankle"], wrist: ["hand"], hand: ["wrist"] };
 const REGION_LABEL = {
   shoulder: "Shoulder", cervical: "Cervical", lumbar: "Lumbar", hip: "Hip",
   knee: "Knee", elbow: "Elbow", thoracic: "Thoracic", ankle: "Ankle",
-  wrist: "Wrist", si: "SI joint", foot: "Foot",
+  wrist: "Wrist", si: "SI joint", foot: "Foot", hand: "Hand",
 };
 
 // Detect the working region from the app's data. Order of trust:
@@ -41,6 +41,7 @@ function detectRegion(data) {
     thoracic: ["thoracic", "t-spine", "mid back", "upper back", "rib", "costochondritis", "costovertebral", "interscapular"],
     foot: ["plantar", "heel", "forefoot", "metatars", "morton", "hallux", "bunion", "midfoot", "navicular", "sesamoid", "turf toe"],
     ankle: ["ankle", "achilles", "talus", "talar", "malleolus", "syndesmosis", "peroneal", "tarsal tunnel"],
+    hand: ["finger", "thumb", "knuckle", "dupuytren", "heberden", "bouchard", "mallet", "skier", "gamekeeper", "raynaud", "palmar", "digit"],
     wrist: ["wrist", "carpal tunnel", "scaphoid", "de quervain", "tfcc", "scapholunate", "trigger finger", "cmc joint"],
   };
   let selected = [];
@@ -145,7 +146,7 @@ export default function ProbableDiagnosis({ data = {} }) {
           {region
             ? `The deterministic engine doesn't yet cover "${region}".`
             : "Couldn't determine the region — select a region in the Subjective assessment first."}
-          {" "}It currently supports: shoulder, cervical spine, lumbar spine, sacroiliac joint, hip, knee, elbow, thoracic spine, ankle, foot, wrist (more regions are being added).
+          {" "}It currently supports: shoulder, cervical spine, lumbar spine, sacroiliac joint, hip, knee, elbow, thoracic spine, ankle, foot, wrist, hand (more regions are being added).
         </div>
       )}
 

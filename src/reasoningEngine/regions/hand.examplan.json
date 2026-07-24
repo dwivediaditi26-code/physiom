@@ -1,0 +1,57 @@
+{
+  "region": "hand",
+  "always": [
+    {
+      "exam": "Fracture/tendon-injury screen (deformity, bony tenderness, active DIP/PIP extension) if any trauma",
+      "why": "A traumatic finger/thumb presentation must exclude fracture, tendon rupture (mallet/boutonniere) or a thumb UCL Stener lesion before provocative testing.",
+      "confirmsOrExcludes": "Screens for fracture / tendon injury requiring imaging or referral",
+      "priority": "High"
+    },
+    {
+      "exam": "Inspection + palpation of the digits (DIP/PIP nodes, thumb MCP, palmar fascia, A1 pulley) with active flexion/extension",
+      "why": "Precise joint- and structure-level findings are the primary discriminator between nodal OA, trigger finger, Dupuytren's and collateral ligament injury.",
+      "confirmsOrExcludes": "Localises the symptomatic digit and structure",
+      "priority": "High"
+    },
+    {
+      "exam": "Grip and pinch strength + functional hand use",
+      "why": "Quantifies impairment and helps differentiate mechanical/structural sources from neurological ones (which route to the wrist/cervical screen).",
+      "confirmsOrExcludes": "Establishes functional baseline",
+      "priority": "Medium"
+    }
+  ],
+  "conditional": [
+    {
+      "when": { "flag": "thumbMcpPainPattern", "equals": true },
+      "add": {
+        "exam": "Thumb MCP valgus stress test (flexion and extension) + imaging",
+        "why": "Ulnar collateral ligament injury is confirmed by valgus laxity; imaging excludes an avulsion fracture / Stener lesion that needs surgical referral.",
+        "confirmsOrExcludes": "Confirms/excludes thumb UCL injury (skier's thumb)",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "triggerDigitPattern", "equals": true },
+      "add": {
+        "exam": "A1-pulley palpation for a nodule + observe active triggering",
+        "why": "Palpable catching at the A1 pulley with triggering confirms stenosing flexor tenosynovitis.",
+        "confirmsOrExcludes": "Confirms/excludes trigger finger",
+        "priority": "Medium"
+      }
+    }
+  ],
+  "supporting": [
+    {
+      "exam": "Hueston tabletop test (if a palmar cord is present)",
+      "why": "A positive tabletop test indicates a functionally significant Dupuytren's contracture and informs referral timing.",
+      "confirmsOrExcludes": "Grades Dupuytren's contracture severity",
+      "priority": "Low"
+    },
+    {
+      "exam": "Cervical / wrist neurological screen if any numbness or tingling",
+      "why": "Digit paraesthesia is usually a nerve-entrapment (CTS/cubital tunnel) or cervical source rather than a local hand joint problem.",
+      "confirmsOrExcludes": "Differentiates neurological referral from a local hand source",
+      "priority": "Medium"
+    }
+  ]
+}

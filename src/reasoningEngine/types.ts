@@ -102,6 +102,15 @@ export interface SubjectiveInput {
   midfootPainPattern?: boolean;
   halluxHyperextensionMechanism?: boolean;
   barefootHardSurfaceAggravation?: boolean;
+  // Hand / fingers region history signals
+  fingerJointPainPattern?: boolean;
+  thumbMcpPainPattern?: boolean;
+  thumbUclInjuryMechanism?: boolean;
+  jammedFingerMechanism?: boolean;
+  triggerDigitPattern?: boolean;
+  handDupuytrensContracture?: boolean;
+  handRaynaudsFeatures?: boolean;
+  handPalmPainPattern?: boolean;
   footDropReported?: boolean;
   hotSwollenJoint?: boolean;
   irreducibleLocking?: boolean;
