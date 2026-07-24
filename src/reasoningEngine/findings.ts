@@ -62,6 +62,9 @@ export function deriveFindings(
   if (region === "si") {
     deriveSi(subjective, objective, add);
   }
+  if (region === "foot") {
+    deriveFoot(subjective, objective, add);
+  }
   return f;
 }
 
@@ -315,6 +318,14 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   thigh_thrust_positive: "specialTests", si_distraction_positive: "specialTests",
   si_compression_positive: "specialTests", gaenslen_positive: "specialTests",
   faber_positive: "specialTests", sij_provocation_cluster_positive: "specialTests",
+  // Foot / plantar region
+  plantar_fascia_pain_pattern: "history", heel_pad_pain_pattern: "history",
+  first_step_morning_pain: "painBehaviour", toe_extension_aggravation: "painBehaviour",
+  barefoot_hard_surface_aggravation: "painBehaviour", forefoot_mtp1_pain_pattern: "history",
+  metatarsal_shaft_pain_pattern: "history", mortons_interspace_pain_pattern: "history",
+  tight_toe_box_aggravation: "painBehaviour", forefoot_paresthesia: "history",
+  midfoot_pain_pattern: "history", hallux_hyperextension_mechanism: "history",
+  windlass_positive: "specialTests",
 };
 
 function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
@@ -839,4 +850,21 @@ function deriveSi(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   const clusterCount = ["thigh_thrust", "si_distraction", "si_compression", "gaenslen", "faber"]
     .filter((k) => isPositive(t, k)).length;
   add("sij_provocation_cluster_positive", "specialTests", clusterCount >= 3, "SIJ provocation cluster: 3+ tests positive (Laslett)");
+}
+
+function deriveFoot(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+  add("plantar_fascia_pain_pattern", "history", !!s.plantarFasciaPainPattern, "History: plantar fascia / medial heel pain pattern");
+  add("heel_pad_pain_pattern", "history", !!s.heelPadPainPattern, "History: central heel-pad pain pattern");
+  add("first_step_morning_pain", "painBehaviour", !!s.firstStepMorningPain, "History: painful first steps in the morning (plantar fascia pattern)");
+  add("toe_extension_aggravation", "painBehaviour", !!s.toeExtensionAggravation, "History: big-toe extension aggravates (windlass load)");
+  add("barefoot_hard_surface_aggravation", "painBehaviour", !!s.barefootHardSurfaceAggravation, "History: barefoot on hard surfaces aggravates");
+  add("forefoot_mtp1_pain_pattern", "history", !!s.forefootMtp1PainPattern, "History: 1st MTP / big-toe pain pattern");
+  add("metatarsal_shaft_pain_pattern", "history", !!s.metatarsalShaftPainPattern, "History: metatarsal / forefoot-load pain pattern");
+  add("mortons_interspace_pain_pattern", "history", !!s.mortonsInterspacePainPattern, "History: 3rd/4th interspace pain (Morton's neuroma)");
+  add("tight_toe_box_aggravation", "painBehaviour", !!s.tightToeBoxAggravation, "History: tight / narrow toe box aggravates");
+  add("forefoot_paresthesia", "history", !!s.forefootParesthesia, "History: forefoot burning / paraesthesia");
+  add("midfoot_pain_pattern", "history", !!s.midfootPainPattern, "History: midfoot (navicular / cuboid) pain pattern");
+  add("hallux_hyperextension_mechanism", "history", !!s.halluxHyperextensionMechanism, "History: forced big-toe hyperextension mechanism (turf toe)");
+  add("windlass_positive", "specialTests", isPositive(t, "windlass"), "Windlass test: positive (plantar fascia)");
 }

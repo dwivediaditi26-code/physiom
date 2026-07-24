@@ -89,6 +89,19 @@ export interface SubjectiveInput {
   nsaidVeryEffective?: boolean;
   ageUnder45?: boolean;
   risingFromSittingAggravation?: boolean;
+  // Foot / plantar region history signals
+  plantarFasciaPainPattern?: boolean;
+  heelPadPainPattern?: boolean;
+  firstStepMorningPain?: boolean;
+  toeExtensionAggravation?: boolean;
+  forefootMtp1PainPattern?: boolean;
+  metatarsalShaftPainPattern?: boolean;
+  mortonsInterspacePainPattern?: boolean;
+  tightToeBoxAggravation?: boolean;
+  forefootParesthesia?: boolean;
+  midfootPainPattern?: boolean;
+  halluxHyperextensionMechanism?: boolean;
+  barefootHardSurfaceAggravation?: boolean;
   footDropReported?: boolean;
   hotSwollenJoint?: boolean;
   irreducibleLocking?: boolean;

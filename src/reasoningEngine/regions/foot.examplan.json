@@ -1,0 +1,57 @@
+{
+  "region": "foot",
+  "always": [
+    {
+      "exam": "Weight-bearing screen + Ottawa foot rules (bony tenderness navicular / 5th metatarsal base, ability to weight-bear) if any trauma",
+      "why": "A traumatic or acute foot presentation must exclude fracture (navicular, 5th metatarsal base, Lisfranc) before loading or provocative testing.",
+      "confirmsOrExcludes": "Screens for foot fracture requiring imaging referral",
+      "priority": "High"
+    },
+    {
+      "exam": "Standing posture / arch + gait assessment (pronation, first-ray position, callus pattern)",
+      "why": "Foot pain is strongly load- and alignment-driven; the arch/gait pattern differentiates plantar, forefoot and midfoot overload sources.",
+      "confirmsOrExcludes": "Establishes the mechanical loading pattern",
+      "priority": "High"
+    },
+    {
+      "exam": "Site-specific palpation (medial calcaneal tubercle, central heel pad, metatarsal heads, interspaces, 1st MTP, midtarsal joints)",
+      "why": "Precise point tenderness is the primary discriminator between plantar fasciitis, fat pad syndrome, metatarsalgia, Morton's neuroma and 1st MTP pathology.",
+      "confirmsOrExcludes": "Localises the symptomatic structure",
+      "priority": "High"
+    }
+  ],
+  "conditional": [
+    {
+      "when": { "flag": "plantarFasciaPainPattern", "equals": true },
+      "add": {
+        "exam": "Windlass test + calf/plantar fascia flexibility",
+        "why": "The windlass test loads the plantar fascia and is the key confirmatory test for plantar fasciopathy; calf tightness is a common driver.",
+        "confirmsOrExcludes": "Confirms/excludes plantar fasciopathy",
+        "priority": "High"
+      }
+    },
+    {
+      "when": { "flag": "mortonsInterspacePainPattern", "equals": true },
+      "add": {
+        "exam": "Mulder's click + web-space sensory testing",
+        "why": "Interdigital (Morton's) neuroma is confirmed by a palpable click on mediolateral squeeze with interspace pressure and altered web-space sensation.",
+        "confirmsOrExcludes": "Confirms/excludes Morton's neuroma",
+        "priority": "Medium"
+      }
+    }
+  ],
+  "supporting": [
+    {
+      "exam": "Footwear review (toe-box width, cushioning, heel height, orthotic use)",
+      "why": "Footwear is a modifiable driver across plantar, forefoot and neuroma presentations and directly informs management.",
+      "confirmsOrExcludes": "Identifies a modifiable mechanical contributor",
+      "priority": "Medium"
+    },
+    {
+      "exam": "1st MTP active/passive ROM with end-feel",
+      "why": "Loss of 1st MTP dorsiflexion differentiates hallux rigidus/OA from a soft-tissue forefoot source.",
+      "confirmsOrExcludes": "Differentiates hallux rigidus from soft-tissue forefoot pain",
+      "priority": "Medium"
+    }
+  ]
+}

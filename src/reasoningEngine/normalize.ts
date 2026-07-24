@@ -1629,6 +1629,84 @@ export function runSiReasoningFromData(data: Data): ReasoningResult {
   return runReasoning(subjective, objective, region);
 }
 
+// ── Foot / plantar ──────────────────────────────────────────
+// Shares the Ankle/Foot (af_*) intake module, filtered to foot/forefoot/plantar
+// signals. Red-flag wiring mirrors the ankle normalizer (Ottawa screen, septic,
+// vascular, shared grf_* screens).
+export function normalizeFootFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.af_loc).toLowerCase();
+  const moi = str(data.af_moi).toLowerCase();
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const pattern = str(data.af_pattern).toLowerCase();
+  const aggMov = str(data.af_agg_mov).toLowerCase();
+  const aggAct = str(data.af_agg_act).toLowerCase();
+  const morning = str(data.af_morning).toLowerCase();
+  const radiation = str(data.af_radiation).toLowerCase();
+  const rf = str(data.af_rf).toLowerCase();
+  const weightbear = str(data.af_moi_weightbear).toLowerCase();
+  const lisfranc = str(data.af_lisfranc).toLowerCase();
+
+  const subjective: SubjectiveInput = {
+    region: "foot",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    nightPain: has(pattern, "night dominant") || has(pattern, "burning / night"),
+    constantPain: has(pattern, "constant — never fully eases"),
+    progressiveStiffness: has(morning, "morning stiffness >30") || has(pattern, "after-rest stiffness"),
+    onsetInsidious: has(moi, "insidious onset") || has(onsetText, "insidious", "gradual", "no clear cause"),
+    onsetTraumatic: has(moi, "direct impact", "fall from height", "sudden push-off", "landing from jump", "stepping on uneven ground")
+      || hasUnnegated(onsetText, "trauma", "fall", "injury", "stub", "jammed", "hyperextend"),
+    plantarFasciaPainPattern: has(loc, "plantar fascia"),
+    heelPadPainPattern: has(loc, "calcaneus — plantar surface"),
+    firstStepMorningPain: has(morning, "first step severely painful") || has(aggAct, "first steps in the morning"),
+    toeExtensionAggravation: has(aggMov, "toe extension — big toe"),
+    forefootMtp1PainPattern: has(loc, "forefoot — 1st mtp"),
+    metatarsalShaftPainPattern: has(loc, "forefoot — metatarsal shafts"),
+    mortonsInterspacePainPattern: has(loc, "3rd / 4th interspace"),
+    tightToeBoxAggravation: has(aggAct, "tight shoes — narrow toe box"),
+    forefootParesthesia: (has(pattern, "burning") && has(loc, "3rd / 4th interspace", "forefoot")) || has(radiation, "toes", "forefoot"),
+    midfootPainPattern: has(loc, "midfoot — navicular"),
+    halluxHyperextensionMechanism: has(onsetText, "hyperextend", "stub", "jammed toe", "turf toe")
+      || (has(loc, "forefoot — 1st mtp") && has(moi, "sudden push-off", "landing from jump")),
+    barefootHardSurfaceAggravation: has(aggAct, "barefoot on tiles / hard floors", "standing on hard surfaces", "barefoot walking"),
+    // Red-flag screen (shared af_/grf_ fields) -- same wiring as ankle.
+    traumaHistory: has(moi, "direct impact", "fall from height", "landing from jump")
+      || hasUnnegated(onsetText, "trauma", "fall", "injury")
+      || has(rf, "ottawa rules")
+      || has(lisfranc, "high-energy mechanism")
+      || selected(data.grf_fracture, "no fracture indicators"),
+    unableToWeightBear: has(rf, "cannot weight bear 4 steps") || has(weightbear, "required assistance", "stopped activity immediately") || has(lisfranc, "cannot weight bear on toes"),
+    hotSwollenJoint: has(rf, "acute hot swollen joint"),
+    vascularCompromiseSigns: has(rf, "compartment syndrome", "vascular compromise"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
+    systemicIllness: selected(data.grf_systemic, "systemically well"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history"),
+  };
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("windlass", isPos(data.st_windlass_test));
+
+  const objective: ObjectiveFindings = {
+    rom: [
+      readRom(data, "adf", "Ankle Dorsiflexion", 20, true),
+    ].filter((e): e is RomEntry => e != null),
+    mmt: [],
+    specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "foot" };
+}
+
+export function runFootReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeFootFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
   if (region === "lumbar") return runLumbarReasoningFromData(data);
@@ -1639,5 +1717,6 @@ export function runReasoningFromData(data: Data, region: string): ReasoningResul
   if (region === "ankle") return runAnkleReasoningFromData(data);
   if (region === "wrist") return runWristReasoningFromData(data);
   if (region === "si") return runSiReasoningFromData(data);
+  if (region === "foot") return runFootReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }

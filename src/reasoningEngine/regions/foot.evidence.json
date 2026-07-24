@@ -1,0 +1,75 @@
+{
+  "region": "foot",
+  "diagnoses": [
+    {
+      "name": "Plantar fasciitis / plantar fasciopathy",
+      "source": "Magee; plantar heel pain clinical guidelines (windlass / first-step pain)",
+      "requiredFindings": [],
+      "supportingFindings": ["plantar_fascia_pain_pattern", "first_step_morning_pain", "windlass_positive", "toe_extension_aggravation", "barefoot_hard_surface_aggravation", "insidious_onset"],
+      "conflictingFindings": ["forefoot_paresthesia"],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.3, "history": 1.0, "painBehaviour": 0.9 },
+      "keyExams": ["Windlass test (dorsiflex the hallux)", "Palpation of medial calcaneal tubercle / plantar fascia origin", "Gait / arch assessment"]
+    },
+    {
+      "name": "Heel fat pad syndrome",
+      "source": "Magee; central plantar heel pain differential to plantar fasciitis",
+      "requiredFindings": [],
+      "supportingFindings": ["heel_pad_pain_pattern", "barefoot_hard_surface_aggravation", "insidious_onset"],
+      "conflictingFindings": ["windlass_positive", "first_step_morning_pain"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "painBehaviour": 1.0, "palpation": 1.0 },
+      "keyExams": ["Palpation of central weight-bearing heel pad (vs medial origin)", "Barefoot vs cushioned-footwear comparison"]
+    },
+    {
+      "name": "Morton's neuroma (interdigital neuroma)",
+      "source": "Magee; interdigital neuroma diagnostic literature (Mulder's click)",
+      "requiredFindings": [],
+      "supportingFindings": ["mortons_interspace_pain_pattern", "tight_toe_box_aggravation", "forefoot_paresthesia"],
+      "conflictingFindings": ["plantar_fascia_pain_pattern"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.2, "painBehaviour": 0.9 },
+      "keyExams": ["Mulder's click (mediolateral squeeze + interspace pressure)", "Web-space sensory testing", "Toe-box footwear review"]
+    },
+    {
+      "name": "Metatarsalgia (mechanical forefoot overload)",
+      "source": "Magee; forefoot overload / plantar-plate differential",
+      "requiredFindings": [],
+      "supportingFindings": ["metatarsal_shaft_pain_pattern", "barefoot_hard_surface_aggravation", "insidious_onset"],
+      "conflictingFindings": ["forefoot_paresthesia"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "painBehaviour": 0.9, "palpation": 1.0 },
+      "keyExams": ["Palpation of metatarsal heads / plantar plate", "Forefoot loading / single-leg heel raise", "Footwear and load review"]
+    },
+    {
+      "name": "First MTP osteoarthritis / hallux rigidus",
+      "source": "Magee; hallux rigidus diagnostic criteria (dorsiflexion loss at 1st MTP)",
+      "requiredFindings": [],
+      "supportingFindings": ["forefoot_mtp1_pain_pattern", "toe_extension_aggravation", "age_over_50", "progressive_stiffness"],
+      "conflictingFindings": ["hallux_hyperextension_mechanism"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0, "rom": 1.1, "painBehaviour": 0.8 },
+      "keyExams": ["1st MTP active/passive dorsiflexion ROM + end-feel", "Grind/axial compression of the 1st MTP", "Imaging if OA suspected"]
+    },
+    {
+      "name": "Turf toe (1st MTP hyperextension sprain)",
+      "source": "Magee; 1st MTP plantar-complex sprain literature",
+      "requiredFindings": [],
+      "supportingFindings": ["forefoot_mtp1_pain_pattern", "hallux_hyperextension_mechanism", "traumatic_onset"],
+      "conflictingFindings": ["insidious_onset"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.3, "painBehaviour": 0.8 },
+      "keyExams": ["1st MTP dorsiflexion stress test", "Plantar plate / sesamoid palpation", "Imaging to exclude sesamoid fracture"]
+    },
+    {
+      "name": "Midfoot sprain / osteoarthritis (navicular / cuboid)",
+      "source": "Magee; midfoot (Lisfranc / midtarsal) differential",
+      "requiredFindings": [],
+      "supportingFindings": ["midfoot_pain_pattern", "insidious_onset"],
+      "conflictingFindings": [],
+      "exclusionFindings": [],
+      "weights": { "history": 0.9, "painBehaviour": 0.8, "palpation": 1.0 },
+      "keyExams": ["Midfoot palpation (navicular, cuboid, TMT joints)", "Midfoot stress / piano-key test", "Weight-bearing imaging if Lisfranc suspected"]
+    }
+  ]
+}

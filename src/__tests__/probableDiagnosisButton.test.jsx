@@ -122,4 +122,18 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     expect(screen.getAllByText(/SI joint/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/lumbar \+ si/i)).toBeInTheDocument();
   });
+
+  it("runs BOTH ankle and foot engines on the shared Ankle/Foot module and surfaces a foot differential", () => {
+    const data = {
+      cc_main: "Medial plantar heel pain, worst on the first steps in the morning",
+      cx_selected_regions: ["Ankle / Foot"],
+      af_loc: "Plantar fascia — medial heel / origin",
+      af_morning: "First step severely painful — then eases (plantar fascia classic)",
+      st_windlass_test: "Positive",
+    };
+    render(<ProbableDiagnosis data={data} />);
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    expect(screen.getAllByText(/plantar fasci/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/ankle \+ foot|foot \+ ankle/i)).toBeInTheDocument();
+  });
 });

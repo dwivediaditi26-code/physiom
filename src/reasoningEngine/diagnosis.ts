@@ -21,6 +21,7 @@ import thoracicEvidence from "./regions/thoracic.evidence.json";
 import ankleEvidence from "./regions/ankle.evidence.json";
 import wristEvidence from "./regions/wrist.evidence.json";
 import siEvidence from "./regions/si.evidence.json";
+import footEvidence from "./regions/foot.evidence.json";
 
 interface EvidenceConfig { region: string; diagnoses: EvidenceModel[]; }
 const CONFIGS: Record<string, EvidenceConfig> = {
@@ -34,6 +35,7 @@ const CONFIGS: Record<string, EvidenceConfig> = {
   ankle: ankleEvidence as EvidenceConfig,
   wrist: wristEvidence as EvidenceConfig,
   si: siEvidence as EvidenceConfig,
+  foot: footEvidence as EvidenceConfig,
 };
 
 const DEFAULT_WEIGHT = 0.5;
