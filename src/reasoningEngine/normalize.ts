@@ -1414,9 +1414,13 @@ export function normalizeWristFromData(data: Data): { subjective: SubjectiveInpu
     progressiveStiffness: has(pattern, "morning stiffness"),
     onsetTraumatic: has(moi, "foosh", "direct trauma — wrist") || hasUnnegated(onsetText, "trauma", "fall", "foosh", "injury", "whiplash", "mva"),
     onsetInsidious: has(moi, "insidious") || has(onsetText, "insidious", "gradual", "no clear cause"),
-    paresthesia: has(neuro, "median nerve", "ulnar nerve", "radial nerve"),
-    ulnarNerveDistributionSymptoms: has(neuro, "ulnar nerve — little and ring"),
-    radialNerveDistributionSymptoms: has(neuro, "radial nerve — dorsum hand"),
+    // ew_radiation encodes nerve-distribution referral (median/ulnar/radial)
+    // that a clinician may record instead of ew_neuro -- previously read into
+    // `radiation` but never consumed (dead read). OR it in as an alternate
+    // source for the nerve-distribution flags.
+    paresthesia: has(neuro, "median nerve", "ulnar nerve", "radial nerve") || has(radiation, "median nerve distribution", "ulnar nerve distribution", "radial nerve distribution"),
+    ulnarNerveDistributionSymptoms: has(neuro, "ulnar nerve — little and ring") || has(radiation, "ulnar nerve distribution"),
+    radialNerveDistributionSymptoms: has(neuro, "radial nerve — dorsum hand") || has(radiation, "radial nerve distribution"),
     resistedWristExtensionPain: has(aggMov, "wrist extension (resisted)"),
     resistedWristFlexionPain: has(aggMov, "wrist flexion (resisted)"),
     wristDorsalPainPattern: has(loc, "wrist — dorsal"),
@@ -1428,9 +1432,13 @@ export function normalizeWristFromData(data: Data): { subjective: SubjectiveInpu
     wristFooshMechanism: has(moi, "foosh — fall onto outstretched hand"),
     wristFooshDorsiflexionMechanism: has(moi, "foosh — wrist dorsiflexion impact"),
     wristDirectTraumaMechanism: has(moi, "direct trauma — wrist / hand"),
-    wristRepetitiveGripOveruse: has(moi, "repetitive gripping", "computer / keyboard / mouse overuse"),
-    wristComputerOveruse: has(moi, "computer / keyboard / mouse overuse"),
-    wristDeQuervainNewParentMechanism: has(moi, "new baby / childcare"),
+    // ew_agg_act (activities) carries parallel de Quervain's / CTS / overuse
+    // signals a clinician may log there instead of ew_moi -- previously read
+    // into `aggAct` but never consumed (dead read). OR them in as alternate
+    // sources, same convention as elbow's aggAct wiring (tennis/golf/throwing).
+    wristRepetitiveGripOveruse: has(moi, "repetitive gripping", "computer / keyboard / mouse overuse") || has(aggAct, "opening jars", "wringing washing / towels", "squeezing objects"),
+    wristComputerOveruse: has(moi, "computer / keyboard / mouse overuse") || has(aggAct, "computer mouse use", "keyboard / typing"),
+    wristDeQuervainNewParentMechanism: has(moi, "new baby / childcare") || has(aggAct, "new parent — lifting baby"),
     wristGrippingAggravation: has(aggMov, "gripping"),
     thumbExtensionAbductionAggravation: has(aggMov, "thumb extension / abduction"),
     wristCompressionLoadingAggravation: has(aggMov, "wrist compression / loading"),
@@ -1463,7 +1471,14 @@ export function normalizeWristFromData(data: Data): { subjective: SubjectiveInpu
     unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss"),
     systemicIllness: selected(data.grf_systemic, "systemically well") || has(rf, "constitutional symptoms"),
     malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rf, "cancer history"),
-    nightPainUnrelieved: has(rf, "constant progressive pain"),
+    // Bug fix (wrist deep audit): has(rf, "constant progressive pain") is DEAD
+    // -- ew_rf's real option list (verified in sharedClinicalData.js) contains
+    // no such phrase, and nightPainUnrelieved had NO other source, so the
+    // malignancy red flag (unexplainedWeightLoss && nightPainUnrelieved &&
+    // ageOver50) was structurally unreachable for wrist regardless of intake.
+    // Identical gap to the one fixed for elbow this session; ew_pattern's
+    // "Constant -- sensitisation / neuropathic" is the best available proxy.
+    nightPainUnrelieved: has(rf, "constant progressive pain") || has(pattern, "constant — sensitisation / neuropathic"),
   };
 
   const rom = [

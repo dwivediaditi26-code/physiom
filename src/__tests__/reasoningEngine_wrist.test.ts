@@ -194,4 +194,38 @@ describe("Wrist region — normalizer field-mapping (real field ids only)", () =
     const r = runReasoningFromData({ cc_main: "wrist pain", ew_loc: "Wrist — dorsal", rom_wflex_L_arom: "70" }, "wrist");
     expect(r.differentials.length).toBeGreaterThan(0);
   });
+
+  // ── Deep-audit regression tests ──────────────────────────────────────────
+  it("wires ew_radiation nerve-distribution options into the nerve flags (previously a dead read)", () => {
+    const { subjective } = normalizeWristFromData({
+      cc_main: "wrist pain",
+      ew_radiation: "Ulnar nerve distribution — little / ulnar half of ring",
+    });
+    expect(subjective.paresthesia).toBe(true);
+    expect(subjective.ulnarNerveDistributionSymptoms).toBe(true);
+  });
+  it("wires ew_agg_act de Quervain's / overuse activities into the mechanism flags (previously a dead read)", () => {
+    const { subjective } = normalizeWristFromData({
+      cc_main: "wrist pain",
+      ew_agg_act: "New parent — lifting baby (de Quervain's), Keyboard / typing, Opening jars",
+    });
+    expect(subjective.wristDeQuervainNewParentMechanism).toBe(true);
+    expect(subjective.wristComputerOveruse).toBe(true);
+    expect(subjective.wristRepetitiveGripOveruse).toBe(true);
+  });
+  it("makes the malignancy red flag reachable via ew_pattern 'Constant — sensitisation / neuropathic' (was structurally unreachable)", () => {
+    const { subjective } = normalizeWristFromData({
+      cc_main: "wrist pain",
+      ew_pattern: "Constant — sensitisation / neuropathic",
+    });
+    expect(subjective.nightPainUnrelieved).toBe(true);
+    const r = runReasoningFromData({
+      cc_main: "wrist pain",
+      dem_age: "62",
+      ew_pattern: "Constant — sensitisation / neuropathic",
+      grf_systemic: "Unexplained weight loss >5kg",
+    }, "wrist");
+    expect(r.stopped).toBe(true);
+    expect(r.redFlag?.flags?.some((f) => f.id === "malignancy")).toBe(true);
+  });
 });
