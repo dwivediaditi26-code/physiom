@@ -5,61 +5,195 @@
       "name": "Lumbar radiculopathy (L4/L5/S1)",
       "source": "Magee Orthopedic Physical Assessment; McGee Evidence-Based Physical Diagnosis (SLR sensitivity, crossed-SLR specificity)",
       "requiredFindings": [],
-      "supportingFindings": ["leg_pain_below_knee", "dermatomal_pattern", "slr_positive", "slump_positive", "femoral_stretch_positive", "myotome_weak", "reflex_change", "sensory_deficit", "foot_drop_reported"],
-      "conflictingFindings": ["sij_pain_pattern"],
+      "supportingFindings": [
+        "leg_pain_below_knee",
+        "dermatomal_pattern",
+        "slr_positive",
+        "slump_positive",
+        "femoral_stretch_positive",
+        "myotome_weak",
+        "reflex_change",
+        "sensory_deficit",
+        "foot_drop_reported"
+      ],
+      "conflictingFindings": [
+        "sij_pain_pattern"
+      ],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.2, "mmt": 1.1, "history": 0.9, "painBehaviour": 0.5 },
-      "keyExams": ["Neurological screen (dermatomes/myotomes/reflexes L2-S1)", "SLR / slump neurodynamic testing"]
+      "weights": {
+        "specialTests": 1.2,
+        "mmt": 1.1,
+        "history": 0.9,
+        "painBehaviour": 0.5
+      },
+      "keyExams": [
+        "Neurological screen (dermatomes/myotomes/reflexes L2-S1)",
+        "SLR / slump neurodynamic testing"
+      ],
+      "conditionLayers": {
+        "observation": "Antalgic lean, dermatomal signs, possible foot-drop",
+        "posture": "Lateral shift / flattened lordosis",
+        "functionalScreen": "SLR / slump reproduces leg symptoms; myotome screen",
+        "fascia": "Neural (sciatic) lower-limb tension line"
+      }
     },
     {
       "name": "Discogenic / lumbar disc pathology",
       "source": "Magee; McKenzie Mechanical Diagnosis and Therapy (centralisation, directional preference)",
       "requiredFindings": [],
-      "supportingFindings": ["flexion_aggravation", "sitting_aggravation", "centralises_extension", "centralises_flexion", "slump_positive", "lateral_shift_positive", "lumbar_flexion_limited", "imaging_disc_herniation"],
+      "supportingFindings": [
+        "flexion_aggravation",
+        "sitting_aggravation",
+        "centralises_extension",
+        "centralises_flexion",
+        "slump_positive",
+        "lateral_shift_positive",
+        "lumbar_flexion_limited",
+        "imaging_disc_herniation"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "painBehaviour": 1.0, "specialTests": 1.0, "rom": 0.8, "imaging": 1.3, "history": 0.6 },
-      "keyExams": ["Repeated-movement / directional-preference examination", "Slump test"]
+      "weights": {
+        "painBehaviour": 1.0,
+        "specialTests": 1.0,
+        "rom": 0.8,
+        "imaging": 1.3,
+        "history": 0.6
+      },
+      "keyExams": [
+        "Repeated-movement / directional-preference examination",
+        "Slump test"
+      ],
+      "conditionLayers": {
+        "observation": "Flexion-guarded, may deviate on bending",
+        "posture": "Loss of lordosis, flexion-intolerant posture",
+        "functionalScreen": "Repeated-flexion worsens / repeated-extension centralises",
+        "fascia": "Thoracolumbar fascia; posterior-chain guarding"
+      }
     },
     {
       "name": "Lumbar facet syndrome / non-specific mechanical LBP",
       "source": "Magee; APTA Low Back Pain CPG",
       "requiredFindings": [],
-      "supportingFindings": ["extension_aggravation", "kemp_positive", "lumbar_extension_limited", "facet_tender", "cpa_core_inhibition"],
-      "conflictingFindings": ["leg_pain_below_knee", "dermatomal_pattern", "myotome_weak"],
+      "supportingFindings": [
+        "extension_aggravation",
+        "kemp_positive",
+        "lumbar_extension_limited",
+        "facet_tender",
+        "cpa_core_inhibition"
+      ],
+      "conflictingFindings": [
+        "leg_pain_below_knee",
+        "dermatomal_pattern",
+        "myotome_weak"
+      ],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.1, "rom": 0.9, "palpation": 0.8, "painBehaviour": 0.6 },
-      "keyExams": ["Kemp's test (lumbar quadrant)", "Segmental palpation"]
+      "weights": {
+        "specialTests": 1.1,
+        "rom": 0.9,
+        "palpation": 0.8,
+        "painBehaviour": 0.6
+      },
+      "keyExams": [
+        "Kemp's test (lumbar quadrant)",
+        "Segmental palpation"
+      ],
+      "conditionLayers": {
+        "observation": "Localised paraspinal guarding, no leg signs",
+        "posture": "Hyperlordotic / extension-loading posture",
+        "functionalScreen": "Extension-rotation quadrant reproduces local pain",
+        "fascia": "Thoracolumbar & multifidus fascial tightness"
+      }
     },
     {
       "name": "Sacroiliac joint (SIJ) dysfunction",
       "source": "Laslett SIJ provocation cluster; APTA LBP CPG",
       "requiredFindings": [],
-      "supportingFindings": ["sij_pain_pattern", "si_cluster_positive", "si_joint_tender", "cpa_core_inhibition"],
-      "conflictingFindings": ["dermatomal_pattern", "myotome_weak"],
+      "supportingFindings": [
+        "sij_pain_pattern",
+        "si_cluster_positive",
+        "si_joint_tender",
+        "cpa_core_inhibition"
+      ],
+      "conflictingFindings": [
+        "dermatomal_pattern",
+        "myotome_weak"
+      ],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.3, "palpation": 0.8, "history": 0.7 },
-      "keyExams": ["SIJ provocation cluster (distraction, compression, thigh thrust, Gaenslen's) — Laslett >=3 positive"]
+      "weights": {
+        "specialTests": 1.3,
+        "palpation": 0.8,
+        "history": 0.7
+      },
+      "keyExams": [
+        "SIJ provocation cluster (distraction, compression, thigh thrust, Gaenslen's) \u2014 Laslett >=3 positive"
+      ],
+      "conditionLayers": {
+        "observation": "Point over PSIS/sulcus, pelvic asymmetry",
+        "posture": "Pelvic tilt/rotation asymmetry",
+        "functionalScreen": "Provocation cluster (thigh-thrust, distraction, compression) & ASLR",
+        "fascia": "Posterior oblique sling fascia"
+      }
     },
     {
       "name": "Spinal stenosis / neurogenic claudication",
       "source": "APTA LBP CPG; McGee Evidence-Based Physical Diagnosis",
       "requiredFindings": [],
-      "supportingFindings": ["neurogenic_claudication", "extension_aggravation", "bilateral_leg_symptoms", "lumbar_extension_limited", "imaging_stenosis"],
-      "conflictingFindings": ["centralises_extension"],
+      "supportingFindings": [
+        "neurogenic_claudication",
+        "extension_aggravation",
+        "bilateral_leg_symptoms",
+        "lumbar_extension_limited",
+        "imaging_stenosis"
+      ],
+      "conflictingFindings": [
+        "centralises_extension"
+      ],
       "exclusionFindings": [],
-      "weights": { "history": 1.1, "painBehaviour": 1.0, "rom": 0.6, "imaging": 1.2 },
-      "keyExams": ["Walking tolerance / extension provocation vs flexion relief testing"]
+      "weights": {
+        "history": 1.1,
+        "painBehaviour": 1.0,
+        "rom": 0.6,
+        "imaging": 1.2
+      },
+      "keyExams": [
+        "Walking tolerance / extension provocation vs flexion relief testing"
+      ],
+      "conditionLayers": {
+        "observation": "Stooped 'shopping-trolley' posture, bilateral leg fatigue",
+        "posture": "Flexed lumbar posture relieving symptoms",
+        "functionalScreen": "Walking provokes, flexion/sitting relieves (treadmill/bicycle test)",
+        "fascia": "Global posterior-chain / neural claudication pattern"
+      }
     },
     {
       "name": "Spondylolisthesis / spondylolysis (pars stress)",
       "source": "Magee; stork (single-leg extension) test literature",
       "requiredFindings": [],
-      "supportingFindings": ["stork_positive", "young_athlete_extension_pain", "extension_aggravation", "prone_instability_positive", "imaging_spondylolisthesis"],
+      "supportingFindings": [
+        "stork_positive",
+        "young_athlete_extension_pain",
+        "extension_aggravation",
+        "prone_instability_positive",
+        "imaging_spondylolisthesis"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.3, "history": 0.9, "imaging": 1.4 },
-      "keyExams": ["Stork test (single-leg extension)", "Imaging (X-ray) for pars defect / forward slip"]
+      "weights": {
+        "specialTests": 1.3,
+        "history": 0.9,
+        "imaging": 1.4
+      },
+      "keyExams": [
+        "Stork test (single-leg extension)",
+        "Imaging (X-ray) for pars defect / forward slip"
+      ],
+      "conditionLayers": {
+        "observation": "Possible palpable step, hamstring guarding",
+        "posture": "Increased lordosis (young athlete)",
+        "functionalScreen": "Single-leg hyperextension (stork) reproduces pain",
+        "fascia": "Anterior hip / thoracolumbar fascial tightness"
+      }
     }
   ]
 }

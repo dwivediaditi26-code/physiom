@@ -29,7 +29,13 @@
         "Anterior drawer test",
         "Talar tilt test",
         "Ottawa Ankle Rules screen"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Lateral swelling/bruising, antalgic gait",
+        "posture": "Guarded plantarflexed posture",
+        "functionalScreen": "Anterior-drawer/talar-tilt & single-leg balance deficit",
+        "fascia": "Lateral ligament / peroneal fascia"
+      }
     },
     {
       "name": "Chronic ankle instability (CAI)",
@@ -55,7 +61,13 @@
         "Talar tilt test",
         "Single-leg balance / proprioception screen",
         "Subtalar mobility assessment"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Recurrent swelling, feeling of giving way",
+        "posture": "Rearfoot varus / supinated posture",
+        "functionalScreen": "Star-excursion balance deficit, single-leg stance failure",
+        "fascia": "Peroneal fascial support; subtalar mobility"
+      }
     },
     {
       "name": "High ankle sprain (syndesmosis)",
@@ -80,7 +92,13 @@
       "keyExams": [
         "Squeeze/mortise test",
         "External rotation stress test"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Swelling above joint line, pain on squeeze",
+        "posture": "Externally-rotated foot guarding",
+        "functionalScreen": "Squeeze & external-rotation stress reproduce high pain",
+        "fascia": "Interosseous membrane / distal syndesmotic fascia"
+      }
     },
     {
       "name": "Achilles tendinopathy (insertional or mid-portion)",
@@ -113,7 +131,13 @@
         "Royal London Hospital test",
         "Single-leg heel raise endurance test",
         "Achilles palpation (insertional vs mid-portion)"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Tendon thickening/tenderness, calf wasting",
+        "posture": "Overpronation increasing tendon load",
+        "functionalScreen": "Single-leg heel-raise load & hop reproduce tendon pain",
+        "fascia": "Superficial back line (gastroc-soleus-Achilles)"
+      }
     },
     {
       "name": "Achilles tendon rupture (complete)",
@@ -136,7 +160,13 @@
       "keyExams": [
         "Thompson's (Simmond's) test",
         "Palpable tendon gap"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Palpable gap, positive Thompson, bruising",
+        "posture": "Cannot toe-off, flat gait",
+        "functionalScreen": "Single-leg heel-raise impossible; Thompson positive",
+        "fascia": "N/A \u2014 urgent referral"
+      }
     },
     {
       "name": "Ankle osteoarthritis",
@@ -164,7 +194,13 @@
         "Passive ROM with end-feel assessment",
         "Weight-bearing dorsiflexion lunge test",
         "Imaging referral if not already available"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Anterior joint-line swelling, reduced DF, crepitus",
+        "posture": "Stiff antalgic posture",
+        "functionalScreen": "Weight-bearing lunge restricted; stairs limited",
+        "fascia": "Anterior capsular fascia"
+      }
     },
     {
       "name": "Tibialis posterior dysfunction / progressive flatfoot (PTTD)",
@@ -190,7 +226,13 @@
         "Navicular drop test",
         "Single-leg heel raise (too-many-toes sign)",
         "Resisted inversion in plantarflexion"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Medial swelling, 'too-many-toes', collapsing arch",
+        "posture": "Hindfoot valgus / flatfoot posture",
+        "functionalScreen": "Single-leg heel-raise fails to invert heel; resisted inversion weak",
+        "fascia": "Deep posterior-compartment fascia (tib-post)"
+      }
     },
     {
       "name": "Peroneal tendinopathy",
@@ -214,7 +256,13 @@
         "Resisted eversion",
         "Peroneal tendon palpation behind lateral malleolus",
         "Subluxation provocation (resisted eversion + dorsiflexion)"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Retromalleolar swelling/tenderness",
+        "posture": "Rearfoot varus (overload) posture",
+        "functionalScreen": "Resisted eversion & single-leg balance reproduce lateral pain",
+        "fascia": "Lateral (peroneal) compartment fascia"
+      }
     },
     {
       "name": "Tarsal tunnel syndrome",
@@ -239,7 +287,13 @@
         "Tinel's sign at tarsal tunnel",
         "Sensory mapping of plantar foot",
         "Dorsiflexion-eversion provocation"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Medial-ankle Tinel, intrinsic wasting",
+        "posture": "Overpronation compressing the tunnel",
+        "functionalScreen": "Sustained eversion-dorsiflexion & Tinel reproduce burning",
+        "fascia": "Flexor retinaculum / tibial neural tension"
+      }
     },
     {
       "name": "Anterior ankle impingement",
@@ -262,7 +316,13 @@
       "keyExams": [
         "Weight-bearing dorsiflexion lunge test with anterior pain provocation",
         "Passive dorsiflexion end-feel"
-      ]
+      ],
+      "conditionLayers": {
+        "observation": "Anterior joint-line tenderness, dorsiflexion block",
+        "posture": "Restricted-DF stiff posture",
+        "functionalScreen": "Weight-bearing lunge blocked/painful anteriorly",
+        "fascia": "Anterior capsular / talar fascial pinch"
+      }
     }
   ]
 }

@@ -5,51 +5,158 @@
       "name": "Cervical radiculopathy",
       "source": "Wainner et al. diagnostic cluster; IFOMPT framework; Magee",
       "requiredFindings": [],
-      "supportingFindings": ["radiating_arm_pain", "dermatomal_pattern", "paresthesia", "spurling_positive", "distraction_relief", "ultta_positive", "rotation_lt_60", "myotome_weak", "reflex_change", "sensory_deficit"],
-      "conflictingFindings": ["headache_cervical"],
+      "supportingFindings": [
+        "radiating_arm_pain",
+        "dermatomal_pattern",
+        "paresthesia",
+        "spurling_positive",
+        "distraction_relief",
+        "ultta_positive",
+        "rotation_lt_60",
+        "myotome_weak",
+        "reflex_change",
+        "sensory_deficit"
+      ],
+      "conflictingFindings": [
+        "headache_cervical"
+      ],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.2, "history": 0.9, "mmt": 1.0 },
-      "keyExams": ["Wainner cluster (Spurling, distraction, ULTT-A, rotation <60°)", "Neurological screen (dermatomes/myotomes/reflexes)"]
+      "weights": {
+        "specialTests": 1.2,
+        "history": 0.9,
+        "mmt": 1.0
+      },
+      "keyExams": [
+        "Wainner cluster (Spurling, distraction, ULTT-A, rotation <60\u00b0)",
+        "Neurological screen (dermatomes/myotomes/reflexes)"
+      ],
+      "conditionLayers": {
+        "observation": "Antalgic head tilt away from side, arm guarding",
+        "posture": "Forward-head posture loading lower cervical",
+        "functionalScreen": "Spurling / ULTT reproduces arm symptoms; relief on distraction",
+        "fascia": "Neural (median/ulnar/radial) upper-limb tension line"
+      }
     },
     {
       "name": "Cervical facet syndrome / mechanical neck pain",
       "source": "Magee; APTA Neck Pain CPG",
       "requiredFindings": [],
-      "supportingFindings": ["neck_stiffness", "ext_rot_aggravation", "cervical_ext_rom_limited", "cervical_rot_rom_limited", "facet_tender"],
-      "conflictingFindings": ["radiating_arm_pain", "dermatomal_pattern", "spurling_positive"],
+      "supportingFindings": [
+        "neck_stiffness",
+        "ext_rot_aggravation",
+        "cervical_ext_rom_limited",
+        "cervical_rot_rom_limited",
+        "facet_tender"
+      ],
+      "conflictingFindings": [
+        "radiating_arm_pain",
+        "dermatomal_pattern",
+        "spurling_positive"
+      ],
       "exclusionFindings": [],
-      "weights": { "rom": 1.0, "painBehaviour": 0.9, "palpation": 0.9, "history": 0.6 },
-      "keyExams": ["Active/passive cervical ROM", "Facet loading (extension-rotation quadrant)"]
+      "weights": {
+        "rom": 1.0,
+        "painBehaviour": 0.9,
+        "palpation": 0.9,
+        "history": 0.6
+      },
+      "keyExams": [
+        "Active/passive cervical ROM",
+        "Facet loading (extension-rotation quadrant)"
+      ],
+      "conditionLayers": {
+        "observation": "Localised guarding, no neuro signs",
+        "posture": "Upper-crossed / forward-head posture",
+        "functionalScreen": "Extension-rotation quadrant reproduces local pain",
+        "fascia": "Suboccipital & cervical paraspinal fascial tightness"
+      }
     },
     {
       "name": "Cervicogenic headache",
       "source": "Cervicogenic Headache International Study Group; flexion-rotation test (Hall)",
       "requiredFindings": [],
-      "supportingFindings": ["headache_cervical", "unilateral_headache", "flexion_rotation_positive", "upper_cervical_tender", "cpa_dnf_pattern"],
-      "conflictingFindings": ["radiating_arm_pain"],
+      "supportingFindings": [
+        "headache_cervical",
+        "unilateral_headache",
+        "flexion_rotation_positive",
+        "upper_cervical_tender",
+        "cpa_dnf_pattern"
+      ],
+      "conflictingFindings": [
+        "radiating_arm_pain"
+      ],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.2, "history": 1.0, "palpation": 0.8 },
-      "keyExams": ["Flexion-rotation test (C1-2)", "Upper cervical palpation"]
+      "weights": {
+        "specialTests": 1.2,
+        "history": 1.0,
+        "palpation": 0.8
+      },
+      "keyExams": [
+        "Flexion-rotation test (C1-2)",
+        "Upper cervical palpation"
+      ],
+      "conditionLayers": {
+        "observation": "Unilateral suboccipital tenderness, restricted C1-2 rotation",
+        "posture": "Forward-head posture",
+        "functionalScreen": "Flexion-rotation test reproduces headache; sustained-posture provocation",
+        "fascia": "Suboccipital fascial restriction / dural tension"
+      }
     },
     {
       "name": "Whiplash-associated disorder (WAD)",
       "source": "Quebec Task Force WAD classification; Canadian C-Spine Rule",
       "requiredFindings": [],
-      "supportingFindings": ["traumatic_onset", "neck_stiffness", "cervical_rot_rom_limited", "facet_tender"],
+      "supportingFindings": [
+        "traumatic_onset",
+        "neck_stiffness",
+        "cervical_rot_rom_limited",
+        "facet_tender"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "history": 1.0, "rom": 0.9, "palpation": 0.7 },
-      "keyExams": ["Canadian C-Spine Rule screen", "Cervical ROM tolerance"]
+      "weights": {
+        "history": 1.0,
+        "rom": 0.9,
+        "palpation": 0.7
+      },
+      "keyExams": [
+        "Canadian C-Spine Rule screen",
+        "Cervical ROM tolerance"
+      ],
+      "conditionLayers": {
+        "observation": "Diffuse guarding, protective stiffness",
+        "posture": "Protective forward-head / elevated-shoulder posture",
+        "functionalScreen": "Global painful/limited AROM, poor DNF endurance",
+        "fascia": "Widespread cervical fascial guarding"
+      }
     },
     {
-      "name": "Cervical myelopathy (URGENT — refer)",
+      "name": "Cervical myelopathy (URGENT \u2014 refer)",
       "source": "IFOMPT; UMN sign clustering (Cook et al.)",
-      "requiredFindings": ["hoffmann_positive"],
-      "supportingFindings": ["gait_disturbance", "myotome_weak", "reflex_change"],
+      "requiredFindings": [
+        "hoffmann_positive"
+      ],
+      "supportingFindings": [
+        "gait_disturbance",
+        "myotome_weak",
+        "reflex_change"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.4, "history": 1.0, "mmt": 0.8 },
-      "keyExams": ["UMN screen (Hoffmann, hyperreflexia, clonus, gait) — urgent referral if positive"]
+      "weights": {
+        "specialTests": 1.4,
+        "history": 1.0,
+        "mmt": 0.8
+      },
+      "keyExams": [
+        "UMN screen (Hoffmann, hyperreflexia, clonus, gait) \u2014 urgent referral if positive"
+      ],
+      "conditionLayers": {
+        "observation": "Hand clumsiness, wasting of intrinsics, wide-based gait",
+        "posture": "Head-forward, unsteady stance",
+        "functionalScreen": "Gait/tandem walk, Hoffman/Romberg \u2014 long-tract signs",
+        "fascia": "Not applicable \u2014 refer; do not load"
+      }
     }
   ]
 }

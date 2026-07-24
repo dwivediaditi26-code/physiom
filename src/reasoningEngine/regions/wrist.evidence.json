@@ -5,101 +5,304 @@
       "name": "Carpal tunnel syndrome (median nerve)",
       "source": "Magee Orthopedic Physical Assessment; Phalen's/Tinel's diagnostic literature",
       "requiredFindings": [],
-      "supportingFindings": ["median_nerve_night_symptoms", "median_nerve_flick_sign_relief", "phalen_positive", "tinel_wrist_positive", "cpa_grip_neuro_inhibited", "paresthesia", "night_pain"],
-      "conflictingFindings": ["wrist_ulnar_pain_pattern"],
+      "supportingFindings": [
+        "median_nerve_night_symptoms",
+        "median_nerve_flick_sign_relief",
+        "phalen_positive",
+        "tinel_wrist_positive",
+        "cpa_grip_neuro_inhibited",
+        "paresthesia",
+        "night_pain"
+      ],
+      "conflictingFindings": [
+        "wrist_ulnar_pain_pattern"
+      ],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.3, "history": 1.0, "painBehaviour": 0.8 },
-      "keyExams": ["Phalen's test", "Tinel's sign at wrist", "Median nerve sensory mapping"]
+      "weights": {
+        "specialTests": 1.3,
+        "history": 1.0,
+        "painBehaviour": 0.8
+      },
+      "keyExams": [
+        "Phalen's test",
+        "Tinel's sign at wrist",
+        "Median nerve sensory mapping"
+      ],
+      "conditionLayers": {
+        "observation": "Thenar wasting, positive flick sign",
+        "posture": "Sustained wrist-flexion/workstation posture",
+        "functionalScreen": "Phalen/Tinel & median ULTT reproduce; grip endurance",
+        "fascia": "Flexor retinaculum / median neural line"
+      }
     },
     {
       "name": "De Quervain's tenosynovitis",
       "source": "Magee; Finkelstein's test diagnostic literature",
-      "requiredFindings": ["finkelstein_positive"],
-      "supportingFindings": ["wrist_radial_pain_pattern", "thumb_extension_abduction_aggravation", "wrist_de_quervain_new_parent_mechanism", "de_quervain_finkelstein_reported", "radial_styloid_tender", "thumb_extensor_abductor_painful"],
+      "requiredFindings": [
+        "finkelstein_positive"
+      ],
+      "supportingFindings": [
+        "wrist_radial_pain_pattern",
+        "thumb_extension_abduction_aggravation",
+        "wrist_de_quervain_new_parent_mechanism",
+        "de_quervain_finkelstein_reported",
+        "radial_styloid_tender",
+        "thumb_extensor_abductor_painful"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.4, "history": 0.9, "painBehaviour": 0.8, "palpation": 1.0, "mmt": 0.9 },
-      "keyExams": ["Finkelstein's test", "Resisted thumb extension/abduction", "1st dorsal compartment palpation"]
+      "weights": {
+        "specialTests": 1.4,
+        "history": 0.9,
+        "painBehaviour": 0.8,
+        "palpation": 1.0,
+        "mmt": 0.9
+      },
+      "keyExams": [
+        "Finkelstein's test",
+        "Resisted thumb extension/abduction",
+        "1st dorsal compartment palpation"
+      ],
+      "conditionLayers": {
+        "observation": "Radial-styloid swelling/tenderness",
+        "posture": "Thumb-loading / new-parent lifting posture",
+        "functionalScreen": "Finkelstein & resisted thumb extension/abduction reproduce",
+        "fascia": "1st dorsal-compartment fascia"
+      }
     },
     {
       "name": "TFCC tear (ulnar-sided wrist pain)",
       "source": "Magee; TFCC stress test / ulnar-sided wrist pain differential literature",
       "requiredFindings": [],
-      "supportingFindings": ["wrist_ulnar_pain_pattern", "wrist_compression_loading_aggravation", "wrist_direct_trauma_mechanism", "traumatic_onset"],
+      "supportingFindings": [
+        "wrist_ulnar_pain_pattern",
+        "wrist_compression_loading_aggravation",
+        "wrist_direct_trauma_mechanism",
+        "traumatic_onset"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "history": 1.0, "painBehaviour": 1.1 },
-      "keyExams": ["TFCC stress test (ulnar compression through lunate)", "Passive ulnar deviation load", "Ulnar-sided wrist palpation"]
+      "weights": {
+        "history": 1.0,
+        "painBehaviour": 1.1
+      },
+      "keyExams": [
+        "TFCC stress test (ulnar compression through lunate)",
+        "Passive ulnar deviation load",
+        "Ulnar-sided wrist palpation"
+      ],
+      "conditionLayers": {
+        "observation": "Ulnar-sided swelling, clicking",
+        "posture": "Ulnar-loading grip posture",
+        "functionalScreen": "TFCC load / press-test & ulnar-deviation load reproduce",
+        "fascia": "Ulnocarpal / TFCC fascia"
+      }
     },
     {
       "name": "Scapholunate ligament instability",
       "source": "Magee; Watson scaphoid shift test diagnostic literature",
-      "requiredFindings": ["watson_positive"],
-      "supportingFindings": ["wrist_dorsal_pain_pattern", "wrist_foosh_mechanism", "scaphoid_snuffbox_tender", "traumatic_onset"],
+      "requiredFindings": [
+        "watson_positive"
+      ],
+      "supportingFindings": [
+        "wrist_dorsal_pain_pattern",
+        "wrist_foosh_mechanism",
+        "scaphoid_snuffbox_tender",
+        "traumatic_onset"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.4, "history": 0.9, "palpation": 1.0 },
-      "keyExams": ["Watson scaphoid shift test", "Radiocarpal/midcarpal joint play assessment"]
+      "weights": {
+        "specialTests": 1.4,
+        "history": 0.9,
+        "palpation": 1.0
+      },
+      "keyExams": [
+        "Watson scaphoid shift test",
+        "Radiocarpal/midcarpal joint play assessment"
+      ],
+      "conditionLayers": {
+        "observation": "Dorsal-radial swelling, tenderness",
+        "posture": "FOOSH-guarded posture",
+        "functionalScreen": "Watson scaphoid-shift reproduces clunk/pain",
+        "fascia": "Dorsal intercarpal fascia"
+      }
     },
     {
       "name": "Wrist osteoarthritis (radiocarpal)",
       "source": "Magee; capsular pattern (flexion = extension equally limited) diagnostic criteria",
       "requiredFindings": [],
-      "supportingFindings": ["age_over_50", "progressive_stiffness", "wrist_flexion_loss", "wrist_extension_loss", "imaging_wrist_oa"],
-      "conflictingFindings": ["traumatic_onset"],
+      "supportingFindings": [
+        "age_over_50",
+        "progressive_stiffness",
+        "wrist_flexion_loss",
+        "wrist_extension_loss",
+        "imaging_wrist_oa"
+      ],
+      "conflictingFindings": [
+        "traumatic_onset"
+      ],
       "exclusionFindings": [],
-      "weights": { "rom": 1.2, "history": 0.8, "imaging": 1.3 },
-      "keyExams": ["Active/passive wrist ROM with end-feel", "Imaging referral if not already available"]
+      "weights": {
+        "rom": 1.2,
+        "history": 0.8,
+        "imaging": 1.3
+      },
+      "keyExams": [
+        "Active/passive wrist ROM with end-feel",
+        "Imaging referral if not already available"
+      ],
+      "conditionLayers": {
+        "observation": "Dorsal swelling, reduced motion, crepitus",
+        "posture": "Stiff guarded posture",
+        "functionalScreen": "Capsular-pattern ROM loss; loaded flexion/extension limited",
+        "fascia": "Radiocarpal capsular fascia"
+      }
     },
     {
       "name": "Distal radius fracture (suspected, Colles/Barton)",
       "source": "Magee; Ottawa/fracture-screening literature for FOOSH presentations",
       "requiredFindings": [],
-      "supportingFindings": ["wrist_foosh_dorsiflexion_mechanism", "wrist_suspected_distal_radius_fracture", "traumatic_onset", "imaging_distal_radius_fracture"],
+      "supportingFindings": [
+        "wrist_foosh_dorsiflexion_mechanism",
+        "wrist_suspected_distal_radius_fracture",
+        "traumatic_onset",
+        "imaging_distal_radius_fracture"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "history": 1.2, "imaging": 1.4 },
-      "keyExams": ["Deformity/swelling observation", "Urgent imaging referral before further loading"]
+      "weights": {
+        "history": 1.2,
+        "imaging": 1.4
+      },
+      "keyExams": [
+        "Deformity/swelling observation",
+        "Urgent imaging referral before further loading"
+      ],
+      "conditionLayers": {
+        "observation": "Dinner-fork deformity, marked swelling",
+        "posture": "N/A \u2014 immobilise",
+        "functionalScreen": "Cannot load; bony tenderness",
+        "fascia": "N/A \u2014 urgent imaging"
+      }
     },
     {
       "name": "Scaphoid fracture (suspected)",
       "source": "Magee; anatomical snuffbox tenderness diagnostic literature (high false-negative rate on initial x-ray)",
       "requiredFindings": [],
-      "supportingFindings": ["wrist_foosh_dorsiflexion_mechanism", "wrist_suspected_scaphoid_fracture", "scaphoid_snuffbox_tender", "traumatic_onset", "imaging_scaphoid_fracture"],
+      "supportingFindings": [
+        "wrist_foosh_dorsiflexion_mechanism",
+        "wrist_suspected_scaphoid_fracture",
+        "scaphoid_snuffbox_tender",
+        "traumatic_onset",
+        "imaging_scaphoid_fracture"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "history": 1.1, "palpation": 1.2, "imaging": 1.4 },
-      "keyExams": ["Anatomical snuffbox palpation", "Scaphoid compression test", "Imaging referral (repeat if initial films negative but clinically suspected)"]
+      "weights": {
+        "history": 1.1,
+        "palpation": 1.2,
+        "imaging": 1.4
+      },
+      "keyExams": [
+        "Anatomical snuffbox palpation",
+        "Scaphoid compression test",
+        "Imaging referral (repeat if initial films negative but clinically suspected)"
+      ],
+      "conditionLayers": {
+        "observation": "Snuffbox swelling/tenderness, FOOSH",
+        "posture": "N/A \u2014 immobilise",
+        "functionalScreen": "Axial thumb load & snuffbox pain",
+        "fascia": "N/A \u2014 imaging (may be false-negative)"
+      }
     },
     {
       "name": "1st CMC osteoarthritis (thumb base)",
       "source": "Magee; Grind test diagnostic literature",
-      "requiredFindings": ["grind_positive"],
-      "supportingFindings": ["thumb_cmc_pain_pattern", "age_over_50", "cmc_thumb_base_tender", "progressive_stiffness"],
+      "requiredFindings": [
+        "grind_positive"
+      ],
+      "supportingFindings": [
+        "thumb_cmc_pain_pattern",
+        "age_over_50",
+        "cmc_thumb_base_tender",
+        "progressive_stiffness"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.3, "history": 0.8, "palpation": 1.0 },
-      "keyExams": ["Grind test", "1st CMC joint palpation", "Thumb ROM assessment"]
+      "weights": {
+        "specialTests": 1.3,
+        "history": 0.8,
+        "palpation": 1.0
+      },
+      "keyExams": [
+        "Grind test",
+        "1st CMC joint palpation",
+        "Thumb ROM assessment"
+      ],
+      "conditionLayers": {
+        "observation": "Squared thumb base, tenderness, \u00b1 crepitus",
+        "posture": "Thumb-loading pinch posture",
+        "functionalScreen": "Grind test & pinch load reproduce base-of-thumb pain",
+        "fascia": "1st CMC capsular fascia"
+      }
     },
     {
       "name": "ECU tendinopathy / instability",
       "source": "Magee; ulnar-sided wrist overuse tendinopathy literature",
       "requiredFindings": [],
-      "supportingFindings": ["wrist_ulnar_pain_pattern", "wrist_extensors_weak_or_painful", "ecu_tender", "wrist_repetitive_grip_overuse", "insidious_onset"],
+      "supportingFindings": [
+        "wrist_ulnar_pain_pattern",
+        "wrist_extensors_weak_or_painful",
+        "ecu_tender",
+        "wrist_repetitive_grip_overuse",
+        "insidious_onset"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "palpation": 1.1, "mmt": 1.0, "history": 0.8 },
-      "keyExams": ["Resisted wrist extension in ulnar deviation", "ECU synergy test", "ECU tendon palpation"]
+      "weights": {
+        "palpation": 1.1,
+        "mmt": 1.0,
+        "history": 0.8
+      },
+      "keyExams": [
+        "Resisted wrist extension in ulnar deviation",
+        "ECU synergy test",
+        "ECU tendon palpation"
+      ],
+      "conditionLayers": {
+        "observation": "Ulnar-dorsal tenderness \u00b1 subluxation",
+        "posture": "Ulnar-loading forearm posture",
+        "functionalScreen": "Resisted wrist extension in ulnar deviation & synergy test",
+        "fascia": "ECU sheath fascia"
+      }
     },
     {
       "name": "Trigger finger / flexor tenosynovitis",
       "source": "Magee; stenosing tenosynovitis diagnostic literature",
       "requiredFindings": [],
-      "supportingFindings": ["trigger_finger_pattern", "wrist_repetitive_grip_overuse", "palm_pain_pattern", "wrist_volar_pain_pattern"],
+      "supportingFindings": [
+        "trigger_finger_pattern",
+        "wrist_repetitive_grip_overuse",
+        "palm_pain_pattern",
+        "wrist_volar_pain_pattern"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "history": 1.1, "painBehaviour": 0.7 },
-      "keyExams": ["Palpation for flexor tendon nodule/catching at A1 pulley", "Active finger flexion/extension observation"]
+      "weights": {
+        "history": 1.1,
+        "painBehaviour": 0.7
+      },
+      "keyExams": [
+        "Palpation for flexor tendon nodule/catching at A1 pulley",
+        "Active finger flexion/extension observation"
+      ],
+      "conditionLayers": {
+        "observation": "Palpable A1-pulley nodule, catching",
+        "posture": "Gripping-load posture",
+        "functionalScreen": "Active flexion-extension shows triggering/locking",
+        "fascia": "Flexor tendon-sheath (A1 pulley) fascia"
+      }
     }
   ]
 }

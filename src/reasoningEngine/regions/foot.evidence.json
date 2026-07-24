@@ -5,71 +5,210 @@
       "name": "Plantar fasciitis / plantar fasciopathy",
       "source": "Magee; plantar heel pain clinical guidelines (windlass / first-step pain)",
       "requiredFindings": [],
-      "supportingFindings": ["plantar_fascia_pain_pattern", "first_step_morning_pain", "windlass_positive", "toe_extension_aggravation", "barefoot_hard_surface_aggravation", "insidious_onset"],
-      "conflictingFindings": ["forefoot_paresthesia"],
+      "supportingFindings": [
+        "plantar_fascia_pain_pattern",
+        "first_step_morning_pain",
+        "windlass_positive",
+        "toe_extension_aggravation",
+        "barefoot_hard_surface_aggravation",
+        "insidious_onset"
+      ],
+      "conflictingFindings": [
+        "forefoot_paresthesia"
+      ],
       "exclusionFindings": [],
-      "weights": { "specialTests": 1.3, "history": 1.0, "painBehaviour": 0.9 },
-      "keyExams": ["Windlass test (dorsiflex the hallux)", "Palpation of medial calcaneal tubercle / plantar fascia origin", "Gait / arch assessment"]
+      "weights": {
+        "specialTests": 1.3,
+        "history": 1.0,
+        "painBehaviour": 0.9
+      },
+      "keyExams": [
+        "Windlass test (dorsiflex the hallux)",
+        "Palpation of medial calcaneal tubercle / plantar fascia origin",
+        "Gait / arch assessment"
+      ],
+      "conditionLayers": {
+        "observation": "Medial calcaneal tenderness, antalgic heel-strike",
+        "posture": "High or collapsed arch, overpronation",
+        "functionalScreen": "Windlass on single-leg toe-stand reproduces heel pain",
+        "fascia": "Superficial back line (plantar-fascia \u2194 gastroc)"
+      }
     },
     {
       "name": "Heel fat pad syndrome",
       "source": "Magee; central plantar heel pain differential to plantar fasciitis",
       "requiredFindings": [],
-      "supportingFindings": ["heel_pad_pain_pattern", "barefoot_hard_surface_aggravation", "insidious_onset"],
-      "conflictingFindings": ["windlass_positive", "first_step_morning_pain"],
+      "supportingFindings": [
+        "heel_pad_pain_pattern",
+        "barefoot_hard_surface_aggravation",
+        "insidious_onset"
+      ],
+      "conflictingFindings": [
+        "windlass_positive",
+        "first_step_morning_pain"
+      ],
       "exclusionFindings": [],
-      "weights": { "history": 1.0, "painBehaviour": 1.0, "palpation": 1.0 },
-      "keyExams": ["Palpation of central weight-bearing heel pad (vs medial origin)", "Barefoot vs cushioned-footwear comparison"]
+      "weights": {
+        "history": 1.0,
+        "painBehaviour": 1.0,
+        "palpation": 1.0
+      },
+      "keyExams": [
+        "Palpation of central weight-bearing heel pad (vs medial origin)",
+        "Barefoot vs cushioned-footwear comparison"
+      ],
+      "conditionLayers": {
+        "observation": "Central heel tenderness, thin heel pad",
+        "posture": "Neutral arch; barefoot hard-surface loading",
+        "functionalScreen": "Deep central heel pressure (not medial origin) reproduces pain",
+        "fascia": "Plantar fat-pad / heel fascia"
+      }
     },
     {
       "name": "Morton's neuroma (interdigital neuroma)",
       "source": "Magee; interdigital neuroma diagnostic literature (Mulder's click)",
       "requiredFindings": [],
-      "supportingFindings": ["mortons_interspace_pain_pattern", "tight_toe_box_aggravation", "forefoot_paresthesia"],
-      "conflictingFindings": ["plantar_fascia_pain_pattern"],
+      "supportingFindings": [
+        "mortons_interspace_pain_pattern",
+        "tight_toe_box_aggravation",
+        "forefoot_paresthesia"
+      ],
+      "conflictingFindings": [
+        "plantar_fascia_pain_pattern"
+      ],
       "exclusionFindings": [],
-      "weights": { "history": 1.2, "painBehaviour": 0.9 },
-      "keyExams": ["Mulder's click (mediolateral squeeze + interspace pressure)", "Web-space sensory testing", "Toe-box footwear review"]
+      "weights": {
+        "history": 1.2,
+        "painBehaviour": 0.9
+      },
+      "keyExams": [
+        "Mulder's click (mediolateral squeeze + interspace pressure)",
+        "Web-space sensory testing",
+        "Toe-box footwear review"
+      ],
+      "conditionLayers": {
+        "observation": "3rd/4th web-space tenderness, splayed toes",
+        "posture": "Narrow-toe-box / forefoot-loading posture",
+        "functionalScreen": "Mulder's squeeze click; web-space sensory change",
+        "fascia": "Intermetatarsal fascia / plantar digital nerve"
+      }
     },
     {
       "name": "Metatarsalgia (mechanical forefoot overload)",
       "source": "Magee; forefoot overload / plantar-plate differential",
       "requiredFindings": [],
-      "supportingFindings": ["metatarsal_shaft_pain_pattern", "barefoot_hard_surface_aggravation", "insidious_onset"],
-      "conflictingFindings": ["forefoot_paresthesia"],
+      "supportingFindings": [
+        "metatarsal_shaft_pain_pattern",
+        "barefoot_hard_surface_aggravation",
+        "insidious_onset"
+      ],
+      "conflictingFindings": [
+        "forefoot_paresthesia"
+      ],
       "exclusionFindings": [],
-      "weights": { "history": 1.0, "painBehaviour": 0.9, "palpation": 1.0 },
-      "keyExams": ["Palpation of metatarsal heads / plantar plate", "Forefoot loading / single-leg heel raise", "Footwear and load review"]
+      "weights": {
+        "history": 1.0,
+        "painBehaviour": 0.9,
+        "palpation": 1.0
+      },
+      "keyExams": [
+        "Palpation of metatarsal heads / plantar plate",
+        "Forefoot loading / single-leg heel raise",
+        "Footwear and load review"
+      ],
+      "conditionLayers": {
+        "observation": "Plantar callus under metatarsal heads",
+        "posture": "Forefoot-loading / high-heel posture",
+        "functionalScreen": "Single-leg heel-raise & forefoot load reproduce pain",
+        "fascia": "Plantar plate / forefoot fascia"
+      }
     },
     {
       "name": "First MTP osteoarthritis / hallux rigidus",
       "source": "Magee; hallux rigidus diagnostic criteria (dorsiflexion loss at 1st MTP)",
       "requiredFindings": [],
-      "supportingFindings": ["forefoot_mtp1_pain_pattern", "toe_extension_aggravation", "age_over_50", "progressive_stiffness"],
-      "conflictingFindings": ["hallux_hyperextension_mechanism"],
+      "supportingFindings": [
+        "forefoot_mtp1_pain_pattern",
+        "toe_extension_aggravation",
+        "age_over_50",
+        "progressive_stiffness"
+      ],
+      "conflictingFindings": [
+        "hallux_hyperextension_mechanism"
+      ],
       "exclusionFindings": [],
-      "weights": { "history": 1.0, "rom": 1.1, "painBehaviour": 0.8 },
-      "keyExams": ["1st MTP active/passive dorsiflexion ROM + end-feel", "Grind/axial compression of the 1st MTP", "Imaging if OA suspected"]
+      "weights": {
+        "history": 1.0,
+        "rom": 1.1,
+        "painBehaviour": 0.8
+      },
+      "keyExams": [
+        "1st MTP active/passive dorsiflexion ROM + end-feel",
+        "Grind/axial compression of the 1st MTP",
+        "Imaging if OA suspected"
+      ],
+      "conditionLayers": {
+        "observation": "Dorsal 1st-MTP osteophyte, reduced toe extension",
+        "posture": "Supinated / lateral-loading gait avoiding push-off",
+        "functionalScreen": "1st-MTP dorsiflexion loss on toe-off; grind test",
+        "fascia": "Plantar plate / 1st-ray fascia"
+      }
     },
     {
       "name": "Turf toe (1st MTP hyperextension sprain)",
       "source": "Magee; 1st MTP plantar-complex sprain literature",
       "requiredFindings": [],
-      "supportingFindings": ["forefoot_mtp1_pain_pattern", "hallux_hyperextension_mechanism", "traumatic_onset"],
-      "conflictingFindings": ["insidious_onset"],
+      "supportingFindings": [
+        "forefoot_mtp1_pain_pattern",
+        "hallux_hyperextension_mechanism",
+        "traumatic_onset"
+      ],
+      "conflictingFindings": [
+        "insidious_onset"
+      ],
       "exclusionFindings": [],
-      "weights": { "history": 1.3, "painBehaviour": 0.8 },
-      "keyExams": ["1st MTP dorsiflexion stress test", "Plantar plate / sesamoid palpation", "Imaging to exclude sesamoid fracture"]
+      "weights": {
+        "history": 1.3,
+        "painBehaviour": 0.8
+      },
+      "keyExams": [
+        "1st MTP dorsiflexion stress test",
+        "Plantar plate / sesamoid palpation",
+        "Imaging to exclude sesamoid fracture"
+      ],
+      "conditionLayers": {
+        "observation": "Swelling/tenderness of 1st MTP, athlete",
+        "posture": "Push-off avoidance posture",
+        "functionalScreen": "1st-MTP dorsiflexion stress reproduces pain; toe-off deficit",
+        "fascia": "Plantar plate / sesamoid complex"
+      }
     },
     {
       "name": "Midfoot sprain / osteoarthritis (navicular / cuboid)",
       "source": "Magee; midfoot (Lisfranc / midtarsal) differential",
       "requiredFindings": [],
-      "supportingFindings": ["midfoot_pain_pattern", "insidious_onset"],
+      "supportingFindings": [
+        "midfoot_pain_pattern",
+        "insidious_onset"
+      ],
       "conflictingFindings": [],
       "exclusionFindings": [],
-      "weights": { "history": 0.9, "painBehaviour": 0.8, "palpation": 1.0 },
-      "keyExams": ["Midfoot palpation (navicular, cuboid, TMT joints)", "Midfoot stress / piano-key test", "Weight-bearing imaging if Lisfranc suspected"]
+      "weights": {
+        "history": 0.9,
+        "painBehaviour": 0.8,
+        "palpation": 1.0
+      },
+      "keyExams": [
+        "Midfoot palpation (navicular, cuboid, TMT joints)",
+        "Midfoot stress / piano-key test",
+        "Weight-bearing imaging if Lisfranc suspected"
+      ],
+      "conditionLayers": {
+        "observation": "Dorsal midfoot swelling/tenderness",
+        "posture": "Collapsed or rigid midfoot posture",
+        "functionalScreen": "Midfoot stress / piano-key & single-leg load reproduce pain",
+        "fascia": "Midfoot dorsal & plantar fascia"
+      }
     }
   ]
 }
