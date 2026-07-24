@@ -3,7 +3,13 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, Component } f
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage } from "./sharedClinicalData.js";
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
-import { buildRealtimeSOAP } from "./ClinicalModules.jsx";
+import { extractLumbarVariablesStructured, mergeLumbarVariables } from "./lumbarVariableExtractor.js";
+import { runLumbarReasoningEngine } from "./lumbarReasoningEngine.js";
+import { extractCervicalVariablesStructured, mergeCervicalVariables } from "./cervicalVariableExtractor.js";
+import { runCervicalReasoningEngine } from "./cervicalReasoningEngine.js";
+import { extractThoracicVariablesStructured, mergeThoracicVariables } from "./thoracicVariableExtractor.js";
+import { runThoracicReasoningEngine } from "./thoracicReasoningEngine.js";
+import { runShoulderPhase05, shoulderTestNav } from "./shoulderPhase05.js";
 
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
@@ -1250,22 +1256,25 @@ const RC_S={"Cervical spine":"#7c3aed","Thoracic spine":"#d97706","Lumbar / SI":
 const ALL_REGIONS_S=Object.keys(RC_S);
 function NavActionBtn({ btn, onNav, PC }) {
   const [showWhy, setShowWhy] = React.useState(false);
+  const clickable = !!btn.nav;
+  const col = clickable ? btn.col : PC.muted;
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
       <div style={{ display:"flex", gap:4 }}>
         <button
-          onClick={()=>onNav(btn.nav, btn.ctx)}
+          onClick={clickable ? ()=>onNav(btn.nav, btn.ctx) : undefined}
+          disabled={!clickable}
           style={{ flex:1, display:"flex", alignItems:"center", gap:6, padding:"7px 10px",
-            background:`${btn.col}12`, border:`1px solid ${btn.col}30`, borderRadius:"7px 0 0 7px",
-            color:btn.col, cursor:"pointer", fontSize:"0.67rem", fontWeight:700,
+            background:`${col}12`, border:`1px solid ${col}30`, borderRadius:"7px 0 0 7px",
+            color:col, cursor: clickable ? "pointer" : "default", fontSize:"0.67rem", fontWeight:700,
             textAlign:"left", transition:"all 0.15s" }}>
           <span style={{fontSize:"0.9rem",flexShrink:0}}>{btn.icon}</span>
           <span>{btn.label}</span>
         </button>
         <button
           onClick={()=>setShowWhy(w=>!w)}
-          style={{ padding:"7px 8px", background:`${btn.col}08`,
-            border:`1px solid ${btn.col}20`, borderLeft:"none",
+          style={{ padding:"7px 8px", background:`${col}08`,
+            border:`1px solid ${col}20`, borderLeft:"none",
             borderRadius:"0 7px 7px 0", color:PC.muted, cursor:"pointer",
             fontSize:"0.78rem", fontWeight:800 }}>
           ?
@@ -1274,12 +1283,206 @@ function NavActionBtn({ btn, onNav, PC }) {
       {showWhy && (
         <div style={{ fontSize:"0.82rem", color:PC.muted, padding:"5px 8px",
           background:PC.s3, borderRadius:"0 0 6px 6px",
-          border:`1px solid ${btn.col}20`, borderTop:"none", lineHeight:1.5 }}>
+          border:`1px solid ${col}20`, borderTop:"none", lineHeight:1.5 }}>
           {btn.why}
         </div>
       )}
     </div>
   );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LUMBAR ENGINE (L01-L11) OBJECTIVE TEST -> NAV TARGET MAPPING
+// The lumbarReasoningEngine.js objectiveTests.{required,recommended} arrays
+// are free-text test names (grounded in Magee/Kisner&Colby, not app internals).
+// This maps ONLY the subset that has a real, unambiguous 1:1 implemented
+// module in this app -- same accuracy bar as the rest of this engine: no
+// invented mappings. A test with no genuine implemented equivalent (imaging,
+// palpation, outcome-measure questionnaires, PA glides, PPIVMs, Farfan/
+// Pheasant/H&I, etc.) is deliberately left non-clickable rather than pointed
+// at a module that doesn't actually test it.
+// ══════════════════════════════════════════════════════════════════════════════
+const LUMBAR_ROM_HIGHLIGHTS = ["rom_lflex","rom_lext","rom_llfl","rom_llfr","rom_lrotl","rom_lrotr"];
+const LUMBAR_NEURO_HIGHLIGHTS = ["n_l4","n_l5","n_s1","n_s2","nt_slr","nt_slump_test"];
+const LUMBAR_CORE_MMT_HIGHLIGHTS = ["mmt_multif","mmt_ta","mmt_ql","mmt_diaphragm","mmt_obliques"];
+
+function lumbarTestNav(testStr) {
+  const s = String(testStr || "");
+  // Exclusions first: tests that share a word with a mapped test but are
+  // clinically distinct and have no dedicated implementation of their own.
+  if (/active slr/i.test(s)) return null;
+  if (/crossed slr/i.test(s)) return null; // distinct test (opposite leg), not implemented in this app
+
+  if (/slump test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },
+      why:"Slump — more sensitive than SLR for disc herniation. Reproduces radicular symptoms in flexed posture." };
+  if (/femoral nerve tension test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_femoral_nerve_stretch" },
+      why:"FNST — 88% sensitivity for L2/3/4 femoral nerve tension. Prone knee flexion reproducing anterior thigh pain = positive." };
+  if (/quadrant test|kemp'?s test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_kemp" },
+      why:"Kemp's — facet loading test. Positive = ipsilateral facet referral or foraminal stenosis." };
+  if (/stork/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_stork" },
+      why:"Stork Test — single-leg lumbar extension loading. Ipsilateral LBP in a young athlete is highly suspicious for spondylolysis/spondylolisthesis." };
+  if (/sij provocation cluster/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar" },
+      why:"A cluster, not one test — Compression, Distraction, Sacral Thrust (Thigh Thrust), Gaenslen's all live on this page. 3+ positive = 91% specific for SIJ." };
+  if (/faber/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" },
+      why:"FABER/Patrick's — SIJ and hip joint provocation. 77% sensitivity. Cross-check against the SIJ cluster above." };
+  if (/\bslr\b/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_slr_test" },
+      why:"SLR — 80% sensitivity for L4/L5/S1 nerve root compression. Positive < 60° = neural involvement." };
+
+  if (/neuro(logical)? screen/i.test(s))
+    return { icon:"\u26a1", col:"#dc2626", nav:"neuro", ctx:{ neuroHighlights: LUMBAR_NEURO_HIGHLIGHTS },
+      why:"L1-S2 dermatomes, myotomes, patella/achilles reflexes. Localise disc level. Rule out cauda equina." };
+
+  if (/core\/?lumbopelvic motor control|core assessment/i.test(s))
+    return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Spine & Core", mmtHighlights: LUMBAR_CORE_MMT_HIGHLIGHTS },
+      why:"Multifidus atrophies within 24hrs of acute LBP and does not recover spontaneously (Hides 1994). Transversus abdominis is the first-to-fire stabiliser and its activation is delayed in LBP (Hodges 1996). Assess both before any loading programme." };
+
+  if (/functional (movement )?screen|functional testing/i.test(s))
+    return { icon:"\ud83c\udfc3", col:"#059669", nav:"fma", ctx:{ fsRegion:"lumbar" },
+      why:"Forward bend — hip hinge vs lumbar flexion. Squat — global lower chain. Single-leg — SIJ control." };
+
+  if (/lumbar arom|repeated movement/i.test(s))
+    return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS },
+      why:"Flexion — discogenic aggravator; test for centralisation with repeated movements (McKenzie). Extension — facet/stenosis pattern, reproduces symptoms and tests centralisation the opposite direction. Side flexion asymmetry — lateral shift/disc protrusion screen." };
+
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CERVICAL ENGINE (C01-C11) OBJECTIVE TEST -> NAV TARGET MAPPING
+// Same design and same accuracy bar as lumbarTestNav() above: only maps the
+// subset of cervicalReasoningEngine.js's objectiveTests.{required,recommended}
+// strings that have a real, unambiguous 1:1 implemented module in this app.
+// Imaging, palpation, PA glides, outcome measures (NDI), and Tinel's sign
+// (no dedicated distal-entrapment module yet) are deliberately left
+// non-clickable rather than pointed at a module that doesn't actually test
+// them -- an honest gap, not a wrong pointer.
+// ══════════════════════════════════════════════════════════════════════════════
+const CERVICAL_ROM_HIGHLIGHTS = ["rom_crotl","rom_crotr","rom_cflex","rom_cext","rom_clatl","rom_clatr"];
+const CERVICAL_NEURO_HIGHLIGHTS = ["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"];
+const CERVICAL_MMT_HIGHLIGHTS = ["mmt_dnf","mmt_scm","mmt_trapU","mmt_scalenes","mmt_suboccip"];
+
+function cervicalTestNav(testStr) {
+  const s = String(testStr || "");
+
+  if (/tinel'?s sign at wrist/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_tinel_wrist" },
+      why:"Tinel's at the wrist — median nerve / carpal tunnel. A positive result here (not at the neck) points to a distal peripheral entrapment (C09), not cervical radiculopathy (C02)." };
+  if (/tinel'?s sign at elbow/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_tinel_elbow" },
+      why:"Tinel's at the elbow — ulnar nerve / cubital tunnel. Same logic as the wrist version: a distal, single-nerve finding argues against a cervical nerve-root source." };
+  if (/ultt1/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_ultt1" },
+      why:"ULTT1 — median nerve tension. Upper-limb equivalent of the SLR; double-crush check against cervical nerve root involvement." };
+  if (/ultt2/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_ultt2" },
+      why:"ULTT2 — radial nerve bias. Differentiates radial nerve tension from median (ULTT1) or ulnar (ULTT3) involvement." };
+  if (/ultt3/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_ultt3" },
+      why:"ULTT3 — ulnar nerve bias. Completes the three-nerve upper limb tension screen alongside ULTT1/2." };
+  if (/spurling'?s test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_spurling" },
+      why:"Spurling's — highest specificity (~92%) for cervical radiculopathy. Foraminal compression test; run first if arm symptoms present." };
+  if (/cervical distraction test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_distraction" },
+      why:"Distraction — relief with axial traction supports a foraminal/nerve-root source, the mirror image of Spurling's." };
+  if (/sharp-?purser test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_sharp_purser" },
+      why:"Sharp-Purser — atlantoaxial (C1-C2) instability screen. Mandatory before any upper cervical manipulation." };
+  if (/alar ligament test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_alar" },
+      why:"Alar ligament stress test — C1-C2 stability. Run alongside Sharp-Purser before end-range cervical rotation testing." };
+  if (/3-part test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_vbi" },
+      why:"VBI / 3-Part Test — vertebral artery patency screen. Mandatory before manipulation or sustained end-range rotation." };
+  if (/flexion-rotation test|\bfrt\b/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_flex_rot" },
+      why:"Flexion-Rotation Test — positive for pain/dysfunction at C1-C2 in cervicogenic headache (Magee)." };
+  if (/jackson'?s compression test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_jackson" },
+      why:"Jackson's Compression — axial loading reproduces facet or nerve-root referral pain." };
+  if (/cervical rotation lateral flexion|\bcrlf\b/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_cervical_rotation_lt" },
+      why:"CRLF — screens for first-rib elevation restricting cervical rotation/lateral flexion." };
+
+  if (/neurological screen/i.test(s))
+    return { icon:"\u26a1", col:"#dc2626", nav:"neuro", ctx:{ neuroHighlights: CERVICAL_NEURO_HIGHLIGHTS },
+      why:"C5-T1 dermatomes, myotomes, biceps/brachioradialis/triceps reflexes. Localise nerve root level; screen for myelopathic signs." };
+
+  if (/functional (movement )?screen|functional testing/i.test(s))
+    return { icon:"\ud83c\udfc3", col:"#059669", nav:"fma", ctx:{ fsRegion:"cervical" },
+      why:"Deep neck flexor endurance and functional overhead/rotation tasks under load -- reveals compensation patterns a static exam misses." };
+
+  if (/postural assessment/i.test(s))
+    return { icon:"\ud83e\uddcd", col:"#059669", nav:"posture", ctx:{ region:"Cervical" },
+      why:"Forward head posture, CVA, thoracic kyphosis — all increase cervical loading and headache trigger load." };
+
+  if (/gait assessment/i.test(s))
+    return { icon:"\ud83d\udeb6", col:"#059669", nav:"gait", ctx:{},
+      why:"A wide-based, unsteady, or myelopathic gait pattern is a key sign of cervical cord compression — screen before proceeding." };
+
+  if (/cervical arom/i.test(s))
+    return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Cervical", romHighlights: CERVICAL_ROM_HIGHLIGHTS },
+      why:"Rotation L+R — most clinically relevant plane; restriction below ~60° (of a ~90° norm) suggests C1-C2 involvement, cross-check with the Flexion-Rotation Test. Flexion — discogenic aggravator, test for centralisation. Extension + rotation quadrant — facet loading, reproduces facet or radicular pain." };
+
+  if (/cervical mmt|deep cervical flexor/i.test(s))
+    return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Cervical", mmtHighlights: CERVICAL_MMT_HIGHLIGHTS },
+      why:"Deep cervical flexors (craniocervical flexion test) are the most commonly inhibited muscle group in cervical dysfunction and a key forward-head-posture driver (Jull 2008). Deep neck extensors (cervical multifidus) atrophy in chronic cervical pain (Elliott 2006)." };
+
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// THORACIC ENGINE (T01-T11) OBJECTIVE TEST -> NAV TARGET MAPPING
+// Same accuracy bar as lumbarTestNav()/cervicalTestNav(): only maps the
+// subset of thoracicReasoningEngine.js's objectiveTests.{required,recommended}
+// strings that have a real, unambiguous 1:1 implemented module in this app.
+// Confirmed via grep that this app has NO dedicated Adson's, Costoclavicular,
+// Roos/EAST, Cyriax Release, First Thoracic Nerve Root Stretch, Passive
+// Scapular Approximation, or Evjenth-Gloeck breath-hold modules -- these
+// stay non-clickable (honest gap, not a wrong pointer), same policy as
+// imaging/palpation/outcome-measure strings across all three engines.
+// ══════════════════════════════════════════════════════════════════════════════
+const THORACIC_ROM_HIGHLIGHTS = ["rom_throtl","rom_throtr","rom_thflex","rom_thext"];
+const THORACIC_MMT_HIGHLIGHTS = ["mmt_trapL","mmt_trapM","mmt_serratus","mmt_trapU","mmt_rhomb"];
+
+function thoracicTestNav(testStr) {
+  const s = String(testStr || "");
+
+  if (/slump test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },
+      why:"Slump Test (add trunk rotation per Butler for intercostal nerve stress) -- reproduces radicular/dural symptoms in a flexed, loaded posture." };
+  if (/cervical rotation lateral flexion|\bcrlf\b/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_cervical_rotation_lt" },
+      why:"CRLF -- Magee-described as testing first-rib elevation restricting cervical rotation/lateral flexion, directly relevant to thoracic outlet syndrome (T04)." };
+
+  if (/rib spring|rib mobility|functional (movement )?screen|functional testing/i.test(s))
+    return { icon:"\ud83c\udfc3", col:"#059669", nav:"fma", ctx:{ fsRegion:"thoracic" },
+      why:"Rib spring (prone PA over each rib angle), pump handle (ribs 1-5), and bucket handle (ribs 6-10) all live in this functional/rib mobility screen -- the real implemented version of Rib Springing." };
+
+  if (/neurological screen/i.test(s))
+    return { icon:"\u26a1", col:"#dc2626", nav:"neuro", ctx:{},
+      why:"Screen for cord-compression signs (bilateral leg weakness/sensory change, hyperreflexia) before proceeding -- this app has no dedicated T2-T12 dermatome table, so nothing is pre-highlighted; use the neuro module's general reflex/sensation testing." };
+
+  if (/postural assessment/i.test(s))
+    return { icon:"\ud83e\uddcd", col:"#059669", nav:"posture", ctx:{ region:"Thoracic" },
+      why:"Kyphosis angle, forward head, scapular position -- the postural drivers behind both round-back kyphosis (T06) and thoracic outlet loading (T04)." };
+
+  if (/thoracic arom/i.test(s))
+    return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Thoracic", romHighlights: THORACIC_ROM_HIGHLIGHTS },
+      why:"Rotation -- most thoracic-sensitive plane (Magee); <30\u00b0 bilateral = significant restriction. Extension -- capsular pattern check. Compare for a hinge point vs. even, distributed motion." };
+
+  if (/thoracic mmt/i.test(s))
+    return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights: THORACIC_MMT_HIGHLIGHTS },
+      why:"Lower/mid/upper trapezius, serratus anterior, rhomboids -- weakness here maintains a kyphotic, round-back posture (T06) and is the muscle group most often implicated in thoracic myofascial referral (T09, Magee Table 8-8)." };
+
+  return null;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2446,41 +2649,30 @@ function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
   };
 
   return (
-    <div style={{ border:`1px solid ${hasSelected ? PC.accent+"55" : PC.border}`, borderRadius:9, overflow:"hidden" }}>
-      {/* Selected tags summary strip (only when something selected) */}
-      {hasSelected && (
-        <div style={{ display:"flex", alignItems:"center", gap:5, flexWrap:"wrap",
-          padding:"8px 12px 6px", background:PC.accent+"06",
-          borderBottom:`1px solid ${PC.accent}22` }}>
-          {selected.map(s => (
-            <span key={s} style={{ fontSize:"0.75rem", fontWeight:700, padding:"2px 8px",
-              borderRadius:99, background:PC.accent+"18", color:PC.accent,
-              border:`1px solid ${PC.accent}44` }}>{s}</span>
-          ))}
-        </div>
+    // Flat, unboxed pill row -- no outer card/border, no separate "selected
+    // tags" summary strip. Selection state shows purely via each pill's own
+    // filled/highlighted style, matching the confirmed lightweight mockup
+    // (numbered line-wise fields, no boxed containers around chip choices).
+    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+      {visibleOpts.map(opt => <PillBtn key={opt} opt={opt} />)}
+      {!showMore && hiddenCount > 0 && (
+        <button type="button" onClick={() => setShowMore(true)}
+          style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
+            border:`1.5px dashed ${PC.border}`, background:"transparent",
+            color:PC.muted, fontSize:"0.82rem", fontWeight:600,
+            lineHeight:1.4, minHeight:38 }}>
+          +{hiddenCount} more
+        </button>
       )}
-      {/* Always-visible pills */}
-      <div style={{ padding:"10px 12px", display:"flex", flexWrap:"wrap", gap:8, background:PC.surface }}>
-        {visibleOpts.map(opt => <PillBtn key={opt} opt={opt} />)}
-        {!showMore && hiddenCount > 0 && (
-          <button type="button" onClick={() => setShowMore(true)}
-            style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
-              border:`1.5px dashed ${PC.border}`, background:"transparent",
-              color:PC.muted, fontSize:"0.82rem", fontWeight:600,
-              lineHeight:1.4, minHeight:38 }}>
-            +{hiddenCount} more
-          </button>
-        )}
-        {showMore && hiddenCount > 0 && (
-          <button type="button" onClick={() => setShowMore(false)}
-            style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
-              border:`1.5px dashed ${PC.border}`, background:"transparent",
-              color:PC.muted, fontSize:"0.82rem", fontWeight:600,
-              lineHeight:1.4, minHeight:38 }}>
-            Show less ▲
-          </button>
-        )}
-      </div>
+      {showMore && hiddenCount > 0 && (
+        <button type="button" onClick={() => setShowMore(false)}
+          style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
+            border:`1.5px dashed ${PC.border}`, background:"transparent",
+            color:PC.muted, fontSize:"0.82rem", fontWeight:600,
+            lineHeight:1.4, minHeight:38 }}>
+          Show less ▲
+        </button>
+      )}
     </div>
   );
 }
@@ -2514,119 +2706,208 @@ const FIELD_HELP = {
   "lx_night": "Night pain: can patient get comfortable? Positional night pain = mechanical. Constant unable to get comfortable = inflammatory or serious pathology. Bladder waking since onset — compare to pre-pain baseline.",
 };
 
-// ── AI Clinical Reasoning panel (Lumbar / SI) ──────────────────────────
-// Renders the output of api/lumbarReasoning.js: an independent, LLM-driven
-// second opinion that runs alongside Engine v6 (runEngineV6 above), which
-// stays fully deterministic and unmodified. Only ever shown for Lumbar/SI,
-// and never blocks or replaces the deterministic results.
-function AiLumbarReasoningPanel({ PC, loading, error, reasoning }) {
-  const badgeColor = (level) => level === "High" ? PC.green : level === "Moderate" ? PC.yellow : PC.muted;
-  const CATS = [
-    { key:"observation",  label:"Observation",              field:"item" },
-    { key:"rom",          label:"Lumbar ROM",                field:"movement" },
-    { key:"mmt",          label:"MMT",                        field:"muscle" },
-    { key:"functional",   label:"Functional Assessment",      field:"task" },
-    { key:"kineticChain", label:"Kinetic Chain Assessment",   field:"area" },
-    { key:"specialTests", label:"Special Tests",              field:"test" },
-  ];
+// ══════════════════════════════════════════════════════════════════
+// SETTINGS-STYLE ASSESSMENT UI — reusable row components
+// (iOS Settings pattern: label left, value right-aligned, hairline
+// dividers only — no per-field borders/boxes, no per-row icons.
+// Suggestions live in a bottom sheet instead of on-screen at all times)
+// ══════════════════════════════════════════════════════════════════
+
+// Kept only for backward compatibility with any external caller —
+// per-row icons were removed from the redesign (icons now live only
+// in section headers, per feedback that per-row emoji stopped adding
+// value after the first row).
+// Best-effort icon per field, based on id/label keywords. Falls back
+// to a neutral dot so every row still has a left-hand anchor even for
+// fields this map doesn't recognise (custom/region-specific fields).
+function fieldIcon_S(f) {
+  const id = (f.id || "").toLowerCase();
+  const label = (f.label || "").toLowerCase();
+  const has = (s) => id.includes(s) || label.includes(s);
+  if (has("chief") || has("main complaint")) return "🎯";
+  if (has("goal")) return "🎯";
+  if (has("onset")) return "📅";
+  if (has("duration")) return "⏳";
+  if (has("mechanism")) return "🚗";
+  if (has("radiat")) return "☀️";
+  if (has("location") || has("site")) return "📍";
+  if (has("worst") && has("pain")) return "⚡";
+  if (has("behav")) return "↗️";
+  if (has("aggravat")) return "📈";
+  if (has("reliev")) return "🍃";
+  if (has("associated")) return "👤";
+  if (has("red flag") || has("rf_") || has("_rf")) return "🚩";
+  if (has("previous") || has("episode") || has("past history")) return "📋";
+  if (has("medication")) return "💊";
+  if (has("imaging") || has("report")) return "🖼️";
+  if (has("occupation") || has("work")) return "💼";
+  if (has("sleep") || has("night")) return "🌙";
+  if (has("sport")) return "🏃";
+  if (has("note") || has("detail")) return "📝";
+  if (has("quality")) return "〰️";
+  if (has("pain")) return "⚡";
+  if (f.type === "range") return "⚡";
+  if (f.type === "multicheck") return "📈";
+  if (f.type === "textarea") return "📝";
+  return "•";
+}
+
+// One row: small icon + label on the left (~30% width, fixed so
+// every row lines up), the field's input on the right (~70%). A
+// hairline divider is the only separator — rows are compact at rest
+// and grow only as far as their content needs.
+function AssessmentRow({ label, helpText, PC, children }) {
+  return (
+    <div className="pm-arow" style={{
+      display: "flex", alignItems: "center", gap: 12,
+    }}>
+      <span className="pm-arow-label" style={{ width: "38%", flexShrink: 0, fontSize: "0.95rem", fontWeight: 400, color: "#6B6B7A", lineHeight: 1.3 }}>
+        {label}
+        {helpText && (
+          <span title={helpText} style={{
+            display: "inline-flex", marginLeft: 4, color: PC.accent,
+            fontSize: "0.62rem", cursor: "help", verticalAlign: "top",
+          }}>ⓘ</span>
+        )}
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+    </div>
+  );
+}
+
+const autoGrow_S = (el) => {
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+};
+
+// Free-typed field: an auto-growing textarea — never truncates or
+// hides text, it just wraps and gets taller as the therapist types.
+function SmartInput({ value, onChange, PC, multiline }) {
+  const taRef = useRef(null);
+  useEffect(() => { autoGrow_S(taRef.current); }, [value]);
+  return (
+    <textarea ref={taRef} rows={1} value={value}
+      onChange={e => { onChange(e); autoGrow_S(taRef.current); }}
+      placeholder="Type or tap to enter..."
+      className="pm-sinput-box pm-sinput-text"
+      style={{
+        width: "100%", boxSizing: "border-box", border: "1px solid #ECE9F7",
+        borderRadius: 16, background: "#fff", padding: "14px 16px", fontSize: "0.95rem", fontWeight: 500,
+        color: "#2D2D3A", fontFamily: "inherit", outline: "none", resize: "none", overflow: "hidden",
+        lineHeight: 1.35, minHeight: 48,
+      }} />
+  );
+}
+
+// Compact pain slider — track + numeric readout in one row, no card.
+function PainSliderCompact({ value, onChange, PC }) {
+  const num = parseInt(value || 0, 10) || 0;
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10, width: "100%", boxSizing: "border-box",
+      border: "1px solid #ECE9F7", borderRadius: 16, background: "#fff", padding: "12px 16px",
+    }}>
+      <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 12, flexShrink: 0 }}>0</span>
+      <input type="range" min={0} max={10} step={1} value={num}
+        onChange={e => onChange(e.target.value)}
+        style={{ flex: 1, minWidth: 0, accentColor: "#6C5CE7", cursor: "pointer" }} />
+      <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 16, flexShrink: 0 }}>10</span>
+      <span className="pm-slider-val" style={{ fontWeight: 700, fontSize: "0.95rem", color: "#2D2D3A", minWidth: 34, textAlign: "right", flexShrink: 0 }}>{num}/10</span>
+    </div>
+  );
+}
+
+// Combo field: pick-or-type. An auto-growing textarea that the
+// therapist can type into directly, plus a small round arrow beside
+// it that opens a compact list anchored to THIS field only (not a
+// full-screen sheet). Selecting an option fills the text; the text
+// stays editable afterward. Used for both single-select and
+// multi-select fields — multi joins picks into a comma-separated
+// line that's still hand-editable.
+function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const taRef = useRef(null);
+
+  useEffect(() => {
+    function onDocClick(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  useEffect(() => { autoGrow_S(taRef.current); }, [val]);
+
+  const selectedList = isMulti ? (val ? String(val).split(SEP_S).filter(Boolean) : []) : [];
+  const textValue = isMulti ? selectedList.join(", ") : (val || "");
+
+  const handleTyped = (e) => {
+    const v = e.target.value;
+    if (isMulti) {
+      setField(f.id, v.split(",").map(s => s.trim()).filter(Boolean).join(SEP_S));
+    } else {
+      setField(f.id, v);
+    }
+    autoGrow_S(taRef.current);
+  };
 
   return (
-    <div style={{ background: PC.surface, borderRadius:12, border:`1.5px solid ${PC.accent}44`, overflow:"hidden" }}>
-      <div style={{ background: PC.accent+"12", borderBottom:`1px solid ${PC.accent}33`,
-        padding:"10px 16px", display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-        <span style={{ fontSize:"1rem" }}>🤖</span>
-        <span style={{ fontSize:"0.78rem", fontWeight:800, color: PC.accent, letterSpacing:0.5 }}>
-          AI Clinical Reasoning — Lumbar / SI
-        </span>
-        <span style={{ fontSize:"0.7rem", color: PC.muted, marginLeft:"auto" }}>
-          Adaptive · independent of Engine v6 above
-        </span>
+    <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
+      <div className="pm-cfield-box" style={{
+        display: "flex", alignItems: "center", gap: 6,
+        border: "1px solid #E4E1F5", borderRadius: 16,
+        background: "#fff", padding: "12px 14px 12px 16px", minHeight: 48, boxSizing: "border-box",
+      }}>
+        <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
+          onClick={e => e.stopPropagation()}
+          placeholder={isMulti ? "Tap to select (multiple)..." : "Tap to select..."}
+          className="pm-cfield-text"
+          style={{
+            flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
+            fontSize: "0.95rem", fontWeight: 500, color: "#2D2D3A", fontFamily: "inherit", resize: "none",
+            overflow: "hidden", lineHeight: 1.35, padding: "2px 0",
+          }} />
+        <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+          className="pm-cfield-chevron" style={{
+          flexShrink: 0, width: 20, height: 20,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "none", color: "#7B68EE", fontSize: "1rem", cursor: "pointer",
+          border: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease",
+        }}>⌄</button>
       </div>
 
-      <div style={{ padding:"14px 16px" }}>
-        {loading && (
-          <div style={{ fontSize:"0.8rem", color: PC.muted, display:"flex", alignItems:"center", gap:8 }}>
-            <span>⏳</span> Reasoning through this patient's subjective findings…
-          </div>
-        )}
-
-        {!loading && error && (
-          <div style={{ fontSize:"0.78rem", color: PC.yellow, lineHeight:1.6 }}>
-            AI reasoning unavailable right now ({error}). The deterministic analysis above is unaffected.
-          </div>
-        )}
-
-        {!loading && !error && reasoning && (
-          <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-
-            {/* ── Hypotheses ── */}
-            {reasoning.hypotheses && reasoning.hypotheses.length > 0 && (
-              <div>
-                <div style={{ fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase",
-                  letterSpacing:1, color: PC.muted, marginBottom:8 }}>
-                  Clinical Hypotheses — presentation suggests, not confirmed diagnosis
-                </div>
-                {reasoning.hypotheses.map((h, i) => (
-                  <div key={i} style={{ marginBottom:8, paddingBottom:8,
-                    borderBottom: i < reasoning.hypotheses.length-1 ? `1px solid ${PC.border}` : "none" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3, flexWrap:"wrap" }}>
-                      <span style={{ fontSize:"0.8rem", fontWeight:700, color: PC.text }}>{h.pattern}</span>
-                      <span style={{ fontSize:"0.68rem", fontWeight:800, padding:"2px 8px", borderRadius:99,
-                        background: badgeColor(h.probability)+"18", color: badgeColor(h.probability),
-                        border:`1px solid ${badgeColor(h.probability)}44` }}>
-                        {h.probability}
-                      </span>
-                    </div>
-                    <div style={{ fontSize:"0.78rem", color: PC.muted, lineHeight:1.6 }}>{h.reasoning}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* ── Objective plan, by category ── */}
-            {reasoning.objectivePlan && CATS.map(({ key, label, field }) => {
-              const items = reasoning.objectivePlan[key];
-              if (!items || items.length === 0) return null;
-              return (
-                <div key={key}>
-                  <div style={{ fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase",
-                    letterSpacing:1, color: PC.muted, marginBottom:8 }}>
-                    {label}
-                  </div>
-                  {items.map((it, i) => (
-                    <div key={i} style={{ marginBottom:7, paddingBottom:7,
-                      borderBottom: i < items.length-1 ? `1px solid ${PC.border}` : "none" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3, flexWrap:"wrap" }}>
-                        <span style={{ fontSize:"0.8rem", fontWeight:700, color: PC.text }}>{it[field]}</span>
-                        <span style={{ fontSize:"0.66rem", fontWeight:800, padding:"2px 7px", borderRadius:99,
-                          background: badgeColor(it.priority)+"18", color: badgeColor(it.priority),
-                          border:`1px solid ${badgeColor(it.priority)}44` }}>
-                          {it.priority}
-                        </span>
-                      </div>
-                      <div style={{ fontSize:"0.76rem", color: PC.muted, lineHeight:1.6 }}>{it.reasoning}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-
-            {/* ── Clinical summary ── */}
-            {reasoning.clinicalSummary && (
-              <div style={{ background: PC.accent+"08", border:`1px solid ${PC.accent}33`,
-                borderRadius:10, padding:"10px 12px" }}>
-                <div style={{ fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase",
-                  letterSpacing:1, color: PC.accent, marginBottom:6 }}>
-                  Clinical Summary
-                </div>
-                <div style={{ fontSize:"0.78rem", color: PC.text, lineHeight:1.65 }}>
-                  {reasoning.clinicalSummary}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 40,
+          background: "#fff", border: `1px solid ${PC.border}`, borderRadius: 12,
+          boxShadow: "0 10px 28px rgba(0,0,0,0.14)", maxHeight: 210, overflowY: "auto", padding: 6,
+        }}>
+          {(f.options || []).map(o => {
+            const isSel = isMulti ? selectedList.includes(o) : val === o;
+            return (
+              <button key={o} type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  if (isMulti) { toggleMulti(f.id, o); } else { setField(f.id, o); setOpen(false); }
+                }}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  textAlign: "left", border: "none", background: isSel ? PC.accent + "10" : "transparent",
+                  padding: "9px 10px", borderRadius: 8, fontSize: "0.88rem", color: PC.text,
+                  cursor: "pointer", fontFamily: "inherit", fontWeight: isSel ? 700 : 500,
+                }}>
+                <span>{o}</span>
+                {isSel && <span style={{ color: PC.accent, fontWeight: 900 }}>✓</span>}
+              </button>
+            );
+          })}
+          {(f.options || []).length === 0 && (
+            <div style={{ padding: 16, textAlign: "center", color: PC.muted, fontSize: "0.82rem" }}>No options</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -2647,17 +2928,141 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [insight, setInsight] = useState(()=>{
     try{ return data.cx_insight?JSON.parse(data.cx_insight):null; }catch{ return null; }
   });
+  // Guards the four cx_lumbar_* rehydrations just below: only trust the
+  // persisted lumbar blob if the persisted region selection actually still
+  // includes Lumbar/SI. Without this, a stale cx_lumbar_variables sitting
+  // alongside a `data` blob whose selected regions had since changed to
+  // something else would render Phase 0/0.5 for a region that isn't even
+  // selected any more.
+  const dataHasLumbarRegionSelected = (() => {
+    try {
+      const regs = JSON.parse(data.cx_selected_regions || "[]");
+      return regs.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Lumbar / SI");
+    } catch { return false; }
+  })();
   const [showInsight, setShowInsight] = useState(true);
+  // Lumbar Variable Extractor state -- Pass 1 (deterministic, from
+  // structured lx_* fields) is synchronous, set alongside `insight` in
+  // runInterpretation(). Pass 2 (AI over free-text notes only) is async,
+  // fetched separately and merged in once it resolves -- never blocks or
+  // delays showing Pass 1's result.
+  // Rehydrated from `data.cx_lumbar_*` (same pattern as `insight`/cx_insight
+  // above) so Phase 0/0.5 survive navigating away to ROM/MMT/Special Tests
+  // and back -- previously these four lived in local state only, with no
+  // persisted source, so switching tabs unmounted this component and
+  // switching back remounted it with everything reset to null/[], forcing
+  // a re-click of "Review & Run Analysis" even though `insight` (the older
+  // Phase 1 engine) correctly survived the same navigation.
+  const [lumbarVariables, setLumbarVariables] = useState(()=>{
+    try{ return (dataHasLumbarRegionSelected && data.cx_lumbar_variables)?JSON.parse(data.cx_lumbar_variables):null; }catch{ return null; }
+  });
+  const [lumbarNoteFindings, setLumbarNoteFindings] = useState(()=>{
+    try{ return (dataHasLumbarRegionSelected && data.cx_lumbar_note_findings)?JSON.parse(data.cx_lumbar_note_findings):[]; }catch{ return []; }
+  });
+  const [lumbarNotesLoading, setLumbarNotesLoading] = useState(false);
+  // Which fields in lumbarVariables were filled by the AI note pass
+  // (Pass 2) rather than a checkbox (Pass 1) -- drives the "AI
+  // extracted" badge in the Phase 0 display so a clinician can tell the
+  // two sources apart at a glance.
+  const [lumbarAiFilledFields, setLumbarAiFilledFields] = useState(()=>{
+    try{ return (dataHasLumbarRegionSelected && data.cx_lumbar_ai_filled)?JSON.parse(data.cx_lumbar_ai_filled):[]; }catch{ return []; }
+  });
+  // Red-flag-category AI findings are never auto-merged into
+  // redFlags.*.state (patient safety) -- they land here instead, purely
+  // for on-screen review, so a clinician has to look and decide.
+  const [lumbarPendingRedFlagReview, setLumbarPendingRedFlagReview] = useState(()=>{
+    try{ return (dataHasLumbarRegionSelected && data.cx_lumbar_pending_rf)?JSON.parse(data.cx_lumbar_pending_rf):[]; }catch{ return []; }
+  });
+  // Layer 3 (Reasoning Engine) output -- recomputed synchronously
+  // alongside lumbarVariables in runInterpretation(), since it's a pure
+  // function of the already-extracted variables and needs no AI call.
+  // On rehydration, re-derive it the same way from the rehydrated
+  // lumbarVariables above rather than persisting a second redundant blob.
+  const [lumbarReasoning, setLumbarReasoning] = useState(()=>{
+    try{
+      const lv0 = (dataHasLumbarRegionSelected && data.cx_lumbar_variables)?JSON.parse(data.cx_lumbar_variables):null;
+      return lv0 ? runLumbarReasoningEngine(lv0) : null;
+    }catch{ return null; }
+  });
+  // Cervical Variable Extractor / Reasoning Engine state -- exact mirror of
+  // the Lumbar block above, including persistence from the start (this is
+  // the bug already fixed once for Lumbar in a follow-up patch; built in
+  // proactively here so it never has to be reported for Cervical).
+  const dataHasCervicalRegionSelected = (() => {
+    try {
+      const regs = JSON.parse(data.cx_selected_regions || "[]");
+      return regs.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Cervical spine");
+    } catch { return false; }
+  })();
+  const [cervicalVariables, setCervicalVariables] = useState(()=>{
+    try{ return (dataHasCervicalRegionSelected && data.cx_cervical_variables)?JSON.parse(data.cx_cervical_variables):null; }catch{ return null; }
+  });
+  const [cervicalNoteFindings, setCervicalNoteFindings] = useState(()=>{
+    try{ return (dataHasCervicalRegionSelected && data.cx_cervical_note_findings)?JSON.parse(data.cx_cervical_note_findings):[]; }catch{ return []; }
+  });
+  const [cervicalNotesLoading, setCervicalNotesLoading] = useState(false);
+  const [cervicalAiFilledFields, setCervicalAiFilledFields] = useState(()=>{
+    try{ return (dataHasCervicalRegionSelected && data.cx_cervical_ai_filled)?JSON.parse(data.cx_cervical_ai_filled):[]; }catch{ return []; }
+  });
+  const [cervicalPendingRedFlagReview, setCervicalPendingRedFlagReview] = useState(()=>{
+    try{ return (dataHasCervicalRegionSelected && data.cx_cervical_pending_rf)?JSON.parse(data.cx_cervical_pending_rf):[]; }catch{ return []; }
+  });
+  const [cervicalReasoning, setCervicalReasoning] = useState(()=>{
+    try{
+      const cv0 = (dataHasCervicalRegionSelected && data.cx_cervical_variables)?JSON.parse(data.cx_cervical_variables):null;
+      return cv0 ? runCervicalReasoningEngine(cv0) : null;
+    }catch{ return null; }
+  });
+  // Thoracic Variable Extractor / Reasoning Engine state -- exact mirror of
+  // the Lumbar/Cervical blocks above, persistence built in from the start.
+  const dataHasThoracicRegionSelected = (() => {
+    try {
+      const regs = JSON.parse(data.cx_selected_regions || "[]");
+      return regs.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Thoracic spine");
+    } catch { return false; }
+  })();
+  const [thoracicVariables, setThoracicVariables] = useState(()=>{
+    try{ return (dataHasThoracicRegionSelected && data.cx_thoracic_variables)?JSON.parse(data.cx_thoracic_variables):null; }catch{ return null; }
+  });
+  const [thoracicNoteFindings, setThoracicNoteFindings] = useState(()=>{
+    try{ return (dataHasThoracicRegionSelected && data.cx_thoracic_note_findings)?JSON.parse(data.cx_thoracic_note_findings):[]; }catch{ return []; }
+  });
+  const [thoracicNotesLoading, setThoracicNotesLoading] = useState(false);
+  const [thoracicAiFilledFields, setThoracicAiFilledFields] = useState(()=>{
+    try{ return (dataHasThoracicRegionSelected && data.cx_thoracic_ai_filled)?JSON.parse(data.cx_thoracic_ai_filled):[]; }catch{ return []; }
+  });
+  const [thoracicPendingRedFlagReview, setThoracicPendingRedFlagReview] = useState(()=>{
+    try{ return (dataHasThoracicRegionSelected && data.cx_thoracic_pending_rf)?JSON.parse(data.cx_thoracic_pending_rf):[]; }catch{ return []; }
+  });
+  const [thoracicReasoning, setThoracicReasoning] = useState(()=>{
+    try{
+      const tv0 = (dataHasThoracicRegionSelected && data.cx_thoracic_variables)?JSON.parse(data.cx_thoracic_variables):null;
+      return tv0 ? runThoracicReasoningEngine(tv0) : null;
+    }catch{ return null; }
+  });
+
+  // Shoulder Phase 0 / 0.5 -- reuses the existing, already-tested Shoulder
+  // reasoningEngine (src/reasoningEngine/) via shoulderPhase05.js's adapter,
+  // rather than a separate Lumbar/Cervical/Thoracic-style extractor. Unlike
+  // those three, this needs NO separate persisted blob: runShoulderPhase05(data)
+  // is a pure, synchronous function of the same `data` record that's already
+  // persisted for the whole form (no async Pass-2 AI note merge to preserve
+  // across navigation), so simply re-deriving it from `data` on every mount/
+  // rehydrate is both correct and sufficient.
+  const dataHasShoulderRegionSelected = (() => {
+    try {
+      const regs = JSON.parse(data.cx_selected_regions || "[]");
+      return regs.some(reg => reg === "Shoulder (L)" || reg === "Shoulder (R)");
+    } catch { return false; }
+  })();
+  const [shoulderReasoning, setShoulderReasoning] = useState(()=>{
+    try{ return dataHasShoulderRegionSelected ? runShoulderPhase05(data) : null; }catch{ return null; }
+  });
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
   const [activeReviewRegion, setActiveReviewRegion] = useState(null); // which region tab is showing in the Interpretation results screen
   const [showSavedToast, setShowSavedToast] = useState(false);
-  // AI Clinical Reasoning (Lumbar/SI) -- additive, alongside runEngineV6 above,
-  // never persisted (re-fetched fresh on each Run Analysis click)
-  const [aiLumbarReasoning, setAiLumbarReasoning] = useState(null);
-  const [aiLumbarLoading, setAiLumbarLoading] = useState(false);
-  const [aiLumbarError, setAiLumbarError] = useState(null);
   const [regionPickerOpen, setRegionPickerOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState({});
   const [openRegions, setOpenRegions] = useState({});
@@ -2677,10 +3082,28 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
         ? prev.filter(x => x !== r)
         : prev.length >= 3 ? prev : [...prev, r];
       // Persist to patient data so navigation doesn't lose selection
-      set({ ...data, cx_selected_regions: JSON.stringify(next), cx_insight: null });
+      set({ cx_selected_regions: JSON.stringify(next), cx_insight: null,
+        cx_lumbar_variables: null, cx_lumbar_note_findings: null, cx_lumbar_ai_filled: null, cx_lumbar_pending_rf: null,
+        cx_cervical_variables: null, cx_cervical_note_findings: null, cx_cervical_ai_filled: null, cx_cervical_pending_rf: null,
+        cx_thoracic_variables: null, cx_thoracic_note_findings: null, cx_thoracic_ai_filled: null, cx_thoracic_pending_rf: null });
       return next;
     });
     setInsight(null);
+    setLumbarVariables(null);
+    setLumbarNoteFindings([]);
+    setLumbarAiFilledFields([]);
+    setLumbarPendingRedFlagReview([]);
+    setLumbarReasoning(null);
+    setCervicalVariables(null);
+    setCervicalNoteFindings([]);
+    setCervicalAiFilledFields([]);
+    setCervicalPendingRedFlagReview([]);
+    setCervicalReasoning(null);
+    setThoracicVariables(null);
+    setThoracicNoteFindings([]);
+    setThoracicAiFilledFields([]);
+    setThoracicPendingRedFlagReview([]);
+    setThoracicReasoning(null);
   }, [set, data]);
 
   // ── AI Parser state ────────────────────────────────────────────────
@@ -2864,8 +3287,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     return m;
   }, [data, selectedRegions]);
 
-  const sec = sections[activeSection] || sections.complaint;
-  const secColor = sec.color || PC.accent;
 
   // ── Progress (exclude notes fields) ────────────────────────────────
   const { totalF, totalD, pct } = useMemo(() => {
@@ -2890,145 +3311,275 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     setInsight(result);
     setActiveTab("results"); onTabChange&&onTabChange("results");
     setShowInsight(true);
+
+    // ── Lumbar Variable Extractor (Pass 1 + Pass 2) ──────────────────
+    // Runs alongside runEngineV6, does not replace or block it. Pass 1
+    // reads the same structured lx_* fields deterministically -- see
+    // src/lumbarVariableExtractor.js for why this is a separate,
+    // zero-hallucination-risk read rather than folded into runEngineV6's
+    // own ad-hoc field reads. Pass 2 asks AI to check ONLY the free-text
+    // note fields for anything Pass 1 didn't already capture.
+    if (selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Lumbar / SI")) {
+      const lv = extractLumbarVariablesStructured(data);
+      setLumbarVariables(lv);
+      setLumbarNoteFindings([]);
+      setLumbarAiFilledFields([]);
+      setLumbarPendingRedFlagReview([]);
+      setLumbarReasoning(runLumbarReasoningEngine(lv));
+      // NOTE: pass only the changed keys here, not `...data` -- set() already
+      // merges against the true latest state internally (setData(prev => ({...prev,
+      // ...patch}))), and this call sits before an async Pass-2 completion further
+      // below that must not clobber it with a stale `data` snapshot spread.
+      try { set({ cx_lumbar_variables: JSON.stringify(lv), cx_lumbar_note_findings: JSON.stringify([]),
+        cx_lumbar_ai_filled: JSON.stringify([]), cx_lumbar_pending_rf: JSON.stringify([]) }); } catch {}
+
+      // Variables Pass 1 already resolved definitively -- Pass 2 is told
+      // never to re-derive or contradict these.
+      const already = [];
+      if (lv.location.belowKneePain !== "unknown") already.push("belowKneePain");
+      if (lv.location.dermatomal.state !== "unknown") already.push("dermatomalPattern");
+      if (lv.mechanism.acuteLiftingMechanism !== "unknown") already.push("acuteLiftingMechanism");
+      if (lv.aggravating.flexionAggravates) already.push("flexionAggravates");
+      if (lv.aggravating.extensionAggravates) already.push("extensionAggravates");
+      if (lv.aggravating.rotationAggravates) already.push("rotationAggravates");
+      if (lv.aggravating.sittingAggravates) already.push("sittingAggravates");
+      if (lv.aggravating.coughSneezeAggravates) already.push("coughSneezeAggravates");
+      if (lv.aggravating.valsalvaAggravates) already.push("valsalvaAggravates");
+      if (lv.relieving.extensionRelieves) already.push("extensionRelieves");
+      if (lv.relieving.flexionRelieves) already.push("flexionRelieves");
+      if (lv.relieving.walkingRelieves) already.push("walkingRelieves");
+      if (lv.symptomBehaviour.constantUnremitting) already.push("constantUnremitting");
+      if (lv.symptomBehaviour.constantNightPain) already.push("constantNightPain");
+      if (lv.symptomBehaviour.morningStiffnessOver60) already.push("morningStiffnessOver60");
+      if (lv.history.priorEpisodeCount) already.push("priorEpisodeCount");
+      if (lv.neurological.hasLegNeuro !== "unknown") already.push("hasLegNeuro");
+      if (lv.neurological.footDrop) already.push("footDrop");
+      if (lv.neurological.neurogenicClaudication) already.push("neurogenicClaudication");
+      if (lv.redFlags.cauda.state !== "unknown") already.push("caudaEquinaConcern");
+      if (lv.redFlags.fracture.state !== "unknown") already.push("fractureRiskConcern");
+      if (lv.redFlags.inflammatory.state !== "unknown") already.push("inflammatoryConcern");
+      if (lv.redFlags.serious.state !== "unknown") already.push("otherSeriousPathologyConcern");
+      if (lv.yellowFlags.highPsychosocialLoad) already.push("highPsychosocialLoad");
+
+      const hasAnyNote = Object.values(lv._notesForAiPass || {}).some(t => t && t.trim());
+      if (hasAnyNote) {
+        setLumbarNotesLoading(true);
+        fetch("/api/extractLumbarNoteVariables", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: lv._notesForAiPass, alreadyKnown: already }),
+        }).then(r => r.json()).then(j => {
+          const findings = Array.isArray(j.findings) ? j.findings : [];
+          setLumbarNoteFindings(findings);
+          // Merge AI note findings into the Pass 1 variables before
+          // re-scoring -- without this, Phase 0 keeps showing "Not
+          // asked" for fields the AI plainly found, and Phase 0.5 keeps
+          // scoring against Pass-1-only data (the exact bug reported:
+          // L02 read "Insufficient data" despite a textbook
+          // radiculopathy case because none of the AI-found variables
+          // ever reached the matching engine).
+          const { merged, aiFilledFields, pendingRedFlagReview } = mergeLumbarVariables(lv, findings);
+          setLumbarVariables(merged);
+          setLumbarAiFilledFields(aiFilledFields);
+          setLumbarPendingRedFlagReview(pendingRedFlagReview);
+          setLumbarReasoning(runLumbarReasoningEngine(merged));
+          // Same reasoning as the sync persist above: only the changed keys,
+          // no `...data` spread -- this callback's `data` closure is frozen at
+          // whatever it was when runInterpretation() started, so spreading it
+          // here would silently re-write cx_insight back to its pre-run value.
+          try { set({ cx_lumbar_variables: JSON.stringify(merged), cx_lumbar_note_findings: JSON.stringify(findings),
+            cx_lumbar_ai_filled: JSON.stringify(aiFilledFields), cx_lumbar_pending_rf: JSON.stringify(pendingRedFlagReview) }); } catch {}
+        }).catch(() => { setLumbarNoteFindings([]); })
+          .finally(() => setLumbarNotesLoading(false));
+      }
+    } else {
+      setLumbarVariables(null);
+      setLumbarNoteFindings([]);
+      setLumbarAiFilledFields([]);
+      setLumbarPendingRedFlagReview([]);
+      setLumbarReasoning(null);
+      try { set({ cx_lumbar_variables: null, cx_lumbar_note_findings: null,
+        cx_lumbar_ai_filled: null, cx_lumbar_pending_rf: null }); } catch {}
+    }
+
+    // ── Cervical Variable Extractor (Pass 1 + Pass 2) ────────────────
+    // Independent of the Lumbar block above -- a clinician can select both
+    // Lumbar/SI and Cervical spine as two of their up-to-3 regions, so this
+    // is a separate if/else, not nested inside the Lumbar one, and never
+    // clears Lumbar's persisted keys or vice versa.
+    if (selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Cervical spine")) {
+      const cv = extractCervicalVariablesStructured(data);
+      setCervicalVariables(cv);
+      setCervicalNoteFindings([]);
+      setCervicalAiFilledFields([]);
+      setCervicalPendingRedFlagReview([]);
+      setCervicalReasoning(runCervicalReasoningEngine(cv));
+      try { set({ cx_cervical_variables: JSON.stringify(cv), cx_cervical_note_findings: JSON.stringify([]),
+        cx_cervical_ai_filled: JSON.stringify([]), cx_cervical_pending_rf: JSON.stringify([]) }); } catch {}
+
+      // Variables Pass 1 already resolved definitively -- Pass 2 is told
+      // never to re-derive or contradict these.
+      const alreadyC = [];
+      if (cv.location.armHandPain !== "unknown") alreadyC.push("armHandPain");
+      if (cv.location.dermatomal.state !== "unknown") alreadyC.push("dermatomalPattern");
+      if (cv.mechanism.type.state !== "unknown") alreadyC.push("whiplashMechanism");
+      if (cv.aggravating.movements.state !== "unknown") {
+        alreadyC.push("flexionAggravates", "extensionAggravates", "rotationAggravates", "quadrantAggravates");
+      }
+      if (cv.aggravating.postures.state !== "unknown") alreadyC.push("sustainedPostureAggravates");
+      if (cv.aggravating.other.state !== "unknown") alreadyC.push("coughSneezeAggravates");
+      if (cv.relieving.movements.state !== "unknown") alreadyC.push("chinTuckRelieves", "armOverheadRelievesArmSymptoms");
+      if (cv.symptomBehaviour.overallPattern.state !== "unknown") alreadyC.push("constantUnremitting");
+      if (cv.symptomBehaviour.morning.state !== "unknown") alreadyC.push("morningStiffnessOver30");
+      if (cv.symptomBehaviour.night.state !== "unknown") alreadyC.push("constantNightPain");
+      if (cv.headache.location.state !== "unknown") alreadyC.push("occipitalHeadache");
+      if (cv.headache.triggers.state !== "unknown") alreadyC.push("headacheTriggeredByNeckMovement");
+      if (cv.armHand.neuroSigns.state !== "unknown") alreadyC.push("objectiveNeuroSigns");
+      if (cv.armHand.lhermitte.state !== "unknown") alreadyC.push("lhermittePositive");
+      if (cv.history.priorEpisodeCount) alreadyC.push("priorEpisodeCount");
+      if (cv.redFlags.myelopathy.state !== "unknown") alreadyC.push("myelopathyConcern");
+      if (cv.redFlags.vbi.state !== "unknown") alreadyC.push("vbiConcern");
+      if (cv.redFlags.instability.state !== "unknown") alreadyC.push("instabilityConcern");
+      if (cv.redFlags.other.state !== "unknown") alreadyC.push("otherSeriousPathologyConcern");
+
+      const hasAnyNoteC = Object.values(cv._notesForAiPass || {}).some(t => t && t.trim());
+      if (hasAnyNoteC) {
+        setCervicalNotesLoading(true);
+        fetch("/api/extractCervicalNoteVariables", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: cv._notesForAiPass, alreadyKnown: alreadyC }),
+        }).then(r => r.json()).then(j => {
+          const findings = Array.isArray(j.findings) ? j.findings : [];
+          setCervicalNoteFindings(findings);
+          const { merged, aiFilledFields, pendingRedFlagReview } = mergeCervicalVariables(cv, findings);
+          setCervicalVariables(merged);
+          setCervicalAiFilledFields(aiFilledFields);
+          setCervicalPendingRedFlagReview(pendingRedFlagReview);
+          setCervicalReasoning(runCervicalReasoningEngine(merged));
+          // Same reasoning as Lumbar's async callback: only the changed keys,
+          // no `...data` spread -- this callback's `data` closure is frozen at
+          // whatever it was when runInterpretation() started.
+          try { set({ cx_cervical_variables: JSON.stringify(merged), cx_cervical_note_findings: JSON.stringify(findings),
+            cx_cervical_ai_filled: JSON.stringify(aiFilledFields), cx_cervical_pending_rf: JSON.stringify(pendingRedFlagReview) }); } catch {}
+        }).catch(() => { setCervicalNoteFindings([]); })
+          .finally(() => setCervicalNotesLoading(false));
+      }
+    } else {
+      setCervicalVariables(null);
+      setCervicalNoteFindings([]);
+      setCervicalAiFilledFields([]);
+      setCervicalPendingRedFlagReview([]);
+      setCervicalReasoning(null);
+      try { set({ cx_cervical_variables: null, cx_cervical_note_findings: null,
+        cx_cervical_ai_filled: null, cx_cervical_pending_rf: null }); } catch {}
+    }
+
+    // ── Thoracic Variable Extractor (Pass 1 + Pass 2) ──────────
+    // Independent of the Lumbar/Cervical blocks above -- a separate if/else,
+    // never clears their persisted keys or vice versa.
+    if (selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Thoracic spine")) {
+      const tv = extractThoracicVariablesStructured(data);
+      setThoracicVariables(tv);
+      setThoracicNoteFindings([]);
+      setThoracicAiFilledFields([]);
+      setThoracicPendingRedFlagReview([]);
+      setThoracicReasoning(runThoracicReasoningEngine(tv));
+      try { set({ cx_thoracic_variables: JSON.stringify(tv), cx_thoracic_note_findings: JSON.stringify([]),
+        cx_thoracic_ai_filled: JSON.stringify([]), cx_thoracic_pending_rf: JSON.stringify([]) }); } catch {}
+
+      // Variables Pass 1 already resolved definitively -- Pass 2 is told
+      // never to re-derive or contradict these.
+      const alreadyT = [];
+      if (tv.aggravating.movements.state !== "unknown") {
+        alreadyT.push("rotationAggravates", "sideBendingAggravates", "extensionAggravates", "flexionAggravates",
+          "coughSneezeLaughAggravates", "breathingAggravates", "overheadReachingAggravates");
+      }
+      if (tv.aggravating.postures.state !== "unknown") alreadyT.push("sustainedPostureAggravates");
+      if (tv.relieving.treatments.state !== "unknown") alreadyT.push("manipulationSignificantRelief");
+      if (tv.symptomBehaviour.pattern.state !== "unknown") {
+        alreadyT.push("mechanicalPattern", "constantUnaffectedPattern", "breathingRelatedPattern", "morningStiffness");
+      }
+      if (tv.location.primaryLocation.state !== "unknown") alreadyT.push("costovertebralLocation");
+      if (tv.history.priorEpisodeCount) alreadyT.push("priorEpisodeCount");
+      // tx_rf is a single combined screen -- if it was answered at all
+      // (positive or negative), every red-flag category it covers is
+      // already known, not just one.
+      if (tv.redFlags.redFlagScreen !== "incomplete") {
+        alreadyT.push("cardiacConcern", "respiratoryConcern", "visceralConcern", "oncologicConcern",
+          "infectionConcern", "fractureConcern", "cordCompressionConcern");
+      }
+
+      const hasAnyNoteT = Object.values(tv._notesForAiPass || {}).some(t => t && t.trim());
+      if (hasAnyNoteT) {
+        setThoracicNotesLoading(true);
+        fetch("/api/extractThoracicNoteVariables", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: tv._notesForAiPass, alreadyKnown: alreadyT }),
+        }).then(r => r.json()).then(j => {
+          const findings = Array.isArray(j.findings) ? j.findings : [];
+          setThoracicNoteFindings(findings);
+          const { merged, aiFilledFields, pendingRedFlagReview } = mergeThoracicVariables(tv, findings);
+          setThoracicVariables(merged);
+          setThoracicAiFilledFields(aiFilledFields);
+          setThoracicPendingRedFlagReview(pendingRedFlagReview);
+          setThoracicReasoning(runThoracicReasoningEngine(merged));
+          // Same reasoning as Lumbar/Cervical's async callback: only the
+          // changed keys, no `...data` spread -- this callback's `data`
+          // closure is frozen at whatever it was when runInterpretation()
+          // started.
+          try { set({ cx_thoracic_variables: JSON.stringify(merged), cx_thoracic_note_findings: JSON.stringify(findings),
+            cx_thoracic_ai_filled: JSON.stringify(aiFilledFields), cx_thoracic_pending_rf: JSON.stringify(pendingRedFlagReview) }); } catch {}
+        }).catch(() => { setThoracicNoteFindings([]); })
+          .finally(() => setThoracicNotesLoading(false));
+      }
+    } else {
+      setThoracicVariables(null);
+      setThoracicNoteFindings([]);
+      setThoracicAiFilledFields([]);
+      setThoracicPendingRedFlagReview([]);
+      setThoracicReasoning(null);
+      try { set({ cx_thoracic_variables: null, cx_thoracic_note_findings: null,
+        cx_thoracic_ai_filled: null, cx_thoracic_pending_rf: null }); } catch {}
+    }
+
+    // -- Shoulder Phase 0 / 0.5 -- no Pass 1/Pass 2 split, no persisted blob:
+    // runShoulderPhase05(data) is a pure function of `data`, computed fresh
+    // here (same trigger point as the other three) and again automatically
+    // on remount from the useState initializer above.
+    if (selectedRegions.some(reg => reg === "Shoulder (L)" || reg === "Shoulder (R)")) {
+      try { setShoulderReasoning(runShoulderPhase05(data)); } catch { setShoulderReasoning(null); }
+    } else {
+      setShoulderReasoning(null);
+    }
+
     // Persist insight so it survives navigation to ROM/MMT and back
     try { set({ ...data, cx_insight: JSON.stringify(result), cx_selected_regions: JSON.stringify(selectedRegions) }); } catch {}
     // Show saved confirmation toast
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 3000);
-
-    // ── AI Clinical Reasoning (Lumbar / SI only) ──────────────────────────
-    // Additive second opinion that runs ALONGSIDE runEngineV6 above -- it
-    // never blocks, gates, or overwrites the deterministic result set above.
-    // Only fires for Lumbar/SI since that is the only region the clinician-
-    // authored reasoning prompt (api/lumbarReasoning.js) currently covers.
-    setAiLumbarReasoning(null);
-    setAiLumbarError(null);
-    if (selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Lumbar / SI")) {
-      setAiLumbarLoading(true);
-      (async () => {
-        try {
-          const narrative = buildRealtimeSOAP(data).S;
-          const res = await fetch("/api/lumbarReasoning", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ subjectiveNarrative: narrative }),
-          });
-          const parsed = await res.json();
-          if (!res.ok) throw new Error(parsed.error || "AI reasoning request failed");
-          setAiLumbarReasoning(parsed);
-        } catch (e) {
-          setAiLumbarError(e.message || "AI reasoning failed");
-          console.error("AI lumbar reasoning error:", e);
-        } finally {
-          setAiLumbarLoading(false);
-        }
-      })();
-    } else {
-      setAiLumbarLoading(false);
-    }
   };
 
-  // ── Inline field renderer (app UI style) ───────────────────────────
+  // ── Inline field renderer — compact line-wise EMR style ─────────────
+  // Every field type renders as the RIGHT-hand content of one
+  // AssessmentRow (icon + label lives in the row wrapper, added where
+  // sections are laid out below). Nothing here is a card; suggestions
+  // for select/multicheck fields live behind a bottom sheet so the
+  // screen stays blank and scannable until the therapist taps in.
   const renderField = (f) => {
     const val = data[f.id] || "";
-    const inputStyle = {
-      width:"100%", padding:"12px 14px",
-      background: PC.inputBg, border:`1.5px solid ${PC.inputBorder}`,
-      borderRadius:10, color: PC.text, fontFamily:"inherit",
-      fontSize:"0.95rem", outline:"none", boxSizing:"border-box",
-      minHeight:48, lineHeight:1.4,
-    };
 
     if (f.type === "multicheck") {
-      return (
-        <CollapsibleMulticheck
-          f={f} val={val} PC={PC}
-          toggleMulti={toggleMulti}
-          searchTerm={searchTerm}
-          SEP_S={SEP_S}
-        />
-      );
+      return <ComboField f={f} val={val} PC={PC} isMulti setField={setField} toggleMulti={toggleMulti} SEP_S={SEP_S} />;
     }
 
     if (f.type === "select") {
-      return (
-        <select value={val} onChange={e => setField(f.id, e.target.value)} style={inputStyle}>
-          <option value="">— select —</option>
-          {f.options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      );
-    }
-
-    if (f.type === "textarea") {
-      return (
-        <textarea value={val} onChange={e => setField(f.id, e.target.value)}
-          placeholder={f.placeholder || "Clinical notes — patient quotes, specific detail, clinician observations..."}
-          rows={4} style={{ ...inputStyle, resize:"vertical", minHeight:88, lineHeight:1.6 }} />
-      );
+      return <ComboField f={f} val={val} PC={PC} setField={setField} toggleMulti={toggleMulti} SEP_S={SEP_S} />;
     }
 
     if (f.type === "range") {
-      const num = parseInt(val || 0);
-      const dotCol = (n) => n >= 7 ? "#ef4444" : n >= 4 ? "#f59e0b" : "#22c55e";
-      const col = dotCol(num);
-      const severity = num === 0 ? "No pain" : num <= 3 ? "Mild" : num <= 6 ? "Moderate" : num <= 8 ? "Severe" : "Worst possible";
-      const sevEmoji = num === 0 ? "😊" : num <= 3 ? "🙂" : num <= 6 ? "😐" : num <= 8 ? "😣" : "😭";
-      return (
-        <div style={{
-          background:"#fff",
-          borderRadius:14,
-          padding:"14px 14px 12px",
-          border:`1.5px solid ${col}33`,
-          boxShadow:`0 2px 12px ${col}18, 0 1px 3px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)`
-        }}>
-          {/* Score display row */}
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
-            <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
-              <span style={{ fontWeight:900, color:col, fontSize:"2.2rem", lineHeight:1, fontVariantNumeric:"tabular-nums" }}>{num}</span>
-              <span style={{ fontSize:"0.75rem", color:PC.muted, fontWeight:500 }}>/10</span>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", gap:6,
-              background:col+"15", borderRadius:20, padding:"5px 12px",
-              border:`1px solid ${col}30` }}>
-              <span style={{ fontSize:"1rem" }}>{sevEmoji}</span>
-              <span style={{ fontSize:"0.75rem", fontWeight:700, color:col }}>{severity}</span>
-            </div>
-          </div>
-
-          {/* Drag slider */}
-          <input
-            type="range" min={0} max={10} step={1}
-            value={num}
-            onChange={e => setField(f.id, e.target.value)}
-            style={{
-              width:"100%", height:8, margin:"6px 0 2px",
-              accentColor: col, cursor:"pointer",
-            }}
-          />
-
-          {/* Track labels */}
-          <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, paddingLeft:2, paddingRight:2 }}>
-            <span style={{ fontSize:"0.6rem", color:"#22c55e", fontWeight:600 }}>No pain</span>
-            <span style={{ fontSize:"0.6rem", color:"#f59e0b", fontWeight:600 }}>Moderate</span>
-            <span style={{ fontSize:"0.6rem", color:"#ef4444", fontWeight:600 }}>Worst</span>
-          </div>
-        </div>
-      );
+      return <PainSliderCompact value={val} onChange={v => setField(f.id, v)} PC={PC} />;
     }
 
-    if (f.type === "number") {
-      return (
-        <input type="number" min="0" max="10" value={val}
-          onChange={e => setField(f.id, e.target.value)}
-          placeholder={f.placeholder || "0–10"} style={{ ...inputStyle, width:90 }} />
-      );
-    }
-
-    return (
-      <input type="text" value={val}
-        onChange={e => setField(f.id, e.target.value)}
-        placeholder={f.placeholder || ""} style={inputStyle} />
-    );
+    return <SmartInput value={val} onChange={e => setField(f.id, e.target.value)} PC={PC} />;
   };
 
   // ── Confidence colour helpers ───────────────────────────────────────
@@ -3061,7 +3612,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const hasAnyRedFlag = allRedFlags.length > 0;
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:14, maxWidth:"100%" }}>
+    <div style={{
+      display:"flex", flexDirection:"column", gap:14, maxWidth:"100%",
+      fontFamily: "ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, -apple-system, sans-serif",
+    }}>
 
       {/* ── Red Flag Alert Banner ─────────────────────────────────── */}
       {hasAnyRedFlag && (
@@ -3275,34 +3829,97 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             {aiReview && aiResult && !aiResult._errorMsg && (
               <div>
                 {(() => {
-                  // Count/display only fields the AI actually filled --
-                  // aiResult always has every schema key present (null
-                  // when not mentioned), so counting Object.keys() alone
-                  // previously showed a constant ~24 regardless of how
-                  // much was really extracted. This is the single source
-                  // the header count and the chip preview both read, so
-                  // they can never drift out of sync with each other.
-                  const filledEntries = Object.entries(aiResult).filter(([k,v])=>!k.startsWith("_")&&v!=null&&v!==""&&!(Array.isArray(v)&&v.length===0));
-                  return (<>
-                    <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#166534", marginBottom:8,
-                      padding:"6px 10px", background:"#f0fdf4", borderRadius:8, border:"1px solid #86efac" }}>
-                      ✓ {filledEntries.length} fields extracted
+                  // Polished, human-readable review card -- icon + label on
+                  // the left, bold value on the right, divided rows, no
+                  // per-row box. Replaces the old dense "key: value" chip
+                  // list per user feedback comparing it against the
+                  // confirmed mockup. The technical confidence/source-quote
+                  // audit view right below this is UNCHANGED -- this card
+                  // is a friendly summary sitting on top of it, not a
+                  // replacement for the zero-hallucination detail there.
+                  const v = aiResult;
+                  const fmtList = (arr) => Array.isArray(arr) && arr.length ? arr.join(", ") : null;
+                  const agg = fmtList([...(v.aggMovements||[]), ...(v.aggActivities||[])]);
+                  const radiation = v.hasRadiation === false ? "No radiation"
+                    : v.radiationArea ? v.radiationArea + (v.radiationSide ? ` (${v.radiationSide})` : "")
+                    : v.hasRadiation === true ? "Yes" : null;
+                  const region = v.region ? v.region + (v.laterality ? ` (${v.laterality})` : "") : null;
+                  const hasRedFlags = Array.isArray(v.flags) && v.flags.length > 0;
+
+                  // "Onset" here intentionally shows TIME-SINCE (the real
+                  // `duration` field, e.g. "2-6 weeks") -- separate from
+                  // "Mechanism of Injury" (the real `onset` field, which
+                  // actually holds the HOW-it-started enum, e.g. "Lifting
+                  // injury"). Matches how a clinician reads these two
+                  // concepts apart in the confirmed mockup.
+                  const rows = [
+                    { icon:"🧑", label:"Age", value: v.age ? `${v.age} Years` : null },
+                    { icon:"⚧", label:"Gender", value: v.sex || null },
+                    { icon:"💼", label:"Occupation", value: v.occupation || null },
+                    { icon:"🧭", label:"Region", value: region },
+                    { icon:"🎯", label:"Chief Complaint", value: v.chiefComplaint || null },
+                    { icon:"📅", label:"Onset", value: v.duration || null },
+                    { icon:"💥", label:"Mechanism of Injury", value: v.onset || null },
+                    { icon:"❔", label:"Mechanism Detail", value: v.onsetContext || null },
+                    { icon:"⚡", label:"Aggravating Factors", value: agg },
+                    { icon:"🍃", label:"Relieving Factors", value: fmtList(v.relMovements) },
+                    { icon:"🌡️", label:"Pain Now (NRS 0–10)", value: v.nrsNow != null ? `${v.nrsNow} / 10` : null, pill:true },
+                    { icon:"📈", label:"Pain Worst (NRS 0–10)", value: v.nrsWorst != null ? `${v.nrsWorst} / 10` : null, pill:true },
+                    { icon:"📉", label:"Pain Best (NRS 0–10)", value: v.nrsBest != null ? `${v.nrsBest} / 10` : null, pill:true },
+                    { icon:"🩹", label:"Pain Quality", value: fmtList(v.painQuality) },
+                    { icon:"📊", label:"Pain Behaviour", value: v.symptomPattern || v.diurnalPattern || null },
+                    { icon:"📍", label:"Location", value: v.locationDescription || null },
+                    { icon:"🔀", label:"Radiation", value: radiation },
+                    { icon:"✨", label:"Numbness / Tingling", value: fmtList(v.neuroSymptoms) },
+                    { icon:"🚩", label:"Red Flags", value: Array.isArray(v.flags) ? (hasRedFlags ? v.flags.join(", ") : "No red flags reported") : null, tint: Array.isArray(v.flags) ? (hasRedFlags ? "red" : "green") : undefined },
+                    { icon:"🏁", label:"Patient Goals", value: v.patientGoals || null },
+                    { icon:"😟", label:"Main Concern", value: v.patientConcern || null },
+                    { icon:"💭", label:"Patient's Belief", value: v.patientBelief || null },
+                    { icon:"🔁", label:"Prior Episode", value: v.priorEpisodeCount ? `${v.priorEpisodeCount} (${v.priorEpisodeOutcome || "outcome not stated"})` : null },
+                    { icon:"💊", label:"Treatment Tried", value: v.priorTreatmentTried || null },
+                    { icon:"📋", label:"Medical History", value: v.medicalHistory || null },
+                    { icon:"💊", label:"Medications", value: v.medications || null },
+                    { icon:"🚫", label:"Functional Limitations", value: fmtList(v.functionalLimitations) },
+                  ].filter(r => r.value != null && r.value !== "");
+
+                  return (
+                    <div style={{ background:"#fff", borderRadius:14, border:"1px solid #EDEBFB",
+                      boxShadow:"0 2px 10px rgba(124,58,237,0.06)", overflow:"hidden", marginBottom:10 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderBottom:"1px solid #F0EEFB" }}>
+                        <span style={{ width:30, height:30, borderRadius:9, background:"#f5f3ff", display:"flex",
+                          alignItems:"center", justifyContent:"center", fontSize:"0.95rem", flexShrink:0 }}>🩺</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:"0.85rem", fontWeight:800, color:"#0D0D0D" }}>Extracted Patient Information</div>
+                          <div style={{ fontSize:"0.72rem", color:"#8B8B8D" }}>Review and confirm the details below</div>
+                        </div>
+                        <button type="button" onClick={() => runParse(aiText)} title="Re-parse this narrative"
+                          style={{ width:26, height:26, borderRadius:"50%", border:"1px solid #E0E0E2",
+                            background:"transparent", color:"#7c3aed", cursor:"pointer", fontSize:"0.85rem",
+                            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>↻</button>
+                      </div>
+                      {rows.map((r, i) => {
+                        const tintBg = r.tint === "red" ? "#fef2f2" : r.tint === "green" ? "#f0fdf4" : "#f5f3ff";
+                        return (
+                        <div key={r.label} style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 14px",
+                          borderBottom: i < rows.length - 1 ? "1px solid #F3F2F9" : "none" }}>
+                          <span style={{ width:26, height:26, borderRadius:8, background:tintBg, display:"flex",
+                            alignItems:"center", justifyContent:"center", fontSize:"0.8rem", flexShrink:0 }}>{r.icon}</span>
+                          <span style={{ fontSize:"0.78rem", color:"#8B8B8D", flexShrink:0 }}>{r.label}</span>
+                          {r.pill ? (
+                            <span style={{ marginLeft:"auto", fontSize:"0.76rem", fontWeight:800, color:"#5b21b6",
+                              background:"#f5f3ff", padding:"3px 10px", borderRadius:99, flexShrink:0 }}>{r.value}</span>
+                          ) : (
+                            <span style={{ marginLeft:"auto", fontSize:"0.8rem", fontWeight:700, color:"#0D0D0D",
+                              textAlign:"right", maxWidth:"55%" }}>{r.value}</span>
+                          )}
+                        </div>
+                        );
+                      })}
+                      <div style={{ padding:"8px 14px 10px", fontSize:"0.7rem", color:"#8B8B8D" }}>
+                        {rows.length} field{rows.length===1?"":"s"} extracted
+                      </div>
                     </div>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:8 }}>
-                      {filledEntries.slice(0,8).map(([k,v])=>(
-                        <span key={k} style={{ fontSize:"0.68rem", padding:"2px 7px", borderRadius:99,
-                          background:"#f5f3ff", color:"#5b21b6", border:"1px solid #c4b5fd" }}>
-                          {k}: {String(v).substring(0,20)}
-                        </span>
-                      ))}
-                      {filledEntries.length > 8 && (
-                        <span style={{ fontSize:"0.68rem", padding:"2px 7px", borderRadius:99,
-                          background:"#ede9fe", color:"#5b21b6", fontWeight:700, border:"1px dashed #c4b5fd" }}>
-                          +{filledEntries.length - 8} more — see details below ↓
-                        </span>
-                      )}
-                    </div>
-                  </>);
+                  );
                 })()}
 
                 {/* Zero-hallucination review: original speech side by side
@@ -3794,7 +4411,15 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             )}
           </button>
 
-          {/* Section nav — grouped by region */}
+          {/* ══════════════════════════════════════════════════════
+              Section nav + continuous field list. One top-level group
+              (Core / a body region / General / ...) is active at a time --
+              switching groups still switches which region's fields you're
+              viewing, same as before. But WITHIN a group, every section is
+              now rendered top to bottom in one continuous scroll instead of
+              being stepped through one section at a time behind a
+              "N / M" counter and Prev/Next buttons.
+          ══════════════════════════════════════════════════════ */}
           {(() => {
             // Build groups: core universal keys, then one group per selected region, then trailing universal
             const CORE_KEYS = ["complaint"];
@@ -3860,197 +4485,134 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             const activeGroup = groups.find(g => g.keys.includes(activeSection)) || groups[0];
             const agCol = activeGroup ? activeGroup.col : PC.accent;
 
+            const jumpToGroup = (key) => {
+              setActiveSection(key);
+              setSearchTerm("");
+              setTimeout(() => {
+                if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
+              }, 30);
+            };
+            const jumpToSection = (key) => {
+              setActiveSection(key);
+              const el = document.getElementById(`subj-sec-${key}`);
+              if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+            };
+
+            const groupSections = activeGroup ? activeGroup.keys.map(k => sections[k]).filter(Boolean) : [];
+            const groupHasMulticheck = groupSections.some((s, i) => activeGroup.keys[i] !== "complaint" && s.fields.some(f => f.type === "multicheck"));
+            // Continuous "N." numbering across every field in the active group
+            // (matches the confirmed mockup) -- resets to 1 whenever the group
+            // tab changes, since this is recomputed fresh on every render.
+            let fieldNum = 0;
+
             return (
-              <div style={{ background:"#fff", borderRadius:14, overflow:"hidden",
-                border:"1px solid rgba(0,0,0,0.07)",
-                boxShadow:"0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)" }}>
+              <>
+                <div style={{ background:"#fff", borderRadius:14, overflow:"hidden",
+                  border:"1px solid rgba(0,0,0,0.07)",
+                  boxShadow:"0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)" }}>
 
-                {/* ── Row 1: Group tabs — plain text, purple underline ── */}
-                <div style={{ display:"flex", overflowX:"auto", scrollbarWidth:"none",
-                  WebkitOverflowScrolling:"touch", borderBottom:"1px solid #F0F0F0",
-                  padding:"0 4px" }}>
-                  {groups.map((g) => {
-                    const isAct = activeGroup && g.label === activeGroup.label;
-                    return (
-                      <button key={g.label} type="button"
-                        onClick={()=>{ setActiveSection(g.keys[0]); setSearchTerm(""); }}
-                        style={{
-                          padding:"10px 12px 8px",
-                          background:"transparent",
-                          borderBottom: isAct ? `2.5px solid ${g.col}` : "2.5px solid transparent",
-                          border:"none", borderRadius:0, cursor:"pointer", fontFamily:"inherit",
-                          flexShrink:0, whiteSpace:"nowrap", transition:"color 120ms",
-                        }}>
-                        <span style={{
-                          fontSize:"0.75rem", fontWeight: isAct ? 700 : 500,
-                          color: isAct ? g.col : "#888",
-                        }}>{g.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* ── Row 2: Section pills ── */}
-                {activeGroup && (
-                  <div style={{ display:"flex", overflowX:"auto", gap:6, padding:"8px 10px",
-                    scrollbarWidth:"none", WebkitOverflowScrolling:"touch", flexWrap:"nowrap" }}>
-                    {activeGroup.keys.map(key => {
-                      const s = sections[key]; if (!s) return null;
-                      const isAct = key === activeSection;
+                  {/* ── Row 1: Group tabs — plain text, purple underline ── */}
+                  <div style={{ display:"flex", overflowX:"auto", scrollbarWidth:"none",
+                    WebkitOverflowScrolling:"touch", borderBottom:"1px solid #F0F0F0",
+                    padding:"0 4px" }}>
+                    {groups.map((g) => {
+                      const isAct = activeGroup && g.label === activeGroup.label;
                       return (
-                        <button key={key} type="button"
-                          onClick={()=>{ setActiveSection(key); setSearchTerm(""); }}
+                        <button key={g.label} type="button" data-testid={`subj-group-tab-${g.label}`}
+                          onClick={()=>jumpToGroup(g.keys[0])}
                           style={{
-                            display:"flex", alignItems:"center", gap:5,
-                            padding:"6px 13px",
-                            borderRadius:99, cursor:"pointer", fontFamily:"inherit",
-                            flexShrink:0, whiteSpace:"nowrap", transition:"all 120ms",
-                            border: isAct ? "none" : "1.5px solid #E8E8E8",
-                            background: isAct ? agCol : "#F5F5F5",
-                            boxShadow: isAct ? `0 2px 8px ${agCol}40` : "none",
+                            padding:"10px 12px 8px",
+                            background:"transparent",
+                            borderBottom: isAct ? `2.5px solid ${g.col}` : "2.5px solid transparent",
+                            border:"none", borderRadius:0, cursor:"pointer", fontFamily:"inherit",
+                            flexShrink:0, whiteSpace:"nowrap", transition:"color 120ms",
                           }}>
-                          <span style={{ fontSize:"0.8rem", lineHeight:1 }}>{s.icon}</span>
                           <span style={{
-                            fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
-                            color: isAct ? "#fff" : "#555",
-                          }}>
-                            {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
-                          </span>
+                            fontSize:"0.75rem", fontWeight: isAct ? 700 : 500,
+                            color: isAct ? g.col : "#888",
+                          }}>{g.label}</span>
                         </button>
                       );
                     })}
                   </div>
-                )}
-              </div>
-            );
-          })()}
 
-          {/* No region selected prompt */}
-          {selectedRegions.length === 0 && !["complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
-            <div style={{ background:"#fffbeb", border:`1px solid ${PC.yellow}55`, borderRadius:10,
-              padding:"12px 16px", color: PC.yellow, fontSize:"0.78rem" }}>
-              ⚠ Select at least one region above to load the region-specific assessment module
-            </div>
-          )}
-
-          {/* Active section card */}
-          {sec && (() => {
-            const sectionKeys = Object.keys(sections);
-            const curIdx = sectionKeys.indexOf(activeSection);
-            const prevKey = curIdx > 0 ? sectionKeys[curIdx - 1] : null;
-            const nextKey = curIdx < sectionKeys.length - 1 ? sectionKeys[curIdx + 1] : null;
-            const prevSec = prevKey ? sections[prevKey] : null;
-            const nextSec = nextKey ? sections[nextKey] : null;
-            const goTo = (key) => {
-              setActiveSection(key);
-              setSearchTerm("");
-              // Scroll the section card to top (works inside any scrollable container)
-              setTimeout(() => {
-                if (sectionTopRef.current) {
-                  sectionTopRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
-                }
-              }, 30);
-            };
-            return (
-              <div ref={sectionTopRef} style={{ background: PC.surface, borderRadius:12,
-                border:`1px solid ${PC.border}`, boxShadow:`0 1px 6px ${PC.border}44`, overflow:"hidden" }}>
-
-                {/* Section header */}
-                <div style={{ padding:"16px 18px 12px", borderBottom:`1px solid ${PC.border}`, background: secColor+"06" }}>
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <div style={{ fontSize:"1.05rem", fontWeight:800, color: secColor }}>
-                      {sec.icon} {sec.label}
-                    </div>
-                    <span style={{ fontSize:"0.85rem", color: PC.muted, fontWeight:600,
-                      background: PC.s2, borderRadius:20, padding:"2px 10px" }}>
-                      {curIdx + 1} / {sectionKeys.length}
-                    </span>
-                  </div>
-                  {sec.description && (
-                    <div style={{ fontSize:"0.82rem", color: PC.muted, marginTop:6, fontStyle:"italic",
-                      borderLeft:`3px solid ${secColor}55`, paddingLeft:10, lineHeight:1.5 }}>
-                      {sec.description}
+                  {/* ── Row 2: Section pills — jump to that section below; every
+                       section stays visible, this just scrolls to it ── */}
+                  {activeGroup && (
+                    <div style={{ display:"flex", overflowX:"auto", gap:6, padding:"8px 10px",
+                      scrollbarWidth:"none", WebkitOverflowScrolling:"touch", flexWrap:"nowrap" }}>
+                      {activeGroup.keys.map(key => {
+                        const s = sections[key]; if (!s) return null;
+                        const isAct = key === activeSection;
+                        return (
+                          <button key={key} type="button"
+                            onClick={()=>jumpToSection(key)}
+                            style={{
+                              display:"flex", alignItems:"center", gap:5,
+                              padding:"6px 13px",
+                              borderRadius:99, cursor:"pointer", fontFamily:"inherit",
+                              flexShrink:0, whiteSpace:"nowrap", transition:"all 120ms",
+                              border: isAct ? "none" : "1.5px solid #E8E8E8",
+                              background: isAct ? agCol : "#F5F5F5",
+                              boxShadow: isAct ? `0 2px 8px ${agCol}40` : "none",
+                            }}>
+                            <span style={{ fontSize:"0.8rem", lineHeight:1 }}>{s.icon}</span>
+                            <span style={{
+                              fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
+                              color: isAct ? "#fff" : "#555",
+                            }}>
+                              {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                {/* Fields */}
-                <div style={{ padding:"18px 18px" }}>
-                  {/* Search (multicheck sections only, excluding Chief Complaint) */}
-                  {activeSection !== "complaint" && sec.fields.some(f => f.type === "multicheck") && (
-                    <input type="text" value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                      placeholder="🔎 Filter options..."
-                      style={{ width:"100%", padding:"11px 14px", marginBottom:14,
-                        background: PC.s2, border:`1.5px solid ${PC.inputBorder}`,
-                        borderRadius:10, fontSize:"0.95rem", color: PC.text,
-                        outline:"none", boxSizing:"border-box", minHeight:46 }} />
-                  )}
+                {/* No region selected prompt */}
+                {selectedRegions.length === 0 && !["complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
+                  <div style={{ background:"#fffbeb", border:`1px solid ${PC.yellow}55`, borderRadius:10,
+                    padding:"12px 16px", color: PC.yellow, fontSize:"0.78rem" }}>
+                    ⚠ Select at least one region above to load the region-specific assessment module
+                  </div>
+                )}
 
-                  {sec.fields.map(field => {
-                    const helpText = FIELD_HELP[field.id];
+                {/* Every section in the active group, stacked top to bottom --
+                    one continuous scroll instead of one section at a time. */}
+                <div ref={sectionTopRef} style={{ display:"flex", flexDirection:"column", gap:20 }}>
+                  {groupSections.map((s, si) => {
+                    const key = activeGroup.keys[si];
+                    const sColor = s.color || PC.accent;
                     return (
-                    <div key={field.id} style={{ marginBottom:20 }}>
-                      <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.93rem", fontWeight:600,
-                        color: PC.text, marginBottom:8, letterSpacing:0.1, flexWrap:"wrap" }}>
-                        <span>{field.label}</span>
-                        {field.type === "textarea" && (
-                          <span style={{ fontSize:"0.8rem", color: PC.muted, fontWeight:400, fontStyle:"italic" }}>notes</span>
+                      <div key={key} id={`subj-sec-${key}`}>
+
+                        {/* Small, subtle section header — icon lives here only */}
+                        <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 4px 6px" }}>
+                          <span style={{ fontSize:"0.78rem" }}>{s.icon}</span>
+                          <span style={{ fontSize:"0.74rem", fontWeight:800, letterSpacing:"0.06em",
+                            textTransform:"uppercase", color: PC.text }}>{s.label}</span>
+                        </div>
+                        {s.description && (
+                          <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 6px", lineHeight:1.5 }}>
+                            {s.description}
+                          </div>
                         )}
-                        {helpText && (
-                          <span title={helpText} style={{
-                            display:"inline-flex", alignItems:"center", justifyContent:"center",
-                            width:16, height:16, borderRadius:"50%",
-                            background: PC.accent+"22", color: PC.accent,
-                            fontSize:"0.72rem", fontWeight:900, cursor:"help",
-                            border:`1px solid ${PC.accent}44`, flexShrink:0, lineHeight:1,
-                          }}>ⓘ</span>
-                        )}
-                      </label>
-                      {renderField(field)}
-                    </div>
+
+                        {/* Field rows — no shared card; each is its own block with real gap between */}
+                        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+                          {s.fields.map((field, fi) => (
+                            <AssessmentRow key={field.id} label={field.label}
+                              helpText={FIELD_HELP[field.id]} PC={PC} last={fi === s.fields.length - 1}>
+                              {renderField(field)}
+                            </AssessmentRow>
+                          ))}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
-
-                {/* Prev / Next row */}
-                <div style={{ display:"flex", borderTop:`1px solid ${PC.border}` }}>
-                  <button type="button"
-                    onClick={() => prevKey && goTo(prevKey)}
-                    disabled={!prevKey}
-                    style={{
-                      flex:1, minWidth:0, padding:"15px 14px", background:"transparent", border:"none",
-                      borderRight:`1px solid ${PC.border}`,
-                      color: prevKey ? PC.muted : PC.border,
-                      fontSize:"0.9rem", fontWeight:500, cursor: prevKey ? "pointer" : "default",
-                      fontFamily:"inherit", textAlign:"left", display:"flex", alignItems:"center", gap:6,
-                    }}>
-                    {prevKey && <span style={{ fontSize:"1rem" }}>←</span>}
-                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      {prevSec ? `${prevSec.icon} ${prevSec.label}` : ""}
-                    </span>
-                  </button>
-                  <button type="button"
-                    onClick={() => nextKey && goTo(nextKey)}
-                    disabled={!nextKey}
-                    style={{
-                      flex:1, minWidth:0, padding:"15px 14px",
-                      background: nextKey ? secColor+"14" : "transparent",
-                      border:"none",
-                      color: nextKey ? secColor : PC.border,
-                      fontSize:"0.9rem", fontWeight: nextKey ? 700 : 500,
-                      cursor: nextKey ? "pointer" : "default",
-                      fontFamily:"inherit", textAlign:"right", display:"flex",
-                      alignItems:"center", justifyContent:"flex-end", gap:6,
-                    }}>
-                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      {nextSec ? `${nextSec.icon} ${nextSec.label}` : "All done ✓"}
-                    </span>
-                    {nextKey && <span style={{ fontSize:"1rem" }}>→</span>}
-                  </button>
-                </div>
-
-              </div>
+              </>
             );
           })()}
 
@@ -4284,6 +4846,765 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                 </div>
 
                 <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:12 }}>
+
+                  {/* ── PHASE 0: EXTRACTED CLINICAL VARIABLES (Lumbar only) ──
+                       Shows what the Lumbar Variable Extractor read from the
+                       Subjective Assessment -- Pass 1 (structured fields,
+                       deterministic, instant) plus Pass 2 (AI over free-text
+                       notes only, async) -- as the actual input the Phase 1
+                       hypotheses below are built from. Present/Absent/Unknown
+                       are shown explicitly rather than collapsing Unknown
+                       into a "no" -- unknown data should lower confidence,
+                       not count as evidence against a hypothesis. ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Lumbar / SI" && lumbarVariables && (() => {
+                    const lv = lumbarVariables;
+                    const Chip = ({ state, children }) => (
+                      <span style={{
+                        display:"inline-flex", alignItems:"center", gap:4,
+                        fontSize:"0.72rem", fontWeight:700, padding:"3px 9px", borderRadius:99,
+                        background: state==="present" ? "#dc262618" : state==="absent" ? "#05966918" : "#94a3b818",
+                        color: state==="present" ? "#dc2626" : state==="absent" ? "#059669" : "#64748b",
+                        border: `1px solid ${state==="present" ? "#dc262644" : state==="absent" ? "#05966944" : "#94a3b844"}`,
+                      }}>
+                        {state==="present" ? "✓" : state==="absent" ? "—" : "?"} {children}
+                      </span>
+                    );
+                    // fieldKey lets a row look itself up in
+                    // lumbarAiFilledFields -- when the AI note pass
+                    // filled this exact field (not just found *a*
+                    // mention of it somewhere), the row shows a
+                    // distinct "AI extracted" badge instead of a plain
+                    // Yes/No, so a clinician can see at a glance which
+                    // answers came from a checkbox vs. a note.
+                    const row = (label, state, detail, fieldKey) => {
+                      const aiFilled = fieldKey && lumbarAiFilledFields.includes(fieldKey);
+                      return (
+                        <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                          <span style={{ fontSize:"0.74rem", color: PC.muted, minWidth:150 }}>{label}</span>
+                          <Chip state={state}>{state==="unknown" ? "Not asked" : (detail || (state==="present"?"Yes":"No"))}</Chip>
+                          {aiFilled && (
+                            <span style={{
+                              fontSize:"0.66rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                              background:"#7c3aed18", color:"#7c3aed", border:"1px solid #7c3aed44",
+                            }}>
+                              ✓ AI extracted
+                            </span>
+                          )}
+                        </div>
+                      );
+                    };
+                    const redFlagState = (f) => f.state;
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:`4px solid #0891b2` }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#0891b2", marginBottom:8 }}>
+                          Phase 0 — Extracted Clinical Variables
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Read from the Subjective Assessment (checkboxes + notes, filled by hand or by AI) — this is the input the hypotheses below are built from
+                        </div>
+
+                        {row("Below-knee pain", lv.location.belowKneePain==="unknown"?"unknown":lv.location.belowKneePain?"present":"absent",
+                          lv.location.belowKneePain==="bilateral"?"Bilateral":undefined, "belowKneePain")}
+                        {row("Dermatomal pattern", lv.location.dermatomal.state, lv.location.dermatomal.values.join(", "), "dermatomalPattern")}
+                        {row("Acute lifting mechanism", lv.mechanism.acuteLiftingMechanism==="unknown"?"unknown":lv.mechanism.acuteLiftingMechanism?"present":"absent", undefined, "acuteLiftingMechanism")}
+                        {row("Flexion aggravates", lv.aggravating.movements.state==="unknown"?"unknown":lv.aggravating.flexionAggravates?"present":"absent", undefined, "flexionAggravates")}
+                        {row("Extension aggravates", lv.aggravating.movements.state==="unknown"?"unknown":lv.aggravating.extensionAggravates?"present":"absent", undefined, "extensionAggravates")}
+                        {row("Sitting aggravates", lv.aggravating.postures.state==="unknown"?"unknown":lv.aggravating.sittingAggravates?"present":"absent", undefined, "sittingAggravates")}
+                        {row("Cough/sneeze aggravates", lv.aggravating.activities.state==="unknown"?"unknown":lv.aggravating.coughSneezeAggravates?"present":"absent", undefined, "coughSneezeAggravates")}
+                        {row("Extension relieves", lv.relieving.movements.state==="unknown"?"unknown":lv.relieving.extensionRelieves?"present":"absent", undefined, "extensionRelieves")}
+                        {row("Walking relieves", lv.relieving.movements.state==="unknown"?"unknown":lv.relieving.walkingRelieves?"present":"absent", undefined, "walkingRelieves")}
+                        {row("Constant, unremitting pain", lv.symptomBehaviour.overallPattern.state==="unknown"?"unknown":lv.symptomBehaviour.constantUnremitting?"present":"absent", undefined, "constantUnremitting")}
+                        {row("Constant night pain", lv.symptomBehaviour.night.state==="unknown"?"unknown":lv.symptomBehaviour.constantNightPain?"present":"absent", undefined, "constantNightPain")}
+                        {row("Leg neurological symptoms", lv.neurological.hasLegNeuro==="unknown"?"unknown":lv.neurological.hasLegNeuro?"present":"absent", undefined, "hasLegNeuro")}
+                        {row("Neurogenic claudication pattern", lv.neurological.claudication.state==="unknown"?"unknown":lv.neurological.neurogenicClaudication?"present":"absent", undefined, "neurogenicClaudication")}
+
+                        <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", margin:"10px 0 5px" }}>Red flag screen (mandatory)</div>
+                        {row("Cauda equina indicators", redFlagState(lv.redFlags.cauda), lv.redFlags.cauda.values.join(", "))}
+                        {row("Fracture risk indicators", redFlagState(lv.redFlags.fracture), lv.redFlags.fracture.values.join(", "))}
+                        {row("Inflammatory indicators", redFlagState(lv.redFlags.inflammatory), lv.redFlags.inflammatory.values.join(", "))}
+                        {row("Other serious pathology", redFlagState(lv.redFlags.serious), lv.redFlags.serious.values.join(", "))}
+
+                        {lumbarNotesLoading && (
+                          <div style={{ fontSize:"0.73rem", color: PC.muted, marginTop:8, fontStyle:"italic" }}>
+                            🔄 Checking free-text notes for anything not already captured…
+                          </div>
+                        )}
+                        {!lumbarNotesLoading && lumbarNoteFindings.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed ${PC.border}` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#7c3aed", marginBottom:5 }}>
+                              Found in your notes (AI — merged into the variables above where a checkbox hadn't already answered that field)
+                            </div>
+                            {lumbarNoteFindings.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {!lumbarNotesLoading && lumbarPendingRedFlagReview.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed #dc2626` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", marginBottom:5 }}>
+                              ⚠ Possible red-flag mentions in your notes — NOT auto-applied, please review the red flag screen above yourself
+                            </div>
+                            {lumbarPendingRedFlagReview.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0.5: LUMBAR REASONING ENGINE (Layer 3) ──
+                       Separate from Phase 1 below, which is the older,
+                       unweighted runEngineV6 differential logic. This is
+                       the new engine covering all 11 lumbar condition
+                       hypotheses (L01-L11), built off the same
+                       lumbarVariables Phase 0 extracted above. Also
+                       unweighted -- count-based match tiers, not a
+                       probability -- per the explicit build order this
+                       project has followed (variables before weights). ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Lumbar / SI" && lumbarReasoning && (() => {
+                    const lr = lumbarReasoning;
+                    const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:"4px solid #7c3aed" }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#7c3aed", marginBottom:8 }}>
+                          Phase 0.5 — Lumbar Condition Matches (L01–L11)
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Unweighted, count-based matches against all 11 lumbar hypotheses — not a probability. Weighting is a deliberately deferred future step.
+                        </div>
+
+                        {lr.redFlagOverride.triggered && (
+                          <div style={{ background:"#FEF2F2", border:"2px solid #dc2626", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+                            <div style={{ fontWeight:800, color:"#dc2626", fontSize:"0.78rem", marginBottom:3 }}>
+                              🚨 {lr.redFlagOverride.urgency === "EMERGENCY" ? "EMERGENCY — Cauda Equina Indicators" : "URGENT REFERRAL INDICATED"}
+                            </div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", marginBottom:3 }}>{lr.redFlagOverride.reason}</div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", fontWeight:600 }}>{lr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+                        {lr.redFlagOverride.urgency === "SCREEN_INCOMPLETE" && (
+                          <div style={{ background:"#FFFBEB", border:"1px solid #d97706", borderRadius:8, padding:"8px 12px", marginBottom:10 }}>
+                            <div style={{ fontSize:"0.73rem", color:"#92400E" }}>⚠ {lr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+
+                        {lr.conditions.slice(0, 6).map((c, ci) => (
+                          <div key={c.id} style={{
+                            background: ci===0 ? "#7c3aed12" : PC.surface,
+                            border: `1px solid ${ci===0 ? "#7c3aed44" : PC.border}`,
+                            borderRadius:8, padding:"9px 12px", marginBottom:6,
+                          }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>
+                                {c.id} — {c.name}{c.lowConfidence ? " ⚠" : ""}
+                              </span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                                background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>
+                                {c.matchTier}
+                              </span>
+                            </div>
+                            <div style={{ fontSize:"0.72rem", color: PC.muted }}>
+                              {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
+                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
+                            </div>
+                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
+                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                  Suggested objective tests — Required
+                                </div>
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
+                                  {(c.objectiveTests.required || []).map((t, ti) => {
+                                    const target = lumbarTestNav(t);
+                                    const btn = target
+                                      ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                      : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                    return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                  })}
+                                </div>
+                                {(c.objectiveTests.recommended || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
+                                      Recommended (if indicated)
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
+                                        const target = lumbarTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0 (CERVICAL): EXTRACTED CLINICAL VARIABLES ──
+                       Exact mirror of the Lumbar Phase 0 block above, reading
+                       cervicalVariables instead. See that block's comment for
+                       the full rationale (Present/Absent/Unknown tri-state,
+                       AI-extracted badges, etc). ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Cervical spine" && cervicalVariables && (() => {
+                    const cv = cervicalVariables;
+                    const Chip = ({ state, children }) => (
+                      <span style={{
+                        display:"inline-flex", alignItems:"center", gap:4,
+                        fontSize:"0.72rem", fontWeight:700, padding:"3px 9px", borderRadius:99,
+                        background: state==="present" ? "#dc262618" : state==="absent" ? "#05966918" : "#94a3b818",
+                        color: state==="present" ? "#dc2626" : state==="absent" ? "#059669" : "#64748b",
+                        border: `1px solid ${state==="present" ? "#dc262644" : state==="absent" ? "#05966944" : "#94a3b844"}`,
+                      }}>
+                        {state==="present" ? "✓" : state==="absent" ? "—" : "?"} {children}
+                      </span>
+                    );
+                    const row = (label, state, detail, fieldKey) => {
+                      const aiFilled = fieldKey && cervicalAiFilledFields.includes(fieldKey);
+                      return (
+                        <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                          <span style={{ fontSize:"0.74rem", color: PC.muted, minWidth:150 }}>{label}</span>
+                          <Chip state={state}>{state==="unknown" ? "Not asked" : (detail || (state==="present"?"Yes":"No"))}</Chip>
+                          {aiFilled && (
+                            <span style={{
+                              fontSize:"0.66rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                              background:"#7c3aed18", color:"#7c3aed", border:"1px solid #7c3aed44",
+                            }}>
+                              ✓ AI extracted
+                            </span>
+                          )}
+                        </div>
+                      );
+                    };
+                    const redFlagState = (f) => f.state;
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:`4px solid #0891b2` }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#0891b2", marginBottom:8 }}>
+                          Phase 0 — Extracted Clinical Variables
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Read from the Subjective Assessment (checkboxes + notes, filled by hand or by AI) — this is the input the hypotheses below are built from
+                        </div>
+
+                        {row("Arm/hand pain", cv.location.armHandPain==="unknown"?"unknown":cv.location.armHandPain?"present":"absent",
+                          cv.location.armHandPain==="bilateral"?"Bilateral":undefined, "armHandPain")}
+                        {row("Dermatomal pattern", cv.location.dermatomal.state, cv.location.dermatomal.values.join(", "), "dermatomalPattern")}
+                        {row("Whiplash mechanism", cv.mechanism.type.state==="unknown"?"unknown":cv.mechanism.whiplashMechanism?"present":"absent", undefined, "whiplashMechanism")}
+                        {row("Flexion aggravates", cv.aggravating.movements.state==="unknown"?"unknown":cv.aggravating.flexionAggravates?"present":"absent", undefined, "flexionAggravates")}
+                        {row("Extension aggravates", cv.aggravating.movements.state==="unknown"?"unknown":cv.aggravating.extensionAggravates?"present":"absent", undefined, "extensionAggravates")}
+                        {row("Rotation aggravates", cv.aggravating.movements.state==="unknown"?"unknown":cv.aggravating.rotationAggravates?"present":"absent", undefined, "rotationAggravates")}
+                        {row("Quadrant position aggravates", cv.aggravating.movements.state==="unknown"?"unknown":cv.aggravating.quadrantAggravates?"present":"absent", undefined, "quadrantAggravates")}
+                        {row("Sustained posture aggravates", cv.aggravating.postures.state==="unknown"?"unknown":cv.aggravating.sustainedPostureAggravates?"present":"absent", undefined, "sustainedPostureAggravates")}
+                        {row("Cough/sneeze aggravates", cv.aggravating.other.state==="unknown"?"unknown":cv.aggravating.coughSneezeAggravates?"present":"absent", undefined, "coughSneezeAggravates")}
+                        {row("Chin tuck relieves", cv.relieving.movements.state==="unknown"?"unknown":cv.relieving.chinTuckRelieves?"present":"absent", undefined, "chinTuckRelieves")}
+                        {row("Arm-overhead relieves arm symptoms", cv.relieving.movements.state==="unknown"?"unknown":cv.relieving.armOverheadRelievesArmSymptoms?"present":"absent", undefined, "armOverheadRelievesArmSymptoms")}
+                        {row("Constant, unremitting pain", cv.symptomBehaviour.overallPattern.state==="unknown"?"unknown":cv.symptomBehaviour.constantUnremitting?"present":"absent", undefined, "constantUnremitting")}
+                        {row("Constant night pain", cv.symptomBehaviour.night.state==="unknown"?"unknown":cv.symptomBehaviour.constantNightPain?"present":"absent", undefined, "constantNightPain")}
+                        {row("Occipital / base-of-skull headache", cv.headache.location.state==="unknown"?"unknown":cv.headache.occipitalHeadache?"present":"absent", undefined, "occipitalHeadache")}
+                        {row("Headache triggered by neck movement", cv.headache.triggers.state==="unknown"?"unknown":cv.headache.headacheTriggeredByNeckMovement?"present":"absent", undefined, "headacheTriggeredByNeckMovement")}
+                        {row("Objective neurological signs", cv.armHand.neuroSigns.state==="unknown"?"unknown":cv.armHand.objectiveNeuroSigns?"present":"absent", undefined, "objectiveNeuroSigns")}
+                        {row("Lhermitte's sign positive", cv.armHand.lhermitte.state==="unknown"?"unknown":cv.armHand.lhermittePositive?"present":"absent", undefined, "lhermittePositive")}
+
+                        <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", margin:"10px 0 5px" }}>Red flag screen (mandatory)</div>
+                        {row("Cervical myelopathy indicators", redFlagState(cv.redFlags.myelopathy), cv.redFlags.myelopathy.values.join(", "))}
+                        {row("Vertebrobasilar insufficiency indicators", redFlagState(cv.redFlags.vbi), cv.redFlags.vbi.values.join(", "))}
+                        {row("Upper cervical instability indicators", redFlagState(cv.redFlags.instability), cv.redFlags.instability.values.join(", "))}
+                        {row("Other serious pathology", redFlagState(cv.redFlags.other), cv.redFlags.other.values.join(", "))}
+
+                        {cervicalNotesLoading && (
+                          <div style={{ fontSize:"0.73rem", color: PC.muted, marginTop:8, fontStyle:"italic" }}>
+                            🔄 Checking free-text notes for anything not already captured…
+                          </div>
+                        )}
+                        {!cervicalNotesLoading && cervicalNoteFindings.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed ${PC.border}` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#7c3aed", marginBottom:5 }}>
+                              Found in your notes (AI — merged into the variables above where a checkbox hadn't already answered that field)
+                            </div>
+                            {cervicalNoteFindings.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {!cervicalNotesLoading && cervicalPendingRedFlagReview.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed #dc2626` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", marginBottom:5 }}>
+                              ⚠ Possible red-flag mentions in your notes — NOT auto-applied, please review the red flag screen above yourself
+                            </div>
+                            {cervicalPendingRedFlagReview.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0.5 (CERVICAL): REASONING ENGINE (Layer 3) ──
+                       Exact mirror of the Lumbar Phase 0.5 block above,
+                       reading cervicalReasoning / cervicalTestNav instead.
+                       ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Cervical spine" && cervicalReasoning && (() => {
+                    const cr = cervicalReasoning;
+                    const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:"4px solid #7c3aed" }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#7c3aed", marginBottom:8 }}>
+                          Phase 0.5 — Cervical Condition Matches (C01–C11)
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Unweighted, count-based matches against all 11 cervical hypotheses — not a probability. Weighting is a deliberately deferred future step.
+                        </div>
+
+                        {cr.redFlagOverride.triggered && (
+                          <div style={{ background:"#FEF2F2", border:"2px solid #dc2626", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+                            <div style={{ fontWeight:800, color:"#dc2626", fontSize:"0.78rem", marginBottom:3 }}>
+                              🚨 {cr.redFlagOverride.urgency === "EMERGENCY" ? "EMERGENCY — Myelopathy / VBI Indicators" : "URGENT REFERRAL INDICATED"}
+                            </div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", marginBottom:3 }}>{cr.redFlagOverride.reason}</div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", fontWeight:600 }}>{cr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+                        {cr.redFlagOverride.urgency === "SCREEN_INCOMPLETE" && (
+                          <div style={{ background:"#FFFBEB", border:"1px solid #d97706", borderRadius:8, padding:"8px 12px", marginBottom:10 }}>
+                            <div style={{ fontSize:"0.73rem", color:"#92400E" }}>⚠ {cr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+
+                        {cr.conditions.slice(0, 6).map((c, ci) => (
+                          <div key={c.id} style={{
+                            background: ci===0 ? "#7c3aed12" : PC.surface,
+                            border: `1px solid ${ci===0 ? "#7c3aed44" : PC.border}`,
+                            borderRadius:8, padding:"9px 12px", marginBottom:6,
+                          }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>
+                                {c.id} — {c.name}{c.lowConfidence ? " ⚠" : ""}
+                              </span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                                background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>
+                                {c.matchTier}
+                              </span>
+                            </div>
+                            <div style={{ fontSize:"0.72rem", color: PC.muted }}>
+                              {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
+                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
+                            </div>
+                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
+                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                  Suggested objective tests — Required
+                                </div>
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
+                                  {(c.objectiveTests.required || []).map((t, ti) => {
+                                    const target = cervicalTestNav(t);
+                                    const btn = target
+                                      ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                      : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                    return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                  })}
+                                </div>
+                                {(c.objectiveTests.recommended || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
+                                      Recommended (if indicated)
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
+                                        const target = cervicalTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0 (THORACIC): EXTRACTED CLINICAL VARIABLES ──
+                       Exact mirror of the Lumbar/Cervical Phase 0 blocks above,
+                       reading thoracicVariables instead. ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Thoracic spine" && thoracicVariables && (() => {
+                    const tv = thoracicVariables;
+                    const Chip = ({ state, children }) => (
+                      <span style={{
+                        display:"inline-flex", alignItems:"center", gap:4,
+                        fontSize:"0.72rem", fontWeight:700, padding:"3px 9px", borderRadius:99,
+                        background: state==="present" ? "#dc262618" : state==="absent" ? "#05966918" : "#94a3b818",
+                        color: state==="present" ? "#dc2626" : state==="absent" ? "#059669" : "#64748b",
+                        border: `1px solid ${state==="present" ? "#dc262644" : state==="absent" ? "#05966944" : "#94a3b844"}`,
+                      }}>
+                        {state==="present" ? "✓" : state==="absent" ? "—" : "?"} {children}
+                      </span>
+                    );
+                    const row = (label, state, detail, fieldKey) => {
+                      const aiFilled = fieldKey && thoracicAiFilledFields.includes(fieldKey);
+                      return (
+                        <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                          <span style={{ fontSize:"0.74rem", color: PC.muted, minWidth:150 }}>{label}</span>
+                          <Chip state={state}>{state==="unknown" ? "Not asked" : (detail || (state==="present"?"Yes":"No"))}</Chip>
+                          {aiFilled && (
+                            <span style={{
+                              fontSize:"0.66rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                              background:"#7c3aed18", color:"#7c3aed", border:"1px solid #7c3aed44",
+                            }}>
+                              ✓ AI extracted
+                            </span>
+                          )}
+                        </div>
+                      );
+                    };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:`4px solid #0891b2` }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#0891b2", marginBottom:8 }}>
+                          Phase 0 — Extracted Clinical Variables
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Read from the Subjective Assessment (checkboxes + notes, filled by hand or by AI) — this is the input the hypotheses below are built from
+                        </div>
+
+                        {row("Rotation aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.rotationAggravates?"present":"absent", undefined, "rotationAggravates")}
+                        {row("Side bending aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.sideBendingAggravates?"present":"absent", undefined, "sideBendingAggravates")}
+                        {row("Extension aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.extensionAggravates?"present":"absent", undefined, "extensionAggravates")}
+                        {row("Flexion aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.flexionAggravates?"present":"absent", undefined, "flexionAggravates")}
+                        {row("Cough/sneeze/laugh aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.coughSneezeLaughAggravates?"present":"absent", undefined, "coughSneezeLaughAggravates")}
+                        {row("Deep breathing aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.breathingAggravates?"present":"absent", undefined, "breathingAggravates")}
+                        {row("Reaching overhead aggravates", tv.aggravating.movements.state==="unknown"?"unknown":tv.aggravating.overheadReachingAggravates?"present":"absent", undefined, "overheadReachingAggravates")}
+                        {row("Sustained posture aggravates", tv.aggravating.postures.state==="unknown"?"unknown":tv.aggravating.sustainedPostureAggravates?"present":"absent", undefined, "sustainedPostureAggravates")}
+                        {row("Manipulation — significant relief", tv.relieving.treatments.state==="unknown"?"unknown":tv.relieving.manipulationSignificantRelief?"present":"absent", undefined, "manipulationSignificantRelief")}
+                        {row("Mechanical pattern", tv.symptomBehaviour.pattern.state==="unknown"?"unknown":tv.symptomBehaviour.mechanicalPattern?"present":"absent", undefined, "mechanicalPattern")}
+                        {row("Constant, unaffected pattern", tv.symptomBehaviour.pattern.state==="unknown"?"unknown":tv.symptomBehaviour.constantUnaffectedPattern?"present":"absent", undefined, "constantUnaffectedPattern")}
+                        {row("Breathing-related pattern", tv.symptomBehaviour.pattern.state==="unknown"?"unknown":tv.symptomBehaviour.breathingRelatedPattern?"present":"absent", undefined, "breathingRelatedPattern")}
+                        {row("Morning stiffness / inflammatory pattern", tv.symptomBehaviour.pattern.state==="unknown"?"unknown":tv.symptomBehaviour.morningStiffness?"present":"absent", undefined, "morningStiffness")}
+                        {row("Costovertebral-pattern location", tv.location.primaryLocation.state==="unknown"?"unknown":tv.location.costovertebralLocation?"present":"absent", undefined, "costovertebralLocation")}
+                        {row("Interscapular referral", tv.location.primaryLocation.state==="unknown"?"unknown":tv.location.interscapularLocation?"present":"absent")}
+                        {row("Cardiac-like radiation (urgent flag)", tv.location.radiation.state==="unknown"?"unknown":tv.location.cardiacLikeRadiation?"present":"absent")}
+                        {row("Traumatic mechanism", tv.mechanism.type.state==="unknown"?"unknown":tv.mechanism.traumaticMechanism?"present":"absent")}
+                        {row("Insidious, postural onset", tv.mechanism.type.state==="unknown"?"unknown":tv.mechanism.insidiousPosturalOnset?"present":"absent")}
+                        {row("Post-viral costochondritis history", tv.mechanism.type.state==="unknown"?"unknown":tv.mechanism.postViralCostochondritis?"present":"absent")}
+
+                        <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", margin:"10px 0 5px" }}>Red flag screen (mandatory — single combined checklist, Magee Table 8-1)</div>
+                        {row("Red flag screen answered", tv.redFlags.screen.state, tv.redFlags.screen.values.join(", "))}
+                        {row("Cardiac indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.cardiac?"present":"absent")}
+                        {row("Respiratory indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.respiratory?"present":"absent")}
+                        {row("Visceral/GI indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.visceral?"present":"absent")}
+                        {row("Oncologic indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.oncologic?"present":"absent")}
+                        {row("Infection indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.infection?"present":"absent")}
+                        {row("Fracture-risk indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.fracture?"present":"absent")}
+                        {row("Cord compression indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.cordCompression?"present":"absent")}
+                        {row("General serious-pathology indicators", tv.redFlags.screen.state==="unknown"?"unknown":tv.redFlags.generalSerious?"present":"absent")}
+
+                        {thoracicNotesLoading && (
+                          <div style={{ fontSize:"0.73rem", color: PC.muted, marginTop:8, fontStyle:"italic" }}>
+                            🔄 Checking free-text notes for anything not already captured…
+                          </div>
+                        )}
+                        {!thoracicNotesLoading && thoracicNoteFindings.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed ${PC.border}` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#7c3aed", marginBottom:5 }}>
+                              Found in your notes (AI — merged into the variables above where a checkbox hadn't already answered that field)
+                            </div>
+                            {thoracicNoteFindings.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {!thoracicNotesLoading && thoracicPendingRedFlagReview.length > 0 && (
+                          <div style={{ marginTop:10, paddingTop:10, borderTop:`1px dashed #dc2626` }}>
+                            <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", marginBottom:5 }}>
+                              ⚠ Possible red-flag mentions in your notes — NOT auto-applied, please review the red flag screen above yourself
+                            </div>
+                            {thoracicPendingRedFlagReview.map((f, fi) => (
+                              <div key={fi} style={{ fontSize:"0.73rem", color: PC.text, marginBottom:4 }}>
+                                <b>{f.variable}</b>: {f.value} <span style={{ color: PC.muted }}>— "{f.sourceQuote}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0.5 (THORACIC): REASONING ENGINE (Layer 3) ──
+                       Exact mirror of the Lumbar/Cervical Phase 0.5 blocks
+                       above, reading thoracicReasoning / thoracicTestNav
+                       instead. T11's override treats cardiac, respiratory,
+                       AND cord-compression as EMERGENCY (not just one
+                       category, unlike L11/C11) -- Magee Table 8-1 lists
+                       MI, PE, and pneumothorax side-by-side as equally
+                       immediate-danger presentations. ── */}
+                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Thoracic spine" && thoracicReasoning && (() => {
+                    const tr = thoracicReasoning;
+                    const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:"4px solid #7c3aed" }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#7c3aed", marginBottom:8 }}>
+                          Phase 0.5 — Thoracic Condition Matches (T01–T11)
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Unweighted, count-based matches against all 11 thoracic hypotheses — not a probability. Weighting is a deliberately deferred future step.
+                        </div>
+
+                        {tr.redFlagOverride.triggered && (
+                          <div style={{ background:"#FEF2F2", border:"2px solid #dc2626", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+                            <div style={{ fontWeight:800, color:"#dc2626", fontSize:"0.78rem", marginBottom:3 }}>
+                              🚨 {tr.redFlagOverride.urgency === "EMERGENCY" ? "EMERGENCY — Cardiac / Respiratory / Cord Compression Indicators" : "URGENT REFERRAL INDICATED"}
+                            </div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", marginBottom:3 }}>{tr.redFlagOverride.reason}</div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", fontWeight:600 }}>{tr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+                        {tr.redFlagOverride.urgency === "SCREEN_INCOMPLETE" && (
+                          <div style={{ background:"#FFFBEB", border:"1px solid #d97706", borderRadius:8, padding:"8px 12px", marginBottom:10 }}>
+                            <div style={{ fontSize:"0.73rem", color:"#92400E" }}>⚠ {tr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+
+                        {tr.conditions.slice(0, 6).map((c, ci) => (
+                          <div key={c.id} style={{
+                            background: ci===0 ? "#7c3aed12" : PC.surface,
+                            border: `1px solid ${ci===0 ? "#7c3aed44" : PC.border}`,
+                            borderRadius:8, padding:"9px 12px", marginBottom:6,
+                          }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>
+                                {c.id} — {c.name}{c.lowConfidence ? " ⚠" : ""}
+                              </span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                                background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>
+                                {c.matchTier}
+                              </span>
+                            </div>
+                            <div style={{ fontSize:"0.72rem", color: PC.muted }}>
+                              {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
+                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
+                            </div>
+                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
+                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                  Suggested objective tests — Required
+                                </div>
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
+                                  {(c.objectiveTests.required || []).map((t, ti) => {
+                                    const target = thoracicTestNav(t);
+                                    const btn = target
+                                      ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                      : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                    return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                  })}
+                                </div>
+                                {(c.objectiveTests.recommended || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
+                                      Recommended (if indicated)
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
+                                        const target = thoracicTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0 (SHOULDER): EXTRACTED CLINICAL VARIABLES ──
+                       Shoulder has no dedicated structured subjective module
+                       (unlike Lumbar/Cervical/Thoracic's lx_, cx_, tx_ prefixed
+                       checklists) -- its signals come from the free-text
+                       chief complaint (cc_main) plus cc_onset/red-flag
+                       checklists, read via the same normalizeFromData() the
+                       reasoningEngine itself uses (negation-safe). Because a
+                       keyword search over free text can only ever return
+                       true/false, NOT a genuine tri-state "not asked" the
+                       way a checkbox can, this card is honest about that --
+                       two states only (Found / Not mentioned), not three. ── */}
+                  {(r.region === "Shoulder (L)" || r.region === "Shoulder (R)") && shoulderReasoning && (() => {
+                    const sv = shoulderReasoning.subjective;
+                    const Chip = ({ found, children }) => (
+                      <span style={{
+                        display:"inline-flex", alignItems:"center", gap:4,
+                        fontSize:"0.72rem", fontWeight:700, padding:"3px 9px", borderRadius:99,
+                        background: found ? "#dc262618" : "#94a3b818",
+                        color: found ? "#dc2626" : "#64748b",
+                        border: `1px solid ${found ? "#dc262644" : "#94a3b844"}`,
+                      }}>
+                        {found ? "✓" : "—"} {children}
+                      </span>
+                    );
+                    const row = (label, found) => (
+                      <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                        <span style={{ fontSize:"0.74rem", color: PC.muted, minWidth:150 }}>{label}</span>
+                        <Chip found={found}>{found ? "Found in your notes" : "Not mentioned"}</Chip>
+                      </div>
+                    );
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:`4px solid #0891b2` }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#0891b2", marginBottom:8 }}>
+                          Phase 0 — Extracted Clinical Variables
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Read from the chief complaint / onset / red-flag text — negation-safe (e.g. "no night pain" is correctly read as absent). "Not mentioned" means either genuinely absent or simply not yet typed; unlike the checkbox-based regions, free text can't distinguish the two.
+                        </div>
+
+                        {row("Night pain", sv.nightPain)}
+                        {row("Constant pain", sv.constantPain)}
+                        {row("Eases with rest", sv.easesWithRest)}
+                        {row("Paraesthesia / tingling", sv.paresthesia)}
+                        {row("Radiation below elbow (cervical concern)", sv.radiationBelowElbow)}
+                        {row("Traumatic onset", sv.onsetTraumatic)}
+                        {row("Insidious onset", sv.onsetInsidious)}
+                        {row("Overhead activity aggravates", sv.overheadAggravation)}
+                        {row("Progressive global stiffness", sv.progressiveStiffness)}
+                        {row("Age 50+ (degenerative risk factor)", sv.ageOver50)}
+
+                        <div style={{ fontSize:"0.72rem", fontWeight:800, color:"#dc2626", margin:"10px 0 5px" }}>Red flag screen (mandatory)</div>
+                        {row("Suspected fracture / unreduced dislocation", sv.traumaHistory)}
+                        {row("Unexplained weight loss", sv.unexplainedWeightLoss)}
+                        {row("Systemic illness signs", sv.systemicIllness)}
+                        {row("Cancer history", sv.malignancyHistory)}
+                        {row("Unrelieved night pain (malignancy pattern)", sv.nightPainUnrelieved)}
+                        {row("Hot, swollen joint (septic joint)", sv.hotSwollenJoint)}
+                        {row("Vascular compromise signs", sv.vascularCompromiseSigns)}
+                        {row("Cervical myelopathy signs", sv.myelopathySigns)}
+                        {row("Cardiac / respiratory / abdominal referral pattern", sv.thoracicCardiacSymptoms || sv.thoracicCardiacLikeRadiation || sv.thoracicRespiratorySymptoms || sv.thoracicAbdominalSymptoms)}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── PHASE 0.5 (SHOULDER): REASONING ENGINE ──
+                       Same visual card as Lumbar/Cervical/Thoracic's Phase
+                       0.5, but the scoring underneath is the EXISTING,
+                       already-tested Shoulder reasoningEngine (src/
+                       reasoningEngine/), reused via shoulderPhase05.js's
+                       adapter -- not a rebuilt/duplicated clinical model.
+                       See that file's header comment for exactly what the
+                       adapter does and does not do. ── */}
+                  {(r.region === "Shoulder (L)" || r.region === "Shoulder (R)") && shoulderReasoning && (() => {
+                    const sr = shoulderReasoning;
+                    const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", borderLeft:"4px solid #7c3aed" }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase",
+                          letterSpacing:1.5, color:"#7c3aed", marginBottom:8 }}>
+                          Phase 0.5 — Shoulder Condition Matches (SH01–SH10)
+                        </div>
+                        <div style={{ fontSize:"0.74rem", color: PC.muted, marginBottom:10, fontStyle:"italic" }}>
+                          Deterministic, weighted matches against all 10 shoulder differentials (JOSPT/APTA CPG, Magee, Dutton, McGee) — same engine that powers "Suggest Probable Diagnosis" in SOAP Notes, run here off Subjective data only to guide the objective exam.
+                        </div>
+
+                        {sr.redFlagOverride.triggered && (
+                          <div style={{ background:"#FEF2F2", border:"2px solid #dc2626", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+                            <div style={{ fontWeight:800, color:"#dc2626", fontSize:"0.78rem", marginBottom:3 }}>
+                              🚨 {sr.redFlagOverride.urgency === "EMERGENCY" ? "EMERGENCY — Urgent Indicators" : "URGENT REFERRAL INDICATED"}
+                            </div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", marginBottom:3 }}>{sr.redFlagOverride.reason}</div>
+                            <div style={{ fontSize:"0.73rem", color:"#991B1B", fontWeight:600 }}>{sr.redFlagOverride.action}</div>
+                          </div>
+                        )}
+
+                        {sr.conditions.length === 0 && !sr.redFlagOverride.triggered && (
+                          <div style={{ fontSize:"0.74rem", color: PC.muted, fontStyle:"italic" }}>Insufficient data — complete the Subjective assessment first.</div>
+                        )}
+
+                        {sr.conditions.slice(0, 6).map((c, ci) => (
+                          <div key={c.id} style={{
+                            background: ci===0 ? "#7c3aed12" : PC.surface,
+                            border: `1px solid ${ci===0 ? "#7c3aed44" : PC.border}`,
+                            borderRadius:8, padding:"9px 12px", marginBottom:6,
+                          }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>
+                                {c.id} — {c.name}
+                              </span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99,
+                                background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>
+                                {c.matchTier}
+                              </span>
+                            </div>
+                            <div style={{ fontSize:"0.72rem", color: PC.muted }}>
+                              {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} not yet tested
+                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
+                            </div>
+                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
+                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                {(c.objectiveTests.required || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                      Suggested objective tests — Required
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
+                                      {(c.objectiveTests.required || []).map((t, ti) => {
+                                        const target = shoulderTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                                {(c.objectiveTests.recommended || []).length > 0 && (
+                                  <>
+                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
+                                      Recommended (if indicated)
+                                    </div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
+                                        const target = shoulderTestNav(t);
+                                        const btn = target
+                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
 
                   {/* ── PHASE 1: CLINICAL HYPOTHESES ── */}
                   <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px",
@@ -4634,18 +5955,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               Magee(7th) · Petty(5th) · Maitland(8th) · Sahrmann · Butler · McKenzie · Brukner & Khan(5th) · Cook & Purdam · Moseley & Butler · Hides · Richardson & Hodges · NICE NG59 · ASAS · Woolf(IASP 2017)
             </div>
           </div>
-
-          {/* ══════════════════════════════════════════════
-              AI CLINICAL REASONING — Lumbar / SI (additive)
-              Independent, LLM-generated second opinion that runs alongside
-              Engine v6 above -- never replaces or gates it. Only rendered
-              for Lumbar/SI, and only once there is something to show.
-          ══════════════════════════════════════════════ */}
-          {selectedRegions.some(reg => (REGION_FAMILY_KEY[reg] || reg) === "Lumbar / SI") &&
-            (!effectiveActiveRegion || (REGION_FAMILY_KEY[effectiveActiveRegion] || effectiveActiveRegion) === "Lumbar / SI") &&
-            (aiLumbarLoading || aiLumbarError || aiLumbarReasoning) && (
-            <AiLumbarReasoningPanel PC={PC} loading={aiLumbarLoading} error={aiLumbarError} reasoning={aiLumbarReasoning} />
-          )}
         </div>
         ); })()}
 
@@ -12749,4 +14058,4 @@ function ErgoModule({ data, set }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 
-export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA, REGION_NAV, REGION_FAMILY_KEY, RC_S };
+export { SpecialTestsSection, SubjectiveModule, NKTSection, KineticChainSection, FMASection, FasciaSection, NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, runEngineV6, ErgoModule, CyriaxModule, CyriaxRegionTests, CYRIAX_REGIONS_DATA, generateDiagnosis, PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML, SPECIAL_TESTS_DATA, REGION_NAV, REGION_FAMILY_KEY, RC_S, lumbarTestNav, cervicalTestNav, thoracicTestNav };
