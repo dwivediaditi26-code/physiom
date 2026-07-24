@@ -1,49 +1,258 @@
 {
   "region": "knee",
   "always": [
-    { "exam": "Observation (effusion, quadriceps atrophy, alignment, gait)", "why": "Baseline for every knee assessment; screens effusion, quadriceps wasting, varus/valgus alignment, and antalgic gait.", "confirmsOrExcludes": "Screens effusion, atrophy, alignment", "priority": "High" },
-    { "exam": "Active + passive knee ROM (flexion, extension) with end-feel", "why": "Range and end-feel is required to identify a capsular/effusion-limited pattern versus an extension block (meniscal/loose body/ACL) or extensor-mechanism lag.", "confirmsOrExcludes": "Screens capsular pattern, extension block, extensor lag", "priority": "High" },
-    { "exam": "Ligament stability screen (Lachman's, valgus/varus stress) + meniscal screen (McMurray's)", "why": "First-line provocation cluster to broadly screen the four major ligaments and the menisci before drilling into a specific mechanism.", "confirmsOrExcludes": "Screens ACL/PCL/MCL/LCL and meniscal integrity", "priority": "High" }
+    {
+      "exam": "Observation (effusion, quadriceps atrophy, alignment, gait)",
+      "why": "Baseline for every knee assessment; screens effusion, quadriceps wasting, varus/valgus alignment, and antalgic gait.",
+      "confirmsOrExcludes": "Screens effusion, atrophy, alignment",
+      "priority": "High"
+    },
+    {
+      "exam": "Active + passive knee ROM (flexion, extension) with end-feel",
+      "why": "Range and end-feel is required to identify a capsular/effusion-limited pattern versus an extension block (meniscal/loose body/ACL) or extensor-mechanism lag.",
+      "confirmsOrExcludes": "Screens capsular pattern, extension block, extensor lag",
+      "priority": "High"
+    },
+    {
+      "exam": "Ligament stability screen (Lachman's, valgus/varus stress) + meniscal screen (McMurray's)",
+      "why": "First-line provocation cluster to broadly screen the four major ligaments and the menisci before drilling into a specific mechanism.",
+      "confirmsOrExcludes": "Screens ACL/PCL/MCL/LCL and meniscal integrity",
+      "priority": "High"
+    }
   ],
   "conditional": [
-    { "when": { "flag": "kneeNonContactTwistMechanism", "equals": true },
-      "add": { "exam": "Lachman's test + anterior drawer + pivot shift test", "why": "A non-contact twisting/pivoting mechanism is the classic ACL injury pattern and warrants the full ACL test cluster.", "confirmsOrExcludes": "Confirms/excludes ACL tear", "priority": "High" } },
-    { "when": { "flag": "kneeAcutePopFelt", "equals": true },
-      "add": { "exam": "Lachman's test + assess for haemarthrosis", "why": "A felt/heard pop at the time of injury is a recognised ACL-rupture flag and should be confirmed with the most sensitive ACL test.", "confirmsOrExcludes": "Confirms/excludes ACL tear", "priority": "High" } },
-    { "when": { "flag": "kneeImmediateHaemarthrosis", "equals": true },
-      "add": { "exam": "Lachman's + pivot shift test; screen for osteochondral fracture / patellar dislocation", "why": "Immediate (within 2 hours) haemarthrosis strongly implicates ACL rupture, osteochondral fracture, or patellar dislocation and needs urgent differentiation.", "confirmsOrExcludes": "Confirms/excludes ACL tear vs osteochondral fracture vs patellar dislocation", "priority": "High" } },
-    { "when": { "flag": "kneeGivingWayWithPivot", "equals": true },
-      "add": { "exam": "Pivot shift test + anterior drawer", "why": "Giving way specifically with pivoting/direction change is a hallmark of ACL-deficient rotational instability.", "confirmsOrExcludes": "Confirms/excludes ACL insufficiency", "priority": "High" } },
-    { "when": { "flag": "kneeValgusMechanism", "equals": true },
-      "add": { "exam": "Valgus stress test at 0° and 30° flexion (MCL)", "why": "A direct blow to the medial knee (valgus stress mechanism) is the classic MCL injury pattern.", "confirmsOrExcludes": "Confirms/excludes MCL sprain", "priority": "High" } },
-    { "when": { "flag": "kneeVarusMechanism", "equals": true },
-      "add": { "exam": "Varus stress test at 0° and 30° flexion (LCL)", "why": "A direct blow to the lateral knee (varus stress mechanism) is the classic LCL injury pattern.", "confirmsOrExcludes": "Confirms/excludes LCL sprain", "priority": "High" } },
-    { "when": { "flag": "kneePclMechanism", "equals": true },
-      "add": { "exam": "Posterior drawer test + observe for posterior tibial sag", "why": "A dashboard mechanism or direct blow to the anterior tibia is the classic PCL injury pattern; posterior sag must be checked before anterior drawer to avoid misinterpretation.", "confirmsOrExcludes": "Confirms/excludes PCL injury", "priority": "High" } },
-    { "when": { "flag": "kneeJointLineMechanical", "equals": true },
-      "add": { "exam": "McMurray's test + Apley's grind test + Thessaly test (meniscal cluster)", "why": "Mechanical catching/clicking/grinding at the joint line warrants the full meniscal provocation cluster.", "confirmsOrExcludes": "Confirms/excludes meniscal tear", "priority": "High" } },
-    { "when": { "flag": "kneeTrueLocking", "equals": true },
-      "add": { "exam": "Full passive ROM block assessment + meniscal cluster; consider urgent orthopaedic referral if irreducible", "why": "True mechanical locking (cannot fully extend) suggests a displaced meniscal fragment (bucket-handle tear) or loose body and may need urgent referral if irreducible.", "confirmsOrExcludes": "Confirms/excludes locked meniscal tear / loose body", "priority": "High" } },
-    { "when": { "flag": "kneeMovieSignPositive", "equals": true },
-      "add": { "exam": "Clarke's sign + patellar grind test + patellar mobility/tracking assessment", "why": "The movie sign (pain with prolonged knee flexion) is a classic patellofemoral pain syndrome marker and should be corroborated with patellofemoral provocation tests.", "confirmsOrExcludes": "Confirms/excludes patellofemoral pain syndrome", "priority": "Medium" } },
-    { "when": { "flag": "kneeWorseDescendingStairs", "equals": true },
-      "add": { "exam": "Clarke's sign + patellar grind test + patellar mobility/tracking assessment", "why": "Pain worse descending stairs (higher patellofemoral joint reaction force) is a classic patellofemoral pattern and should be corroborated with patellofemoral provocation tests.", "confirmsOrExcludes": "Confirms/excludes patellofemoral pain syndrome", "priority": "Medium" } },
-    { "when": { "flag": "kneeAnteriorPainPattern", "equals": true },
-      "add": { "exam": "Clarke's sign + patellar grind test + patellar mobility/tracking assessment", "why": "Diffuse anterior/peripatellar pain without a clear traumatic mechanism is the classic patellofemoral pain syndrome presentation.", "confirmsOrExcludes": "Confirms/excludes patellofemoral pain syndrome", "priority": "Medium" } },
-    { "when": { "flag": "kneePatellarTendonPattern", "equals": true },
-      "add": { "exam": "Resisted knee extension (MMT) + palpate patellar tendon inferior pole", "why": "Inferior-pole patellar tendon pain in a jumping/loading athlete is the classic patellar tendinopathy pattern.", "confirmsOrExcludes": "Confirms/excludes patellar tendinopathy", "priority": "Medium" } },
-    { "when": { "flag": "kneeLateralItbPattern", "equals": true },
-      "add": { "exam": "Noble compression test + Ober's test", "why": "Lateral knee pain at the ITB attachment in a runner suggests iliotibial band friction syndrome and should be corroborated with the Noble compression test and Ober's test for ITB tightness.", "confirmsOrExcludes": "Confirms/excludes IT band friction syndrome", "priority": "Medium" } },
-    { "when": { "flag": "kneeMedialJointPain", "equals": true },
-      "add": { "exam": "Palpate medial joint line + McMurray's test (medial technique)", "why": "Medial joint line pain warrants direct palpation and the medial McMurray's technique to screen the medial meniscus / MCL.", "confirmsOrExcludes": "Confirms/excludes medial meniscal or MCL source", "priority": "Medium" } },
-    { "when": { "flag": "kneeLateralJointPain", "equals": true },
-      "add": { "exam": "Palpate lateral joint line + McMurray's test (lateral technique)", "why": "Lateral joint line pain warrants direct palpation and the lateral McMurray's technique to screen the lateral meniscus / LCL.", "confirmsOrExcludes": "Confirms/excludes lateral meniscal or LCL source", "priority": "Medium" } },
-    { "when": { "flag": "kneeDelayedOrRecurrentSwelling", "equals": true },
-      "add": { "exam": "Sweep/ballottement test for effusion; consider knee OA / meniscal screen", "why": "A delayed or recurrent effusion pattern (reactive synovitis) points toward meniscal pathology or early osteoarthritis rather than an acute ligamentous rupture.", "confirmsOrExcludes": "Confirms/excludes effusion-driven pathology (meniscal / OA)", "priority": "Medium" } }
+    {
+      "when": {
+        "flag": "kneeNonContactTwistMechanism",
+        "equals": true
+      },
+      "add": {
+        "exam": "Lachman's test + anterior drawer + pivot shift test",
+        "why": "A non-contact twisting/pivoting mechanism is the classic ACL injury pattern and warrants the full ACL test cluster.",
+        "confirmsOrExcludes": "Confirms/excludes ACL tear",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeAcutePopFelt",
+        "equals": true
+      },
+      "add": {
+        "exam": "Lachman's test + assess for haemarthrosis",
+        "why": "A felt/heard pop at the time of injury is a recognised ACL-rupture flag and should be confirmed with the most sensitive ACL test.",
+        "confirmsOrExcludes": "Confirms/excludes ACL tear",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeImmediateHaemarthrosis",
+        "equals": true
+      },
+      "add": {
+        "exam": "Lachman's + pivot shift test; screen for osteochondral fracture / patellar dislocation",
+        "why": "Immediate (within 2 hours) haemarthrosis strongly implicates ACL rupture, osteochondral fracture, or patellar dislocation and needs urgent differentiation.",
+        "confirmsOrExcludes": "Confirms/excludes ACL tear vs osteochondral fracture vs patellar dislocation",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeGivingWayWithPivot",
+        "equals": true
+      },
+      "add": {
+        "exam": "Pivot shift test + anterior drawer",
+        "why": "Giving way specifically with pivoting/direction change is a hallmark of ACL-deficient rotational instability.",
+        "confirmsOrExcludes": "Confirms/excludes ACL insufficiency",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeValgusMechanism",
+        "equals": true
+      },
+      "add": {
+        "exam": "Valgus stress test at 0\u00b0 and 30\u00b0 flexion (MCL)",
+        "why": "A direct blow to the medial knee (valgus stress mechanism) is the classic MCL injury pattern.",
+        "confirmsOrExcludes": "Confirms/excludes MCL sprain",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeVarusMechanism",
+        "equals": true
+      },
+      "add": {
+        "exam": "Varus stress test at 0\u00b0 and 30\u00b0 flexion (LCL)",
+        "why": "A direct blow to the lateral knee (varus stress mechanism) is the classic LCL injury pattern.",
+        "confirmsOrExcludes": "Confirms/excludes LCL sprain",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneePclMechanism",
+        "equals": true
+      },
+      "add": {
+        "exam": "Posterior drawer test + observe for posterior tibial sag",
+        "why": "A dashboard mechanism or direct blow to the anterior tibia is the classic PCL injury pattern; posterior sag must be checked before anterior drawer to avoid misinterpretation.",
+        "confirmsOrExcludes": "Confirms/excludes PCL injury",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeJointLineMechanical",
+        "equals": true
+      },
+      "add": {
+        "exam": "McMurray's test + Apley's grind test + Thessaly test (meniscal cluster)",
+        "why": "Mechanical catching/clicking/grinding at the joint line warrants the full meniscal provocation cluster.",
+        "confirmsOrExcludes": "Confirms/excludes meniscal tear",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeTrueLocking",
+        "equals": true
+      },
+      "add": {
+        "exam": "Full passive ROM block assessment + meniscal cluster; consider urgent orthopaedic referral if irreducible",
+        "why": "True mechanical locking (cannot fully extend) suggests a displaced meniscal fragment (bucket-handle tear) or loose body and may need urgent referral if irreducible.",
+        "confirmsOrExcludes": "Confirms/excludes locked meniscal tear / loose body",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeMovieSignPositive",
+        "equals": true
+      },
+      "add": {
+        "exam": "Clarke's sign + patellar grind test + patellar mobility/tracking assessment",
+        "why": "The movie sign (pain with prolonged knee flexion) is a classic patellofemoral pain syndrome marker and should be corroborated with patellofemoral provocation tests.",
+        "confirmsOrExcludes": "Confirms/excludes patellofemoral pain syndrome",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeWorseDescendingStairs",
+        "equals": true
+      },
+      "add": {
+        "exam": "Clarke's sign + patellar grind test + patellar mobility/tracking assessment",
+        "why": "Pain worse descending stairs (higher patellofemoral joint reaction force) is a classic patellofemoral pattern and should be corroborated with patellofemoral provocation tests.",
+        "confirmsOrExcludes": "Confirms/excludes patellofemoral pain syndrome",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeAnteriorPainPattern",
+        "equals": true
+      },
+      "add": {
+        "exam": "Clarke's sign + patellar grind test + patellar mobility/tracking assessment",
+        "why": "Diffuse anterior/peripatellar pain without a clear traumatic mechanism is the classic patellofemoral pain syndrome presentation.",
+        "confirmsOrExcludes": "Confirms/excludes patellofemoral pain syndrome",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneePatellarTendonPattern",
+        "equals": true
+      },
+      "add": {
+        "exam": "Resisted knee extension (MMT) + palpate patellar tendon inferior pole",
+        "why": "Inferior-pole patellar tendon pain in a jumping/loading athlete is the classic patellar tendinopathy pattern.",
+        "confirmsOrExcludes": "Confirms/excludes patellar tendinopathy",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeLateralItbPattern",
+        "equals": true
+      },
+      "add": {
+        "exam": "Noble compression test + Ober's test",
+        "why": "Lateral knee pain at the ITB attachment in a runner suggests iliotibial band friction syndrome and should be corroborated with the Noble compression test and Ober's test for ITB tightness.",
+        "confirmsOrExcludes": "Confirms/excludes IT band friction syndrome",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeMedialJointPain",
+        "equals": true
+      },
+      "add": {
+        "exam": "Palpate medial joint line + McMurray's test (medial technique)",
+        "why": "Medial joint line pain warrants direct palpation and the medial McMurray's technique to screen the medial meniscus / MCL.",
+        "confirmsOrExcludes": "Confirms/excludes medial meniscal or MCL source",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeLateralJointPain",
+        "equals": true
+      },
+      "add": {
+        "exam": "Palpate lateral joint line + McMurray's test (lateral technique)",
+        "why": "Lateral joint line pain warrants direct palpation and the lateral McMurray's technique to screen the lateral meniscus / LCL.",
+        "confirmsOrExcludes": "Confirms/excludes lateral meniscal or LCL source",
+        "priority": "Medium"
+      }
+    },
+    {
+      "when": {
+        "flag": "kneeDelayedOrRecurrentSwelling",
+        "equals": true
+      },
+      "add": {
+        "exam": "Sweep/ballottement test for effusion; consider knee OA / meniscal screen",
+        "why": "A delayed or recurrent effusion pattern (reactive synovitis) points toward meniscal pathology or early osteoarthritis rather than an acute ligamentous rupture.",
+        "confirmsOrExcludes": "Confirms/excludes effusion-driven pathology (meniscal / OA)",
+        "priority": "Medium"
+      }
+    }
   ],
   "supporting": [
-    { "exam": "Neurological screen — L3 (knee extension) / S2 (knee flexion) myotomes + patella reflex if radiculopathy suspected", "why": "Rules out a lumbar nerve-root contribution when knee pain has an atypical or referred quality.", "confirmsOrExcludes": "Screens L3/S2 nerve root contribution", "priority": "Low" },
-    { "exam": "Functional + outcome measure (KOOS, Lysholm, IKDC, or Kujala score for PFPS)", "why": "Quantifies baseline knee-related disability for goal-setting and re-assessment.", "confirmsOrExcludes": "Baseline functional severity", "priority": "Medium" },
-    { "exam": "Imaging (Ottawa Knee Rules if acute trauma; MRI only if red flag or failed conservative management)", "why": "Plain film is guided by the Ottawa Knee Rules after acute trauma; MRI is reserved for red flags, suspected internal derangement, or failure to progress with conservative care.", "confirmsOrExcludes": "Confirms structural pathology when clinically indicated", "priority": "Low" }
-  ]
+    {
+      "exam": "Neurological screen \u2014 L3 (knee extension) / S2 (knee flexion) myotomes + patella reflex if radiculopathy suspected",
+      "why": "Rules out a lumbar nerve-root contribution when knee pain has an atypical or referred quality.",
+      "confirmsOrExcludes": "Screens L3/S2 nerve root contribution",
+      "priority": "Low"
+    },
+    {
+      "exam": "Functional + outcome measure (KOOS, Lysholm, IKDC, or Kujala score for PFPS)",
+      "why": "Quantifies baseline knee-related disability for goal-setting and re-assessment.",
+      "confirmsOrExcludes": "Baseline functional severity",
+      "priority": "Medium"
+    },
+    {
+      "exam": "Imaging (Ottawa Knee Rules if acute trauma; MRI only if red flag or failed conservative management)",
+      "why": "Plain film is guided by the Ottawa Knee Rules after acute trauma; MRI is reserved for red flags, suspected internal derangement, or failure to progress with conservative care.",
+      "confirmsOrExcludes": "Confirms structural pathology when clinically indicated",
+      "priority": "Low"
+    }
+  ],
+  "assessmentLayers": {
+    "Observation": "Effusion, quadriceps (VMO) wasting, patellar position, alignment (valgus/varus/Q-angle), gait",
+    "Posture": "Genu valgum / varum / recurvatum, foot pronation, femoral internal rotation",
+    "Functional screen": "Single-leg / decline squat, step-down, hop test, gait & landing mechanics",
+    "STTT (Cyriax)": "Resisted knee flexion / extension; ligament & meniscal special tests remain primary",
+    "CPA (compensation pattern)": "VMO / glute-med inhibition vs TFL / lateral-quad / hamstring overactivity",
+    "Kinetic chain": "Hip control (valgus driver) above and ankle dorsiflexion (mobility driver) below",
+    "Fascia": "Superficial front line (quads), lateral line (ITB), deep front line"
+  }
 }

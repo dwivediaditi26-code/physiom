@@ -59,5 +59,14 @@
       "confirmsOrExcludes": "Differentiates hip/deep-gluteal referral from SIJ",
       "priority": "Medium"
     }
-  ]
+  ],
+  "assessmentLayers": {
+    "Observation": "Pelvic symmetry (PSIS / iliac-crest levels), gait, single-leg-stance pelvic drop",
+    "Posture": "Pelvic tilt / rotation asymmetry, apparent leg-length difference",
+    "Functional screen": "Active straight-leg raise (ASLR load-transfer), Gillet/stork, step-up, single-leg stance",
+    "STTT (Cyriax)": "Resisted hip abduction/adduction to differentiate; provocation cluster remains primary",
+    "CPA (compensation pattern)": "Gluteus max / medius inhibition vs hamstring / piriformis / adductor overactivity (force closure)",
+    "Kinetic chain": "Hip and lumbar mobility; foot pronation influence on pelvic mechanics",
+    "Fascia": "Posterior oblique sling (glute-max \u2194 contralateral lat via TL fascia), long dorsal ligament"
+  }
 }

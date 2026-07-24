@@ -22,7 +22,10 @@
   ],
   "conditional": [
     {
-      "when": { "flag": "thoracicChestWallPain", "equals": true },
+      "when": {
+        "flag": "thoracicChestWallPain",
+        "equals": true
+      },
       "add": {
         "exam": "Costochondral junction palpation + observation for swelling (Tietze)",
         "why": "Anterior/sternal chest wall pain requires differentiating costochondritis/Tietze syndrome from a cardiac or pulmonary source.",
@@ -31,7 +34,10 @@
       }
     },
     {
-      "when": { "flag": "thoracicBreathingAggravation", "equals": true },
+      "when": {
+        "flag": "thoracicBreathingAggravation",
+        "equals": true
+      },
       "add": {
         "exam": "Rib spring test + bilateral rib expansion assessment",
         "why": "Pain provoked by deep breathing/coughing points toward a costal/rib-cage source rather than a pure vertebral facet source.",
@@ -40,7 +46,10 @@
       }
     },
     {
-      "when": { "flag": "thoracicStressFractureRiskActivity", "equals": true },
+      "when": {
+        "flag": "thoracicStressFractureRiskActivity",
+        "equals": true
+      },
       "add": {
         "exam": "Point rib palpation + training-load history (rowing/throwing/repetitive coughing)",
         "why": "A stress-fracture risk activity in an athlete with localised point tenderness warrants specific screening before return to loaded training.",
@@ -49,7 +58,10 @@
       }
     },
     {
-      "when": { "flag": "thoracicDermatomalBandPattern", "equals": true },
+      "when": {
+        "flag": "thoracicDermatomalBandPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Dermatomal band sensory mapping + lower-limb neurological screen if any radicular concern",
         "why": "A dermatomal band pattern raises suspicion for thoracic disc herniation/radiculopathy or intercostal neuralgia and needs differentiation from a musculoskeletal referral pattern.",
@@ -58,7 +70,10 @@
       }
     },
     {
-      "when": { "flag": "thoracicPosturalInsidiousOnset", "equals": true },
+      "when": {
+        "flag": "thoracicPosturalInsidiousOnset",
+        "equals": true
+      },
       "add": {
         "exam": "Postural/ergonomic screen + wall angel test + foam roller thoracic extension test",
         "why": "An insidious postural onset is the classic pattern for both sustained-posture pain and early thoracic hypomobility, and mobility testing differentiates the two.",
@@ -67,7 +82,10 @@
       }
     },
     {
-      "when": { "flag": "thoracicOsteoporoticMinimalTraumaMechanism", "equals": true },
+      "when": {
+        "flag": "thoracicOsteoporoticMinimalTraumaMechanism",
+        "equals": true
+      },
       "add": {
         "exam": "Percussion tenderness over spinous processes + imaging referral if positive",
         "why": "Minimal-trauma onset in a patient with osteoporosis risk requires screening for a vertebral compression fracture before any manual loading.",
@@ -76,7 +94,10 @@
       }
     },
     {
-      "when": { "flag": "thoracicDirectTraumaMechanism", "equals": true },
+      "when": {
+        "flag": "thoracicDirectTraumaMechanism",
+        "equals": true
+      },
       "add": {
         "exam": "Fracture screen (point bony tenderness, deformity, breathing mechanics) before any provocative testing",
         "why": "Direct trauma to the chest/rib cage requires excluding an occult rib or vertebral fracture before proceeding.",
@@ -88,7 +109,7 @@
   "supporting": [
     {
       "exam": "Thoracic rotation and extension kinetic-chain screen (seated rotation, foam roller extension, wall angel)",
-      "why": "Thoracic mobility deficits commonly drive compensatory cervical, shoulder, and lumbar overload — quantifying this guides both local and referred treatment priorities.",
+      "why": "Thoracic mobility deficits commonly drive compensatory cervical, shoulder, and lumbar overload \u2014 quantifying this guides both local and referred treatment priorities.",
       "confirmsOrExcludes": "Screens thoracic mobility contribution to the broader kinetic chain",
       "priority": "Low"
     },
@@ -104,5 +125,14 @@
       "confirmsOrExcludes": "Confirms structural pathology when clinically indicated",
       "priority": "Low"
     }
-  ]
+  ],
+  "assessmentLayers": {
+    "Observation": "Kyphosis/scoliosis, breathing pattern, rib symmetry, scapular position",
+    "Posture": "Thoracic kyphosis, sway/flat-back, scapular protraction",
+    "Functional screen": "Seated thoracic rotation, combined extension-rotation, deep-breath excursion, thread-the-needle",
+    "STTT (Cyriax)": "Resisted trunk rotation; Evjenth\u2013Gloeck breath-hold flexion to separate rib vs vertebral source",
+    "CPA (compensation pattern)": "Lower-trap / serratus inhibition vs pec / lat overactivity; diaphragm & core control",
+    "Kinetic chain": "Thoracic extension & rotation hub, rib mobility, cervical & lumbar links, hip rotation",
+    "Fascia": "Spiral line, superficial front/back line, thoracolumbar fascia"
+  }
 }

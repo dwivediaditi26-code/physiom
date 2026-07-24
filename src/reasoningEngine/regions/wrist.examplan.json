@@ -22,7 +22,10 @@
   ],
   "conditional": [
     {
-      "when": { "flag": "wristRadialPainPattern", "equals": true },
+      "when": {
+        "flag": "wristRadialPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Finkelstein's test + 1st dorsal compartment palpation",
         "why": "Radial-sided wrist pain is the classic presentation of De Quervain's tenosynovitis and requires this specific confirmatory test.",
@@ -31,7 +34,10 @@
       }
     },
     {
-      "when": { "flag": "wristUlnarPainPattern", "equals": true },
+      "when": {
+        "flag": "wristUlnarPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "TFCC stress test + ECU synergy test + ulnar-sided palpation",
         "why": "Ulnar-sided wrist pain has a distinct differential (TFCC tear vs ECU tendinopathy/instability) that requires dedicated testing to separate.",
@@ -40,7 +46,10 @@
       }
     },
     {
-      "when": { "flag": "wristFooshMechanism", "equals": true },
+      "when": {
+        "flag": "wristFooshMechanism",
+        "equals": true
+      },
       "add": {
         "exam": "Anatomical snuffbox palpation + Watson scaphoid shift test",
         "why": "A FOOSH mechanism requires screening for scaphoid fracture (easily missed and high false-negative rate on initial x-ray) and scapholunate ligament instability.",
@@ -49,7 +58,10 @@
       }
     },
     {
-      "when": { "flag": "wristSuspectedDistalRadiusFracture", "equals": true },
+      "when": {
+        "flag": "wristSuspectedDistalRadiusFracture",
+        "equals": true
+      },
       "add": {
         "exam": "Deformity/swelling observation and urgent imaging referral before any further provocative testing",
         "why": "A suspected distal radius fracture must be confirmed or excluded before any loading or manual testing is attempted.",
@@ -58,7 +70,10 @@
       }
     },
     {
-      "when": { "flag": "thumbCmcPainPattern", "equals": true },
+      "when": {
+        "flag": "thumbCmcPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Grind test + 1st CMC joint palpation",
         "why": "Thumb base pain in an appropriate age group is the classic presentation of 1st CMC osteoarthritis and requires this specific confirmatory test.",
@@ -67,7 +82,10 @@
       }
     },
     {
-      "when": { "flag": "triggerFingerPattern", "equals": true },
+      "when": {
+        "flag": "triggerFingerPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Palpation for flexor tendon nodule/catching at the A1 pulley with active finger flexion/extension",
         "why": "A catching/locking digit pattern needs direct confirmation of a flexor tendon nodule to distinguish trigger finger from other hand pathology.",
@@ -76,7 +94,10 @@
       }
     },
     {
-      "when": { "flag": "wristBilateralCtsScreen", "equals": true },
+      "when": {
+        "flag": "wristBilateralCtsScreen",
+        "equals": true
+      },
       "add": {
         "exam": "Bilateral neurological screen + systemic/metabolic history review (thyroid, diabetes, pregnancy, rheumatoid arthritis)",
         "why": "Bilateral carpal tunnel symptoms raise suspicion for a systemic contributing cause that should be screened rather than treated as a purely local mechanical problem.",
@@ -110,5 +131,14 @@
       "confirmsOrExcludes": "Confirms structural pathology when clinically indicated",
       "priority": "Low"
     }
-  ]
+  ],
+  "assessmentLayers": {
+    "Observation": "Swelling, deformity (dinner-fork), ganglion, thenar wasting, colour changes",
+    "Posture": "Wrist / hand resting posture, forearm loading at workstation",
+    "Functional screen": "Grip & pinch strength, functional grip / keyboard tasks, provocative positions",
+    "STTT (Cyriax)": "Resisted wrist ext/flex, thumb extension/abduction (De Quervain's), grip",
+    "CPA (compensation pattern)": "Wrist-extensor / grip inhibition patterns; forearm\u2013shoulder chain",
+    "Kinetic chain": "Cervical & shoulder neural contribution, elbow, forearm rotation",
+    "Fascia": "Deep front arm line; flexor retinaculum / carpal tunnel"
+  }
 }

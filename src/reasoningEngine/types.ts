@@ -303,6 +303,9 @@ export interface ExamPlan {
   region: string;
   referFirst: RedFlagResult | null; // non-null => refer before further testing
   recommendations: ExamRecommendation[];
+  // Optional systematic objective-assessment layers (observation, posture,
+  // functional screen, STTT/Cyriax, CPA, kinetic chain, fascia) — region-level.
+  assessmentLayers?: Record<string, string>;
 }
 
 /** Completeness / validation (Stage 4). */

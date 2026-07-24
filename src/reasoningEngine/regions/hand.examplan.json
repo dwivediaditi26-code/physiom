@@ -22,7 +22,10 @@
   ],
   "conditional": [
     {
-      "when": { "flag": "thumbMcpPainPattern", "equals": true },
+      "when": {
+        "flag": "thumbMcpPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Thumb MCP valgus stress test (flexion and extension) + imaging",
         "why": "Ulnar collateral ligament injury is confirmed by valgus laxity; imaging excludes an avulsion fracture / Stener lesion that needs surgical referral.",
@@ -31,7 +34,10 @@
       }
     },
     {
-      "when": { "flag": "triggerDigitPattern", "equals": true },
+      "when": {
+        "flag": "triggerDigitPattern",
+        "equals": true
+      },
       "add": {
         "exam": "A1-pulley palpation for a nodule + observe active triggering",
         "why": "Palpable catching at the A1 pulley with triggering confirms stenosing flexor tenosynovitis.",
@@ -53,5 +59,14 @@
       "confirmsOrExcludes": "Differentiates neurological referral from a local hand source",
       "priority": "Medium"
     }
-  ]
+  ],
+  "assessmentLayers": {
+    "Observation": "Nodes (Heberden/Bouchard), deformity (swan-neck / boutonniere / mallet), palmar cords, colour change, swelling",
+    "Posture": "Hand resting posture, digit alignment",
+    "Functional screen": "Grip & pinch (key/tripod), fist & finger-tip-to-palm, Hueston tabletop test, triggering on active flexion",
+    "STTT (Cyriax)": "Resisted finger / thumb flexion-extension, thumb-MCP valgus stress (UCL)",
+    "CPA (compensation pattern)": "Intrinsic vs extrinsic balance; grip-pattern compensation",
+    "Kinetic chain": "Cervical / wrist neural contribution; forearm & shoulder chain",
+    "Fascia": "Deep front arm line; palmar fascia (Dupuytren's)"
+  }
 }

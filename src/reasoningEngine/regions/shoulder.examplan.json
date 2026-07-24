@@ -1,29 +1,138 @@
 {
   "region": "shoulder",
   "always": [
-    { "exam": "Observation & posture", "why": "Baseline for every shoulder assessment; screens deformity, muscle wasting (cuff/deltoid), scapular position.", "confirmsOrExcludes": "Screens gross deformity, wasting, scapular dyskinesis", "priority": "High" },
-    { "exam": "Active ROM (all planes)", "why": "First objective movement test; establishes willingness, range and painful arc.", "confirmsOrExcludes": "Screens painful arc, restriction pattern", "priority": "High" },
-    { "exam": "Passive ROM + end-feel", "why": "Differentiates contractile vs inert restriction; capsular pattern points to adhesive capsulitis/OA.", "confirmsOrExcludes": "Confirms/excludes capsular pattern (adhesive capsulitis, GH OA)", "priority": "High" },
-    { "exam": "Resisted isometrics / MMT (abduction, ER, IR)", "why": "Isolates contractile lesions; weak+painful resisted abduction/ER implicates rotator cuff.", "confirmsOrExcludes": "Confirms/excludes rotator cuff contractile lesion", "priority": "High" }
+    {
+      "exam": "Observation & posture",
+      "why": "Baseline for every shoulder assessment; screens deformity, muscle wasting (cuff/deltoid), scapular position.",
+      "confirmsOrExcludes": "Screens gross deformity, wasting, scapular dyskinesis",
+      "priority": "High"
+    },
+    {
+      "exam": "Active ROM (all planes)",
+      "why": "First objective movement test; establishes willingness, range and painful arc.",
+      "confirmsOrExcludes": "Screens painful arc, restriction pattern",
+      "priority": "High"
+    },
+    {
+      "exam": "Passive ROM + end-feel",
+      "why": "Differentiates contractile vs inert restriction; capsular pattern points to adhesive capsulitis/OA.",
+      "confirmsOrExcludes": "Confirms/excludes capsular pattern (adhesive capsulitis, GH OA)",
+      "priority": "High"
+    },
+    {
+      "exam": "Resisted isometrics / MMT (abduction, ER, IR)",
+      "why": "Isolates contractile lesions; weak+painful resisted abduction/ER implicates rotator cuff.",
+      "confirmsOrExcludes": "Confirms/excludes rotator cuff contractile lesion",
+      "priority": "High"
+    }
   ],
   "conditional": [
-    { "when": { "flag": "overheadAggravation", "equals": true },
-      "add": { "exam": "Subacromial cluster (Hawkins-Kennedy, Neer, painful arc, empty can)", "why": "Overhead aggravation raises subacromial pain probability; cluster of 3+ positives materially increases likelihood.", "confirmsOrExcludes": "Confirms/excludes subacromial pain syndrome", "priority": "High" } },
-    { "when": { "flag": "traumaHistory", "equals": true },
-      "add": { "exam": "Full-thickness cuff tests (ER lag, drop-arm, lift-off)", "why": "Traumatic onset raises tear probability; lag/drop-arm signs indicate full-thickness tear needing possible imaging.", "confirmsOrExcludes": "Confirms/excludes full-thickness rotator cuff tear", "priority": "High" } },
-    { "when": { "flag": "progressiveStiffness", "equals": true },
-      "add": { "exam": "Capsular pattern mapping (passive ER vs Abd vs IR)", "why": "Progressive global stiffness suggests adhesive capsulitis; document ER>Abd>IR loss.", "confirmsOrExcludes": "Confirms/excludes adhesive capsulitis", "priority": "High" } },
-    { "when": { "flag": "paresthesia", "equals": true },
-      "add": { "exam": "Neurological screen (dermatomes, myotomes, reflexes) + Spurling's", "why": "Paraesthesia mandates excluding cervical radiculopathy referring to the shoulder before local diagnosis.", "confirmsOrExcludes": "Excludes cervical referral / radiculopathy", "priority": "High" } },
-    { "when": { "flag": "radiationBelowElbow", "equals": true },
-      "add": { "exam": "Cervical screen + upper limb neurodynamics", "why": "Radiation below the elbow is atypical for local shoulder pathology; screen cervical spine and neural tissue.", "confirmsOrExcludes": "Excludes cervical/neural source", "priority": "High" } },
-    { "when": { "flag": "onsetTraumatic", "equals": true },
-      "add": { "exam": "Instability tests (apprehension, relocation)", "why": "Traumatic onset in a younger patient raises instability probability.", "confirmsOrExcludes": "Confirms/excludes anterior glenohumeral instability", "priority": "Medium" } }
+    {
+      "when": {
+        "flag": "overheadAggravation",
+        "equals": true
+      },
+      "add": {
+        "exam": "Subacromial cluster (Hawkins-Kennedy, Neer, painful arc, empty can)",
+        "why": "Overhead aggravation raises subacromial pain probability; cluster of 3+ positives materially increases likelihood.",
+        "confirmsOrExcludes": "Confirms/excludes subacromial pain syndrome",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "traumaHistory",
+        "equals": true
+      },
+      "add": {
+        "exam": "Full-thickness cuff tests (ER lag, drop-arm, lift-off)",
+        "why": "Traumatic onset raises tear probability; lag/drop-arm signs indicate full-thickness tear needing possible imaging.",
+        "confirmsOrExcludes": "Confirms/excludes full-thickness rotator cuff tear",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "progressiveStiffness",
+        "equals": true
+      },
+      "add": {
+        "exam": "Capsular pattern mapping (passive ER vs Abd vs IR)",
+        "why": "Progressive global stiffness suggests adhesive capsulitis; document ER>Abd>IR loss.",
+        "confirmsOrExcludes": "Confirms/excludes adhesive capsulitis",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "paresthesia",
+        "equals": true
+      },
+      "add": {
+        "exam": "Neurological screen (dermatomes, myotomes, reflexes) + Spurling's",
+        "why": "Paraesthesia mandates excluding cervical radiculopathy referring to the shoulder before local diagnosis.",
+        "confirmsOrExcludes": "Excludes cervical referral / radiculopathy",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "radiationBelowElbow",
+        "equals": true
+      },
+      "add": {
+        "exam": "Cervical screen + upper limb neurodynamics",
+        "why": "Radiation below the elbow is atypical for local shoulder pathology; screen cervical spine and neural tissue.",
+        "confirmsOrExcludes": "Excludes cervical/neural source",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "onsetTraumatic",
+        "equals": true
+      },
+      "add": {
+        "exam": "Instability tests (apprehension, relocation)",
+        "why": "Traumatic onset in a younger patient raises instability probability.",
+        "confirmsOrExcludes": "Confirms/excludes anterior glenohumeral instability",
+        "priority": "Medium"
+      }
+    }
   ],
   "supporting": [
-    { "exam": "AC joint tests (scarf/cross-body, palpation)", "why": "Cheap, quick localiser for AC joint pathology; include when pain is localised superiorly.", "confirmsOrExcludes": "Confirms/excludes AC joint pathology", "priority": "Medium" },
-    { "exam": "Biceps tests (Speed's, palpation of bicipital groove)", "why": "Screens long head of biceps involvement, common co-existing pain generator.", "confirmsOrExcludes": "Confirms/excludes biceps tendinopathy", "priority": "Low" },
-    { "exam": "Functional + outcome measure (SPADI or DASH)", "why": "Quantifies baseline disability for goal-setting and re-assessment.", "confirmsOrExcludes": "Baseline functional severity", "priority": "Medium" },
-    { "exam": "Imaging (only if red flag, suspected full-thickness tear, or calcific tendinopathy)", "why": "Imaging is not routine; reserve for red flags, lag-sign positive tears, or suspected calcific deposit.", "confirmsOrExcludes": "Confirms structural pathology when clinically indicated", "priority": "Low" }
-  ]
+    {
+      "exam": "AC joint tests (scarf/cross-body, palpation)",
+      "why": "Cheap, quick localiser for AC joint pathology; include when pain is localised superiorly.",
+      "confirmsOrExcludes": "Confirms/excludes AC joint pathology",
+      "priority": "Medium"
+    },
+    {
+      "exam": "Biceps tests (Speed's, palpation of bicipital groove)",
+      "why": "Screens long head of biceps involvement, common co-existing pain generator.",
+      "confirmsOrExcludes": "Confirms/excludes biceps tendinopathy",
+      "priority": "Low"
+    },
+    {
+      "exam": "Functional + outcome measure (SPADI or DASH)",
+      "why": "Quantifies baseline disability for goal-setting and re-assessment.",
+      "confirmsOrExcludes": "Baseline functional severity",
+      "priority": "Medium"
+    },
+    {
+      "exam": "Imaging (only if red flag, suspected full-thickness tear, or calcific tendinopathy)",
+      "why": "Imaging is not routine; reserve for red flags, lag-sign positive tears, or suspected calcific deposit.",
+      "confirmsOrExcludes": "Confirms structural pathology when clinically indicated",
+      "priority": "Low"
+    }
+  ],
+  "assessmentLayers": {
+    "Observation": "Scapular position/winging, deltoid & cuff wasting, shoulder-height symmetry, swelling or deformity",
+    "Posture": "Forward-head / rounded-shoulder / increased thoracic kyphosis (subacromial driver); scapular downward rotation",
+    "Functional screen": "Elevation with painful-arc watch, hand-behind-back & hand-behind-neck (Apley's), functional overhead reach",
+    "STTT (Cyriax)": "Resisted abduction (supraspinatus), ER (infraspinatus/teres minor), IR (subscapularis), elbow flexion (biceps) \u2014 pain vs weakness pattern",
+    "CPA (compensation pattern)": "Lower-trapezius / serratus-anterior inhibition vs upper-trap / pec-minor overactivity driving scapular dyskinesis",
+    "Kinetic chain": "Thoracic extension & rotation mobility, scapulothoracic rhythm, cervical contribution",
+    "Fascia": "Superficial & deep front-arm lines; pec-minor and latissimus restriction"
+  }
 }

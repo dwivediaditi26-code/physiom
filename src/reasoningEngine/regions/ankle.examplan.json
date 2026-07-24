@@ -22,7 +22,10 @@
   ],
   "conditional": [
     {
-      "when": { "flag": "achillesMidPortionPainPattern", "equals": true },
+      "when": {
+        "flag": "achillesMidPortionPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Thompson's test + Royal London Hospital test + Achilles palpation",
         "why": "Achilles pain requires urgently excluding complete rupture (Thompson's) before proceeding to confirm tendinopathy (Royal London).",
@@ -31,7 +34,10 @@
       }
     },
     {
-      "when": { "flag": "achillesInsertionalPainPattern", "equals": true },
+      "when": {
+        "flag": "achillesInsertionalPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Thompson's test + insertional palpation + single-leg heel raise endurance",
         "why": "Insertional Achilles pain needs rupture excluded and load tolerance quantified to guide eccentric loading dosage.",
@@ -40,7 +46,10 @@
       }
     },
     {
-      "when": { "flag": "ankleSuspectedAchillesRuptureFlag", "equals": true },
+      "when": {
+        "flag": "ankleSuspectedAchillesRuptureFlag",
+        "equals": true
+      },
       "add": {
         "exam": "Thompson's test + palpable tendon gap check, before any weight-bearing testing",
         "why": "A flagged suspected rupture must be confirmed or excluded before any further loading or resisted testing is attempted.",
@@ -49,7 +58,10 @@
       }
     },
     {
-      "when": { "flag": "ankleGivingWayInstability", "equals": true },
+      "when": {
+        "flag": "ankleGivingWayInstability",
+        "equals": true
+      },
       "add": {
         "exam": "Talar tilt test + single-leg balance/proprioception screen + subtalar mobility assessment",
         "why": "Reported instability needs both mechanical laxity and functional/proprioceptive deficits assessed, since chronic instability has both components.",
@@ -58,7 +70,10 @@
       }
     },
     {
-      "when": { "flag": "ankleMedialPainPattern", "equals": true },
+      "when": {
+        "flag": "ankleMedialPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Navicular drop test + resisted inversion in plantarflexion + single-leg heel raise (too-many-toes sign)",
         "why": "Medial ankle pain in an adult raises suspicion for tibialis posterior dysfunction / progressive flatfoot, which is easily missed without a dedicated arch assessment.",
@@ -67,7 +82,10 @@
       }
     },
     {
-      "when": { "flag": "ankleRadiatesTarsalTunnel", "equals": true },
+      "when": {
+        "flag": "ankleRadiatesTarsalTunnel",
+        "equals": true
+      },
       "add": {
         "exam": "Tinel's sign at tarsal tunnel + plantar foot sensory mapping",
         "why": "A neuropathic-sounding referral pattern requires differentiating tarsal tunnel syndrome from a local musculoskeletal source.",
@@ -76,7 +94,10 @@
       }
     },
     {
-      "when": { "flag": "ankleStressFractureSuspected", "equals": true },
+      "when": {
+        "flag": "ankleStressFractureSuspected",
+        "equals": true
+      },
       "add": {
         "exam": "Point bony palpation + hop test + training-load history, before any further loaded testing",
         "why": "A suspected stress fracture requires screening before continuing with provocative/resisted testing that could aggravate it.",
@@ -110,5 +131,14 @@
       "confirmsOrExcludes": "Confirms structural pathology when clinically indicated",
       "priority": "Low"
     }
-  ]
+  ],
+  "assessmentLayers": {
+    "Observation": "Swelling/bruising pattern, deformity, foot posture, antalgic gait",
+    "Posture": "Foot pronation / supination, navicular drop, calcaneal alignment",
+    "Functional screen": "Single-leg balance / Star-excursion, single-leg heel raises, hop, weight-bearing lunge",
+    "STTT (Cyriax)": "Resisted dorsiflexion / plantarflexion / inversion / eversion \u2014 contractile source",
+    "CPA (compensation pattern)": "Peroneal / tibialis-posterior inhibition vs gastrocnemius overactivity",
+    "Kinetic chain": "Weight-bearing dorsiflexion (lunge) & subtalar mobility as chain drivers; knee/hip above",
+    "Fascia": "Superficial & deep back line (gastroc-soleus-plantar continuity), spiral line"
+  }
 }

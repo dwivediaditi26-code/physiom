@@ -25,6 +25,7 @@ interface PlanConfig {
   always: ExamRecommendation[];
   conditional: { when: { flag: keyof SubjectiveInput; equals: boolean }; add: ExamRecommendation }[];
   supporting: ExamRecommendation[];
+  assessmentLayers?: Record<string, string>;
 }
 
 const CONFIGS: Record<string, PlanConfig> = {
@@ -90,5 +91,5 @@ export function buildExamPlan(
     return a.exam.localeCompare(b.exam); // deterministic tie-break
   });
 
-  return { region, referFirst: null, recommendations };
+  return { region, referFirst: null, recommendations, assessmentLayers: config.assessmentLayers };
 }

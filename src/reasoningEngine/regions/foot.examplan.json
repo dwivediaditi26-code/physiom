@@ -22,7 +22,10 @@
   ],
   "conditional": [
     {
-      "when": { "flag": "plantarFasciaPainPattern", "equals": true },
+      "when": {
+        "flag": "plantarFasciaPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Windlass test + calf/plantar fascia flexibility",
         "why": "The windlass test loads the plantar fascia and is the key confirmatory test for plantar fasciopathy; calf tightness is a common driver.",
@@ -31,7 +34,10 @@
       }
     },
     {
-      "when": { "flag": "mortonsInterspacePainPattern", "equals": true },
+      "when": {
+        "flag": "mortonsInterspacePainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Mulder's click + web-space sensory testing",
         "why": "Interdigital (Morton's) neuroma is confirmed by a palpable click on mediolateral squeeze with interspace pressure and altered web-space sensation.",
@@ -53,5 +59,14 @@
       "confirmsOrExcludes": "Differentiates hallux rigidus from soft-tissue forefoot pain",
       "priority": "Medium"
     }
-  ]
+  ],
+  "assessmentLayers": {
+    "Observation": "Arch height, callus pattern, toe deformity (hallux valgus, claw/hammer), swelling, footwear wear",
+    "Posture": "Pronation / supination, navicular drop, first-ray position, rearfoot alignment",
+    "Functional screen": "Windlass on toe-stand, single-leg heel raise, gait push-off, Jack's test",
+    "STTT (Cyriax)": "Resisted hallux / toe flexion-extension, resisted inversion (tib-post) for arch support",
+    "CPA (compensation pattern)": "Intrinsic-foot / tibialis-posterior inhibition vs overactive long toe flexors",
+    "Kinetic chain": "Ankle DF mobility, subtalar & midfoot mobility, tibial-rotation link upward",
+    "Fascia": "Superficial back line (plantar-fascia \u2194 gastroc continuity); windlass mechanism"
+  }
 }

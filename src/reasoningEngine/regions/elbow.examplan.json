@@ -22,7 +22,10 @@
   ],
   "conditional": [
     {
-      "when": { "flag": "lateralElbowPainPattern", "equals": true },
+      "when": {
+        "flag": "lateralElbowPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Cozen's test + Mill's test + resisted wrist extension (ECRB)",
         "why": "Lateral elbow pain is the classic lateral epicondylalgia (tennis elbow) location and warrants targeted confirmation.",
@@ -31,7 +34,10 @@
       }
     },
     {
-      "when": { "flag": "elbowRacquetSportMechanism", "equals": true },
+      "when": {
+        "flag": "elbowRacquetSportMechanism",
+        "equals": true
+      },
       "add": {
         "exam": "Cozen's test + grip strength comparison + load/technique review",
         "why": "A racquet-sport mechanism is a well-recognised lateral epicondylalgia risk factor and should be corroborated with provocation testing.",
@@ -40,16 +46,22 @@
       }
     },
     {
-      "when": { "flag": "medialElbowPainPattern", "equals": true },
+      "when": {
+        "flag": "medialElbowPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Golfer's elbow test + resisted wrist flexion (FCR/FCU) + elbow valgus stress test",
-        "why": "Medial elbow pain overlaps medial epicondylalgia, UCL sprain, and pronator teres syndrome — testing all three sources is required to differentiate.",
+        "why": "Medial elbow pain overlaps medial epicondylalgia, UCL sprain, and pronator teres syndrome \u2014 testing all three sources is required to differentiate.",
         "confirmsOrExcludes": "Confirms/excludes medial epicondylalgia, UCL sprain, pronator teres syndrome",
         "priority": "High"
       }
     },
     {
-      "when": { "flag": "elbowGolfSwingMechanism", "equals": true },
+      "when": {
+        "flag": "elbowGolfSwingMechanism",
+        "equals": true
+      },
       "add": {
         "exam": "Golfer's elbow test + resisted wrist flexion with forearm supination",
         "why": "A golf-swing mechanism is a well-recognised medial epicondylalgia risk factor and should be corroborated with provocation testing.",
@@ -58,7 +70,10 @@
       }
     },
     {
-      "when": { "flag": "elbowThrowingMechanism", "equals": true },
+      "when": {
+        "flag": "elbowThrowingMechanism",
+        "equals": true
+      },
       "add": {
         "exam": "Elbow valgus stress test (+ milking manoeuvre) + throwing-phase history",
         "why": "A throwing mechanism creates repetitive valgus overload, the classic UCL sprain mechanism, and should be corroborated with valgus stress testing.",
@@ -67,7 +82,10 @@
       }
     },
     {
-      "when": { "flag": "ulnarNerveDistributionSymptoms", "equals": true },
+      "when": {
+        "flag": "ulnarNerveDistributionSymptoms",
+        "equals": true
+      },
       "add": {
         "exam": "Tinel's sign at cubital tunnel + elbow flexion provocation test + intrinsic hand muscle screen",
         "why": "Ulnar nerve distribution symptoms (little/ring finger) require confirmation of cubital tunnel entrapment and a check for advanced (intrinsic wasting) involvement.",
@@ -76,7 +94,10 @@
       }
     },
     {
-      "when": { "flag": "sustainedElbowFlexionAggravation", "equals": true },
+      "when": {
+        "flag": "sustainedElbowFlexionAggravation",
+        "equals": true
+      },
       "add": {
         "exam": "Tinel's sign at cubital tunnel + sustained elbow flexion provocation test",
         "why": "Symptom onset with sustained elbow flexion (e.g. phone use, sleeping) is the classic cubital tunnel aggravation pattern.",
@@ -85,7 +106,10 @@
       }
     },
     {
-      "when": { "flag": "radialNerveDistributionSymptoms", "equals": true },
+      "when": {
+        "flag": "radialNerveDistributionSymptoms",
+        "equals": true
+      },
       "add": {
         "exam": "Resisted supination + resisted middle finger extension + forearm extensor mass (mobile wad) palpation",
         "why": "Radial nerve distribution symptoms with lateral forearm pain distal to the epicondyle raise suspicion for radial tunnel syndrome, a lateral-epicondylalgia mimic.",
@@ -94,7 +118,10 @@
       }
     },
     {
-      "when": { "flag": "anteriorElbowPainPattern", "equals": true },
+      "when": {
+        "flag": "anteriorElbowPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Resisted elbow flexion/supination (biceps) + cubital fossa palpation + observe for a Popeye deformity",
         "why": "Anterior/cubital fossa pain with a forceful eccentric loading mechanism raises suspicion for distal biceps tendinopathy or rupture.",
@@ -103,7 +130,10 @@
       }
     },
     {
-      "when": { "flag": "posteriorElbowPainPattern", "equals": true },
+      "when": {
+        "flag": "posteriorElbowPainPattern",
+        "equals": true
+      },
       "add": {
         "exam": "Olecranon palpation (fluctuance, warmth) + resisted elbow extension (triceps)",
         "why": "Posterior elbow pain over the olecranon requires differentiating bursitis (superficial, fluctuant) from triceps insertion tendinopathy.",
@@ -112,9 +142,12 @@
       }
     },
     {
-      "when": { "flag": "elbowDirectTraumaOnset", "equals": true },
+      "when": {
+        "flag": "elbowDirectTraumaOnset",
+        "equals": true
+      },
       "add": {
-        "exam": "Fracture screen (point bone tenderness, gross deformity, active extension check) — imaging referral if positive",
+        "exam": "Fracture screen (point bone tenderness, gross deformity, active extension check) \u2014 imaging referral if positive",
         "why": "Direct trauma to the elbow requires a fracture screen before any provocative special testing or loading.",
         "confirmsOrExcludes": "Screens for occult fracture requiring imaging referral before proceeding",
         "priority": "High"
@@ -123,7 +156,7 @@
   ],
   "supporting": [
     {
-      "exam": "Neurological screen — C5-T1 dermatomes/myotomes/reflexes if referred/neurological concern",
+      "exam": "Neurological screen \u2014 C5-T1 dermatomes/myotomes/reflexes if referred/neurological concern",
       "why": "Rules out a cervical radiculopathy contribution when the pain pattern or neurological symptoms are atypical for a local elbow source.",
       "confirmsOrExcludes": "Screens C5-T1 nerve root contribution",
       "priority": "Low"
@@ -140,5 +173,14 @@
       "confirmsOrExcludes": "Confirms structural pathology when clinically indicated",
       "priority": "Low"
     }
-  ]
+  ],
+  "assessmentLayers": {
+    "Observation": "Carrying angle, olecranon swelling, muscle bulk, deformity",
+    "Posture": "Shoulder-girdle & wrist posture, grip mechanics",
+    "Functional screen": "Grip strength (pain-free dynamometry), resisted grip in extension, functional lift / carry",
+    "STTT (Cyriax)": "Resisted wrist extension (lateral epicondylalgia), wrist flexion/pronation (medial), elbow flexion/extension & supination (biceps)",
+    "CPA (compensation pattern)": "Wrist-extensor inhibition (lateral epicondylalgia) vs grip overactivity; scapular support",
+    "Kinetic chain": "Cervical / shoulder contribution, wrist & grip mechanics, thoracic posture",
+    "Fascia": "Deep & superficial front/back arm lines; forearm compartment"
+  }
 }
