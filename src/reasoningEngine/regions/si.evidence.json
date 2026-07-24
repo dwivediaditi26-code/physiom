@@ -1,0 +1,55 @@
+{
+  "region": "si",
+  "diagnoses": [
+    {
+      "name": "Sacroiliac joint pain / dysfunction (mechanical)",
+      "source": "Laslett provocation test cluster (Laslett 2005); Magee SIJ chapter",
+      "requiredFindings": [],
+      "supportingFindings": ["sij_provocation_cluster_positive", "sij_pain_pattern", "thigh_thrust_positive", "si_distraction_positive", "si_compression_positive", "gaenslen_positive", "buttock_pain_pattern", "rising_from_sitting_aggravation"],
+      "conflictingFindings": ["leg_pain_below_knee", "dermatomal_pattern"],
+      "exclusionFindings": [],
+      "weights": { "specialTests": 1.4, "history": 0.9, "painBehaviour": 0.8 },
+      "keyExams": ["Laslett cluster (thigh thrust, distraction, compression, Gaenslen, sacral thrust)", "SIJ palpation (PSIS, long dorsal ligament)"]
+    },
+    {
+      "name": "Pregnancy-related pelvic girdle pain (PGP)",
+      "source": "European guidelines on PGP (Vleeming 2008); Magee",
+      "requiredFindings": [],
+      "supportingFindings": ["postpartum_pregnancy_mechanism", "sij_pain_pattern", "thigh_thrust_positive", "faber_positive", "buttock_pain_pattern", "groin_radiation"],
+      "conflictingFindings": ["leg_pain_below_knee"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.3, "specialTests": 1.1, "painBehaviour": 0.7 },
+      "keyExams": ["Active Straight Leg Raise (ASLR)", "Posterior pelvic pain provocation (thigh thrust)", "Symphysis pubis palpation"]
+    },
+    {
+      "name": "Inflammatory sacroiliitis (axial spondyloarthritis)",
+      "source": "ASAS classification criteria; Magee inflammatory back pain features",
+      "requiredFindings": [],
+      "supportingFindings": ["alternating_buttock_pain", "morning_stiffness_inflammatory", "nsaid_very_effective", "age_under_45", "insidious_onset", "night_pain", "sij_pain_pattern"],
+      "conflictingFindings": ["traumatic_onset"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.3, "painBehaviour": 1.1, "specialTests": 0.6 },
+      "keyExams": ["Inflammatory back pain screen (ASAS)", "MRI SIJ (bone marrow oedema) referral", "HLA-B27 / ESR-CRP referral"]
+    },
+    {
+      "name": "Gluteal / deep-buttock referred pain (differential)",
+      "source": "Magee; deep gluteal syndrome differential literature",
+      "requiredFindings": [],
+      "supportingFindings": ["buttock_pain_pattern", "insidious_onset"],
+      "conflictingFindings": ["sij_provocation_cluster_positive"],
+      "exclusionFindings": [],
+      "weights": { "history": 0.9, "painBehaviour": 0.7 },
+      "keyExams": ["Palpation of piriformis / deep gluteal", "FAIR test", "Resisted hip external rotation"]
+    },
+    {
+      "name": "Lumbar-referred pain (differential to exclude)",
+      "source": "Magee; SIJ vs lumbar source differentiation",
+      "requiredFindings": [],
+      "supportingFindings": ["leg_pain_below_knee", "dermatomal_pattern"],
+      "conflictingFindings": ["sij_provocation_cluster_positive", "thigh_thrust_positive"],
+      "exclusionFindings": [],
+      "weights": { "history": 1.0 },
+      "keyExams": ["Lumbar AROM + neurological screen", "SLR / slump", "Centralisation testing to distinguish lumbar source"]
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "region": "si",
+  "always": [
+    {
+      "exam": "Lumbar screen + neurological screen (myotomes, dermatomes, reflexes, SLR/slump)",
+      "why": "The SIJ is a diagnosis of exclusion \u2014 a lumbar source (disc/radiculopathy) must be screened first, since below-knee/dermatomal symptoms point away from the SIJ.",
+      "confirmsOrExcludes": "Excludes lumbar radicular source before attributing pain to the SIJ",
+      "priority": "High"
+    },
+    {
+      "exam": "SIJ provocation cluster (thigh thrust, distraction, compression, Gaenslen's, sacral thrust)",
+      "why": "No single SIJ test is diagnostic; Laslett showed 3+ positive of the provocation cluster is ~91% specific for a SIJ pain source.",
+      "confirmsOrExcludes": "Confirms/excludes SIJ as the pain source (3+ positive cluster)",
+      "priority": "High"
+    },
+    {
+      "exam": "Inflammatory back pain screen (age of onset, morning stiffness duration, night pain, alternating buttock pain, NSAID response, family history)",
+      "why": "Distinguishes a mechanical SIJ presentation from inflammatory sacroiliitis (axial spondyloarthritis), which needs medical/rheumatology referral rather than mechanical treatment.",
+      "confirmsOrExcludes": "Screens for inflammatory sacroiliitis requiring onward referral",
+      "priority": "High"
+    }
+  ],
+  "conditional": [
+    {
+      "when": {
+        "flag": "postpartumPregnancyMechanism",
+        "equals": true
+      },
+      "add": {
+        "exam": "Active Straight Leg Raise (ASLR) + symphysis pubis palpation",
+        "why": "Pregnancy-related pelvic girdle pain frequently involves the whole pelvic ring; ASLR grades load-transfer impairment and the symphysis must be assessed alongside the SIJ.",
+        "confirmsOrExcludes": "Confirms pelvic girdle pain / load-transfer deficit",
+        "priority": "High"
+      }
+    },
+    {
+      "when": {
+        "flag": "alternatingButtockPain",
+        "equals": true
+      },
+      "add": {
+        "exam": "Refer for MRI SIJ (bone marrow oedema) and HLA-B27 / ESR-CRP bloods",
+        "why": "Alternating buttock pain is a specific inflammatory back pain feature; imaging/serology confirm or exclude axial spondyloarthritis.",
+        "confirmsOrExcludes": "Confirms/excludes inflammatory sacroiliitis",
+        "priority": "Medium"
+      }
+    }
+  ],
+  "supporting": [
+    {
+      "exam": "SIJ palpation (PSIS symmetry, long dorsal sacroiliac ligament, sacral sulcus)",
+      "why": "Localised SIJ ligament tenderness supports a SIJ source and helps localise the symptomatic side alongside the provocation cluster.",
+      "confirmsOrExcludes": "Supports SIJ localisation",
+      "priority": "Medium"
+    },
+    {
+      "exam": "Hip examination (FADIR, resisted hip external rotation, deep gluteal palpation)",
+      "why": "Hip and deep-gluteal sources refer to the buttock and must be differentiated from a true SIJ source.",
+      "confirmsOrExcludes": "Differentiates hip/deep-gluteal referral from SIJ",
+      "priority": "Medium"
+    }
+  ]
+}

@@ -59,6 +59,9 @@ export function deriveFindings(
   if (region === "wrist") {
     deriveWrist(subjective, objective, add);
   }
+  if (region === "si") {
+    deriveSi(subjective, objective, add);
+  }
   return f;
 }
 
@@ -304,6 +307,14 @@ export const FINDING_DOMAIN: Record<string, Domain> = {
   radial_styloid_tender: "palpation", cmc_thumb_base_tender: "palpation",
   carpal_tunnel_tender_wrist: "palpation",
   imaging_wrist_oa: "imaging", imaging_scaphoid_fracture: "imaging", imaging_distal_radius_fracture: "imaging",
+  // SI-joint region
+  buttock_pain_pattern: "history", groin_radiation: "history",
+  postpartum_pregnancy_mechanism: "history", alternating_buttock_pain: "history",
+  morning_stiffness_inflammatory: "painBehaviour", nsaid_very_effective: "history",
+  age_under_45: "history", rising_from_sitting_aggravation: "painBehaviour",
+  thigh_thrust_positive: "specialTests", si_distraction_positive: "specialTests",
+  si_compression_positive: "specialTests", gaenslen_positive: "specialTests",
+  faber_positive: "specialTests", sij_provocation_cluster_positive: "specialTests",
 };
 
 function deriveCervical(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
@@ -801,4 +812,31 @@ function deriveElbow(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
   add("imaging_elbow_oa", "imaging", imagingSummary.includes("osteoarth") || imagingSummary.includes(" oa"), "Imaging: elbow osteoarthritis reported");
   add("imaging_ucl_tear", "imaging", imagingSummary.includes("ucl") || imagingSummary.includes("medial collateral"), "Imaging: UCL tear reported");
   add("imaging_biceps_rupture", "imaging", imagingSummary.includes("biceps rupture") || imagingSummary.includes("biceps tendon tear"), "Imaging: distal biceps rupture/tear reported");
+}
+
+function deriveSi(s: SubjectiveInput, o: ObjectiveFindings, add: Add): void {
+  const t = o.specialTests;
+  // History / behaviour (SI-specific subjective signals)
+  add("sij_pain_pattern", "history", !!s.sacroiliacPainPattern, "History: sacroiliac joint pain pattern");
+  add("buttock_pain_pattern", "history", !!s.buttockPainPattern, "History: buttock-dominant pain pattern");
+  add("groin_radiation", "history", !!s.groinRadiation, "History: groin radiation");
+  add("postpartum_pregnancy_mechanism", "history", !!s.postpartumPregnancyMechanism, "History: pregnancy/post-partum onset");
+  add("alternating_buttock_pain", "history", !!s.alternatingButtockPain, "History: alternating buttock pain (inflammatory feature)");
+  add("morning_stiffness_inflammatory", "painBehaviour", !!s.morningStiffnessInflammatory, "History: prolonged morning stiffness (inflammatory)");
+  add("nsaid_very_effective", "history", !!s.nsaidVeryEffective, "History: NSAIDs very effective (ASAS criterion)");
+  add("age_under_45", "history", !!s.ageUnder45, "History: age of onset < 45 (inflammatory risk factor)");
+  add("rising_from_sitting_aggravation", "painBehaviour", !!s.risingFromSittingAggravation, "History: rising from sitting aggravates");
+  add("leg_pain_below_knee", "history", !!s.legPainBelowKnee, "History: leg pain below knee (points to lumbar source)");
+  add("dermatomal_pattern", "history", !!s.dermatomalPattern, "History: dermatomal distribution (points to lumbar source)");
+
+  // SIJ provocation special tests
+  add("thigh_thrust_positive", "specialTests", isPositive(t, "thigh_thrust"), "Thigh thrust: positive (posterior SIJ)");
+  add("si_distraction_positive", "specialTests", isPositive(t, "si_distraction"), "SI distraction: positive");
+  add("si_compression_positive", "specialTests", isPositive(t, "si_compression"), "SI compression: positive");
+  add("gaenslen_positive", "specialTests", isPositive(t, "gaenslen"), "Gaenslen's: positive");
+  add("faber_positive", "specialTests", isPositive(t, "faber"), "FABER/Patrick's: positive (SIJ/hip)");
+  // Laslett cluster: 3+ positive provocation tests is ~91% specific for a SIJ source.
+  const clusterCount = ["thigh_thrust", "si_distraction", "si_compression", "gaenslen", "faber"]
+    .filter((k) => isPositive(t, k)).length;
+  add("sij_provocation_cluster_positive", "specialTests", clusterCount >= 3, "SIJ provocation cluster: 3+ tests positive (Laslett)");
 }

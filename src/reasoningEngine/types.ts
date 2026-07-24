@@ -80,6 +80,15 @@ export interface SubjectiveInput {
   centralisesWithFlexion?: boolean;
   sacroiliacPainPattern?: boolean;
   youngAthleteExtensionPain?: boolean;
+  // SI-joint-relevant history signals
+  buttockPainPattern?: boolean;
+  groinRadiation?: boolean;
+  postpartumPregnancyMechanism?: boolean;
+  alternatingButtockPain?: boolean;
+  morningStiffnessInflammatory?: boolean;
+  nsaidVeryEffective?: boolean;
+  ageUnder45?: boolean;
+  risingFromSittingAggravation?: boolean;
   footDropReported?: boolean;
   hotSwollenJoint?: boolean;
   irreducibleLocking?: boolean;

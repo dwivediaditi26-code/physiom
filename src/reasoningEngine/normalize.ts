@@ -1536,6 +1536,90 @@ export function runWristReasoningFromData(data: Data): ReasoningResult {
   return runReasoning(subjective, objective, region);
 }
 
+// ── Sacroiliac joint (SI) ───────────────────────────────────
+// The SIJ shares the "Lumbar / SI" subjective module (lx_* fields, verified in
+// sharedClinicalData.js) and adds dedicated provocation special tests
+// (st_si_distraction / st_si_compression / st_gaenslen / st_thigh_thrust /
+// st_faber_test). Red-flag wiring mirrors the lumbar normalizer (shared
+// grf_*/lx_rf_* screens) since a serious spinal/pelvic pathology presenting as
+// buttock pain must halt here exactly as it would for lumbar.
+export function normalizeSiFromData(data: Data): { subjective: SubjectiveInput; objective: ObjectiveFindings; region: string } {
+  const age = num(data.dem_age);
+  const loc = str(data.lx_loc).toLowerCase();
+  const radiation = str(data.lx_radiation).toLowerCase();
+  const onsetText = str(data.cc_onset).toLowerCase();
+  const moi = str(data.lx_moi).toLowerCase();
+  const behaviour = str(data.lx_pattern).toLowerCase();
+  const belowKnee = str(data.lx_below_knee).toLowerCase();
+  const dermatomal = str(data.lx_dermatomal).toLowerCase();
+  const aggAct = str(data.lx_agg_act).toLowerCase();
+  const aggOther = str(data.lx_agg_other).toLowerCase();
+  const morning = str(data.lx_morning).toLowerCase();
+  const night = str(data.lx_night).toLowerCase();
+  const relMed = str(data.lx_rel_med).toLowerCase();
+  const rfInflammatory = str(data.lx_rf_inflammatory).toLowerCase();
+  const rfSerious = str(data.lx_rf_serious).toLowerCase();
+  const rfCauda = str(data.lx_rf_cauda).toLowerCase();
+  const fractureScreenPositive = selected(data.lx_rf_fracture, "no fracture indicators");
+
+  const subjective: SubjectiveInput = {
+    region: "si",
+    chiefComplaint: str(data.cc_main),
+    ageOver50: age != null && age >= 50,
+    ageUnder45: age != null && age < 45,
+    ageBand: age == null ? undefined : age < 40 ? "under40" : age <= 65 ? "40to65" : "over65",
+    nightPain: has(night, "wakes", "constant night pain") || has(behaviour, "night dominant", "worse second half of night"),
+    constantPain: has(behaviour, "constant"),
+    sacroiliacPainPattern: has(loc, "si joint", "bilateral si joints", "sacrum"),
+    buttockPainPattern: has(loc, "buttock", "ischial tuberosity"),
+    groinRadiation: has(radiation, "into groin"),
+    postpartumPregnancyMechanism: has(moi, "post-partum") || has(aggOther, "pregnancy / post-partum") || has(onsetText, "pregnan", "post-partum", "postpartum"),
+    alternatingButtockPain: has(rfInflammatory, "alternating buttock pain"),
+    morningStiffnessInflammatory: has(morning, ">1 hour") || has(rfInflammatory, "morning stiffness >30"),
+    nsaidVeryEffective: has(relMed, "nsaids — very effective") || has(rfInflammatory, "nsaids very effective"),
+    risingFromSittingAggravation: has(aggAct, "getting up from sitting"),
+    legPainBelowKnee: has(belowKnee, "below knee", "extends to foot"),
+    dermatomalPattern: dermatomal !== "" && !has(dermatomal, "not dermatomal"),
+    onsetTraumatic: hasUnnegated(onsetText, "trauma", "fall", "injury") || has(moi, "fall onto back", "fall from height", "motor vehicle accident"),
+    onsetInsidious: has(onsetText, "insidious", "gradual", "no clear cause") || has(moi, "no clear mechanism", "insidious onset", "sustained poor posture"),
+    // Red-flag screen (shared lumbar/SI fields) -- same wiring as lumbar.
+    traumaHistory: selected(data.grf_fracture, "no fracture indicators") || hasUnnegated(onsetText, "fall", "trauma", "injury") || fractureScreenPositive,
+    unableToWeightBear: fractureScreenPositive,
+    saddleAnesthesia: has(rfCauda, "saddle") || has(str(data.lx_neuro_signs), "saddle"),
+    bladderBowelChange: has(rfCauda, "bladder", "bowel"),
+    bilateralLegWeakness: has(rfCauda, "bilateral leg weakness"),
+    unexplainedWeightLoss: has(str(data.grf_systemic), "unexplained weight loss") || has(rfSerious, "unexplained weight loss"),
+    nightPainUnrelieved: has(night, "constant night pain") || has(rfSerious, "progressive night pain"),
+    malignancyHistory: selected(data.grf_cancer, "no cancer history") || has(rfSerious, "history of cancer"),
+    systemicIllness: selected(data.grf_systemic, "systemically well") || has(rfSerious, "fever", "systemically unwell"),
+    fever: has(rfSerious, "fever"),
+    constantUnremittingPain: has(rfSerious, "constant pain"),
+  };
+
+  const specialTests: Record<string, boolean> = {};
+  const setT = (key: string, v: boolean) => { if (v) specialTests[key] = true; };
+  setT("thigh_thrust", isPos(data.st_thigh_thrust));
+  setT("si_distraction", isPos(data.st_si_distraction));
+  setT("si_compression", isPos(data.st_si_compression));
+  setT("gaenslen", isPos(data.st_gaenslen));
+  setT("faber", isPos(data.st_faber_test));
+
+  const objective: ObjectiveFindings = {
+    rom: [],
+    mmt: [],
+    specialTests,
+    palpation: { tenderStructures: readPalpation(data) },
+    functional: { movements: [] },
+    imaging: readImaging(data),
+  };
+  return { subjective, objective, region: "si" };
+}
+
+export function runSiReasoningFromData(data: Data): ReasoningResult {
+  const { subjective, objective, region } = normalizeSiFromData(data);
+  return runReasoning(subjective, objective, region);
+}
+
 export function runReasoningFromData(data: Data, region: string): ReasoningResult {
   if (region === "cervical") return runCervicalReasoningFromData(data);
   if (region === "lumbar") return runLumbarReasoningFromData(data);
@@ -1545,5 +1629,6 @@ export function runReasoningFromData(data: Data, region: string): ReasoningResul
   if (region === "thoracic") return runThoracicReasoningFromData(data);
   if (region === "ankle") return runAnkleReasoningFromData(data);
   if (region === "wrist") return runWristReasoningFromData(data);
+  if (region === "si") return runSiReasoningFromData(data);
   return runShoulderReasoningFromData(data);
 }
