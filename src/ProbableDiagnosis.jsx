@@ -13,7 +13,20 @@ const TEAL = "#0891b2";
 // diagnosis-suggestion path in the app -- the older interpretationEngine /
 // interpretationAdapter system has been removed. Exported for use elsewhere
 // (e.g. region-aware messaging) if needed.
-export const SUPPORTED = ["shoulder", "cervical", "lumbar", "hip", "knee", "elbow", "thoracic", "ankle", "wrist"];
+export const SUPPORTED = ["shoulder", "cervical", "lumbar", "hip", "knee", "elbow", "thoracic", "ankle", "wrist", "si"];
+
+// Some regions share a single subjective intake module and should be reasoned
+// about together. The lumbar spine and the sacroiliac joint share the one
+// "Lumbar / SI" module (lx_* fields); because the SIJ is clinically a diagnosis
+// of exclusion FROM the lumbar spine, a lumbopelvic assessment runs BOTH engines
+// and the two differential sets are surfaced together (ranked by match score),
+// rather than forcing the clinician to pick lumbar-vs-SI up front.
+const COMPANION = { lumbar: ["si"] };
+const REGION_LABEL = {
+  shoulder: "Shoulder", cervical: "Cervical", lumbar: "Lumbar", hip: "Hip",
+  knee: "Knee", elbow: "Elbow", thoracic: "Thoracic", ankle: "Ankle",
+  wrist: "Wrist", si: "SI joint",
+};
 
 // Detect the working region from the app's data. Order of trust:
 // explicit selected-regions -> chief complaint keywords.
@@ -64,6 +77,7 @@ function Chips({ label, items, color }) {
 
 export default function ProbableDiagnosis({ data = {} }) {
   const [result, setResult] = useState(null);
+  const [companionResults, setCompanionResults] = useState([]);
   const [status, setStatus] = useState("idle"); // idle | ok | unsupported | error
   const [region, setRegion] = useState(null);
   const [running, setRunning] = useState(false);
@@ -76,19 +90,37 @@ export default function ProbableDiagnosis({ data = {} }) {
       if (!r || !SUPPORTED.includes(r)) {
         setStatus("unsupported");
         setResult(null);
+        setCompanionResults([]);
       } else {
         setResult(runReasoningFromData(data, r));
+        // Run any companion regions that share this region's intake module
+        // (e.g. SI joint alongside lumbar) on the same recorded data.
+        const companions = (COMPANION[r] || [])
+          .filter((c) => SUPPORTED.includes(c))
+          .map((c) => ({ region: c, result: runReasoningFromData(data, c) }));
+        setCompanionResults(companions);
         setStatus("ok");
       }
     } catch (e) {
       setStatus("error");
       setResult(null);
+      setCompanionResults([]);
     } finally {
       setRunning(false);
     }
   };
 
-  const candidates = (result?.differentials || []).filter((d) => !d.excluded && d.diagnosticMatchScore > 0);
+  // Merge the primary region's differentials with any companion region's, tag
+  // each with its source region, and rank the combined list by match score.
+  const multiRegion = companionResults.length > 0;
+  const tagged = (res, regionKey) =>
+    (res?.differentials || [])
+      .filter((d) => !d.excluded && d.diagnosticMatchScore > 0)
+      .map((d) => ({ ...d, _regionLabel: REGION_LABEL[regionKey] || regionKey }));
+  const candidates = [
+    ...tagged(result, result?.region),
+    ...companionResults.flatMap((c) => tagged(c.result, c.region)),
+  ].sort((a, b) => b.diagnosticMatchScore - a.diagnosticMatchScore);
 
   return (
     <div style={{ margin: "10px 0 4px" }}>
@@ -112,7 +144,7 @@ export default function ProbableDiagnosis({ data = {} }) {
           {region
             ? `The deterministic engine doesn't yet cover "${region}".`
             : "Couldn't determine the region — select a region in the Subjective assessment first."}
-          {" "}It currently supports: shoulder, cervical spine, lumbar spine, hip, knee, elbow, thoracic spine, ankle, wrist (more regions are being added).
+          {" "}It currently supports: shoulder, cervical spine, lumbar spine, sacroiliac joint, hip, knee, elbow, thoracic spine, ankle, wrist (more regions are being added).
         </div>
       )}
 
@@ -135,7 +167,9 @@ export default function ProbableDiagnosis({ data = {} }) {
       {status === "ok" && result && !result.stopped && (
         <div style={{ marginTop: 10 }}>
           <div style={{ fontSize: 12, color: "#374151", marginBottom: 8, padding: "8px 10px", background: "#F0F9FF", border: "1px solid #BAE6FD", borderRadius: 8 }}>
-            <b style={{ textTransform: "capitalize" }}>{result.region}</b> · Evidence completeness{" "}
+            <b style={{ textTransform: "capitalize" }}>{multiRegion
+              ? [result.region, ...companionResults.map((c) => c.region)].join(" + ")
+              : result.region}</b> · Evidence completeness{" "}
             <b>{result.completeness.evidenceConfidence}%</b>
             {result.completeness.missingCritical.length > 0 && (
               <span> · still outstanding: {result.completeness.missingCritical.map((m) => m.exam).join(", ")}</span>
@@ -155,6 +189,11 @@ export default function ProbableDiagnosis({ data = {} }) {
                   <div key={i} style={{ padding: "10px 12px", background: cs.bg, border: `1.5px solid ${cs.border}`, borderRadius: 10, marginBottom: 7 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
                       <span style={{ fontSize: 14.5, fontWeight: 700, color: "#111827", flex: 1 }}>{i + 1}. {d.name}</span>
+                      {multiRegion && d._regionLabel && (
+                        <span style={{ padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: "#EEF2FF", color: "#3730A3", border: "1px solid #C7D2FE" }}>
+                          {d._regionLabel}
+                        </span>
+                      )}
                       <span style={{ padding: "2px 8px", borderRadius: 99, fontSize: 12, fontWeight: 700, background: cs.badge, color: "#fff" }}>
                         {d.band} {d.diagnosticMatchScore}%
                       </span>

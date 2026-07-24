@@ -105,4 +105,21 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
     expect(screen.getAllByText(/lateral epicondylalgia/i).length).toBeGreaterThan(0);
   });
+
+  it("runs BOTH lumbar and SI engines on the shared Lumbar/SI module and surfaces an SI differential", () => {
+    const data = {
+      cc_main: "Left SI joint and buttock pain after a fall onto the buttocks, no leg pain",
+      cx_selected_regions: ["Lumbar / SI"],
+      lx_loc: "SI joint (L)",
+      st_thigh_thrust: "Positive",
+      st_si_distraction: "Positive",
+      st_si_compression: "Positive",
+    };
+    render(<ProbableDiagnosis data={data} />);
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    // SIJ differential appears, and the multi-region tag is rendered
+    expect(screen.getAllByText(/sacroiliac joint pain/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/SI joint/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/lumbar \+ si/i)).toBeInTheDocument();
+  });
 });
