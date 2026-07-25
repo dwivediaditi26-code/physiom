@@ -5600,6 +5600,26 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                 )}
                               </div>
                             )}
+                            {c.matchTier !== "Unlikely" && c.assessmentModules && c.assessmentModules.length > 0 && (
+                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
+                                  Layered assessment — what to look for &amp; where to check
+                                </div>
+                                {c.assessmentModules.map((m, mi) => (
+                                  <div key={"lay"+mi} style={{ display:"flex", alignItems:"flex-start", gap:6, margin:"3px 0" }}>
+                                    <div style={{ flex:1 }}>
+                                      <span style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{m.label}: </span>
+                                      <span style={{ fontSize:"0.72rem", color: PC.muted }}>{m.detail}</span>
+                                    </div>
+                                    {onNav && m.key && (
+                                      <button type="button" onClick={()=>onNav(m.key)} title={`Open the ${m.label} module`}
+                                        style={{ flexShrink:0, fontSize:"0.66rem", fontWeight:700, cursor:"pointer", color:"#fff",
+                                          background:"#0891b2", border:"none", borderRadius:99, padding:"2px 9px" }}>Open →</button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

@@ -151,6 +151,7 @@ export function runShoulderPhase05(data) {
     unknownCount: (d.missingFindings || []).length,
     note: d.whySuggested,
     objectiveTests: SHOULDER_OBJECTIVE_TESTS[d.name] || { required: [], recommended: [] },
+    assessmentModules: d.assessmentModules || [],
   }));
 
   return {
