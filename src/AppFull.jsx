@@ -1521,7 +1521,7 @@ function AppInner({ currentUser, onSignOut }) {
                   </div>
                 </div>
               ):tests==="SOAP_MODULE"?(
-              <Suspense fallback={<TabFallback/>}><LazySOAPNote data={data} set={set} initialTab={active==="soap"?navContext.initialTab:undefined}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazySOAPNote data={data} set={set} onNav={navTo} initialTab={active==="soap"?navContext.initialTab:undefined}/></Suspense>
               ):tests==="AI_MODULE"?(
               <AIAssistant data={data} set={set} PC={PC} onClose={()=>navTo("home")}/>
               ):(

@@ -148,4 +148,25 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     expect(screen.getAllByText(/dupuytren/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/wrist \+ hand|hand \+ wrist/i)).toBeInTheDocument();
   });
+
+  it("renders clickable assessment-module buttons that call onNav with the module key", () => {
+    const onNav = vi.fn();
+    const data = {
+      cc_main: "Medial heel pain, worst on the first steps in the morning",
+      af_loc: "Plantar fascia — medial heel / origin",
+      af_morning: "First step severely painful — then eases (plantar fascia classic)",
+      st_windlass_test: "Positive",
+    };
+    render(<ProbableDiagnosis data={data} onNav={onNav} />);
+    fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
+    // an Observation button should be present and navigate to the observation module
+    const btn = screen.getAllByText(/Observation →/i)[0];
+    expect(btn).toBeInTheDocument();
+    fireEvent.click(btn);
+    expect(onNav).toHaveBeenCalledWith("observation");
+    // a Special-tests button should navigate to the special module
+    const st = screen.getAllByText(/Special tests →/i)[0];
+    fireEvent.click(st);
+    expect(onNav).toHaveBeenCalledWith("special");
+  });
 });

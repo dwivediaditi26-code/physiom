@@ -77,7 +77,7 @@ function Chips({ label, items, color }) {
   );
 }
 
-export default function ProbableDiagnosis({ data = {} }) {
+export default function ProbableDiagnosis({ data = {}, onNav }) {
   const [result, setResult] = useState(null);
   const [companionResults, setCompanionResults] = useState([]);
   const [status, setStatus] = useState("idle"); // idle | ok | unsupported | error
@@ -209,6 +209,24 @@ export default function ProbableDiagnosis({ data = {} }) {
                     <Chips label="Not yet tested" items={d.missingFindings} color="#6B7280" />
                     {d.recommendedAdditional && d.recommendedAdditional.length > 0 && (
                       <Chips label="To raise confidence" items={d.recommendedAdditional} color={TEAL} />
+                    )}
+                    {onNav && d.assessmentModules && d.assessmentModules.length > 0 && (
+                      <div style={{ marginTop: 7 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280" }}>Assess ⟶ </span>
+                        {d.assessmentModules.map((m, k) => (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => onNav(m.key)}
+                            title={`Open the ${m.label} module`}
+                            style={{
+                              display: "inline-block", fontSize: 11, fontWeight: 700, cursor: "pointer",
+                              color: "#fff", background: TEAL, border: "none", borderRadius: 999,
+                              padding: "3px 10px", margin: "2px 4px 0 0", boxShadow: "0 1px 3px rgba(8,145,178,0.25)",
+                            }}
+                          >{m.label} →</button>
+                        ))}
+                      </div>
                     )}
                     {d.whyConfidenceReduced && d.whyConfidenceReduced.length > 0 && (
                       <div style={{ fontSize: 11, color: "#92400E", marginTop: 5 }}>⚠ {d.whyConfidenceReduced.join(" ")}</div>

@@ -326,6 +326,7 @@ export interface EvidenceModel {
   exclusionFindings: string[];
   weights: Partial<Record<Domain, number>>;
   keyExams: string[];             // exams whose absence lowers confidence for THIS dx
+  conditionLayers?: Record<string, string>;
 }
 
 /** Ranked diagnosis candidate with dual confidence + full explainability (Stage 5). */
@@ -342,6 +343,8 @@ export interface DiagnosisCandidate {
   recommendedAdditional: string[];
   whySuggested: string;
   whyConfidenceReduced: string[];
+  // Clickable objective-assessment modules relevant to this diagnosis (label + app nav key)
+  assessmentModules?: { label: string; key: string }[];
 }
 
 /** Clinical interpretation (Stage 6). */

@@ -5050,7 +5050,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               <div style={{marginBottom:16}}>
                 {subH("Provisional Diagnosis","#0891b2")}
 
-                <ProbableDiagnosis data={data} />
+                <ProbableDiagnosis data={data} onNav={onNav} />
 
                 <DiagDropdown label="Provisional Diagnosis" value={dx} onChange={val=>set("soap_a_diagnosis",val)} color="#1E40AF" borderColor="#C7D2FE" badgeColor="#4F46E5"/>
                 <input placeholder="ICD-10 code (e.g. M51.1)" value={icd} onChange={e=>set("soap_icd10",e.target.value)} style={{...inp,marginBottom:0,fontSize:14.5}}/>
