@@ -31,10 +31,17 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   const SEP = "|||";
 
   let reg = result.region || "";
-  if (result.laterality === "Left"  && reg === "Shoulder") reg = "Shoulder (L)";
-  if (result.laterality === "Right" && reg === "Shoulder") reg = "Shoulder (R)";
-  if (result.laterality === "Left"  && reg === "Knee")     reg = "Knee (L)";
-  if (result.laterality === "Right" && reg === "Knee")     reg = "Knee (R)";
+  // Knee and Shoulder are stored per-side (…(L)/(R)); every other region has a
+  // single key. Resolve the side from laterality. CRITICAL: this must cover
+  // "Bilateral"/"Both"/unspecified, not just Left/Right — otherwise a plain
+  // "Knee"/"Shoulder" region never matches REGION_PREFIX_MAP, pfx falls to null,
+  // and EVERY region-specific extracted field (aggravating, location, pattern,
+  // radiation, night/morning, relieving, red flags) is silently dropped — only
+  // the shared cc_/dem_ fields survive. Found via a bilateral-knee intake where
+  // the review showed 11 extracted fields but Run-Analysis saw almost none.
+  if (reg === "Shoulder" || reg === "Knee") {
+    reg = reg + (result.laterality === "Left" ? " (L)" : " (R)"); // Right/Bilateral/Both/unknown -> (R)
+  }
   const pfx = REGION_PREFIX_MAP[reg] || null;
 
   // ── Demographics ─────────────────────────────────────────────────

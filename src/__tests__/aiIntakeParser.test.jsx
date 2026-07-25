@@ -81,6 +81,23 @@ describe("mapParseResultToUpdates — the shared extraction logic", () => {
     expect(mapParseResultToUpdates({ region: "Shoulder", laterality: "Left" }, {}).region).toBe("Shoulder (L)");
     expect(mapParseResultToUpdates({ region: "Knee", laterality: "Left" }, {}).region).toBe("Knee (L)");
   });
+
+  it("bilateral / unspecified-side Knee & Shoulder still resolve a prefix so region fields are NOT dropped (regression)", () => {
+    // Bilateral knee: previously region stayed 'Knee', REGION_PREFIX_MAP['Knee']
+    // was undefined, pfx=null, and every region-specific field was silently lost.
+    const biKnee = mapParseResultToUpdates({
+      region: "Knee", laterality: "Bilateral",
+      aggMovements: ["Climbing stairs"], aggActivities: ["Prolonged standing"],
+      symptomPattern: "Mechanical",
+    }, {});
+    expect(biKnee.region).toBe("Knee (R)");
+    expect(REGION_PREFIX_MAP[biKnee.region]).toBe("knr");
+    expect(biKnee.updates.knr_agg_notes).toBeTruthy();      // region data now lands
+    expect(biKnee.updates.knr_agg_notes).toContain("stairs");
+    // Unspecified side defaults to a resolvable prefix too
+    expect(mapParseResultToUpdates({ region: "Knee" }, {}).region).toBe("Knee (R)");
+    expect(mapParseResultToUpdates({ region: "Shoulder", laterality: "Both" }, {}).region).toBe("Shoulder (R)");
+  });
 });
 
 describe("AI Assistant chat — extraction flow", () => {
