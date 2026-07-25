@@ -210,21 +210,30 @@ export default function ProbableDiagnosis({ data = {}, onNav }) {
                     {d.recommendedAdditional && d.recommendedAdditional.length > 0 && (
                       <Chips label="To raise confidence" items={d.recommendedAdditional} color={TEAL} />
                     )}
-                    {onNav && d.assessmentModules && d.assessmentModules.length > 0 && (
-                      <div style={{ marginTop: 7 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280" }}>Assess ⟶ </span>
+                    {d.assessmentModules && d.assessmentModules.length > 0 && (
+                      <div style={{ marginTop: 8, paddingTop: 7, borderTop: "1px dashed #E5E7EB" }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: "#0E7490", marginBottom: 4 }}>
+                          OBJECTIVE ASSESSMENT — what to look for &amp; where to check
+                        </div>
                         {d.assessmentModules.map((m, k) => (
-                          <button
-                            key={k}
-                            type="button"
-                            onClick={() => onNav(m.key)}
-                            title={`Open the ${m.label} module`}
-                            style={{
-                              display: "inline-block", fontSize: 11, fontWeight: 700, cursor: "pointer",
-                              color: "#fff", background: TEAL, border: "none", borderRadius: 999,
-                              padding: "3px 10px", margin: "2px 4px 0 0", boxShadow: "0 1px 3px rgba(8,145,178,0.25)",
-                            }}
-                          >{m.label} →</button>
+                          <div key={k} style={{ display: "flex", alignItems: "flex-start", gap: 6, margin: "3px 0" }}>
+                            <div style={{ flex: 1 }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: "#111827" }}>{m.label}: </span>
+                              <span style={{ fontSize: 11.5, color: "#374151" }}>{m.detail}</span>
+                            </div>
+                            {onNav && (
+                              <button
+                                type="button"
+                                onClick={() => onNav(m.key)}
+                                title={`Open the ${m.label} module`}
+                                style={{
+                                  flexShrink: 0, fontSize: 10.5, fontWeight: 700, cursor: "pointer",
+                                  color: "#fff", background: TEAL, border: "none", borderRadius: 999,
+                                  padding: "2px 9px", boxShadow: "0 1px 3px rgba(8,145,178,0.25)",
+                                }}
+                              >Open →</button>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}

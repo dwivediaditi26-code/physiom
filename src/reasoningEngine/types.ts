@@ -344,7 +344,7 @@ export interface DiagnosisCandidate {
   whySuggested: string;
   whyConfidenceReduced: string[];
   // Clickable objective-assessment modules relevant to this diagnosis (label + app nav key)
-  assessmentModules?: { label: string; key: string }[];
+  assessmentModules?: { label: string; key: string; detail?: string }[];
 }
 
 /** Clinical interpretation (Stage 6). */

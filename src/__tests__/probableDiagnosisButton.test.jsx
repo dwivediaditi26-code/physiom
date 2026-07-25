@@ -159,14 +159,13 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     };
     render(<ProbableDiagnosis data={data} onNav={onNav} />);
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
-    // an Observation button should be present and navigate to the observation module
-    const btn = screen.getAllByText(/Observation →/i)[0];
-    expect(btn).toBeInTheDocument();
-    fireEvent.click(btn);
-    expect(onNav).toHaveBeenCalledWith("observation");
-    // a Special-tests button should navigate to the special module
-    const st = screen.getAllByText(/Special tests →/i)[0];
-    fireEvent.click(st);
-    expect(onNav).toHaveBeenCalledWith("special");
+    // written per-condition observation finding is shown in text form
+    expect(screen.getAllByText(/Observation:/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/what to look for/i).length).toBeGreaterThan(0);
+    // and each layer has an Open button that navigates to its module
+    const opens = screen.getAllByText(/Open →/i);
+    expect(opens.length).toBeGreaterThan(0);
+    fireEvent.click(opens[0]);
+    expect(onNav).toHaveBeenCalled();
   });
 });

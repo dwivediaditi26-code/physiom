@@ -127,7 +127,7 @@ function scoreModel(
     recommendedAdditional,
     whySuggested,
     whyConfidenceReduced,
-    assessmentModules: assessmentModulesFor(model),
+    assessmentModules: assessmentModulesFor(model, findingsByCode),
   };
 }
 
@@ -136,23 +136,35 @@ function scoreModel(
 // Authored layers (observation/posture/functional/fascia/outcome) come from the
 // evidence model's conditionLayers; the rest are inferred from the finding tokens
 // the model actually scores on, so the buttons are condition-specific.
-function assessmentModulesFor(model: EvidenceModel): { label: string; key: string }[] {
+function assessmentModulesFor(
+  model: EvidenceModel,
+  findingsByCode: Map<string, Finding>,
+): { label: string; key: string; detail: string }[] {
   const toks = [...(model.requiredFindings || []), ...(model.supportingFindings || [])];
-  const has = (pred: (t: string) => boolean) => toks.some(pred);
   const cl = ((model as unknown) as { conditionLayers?: Record<string, string> }).conditionLayers || {};
   const notNA = (v?: string) => !!v && !v.toUpperCase().startsWith("N/A");
-  const out: { label: string; key: string }[] = [];
-  if (notNA(cl.observation)) out.push({ label: "Observation", key: "observation" });
-  if (notNA(cl.posture)) out.push({ label: "Posture", key: "posture" });
-  if (notNA(cl.functionalScreen)) out.push({ label: "Functional (FMA)", key: "fma" });
-  if (has((t) => t.endsWith("_positive") || t.includes("_test") || t.includes("cluster"))) out.push({ label: "Special tests", key: "special" });
-  if (has((t) => t.includes("resisted") || t.includes("weak_or_painful") || t.includes("painful_resist"))) out.push({ label: "STTT (Cyriax)", key: "cyriax_full" });
-  if (has((t) => t.startsWith("cpa_"))) out.push({ label: "CPA", key: "nkt" });
-  if (has((t) => t.startsWith("kc_"))) out.push({ label: "Kinetic chain", key: "kinetic" });
-  if (has((t) => t.endsWith("_loss") || t.endsWith("_limited"))) out.push({ label: "ROM", key: "rom" });
-  if (has((t) => t.endsWith("tender"))) out.push({ label: "Palpation", key: "palpation" });
-  if (notNA(cl.fascia)) out.push({ label: "Fascia", key: "fascia" });
-  if (notNA(cl.outcome)) out.push({ label: "Outcome", key: "outcome" });
+  // Written expected finding for a derived layer: prefer the finding's own source
+  // description, else a humanised token.
+  const label = (c: string) => findingsByCode.get(c)?.source || humanize(c);
+  const join = (pred: (t: string) => boolean) => toks.filter(pred).map(label).join("; ");
+  const out: { label: string; key: string; detail: string }[] = [];
+  if (notNA(cl.observation)) out.push({ label: "Observation", key: "observation", detail: cl.observation });
+  if (notNA(cl.posture)) out.push({ label: "Posture", key: "posture", detail: cl.posture });
+  if (notNA(cl.functionalScreen)) out.push({ label: "Functional (FMA)", key: "fma", detail: cl.functionalScreen });
+  const sp = join((t) => t.endsWith("_positive") || t.includes("_test") || t.includes("cluster"));
+  if (sp) out.push({ label: "Special tests", key: "special", detail: sp });
+  const st = join((t) => t.includes("resisted") || t.includes("weak_or_painful") || t.includes("painful_resist"));
+  if (st) out.push({ label: "STTT (Cyriax)", key: "cyriax_full", detail: st });
+  const cp = join((t) => t.startsWith("cpa_"));
+  if (cp) out.push({ label: "CPA", key: "nkt", detail: cp });
+  const kc = join((t) => t.startsWith("kc_"));
+  if (kc) out.push({ label: "Kinetic chain", key: "kinetic", detail: kc });
+  const rm = join((t) => t.endsWith("_loss") || t.endsWith("_limited"));
+  if (rm) out.push({ label: "ROM", key: "rom", detail: rm });
+  const pl = join((t) => t.endsWith("tender"));
+  if (pl) out.push({ label: "Palpation", key: "palpation", detail: pl });
+  if (notNA(cl.fascia)) out.push({ label: "Fascia", key: "fascia", detail: cl.fascia });
+  if (notNA(cl.outcome)) out.push({ label: "Outcome", key: "outcome", detail: cl.outcome });
   return out;
 }
 
