@@ -32,7 +32,8 @@
         "observation": "Thenar wasting, positive flick sign",
         "posture": "Sustained wrist-flexion/workstation posture",
         "functionalScreen": "Phalen/Tinel & median ULTT reproduce; grip endurance",
-        "fascia": "Flexor retinaculum / median neural line"
+        "fascia": "Flexor retinaculum / median neural line",
+        "outcome": "Boston Carpal Tunnel Questionnaire + PRWE"
       }
     },
     {
@@ -67,7 +68,8 @@
         "observation": "Radial-styloid swelling/tenderness",
         "posture": "Thumb-loading / new-parent lifting posture",
         "functionalScreen": "Finkelstein & resisted thumb extension/abduction reproduce",
-        "fascia": "1st dorsal-compartment fascia"
+        "fascia": "1st dorsal-compartment fascia",
+        "outcome": "PRWE (Patient-Rated Wrist Evaluation); QuickDASH"
       }
     },
     {
@@ -95,7 +97,8 @@
         "observation": "Ulnar-sided swelling, clicking",
         "posture": "Ulnar-loading grip posture",
         "functionalScreen": "TFCC load / press-test & ulnar-deviation load reproduce",
-        "fascia": "Ulnocarpal / TFCC fascia"
+        "fascia": "Ulnocarpal / TFCC fascia",
+        "outcome": "PRWE (Patient-Rated Wrist Evaluation); QuickDASH"
       }
     },
     {
@@ -125,7 +128,8 @@
         "observation": "Dorsal-radial swelling, tenderness",
         "posture": "FOOSH-guarded posture",
         "functionalScreen": "Watson scaphoid-shift reproduces clunk/pain",
-        "fascia": "Dorsal intercarpal fascia"
+        "fascia": "Dorsal intercarpal fascia",
+        "outcome": "PRWE (Patient-Rated Wrist Evaluation); QuickDASH"
       }
     },
     {
@@ -156,7 +160,8 @@
         "observation": "Dorsal swelling, reduced motion, crepitus",
         "posture": "Stiff guarded posture",
         "functionalScreen": "Capsular-pattern ROM loss; loaded flexion/extension limited",
-        "fascia": "Radiocarpal capsular fascia"
+        "fascia": "Radiocarpal capsular fascia",
+        "outcome": "PRWE (Patient-Rated Wrist Evaluation); QuickDASH"
       }
     },
     {
@@ -183,7 +188,8 @@
         "observation": "Dinner-fork deformity, marked swelling",
         "posture": "N/A \u2014 immobilise",
         "functionalScreen": "Cannot load; bony tenderness",
-        "fascia": "N/A \u2014 urgent imaging"
+        "fascia": "N/A \u2014 urgent imaging",
+        "outcome": "N/A \u2014 acute/medical; functional outcome once appropriate"
       }
     },
     {
@@ -213,7 +219,8 @@
         "observation": "Snuffbox swelling/tenderness, FOOSH",
         "posture": "N/A \u2014 immobilise",
         "functionalScreen": "Axial thumb load & snuffbox pain",
-        "fascia": "N/A \u2014 imaging (may be false-negative)"
+        "fascia": "N/A \u2014 imaging (may be false-negative)",
+        "outcome": "N/A \u2014 acute/medical; functional outcome once appropriate"
       }
     },
     {
@@ -244,7 +251,8 @@
         "observation": "Squared thumb base, tenderness, \u00b1 crepitus",
         "posture": "Thumb-loading pinch posture",
         "functionalScreen": "Grind test & pinch load reproduce base-of-thumb pain",
-        "fascia": "1st CMC capsular fascia"
+        "fascia": "1st CMC capsular fascia",
+        "outcome": "PRWE (Patient-Rated Wrist Evaluation); QuickDASH"
       }
     },
     {
@@ -274,7 +282,8 @@
         "observation": "Ulnar-dorsal tenderness \u00b1 subluxation",
         "posture": "Ulnar-loading forearm posture",
         "functionalScreen": "Resisted wrist extension in ulnar deviation & synergy test",
-        "fascia": "ECU sheath fascia"
+        "fascia": "ECU sheath fascia",
+        "outcome": "PRWE (Patient-Rated Wrist Evaluation); QuickDASH"
       }
     },
     {
@@ -301,7 +310,8 @@
         "observation": "Palpable A1-pulley nodule, catching",
         "posture": "Gripping-load posture",
         "functionalScreen": "Active flexion-extension shows triggering/locking",
-        "fascia": "Flexor tendon-sheath (A1 pulley) fascia"
+        "fascia": "Flexor tendon-sheath (A1 pulley) fascia",
+        "outcome": "PRWE (Patient-Rated Wrist Evaluation); QuickDASH"
       }
     }
   ]

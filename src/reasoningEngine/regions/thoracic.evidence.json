@@ -33,7 +33,8 @@
         "observation": "Localised paraspinal guarding, no neuro signs",
         "posture": "Increased thoracic kyphosis",
         "functionalScreen": "Rotation & combined extension-rotation reproduce local pain",
-        "fascia": "Thoracolumbar & paraspinal fascial tightness"
+        "fascia": "Thoracolumbar & paraspinal fascial tightness",
+        "outcome": "PSFS + NPRS; Oswestry/RMDQ adapted for spine"
       }
     },
     {
@@ -63,7 +64,8 @@
         "observation": "Rib-angle tenderness, altered breathing on one side",
         "posture": "Kyphotic / protracted posture",
         "functionalScreen": "Deep breath & Evjenth-Gloeck breath-hold flexion localise rib source",
-        "fascia": "Intercostal & serratus fascial restriction"
+        "fascia": "Intercostal & serratus fascial restriction",
+        "outcome": "PSFS + NPRS; Oswestry/RMDQ adapted for spine"
       }
     },
     {
@@ -93,7 +95,8 @@
         "observation": "Anterior chest tenderness \u00b1 swelling at costochondral junction",
         "posture": "Protracted / slumped posture",
         "functionalScreen": "Anterior chest-wall loading (springing, arm horizontal adduction)",
-        "fascia": "Anterior chest-wall (pectoral) fascia"
+        "fascia": "Anterior chest-wall (pectoral) fascia",
+        "outcome": "PSFS + NPRS; Oswestry/RMDQ adapted for spine"
       }
     },
     {
@@ -121,7 +124,8 @@
         "observation": "Focal rib point tenderness, splinting on breath",
         "posture": "Load-related posture (rower/cougher)",
         "functionalScreen": "Single-rib compression / spring reproduces sharp focal pain",
-        "fascia": "N/A \u2014 imaging if suspected"
+        "fascia": "N/A \u2014 imaging if suspected",
+        "outcome": "N/A \u2014 acute/medical; functional outcome once appropriate"
       }
     },
     {
@@ -148,7 +152,8 @@
         "observation": "Band-like sensory change, possible cord signs",
         "posture": "Guarded trunk posture",
         "functionalScreen": "Trunk movement provokes dermatomal band; screen cord signs",
-        "fascia": "Neural (intercostal) tension bias"
+        "fascia": "Neural (intercostal) tension bias",
+        "outcome": "PSFS + NPRS; Oswestry/RMDQ adapted for spine"
       }
     },
     {
@@ -176,7 +181,8 @@
         "observation": "Rigid structural kyphosis (adolescent), apex tenderness",
         "posture": "Fixed increased kyphosis not correcting on extension",
         "functionalScreen": "Prone extension does NOT reverse the kyphosis (vs postural)",
-        "fascia": "Anterior thoracic fascial shortening"
+        "fascia": "Anterior thoracic fascial shortening",
+        "outcome": "PSFS + NPRS; Oswestry/RMDQ adapted for spine"
       }
     },
     {
@@ -205,7 +211,8 @@
         "observation": "Acute focal kyphotic angulation, height loss",
         "posture": "New/worse kyphosis",
         "functionalScreen": "Loading/percussion of the level reproduces sharp pain",
-        "fascia": "N/A \u2014 imaging / medical"
+        "fascia": "N/A \u2014 imaging / medical",
+        "outcome": "N/A \u2014 acute/medical; functional outcome once appropriate"
       }
     },
     {
@@ -231,7 +238,8 @@
         "observation": "Dermatomal band tenderness following a rib",
         "posture": "Guarded trunk",
         "functionalScreen": "Trunk rotation/side-flex along the intercostal reproduces band pain",
-        "fascia": "Intercostal fascial/neural tension"
+        "fascia": "Intercostal fascial/neural tension",
+        "outcome": "PSFS + NPRS; Oswestry/RMDQ adapted for spine"
       }
     },
     {
@@ -259,7 +267,8 @@
         "observation": "No structural change; fatigue-related ache",
         "posture": "Slumped / protracted sustained posture",
         "functionalScreen": "Symptoms build with sustained sitting, ease with postural correction",
-        "fascia": "Global posterior-chain fascial deconditioning"
+        "fascia": "Global posterior-chain fascial deconditioning",
+        "outcome": "PSFS + NPRS; Oswestry/RMDQ adapted for spine"
       }
     }
   ]

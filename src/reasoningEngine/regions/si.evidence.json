@@ -33,7 +33,8 @@
         "observation": "PSIS/sulcus tenderness, single-leg-stance drop",
         "posture": "Pelvic asymmetry",
         "functionalScreen": "3+ provocation cluster positive; ASLR load-transfer",
-        "fascia": "Posterior oblique sling (glute-max \u2194 contralateral lat)"
+        "fascia": "Posterior oblique sling (glute-max \u2194 contralateral lat)",
+        "outcome": "Oswestry / Pelvic Girdle Questionnaire; Active SLR; PSFS"
       }
     },
     {
@@ -66,7 +67,8 @@
         "observation": "Waddling/antalgic gait, symphysis tenderness",
         "posture": "Increased lordosis, pelvic instability",
         "functionalScreen": "Positive ASLR improved by pelvic compression; step-up",
-        "fascia": "Anterior/posterior pelvic slings; symphysis"
+        "fascia": "Anterior/posterior pelvic slings; symphysis",
+        "outcome": "Pelvic Girdle Questionnaire (PGQ) + Active SLR"
       }
     },
     {
@@ -100,7 +102,8 @@
         "observation": "Reduced spinal mobility, alternating buttock signs",
         "posture": "Loss of lumbar lordosis over time",
         "functionalScreen": "Prolonged morning stiffness pattern; Schober's reduced",
-        "fascia": "N/A \u2014 screen ASAS / refer for imaging & bloods"
+        "fascia": "N/A \u2014 screen ASAS / refer for imaging & bloods",
+        "outcome": "BASDAI / BASFI (if axial SpA) + Oswestry"
       }
     },
     {
@@ -128,7 +131,8 @@
         "observation": "Deep buttock tenderness, no pelvic asymmetry",
         "posture": "Neutral pelvis",
         "functionalScreen": "FAIR/piriformis test & resisted external rotation reproduce",
-        "fascia": "Deep gluteal / piriformis fascial compartment"
+        "fascia": "Deep gluteal / piriformis fascial compartment",
+        "outcome": "Oswestry / Pelvic Girdle Questionnaire; Active SLR; PSFS"
       }
     },
     {
@@ -156,7 +160,8 @@
         "observation": "Lumbar-driven signs, \u00b1 dermatomal",
         "posture": "Lumbar posture drivers",
         "functionalScreen": "Lumbar movements/SLR reproduce the buttock pain",
-        "fascia": "Neural / thoracolumbar fascia bias"
+        "fascia": "Neural / thoracolumbar fascia bias",
+        "outcome": "Oswestry / Pelvic Girdle Questionnaire; Active SLR; PSFS"
       }
     }
   ]

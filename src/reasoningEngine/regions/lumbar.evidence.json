@@ -34,7 +34,8 @@
         "observation": "Antalgic lean, dermatomal signs, possible foot-drop",
         "posture": "Lateral shift / flattened lordosis",
         "functionalScreen": "SLR / slump reproduces leg symptoms; myotome screen",
-        "fascia": "Neural (sciatic) lower-limb tension line"
+        "fascia": "Neural (sciatic) lower-limb tension line",
+        "outcome": "Oswestry Disability Index or Roland-Morris (RMDQ); STarT Back (risk stratification)"
       }
     },
     {
@@ -68,7 +69,8 @@
         "observation": "Flexion-guarded, may deviate on bending",
         "posture": "Loss of lordosis, flexion-intolerant posture",
         "functionalScreen": "Repeated-flexion worsens / repeated-extension centralises",
-        "fascia": "Thoracolumbar fascia; posterior-chain guarding"
+        "fascia": "Thoracolumbar fascia; posterior-chain guarding",
+        "outcome": "Oswestry Disability Index or Roland-Morris (RMDQ); STarT Back (risk stratification)"
       }
     },
     {
@@ -102,7 +104,8 @@
         "observation": "Localised paraspinal guarding, no leg signs",
         "posture": "Hyperlordotic / extension-loading posture",
         "functionalScreen": "Extension-rotation quadrant reproduces local pain",
-        "fascia": "Thoracolumbar & multifidus fascial tightness"
+        "fascia": "Thoracolumbar & multifidus fascial tightness",
+        "outcome": "Oswestry Disability Index or Roland-Morris (RMDQ); STarT Back (risk stratification)"
       }
     },
     {
@@ -132,7 +135,8 @@
         "observation": "Point over PSIS/sulcus, pelvic asymmetry",
         "posture": "Pelvic tilt/rotation asymmetry",
         "functionalScreen": "Provocation cluster (thigh-thrust, distraction, compression) & ASLR",
-        "fascia": "Posterior oblique sling fascia"
+        "fascia": "Posterior oblique sling fascia",
+        "outcome": "Oswestry + Pelvic Girdle Questionnaire"
       }
     },
     {
@@ -163,7 +167,8 @@
         "observation": "Stooped 'shopping-trolley' posture, bilateral leg fatigue",
         "posture": "Flexed lumbar posture relieving symptoms",
         "functionalScreen": "Walking provokes, flexion/sitting relieves (treadmill/bicycle test)",
-        "fascia": "Global posterior-chain / neural claudication pattern"
+        "fascia": "Global posterior-chain / neural claudication pattern",
+        "outcome": "Oswestry Disability Index or Roland-Morris (RMDQ); STarT Back (risk stratification)"
       }
     },
     {
@@ -192,7 +197,8 @@
         "observation": "Possible palpable step, hamstring guarding",
         "posture": "Increased lordosis (young athlete)",
         "functionalScreen": "Single-leg hyperextension (stork) reproduces pain",
-        "fascia": "Anterior hip / thoracolumbar fascial tightness"
+        "fascia": "Anterior hip / thoracolumbar fascial tightness",
+        "outcome": "Oswestry Disability Index or Roland-Morris (RMDQ); STarT Back (risk stratification)"
       }
     }
   ]

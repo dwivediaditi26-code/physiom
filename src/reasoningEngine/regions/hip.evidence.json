@@ -29,7 +29,8 @@
         "observation": "C-sign grip over groin, antalgic gait",
         "posture": "Reduced hip IR posture",
         "functionalScreen": "FADIR & deep squat reproduce groin pain/click",
-        "fascia": "Anterior hip capsule / adductor fascia"
+        "fascia": "Anterior hip capsule / adductor fascia",
+        "outcome": "iHOT-33 + HOOS"
       }
     },
     {
@@ -62,7 +63,8 @@
         "observation": "Reduced stride, gluteal/quad wasting, antalgic gait",
         "posture": "Fixed-flexion / externally-rotated posture",
         "functionalScreen": "Capsular-pattern loss (IR/flexion); squat & stairs limited",
-        "fascia": "Global hip capsular fascial restriction"
+        "fascia": "Global hip capsular fascial restriction",
+        "outcome": "Oxford Hip Score or HOOS; HAGOS (groin); iHOT-33 (young/sport)"
       }
     },
     {
@@ -96,7 +98,8 @@
         "observation": "Tender over greater trochanter, Trendelenburg",
         "posture": "Hip-drop / adducted stance (compensating glute med)",
         "functionalScreen": "Single-leg stance 30s & resisted abduction reproduce lateral pain",
-        "fascia": "Lateral line (ITB/TFL) tension"
+        "fascia": "Lateral line (ITB/TFL) tension",
+        "outcome": "VISA-G + Oxford Hip"
       }
     },
     {
@@ -125,7 +128,8 @@
         "observation": "Ischial tuberosity tenderness",
         "posture": "Posterior pelvic-tilt sitting avoidance",
         "functionalScreen": "Bent-knee stretch / long-lever resisted knee-flexion reproduce",
-        "fascia": "Posterior-chain (hamstring\u2013sacrotuberous) fascia"
+        "fascia": "Posterior-chain (hamstring\u2013sacrotuberous) fascia",
+        "outcome": "Oxford Hip Score or HOOS; HAGOS (groin); iHOT-33 (young/sport)"
       }
     },
     {
@@ -154,7 +158,8 @@
         "observation": "Adductor-origin tenderness, \u00b1 swelling",
         "posture": "Pelvic instability posture",
         "functionalScreen": "Resisted adduction (squeeze test) & change-of-direction reproduce",
-        "fascia": "Adductor / deep-front-line fascia"
+        "fascia": "Adductor / deep-front-line fascia",
+        "outcome": "HAGOS (groin) + Oxford Hip"
       }
     },
     {
@@ -179,7 +184,8 @@
         "observation": "Deep buttock tenderness, \u00b1 sciatic signs",
         "posture": "Externally-rotated resting hip",
         "functionalScreen": "FAIR test & resisted external rotation reproduce deep pain",
-        "fascia": "Deep gluteal fascial compartment; sciatic neural bias"
+        "fascia": "Deep gluteal fascial compartment; sciatic neural bias",
+        "outcome": "Oxford Hip Score or HOOS; HAGOS (groin); iHOT-33 (young/sport)"
       }
     },
     {
@@ -202,7 +208,8 @@
         "observation": "Visible/audible snap with movement",
         "posture": "ITB-tight or hip-flexor-tight posture",
         "functionalScreen": "Active hip circumduction / flex-to-extend reproduces the snap",
-        "fascia": "Lateral line (external) or iliopsoas (internal) fascia"
+        "fascia": "Lateral line (external) or iliopsoas (internal) fascia",
+        "outcome": "Oxford Hip Score or HOOS; HAGOS (groin); iHOT-33 (young/sport)"
       }
     }
   ]

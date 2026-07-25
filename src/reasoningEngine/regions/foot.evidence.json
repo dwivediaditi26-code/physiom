@@ -31,7 +31,8 @@
         "observation": "Medial calcaneal tenderness, antalgic heel-strike",
         "posture": "High or collapsed arch, overpronation",
         "functionalScreen": "Windlass on single-leg toe-stand reproduces heel pain",
-        "fascia": "Superficial back line (plantar-fascia \u2194 gastroc)"
+        "fascia": "Superficial back line (plantar-fascia \u2194 gastroc)",
+        "outcome": "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
       }
     },
     {
@@ -61,7 +62,8 @@
         "observation": "Central heel tenderness, thin heel pad",
         "posture": "Neutral arch; barefoot hard-surface loading",
         "functionalScreen": "Deep central heel pressure (not medial origin) reproduces pain",
-        "fascia": "Plantar fat-pad / heel fascia"
+        "fascia": "Plantar fat-pad / heel fascia",
+        "outcome": "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
       }
     },
     {
@@ -90,7 +92,8 @@
         "observation": "3rd/4th web-space tenderness, splayed toes",
         "posture": "Narrow-toe-box / forefoot-loading posture",
         "functionalScreen": "Mulder's squeeze click; web-space sensory change",
-        "fascia": "Intermetatarsal fascia / plantar digital nerve"
+        "fascia": "Intermetatarsal fascia / plantar digital nerve",
+        "outcome": "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
       }
     },
     {
@@ -120,7 +123,8 @@
         "observation": "Plantar callus under metatarsal heads",
         "posture": "Forefoot-loading / high-heel posture",
         "functionalScreen": "Single-leg heel-raise & forefoot load reproduce pain",
-        "fascia": "Plantar plate / forefoot fascia"
+        "fascia": "Plantar plate / forefoot fascia",
+        "outcome": "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
       }
     },
     {
@@ -151,7 +155,8 @@
         "observation": "Dorsal 1st-MTP osteophyte, reduced toe extension",
         "posture": "Supinated / lateral-loading gait avoiding push-off",
         "functionalScreen": "1st-MTP dorsiflexion loss on toe-off; grind test",
-        "fascia": "Plantar plate / 1st-ray fascia"
+        "fascia": "Plantar plate / 1st-ray fascia",
+        "outcome": "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
       }
     },
     {
@@ -180,7 +185,8 @@
         "observation": "Swelling/tenderness of 1st MTP, athlete",
         "posture": "Push-off avoidance posture",
         "functionalScreen": "1st-MTP dorsiflexion stress reproduces pain; toe-off deficit",
-        "fascia": "Plantar plate / sesamoid complex"
+        "fascia": "Plantar plate / sesamoid complex",
+        "outcome": "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
       }
     },
     {
@@ -207,7 +213,8 @@
         "observation": "Dorsal midfoot swelling/tenderness",
         "posture": "Collapsed or rigid midfoot posture",
         "functionalScreen": "Midfoot stress / piano-key & single-leg load reproduce pain",
-        "fascia": "Midfoot dorsal & plantar fascia"
+        "fascia": "Midfoot dorsal & plantar fascia",
+        "outcome": "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
       }
     }
   ]

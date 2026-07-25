@@ -33,7 +33,8 @@
         "observation": "Painful arc on elevation, subtle scapular dyskinesis, no wasting",
         "posture": "Forward head / rounded shoulders, scapular downward rotation",
         "functionalScreen": "Scapular-assist / scapular-retraction test eases the arc; overhead reach",
-        "fascia": "Pec-minor & posterior-capsule tightness limiting scapular upward rotation"
+        "fascia": "Pec-minor & posterior-capsule tightness limiting scapular upward rotation",
+        "outcome": "SPADI or DASH/QuickDASH; Constant-Murley; Oxford Shoulder Score"
       }
     },
     {
@@ -68,7 +69,8 @@
         "observation": "Painful mid-arc, minimal wasting, tender cuff insertion",
         "posture": "Rounded-shoulder posture increasing subacromial load",
         "functionalScreen": "Load-and-shift / resisted-hold reproduces pain, not weakness",
-        "fascia": "Deep-front-arm-line tension; infraspinatus fascial tightness"
+        "fascia": "Deep-front-arm-line tension; infraspinatus fascial tightness",
+        "outcome": "SPADI or DASH/QuickDASH; Constant-Murley; Oxford Shoulder Score"
       }
     },
     {
@@ -105,7 +107,8 @@
         "observation": "Visible supraspinatus/infraspinatus wasting, drop of the arm",
         "posture": "Cannot maintain scapular set under load",
         "functionalScreen": "Lag signs, inability to sustain elevation (functional drop)",
-        "fascia": "Cuff atrophy; loss of dynamic humeral centring"
+        "fascia": "Cuff atrophy; loss of dynamic humeral centring",
+        "outcome": "SPADI or DASH/QuickDASH; Constant-Murley; Oxford Shoulder Score"
       }
     },
     {
@@ -136,7 +139,8 @@
         "observation": "Global loss of active AND passive motion, arm held guarded",
         "posture": "Compensatory scapular hitching / trunk lean on reach",
         "functionalScreen": "Every functional reach (hair, back-pocket) globally limited",
-        "fascia": "Capsular / axillary-fold fascial contracture; pan-directional restriction"
+        "fascia": "Capsular / axillary-fold fascial contracture; pan-directional restriction",
+        "outcome": "SPADI or DASH/QuickDASH; Constant-Murley; Oxford Shoulder Score"
       }
     },
     {
@@ -161,7 +165,8 @@
         "observation": "Step deformity / swelling over the AC joint, tender apex",
         "posture": "Protracted shoulder loading the joint",
         "functionalScreen": "Cross-body adduction & high-reach reproduce pain",
-        "fascia": "Deltotrapezial fascia over AC joint"
+        "fascia": "Deltotrapezial fascia over AC joint",
+        "outcome": "SPADI or DASH/QuickDASH; Constant-Murley; Oxford Shoulder Score"
       }
     },
     {
@@ -186,7 +191,8 @@
         "observation": "Tender bicipital groove, no wasting",
         "posture": "Anterior shoulder carriage",
         "functionalScreen": "Resisted elevation / O'Brien functional load, catching with rotation",
-        "fascia": "Deep-front-arm line (biceps\u2013coracoid) tension"
+        "fascia": "Deep-front-arm line (biceps\u2013coracoid) tension",
+        "outcome": "SPADI or DASH/QuickDASH; Constant-Murley; Oxford Shoulder Score"
       }
     },
     {
@@ -213,7 +219,8 @@
         "observation": "Apprehension guarding, possible sulcus sign",
         "posture": "Loose posture, scapular dyskinesis",
         "functionalScreen": "Apprehension/relocation in function, feeling of 'coming out'",
-        "fascia": "Anterior capsule laxity / global ligament laxity screen"
+        "fascia": "Anterior capsule laxity / global ligament laxity screen",
+        "outcome": "WOSI (Western Ontario Shoulder Instability) + SPADI"
       }
     },
     {
@@ -241,7 +248,8 @@
         "observation": "Acutely held rigid, marked guarding; often no wasting",
         "posture": "Antalgic protective posture",
         "functionalScreen": "Marked painful restriction of active elevation",
-        "fascia": "Supraspinatus tendon focal tenderness"
+        "fascia": "Supraspinatus tendon focal tenderness",
+        "outcome": "SPADI or DASH/QuickDASH; Constant-Murley; Oxford Shoulder Score"
       }
     },
     {
@@ -270,7 +278,8 @@
         "observation": "Reduced arm swing, muscle bulk loss, possible crepitus",
         "posture": "Guarded elevated-shoulder posture",
         "functionalScreen": "Capsular-pattern loss (ER>abduction), functional reach limited",
-        "fascia": "Global capsular fascial restriction"
+        "fascia": "Global capsular fascial restriction",
+        "outcome": "SPADI or DASH/QuickDASH; Constant-Murley; Oxford Shoulder Score"
       }
     },
     {
@@ -298,7 +307,8 @@
         "observation": "Neck-driven guarding, dermatomal signs",
         "posture": "Forward-head posture",
         "functionalScreen": "Neck movement / Spurling reproduces the shoulder pain",
-        "fascia": "Neural (brachial plexus) upper-limb tension bias"
+        "fascia": "Neural (brachial plexus) upper-limb tension bias",
+        "outcome": "SPADI or DASH/QuickDASH; Constant-Murley; Oxford Shoulder Score"
       }
     }
   ]

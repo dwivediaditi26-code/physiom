@@ -34,7 +34,8 @@
         "observation": "Antalgic head tilt away from side, arm guarding",
         "posture": "Forward-head posture loading lower cervical",
         "functionalScreen": "Spurling / ULTT reproduces arm symptoms; relief on distraction",
-        "fascia": "Neural (median/ulnar/radial) upper-limb tension line"
+        "fascia": "Neural (median/ulnar/radial) upper-limb tension line",
+        "outcome": "Neck Disability Index (NDI); PSFS; NPRS"
       }
     },
     {
@@ -68,7 +69,8 @@
         "observation": "Localised guarding, no neuro signs",
         "posture": "Upper-crossed / forward-head posture",
         "functionalScreen": "Extension-rotation quadrant reproduces local pain",
-        "fascia": "Suboccipital & cervical paraspinal fascial tightness"
+        "fascia": "Suboccipital & cervical paraspinal fascial tightness",
+        "outcome": "Neck Disability Index (NDI); PSFS; NPRS"
       }
     },
     {
@@ -99,7 +101,8 @@
         "observation": "Unilateral suboccipital tenderness, restricted C1-2 rotation",
         "posture": "Forward-head posture",
         "functionalScreen": "Flexion-rotation test reproduces headache; sustained-posture provocation",
-        "fascia": "Suboccipital fascial restriction / dural tension"
+        "fascia": "Suboccipital fascial restriction / dural tension",
+        "outcome": "Neck Disability Index (NDI); PSFS; NPRS"
       }
     },
     {
@@ -127,7 +130,8 @@
         "observation": "Diffuse guarding, protective stiffness",
         "posture": "Protective forward-head / elevated-shoulder posture",
         "functionalScreen": "Global painful/limited AROM, poor DNF endurance",
-        "fascia": "Widespread cervical fascial guarding"
+        "fascia": "Widespread cervical fascial guarding",
+        "outcome": "Neck Disability Index (NDI); PSFS; NPRS"
       }
     },
     {
@@ -155,7 +159,8 @@
         "observation": "Hand clumsiness, wasting of intrinsics, wide-based gait",
         "posture": "Head-forward, unsteady stance",
         "functionalScreen": "Gait/tandem walk, Hoffman/Romberg \u2014 long-tract signs",
-        "fascia": "Not applicable \u2014 refer; do not load"
+        "fascia": "Not applicable \u2014 refer; do not load",
+        "outcome": "N/A \u2014 acute/medical; functional outcome once appropriate"
       }
     }
   ]

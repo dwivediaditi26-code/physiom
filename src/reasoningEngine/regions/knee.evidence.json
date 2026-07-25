@@ -28,7 +28,8 @@
         "observation": "Immediate effusion, quadriceps inhibition, giving-way",
         "posture": "Genu recurvatum / dynamic valgus",
         "functionalScreen": "Lachman/pivot in function, single-leg hop confidence",
-        "fascia": "Not applicable acutely; address quads inhibition"
+        "fascia": "Not applicable acutely; address quads inhibition",
+        "outcome": "IKDC + KOOS + Tegner activity level"
       }
     },
     {
@@ -52,7 +53,8 @@
         "observation": "Posterior sag, \u00b1 posterior bruising",
         "posture": "Posterior tibial droop stance",
         "functionalScreen": "Posterior-drawer load, downhill/decline discomfort",
-        "fascia": "Posterior capsule"
+        "fascia": "Posterior capsule",
+        "outcome": "KOOS or Oxford Knee Score; Lysholm; IKDC / Tegner (sport)"
       }
     },
     {
@@ -85,7 +87,8 @@
         "observation": "Joint-line swelling, catching/locking, quad wasting",
         "posture": "Antalgic, avoids full flexion",
         "functionalScreen": "McMurray/Thessaly & deep squat reproduce joint-line pain",
-        "fascia": "Joint-line capsular fascia"
+        "fascia": "Joint-line capsular fascia",
+        "outcome": "KOOS or Oxford Knee Score; Lysholm; IKDC / Tegner (sport)"
       }
     },
     {
@@ -112,7 +115,8 @@
         "observation": "Medial joint-line tenderness, valgus laxity",
         "posture": "Valgus-loading alignment",
         "functionalScreen": "Valgus stress (0\u00b0/30\u00b0) & cutting reproduce medial pain",
-        "fascia": "Medial capsule / pes anserine fascia"
+        "fascia": "Medial capsule / pes anserine fascia",
+        "outcome": "KOOS or Oxford Knee Score; Lysholm; IKDC / Tegner (sport)"
       }
     },
     {
@@ -139,7 +143,8 @@
         "observation": "Lateral joint-line tenderness, varus laxity",
         "posture": "Varus-loading alignment",
         "functionalScreen": "Varus stress & lateral loading reproduce pain",
-        "fascia": "Lateral capsule / ITB fascia"
+        "fascia": "Lateral capsule / ITB fascia",
+        "outcome": "KOOS or Oxford Knee Score; Lysholm; IKDC / Tegner (sport)"
       }
     },
     {
@@ -170,7 +175,8 @@
         "observation": "Patellar maltracking, VMO wasting, no effusion",
         "posture": "Dynamic valgus, foot pronation, femoral IR",
         "functionalScreen": "Single-leg decline squat & step-down reproduce anterior pain",
-        "fascia": "Lateral retinaculum / ITB tightness"
+        "fascia": "Lateral retinaculum / ITB tightness",
+        "outcome": "Kujala (Anterior Knee Pain Scale) + KOOS"
       }
     },
     {
@@ -197,7 +203,8 @@
         "observation": "Inferior-pole tenderness, jumper's history",
         "posture": "Stiff-landing posture",
         "functionalScreen": "Decline single-leg squat loads and reproduces tendon pain",
-        "fascia": "Superficial front line (quad\u2013patellar tendon)"
+        "fascia": "Superficial front line (quad\u2013patellar tendon)",
+        "outcome": "VISA-P + KOOS"
       }
     },
     {
@@ -230,7 +237,8 @@
         "observation": "Bony enlargement, effusion, varus/valgus, crepitus",
         "posture": "Varus/valgus malalignment",
         "functionalScreen": "Capsular-pattern ROM loss; stairs & squat limited",
-        "fascia": "Global knee capsular fascia"
+        "fascia": "Global knee capsular fascia",
+        "outcome": "WOMAC or KOOS"
       }
     },
     {
@@ -257,7 +265,8 @@
         "observation": "Lateral epicondyle tenderness ~30\u00b0 flexion, runner",
         "posture": "Hip-drop / adducted running posture",
         "functionalScreen": "Noble/Ober positive; single-leg squat shows valgus",
-        "fascia": "Lateral line (ITB/TFL) tension"
+        "fascia": "Lateral line (ITB/TFL) tension",
+        "outcome": "KOOS or Oxford Knee Score; Lysholm; IKDC / Tegner (sport)"
       }
     }
   ]

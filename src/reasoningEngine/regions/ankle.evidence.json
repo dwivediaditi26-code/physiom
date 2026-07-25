@@ -34,7 +34,8 @@
         "observation": "Lateral swelling/bruising, antalgic gait",
         "posture": "Guarded plantarflexed posture",
         "functionalScreen": "Anterior-drawer/talar-tilt & single-leg balance deficit",
-        "fascia": "Lateral ligament / peroneal fascia"
+        "fascia": "Lateral ligament / peroneal fascia",
+        "outcome": "FAAM or FAOS; Cumberland Ankle Instability Tool (instability)"
       }
     },
     {
@@ -66,7 +67,8 @@
         "observation": "Recurrent swelling, feeling of giving way",
         "posture": "Rearfoot varus / supinated posture",
         "functionalScreen": "Star-excursion balance deficit, single-leg stance failure",
-        "fascia": "Peroneal fascial support; subtalar mobility"
+        "fascia": "Peroneal fascial support; subtalar mobility",
+        "outcome": "Cumberland Ankle Instability Tool (CAIT) + FAAM"
       }
     },
     {
@@ -97,7 +99,8 @@
         "observation": "Swelling above joint line, pain on squeeze",
         "posture": "Externally-rotated foot guarding",
         "functionalScreen": "Squeeze & external-rotation stress reproduce high pain",
-        "fascia": "Interosseous membrane / distal syndesmotic fascia"
+        "fascia": "Interosseous membrane / distal syndesmotic fascia",
+        "outcome": "FAAM or FAOS; Cumberland Ankle Instability Tool (instability)"
       }
     },
     {
@@ -136,7 +139,8 @@
         "observation": "Tendon thickening/tenderness, calf wasting",
         "posture": "Overpronation increasing tendon load",
         "functionalScreen": "Single-leg heel-raise load & hop reproduce tendon pain",
-        "fascia": "Superficial back line (gastroc-soleus-Achilles)"
+        "fascia": "Superficial back line (gastroc-soleus-Achilles)",
+        "outcome": "VISA-A + FAAM"
       }
     },
     {
@@ -165,7 +169,8 @@
         "observation": "Palpable gap, positive Thompson, bruising",
         "posture": "Cannot toe-off, flat gait",
         "functionalScreen": "Single-leg heel-raise impossible; Thompson positive",
-        "fascia": "N/A \u2014 urgent referral"
+        "fascia": "N/A \u2014 urgent referral",
+        "outcome": "N/A \u2014 acute/medical; functional outcome once appropriate"
       }
     },
     {
@@ -199,7 +204,8 @@
         "observation": "Anterior joint-line swelling, reduced DF, crepitus",
         "posture": "Stiff antalgic posture",
         "functionalScreen": "Weight-bearing lunge restricted; stairs limited",
-        "fascia": "Anterior capsular fascia"
+        "fascia": "Anterior capsular fascia",
+        "outcome": "FAAM or FAOS; Cumberland Ankle Instability Tool (instability)"
       }
     },
     {
@@ -231,7 +237,8 @@
         "observation": "Medial swelling, 'too-many-toes', collapsing arch",
         "posture": "Hindfoot valgus / flatfoot posture",
         "functionalScreen": "Single-leg heel-raise fails to invert heel; resisted inversion weak",
-        "fascia": "Deep posterior-compartment fascia (tib-post)"
+        "fascia": "Deep posterior-compartment fascia (tib-post)",
+        "outcome": "FAAM or FAOS; Cumberland Ankle Instability Tool (instability)"
       }
     },
     {
@@ -261,7 +268,8 @@
         "observation": "Retromalleolar swelling/tenderness",
         "posture": "Rearfoot varus (overload) posture",
         "functionalScreen": "Resisted eversion & single-leg balance reproduce lateral pain",
-        "fascia": "Lateral (peroneal) compartment fascia"
+        "fascia": "Lateral (peroneal) compartment fascia",
+        "outcome": "FAAM or FAOS; Cumberland Ankle Instability Tool (instability)"
       }
     },
     {
@@ -292,7 +300,8 @@
         "observation": "Medial-ankle Tinel, intrinsic wasting",
         "posture": "Overpronation compressing the tunnel",
         "functionalScreen": "Sustained eversion-dorsiflexion & Tinel reproduce burning",
-        "fascia": "Flexor retinaculum / tibial neural tension"
+        "fascia": "Flexor retinaculum / tibial neural tension",
+        "outcome": "FAAM or FAOS; Cumberland Ankle Instability Tool (instability)"
       }
     },
     {
@@ -321,7 +330,8 @@
         "observation": "Anterior joint-line tenderness, dorsiflexion block",
         "posture": "Restricted-DF stiff posture",
         "functionalScreen": "Weight-bearing lunge blocked/painful anteriorly",
-        "fascia": "Anterior capsular / talar fascial pinch"
+        "fascia": "Anterior capsular / talar fascial pinch",
+        "outcome": "FAAM or FAOS; Cumberland Ankle Instability Tool (instability)"
       }
     }
   ]

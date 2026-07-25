@@ -33,7 +33,8 @@
         "observation": "Lateral epicondyle tenderness, no swelling",
         "posture": "Poor scapular support, wrist-loading grip",
         "functionalScreen": "Resisted wrist extension (Cozen/Mill) & gripping reproduce",
-        "fascia": "Deep-back-arm line; common extensor fascia"
+        "fascia": "Deep-back-arm line; common extensor fascia",
+        "outcome": "PRTEE (Patient-Rated Tennis Elbow Evaluation)"
       }
     },
     {
@@ -65,7 +66,8 @@
         "observation": "Medial epicondyle tenderness",
         "posture": "Wrist-flexor-loading grip posture",
         "functionalScreen": "Resisted wrist flexion/pronation reproduce medial pain",
-        "fascia": "Common flexor\u2013pronator fascia"
+        "fascia": "Common flexor\u2013pronator fascia",
+        "outcome": "PRTEE + DASH"
       }
     },
     {
@@ -93,7 +95,8 @@
         "observation": "Antecubital tenderness \u00b1 gap/retraction (Popeye)",
         "posture": "Anterior-arm loading",
         "functionalScreen": "Resisted supination/flexion (hook test) reproduces/weakness",
-        "fascia": "Deep-front-arm line (biceps)"
+        "fascia": "Deep-front-arm line (biceps)",
+        "outcome": "DASH/QuickDASH; PRTEE (epicondylalgia)"
       }
     },
     {
@@ -123,7 +126,8 @@
         "observation": "Reduced extension, crepitus, \u00b1 loose-body locking",
         "posture": "Fixed-flexion posture",
         "functionalScreen": "Capsular-pattern ROM loss; loading & rotation limited",
-        "fascia": "Anterior capsule fascia"
+        "fascia": "Anterior capsule fascia",
+        "outcome": "DASH/QuickDASH; PRTEE (epicondylalgia)"
       }
     },
     {
@@ -149,7 +153,8 @@
         "observation": "Posterior fluctuant swelling over olecranon",
         "posture": "Elbow-resting-on-surface loading",
         "functionalScreen": "Direct pressure/flexion loads the bursa",
-        "fascia": "Posterior olecranon fascia"
+        "fascia": "Posterior olecranon fascia",
+        "outcome": "DASH/QuickDASH; PRTEE (epicondylalgia)"
       }
     },
     {
@@ -176,7 +181,8 @@
         "observation": "Medial tenderness, valgus laxity (thrower)",
         "posture": "Valgus-loading throwing posture",
         "functionalScreen": "Valgus stress / moving-valgus reproduce medial pain",
-        "fascia": "Medial capsuloligamentous fascia"
+        "fascia": "Medial capsuloligamentous fascia",
+        "outcome": "DASH/QuickDASH; PRTEE (epicondylalgia)"
       }
     },
     {
@@ -205,7 +211,8 @@
         "observation": "Intrinsic wasting, 4th/5th tingling, Tinel medial",
         "posture": "Sustained elbow-flexion posture",
         "functionalScreen": "Elbow-flexion + Tinel & ULTT-ulnar reproduce symptoms",
-        "fascia": "Ulnar neural tension line"
+        "fascia": "Ulnar neural tension line",
+        "outcome": "DASH/QuickDASH; PRTEE (epicondylalgia)"
       }
     },
     {
@@ -234,7 +241,8 @@
         "observation": "Tenderness ~4cm distal to lateral epicondyle",
         "posture": "Repetitive-pronation loading",
         "functionalScreen": "Resisted supination/middle-finger extension reproduce forearm pain",
-        "fascia": "Radial (PIN) neural tension"
+        "fascia": "Radial (PIN) neural tension",
+        "outcome": "DASH/QuickDASH; PRTEE (epicondylalgia)"
       }
     },
     {
@@ -260,7 +268,8 @@
         "observation": "Proximal-volar-forearm tenderness, median signs",
         "posture": "Repetitive-gripping/pronation posture",
         "functionalScreen": "Resisted pronation & median ULTT reproduce forearm/median symptoms",
-        "fascia": "Median neural tension through pronator"
+        "fascia": "Median neural tension through pronator",
+        "outcome": "DASH/QuickDASH; PRTEE (epicondylalgia)"
       }
     }
   ]

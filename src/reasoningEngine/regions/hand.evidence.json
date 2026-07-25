@@ -30,7 +30,8 @@
         "observation": "DIP/PIP nodes, deformity, reduced grip",
         "posture": "Deforming digit posture",
         "functionalScreen": "Grip/pinch strength & finger-tip-to-palm limited",
-        "fascia": "Peri-articular digital fascia"
+        "fascia": "Peri-articular digital fascia",
+        "outcome": "DASH/QuickDASH; PRWE; grip & pinch dynamometry"
       }
     },
     {
@@ -61,7 +62,8 @@
         "observation": "Ulnar-MCP swelling/tenderness",
         "posture": "Guarded thumb posture",
         "functionalScreen": "Thumb-MCP valgus stress (flex/ext) reproduces laxity/pain",
-        "fascia": "Ulnar MCP capsuloligamentous fascia"
+        "fascia": "Ulnar MCP capsuloligamentous fascia",
+        "outcome": "DASH/QuickDASH; PRWE; grip & pinch dynamometry"
       }
     },
     {
@@ -88,7 +90,8 @@
         "observation": "A1-pulley nodule, catching/locking",
         "posture": "Gripping-load posture",
         "functionalScreen": "Active flexion-extension shows triggering",
-        "fascia": "Flexor tendon-sheath (A1 pulley) fascia"
+        "fascia": "Flexor tendon-sheath (A1 pulley) fascia",
+        "outcome": "DASH/QuickDASH; PRWE; grip & pinch dynamometry"
       }
     },
     {
@@ -117,7 +120,8 @@
         "observation": "Palmar cord/nodule, ring/little-finger flexion contracture",
         "posture": "Fixed digit-flexion posture",
         "functionalScreen": "Hueston tabletop test positive; MCP/PIP extension deficit",
-        "fascia": "Palmar aponeurosis (Dupuytren cord)"
+        "fascia": "Palmar aponeurosis (Dupuytren cord)",
+        "outcome": "DASH/QuickDASH; PRWE; grip & pinch dynamometry"
       }
     },
     {
@@ -147,7 +151,8 @@
         "observation": "Fusiform joint swelling, jammed history",
         "posture": "Guarded digit posture",
         "functionalScreen": "Collateral stress & active extension (exclude mallet/boutonniere)",
-        "fascia": "Peri-articular collateral fascia"
+        "fascia": "Peri-articular collateral fascia",
+        "outcome": "DASH/QuickDASH; PRWE; grip & pinch dynamometry"
       }
     },
     {
@@ -170,7 +175,8 @@
         "observation": "Triphasic colour change (white-blue-red) with cold",
         "posture": "N/A",
         "functionalScreen": "History of cold-triggered episodes; screen secondary causes",
-        "fascia": "N/A \u2014 vascular, not fascial"
+        "fascia": "N/A \u2014 vascular, not fascial",
+        "outcome": "N/A \u2014 acute/medical; functional outcome once appropriate"
       }
     }
   ]
