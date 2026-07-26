@@ -1262,7 +1262,7 @@ function NavActionBtn({ btn, onNav, PC }) {
   const clickable = !!btn.nav;
   const col = clickable ? btn.col : PC.muted;
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
       <div style={{ display:"flex", gap:4 }}>
         <button
           onClick={clickable ? ()=>onNav(btn.nav, btn.ctx) : undefined}
@@ -2761,12 +2761,14 @@ function fieldIcon_S(f) {
 // every row lines up), the field's input on the right (~70%). A
 // hairline divider is the only separator — rows are compact at rest
 // and grow only as far as their content needs.
-function AssessmentRow({ label, helpText, PC, children }) {
+function AssessmentRow({ label, helpText, PC, children, last }) {
   return (
     <div className="pm-arow" style={{
-      display: "flex", alignItems: "center", gap: 12,
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "8px 2px",
+      borderBottom: last ? "none" : "0.5px solid #EFEDF7",
     }}>
-      <span className="pm-arow-label" style={{ width: "38%", flexShrink: 0, fontSize: "0.95rem", fontWeight: 400, color: "#6B6B7A", lineHeight: 1.3 }}>
+      <span className="pm-arow-label" style={{ width: "42%", flexShrink: 0, fontSize: "0.84rem", fontWeight: 400, color: "#5C5C6B", lineHeight: 1.25 }}>
         {label}
         {helpText && (
           <span title={helpText} style={{
@@ -2797,10 +2799,10 @@ function SmartInput({ value, onChange, PC, multiline }) {
       placeholder="Type or tap to enter..."
       className="pm-sinput-box pm-sinput-text"
       style={{
-        width: "100%", boxSizing: "border-box", border: "1px solid #ECE9F7",
-        borderRadius: 16, background: "#fff", padding: "14px 16px", fontSize: "0.95rem", fontWeight: 500,
+        width: "100%", boxSizing: "border-box", border: "1px solid #E4E1F5",
+        borderRadius: 10, background: "#fff", padding: "8px 12px", fontSize: "0.82rem", fontWeight: 500,
         color: "#2D2D3A", fontFamily: "inherit", outline: "none", resize: "none", overflow: "hidden",
-        lineHeight: 1.35, minHeight: 48,
+        lineHeight: 1.3, minHeight: 36,
       }} />
   );
 }
@@ -2811,7 +2813,7 @@ function PainSliderCompact({ value, onChange, PC }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10, width: "100%", boxSizing: "border-box",
-      border: "1px solid #ECE9F7", borderRadius: 16, background: "#fff", padding: "12px 16px",
+      border: "1px solid #E4E1F5", borderRadius: 10, background: "#fff", padding: "6px 12px", minHeight: 36,
     }}>
       <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 12, flexShrink: 0 }}>0</span>
       <input type="range" min={0} max={10} step={1} value={num}
@@ -2860,25 +2862,26 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
-      <div className="pm-cfield-box" style={{
-        display: "flex", alignItems: "center", gap: 6,
-        border: "1px solid #E4E1F5", borderRadius: 16,
-        background: "#fff", padding: "12px 14px 12px 16px", minHeight: 48, boxSizing: "border-box",
+      <div className="pm-cfield-box" onClick={() => setOpen(o => !o)} style={{
+        display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
+        border: `1px solid ${textValue ? "#C9C1F0" : "#E4E1F5"}`, borderRadius: 10,
+        background: "#fff", padding: "0 8px 0 12px", height: 36, boxSizing: "border-box",
       }}>
-        <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
+        <input ref={taRef} type="text" value={textValue} onChange={handleTyped}
           onClick={e => e.stopPropagation()}
-          placeholder={isMulti ? "Tap to select (multiple)..." : "Tap to select..."}
+          placeholder={isMulti ? "Tap to select..." : "Tap to select..."}
           className="pm-cfield-text"
           style={{
             flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
-            fontSize: "0.95rem", fontWeight: 500, color: "#2D2D3A", fontFamily: "inherit", resize: "none",
-            overflow: "hidden", lineHeight: 1.35, padding: "2px 0",
+            fontSize: "0.82rem", fontWeight: textValue ? 600 : 400,
+            color: textValue ? "#7B68EE" : "#9A98AC", fontFamily: "inherit",
+            textOverflow: "ellipsis", padding: 0, height: "100%",
           }} />
         <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
           className="pm-cfield-chevron" style={{
-          flexShrink: 0, width: 20, height: 20,
+          flexShrink: 0, width: 18, height: 18,
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: "none", color: "#7B68EE", fontSize: "1rem", cursor: "pointer",
+          background: "none", color: "#9A98AC", fontSize: "0.9rem", cursor: "pointer",
           border: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease",
         }}>⌄</button>
       </div>
@@ -4621,7 +4624,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                           const deepFields = classified.filter((c) => c.visible && c.tier === "deep");
                           const open = !!deepOpen[key];
                           return (
-                            <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+                            <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
                               {mainFields.map(({ field }, fi) => (
                                 <AssessmentRow key={field.id} label={field.label}
                                   helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
