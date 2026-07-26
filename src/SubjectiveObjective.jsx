@@ -11,6 +11,7 @@ import { extractThoracicVariablesStructured, mergeThoracicVariables } from "./th
 import { runThoracicReasoningEngine } from "./thoracicReasoningEngine.js";
 import { runShoulderPhase05, shoulderTestNav } from "./shoulderPhase05.js";
 import { spineAssessmentModules } from "./spineLayeredAssessment.js";
+import { runGenericPhase05 } from "./genericPhase05.js";
 import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
 
 const TEST_SVG = {
@@ -5573,6 +5574,63 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                       </div>
                     );
                   })()}
+
+                  {["Hip / Groin","Knee (L)","Knee (R)","Ankle / Foot","Elbow/Wrist/Hand"].includes(r.region) && (() => {
+                    const gp = runGenericPhase05(data, r.region);
+                    if (!gp) return null;
+                    const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
+                    if (gp.stopped) {
+                      return (
+                        <div style={{ background:"#FEF2F2", border:"1px solid #FCA5A5", borderRadius:10, padding:"12px 14px", marginBottom:12 }}>
+                          <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#991B1B" }}>Red flag screen positive — condition matches withheld</div>
+                          <div style={{ fontSize:"0.75rem", color:"#7F1D1D", marginTop:4 }}>Address the red flag(s) before relying on a differential.</div>
+                        </div>
+                      );
+                    }
+                    if (!gp.conditions.length) return null;
+                    return (
+                      <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", marginBottom:12, borderLeft:`4px solid ${regCol}` }}>
+                        <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase", letterSpacing:1.2, color: regCol, marginBottom:4 }}>
+                          Phase 0.5 — {r.region} condition matches
+                        </div>
+                        <div style={{ fontSize:"0.72rem", color:PC.muted, fontStyle:"italic", marginBottom:8 }}>
+                          Deterministic matches against the {r.region} differentials, run off subjective data to guide the objective exam.
+                        </div>
+                        {gp.conditions.slice(0,6).map((c, ci) => (
+                          <div key={c.id} style={{ background: ci===0 ? regCol+"12" : PC.surface, border:`1px solid ${ci===0 ? regCol+"44" : PC.border}`, borderRadius:8, padding:"9px 12px", marginBottom:6 }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>{c.name}</span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99, background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>{c.matchTier}</span>
+                            </div>
+                            <div style={{ fontSize:"0.72rem", color:PC.muted }}>
+                              {c.supporting.length} supporting · {c.refuting.length} refuting · {c.unknownCount} not yet tested
+                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
+                            </div>
+                            {c.matchTier !== "Unlikely" && (c.keyExams.length > 0 || c.assessmentModules.length > 0) && (() => {
+                              const testFirst = new Set(c.keyExams.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
+                              const layers = c.assessmentModules.filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              return (
+                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                  <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                    Objective assessment — for this condition (tap ? for why &amp; what it tells you)
+                                  </div>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                    {c.keyExams.map((t, ti) => (
+                                      <NavActionBtn key={"ke"+ti} btn={{ label:t, icon:"🔬", col:tierColor[c.matchTier], nav:onNav?"special":null, ctx:null, why:"Confirmatory test for this condition — opens the Special Tests module to perform and record it." }} onNav={onNav} PC={PC}/>
+                                    ))}
+                                    {layers.map((m, mi) => (
+                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
 
                   {/* ── PHASE 1: CLINICAL HYPOTHESES ── */}
                   <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px",
