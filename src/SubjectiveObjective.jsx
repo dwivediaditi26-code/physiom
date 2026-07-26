@@ -1,7 +1,7 @@
 // SubjectiveObjective.jsx — Special Tests, Subjective, CPA, KineticChain, FMS, Fascia, Ergo
 import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
 import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
-import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage } from "./sharedClinicalData.js";
+import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage, classifyField, coreProgress } from "./sharedClinicalData.js";
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
 import { extractLumbarVariablesStructured, mergeLumbarVariables } from "./lumbarVariableExtractor.js";
 import { runLumbarReasoningEngine } from "./lumbarReasoningEngine.js";
@@ -2926,6 +2926,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   };
 
   const [activeSection, setActiveSection] = useState("complaint");
+  const [deepOpen, setDeepOpen] = useState({}); // section key -> show deep-dive fields
   const sectionTopRef = React.useRef(null);
   const [selectedRegions, setSelectedRegions] = useState(()=>{
     try{ return JSON.parse(data.cx_selected_regions||"[]"); }catch{ return []; }
@@ -4205,8 +4206,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
         const hasRegion = selectedRegions.length > 0;
         const hasBPS = needsBPS_S(data);
 
+        // Tiered CORE (the mandatory clinical minimum) for the loaded region
+        // module(s) — separate from the optional deep-dive fields.
+        const cp = coreProgress(Object.values(sections||{}), data);
+
         const groups = [
           { label:"Core", done: coreDone >= Math.round(coreTotal*0.5), pct: Math.round(coreDone/Math.max(coreTotal,1)*100) },
+          hasRegion && cp.total > 0 && { label:`Core ${cp.filled}/${cp.total}`, done: cp.filled >= cp.total, pct: Math.round(cp.filled/Math.max(cp.total,1)*100) },
           hasRegion && { label:"Region", done: regDone > 0 && regDone >= Math.round(regTotal*0.4), pct: Math.round(regDone/Math.max(regTotal,1)*100) },
           hasBPS && { label:"BPS", done: bpsDone > 0, pct: Math.round(bpsDone/Math.max(bpsTotal,1)*100) },
         ].filter(Boolean);
@@ -4604,15 +4610,45 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                           </div>
                         )}
 
-                        {/* Field rows — no shared card; each is its own block with real gap between */}
-                        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-                          {s.fields.map((field, fi) => (
-                            <AssessmentRow key={field.id} label={field.label}
-                              helpText={FIELD_HELP[field.id]} PC={PC} last={fi === s.fields.length - 1}>
-                              {renderField(field)}
-                            </AssessmentRow>
-                          ))}
-                        </div>
+                        {/* Adaptive tiering: CORE + triggered CONDITIONAL (+ any
+                            legacy note that already holds data) render inline;
+                            DEEP-dive detail sits behind an "Add more detail"
+                            expander. Non-visible gated fields are omitted (their
+                            data, if ever set, still flows to the engine). */}
+                        {(() => {
+                          const classified = s.fields.map((field) => ({ field, ...classifyField(field, data) }));
+                          const mainFields = classified.filter((c) => c.visible && c.tier !== "deep");
+                          const deepFields = classified.filter((c) => c.visible && c.tier === "deep");
+                          const open = !!deepOpen[key];
+                          return (
+                            <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+                              {mainFields.map(({ field }, fi) => (
+                                <AssessmentRow key={field.id} label={field.label}
+                                  helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
+                                  {renderField(field)}
+                                </AssessmentRow>
+                              ))}
+                              {deepFields.length > 0 && (
+                                <>
+                                  <button type="button" data-testid={`subj-deep-toggle-${key}`}
+                                    onClick={() => setDeepOpen((o) => ({ ...o, [key]: !o[key] }))}
+                                    style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:6,
+                                      padding:"7px 12px", borderRadius:99, cursor:"pointer", fontFamily:"inherit",
+                                      border:`1.5px dashed ${sColor}66`, background:"transparent",
+                                      color:sColor, fontSize:"0.72rem", fontWeight:700 }}>
+                                    {open ? "▲ Hide extra detail" : `＋ Add more detail (${deepFields.length})`}
+                                  </button>
+                                  {open && deepFields.map(({ field }, fi) => (
+                                    <AssessmentRow key={field.id} label={field.label}
+                                      helpText={FIELD_HELP[field.id]} PC={PC} last={fi === deepFields.length - 1}>
+                                      {renderField(field)}
+                                    </AssessmentRow>
+                                  ))}
+                                </>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}

@@ -1,3 +1,4 @@
+import { injectConsolidatedNotes, SUBJ_TIER, SUBJ_NOTES, classifyField, coreProgress, NEW_NOTE_IDS } from "./subjectiveTiering.js";
 // sharedClinicalData.js — pure data/constants shared across SubjectiveObjective.jsx,
 // ClinicalModules.jsx, OutcomeMeasuresPro.jsx, PhysioNeuro.jsx, and their external
 // consumers (AppFull.jsx, PatientDatabase.jsx, AppModules.jsx, DashboardModules.jsx,
@@ -3390,6 +3391,7 @@ const REG_MOD_S={
   ]},
 }},
 }; // end REGION_MODULES
+injectConsolidatedNotes(REG_MOD_S);
 // ══════════════════════════════════════════════════════════════════════
 // CONDITIONAL SECTIONS
 // ══════════════════════════════════════════════════════════════════════
@@ -5393,6 +5395,7 @@ export {
   CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS,
   SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA,
   UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
+  SUBJ_TIER, SUBJ_NOTES, classifyField, coreProgress, NEW_NOTE_IDS,
   needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S,
   NKT_REGIONS, KC_REGIONS,
   downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage,
