@@ -1292,31 +1292,9 @@ function NavActionBtn({ btn, onNav, PC }) {
   );
 }
 
-// Layered-assessment item rendered as a clickable button-card (same visual family
-// as NavActionBtn / the recommended-test buttons): icon + layer label + OPEN, with
-// the "what to look for" detail shown inline. Clicking jumps to the module.
+
+// Icons for the layered-assessment modules (rendered as NavActionBtn boxes).
 const LAYER_ICON = { observation:"👁", posture:"🧍", fma:"🏃", special:"🔬", cyriax_full:"🦴", nkt:"🧠", kinetic:"⛓", rom:"📐", palpation:"🖐", fascia:"🕸", outcome:"📈" };
-function LayerActionBtn({ m, onNav, PC }) {
-  const col = "#0891b2";
-  const clickable = !!(onNav && m.key);
-  return (
-    <button
-      type="button"
-      onClick={clickable ? ()=>onNav(m.key) : undefined}
-      disabled={!clickable}
-      title={clickable ? `Open the ${m.label} module` : undefined}
-      style={{ textAlign:"left", width:"100%", display:"flex", flexDirection:"column", gap:2,
-        padding:"7px 10px", background:`${col}0e`, border:`1px solid ${col}33`, borderRadius:8,
-        cursor: clickable ? "pointer" : "default", marginBottom:6, fontFamily:"inherit" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-        <span style={{ fontSize:"0.9rem", flexShrink:0 }}>{LAYER_ICON[m.key] || "•"}</span>
-        <span style={{ fontSize:"0.72rem", fontWeight:800, color:col }}>{m.label}</span>
-        {clickable && <span style={{ marginLeft:"auto", fontSize:"0.62rem", fontWeight:800, color:col, letterSpacing:0.4 }}>OPEN →</span>}
-      </div>
-      <div style={{ fontSize:"0.72rem", color:PC.muted, lineHeight:1.45 }}>{m.detail}</div>
-    </button>
-  );
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LUMBAR ENGINE (L01-L11) OBJECTIVE TEST -> NAV TARGET MAPPING
@@ -5078,9 +5056,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
                                   Layered assessment — what to look for &amp; where to check
                                 </div>
-                                {spineAssessmentModules(c.id).map((m, mi) => (
-                                  <LayerActionBtn key={"lay"+mi} m={m} onNav={onNav} PC={PC}/>
-                                ))}
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                  {spineAssessmentModules(c.id).map((m, mi) => (
+                                    <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:m.detail }} onNav={onNav} PC={PC}/>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -5281,9 +5261,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
                                   Layered assessment — what to look for &amp; where to check
                                 </div>
-                                {spineAssessmentModules(c.id).map((m, mi) => (
-                                  <LayerActionBtn key={"lay"+mi} m={m} onNav={onNav} PC={PC}/>
-                                ))}
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                  {spineAssessmentModules(c.id).map((m, mi) => (
+                                    <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:m.detail }} onNav={onNav} PC={PC}/>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -5491,9 +5473,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
                                   Layered assessment — what to look for &amp; where to check
                                 </div>
-                                {spineAssessmentModules(c.id).map((m, mi) => (
-                                  <LayerActionBtn key={"lay"+mi} m={m} onNav={onNav} PC={PC}/>
-                                ))}
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                  {spineAssessmentModules(c.id).map((m, mi) => (
+                                    <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:m.detail }} onNav={onNav} PC={PC}/>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -5662,9 +5646,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
                                   Layered assessment — what to look for &amp; where to check
                                 </div>
-                                {c.assessmentModules.map((m, mi) => (
-                                  <LayerActionBtn key={"lay"+mi} m={m} onNav={onNav} PC={PC}/>
-                                ))}
+                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                  {c.assessmentModules.map((m, mi) => (
+                                    <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:m.detail }} onNav={onNav} PC={PC}/>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>
