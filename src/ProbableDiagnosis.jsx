@@ -6,9 +6,10 @@
 
 import React, { useState } from "react";
 import { runReasoningFromData } from "./reasoningEngine/index";
+import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
 
 const TEAL = "#0891b2";
-const LAYER_ICON = { observation:"\uD83D\uDC41", posture:"\uD83E\uDDCD", fma:"\uD83C\uDFC3", special:"\uD83D\uDD2C", cyriax_full:"\uD83E\uDDB4", nkt:"\uD83E\uDDE0", kinetic:"\u26D3", rom:"\uD83D\uDCD0", palpation:"\uD83D\uDD90", fascia:"\uD83D\uDD78", outcome:"\uD83D\uDCC8" };
+
 
 // Regions the deterministic engine covers end-to-end. This is now the only
 // diagnosis-suggestion path in the app -- the older interpretationEngine /
@@ -238,6 +239,9 @@ export default function ProbableDiagnosis({ data = {}, onNav }) {
                                 {clickable && <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 800, color: TEAL, letterSpacing: 0.4 }}>OPEN →</span>}
                               </div>
                               <div style={{ fontSize: 11.5, color: "#374151", lineHeight: 1.45 }}>{m.detail}</div>
+                              {LAYER_TEACH[m.key] && (
+                                <div style={{ fontSize: 10.5, color: "#6B7280", lineHeight: 1.4, marginTop: 3, fontStyle: "italic" }}>{LAYER_TEACH[m.key]}</div>
+                              )}
                             </button>
                           );
                         })}
