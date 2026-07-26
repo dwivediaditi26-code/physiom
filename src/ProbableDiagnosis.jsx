@@ -209,14 +209,19 @@ export default function ProbableDiagnosis({ data = {}, onNav }) {
                     <Chips label="Supports" items={d.supportingFindings} color="#059669" />
                     <Chips label="Against" items={d.conflictingFindings} color="#DC2626" />
                     <Chips label="Not yet tested" items={d.missingFindings} color="#6B7280" />
-                    {d.recommendedAdditional && d.recommendedAdditional.length > 0 && (
-                      <Chips label="To raise confidence" items={d.recommendedAdditional} color={TEAL} />
-                    )}
-                    {d.assessmentModules && d.assessmentModules.length > 0 && (
+                    {((d.recommendedAdditional && d.recommendedAdditional.length > 0) || (d.assessmentModules && d.assessmentModules.length > 0)) && (
                       <div style={{ marginTop: 8, paddingTop: 7, borderTop: "1px dashed #E5E7EB" }}>
                         <div style={{ fontSize: 11, fontWeight: 800, color: "#0E7490", marginBottom: 5 }}>
-                          OBJECTIVE ASSESSMENT — what to look for &amp; where to check
+                          OBJECTIVE ASSESSMENT — for this condition
                         </div>
+                        {d.recommendedAdditional && d.recommendedAdditional.length > 0 && (
+                          <Chips label="Priority tests to confirm it" items={d.recommendedAdditional} color={TEAL} />
+                        )}
+                        {d.assessmentModules && d.assessmentModules.length > 0 && (
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: 0.3, margin: "8px 0 4px" }}>
+                            …and assess by layer — what to look for &amp; why
+                          </div>
+                        )}
                         {d.assessmentModules.map((m, k) => {
                           const clickable = !!onNav;
                           return (
