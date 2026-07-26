@@ -5018,50 +5018,30 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
                               {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
                             </div>
-                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
-                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
-                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
-                                  Objective assessment  ·  priority tests to confirm this condition
+                            {c.matchTier !== "Unlikely" && ((c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0)) || spineAssessmentModules(c.id).length > 0) && (() => {
+                              const priTests = [...(c.objectiveTests?.required || []), ...(c.objectiveTests?.recommended || [])];
+                              const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
+                              const layers = spineAssessmentModules(c.id).filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              return (
+                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                  <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                    Objective assessment — for this condition (tap ? for why &amp; what it tells you)
+                                  </div>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                    {priTests.map((t, ti) => {
+                                      const target = lumbarTestNav(t);
+                                      const btn = target
+                                        ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                        : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                      return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                    })}
+                                    {layers.map((m, mi) => (
+                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                    ))}
+                                  </div>
                                 </div>
-                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
-                                  {(c.objectiveTests.required || []).map((t, ti) => {
-                                    const target = lumbarTestNav(t);
-                                    const btn = target
-                                      ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
-                                      : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
-                                    return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
-                                  })}
-                                </div>
-                                {(c.objectiveTests.recommended || []).length > 0 && (
-                                  <>
-                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
-                                      Recommended (if indicated)
-                                    </div>
-                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
-                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
-                                        const target = lumbarTestNav(t);
-                                        const btn = target
-                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
-                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
-                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
-                                      })}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                            {c.matchTier !== "Unlikely" && spineAssessmentModules(c.id).length > 0 && (
-                              <div style={{ marginTop:6 }}>
-                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
-                                  …and assess by layer — what to look for &amp; why (tap ? on each)
-                                </div>
-                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
-                                  {spineAssessmentModules(c.id).map((m, mi) => (
-                                    <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         ))}
                       </div>
@@ -5223,50 +5203,30 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
                               {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
                             </div>
-                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
-                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
-                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
-                                  Objective assessment  ·  priority tests to confirm this condition
+                            {c.matchTier !== "Unlikely" && ((c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0)) || spineAssessmentModules(c.id).length > 0) && (() => {
+                              const priTests = [...(c.objectiveTests?.required || []), ...(c.objectiveTests?.recommended || [])];
+                              const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
+                              const layers = spineAssessmentModules(c.id).filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              return (
+                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                  <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                    Objective assessment — for this condition (tap ? for why &amp; what it tells you)
+                                  </div>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                    {priTests.map((t, ti) => {
+                                      const target = cervicalTestNav(t);
+                                      const btn = target
+                                        ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                        : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                      return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                    })}
+                                    {layers.map((m, mi) => (
+                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                    ))}
+                                  </div>
                                 </div>
-                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
-                                  {(c.objectiveTests.required || []).map((t, ti) => {
-                                    const target = cervicalTestNav(t);
-                                    const btn = target
-                                      ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
-                                      : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
-                                    return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
-                                  })}
-                                </div>
-                                {(c.objectiveTests.recommended || []).length > 0 && (
-                                  <>
-                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
-                                      Recommended (if indicated)
-                                    </div>
-                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
-                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
-                                        const target = cervicalTestNav(t);
-                                        const btn = target
-                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
-                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
-                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
-                                      })}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                            {c.matchTier !== "Unlikely" && spineAssessmentModules(c.id).length > 0 && (
-                              <div style={{ marginTop:6 }}>
-                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
-                                  …and assess by layer — what to look for &amp; why (tap ? on each)
-                                </div>
-                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
-                                  {spineAssessmentModules(c.id).map((m, mi) => (
-                                    <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         ))}
                       </div>
@@ -5435,50 +5395,30 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} unknown
                               {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
                             </div>
-                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
-                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
-                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
-                                  Objective assessment  ·  priority tests to confirm this condition
+                            {c.matchTier !== "Unlikely" && ((c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0)) || spineAssessmentModules(c.id).length > 0) && (() => {
+                              const priTests = [...(c.objectiveTests?.required || []), ...(c.objectiveTests?.recommended || [])];
+                              const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
+                              const layers = spineAssessmentModules(c.id).filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              return (
+                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                  <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                    Objective assessment — for this condition (tap ? for why &amp; what it tells you)
+                                  </div>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                    {priTests.map((t, ti) => {
+                                      const target = thoracicTestNav(t);
+                                      const btn = target
+                                        ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                        : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                      return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                    })}
+                                    {layers.map((m, mi) => (
+                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                    ))}
+                                  </div>
                                 </div>
-                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
-                                  {(c.objectiveTests.required || []).map((t, ti) => {
-                                    const target = thoracicTestNav(t);
-                                    const btn = target
-                                      ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
-                                      : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
-                                    return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
-                                  })}
-                                </div>
-                                {(c.objectiveTests.recommended || []).length > 0 && (
-                                  <>
-                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
-                                      Recommended (if indicated)
-                                    </div>
-                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
-                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
-                                        const target = thoracicTestNav(t);
-                                        const btn = target
-                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
-                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
-                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
-                                      })}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                            {c.matchTier !== "Unlikely" && spineAssessmentModules(c.id).length > 0 && (
-                              <div style={{ marginTop:6 }}>
-                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
-                                  …and assess by layer — what to look for &amp; why (tap ? on each)
-                                </div>
-                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
-                                  {spineAssessmentModules(c.id).map((m, mi) => (
-                                    <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         ))}
                       </div>
@@ -5604,54 +5544,30 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               {c.supportingMatched.length} supporting · {c.refutingMatched.length} refuting · {c.unknownCount} not yet tested
                               {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
                             </div>
-                            {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
-                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
-                                {(c.objectiveTests.required || []).length > 0 && (
-                                  <>
-                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
-                                      Objective assessment  ·  priority tests to confirm this condition
-                                    </div>
-                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
-                                      {(c.objectiveTests.required || []).map((t, ti) => {
-                                        const target = shoulderTestNav(t);
-                                        const btn = target
-                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
-                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
-                                        return <NavActionBtn key={"req"+ti} btn={btn} onNav={onNav} PC={PC}/>;
-                                      })}
-                                    </div>
-                                  </>
-                                )}
-                                {(c.objectiveTests.recommended || []).length > 0 && (
-                                  <>
-                                    <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: PC.muted, marginBottom:6 }}>
-                                      Recommended (if indicated)
-                                    </div>
-                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
-                                      {(c.objectiveTests.recommended || []).map((t, ti) => {
-                                        const target = shoulderTestNav(t);
-                                        const btn = target
-                                          ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
-                                          : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
-                                        return <NavActionBtn key={"rec"+ti} btn={btn} onNav={onNav} PC={PC}/>;
-                                      })}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                            {c.matchTier !== "Unlikely" && c.assessmentModules && c.assessmentModules.length > 0 && (
-                              <div style={{ marginTop:6 }}>
-                                <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
-                                  …and assess by layer — what to look for &amp; why (tap ? on each)
+                            {c.matchTier !== "Unlikely" && ((c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0)) || c.assessmentModules.length > 0) && (() => {
+                              const priTests = [...(c.objectiveTests?.required || []), ...(c.objectiveTests?.recommended || [])];
+                              const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
+                              const layers = c.assessmentModules.filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              return (
+                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                  <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
+                                    Objective assessment — for this condition (tap ? for why &amp; what it tells you)
+                                  </div>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                    {priTests.map((t, ti) => {
+                                      const target = shoulderTestNav(t);
+                                      const btn = target
+                                        ? { label:t, icon:target.icon, col:target.col, nav:target.nav, ctx:target.ctx, why:target.why }
+                                        : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                      return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                    })}
+                                    {layers.map((m, mi) => (
+                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                    ))}
+                                  </div>
                                 </div>
-                                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
-                                  {c.assessmentModules.map((m, mi) => (
-                                    <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         ))}
                       </div>
