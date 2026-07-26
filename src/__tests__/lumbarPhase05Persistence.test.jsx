@@ -74,7 +74,7 @@ describe("Phase 0/0.5 survive a real tab-away-and-back navigation cycle", () => 
     // Must show up immediately on remount -- no button click here.
     expect(screen.getByText(/Phase 0.5 — Lumbar Condition Matches/)).toBeInTheDocument();
     expect(screen.getByText(/L02 — Lumbar Disc Herniation \/ Radiculopathy/)).toBeInTheDocument();
-    expect(screen.getByText(/Phase 0 — Extracted Clinical Variables/)).toBeInTheDocument();
+    expect(screen.queryByText(/Phase 0 — Extracted Clinical Variables/)).not.toBeInTheDocument(); // Phase 0 panel now hidden — runs silently
   });
 
   test("changing region selection clears the persisted lumbar results (no stale cross-region leftovers)", () => {

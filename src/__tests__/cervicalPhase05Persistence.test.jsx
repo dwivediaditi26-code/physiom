@@ -62,7 +62,7 @@ describe("Phase 0/0.5 (Cervical) survive a real tab-away-and-back navigation cyc
 
     expect(screen.getByText(/Phase 0.5 — Cervical Condition Matches/)).toBeInTheDocument();
     expect(screen.getByText(/C02 — Cervical Radiculopathy/)).toBeInTheDocument();
-    expect(screen.getByText(/Phase 0 — Extracted Clinical Variables/)).toBeInTheDocument();
+    expect(screen.queryByText(/Phase 0 — Extracted Clinical Variables/)).not.toBeInTheDocument(); // Phase 0 panel now hidden — runs silently
   });
 
   test("changing region selection clears the persisted cervical results (no stale cross-region leftovers)", () => {

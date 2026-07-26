@@ -50,17 +50,17 @@ function runReviewAndAnalysis() {
 
 describe("Lumbar/SI region: Review & Run Analysis end to end", () => {
   test.each(["Lumbar/SI (L)", "Lumbar/SI (R)"])(
-    "selecting %s renders the Phase 0 extracted-variables card, not just Phase 1",
+    "selecting %s feeds the extracted variables silently into Phase 0.5 (Phase 0 card hidden)",
     (regionKey) => {
       const data = realisticRadiculopathyData(regionKey);
       render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
       runReviewAndAnalysis();
 
-      expect(screen.getByText(/Phase 0 — Extracted Clinical Variables/)).toBeInTheDocument();
-      // Below-knee pain, the acute lifting mechanism, and the dermatomal
-      // pattern were all explicitly set in the fixture -- must read as
-      // present, not silently dropped.
-      expect(screen.getByText(/L5 — lateral lower leg/)).toBeInTheDocument();
+      // Phase 0 card is intentionally hidden now — it runs silently.
+      expect(screen.queryByText(/Phase 0 — Extracted Clinical Variables/)).not.toBeInTheDocument();
+      // The dermatomal/below-knee data must still reach the engine: Phase 0.5
+      // shows the lumbar condition matches (proving it was NOT dropped).
+      expect(screen.getByText(/Phase 0.5 — Lumbar Condition Matches/)).toBeInTheDocument();
     }
   );
 
@@ -170,9 +170,8 @@ describe("Lumbar/SI region: AI note findings merge into scoring (regression)", (
     const l02Card = screen.getByText(/L02 — Lumbar Disc Herniation \/ Radiculopathy/).closest("div");
     expect(l02Card).not.toHaveTextContent(/Insufficient data/);
 
-    // Phase 0: an AI-filled field must show the "AI extracted" badge,
-    // not silently blend in with a real "Not asked".
-    expect(screen.getAllByText(/AI extracted/).length).toBeGreaterThan(0);
+    // (Phase 0 card is now hidden — the AI-extracted badge there is no longer
+    // surfaced; the meaningful effect is the Phase 0.5 upgrade asserted above.)
   });
 });
 

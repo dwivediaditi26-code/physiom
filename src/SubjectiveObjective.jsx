@@ -4883,7 +4883,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                        are shown explicitly rather than collapsing Unknown
                        into a "no" -- unknown data should lower confidence,
                        not count as evidence against a hypothesis. ── */}
-                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Lumbar / SI" && lumbarVariables && (() => {
+                  {false && (REGION_FAMILY_KEY[r.region] || r.region) === "Lumbar / SI" && lumbarVariables && (() => {
                     const lv = lumbarVariables;
                     const Chip = ({ state, children }) => (
                       <span style={{
@@ -5094,7 +5094,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                        cervicalVariables instead. See that block's comment for
                        the full rationale (Present/Absent/Unknown tri-state,
                        AI-extracted badges, etc). ── */}
-                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Cervical spine" && cervicalVariables && (() => {
+                  {false && (REGION_FAMILY_KEY[r.region] || r.region) === "Cervical spine" && cervicalVariables && (() => {
                     const cv = cervicalVariables;
                     const Chip = ({ state, children }) => (
                       <span style={{
@@ -5295,7 +5295,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   {/* ── PHASE 0 (THORACIC): EXTRACTED CLINICAL VARIABLES ──
                        Exact mirror of the Lumbar/Cervical Phase 0 blocks above,
                        reading thoracicVariables instead. ── */}
-                  {(REGION_FAMILY_KEY[r.region] || r.region) === "Thoracic spine" && thoracicVariables && (() => {
+                  {false && (REGION_FAMILY_KEY[r.region] || r.region) === "Thoracic spine" && thoracicVariables && (() => {
                     const tv = thoracicVariables;
                     const Chip = ({ state, children }) => (
                       <span style={{
@@ -5513,7 +5513,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                        true/false, NOT a genuine tri-state "not asked" the
                        way a checkbox can, this card is honest about that --
                        two states only (Found / Not mentioned), not three. ── */}
-                  {(r.region === "Shoulder (L)" || r.region === "Shoulder (R)") && shoulderReasoning && (() => {
+                  {false && (r.region === "Shoulder (L)" || r.region === "Shoulder (R)") && shoulderReasoning && (() => {
                     const sv = shoulderReasoning.subjective;
                     const Chip = ({ found, children }) => (
                       <span style={{

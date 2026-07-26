@@ -38,7 +38,7 @@ describe("Phase 0/0.5 (Shoulder) -- reuses the existing reasoningEngine, wired i
     fireEvent.click(screen.getByText(/Review & Run Analysis/));
     fireEvent.click(screen.getByText(/Run analysis/));
 
-    expect(screen.getByText(/Phase 0 — Extracted Clinical Variables/)).toBeInTheDocument();
+    expect(screen.queryByText(/Phase 0 — Extracted Clinical Variables/)).not.toBeInTheDocument(); // Phase 0 panel now hidden — runs silently
     expect(screen.getByText(/Phase 0.5 — Shoulder Condition Matches/)).toBeInTheDocument();
     expect(screen.getByText(/SH01 — Subacromial pain syndrome \(impingement\)/)).toBeInTheDocument();
   });
@@ -55,7 +55,7 @@ describe("Phase 0/0.5 (Shoulder) -- reuses the existing reasoningEngine, wired i
     render(<SubjectiveModule data={get()} set={set} onNav={() => {}} onTabChange={() => {}} />);
 
     expect(screen.getByText(/Phase 0.5 — Shoulder Condition Matches/)).toBeInTheDocument();
-    expect(screen.getByText(/Phase 0 — Extracted Clinical Variables/)).toBeInTheDocument();
+    expect(screen.queryByText(/Phase 0 — Extracted Clinical Variables/)).not.toBeInTheDocument(); // Phase 0 panel now hidden — runs silently
   });
 
   test("changing region selection clears the Shoulder Phase 0.5 card (no stale cross-region leftover)", () => {

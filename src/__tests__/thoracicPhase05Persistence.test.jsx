@@ -57,7 +57,7 @@ describe("Phase 0/0.5 (Thoracic) survive a real tab-away-and-back navigation cyc
 
     expect(screen.getByText(/Phase 0.5 — Thoracic Condition Matches/)).toBeInTheDocument();
     expect(screen.getByText(/T01 — Thoracic Facet/)).toBeInTheDocument();
-    expect(screen.getByText(/Phase 0 — Extracted Clinical Variables/)).toBeInTheDocument();
+    expect(screen.queryByText(/Phase 0 — Extracted Clinical Variables/)).not.toBeInTheDocument(); // Phase 0 panel now hidden — runs silently
   });
 
   test("changing region selection clears the persisted thoracic results (no stale cross-region leftovers)", () => {
