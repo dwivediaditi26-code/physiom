@@ -5021,7 +5021,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
                               <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
-                                  Suggested objective tests — Required
+                                  Objective assessment  ·  priority tests to confirm this condition
                                 </div>
                                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
                                   {(c.objectiveTests.required || []).map((t, ti) => {
@@ -5051,9 +5051,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               </div>
                             )}
                             {c.matchTier !== "Unlikely" && spineAssessmentModules(c.id).length > 0 && (
-                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                              <div style={{ marginTop:6 }}>
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
-                                  Layered assessment — what to look for &amp; where to check
+                                  …and assess by layer — what to look for &amp; why (tap ? on each)
                                 </div>
                                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
                                   {spineAssessmentModules(c.id).map((m, mi) => (
@@ -5226,7 +5226,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
                               <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
-                                  Suggested objective tests — Required
+                                  Objective assessment  ·  priority tests to confirm this condition
                                 </div>
                                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
                                   {(c.objectiveTests.required || []).map((t, ti) => {
@@ -5256,9 +5256,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               </div>
                             )}
                             {c.matchTier !== "Unlikely" && spineAssessmentModules(c.id).length > 0 && (
-                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                              <div style={{ marginTop:6 }}>
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
-                                  Layered assessment — what to look for &amp; where to check
+                                  …and assess by layer — what to look for &amp; why (tap ? on each)
                                 </div>
                                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
                                   {spineAssessmentModules(c.id).map((m, mi) => (
@@ -5438,7 +5438,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             {c.matchTier !== "Unlikely" && c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0) && (
                               <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
-                                  Suggested objective tests — Required
+                                  Objective assessment  ·  priority tests to confirm this condition
                                 </div>
                                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
                                   {(c.objectiveTests.required || []).map((t, ti) => {
@@ -5468,9 +5468,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               </div>
                             )}
                             {c.matchTier !== "Unlikely" && spineAssessmentModules(c.id).length > 0 && (
-                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                              <div style={{ marginTop:6 }}>
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
-                                  Layered assessment — what to look for &amp; where to check
+                                  …and assess by layer — what to look for &amp; why (tap ? on each)
                                 </div>
                                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
                                   {spineAssessmentModules(c.id).map((m, mi) => (
@@ -5609,7 +5609,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                 {(c.objectiveTests.required || []).length > 0 && (
                                   <>
                                     <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
-                                      Suggested objective tests — Required
+                                      Objective assessment  ·  priority tests to confirm this condition
                                     </div>
                                     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6, marginBottom: (c.objectiveTests.recommended||[]).length ? 8 : 0 }}>
                                       {(c.objectiveTests.required || []).map((t, ti) => {
@@ -5641,9 +5641,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               </div>
                             )}
                             {c.matchTier !== "Unlikely" && c.assessmentModules && c.assessmentModules.length > 0 && (
-                              <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                              <div style={{ marginTop:6 }}>
                                 <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#0E7490", marginBottom:6 }}>
-                                  Layered assessment — what to look for &amp; where to check
+                                  …and assess by layer — what to look for &amp; why (tap ? on each)
                                 </div>
                                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
                                   {c.assessmentModules.map((m, mi) => (
