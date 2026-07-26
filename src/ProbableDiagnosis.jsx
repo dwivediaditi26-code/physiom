@@ -8,6 +8,7 @@ import React, { useState } from "react";
 import { runReasoningFromData } from "./reasoningEngine/index";
 
 const TEAL = "#0891b2";
+const LAYER_ICON = { observation:"\uD83D\uDC41", posture:"\uD83E\uDDCD", fma:"\uD83C\uDFC3", special:"\uD83D\uDD2C", cyriax_full:"\uD83E\uDDB4", nkt:"\uD83E\uDDE0", kinetic:"\u26D3", rom:"\uD83D\uDCD0", palpation:"\uD83D\uDD90", fascia:"\uD83D\uDD78", outcome:"\uD83D\uDCC8" };
 
 // Regions the deterministic engine covers end-to-end. This is now the only
 // diagnosis-suggestion path in the app -- the older interpretationEngine /
@@ -212,29 +213,34 @@ export default function ProbableDiagnosis({ data = {}, onNav }) {
                     )}
                     {d.assessmentModules && d.assessmentModules.length > 0 && (
                       <div style={{ marginTop: 8, paddingTop: 7, borderTop: "1px dashed #E5E7EB" }}>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: "#0E7490", marginBottom: 4 }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: "#0E7490", marginBottom: 5 }}>
                           OBJECTIVE ASSESSMENT — what to look for &amp; where to check
                         </div>
-                        {d.assessmentModules.map((m, k) => (
-                          <div key={k} style={{ display: "flex", alignItems: "flex-start", gap: 6, margin: "3px 0" }}>
-                            <div style={{ flex: 1 }}>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: "#111827" }}>{m.label}: </span>
-                              <span style={{ fontSize: 11.5, color: "#374151" }}>{m.detail}</span>
-                            </div>
-                            {onNav && (
-                              <button
-                                type="button"
-                                onClick={() => onNav(m.key)}
-                                title={`Open the ${m.label} module`}
-                                style={{
-                                  flexShrink: 0, fontSize: 10.5, fontWeight: 700, cursor: "pointer",
-                                  color: "#fff", background: TEAL, border: "none", borderRadius: 999,
-                                  padding: "2px 9px", boxShadow: "0 1px 3px rgba(8,145,178,0.25)",
-                                }}
-                              >Open →</button>
-                            )}
-                          </div>
-                        ))}
+                        {d.assessmentModules.map((m, k) => {
+                          const clickable = !!onNav;
+                          return (
+                            <button
+                              key={k}
+                              type="button"
+                              onClick={clickable ? () => onNav(m.key) : undefined}
+                              disabled={!clickable}
+                              title={clickable ? `Open the ${m.label} module` : undefined}
+                              style={{
+                                textAlign: "left", width: "100%", display: "flex", flexDirection: "column", gap: 2,
+                                padding: "7px 10px", marginBottom: 6, background: `${TEAL}0e`,
+                                border: `1px solid ${TEAL}33`, borderRadius: 8, fontFamily: "inherit",
+                                cursor: clickable ? "pointer" : "default",
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 12.5 }}>{LAYER_ICON[m.key] || "•"}</span>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: TEAL }}>{m.label}</span>
+                                {clickable && <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 800, color: TEAL, letterSpacing: 0.4 }}>OPEN →</span>}
+                              </div>
+                              <div style={{ fontSize: 11.5, color: "#374151", lineHeight: 1.45 }}>{m.detail}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                     {d.whyConfidenceReduced && d.whyConfidenceReduced.length > 0 && (

@@ -159,11 +159,11 @@ describe("SUGGEST PROBABLE DIAGNOSIS button (SOAP Assessment)", () => {
     };
     render(<ProbableDiagnosis data={data} onNav={onNav} />);
     fireEvent.click(screen.getByText(/SUGGEST PROBABLE DIAGNOSIS/i));
-    // written per-condition observation finding is shown in text form
-    expect(screen.getAllByText(/Observation:/i).length).toBeGreaterThan(0);
+    // written per-condition objective findings shown as clickable button-cards
     expect(screen.getAllByText(/what to look for/i).length).toBeGreaterThan(0);
-    // and each layer has an Open button that navigates to its module
-    const opens = screen.getAllByText(/Open →/i);
+    expect(screen.getAllByText(/^Observation$/i).length).toBeGreaterThan(0);
+    // each layer is a clickable button (OPEN →) that navigates to its module
+    const opens = screen.getAllByText(/OPEN →/i);
     expect(opens.length).toBeGreaterThan(0);
     fireEvent.click(opens[0]);
     expect(onNav).toHaveBeenCalled();

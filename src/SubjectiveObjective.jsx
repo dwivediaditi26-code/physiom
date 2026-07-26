@@ -1292,6 +1292,32 @@ function NavActionBtn({ btn, onNav, PC }) {
   );
 }
 
+// Layered-assessment item rendered as a clickable button-card (same visual family
+// as NavActionBtn / the recommended-test buttons): icon + layer label + OPEN, with
+// the "what to look for" detail shown inline. Clicking jumps to the module.
+const LAYER_ICON = { observation:"👁", posture:"🧍", fma:"🏃", special:"🔬", cyriax_full:"🦴", nkt:"🧠", kinetic:"⛓", rom:"📐", palpation:"🖐", fascia:"🕸", outcome:"📈" };
+function LayerActionBtn({ m, onNav, PC }) {
+  const col = "#0891b2";
+  const clickable = !!(onNav && m.key);
+  return (
+    <button
+      type="button"
+      onClick={clickable ? ()=>onNav(m.key) : undefined}
+      disabled={!clickable}
+      title={clickable ? `Open the ${m.label} module` : undefined}
+      style={{ textAlign:"left", width:"100%", display:"flex", flexDirection:"column", gap:2,
+        padding:"7px 10px", background:`${col}0e`, border:`1px solid ${col}33`, borderRadius:8,
+        cursor: clickable ? "pointer" : "default", marginBottom:6, fontFamily:"inherit" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+        <span style={{ fontSize:"0.9rem", flexShrink:0 }}>{LAYER_ICON[m.key] || "•"}</span>
+        <span style={{ fontSize:"0.72rem", fontWeight:800, color:col }}>{m.label}</span>
+        {clickable && <span style={{ marginLeft:"auto", fontSize:"0.62rem", fontWeight:800, color:col, letterSpacing:0.4 }}>OPEN →</span>}
+      </div>
+      <div style={{ fontSize:"0.72rem", color:PC.muted, lineHeight:1.45 }}>{m.detail}</div>
+    </button>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // LUMBAR ENGINE (L01-L11) OBJECTIVE TEST -> NAV TARGET MAPPING
 // The lumbarReasoningEngine.js objectiveTests.{required,recommended} arrays
@@ -5053,17 +5079,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   Layered assessment — what to look for &amp; where to check
                                 </div>
                                 {spineAssessmentModules(c.id).map((m, mi) => (
-                                  <div key={"lay"+mi} style={{ display:"flex", alignItems:"flex-start", gap:6, margin:"3px 0" }}>
-                                    <div style={{ flex:1 }}>
-                                      <span style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{m.label}: </span>
-                                      <span style={{ fontSize:"0.72rem", color: PC.muted }}>{m.detail}</span>
-                                    </div>
-                                    {onNav && m.key && (
-                                      <button type="button" onClick={()=>onNav(m.key)} title={`Open the ${m.label} module`}
-                                        style={{ flexShrink:0, fontSize:"0.66rem", fontWeight:700, cursor:"pointer", color:"#fff",
-                                          background:"#0891b2", border:"none", borderRadius:99, padding:"2px 9px" }}>Open →</button>
-                                    )}
-                                  </div>
+                                  <LayerActionBtn key={"lay"+mi} m={m} onNav={onNav} PC={PC}/>
                                 ))}
                               </div>
                             )}
@@ -5266,17 +5282,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   Layered assessment — what to look for &amp; where to check
                                 </div>
                                 {spineAssessmentModules(c.id).map((m, mi) => (
-                                  <div key={"lay"+mi} style={{ display:"flex", alignItems:"flex-start", gap:6, margin:"3px 0" }}>
-                                    <div style={{ flex:1 }}>
-                                      <span style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{m.label}: </span>
-                                      <span style={{ fontSize:"0.72rem", color: PC.muted }}>{m.detail}</span>
-                                    </div>
-                                    {onNav && m.key && (
-                                      <button type="button" onClick={()=>onNav(m.key)} title={`Open the ${m.label} module`}
-                                        style={{ flexShrink:0, fontSize:"0.66rem", fontWeight:700, cursor:"pointer", color:"#fff",
-                                          background:"#0891b2", border:"none", borderRadius:99, padding:"2px 9px" }}>Open →</button>
-                                    )}
-                                  </div>
+                                  <LayerActionBtn key={"lay"+mi} m={m} onNav={onNav} PC={PC}/>
                                 ))}
                               </div>
                             )}
@@ -5486,17 +5492,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   Layered assessment — what to look for &amp; where to check
                                 </div>
                                 {spineAssessmentModules(c.id).map((m, mi) => (
-                                  <div key={"lay"+mi} style={{ display:"flex", alignItems:"flex-start", gap:6, margin:"3px 0" }}>
-                                    <div style={{ flex:1 }}>
-                                      <span style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{m.label}: </span>
-                                      <span style={{ fontSize:"0.72rem", color: PC.muted }}>{m.detail}</span>
-                                    </div>
-                                    {onNav && m.key && (
-                                      <button type="button" onClick={()=>onNav(m.key)} title={`Open the ${m.label} module`}
-                                        style={{ flexShrink:0, fontSize:"0.66rem", fontWeight:700, cursor:"pointer", color:"#fff",
-                                          background:"#0891b2", border:"none", borderRadius:99, padding:"2px 9px" }}>Open →</button>
-                                    )}
-                                  </div>
+                                  <LayerActionBtn key={"lay"+mi} m={m} onNav={onNav} PC={PC}/>
                                 ))}
                               </div>
                             )}
@@ -5667,17 +5663,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   Layered assessment — what to look for &amp; where to check
                                 </div>
                                 {c.assessmentModules.map((m, mi) => (
-                                  <div key={"lay"+mi} style={{ display:"flex", alignItems:"flex-start", gap:6, margin:"3px 0" }}>
-                                    <div style={{ flex:1 }}>
-                                      <span style={{ fontSize:"0.72rem", fontWeight:700, color: PC.text }}>{m.label}: </span>
-                                      <span style={{ fontSize:"0.72rem", color: PC.muted }}>{m.detail}</span>
-                                    </div>
-                                    {onNav && m.key && (
-                                      <button type="button" onClick={()=>onNav(m.key)} title={`Open the ${m.label} module`}
-                                        style={{ flexShrink:0, fontSize:"0.66rem", fontWeight:700, cursor:"pointer", color:"#fff",
-                                          background:"#0891b2", border:"none", borderRadius:99, padding:"2px 9px" }}>Open →</button>
-                                    )}
-                                  </div>
+                                  <LayerActionBtn key={"lay"+mi} m={m} onNav={onNav} PC={PC}/>
                                 ))}
                               </div>
                             )}
