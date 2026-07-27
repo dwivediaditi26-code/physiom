@@ -126,7 +126,9 @@ test("Hip: full subjective carries through to analysis, Live SOAP and SOAP Notes
   await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
 
   // chief complaint (patient's own words) — our unique marker
-  await page.getByPlaceholder(/Quote the patient directly/i).first().fill(MARKER);
+  // the chief-complaint free-text box (its visible placeholder is generic, so
+  // target it by its row label instead)
+  await page.locator(".pm-arow", { hasText: "own words" }).getByRole("textbox").first().fill(MARKER);
 
   // select Hip and fill several fields "fully"
   await selectRegion(page, "Lower limb", "Hip / Groin");
