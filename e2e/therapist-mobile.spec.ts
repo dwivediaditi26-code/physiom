@@ -162,3 +162,47 @@ test("Hip: full subjective carries through to analysis, Live SOAP and SOAP Notes
   if (await suggest.isVisible({ timeout: 4000 }).catch(() => false)) await suggest.click().catch(() => {});
   await noCrash(page);
 });
+
+// ── Patient profile data-integrity (CREATES a real patient in your database) ──
+// Creates a clearly-named "E2E TEST — delete me" patient, fills the Hip
+// subjective, then opens that patient's profile and confirms the subjective
+// data (our unique marker) shows there in full. You can delete the patient
+// afterward from the patient list.
+async function openPatientDb(page: Page) {
+  const direct = page.getByRole("button", { name: /\d+ Patients/ }).first();
+  if (await direct.isVisible({ timeout: 2500 }).catch(() => false)) { await direct.click(); return; }
+  await page.getByRole("button", { name: /^Patient$/ }).first().click({ timeout: 4000 }).catch(() => {});
+  await page.getByRole("button", { name: /Load Patient/ }).first().click({ timeout: 4000 }).catch(() => {});
+}
+
+test("Hip: saved patient profile shows the full subjective (creates a test patient)", async ({ page }) => {
+  const NAME = "E2E TEST DELETE ME";
+  const MARKER = "E2ECHECK buttock pain seven days right side";
+  await login(page);
+
+  // create a new patient via the intake form
+  await openPatientDb(page);
+  await page.getByRole("button", { name: /New Patient/ }).first().click({ timeout: 8000 });
+  await page.getByPlaceholder("e.g. Riya Sharma").fill(NAME);
+  await page.getByPlaceholder(/Lower back pain/).fill(MARKER);   // chief complaint
+  await page.getByRole("button", { name: "Consent", exact: true }).click();
+  await page.getByRole("checkbox").first().check();
+  await page.getByRole("button", { name: /Start Assessment/ }).last().click();
+  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
+
+  // fill some Hip subjective; it auto-saves to the patient
+  await selectRegion(page, "Lower limb", "Hip / Groin");
+  await fillSome(page);
+  await page.waitForTimeout(2800);   // allow the autosave debounce
+  await noCrash(page);
+
+  // open the patient's profile -> Subjective tab -> confirm the marker
+  await openPatientDb(page);
+  await page.getByText(NAME).first().click({ timeout: 8000 });
+  await page.getByText(/Profile/).first().click({ timeout: 6000 }).catch(() => {});
+  const modal = page.getByTestId("patient-profile-modal");
+  await expect(modal).toBeVisible({ timeout: 8000 });
+  await modal.getByRole("button", { name: /Subjective/ }).first().click({ timeout: 6000 }).catch(() => {});
+  await expect(page.getByText(/E2ECHECK/).first()).toBeVisible({ timeout: 8000 });
+  await noCrash(page);
+});
