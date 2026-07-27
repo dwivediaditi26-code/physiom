@@ -579,7 +579,7 @@ function AppInner({ currentUser, onSignOut }) {
 
   const navTo = useCallback((key, ctx = {}) => {
     setActive(key);
-    setNavContext(ctx);
+    setNavContext(ctx || {});
     setNavOpen(false);
     // Mount tab on first visit
     setMountedTabs(prev => {

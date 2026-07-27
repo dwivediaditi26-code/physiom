@@ -1265,7 +1265,7 @@ function NavActionBtn({ btn, onNav, PC }) {
     <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
       <div style={{ display:"flex", gap:4 }}>
         <button
-          onClick={clickable ? ()=>onNav(btn.nav, btn.ctx) : undefined}
+          onClick={clickable ? ()=>onNav(btn.nav, btn.ctx || {}) : undefined}
           disabled={!clickable}
           style={{ flex:1, display:"flex", alignItems:"center", gap:6, padding:"7px 10px",
             background:`${col}12`, border:`1px solid ${col}30`, borderRadius:"7px 0 0 7px",
