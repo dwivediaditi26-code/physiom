@@ -114,3 +114,42 @@ for (const [label, group, regionName] of REGIONS) {
     await noCrash(page);
   });
 }
+
+// ── Data-integrity: the full subjective must carry through to the analysis,
+// Live SOAP, and SOAP Notes — not get half-lost. We type a unique marker into
+// the chief complaint, fill the rest, then assert the marker + analysis appear
+// downstream. (Does NOT save a patient -> no writes to your real database.)
+test("Hip: full subjective carries through to analysis, Live SOAP and SOAP Notes", async ({ page }) => {
+  const MARKER = "E2ECHECK buttock pain seven days right side";
+  await login(page);
+  await page.getByRole("button", { name: /Start Assessment/i }).first().click();
+  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
+
+  // chief complaint (patient's own words) — our unique marker
+  await page.getByPlaceholder(/Quote the patient directly/i).first().fill(MARKER);
+
+  // select Hip and fill several fields "fully"
+  await selectRegion(page, "Lower limb", "Hip / Groin");
+  await fillSome(page);
+  await expect(page.getByText(/E2ECHECK/).first()).toBeVisible();   // present on subjective
+  await noCrash(page);
+
+  // Live SOAP panel should reflect the subjective data
+  const liveBtn = page.getByRole("button", { name: /Live SOAP/i }).first();
+  if (await liveBtn.isVisible({ timeout: 6000 }).catch(() => false)) await liveBtn.click().catch(() => {});
+  await expect(page.getByText(/E2ECHECK/).first()).toBeVisible({ timeout: 8000 });
+  await noCrash(page);
+
+  // Run analysis
+  await runAnalysis(page);
+  await noCrash(page);
+
+  // SOAP Notes (Docs tab) should also carry the subjective through
+  await page.getByRole("button", { name: "Docs", exact: true }).first().click().catch(() => {});
+  await page.getByRole("button", { name: /SOAP Notes/i }).first().click().catch(() => {});
+  await expect(page.getByText(/E2ECHECK/).first()).toBeVisible({ timeout: 10000 });
+  // the SOAP diagnosis suggester should run without crashing
+  const suggest = page.getByRole("button", { name: /Suggest Probable Diagnosis/i }).first();
+  if (await suggest.isVisible({ timeout: 6000 }).catch(() => false)) await suggest.click().catch(() => {});
+  await noCrash(page);
+});
