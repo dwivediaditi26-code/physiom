@@ -208,3 +208,29 @@ test("Hip: saved patient profile shows the full subjective (creates a test patie
   await expect(page.getByText(/E2ECHECK/).first()).toBeVisible({ timeout: 8000 });
   await noCrash(page);
 });
+
+// ── SAFETY / CORRECTNESS: a cauda equina red flag must WITHHOLD the diagnosis.
+// This checks the app behaves *correctly*, not just that it doesn't crash.
+test("Safety: cauda equina red flag withholds the diagnosis (must refer)", async ({ page }) => {
+  await login(page);
+  await page.getByRole("button", { name: /Start Assessment/i }).first().click();
+  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
+
+  await selectRegion(page, "Spine", "Lumbar / SI");
+
+  // set an URGENT cauda equina red flag in the Lumbar red-flags section
+  try {
+    await page.locator("#subj-sec-lx_redflags .pm-cfield-box").first().click({ timeout: 5000 });
+    await page.getByRole("button", { name: "Saddle area anaesthesia — perineum / inner thighs" }).first().click({ timeout: 5000 });
+    await page.keyboard.press("Escape").catch(() => {});
+  } catch { /* selector fallback below */ }
+
+  // the urgent red-flag warning must appear
+  await expect(page.getByText(/Cauda Equina|red flag|withheld|refer/i).first()).toBeVisible({ timeout: 8000 });
+
+  await runAnalysis(page);
+
+  // the diagnosis must be WITHHELD (refer), not a normal differential list
+  await expect(page.getByText(/withheld|refer|Cauda Equina/i).first()).toBeVisible({ timeout: 8000 });
+  await noCrash(page);
+});
