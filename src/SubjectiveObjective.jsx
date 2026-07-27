@@ -5614,8 +5614,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     );
                   })()}
 
-                  {["Hip / Groin","Knee (L)","Knee (R)","Ankle / Foot","Elbow/Wrist/Hand"].includes(r.region) && (() => {
-                    const gp = runGenericPhase05(data, r.region);
+                  {["Hip / Groin","Knee (L)","Knee (R)","Ankle / Foot","Elbow/Wrist/Hand"].includes(REGION_FAMILY_KEY[r.region] || r.region) && (() => {
+                    const gp = runGenericPhase05(data, REGION_FAMILY_KEY[r.region] || r.region);
                     if (!gp) return null;
                     const tierColor = { "Strong match":"#dc2626", "Possible match":"#d97706", "Weak match":"#64748b", "Insufficient data":"#94a3b8", "Unlikely":"#cbd5e1" };
                     if (gp.stopped) {
@@ -5627,13 +5627,14 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                       );
                     }
                     if (!gp.conditions.length) return null;
+                    const famLabel = REGION_FAMILY_KEY[r.region] || r.region;
                     return (
                       <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", marginBottom:12, borderLeft:`4px solid ${regCol}` }}>
                         <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase", letterSpacing:1.2, color: regCol, marginBottom:4 }}>
-                          Phase 0.5 — {r.region} condition matches
+                          Phase 0.5 — {famLabel} condition matches
                         </div>
                         <div style={{ fontSize:"0.72rem", color:PC.muted, fontStyle:"italic", marginBottom:8 }}>
-                          Deterministic matches against the {r.region} differentials, run off subjective data to guide the objective exam.
+                          Deterministic matches against the {famLabel} differentials, run off subjective data to guide the objective exam.
                         </div>
                         {gp.conditions.slice(0,6).map((c, ci) => (
                           <div key={c.id} style={{ background: ci===0 ? regCol+"12" : PC.surface, border:`1px solid ${ci===0 ? regCol+"44" : PC.border}`, borderRadius:8, padding:"9px 12px", marginBottom:6 }}>

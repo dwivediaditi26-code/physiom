@@ -222,7 +222,7 @@ export default function ProbableDiagnosis({ data = {}, onNav }) {
                             …and assess by layer — what to look for &amp; why
                           </div>
                         )}
-                        {d.assessmentModules.map((m, k) => {
+                        {(d.assessmentModules || []).map((m, k) => {
                           const clickable = !!onNav;
                           return (
                             <button
