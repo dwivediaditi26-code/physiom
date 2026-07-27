@@ -1,9 +1,8 @@
-// therapist-mobile.spec.ts — drives the app on a phone like a therapist would.
-// Selectors were captured from a real recording (npx playwright codegen).
+// therapist-mobile.spec.ts — drives the app on a phone like a therapist would,
+// across every body region. Selectors captured from a real recording.
 //
-// Logs in with YOUR real account. Your password is NOT in this file and NOT on
-// GitHub — put it in e2e/login.local.json on your Mac. SAFE: never saves a
-// patient, so it writes nothing to your real database.
+// Logs in with YOUR real account (e2e/login.local.json — never uploaded).
+// SAFE: never saves a patient, so it writes nothing to your real database.
 import { test, expect, devices, Page } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
@@ -19,60 +18,66 @@ function creds() {
   return { email: process.env.E2E_EMAIL || "", password: process.env.E2E_PASSWORD || "" };
 }
 
-const noCrash = async (page: Page) =>
-  expect(page.getByText("Something went wrong")).toHaveCount(0);
+const noCrash = (page: Page) => expect(page.getByText("Something went wrong")).toHaveCount(0);
 
 async function login(page: Page) {
   const { email, password } = creds();
   expect(email, "Put your login in e2e/login.local.json").not.toBe("");
-  await page.addInitScript(() => localStorage.setItem("pm_onboarded", "1"));
+  // start each test from a clean slate (no leftover region/draft) + skip onboarding
+  await page.addInitScript(() => { try { localStorage.clear(); } catch {} localStorage.setItem("pm_onboarded", "1"); });
   await page.goto("/");
   await page.getByRole("textbox", { name: "you@clinic.com" }).fill(email);
   await page.getByRole("textbox", { name: "••••••••" }).fill(password);
   await page.getByRole("button", { name: /Sign in/ }).click();
   const skip = page.getByRole("button", { name: /Skip tour|Got it/i }).first();
   if (await skip.isVisible({ timeout: 8000 }).catch(() => false)) await skip.click().catch(() => {});
-  await expect(page.getByRole("button", { name: /Start Assessment/i }).first())
-    .toBeVisible({ timeout: 25000 });
+  await expect(page.getByRole("button", { name: /Start Assessment/i }).first()).toBeVisible({ timeout: 25000 });
   await noCrash(page);
 }
 
-// Log in, open Subjective, select Hip (R), fill a few fields, run the analysis.
-async function openHipAnalysis(page: Page) {
-  await login(page);
-  await page.getByRole("button", { name: /Start Assessment/i }).first().click();
-  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
-
-  // select Hip / Groin (Right) if not already selected
-  if (!(await page.getByText("Hip/Groin (R)").first().isVisible().catch(() => false))) {
-    if (!(await page.getByText("Lower limb").first().isVisible().catch(() => false))) {
-      await page.getByRole("button", { name: /\+ Add body region|\+ Edit/ }).first()
-        .click({ timeout: 8000 }).catch(() => {});
-    }
-    await page.getByText("Lower limb").first().click({ timeout: 8000 });
-    await page.getByText("Hip / Groin").first().click({ timeout: 8000 });
-    await page.getByRole("button", { name: "Right", exact: true }).first().click({ timeout: 8000 });
-    await page.getByRole("button", { name: "▲" }).first().click({ timeout: 5000 }).catch(() => {});
+async function selectRegion(page: Page, group: string, regionName: string) {
+  if (!(await page.getByText("Lower limb").first().isVisible().catch(() => false))) {
+    await page.getByRole("button", { name: /\+ Add body region|\+ Edit/ }).first().click({ timeout: 8000 }).catch(() => {});
   }
+  await page.getByText(`${group}▼`).first().click({ timeout: 8000 });     // open the group
+  await page.getByText(regionName, { exact: true }).first().click({ timeout: 8000 }); // open the region row
+  await page.getByRole("button", { name: "Right", exact: true }).first().click({ timeout: 8000 });
+  await page.getByRole("button", { name: "▲" }).first().click({ timeout: 5000 }).catch(() => {});
+}
 
-  // best-effort: fill a few fields so the engine produces differentials
-  const pick = async (sectionId: string, option: string) => {
+// Best-effort: fill the first few dropdowns with their first real option.
+async function fillSome(page: Page) {
+  const boxes = page.locator(".pm-cfield-box");
+  const n = Math.min(await boxes.count(), 4);
+  for (let i = 0; i < n; i++) {
     try {
-      await page.locator(`#subj-sec-${sectionId} .pm-cfield-box`).first().click({ timeout: 4000 });
-      await page.getByRole("button", { name: option }).first().click({ timeout: 4000 });
+      await boxes.nth(i).click({ timeout: 3000 });
+      const opt = page.locator('div[style*="absolute"] button').filter({ hasNotText: /^No\b|^Not\b|^N\/A|Tap to/ }).first();
+      if (await opt.isVisible({ timeout: 2000 }).catch(() => false)) await opt.click({ timeout: 2000 });
+      await page.keyboard.press("Escape").catch(() => {});
     } catch { /* non-fatal */ }
-  };
-  await pick("hp_location", "Posterior hip — deep gluteal");
-  await pick("hp_mechanism", "Insidious onset — gradual");
-  await pick("hp_aggravating", "Sitting — low chairs");
-  await noCrash(page);
+  }
+}
 
+async function runAnalysis(page: Page) {
   await page.getByRole("button", { name: /Review & Run Analysis/i }).click();
   const run = page.getByRole("button", { name: /Run analysis/i });
   if (await run.isVisible({ timeout: 8000 }).catch(() => false)) await run.click();
   await page.waitForTimeout(1500);
-  await noCrash(page);
 }
+
+const REGIONS: [string, string, string][] = [
+  // [test label, picker group, region row name]
+  ["Cervical", "Spine", "Cervical spine"],
+  ["Thoracic", "Spine", "Thoracic spine"],
+  ["Lumbar / SI", "Spine", "Lumbar / SI"],
+  ["Shoulder", "Upper limb", "Shoulder"],
+  ["Elbow", "Upper limb", "Elbow"],
+  ["Wrist / Hand", "Upper limb", "Wrist / Hand"],
+  ["Hip / Groin", "Lower limb", "Hip / Groin"],
+  ["Knee", "Lower limb", "Knee"],
+  ["Ankle / Foot", "Lower limb", "Ankle / Foot"],
+];
 
 test("logs in and opens the Subjective screen on a phone", async ({ page }) => {
   await login(page);
@@ -81,15 +86,30 @@ test("logs in and opens the Subjective screen on a phone", async ({ page }) => {
   await noCrash(page);
 });
 
-// The reported crash: clicking these objective-assessment tiles used to throw
-// "Something went wrong". One test per tile so a navigation doesn't hide others.
-for (const tile of [/Functional \(FMA\)/, /Fascia/, /Outcome/]) {
-  test(`objective-assessment tile ${tile.source} opens without crashing`, async ({ page }) => {
-    await openHipAnalysis(page);
-    const btn = page.getByRole("button", { name: tile }).first();
-    if (await btn.isVisible({ timeout: 8000 }).catch(() => false)) {
-      await btn.click();
-      await page.waitForTimeout(800);
+for (const [label, group, regionName] of REGIONS) {
+  test(`${label}: pick region, run analysis, click tiles — no crash`, async ({ page }) => {
+    await login(page);
+    await page.getByRole("button", { name: /Start Assessment/i }).first().click();
+    await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
+
+    await selectRegion(page, group, regionName);
+    await fillSome(page);
+    await noCrash(page);
+
+    await runAnalysis(page);
+    await noCrash(page);
+
+    // click every objective-assessment tile that's present; assert no crash after each
+    const tiles = page.getByRole("button", {
+      name: /Functional \(FMA\)|Fascia|Outcome|Observation|Posture|Palpation|Special|\bROM\b|Kinetic|Scour|test/i,
+    });
+    const count = await tiles.count();
+    for (let i = 0; i < Math.min(count, 6); i++) {
+      const btn = tiles.nth(i);
+      if (await btn.isVisible().catch(() => false)) {
+        await btn.click({ timeout: 4000 }).catch(() => {});
+        await noCrash(page);
+      }
     }
     await noCrash(page);
   });
