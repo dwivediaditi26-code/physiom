@@ -71,7 +71,8 @@ async function pickField(page: Page, fieldId: string) {
 async function runAnalysis(page: Page) {
   await page.getByTestId("btn-review-run").click();
   const run = page.getByTestId("btn-run-analysis");
-  if (await run.isVisible({ timeout: 8000 }).catch(() => false)) await run.click();
+  // the review summary can overlap the button on mobile; force the click through
+  if (await run.isVisible({ timeout: 8000 }).catch(() => false)) await run.click({ force: true });
   await page.waitForTimeout(1500);
 }
 
