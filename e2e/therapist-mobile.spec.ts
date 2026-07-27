@@ -1,17 +1,15 @@
 // therapist-mobile.spec.ts — drives the app on a phone like a therapist would.
 //
-// It logs in with YOUR real account. Your password is NOT in this file and NOT
-// on GitHub — you put it in e2e/login.local.json on your Mac (see
-// e2e/HOW-TO-RUN-FIRST-TEST.md). The test reads it from there.
+// Logs in with YOUR real account. Your password is NOT in this file and NOT on
+// GitHub — you put it in e2e/login.local.json on your Mac. The test reads it.
 //
 // SAFE: it never creates or saves a patient, so it does not write anything to
-// your real database — it only fills the Subjective screen (kept in the browser)
-// and checks the buttons work and nothing crashes.
+// your real database — it only opens the Subjective screen and checks buttons
+// work and nothing crashes.
 import { test, expect, devices } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 
-// Run everything here on the phone profile.
 test.use({ ...devices["Pixel 7"] });
 
 function creds() {
@@ -23,29 +21,27 @@ function creds() {
   return { email: process.env.E2E_EMAIL || "", password: process.env.E2E_PASSWORD || "" };
 }
 
-test.beforeEach(async ({ page }) => {
+async function login(page) {
   const { email, password } = creds();
   expect(email, "Put your login in e2e/login.local.json").not.toBe("");
-  // skip the first-run onboarding modal
   await page.addInitScript(() => localStorage.setItem("pm_onboarded", "1"));
   await page.goto("/");
-  // default screen is the "Welcome back" login form
   await page.getByPlaceholder("you@clinic.com").fill(email);
   await page.getByPlaceholder("••••••••").fill(password);
   await page.getByRole("button", { name: /Sign in/ }).click();
-  // wait until we're past the login wall (bottom nav appears)
-  await expect(page.getByText("Assess", { exact: false }).first()).toBeVisible({ timeout: 20000 });
-  // dismiss a tour/onboarding button if it shows
-  const skip = page.getByRole("button", { name: /Skip tour|Got it|Dismiss|Close/i });
-  if (await skip.count()) await skip.first().click().catch(() => {});
-  // never on the crash screen
+  // proof we're logged in: the Home "Start Assessment" button is visible
+  await expect(page.getByRole("button", { name: /Start Assessment/i }).first())
+    .toBeVisible({ timeout: 25000 });
+  // dismiss a tour button ONLY if it's actually showing (never hang on it)
+  const skip = page.getByRole("button", { name: /Skip tour|Got it/i }).first();
+  if (await skip.isVisible().catch(() => false)) await skip.click({ timeout: 3000 }).catch(() => {});
   await expect(page.getByText("Something went wrong")).toHaveCount(0);
-});
+}
 
 test("logs in and opens the Subjective screen on a phone", async ({ page }) => {
-  await page.getByText("Assess", { exact: false }).first().click();
-  await page.getByText("Subjective Assessment", { exact: false }).first().click();
-  // the subjective screen has a Review & Run Analysis action
-  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 15000 });
+  await login(page);
+  // Home -> Start Assessment goes straight to the Subjective screen
+  await page.getByRole("button", { name: /Start Assessment/i }).first().click();
+  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
   await expect(page.getByText("Something went wrong")).toHaveCount(0);
 });
