@@ -154,12 +154,12 @@ test("Safety: cauda equina red flag withholds the diagnosis (must refer)", async
   await login(page);
   await openSubjective(page);
   await selectRegion(page, "spine", "lumbar");
-  // set an urgent cauda flag
-  try {
-    await page.getByTestId("field-lx_rf_cauda").locator(".pm-cfield-box").first().click({ timeout: 5000 });
-    await page.getByRole("button", { name: "Saddle area anaesthesia — perineum / inner thighs" }).first().click({ timeout: 5000 });
-    await page.keyboard.press("Escape").catch(() => {});
-  } catch { /* */ }
+  // set an urgent cauda flag by typing the value straight into the field
+  const cauda = page.getByTestId("field-lx_rf_cauda").getByRole("textbox").first();
+  await cauda.scrollIntoViewIfNeeded().catch(() => {});
+  await cauda.fill("Saddle area anaesthesia — perineum / inner thighs");
+  await cauda.blur().catch(() => {});
+  await page.waitForTimeout(500);
   await expect(page.getByText(/Cauda Equina|red flag|withheld|refer/i).first()).toBeVisible({ timeout: 8000 });
   await runAnalysis(page);
   await expect(page.getByText(/withheld|refer|Cauda Equina/i).first()).toBeVisible({ timeout: 8000 });
