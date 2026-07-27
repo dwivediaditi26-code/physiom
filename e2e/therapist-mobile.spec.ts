@@ -29,8 +29,14 @@ async function login(page: Page) {
   await page.getByRole("textbox", { name: "you@clinic.com" }).fill(email);
   await page.getByRole("textbox", { name: "••••••••" }).fill(password);
   await page.getByRole("button", { name: /Sign in/ }).click();
+  // onboarding wizard (if shown): click through Next, then Skip tour
+  for (let i = 0; i < 5; i++) {
+    const next = page.getByRole("button", { name: /^Next/ }).first();
+    if (await next.isVisible({ timeout: i === 0 ? 4000 : 1200 }).catch(() => false)) await next.click().catch(() => {});
+    else break;
+  }
   const skip = page.getByRole("button", { name: /Skip tour|Got it/i }).first();
-  if (await skip.isVisible({ timeout: 8000 }).catch(() => false)) await skip.click().catch(() => {});
+  if (await skip.isVisible({ timeout: 3000 }).catch(() => false)) await skip.click().catch(() => {});
   await expect(page.getByRole("button", { name: /Start Assessment/i }).first()).toBeVisible({ timeout: 25000 });
   await noCrash(page);
 }
@@ -146,16 +152,13 @@ test("Hip: full subjective carries through to analysis, Live SOAP and SOAP Notes
   await runAnalysis(page);
   await noCrash(page);
 
-  // SOAP Notes (Docs tab) — best-effort. The core integrity (chief complaint +
-  // Live SOAP + analysis) is already asserted above; here we try to reach SOAP
-  // Notes and, IF we get there, confirm the marker carried through and the
-  // diagnosis suggester runs. We never hard-fail on the navigation selectors.
-  await page.getByRole("button", { name: "Docs", exact: true }).first().click({ timeout: 4000 }).catch(() => {});
-  await page.getByRole("button", { name: /SOAP Notes/i }).first().click({ timeout: 4000 }).catch(() => {});
+  // SOAP Notes — opened via the Documentation panel (real recorded selectors).
+  // Confirm the subjective marker carried through into SOAP Notes.
+  await page.getByText("Documentation").nth(1).click({ timeout: 5000 }).catch(() => {});
+  await page.getByText("SOAP Notes").nth(1).click({ timeout: 5000 }).catch(() => {});
   await page.waitForTimeout(800);
-  if (await page.getByText(/E2ECHECK/).first().isVisible().catch(() => false)) {
-    const suggest = page.getByRole("button", { name: /Suggest Probable Diagnosis/i }).first();
-    if (await suggest.isVisible({ timeout: 4000 }).catch(() => false)) await suggest.click().catch(() => {});
-  }
+  await expect(page.getByText(/E2ECHECK/).first()).toBeVisible({ timeout: 8000 });
+  const suggest = page.getByRole("button", { name: /Suggest Probable Diagnosis/i }).first();
+  if (await suggest.isVisible({ timeout: 4000 }).catch(() => false)) await suggest.click().catch(() => {});
   await noCrash(page);
 });
