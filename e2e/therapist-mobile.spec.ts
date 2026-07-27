@@ -180,14 +180,16 @@ test("Hip: saved patient profile shows the full subjective (creates a test patie
   const MARKER = "E2ECHECK buttock pain seven days right side";
   await login(page);
 
-  // create a new patient via the intake form
+  // create a new patient via the intake form (scope all clicks to the modal so
+  // we don't hit the Home page's "Start Assessment" button behind it)
   await openPatientDb(page);
   await page.getByRole("button", { name: /New Patient/ }).first().click({ timeout: 8000 });
-  await page.getByPlaceholder("e.g. Riya Sharma").fill(NAME);
-  await page.getByPlaceholder(/Lower back pain/).fill(MARKER);   // chief complaint
-  await page.getByRole("button", { name: "Consent", exact: true }).click();
-  await page.getByRole("checkbox").first().check();
-  await page.getByRole("button", { name: /Start Assessment/ }).last().click();
+  const intake = page.getByTestId("intake-modal");
+  await intake.getByPlaceholder("e.g. Riya Sharma").fill(NAME);
+  await intake.getByPlaceholder(/Lower back pain/).fill(MARKER);   // chief complaint
+  await intake.getByRole("button", { name: "Consent", exact: true }).click();
+  await intake.getByRole("checkbox").first().check();
+  await intake.getByRole("button", { name: /Start Assessment/ }).first().click();
   await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
 
   // fill some Hip subjective; it auto-saves to the patient
