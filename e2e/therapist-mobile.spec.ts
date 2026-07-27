@@ -169,19 +169,10 @@ test("Hip: full subjective carries through to analysis, Live SOAP and SOAP Notes
 // data (our unique marker) shows there in full. You can delete the patient
 // afterward from the patient list.
 async function openPatientDb(page: Page) {
-  // several "N Patients" buttons exist; some are hidden/covered. Try each
-  // visible one with a short timeout so we never hang, then fall back to the
-  // bottom-nav Patient tab -> Load Patient route.
-  const btns = page.getByRole("button", { name: /\d+ Patients/ });
-  const count = await btns.count();
-  for (let i = 0; i < count; i++) {
-    const b = btns.nth(i);
-    if (await b.isVisible().catch(() => false)) {
-      try { await b.click({ timeout: 3500 }); return; } catch { /* try next */ }
-    }
-  }
-  await page.getByRole("button", { name: /^.?\s*Patient$/ }).first().click({ timeout: 3500 }).catch(() => {});
-  await page.getByRole("button", { name: /Load Patient/ }).first().click({ timeout: 3500 }).catch(() => {});
+  // On the phone the "N Patients" buttons live in the off-screen desktop
+  // sidebar (unclickable). Use the bottom-nav Patient tab -> Load Patient.
+  await page.locator(".pm-bnav-tab", { hasText: "Patient" }).first().click({ timeout: 6000 }).catch(() => {});
+  await page.getByRole("button", { name: /Load Patient/ }).first().click({ timeout: 6000 }).catch(() => {});
 }
 
 test("Hip: saved patient profile shows the full subjective (creates a test patient)", async ({ page }) => {
