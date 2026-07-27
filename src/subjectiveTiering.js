@@ -177,7 +177,11 @@ export function injectConsolidatedNotes(REG_MOD_S) {
 // prefix from a field id: "cx_loc" -> "cx", "shl_moi" -> "shl"
 const prefixOf = (id) => String(id || "").split("_")[0];
 
-const isNoteField = (f) => f.type === "textarea" || /_notes$/.test(f.id) || f.tierNote;
+// A field counts as a "note" ONLY if its id ends with _notes (the legacy
+// per-subsection notes) or it is one of the new consolidated notes. We must NOT
+// treat every textarea as a note — real free-text fields like the chief
+// complaint (cc_main, patient's own words) are textareas and must always show.
+const isNoteField = (f) => /_notes$/.test(f.id) || f.tierNote === true || NEW_NOTE_IDS.has(f.id);
 
 // ── the core classifier used by the renderer + progress counter ──────
 // Returns { visible, tier } where tier ∈ 'core' | 'conditional' | 'deep' | 'note'.

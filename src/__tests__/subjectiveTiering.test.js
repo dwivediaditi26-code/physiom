@@ -94,3 +94,14 @@ describe("core progress", () => {
     expect(filled).toBe(2);
   });
 });
+
+describe("free-text (non-note) fields stay visible", () => {
+  it("chief complaint (cc_main, a textarea) is always shown — not hidden as a note", () => {
+    const c = classifyField({ id: "cc_main", type: "textarea" }, {});
+    expect(c.visible).toBe(true);
+    expect(c.tier).not.toBe("note");
+  });
+  it("a legacy *_notes textarea is still hidden when empty", () => {
+    expect(classifyField({ id: "cx_loc_notes", type: "textarea" }, {}).visible).toBe(false);
+  });
+});
