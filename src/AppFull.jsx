@@ -1569,7 +1569,7 @@ function AppInner({ currentUser, onSignOut }) {
             const isAct = active===navKey;
             const pct = getSectionPct(navKey);
             return (
-              <button className={`pm-bnav-item${isAct?" active":""}`}
+              <button className={`pm-bnav-item${isAct?" active":""}`} data-testid={`bnav-item-${navKey}`}
                 onClick={()=>{ navTo(navKey); setBnavTab(null); }}>
                 <span className="pm-bnav-item-icon">{icon}</span>
                 <span className="pm-bnav-item-label">{label}</span>
@@ -1647,7 +1647,7 @@ function AppInner({ currentUser, onSignOut }) {
                     </div>
                     {/* Switch patient */}
                     <button className="pm-bnav-dx" style={{marginTop:10}}
-                      onClick={()=>{ setBnavTab(null); setShowPatientDb(true); }}>
+                      data-testid="btn-open-patientdb" onClick={()=>{ setBnavTab(null); setShowPatientDb(true); }}>
                       👥 Switch / Load Patient
                     </button>
                   </div>
@@ -1655,7 +1655,7 @@ function AppInner({ currentUser, onSignOut }) {
                   <div style={{padding:"6px 2px"}}>
                     <div style={{textAlign:"center",padding:"16px 12px",color:"#6B6B6B",fontSize:"0.85rem",fontWeight:600}}>No patient loaded</div>
                     <button className="pm-bnav-dx"
-                      onClick={()=>{ setBnavTab(null); setShowPatientDb(true); }}>
+                      data-testid="btn-open-patientdb" onClick={()=>{ setBnavTab(null); setShowPatientDb(true); }}>
                       👥 Load Patient
                     </button>
                   </div>
@@ -1677,7 +1677,7 @@ function AppInner({ currentUser, onSignOut }) {
             const TabBtn = ({id,icon,label,matchKeys}) => {
               const isActive = bnavTab===id || (matchKeys&&matchKeys.includes(active));
               return (
-                <button className={`pm-bnav-tab${isActive?" active":""}`}
+                <button className={`pm-bnav-tab${isActive?" active":""}`} data-testid={`bnav-${id}`}
                   onClick={()=>setBnavTab(t=> t===id ? null : id)}>
                   <span className="pm-bnav-tab-icon">{icon}</span>
                   <span className="pm-bnav-tab-label">{label}</span>

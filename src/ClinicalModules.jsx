@@ -8076,7 +8076,7 @@ ${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div>
     if (isMobilePill) {
       // Round floating button — sits above the bottom navigation, never covers it
       return (
-        <button onClick={()=>setOpen(true)} title="Open Live SOAP Panel" style={{
+        <button onClick={()=>setOpen(true)} data-testid="btn-live-soap" title="Open Live SOAP Panel" style={{
           position:"fixed", bottom:"calc(96px + env(safe-area-inset-bottom))", right:14, zIndex:138,
           width:56, height:56, borderRadius:"50%",
           display:"flex", alignItems:"center", justifyContent:"center",

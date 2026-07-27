@@ -1852,7 +1852,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
       <div style={{background:C.white,borderBottom:`1px solid ${C.border}`,flexShrink:0,
         display:"flex",overflowX:"auto",padding:"0 8px"}}>
         {TABS.map(t=>(
-          <button key={t.k} onClick={()=>setTab(t.k)} style={{
+          <button key={t.k} data-testid={`profile-tab-${t.k}`} onClick={()=>setTab(t.k)} style={{
             flex:"1 0 auto",padding:"14px 12px 12px",border:"none",background:"none",
             cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,
             borderBottom:`2.5px solid ${tab===t.k?C.primary:"transparent"}`,
@@ -3687,6 +3687,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
 
 function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
+  const _tid = `patient-card-${(patient.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}`;
   const age    = patient.data?.dem_age    ? `${patient.data.dem_age}y` : "";
   const sex    = patient.data?.dem_sex    || patient.data?.dem_gender || "";
   const occ    = patient.data?.dem_occupation || "";
@@ -3697,7 +3698,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
   const updatedAt = patient.updatedAt ? new Date(patient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : null;
 
   return (
-    <div style={{
+    <div data-testid={_tid} style={{
       padding:"14px 14px 10px", borderRadius:14, marginBottom:8,
       background: isActive ? "#F0EEFF" : "#FFFFFF",
       border: `1.5px solid ${hasRed ? "#FCA5A5" : isActive ? "#7c3aed" : "#E5E7EB"}`,
@@ -3741,7 +3742,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
             boxShadow:"0 2px 8px rgba(124,58,237,0.3)",letterSpacing:"0.1px"}}>
           Open Assessment
         </button>
-        <button onClick={e=>{e.stopPropagation();onProfile();}}
+        <button onClick={e=>{e.stopPropagation();onProfile();}} data-testid="btn-open-profile"
           style={{flex:1,padding:"9px 0",borderRadius:10,
             border:"1.5px solid #7c3aed",background:"white",
             color:"#7c3aed",fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>
@@ -3932,7 +3933,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
 
         {/* Footer */}
         <div style={{padding:"14px 14px",borderTop:"1px solid #E5E7EB",flexShrink:0,display:"flex",flexDirection:"column",gap:8,background:"white"}}>
-          <button onClick={onNew}
+          <button onClick={onNew} data-testid="btn-new-patient"
             style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
               border:"none",borderRadius:12,color:"white",fontWeight:900,fontSize:"0.9rem",cursor:"pointer",
               boxShadow:"0 4px 12px rgba(124,58,237,0.3)"}}>

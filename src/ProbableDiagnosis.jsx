@@ -130,6 +130,7 @@ export default function ProbableDiagnosis({ data = {}, onNav }) {
     <div style={{ margin: "10px 0 4px" }}>
       <button
         onClick={run}
+        data-testid="btn-suggest-dx"
         disabled={running}
         style={{
           width: "100%", padding: "12px 16px", borderRadius: 12, border: "none",

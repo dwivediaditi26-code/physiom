@@ -1265,6 +1265,7 @@ function NavActionBtn({ btn, onNav, PC }) {
     <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
       <div style={{ display:"flex", gap:4 }}>
         <button
+          data-testid={btn.testId || (btn.nav ? `tile-${btn.nav}` : undefined)}
           onClick={clickable ? ()=>onNav(btn.nav, btn.ctx || {}) : undefined}
           disabled={!clickable}
           style={{ flex:1, display:"flex", alignItems:"center", gap:6, padding:"7px 10px",
@@ -2761,9 +2762,9 @@ function fieldIcon_S(f) {
 // every row lines up), the field's input on the right (~70%). A
 // hairline divider is the only separator — rows are compact at rest
 // and grow only as far as their content needs.
-function AssessmentRow({ label, helpText, PC, children, last }) {
+function AssessmentRow({ label, helpText, PC, children, last, testId }) {
   return (
-    <div className="pm-arow" style={{
+    <div className="pm-arow" data-testid={testId} style={{
       display: "flex", alignItems: "center", gap: 10,
       padding: "8px 2px",
       borderBottom: last ? "none" : "0.5px solid #EFEDF7",
@@ -3713,7 +3714,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           overflowX:"auto", scrollbarWidth:"none", WebkitOverflowScrolling:"touch" }}>
           <span style={{ fontSize:"0.7rem", color:"rgba(255,255,255,0.6)", flexShrink:0 }}>📍</span>
           {selectedRegions.length === 0 ? (
-            <button type="button" onClick={() => setRegionPickerOpen(true)}
+            <button type="button" data-testid="btn-region-picker" onClick={() => setRegionPickerOpen(true)}
               style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 11px",
                 borderRadius:8, border:"1.5px dashed rgba(255,255,255,0.4)",
                 background:"rgba(255,255,255,0.1)", cursor:"pointer", fontFamily:"inherit",
@@ -3723,7 +3724,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           ) : (
             <>
               {selectedRegions.map(r => (
-                <button key={r} type="button" onClick={() => setRegionPickerOpen(o => !o)}
+                <button key={r} type="button" data-testid="btn-region-picker" onClick={() => setRegionPickerOpen(o => !o)}
                   style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 11px",
                     borderRadius:8, border:"none", cursor:"pointer", fontFamily:"inherit", flexShrink:0,
                     background:"#ffffff",
@@ -3734,7 +3735,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   <span style={{ fontSize:"0.68rem", fontWeight:700, color:"#0D0D0D", whiteSpace:"nowrap" }}>{r}</span>
                 </button>
               ))}
-              <button type="button" onClick={() => setRegionPickerOpen(o => !o)}
+              <button type="button" data-testid="btn-region-picker" onClick={() => setRegionPickerOpen(o => !o)}
                 style={{ display:"inline-flex", alignItems:"center", padding:"5px 9px",
                   borderRadius:8, border:"1.5px dashed rgba(255,255,255,0.4)",
                   background:"rgba(255,255,255,0.12)", cursor:"pointer", fontFamily:"inherit", flexShrink:0,
@@ -4110,7 +4111,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               return (
                 <div key={group.id} style={{ borderBottom: isLastGroup && !groupOpen ? "none" : `1px solid ${PC.border}` }}>
                   {/* Group header */}
-                  <div onClick={() => setOpenGroups(prev => ({ ...prev, [group.id]: !prev[group.id] }))}
+                  <div data-testid={`region-group-${group.id}`} onClick={() => setOpenGroups(prev => ({ ...prev, [group.id]: !prev[group.id] }))}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 14px", background:PC.s2, cursor:"pointer", userSelect:"none" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:"0.72rem", fontWeight:700, color:PC.muted, textTransform:"uppercase", letterSpacing:"0.05em" }}>
                       <span>{group.icon}</span>{group.label}
@@ -4127,7 +4128,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     return (
                       <div key={reg.id} style={{ borderTop:`1px solid ${PC.border}` }}>
                         {/* Region row */}
-                        <div onClick={() => setOpenRegions(prev => ({ ...prev, [reg.id]: !prev[reg.id] }))}
+                        <div data-testid={`region-row-${reg.id}`} onClick={() => setOpenRegions(prev => ({ ...prev, [reg.id]: !prev[reg.id] }))}
                           style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 14px 8px 20px", cursor:"pointer", userSelect:"none", background:PC.surface }}>
                           <span style={{ fontSize:"0.8rem", color:PC.text, flex:1 }}>{reg.name}</span>
                           <div style={{ display:"flex", alignItems:"center", gap:6 }}>
@@ -4149,7 +4150,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                 const col = sideColors[side];
                                 return (
                                   <button key={side} type="button"
-                                    onClick={e => { e.stopPropagation(); if (!isDisabled) handleSidePick(reg, side); }}
+                                    data-testid={`region-side-${reg.id}-${side}`} onClick={e => { e.stopPropagation(); if (!isDisabled) handleSidePick(reg, side); }}
                                     style={{ fontSize:"0.72rem", fontWeight:600, padding:"5px 14px", borderRadius:99,
                                       border:`1px solid ${isActive ? col : PC.border}`,
                                       background: isActive ? col : PC.surface,
@@ -4358,7 +4359,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                   style={{padding:"11px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
                   Continue editing
                 </button>
-                <button onClick={()=>{setShowSummary(false);runInterpretation();}}
+                <button data-testid="btn-run-analysis" onClick={()=>{setShowSummary(false);runInterpretation();}}
                   disabled={selectedRegions.length===0}
                   style={{padding:"11px",borderRadius:10,border:"none",
                     background:selectedRegions.length>0?`linear-gradient(135deg,${PC.accent},${PC.a2})`:PC.s3,
@@ -4401,7 +4402,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                sticky so it stays visible while scrolling through the
                section list below instead of only being reachable after
                scrolling all the way to the bottom of a long form ── */}
-          <button type="button" onClick={()=>setShowSummary(true)}
+          <button type="button" data-testid="btn-review-run" onClick={()=>setShowSummary(true)}
             disabled={selectedRegions.length === 0}
             style={{
               position:"sticky", top:0, zIndex:20,
@@ -4626,7 +4627,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                           return (
                             <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
                               {mainFields.map(({ field }, fi) => (
-                                <AssessmentRow key={field.id} label={field.label}
+                                <AssessmentRow key={field.id} testId={`field-${field.id}`} label={field.label}
                                   helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
                                   {renderField(field)}
                                 </AssessmentRow>
@@ -4642,7 +4643,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                     {open ? "▲ Hide extra detail" : `＋ Add more detail (${deepFields.length})`}
                                   </button>
                                   {open && deepFields.map(({ field }, fi) => (
-                                    <AssessmentRow key={field.id} label={field.label}
+                                    <AssessmentRow key={field.id} testId={`field-${field.id}`} label={field.label}
                                       helpText={FIELD_HELP[field.id]} PC={PC} last={fi === deepFields.length - 1}>
                                       {renderField(field)}
                                     </AssessmentRow>

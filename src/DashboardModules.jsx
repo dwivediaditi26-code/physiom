@@ -475,7 +475,7 @@ function HomeModule({ onNav }) {
             A posture screening & education platform. AI-assisted posture screening, notes, and organisation tools — all in one place. For education and screening only; not a medical device and not a substitute for professional care.
           </p>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            <button onClick={()=>onNav("subjective")} style={{padding:"12px 22px",background:"#fff",border:"none",borderRadius:12,color:"#7c3aed",fontWeight:800,fontSize:"0.88rem",cursor:"pointer",boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
+            <button data-testid="btn-start-assessment" onClick={()=>onNav("subjective")} style={{padding:"12px 22px",background:"#fff",border:"none",borderRadius:12,color:"#7c3aed",fontWeight:800,fontSize:"0.88rem",cursor:"pointer",boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
               Start Assessment →
             </button>
             <button onClick={()=>onNav("dashboard")} style={{padding:"12px 22px",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:12,color:"#fff",fontWeight:700,fontSize:"0.88rem",cursor:"pointer"}}>

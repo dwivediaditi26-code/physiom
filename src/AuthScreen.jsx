@@ -16,6 +16,7 @@ function FocusInput({label,type="text",value,onChange,placeholder,autoFocus,requ
   return(<div style={{marginBottom:16}}>
     <label style={lbl}>{label}</label>
     <input type={type} value={value} onChange={e=>onChange(e.target.value)}
+      data-testid={`authfield-${String(label||"").toLowerCase().replace(/\s+/g,"-")}`}
       placeholder={placeholder} autoFocus={autoFocus} required={required}
       style={{...inp,borderColor:f?A:BD}} onFocus={()=>setF(true)} onBlur={()=>setF(false)}/>
   </div>);
@@ -49,7 +50,7 @@ function Login({onSwitch,onAuth}){
     <div style={{textAlign:"right",marginTop:-10,marginBottom:18}}>
       <button type="button" onClick={()=>onSwitch("forgot")} style={{...link,fontSize:"0.75rem"}}>Forgot password?</button>
     </div>
-    <button type="submit" style={{...btnS,opacity:loading?0.7:1}} disabled={loading}>{loading?"Signing in…":"Sign in →"}</button>
+    <button type="submit" data-testid="btn-signin" style={{...btnS,opacity:loading?0.7:1}} disabled={loading}>{loading?"Signing in…":"Sign in →"}</button>
     <p style={{textAlign:"center",marginTop:18,fontSize:"0.78rem",color:MU}}>
       No account?{" "}<button type="button" onClick={()=>onSwitch("register")} style={link}>Create free account</button>
     </p>

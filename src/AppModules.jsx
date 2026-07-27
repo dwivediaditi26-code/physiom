@@ -1683,13 +1683,13 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
       )}
       {/* Tabs */}
       <div style={{display:"flex",gap:6,marginBottom:18,flexWrap:"wrap"}}>
-        {tabs.map(t=><button key={t.id} style={tabStyle(t.id)} onClick={()=>setTab(t.id)}>{t.label}</button>)}
+        {tabs.map(t=><button key={t.id} data-testid={`intake-tab-${t.id}`} style={tabStyle(t.id)} onClick={()=>setTab(t.id)}>{t.label}</button>)}
       </div>
 
       {/* Essential */}
       {tab==="essential" && (
         <div>
-          {field("Full name *", <input style={inp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>)}
+          {field("Full name *", <input style={inp} data-testid="intake-name" placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>)}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
             <div>{field("Date of birth", <input type="date" style={inp} value={fd.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>)}</div>
             <div>{field("Age", <input style={inp} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>)}</div>
@@ -1699,7 +1699,7 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
             <div>{field("Dominant hand", sel("dem_hand",["Right","Left","Ambidextrous"]))}</div>
           </div>
           {field("Occupation", <input style={inp} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>)}
-          {field("Chief complaint *", <input style={inp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>)}
+          {field("Chief complaint *", <input style={inp} data-testid="intake-cc" placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>)}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div>{field("Pain now (0–10)", <input style={inp} type="number" min="0" max="10" placeholder="0–10" value={fd.cc_vas_now||""} onChange={e=>set("cc_vas_now",e.target.value)}/>)}</div>
             <div>{field("Duration", <input style={inp} placeholder="e.g. 3 weeks, 6 months" value={fd.cc_duration||""} onChange={e=>set("cc_duration",e.target.value)}/>)}</div>
@@ -1738,7 +1738,7 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
             I consent to physiotherapy assessment and treatment. I understand I may withdraw consent at any time. Treatment goals and procedures have been explained to me.
           </div>
           <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",marginBottom:14}}>
-            <input type="checkbox" checked={!!fd.consent_treat} onChange={e=>set("consent_treat",e.target.checked)} style={{marginTop:3,width:16,height:16,flexShrink:0}}/>
+            <input type="checkbox" data-testid="intake-consent" checked={!!fd.consent_treat} onChange={e=>set("consent_treat",e.target.checked)} style={{marginTop:3,width:16,height:16,flexShrink:0}}/>
             <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:600}}>I consent to physiotherapy assessment and treatment <span style={{color:"#ef4444"}}>*</span></span>
           </label>
           <div style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,padding:14,marginBottom:14,fontSize:"0.82rem",color:PC.muted,lineHeight:1.6}}>
@@ -1762,7 +1762,7 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
 
       <div style={{display:"flex",gap:10,marginTop:20}}>
         <button onClick={()=>{clearDraft();onCancel();}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.82rem"}}>Cancel</button>
-        <button disabled={!canSubmit} onClick={()=>{clearDraft();onSubmit(fd);}} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:canSubmit?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:canSubmit?"pointer":"not-allowed",fontSize:"0.82rem"}}>
+        <button data-testid="intake-submit" disabled={!canSubmit} onClick={()=>{clearDraft();onSubmit(fd);}} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:canSubmit?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:canSubmit?"pointer":"not-allowed",fontSize:"0.82rem"}}>
           {canSubmit ? "Start Assessment →" : "Complete Consent tab first"}
         </button>
       </div>
