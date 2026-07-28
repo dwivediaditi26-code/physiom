@@ -19,6 +19,10 @@ describe("lumbarTestNav -- L01-L11 objective test -> module mapping", () => {
     expect(lumbarTestNav("Active SLR")).toBeNull();
   });
 
+  it("maps Observation to the observation module for this region", () => {
+    expect(lumbarTestNav("Observation")).toMatchObject({ nav:"observation", ctx:{ obsRegion:"lx" } });
+  });
+
   it("maps Slump test to the neural special-tests entry", () => {
     expect(lumbarTestNav("Slump test")).toMatchObject({
       nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_slump_test" },
@@ -91,7 +95,7 @@ describe("lumbarTestNav -- L01-L11 objective test -> module mapping", () => {
     expect(lumbarTestNav("Meyerding grading once imaging confirms a slip")).toBeNull();
     expect(lumbarTestNav("Hamstring length")).toBeNull();
     expect(lumbarTestNav("Resisted isometric movements")).toBeNull();
-    expect(lumbarTestNav("Crossed SLR")).toBeNull();
+    expect(lumbarTestNav("Crossed SLR")).toMatchObject({ nav:"special", ctx:{ highlightTest:"st_slr_test" } });
     expect(lumbarTestNav("Palpation for taut bands/trigger points reproducing referred pain (unverified against a real source)")).toBeNull();
     expect(lumbarTestNav("ESR/CRP, HLA-B27 referral")).toBeNull();
     expect(lumbarTestNav("Peripheral joint screen")).toBeNull();

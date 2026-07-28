@@ -744,38 +744,6 @@ Object.assign(SCALES, {
     score:(v)=>{const ids=["barthel_feeding","barthel_bathing","barthel_grooming","barthel_dressing","barthel_bowels","barthel_bladder","barthel_toilet","barthel_transfer","barthel_mobility","barthel_stairs"];const s=ids.map(id=>v[id]!==undefined?+v[id].split(" — ")[0]:null).filter(x=>x!==null);return s.length?s.reduce((a,b)=>a+b,0):null;}
   },
 
-});
-
-// ─── from PhysioNeuro.jsx ───────────────────────────────────────────────────
-const ALL_TESTS = {
-  home:{ label:"Home", icon:"🏠", desc:"App Overview & Features", groups:{ "Welcome":"HOME_MODULE" }},
-  dashboard:{ label:"Dashboard", icon:"📊", desc:"Therapist Overview", groups:{ "Therapist Dashboard":"DASHBOARD_MODULE" }},
-  demographics:{ label:"Demographics", icon:"👤", desc:"Patient Information", groups:{ "Demographic Data":"DEMOGRAPHICS_MODULE" }},
-  subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
-  palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
-  posture:{ label:"Posture Analysis", icon:"🧍", desc:"AI Posture Screening", groups:{}},
-  observation:{ label:"Observation", icon:"👁️", desc:"Visual Inspection — Magee's", groups:{
-    "Clinical Observation":"OBSERVATION_MODULE",
-  }},
-  rom:{ label:"ROM", icon:"📐", desc:"Range of Motion", groups:{ "Full ROM Assessment":"ROM_MODULE" }},
-  mmt:{ label:"Muscle MMT", icon:"💪", groups:{ "Full MMT Assessment":"MMT_MODULE" }},
-  special:{ label:"Special Tests (100+)", icon:"🔬", groups:{ "All Special Tests":"SPECIAL_TESTS_MODULE" }},
-  neuro:{ label:"Neurological", icon:"⚡", groups:{ "Full Neurological Assessment":"NEURO_MODULE" }},
-  neurotemplates:{ label:"Neuro Templates", icon:"🧩", groups:{ "Neuro Templates":"NEURO_TEMPLATES_MODULE" }},
-  gait:{ label:"Gait Analysis", icon:"🚶", groups:{ "Full Gait Analysis":"GAIT_MODULE" }},
-  nkt:{ label:"CPA — Compensation Pattern Analysis", icon:"🧠", groups:{ "Compensation Pattern Tests":"NKT_REGION" }},
-  kinetic:{ label:"Kinetic Chain", icon:"⛓️", groups:{ "Joint-by-Joint Assessment":"KC_REGION" }},
-  fascia:{ label:"Fascia Integration", icon:"🕸️", groups:{ "Fascial Assessment":"FASCIA_REGION" }},
-  fma:{ label:"Functional Movement", icon:"🏃", groups:{ "Movement Analysis":"FMA_REGION" }},
-  cyriax_full:{ label:"STTT — Selective Tissue Tension Test", icon:"🦴", groups:{ "Complete STTT Assessment":"CYRIAX_MODULE" }},
-  outcome:{ label:"Outcome Measures", icon:"📈", groups:{ "Validated Outcome Measures":"OUTCOME_MODULE" }},
-  treatment:{ label:"Treatment", icon:"💊", desc:"Exercise & Treatment Techniques", groups:{ "Treatment":"TREATMENT_MODULE" }},
-  exercise:{ label:"Treatment Prescription", icon:"💊", desc:"Exercise & Treatment Plan", groups:{ "Exercise Prescription":"EXERCISE_MODULE" }},
-  tx_techniques:{ label:"Tx Techniques", icon:"🤲", groups:{ "Treatment Techniques":"TX_TECHNIQUES_MODULE" }},
-  tx_sessions:{ label:"Session Log", icon:"📋", groups:{ "Treatment Session Log":"TX_SESSION_MODULE" }},
-  soap:{ label:"SOAP Notes", icon:"📋", desc:"SOAP Documentation", groups:{ "SOAP Note Generator":"SOAP_MODULE" }},
-  ai_assistant:{ label:"AI Assistant", icon:"🤖", desc:"AI Clinical Assistant", groups:{ "AI Clinical Assistant":"AI_MODULE" }},
-
   nprs:{id:"nprs",label:"NPRS",full:"Numeric Pain Rating Scale (0–10)",icon:"🌡️",category:"Pain",
     maxScore:10,unit:"/10",mcid:2,
     interpret:(s)=>s===0?{label:"No pain",color:"#16a34a"}:s<=3?{label:"Mild pain",color:"#0891b2"}:s<=6?{label:"Moderate pain",color:"#d97706"}:{label:"Severe pain",color:"#dc2626"},
@@ -996,6 +964,37 @@ const ALL_TESTS = {
     ],
     score:(v)=>{const ids=["constant_pain","constant_work","constant_sport","constant_sleep","constant_reach","constant_flex","constant_abd","constant_er","constant_ir","constant_power"];const s=ids.map(id=>v[id]!==undefined&&v[id]!==""?parseFloat(v[id]):null).filter(x=>x!==null&&!isNaN(x));return s.length===ids.length?s.reduce((a,b)=>a+b,0):null;}
   },
+});
+
+// ─── from PhysioNeuro.jsx ───────────────────────────────────────────────────
+const ALL_TESTS = {
+  home:{ label:"Home", icon:"🏠", desc:"App Overview & Features", groups:{ "Welcome":"HOME_MODULE" }},
+  dashboard:{ label:"Dashboard", icon:"📊", desc:"Therapist Overview", groups:{ "Therapist Dashboard":"DASHBOARD_MODULE" }},
+  demographics:{ label:"Demographics", icon:"👤", desc:"Patient Information", groups:{ "Demographic Data":"DEMOGRAPHICS_MODULE" }},
+  subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
+  palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
+  posture:{ label:"Posture Analysis", icon:"🧍", desc:"AI Posture Screening", groups:{}},
+  observation:{ label:"Observation", icon:"👁️", desc:"Visual Inspection — Magee's", groups:{
+    "Clinical Observation":"OBSERVATION_MODULE",
+  }},
+  rom:{ label:"ROM", icon:"📐", desc:"Range of Motion", groups:{ "Full ROM Assessment":"ROM_MODULE" }},
+  mmt:{ label:"Muscle MMT", icon:"💪", groups:{ "Full MMT Assessment":"MMT_MODULE" }},
+  special:{ label:"Special Tests (100+)", icon:"🔬", groups:{ "All Special Tests":"SPECIAL_TESTS_MODULE" }},
+  neuro:{ label:"Neurological", icon:"⚡", groups:{ "Full Neurological Assessment":"NEURO_MODULE" }},
+  neurotemplates:{ label:"Neuro Templates", icon:"🧩", groups:{ "Neuro Templates":"NEURO_TEMPLATES_MODULE" }},
+  gait:{ label:"Gait Analysis", icon:"🚶", groups:{ "Full Gait Analysis":"GAIT_MODULE" }},
+  nkt:{ label:"CPA — Compensation Pattern Analysis", icon:"🧠", groups:{ "Compensation Pattern Tests":"NKT_REGION" }},
+  kinetic:{ label:"Kinetic Chain", icon:"⛓️", groups:{ "Joint-by-Joint Assessment":"KC_REGION" }},
+  fascia:{ label:"Fascia Integration", icon:"🕸️", groups:{ "Fascial Assessment":"FASCIA_REGION" }},
+  fma:{ label:"Functional Movement", icon:"🏃", groups:{ "Movement Analysis":"FMA_REGION" }},
+  cyriax_full:{ label:"STTT — Selective Tissue Tension Test", icon:"🦴", groups:{ "Complete STTT Assessment":"CYRIAX_MODULE" }},
+  outcome:{ label:"Outcome Measures", icon:"📈", groups:{ "Validated Outcome Measures":"OUTCOME_MODULE" }},
+  treatment:{ label:"Treatment", icon:"💊", desc:"Exercise & Treatment Techniques", groups:{ "Treatment":"TREATMENT_MODULE" }},
+  exercise:{ label:"Treatment Prescription", icon:"💊", desc:"Exercise & Treatment Plan", groups:{ "Exercise Prescription":"EXERCISE_MODULE" }},
+  tx_techniques:{ label:"Tx Techniques", icon:"🤲", groups:{ "Treatment Techniques":"TX_TECHNIQUES_MODULE" }},
+  tx_sessions:{ label:"Session Log", icon:"📋", groups:{ "Treatment Session Log":"TX_SESSION_MODULE" }},
+  soap:{ label:"SOAP Notes", icon:"📋", desc:"SOAP Documentation", groups:{ "SOAP Note Generator":"SOAP_MODULE" }},
+  ai_assistant:{ label:"AI Assistant", icon:"🤖", desc:"AI Clinical Assistant", groups:{ "AI Clinical Assistant":"AI_MODULE" }},
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════

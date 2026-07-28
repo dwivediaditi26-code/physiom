@@ -77,9 +77,29 @@ const KC_REGION_FOR = {
   "Shoulder (L)": "scapula", "Shoulder (R)": "scapula", "Hip / Groin": "hip",
   "Knee (L)": "knee", "Knee (R)": "knee", "Ankle / Foot": "foot_ankle",
 };
+function kcHighlightsFromDetail(detail = "") {
+  const d = String(detail).toLowerCase();
+  const ids = [];
+  if (/hip/.test(d)) {
+    if (/ext/.test(d)) ids.push("kc_hip_ext_mob");
+    if (/rotat|\bir\b|\ber\b|internal|external/.test(d)) ids.push("kc_hip_er_mob", "kc_hip_ir_mob");
+    if (/abduct|glut|med/.test(d)) ids.push("kc_hip_abd_mob");
+    if (!ids.length) ids.push("kc_hip_ext_mob", "kc_hip_er_mob");
+  }
+  if (/thoracic/.test(d)) ids.push("kc_thoracic_rotation", "kc_thoracic_extension");
+  if (/rib/.test(d)) ids.push("kc_rib_mobility");
+  if (/ankle|dorsiflex|\bdf\b/.test(d)) ids.push("kc_ankle_df");
+  if (/subtalar|pronat|foot/.test(d)) ids.push("kc_subtalar");
+  if (/lumbar|core|stability|control/.test(d)) ids.push("kc_lumbar_stability");
+  if (/knee/.test(d)) ids.push("kc_knee_stability");
+  if (/scapul|shoulder|rhythm/.test(d)) ids.push("kc_scapulohumeral_rhythm");
+  return [...new Set(ids)];
+}
 function kcCtxFromDetail(detail, family) {
   const region = KC_REGION_FOR[family];
-  return region ? { kcRegion: region } : null;
+  if (!region) return null;
+  const kcHighlights = kcHighlightsFromDetail(detail);
+  return kcHighlights.length ? { kcRegion: region, kcHighlights } : { kcRegion: region };
 }
 
 function layerNavBtn(m, onNav, family) {
@@ -1441,7 +1461,9 @@ function lumbarTestNav(testStr) {
   // Exclusions first: tests that share a word with a mapped test but are
   // clinically distinct and have no dedicated implementation of their own.
   if (/active slr/i.test(s)) return null;
-  if (/crossed slr/i.test(s)) return null; // distinct test (opposite leg), not implemented in this app
+  if (/crossed slr/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_slr_test" },
+      why:"Crossed SLR - raising the UNAFFECTED leg reproduces the patient's radicular pain. ~90% specific for lumbar disc herniation. Recorded as the Crossed SLR positive option on the SLR test card." };
 
   if (/slump test/i.test(s))
     return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },
@@ -1481,6 +1503,10 @@ function lumbarTestNav(testStr) {
     return { icon:"\ud83d\udcd0", col:"#9333ea", nav:"rom", ctx:{ romRegion:"Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS },
       why:"Flexion — discogenic aggravator; test for centralisation with repeated movements (McKenzie). Extension — facet/stenosis pattern, reproduces symptoms and tests centralisation the opposite direction. Side flexion asymmetry — lateral shift/disc protrusion screen." };
 
+
+  if (/observation|posture screen/i.test(s))
+    return { icon:"\ud83d\udc41\ufe0f", col:"#7c3aed", nav:"observation", ctx:{ obsRegion:"lx" },
+      why:"Lumbar lordosis (loss = disc/guarding, increased = facet), lateral shift/scoliosis, pelvic obliquity, paraspinal bulk asymmetry, and antalgic/Trendelenburg gait." };
   return null;
 }
 
@@ -1565,6 +1591,10 @@ function cervicalTestNav(testStr) {
     return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Cervical", mmtHighlights: CERVICAL_MMT_HIGHLIGHTS },
       why:"Deep cervical flexors (craniocervical flexion test) are the most commonly inhibited muscle group in cervical dysfunction and a key forward-head-posture driver (Jull 2008). Deep neck extensors (cervical multifidus) atrophy in chronic cervical pain (Elliott 2006)." };
 
+
+  if (/observation|posture screen/i.test(s))
+    return { icon:"\ud83d\udc41\ufe0f", col:"#7c3aed", nav:"observation", ctx:{ obsRegion:"cx" },
+      why:"Forward head posture and thoracic kyphosis, scapular elevation / upper-trap hypertrophy, resting cervical rotation asymmetry, and shoulder height." };
   return null;
 }
 
@@ -1612,6 +1642,10 @@ function thoracicTestNav(testStr) {
     return { icon:"\ud83d\udcaa", col:"#7c3aed", nav:"mmt", ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights: THORACIC_MMT_HIGHLIGHTS },
       why:"Lower/mid/upper trapezius, serratus anterior, rhomboids -- weakness here maintains a kyphotic, round-back posture (T06) and is the muscle group most often implicated in thoracic myofascial referral (T09, Magee Table 8-8)." };
 
+
+  if (/observation|posture screen/i.test(s))
+    return { icon:"\ud83d\udc41\ufe0f", col:"#7c3aed", nav:"observation", ctx:{ obsRegion:"th" },
+      why:"Thoracic kyphosis / scoliosis (Adams forward bend), rib-cage symmetry, scapular position and winging, and breathing pattern (thoracic vs diaphragmatic)." };
   return null;
 }
 
