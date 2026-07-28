@@ -3241,6 +3241,22 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     if (v("om_dash_score")&&!addedScales.has("dash")) omRows.push(`DASH: ${v("om_dash_score")}`);
     if (v("om_ndi_score")&&!addedScales.has("ndi")) omRows.push(`NDI: ${v("om_ndi_score")}%`);
     if (v("om_lefs_score")&&!addedScales.has("lefs")) omRows.push(`LEFS: ${v("om_lefs_score")}/80`);
+    // Robust coverage: surface ANY validated scale whose own fields are filled
+    // in the record, regardless of how it was entered (OutcomeMeasuresPro
+    // om_history_, a neuro/template grid, or direct field writes). This
+    // guarantees every completed outcome measure reaches the documentation.
+    try {
+      Object.values(SCALES).forEach(sc => {
+        if (!sc || addedScales.has(sc.id) || typeof sc.score !== "function") return;
+        const hasField = Array.isArray(sc.fields) && sc.fields.some(fl => data[fl.id] !== undefined && String(data[fl.id]).trim() !== "");
+        if (!hasField) return;
+        let score = null; try { score = sc.score(data); } catch { score = null; }
+        if (score === null || score === undefined || (typeof score === "number" && Number.isNaN(score))) return;
+        const label = SCALE_LABELS[sc.id] || sc.label || sc.id.toUpperCase();
+        omRows.push(`${label}: ${score}${sc.unit || ""}`);
+        addedScales.add(sc.id);
+      });
+    } catch {}
     if (omRows.length) O_parts.push(`Outcome Measures:\n  ${omRows.join("\n  ")}.`);
   }
 

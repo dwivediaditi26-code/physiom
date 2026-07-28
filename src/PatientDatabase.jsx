@@ -2502,6 +2502,21 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               const obsKeys = Object.keys(d).filter(k=>k.startsWith("obs_")&&k!=="obs_snapshots"&&d[k]);
               // Outcome measures: om_history_* OR om_psfs_* / om_ndi_* / ndi_score / psfs_score etc
               const omKeys  = Object.keys(d).filter(k=>d[k]&&(k.startsWith("om_history_")||k.startsWith("om_psfs_")||k.startsWith("om_ndi_")||k.startsWith("om_koos_")||k.startsWith("om_dash_")||k.startsWith("om_lefs_")||/^(ndi_score|psfs_score|koos_score|dash_score|lefs_score|om_odi_score|om_report)$/.test(k)));
+              // Robust coverage: any validated scale whose own fields are filled
+              // but which lacks an om_history_ entry (e.g. entered via a neuro/
+              // template grid or the gait module) still gets surfaced here, so
+              // every completed outcome measure appears in the profile.
+              const omScaleAug={};
+              try{ Object.values(SCALES||{}).forEach(sc=>{
+                const key="om_history_"+sc.id;
+                if(d[key]) return;
+                const hasField=Array.isArray(sc.fields)&&sc.fields.some(fl=>d[fl.id]!==undefined&&String(d[fl.id]).trim()!=="");
+                if(!hasField) return;
+                let score=null; try{score=sc.score(d);}catch{score=null;}
+                if(score===null||score===undefined||(typeof score==="number"&&Number.isNaN(score))) return;
+                omScaleAug[key]=JSON.stringify([{score,date:new Date().toISOString()}]);
+              });}catch{}
+              const omKeysAll=[...omKeys, ...Object.keys(omScaleAug)];
               const hasGait = !!(d.ag_antalgic||d.gait_pattern||d.g_rom_findings);
               // Palpation pins are already self-describing (label/structures/
               // tenderness/temp/texture/notes/side set by PalpationModule
@@ -2903,15 +2918,15 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   </Sec>
 
                   {/* ── Outcome Measures ── */}
-                  <Sec icon="📊" title="Outcome Measures" navKey="outcome" hasData={omKeys.length>0}>
+                  <Sec icon="📊" title="Outcome Measures" navKey="outcome" hasData={omKeysAll.length>0}>
                     {(()=>{
                       const OM_MAX={odi:100,ndi:100,dash:100,quickdash:100,lefs:80,vas:10,nprs:10,psfs1:10,psfs2:10,psfs3:10,psfs:10,tsk:44,fabq:96,fabqpa:24,pcs:52,womac:96,koos:100,koosjr:28,spadi:100,hoos:100,hoosjr:24,faam:100,dgi:24,tug:60,bbs:56,abc:100,sf36:100,eq5d:100,pdi:70,rmdq:24,mwt10:3,fac:5,asia:100,oks:48,startback:9,visaa:100,visap:100,lysholm:100,ikdc:100,ases:100,constant:100,prtee:100,qbpds:100};
                       const OM_NAMES={odi:"ODI — Oswestry Disability",ndi:"NDI — Neck Disability",dash:"DASH — Arm/Shoulder/Hand",quickdash:"QuickDASH",lefs:"LEFS — Lower Extremity",vas:"VAS — Pain",nprs:"NPRS — Pain Rating",psfs:"PSFS — Patient-Specific",tsk:"TSK-11 — Kinesiophobia",fabq:"FABQ — Fear Avoidance",fabqpa:"FABQ-PA — Fear Avoidance",pcs:"PCS — Catastrophising",womac:"WOMAC",koos:"KOOS",koosjr:"KOOS-JR — Knee",spadi:"SPADI — Shoulder Pain",hoos:"HOOS",hoosjr:"HOOS-JR — Hip",faam:"FAAM — Foot & Ankle",dgi:"DGI — Dynamic Gait",tug:"TUG — Timed Up & Go",bbs:"BBS — Berg Balance",abc:"ABC — Balance Confidence",rmdq:"RMDQ — Roland-Morris"};
                       return(
                         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                          {omKeys.map(k=>{
+                          {omKeysAll.map(k=>{
                             const scaleId=k.replace("om_history_","");
-                            let hist=[];try{hist=JSON.parse(d[k]||"[]");}catch{}
+                            let hist=[];try{hist=JSON.parse(d[k]||omScaleAug[k]||"[]");}catch{}
                             if(hist.length===0) return null;
                             const curr=parseFloat(hist[hist.length-1]?.score);
                             const prev=hist.length>=2?parseFloat(hist[hist.length-2]?.score):null;
