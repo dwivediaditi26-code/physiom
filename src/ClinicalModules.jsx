@@ -6086,6 +6086,9 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, accentColor
   );
 }
 
+// ─── Region → evidence-based protocol arrays (merged into the listing) ───────
+const REGION_PROTOCOLS = { Knee: KNEE_PROTOCOLS, Shoulder: SHOULDER_PROTOCOLS, Elbow: ELBOW_PROTOCOLS, Hip: HIP_PROTOCOLS };
+
 // ─── QUICK TEMPLATES PANEL ────────────────────────────────────────────────────
 function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[], onAdd, onRemove, onUpdate, onLoadTemplate, programme }) {
   const [open,       setOpen]       = useState(false);
@@ -6106,67 +6109,126 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
     pilates:"Pilates / Yoga", neuro:"Neuro", cardiac:"Cardiac", hydro:"Hydrotherapy",
   };
 
-  const TemplateCard = ({ templateKey:key, t }) => {
-    const tx = TEMPLATE_TX[key];
-    const isOpen = openTpl === key;
-    const added = t.exercises.filter(id => programme?.find(p=>p.id===id)).length;
-    // Manual therapy + modality chips count toward "added" too -- previously
-    // this summary only ever reflected exercises, so tapping a manual/
-    // modality chip (which does get saved) looked like it had no visible
-    // effect on the template's own progress indicator.
-    const txAll = tx ? [...(tx.manual||[]), ...(tx.machine||[])] : [];
+  // Build one unified, alphabetically-sorted list per region that merges the
+  // evidence-based condition protocols with the quick templates. Protocols are
+  // flattened into a plain exercise list (each card keeps its phase tag, but
+  // there is no phase grouping and no separate treatment-technique tab —
+  // evidence-based treatment techniques appear as read-only notes at the
+  // bottom of the row so no clinical content is lost).
+  // Normalised condition key so the same condition coming from a protocol and a
+  // quick template collapses into ONE row (no duplicate condition entries).
+  const condKey = (label) => String(label||"").toLowerCase().replace(/\(.*?\)/g,"").replace(/[^a-z0-9]/g,"");
+  const buildRegionItems = (regionName) => {
+    const byCond = new Map();
+    const add = (item) => {
+      const ck = condKey(item.label);
+      const existing = byCond.get(ck);
+      if (!existing) { byCond.set(ck, item); return; }
+      // Merge: keep the protocol as the base (evidence + treatment), fold in the
+      // template's library link, manual/modality chips and any extra exercises.
+      const base = existing.source === "protocol" ? existing : item;
+      const other = existing.source === "protocol" ? item : existing;
+      const seen = new Set(base.exercises.map(e=>e.id));
+      base.exercises = [...base.exercises, ...other.exercises.filter(e=>!seen.has(e.id))];
+      base.manual = [...new Set([...base.manual, ...other.manual])];
+      base.machine = [...new Set([...base.machine, ...other.machine])];
+      base.treatment = base.treatment.length ? base.treatment : other.treatment;
+      base.templateKey = base.templateKey || other.templateKey;
+      base.note = base.note || other.note;
+      base.evidence = base.evidence || other.evidence;
+      byCond.set(ck, base);
+    };
+    (REGION_PROTOCOLS[regionName] || []).forEach(p => {
+      const exs = [];
+      (p.phases || []).forEach(ph => (ph.exercises || []).forEach(ex => {
+        const exId = "proto_" + ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_");
+        exs.push({ ...ex, id:exId, phase:ph.phase, target:ex.cues?.slice(0,40)||ex.name });
+      }));
+      add({ key:"proto_"+p.id, label:p.label, note:p.note, evidence:p.evidence,
+        source:"protocol", exercises:exs, manual:[], machine:[], treatment:p.treatment||[] });
+    });
+    Object.entries(PROGRAMME_TEMPLATES).filter(([k,t]) => t.region === regionName).forEach(([key,t]) => {
+      const tx = TEMPLATE_TX[key] || {};
+      const exs = t.exercises.map(id => ALL_EXERCISES.find(e=>e.id===id)).filter(Boolean);
+      add({ key:"tpl_"+key, label:t.label, note:t.note, evidence:null,
+        source:"template", templateKey:key, exercises:exs,
+        manual:tx.manual||[], machine:tx.machine||[], treatment:[] });
+    });
+    return [...byCond.values()].sort((a,b) => a.label.localeCompare(b.label));
+  };
+
+  const UnifiedRow = ({ item }) => {
+    const isOpen = openTpl === item.key;
+    const added = item.exercises.filter(ex => programme?.find(pp=>pp.id===ex.id)).length;
+    const txAll = [...item.manual, ...item.machine];
     const txAdded = txAll.filter(m => addedTx.includes(m)).length;
+    const summary = `${item.exercises.length} exercises${added>0?` · ${added} added`:""}`
+      + (txAll.length ? ` · ${txAll.length} manual/modality${txAdded>0?` (${txAdded} added)`:""}` : "")
+      + (item.treatment.length ? ` · ${item.treatment.length} treatment` : "");
     return (
-      <div key={key} style={{ marginBottom:4 }}>
-        <div onClick={()=>setOpenTpl(isOpen?null:key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
+      <div style={{ marginBottom:4 }}>
+        <div onClick={()=>setOpenTpl(isOpen?null:item.key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{t.label}</div>
-            <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{t.exercises.length} exercises{added>0?` · ${added} added`:""}{txAll.length?` · ${txAll.length} manual/modality${txAdded>0?` (${txAdded} added)`:""}`:""}</div>
+            <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{item.label}</div>
+            <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{summary}</div>
           </div>
           <span style={{ fontSize:"0.61rem", color:"#7c3aed", fontWeight:800 }}>{isOpen?"▲":"▼"}</span>
         </div>
         {isOpen && (
           <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"transparent" }}>
-            {t.note&&(
-              <div style={{ padding:"7px 10px", background:"rgba(217,119,6,0.08)", border:"1px solid rgba(217,119,6,0.25)", borderRadius:7, marginBottom:8, fontSize:"0.68rem", color:"#854f0b", lineHeight:1.5 }}>
-                ⚠️ {t.note}
+            {item.evidence && (
+              <div style={{ fontSize:"0.6rem", color:"#7c3aed", fontWeight:700, marginBottom:8, background:"rgba(124,58,237,0.1)", display:"inline-block", padding:"2px 9px", borderRadius:5, border:"1px solid rgba(124,58,237,0.25)" }}>📚 {item.evidence}</div>
+            )}
+            {item.note && (
+              <div style={{ padding:"7px 10px", background:"rgba(217,119,6,0.08)", border:"1px solid rgba(217,119,6,0.25)", borderRadius:7, marginBottom:8, fontSize:"0.68rem", color:"#854f0b", lineHeight:1.5 }}>⚠️ {item.note}</div>
+            )}
+            {item.source==="template" && onLoadTemplate && (
+              <button onClick={()=>{onLoadTemplate(item.templateKey);setOpenTpl(null);}} style={{ width:"100%", padding:"9px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:8 }}>→ View & add {item.exercises.length} exercises in Exercise Library</button>
+            )}
+            {item.exercises.length>0 && (
+              <div style={{ marginBottom:6 }}>
+                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>💪 Included exercises — tap to add, adjust sets/reps/hold/freq once added</div>
+                {item.exercises.map(ex => {
+                  const progEntry = programme?.find(pp=>pp.id===ex.id);
+                  const inProg = !!progEntry;
+                  return (
+                    <ExerciseDetailCard key={ex.id} ex={progEntry||ex} inProg={inProg}
+                      onAdd={()=>onAdd&&onAdd(ex)} onRemove={()=>onRemove&&onRemove(ex.id)}
+                      onUpdate={(field,val)=>onUpdate&&onUpdate(ex.id,field,val)} accentColor="#7c3aed"/>
+                  );
+                })}
               </div>
             )}
-            <button onClick={()=>{onLoadTemplate&&onLoadTemplate(key);setOpenTpl(null);}} style={{ width:"100%", padding:"9px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:8 }}>
-              → View & add {t.exercises.length} exercises in Exercise Library
-            </button>
-            <div style={{ marginBottom:6 }}>
-              <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>💪 Included exercises — tap to add, adjust sets/reps/hold/freq once added</div>
-              {t.exercises.map(id => {
-                const ex = ALL_EXERCISES.find(e=>e.id===id);
-                if(!ex) return null;
-                const progEntry = programme?.find(p=>p.id===id);
-                const inProg = !!progEntry;
-                return (
-                  <ExerciseDetailCard key={id} ex={progEntry||ex} inProg={inProg}
-                    onAdd={()=>onAdd&&onAdd(ex)} onRemove={()=>onRemove&&onRemove(ex.id)}
-                    onUpdate={(field,val)=>onUpdate&&onUpdate(ex.id,field,val)} accentColor="#7c3aed"/>
-                );
-              })}
-            </div>
-            {tx&&(tx.manual||[]).length>0&&(
+            {item.manual.length>0 && (
               <div style={{ marginBottom:5 }}>
                 <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🤲 Manual therapy</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
-                  {tx.manual.map(m=>{ const added=addedTx.includes(m); return (
-                    <button key={m} onClick={()=>addTx&&addTx(m)} disabled={added} style={{ padding:"2px 8px", borderRadius:99, border:`1px solid ${added?"rgba(0,201,122,0.4)":"rgba(124,58,237,0.3)"}`, background:added?"rgba(0,201,122,0.1)":"transparent", color:added?"#00c97a":"#7c3aed", fontWeight:700, fontSize:"0.56rem", cursor:added?"default":"pointer" }}>{added?"✓ ":""}{m}</button>
+                  {item.manual.map(m=>{ const a=addedTx.includes(m); return (
+                    <button key={m} onClick={()=>addTx&&addTx(m)} disabled={a} style={{ padding:"2px 8px", borderRadius:99, border:`1px solid ${a?"rgba(0,201,122,0.4)":"rgba(124,58,237,0.3)"}`, background:a?"rgba(0,201,122,0.1)":"transparent", color:a?"#00c97a":"#7c3aed", fontWeight:700, fontSize:"0.56rem", cursor:a?"default":"pointer" }}>{a?"✓ ":""}{m}</button>
                   );})}
                 </div>
               </div>
             )}
-            {tx&&(tx.machine||[]).length>0&&(
-              <div>
+            {item.machine.length>0 && (
+              <div style={{ marginBottom:5 }}>
                 <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>⚡ Modality</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
-                  {tx.machine.map(m=>{ const added=addedTx.includes(m); return (
-                    <button key={m} onClick={()=>addTx&&addTx(m)} disabled={added} style={{ padding:"2px 8px", borderRadius:99, border:`1px solid ${added?"rgba(0,201,122,0.4)":"rgba(0,229,255,0.3)"}`, background:added?"rgba(0,201,122,0.1)":"transparent", color:added?"#00c97a":"#00c97a", fontWeight:700, fontSize:"0.56rem", cursor:added?"default":"pointer" }}>{added?"✓ ":""}{m}</button>
+                  {item.machine.map(m=>{ const a=addedTx.includes(m); return (
+                    <button key={m} onClick={()=>addTx&&addTx(m)} disabled={a} style={{ padding:"2px 8px", borderRadius:99, border:`1px solid ${a?"rgba(0,201,122,0.4)":"rgba(0,229,255,0.3)"}`, background:a?"rgba(0,201,122,0.1)":"transparent", color:"#00c97a", fontWeight:700, fontSize:"0.56rem", cursor:a?"default":"pointer" }}>{a?"✓ ":""}{m}</button>
                   );})}
                 </div>
+              </div>
+            )}
+            {item.treatment.length>0 && (
+              <div>
+                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>🏥 Treatment techniques</div>
+                {item.treatment.map((tx,ti)=>(
+                  <div key={ti} style={{ background:"#FFFFFF", border:"1px solid rgba(124,58,237,0.2)", borderRadius:7, padding:"7px 10px", marginBottom:5 }}>
+                    <div style={{ fontWeight:800, fontSize:"0.66rem", color:"#7c3aed", marginBottom:3 }}>🏥 {tx.name}</div>
+                    <div style={{ fontSize:"0.63rem", color:"#334155", lineHeight:1.5, marginBottom:3 }}>{tx.desc}</div>
+                    {tx.evidence && <div style={{ fontSize:"0.56rem", color:"#7f5af0" }}>📚 {tx.evidence}</div>}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -6176,14 +6238,14 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
   };
 
   const QuickTemplatesForRegion = ({ regionName }) => {
-    const entries = Object.entries(PROGRAMME_TEMPLATES).filter(([k,t]) => t.region === regionName);
-    if (!entries.length) return null;
+    const items = buildRegionItems(regionName);
+    if (!items.length) return null;
     return (
       <div style={{ marginTop:14, paddingTop:12, borderTop:"1px dashed #E0E0E2" }}>
         <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>
-          ⚡ Quick templates — {regionName}
+          ⚡ Protocols & templates — {regionName}
         </div>
-        {entries.map(([key,t]) => <TemplateCard key={key} templateKey={key} t={t}/>)}
+        {items.map(item => <UnifiedRow key={item.key} item={item}/>)}
       </div>
     );
   };
@@ -6244,92 +6306,20 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
               <QuickTemplatesForRegion regionName="Cervical"/>
             )}
 
-            {activeTab === "knee" && (() => {
-              return (
-                <div>
-                  <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:9 }}>
-                    {KNEE_PROTOCOLS.map(kp => (
-                      <button key={kp.id} onClick={() => { setOpenId(openId===kp.id?null:kp.id); setOpenTx(null); }}
-                        style={{ padding:"5px 12px", borderRadius:20, fontSize:"0.61rem", fontWeight:600,
-                          background: openId===kp.id?`${kp.color}18`:"transparent",
-                          border:`1px solid ${openId===kp.id?kp.color:"#E0E0E2"}`,
-                          color: openId===kp.id?kp.color:"#6B6B6B", cursor:"pointer" }}>
-                        {kp.icon} {kp.label}
-                      </button>
-                    ))}
-                  </div>
-                  {openId && (() => {
-                    const kp = KNEE_PROTOCOLS.find(k => k.id === openId);
-                    if(!kp) return null;
-                    return (
-                      <div style={{ background:`${kp.color}06`, border:`1px solid ${kp.color}30`, borderRadius:9, padding:"10px" }}>
-                        <div style={{ fontSize:"0.57rem", color:kp.color, fontWeight:700, marginBottom:8, background:`${kp.color}12`, display:"inline-block", padding:"2px 9px", borderRadius:5, border:`1px solid ${kp.color}30` }}>📚 {kp.evidence}</div>
-                        <div style={{ display:"flex", gap:5, marginBottom:9 }}>
-                          <button onClick={() => setOpenTx(null)} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx!=="tx"?kp.color:"#E0E0E2"}`, background:openTx!=="tx"?`${kp.color}15`:"transparent", color:openTx!=="tx"?kp.color:"#6B6B6B", fontSize:"0.8rem", fontWeight:800, cursor:"pointer" }}>💪 Exercises</button>
-                          <button onClick={() => setOpenTx("tx")} style={{ flex:1, padding:"6px", borderRadius:7, border:`1px solid ${openTx==="tx"?kp.color:"#E0E0E2"}`, background:openTx==="tx"?`${kp.color}15`:"transparent", color:openTx==="tx"?kp.color:"#6B6B6B", fontSize:"0.8rem", fontWeight:800, cursor:"pointer" }}>🏥 Treatment</button>
-                        </div>
-                        {openTx !== "tx" && kp.phases.map((ph, pi) => (
-                          <div key={pi} style={{ marginBottom:6, border:`1px solid ${ph.color}30`, borderRadius:7, overflow:"hidden" }}>
-                            <div onClick={() => togglePhase(`${kp.id}_${pi}`)} style={{ padding:"7px 10px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", background:`${ph.color}10` }}>
-                              <div style={{ fontWeight:800, fontSize:"0.75rem", color:ph.color }}>{ph.phase}</div>
-                              <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                                <span style={{ fontSize:"0.57rem", color:"#6B6B6B" }}>{ph.exercises.length} ex</span>
-                                <span style={{ color:ph.color, fontSize:"0.73rem" }}>{openPhase[`${kp.id}_${pi}`]?"▲":"▼"}</span>
-                              </div>
-                            </div>
-                            {openPhase[`${kp.id}_${pi}`] && (
-                              <div style={{ padding:"8px 10px" }}>
-                                {ph.exercises.map((ex, ei) => {
-                                  const exId = "proto_" + ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_");
-                                  const inProg = programme?.find(e=>e.id===exId);
-                                  return (
-                                  <ExerciseDetailCard key={ei}
-                                    ex={inProg||{...ex,id:exId,phase:ph.phase,target:ex.cues?.slice(0,40)||ex.name}}
-                                    inProg={!!inProg}
-                                    onAdd={()=>onAdd&&onAdd({...ex,id:exId,phase:ph.phase,target:ex.cues?.slice(0,40)||ex.name})}
-                                    onRemove={()=>onRemove&&onRemove(exId)}
-                                    onUpdate={(field,val)=>onUpdate&&onUpdate(exId,field,val)}
-                                    accentColor={ph.color}/>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        {openTx === "tx" && kp.treatment.map((tx,ti) => (
-                          <div key={ti} style={{ background:"#FFFFFF", border:`1px solid ${kp.color}25`, borderRadius:7, padding:"8px 10px", marginBottom:6 }}>
-                            <div style={{ fontWeight:800, fontSize:"0.69rem", color:kp.color, marginBottom:3 }}>🏥 {tx.name}</div>
-                            <div style={{ fontSize:"0.66rem", color:"#334155", lineHeight:1.5, marginBottom:3 }}>{tx.desc}</div>
-                            <div style={{ fontSize:"0.57rem", color:"#7f5af0" }}>📚 {tx.evidence}</div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()}
-                  <QuickTemplatesForRegion regionName="Knee"/>
-                </div>
-              );
-            })()}
+            {activeTab === "knee" && (
+              <QuickTemplatesForRegion regionName="Knee"/>
+            )}
 
             {activeTab === "shoulder" && (
-              <>
-                <ProtocolPanel protocols={SHOULDER_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} onRemove={onRemove} onUpdate={onUpdate} programme={programme} />
-                <QuickTemplatesForRegion regionName="Shoulder"/>
-              </>
+              <QuickTemplatesForRegion regionName="Shoulder"/>
             )}
 
             {activeTab === "elbow" && (
-              <>
-                <ProtocolPanel protocols={ELBOW_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} onRemove={onRemove} onUpdate={onUpdate} programme={programme} />
-                <QuickTemplatesForRegion regionName="Elbow"/>
-              </>
+              <QuickTemplatesForRegion regionName="Elbow"/>
             )}
 
             {activeTab === "hip" && (
-              <>
-                <ProtocolPanel protocols={HIP_PROTOCOLS} openId={openId} setOpenId={setOpenId} openTx={openTx} setOpenTx={setOpenTx} openPhase={openPhase} togglePhase={togglePhase} onAdd={onAdd} onRemove={onRemove} onUpdate={onUpdate} programme={programme} />
-                <QuickTemplatesForRegion regionName="Hip"/>
-              </>
+              <QuickTemplatesForRegion regionName="Hip"/>
             )}
 
             {activeTab === "posture" && (
