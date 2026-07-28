@@ -433,18 +433,19 @@ function loadPatientDB(userId) {
     if (real.length !== stored.length) {
       try { localStorage.setItem(DB_KEY, JSON.stringify(real)); } catch {}
     }
-    // Seed both demo patients if missing or outdated
-    const priya  = real.find(p => p.id === SEED_PATIENT.id);
-    const arjun  = real.find(p => p.id === SEED_PATIENT_2.id);
-    const needsSeed = real.length === 0 ||
-      (priya && Object.keys(priya.data || {}).length < 230) ||
-      !arjun;
-    if (needsSeed) {
-      const others = real.filter(p => p.id !== SEED_PATIENT.id && p.id !== SEED_PATIENT_2.id);
-      const seeded = [SEED_PATIENT, SEED_PATIENT_2, ...others];
-      try { localStorage.setItem(DB_KEY, JSON.stringify(seeded)); } catch {}
-      try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: SEED_PATIENT.id, data: SEED_PATIENT.data })); } catch {}
-      return seeded;
+    // Seed the two demo patients ONCE, on the first ever load for this user.
+    // After that we never re-add them. Previously this re-seeded whenever Priya
+    // or Arjun were missing, so deleting a demo patient just brought it straight
+    // back on the next load (the "deleted patients reappear" bug).
+    const SEED_FLAG = "pm_seeded_" + DEMO_VERSION;
+    if (!localStorage.getItem(SEED_FLAG)) {
+      try { localStorage.setItem(SEED_FLAG, "1"); } catch {}
+      if (real.length === 0) {
+        const seeded = [SEED_PATIENT, SEED_PATIENT_2];
+        try { localStorage.setItem(DB_KEY, JSON.stringify(seeded)); } catch {}
+        try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: SEED_PATIENT.id, data: SEED_PATIENT.data })); } catch {}
+        return seeded;
+      }
     }
     return real;
   } catch { return []; }
